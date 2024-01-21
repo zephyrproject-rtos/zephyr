@@ -297,6 +297,7 @@ static int mcp251xfd_reg_check_value_wtimeout(const struct device *dev, uint16_t
 static int mcp251xfd_set_tdc(const struct device *dev, bool is_enabled, int tdc_offset)
 {
 	uint32_t *reg;
+	uint32_t tmp;
 
 	if (is_enabled &&
 	    (tdc_offset < MCP251XFD_REG_TDC_TDCO_MIN || tdc_offset > MCP251XFD_REG_TDC_TDCO_MAX)) {
@@ -306,13 +307,13 @@ static int mcp251xfd_set_tdc(const struct device *dev, bool is_enabled, int tdc_
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 
 	if (is_enabled) {
-		*reg = FIELD_PREP(MCP251XFD_REG_TDC_TDCMOD_MASK, MCP251XFD_REG_TDC_TDCMOD_AUTO);
-		*reg |= FIELD_PREP(MCP251XFD_REG_TDC_TDCO_MASK, tdc_offset);
+		tmp = FIELD_PREP(MCP251XFD_REG_TDC_TDCMOD_MASK, MCP251XFD_REG_TDC_TDCMOD_AUTO);
+		tmp |= FIELD_PREP(MCP251XFD_REG_TDC_TDCO_MASK, tdc_offset);
 	} else {
-		*reg = FIELD_PREP(MCP251XFD_REG_TDC_TDCMOD_MASK, MCP251XFD_REG_TDC_TDCMOD_DISABLED);
+		tmp = FIELD_PREP(MCP251XFD_REG_TDC_TDCMOD_MASK, MCP251XFD_REG_TDC_TDCMOD_DISABLED);
 	}
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	return mcp251xfd_write(dev, MCP251XFD_REG_TDC, MCP251XFD_REG_SIZE);
 }
@@ -417,6 +418,7 @@ static int mcp251xfd_set_timing(const struct device *dev, const struct can_timin
 {
 	struct mcp251xfd_data *dev_data = dev->data;
 	uint32_t *reg;
+	uint32_t tmp;
 	int ret;
 
 	if (!timing) {
@@ -430,11 +432,12 @@ static int mcp251xfd_set_timing(const struct device *dev, const struct can_timin
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
-	*reg = FIELD_PREP(MCP251XFD_REG_NBTCFG_BRP_MASK, timing->prescaler - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_NBTCFG_TSEG1_MASK,
+	tmp = FIELD_PREP(MCP251XFD_REG_NBTCFG_BRP_MASK, timing->prescaler - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_NBTCFG_TSEG1_MASK,
 			   timing->prop_seg + timing->phase_seg1 - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_NBTCFG_TSEG2_MASK, timing->phase_seg2 - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_NBTCFG_SJW_MASK, timing->sjw - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_NBTCFG_TSEG2_MASK, timing->phase_seg2 - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_NBTCFG_SJW_MASK, timing->sjw - 1);
+	*reg = tmp;
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_NBTCFG, MCP251XFD_REG_SIZE);
 	if (ret < 0) {
@@ -452,6 +455,7 @@ static int mcp251xfd_set_timing_data(const struct device *dev, const struct can_
 {
 	struct mcp251xfd_data *dev_data = dev->data;
 	uint32_t *reg;
+	uint32_t tmp;
 	int ret;
 
 	if (!timing) {
@@ -466,13 +470,13 @@ static int mcp251xfd_set_timing_data(const struct device *dev, const struct can_
 
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 
-	*reg = FIELD_PREP(MCP251XFD_REG_DBTCFG_BRP_MASK, timing->prescaler - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_DBTCFG_TSEG1_MASK,
-			   timing->prop_seg + timing->phase_seg1 - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_DBTCFG_TSEG2_MASK, timing->phase_seg2 - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_DBTCFG_SJW_MASK, timing->sjw - 1);
+	tmp = FIELD_PREP(MCP251XFD_REG_DBTCFG_BRP_MASK, timing->prescaler - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_DBTCFG_TSEG1_MASK,
+			  timing->prop_seg + timing->phase_seg1 - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_DBTCFG_TSEG2_MASK, timing->phase_seg2 - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_DBTCFG_SJW_MASK, timing->sjw - 1);
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	dev_data->tdco = timing->prescaler * (timing->prop_seg + timing->phase_seg1);
 
@@ -558,6 +562,7 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 {
 	struct mcp251xfd_data *dev_data = dev->data;
 	uint32_t *reg;
+	uint32_t tmp;
 	uint8_t *reg_byte;
 	int filter_idx;
 	int ret;
@@ -579,14 +584,14 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 
 	if ((filter->flags & CAN_FILTER_IDE) != 0) {
-		*reg = FIELD_PREP(MCP251XFD_REG_FLTOBJ_SID_MASK, filter->id >> 18);
-		*reg |= FIELD_PREP(MCP251XFD_REG_FLTOBJ_EID_MASK, filter->id);
-		*reg |= MCP251XFD_REG_FLTOBJ_EXIDE;
+		tmp = FIELD_PREP(MCP251XFD_REG_FLTOBJ_SID_MASK, filter->id >> 18);
+		tmp |= FIELD_PREP(MCP251XFD_REG_FLTOBJ_EID_MASK, filter->id);
+		tmp |= MCP251XFD_REG_FLTOBJ_EXIDE;
 	} else {
-		*reg = FIELD_PREP(MCP251XFD_REG_FLTOBJ_SID_MASK, filter->id);
+		tmp = FIELD_PREP(MCP251XFD_REG_FLTOBJ_SID_MASK, filter->id);
 	}
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_FLTOBJ(filter_idx), MCP251XFD_REG_SIZE);
 	if (ret < 0) {
 		LOG_ERR("Failed to write FLTOBJ register [%d]", ret);
@@ -595,14 +600,14 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 	if ((filter->flags & CAN_FILTER_IDE) != 0) {
-		*reg = FIELD_PREP(MCP251XFD_REG_MASK_MSID_MASK, filter->mask >> 18);
-		*reg |= FIELD_PREP(MCP251XFD_REG_MASK_MEID_MASK, filter->mask);
+		tmp = FIELD_PREP(MCP251XFD_REG_MASK_MSID_MASK, filter->mask >> 18);
+		tmp |= FIELD_PREP(MCP251XFD_REG_MASK_MEID_MASK, filter->mask);
 	} else {
-		*reg = FIELD_PREP(MCP251XFD_REG_MASK_MSID_MASK, filter->mask);
+		tmp = FIELD_PREP(MCP251XFD_REG_MASK_MSID_MASK, filter->mask);
 	}
-	*reg |= MCP251XFD_REG_MASK_MIDE;
+	tmp |= MCP251XFD_REG_MASK_MIDE;
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_FLTMASK(filter_idx), MCP251XFD_REG_SIZE);
 	if (ret < 0) {
@@ -682,6 +687,7 @@ static int mcp251xfd_get_state(const struct device *dev, enum can_state *state,
 {
 	struct mcp251xfd_data *dev_data = dev->data;
 	uint32_t *reg;
+	uint32_t tmp;
 	int ret = 0;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
@@ -692,11 +698,11 @@ static int mcp251xfd_get_state(const struct device *dev, enum can_state *state,
 		goto done;
 	}
 
-	*reg = sys_le32_to_cpu(*reg);
+	tmp = sys_le32_to_cpu(*reg);
 
 	if (err_cnt != NULL) {
-		err_cnt->tx_err_cnt = FIELD_GET(MCP251XFD_REG_TREC_TEC_MASK, *reg);
-		err_cnt->rx_err_cnt = FIELD_GET(MCP251XFD_REG_TREC_REC_MASK, *reg);
+		err_cnt->tx_err_cnt = FIELD_GET(MCP251XFD_REG_TREC_TEC_MASK, tmp);
+		err_cnt->rx_err_cnt = FIELD_GET(MCP251XFD_REG_TREC_REC_MASK, tmp);
 	}
 
 	if (state == NULL) {
@@ -708,15 +714,15 @@ static int mcp251xfd_get_state(const struct device *dev, enum can_state *state,
 		goto done;
 	}
 
-	if ((*reg & MCP251XFD_REG_TREC_TXBO) != 0) {
+	if ((tmp & MCP251XFD_REG_TREC_TXBO) != 0) {
 		*state = CAN_STATE_BUS_OFF;
-	} else if ((*reg & MCP251XFD_REG_TREC_TXBP) != 0) {
+	} else if ((tmp & MCP251XFD_REG_TREC_TXBP) != 0) {
 		*state = CAN_STATE_ERROR_PASSIVE;
-	} else if ((*reg & MCP251XFD_REG_TREC_RXBP) != 0) {
+	} else if ((tmp & MCP251XFD_REG_TREC_RXBP) != 0) {
 		*state = CAN_STATE_ERROR_PASSIVE;
-	} else if ((*reg & MCP251XFD_REG_TREC_TXWARN) != 0) {
+	} else if ((tmp & MCP251XFD_REG_TREC_TXWARN) != 0) {
 		*state = CAN_STATE_ERROR_WARNING;
-	} else if ((*reg & MCP251XFD_REG_TREC_RXWARN) != 0) {
+	} else if ((tmp & MCP251XFD_REG_TREC_RXWARN) != 0) {
 		*state = CAN_STATE_ERROR_WARNING;
 	} else {
 		*state = CAN_STATE_ERROR_ACTIVE;
@@ -905,7 +911,7 @@ static int mcp251xfd_handle_cerrif(const struct device *dev)
 	enum can_state new_state;
 	struct mcp251xfd_data *dev_data = dev->data;
 	struct can_bus_err_cnt err_cnt;
-	int ret = 0;
+	int ret;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
@@ -1024,7 +1030,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 		reg_int = *reg_int_hw;
 
 		/* these interrupt flags need to be explicitly cleared */
-		if (*reg_int_hw & MCP251XFD_REG_INT_IF_CLEARABLE_MASK) {
+		if (reg_int & MCP251XFD_REG_INT_IF_CLEARABLE_MASK) {
 
 			*reg_int_hw &= ~MCP251XFD_REG_INT_IF_CLEARABLE_MASK;
 
@@ -1355,12 +1361,14 @@ static int mcp251xfd_init_timing_struct(struct can_timing *timing,
 static inline int mcp251xfd_init_con_reg(const struct device *dev)
 {
 	uint32_t *reg;
+	uint32_t tmp;
 
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
-	*reg = MCP251XFD_REG_CON_ISOCRCEN | MCP251XFD_REG_CON_WAKFIL | MCP251XFD_REG_CON_TXQEN |
-	       MCP251XFD_REG_CON_STEF;
-	*reg |= FIELD_PREP(MCP251XFD_REG_CON_WFT_MASK, MCP251XFD_REG_CON_WFT_T11FILTER) |
+	tmp = MCP251XFD_REG_CON_ISOCRCEN | MCP251XFD_REG_CON_WAKFIL | MCP251XFD_REG_CON_TXQEN |
+	      MCP251XFD_REG_CON_STEF;
+	tmp |= FIELD_PREP(MCP251XFD_REG_CON_WFT_MASK, MCP251XFD_REG_CON_WFT_T11FILTER) |
 		FIELD_PREP(MCP251XFD_REG_CON_REQOP_MASK, MCP251XFD_REG_CON_MODE_CONFIG);
+	*reg = tmp;
 
 	return mcp251xfd_write(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
 }
@@ -1371,14 +1379,15 @@ static inline int mcp251xfd_init_osc_reg(const struct device *dev)
 	const struct mcp251xfd_config *dev_cfg = dev->config;
 	uint32_t *reg = mcp251xfd_get_spi_buf_ptr(dev);
 	uint32_t reg_value = MCP251XFD_REG_OSC_OSCRDY;
+	uint32_t tmp;
 
-	*reg = FIELD_PREP(MCP251XFD_REG_OSC_CLKODIV_MASK, dev_cfg->clko_div);
+	tmp = FIELD_PREP(MCP251XFD_REG_OSC_CLKODIV_MASK, dev_cfg->clko_div);
 	if (dev_cfg->pll_enable) {
-		*reg |= MCP251XFD_REG_OSC_PLLEN;
+		tmp |= MCP251XFD_REG_OSC_PLLEN;
 		reg_value |= MCP251XFD_REG_OSC_PLLRDY;
 	}
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_OSC, MCP251XFD_REG_SIZE);
 	if (ret < 0) {
@@ -1394,6 +1403,7 @@ static inline int mcp251xfd_init_iocon_reg(const struct device *dev)
 {
 	const struct mcp251xfd_config *dev_cfg = dev->config;
 	uint32_t *reg = mcp251xfd_get_spi_buf_ptr(dev);
+	uint32_t tmp;
 
 /*
  *         MCP2518FD Errata: DS80000789
@@ -1403,14 +1413,14 @@ static inline int mcp251xfd_init_iocon_reg(const struct device *dev)
  *         to do single byte writes instead.
  */
 
-	*reg = MCP251XFD_REG_IOCON_TRIS0 | MCP251XFD_REG_IOCON_TRIS1 | MCP251XFD_REG_IOCON_PM0 |
-	       MCP251XFD_REG_IOCON_PM1;
+	tmp = MCP251XFD_REG_IOCON_TRIS0 | MCP251XFD_REG_IOCON_TRIS1 | MCP251XFD_REG_IOCON_PM0 |
+	      MCP251XFD_REG_IOCON_PM1;
 
 	if (dev_cfg->sof_on_clko) {
-		*reg |= MCP251XFD_REG_IOCON_SOF;
+		tmp |= MCP251XFD_REG_IOCON_SOF;
 	}
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	return  mcp251xfd_write(dev, MCP251XFD_REG_IOCON, MCP251XFD_REG_SIZE);
 }
@@ -1418,11 +1428,12 @@ static inline int mcp251xfd_init_iocon_reg(const struct device *dev)
 static inline int mcp251xfd_init_int_reg(const struct device *dev)
 {
 	uint32_t *reg = mcp251xfd_get_spi_buf_ptr(dev);
+	uint32_t tmp;
 
-	*reg = MCP251XFD_REG_INT_RXIE | MCP251XFD_REG_INT_MODIE | MCP251XFD_REG_INT_TEFIE |
-	       MCP251XFD_REG_INT_CERRIE;
+	tmp = MCP251XFD_REG_INT_RXIE | MCP251XFD_REG_INT_MODIE | MCP251XFD_REG_INT_TEFIE |
+	      MCP251XFD_REG_INT_CERRIE;
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	return mcp251xfd_write(dev, MCP251XFD_REG_INT, MCP251XFD_REG_SIZE);
 }
@@ -1430,11 +1441,12 @@ static inline int mcp251xfd_init_int_reg(const struct device *dev)
 static inline int mcp251xfd_init_tef_fifo(const struct device *dev)
 {
 	uint32_t *reg = mcp251xfd_get_spi_buf_ptr(dev);
+	uint32_t tmp;
 
-	*reg = MCP251XFD_REG_TEFCON_TEFNEIE | MCP251XFD_REG_TEFCON_FRESET;
-	*reg |= FIELD_PREP(MCP251XFD_REG_TEFCON_FSIZE_MASK, MCP251XFD_TX_QUEUE_ITEMS - 1);
+	tmp = MCP251XFD_REG_TEFCON_TEFNEIE | MCP251XFD_REG_TEFCON_FRESET;
+	tmp |= FIELD_PREP(MCP251XFD_REG_TEFCON_FSIZE_MASK, MCP251XFD_TX_QUEUE_ITEMS - 1);
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	return mcp251xfd_write(dev, MCP251XFD_REG_TEFCON, MCP251XFD_REG_SIZE);
 }
@@ -1442,14 +1454,15 @@ static inline int mcp251xfd_init_tef_fifo(const struct device *dev)
 static inline int mcp251xfd_init_tx_queue(const struct device *dev)
 {
 	uint32_t *reg = mcp251xfd_get_spi_buf_ptr(dev);
+	uint32_t tmp;
 
-	*reg = MCP251XFD_REG_TXQCON_TXEN | MCP251XFD_REG_TXQCON_FRESET;
-	*reg |= FIELD_PREP(MCP251XFD_REG_TXQCON_TXAT_MASK, MCP251XFD_REG_TXQCON_TXAT_UNLIMITED);
-	*reg |= FIELD_PREP(MCP251XFD_REG_TXQCON_FSIZE_MASK, MCP251XFD_TX_QUEUE_ITEMS - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_TXQCON_PLSIZE_MASK,
-			   can_bytes_to_dlc(MCP251XFD_PAYLOAD_SIZE) - 8);
+	tmp = MCP251XFD_REG_TXQCON_TXEN | MCP251XFD_REG_TXQCON_FRESET;
+	tmp |= FIELD_PREP(MCP251XFD_REG_TXQCON_TXAT_MASK, MCP251XFD_REG_TXQCON_TXAT_UNLIMITED);
+	tmp |= FIELD_PREP(MCP251XFD_REG_TXQCON_FSIZE_MASK, MCP251XFD_TX_QUEUE_ITEMS - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_TXQCON_PLSIZE_MASK,
+			  can_bytes_to_dlc(MCP251XFD_PAYLOAD_SIZE) - 8);
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	return mcp251xfd_write(dev, MCP251XFD_REG_TXQCON, MCP251XFD_REG_SIZE);
 }
@@ -1457,16 +1470,17 @@ static inline int mcp251xfd_init_tx_queue(const struct device *dev)
 static inline int mcp251xfd_init_rx_fifo(const struct device *dev)
 {
 	uint32_t *reg = mcp251xfd_get_spi_buf_ptr(dev);
+	uint32_t tmp;
 
-	*reg = MCP251XFD_REG_FIFOCON_TFNRFNIE | MCP251XFD_REG_FIFOCON_FRESET;
-	*reg |= FIELD_PREP(MCP251XFD_REG_FIFOCON_FSIZE_MASK, MCP251XFD_RX_FIFO_ITEMS - 1);
-	*reg |= FIELD_PREP(MCP251XFD_REG_FIFOCON_PLSIZE_MASK,
-			   can_bytes_to_dlc(MCP251XFD_PAYLOAD_SIZE) - 8);
+	tmp = MCP251XFD_REG_FIFOCON_TFNRFNIE | MCP251XFD_REG_FIFOCON_FRESET;
+	tmp |= FIELD_PREP(MCP251XFD_REG_FIFOCON_FSIZE_MASK, MCP251XFD_RX_FIFO_ITEMS - 1);
+	tmp |= FIELD_PREP(MCP251XFD_REG_FIFOCON_PLSIZE_MASK,
+			  can_bytes_to_dlc(MCP251XFD_PAYLOAD_SIZE) - 8);
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
-	*reg |= MCP251XFD_REG_FIFOCON_RXTSEN;
+	tmp |= MCP251XFD_REG_FIFOCON_RXTSEN;
 #endif
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	return mcp251xfd_write(dev, MCP251XFD_REG_FIFOCON(MCP251XFD_RX_FIFO_IDX),
 			       MCP251XFD_REG_SIZE);
@@ -1477,12 +1491,13 @@ static int mcp251xfd_init_tscon(const struct device *dev)
 {
 	uint32_t *reg = mcp251xfd_get_spi_buf_ptr(dev);
 	const struct mcp251xfd_config *dev_cfg = dev->config;
+	uint32_t tmp;
 
-	*reg = MCP251XFD_REG_TSCON_TBCEN;
-	*reg |= FIELD_PREP(MCP251XFD_REG_TSCON_TBCPRE_MASK,
-			   dev_cfg->timestamp_prescaler - 1);
+	tmp = MCP251XFD_REG_TSCON_TBCEN;
+	tmp |= FIELD_PREP(MCP251XFD_REG_TSCON_TBCPRE_MASK,
+			  dev_cfg->timestamp_prescaler - 1);
 
-	*reg = sys_cpu_to_le32(*reg);
+	*reg = sys_cpu_to_le32(tmp);
 
 	return mcp251xfd_write(dev, MCP251XFD_REG_TSCON, MCP251XFD_REG_SIZE);
 }
