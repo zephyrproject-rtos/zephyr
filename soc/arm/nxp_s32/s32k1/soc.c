@@ -20,8 +20,6 @@
 #endif
 
 #if defined(CONFIG_WDOG_INIT)
-#define WDOG_UPDATE_KEY    0xD928C520U
-
 void z_arm_watchdog_init(void)
 {
 	/*
