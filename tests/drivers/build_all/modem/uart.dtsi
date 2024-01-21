@@ -70,3 +70,7 @@ test_telit_me910g1: telit_me910g1 {
 test_esp_at: esp_at {
 	compatible = "espressif,esp-at";
 };
+
+test_murata_1sc: murata_1sc {
+	compatible = "murata,1sc";
+};

@@ -1,0 +1,27 @@
+# Copyright (c) 2023 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: murata 1sc modem
+
+compatible: "murata,1sc"
+
+include: uart-device.yaml
+
+properties:
+  mdm-wake-host-gpios:
+    type: phandle-array
+
+  mdm-wake-mdm-gpios:
+    type: phandle-array
+
+  mdm-reset-gpios:
+    type: phandle-array
+
+  mdm-rst-done-gpios:
+    type: phandle-array
+
+  mdm-rx-gpios:
+    type: phandle-array
+
+  mdm-tx-gpios:
+    type: phandle-array

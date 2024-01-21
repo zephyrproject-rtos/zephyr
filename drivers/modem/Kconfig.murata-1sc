@@ -1,0 +1,122 @@
+# Murata 1SC driver options
+
+# Copyright (c) 2023 T-Moblie
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MODEM_MURATA_1SC
+		bool "Murata-1sc modem driver"
+		select MODEM_CONTEXT
+		select MODEM_CMD_HANDLER
+		select MODEM_IFACE_UART
+		select MODEM_SOCKET
+		select NET_SOCKETS
+		select NET_SOCKETS_OFFLOAD
+		select BASE64
+		imply GPIO
+		help
+		  Choose this setting to enable Murata 1SC modem
+		  driver.
+
+if MODEM_MURATA_1SC
+config MODEM_MURATA_1SC_RX_STACK_SIZE
+		int "Stack size for the MURATA_1SC modem driver RX thread"
+		default 1028
+		help
+		  This stack is used by the MURATA_1SC RX thread.
+
+config MODEM_MURATA_1SC_RX_WORKQ_STACK_SIZE
+		int "Stack size for the MURATA_1SC modem driver work queue"
+		default 2048
+		help
+		  This stack is used by the work queue to pass off net_pkt data
+		  to the rest of the network stack, letting the rx thread continue
+		  processing data.
+
+config MODEM_MURATA_1SC_APN
+		string "APN for establishing network connection"
+		default ""
+		help
+		  This setting is used to set the APN name for the network connection
+		  context. This value is specific to the network provider
+
+config MODEM_MURATA_1SC_INIT_PRIORITY
+		int "MURATA_1SC driver init priority"
+		default 80
+		help
+		  MURATA_1SC device driver initialization priority.
+		  Do not mess with it unless you know what you are doing.
+		  Note that the priority needs to be lower than the net stack
+		  so that it can start before the networking sub-system.
+
+config MODEM_MURATA_1SC_SOCKET_COUNT
+		int "MURATA_1SC Maximum concurrent sockets allowed"
+		range 1 6
+		default 4
+		help
+		  This value sets the maximum number of allowed concurrent sockets
+		  for the 1sc modem.
+
+config MURATA_MODEM_SNI_BUFFER_SZ
+		int "Max size for a server name"
+		default 64
+		range 40 1000
+		help
+		  This value is for murata-1sc driver to wait before turn cfun=1
+
+config MODEM_MURATA_IPV4_DNS_PRIMARY
+		string "Primary IPv4 DNS server to be used on the Murata modem"
+		default ""
+		help
+		  This is the default IPv4 DNS server used by the modem, if not set
+		  it uses the DNS provided by the network.
+
+config MODEM_MURATA_IPV4_DNS_SECONDARY
+		string "Secondary IPv4 DNS server to be used on the Murata modem"
+		default ""
+		help
+		  This is the secondary IPv4 DNS server used by the modem, if not set
+		  it uses the DNS provided by the network.
+
+config MODEM_MURATA_IPV6_DNS_PRIMARY
+		string "Primary IPv6 DNS server to be used on the Murata modem"
+		default ""
+		help
+		  This is the default IPv6 DNS server used by the modem, if not set
+		  it uses the DNS provided by the network.
+
+config MODEM_MURATA_IPV6_DNS_SECONDARY
+		string "Secondary IPv6 DNS server to be used on the Murata modem"
+		default ""
+		help
+		  This is the secondary IPv6 DNS server used by the modem, if not set
+		  it uses the DNS provided by the network.
+
+config MODEM_MURATA_RSSI_WORK
+	bool "RSSI polling work"
+	default y
+	help
+	  Murata 1SC device is configured to poll for RSSI
+
+config MODEM_MURATA_RSSI_WORK_PERIOD
+	int "Configure RSSI WORK polling frequency"
+	depends on MODEM_MURATA_RSSI_WORK
+	default 30
+	help
+	  This setting is used to configure the period of RSSI polling
+
+config MODEM_MURATA_USE_SYSTEM_WORKQUEUE
+	bool "Use system workqueue for tasks"
+	default y
+	help
+	  This setting instructs the driver to use the system workqueue instead of
+	  its own workqueue.
+
+config MODEM_MURATA_WORKQ_STACK_SIZE
+	int "Stack size for the murata modem driver work queue"
+	default 2048
+	depends on !MODEM_MURATA_USE_SYSTEM_WORKQUEUE
+	help
+	  This stack is used by the work queue for certain tasks such as the RSSI
+	  polling task and the HIFC handshake
+
+endif  #MODEM_MURATA_1SC
