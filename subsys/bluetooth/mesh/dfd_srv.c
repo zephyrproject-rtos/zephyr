@@ -103,10 +103,8 @@ static void receivers_status_rsp(struct bt_mesh_dfd_srv *srv,
 				 struct bt_mesh_msg_ctx *ctx,
 				 enum bt_mesh_dfd_status status)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFD_OP_RECEIVERS_STATUS, 3);
-
-	net_buf_simple_add_u8(&buf, status);
-	net_buf_simple_add_le16(&buf, srv->target_cnt);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFD_OP_RECEIVERS_STATUS_RAW, 3,
+			       status, BT_BYTES_LIST_LE16(srv->target_cnt));
 
 	bt_mesh_model_send(srv->mod, ctx, &buf, NULL, NULL);
 }
@@ -210,12 +208,11 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 {
 	size_t size = 0;
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_CAPABILITIES_STATUS, 17);
-
-	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX);
-	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_DFU_SLOT_CNT);
-	net_buf_simple_add_le32(&rsp, CONFIG_BT_MESH_DFD_SRV_SLOT_MAX_SIZE);
-	net_buf_simple_add_le32(&rsp, CONFIG_BT_MESH_DFD_SRV_SLOT_SPACE);
+	BT_MESH_MODEL_BUF_INIT(rsp, BT_MESH_DFD_OP_CAPABILITIES_STATUS_RAW, 17,
+			       BT_BYTES_LIST_LE16(CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX),
+			       BT_BYTES_LIST_LE16(CONFIG_BT_MESH_DFU_SLOT_CNT),
+			       BT_BYTES_LIST_LE32(CONFIG_BT_MESH_DFD_SRV_SLOT_MAX_SIZE),
+			       BT_BYTES_LIST_LE32(CONFIG_BT_MESH_DFD_SRV_SLOT_SPACE));
 
 	/* Remaining size */
 	(void)bt_mesh_dfu_slot_foreach(slot_space_cb, &size);
@@ -244,10 +241,8 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 static void status_rsp(struct bt_mesh_dfd_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		       enum bt_mesh_dfd_status status)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_STATUS, 12);
-
-	net_buf_simple_add_u8(&rsp, status);
-	net_buf_simple_add_u8(&rsp, srv->phase);
+	BT_MESH_MODEL_BUF_INIT(rsp, BT_MESH_DFD_OP_STATUS_RAW, 12,
+			       status, srv->phase);
 
 	if (srv->phase == BT_MESH_DFD_PHASE_IDLE || !srv->dfu.xfer.slot) {
 		bt_mesh_model_send(srv->mod, ctx, &rsp, NULL, NULL);
@@ -343,11 +338,9 @@ static void upload_status_rsp_with_progress(struct bt_mesh_dfd_srv *srv,
 					    enum bt_mesh_dfd_status status,
 					    uint8_t progress)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_UPLOAD_STATUS,
-					DFD_UPLOAD_STATUS_MSG_MAXLEN);
-
-	net_buf_simple_add_u8(&rsp, status);
-	net_buf_simple_add_u8(&rsp, srv->upload.phase);
+	BT_MESH_MODEL_BUF_INIT(rsp, BT_MESH_DFD_OP_UPLOAD_STATUS_RAW,
+			       DFD_UPLOAD_STATUS_MSG_MAXLEN,
+			       status, srv->upload.phase);
 
 	if (srv->upload.phase == BT_MESH_DFD_UPLOAD_PHASE_IDLE ||
 	    !srv->upload.slot) {
@@ -671,8 +664,8 @@ static void fw_status_rsp(struct bt_mesh_dfd_srv *srv,
 			  enum bt_mesh_dfd_status status, uint16_t idx,
 			  const uint8_t *fwid, size_t fwid_len)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_FW_STATUS,
-					7 + CONFIG_BT_MESH_DFU_FWID_MAXLEN);
+	BT_MESH_MODEL_BUF_INIT(rsp, BT_MESH_DFD_OP_FW_STATUS_RAW,
+			       7 + CONFIG_BT_MESH_DFU_FWID_MAXLEN);
 
 	net_buf_simple_add_u8(&rsp, status);
 	net_buf_simple_add_le16(&rsp, bt_mesh_dfu_slot_count());

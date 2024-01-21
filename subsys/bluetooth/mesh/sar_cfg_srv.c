@@ -46,7 +46,7 @@ static int sar_tx_store(const struct bt_mesh_model *model, bool delete)
 static void transmitter_status(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_TX_STATUS, BT_MESH_SAR_TX_LEN);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SAR_CFG_TX_STATUS_RAW, BT_MESH_SAR_TX_LEN);
 	const struct bt_mesh_sar_tx *tx = &bt_mesh.sar_tx;
 
 	LOG_DBG("SAR TX {0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x}",
@@ -65,7 +65,7 @@ static void transmitter_status(const struct bt_mesh_model *model,
 static void receiver_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_RX_STATUS, BT_MESH_SAR_RX_LEN);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SAR_CFG_RX_STATUS_RAW, BT_MESH_SAR_RX_LEN);
 	const struct bt_mesh_sar_rx *rx = &bt_mesh.sar_rx;
 
 	LOG_DBG("SAR RX {0x%02x 0x%02x 0x%02x 0x%02x 0x%02x}", rx->seg_thresh,

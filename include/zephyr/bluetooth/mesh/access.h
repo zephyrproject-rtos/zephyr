@@ -386,6 +386,21 @@ struct bt_mesh_model_op {
 #define BT_MESH_MODEL_OP_2(b0, b1) (((b0) << 8) | (b1))
 #define BT_MESH_MODEL_OP_3(b0, cid) ((((b0) << 16) | 0xc00000) | (cid))
 
+#define BT_MESH_MODEL_OP_SIG(b0, ...) COND_CODE_1(IS_EMPTY(__VA_ARGS__), (b0), ((b0), __VA_ARGS__))
+#define BT_MESH_MODEL_OP_VND(b0, cid) ((b0) | 0xc0), ((cid) & 0xFFU), (((cid) >> 8) & 0xFFU)
+
+#define Z_OP_1(...) (GET_ARG_N(1, __VA_ARGS__))
+#define Z_OP_2(...) (((Z_OP_1(__VA_ARGS__) << 8) | (GET_ARG_N(2, __VA_ARGS__))))
+#define Z_OP_3(...) (((GET_ARG_N(1, __VA_ARGS__) << 16) | (GET_ARG_N(2, __VA_ARGS__)) |		\
+		      (GET_ARG_N(3, __VA_ARGS__) << 8)))
+
+#define BT_MESH_MODEL_OPCODE(...) COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),			\
+					      Z_OP_1(__VA_ARGS__),				\
+					      COND_CODE_1(NUM_VA_ARGS_LESS_1(__VA_ARGS__),	\
+							  (Z_OP_2(__VA_ARGS__, dummy)),		\
+							  (Z_OP_3(__VA_ARGS__, dummy, dummy))))
+
+
 /** Macro for encoding exact message length for fixed-length messages.  */
 #define BT_MESH_LEN_EXACT(len) (-len)
 /** Macro for encoding minimum message length for variable-length messages.  */

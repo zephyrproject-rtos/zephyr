@@ -167,9 +167,9 @@ int bt_mesh_priv_beacon_cli_set(uint16_t net_idx, uint16_t addr, struct bt_mesh_
 		.timeout = msg_timeout,
 	};
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_BEACON_SET, 2);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_BEACON_SET_RAW, 2,
+			       val->enabled);
 
-	net_buf_simple_add_u8(&buf, val->enabled);
 	if (val->rand_interval) {
 		net_buf_simple_add_u8(&buf, val->rand_interval);
 	}
@@ -187,7 +187,7 @@ int bt_mesh_priv_beacon_cli_get(uint16_t net_idx, uint16_t addr, struct bt_mesh_
 		.timeout = msg_timeout,
 	};
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_BEACON_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_BEACON_GET_RAW, 0);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, val ? &rsp_ctx : NULL);
 }
@@ -208,9 +208,8 @@ int bt_mesh_priv_beacon_cli_gatt_proxy_set(uint16_t net_idx, uint16_t addr, uint
 		return -EINVAL;
 	}
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_GATT_PROXY_SET, 1);
-
-	net_buf_simple_add_u8(&buf, val);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_GATT_PROXY_SET_RAW, 1,
+			       val);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, rsp ? &rsp_ctx : NULL);
 }
@@ -225,7 +224,7 @@ int bt_mesh_priv_beacon_cli_gatt_proxy_get(uint16_t net_idx, uint16_t addr, uint
 		.timeout = msg_timeout,
 	};
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_GATT_PROXY_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_GATT_PROXY_GET_RAW, 0);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, val ? &rsp_ctx : NULL);
 }
@@ -248,10 +247,8 @@ int bt_mesh_priv_beacon_cli_node_id_set(uint16_t net_idx, uint16_t addr,
 		return -EINVAL;
 	}
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_NODE_ID_SET, 3);
-
-	net_buf_simple_add_le16(&buf, val->net_idx);
-	net_buf_simple_add_u8(&buf, val->state);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_NODE_ID_SET_RAW, 3,
+			       BT_BYTES_LIST_LE16(val->net_idx), val->state);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, rsp ? &rsp_ctx : NULL);
 }
@@ -267,9 +264,8 @@ int bt_mesh_priv_beacon_cli_node_id_get(uint16_t net_idx, uint16_t addr, uint16_
 		.timeout = msg_timeout,
 	};
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_NODE_ID_GET, 2);
-
-	net_buf_simple_add_le16(&buf, key_net_idx);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_NODE_ID_GET_RAW, 2,
+			       BT_BYTES_LIST_LE16(key_net_idx));
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, val ? &rsp_ctx : NULL);
 }

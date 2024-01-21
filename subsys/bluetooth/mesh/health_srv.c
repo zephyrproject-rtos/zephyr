@@ -231,7 +231,7 @@ static int send_attention_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_ATTENTION_STATUS, 1);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_ATTENTION_STATUS_RAW, 1);
 	struct bt_mesh_health_srv *srv = model->rt->user_data;
 	uint8_t time;
 
@@ -292,9 +292,8 @@ static int send_health_period_status(const struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_PERIOD_STATUS, 1);
-
-	net_buf_simple_add_u8(&msg, model->pub->period_div);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_HEALTH_PERIOD_STATUS_RAW, 1,
+			       model->pub->period_div);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Health Period Status");

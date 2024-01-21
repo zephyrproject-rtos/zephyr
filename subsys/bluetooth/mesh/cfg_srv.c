@@ -288,9 +288,9 @@ static int send_app_key_status(const struct bt_mesh_model *model,
 			       uint8_t status,
 			       uint16_t app_idx, uint16_t net_idx)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_APP_KEY_STATUS, 4);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_APP_KEY_STATUS_RAW, 4,
+			       status);
 
-	net_buf_simple_add_u8(&msg, status);
 	key_idx_pack_pair(&msg, net_idx, app_idx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -375,8 +375,8 @@ static int app_key_get(const struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_APP_KEY_LIST,
-					3 + IDX_LEN(CONFIG_BT_MESH_APP_KEY_COUNT));
+	BT_MESH_MODEL_BUF_INIT(msg, OP_APP_KEY_LIST_RAW,
+			       3 + IDX_LEN(CONFIG_BT_MESH_APP_KEY_COUNT));
 	uint16_t app_idx[CONFIG_BT_MESH_APP_KEY_COUNT];
 	uint16_t get_idx;
 	uint8_t status;
@@ -422,12 +422,11 @@ static int beacon_get(const struct bt_mesh_model *model,
 		      struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_BEACON_STATUS, 1);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_BEACON_STATUS_RAW, 1,
+			       bt_mesh_beacon_enabled());
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
-
-	net_buf_simple_add_u8(&msg, bt_mesh_beacon_enabled());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Config Beacon Status response");
@@ -440,7 +439,7 @@ static int beacon_set(const struct bt_mesh_model *model,
 		      struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_BEACON_STATUS, 1);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_BEACON_STATUS_RAW, 1);
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
@@ -465,12 +464,11 @@ static int default_ttl_get(const struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_DEFAULT_TTL_STATUS, 1);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_DEFAULT_TTL_STATUS_RAW, 1,
+			       bt_mesh_default_ttl_get());
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
-
-	net_buf_simple_add_u8(&msg, bt_mesh_default_ttl_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Default TTL Status response");
@@ -483,7 +481,7 @@ static int default_ttl_set(const struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_DEFAULT_TTL_STATUS, 1);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_DEFAULT_TTL_STATUS_RAW, 1);
 	int err;
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
@@ -507,9 +505,8 @@ static int default_ttl_set(const struct bt_mesh_model *model,
 static int send_gatt_proxy_status(const struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_GATT_PROXY_STATUS, 1);
-
-	net_buf_simple_add_u8(&msg, bt_mesh_gatt_proxy_get());
+	BT_MESH_MODEL_BUF_INIT(msg, OP_GATT_PROXY_STATUS_RAW, 1,
+			       bt_mesh_gatt_proxy_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send GATT Proxy Status");
@@ -556,12 +553,11 @@ static int net_transmit_get(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_NET_TRANSMIT_STATUS, 1);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_NET_TRANSMIT_STATUS_RAW, 1,
+			       bt_mesh_net_transmit_get());
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
-
-	net_buf_simple_add_u8(&msg, bt_mesh_net_transmit_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Config Network Transmit Status");
@@ -574,7 +570,8 @@ static int net_transmit_set(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_NET_TRANSMIT_STATUS, 1);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_NET_TRANSMIT_STATUS_RAW, 1,
+			       buf->data[0]);
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
@@ -583,8 +580,6 @@ static int net_transmit_set(const struct bt_mesh_model *model,
 		BT_MESH_TRANSMIT_COUNT(buf->data[0]), BT_MESH_TRANSMIT_INT(buf->data[0]));
 
 	bt_mesh_net_transmit_set(buf->data[0]);
-
-	net_buf_simple_add_u8(&msg, buf->data[0]);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Network Transmit Status");
@@ -597,13 +592,12 @@ static int relay_get(const struct bt_mesh_model *model,
 		     struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_RELAY_STATUS, 2);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_RELAY_STATUS_RAW, 2,
+			       bt_mesh_relay_get(),
+			       bt_mesh_relay_retransmit_get());
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
-
-	net_buf_simple_add_u8(&msg, bt_mesh_relay_get());
-	net_buf_simple_add_u8(&msg, bt_mesh_relay_retransmit_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Config Relay Status response");
@@ -616,7 +610,7 @@ static int relay_set(const struct bt_mesh_model *model,
 		     struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_RELAY_STATUS, 2);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_RELAY_STATUS_RAW, 2);
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
@@ -644,10 +638,8 @@ static int send_mod_pub_status(const struct bt_mesh_model *cfg_mod,
 			       const struct bt_mesh_model *mod, uint8_t status,
 			       uint8_t *mod_id)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_MOD_PUB_STATUS, 14);
-
-	net_buf_simple_add_u8(&msg, status);
-	net_buf_simple_add_le16(&msg, elem_addr);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_MOD_PUB_STATUS_RAW, 14,
+			       status, BT_BYTES_LIST_LE16(elem_addr));
 
 	if (status != STATUS_SUCCESS) {
 		(void)memset(net_buf_simple_add(&msg, 7), 0, 7);
@@ -905,13 +897,11 @@ static int send_mod_sub_status(const struct bt_mesh_model *model,
 			       uint16_t elem_addr, uint16_t sub_addr, uint8_t *mod_id,
 			       bool vnd)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_MOD_SUB_STATUS, 9);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_MOD_SUB_STATUS_RAW, 9,
+			       status, BT_BYTES_LIST_LE16(elem_addr),
+			       BT_BYTES_LIST_LE16(sub_addr));
 
 	LOG_DBG("status 0x%02x elem_addr 0x%04x sub_addr 0x%04x", status, elem_addr, sub_addr);
-
-	net_buf_simple_add_u8(&msg, status);
-	net_buf_simple_add_le16(&msg, elem_addr);
-	net_buf_simple_add_le16(&msg, sub_addr);
 
 	if (vnd) {
 		memcpy(net_buf_simple_add(&msg, 4), mod_id, 4);
@@ -1625,10 +1615,8 @@ static int send_net_key_status(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx, uint16_t idx,
 			       uint8_t status)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_NET_KEY_STATUS, 3);
-
-	net_buf_simple_add_u8(&msg, status);
-	net_buf_simple_add_le16(&msg, idx);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_NET_KEY_STATUS_RAW, 3,
+			       status, BT_BYTES_LIST_LE16(idx));
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send NetKey Status");
@@ -1705,8 +1693,8 @@ static int net_key_get(const struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_NET_KEY_LIST,
-					IDX_LEN(CONFIG_BT_MESH_SUBNET_COUNT));
+	BT_MESH_MODEL_BUF_INIT(msg, OP_NET_KEY_LIST_RAW,
+			       IDX_LEN(CONFIG_BT_MESH_SUBNET_COUNT));
 	uint16_t net_idx[CONFIG_BT_MESH_SUBNET_COUNT];
 	ssize_t count;
 
@@ -1729,11 +1717,8 @@ static int send_node_id_status(const struct bt_mesh_model *model,
 			       uint8_t status,
 			       uint16_t net_idx, uint8_t node_id)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_NODE_IDENTITY_STATUS, 4);
-
-	net_buf_simple_add_u8(&msg, status);
-	net_buf_simple_add_le16(&msg, net_idx);
-	net_buf_simple_add_u8(&msg, node_id);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_NODE_IDENTITY_STATUS_RAW, 4,
+			       status, BT_BYTES_LIST_LE16(net_idx), node_id);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Node Identity Status");
@@ -1823,7 +1808,7 @@ static int mod_app_bind(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_MOD_APP_STATUS, 9);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_MOD_APP_STATUS_RAW, 9);
 	uint16_t elem_addr, key_app_idx;
 	const struct bt_mesh_model *mod;
 	const struct bt_mesh_elem *elem;
@@ -1887,7 +1872,7 @@ static int mod_app_unbind(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_MOD_APP_STATUS, 9);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_MOD_APP_STATUS_RAW, 9);
 	uint16_t elem_addr, key_app_idx;
 	const struct bt_mesh_model *mod;
 	const struct bt_mesh_elem *elem;
@@ -2036,7 +2021,7 @@ static int node_reset(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 		.end = reset_send_end,
 	};
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_NODE_RESET_STATUS, 0);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_NODE_RESET_STATUS_RAW, 0);
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
@@ -2051,9 +2036,8 @@ static int node_reset(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 static int send_friend_status(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_FRIEND_STATUS, 1);
-
-	net_buf_simple_add_u8(&msg, bt_mesh_friend_get());
+	BT_MESH_MODEL_BUF_INIT(msg, OP_FRIEND_STATUS_RAW, 1,
+			       bt_mesh_friend_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Friend Status");
@@ -2093,7 +2077,7 @@ static int lpn_timeout_get(const struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_LPN_TIMEOUT_STATUS, 5);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_LPN_TIMEOUT_STATUS_RAW, 5);
 	struct bt_mesh_friend *frnd;
 	int32_t timeout_steps;
 	uint16_t lpn_addr;
@@ -2138,11 +2122,8 @@ static int send_krp_status(const struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx, uint16_t idx,
 			   uint8_t phase, uint8_t status)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_KRP_STATUS, 4);
-
-	net_buf_simple_add_u8(&msg, status);
-	net_buf_simple_add_le16(&msg, idx);
-	net_buf_simple_add_u8(&msg, phase);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_KRP_STATUS_RAW, 4,
+			       status, BT_BYTES_LIST_LE16(idx), phase);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Key Refresh State Status");
@@ -2230,13 +2211,11 @@ static int hb_pub_send_status(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx, uint8_t status,
 			      const struct bt_mesh_hb_pub *pub)
 {
-	BT_MESH_SIG_MODEL_OP_1_BUF_INIT(msg, OP_HEARTBEAT_PUB_STATUS, 10);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_HEARTBEAT_PUB_STATUS_RAW, 10,
+			       status, BT_BYTES_LIST_LE16(pub->dst));
 
 	LOG_DBG("src 0x%04x status 0x%02x", ctx->addr, status);
 
-	net_buf_simple_add_u8(&msg, status);
-
-	net_buf_simple_add_le16(&msg, pub->dst);
 	if (pub->dst == BT_MESH_ADDR_UNASSIGNED) {
 		(void)memset(net_buf_simple_add(&msg, 7), 0, 7);
 	} else {
@@ -2331,17 +2310,15 @@ static int hb_sub_send_status(const struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      const struct bt_mesh_hb_sub *sub)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEARTBEAT_SUB_STATUS, 9);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_HEARTBEAT_SUB_STATUS_RAW, 9,
+			       STATUS_SUCCESS,
+			       BT_BYTES_LIST_LE16(sub->src),
+			       BT_BYTES_LIST_LE16(sub->dst),
+			       bt_mesh_hb_log(sub->remaining),
+			       hb_sub_count_log(sub->count),
+			       sub->min_hops, sub->max_hops);
 
 	LOG_DBG("src 0x%04x ", ctx->addr);
-
-	net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
-	net_buf_simple_add_le16(&msg, sub->src);
-	net_buf_simple_add_le16(&msg, sub->dst);
-	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(sub->remaining));
-	net_buf_simple_add_u8(&msg, hb_sub_count_log(sub->count));
-	net_buf_simple_add_u8(&msg, sub->min_hops);
-	net_buf_simple_add_u8(&msg, sub->max_hops);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Heartbeat Subscription Status");

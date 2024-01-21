@@ -327,10 +327,8 @@ static int info_get(struct bt_mesh_dfu_cli *cli, struct bt_mesh_msg_ctx *ctx,
 		    uint8_t idx, uint8_t max_count,
 		    const struct bt_mesh_send_cb *cb)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_INFO_GET, 2);
-
-	net_buf_simple_add_u8(&buf, idx);
-	net_buf_simple_add_u8(&buf, max_count);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_INFO_GET_RAW, 2,
+			       idx, max_count);
 
 	return tx(cli->mod, ctx, &buf, cb, cli);
 }
@@ -359,13 +357,13 @@ static void send_update_start(struct bt_mesh_blob_cli *b, uint16_t dst)
 						target, blob.n);
 	}
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_START,
-					DFU_UPDATE_START_MSG_MAXLEN);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_START_RAW,
+			       DFU_UPDATE_START_MSG_MAXLEN,
+			       cli->blob.inputs->ttl,
+			       BT_BYTES_LIST_LE16(cli->blob.inputs->timeout_base),
+			       BT_BYTES_LIST_LE64(cli->xfer.blob.id),
+			       target->img_idx);
 
-	net_buf_simple_add_u8(&buf, cli->blob.inputs->ttl);
-	net_buf_simple_add_le16(&buf, cli->blob.inputs->timeout_base);
-	net_buf_simple_add_le64(&buf, cli->xfer.blob.id);
-	net_buf_simple_add_u8(&buf, target->img_idx);
 	net_buf_simple_add_mem(&buf, cli->xfer.slot->metadata,
 			       cli->xfer.slot->metadata_len);
 
@@ -377,7 +375,7 @@ static void send_update_get(struct bt_mesh_blob_cli *b, uint16_t dst)
 	struct bt_mesh_dfu_cli *cli = DFU_CLI(b);
 	struct bt_mesh_msg_ctx ctx = MSG_CTX(cli, dst);
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_GET_RAW, 0);
 
 	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
 }
@@ -387,7 +385,7 @@ static void send_update_cancel(struct bt_mesh_blob_cli *b, uint16_t dst)
 	struct bt_mesh_dfu_cli *cli = DFU_CLI(b);
 	struct bt_mesh_msg_ctx ctx = MSG_CTX(cli, dst);
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_CANCEL, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_CANCEL_RAW, 0);
 
 	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
 }
@@ -397,7 +395,7 @@ static void send_update_apply(struct bt_mesh_blob_cli *b, uint16_t dst)
 	struct bt_mesh_dfu_cli *cli = DFU_CLI(b);
 	struct bt_mesh_msg_ctx ctx = MSG_CTX(cli, dst);
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_APPLY, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_APPLY_RAW, 0);
 
 	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
 }
@@ -1084,7 +1082,7 @@ int bt_mesh_dfu_cli_cancel(struct bt_mesh_dfu_cli *cli,
 			return err;
 		}
 
-		BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_CANCEL, 0);
+		BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_CANCEL_RAW, 0);
 
 		err = bt_mesh_model_send(cli->mod, ctx, &buf, NULL, NULL);
 		if (err) {
@@ -1200,10 +1198,9 @@ int bt_mesh_dfu_cli_metadata_check(struct bt_mesh_dfu_cli *cli,
 		return err;
 	}
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_METADATA_CHECK,
-					1 + CONFIG_BT_MESH_DFU_METADATA_MAXLEN);
-
-	net_buf_simple_add_u8(&buf, img_idx);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_METADATA_CHECK_RAW,
+			       1 + CONFIG_BT_MESH_DFU_METADATA_MAXLEN,
+			       img_idx);
 
 	if (slot->metadata_len) {
 		net_buf_simple_add_mem(&buf, slot->metadata,
@@ -1232,7 +1229,7 @@ int bt_mesh_dfu_cli_status_get(struct bt_mesh_dfu_cli *cli,
 		return err;
 	}
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_GET_RAW, 0);
 
 	err = bt_mesh_model_send(cli->mod, ctx, &buf, NULL, NULL);
 	if (err) {

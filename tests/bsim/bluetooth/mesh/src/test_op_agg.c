@@ -19,8 +19,12 @@ LOG_MODULE_REGISTER(test_op_agg, LOG_LEVEL_INF);
 #define WAIT_TIME   15 /* seconds */
 #define SEM_TIMEOUT K_SECONDS(10)
 
-#define BT_MESH_DUMMY_VND_MOD_GET_OP	BT_MESH_MODEL_OP_3(0xDC, TEST_VND_COMPANY_ID)
-#define BT_MESH_DUMMY_VND_MOD_STATUS_OP BT_MESH_MODEL_OP_3(0xCD, TEST_VND_COMPANY_ID)
+#define BT_MESH_DUMMY_VND_MOD_GET_OP_RAW    BT_MESH_MODEL_OP_VND(0xDC, TEST_VND_COMPANY_ID)
+#define BT_MESH_DUMMY_VND_MOD_GET_OP        \
+	BT_MESH_MODEL_OPCODE(BT_MESH_DUMMY_VND_MOD_GET_OP_RAW)
+#define BT_MESH_DUMMY_VND_MOD_STATUS_OP_RAW BT_MESH_MODEL_OP_VND(0xCD, TEST_VND_COMPANY_ID)
+#define BT_MESH_DUMMY_VND_MOD_STATUS_OP     \
+	BT_MESH_MODEL_OPCODE(BT_MESH_DUMMY_VND_MOD_STATUS_OP_RAW)
 
 #define BT_MESH_DUMMY_VND_MOD_MSG_MINLEN 7
 #define BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN 8
@@ -61,8 +65,8 @@ static int get_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 
 	get_rcvd_count++;
 
-	BT_MESH_VND_MODEL_BUF_INIT(msg, BT_MESH_DUMMY_VND_MOD_STATUS_OP,
-				   BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
+	BT_MESH_MODEL_BUF_INIT(msg, BT_MESH_DUMMY_VND_MOD_STATUS_OP_RAW,
+			       BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
 
 	net_buf_simple_add_u8(&msg, seq);
 	memset(net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1), 0,
@@ -95,8 +99,8 @@ static int status_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_
 static int dummy_vnd_mod_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			     uint8_t seq)
 {
-	BT_MESH_VND_MODEL_BUF_INIT(msg, BT_MESH_DUMMY_VND_MOD_GET_OP,
-				   BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
+	BT_MESH_MODEL_BUF_INIT(msg, BT_MESH_DUMMY_VND_MOD_GET_OP_RAW,
+			       BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
 
 	net_buf_simple_add_u8(&msg, seq);
 	memset(net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1), 0,

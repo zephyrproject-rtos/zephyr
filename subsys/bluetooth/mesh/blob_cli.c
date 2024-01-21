@@ -626,46 +626,43 @@ static void send_end(int err, void *user_data)
 
 static void info_get_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_INFO_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_BLOB_OP_INFO_GET_RAW, 0);
 
 	tx(cli, dst, &buf);
 }
 
 static void xfer_start_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_START, 16);
-
-	net_buf_simple_add_u8(&buf, cli->xfer->mode << 6);
-	net_buf_simple_add_le64(&buf, cli->xfer->id);
-	net_buf_simple_add_le32(&buf, cli->xfer->size);
-	net_buf_simple_add_u8(&buf, cli->xfer->block_size_log);
-	net_buf_simple_add_le16(&buf, BT_MESH_TX_SDU_MAX);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_START_RAW, 16,
+			       cli->xfer->mode << 6,
+			       BT_BYTES_LIST_LE64(cli->xfer->id),
+			       BT_BYTES_LIST_LE32(cli->xfer->size),
+			       cli->xfer->block_size_log,
+			       BT_BYTES_LIST_LE16(BT_MESH_TX_SDU_MAX));
 
 	tx(cli, dst, &buf);
 }
 
 static void xfer_get_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_GET_RAW, 0);
 
 	tx(cli, dst, &buf);
 }
 
 static void xfer_cancel_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_CANCEL, 8);
-
-	net_buf_simple_add_le64(&buf, cli->xfer->id);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_CANCEL_RAW, 8,
+			       BT_BYTES_LIST_LE64(cli->xfer->id));
 
 	tx(cli, dst, &buf);
 }
 
 static void block_start_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_START, 4);
-
-	net_buf_simple_add_le16(&buf, cli->block.number);
-	net_buf_simple_add_le16(&buf, cli->xfer->chunk_size);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_START_RAW, 4,
+			       BT_BYTES_LIST_LE16(cli->block.number),
+			       BT_BYTES_LIST_LE16(cli->xfer->chunk_size));
 
 	tx(cli, dst, &buf);
 }
@@ -694,7 +691,7 @@ static void chunk_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 
 static void block_get_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_GET_RAW, 0);
 
 	tx(cli, dst, &buf);
 }

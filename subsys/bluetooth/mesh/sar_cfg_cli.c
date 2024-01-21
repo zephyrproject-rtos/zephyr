@@ -128,7 +128,7 @@ const struct bt_mesh_model_cb _bt_mesh_sar_cfg_cli_cb = {
 int bt_mesh_sar_cfg_cli_transmitter_get(uint16_t net_idx, uint16_t addr,
 					struct bt_mesh_sar_tx *rsp)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_TX_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SAR_CFG_TX_GET_RAW, 0);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -156,7 +156,7 @@ int bt_mesh_sar_cfg_cli_transmitter_set(uint16_t net_idx, uint16_t addr,
 					const struct bt_mesh_sar_tx *set,
 					struct bt_mesh_sar_tx *rsp)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_TX_SET, BT_MESH_SAR_TX_LEN);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SAR_CFG_TX_SET_RAW, BT_MESH_SAR_TX_LEN);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -185,7 +185,7 @@ int bt_mesh_sar_cfg_cli_transmitter_set(uint16_t net_idx, uint16_t addr,
 int bt_mesh_sar_cfg_cli_receiver_get(uint16_t net_idx, uint16_t addr,
 				     struct bt_mesh_sar_rx *rsp)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_RX_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SAR_CFG_RX_GET_RAW, 0);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -213,7 +213,7 @@ int bt_mesh_sar_cfg_cli_receiver_set(uint16_t net_idx, uint16_t addr,
 				     const struct bt_mesh_sar_rx *set,
 				     struct bt_mesh_sar_rx *rsp)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_RX_SET, BT_MESH_SAR_RX_LEN);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SAR_CFG_RX_SET_RAW, BT_MESH_SAR_RX_LEN);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,

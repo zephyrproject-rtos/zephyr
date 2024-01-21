@@ -40,10 +40,9 @@ static int priv_beacon_store(bool delete)
 static int beacon_status_rsp(const struct bt_mesh_model *mod,
 			      struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_BEACON_STATUS, 2);
-
-	net_buf_simple_add_u8(&buf, bt_mesh_priv_beacon_get());
-	net_buf_simple_add_u8(&buf, bt_mesh_priv_beacon_update_interval_get());
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_BEACON_STATUS_RAW, 2,
+			       bt_mesh_priv_beacon_get(),
+			       bt_mesh_priv_beacon_update_interval_get());
 
 	bt_mesh_model_send(mod, ctx, &buf, NULL, NULL);
 
@@ -91,9 +90,8 @@ static int handle_beacon_set(const struct bt_mesh_model *mod,
 static void gatt_proxy_status_rsp(const struct bt_mesh_model *mod,
 				  struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_GATT_PROXY_STATUS, 1);
-
-	net_buf_simple_add_u8(&buf, bt_mesh_priv_gatt_proxy_get());
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_GATT_PROXY_STATUS_RAW, 1,
+			       bt_mesh_priv_gatt_proxy_get());
 
 	bt_mesh_model_send(mod, ctx, &buf, NULL, NULL);
 }
@@ -135,11 +133,8 @@ static void node_id_status_rsp(const struct bt_mesh_model *mod,
 			       struct bt_mesh_msg_ctx *ctx, uint8_t status,
 			       uint16_t net_idx, uint8_t node_id)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_PRIV_NODE_ID_STATUS, 4);
-
-	net_buf_simple_add_u8(&buf, status);
-	net_buf_simple_add_le16(&buf, net_idx);
-	net_buf_simple_add_u8(&buf, node_id);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_PRIV_NODE_ID_STATUS_RAW, 4,
+			       status, BT_BYTES_LIST_LE16(net_idx), node_id);
 
 	bt_mesh_model_send(mod, ctx, &buf, NULL, NULL);
 }

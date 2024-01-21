@@ -44,8 +44,8 @@ static int handle_large_comp_data_get(const struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, OP_LARGE_COMP_DATA_STATUS,
-					BT_MESH_MODEL_PAYLOAD_MAX);
+	BT_MESH_MODEL_BUF_INIT(rsp, OP_LARGE_COMP_DATA_STATUS_RAW,
+			       BT_MESH_MODEL_PAYLOAD_MAX);
 	uint8_t page;
 	size_t offset, total_size;
 	int err;
@@ -105,8 +105,8 @@ static int handle_models_metadata_get(const struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, OP_MODELS_METADATA_STATUS,
-					BT_MESH_MODEL_PAYLOAD_MAX);
+	BT_MESH_MODEL_BUF_INIT(rsp, OP_MODELS_METADATA_STATUS_RAW,
+			       BT_MESH_MODEL_PAYLOAD_MAX);
 	size_t offset, total_size;
 	uint8_t page;
 	int err;

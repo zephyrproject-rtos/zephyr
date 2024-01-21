@@ -64,7 +64,7 @@ int bt_mesh_od_priv_proxy_cli_get(uint16_t net_idx, uint16_t addr, uint8_t *val_
 		.timeout = msg_timeout,
 	};
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_OD_PRIV_PROXY_GET, 0);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_OD_PRIV_PROXY_GET_RAW, 0);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, val_rsp ? &rsp : NULL);
 }
@@ -79,9 +79,8 @@ int bt_mesh_od_priv_proxy_cli_set(uint16_t net_idx, uint16_t addr, uint8_t val, 
 		.timeout = msg_timeout,
 	};
 
-	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_OD_PRIV_PROXY_SET, 1);
-
-	net_buf_simple_add_u8(&msg, val);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_OD_PRIV_PROXY_SET_RAW, 1,
+			       val);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, val_rsp ? &rsp : NULL);
 }
