@@ -2494,6 +2494,6 @@ static int ptp_gmac_init(const struct device *port)
 
 DEVICE_DEFINE(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
 		NULL, &ptp_gmac_0_context, NULL, POST_KERNEL,
-		CONFIG_APPLICATION_INIT_PRIORITY, &ptp_api);
+		CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_api);
 
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
