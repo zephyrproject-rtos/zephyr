@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_include_directories(.)
+
 # Create an EFI image
 if(CONFIG_BUILD_OUTPUT_EFI)
 set_property(GLOBAL APPEND PROPERTY extra_post_build_commands

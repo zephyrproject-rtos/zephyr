@@ -29,7 +29,7 @@ Hardware
 
 General information about the board can be found at the `UP Squared`_ website.
 
-.. include:: ../../../../soc/x86/apollo_lake/doc/supported_features.txt
+.. include:: ../../../../../soc/v2/intel/apollo_lake/doc/supported_features.txt
 
 GPIO
 ----
@@ -79,7 +79,7 @@ Build Zephyr application
 Booting the UP Squared Board using UEFI
 =======================================
 
-.. include:: ../../common/efi_boot.rst
+.. include:: ../../../../../boards/x86/common/efi_boot.rst
    :start-after: start_include_here
 
 .. note::
@@ -97,7 +97,7 @@ Booting the UP Squared Board using UEFI
 Booting the UP Squared Board over network
 =========================================
 
-.. include:: ../../common/net_boot.rst
+.. include:: ../../../../../boards/x86/common/net_boot.rst
    :start-after: start_include_here
 
 .. note::
