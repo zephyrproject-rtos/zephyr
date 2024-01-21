@@ -90,7 +90,7 @@ static size_t print_line(enum font_size font_size, int row, const char *text,
 		pad = 0;
 	}
 
-	cfb_get_font_size(epd_dev, font_size, &font_width, &font_height);
+	cfb_get_font_size(font_size, &font_width, &font_height);
 
 	if (cfb_print(epd_dev, line, font_width * pad, font_height * row)) {
 		printk("Failed to print a string\n");
