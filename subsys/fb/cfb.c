@@ -70,8 +70,7 @@ static struct char_framebuffer char_fb;
 static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 {
 	return (uint8_t *)fptr->data +
-	       (c - fptr->first_char) *
-	       (fptr->width * fptr->height / 8U);
+	       (c - fptr->first_char) * (fptr->width * DIV_ROUND_UP(fptr->height, 8U));
 }
 
 static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *fptr,
@@ -79,7 +78,7 @@ static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *
 {
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
 		if (vtiled) {
-			return glyph_ptr[x * (fptr->height / 8U) + y];
+			return glyph_ptr[x * DIV_ROUND_UP(fptr->height, 8U) + y];
 		} else {
 			return glyph_ptr[(x * fptr->height + y) / 8];
 		}
@@ -335,13 +334,6 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 
 	if (!fb->fonts || !fb->buf) {
 		return -ENODEV;
-	}
-
-	fptr = &(fb->fonts[fb->font_idx]);
-
-	if (fptr->height % 8) {
-		LOG_ERR("Wrong font size");
-		return -EINVAL;
 	}
 
 	const size_t len = strlen(str);
