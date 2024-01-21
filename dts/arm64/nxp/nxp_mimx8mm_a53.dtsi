@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 NXP
+ * Copyright 2020-2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,5 +110,10 @@
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 		status = "disabled";
+	};
+
+	rdc: rdc@303d0000 {
+		compatible = "nxp,rdc";
+		reg = <0x303d0000 DT_SIZE_K(64)>;
 	};
 };
