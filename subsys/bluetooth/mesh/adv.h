@@ -76,6 +76,7 @@ struct bt_mesh_adv *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 
 void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
 		      void *cb_data);
+void bt_mesh_adv_send_end(int err, struct bt_mesh_adv_ctx const *ctx);
 
 struct bt_mesh_adv *bt_mesh_adv_get(k_timeout_t timeout);
 

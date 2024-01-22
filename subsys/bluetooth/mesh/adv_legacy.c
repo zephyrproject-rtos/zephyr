@@ -182,7 +182,11 @@ static void adv_thread(void *p1, void *p2, void *p3)
 			adv_send(adv);
 		}
 
+		struct bt_mesh_adv_ctx ctx = adv->ctx;
+
+		adv->ctx.started = 0;
 		bt_mesh_adv_unref(adv);
+		bt_mesh_adv_send_end(0, &ctx);
 
 		/* Give other threads a chance to run */
 		k_yield();
