@@ -43,6 +43,14 @@ config FILE_SYSTEM_MAX_FILE_NAME
 	  supported by a file system may result in memory access
 	  violations.
 
+config FILE_SYSTEM_INIT_PRIORITY
+	int "File system initialization priority"
+	default 99
+	help
+	  Specify the initialization priority for file systems. In case
+	  automount is enabled, the initialization should be done after
+	  the underlying storage device is initialized.
+
 config FILE_SYSTEM_SHELL
 	bool "File system shell"
 	depends on SHELL
