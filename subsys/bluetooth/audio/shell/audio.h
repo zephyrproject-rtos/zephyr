@@ -197,15 +197,172 @@ static void print_ltv_array(const struct shell *sh, const char *str, const uint8
 	bt_audio_data_parse(ltv_data, ltv_data_len, print_ltv_elem, &ltv_info);
 }
 
+static inline char *codec_cap_freq_bit_to_str(enum bt_audio_codec_cap_freq freq)
+{
+	switch (freq) {
+	case BT_AUDIO_CODEC_CAP_FREQ_8KHZ:
+		return "8000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_11KHZ:
+		return "11025 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_16KHZ:
+		return "16000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_22KHZ:
+		return "22050 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_24KHZ:
+		return "24000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_32KHZ:
+		return "32000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_44KHZ:
+		return "44100 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_48KHZ:
+		return "48000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_88KHZ:
+		return "88200 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_96KHZ:
+		return "96000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_176KHZ:
+		return "176400 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_192KHZ:
+		return "192000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_384KHZ:
+		return "384000 Hz";
+	default:
+		return "Unknown supported frequency";
+	}
+}
+
+static inline void print_codec_cap_freq(const struct shell *sh, enum bt_audio_codec_cap_freq freq)
+{
+	shell_print(sh, "\tSupported sampling frequencies:");
+	/* There can be up to 16 bits set in the field */
+	for (size_t i = 0; i < 16; i++) {
+		const uint16_t bit_val = BIT(i);
+
+		if (freq & bit_val) {
+			shell_print(sh, "\t\t%s (0x%04X)", codec_cap_freq_bit_to_str(bit_val),
+				    bit_val);
+		}
+	}
+}
+
+static inline char *codec_cap_frame_dur_bit_to_str(enum bt_audio_codec_cap_frame_dur frame_dur)
+{
+	switch (frame_dur) {
+	case BT_AUDIO_CODEC_CAP_DURATION_7_5:
+		return "7.5 ms";
+	case BT_AUDIO_CODEC_CAP_DURATION_10:
+		return "10 ms";
+	case BT_AUDIO_CODEC_CAP_DURATION_PREFER_7_5:
+		return "7.5 ms preferred";
+	case BT_AUDIO_CODEC_CAP_DURATION_PREFER_10:
+		return "10 ms preferred";
+	default:
+		return "Unknown frame duration";
+	}
+}
+
+static inline void print_codec_cap_frame_dur(const struct shell *sh,
+					     enum bt_audio_codec_cap_frame_dur frame_dur)
+{
+	shell_print(sh, "\tSupported frame durations:");
+	/* There can be up to 8 bits set in the field */
+	for (size_t i = 0; i < 8; i++) {
+		const uint8_t bit_val = BIT(i);
+
+		if (frame_dur & bit_val) {
+			shell_print(sh, "\t\t%s (0x%02X)", codec_cap_frame_dur_bit_to_str(bit_val),
+				    bit_val);
+		}
+	}
+}
+
+static inline char *codec_cap_chan_count_bit_to_str(enum bt_audio_codec_cap_chan_count chan_count)
+{
+	switch (chan_count) {
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_1:
+		return "1 channel";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_2:
+		return "2 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_3:
+		return "3 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_4:
+		return "4 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_5:
+		return "5 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_6:
+		return "6 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_7:
+		return "7 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_8:
+		return "8 channels";
+	default:
+		return "Unknown channel count";
+	}
+}
+
+static inline void print_codec_cap_chan_count(const struct shell *sh,
+					      enum bt_audio_codec_cap_chan_count chan_count)
+{
+	shell_print(sh, "\tSupported channel counts:");
+	/* There can be up to 8 bits set in the field */
+	for (size_t i = 0; i < 8; i++) {
+		const uint8_t bit_val = BIT(i);
+
+		if (chan_count & bit_val) {
+			shell_print(sh, "\t\t%s (0x%02X)", codec_cap_chan_count_bit_to_str(bit_val),
+				    bit_val);
+		}
+	}
+}
+
+static inline void print_codec_cap_octets_per_codec_frame(
+	const struct shell *sh, const struct bt_audio_codec_octets_per_codec_frame *codec_frame)
+{
+	shell_print(sh, "\tSupported octets per codec frame counts:\n\t\tMin: %u\n\t\tMax: %u",
+		    codec_frame->min, codec_frame->max);
+}
+
+static inline void print_codec_cap_max_codec_frames_per_sdu(const struct shell *sh,
+							    uint8_t codec_frames_per_sdu)
+{
+	shell_print(sh, "\tSupported max codec frames per SDU: %u", codec_frames_per_sdu);
+}
+
 static inline void print_codec_cap(const struct shell *sh,
 				   const struct bt_audio_codec_cap *codec_cap)
 {
-	shell_print(sh, "codec cap id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cap->id,
-		    codec_cap->cid, codec_cap->vid, codec_cap->data_len);
+	shell_print(sh, "codec cap id 0x%02x cid 0x%04x vid 0x%04x", codec_cap->id, codec_cap->cid,
+		    codec_cap->vid);
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
 	if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
-		print_ltv_array(sh, "data", codec_cap->data, codec_cap->data_len);
+		struct bt_audio_codec_octets_per_codec_frame codec_frame;
+		int ret;
+
+		ret = bt_audio_codec_cap_get_freq(codec_cap);
+		if (ret >= 0) {
+			print_codec_cap_freq(sh, (enum bt_audio_codec_cap_freq)ret);
+		}
+
+		ret = bt_audio_codec_cap_get_frame_dur(codec_cap);
+		if (ret >= 0) {
+			print_codec_cap_frame_dur(sh, (enum bt_audio_codec_cap_frame_dur)ret);
+		}
+
+		ret = bt_audio_codec_cap_get_supported_audio_chan_counts(codec_cap);
+		if (ret >= 0) {
+			print_codec_cap_chan_count(sh, (enum bt_audio_codec_cap_chan_count)ret);
+		}
+
+		ret = bt_audio_codec_cap_get_octets_per_frame(codec_cap, &codec_frame);
+		if (ret >= 0) {
+			print_codec_cap_octets_per_codec_frame(sh, &codec_frame);
+		}
+
+		ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(codec_cap);
+		if (ret >= 0) {
+			print_codec_cap_max_codec_frames_per_sdu(sh, (uint8_t)ret);
+		}
 	} else { /* If not LC3, we cannot assume it's LTV */
 		shell_hexdump(sh, codec_cap->data, codec_cap->data_len);
 	}
