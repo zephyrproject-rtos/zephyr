@@ -9,6 +9,7 @@ on:
     - ready_for_review
     branches:
     - main
+    - collab-*
     - v*-branch
   issues:
     types:
