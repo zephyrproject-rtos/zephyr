@@ -8,7 +8,6 @@
 
 #include "mock.h"
 #include <zephyr/acpi/acpi.h>
-
 #include <acpi.h>
 #include <accommon.h>
 #include <acapps.h>
@@ -65,3 +64,5 @@ FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetPossibleResources, ACPI_HANDLE, ACPI_BUFFER 
 
 FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetTable, char *, UINT32,
 		struct acpi_table_header **);
+
+FAKE_VALUE_FUNC(uint32_t, arch_acpi_encode_irq_flags, uint8_t, uint8_t);

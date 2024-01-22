@@ -16,4 +16,7 @@
 #define LOG_ERR(...)
 #define LOG_WRN(...)
 
+#define CONFIG_ACPI_IRQ_VECTOR_MAX 32
+#define CONFIG_ACPI_MMIO_ENTRIES_MAX 32
+
 typedef uint32_t pcie_bdf_t;
