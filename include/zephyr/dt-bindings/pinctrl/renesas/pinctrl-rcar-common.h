@@ -17,8 +17,10 @@
  * @param func the 4 bits encoded alternate function.
  *
  * Function code    [ 0 : 3 ]
- * Function shift   [ 4 : 9 ]
- * IPSR bank        [ 10 : 13 ]
+ * Function shift   [ 4 : 8 ]
+ * Empty            [ 9 ]
+ * IPSR bank        [ 10 : 14 ]
+ * Register index   [ 15 : 17 ] (S4 only)
  */
 #define IPSR(bank, shift, func) (((bank) << 10U) | ((shift) << 4U) | (func))
 
@@ -45,7 +47,7 @@
  * Each base address has 4 IPSR banks.
  */
 #define IPnSR(bank, reg, shift, func) \
-	IPSR(((reg) << 4U) | (bank), shift, func)
+	IPSR(((reg) << 5U) | (bank), shift, func)
 
 #define IP0SR0(shift, func) IPnSR(0, 0, shift, func)
 #define IP1SR0(shift, func) IPnSR(1, 0, shift, func)
