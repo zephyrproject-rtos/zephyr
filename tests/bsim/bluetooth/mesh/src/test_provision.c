@@ -1009,11 +1009,11 @@ static void test_provisioner_pb_remote_client_parallel(void)
 	/* scanning device with dev index 3 */
 	uuid[6] = '0' + 3;
 	uuid_to_provision_remote = uuid;
-	ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, &srv, uuid, 5, 1, &scan_status));
+	ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, &srv, uuid, 15, 1, &scan_status));
 	ASSERT_EQUAL(BT_MESH_RPR_SUCCESS, scan_status.status);
 	ASSERT_EQUAL(BT_MESH_RPR_SCAN_SINGLE, scan_status.scan);
 	ASSERT_EQUAL(1, scan_status.max_devs);
-	ASSERT_EQUAL(5, scan_status.timeout);
+	ASSERT_EQUAL(15, scan_status.timeout);
 
 	ASSERT_OK(k_sem_take(&scan_sem, K_SECONDS(20)));
 	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));

@@ -1413,7 +1413,7 @@ static void test_tx_priv_interleave(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_2);
 
-	k_sleep(K_SECONDS(BEACON_INTERVAL + 5));
+	k_sleep(K_SECONDS(BEACON_INTERVAL + 7));
 	toggle_priv_beacon(tx_cfg.addr, 1);
 
 	PASS();
