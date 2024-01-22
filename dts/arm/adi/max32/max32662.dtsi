@@ -24,6 +24,8 @@
 
 /delete-node/ &timer3;
 
+/delete-node/ &i2c2;
+
 /delete-node/ &rtc_counter;
 
 &adc {
