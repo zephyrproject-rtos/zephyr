@@ -26,6 +26,16 @@ config POWER_DOMAIN_GPIO
 	depends on TIMEOUT_64BIT
 	select DEVICE_DEPS
 
+if POWER_DOMAIN_GPIO
+
+config POWER_DOMAIN_GPIO_INIT_PRIORITY
+	int "GPIO power domain init priority"
+	default POWER_DOMAIN_INIT_PRIORITY
+	help
+	  GPIO power domain initialization priority.
+
+endif #POWER_DOMAIN_GPIO_MONITOR
+
 config POWER_DOMAIN_INTEL_ADSP
 	bool "Use Intel ADSP power gating mechanisms"
 	default y
