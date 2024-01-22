@@ -32,6 +32,12 @@ if(CONFIG_BT_MESH_USES_MBEDTLS_PSA)
  )
 endif()
 
+if(CONFIG_BT_MESH_GATT_PROXY AND CONFIG_BT_MESH_PROXY_SOLICITATION)
+ target_sources(app PRIVATE
+  src/test_proxy_sol.c
+ )
+endif()
+
 elseif(CONFIG_BT_MESH_GATT_PROXY)
 
  target_sources(app PRIVATE
