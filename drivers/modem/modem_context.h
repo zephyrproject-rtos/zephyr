@@ -62,6 +62,12 @@ struct modem_context {
 	int   *data_rssi;
 	bool  is_automatic_oper;
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_TIME)
+	/* cclk info */
+	char data_date[20];
+	char data_time[20];
+#endif
+
 	/* interface config */
 	struct modem_iface iface;
 
