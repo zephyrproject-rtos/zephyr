@@ -645,7 +645,7 @@ cleanup:
  */
 static void hint_socket_state(struct lwm2m_ctx *ctx, struct lwm2m_message *ongoing_tx)
 {
-	if (!ctx->set_socket_state) {
+	if (!ctx || !ctx->set_socket_state) {
 		return;
 	}
 
