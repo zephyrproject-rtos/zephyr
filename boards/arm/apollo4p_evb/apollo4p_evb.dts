@@ -97,7 +97,7 @@
 	status = "okay";
 };
 
-&iom0 {
+&iom0_i2c {
 	compatible = "ambiq,i2c";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
@@ -105,7 +105,7 @@
 	status = "okay";
 };
 
-&iom1 {
+&iom1_spi {
 	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
@@ -115,6 +115,18 @@
 
 &mspi0 {
 	pinctrl-0 = <&mspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mspi1 {
+	pinctrl-0 = <&mspi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mspi2 {
+	pinctrl-0 = <&mspi2_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
