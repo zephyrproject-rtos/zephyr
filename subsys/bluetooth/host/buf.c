@@ -120,9 +120,6 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 			return buf;
 		}
 #endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
-	case BT_HCI_EVT_CMD_COMPLETE:
-	case BT_HCI_EVT_CMD_STATUS:
-		return bt_buf_get_cmd_complete(timeout);
 	default:
 		if (discardable) {
 			struct net_buf *buf;
