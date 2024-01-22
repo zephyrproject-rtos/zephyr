@@ -101,7 +101,7 @@ void bt_mesh_adv_local_ready(void);
 
 void bt_mesh_adv_relay_ready(void);
 
-void bt_mesh_adv_terminate(struct bt_mesh_adv *adv);
+int bt_mesh_adv_terminate(struct bt_mesh_adv *adv);
 
 void bt_mesh_adv_friend_ready(void);
 
