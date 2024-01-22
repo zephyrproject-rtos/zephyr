@@ -106,7 +106,7 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000>;
 		};
 
-		iom0: iom@40050000 {
+		iom0_spi: spi@40050000 {
 			reg = <0x40050000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -115,7 +115,16 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
 		};
 
-		iom1: iom@40051000 {
+		iom0_i2c: i2c@40050000 {
+			reg = <0x40050000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <6 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
+		};
+
+		iom1_spi: spi@40051000 {
 			reg = <0x40051000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -124,7 +133,16 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
 		};
 
-		iom2: iom@40052000 {
+		iom1_i2c: i2c@40051000 {
+			reg = <0x40051000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <7 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
+		};
+
+		iom2_spi: spi@40052000 {
 			reg = <0x40052000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -133,7 +151,16 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
 		};
 
-		iom3: iom@40053000 {
+		iom2_i2c: i2c@40052000 {
+			reg = <0x40052000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <8 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
+		};
+
+		iom3_spi: spi@40053000 {
 			reg = <0x40053000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -141,7 +168,17 @@
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 		};
-		iom4: iom@40054000 {
+
+		iom3_i2c: i2c@40053000 {
+			reg = <0x40053000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <9 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
+		};
+
+		iom4_spi: spi@40054000 {
 			reg = <0x40054000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -150,7 +187,16 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 		};
 
-		iom5: iom@40055000 {
+		iom4_i2c: i2c@40054000 {
+			reg = <0x40054000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <10 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
+		};
+
+		iom5_spi: spi@40055000 {
 			reg = <0x40055000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -159,7 +205,16 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
 		};
 
-		iom6: iom@40056000 {
+		iom5_i2c: i2c@40055000 {
+			reg = <0x40055000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <11 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
+		};
+
+		iom6_spi: spi@40056000 {
 			reg = <0x40056000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -168,7 +223,25 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
 		};
 
-		iom7: iom@40057000 {
+		iom6_i2c: i2c@40056000 {
+			reg = <0x40056000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <12 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
+		};
+
+		iom7_spi: spi@40057000 {
+			reg = <0x40057000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <13 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+		};
+
+		iom7_i2c: i2c@40057000 {
 			reg = <0x40057000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
