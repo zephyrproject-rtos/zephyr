@@ -29,7 +29,6 @@
 #define INVALID_BROADCAST_ID 0xFFFFFFFF
 
 static bool pbs_found;
-static uint8_t meta[CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE];
 
 static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
 static K_SEM_DEFINE(sem_base_received, 0U, 1U);
@@ -160,11 +159,11 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
+	enum bt_pbp_announcement_feature source_features;
 	uint32_t *broadcast_id = user_data;
 	struct bt_uuid_16 adv_uuid;
-	enum bt_pbp_announcement_feature source_features = 0U;
-
-	memset(meta, 0, ARRAY_SIZE(meta));
+	uint8_t *tmp_meta = NULL;
+	int ret;
 
 	if (data->type != BT_DATA_SVC_DATA16) {
 		return true;
@@ -179,16 +178,18 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		return true;
 	}
 
-	if (!bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_PBA)) {
-		bt_pbp_parse_announcement(data, &source_features, meta);
+	ret = bt_pbp_parse_announcement(data, &source_features, &tmp_meta);
+	if (ret >= 0) {
 		if (!(source_features & BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY)) {
 			/* This is a Standard Quality Public Broadcast Audio stream */
 			printk("This is a Standard Quality Public Broadcast Audio stream\n");
 			pbs_found = false;
 
-			return true;
+			return false;
 		}
-		printk("Found Suitable Public Broadcast Announcement\n");
+
+		printk("Found Suitable Public Broadcast Announcement with %d octets of metadata\n",
+		       ret);
 		pbs_found = true;
 
 		/**
@@ -198,8 +199,6 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		if (*broadcast_id == INVALID_BROADCAST_ID) {
 			return true;
 		}
-
-		return false;
 	}
 
 	return true;
