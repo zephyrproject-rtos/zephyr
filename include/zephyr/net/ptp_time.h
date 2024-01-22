@@ -200,7 +200,7 @@ static inline net_time_t net_ptp_time_to_ns(struct net_ptp_time *ts)
 		return NET_TIME_MAX;
 	}
 
-	return ((int64_t)ts->second * NSEC_PER_SEC) + ts->nanosecond;
+	return ((net_time_t)ts->second * NSEC_PER_SEC) + ts->nanosecond;
 }
 
 /**
@@ -214,8 +214,6 @@ static inline net_time_t net_ptp_time_to_ns(struct net_ptp_time *ts)
 static inline struct net_ptp_time ns_to_net_ptp_time(net_time_t nsec)
 {
 	struct net_ptp_time ts;
-
-	__ASSERT_NO_MSG(nsec >= 0);
 
 	ts.second = nsec / NSEC_PER_SEC;
 	ts.nanosecond = nsec % NSEC_PER_SEC;

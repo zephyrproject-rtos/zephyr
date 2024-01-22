@@ -313,7 +313,6 @@ static net_time_t convert_32bit_us_wrapped_to_64bit_ns(uint32_t target_time_us_w
 		}
 	}
 
-	__ASSERT_NO_MSG(result <= INT64_MAX / NSEC_PER_USEC);
 	return (net_time_t)result * NSEC_PER_USEC;
 }
 #endif /* CONFIG_NET_PKT_TXTIME || CONFIG_OPENTHREAD_CSL_RECEIVER */

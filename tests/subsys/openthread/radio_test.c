@@ -46,7 +46,7 @@ FAKE_VALUE_FUNC(int, set_channel_mock, const struct device *, uint16_t);
 FAKE_VALUE_FUNC(int, filter_mock, const struct device *, bool, enum ieee802154_filter_type,
 		const struct ieee802154_filter *);
 FAKE_VALUE_FUNC(int, set_txpower_mock, const struct device *, int16_t);
-FAKE_VALUE_FUNC(int64_t, get_time_mock, const struct device *);
+FAKE_VALUE_FUNC(net_time_t, get_time_mock, const struct device *);
 FAKE_VALUE_FUNC(int, tx_mock, const struct device *, enum ieee802154_tx_mode, struct net_pkt *,
 		struct net_buf *);
 FAKE_VALUE_FUNC(int, start_mock, const struct device *);
