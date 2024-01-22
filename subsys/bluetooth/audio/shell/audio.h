@@ -373,6 +373,112 @@ static inline void print_codec_cap(const struct shell *sh,
 #endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0 */
 }
 
+static inline void print_codec_cfg_freq(const struct shell *sh, enum bt_audio_codec_cfg_freq freq)
+{
+	shell_print(sh, "\tSampling frequency: %u Hz (%u)",
+		    bt_audio_codec_cfg_freq_to_freq_hz(freq), freq);
+}
+
+static inline void print_codec_cfg_frame_dur(const struct shell *sh,
+					     enum bt_audio_codec_cfg_frame_dur frame_dur)
+{
+	shell_print(sh, "\tFrame duration: %u us (%u)",
+		    bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur), frame_dur);
+}
+
+static inline char *chan_location_bit_to_str(enum bt_audio_location chan_allocation)
+{
+	switch (chan_allocation) {
+	case BT_AUDIO_LOCATION_MONO_AUDIO:
+		return "Mono";
+	case BT_AUDIO_LOCATION_FRONT_LEFT:
+		return "Front left";
+	case BT_AUDIO_LOCATION_FRONT_RIGHT:
+		return "Front right";
+	case BT_AUDIO_LOCATION_FRONT_CENTER:
+		return "Front center";
+	case BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_1:
+		return "Low frequency effects 1";
+	case BT_AUDIO_LOCATION_BACK_LEFT:
+		return "Back left";
+	case BT_AUDIO_LOCATION_BACK_RIGHT:
+		return "Back right";
+	case BT_AUDIO_LOCATION_FRONT_LEFT_OF_CENTER:
+		return "Front left of center";
+	case BT_AUDIO_LOCATION_FRONT_RIGHT_OF_CENTER:
+		return "Front right of center";
+	case BT_AUDIO_LOCATION_BACK_CENTER:
+		return "Back center";
+	case BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_2:
+		return "Low frequency effects 2";
+	case BT_AUDIO_LOCATION_SIDE_LEFT:
+		return "Side left";
+	case BT_AUDIO_LOCATION_SIDE_RIGHT:
+		return "Side right";
+	case BT_AUDIO_LOCATION_TOP_FRONT_LEFT:
+		return "Top front left";
+	case BT_AUDIO_LOCATION_TOP_FRONT_RIGHT:
+		return "Top front right";
+	case BT_AUDIO_LOCATION_TOP_FRONT_CENTER:
+		return "Top front center";
+	case BT_AUDIO_LOCATION_TOP_CENTER:
+		return "Top center";
+	case BT_AUDIO_LOCATION_TOP_BACK_LEFT:
+		return "Top back left";
+	case BT_AUDIO_LOCATION_TOP_BACK_RIGHT:
+		return "Top back right";
+	case BT_AUDIO_LOCATION_TOP_SIDE_LEFT:
+		return "Top side left";
+	case BT_AUDIO_LOCATION_TOP_SIDE_RIGHT:
+		return "Top side right";
+	case BT_AUDIO_LOCATION_TOP_BACK_CENTER:
+		return "Top back center";
+	case BT_AUDIO_LOCATION_BOTTOM_FRONT_CENTER:
+		return "Bottom front center";
+	case BT_AUDIO_LOCATION_BOTTOM_FRONT_LEFT:
+		return "Bottom front left";
+	case BT_AUDIO_LOCATION_BOTTOM_FRONT_RIGHT:
+		return "Bottom front right";
+	case BT_AUDIO_LOCATION_FRONT_LEFT_WIDE:
+		return "Front left wide";
+	case BT_AUDIO_LOCATION_FRONT_RIGHT_WIDE:
+		return "Front right wde";
+	case BT_AUDIO_LOCATION_LEFT_SURROUND:
+		return "Left surround";
+	case BT_AUDIO_LOCATION_RIGHT_SURROUND:
+		return "Right surround";
+	default:
+		return "Unknown location";
+	}
+}
+
+static inline void print_codec_cfg_chan_allocation(const struct shell *sh,
+						   enum bt_audio_location chan_allocation)
+{
+	shell_print(sh, "\tChannel allocation:");
+	/* There can be up to 32 bits set in the field */
+	for (size_t i = 0; i < 32; i++) {
+		const uint8_t bit_val = BIT(i);
+
+		if (chan_allocation & bit_val) {
+			shell_print(sh, "\t\t%s (0x%08X)", chan_location_bit_to_str(bit_val),
+				    bit_val);
+		}
+	}
+}
+
+static inline void print_codec_cfg_octets_per_frame(const struct shell *sh,
+						    uint16_t octets_per_frame)
+{
+	shell_print(sh, "\tOctets per codec frame: %u", octets_per_frame);
+}
+
+static inline void print_codec_cfg_frame_blocks_per_sdu(const struct shell *sh,
+							uint8_t frame_blocks_per_sdu)
+{
+	shell_print(sh, "\tCodec frame blocks per SDU: %u", frame_blocks_per_sdu);
+}
+
 static inline void print_codec_cfg(const struct shell *sh,
 				   const struct bt_audio_codec_cfg *codec_cfg)
 {
@@ -381,7 +487,33 @@ static inline void print_codec_cfg(const struct shell *sh,
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
-		print_ltv_array(sh, "data", codec_cfg->data, codec_cfg->data_len);
+		enum bt_audio_location chan_allocation;
+		int ret;
+
+		ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+		if (ret >= 0) {
+			print_codec_cfg_freq(sh, (enum bt_audio_codec_cfg_freq)ret);
+		}
+
+		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+		if (ret >= 0) {
+			print_codec_cfg_frame_dur(sh, (enum bt_audio_codec_cfg_frame_dur)ret);
+		}
+
+		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
+		if (ret >= 0) {
+			print_codec_cfg_chan_allocation(sh, chan_allocation);
+		}
+
+		ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+		if (ret >= 0) {
+			print_codec_cfg_octets_per_frame(sh, (uint16_t)ret);
+		}
+
+		ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, false);
+		if (ret >= 0) {
+			print_codec_cfg_frame_blocks_per_sdu(sh, (uint8_t)ret);
+		}
 	} else { /* If not LC3, we cannot assume it's LTV */
 		shell_hexdump(sh, codec_cfg->data, codec_cfg->data_len);
 	}
