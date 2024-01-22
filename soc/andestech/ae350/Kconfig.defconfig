@@ -36,4 +36,8 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 64
 
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 endif # SOC_SERIES_ANDES_AE350
