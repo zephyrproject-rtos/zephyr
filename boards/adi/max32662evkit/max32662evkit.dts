@@ -70,6 +70,12 @@
 	status = "okay";
 };
 
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1a_scl_p0_6 &i2c1a_sda_p0_9>;
+	pinctrl-names = "default";
+};
+
 &trng {
 	status = "okay";
 };
