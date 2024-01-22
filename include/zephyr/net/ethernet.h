@@ -179,6 +179,9 @@ enum ethernet_hw_caps {
 
 	/** TXTIME supported */
 	ETHERNET_TXTIME			= BIT(19),
+
+	/** TX-Injection supported */
+	ETHERNET_TXINJECTION_MODE	= BIT(20),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -197,6 +200,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_FILTER,
 	ETHERNET_CONFIG_TYPE_PORTS_NUM,
 	ETHERNET_CONFIG_TYPE_T1S_PARAM,
+	ETHERNET_CONFIG_TYPE_TXINJECTION_MODE,
 };
 
 enum ethernet_qav_param_type {
@@ -442,6 +446,7 @@ struct ethernet_config {
 		bool auto_negotiation;
 		bool full_duplex;
 		bool promisc_mode;
+		bool txinjection_mode;
 
 		struct {
 			bool link_10bt;
@@ -1028,6 +1033,17 @@ void net_eth_carrier_off(struct net_if *iface);
  * @return 0 if mode set or unset was successful, <0 otherwise.
  */
 int net_eth_promisc_mode(struct net_if *iface, bool enable);
+
+/**
+ * @brief Set TX-Injection mode either ON or OFF.
+ *
+ * @param iface Network interface
+ *
+ * @param enable on (true) or off (false)
+ *
+ * @return 0 if mode set or unset was successful, <0 otherwise.
+ */
+int net_eth_txinjection_mode(struct net_if *iface, bool enable);
 
 /**
  * @brief Return PTP clock that is tied to this ethernet network interface.
