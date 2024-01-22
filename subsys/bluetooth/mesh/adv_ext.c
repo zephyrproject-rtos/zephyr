@@ -259,7 +259,12 @@ static void send_pending_adv(struct k_work *work)
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY_START);
 
 		if (ext_adv->adv) {
+			struct bt_mesh_adv_ctx ctx = ext_adv->adv->ctx;
+
+			ext_adv->adv->ctx.started = 0;
 			bt_mesh_adv_unref(ext_adv->adv);
+			bt_mesh_adv_send_end(0, &ctx);
+
 			ext_adv->adv = NULL;
 		}
 
