@@ -96,6 +96,22 @@ static inline int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, 
 	return adxl345_reg_read(dev, addr, buf, 1);
 }
 
+int adxl345_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask, uint8_t data)
+{
+	int ret;
+	uint8_t tmp;
+
+	ret = adxl345_reg_read_byte(dev, reg_addr, &tmp);
+	if (ret != 0) {
+		return ret;
+	}
+
+	tmp &= ~mask;
+	tmp |= data;
+
+	return adxl345_reg_write_byte(dev, reg_addr, tmp);
+}
+
 static inline bool adxl345_bus_is_ready(const struct device *dev)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
@@ -106,7 +122,6 @@ static inline bool adxl345_bus_is_ready(const struct device *dev)
 static int adxl345_read_sample(const struct device *dev,
 			       struct adxl345_sample *sample)
 {
-	int16_t raw_x, raw_y, raw_z;
 	uint8_t axis_data[6];
 
 	int rc = adxl345_reg_read(dev, ADXL345_X_AXIS_DATA_0_REG, axis_data, 6);
@@ -116,29 +131,22 @@ static int adxl345_read_sample(const struct device *dev,
 		return rc;
 	}
 
-	raw_x = axis_data[0] | (axis_data[1] << 8);
-	raw_y = axis_data[2] | (axis_data[3] << 8);
-	raw_z = axis_data[4] | (axis_data[5] << 8);
-
-	sample->x = raw_x;
-	sample->y = raw_y;
-	sample->z = raw_z;
+	sample->x = axis_data[0] | (((int16_t)axis_data[1]) << 8);
+	sample->y = axis_data[2] | (((int16_t)axis_data[3]) << 8);
+	sample->z = axis_data[4] | (((int16_t)axis_data[5]) << 8);
 
 	return 0;
 }
 
-static void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
+static inline void adxl345_accel_convert(struct sensor_value *val, int16_t sample, uint16_t scale)
 {
-	if (sample & BIT(9)) {
-		sample |= ADXL345_COMPLEMENT;
-	}
+	int64_t micro_g = (sample * scale) * 1000;
 
-	val->val1 = ((sample * SENSOR_G) / 32) / 1000000;
-	val->val2 = ((sample * SENSOR_G) / 32) % 1000000;
+	sensor_ug_to_ms2(micro_g, val);
 }
 
 static int adxl345_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+				enum sensor_channel cha)
 {
 	struct adxl345_dev_data *data = dev->data;
 	struct adxl345_sample sample;
@@ -146,10 +154,15 @@ static int adxl345_sample_fetch(const struct device *dev,
 	int rc;
 
 	data->sample_number = 0;
-	rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &samples_count);
-	if (rc < 0) {
-		LOG_ERR("Failed to read FIFO status rc = %d\n", rc);
-		return rc;
+
+	if (data->fifo_mode == ADXL345_FIFO_BYPASS) {
+		samples_count = 1;
+	} else {
+		rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &samples_count);
+		if (rc < 0) {
+			LOG_ERR("Failed to read FIFO status rc = %d\n", rc);
+			return rc;
+		}
 	}
 
 	__ASSERT_NO_MSG(samples_count <= ARRAY_SIZE(data->bufx));
@@ -180,21 +193,21 @@ static int adxl345_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl345_accel_convert(val, data->bufx[data->sample_number]);
+		adxl345_accel_convert(val, data->bufx[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl345_accel_convert(val, data->bufy[data->sample_number]);
+		adxl345_accel_convert(val, data->bufy[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl345_accel_convert(val, data->bufz[data->sample_number]);
+		adxl345_accel_convert(val, data->bufz[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl345_accel_convert(val++, data->bufx[data->sample_number]);
-		adxl345_accel_convert(val++, data->bufy[data->sample_number]);
-		adxl345_accel_convert(val,   data->bufz[data->sample_number]);
+		adxl345_accel_convert(val++, data->bufx[data->sample_number], data->scale_factor);
+		adxl345_accel_convert(val++, data->bufy[data->sample_number], data->scale_factor);
+		adxl345_accel_convert(val, data->bufz[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	default:
@@ -209,10 +222,109 @@ static const struct sensor_driver_api adxl345_api_funcs = {
 	.channel_get = adxl345_channel_get,
 };
 
+static int adxl345_set_output_rate(const struct device *dev, const enum adxl345_odr odr)
+{
+	int rc = adxl345_reg_write_mask(dev, ADXL345_BW_RATE_REG, ADXL345_BW_RATE_RATE_MSK, odr);
+
+	if (rc < 0) {
+		return -EIO;
+	}
+
+	return rc;
+}
+
+static int adxl345_set_range(const struct device *dev, const enum adxl345_range range)
+{
+	int rc;
+	struct adxl345_dev_data *data = dev->data;
+
+	rc = adxl345_reg_write_mask(dev, ADXL345_DATA_FORMAT_REG, ADXL345_DATA_FORMAT_RANGE_MSK,
+				    range);
+	if (rc < 0) {
+		return -EIO;
+	}
+
+	switch (range) {
+	case ADXL345_2G_RANGE:
+		data->scale_factor = 4;
+		break;
+	case ADXL345_4G_RANGE:
+		data->scale_factor = 8;
+		break;
+	case ADXL345_8G_RANGE:
+		data->scale_factor = 16;
+		break;
+	case ADXL345_16G_RANGE:
+	default:
+		data->scale_factor = 32;
+		break;
+	}
+
+	return rc;
+}
+
+static enum adxl345_odr adxl345_map_odr(int frequency)
+{
+	switch (frequency) {
+	case 6:
+		return ADXL345_ODR_6P25HZ;
+	case 12:
+		return ADXL345_ODR_12P5HZ;
+	case 25:
+		return ADXL345_ODR_25HZ;
+	case 50:
+		return ADXL345_ODR_50HZ;
+	case 100:
+		return ADXL345_ODR_100HZ;
+	case 200:
+		return ADXL345_ODR_200HZ;
+	case 400:
+		return ADXL345_ODR_400HZ;
+	default:
+		LOG_WRN("Invalid ADXL345 frequency received, set to 100Hz");
+		return ADXL345_ODR_100HZ;
+	}
+}
+
+static enum adxl345_range adxl345_map_range(int range)
+{
+	switch (range) {
+	case 2:
+		return ADXL345_2G_RANGE;
+	case 4:
+		return ADXL345_4G_RANGE;
+	case 8:
+		return ADXL345_8G_RANGE;
+	case 16:
+		return ADXL345_16G_RANGE;
+	default:
+		LOG_WRN("Invalid ADXL345 range received, set to 16G");
+		return ADXL345_16G_RANGE;
+	}
+}
+
+static enum adxl345_fifo adxl345_map_fifo(int fifo_mode)
+{
+	switch (fifo_mode) {
+	case 0:
+		return ADXL345_FIFO_BYPASS;
+	case 1:
+		return ADXL345_FIFO_FIFO;
+	case 2:
+		return ADXL345_FIFO_STREAM;
+	case 3:
+		return ADXL345_FIFO_TRIGGER;
+	default:
+		LOG_WRN("Invalid ADXL345 range received, set to bypass");
+		return ADXL345_FIFO_BYPASS;
+	}
+}
+
 static int adxl345_init(const struct device *dev)
 {
 	int rc;
 	struct adxl345_dev_data *data = dev->data;
+	const struct adxl345_dev_config *cfg = dev->config;
 	uint8_t dev_id;
 
 	data->sample_number = 0;
@@ -223,30 +335,33 @@ static int adxl345_init(const struct device *dev)
 	}
 
 	rc = adxl345_reg_read_byte(dev, ADXL345_DEVICE_ID_REG, &dev_id);
-	if (rc < 0 || dev_id != ADXL345_PART_ID) {
+	if (rc < 0 || dev_id != ADXL345_DEVICE_ID_VALUE) {
 		LOG_ERR("Read PART ID failed: 0x%x\n", rc);
 		return -ENODEV;
 	}
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, ADXL345_FIFO_STREAM_MODE);
+	data->fifo_mode = adxl345_map_fifo(cfg->fifo_mode);
+	rc = adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, data->fifo_mode);
 	if (rc < 0) {
 		LOG_ERR("FIFO enable failed\n");
 		return -EIO;
 	}
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_DATA_FORMAT_REG, ADXL345_RANGE_16G);
+	data->range = adxl345_map_range(cfg->range);
+	rc = adxl345_set_range(dev, data->range);
 	if (rc < 0) {
 		LOG_ERR("Data format set failed\n");
 		return -EIO;
 	}
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_RATE_REG, ADXL345_RATE_25HZ);
+	data->odr = adxl345_map_odr(cfg->frequency);
+	rc = adxl345_set_output_rate(dev, data->odr);
 	if (rc < 0) {
 		LOG_ERR("Rate setting failed\n");
-		return -EIO;
+		return rc;
 	}
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_POWER_CTL_REG, ADXL345_ENABLE_MEASURE_BIT);
+	rc = adxl345_reg_write_byte(dev, ADXL345_POWER_CTL_REG, ADXL345_POWER_CTL_REG_MEASURE_BIT);
 	if (rc < 0) {
 		LOG_ERR("Enable measure bit failed\n");
 		return -EIO;
@@ -254,6 +369,11 @@ static int adxl345_init(const struct device *dev)
 
 	return 0;
 }
+
+#define ADXL345_CONFIG(inst)                                                                       \
+	.frequency = DT_INST_PROP(inst, frequency), .range = DT_INST_PROP(inst, range),            \
+	.fifo_mode = DT_INST_PROP(inst, fifo),
+
 
 #define ADXL345_CONFIG_SPI(inst)                                       \
 	{                                                              \
@@ -265,6 +385,7 @@ static int adxl345_init(const struct device *dev)
 						    0)},               \
 		.bus_is_ready = adxl345_bus_is_ready_spi,              \
 		.reg_access = adxl345_reg_access_spi,                  \
+		ADXL345_CONFIG(inst)                                   \
 	}
 
 #define ADXL345_CONFIG_I2C(inst)			    \
@@ -272,6 +393,7 @@ static int adxl345_init(const struct device *dev)
 		.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)}, \
 		.bus_is_ready = adxl345_bus_is_ready_i2c,   \
 		.reg_access = adxl345_reg_access_i2c,	    \
+		ADXL345_CONFIG(inst)                        \
 	}
 
 #define ADXL345_DEFINE(inst)								\
