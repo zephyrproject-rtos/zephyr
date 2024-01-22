@@ -1201,6 +1201,20 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable)
 }
 #endif/* CONFIG_NET_PROMISCUOUS_MODE */
 
+int net_eth_txinjection_mode(struct net_if *iface, bool enable)
+{
+	struct ethernet_req_params params;
+
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_TXINJECTION_MODE)) {
+		return -ENOTSUP;
+	}
+
+	params.txinjection_mode = enable;
+
+	return net_mgmt(NET_REQUEST_ETHERNET_SET_TXINJECTION_MODE, iface,
+			&params, sizeof(struct ethernet_req_params));
+}
+
 void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
