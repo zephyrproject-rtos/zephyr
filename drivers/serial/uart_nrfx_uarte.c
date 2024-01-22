@@ -516,6 +516,20 @@ static int wait_tx_ready(const struct device *dev)
 	return key;
 }
 
+#if defined(UARTE_ANY_ASYNC) || defined(CONFIG_PM_DEVICE)
+static int pins_state_change(const struct device *dev, bool on)
+{
+	const struct uarte_nrfx_config *config = dev->config;
+
+	if (config->flags & UARTE_CFG_FLAG_GPIO_MGMT) {
+		return pinctrl_apply_state(config->pcfg,
+				on ? PINCTRL_STATE_DEFAULT : PINCTRL_STATE_SLEEP);
+	}
+
+	return 0;
+}
+#endif
+
 #ifdef UARTE_ANY_ASYNC
 
 /* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
@@ -526,7 +540,7 @@ static int wait_tx_ready(const struct device *dev)
 
 #endif /* UARTE_ANY_ASYNC */
 
-static void uarte_enable(const struct device *dev, uint32_t mask)
+static int uarte_enable(const struct device *dev, uint32_t mask)
 {
 #ifdef UARTE_ANY_ASYNC
 	const struct uarte_nrfx_config *config = dev->config;
@@ -534,8 +548,14 @@ static void uarte_enable(const struct device *dev, uint32_t mask)
 
 	if (data->async) {
 		bool disabled = data->async->low_power_mask == 0;
+		int ret;
 
 		data->async->low_power_mask |= mask;
+		ret = pins_state_change(dev, true);
+		if (ret < 0) {
+			return ret;
+		}
+
 		if (HW_RX_COUNTING_ENABLED(data) && disabled) {
 			const nrfx_timer_t *timer = &config->timer;
 
@@ -548,6 +568,8 @@ static void uarte_enable(const struct device *dev, uint32_t mask)
 	}
 #endif
 	nrf_uarte_enable(get_uarte_instance(dev));
+
+	return 0;
 }
 
 /* At this point we should have irq locked and any previous transfer completed.
@@ -571,7 +593,7 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
 
 	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
-		uarte_enable(dev, UARTE_LOW_POWER_TX);
+		(void)uarte_enable(dev, UARTE_LOW_POWER_TX);
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 	}
 
@@ -853,6 +875,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	struct uarte_nrfx_data *data = dev->data;
 	const struct uarte_nrfx_config *cfg = dev->config;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	int ret = 0;
 
 	if (cfg->disable_rx) {
 		__ASSERT(false, "TX only UARTE instance");
@@ -906,7 +929,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	if (cfg->flags & UARTE_CFG_FLAG_LOW_POWER) {
 		unsigned int key = irq_lock();
 
-		uarte_enable(dev, UARTE_LOW_POWER_RX);
+		ret = uarte_enable(dev, UARTE_LOW_POWER_RX);
 		irq_unlock(key);
 	}
 
@@ -1279,6 +1302,10 @@ static void async_uart_release(const struct device *dev, uint32_t dir_mask)
 		}
 
 		uart_disable(dev);
+		int err = pins_state_change(dev, false);
+
+		(void)err;
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	irq_unlock(key);
@@ -1875,14 +1902,21 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 	const struct uarte_nrfx_config *cfg = dev->config;
 	int ret;
 
+#ifdef UARTE_ANY_ASYNC
+	/* If low power mode for asynchronous mode is used then there is nothing to do here.
+	 * In low power mode UARTE is turned off whenever there is no activity.
+	 */
+	if (data->async && (cfg->flags & UARTE_CFG_FLAG_LOW_POWER)) {
+		return 0;
+	}
+#endif
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (cfg->flags & UARTE_CFG_FLAG_GPIO_MGMT) {
-			ret = pinctrl_apply_state(cfg->pcfg,
-						  PINCTRL_STATE_DEFAULT);
-			if (ret < 0) {
-				return ret;
-			}
+
+		ret = pins_state_change(dev, true);
+		if (ret < 0) {
+			return ret;
 		}
 
 		nrf_uarte_enable(uarte);
@@ -1951,12 +1985,9 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		wait_for_tx_stopped(dev);
 		uart_disable(dev);
 
-		if (cfg->flags & UARTE_CFG_FLAG_GPIO_MGMT) {
-			ret = pinctrl_apply_state(cfg->pcfg,
-						  PINCTRL_STATE_SLEEP);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pins_state_change(dev, false);
+		if (ret < 0) {
+			return ret;
 		}
 
 		break;
