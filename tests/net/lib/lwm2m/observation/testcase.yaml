@@ -1,5 +1,5 @@
 tests:
-  net.lwm2m.engine:
+  net.lwm2m.observation:
     platform_key:
       - simulation
     tags:
