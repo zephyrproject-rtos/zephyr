@@ -447,6 +447,70 @@ before transmitting any data.
 
 .. _testing_USB_native_sim:
 
+Interface number and endpoint address assignment
+************************************************
+
+In USB terminology, a ``function`` is a device that provides a capability to the
+host, such as a HID class device that implements a keyboard. A function
+constains a collection of ``interfaces``; at least one interface is required. An
+interface may contain device ``endpoints``; for example, at least one input
+endpoint is required to implement a HID class device, and no endpoints are
+required to implement a USB DFU class. A USB device that combines functions is
+a multifunction USB device, for example, a combination of a HID class device
+and a CDC ACM device.
+
+With Zephyr RTOS USB support, various combinations are possible with built-in USB
+classes/functions or custom user implementations. The limitation is the number
+of available device endpoints. Each device endpoint is uniquely addressable.
+The endpoint address is a combination of endpoint direction and endpoint
+number, a four-bit value. Endpoint number zero is used for the default control
+method to initialize and configure a USB device. By specification, a maximum of
+``15 IN`` and ``15 OUT`` device endpoints are also available for use in functions.
+The actual number depends on the device controller used. Not all controllers
+support the maximum number of endpoints and all endpoint types. For example, a
+device controller might support one IN and one OUT isochronous endpoint, but
+only for endpoint number 8, resulting in endpoint addresses 0x88 and 0x08.
+Also, one controller may be able to have IN/OUT endpoints on the same endpoint
+number, interrupt IN endpoint 0x81 and bulk OUT endpoint 0x01, while the other
+may only be able to handle one endpoint per endpoint number. Information about
+the number of interfaces, interface associations, endpoint types, and addresses
+is provided to the host by the interface, interface specifiec, and endpoint
+descriptors.
+
+Host driver for specific function, uses interface and endpoint descriptor to
+obtain endpoint addresses, types, and other properties. This allows function
+host drivers to be generic, for example, a multi-function device consisting of
+one or more CDC ACM and one or more CDC ECM class implementations is possible
+and no specific drivers are required.
+
+Interface and endpoint descriptors of built-in USB class/function
+implementations in Zephyr RTOS typically have default interface numbers and
+endpoint addresses assigned in ascending order. During initialization,
+default interface numbers may be reassigned based on the number of interfaces in
+a given configuration. Endpoint addresses are reassigned based on controller
+capabilities, since certain endpoint combinations are not possible with every
+controller, and the number of interfaces in a given configuration. This also
+means that the device side class/function in the Zephyr RTOS must check the
+actual interface and endpoint descriptor values at runtime.
+This mechanism also allows as to provide generic samples and generic
+multifunction samples that are limited only by the resources provided by the
+controller, such as the number of endpoints and the size of the endpoint FIFOs.
+
+There may be host drivers for a specific function, for example in the Linux
+Kernel, where the function driver does not read interface and endpoint
+descriptors to check interface numbers or endpoint addresses, but instead uses
+hardcoded values. Therefore, the host driver cannot be used in a generic way,
+meaning it cannot be used with different device controllers and different
+device configurations in combination with other functions. This may also be
+because the driver is designed for a specific hardware and is not intended to
+be used with a clone of this specific hardware. On the contrary, if the driver
+is generic in nature and should work with different hardware variants, then it
+must not use hardcoded interface numbers and endpoint addresses.
+It is not possible to disable endpoint reassignment in Zephyr RTOS, which may
+prevent you from implementing a hardware-clone firmware. Instead, if possible,
+the host driver implementation should be fixed to use values from the interface
+and endpoint descriptor.
+
 Testing over USPIP in native_sim
 ********************************
 
