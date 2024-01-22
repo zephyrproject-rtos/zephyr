@@ -229,14 +229,6 @@ if (CONFIG_BUILD_WITH_TFM)
 
   string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
 
-  if (CONFIG_TFM_QCBOR_PATH STREQUAL "DOWNLOAD")
-    # Change CMake cache type to string to avoid QCBOR_PATH=/absolute/path/DOWNLOAD being set.
-    set(QCBOR_PATH_TYPE ":STRING")
-  endif()
-  # Always set QCBOR_PATH, this will make sure that we don't automatically download this
-  # dependency in the TF-M build system and it will fail when set to an invalid value.
-  list(APPEND TFM_CMAKE_ARGS -DQCBOR_PATH${QCBOR_PATH_TYPE}=${CONFIG_TFM_QCBOR_PATH})
-
   if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
     # Supply path to NXP HAL sources used for TF-M build
     set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
