@@ -41,4 +41,14 @@ config POWER_DOMAIN_GPIO_MONITOR
 	depends on GPIO
 	select DEVICE_DEPS
 
+if POWER_DOMAIN_GPIO_MONITOR
+
+config POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY
+	int "GPIO monitor power domain init priority"
+	default POWER_DOMAIN_INIT_PRIORITY
+	help
+	  GPIO monitor power domain initialization priority.
+
+endif #POWER_DOMAIN_GPIO_MONITOR
+
 endif
