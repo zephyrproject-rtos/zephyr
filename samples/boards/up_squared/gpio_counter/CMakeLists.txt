@@ -6,4 +6,3 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(gpio_counter)
 
 target_sources(app PRIVATE src/main.c)
-zephyr_include_directories(${ZEPHYR_BASE}/boards/x86/up_squared)
