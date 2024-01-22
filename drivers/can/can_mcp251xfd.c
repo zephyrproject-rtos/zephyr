@@ -1290,22 +1290,48 @@ static void mcp251xfd_tef_fifo_handler(const struct device *dev, void *data)
 	k_sem_give(&dev_data->tx_sem);
 }
 
+#if defined(CONFIG_CAN_FD_MODE)
+static int mcp251xfd_init_timing_struct_data(struct can_timing *timing,
+					     const struct device *dev,
+					     const struct mcp251xfd_timing_params *timing_params)
+{
+	const struct mcp251xfd_config *dev_cfg = dev->config;
+	int ret;
+
+	if (USE_SP_ALGO && dev_cfg->common.sample_point_data > 0) {
+		ret = can_calc_timing_data(dev, timing, dev_cfg->common.bus_speed_data,
+					   dev_cfg->common.sample_point_data);
+		if (ret < 0) {
+			return ret;
+		}
+		LOG_DBG("Data phase Presc: %d, BS1: %d, BS2: %d", timing->prescaler,
+			timing->phase_seg1, timing->phase_seg2);
+		LOG_DBG("Data phase Sample-point err : %d", ret);
+	} else {
+		timing->sjw = timing_params->sjw;
+		timing->prop_seg = timing_params->prop_seg;
+		timing->phase_seg1 = timing_params->phase_seg1;
+		timing->phase_seg2 = timing_params->phase_seg2;
+		ret = can_calc_prescaler(dev, timing, dev_cfg->common.bus_speed_data);
+		if (ret > 0) {
+			LOG_WRN("Data phase Bitrate error: %d", ret);
+		}
+	}
+
+	return ret;
+}
+#endif
+
 static int mcp251xfd_init_timing_struct(struct can_timing *timing,
 					const struct device *dev,
-					const struct mcp251xfd_timing_params *timing_params,
-					bool is_nominal)
+					const struct mcp251xfd_timing_params *timing_params)
 {
 	const struct mcp251xfd_config *dev_cfg = dev->config;
 	int ret;
 
 	if (USE_SP_ALGO && dev_cfg->common.sample_point > 0) {
-		if (is_nominal) {
-			ret = can_calc_timing(dev, timing, dev_cfg->common.bus_speed,
-					      dev_cfg->common.sample_point);
-		} else {
-			ret = can_calc_timing_data(dev, timing, dev_cfg->common.bus_speed,
-						   dev_cfg->common.sample_point);
-		}
+		ret = can_calc_timing(dev, timing, dev_cfg->common.bus_speed,
+				      dev_cfg->common.sample_point);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1552,16 +1578,16 @@ static int mcp251xfd_init(const struct device *dev)
 		goto done;
 	}
 
-	ret = mcp251xfd_init_timing_struct(&timing, dev, &dev_cfg->timing_params, true);
+	ret = mcp251xfd_init_timing_struct(&timing, dev, &dev_cfg->timing_params);
 	if (ret < 0) {
 		LOG_ERR("Can't find timing for given param");
 		goto done;
 	}
 
 #if defined(CONFIG_CAN_FD_MODE)
-	ret = mcp251xfd_init_timing_struct(&timing_data, dev, &dev_cfg->timing_params_data, false);
+	ret = mcp251xfd_init_timing_struct_data(&timing_data, dev, &dev_cfg->timing_params_data);
 	if (ret < 0) {
-		LOG_ERR("Can't find timing for given param");
+		LOG_ERR("Can't find data timing for given param");
 		goto done;
 	}
 #endif
