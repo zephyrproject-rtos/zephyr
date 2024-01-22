@@ -44,6 +44,16 @@ config POWER_DOMAIN_INTEL_ADSP
 	help
 	  Include Intel ADSP power domain control mechanisms
 
+if POWER_DOMAIN_INTEL_ADSP
+
+config POWER_DOMAIN_INTEL_ADSP_INIT_PRIORITY
+	int "Intel ADSP power domain init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Intel ADSP power domain initialization priority.
+
+endif #POWER_DOMAIN_INTEL_ADSP
+
 config POWER_DOMAIN_GPIO_MONITOR
 	bool "GPIO monitor for sensing power on rail"
 	default y
