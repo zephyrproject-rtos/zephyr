@@ -6,6 +6,8 @@ tests:
       - userspace
   kernel.timer.tickless:
     extra_args: CONF_FILE="prj_tickless.conf"
+    extra_configs:
+      - platform:it8xxx2_evb:CONFIG_PM=n
     arch_exclude:
       - nios2
       - posix
