@@ -145,6 +145,6 @@ unconfigure_pin:
 	DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_init,					\
 				PM_DEVICE_DT_INST_GET(inst), &pd_gpio_monitor_data_##inst,	\
 				&pd_gpio_monitor_config_##inst, POST_KERNEL,			\
-				CONFIG_POWER_DOMAIN_INIT_PRIORITY, NULL);
+				CONFIG_POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)
