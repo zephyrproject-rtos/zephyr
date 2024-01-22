@@ -14,6 +14,7 @@ config SOC_ANDES_AE350
 	select RISCV_ISA_EXT_C
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select CACHE_MANAGEMENT if DCACHE
 	select RISCV_PMP
 
 if SOC_SERIES_ANDES_AE350
@@ -103,16 +104,12 @@ config SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE
 		Minimum size (and alignment) of an PMA region. Use this symbol
 		to guarantee minimum size and alignment of PMA regions.
 
-# Workaround for not being able to have commas in macro arguments
-DT_ANDESTECH_L2C := andestech,l2c
-
 config SOC_ANDES_V5_L2C
 	bool
-	default $(dt_compat_enabled,$(DT_ANDESTECH_L2C))
+	select DEPRECATED
 
 config SOC_ANDES_V5_IOCP
 	bool "Andes V5 I/O Coherence Port (IOCP)"
-	depends on SOC_ANDES_V5_L2C
 	depends on DCACHE
 	help
 		Support Andes V5 I/O Coherence Port to handle cache coherency
