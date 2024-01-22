@@ -229,6 +229,48 @@ Device Drivers and Device Tree
   change is that this feature is rarely used and disabling it significantly reduces the memory
   footprint.
 
+* For platforms that enabled :kconfig:option:`CONFIG_MULTI_LEVEL_INTERRUPTS`, the ``IRQ`` variant
+  of the Devicetree macros now return the as-seen value in the devicetree instead of the Zephyr
+  multilevel-encoded IRQ number. To get the IRQ number in Zephyr multilevel-encoded format, use
+  ``IRQN`` variant instead. For example, consider the following devicetree:
+
+  .. code-block:: devicetree
+
+    plic: interrupt-controller@c000000 {
+            riscv,max-priority = <7>;
+            riscv,ndev = <1024>;
+            reg = <0x0c000000 0x04000000>;
+            interrupts-extended = <&hlic0 11>;
+            interrupt-controller;
+            compatible = "sifive,plic-1.0.0";
+            #address-cells = <0x0>;
+            #interrupt-cells = <0x2>;
+    };
+
+    uart0: uart@10000000 {
+            interrupts = <10 1>;
+            interrupt-parent = <&plic>;
+            clock-frequency = <0x384000>;
+            reg = <0x10000000 0x100>;
+            compatible = "ns16550";
+            reg-shift = <0>;
+    };
+
+  ``plic`` is a second level interrupt aggregator and ``uart0`` is a child of ``plic``.
+  ``DT_IRQ_BY_IDX(DT_NODELABEL(uart0), 0, irq)`` will return ``10``
+  (as-seen value in the devicetree), while ``DT_IRQN_BY_IDX(DT_NODELABEL(uart0), 0)`` will return
+  ``(((10 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11)``.
+
+  Drivers and applications that are supposed to work in multilevel-interrupt configurations should
+  be updated to use the ``IRQN`` variant, i.e.:
+
+  * ``DT_IRQ(node_id, irq)`` -> ``DT_IRQN(node_id)``
+  * ``DT_IRQ_BY_IDX(node_id, idx, irq)`` -> ``DT_IRQN_BY_IDX(node_id, idx)``
+  * ``DT_IRQ_BY_NAME(node_id, name, irq)`` -> ``DT_IRQN_BY_NAME(node_id, name)``
+  * ``DT_INST_IRQ(inst, irq)`` -> ``DT_INST_IRQN(inst)``
+  * ``DT_INST_IRQ_BY_IDX(inst, idx, irq)`` -> ``DT_INST_IRQN_BY_IDX(inst, idx)``
+  * ``DT_INST_IRQ_BY_NAME(inst, name, irq)`` -> ``DT_INST_IRQN_BY_NAME(inst, name)``
+
 Power Management
 ================
 
