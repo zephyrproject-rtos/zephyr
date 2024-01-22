@@ -401,6 +401,76 @@ config NRFX_SPIS3
 	depends on $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	select NRFX_SPIS
 
+config NRFX_SPIS00
+	bool "SPIS00 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi00,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS20
+	bool "SPIS20 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi20,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS21
+	bool "SPIS21 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi21,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS22
+	bool "SPIS22 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi22,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS30
+	bool "SPIS30 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi30,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS120
+	bool "SPIS120 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi120,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS130
+	bool "SPIS130 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi130,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS131
+	bool "SPIS131 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi131,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS132
+	bool "SPIS132 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi132,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS133
+	bool "SPIS133 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi133,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS134
+	bool "SPIS134 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi134,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS135
+	bool "SPIS135 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi135,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS136
+	bool "SPIS136 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi136,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS137
+	bool "SPIS137 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi137,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
 config NRFX_SYSTICK
 	bool "SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
