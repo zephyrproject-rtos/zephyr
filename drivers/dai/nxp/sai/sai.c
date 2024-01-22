@@ -563,6 +563,9 @@ static int sai_trigger_pause(const struct device *dev,
 		return ret;
 	}
 
+	/* disable TX/RX data line */
+	sai_tx_rx_set_dline_mask(dir, data->regmap, 0x0);
+
 	/* update the software state of TX/RX */
 	sai_tx_rx_sw_enable_disable(dir, data, false);
 
@@ -601,7 +604,7 @@ static int sai_trigger_stop(const struct device *dev,
 		 * left to do is disable the DMA requests and
 		 * the data line.
 		 */
-		goto out_dline_disable;
+		goto out_dmareq_disable;
 	}
 
 	ret = sai_tx_rx_disable(data, cfg, dir);
@@ -612,10 +615,10 @@ static int sai_trigger_stop(const struct device *dev,
 	/* update the software state of TX/RX */
 	sai_tx_rx_sw_enable_disable(dir, data, false);
 
-out_dline_disable:
 	/* disable TX/RX data line */
 	sai_tx_rx_set_dline_mask(dir, data->regmap, 0x0);
 
+out_dmareq_disable:
 	/* disable DMA requests */
 	SAI_TX_RX_DMA_ENABLE_DISABLE(dir, data->regmap, false);
 
@@ -719,7 +722,7 @@ static int sai_trigger_start(const struct device *dev,
 		 * skip this part and go directly to the TX/RX
 		 * enablement.
 		 */
-		goto out_enable_tx_rx;
+		goto out_enable_dline;
 	}
 
 	LOG_DBG("start on direction %d", dir);
@@ -735,6 +738,7 @@ static int sai_trigger_start(const struct device *dev,
 	/* TODO: for now, only DMA mode is supported */
 	SAI_TX_RX_DMA_ENABLE_DISABLE(dir, data->regmap, true);
 
+out_enable_dline:
 	/* enable TX/RX data line. This translates to TX_DLINE0/RX_DLINE0
 	 * being enabled.
 	 *
@@ -742,7 +746,6 @@ static int sai_trigger_start(const struct device *dev,
 	 */
 	sai_tx_rx_set_dline_mask(dir, data->regmap, 0x1);
 
-out_enable_tx_rx:
 	/* this will also enable the async side */
 	SAI_TX_RX_ENABLE_DISABLE(dir, data->regmap, true);
 
