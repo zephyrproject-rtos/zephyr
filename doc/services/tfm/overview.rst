@@ -8,7 +8,7 @@ It defines and implements an architecture and a set of software components
 that aim to address some of the main security concerns in IoT products.
 
 Zephyr RTOS has been PSA Certified since Zephyr 2.0.0 with TF-M 1.0, and
-is currently integrated with TF-M 1.8.0.
+is currently integrated with TF-M 2.0.0.
 
 What Does TF-M Offer?
 *********************
