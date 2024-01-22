@@ -264,9 +264,10 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info)
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
+	enum bt_pbp_announcement_feature source_features;
 	struct bt_uuid_16 adv_uuid;
-	uint8_t source_features = 0U;
-	uint8_t meta[50];
+	uint8_t *tmp_meta;
+	int ret;
 
 	if (data->type != BT_DATA_SVC_DATA16) {
 		return true;
@@ -288,17 +289,18 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		}
 	}
 
-	if (!bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_PBA)) {
-		bt_pbp_parse_announcement(data, &source_features, meta);
+	ret = bt_pbp_parse_announcement(data, &source_features, &tmp_meta);
+	if (ret >= 0) {
 		if (!(source_features & BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY)) {
 			/* This is a Standard Quality Public Broadcast Audio stream - do not sync */
 			printk("This is a Standard Quality Public Broadcast Audio stream\n");
 			pbs_found = false;
 
-			return true;
+			return false;
 		}
 
-		printk("Found Suitable Public Broadcast Announcement\n");
+		printk("Found Suitable Public Broadcast Announcement with %d octets of metadata\n",
+		       ret);
 		pbs_found = true;
 
 		/* Continue parsing if Broadcast Audio Announcement Service was not found */
