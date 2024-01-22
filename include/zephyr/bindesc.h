@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
 
+#include <zephyr/sys/util_macro.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
