@@ -479,7 +479,7 @@ afterwards detach the debug session:
 	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
 
 .. _MCUXpresso Installer:
-	https://www.nxp.com/lgfiles/updates/mcuxpresso/MCUXpressoInstaller.exe
+	https://github.com/nxp-mcuxpresso/vscode-for-mcux/wiki/Dependency-Installation
 
 .. _NXP S32 Design Studio for S32 Platform:
    https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-s32-platform:S32DS-S32PLATFORM
