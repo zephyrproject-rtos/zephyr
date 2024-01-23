@@ -450,12 +450,6 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	char *endptr;
 	int idx = 1;
 
-	if (argc < 1) {
-		print(context.sh, SHELL_WARNING,
-		      "SSID not specified\n");
-		return -EINVAL;
-	}
-
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
 	params->channel = WIFI_CHANNEL_ANY;
@@ -1058,12 +1052,6 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 
 	context.sh = sh;
 
-	if (argc != 3) {
-		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
-		shell_help(sh);
-		return -ENOEXEC;
-	}
-
 	/* Sensible defaults */
 	params.operation = WIFI_TWT_SETUP;
 	params.negotiation_type = WIFI_TWT_INDIVIDUAL;
@@ -1111,12 +1099,6 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 	long value;
 
 	context.sh = sh;
-
-	if (argc != 12) {
-		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
-		shell_help(sh);
-		return -ENOEXEC;
-	}
 
 	params.operation = WIFI_TWT_SETUP;
 
@@ -1202,12 +1184,6 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 
 	context.sh = sh;
 	int idx = 1;
-
-	if (argc != 5) {
-		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
-		shell_help(sh);
-		return -ENOEXEC;
-	}
 
 	params.operation = WIFI_TWT_TEARDOWN;
 
@@ -1675,13 +1651,8 @@ static int cmd_wifi_channel(const struct shell *sh, size_t argc, char *argv[])
 	int ret;
 	bool do_channel_oper = true;
 
-	if (argc > 1) {
-		channel_info.oper = WIFI_MGMT_SET;
-		parse_channel_args_to_params(sh, argc, argv, &channel_info, &do_channel_oper);
-	} else {
-		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
-		return -EINVAL;
-	}
+	channel_info.oper = WIFI_MGMT_SET;
+	parse_channel_args_to_params(sh, argc, argv, &channel_info, &do_channel_oper);
 
 	if (do_channel_oper) {
 		/*
@@ -1797,13 +1768,8 @@ static int cmd_wifi_packet_filter(const struct shell *sh, size_t argc, char *arg
 	int ret;
 	bool do_filter_oper = true;
 
-	if (argc > 1) {
-		packet_filter.oper = WIFI_MGMT_SET;
-		parse_filter_args_to_params(sh, argc, argv, &packet_filter, &do_filter_oper);
-	} else {
-		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
-		return -EINVAL;
-	}
+	packet_filter.oper = WIFI_MGMT_SET;
+	parse_filter_args_to_params(sh, argc, argv, &packet_filter, &do_filter_oper);
 
 	if (do_filter_oper) {
 		/*
@@ -1984,7 +1950,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"Set operation example for interface index 1 - set data+management frame filter\n"
 		"wifi packet_filter -i1 -md.\n",
 		cmd_wifi_packet_filter,
-		1, 8),
+		2, 8),
 	SHELL_CMD_ARG(channel, NULL, "wifi channel setting\n"
 		"This command is used to set the channel when\n"
 		"monitor or TX-Injection mode is enabled\n"
@@ -1998,7 +1964,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"Set operation example for interface index 1 (setting channel 5)\n"
 		"wifi -i1 -c5.\n",
 		cmd_wifi_channel,
-		1, 4),
+		2, 4),
 	SHELL_CMD_ARG(ps_timeout,
 		      NULL,
 		      "<val> - PS inactivity timer(in ms).\n",
