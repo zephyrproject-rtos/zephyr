@@ -1441,9 +1441,12 @@ shall be limited to the functions, excluding the Annex K "Bounds-checking
 interfaces", from the ISO/IEC 9899:2011 standard, also known as C11, unless
 exempted by this rule.
 
-The "Zephyr codebase" in this context refers to all source code files committed
+The "Zephyr codebase" in this context refers to all embedded source code files committed
 to the `main Zephyr repository`_, except the Zephyr kernel as defined by the
 :ref:`coding_guideline_libc_usage_restrictions_in_zephyr_kernel`.
+With embedded source code we refer to code which is meant to be executed in embedded
+targets, and therefore excludes host tooling, and code specific for the
+:ref:`native <boards_posix>` test targets.
 
 The following non-ISO 9899:2011, hereinafter referred to as non-standard,
 functions and macros are exempt from this rule and allowed to be used in the
