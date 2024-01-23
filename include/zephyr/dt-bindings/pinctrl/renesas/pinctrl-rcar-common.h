@@ -73,6 +73,14 @@
 #define IP1SR5(shift, func) IPnSR(1, 5, shift, func)
 #define IP2SR5(shift, func) IPnSR(2, 5, shift, func)
 #define IP3SR5(shift, func) IPnSR(3, 5, shift, func)
+#define IP0SR6(shift, func) IPnSR(0, 6, shift, func)
+#define IP1SR6(shift, func) IPnSR(1, 6, shift, func)
+#define IP2SR6(shift, func) IPnSR(2, 6, shift, func)
+#define IP3SR6(shift, func) IPnSR(3, 6, shift, func)
+#define IP0SR7(shift, func) IPnSR(0, 7, shift, func)
+#define IP1SR7(shift, func) IPnSR(1, 7, shift, func)
+#define IP2SR7(shift, func) IPnSR(2, 7, shift, func)
+#define IP3SR7(shift, func) IPnSR(3, 7, shift, func)
 
 #define PIN_VOLTAGE_NONE 0
 #define PIN_VOLTAGE_1P8V 1
