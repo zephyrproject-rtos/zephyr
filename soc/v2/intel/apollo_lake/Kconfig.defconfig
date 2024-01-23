@@ -6,9 +6,6 @@
 
 if SOC_APOLLO_LAKE
 
-config SOC
-	default "apollo_lake"
-
 config PCIE_MMIO_CFG
 	default y
 
