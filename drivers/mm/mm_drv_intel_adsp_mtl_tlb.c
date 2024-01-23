@@ -401,6 +401,49 @@ int sys_mm_drv_unmap_region(void *virt, size_t size)
 	return sys_mm_drv_simple_unmap_region(va, size);
 }
 
+int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
+{
+	k_spinlock_key_t key;
+	uint32_t entry_idx;
+	uint16_t entry;
+	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	int ret = 0;
+
+	/* Use cached virtual address */
+	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
+
+	/* Make sure inputs are page-aligned and check bounds of virtual address space */
+	CHECKIF(!sys_mm_drv_is_addr_aligned(va) ||
+		(va < UNUSED_L2_START_ALIGNED) ||
+		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&tlb_lock);
+
+	entry_idx = get_tlb_entry_idx(va);
+
+	entry = tlb_entries[entry_idx];
+
+	/* Check entry is already mapped */
+	if (!(entry & TLB_ENABLE_BIT)) {
+		ret = -EFAULT;
+		goto out;
+	}
+
+	/* Clear the access flags */
+	entry &= ~(TLB_EXEC_BIT | TLB_WRITE_BIT);
+
+	/* Set new permissions for this entry */
+	entry |= flags_to_tlb_perms(flags);
+
+	tlb_entries[entry_idx] = entry;
+
+out:
+	k_spin_unlock(&tlb_lock, key);
+	return ret;
+}
+
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 {
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
