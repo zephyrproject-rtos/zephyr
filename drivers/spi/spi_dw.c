@@ -562,6 +562,55 @@ int spi_dw_init(const struct device *dev)
 	return 0;
 }
 
+#define SPI_CFG_IRQS_SINGLE_ERR_LINE(inst)					\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rx_avail, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx_req, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, tx_req, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, err_int, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, err_int, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, tx_req, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, err_int, irq));
+
+#define SPI_CFG_IRQS_MULTIPLE_ERR_LINES(inst)					\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rx_avail, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx_req, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, tx_req, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, txo_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, txo_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rxo_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rxo_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rxu_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, rxu_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, mst_err, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, mst_err, priority),	\
+			    spi_dw_isr, DEVICE_DT_INST_GET(inst),		\
+			    0);							\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, tx_req, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, txo_err, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rxo_err, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, rxu_err, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, mst_err, irq));
+
 #define SPI_DW_IRQ_HANDLER(inst)                                   \
 void spi_dw_irq_config_##inst(void)                                \
 {                                                                  \
@@ -571,21 +620,9 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 		spi_dw_isr, DEVICE_DT_INST_GET(inst),              \
 		0);                                                \
 	irq_enable(DT_INST_IRQN(inst));),                          \
-	(IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq),     \
-		DT_INST_IRQ_BY_NAME(inst, rx_avail, priority),     \
-		spi_dw_isr, DEVICE_DT_INST_GET(inst),              \
-		0);                                                \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx_req, irq),        \
-		DT_INST_IRQ_BY_NAME(inst, tx_req, priority),       \
-		spi_dw_isr, DEVICE_DT_INST_GET(inst),              \
-		0);                                                \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, err_int, irq),       \
-		DT_INST_IRQ_BY_NAME(inst, err_int, priority),      \
-		spi_dw_isr, DEVICE_DT_INST_GET(inst),              \
-		0);                                                \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, rx_avail, irq));      \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, tx_req, irq));        \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, err_int, irq));))     \
+	(COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 3),     \
+		(SPI_CFG_IRQS_SINGLE_ERR_LINE(inst)),		   \
+		(SPI_CFG_IRQS_MULTIPLE_ERR_LINES(inst)))))	   \
 }
 
 #define SPI_DW_INIT(inst)                                                                   \
