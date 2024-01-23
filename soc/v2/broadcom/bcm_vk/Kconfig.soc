@@ -6,11 +6,8 @@
 config SOC_FAMILY_BCMVK
 	bool
 
-if SOC_FAMILY_BCMVK
 config SOC_FAMILY
 	string
-	default "bcm_vk"
+	default "bcm_vk" if SOC_FAMILY_BCMVK
 
-source "soc/arm64/bcm_vk/*/Kconfig.soc"
-
-endif
+rsource "*/Kconfig.soc"
