@@ -41,6 +41,11 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP NRF_APPLICATION
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUAPP NRF54H20_ENGA_XXAA
+                                                                 NRF_APPLICATION)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPURAD NRF54H20_ENGA_XXAA
+                                                                 NRF_RADIOCORE)
+
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
                                  ENABLE_APPROTECT)
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_USER_HANDLING
@@ -71,6 +76,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_NRF52833       ${MDK_DIR}/system_nrf5283
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52840       ${MDK_DIR}/system_nrf52840.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUAPP ${MDK_DIR}/system_nrf5340_application.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUNET ${MDK_DIR}/system_nrf5340_network.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF54HX ${MDK_DIR}/system_nrf54h.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF54LX ${MDK_DIR}/system_nrf54l.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF91X  ${MDK_DIR}/system_nrf91.c)
 
