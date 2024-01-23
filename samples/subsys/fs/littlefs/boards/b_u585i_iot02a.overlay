@@ -5,6 +5,10 @@
  */
 
  / {
+	chosen {
+		zephyr,code-partition = &slot1_partition;
+	};
+
 	fstab {
 		compatible = "zephyr,fstab";
 		lfs1: lfs1 {
@@ -21,13 +25,10 @@
 	};
 };
 
-&mx25lm51245 {
+&flash0 {
 	partitions {
-		/delete-node/ partition;
-
-		/* Use the whole flash for the filesystem. */
-		lfs1_partition: partition@0 {
-			reg = <0x00000000 DT_SIZE_M(64)>;
+		lfs1_partition: partition@d0000 {
+			reg = <0x000d0000 DT_SIZE_K(64)>;
 		};
 	};
 };
