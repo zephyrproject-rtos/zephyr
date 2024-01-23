@@ -3,4 +3,4 @@
 # Copyright 2020 Broadcom.
 #
 
-source "soc/arm/bcm_vk/*/Kconfig.defconfig.series"
+rsource "*/Kconfig.defconfig"
