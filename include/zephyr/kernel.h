@@ -2113,6 +2113,23 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
 	STRUCT_SECTION_ITERABLE(k_queue, name) = \
 		Z_QUEUE_INITIALIZER(name)
 
+/**
+ * @brief Provide the primitive to iterate on a queue
+ * Note: the loop is unsafe and thus curr should not be removed
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     K_QUEUE_FOR_EACH_CONTAINER(l, n) {
+ *         <user code>
+ *     }
+ *
+ * @param _queue Address of the queue.
+ * @param __cn   A pointer to peek each entry of the list
+ * @param __n    The field name of sys_node_t within the container struct
+ */
+#define K_QUEUE_FOR_EACH_CONTAINER(_queue, __cn, __n) \
+	SYS_SFLIST_FOR_EACH_CONTAINER(&((_queue)->data_q), __cn, __n)
+
 /** @} */
 
 #ifdef CONFIG_USERSPACE
