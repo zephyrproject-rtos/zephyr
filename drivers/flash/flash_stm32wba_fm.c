@@ -93,7 +93,7 @@ static int flash_stm32_read(const struct device *dev, off_t offset,
 
 	flash_stm32_sem_take(dev);
 
-	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *) FLASH_STM32_BASE_ADDRESS + offset, len);
 
 	flash_stm32_sem_give(dev);
 
@@ -153,7 +153,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 	LOG_DBG("Write offset: %p, len: %zu", (void *)offset, len);
 
 	rc = FM_Write((uint32_t *)data,
-		      (uint32_t *)(CONFIG_FLASH_BASE_ADDRESS + offset),
+		      (uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset),
 		      (int32_t)len/4, &cb_ptr);
 	if (rc == 0) {
 		k_sem_take(&flash_busy, K_FOREVER);

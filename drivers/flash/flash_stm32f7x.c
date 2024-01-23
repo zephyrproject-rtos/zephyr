@@ -60,7 +60,7 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 	barrier_dsync_fence_full();
 
 	/* write the data */
-	*((uint8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
+	*((uint8_t *) offset + FLASH_STM32_BASE_ADDRESS) = val;
 	/* flush the register write */
 	barrier_dsync_fence_full();
 

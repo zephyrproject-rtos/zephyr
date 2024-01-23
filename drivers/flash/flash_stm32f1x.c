@@ -62,7 +62,7 @@ static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
 {
 	/* Set the PER bit and select the page you wish to erase */
 	regs->CR |= FLASH_CR_PER;
-	regs->AR = CONFIG_FLASH_BASE_ADDRESS + page * FLASH_PAGE_SIZE;
+	regs->AR = FLASH_STM32_BASE_ADDRESS + page * FLASH_PAGE_SIZE;
 
 	barrier_dsync_fence_full();
 
@@ -99,7 +99,7 @@ static void write_disable(FLASH_TypeDef *regs)
 static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
 {
 	volatile flash_prg_t *page_base = (flash_prg_t *)(
-		CONFIG_FLASH_BASE_ADDRESS + page * FLASH_PAGE_SIZE);
+		FLASH_STM32_BASE_ADDRESS + page * FLASH_PAGE_SIZE);
 	/* Enable programming in erase mode. An erase is triggered by
 	 * writing 0 to the first word of a page.
 	 */
@@ -123,7 +123,7 @@ static int write_value(const struct device *dev, off_t offset,
 		       flash_prg_t val)
 {
 	volatile flash_prg_t *flash = (flash_prg_t *)(
-		offset + CONFIG_FLASH_BASE_ADDRESS);
+		offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
 
