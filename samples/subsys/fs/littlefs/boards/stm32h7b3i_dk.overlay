@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2023 OS Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+	chosen {
+		zephyr,code-partition = &slot1_partition;
+	};
+	
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <256>;
+			prog-size = <256>;
+			cache-size = <4096>;
+			lookahead-size = <256>;
+			block-cycles = <512>;
+			partition = <&lfs1_partition>;
+			mount-point = "/lfs1";
+			automount;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		lfs1_partition: partition@e0000 {
+			reg = <0x000e0000 DT_SIZE_K(64)>;
+		};
+	};
+};
