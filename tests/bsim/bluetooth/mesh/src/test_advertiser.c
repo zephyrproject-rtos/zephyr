@@ -284,7 +284,7 @@ static void send_adv_buf(struct bt_mesh_adv *adv, uint8_t curr, uint8_t prev)
 	(void)net_buf_simple_add_u8(&adv->b, curr);
 	(void)net_buf_simple_add_u8(&adv->b, prev);
 
-	bt_mesh_adv_send(adv, &send_cb, adv);
+	bt_mesh_adv_send(adv, &send_cb, adv, 0);
 	bt_mesh_adv_unref(adv);
 }
 
@@ -331,7 +331,7 @@ static void test_tx_cb_single(void)
 	net_buf_simple_add_mem(&adv->b, txt_msg, sizeof(txt_msg));
 	seq_checker = 0;
 	tx_timestamp = k_uptime_get();
-	bt_mesh_adv_send(adv, &send_cb, (void *)cb_msg);
+	bt_mesh_adv_send(adv, &send_cb, (void *)cb_msg, 0);
 	bt_mesh_adv_unref(adv);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(1));
@@ -369,7 +369,7 @@ static void test_tx_cb_multi(void)
 	send_cb.end = realloc_end_cb;
 	net_buf_simple_add_mem(&(adv[0]->b), txt_msg, sizeof(txt_msg));
 
-	bt_mesh_adv_send(adv[0], &send_cb, adv[0]);
+	bt_mesh_adv_send(adv[0], &send_cb, adv[0], 0);
 	bt_mesh_adv_unref(adv[0]);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(1));
@@ -382,7 +382,7 @@ static void test_tx_cb_multi(void)
 
 	for (int i = 0; i < CONFIG_BT_MESH_ADV_BUF_COUNT; i++) {
 		net_buf_simple_add_le32(&(adv[i]->b), i);
-		bt_mesh_adv_send(adv[i], &send_cb, (void *)(intptr_t)i);
+		bt_mesh_adv_send(adv[i], &send_cb, (void *)(intptr_t)i, 0);
 		bt_mesh_adv_unref(adv[i]);
 	}
 
@@ -429,7 +429,7 @@ static void test_tx_proxy_mixin(void)
 	struct bt_mesh_adv *adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 			BT_MESH_TRANSMIT(5, 20), K_NO_WAIT);
 	net_buf_simple_add_mem(&adv->b, txt_msg, sizeof(txt_msg));
-	bt_mesh_adv_send(adv, NULL, NULL);
+	bt_mesh_adv_send(adv, NULL, NULL, 0);
 	k_sleep(K_MSEC(150));
 
 	/* Let the tester to measure an interval between advertisements again. */

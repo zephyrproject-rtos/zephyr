@@ -279,7 +279,7 @@ static bool net_beacon_send(struct bt_mesh_subnet *sub, struct bt_mesh_beacon *b
 
 	err = beacon_create(sub, &adv->b);
 	if (!err) {
-		bt_mesh_adv_send(adv, &send_cb, beacon);
+		bt_mesh_adv_send(adv, &send_cb, beacon, 0);
 	}
 
 	bt_mesh_adv_unref(adv);
@@ -355,7 +355,7 @@ static int unprovisioned_beacon_send(void)
 	net_buf_simple_add_be16(&adv->b, oob_info);
 	net_buf_simple_add_mem(&adv->b, uri_hash, 4);
 
-	bt_mesh_adv_send(adv, NULL, NULL);
+	bt_mesh_adv_send(adv, NULL, NULL, 0);
 	bt_mesh_adv_unref(adv);
 
 	if (prov->uri) {
@@ -373,7 +373,7 @@ static int unprovisioned_beacon_send(void)
 			LOG_WRN("Too long URI to fit advertising data");
 		} else {
 			net_buf_simple_add_mem(&adv->b, prov->uri, len);
-			bt_mesh_adv_send(adv, NULL, NULL);
+			bt_mesh_adv_send(adv, NULL, NULL, 0);
 		}
 
 		bt_mesh_adv_unref(adv);

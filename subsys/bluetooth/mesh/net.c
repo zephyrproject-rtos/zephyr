@@ -581,7 +581,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_adv *adv,
 		(void)bt_mesh_proxy_cli_relay(adv);
 	}
 
-	bt_mesh_adv_send(adv, cb, cb_data);
+	bt_mesh_adv_send(adv, cb, cb_data, 0);
 
 done:
 	bt_mesh_adv_unref(adv);
@@ -749,7 +749,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	}
 
 	if (relay_to_adv(rx->net_if) || rx->friend_cred) {
-		bt_mesh_adv_send(adv, NULL, NULL);
+		bt_mesh_adv_send(adv, NULL, NULL, 0);
 	}
 
 done:

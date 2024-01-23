@@ -1291,7 +1291,7 @@ send_last:
 
 	frnd->pending_req = 0U;
 	frnd->pending_buf = 1U;
-	bt_mesh_adv_send(adv, &buf_sent_cb, frnd);
+	bt_mesh_adv_send(adv, &buf_sent_cb, frnd, 0);
 	bt_mesh_adv_unref(adv);
 }
 

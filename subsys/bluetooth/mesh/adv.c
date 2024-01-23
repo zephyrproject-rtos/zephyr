@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(bt_mesh_adv);
 #define MESH_SCAN_INTERVAL    BT_MESH_ADV_SCAN_UNIT(BT_MESH_SCAN_INTERVAL_MS)
 #define MESH_SCAN_WINDOW      BT_MESH_ADV_SCAN_UNIT(BT_MESH_SCAN_WINDOW_MS)
 
+static void delayable_adv_send(struct k_work *work);
+
 const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES] = {
 	[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
 	[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
@@ -45,6 +47,8 @@ static bool active_scanning;
 static K_FIFO_DEFINE(bt_mesh_adv_queue);
 static K_FIFO_DEFINE(bt_mesh_relay_queue);
 static K_FIFO_DEFINE(bt_mesh_friend_queue);
+
+static K_WORK_DELAYABLE_DEFINE(delayable, delayable_adv_send);
 
 K_MEM_SLAB_DEFINE_STATIC(local_adv_pool, sizeof(struct bt_mesh_adv),
 			 CONFIG_BT_MESH_ADV_BUF_COUNT, __alignof__(struct bt_mesh_adv));
@@ -253,20 +257,10 @@ void bt_mesh_adv_get_cancel(void)
 	}
 }
 
-void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
-		      void *cb_data)
+static K_QUEUE_DEFINE(delayable_adv_queue);
+
+static void adv_ready_to_send(struct bt_mesh_adv *adv)
 {
-	LOG_DBG("type 0x%02x len %u: %s", adv->ctx.type, adv->b.len,
-		bt_hex(adv->b.data, adv->b.len));
-
-	adv->ctx.cb = cb;
-	adv->ctx.cb_data = cb_data;
-	adv->ctx.busy = 1U;
-
-	if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
-		bt_mesh_stat_planned_count(&adv->ctx);
-	}
-
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
 	    adv->ctx.tag == BT_MESH_ADV_TAG_FRIEND) {
 		k_fifo_put(&bt_mesh_friend_queue, bt_mesh_adv_ref(adv));
@@ -285,6 +279,89 @@ void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
 
 	k_fifo_put(&bt_mesh_adv_queue, bt_mesh_adv_ref(adv));
 	bt_mesh_adv_local_ready();
+}
+
+static void delayable_adv_send(struct k_work *work)
+{
+	struct bt_mesh_adv *adv = k_queue_get(&delayable_adv_queue, K_NO_WAIT);
+
+	if (!adv) {
+		return;
+	}
+
+	adv_ready_to_send(adv);
+
+	adv = k_queue_peek_head(&delayable_adv_queue);
+	if (!adv) {
+		return;
+	}
+
+	k_work_reschedule(&delayable, K_MSEC(adv->ctx.delay_ms));
+}
+
+static void delayable_adv_reschedule(struct bt_mesh_adv *adv)
+{
+	struct bt_mesh_adv *curr, *prev = NULL;
+	uint32_t remaining, elapsed = 0;
+
+	curr = k_queue_peek_head(&delayable_adv_queue);
+	if (!curr) {
+		k_queue_append(&delayable_adv_queue, adv);
+		k_work_reschedule(&delayable, K_MSEC(adv->ctx.delay_ms));
+		return;
+	}
+
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&delayable));
+
+	if (curr->ctx.delay_ms > remaining) {
+		elapsed = curr->ctx.delay_ms - remaining;
+	}
+
+	adv->ctx.delay_ms += elapsed;
+
+	K_QUEUE_FOR_EACH_CONTAINER(&delayable_adv_queue, curr, node) {
+		if (adv->ctx.delay_ms < curr->ctx.delay_ms) {
+			curr->ctx.delay_ms -= adv->ctx.delay_ms;
+			k_queue_insert(&delayable_adv_queue, prev, adv);
+			return;
+		}
+
+		adv->ctx.delay_ms -= curr->ctx.delay_ms;
+		prev = curr;
+	}
+
+	k_queue_append(&delayable_adv_queue, adv);
+}
+
+void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
+		      void *cb_data, uint16_t delay_ms)
+{
+	LOG_DBG("type 0x%02x len %u: %s", adv->ctx.type, adv->b.len,
+		bt_hex(adv->b.data, adv->b.len));
+
+	adv->ctx.cb = cb;
+	adv->ctx.cb_data = cb_data;
+	adv->ctx.busy = 1U;
+	adv->ctx.delay_ms = delay_ms;
+
+	if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
+		bt_mesh_stat_planned_count(&adv->ctx);
+	}
+
+	if (!delay_ms) {
+		adv_ready_to_send(adv);
+	} else {
+		delayable_adv_reschedule(adv);
+	}
+}
+
+uint16_t bt_mesh_adv_random_delay(uint16_t down, uint16_t up)
+{
+	uint16_t random;
+
+	(void)bt_rand(&random, sizeof(random));
+
+	return down + (random % (up - down));
 }
 
 int bt_mesh_adv_gatt_send(void)

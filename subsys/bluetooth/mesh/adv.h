@@ -49,10 +49,12 @@ struct bt_mesh_adv_ctx {
 		  tag:4;
 
 	uint8_t      xmit;
+
+	uint16_t delay_ms;
 };
 
 struct bt_mesh_adv {
-	sys_snode_t node;
+	sys_sfnode_t node;
 
 	struct bt_mesh_adv_ctx ctx;
 
@@ -75,7 +77,9 @@ struct bt_mesh_adv *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 				       uint8_t xmit, k_timeout_t timeout);
 
 void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
-		      void *cb_data);
+		      void *cb_data, uint16_t delay_ms);
+
+uint16_t bt_mesh_adv_random_delay(uint16_t down, uint16_t up);
 
 struct bt_mesh_adv *bt_mesh_adv_get(k_timeout_t timeout);
 

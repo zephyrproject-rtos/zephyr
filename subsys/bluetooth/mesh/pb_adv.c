@@ -354,7 +354,7 @@ static void gen_prov_ack_send(uint8_t xact_id)
 	net_buf_simple_add_u8(&adv->b, xact_id);
 	net_buf_simple_add_u8(&adv->b, GPC_ACK);
 
-	bt_mesh_adv_send(adv, complete, NULL);
+	bt_mesh_adv_send(adv, complete, NULL, bt_mesh_adv_random_delay(20, 50));
 	bt_mesh_adv_unref(adv);
 }
 
@@ -591,7 +591,7 @@ static void gen_prov_recv(struct prov_rx *rx, struct net_buf_simple *buf)
  * TX
  ******************************************************************************/
 
-static void send_reliable(void)
+static void send_reliable(uint16_t delay)
 {
 	int i;
 
@@ -608,7 +608,7 @@ static void send_reliable(void)
 
 		LOG_DBG("%u bytes: %s", adv->b.len, bt_hex(adv->b.data, adv->b.len));
 
-		bt_mesh_adv_send(adv, NULL, NULL);
+		bt_mesh_adv_send(adv, NULL, NULL, delay);
 	}
 
 	k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
@@ -629,7 +629,7 @@ static void prov_retransmit(struct k_work *work)
 		return;
 	}
 
-	send_reliable();
+	send_reliable(0);
 }
 
 static struct bt_mesh_adv *ctl_adv_create(uint8_t op, const void *data, uint8_t data_len,
@@ -664,7 +664,8 @@ static int bearer_ctl_send(struct bt_mesh_adv *adv)
 
 	link.tx.start = k_uptime_get();
 	link.tx.adv[0] = adv;
-	send_reliable();
+
+	send_reliable(bt_mesh_adv_random_delay(20, 50));
 
 	return 0;
 }
@@ -678,7 +679,7 @@ static int bearer_ctl_send_unacked(struct bt_mesh_adv *adv, void *user_data)
 	prov_clear_tx();
 	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 
-	bt_mesh_adv_send(adv, &buf_sent_cb, user_data);
+	bt_mesh_adv_send(adv, &buf_sent_cb, user_data, 0);
 	bt_mesh_adv_unref(adv);
 
 	return 0;
@@ -745,7 +746,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 		net_buf_simple_pull(msg, seg_len);
 	}
 
-	send_reliable();
+	send_reliable(bt_mesh_adv_random_delay(20, 50));
 
 	return 0;
 }

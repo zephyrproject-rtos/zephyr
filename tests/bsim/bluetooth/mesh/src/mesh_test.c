@@ -552,7 +552,7 @@ void bt_mesh_test_send_over_adv(void *data, size_t len)
 	struct bt_mesh_adv *adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 						     BT_MESH_TRANSMIT(0, 20), K_NO_WAIT);
 	net_buf_simple_add_mem(&adv->b, data, len);
-	bt_mesh_adv_send(adv, NULL, NULL);
+	bt_mesh_adv_send(adv, NULL, NULL, 0);
 }
 
 int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer_sem, uint16_t wait)
