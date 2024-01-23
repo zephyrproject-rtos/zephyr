@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "nrf54h20pdk_nrf54h20_cpuapp" if BOARD_NRF54H20PDK_NRF54H20_CPUAPP
+	default "nrf54h20pdk_nrf54h20_cpurad" if BOARD_NRF54H20PDK_NRF54H20_CPURAD
+
+if BOARD_NRF54H20PDK_NRF54H20_CPUAPP || BOARD_NRF54H20PDK_NRF54H20_CPURAD
+
+# Data cache is disabled due to a HW issue in the EngA SoC revision.
+config DCACHE
+	default n
+
+endif # BOARD_NRF54H20PDK_NRF54H20_CPUAPP || BOARD_NRF54H20PDK_NRF54H20_CPURAD

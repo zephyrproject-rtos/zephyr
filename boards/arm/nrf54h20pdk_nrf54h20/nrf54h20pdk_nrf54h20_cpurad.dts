@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54h20_enga_cpurad.dtsi>
+#include "nrf54h20pdk_nrf54h20-memory_map.dtsi"
+#include "nrf54h20pdk_nrf54h20-pinctrl.dtsi"
+
+/ {
+	compatible = "nordic,nrf54h20pdk_nrf54h20-cpurad";
+	model = "Nordic nRF54H20 PDK nRF54H20 Radio MCU";
+
+	chosen {
+		zephyr,console = &uart135;
+		zephyr,code-partition = &cpurad_slot0_partition;
+		zephyr,flash = &mram1x;
+		zephyr,sram = &cpurad_ram0;
+	};
+};
+
+&ram3x_dma_region {
+	status = "okay";
+};
+
+&cpurad_dma_region {
+	status = "okay";
+};
+
+&cpurad_rx_partitions {
+	status = "okay";
+};
+
+&grtc {
+	status = "okay";
+	child-owned-channels = <8 9 10 11 12>;
+	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <108 NRF_DEFAULT_IRQ_PRIORITY>;
+	nonsecure-channels = <8 9 10 11 12>;
+	owned-channels = <7 8 9 10 11 12 13 14>;
+};
+
+&uart135 {
+	status = "okay";
+	memory-regions = <&cpurad_dma_region>;
+	pinctrl-0 = <&uart135_default>;
+	pinctrl-1 = <&uart135_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart136 {
+	pinctrl-0 = <&uart136_default>;
+	pinctrl-1 = <&uart136_sleep>;
+	pinctrl-names = "default", "sleep";
+};
