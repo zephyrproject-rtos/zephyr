@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(sd, CONFIG_SD_LOG_LEVEL);
 /* Idle all cards on bus. Can be used to clear errors on cards */
 static inline int sd_idle(struct sd_card *card)
 {
-	struct sdhc_command cmd = {0};
+	struct sdhc_command cmd;
 
 	/* Reset card with CMD0 */
 	cmd.opcode = SD_GO_IDLE_STATE;
@@ -35,7 +35,7 @@ static inline int sd_idle(struct sd_card *card)
 /* Sends CMD8 during SD initialization */
 static int sd_send_interface_condition(struct sd_card *card)
 {
-	struct sdhc_command cmd = {0};
+	struct sdhc_command cmd;
 	int ret;
 	uint32_t resp;
 
@@ -72,7 +72,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 /* Sends CMD59 to enable CRC checking for SD card in SPI mode */
 static int sd_enable_crc(struct sd_card *card)
 {
-	struct sdhc_command cmd = {0};
+	struct sdhc_command cmd;
 
 	/* CMD59 for CRC mode is only valid for SPI hosts */
 	__ASSERT_NO_MSG(card->host_props.is_spi);
