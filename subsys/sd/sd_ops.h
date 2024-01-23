@@ -10,7 +10,7 @@
 
 /*
  * Switches voltage of SD card to 1.8V, as described by
- * "Signal volatage switch procedure" in section 3.6.1 of SD specification.
+ * "Signal voltage switch procedure" in section 3.6.1 of SD specification.
  */
 int sdmmc_switch_voltage(struct sd_card *card);
 
