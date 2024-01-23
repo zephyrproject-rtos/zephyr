@@ -1208,7 +1208,7 @@
  * @return the property's value as a sequence of tokens, with no quotes
  */
 #define DT_STRING_UNQUOTED_BY_IDX(node_id, prop, idx) \
-	DT_CAT4(node_id, _P_, prop##_IDX_##idx, _STRING_UNQUOTED)
+	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_UNQUOTED)
 
 /*
  * phandle properties
@@ -1383,7 +1383,7 @@
  * @return the cell's value or @p default_value
  */
 #define DT_PHA_BY_IDX_OR(node_id, pha, idx, cell, default_value) \
-	DT_PROP_OR(node_id, pha##_IDX_##idx##_VAL_##cell, default_value)
+	DT_PROP_OR(node_id, DT_CAT5(pha, _IDX_, idx, _VAL_, cell), default_value)
 
 /**
  * @brief Equivalent to DT_PHA_BY_IDX(node_id, pha, 0, cell)
@@ -1476,7 +1476,7 @@
  * @return the cell's value or @p default_value
  */
 #define DT_PHA_BY_NAME_OR(node_id, pha, name, cell, default_value) \
-	DT_PROP_OR(node_id, pha##_NAME_##name##_VAL_##cell, default_value)
+	DT_PROP_OR(node_id, DT_CAT5(pha, _NAME_, name, _VAL_, cell), default_value)
 
 /**
  * @brief Get a phandle's node identifier from a phandle array by @p name
