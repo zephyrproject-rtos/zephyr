@@ -21,3 +21,10 @@ tests:
     depends_on: netif
     integration_platforms:
       - frdm_k64f
+  sample.net.gpt.nxp_enet_experimental:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="nxp,enet-experimental.overlay"
+    platform_allow:
+      - mimxrt1050_evk
+      - mimxrt1060_evk
+      - mimxrt1064_evk
+      - mimxrt1024_evk

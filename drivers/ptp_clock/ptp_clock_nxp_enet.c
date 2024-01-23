@@ -153,7 +153,7 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 
 void nxp_enet_ptp_clock_callback(const struct device *dev,
 			enum nxp_enet_callback_reason event,
-			void *data)
+			void *cb_data)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
@@ -181,9 +181,9 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 				      &ptp_config);
 	}
 
-	if (data != NULL) {
+	if (cb_data != NULL) {
 		/* Share the mutex with mac driver */
-		*(struct k_mutex *)data = &data->ptp_mutex;
+		*(uintptr_t *)cb_data = (uintptr_t)&data->ptp_mutex;
 	}
 }
 
