@@ -236,6 +236,7 @@ ZTEST(util, test_IN_RANGE) {
 
 ZTEST(util, test_FOR_EACH) {
 	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg
+	#define FOR_EACH_MACRO_TEST2(arg) arg
 
 	uint8_t array[3] = {0};
 	uint8_t *buf = array;
@@ -245,6 +246,14 @@ ZTEST(util, test_FOR_EACH) {
 	zassert_equal(array[0], 1, "Unexpected value %d", array[0]);
 	zassert_equal(array[1], 2, "Unexpected value %d", array[1]);
 	zassert_equal(array[2], 3, "Unexpected value %d", array[2]);
+
+	uint8_t test0[] = { 0, FOR_EACH(FOR_EACH_MACRO_TEST2, (,))};
+
+	BUILD_ASSERT(sizeof(test0) == 1, "Unexpected length due to FOR_EACH fail");
+
+	uint8_t test1[] = { 0, FOR_EACH(FOR_EACH_MACRO_TEST2, (,), 1)};
+
+	BUILD_ASSERT(sizeof(test1) == 2, "Unexpected length due to FOR_EACH fail");
 }
 
 ZTEST(util, test_FOR_EACH_NONEMPTY_TERM) {
