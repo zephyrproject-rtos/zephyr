@@ -1,0 +1,10 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BCM958402M2_BCM58402_M7
+	bool
+	select SOC_BCM58402_M7
+
+config BOARD_BCM958402M2_BCM58402_A72
+	bool
+	select SOC_BCM58402_A72
