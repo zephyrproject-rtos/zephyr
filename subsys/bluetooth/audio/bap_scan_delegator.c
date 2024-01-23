@@ -161,8 +161,8 @@ static void bass_notify_receive_state(struct bt_conn *conn,
 
 	LOG_DBG("Sending bytes %d", ntf_size);
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
-				      internal_state->attr, read_buf.data,
-				      ntf_size);
+				  internal_state->attr, read_buf.data,
+				  ntf_size);
 
 	if (err != 0 && err != -ENOTCONN) {
 		LOG_DBG("Could not notify receive state: %d", err);
@@ -807,7 +807,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	 * we are not already synced to the device
 	 */
 	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC &&
-	    (state_changed || state->pa_sync_state != BT_BAP_PA_STATE_SYNCED)) {
+	    state->pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
 		const int err = pa_sync_request(conn, state, pa_sync,
 						pa_interval);
 
