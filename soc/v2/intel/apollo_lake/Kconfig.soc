@@ -1,0 +1,8 @@
+# Copyright (c) 2018-2024 Intel Corporation Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_APOLLO_LAKE
+	bool
+
+config SOC
+	default "apollo_lake" if SOC_APOLLO_LAKE
