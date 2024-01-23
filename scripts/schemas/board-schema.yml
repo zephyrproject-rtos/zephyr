@@ -44,13 +44,13 @@ schema;board-schema:
           enum:
             ["major.minor.patch", "letter", "number", "custom"]
         default:
-          required: true
+          required: false # This field is required when 'format' != 'custom'
           type: str
         exact:
           required: false
           type: bool
         revisions:
-          required: true
+          required: false # This field is required when 'format' != 'custom'
           type: seq
           sequence:
             - type: map
