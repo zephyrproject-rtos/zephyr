@@ -359,7 +359,7 @@ _POSIX_MESSAGE_PASSING
 
     mq_close(),yes
     mq_getattr(),yes
-    mq_notify(),
+    mq_notify(),yes
     mq_open(),yes
     mq_receive(),yes
     mq_send(),yes
