@@ -1,9 +1,0 @@
-# Copyright 2020 Broadcom
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_SERIES_VIPER
-	bool "Broadcom Viper Series"
-	select ARM
-	select SOC_FAMILY_BCMVK
-	help
-	  Enable support for Broadcom Viper Series.
