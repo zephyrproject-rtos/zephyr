@@ -806,6 +806,7 @@ int bt_br_init(void)
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
 	struct bt_hci_write_local_name *name_cp;
+	struct bt_hci_cp_write_class_of_device *cod;
 	int err;
 
 	/* Read extended local features */
@@ -865,6 +866,19 @@ int bt_br_init(void)
 		sizeof(name_cp->local_name));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	/* Set Class of device */
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(*cod));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_le24(buf, CONFIG_BT_COD);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, buf, NULL);
 	if (err) {
 		return err;
 	}

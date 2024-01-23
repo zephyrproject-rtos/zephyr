@@ -1089,6 +1089,14 @@ config BT_PAGE_TIMEOUT
 	  This option sets the page timeout value. Value is selected as
 	  (N * 0.625) ms.
 
+config BT_COD
+	hex "Bluetooth Class of Device(CoD)"
+	default 0
+	help
+	  This option sets the class of device.For the list of possible values please
+	  consult the following link:
+	  https://www.bluetooth.com/specifications/assigned-numbers
+
 endif # BT_BREDR
 
 config BT_HCI_VS_EVT_USER
