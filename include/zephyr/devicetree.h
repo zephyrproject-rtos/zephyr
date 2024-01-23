@@ -356,7 +356,7 @@
  * @param node_id node identifier
  * @return a node identifier for the node's parent
  */
-#define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
+#define DT_PARENT(node_id) DT_CAT(node_id, _PARENT)
 
 /**
  * @brief Get a node identifier for a grandparent node
@@ -3087,7 +3087,7 @@
  */
 #define DT_FOREACH_STATUS_OKAY(compat, fn)				\
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			\
-		    (UTIL_CAT(DT_FOREACH_OKAY_, compat)(fn)),	\
+		    (DT_CAT(DT_FOREACH_OKAY_, compat)(fn)),	\
 		    ())
 
 /**
@@ -3136,7 +3136,7 @@
  */
 #define DT_FOREACH_STATUS_OKAY_VARGS(compat, fn, ...)			\
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			\
-		    (UTIL_CAT(DT_FOREACH_OKAY_VARGS_,			\
+		    (DT_CAT(DT_FOREACH_OKAY_VARGS_,			\
 			      compat)(fn, __VA_ARGS__)),		\
 		    ())
 
@@ -4107,7 +4107,7 @@
  *         0 otherwise
  */
 #define DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(compat, bus) \
-	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
+	IS_ENABLED(DT_CAT4(DT_COMPAT_, compat, _BUS_, bus))
 
 /**
  * @brief Test if any `DT_DRV_COMPAT` node is on a bus of a given type
