@@ -34,6 +34,11 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 	return 0;
 }
 
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
+{
+	(*rwlock)->status = pshared;
+}
+
 /**
  * @brief Destroy read-write lock object.
  *
