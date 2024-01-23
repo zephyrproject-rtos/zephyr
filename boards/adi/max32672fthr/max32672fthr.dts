@@ -133,3 +133,7 @@
 		inversion-on;
 	};
 };
+
+&dma0 {
+	status = "okay";
+};
