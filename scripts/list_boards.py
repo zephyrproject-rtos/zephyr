@@ -197,6 +197,15 @@ def find_v2_boards(args):
                         # Not the board we're looking for, ignore.
                         continue
 
+                board_revision = board.get('revision')
+                if board_revision is not None and board_revision.get('format') != 'custom':
+                    if board_revision.get('default') is None:
+                        sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
+                                 "Cannot find required key 'default'. Path: '/board/revision.'")
+                    if board_revision.get('revisions') is None:
+                        sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
+                                 "Cannot find required key 'revisions'. Path: '/board/revision.'")
+
                 mutual_exclusive = {'socs', 'variants'}
                 if len(mutual_exclusive - board.keys()) < 1:
                     sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
