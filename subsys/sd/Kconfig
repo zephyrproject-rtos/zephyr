@@ -80,6 +80,12 @@ config SD_BUFFER_SIZE
 	  Size in bytes of internal buffer SD card uses for unaligned reads and
 	  internal data reads during initialization
 
+config SD_CMD_RETRIES
+	int "Number of times to retry sending command to card"
+	default 0
+	help
+	  Number of times to retry sending command to SD card in case of failure
+
 config SD_DATA_RETRIES
 	int "Number of times to retry sending data to card"
 	default 3
