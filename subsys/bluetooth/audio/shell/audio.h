@@ -197,6 +197,202 @@ static void print_ltv_array(const struct shell *sh, const char *str, const uint8
 	bt_audio_data_parse(ltv_data, ltv_data_len, print_ltv_elem, &ltv_info);
 }
 
+static inline char *context_bit_to_str(enum bt_audio_context context)
+{
+	switch (context) {
+	case BT_AUDIO_CONTEXT_TYPE_PROHIBITED:
+		return "Prohibited";
+	case BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED:
+		return "Unspecified";
+	case BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL:
+		return "Converstation";
+	case BT_AUDIO_CONTEXT_TYPE_MEDIA:
+		return "Media";
+	case BT_AUDIO_CONTEXT_TYPE_GAME:
+		return "Game";
+	case BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL:
+		return "Instructional";
+	case BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS:
+		return "Voice assistant";
+	case BT_AUDIO_CONTEXT_TYPE_LIVE:
+		return "Live";
+	case BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS:
+		return "Sound effects";
+	case BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS:
+		return "Notifications";
+	case BT_AUDIO_CONTEXT_TYPE_RINGTONE:
+		return "Ringtone";
+	case BT_AUDIO_CONTEXT_TYPE_ALERTS:
+		return "Alerts";
+	case BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM:
+		return "Emergency alarm";
+	default:
+		return "Unknown context";
+	}
+}
+
+static inline void print_codec_meta_pref_context(const struct shell *sh,
+						 enum bt_audio_context context)
+{
+	shell_print(sh, "\tPreferred audio contexts:");
+
+	/* There can be up to 16 bits set in the field */
+	for (size_t i = 0U; i < 16; i++) {
+		const uint16_t bit_val = BIT(i);
+
+		if (context & bit_val) {
+			shell_print(sh, "\t\t%s (0x%04X)", context_bit_to_str(bit_val), bit_val);
+		}
+	}
+}
+
+static inline void print_codec_meta_stream_context(const struct shell *sh,
+						   enum bt_audio_context context)
+{
+	shell_print(sh, "\tStreaming audio contexts:");
+
+	/* There can be up to 16 bits set in the field */
+	for (size_t i = 0U; i < 16; i++) {
+		const uint16_t bit_val = BIT(i);
+
+		if (context & bit_val) {
+			shell_print(sh, "\t\t%s (0x%04X)", context_bit_to_str(bit_val), bit_val);
+		}
+	}
+}
+
+static inline void print_codec_meta_program_info(const struct shell *sh,
+						 const uint8_t *program_info,
+						 uint8_t program_info_len)
+{
+	shell_fprintf(sh, SHELL_NORMAL, "\tProgram info:\n\t\t");
+
+	for (uint8_t i = 0U; i < program_info_len; i++) {
+		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)program_info[i]);
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+}
+
+static inline void print_codec_meta_language(const struct shell *sh, uint32_t stream_lang)
+{
+	uint8_t lang_array[3];
+
+	sys_put_be24(stream_lang, lang_array);
+
+	shell_print(sh, "\tLanguage: %c%c%c", (char)lang_array[0], (char)lang_array[1],
+		    (char)lang_array[2]);
+}
+
+static inline void print_codec_meta_ccid_list(const struct shell *sh, const uint8_t *ccid_list,
+					      uint8_t ccid_list_len)
+{
+	shell_print(sh, "\tCCID list:\n");
+
+	/* There can be up to 16 bits set in the field */
+	for (uint8_t i = 0U; i < ccid_list_len; i++) {
+
+		shell_print(sh, "\t\t0x%02X ", ccid_list[i]);
+	}
+}
+
+static inline char *parental_rating_to_str(enum bt_audio_parental_rating parental_rating)
+{
+	switch (parental_rating) {
+	case BT_AUDIO_PARENTAL_RATING_NO_RATING:
+		return "No rating";
+	case BT_AUDIO_PARENTAL_RATING_AGE_ANY:
+		return "Any";
+	case BT_AUDIO_PARENTAL_RATING_AGE_5_OR_ABOVE:
+		return "Age 5 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_6_OR_ABOVE:
+		return "Age 6 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_7_OR_ABOVE:
+		return "Age 7 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_8_OR_ABOVE:
+		return "Age 8 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_9_OR_ABOVE:
+		return "Age 9 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_10_OR_ABOVE:
+		return "Age 10 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_11_OR_ABOVE:
+		return "Age 11 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_12_OR_ABOVE:
+		return "Age 12 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_13_OR_ABOVE:
+		return "Age 13 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_14_OR_ABOVE:
+		return "Age 14 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_15_OR_ABOVE:
+		return "Age 15 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_16_OR_ABOVE:
+		return "Age 16 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_17_OR_ABOVE:
+		return "Age 17 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_18_OR_ABOVE:
+		return "Age 18 or above";
+	default:
+		return "Unknown rating";
+	}
+}
+
+static inline void print_codec_meta_parental_rating(const struct shell *sh,
+						    enum bt_audio_parental_rating parental_rating)
+{
+	shell_print(sh, "\tRating: %s (0x%02X)", parental_rating_to_str(parental_rating),
+		    (uint8_t)parental_rating);
+}
+
+static inline void print_codec_meta_program_info_uri(const struct shell *sh,
+						     const uint8_t *program_info_uri,
+						     uint8_t program_info_uri_len)
+{
+	shell_fprintf(sh, SHELL_NORMAL, "\tProgram info URI:\n\t\t");
+
+	for (uint8_t i = 0U; i < program_info_uri_len; i++) {
+		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)program_info_uri[i]);
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+}
+
+static inline void print_codec_meta_audio_active_state(const struct shell *sh,
+						       enum bt_audio_active_state state)
+{
+	shell_print(sh, "\tAudio active state: %s (0x%02X)",
+		    state == BT_AUDIO_ACTIVE_STATE_ENABLED ? "enabled" : "disabled",
+		    (uint8_t)state);
+}
+
+static inline void print_codec_meta_bcast_audio_immediate_rend_flag(const struct shell *sh)
+{
+	shell_print(sh, "\tBroadcast audio immediate rendering flag set");
+}
+
+static inline void print_codec_meta_extended(const struct shell *sh, const uint8_t *extended_meta,
+					     size_t extended_meta_len)
+{
+	shell_fprintf(sh, SHELL_NORMAL, "\tExtended metadata:\n\t\t");
+
+	for (uint8_t i = 0U; i < extended_meta_len; i++) {
+		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)extended_meta[i]);
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+}
+
+static inline void print_codec_meta_vendor(const struct shell *sh, const uint8_t *vendor_meta,
+					   size_t vender_meta_len)
+{
+	shell_fprintf(sh, SHELL_NORMAL, "\tVender metadata:\n\t\t");
+
+	for (uint8_t i = 0U; i < vender_meta_len; i++) {
+		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)vendor_meta[i]);
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+}
+
 static inline char *codec_cap_freq_bit_to_str(enum bt_audio_codec_cap_freq freq)
 {
 	switch (freq) {
@@ -335,7 +531,10 @@ static inline void print_codec_cap(const struct shell *sh,
 		    codec_cap->vid);
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
-	if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
+	shell_print(sh, "Codec specific capabilities:");
+	if (codec_cap->data_len == 0U) {
+		shell_print(sh, "\tNone");
+	} else if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
 		struct bt_audio_codec_octets_per_codec_frame codec_frame;
 		int ret;
 
@@ -369,7 +568,63 @@ static inline void print_codec_cap(const struct shell *sh,
 #endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
-	print_ltv_array(sh, "meta", codec_cap->meta, codec_cap->meta_len);
+	shell_print(sh, "Codec specific metadata:");
+	if (codec_cap->meta_len == 0U) {
+		shell_print(sh, "\tNone");
+	} else {
+		const uint8_t *data;
+		int ret;
+
+		ret = bt_audio_codec_cap_meta_get_pref_context(codec_cap);
+		if (ret >= 0) {
+			print_codec_meta_pref_context(sh, (enum bt_audio_context)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_stream_context(codec_cap);
+		if (ret >= 0) {
+			print_codec_meta_stream_context(sh, (enum bt_audio_context)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_program_info(codec_cap, &data);
+		if (ret >= 0) {
+			print_codec_meta_program_info(sh, data, (uint8_t)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_stream_lang(codec_cap);
+		if (ret >= 0) {
+			print_codec_meta_language(sh, (uint32_t)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_ccid_list(codec_cap, &data);
+		if (ret >= 0) {
+			print_codec_meta_ccid_list(sh, data, (uint8_t)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_parental_rating(codec_cap);
+		if (ret >= 0) {
+			print_codec_meta_parental_rating(sh, (enum bt_audio_parental_rating)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_audio_active_state(codec_cap);
+		if (ret >= 0) {
+			print_codec_meta_audio_active_state(sh, (enum bt_audio_active_state)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_bcast_audio_immediate_rend_flag(codec_cap);
+		if (ret >= 0) {
+			print_codec_meta_bcast_audio_immediate_rend_flag(sh);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_extended(codec_cap, &data);
+		if (ret >= 0) {
+			print_codec_meta_extended(sh, data, (uint8_t)ret);
+		}
+
+		ret = bt_audio_codec_cap_meta_get_vendor(codec_cap, &data);
+		if (ret >= 0) {
+			print_codec_meta_vendor(sh, data, (uint8_t)ret);
+		}
+	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0 */
 }
 
@@ -486,7 +741,10 @@ static inline void print_codec_cfg(const struct shell *sh,
 		    codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+	shell_print(sh, "Codec specific configuration:");
+	if (codec_cfg->data_len == 0U) {
+		shell_print(sh, "\tNone");
+	} else if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		enum bt_audio_location chan_allocation;
 		int ret;
 
@@ -520,7 +778,63 @@ static inline void print_codec_cfg(const struct shell *sh,
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
-	print_ltv_array(sh, "meta", codec_cfg->meta, codec_cfg->meta_len);
+	shell_print(sh, "Codec specific metadata:");
+	if (codec_cfg->meta_len == 0U) {
+		shell_print(sh, "\tNone");
+	} else {
+		const uint8_t *data;
+		int ret;
+
+		ret = bt_audio_codec_cfg_meta_get_pref_context(codec_cfg);
+		if (ret >= 0) {
+			print_codec_meta_pref_context(sh, (enum bt_audio_context)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_stream_context(codec_cfg);
+		if (ret >= 0) {
+			print_codec_meta_stream_context(sh, (enum bt_audio_context)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_program_info(codec_cfg, &data);
+		if (ret >= 0) {
+			print_codec_meta_program_info(sh, data, (uint8_t)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_stream_lang(codec_cfg);
+		if (ret >= 0) {
+			print_codec_meta_language(sh, (uint32_t)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_ccid_list(codec_cfg, &data);
+		if (ret >= 0) {
+			print_codec_meta_ccid_list(sh, data, (uint8_t)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_parental_rating(codec_cfg);
+		if (ret >= 0) {
+			print_codec_meta_parental_rating(sh, (enum bt_audio_parental_rating)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_audio_active_state(codec_cfg);
+		if (ret >= 0) {
+			print_codec_meta_audio_active_state(sh, (enum bt_audio_active_state)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_bcast_audio_immediate_rend_flag(codec_cfg);
+		if (ret >= 0) {
+			print_codec_meta_bcast_audio_immediate_rend_flag(sh);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_extended(codec_cfg, &data);
+		if (ret >= 0) {
+			print_codec_meta_extended(sh, data, (uint8_t)ret);
+		}
+
+		ret = bt_audio_codec_cfg_meta_get_vendor(codec_cfg, &data);
+		if (ret >= 0) {
+			print_codec_meta_vendor(sh, data, (uint8_t)ret);
+		}
+	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 }
 
@@ -546,7 +860,15 @@ static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_
 	shell_print(ctx_shell, "\t\tBIS index: 0x%02X", bis->index);
 	/* Print CC data */
 	if (codec_id->id == BT_HCI_CODING_FORMAT_LC3) {
-		print_ltv_array(ctx_shell, "\t\tdata", bis->data, bis->data_len);
+		struct bt_audio_codec_cfg codec_cfg;
+		int err;
+
+		err = bt_bap_base_subgroup_bis_codec_to_codec_cfg(bis, &codec_cfg);
+		if (err == 0) {
+			print_codec_cfg(ctx_shell, &codec_cfg);
+		} else {
+			print_ltv_array(ctx_shell, "\t\tdata", bis->data, bis->data_len);
+		}
 	} else { /* If not LC3, we cannot assume it's LTV */
 		shell_hexdump(ctx_shell, bis->data, bis->data_len);
 	}
@@ -558,6 +880,7 @@ static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *sub
 					  void *user_data)
 {
 	struct bt_bap_base_codec_id codec_id;
+	struct bt_audio_codec_cfg codec_cfg;
 	uint8_t *data;
 	int ret;
 
@@ -577,23 +900,28 @@ static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *sub
 		return false;
 	}
 
-	/* Print CC data */
-	if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
-		print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
-	} else { /* If not LC3, we cannot assume it's LTV */
-		shell_hexdump(ctx_shell, data, (uint8_t)ret);
-	}
+	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
+	if (ret == 0) {
+		print_codec_cfg(ctx_shell, &codec_cfg);
+	} else {
+		/* Print CC data */
+		if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
+			print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
+		} else { /* If not LC3, we cannot assume it's LTV */
+			shell_hexdump(ctx_shell, data, (uint8_t)ret);
+		}
 
-	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
-	if (ret < 0) {
-		return false;
-	}
+		ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
+		if (ret < 0) {
+			return false;
+		}
 
-	/* Print metadata */
-	if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
-		print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
-	} else { /* If not LC3, we cannot assume it's LTV */
-		shell_hexdump(ctx_shell, data, (uint8_t)ret);
+		/* Print metadata */
+		if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
+			print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
+		} else { /* If not LC3, we cannot assume it's LTV */
+			shell_hexdump(ctx_shell, data, (uint8_t)ret);
+		}
 	}
 
 	ret = bt_bap_base_subgroup_foreach_bis(subgroup, print_base_subgroup_bis_cb, &codec_id);
