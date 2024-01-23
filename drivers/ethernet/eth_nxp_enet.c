@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/dt-bindings/ethernet/nxp_enet.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
+#include <zephyr/drivers/ptp_clock.h>
 #if defined(CONFIG_NET_DSA)
 #include <zephyr/net/dsa.h>
 #endif
@@ -351,7 +352,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint32_t frame_length = 0U;
 	struct net_if *iface;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
 	status_t status;
 	uint32_t ts;
 
@@ -420,7 +421,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	if (eth_get_ptp_data(get_iface(data, vlan_tag), pkt)) {
 		struct net_ptp_time ptp_time;
 
-		ptp_clock_nxp_enet_get(config->ptp_clock, &ptp_time);
+		ptp_clock_get(config->ptp_clock, &ptp_time);
 
 		/* If latest timestamp reloads after getting from Rx BD,
 		 * then second - 1 to make sure the actual Rx timestamp is accurate
@@ -453,7 +454,9 @@ flush:
 					0, RING_ID, NULL);
 	__ASSERT_NO_MSG(status == kStatus_Success);
 error:
-	net_pkt_unref(pkt);
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
 	eth_stats_update_errors_rx(get_iface(data, vlan_tag));
 	return -EIO;
 }
