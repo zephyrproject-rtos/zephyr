@@ -899,35 +899,38 @@ static int nrf5_configure(const struct device *dev,
 		uint8_t ext_addr_le[EXTENDED_ADDRESS_SIZE];
 		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
 		uint8_t element_id;
+		bool valid_vendor_specific_ie = false;
 
 		if (config->ack_ie.short_addr == IEEE802154_BROADCAST_ADDRESS ||
 		    config->ack_ie.ext_addr == NULL) {
 			return -ENOTSUP;
 		}
 
-		element_id = ieee802154_header_ie_get_element_id(config->ack_ie.header_ie);
-
-		if (element_id != IEEE802154_HEADER_IE_ELEMENT_ID_CSL_IE &&
-		    (!IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) ||
-		     element_id != IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE)) {
-			return -ENOTSUP;
-		}
-
-#if defined(CONFIG_NET_L2_OPENTHREAD)
-		uint8_t vendor_oui_le[IEEE802154_OPENTHREAD_VENDOR_OUI_LEN] =
-			IEEE802154_OPENTHREAD_THREAD_IE_VENDOR_OUI;
-
-		if (element_id == IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE &&
-		    memcmp(config->ack_ie.header_ie->content.vendor_specific.vendor_oui,
-			   vendor_oui_le, sizeof(vendor_oui_le))) {
-			return -ENOTSUP;
-		}
-#endif
-
 		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
 		sys_memcpy_swap(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
 
-		if (config->ack_ie.header_ie && config->ack_ie.header_ie->length > 0) {
+		if (config->ack_ie.header_ie == NULL || config->ack_ie.header_ie->length == 0) {
+			nrf_802154_ack_data_clear(short_addr_le, false, NRF_802154_ACK_DATA_IE);
+			nrf_802154_ack_data_clear(ext_addr_le, true, NRF_802154_ACK_DATA_IE);
+		} else {
+			element_id = ieee802154_header_ie_get_element_id(config->ack_ie.header_ie);
+
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+			uint8_t vendor_oui_le[IEEE802154_OPENTHREAD_VENDOR_OUI_LEN] =
+				IEEE802154_OPENTHREAD_THREAD_IE_VENDOR_OUI;
+
+			if (element_id == IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE &&
+			    memcmp(config->ack_ie.header_ie->content.vendor_specific.vendor_oui,
+				   vendor_oui_le, sizeof(vendor_oui_le)) == 0) {
+				valid_vendor_specific_ie = true;
+			}
+#endif
+
+			if (element_id != IEEE802154_HEADER_IE_ELEMENT_ID_CSL_IE &&
+			    !valid_vendor_specific_ie) {
+				return -ENOTSUP;
+			}
+
 			nrf_802154_ack_data_set(short_addr_le, false, config->ack_ie.header_ie,
 						config->ack_ie.header_ie->length +
 							IEEE802154_HEADER_IE_HEADER_LENGTH,
@@ -936,9 +939,6 @@ static int nrf5_configure(const struct device *dev,
 						config->ack_ie.header_ie->length +
 							IEEE802154_HEADER_IE_HEADER_LENGTH,
 						NRF_802154_ACK_DATA_IE);
-		} else {
-			nrf_802154_ack_data_clear(short_addr_le, false, NRF_802154_ACK_DATA_IE);
-			nrf_802154_ack_data_clear(ext_addr_le, true, NRF_802154_ACK_DATA_IE);
 		}
 	} break;
 
