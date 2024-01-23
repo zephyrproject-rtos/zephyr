@@ -81,6 +81,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_PACKET_FILTER,
 	/** Set or get Wi-Fi channel for Monitor or TX-Injection mode */
 	NET_REQUEST_WIFI_CMD_CHANNEL,
+	/** Disconnect a STA from AP */
+	NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -157,6 +159,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PACKET_FILTER);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CHANNEL)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL);
+
+#define NET_REQUEST_WIFI_AP_STA_DISCONNECT			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT);
 
 /** Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -735,6 +742,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_disable)(const struct device *dev);
+	/** Disconnect a STA from AP
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param mac MAC address of the STA to disconnect
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*ap_sta_disconnect)(const struct device *dev, const uint8_t *mac);
 	/** Get interface status
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
