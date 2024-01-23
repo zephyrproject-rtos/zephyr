@@ -1,0 +1,16 @@
+# Nordic Semiconductor nRF54H MCU line
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF54HX
+	bool "Nordic Semiconductor nRF54H series MCU"
+	select ARM
+	select ARMV8_M_DSP
+	select CPU_CORTEX_M33
+	select SOC_FAMILY_NRF
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	help
+	  Enable support for nRF54H MCU series
