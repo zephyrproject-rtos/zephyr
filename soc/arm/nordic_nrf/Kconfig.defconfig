@@ -11,7 +11,7 @@ source "soc/arm/nordic_nrf/*/Kconfig.defconfig.series"
 if SYS_CLOCK_EXISTS
 
 config CLOCK_CONTROL
-	default y
+	default y if !SOC_SERIES_NRF54HX
 
 endif # SYS_CLOCK_EXISTS
 
