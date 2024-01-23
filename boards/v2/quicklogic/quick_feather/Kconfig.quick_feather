@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QUICK_FEATHER
-	bool "QuickLogic Quick Feather target"
-	depends on SOC_EOS_S3
+	select SOC_EOS_S3
