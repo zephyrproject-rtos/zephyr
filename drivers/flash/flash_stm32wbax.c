@@ -109,7 +109,7 @@ static int write_qword(const struct device *dev, off_t offset, const uint32_t *b
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	volatile uint32_t *flash = (uint32_t *)(offset
-						+ CONFIG_FLASH_BASE_ADDRESS);
+						+ FLASH_STM32_BASE_ADDRESS);
 	uint32_t tmp;
 	int rc;
 
