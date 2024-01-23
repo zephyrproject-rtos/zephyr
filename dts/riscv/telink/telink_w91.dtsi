@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Telink Semiconductor
+ * Copyright (c) 2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,12 @@
 			reg = <0xe6000000 0x10000>;
 			interrupts = <7 0>;
 			interrupt-parent = <&plic0>;
+		};
+
+		mbox: mbox@e6400000 {
+			compatible = "telink,mbox-ipc-w91";
+			#mbox-cells = <1>;
+			reg = <0xe6400000 0x4000000>;
 		};
 
 		flash_mspi: flash-controller@A3FFFF00 {

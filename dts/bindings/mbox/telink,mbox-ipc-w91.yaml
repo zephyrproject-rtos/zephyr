@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Telink Semiconductor (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink W91 IPC (MBOX Interprocessor Communication)
+
+compatible: "telink,mbox-ipc-w91"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+mbox-cells:
+  - channel

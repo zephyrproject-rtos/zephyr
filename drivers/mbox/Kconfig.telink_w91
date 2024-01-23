@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_TELINK_W91_IPC
+	bool "Telink W91 Message Receive Unit (MRU) driver"
+	default y
+	depends on DT_HAS_TELINK_MBOX_IPC_W91_ENABLED
+	help
+		Driver for Telink W91 Message Receive Unit (MRU).
