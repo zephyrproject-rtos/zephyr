@@ -1350,7 +1350,7 @@ uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
  * | IE_VENDOR_THREAD_ACK_PROBING_ID | LINK_METRIC_TOKEN | LINK_METRIC_TOKEN|
  * |---------------------------------|-------------------|------------------|
  */
-static uint8_t set_vendor_ie_header_lm(bool lqi, bool link_margin, bool rssi, uint8_t *ie_header)
+static void set_vendor_ie_header_lm(bool lqi, bool link_margin, bool rssi, uint8_t *ie_header)
 {
 	/* Vendor-specific IE identifier */
 	const uint8_t ie_vendor_id = 0x00;
@@ -1364,7 +1364,6 @@ static uint8_t set_vendor_ie_header_lm(bool lqi, bool link_margin, bool rssi, ui
 	const uint8_t ie_vendor_thread_margin_token = 0x02;
 	/* Thread Vendor-specific ACK Probing IE LQI value placeholder */
 	const uint8_t ie_vendor_thread_lqi_token = 0x03;
-	const uint8_t ie_header_size = 2;
 	const uint8_t oui_size = 3;
 	const uint8_t sub_type = 1;
 	const uint8_t id_offset = 7;
@@ -1382,7 +1381,8 @@ static uint8_t set_vendor_ie_header_lm(bool lqi, bool link_margin, bool rssi, ui
 	__ASSERT(ie_header, "Invalid argument");
 
 	if (link_metrics_data_len == 0) {
-		return 0;
+		ie_header[0] = 0;
+		return;
 	}
 
 	/* Set Element ID */
@@ -1417,8 +1417,6 @@ static uint8_t set_vendor_ie_header_lm(bool lqi, bool link_margin, bool rssi, ui
 	if (rssi) {
 		ie_header[link_metrics_idx++] = ie_vendor_thread_rssi_token;
 	}
-
-	return ie_header_size + content_len;
 }
 
 otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics aLinkMetrics,
@@ -1430,13 +1428,12 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 		.ack_ie.ext_addr = aExtAddress->m8,
 	};
 	uint8_t header_ie_buf[OT_ACK_IE_MAX_SIZE];
-	uint16_t header_ie_len;
 	int result;
 
 	ARG_UNUSED(aInstance);
 
-	header_ie_len = set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
-						aLinkMetrics.mRssi, header_ie_buf);
+	set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
+				aLinkMetrics.mRssi, header_ie_buf);
 	config.ack_ie.header_ie = (struct ieee802154_header_ie *)header_ie_buf;
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
