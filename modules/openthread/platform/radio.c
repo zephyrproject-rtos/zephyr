@@ -1296,6 +1296,22 @@ otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShort
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
 
+otError otPlatRadioResetCsl(otInstance *aInstance)
+{
+	struct ieee802154_config config = { 0 };
+	int result;
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_PERIOD, &config);
+	if (result) {
+		return OT_ERROR_FAILED;
+	}
+
+	config.ack_ie.purge_ie = true;
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+
 void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTime)
 {
 	ARG_UNUSED(aInstance);
