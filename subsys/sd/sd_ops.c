@@ -260,7 +260,7 @@ static int sdmmc_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t rca, u
 int sdmmc_read_csd(struct sd_card *card)
 {
 	int ret;
-	uint32_t csd[4] = {0};
+	uint32_t csd[4];
 	/* Keep CSD on stack for reduced RAM usage */
 	struct sd_csd card_csd = {0};
 
@@ -283,7 +283,7 @@ int sdmmc_read_csd(struct sd_card *card)
 /* Reads card identification register, and decodes it */
 int card_read_cid(struct sd_card *card)
 {
-	uint32_t cid[4] = {0};
+	uint32_t cid[4];
 	int ret;
 #if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
 	/* Keep CID on stack for reduced RAM usage */
