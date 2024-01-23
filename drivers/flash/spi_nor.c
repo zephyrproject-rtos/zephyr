@@ -402,10 +402,19 @@ static int spi_nor_wait_until_ready(const struct device *dev)
 	int ret;
 	uint8_t reg;
 
-	do {
-		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
-	} while (!ret && (reg & SPI_NOR_WIP_BIT));
+	ARG_UNUSED(poll_delay);
 
+	while (true) {
+		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
+		/* Exit on error or no longer WIP */
+		if (ret || !(reg & SPI_NOR_WIP_BIT)) {
+			break;
+		}
+#ifdef CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
+		/* Don't monopolise the CPU while waiting for ready */
+		k_sleep(K_TICKS(1));
+#endif /* CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY */
+	}
 	return ret;
 }
 

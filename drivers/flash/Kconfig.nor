@@ -55,6 +55,16 @@ config SPI_NOR_CS_WAIT_DELAY
 	help
 	  This is the wait delay (in us) to allow for CS switching to take effect
 
+config SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
+	bool "Sleep while waiting for flash operations to complete"
+	default y
+	help
+	  Flash operations can take anywhere from 1ms to 240 seconds to
+	  complete. Enabling this option adds a delay between polls on the
+	  status register for slow operations. Disabling this option can
+	  result in significant flash savings if this driver is the only user
+	  of "k_sleep". This can be the case when building as a bootloader.
+
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
 	default 65536
