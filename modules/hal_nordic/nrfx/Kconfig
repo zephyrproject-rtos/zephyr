@@ -422,6 +422,41 @@ config NRFX_TIMER4
 	depends on $(dt_nodelabel_has_compat,timer4,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
+config NRFX_TIMER00
+	bool "TIMER00 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer00,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER10
+	bool "TIMER10 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer10,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER20
+	bool "TIMER20 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer20,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER21
+	bool "TIMER21 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer21,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER22
+	bool "TIMER22 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer22,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER23
+	bool "TIMER23 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer23,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER24
+	bool "TIMER24 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer24,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
 config NRFX_TWI
 	bool
 
@@ -575,6 +610,31 @@ config NRFX_UARTE2
 config NRFX_UARTE3
 	bool "UARTE3 driver instance"
 	depends on $(dt_nodelabel_has_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE00
+	bool "UARTE00 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart00,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE20
+	bool "UARTE20 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart20,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE21
+	bool "UARTE21 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart21,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE22
+	bool "UARTE22 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart22,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE30
+	bool "UARTE30 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart30,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
 
 config NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG
