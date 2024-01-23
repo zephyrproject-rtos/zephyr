@@ -1361,6 +1361,28 @@ static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
+				      char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	uint8_t mac[6];
+	int ret;
+
+	if (net_bytes_from_str(mac, sizeof(mac), argv[1]) < 0) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid MAC address\n");
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_AP_STA_DISCONNECT, iface, mac, sizeof(mac));
+	if (ret) {
+		shell_fprintf(sh, SHELL_WARNING, "AP station disconnect failed: %s\n",
+			      strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "AP station disconnect requested\n");
+	return 0;
+}
 
 static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			       char *argv[])
@@ -1849,6 +1871,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "List stations connected to the AP",
 		  cmd_wifi_ap_stations,
 		  1, 0),
+	SHELL_CMD_ARG(disconnect, NULL,
+		  "Disconnect a station from the AP\n"
+		  "<MAC address of the station>\n",
+		  cmd_wifi_ap_sta_disconnect,
+		  2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
