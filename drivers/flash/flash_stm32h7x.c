@@ -307,7 +307,7 @@ static int write_ndwords(const struct device *dev,
 			 uint8_t n)
 {
 	volatile uint64_t *flash = (uint64_t *)(offset
-						+ CONFIG_FLASH_BASE_ADDRESS);
+						+ FLASH_STM32_BASE_ADDRESS);
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
@@ -451,7 +451,7 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 		return; /* Cache not enabled */
 	}
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(CONFIG_FLASH_BASE_ADDRESS
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS
 						  + offset), len);
 }
 #endif /* CONFIG_CPU_CORTEX_M7 */
@@ -574,7 +574,7 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 
-	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *) FLASH_STM32_BASE_ADDRESS + offset, len);
 
 	__set_FAULTMASK(0);
 	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
