@@ -12,8 +12,14 @@
 #include "memc_mcux_flexspi.h"
 #define FLEXSPI_DEV DEVICE_DT_GET(DT_PARENT(DT_ALIAS(sram_ext)))
 #define MEMC_PORT DT_REG_ADDR(DT_ALIAS(sram_ext))
-#define MEMC_BASE memc_flexspi_get_ahb_address(FLEXSPI_DEV, MEMC_PORT, 0)
+#define MEMC_BASE ((void *)memc_flexspi_get_ahb_address(FLEXSPI_DEV, MEMC_PORT, 0))
 #define MEMC_SIZE (DT_PROP(DT_ALIAS(sram_ext), size) / 8)
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_smartbond_nor_psram)
+#include <da1469x_config.h>
+#define MEMC_BASE ((void *)MCU_QSPIR_M_BASE)
+#define MEMC_SIZE (DT_PROP(DT_ALIAS(sram_ext), dev_size) / 8)
+#else
+#error At least one driver should be selected!
 #endif
 
 void dump_memory(uint8_t *p, uint32_t size)
