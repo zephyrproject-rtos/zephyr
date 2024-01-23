@@ -1,0 +1,4 @@
+board:
+  name: up_squared_pro_7000
+  socs:
+    - name: alder_lake
