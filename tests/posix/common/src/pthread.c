@@ -10,6 +10,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#define DETACH_THR_ID 2
+
 #define N_THR_E 3
 #define N_THR_T 4
 #define BOUNCES 64
@@ -202,7 +204,7 @@ static void *thread_top_term(void *p1)
 		zassert_false(ret, "Unable to set cancel state!");
 	}
 
-	if (id >= 2) {
+	if (id >= DETACH_THR_ID) {
 		zassert_ok(pthread_detach(self), "failed to set detach state");
 		zassert_equal(pthread_detach(self), EINVAL, "re-detached thread!");
 	}
@@ -355,7 +357,9 @@ ZTEST(pthread, test_pthread_termination)
 	zassert_equal(ret, EINVAL, "invalid cancel state set!");
 
 	for (i = 0; i < N_THR_T; i++) {
-		pthread_join(newthread[i], &retval);
+		if (i < DETACH_THR_ID) {
+			zassert_ok(pthread_join(newthread[i], &retval));
+		}
 	}
 
 	/* TESTPOINT: Test for deadlock */
@@ -363,7 +367,7 @@ ZTEST(pthread, test_pthread_termination)
 	zassert_equal(ret, EDEADLK, "thread joined with self inexplicably!");
 
 	/* TESTPOINT: Try canceling a terminated thread */
-	ret = pthread_cancel(newthread[N_THR_T/2]);
+	ret = pthread_cancel(newthread[0]);
 	zassert_equal(ret, ESRCH, "cancelled a terminated thread!");
 }
 
