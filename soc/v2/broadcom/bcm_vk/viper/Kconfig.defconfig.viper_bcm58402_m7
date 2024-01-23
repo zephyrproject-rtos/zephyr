@@ -3,9 +3,6 @@
 
 if SOC_BCM58402_M7
 
-config SOC
-	default "bcm58402_m7"
-
 config NUM_IRQS
 	int
 	default 240

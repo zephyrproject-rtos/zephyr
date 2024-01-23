@@ -3,4 +3,8 @@
 # Copyright 2020 Broadcom.
 #
 
-source "soc/arm64/bcm_vk/*/Kconfig.series"
+if SOC_FAMILY_BCMVK
+
+rsource "*/Kconfig"
+
+endif
