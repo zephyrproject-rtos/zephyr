@@ -935,4 +935,39 @@ out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
 	return ret;
 }
+
+int supplicant_ap_sta_disconnect(const struct device *dev,
+				 const uint8_t *mac_addr)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (!mac_addr) {
+		ret = -EINVAL;
+		wpa_printf(MSG_ERROR, "Invalid MAC address");
+		goto out;
+	}
+
+	if (!wpa_cli_cmd_v("disassociate %02x:%02x:%02x:%02x:%02x:%02x",
+			   mac_addr[0], mac_addr[1], mac_addr[2],
+			   mac_addr[3], mac_addr[4], mac_addr[5])) {
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
 #endif /* CONFIG_AP */
