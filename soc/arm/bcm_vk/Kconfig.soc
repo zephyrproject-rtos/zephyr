@@ -1,6 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-#
-# Copyright 2020 Broadcom.
-#
-
-source "soc/arm/bcm_vk/*/Kconfig.series"

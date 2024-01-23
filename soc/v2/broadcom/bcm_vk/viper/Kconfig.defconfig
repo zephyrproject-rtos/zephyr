@@ -3,9 +3,6 @@
 
 if SOC_SERIES_VIPER
 
-config SOC_SERIES
-	default "viper"
-
-source "soc/arm64/bcm_vk/viper/Kconfig.defconfig.viper*"
+rsource "Kconfig.defconfig.viper*"
 
 endif # SOC_SERIES_VIPER

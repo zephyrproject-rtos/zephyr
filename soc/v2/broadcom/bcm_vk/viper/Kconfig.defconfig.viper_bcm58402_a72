@@ -3,9 +3,6 @@
 
 if SOC_BCM58402_A72
 
-config SOC
-	default "bcm58402_a72"
-
 config NUM_IRQS
 	int
 	default 260

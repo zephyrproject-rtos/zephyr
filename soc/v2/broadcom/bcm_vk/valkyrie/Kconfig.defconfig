@@ -5,9 +5,6 @@
 
 if SOC_SERIES_VALKYRIE
 
-config SOC_SERIES
-	default "valkyrie"
-
 config NUM_IRQS
 	int
 	default 240
@@ -15,7 +12,5 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 500000000
-
-source "soc/arm/bcm_vk/valkyrie/Kconfig.defconfig.valkyrie*"
 
 endif # SOC_SERIES_VALKYRIE
