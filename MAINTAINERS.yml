@@ -300,6 +300,15 @@ Binary Descriptors:
   tests:
     - bindesc
 
+Black Magic Probe Runner:
+  status: maintained
+  maintainers:
+    - fabiobaltieri
+  files:
+    - boards/common/blackmagicprobe.board.cmake
+    - scripts/west_commands/runners/blackmagicprobe.py
+    - scripts/west_commands/tests/test_blackmagicprobe.py
+
 Bluetooth:
   status: maintained
   maintainers:
