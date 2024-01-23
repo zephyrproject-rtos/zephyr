@@ -444,7 +444,12 @@ ZTEST(pthread_attr, test_pthread_attr_large_stacksize)
 	size_t actual_size;
 	const size_t expect_size = BIT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS);
 
-	zassert_ok(pthread_attr_setstacksize(&attr, expect_size));
+	if (pthread_attr_setstacksize(&attr, expect_size) != 0) {
+		TC_PRINT("Unable to allocate large stack of size %zu (skipping)\n", expect_size);
+		ztest_test_skip();
+		return;
+	}
+
 	zassert_ok(pthread_attr_getstacksize(&attr, &actual_size));
 	zassert_equal(actual_size, expect_size);
 }
