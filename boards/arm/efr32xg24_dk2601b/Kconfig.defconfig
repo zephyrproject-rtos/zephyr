@@ -40,11 +40,12 @@ choice BT_HCI_BUS_TYPE
 	default BT_SILABS_HCI
 endchoice
 
-if BT_SHELL
-	config SHELL_STACK_SIZE
-		default 4096
+if SHELL
 
-endif # BT_SHELL
+config SHELL_STACK_SIZE
+	default 4096
+	
+endif # SHELL
 
 endif # BT
 
