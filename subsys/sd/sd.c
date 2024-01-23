@@ -27,6 +27,7 @@ static inline int sd_idle(struct sd_card *card)
 	cmd.opcode = SD_GO_IDLE_STATE;
 	cmd.arg = 0x0;
 	cmd.response_type = (SD_RSP_TYPE_NONE | SD_SPI_RSP_TYPE_R1);
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
@@ -41,6 +42,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 	cmd.opcode = SD_SEND_IF_COND;
 	cmd.arg = SD_IF_COND_VHS_3V3 | SD_IF_COND_CHECK;
 	cmd.response_type = (SD_RSP_TYPE_R7 | SD_SPI_RSP_TYPE_R7);
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 	if (ret) {
@@ -77,6 +79,7 @@ static int sd_enable_crc(struct sd_card *card)
 	cmd.opcode = SD_SPI_CRC_ON_OFF;
 	cmd.arg = 0x1; /* Enable CRC */
 	cmd.response_type = SD_SPI_RSP_TYPE_R1;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }

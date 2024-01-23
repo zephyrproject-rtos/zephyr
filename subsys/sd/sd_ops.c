@@ -27,6 +27,7 @@ int sdmmc_read_status(struct sd_card *card)
 		cmd.arg = (card->relative_addr << 16U);
 	}
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R2);
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
@@ -211,6 +212,7 @@ static int sdmmc_spi_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t *c
 	cmd.opcode = opcode;
 	cmd.arg = 0;
 	cmd.response_type = SD_SPI_RSP_TYPE_R1;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
 	/* CID/CSD is 16 bytes */
@@ -239,6 +241,7 @@ static int sdmmc_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t rca, u
 	cmd.opcode = opcode;
 	cmd.arg = (rca << 16);
 	cmd.response_type = SD_RSP_TYPE_R2;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
@@ -332,6 +335,7 @@ int sdmmc_switch_voltage(struct sd_card *card)
 	cmd.opcode = SD_VOL_SWITCH;
 	cmd.arg = 0U;
 	cmd.response_type = SD_RSP_TYPE_R1;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 	if (ret) {
@@ -410,6 +414,7 @@ int sdmmc_request_rca(struct sd_card *card)
 	cmd.opcode = SD_SEND_RELATIVE_ADDR;
 	cmd.arg = 0;
 	cmd.response_type = SD_RSP_TYPE_R6;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	/* Issue CMD3 until card responds with nonzero RCA */
 	do {
@@ -436,6 +441,7 @@ int sdmmc_select_card(struct sd_card *card)
 	cmd.opcode = SD_SELECT_CARD;
 	cmd.arg = ((card->relative_addr) << 16U);
 	cmd.response_type = SD_RSP_TYPE_R1;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
@@ -460,6 +466,7 @@ int card_app_command(struct sd_card *card, int relative_card_address)
 	cmd.opcode = SD_APP_CMD;
 	cmd.arg = relative_card_address << 16U;
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 	if (ret) {
@@ -505,8 +512,8 @@ static int card_read(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 		cmd.arg = start_block;
 	}
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
-	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	cmd.retries = CONFIG_SD_DATA_RETRIES;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
 	data.block_addr = start_block;
 	data.block_size = card->block_size;
@@ -617,6 +624,7 @@ static int card_query_written(struct sd_card *card, uint32_t *num_written)
 	cmd.opcode = SD_APP_SEND_NUM_WRITTEN_BLK;
 	cmd.arg = 0;
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
 	data.block_size = 4U;
@@ -660,8 +668,8 @@ static int card_write(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 		cmd.arg = start_block;
 	}
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
-	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	cmd.retries = CONFIG_SD_DATA_RETRIES;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
 	data.block_addr = start_block;
 	data.block_size = card->block_size;
