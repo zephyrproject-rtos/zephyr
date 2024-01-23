@@ -3,9 +3,5 @@
 # Copyright (c) 2022 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_QOMU
-
-config BOARD
-	default "qomu"
-
-endif # BOARD_QOMU
+config BOARD_QOMU
+	select SOC_EOS_S3
