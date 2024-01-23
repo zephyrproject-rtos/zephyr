@@ -253,6 +253,11 @@ int posix_to_zephyr_priority(int priority, int policy)
 	return POSIX_TO_ZEPHYR_PRIORITY(priority, policy);
 }
 
+static bool __attr_is_initialized(const struct posix_thread_attr *attr)
+{
+	return attr != NULL && attr->initialized;
+}
+
 /**
  * @brief Set scheduling parameter attributes in thread attributes object.
  *
@@ -262,7 +267,7 @@ int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if (attr == NULL || !attr->initialized || schedparam == NULL ||
+	if (!__attr_is_initialized(attr) || schedparam == NULL ||
 	    !is_posix_policy_prio_valid(schedparam->sched_priority, attr->schedpolicy)) {
 		LOG_ERR("Invalid pthread_attr_t or sched_param");
 		return EINVAL;
@@ -286,7 +291,8 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 		return EACCES;
 	}
 
-	if (stacksize == 0 || stacksize < PTHREAD_STACK_MIN || stacksize > PTHREAD_STACK_MAX) {
+	if (!__attr_is_initialized(attr) || stacksize < PTHREAD_STACK_MIN ||
+	    stacksize > PTHREAD_STACK_MAX) {
 		LOG_ERR("Invalid stacksize %zu", stacksize);
 		return EINVAL;
 	}
@@ -298,15 +304,22 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 
 static bool pthread_attr_is_valid(const struct posix_thread_attr *attr)
 {
+	size_t stacksize;
+
 	/* auto-alloc thread stack */
 	if (attr == NULL) {
 		return true;
 	}
 
-	/* caller-provided thread stack */
-	if (!attr->initialized || attr->stack == NULL || attr->stacksize == 0 ||
-	    __get_attr_stacksize(attr) < PTHREAD_STACK_MIN) {
-		LOG_ERR("pthread_attr_t is not initialized, has a NULL stack, or invalid size");
+	if (!__attr_is_initialized(attr) || attr->stack == NULL) {
+		LOG_DBG("attr %p is not initialized", attr);
+		return false;
+	}
+
+	stacksize = __get_attr_stacksize(attr);
+	if (stacksize < PTHREAD_STACK_MIN) {
+		LOG_DBG("attr %p has stacksize %zu is smaller than PTHREAD_STACK_MIN (%zu)", attr,
+			stacksize, (size_t)PTHREAD_STACK_MIN);
 		return false;
 	}
 
@@ -888,7 +901,7 @@ int pthread_attr_getdetachstate(const pthread_attr_t *_attr, int *detachstate)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false) || (detachstate == NULL)) {
+	if (!__attr_is_initialized(attr) || (detachstate == NULL)) {
 		return EINVAL;
 	}
 
@@ -905,9 +918,8 @@ int pthread_attr_setdetachstate(pthread_attr_t *_attr, int detachstate)
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false) ||
-	    ((detachstate != PTHREAD_CREATE_DETACHED) &&
-	     (detachstate != PTHREAD_CREATE_JOINABLE))) {
+	if (!__attr_is_initialized(attr) || ((detachstate != PTHREAD_CREATE_DETACHED) &&
+					     (detachstate != PTHREAD_CREATE_JOINABLE))) {
 		return EINVAL;
 	}
 
@@ -924,7 +936,7 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *_attr, int *policy)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == 0U) || (policy == NULL)) {
+	if (!__attr_is_initialized(attr) || (policy == NULL)) {
 		return EINVAL;
 	}
 
@@ -941,7 +953,7 @@ int pthread_attr_setschedpolicy(pthread_attr_t *_attr, int policy)
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == 0U) || !valid_posix_policy(policy)) {
+	if (!__attr_is_initialized(attr) || !valid_posix_policy(policy)) {
 		return EINVAL;
 	}
 
@@ -958,7 +970,7 @@ int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false) || (stacksize == NULL)) {
+	if (!__attr_is_initialized(attr) || (stacksize == NULL)) {
 		return EINVAL;
 	}
 
@@ -973,13 +985,11 @@ int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
  */
 int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 {
+	int ret;
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == 0U)) {
-		return EINVAL;
-	}
-
-	if (stacksize == 0 || stacksize < PTHREAD_STACK_MIN || stacksize > PTHREAD_STACK_MAX) {
+	if (!__attr_is_initialized(attr) || stacksize < PTHREAD_STACK_MIN ||
+	    stacksize > PTHREAD_STACK_MAX) {
 		return EINVAL;
 	}
 
@@ -996,8 +1006,7 @@ int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t 
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false) || (stackaddr == NULL) ||
-	    (stacksize == NULL)) {
+	if (!__attr_is_initialized(attr) || (stackaddr == NULL) || (stacksize == NULL)) {
 		return EINVAL;
 	}
 
@@ -1010,7 +1019,7 @@ int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT _attr, size_t *ZRE
 {
 	struct posix_thread_attr *const attr = (struct posix_thread_attr *)_attr;
 
-	if (attr == NULL || guardsize == NULL || !attr->initialized) {
+	if (!__attr_is_initialized(attr) || guardsize == NULL) {
 		return EINVAL;
 	}
 
@@ -1023,7 +1032,7 @@ int pthread_attr_setguardsize(pthread_attr_t *_attr, size_t guardsize)
 {
 	struct posix_thread_attr *const attr = (struct posix_thread_attr *)_attr;
 
-	if (attr == NULL || !attr->initialized || guardsize > PTHREAD_GUARD_MAX) {
+	if (!__attr_is_initialized(attr) || guardsize > PTHREAD_GUARD_MAX) {
 		return EINVAL;
 	}
 
@@ -1041,7 +1050,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *_attr, struct sched_param *
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false) || (schedparam == NULL)) {
+	if (!__attr_is_initialized(attr) || (schedparam == NULL)) {
 		return EINVAL;
 	}
 
@@ -1058,12 +1067,11 @@ int pthread_attr_destroy(pthread_attr_t *_attr)
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if ((attr != NULL) && (attr->initialized != 0U)) {
-		attr->initialized = false;
-		return 0;
+	if (!__attr_is_initialized(attr)) {
+		return EINVAL;
 	}
 
-	return EINVAL;
+	return 0;
 }
 
 int pthread_setname_np(pthread_t thread, const char *name)
