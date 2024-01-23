@@ -111,6 +111,7 @@ struct core_state {
 	uint32_t excsave3;
 	uint32_t thread_ptr;
 	uint32_t intenable;
+	uint32_t ps;
 	uint32_t bctl;
 };
 
@@ -127,6 +128,7 @@ struct lpsram_header {
 
 static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 {
+	core_desc[core_id].ps = XTENSA_RSR("PS");
 	core_desc[core_id].vecbase = XTENSA_RSR("VECBASE");
 	core_desc[core_id].excsave2 = XTENSA_RSR("EXCSAVE2");
 	core_desc[core_id].excsave3 = XTENSA_RSR("EXCSAVE3");
@@ -140,6 +142,7 @@ static ALWAYS_INLINE void _restore_core_context(void)
 {
 	uint32_t core_id = arch_proc_id();
 
+	XTENSA_WSR("PS", core_desc[core_id].ps);
 	XTENSA_WSR("VECBASE", core_desc[core_id].vecbase);
 	XTENSA_WSR("EXCSAVE2", core_desc[core_id].excsave2);
 	XTENSA_WSR("EXCSAVE3", core_desc[core_id].excsave3);
@@ -404,6 +407,11 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	}
 
 	z_xt_ints_on(core_desc[cpu].intenable);
+
+	/* We don't have the key used to lock interruptions here.
+	 * Just set PS.INTLEVEL to 0.
+	 */
+	__asm__ volatile ("rsil a2, 0");
 }
 
 #endif /* CONFIG_PM */
