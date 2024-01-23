@@ -257,10 +257,10 @@
   - "subsys/zbus/**/*"
 
 "CI-pmic-samples-test":
-  - "/samples/shields/npm1300_ek/**/*"
-  - "/boards/shields/npm1300_ek/**/*"
+  - "samples/shields/npm1300_ek/**/*"
+  - "boards/shields/npm1300_ek/**/*"
   - "**/**npm1300**/**"
-  - "/drivers/regulator/regulator_common.c"
-  - "/drivers/regulator/regulator_shell.c"
-  - "/drivers/gpio/gpio_shell.c"
-  - "/drivers/sensor/sensor_shell.c"
+  - "drivers/regulator/regulator_common.c"
+  - "drivers/regulator/regulator_shell.c"
+  - "drivers/gpio/gpio_shell.c"
+  - "drivers/sensor/sensor_shell.c"
