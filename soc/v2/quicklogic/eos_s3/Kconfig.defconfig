@@ -3,9 +3,6 @@
 
 if SOC_EOS_S3
 
-config SOC
-	default "quicklogic_eos_s3"
-
 config NUM_IRQS
 	default 52
 
