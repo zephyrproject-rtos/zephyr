@@ -1,0 +1,5 @@
+board:
+  name: quick_feather
+  vendor: QuickLogic
+  socs:
+  - name: quicklogic_eos_s3
