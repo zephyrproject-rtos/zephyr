@@ -1,12 +1,5 @@
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
-
-if BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP || BOARD_UP_SQUARED_PRO_7000
-
-config BOARD
-	default "intel_adl_crb" if BOARD_INTEL_ADL_CRB
-	default "intel_adl_rvp" if BOARD_INTEL_ADL_RVP
-	default "up_squared_pro_7000" if BOARD_UP_SQUARED_PRO_7000
 
 config BUILD_OUTPUT_STRIPPED
 	default y
@@ -56,4 +49,5 @@ endif
 config UART_NS16550_INTEL_LPSS_DMA
 	default y
 
-endif # BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP || BOARD_UP_SQUARED_PRO_7000
+config HAS_COVERAGE_SUPPORT
+	default y
