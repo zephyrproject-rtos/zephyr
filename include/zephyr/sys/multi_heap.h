@@ -58,7 +58,7 @@ struct sys_multi_heap_rec {
 };
 
 struct sys_multi_heap {
-	int nheaps;
+	unsigned int nheaps;
 	sys_multi_heap_fn_t choice;
 	struct sys_multi_heap_rec heaps[MAX_MULTI_HEAPS];
 };
