@@ -915,9 +915,11 @@ ZTEST_USER(can_classic, test_filters_preserved_through_mode_change)
 
 	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
 	zassert_equal(err, 0, "failed to set normal mode (err %d)", err);
+	zassert_equal(CAN_MODE_NORMAL, can_get_mode(can_dev));
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+	zassert_equal(CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -1121,6 +1123,7 @@ void *can_classic_setup(void)
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback mode (err %d)", err);
+	zassert_equal(CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);

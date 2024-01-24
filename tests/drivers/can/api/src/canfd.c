@@ -286,6 +286,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 	err = can_set_mode(can_dev, first | CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set first loopback mode (err %d)", err);
+	zassert_equal(first | CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -318,6 +319,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 	err = can_set_mode(can_dev, second | CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set second loopback mode (err %d)", err);
+	zassert_equal(second | CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -346,6 +348,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 	err = can_set_mode(can_dev, CAN_MODE_FD | CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+	zassert_equal(CAN_MODE_FD | CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -433,6 +436,7 @@ void *canfd_setup(void)
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
 	zassert_equal(err, 0, "failed to set CAN FD loopback mode (err %d)", err);
+	zassert_equal(CAN_MODE_LOOPBACK | CAN_MODE_FD, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
