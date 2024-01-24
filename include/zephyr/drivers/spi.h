@@ -389,9 +389,8 @@ struct spi_dt_spec {
  * data from the devicetree.
  *
  * Important: multiple fields are automatically constructed by this macro
- * which must be checked before use. @ref spi_is_ready performs the required
+ * which must be checked before use. @ref spi_is_ready_dt performs the required
  * @ref device_is_ready checks.
- * @deprecated Use @ref spi_is_ready_dt instead.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_dt_spec to create an initializer for
@@ -681,29 +680,6 @@ static inline bool spi_cs_is_gpio(const struct spi_config *config)
 static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec *spec)
 {
 	return spi_cs_is_gpio(&spec->config);
-}
-
-/**
- * @brief Validate that SPI bus is ready.
- *
- * @param spec SPI specification from devicetree
- *
- * @retval true if the SPI bus is ready for use.
- * @retval false if the SPI bus is not ready for use.
- */
-__deprecated
-static inline bool spi_is_ready(const struct spi_dt_spec *spec)
-{
-	/* Validate bus is ready */
-	if (!device_is_ready(spec->bus)) {
-		return false;
-	}
-	/* Validate CS gpio port is ready, if it is used */
-	if (spi_cs_is_gpio_dt(spec) &&
-	    !gpio_is_ready_dt(&spec->config.cs.gpio)) {
-		return false;
-	}
-	return true;
 }
 
 /**

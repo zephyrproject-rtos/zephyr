@@ -60,6 +60,10 @@ Deprecated in this release
    Application developer will now need to set the advertised name themselves by updating the advertising data
    or the scan response data.
 
+ * SPI
+
+  * Deprecated :c:func:`spi_is_ready` API function has been removed.
+
 Architectures
 *************
 
