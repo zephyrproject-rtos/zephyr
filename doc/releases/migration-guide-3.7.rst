@@ -301,6 +301,20 @@ Input
 Interrupt Controller
 ====================
 
+* The static auto-generation of the multilevel interrupt controller lookup table has been
+  deprecated, and will be compiled only when the new compatibility Kconfig:
+  :kconfig:option:`CONFIG_LEGACY_MULTI_LEVEL_TABLE_GENERATION` is enabled, which will eventually
+  be removed in the coming releases.
+
+  Multi-level interrupt controller drivers should be updated to use the newly created
+  ``IRQ_PARENT_ENTRY_DEFINE`` macro to register itself with the new multi-level interrupt
+  architecture. To make the macro easier to use, ``INTC_INST_ISR_TBL_OFFSET`` macro is made to
+  deduce the software ISR table offset for a given driver instance, for pseudo interrupt controller
+  child, use the ``INTC_CHILD_ISR_TBL_OFFSET`` macro instead. New devicetree macros
+  (``DT_INTC_GET_AGGREGATOR_LEVEL`` & ``DT_INST_INTC_GET_AGGREGATOR_LEVEL``) have been added
+  for an interrupt controller driver instance to pass its aggregator level into the
+  ``IRQ_PARENT_ENTRY_DEFINE`` macro.
+
 LED Strip
 =========
 
