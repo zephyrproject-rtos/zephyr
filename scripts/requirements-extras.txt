@@ -32,4 +32,4 @@ PyGithub
 graphviz
 
 # used to generate CBOR encoders and decoders, e.g. lwm2m_senml_cbor.
-zcbor>=0.6.0
+zcbor>=0.8.0
