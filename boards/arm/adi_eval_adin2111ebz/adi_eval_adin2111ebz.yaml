@@ -1,0 +1,15 @@
+identifier: adi_eval_adin2111ebz
+name: ADI EVAL-ADIN2111EBZ evaulation board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 640
+flash: 2048
+supported:
+  - gpio
+  - spi
+  - watchdog
+vendor: adi
