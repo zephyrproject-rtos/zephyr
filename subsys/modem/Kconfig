@@ -54,6 +54,21 @@ config MODEM_PPP_NET_BUF_FRAG_SIZE
 
 endif
 
+config MODEM_UBX
+	bool "Modem U-BLOX module"
+	select RING_BUFFER
+	select MODEM_PIPE
+	help
+	  Enable Modem U-BLOX module.
+
+if MODEM_UBX
+
+config MODEM_UBX_LOG_BUFFER
+	int "Modem U-BLOX log buffer size"
+	default 128
+
+endif
+
 module = MODEM_MODULES
 module-str = modem_modules
 source "subsys/logging/Kconfig.template.log_config"
