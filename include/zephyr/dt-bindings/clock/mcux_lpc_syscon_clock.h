@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023, NXP
+ * Copyright 2020-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,5 +58,12 @@
 #define MCUX_FLEXSPI2_CLK		37
 
 #define MCUX_MRT_CLK			40
+
+#define MCUX_PORT0_CLK			41
+#define MCUX_PORT1_CLK			42
+#define MCUX_PORT2_CLK			43
+#define MCUX_PORT3_CLK			44
+#define MCUX_PORT4_CLK			45
+#define MCUX_PORT5_CLK			46
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

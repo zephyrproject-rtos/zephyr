@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-23, NXP
+ * Copyright 2020-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,28 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 	}
 #endif /* defined(CONFIG_COUNTER_NXP_MRT) */
+
+#if defined(CONFIG_PINCTRL_NXP_KINETIS)
+	switch ((uint32_t)sub_system) {
+	case MCUX_PORT0_CLK:
+		CLOCK_EnableClock(kCLOCK_Port0);
+		break;
+	case MCUX_PORT1_CLK:
+		CLOCK_EnableClock(kCLOCK_Port1);
+		break;
+	case MCUX_PORT2_CLK:
+		CLOCK_EnableClock(kCLOCK_Port2);
+		break;
+	case MCUX_PORT3_CLK:
+		CLOCK_EnableClock(kCLOCK_Port3);
+		break;
+	case MCUX_PORT4_CLK:
+		CLOCK_EnableClock(kCLOCK_Port4);
+		break;
+	default:
+		break;
+	}
+#endif /* defined(CONFIG_PINCTRL_NXP_KINETIS) */
 
 	return 0;
 }
@@ -109,15 +131,55 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	case MCUX_HS_SPI1_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(16);
 		break;
+#elif defined(CONFIG_NXP_LP_FLEXCOMM)
+	case MCUX_FLEXCOMM0_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(0);
+		break;
+	case MCUX_FLEXCOMM1_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(1);
+		break;
+	case MCUX_FLEXCOMM2_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(2);
+		break;
+	case MCUX_FLEXCOMM3_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(3);
+		break;
+	case MCUX_FLEXCOMM4_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(4);
+		break;
+	case MCUX_FLEXCOMM5_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(5);
+		break;
+	case MCUX_FLEXCOMM6_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(6);
+		break;
+	case MCUX_FLEXCOMM7_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(7);
+		break;
+	case MCUX_FLEXCOMM8_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(8);
+		break;
+	case MCUX_FLEXCOMM9_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(9);
+		break;
+
 #endif
 
 #if (defined(FSL_FEATURE_SOC_USDHC_COUNT) && FSL_FEATURE_SOC_USDHC_COUNT)
+
+#if CONFIG_SOC_FAMILY_NXP_MCX
+	case MCUX_USDHC1_CLK:
+		*rate = CLOCK_GetUsdhcClkFreq();
+		break;
+#else
 	case MCUX_USDHC1_CLK:
 		*rate = CLOCK_GetSdioClkFreq(0);
 		break;
 	case MCUX_USDHC2_CLK:
 		*rate = CLOCK_GetSdioClkFreq(1);
 		break;
+#endif
+
 #endif
 
 #if (defined(FSL_FEATURE_SOC_SDIF_COUNT) && \
