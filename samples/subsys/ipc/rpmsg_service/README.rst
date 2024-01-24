@@ -11,7 +11,9 @@ RPMsg Service is an abstraction created over OpenAMP that makes initialization
 and endpoints creation process easier.
 This application demonstrates how to use RPMsg Service in Zephyr. It is designed
 to demonstrate how to integrate RPMsg Service with Zephyr both from a build
-perspective and code.
+perspective and code. Note that the remote and primary image core images can be
+flashed independently, but sysbuild must be used in order to flash them in one
+step.
 
 Building the application for nrf5340dk_nrf5340_cpuapp
 *****************************************************
