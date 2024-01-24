@@ -1971,6 +1971,7 @@ static int mcux_i3c_init(const struct device *dev)
 	struct mcux_i3c_data *data = dev->data;
 	I3C_Type *base = config->base;
 	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
+	i3c_master_config_t ctrl_config_hal;
 	int ret = 0;
 
 	ret = i3c_addr_slots_init(dev);
@@ -1989,6 +1990,17 @@ static int mcux_i3c_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 	k_condvar_init(&data->condvar);
+
+	I3C_MasterGetDefaultConfig(&ctrl_config_hal);
+
+	/* Set default SCL clock rate (in Hz) */
+	if (ctrl_config->scl.i2c == 0U) {
+		ctrl_config->scl.i2c = ctrl_config_hal.baudRate_Hz.i2cBaud;
+	}
+
+	if (ctrl_config->scl.i3c == 0U) {
+		ctrl_config->scl.i3c = ctrl_config_hal.baudRate_Hz.i3cPushPullBaud;
+	}
 
 	/* Currently can only act as primary controller. */
 	ctrl_config->is_secondary = false;
