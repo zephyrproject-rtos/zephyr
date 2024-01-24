@@ -1,7 +1,7 @@
 # Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config UART_RA
+config UART_RENESAS_RA
 	bool "Renesas RA Series UART Driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_UART_SCI_ENABLED
