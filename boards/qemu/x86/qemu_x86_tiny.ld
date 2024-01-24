@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 #include <zephyr/sys/util.h>

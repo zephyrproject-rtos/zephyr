@@ -151,7 +151,7 @@ void uart_mux_enable(const struct device *dev);
 }
 #endif
 
-#include <syscalls/uart_mux.h>
+#include <zephyr/syscalls/uart_mux.h>
 
 /**
  * @}

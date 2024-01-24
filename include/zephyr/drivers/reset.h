@@ -384,6 +384,6 @@ static inline int reset_line_toggle_dt(const struct reset_dt_spec *spec)
 }
 #endif
 
-#include <syscalls/reset.h>
+#include <zephyr/syscalls/reset.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RESET_H_ */

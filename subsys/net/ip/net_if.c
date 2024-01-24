@@ -166,7 +166,7 @@ struct net_if *z_vrfy_net_if_get_by_index(int index)
 	return iface;
 }
 
-#include <syscalls/net_if_get_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_get_by_index_mrsh.c>
 #endif
 
 static inline void net_context_send_cb(struct net_context *context,
@@ -1646,7 +1646,7 @@ static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
 
 	return z_impl_net_if_ipv6_addr_lookup_by_index(&addr_v6);
 }
-#include <syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
 #endif
 
 /* To be called when interface comes up so that all the non-joined multicast
@@ -2007,7 +2007,7 @@ bool z_vrfy_net_if_ipv6_addr_add_by_index(int index,
 						    vlifetime);
 }
 
-#include <syscalls/net_if_ipv6_addr_add_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv6_addr_add_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 bool z_impl_net_if_ipv6_addr_rm_by_index(int index,
@@ -2040,7 +2040,7 @@ bool z_vrfy_net_if_ipv6_addr_rm_by_index(int index,
 	return z_impl_net_if_ipv6_addr_rm_by_index(index, &addr_v6);
 }
 
-#include <syscalls/net_if_ipv6_addr_rm_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv6_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void net_if_ipv6_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
@@ -3844,7 +3844,7 @@ static inline int z_vrfy_net_if_ipv4_addr_lookup_by_index(
 
 	return z_impl_net_if_ipv4_addr_lookup_by_index(&addr_v4);
 }
-#include <syscalls/net_if_ipv4_addr_lookup_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv4_addr_lookup_by_index_mrsh.c>
 #endif
 
 struct in_addr net_if_ipv4_get_netmask_by_addr(struct net_if *iface,
@@ -4056,7 +4056,7 @@ bool z_vrfy_net_if_ipv4_set_netmask_by_index(int index,
 	return z_impl_net_if_ipv4_set_netmask_by_index(index, &netmask_addr);
 }
 
-#include <syscalls/net_if_ipv4_set_netmask_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv4_set_netmask_by_index_mrsh.c>
 
 bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 						     const struct in_addr *addr,
@@ -4080,7 +4080,7 @@ bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 							       &netmask_addr);
 }
 
-#include <syscalls/net_if_ipv4_set_netmask_by_addr_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv4_set_netmask_by_addr_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw)
@@ -4132,7 +4132,7 @@ bool z_vrfy_net_if_ipv4_set_gw_by_index(int index,
 	return z_impl_net_if_ipv4_set_gw_by_index(index, &gw_addr);
 }
 
-#include <syscalls/net_if_ipv4_set_gw_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv4_set_gw_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
@@ -4295,7 +4295,7 @@ bool z_vrfy_net_if_ipv4_addr_add_by_index(int index,
 						    vlifetime);
 }
 
-#include <syscalls/net_if_ipv4_addr_add_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv4_addr_add_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 bool z_impl_net_if_ipv4_addr_rm_by_index(int index,
@@ -4328,7 +4328,7 @@ bool z_vrfy_net_if_ipv4_addr_rm_by_index(int index,
 	return (uint32_t)z_impl_net_if_ipv4_addr_rm_by_index(index, &addr_v4);
 }
 
-#include <syscalls/net_if_ipv4_addr_rm_by_index_mrsh.c>
+#include <zephyr/syscalls/net_if_ipv4_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void net_if_ipv4_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,

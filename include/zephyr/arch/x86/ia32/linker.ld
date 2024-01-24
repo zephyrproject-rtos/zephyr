@@ -38,7 +38,7 @@
  */
 
 #include <zephyr/linker/linker-defs.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel/mm.h>
 

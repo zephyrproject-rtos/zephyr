@@ -17,7 +17,7 @@ static inline int z_vrfy_mbox_send(const struct device *dev,
 
 	return z_impl_mbox_send(dev, channel_id, msg);
 }
-#include <syscalls/mbox_send_mrsh.c>
+#include <zephyr/syscalls/mbox_send_mrsh.c>
 
 static inline int z_vrfy_mbox_mtu_get(const struct device *dev)
 {
@@ -25,7 +25,7 @@ static inline int z_vrfy_mbox_mtu_get(const struct device *dev)
 
 	return z_impl_mbox_mtu_get(dev);
 }
-#include <syscalls/mbox_mtu_get_mrsh.c>
+#include <zephyr/syscalls/mbox_mtu_get_mrsh.c>
 
 static inline uint32_t z_vrfy_mbox_max_channels_get(const struct device *dev)
 {
@@ -33,7 +33,7 @@ static inline uint32_t z_vrfy_mbox_max_channels_get(const struct device *dev)
 
 	return z_impl_mbox_max_channels_get(dev);
 }
-#include <syscalls/mbox_max_channels_get_mrsh.c>
+#include <zephyr/syscalls/mbox_max_channels_get_mrsh.c>
 
 static inline int z_vrfy_mbox_set_enabled(const struct device *dev,
 					  mbox_channel_id_t channel_id,
@@ -43,4 +43,4 @@ static inline int z_vrfy_mbox_set_enabled(const struct device *dev,
 
 	return z_impl_mbox_set_enabled(dev, channel_id, enabled);
 }
-#include <syscalls/mbox_set_enabled_mrsh.c>
+#include <zephyr/syscalls/mbox_set_enabled_mrsh.c>

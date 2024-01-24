@@ -94,7 +94,7 @@ const char *otype_to_str(enum k_objects otype)
 	case K_OBJ_ANY:
 		ret = "generic";
 		break;
-#include <otype-to-str.h>
+#include <zephyr/otype-to-str.h>
 	default:
 		ret = "?";
 		break;
@@ -192,7 +192,7 @@ static size_t obj_size_get(enum k_objects otype)
 	size_t ret;
 
 	switch (otype) {
-#include <otype-to-size.h>
+#include <zephyr/otype-to-size.h>
 	default:
 		ret = sizeof(const struct device);
 		break;

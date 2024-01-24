@@ -340,6 +340,6 @@ static inline int z_impl_ivshmem_enable_interrupts(const struct device *dev,
  * @}
  */
 
-#include <syscalls/ivshmem.h>
+#include <zephyr/syscalls/ivshmem.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_ */

@@ -16,4 +16,4 @@ __syscall int ext_syscall_ok(int a);
  */
 __syscall void ext_syscall_fail(void);
 
-#include <syscalls/syscalls_ext.h>
+#include <zephyr/syscalls/syscalls_ext.h>

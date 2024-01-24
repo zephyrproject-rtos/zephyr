@@ -18,5 +18,5 @@ __syscall int foo(int bar);
 }
 #endif
 
-#include <syscalls/app_api.h>
+#include <zephyr/syscalls/app_api.h>
 #endif /* _TEST_EDK_H_ */

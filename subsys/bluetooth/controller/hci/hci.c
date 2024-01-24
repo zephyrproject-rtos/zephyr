@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <version.h>
+#include <zephyr/version.h>
 #include <errno.h>
 
 #include <zephyr/sys/util.h>

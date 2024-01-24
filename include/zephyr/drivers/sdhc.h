@@ -519,5 +519,5 @@ static inline int z_impl_sdhc_disable_interrupt(const struct device *dev,
 }
 #endif
 
-#include <syscalls/sdhc.h>
+#include <zephyr/syscalls/sdhc.h>
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SDHC_H_ */

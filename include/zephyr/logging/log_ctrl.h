@@ -301,7 +301,7 @@ int log_mem_get_max_usage(uint32_t *max);
 #define LOG_PROCESS() false
 #endif
 
-#include <syscalls/log_ctrl.h>
+#include <zephyr/syscalls/log_ctrl.h>
 
 /**
  * @}

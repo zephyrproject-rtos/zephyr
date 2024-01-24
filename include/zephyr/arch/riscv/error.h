@@ -42,7 +42,7 @@ extern "C" {
 
 __syscall void user_fault(unsigned int reason);
 
-#include <syscalls/error.h>
+#include <zephyr/syscalls/error.h>
 
 #ifdef __cplusplus
 }

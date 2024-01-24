@@ -32,7 +32,7 @@ static inline int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
 {
 	return z_impl_sys_clock_hw_cycles_per_sec_runtime_get();
 }
-#include <syscalls/sys_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
+#include <zephyr/syscalls/sys_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
@@ -287,7 +287,7 @@ static inline int64_t z_vrfy_k_uptime_ticks(void)
 {
 	return z_impl_k_uptime_ticks();
 }
-#include <syscalls/k_uptime_ticks_mrsh.c>
+#include <zephyr/syscalls/k_uptime_ticks_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)

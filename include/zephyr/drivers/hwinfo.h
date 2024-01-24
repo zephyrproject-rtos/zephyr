@@ -171,6 +171,6 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported);
 }
 #endif
 
-#include <syscalls/hwinfo.h>
+#include <zephyr/syscalls/hwinfo.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HWINFO_H_ */

@@ -340,7 +340,7 @@ char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
 
 	return dst;
 }
-#include <syscalls/net_addr_ntop_mrsh.c>
+#include <zephyr/syscalls/net_addr_ntop_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_net_addr_pton(sa_family_t family, const char *src,
@@ -512,7 +512,7 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 
 	return 0;
 }
-#include <syscalls/net_addr_pton_mrsh.c>
+#include <zephyr/syscalls/net_addr_pton_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <xtensa/coreasm.h>
-#include <zsr.h>
+#include <zephyr/zsr.h>
 
 /* WINDOW OVERFLOW AND UNDERFLOW EXCEPTION VECTORS AND ALLOCA EXCEPTION
  * HANDLER

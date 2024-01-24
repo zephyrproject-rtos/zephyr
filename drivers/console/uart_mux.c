@@ -739,7 +739,7 @@ static inline const struct device *z_vrfy_uart_mux_find(int dlci_address)
 {
 	return z_impl_uart_mux_find(dlci_address);
 }
-#include <syscalls/uart_mux_find_mrsh.c>
+#include <zephyr/syscalls/uart_mux_find_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 const struct device *z_impl_uart_mux_find(int dlci_address)

@@ -12,8 +12,8 @@
 #include <kswap.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
-#include <offsets.h>
-#include <zsr.h>
+#include <zephyr/offsets.h>
+#include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
 #ifdef CONFIG_XTENSA_GEN_HANDLERS

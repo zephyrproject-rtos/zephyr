@@ -46,7 +46,7 @@ static inline void z_vrfy_stack_info_get(char **start_addr,
 
 	z_impl_stack_info_get(start_addr, size);
 }
-#include <syscalls/stack_info_get_mrsh.c>
+#include <zephyr/syscalls/stack_info_get_mrsh.c>
 
 int z_impl_check_perms(void *addr, size_t size, int write)
 {
@@ -57,7 +57,7 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 {
 	return z_impl_check_perms((void *)addr, size, write);
 }
-#include <syscalls/check_perms_mrsh.c>
+#include <zephyr/syscalls/check_perms_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /* Global data structure with object information, used by

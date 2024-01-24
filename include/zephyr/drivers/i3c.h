@@ -2132,6 +2132,6 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target);
  * @}
  */
 
-#include <syscalls/i3c.h>
+#include <zephyr/syscalls/i3c.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I3C_H_ */

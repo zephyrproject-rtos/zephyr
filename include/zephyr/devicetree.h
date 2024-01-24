@@ -16,7 +16,7 @@
 #ifndef DEVICETREE_H
 #define DEVICETREE_H
 
-#include <devicetree_generated.h>
+#include <zephyr/devicetree_generated.h>
 #include <zephyr/irq_multilevel.h>
 
 #if !defined(_LINKER) && !defined(_ASMLANGUAGE)

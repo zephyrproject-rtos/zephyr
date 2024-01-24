@@ -647,7 +647,7 @@ static inline int k_object_validation_check(struct k_object *ko,
 #define K_SYSCALL_OBJ_NEVER_INIT(ptr, type) \
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_FALSE)
 
-#include <driver-validation.h>
+#include <zephyr/driver-validation.h>
 
 #endif /* _ASMLANGUAGE */
 

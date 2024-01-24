@@ -289,10 +289,10 @@ void z_impl_z_test_1cpu_stop(void)
 
 #ifdef CONFIG_USERSPACE
 void z_vrfy_z_test_1cpu_start(void) { z_impl_z_test_1cpu_start(); }
-#include <syscalls/z_test_1cpu_start_mrsh.c>
+#include <zephyr/syscalls/z_test_1cpu_start_mrsh.c>
 
 void z_vrfy_z_test_1cpu_stop(void) { z_impl_z_test_1cpu_stop(); }
-#include <syscalls/z_test_1cpu_stop_mrsh.c>
+#include <zephyr/syscalls/z_test_1cpu_stop_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif
 
@@ -1135,13 +1135,13 @@ void z_vrfy___ztest_set_test_result(enum ztest_result new_result)
 {
 	z_impl___ztest_set_test_result(new_result);
 }
-#include <syscalls/__ztest_set_test_result_mrsh.c>
+#include <zephyr/syscalls/__ztest_set_test_result_mrsh.c>
 
 void z_vrfy___ztest_set_test_phase(enum ztest_phase new_phase)
 {
 	z_impl___ztest_set_test_phase(new_phase);
 }
-#include <syscalls/__ztest_set_test_phase_mrsh.c>
+#include <zephyr/syscalls/__ztest_set_test_phase_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void ztest_verify_all_test_suites_ran(void)

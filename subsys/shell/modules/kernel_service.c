@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <version.h>
+#include <zephyr/version.h>
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/shell/shell.h>
