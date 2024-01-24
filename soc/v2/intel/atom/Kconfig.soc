@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ATOM
+	bool
+
+config SOC
+	default "atom" if SOC_ATOM
