@@ -584,7 +584,7 @@ static int can_rcar_start(const struct device *dev)
 	}
 
 	if (config->common.phy != NULL) {
-		ret = can_transceiver_enable(config->common.phy);
+		ret = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (ret != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
 			return ret;
