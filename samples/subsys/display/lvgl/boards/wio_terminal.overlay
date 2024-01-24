@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Joel Guittet
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+
+/ {
+	lvgl_button_input {
+		compatible = "zephyr,lvgl-button-input";
+		input = <&buttons>;
+		input-codes = <INPUT_KEY_0>;
+		coordinates = <160 120>;
+	};
+
+	lvgl_keypad_input {
+		compatible = "zephyr,lvgl-keypad-input";
+		input = <&joystick>;
+		input-codes = <INPUT_KEY_ENTER INPUT_KEY_DOWN INPUT_KEY_UP INPUT_KEY_LEFT INPUT_KEY_RIGHT>;
+		lvgl-codes = <LV_KEY_ENTER LV_KEY_DOWN LV_KEY_UP LV_KEY_LEFT LV_KEY_RIGHT>;
+	};
+};
