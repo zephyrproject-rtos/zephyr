@@ -234,7 +234,7 @@ source "drivers/gpio/Kconfig.altera"
 
 source "drivers/gpio/Kconfig.bcm2711"
 
-source "drivers/gpio/Kconfig.ra"
+source "drivers/gpio/Kconfig.renesas_ra"
 
 source "drivers/gpio/Kconfig.rzt2m"
 
