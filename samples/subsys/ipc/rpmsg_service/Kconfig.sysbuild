@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Arm Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config RPMSG_REMOTE_BOARD
+string
+	default "nrf5340dk_nrf5340_cpunet" if $(BOARD) = "nrf5340dk_nrf5340_cpuapp"
+	default "bl5340_dvk_cpunet" if $(BOARD) = "bl5340_dvk_cpuapp"
+	default "lpcxpresso54114_m0" if $(BOARD) = "lpcxpresso54114_m4"
+	default "mps2_an521_remote" if $(BOARD) = "mps2_an521"
+	default "v2m_musca_b1_ns" if $(BOARD) = "v2m_musca_b1"
+	default "esp32_devkitc_wroom_appcpu" if $(BOARD) = "esp32_devkitc_wroom"
+	default "esp32_devkitc_wrover_appcpu" if $(BOARD) = "esp32_devkitc_wrover"
+	default "esp32s3_devkitm_appcpu" if $(BOARD) = "esp32s3_devkitm"
