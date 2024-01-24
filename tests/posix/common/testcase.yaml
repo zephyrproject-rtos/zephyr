@@ -97,3 +97,10 @@ tests:
       - CONFIG_THREAD_STACK_INFO=y
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=5
       - CONFIG_HEAP_MEM_POOL_SIZE=16384
+  portability.posix.common.static_stack:
+    integration_platforms:
+      - qemu_x86
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=n
+      - CONFIG_THREAD_STACK_INFO=n
