@@ -19,7 +19,7 @@ Hardware
 
 General information about the board can be found at the `EHL`_ website.
 
-.. include:: ../../../../soc/x86/elkhart_lake/doc/supported_features.txt
+.. include:: ../../../../../soc/v2/intel/elkhart_lake/doc/supported_features.txt
 
 
 Connections and IOs
@@ -61,7 +61,7 @@ Booting the Elkhart Lake CRB Board using UEFI
 Booting the Elkhart Lake CRB Board over network
 ===============================================
 
-.. include:: ../../common/net_boot.rst
+.. include:: ../../../../../boards/x86/common/net_boot.rst
    :start-after: start_include_here
 
 .. note::
