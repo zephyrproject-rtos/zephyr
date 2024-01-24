@@ -167,7 +167,7 @@
 /drivers/adc/*ads114s0x*                  @benediktibk
 /drivers/adc/*max11102_17*                @benediktibk
 /drivers/adc/*kb1200*                     @ene-steven
-/drivers/adc/adc_ad5592.c                 @bbilas
+/drivers/adc/adc_ad559x.c                 @bbilas
 /drivers/audio/*nrfx*                     @anangl
 /drivers/auxdisplay/*pt6314*              @xingrz
 /drivers/auxdisplay/*                      @thedjnK
@@ -192,7 +192,7 @@
 /drivers/display/*rm68200*                @mmahadevan108
 /drivers/display/display_ili9342c.*       @extremegtx
 /drivers/dac/*ad56xx*                     @benediktibk
-/drivers/dac/dac_ad5592.c                 @bbilas
+/drivers/dac/dac_ad559x.c                 @bbilas
 /drivers/dai/                             @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/                       @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/ssp/                   @kv2019i @marcinszkudlinski @abonislawski
@@ -244,7 +244,7 @@
 /drivers/gpio/*pcal64xxa*                 @benediktibk
 /drivers/gpio/*kb1200*                    @ene-steven
 /drivers/gpio/gpio_altera_pio.c           @shilinte
-/drivers/gpio/gpio_ad5592.c               @bbilas
+/drivers/gpio/gpio_ad559x.c               @bbilas
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
 /drivers/i2c/i2c_ite_enhance.c            @GTLin08
@@ -284,7 +284,7 @@
 /drivers/kscan/*ft5336*                   @MaureenHelm
 /drivers/kscan/*ht16k33*                  @henrikbrixandersen
 /drivers/led_strip/                       @mbolivar-ampere
-/drivers/mfd/mfd_ad5592.c                 @bbilas
+/drivers/mfd/mfd_ad559x.c                 @bbilas
 /drivers/mfd/mfd_max20335.c               @bbilas
 /drivers/misc/ft8xx/                      @hubertmis
 /drivers/modem/hl7800.c                   @rerickson1
