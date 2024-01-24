@@ -15,3 +15,23 @@ config GNSS_QUECTEL_LCX6G
 	select GNSS_NMEA0183_MATCH
 	help
 	  Enable quectel LCX6G series GNSS modem driver.
+
+if GNSS_QUECTEL_LCX6G
+
+config GNSS_QUECTEL_LCX6G_UART_RX_BUF_SIZE
+	int "Size of UART backend receive buffer"
+	default 256
+
+config GNSS_QUECTEL_LCX6G_UART_TX_BUF_SIZE
+	int "Size of UART backend transmit buffer"
+	default 64
+
+if GNSS_SATELLITES
+
+config GNSS_QUECTEL_LCX6G_SAT_ARRAY_SIZE
+	int "Size of GNSS satellites array"
+	default 24
+
+endif # GNSS_SATELLITES
+
+endif # GNSS_QUECTEL_LCX6G
