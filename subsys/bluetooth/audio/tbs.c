@@ -1590,8 +1590,8 @@ static void tbs_inst_init(struct service_inst *inst, const struct bt_gatt_attr *
 	LOG_DBG("inst %p index 0x%02x provider_name %s", inst, inst_index(inst), provider_name);
 
 	inst->ccid = bt_ccid_get_value();
-	(void)strcpy(inst->provider_name, provider_name);
-	(void)strcpy(inst->uci, CONFIG_BT_TBS_UCI);
+	(void)utf8_lcpy(inst->provider_name, provider_name, sizeof(inst->provider_name));
+	(void)utf8_lcpy(inst->uci, CONFIG_BT_TBS_UCI, sizeof(inst->uci));
 	inst->optional_opcodes = CONFIG_BT_TBS_SUPPORTED_FEATURES;
 	inst->technology = CONFIG_BT_TBS_TECHNOLOGY;
 	inst->signal_strength_interval = CONFIG_BT_TBS_SIGNAL_STRENGTH_INTERVAL;
@@ -1612,7 +1612,8 @@ static void tbs_service_inst_init(struct tbs_service_inst *inst, struct bt_gatt_
 {
 	tbs_inst_init(&inst->inst, service->attrs, service->attr_count,
 		      CONFIG_BT_TBS_PROVIDER_NAME);
-	(void)strcpy(inst->uri_scheme_list, CONFIG_BT_TBS_URI_SCHEMES_LIST);
+	(void)utf8_lcpy(inst->uri_scheme_list, CONFIG_BT_TBS_URI_SCHEMES_LIST,
+			sizeof(inst->uri_scheme_list));
 }
 
 static int bt_tbs_init(void)
@@ -1889,10 +1890,10 @@ static void tbs_inst_remote_incoming(struct service_inst *inst, const char *to, 
 	remote_uri_ind_len = strlen(from) + 1;
 
 	inst->in_call.call_index = call->index;
-	(void)strcpy(inst->in_call.uri, from);
+	(void)utf8_lcpy(inst->in_call.uri, from, sizeof(inst->in_call.uri));
 
 	inst->incoming_uri.call_index = call->index;
-	(void)strcpy(inst->incoming_uri.uri, to);
+	(void)utf8_lcpy(inst->incoming_uri.uri, to, sizeof(inst->incoming_uri.uri));
 
 	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_INCOMING_URI, inst->attrs, &inst->incoming_uri,
 			    local_uri_ind_len);
@@ -1967,7 +1968,7 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 		return 0;
 	}
 
-	(void)strcpy(inst->provider_name, name);
+	(void)utf8_lcpy(inst->provider_name, name, sizeof(inst->provider_name));
 
 	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_PROVIDER_NAME, inst->attrs, inst->provider_name,
 			    strlen(inst->provider_name));
@@ -2087,7 +2088,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 	}
 
 	/* Store final result */
-	(void)strcpy(inst->uri_scheme_list, uri_scheme_list);
+	(void)utf8_lcpy(inst->uri_scheme_list, uri_scheme_list, sizeof(inst->uri_scheme_list));
 
 	LOG_DBG("TBS instance %u uri prefix list is now %s", bearer_index, inst->uri_scheme_list);
 
