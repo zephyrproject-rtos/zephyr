@@ -133,6 +133,10 @@ function(zephyr_cc_option_fallback option1 option2)
     target_cc_option_fallback(zephyr_interface INTERFACE ${option1} ${option2})
 endfunction()
 
+function(zephyr_ld_libraries)
+    target_ld_libraries(zephyr_interface INTERFACE ${ARGV})
+endfunction()
+
 function(zephyr_ld_options)
     target_ld_options(zephyr_interface INTERFACE ${ARGV})
 endfunction()
@@ -2194,6 +2198,15 @@ function(target_cc_option_fallback target scope option1 option2)
       target_compile_options(${target} ${scope} ${option2})
     endif()
   endif()
+endfunction()
+
+function(target_ld_libraries target scope)
+  # Ensure that this function can only be used with libraries by
+  # prepending each argument with "-l"
+  foreach(libname ${ARGN})
+    string(JOIN "" option "-l" ${libname})
+    target_link_libraries(${target} ${scope} ${option})
+  endforeach()
 endfunction()
 
 function(target_ld_options target scope)
