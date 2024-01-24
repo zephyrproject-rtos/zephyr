@@ -67,37 +67,39 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 static int ambiq_power_init(void)
 {
-	am_hal_pwrctrl_mcu_memory_config_t sMcuMemCfg = {
-		.eCacheCfg    = AM_HAL_PWRCTRL_CACHE_NONE,
-		.bRetainCache = true,
-		.eDTCMCfg     = AM_HAL_PWRCTRL_DTCM_384K,
-		.eRetainDTCM  = AM_HAL_PWRCTRL_DTCM_384K,
-		.bEnableNVM0  = true,
-		.bRetainNVM0  = false
-	};
+	/* Enable flash.
+	 * Currently all flash area is powered on, but we should only enable the used flash area and
+	 * put unused flash in power down mode.
+	 */
+	if (am_hal_pwrctrl_memory_enable(AM_HAL_PWRCTRL_MEM_FLASH_MAX)) {
+		__ASSERT(0, "Failed to enable FLASH!");
+	}
 
-	am_hal_pwrctrl_sram_memcfg_t sSRAMCfg = {
-		.eSRAMCfg        = AM_HAL_PWRCTRL_SRAM_ALL,
-		.eActiveWithMCU	 = AM_HAL_PWRCTRL_SRAM_NONE,
-		.eActiveWithGFX	 = AM_HAL_PWRCTRL_SRAM_NONE,
-		.eActiveWithDISP = AM_HAL_PWRCTRL_SRAM_NONE,
-		.eActiveWithDSP	 = AM_HAL_PWRCTRL_SRAM_NONE,
-		.eSRAMRetain     = AM_HAL_PWRCTRL_SRAM_ALL
-	};
+	/* Enable SRAM.
+	 * Currently all SRAM area is powered on, but we should only enable the used ram area and
+	 * put unused ram in power down mode.
+	 */
+	if (am_hal_pwrctrl_memory_enable(AM_HAL_PWRCTRL_MEM_SRAM_MAX)) {
+		__ASSERT(0, "Failed to enable SRAM!");
+	}
 
-	am_hal_pwrctrl_dsp_memory_config_t sDSPMemCfg = {
-		.bEnableICache = false,
-		.bRetainCache  = false,
-		.bEnableRAM	   = false,
-		.bActiveRAM	   = false,
-		.bRetainRAM	   = false
-	};
+	/* For optimal Deep Sleep current, configure cache to be powered-down in deepsleep. */
+	am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_CACHE);
 
-	am_hal_pwrctrl_mcu_memory_config(&sMcuMemCfg);
-	am_hal_pwrctrl_sram_config(&sSRAMCfg);
-	am_hal_pwrctrl_dsp_memory_config(AM_HAL_DSP0, &sDSPMemCfg);
+	/* Power off all flash area, when go to deep sleep.*/
+	am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_FLASH_MAX);
 
-	am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_CRYPTO);
+	/* Keep the used SRAM area in retention mode. */
+	am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_SRAM_MAX);
+	am_hal_pwrctrl_memory_deepsleep_retain(AM_HAL_PWRCTRL_MEM_SRAM_MAX);
+
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
+	/*
+	 * If user has enabled AM_HAL_SYSCTRL_DEEPSLEEP_WA in am_hal_sysctrl.h
+	 * this will allow user to acheive lower current draw in deepsleep
+	 */
+	am_hal_sysctrl_control(AM_HAL_SYSCTRL_CONTROL_DEEPSLEEP_MINPWR_EN, 0);
+#endif
 
 	return 0;
 }
