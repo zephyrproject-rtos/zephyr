@@ -412,10 +412,8 @@ int bt_vocs_register(struct bt_vocs *vocs,
 	inst->cb = param->cb;
 
 	if (param->output_desc) {
-		strncpy(inst->output_desc, param->output_desc,
-			sizeof(inst->output_desc) - 1);
-		/* strncpy may not always null-terminate */
-		inst->output_desc[sizeof(inst->output_desc) - 1] = '\0';
+		(void)utf8_lcpy(inst->output_desc, param->output_desc,
+				sizeof(inst->output_desc));
 		if (IS_ENABLED(CONFIG_BT_VOCS_LOG_LEVEL_DBG) &&
 		    strcmp(inst->output_desc, param->output_desc)) {
 			LOG_DBG("Output desc clipped to %s", inst->output_desc);
