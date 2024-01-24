@@ -116,8 +116,10 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         #
         # https://github.com/zephyrproject-rtos/zephyr/issues/50789
         self.elf_file = Path(cfg.elf_file).as_posix()
-        # hex_file for flash signed image
-        self.hex_file = Path(cfg.hex_file).as_posix()
+        if cfg.hex_file is not None:
+            self.hex_file = Path(cfg.hex_file).as_posix()
+        else:
+            self.hex_file = None
         self.gdb_serial = blackmagicprobe_gdb_serial(gdb_serial)
         self.logger.info(f'using GDB serial: {self.gdb_serial}')
         if connect_rst:
@@ -152,8 +154,20 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                             help='Assert SRST during connect? (default: no)')
 
     def bmp_flash(self, command, **kwargs):
-        if self.hex_file is None:
-            raise ValueError('Cannot flash; hex file is missing')
+        # if hex file is present and signed, use it else use elf file
+        if self.hex_file:
+            split = self.hex_file.split('.')
+            # eg zephyr.signed.hex
+            if len(split) >= 3 and split[-2] == 'signed':
+                flash_file = self.hex_file
+            else:
+                flash_file = self.elf_file
+        else:
+            flash_file = self.elf_file
+
+        if flash_file is None:
+            raise ValueError('Cannot flash; elf file is missing')
+
         command = (self.gdb +
                    ['-ex', "set confirm off",
                     '-ex', "target extended-remote {}".format(
@@ -161,7 +175,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                     self.connect_rst_enable_arg +
                    ['-ex', "monitor swdp_scan",
                     '-ex', "attach 1",
-                    '-ex', "load {}".format(self.hex_file),
+                    '-ex', "load {}".format(flash_file),
                     '-ex', "kill",
                     '-ex', "quit",
                     '-silent'])
