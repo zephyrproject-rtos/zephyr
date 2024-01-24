@@ -320,7 +320,7 @@ int card_read_cid(struct sd_card *card)
 
 /*
  * Implements signal voltage switch procedure described in section 3.6.1 of
- * SD specification.
+ * SD host controller specification.
  */
 int sdmmc_switch_voltage(struct sd_card *card)
 {
