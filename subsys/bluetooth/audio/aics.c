@@ -512,10 +512,8 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	k_work_init_delayable(&aics->srv.notify_work, notify_work_handler);
 
 	if (param->description) {
-		strncpy(aics->srv.description, param->description,
-			sizeof(aics->srv.description) - 1);
-		/* strncpy may not always null-terminate */
-		aics->srv.description[sizeof(aics->srv.description) - 1] = '\0';
+		(void)utf8_lcpy(aics->srv.description, param->description,
+				sizeof(aics->srv.description));
 		if (IS_ENABLED(CONFIG_BT_AICS_LOG_LEVEL_DBG) &&
 		    strcmp(aics->srv.description, param->description)) {
 			LOG_DBG("Input desc clipped to %s", aics->srv.description);
