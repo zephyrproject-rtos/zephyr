@@ -7,7 +7,6 @@
 
 #include <zephyr/sys/byteorder.h>
 
-
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
@@ -155,8 +154,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	uint8_t key_size;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
-				sizeof(*cp));
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE, sizeof(*cp));
 	if (!buf) {
 		LOG_ERR("Failed to allocate command buffer");
 		return false;
@@ -165,8 +163,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
-				   buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE, buf, &rsp);
 	if (err) {
 		LOG_ERR("Failed to read encryption key size (err %d)", err);
 		return false;
@@ -328,8 +325,8 @@ static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_REQUEST, buf, NULL);
 }
 
-#define EIR_SHORT_NAME		0x08
-#define EIR_COMPLETE_NAME	0x09
+#define EIR_SHORT_NAME    0x08
+#define EIR_COMPLETE_NAME 0x09
 
 static bool eir_has_name(const uint8_t *eir)
 {
@@ -391,8 +388,8 @@ static void report_discovery_results(void)
 			continue;
 		}
 
-		if (request_name(&discovery_results[i].addr,
-				 priv->pscan_rep_mode, priv->clock_offset)) {
+		if (request_name(&discovery_results[i].addr, priv->pscan_rep_mode,
+				 priv->clock_offset)) {
 			continue;
 		}
 
@@ -423,8 +420,7 @@ void bt_hci_inquiry_complete(struct net_buf *buf)
 	report_discovery_results();
 }
 
-static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
-						      int8_t rssi)
+static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int8_t rssi)
 {
 	struct bt_br_discovery_result *result = NULL;
 	size_t i;
@@ -438,8 +434,7 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
 
 	/* Pick a new slot (if available) */
 	if (discovery_results_count < discovery_results_size) {
-		bt_addr_copy(&discovery_results[discovery_results_count].addr,
-			     addr);
+		bt_addr_copy(&discovery_results[discovery_results_count].addr, addr);
 		return &discovery_results[discovery_results_count++];
 	}
 
@@ -616,7 +611,6 @@ check_names:
 	if (discovery_cb) {
 		discovery_cb(discovery_results, discovery_results_count);
 	}
-
 }
 
 void bt_hci_read_remote_features_complete(struct net_buf *buf)
@@ -644,8 +638,7 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 		goto done;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_EXT_FEATURES,
-				sizeof(*cp));
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, sizeof(*cp));
 	if (!buf) {
 		goto done;
 	}
@@ -676,8 +669,7 @@ void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
 	}
 
 	if (!evt->status && evt->page == 0x01) {
-		memcpy(conn->br.features[1], evt->features,
-		       sizeof(conn->br.features[1]));
+		memcpy(conn->br.features[1], evt->features, sizeof(conn->br.features[1]));
 	}
 
 	bt_conn_unref(conn);
@@ -720,8 +712,7 @@ static int read_ext_features(void)
 		struct net_buf *buf, *rsp;
 		int err;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
-					sizeof(*cp));
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES, sizeof(*cp));
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -729,16 +720,14 @@ static int read_ext_features(void)
 		cp = net_buf_add(buf, sizeof(*cp));
 		cp->page = i;
 
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
-					   buf, &rsp);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_EXT_FEATURES, buf, &rsp);
 		if (err) {
 			return err;
 		}
 
 		rp = (void *)rsp->data;
 
-		memcpy(&bt_dev.features[i], rp->ext_features,
-		       sizeof(bt_dev.features[i]));
+		memcpy(&bt_dev.features[i], rp->ext_features, sizeof(bt_dev.features[i]));
 
 		if (rp->max_page <= i) {
 			net_buf_unref(rsp);
@@ -787,8 +776,7 @@ void device_supported_pkt_type(void)
 	}
 
 	if (BT_FEAT_3SLOT_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_2EV5 |
-					    HCI_PKT_TYPE_ESCO_3EV5);
+		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_2EV5 | HCI_PKT_TYPE_ESCO_3EV5);
 	}
 }
 
@@ -869,8 +857,7 @@ int bt_br_init(void)
 	}
 
 	name_cp = net_buf_add(buf, sizeof(*name_cp));
-	strncpy((char *)name_cp->local_name, CONFIG_BT_DEVICE_NAME,
-		sizeof(name_cp->local_name));
+	strncpy((char *)name_cp->local_name, CONFIG_BT_DEVICE_NAME, sizeof(name_cp->local_name));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
 	if (err) {
@@ -907,8 +894,7 @@ int bt_br_init(void)
 	if (BT_FEAT_SC(bt_dev.features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SC_HOST_SUPP,
-					sizeof(*sc_cp));
+		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SC_HOST_SUPP, sizeof(*sc_cp));
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -916,8 +902,7 @@ int bt_br_init(void)
 		sc_cp = net_buf_add(buf, sizeof(*sc_cp));
 		sc_cp->sc_support = 0x01;
 
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SC_HOST_SUPP, buf,
-					   NULL);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SC_HOST_SUPP, buf, NULL);
 		if (err) {
 			return err;
 		}
@@ -928,7 +913,7 @@ int bt_br_init(void)
 
 static int br_start_inquiry(const struct bt_br_discovery_param *param)
 {
-	const uint8_t iac[3] = { 0x33, 0x8b, 0x9e };
+	const uint8_t iac[3] = {0x33, 0x8b, 0x9e};
 	struct bt_hci_op_inquiry *cp;
 	struct net_buf *buf;
 
@@ -950,8 +935,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY, buf, NULL);
 }
 
-static bool valid_br_discov_param(const struct bt_br_discovery_param *param,
-				  size_t num_results)
+static bool valid_br_discov_param(const struct bt_br_discovery_param *param, size_t num_results)
 {
 	if (!num_results || num_results > 255) {
 		return false;
@@ -1024,8 +1008,7 @@ int bt_br_discovery_stop(void)
 			continue;
 		}
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_CANCEL,
-					sizeof(*cp));
+		buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_CANCEL, sizeof(*cp));
 		if (!buf) {
 			continue;
 		}
@@ -1064,10 +1047,8 @@ static int write_scan_enable(uint8_t scan)
 		return err;
 	}
 
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_ISCAN,
-			  (scan & BT_BREDR_SCAN_INQUIRY));
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_PSCAN,
-			  (scan & BT_BREDR_SCAN_PAGE));
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ISCAN, (scan & BT_BREDR_SCAN_INQUIRY));
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_PSCAN, (scan & BT_BREDR_SCAN_PAGE));
 
 	return 0;
 }
@@ -1100,8 +1081,7 @@ int bt_br_set_discoverable(bool enable)
 			return -EPERM;
 		}
 
-		return write_scan_enable(BT_BREDR_SCAN_INQUIRY |
-					 BT_BREDR_SCAN_PAGE);
+		return write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
 	} else {
 		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
 			return -EALREADY;
