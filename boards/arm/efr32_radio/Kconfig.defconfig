@@ -9,6 +9,7 @@ if BOARD_EFR32_RADIO
 config BOARD
 	default "efr32_radio_brd4104a" if BOARD_EFR32_RADIO_BRD4104A
 	default "efr32_radio_brd4170a" if BOARD_EFR32_RADIO_BRD4170A
+	default "efr32_radio_brd4161a" if BOARD_EFR32_RADIO_BRD4161A
 	default "efr32_radio_brd4250b" if BOARD_EFR32_RADIO_BRD4250B
 	default "efr32_radio_brd4180a" if BOARD_EFR32_RADIO_BRD4180A
 	default "efr32_radio_brd4187c" if BOARD_EFR32_RADIO_BRD4187C
