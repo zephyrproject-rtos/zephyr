@@ -1131,6 +1131,22 @@ static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
 }
 
 /**
+ * @brief Get the operation mode of the CAN controller
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return Current operation mode.
+ */
+__syscall can_mode_t can_get_mode(const struct device *dev);
+
+static inline can_mode_t z_impl_can_get_mode(const struct device *dev)
+{
+	const struct can_driver_data *common = (const struct can_driver_data *)dev->data;
+
+	return common->mode;
+}
+
+/**
  * @brief Set the bitrate of the CAN controller
  *
  * CAN in Automation (CiA) 301 v4.2.0 recommends a sample point location of
