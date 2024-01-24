@@ -397,6 +397,10 @@ Libraries / Subsystems
 
   * File systems: LittleFS module has been updated to version 2.8.1.
 
+  * Following Flash Map API macros, marked in 3.2 as deprecated, have been removed:
+    ``FLASH_AREA_ID``, ``FLASH_AREA_OFFSET``, ``FLASH_AREA_SIZE``,
+    ``FLASH_AREA_LABEL_EXISTS`` and ``FLASH_AREA_DEVICE``.
+
 * Binary descriptors
 
 * POSIX API
