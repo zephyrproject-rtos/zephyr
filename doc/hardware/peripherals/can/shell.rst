@@ -62,7 +62,8 @@ Inspection
 
 The properties of a given CAN controller can be inspected using the ``can show`` subcommand as shown
 below. The properties include the core CAN clock rate, the maximum supported bitrate, the number of
-RX filters supported, capabilities, current state, error counters, timing limits, and more:
+RX filters supported, capabilities, current mode, current state, error counters, timing limits, and
+more:
 
 .. code-block:: console
 
@@ -72,6 +73,7 @@ RX filters supported, capabilities, current state, error counters, timing limits
    max std filters: 15
    max ext filters: 15
    capabilities:    normal loopback listen-only fd
+   mode:            normal
    state:           stopped
    rx errors:       0
    tx errors:       0
