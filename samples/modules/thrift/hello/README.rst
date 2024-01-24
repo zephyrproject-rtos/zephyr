@@ -48,6 +48,14 @@ layers in thrift can be combined to build an application with desired features.
 Requirements
 ************
 
+- Optional Modules
+
+.. code-block:: console
+   :caption: Download optional modules with west
+
+   west config manifest.group-filter -- +optional
+   west update
+
 - QEMU Networking (described in :ref:`networking_with_qemu`)
 - Thrift dependencies installed for your host OS e.g. in Ubuntu
 
