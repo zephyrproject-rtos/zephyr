@@ -156,7 +156,7 @@ ZTEST(thread_dynamic, test_thread_index_management)
 
 	switch (K_OBJ_THREAD) {
 	/** @cond keep_doxygen_away */
-	#include <otype-to-size.h>
+	#include <zephyr/otype-to-size.h>
 	/** @endcond */
 	}
 	blob = k_object_create_dynamic_aligned(16, ret);

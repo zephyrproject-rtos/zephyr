@@ -12,7 +12,7 @@
  * and follows, with few exceptions, the USB Specification 2.0.
  */
 
-#include <version.h>
+#include <zephyr/version.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/math/ilog2.h>
 #include <zephyr/usb/class/usb_hub.h>

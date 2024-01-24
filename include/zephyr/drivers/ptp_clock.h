@@ -101,6 +101,6 @@ static inline int ptp_clock_rate_adjust(const struct device *dev, double rate)
 }
 #endif
 
-#include <syscalls/ptp_clock.h>
+#include <zephyr/syscalls/ptp_clock.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PTP_CLOCK_H_ */

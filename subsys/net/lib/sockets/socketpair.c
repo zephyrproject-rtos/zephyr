@@ -357,7 +357,7 @@ out:
 	return ret;
 }
 
-#include <syscalls/zsock_socketpair_mrsh.c>
+#include <zephyr/syscalls/zsock_socketpair_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**

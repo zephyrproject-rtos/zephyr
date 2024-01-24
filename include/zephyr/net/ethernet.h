@@ -1334,6 +1334,6 @@ static inline bool net_eth_type_is_wifi(struct net_if *iface)
 }
 #endif
 
-#include <syscalls/ethernet.h>
+#include <zephyr/syscalls/ethernet.h>
 
 #endif /* ZEPHYR_INCLUDE_NET_ETHERNET_H_ */

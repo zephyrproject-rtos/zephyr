@@ -16,7 +16,7 @@ static inline int z_vrfy_gpio_pin_configure(const struct device *port,
 					  pin,
 					  flags);
 }
-#include <syscalls/gpio_pin_configure_mrsh.c>
+#include <zephyr/syscalls/gpio_pin_configure_mrsh.c>
 
 #ifdef CONFIG_GPIO_GET_CONFIG
 static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
@@ -28,7 +28,7 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 
 	return z_impl_gpio_pin_get_config(port, pin, flags);
 }
-#include <syscalls/gpio_pin_get_config_mrsh.c>
+#include <zephyr/syscalls/gpio_pin_get_config_mrsh.c>
 #endif
 
 static inline int z_vrfy_gpio_port_get_raw(const struct device *port,
@@ -39,7 +39,7 @@ static inline int z_vrfy_gpio_port_get_raw(const struct device *port,
 	return z_impl_gpio_port_get_raw((const struct device *)port,
 					(gpio_port_value_t *)value);
 }
-#include <syscalls/gpio_port_get_raw_mrsh.c>
+#include <zephyr/syscalls/gpio_port_get_raw_mrsh.c>
 
 static inline int z_vrfy_gpio_port_set_masked_raw(const struct device *port,
 						  gpio_port_pins_t mask,
@@ -50,7 +50,7 @@ static inline int z_vrfy_gpio_port_set_masked_raw(const struct device *port,
 						mask,
 						value);
 }
-#include <syscalls/gpio_port_set_masked_raw_mrsh.c>
+#include <zephyr/syscalls/gpio_port_set_masked_raw_mrsh.c>
 
 static inline int z_vrfy_gpio_port_set_bits_raw(const struct device *port,
 						gpio_port_pins_t pins)
@@ -59,7 +59,7 @@ static inline int z_vrfy_gpio_port_set_bits_raw(const struct device *port,
 	return z_impl_gpio_port_set_bits_raw((const struct device *)port,
 					     pins);
 }
-#include <syscalls/gpio_port_set_bits_raw_mrsh.c>
+#include <zephyr/syscalls/gpio_port_set_bits_raw_mrsh.c>
 
 static inline int z_vrfy_gpio_port_clear_bits_raw(const struct device *port,
 						  gpio_port_pins_t pins)
@@ -68,7 +68,7 @@ static inline int z_vrfy_gpio_port_clear_bits_raw(const struct device *port,
 	return z_impl_gpio_port_clear_bits_raw((const struct device *)port,
 					       pins);
 }
-#include <syscalls/gpio_port_clear_bits_raw_mrsh.c>
+#include <zephyr/syscalls/gpio_port_clear_bits_raw_mrsh.c>
 
 static inline int z_vrfy_gpio_port_toggle_bits(const struct device *port,
 					       gpio_port_pins_t pins)
@@ -76,7 +76,7 @@ static inline int z_vrfy_gpio_port_toggle_bits(const struct device *port,
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_toggle_bits));
 	return z_impl_gpio_port_toggle_bits((const struct device *)port, pins);
 }
-#include <syscalls/gpio_port_toggle_bits_mrsh.c>
+#include <zephyr/syscalls/gpio_port_toggle_bits_mrsh.c>
 
 static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port,
 						      gpio_pin_t pin,
@@ -87,7 +87,7 @@ static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port,
 						   pin,
 						   flags);
 }
-#include <syscalls/gpio_pin_interrupt_configure_mrsh.c>
+#include <zephyr/syscalls/gpio_pin_interrupt_configure_mrsh.c>
 
 static inline int z_vrfy_gpio_get_pending_int(const struct device *dev)
 {
@@ -95,7 +95,7 @@ static inline int z_vrfy_gpio_get_pending_int(const struct device *dev)
 
 	return z_impl_gpio_get_pending_int((const struct device *)dev);
 }
-#include <syscalls/gpio_get_pending_int_mrsh.c>
+#include <zephyr/syscalls/gpio_get_pending_int_mrsh.c>
 
 #ifdef CONFIG_GPIO_GET_DIRECTION
 static inline int z_vrfy_gpio_port_get_direction(const struct device *dev, gpio_port_pins_t map,
@@ -114,5 +114,5 @@ static inline int z_vrfy_gpio_port_get_direction(const struct device *dev, gpio_
 
 	return z_impl_gpio_port_get_direction(dev, map, inputs, outputs);
 }
-#include <syscalls/gpio_port_get_direction_mrsh.c>
+#include <zephyr/syscalls/gpio_port_get_direction_mrsh.c>
 #endif /* CONFIG_GPIO_GET_DIRECTION */

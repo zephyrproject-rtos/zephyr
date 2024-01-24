@@ -513,6 +513,6 @@ static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
  * @}
  */
 
-#include <syscalls/flash.h>
+#include <zephyr/syscalls/flash.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_H_ */

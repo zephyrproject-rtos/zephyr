@@ -13,7 +13,7 @@ static inline int z_vrfy_wdt_setup(const struct device *dev, uint8_t options)
 	return z_impl_wdt_setup(dev, options);
 }
 
-#include <syscalls/wdt_setup_mrsh.c>
+#include <zephyr/syscalls/wdt_setup_mrsh.c>
 
 static inline int z_vrfy_wdt_disable(const struct device *dev)
 {
@@ -21,7 +21,7 @@ static inline int z_vrfy_wdt_disable(const struct device *dev)
 	return z_impl_wdt_disable(dev);
 }
 
-#include <syscalls/wdt_disable_mrsh.c>
+#include <zephyr/syscalls/wdt_disable_mrsh.c>
 
 static inline int z_vrfy_wdt_feed(const struct device *dev, int channel_id)
 {
@@ -29,4 +29,4 @@ static inline int z_vrfy_wdt_feed(const struct device *dev, int channel_id)
 	return z_impl_wdt_feed(dev, channel_id);
 }
 
-#include <syscalls/wdt_feed_mrsh.c>
+#include <zephyr/syscalls/wdt_feed_mrsh.c>

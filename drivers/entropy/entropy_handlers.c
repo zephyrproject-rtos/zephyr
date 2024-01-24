@@ -17,4 +17,4 @@ static inline int z_vrfy_entropy_get_entropy(const struct device *dev,
 					  (uint8_t *)buffer,
 					  len);
 }
-#include <syscalls/entropy_get_entropy_mrsh.c>
+#include <zephyr/syscalls/entropy_get_entropy_mrsh.c>

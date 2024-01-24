@@ -10,7 +10,7 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm64/tpidrro_el0.h>
 #include <offsets_short.h>

@@ -1009,7 +1009,7 @@ static inline void z_vrfy_check_syscall_context(void)
 {
 	return z_impl_check_syscall_context();
 }
-#include <syscalls/check_syscall_context_mrsh.c>
+#include <zephyr/syscalls/check_syscall_context_mrsh.c>
 
 ZTEST_USER(userspace, test_syscall_context)
 {

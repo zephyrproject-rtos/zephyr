@@ -596,6 +596,6 @@ int maxim_ds3231_check_alarms(const struct device *dev);
 #endif
 
 /* @todo this should be syscalls/drivers/rtc/maxim_ds3231.h */
-#include <syscalls/maxim_ds3231.h>
+#include <zephyr/syscalls/maxim_ds3231.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RTC_DS3231_H_ */

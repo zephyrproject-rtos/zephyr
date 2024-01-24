@@ -11,7 +11,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/kernel_structs.h>
-#include <zsr.h>
+#include <zephyr/zsr.h>
 
 /**
  * @brief Read a special register.
