@@ -638,6 +638,7 @@ int pthread_setcanceltype(int type, int *oldtype)
 int pthread_cancel(pthread_t pthread)
 {
 	int cancel_state;
+	int cancel_type;
 	k_spinlock_key_t key;
 	struct posix_thread *t;
 
@@ -649,9 +650,11 @@ int pthread_cancel(pthread_t pthread)
 	key = k_spin_lock(&pthread_pool_lock);
 	t->cancel_pending = true;
 	cancel_state = t->cancel_state;
+	cancel_type = t->cancel_type;
 	k_spin_unlock(&pthread_pool_lock, key);
 
-	if (cancel_state == PTHREAD_CANCEL_ENABLE) {
+	if (cancel_state == PTHREAD_CANCEL_ENABLE &&
+	    cancel_type == PTHREAD_CANCEL_ASYNCHRONOUS) {
 		posix_thread_finalize(t, PTHREAD_CANCELED);
 	}
 
