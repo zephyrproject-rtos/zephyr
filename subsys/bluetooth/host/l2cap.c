@@ -1944,6 +1944,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	struct net_buf *seg;
 	struct net_buf_simple_state state;
 	int len, err;
+	bt_conn_tx_cb_t cb;
 
 	if (!test_and_dec(&ch->tx.credits)) {
 		LOG_DBG("No credits to transmit packet");
@@ -1985,14 +1986,19 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 	/* Set a callback if there is no data left in the buffer */
 	if (buf == seg || !buf->len) {
-		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				       l2cap_chan_sdu_sent,
-				       l2cap_tx_meta_data(buf));
+		cb = l2cap_chan_sdu_sent;
 	} else {
-		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				       l2cap_chan_seg_sent,
-				       l2cap_tx_meta_data(buf));
+		cb = l2cap_chan_seg_sent;
 	}
+
+	/* Forward the PDU to the lower layer.
+	 *
+	 * Note: after this call, anything in buf->user_data should be
+	 * considered lost, as the lower layers are free to re-use it as they
+	 * see fit. Reading from it later is obviously a no-no.
+	 */
+	err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
+			       cb, l2cap_tx_meta_data(buf));
 
 	if (err) {
 		LOG_DBG("Unable to send seg %d", err);
