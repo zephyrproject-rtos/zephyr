@@ -75,7 +75,8 @@ def board_v1_to_v2(board_root, board, new_board, group, vendor, soc, variants):
         }
     else:
         with open(board_settings_file) as f:
-            board_settings = ruamel.yaml.safe_load(f) # pylint: disable=assignment-from-no-return
+            yaml = ruamel.yaml.YAML(typ='safe', pure=True)
+            board_settings = yaml.load(f) # pylint: disable=assignment-from-no-return
 
     soc = {"name": soc}
     if variants:
@@ -158,6 +159,7 @@ def board_v1_to_v2(board_root, board, new_board, group, vendor, soc, variants):
 
     print(f"Creating or updating Kconfig.{new_board}...")
     board_kconfig_file = new_board_path / "Kconfig.board"
+    copyright = None
     with open(board_kconfig_file) as f:
         for line in f.readlines():
             if "Copyright" in line:
