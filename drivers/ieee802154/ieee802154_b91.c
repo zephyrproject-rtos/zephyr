@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/openthread.h>
 #endif
 
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+
 #include "ieee802154_b91.h"
 
 

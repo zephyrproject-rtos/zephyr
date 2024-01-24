@@ -229,19 +229,8 @@ config TFM_BL2
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
 
-config TFM_BUILD_NS
-	bool "Build the TF-M Non-Secure application and libraries"
-	help
-	  Instruct the TF-M build system to build the TF-M Non-Secure
-	  application and libraries.
-
-	  This option is intended for testing purposes only, since this is the
-	  easiest way to build the TF-M regression tests application and test
-	  support libraries in the zephyr build system.
-
 config TFM_USE_NS_APP
 	bool "Use the TF-M Non-Secure application"
-	depends on TFM_BUILD_NS
 	help
 	  The TF-M build system can produce multiple executable files.
 	  The main one is the TF-M secure firmware. Optionally the TF-M

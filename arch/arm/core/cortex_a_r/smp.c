@@ -148,7 +148,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	 *  \todo Support PSCI
 	 */
 
-	/* Wait secondary cores up, see z_arm64_secondary_start */
+	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm_cpu_boot_params.fn) {
 		wfe();
 	}
@@ -159,7 +159,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 }
 
 /* the C entry of secondary cores */
-void z_arm_secondary_start(void)
+void arch_secondary_cpu_init(void)
 {
 	int cpu_num = arm_cpu_boot_params.cpu_num;
 	arch_cpustart_t fn;
@@ -245,7 +245,7 @@ void arch_sched_ipi(void)
 	broadcast_ipi(SGI_SCHED_IPI);
 }
 
-static int arm_smp_init(void)
+int arch_smp_init(void)
 {
 	cpu_map[0] = MPIDR_TO_CORE(GET_MPIDR());
 
@@ -259,6 +259,6 @@ static int arm_smp_init(void)
 	return 0;
 }
 
-SYS_INIT(arm_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif

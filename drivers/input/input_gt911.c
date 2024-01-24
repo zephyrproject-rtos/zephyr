@@ -17,9 +17,9 @@
 LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 
 /* GT911 used registers */
-#define DEVICE_ID           __bswap_16(0x8140U)
-#define REG_STATUS		    __bswap_16(0x814EU)
-#define REG_FIRST_POINT		__bswap_16(0x814FU)
+#define DEVICE_ID           BSWAP_16(0x8140U)
+#define REG_STATUS		    BSWAP_16(0x814EU)
+#define REG_FIRST_POINT		BSWAP_16(0x814FU)
 
 /* REG_TD_STATUS: Touch points. */
 #define TOUCH_POINTS_MSK	0x0FU
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 #define TOUCH_STATUS_MSK    (1 << 7U)
 
 /* The GT911's config */
-#define GT911_CONFIG_REG         __bswap_16(0x8047U)
+#define GT911_CONFIG_REG         BSWAP_16(0x8047U)
 #define REG_CONFIG_VERSION GT911_CONFIG_REG
 #define REG_CONFIG_SIZE (186U)
 #define GT911_PRODUCT_ID (0x00313139U)

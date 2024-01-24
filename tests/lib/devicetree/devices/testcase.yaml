@@ -18,3 +18,4 @@ tests:
       - mimxrt595_evk_cm33
       - nrf9131ek_nrf9131
       - nrf9131ek_nrf9131_ns
+      - kincony_kc868_a32

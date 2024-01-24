@@ -56,6 +56,27 @@ enum charger_property {
 	CHARGER_PROP_CHARGE_TERM_CURRENT_UA,
 	/** Configuration of charge voltage regulation target in µV */
 	CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV,
+	/**
+	 * Configuration of the input current regulation target in µA
+	 *
+	 * This value is a rising current threshold that is regulated by reducing the charge
+	 * current output
+	 */
+	CHARGER_PROP_INPUT_REGULATION_CURRENT_UA,
+	/**
+	 * Configuration of the input voltage regulation target in µV
+	 *
+	 * This value is a falling voltage threshold that is regulated by reducing the charge
+	 * current output
+	 */
+	CHARGER_PROP_INPUT_REGULATION_VOLTAGE_UV,
+	/**
+	 * Configuration to issue a notification to the system based on the input current
+	 * level and timing
+	 *
+	 * Value should be of type struct charger_input_current_notifier
+	 */
+	CHARGER_PROP_INPUT_CURRENT_NOTIFICATION,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -174,6 +195,30 @@ enum charger_health {
 };
 
 /**
+ * @brief Charger severity levels for system notifications
+ */
+enum charger_notification_severity {
+	/** Most severe level, typically triggered instantaneously */
+	CHARGER_SEVERITY_PEAK = 0,
+	/** More severe than the warning level, less severe than peak */
+	CHARGER_SEVERITY_CRITICAL,
+	/** Base severity level */
+	CHARGER_SEVERITY_WARNING,
+};
+
+/**
+ * @brief The input current thresholds for the charger to notify the system
+ */
+struct charger_current_notifier {
+	/** The severity of the notification where CHARGER_SEVERITY_PEAK is the most severe */
+	uint8_t severity;
+	/** The current threshold to be exceeded */
+	uint32_t current_ua;
+	/** The duration of excess current before notifying the system */
+	uint32_t duration_us;
+};
+
+/**
  * @brief container for a charger_property value
  *
  */
@@ -200,6 +245,12 @@ union charger_propval {
 	uint32_t charge_term_current_ua;
 	/** CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV */
 	uint32_t const_charge_voltage_uv;
+	/** CHARGER_PROP_INPUT_REGULATION_CURRENT_UA */
+	uint32_t input_current_regulation_current_ua;
+	/** CHARGER_PROP_INPUT_REGULATION_VOLTAGE_UV */
+	uint32_t input_voltage_regulation_voltage_uv;
+	/** CHARGER_PROP_INPUT_CURRENT_NOTIFICATION */
+	struct charger_current_notifier input_current_notification;
 };
 
 /**

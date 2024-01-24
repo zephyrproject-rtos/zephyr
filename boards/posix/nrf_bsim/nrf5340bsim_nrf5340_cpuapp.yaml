@@ -12,3 +12,4 @@ testing:
     - gpio
     - modem
     - uart
+    - bsim_skip_CI

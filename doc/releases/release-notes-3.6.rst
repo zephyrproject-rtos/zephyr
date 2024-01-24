@@ -58,6 +58,7 @@ Bluetooth
     the transmitted responses on the Access layer.
     The functionality is enabled by the :kconfig:option:`CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG`
     Kconfig option.
+  * The Bluetooth Mesh Protocol 1.1 is now supported by default.
 
 * Controller
 
@@ -137,6 +138,14 @@ Build system and infrastructure
 
 * Added MCUboot image size reduction to sysbuild images which include MCUboot which prevents
   issues with building firmware images that are too large for MCUboot to swap.
+
+* Deprecated :kconfig:option:`CONFIG_BOOTLOADER_SRAM_SIZE`, users of this should transition to
+  having RAM set up properly in their board devicetree files.
+
+* Fixed an issue whereby shields were processed in order of the root they resided in rather than
+  the order they were supplied to cmake in.
+
+* Fixed an issue whereby using some shields with sysbuild would cause a cmake Kconfig error.
 
 Drivers and Sensors
 *******************
@@ -316,6 +325,9 @@ Libraries / Subsystems
 
   * Fixed an issue whereby the ``mcuboot erase`` DFU shell command could be used to erase the
     MCUboot or currently running application slot.
+
+  * Fixed an issue whereby messages that were too large to be sent over the UDP transport would
+    wrongly return :c:enum:`MGMT_ERR_EINVAL` instead of :c:enum:`MGMT_ERR_EMSGSIZE`.
 
 * File systems
 

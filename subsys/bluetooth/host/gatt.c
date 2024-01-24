@@ -5294,6 +5294,13 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	if (params->disc_params != NULL && params->disc_params->func == gatt_ccc_discover_cb) {
+		/* Already in progress */
+		return -EBUSY;
+	}
+#endif
+
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
 		/* Fail if entry already exists */

@@ -237,7 +237,7 @@ section.
     instruction executes is just some of it; Emulating peripherals accurately
     is another side.
 
-This native port compiles your code directly for the host architectture
+This native port compiles your code directly for the host architecture
 (typically x86), with no instrumentation or
 monitoring code. Your code executes directly in the host CPU. That is, your code
 executes just as fast as it possibly can.

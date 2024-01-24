@@ -15,8 +15,9 @@
 #define AD5592_GPIO_READBACK_EN BIT(10)
 #define AD5592_LDAC_READBACK_EN BIT(6)
 #define AD5592_REG_SOFTWARE_RESET 0x0FU
-#define AD5592_SOFTWARE_RESET_MAGIC_VAL 0xDAC
-#define AD5592_REV_VAL_MASK 0x3FF
+#define AD5592_SOFTWARE_RESET_MAGIC_VAL 0x5AC
+#define AD5592_REG_VAL_MASK 0x3FF
+#define AD5592_REG_RESET_VAL_MASK 0x7FF
 #define AD5592_REG_SHIFT_VAL 11
 #define AD5592_REG_READBACK_SHIFT_VAL 2
 
@@ -115,7 +116,19 @@ int mfd_ad5592_read_reg(const struct device *dev, uint8_t reg, uint8_t reg_data,
 
 int mfd_ad5592_write_reg(const struct device *dev, uint8_t reg, uint16_t val)
 {
-	uint16_t msg = sys_cpu_to_be16((reg << AD5592_REG_SHIFT_VAL) | (val & AD5592_REV_VAL_MASK));
+	uint16_t write_mask;
+	uint16_t msg;
+
+	switch (reg) {
+	case AD5592_REG_SOFTWARE_RESET:
+		write_mask = AD5592_REG_RESET_VAL_MASK;
+		break;
+	default:
+		write_mask = AD5592_REG_VAL_MASK;
+		break;
+	}
+
+	msg = sys_cpu_to_be16((reg << AD5592_REG_SHIFT_VAL) | (val & write_mask));
 
 	return mfd_ad5592_write_raw(dev, msg);
 }

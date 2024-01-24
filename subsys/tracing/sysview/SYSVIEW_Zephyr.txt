@@ -110,7 +110,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 103 k_thread_resume
 104 k_thread_join
 105 k_thread_yield
-106 k_thread_usermode_enter
+106 k_thread_user_mode_enter
 107 k_thread_foreach
 108 k_thread_foreach_unlocked
 155 k_thread_name_set           thread=%I

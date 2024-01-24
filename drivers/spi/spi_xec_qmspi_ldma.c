@@ -215,7 +215,7 @@ static int qmspi_set_frequency(struct spi_qmspi_data *qdata, struct qmspi_regs *
  * SPI signalling mode: CPOL and CPHA
  * CPOL = 0 is clock idles low, 1 is clock idle high
  * CPHA = 0 Transmitter changes data on trailing of preceding clock cycle.
- *          Receiver samples data on leading edge of clock cyle.
+ *          Receiver samples data on leading edge of clock cycle.
  *        1 Transmitter changes data on leading edge of current clock cycle.
  *          Receiver samples data on the trailing edge of clock cycle.
  * SPI Mode nomenclature:
@@ -475,7 +475,7 @@ static inline int qmspi_xfr_cm_init(const struct device *dev,
  * RX data discard for certain SPI command protocols using dual/quad I/O.
  * 1. Get largest contiguous data size from SPI context.
  * 2. If the SPI TX context has a non-zero length configure Local-DMA TX
- *    channel 1 for contigous data size. If TX context has valid buffer
+ *    channel 1 for contiguous data size. If TX context has valid buffer
  *    configure channel to use context buffer with address increment.
  *    If the TX buffer pointer is NULL interpret byte length as the number
  *    of clocks to generate with output line(s) tri-stated. NOTE: The controller
@@ -487,7 +487,7 @@ static inline int qmspi_xfr_cm_init(const struct device *dev,
  *    For example, if I/O lines is 4 (quad) meaning 4 bits per clock and the
  *    user wants 7 clocks then the number of bit units is 4 * 7 = 28.
  * 3. If instead, the SPI RX context has a non-zero length configure Local-DMA
- *    RX channel 1 for the contigous data size. If RX context has a valid
+ *    RX channel 1 for the contiguous data size. If RX context has a valid
  *    buffer configure channel to use buffer with address increment else
  *    configure channel for driver data temporary buffer without address
  *    increment.
@@ -696,7 +696,7 @@ static int qmspi_xfr_start_async(const struct device *dev, const struct spi_buf_
 	return 0;
 }
 
-/* Wrapper to start asynchronous (interrupts enabled) SPI transction */
+/* Wrapper to start asynchronous (interrupts enabled) SPI transaction */
 static int qmspi_xfr_async(const struct device *dev,
 			   const struct spi_config *config,
 			   const struct spi_buf_set *tx_bufs,

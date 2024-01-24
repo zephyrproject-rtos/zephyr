@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32f3x0/gd32f350rb.dtsi>
+#include <gd/gd32f3x0/gd32f350rb.dtsi>
 #include "gd32f350r_eval-pinctrl.dtsi"
 
 / {

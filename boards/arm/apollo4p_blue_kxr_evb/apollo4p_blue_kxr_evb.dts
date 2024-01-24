@@ -87,20 +87,9 @@
 };
 
 &iom4 {
-	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio32_63 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-	clock-frequency = <DT_FREQ_M(24)>;
 	status = "okay";
-
-	bt-hci@0 {
-		compatible = "ambiq,bt-hci-spi";
-		reg = <0>;
-		irq-gpios = <&gpio32_63 21 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio32_63 23 GPIO_ACTIVE_LOW>;
-		clkreq-gpios = <&gpio32_63 20 GPIO_ACTIVE_HIGH>;
-	};
 };
 
 &mspi0 {

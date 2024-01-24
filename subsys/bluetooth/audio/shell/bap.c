@@ -993,7 +993,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
-	enum bt_audio_location location = BT_AUDIO_LOCATION_PROHIBITED;
+	enum bt_audio_location location = BT_AUDIO_LOCATION_MONO_AUDIO;
 	const struct named_lc3_preset *named_preset;
 	struct shell_stream *uni_stream;
 	struct bt_bap_stream *bap_stream;
@@ -1076,8 +1076,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 
-			if (loc_bits == BT_AUDIO_LOCATION_PROHIBITED ||
-			    loc_bits > BT_AUDIO_LOCATION_ANY) {
+			if (loc_bits > BT_AUDIO_LOCATION_ANY) {
 				shell_error(sh, "Invalid loc_bits: %lu", loc_bits);
 
 				return -ENOEXEC;
@@ -1109,39 +1108,37 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	copy_unicast_stream_preset(uni_stream, named_preset);
 
 	/* If location has been modifed, we update the location in the codec configuration */
-	if (location != BT_AUDIO_LOCATION_PROHIBITED) {
-		struct bt_audio_codec_cfg *codec_cfg = &uni_stream->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = &uni_stream->codec_cfg;
 
-		for (size_t i = 0U; i < codec_cfg->data_len;) {
-			const uint8_t len = codec_cfg->data[i++];
-			uint8_t *value;
-			uint8_t data_len;
-			uint8_t type;
+	for (size_t i = 0U; i < codec_cfg->data_len;) {
+		const uint8_t len = codec_cfg->data[i++];
+		uint8_t *value;
+		uint8_t data_len;
+		uint8_t type;
 
-			if (len == 0 || len > codec_cfg->data_len - i) {
-				/* Invalid len field */
-				return false;
-			}
-
-			type = codec_cfg->data[i++];
-			value = &codec_cfg->data[i];
-
-			if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
-				const uint32_t loc_32 = location;
-
-				sys_put_le32(loc_32, value);
-
-				shell_print(sh, "Setting location to 0x%08X", location);
-				break;
-			}
-
-			data_len = len - sizeof(type);
-
-			/* Since we are incrementing i by the value_len, we don't need to increment
-			 * it further in the `for` statement
-			 */
-			i += data_len;
+		if (len == 0 || len > codec_cfg->data_len - i) {
+			/* Invalid len field */
+			return false;
 		}
+
+		type = codec_cfg->data[i++];
+		value = &codec_cfg->data[i];
+
+		if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
+			const uint32_t loc_32 = location;
+
+			sys_put_le32(loc_32, value);
+
+			shell_print(sh, "Setting location to 0x%08X", location);
+			break;
+		}
+
+		data_len = len - sizeof(type);
+
+		/* Since we are incrementing i by the value_len, we don't need to increment
+		 * it further in the `for` statement
+		 */
+		i += data_len;
 	}
 
 	if (bap_stream->ep == ep) {
@@ -2347,8 +2344,7 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (loc_val == BT_AUDIO_LOCATION_PROHIBITED ||
-	    loc_val > BT_AUDIO_LOCATION_ANY) {
+	if (loc_val > BT_AUDIO_LOCATION_ANY) {
 		shell_error(sh, "Invalid location: %lu", loc_val);
 
 		return -ENOEXEC;

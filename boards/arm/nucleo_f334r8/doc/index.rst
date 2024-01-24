@@ -123,7 +123,7 @@ Default Zephyr Peripheral Mapping:
 - USER_PB   : PC13
 - LD2       : PA5
 
-For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
+For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Programming and Debugging
 *************************

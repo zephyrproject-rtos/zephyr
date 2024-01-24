@@ -22,6 +22,7 @@ CONFIG_BOARD_MIMX93_EVK_A55=y
 
 # Zephyr Kernel Configuration
 CONFIG_XIP=n
+CONFIG_KERNEL_DIRECT_MAP=y
 
 # Serial Drivers
 CONFIG_SERIAL=y

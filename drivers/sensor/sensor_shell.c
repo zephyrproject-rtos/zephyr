@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(sensor_shell);
 	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
 	"<device_name> <on/off> <trigger_name>"
 
-const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
+static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_ACCEL_X] = "accel_x",
 	[SENSOR_CHAN_ACCEL_Y] = "accel_y",
 	[SENSOR_CHAN_ACCEL_Z] = "accel_z",
@@ -124,6 +124,33 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
 };
+
+enum sample_stats_state {
+	SAMPLE_STATS_STATE_UNINITIALIZED = 0,
+	SAMPLE_STATS_STATE_ENABLED,
+	SAMPLE_STATS_STATE_DISABLED,
+};
+
+struct sample_stats {
+	int64_t accumulator;
+	uint64_t sample_window_start;
+	uint32_t count;
+	enum sample_stats_state state;
+};
+
+static struct sample_stats sensor_stats[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES][SENSOR_CHAN_ALL];
+
+static const struct device *sensor_trigger_devices[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES];
+
+static int find_sensor_trigger_device(const struct device *sensor)
+{
+	for (int i = 0; i < CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES; i++) {
+		if (sensor_trigger_devices[i] == sensor) {
+			return i;
+		}
+	}
+	return -1;
+}
 
 /* Forward declaration */
 static void data_ready_trigger_handler(const struct device *sensor,
@@ -882,25 +909,27 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 #endif
 }
 
-enum sample_stats_state {
-	SAMPLE_STATS_STATE_UNINITIALIZED = 0,
-	SAMPLE_STATS_STATE_ENABLED,
-	SAMPLE_STATS_STATE_DISABLED,
-};
-
-struct sample_stats {
-	int64_t accumulator;
-	uint32_t count;
-	uint64_t sample_window_start;
-	enum sample_stats_state state;
-};
-
 static void data_ready_trigger_handler(const struct device *sensor,
 				       const struct sensor_trigger *trigger)
 {
-	static struct sample_stats stats[SENSOR_CHAN_ALL];
 	const int64_t now = k_uptime_get();
 	struct sensor_value value;
+	int sensor_idx = find_sensor_trigger_device(sensor);
+	struct sample_stats *stats;
+	int sensor_name_len_before_at;
+	const char *sensor_name;
+
+	if (sensor_idx < 0) {
+		LOG_ERR("Unable to find sensor trigger device");
+		return;
+	}
+	stats = sensor_stats[sensor_idx];
+	sensor_name = sensor_trigger_devices[sensor_idx]->name;
+	if (sensor_name) {
+		sensor_name_len_before_at = strchr(sensor_name, '@') - sensor_name;
+	} else {
+		sensor_name_len_before_at = 0;
+	}
 
 	if (sensor_sample_fetch(sensor)) {
 		LOG_ERR("Failed to fetch samples on data ready handler");
@@ -919,9 +948,16 @@ static void data_ready_trigger_handler(const struct device *sensor,
 		}
 
 		rc = sensor_channel_get(sensor, i, &value);
-		if (rc == -ENOTSUP && stats[i].state == SAMPLE_STATS_STATE_UNINITIALIZED) {
-			/* Stop reading this channel if the driver told us it's not supported. */
-			stats[i].state = SAMPLE_STATS_STATE_DISABLED;
+		if (stats[i].state == SAMPLE_STATS_STATE_UNINITIALIZED) {
+			if (rc == -ENOTSUP) {
+				/*
+				 * Stop reading this channel if the driver told us
+				 * it's not supported.
+				 */
+				stats[i].state = SAMPLE_STATS_STATE_DISABLED;
+			} else if (rc == 0) {
+				stats[i].state = SAMPLE_STATS_STATE_ENABLED;
+			}
 		}
 		if (rc != 0) {
 			/* Skip on any error. */
@@ -937,7 +973,10 @@ static void data_ready_trigger_handler(const struct device *sensor,
 
 			value.val1 = micro_value / 1000000;
 			value.val2 = (int32_t)llabs(micro_value - (value.val1 * 1000000));
-			LOG_INF("chan=%d, num_samples=%u, data=%d.%06d", i, stats[i].count,
+			LOG_INF("sensor=%.*s, chan=%s, num_samples=%u, data=%d.%06d",
+				sensor_name_len_before_at, sensor_name,
+				sensor_channel_name[i],
+				stats[i].count,
 				value.val1, value.val2);
 
 			stats[i].accumulator = 0;
@@ -973,11 +1012,37 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 
 	/* Parse on/off */
 	if (strcmp(argv[2], "on") == 0) {
-		err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger,
-					 sensor_trigger_table[trigger].handler);
+		/* find a free entry in sensor_trigger_devices[] */
+		int sensor_idx = find_sensor_trigger_device(NULL);
+
+		if (sensor_idx < 0) {
+			shell_error(sh, "Unable to support more simultaneous sensor trigger"
+				    " devices");
+			err = -ENOTSUP;
+		} else {
+			struct sample_stats *stats = sensor_stats[sensor_idx];
+
+			sensor_trigger_devices[sensor_idx] = dev;
+			/* reset stats state to UNINITIALIZED */
+			for (unsigned int ch = 0; ch < SENSOR_CHAN_ALL; ch++) {
+				stats[ch].state = SAMPLE_STATS_STATE_UNINITIALIZED;
+			}
+			err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger,
+						 sensor_trigger_table[trigger].handler);
+		}
 	} else if (strcmp(argv[2], "off") == 0) {
 		/* Clear the handler for the given trigger on this device */
 		err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger, NULL);
+		if (!err) {
+			/* find entry in sensor_trigger_devices[] and free it */
+			int sensor_idx = find_sensor_trigger_device(dev);
+
+			if (sensor_idx < 0) {
+				shell_error(sh, "Unable to find sensor device in trigger array");
+			} else {
+				sensor_trigger_devices[sensor_idx] = NULL;
+			}
+		}
 	} else {
 		shell_error(sh, "Pass 'on' or 'off' to enable/disable trigger");
 		return -EINVAL;

@@ -15,4 +15,5 @@ supported:
   - memc
   - adc
   - counter
+  - can
 vendor: st

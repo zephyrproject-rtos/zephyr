@@ -603,7 +603,7 @@ static int uart_esp32_async_tx_abort(const struct device *dev)
 
 	err = dma_stop(config->dma_dev, config->tx_dma_channel);
 	if (err) {
-		LOG_ERR("Error stoping Tx DMA (%d)", err);
+		LOG_ERR("Error stopping Tx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -838,7 +838,7 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 
 	err = dma_stop(config->dma_dev, config->rx_dma_channel);
 	if (err) {
-		LOG_ERR("Error stoping Rx DMA (%d)", err);
+		LOG_ERR("Error stopping Rx DMA (%d)", err);
 		goto unlock;
 	}
 

@@ -56,6 +56,7 @@ static void modem_backend_uart_isr_irq_handler_transmit_ready(struct modem_backe
 
 	if (ring_buf_is_empty(&backend->isr.transmit_rb) == true) {
 		uart_irq_tx_disable(backend->uart);
+		k_work_submit(&backend->transmit_idle_work);
 		return;
 	}
 

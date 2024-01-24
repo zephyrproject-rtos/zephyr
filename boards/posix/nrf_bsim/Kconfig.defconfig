@@ -87,11 +87,11 @@ endif # LOG
 if CONSOLE
 
 config POSIX_ARCH_CONSOLE
-	default y if !SERIAL
-
-config UART_CONSOLE
-	default y if SERIAL
+	default y
 
 endif # CONSOLE
+
+config UART_NRFX_UARTE_LEGACY_SHIM
+	default y
 
 endif # SOC_SERIES_BSIM_NRFXX

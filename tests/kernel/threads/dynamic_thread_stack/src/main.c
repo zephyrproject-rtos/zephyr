@@ -9,13 +9,17 @@
 
 #define TIMEOUT_MS 500
 
+#define POOL_SIZE 20480
+
 #ifdef CONFIG_USERSPACE
 #define STACK_OBJ_SIZE Z_THREAD_STACK_SIZE_ADJUST(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
 #else
 #define STACK_OBJ_SIZE Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
 #endif
 
-#define MAX_HEAP_STACKS (CONFIG_HEAP_MEM_POOL_SIZE / STACK_OBJ_SIZE)
+#define MAX_HEAP_STACKS (POOL_SIZE / STACK_OBJ_SIZE)
+
+Z_HEAP_DEFINE_IN_SECT(stack_heap, POOL_SIZE, __incoherent);
 
 ZTEST_DMEM bool tflag[MAX(CONFIG_DYNAMIC_THREAD_POOL_SIZE, MAX_HEAP_STACKS)];
 
@@ -130,11 +134,7 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 
 static void *dynamic_thread_stack_setup(void)
 {
-#ifdef CONFIG_USERSPACE
-	k_thread_system_pool_assign(k_current_get());
-	/* k_thread_access_grant(k_current_get(), ... ); */
-#endif
-
+	k_thread_heap_assign(k_current_get(), &stack_heap);
 	return NULL;
 }
 

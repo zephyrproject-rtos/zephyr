@@ -78,6 +78,15 @@ compatibility device node, for example:
         };
     };
 
+Driver Documentation
+********************
+
+.. toctree::
+   :maxdepth: 1
+
+   gpio-kbd.rst
+
+
 API Reference
 *************
 
@@ -88,7 +97,7 @@ Input Event Definitions
 
 .. doxygengroup:: input_events
 
-Keyboard Matrix API Reference
-*****************************
+Analog Axis API Reference
+*************************
 
-.. doxygengroup:: input_kbd_matrix
+.. doxygengroup:: input_analog_axis

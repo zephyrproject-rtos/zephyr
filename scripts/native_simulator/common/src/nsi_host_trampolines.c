@@ -56,6 +56,11 @@ long nsi_host_read(int fd, void *buffer, unsigned long size)
 	return read(fd, buffer, size);
 }
 
+void *nsi_host_realloc(void *ptr, unsigned long size)
+{
+	return realloc(ptr, size);
+}
+
 void nsi_host_srandom(unsigned int seed)
 {
 	srandom(seed);

@@ -181,11 +181,12 @@
 			status = "okay";
 		};
 
-		gpiote: gpiote@40006000 {
+		gpiote: gpiote0: gpiote@40006000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 5>;
 			status = "disabled";
+			instance = <0>;
 		};
 
 		adc: adc@40007000 {
@@ -525,6 +526,7 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 			port = <0>;
+			gpiote-instance = <&gpiote>;
 		};
 
 		gpio1: gpio@50000300 {
@@ -536,6 +538,7 @@
 			ngpios = <16>;
 			status = "disabled";
 			port = <1>;
+			gpiote-instance = <&gpiote>;
 		};
 
 		cryptocell: crypto@5002a000 {

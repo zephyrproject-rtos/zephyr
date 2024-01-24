@@ -10,6 +10,7 @@
 #include "mesh/net.h"
 #include "mesh/mesh.h"
 #include "mesh/foundation.h"
+#include "gatt_common.h"
 
 #define LOG_MODULE_NAME test_adv
 
@@ -17,22 +18,6 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define WAIT_TIME 60 /*seconds*/
-
-enum bt_mesh_gatt_service {
-	MESH_SERVICE_PROVISIONING,
-	MESH_SERVICE_PROXY,
-};
-
-struct bt_mesh_test_adv {
-	uint8_t retr;     /* number of retransmits of adv frame */
-	int64_t interval; /* interval of transmitted frames */
-};
-
-struct bt_mesh_test_gatt {
-	uint8_t transmits; /* number of frame (pb gatt or proxy beacon) transmits */
-	int64_t interval;  /* interval of transmitted frames */
-	enum bt_mesh_gatt_service service;
-};
 
 extern const struct bt_mesh_comp comp;
 
@@ -183,36 +168,6 @@ static void seq_end_cb(int err, void *cb_data)
 	}
 }
 
-static void parse_mesh_gatt_preamble(struct net_buf_simple *buf)
-{
-	ASSERT_EQUAL(0x0201, net_buf_simple_pull_be16(buf));
-	/* flags */
-	(void)net_buf_simple_pull_u8(buf);
-	ASSERT_EQUAL(0x0303, net_buf_simple_pull_be16(buf));
-}
-
-static void parse_mesh_pb_gatt_service(struct net_buf_simple *buf)
-{
-	/* Figure 7.1: PB-GATT Advertising Data */
-	/* mesh provisioning service */
-	ASSERT_EQUAL(0x2718, net_buf_simple_pull_be16(buf));
-	ASSERT_EQUAL(0x1516, net_buf_simple_pull_be16(buf));
-	/* mesh provisioning service */
-	ASSERT_EQUAL(0x2718, net_buf_simple_pull_be16(buf));
-}
-
-static void parse_mesh_proxy_service(struct net_buf_simple *buf)
-{
-	/* Figure 7.2: Advertising with Network ID (Identification Type 0x00) */
-	/* mesh proxy service */
-	ASSERT_EQUAL(0x2818, net_buf_simple_pull_be16(buf));
-	ASSERT_EQUAL(0x0c16, net_buf_simple_pull_be16(buf));
-	/* mesh proxy service */
-	ASSERT_EQUAL(0x2818, net_buf_simple_pull_be16(buf));
-	/* network ID */
-	ASSERT_EQUAL(0x00, net_buf_simple_pull_u8(buf));
-}
-
 static void gatt_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 			  uint8_t adv_type, struct net_buf_simple *buf)
 {
@@ -220,12 +175,12 @@ static void gatt_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 		return;
 	}
 
-	parse_mesh_gatt_preamble(buf);
+	bt_mesh_test_parse_mesh_gatt_preamble(buf);
 
 	if (gatt_param.service == MESH_SERVICE_PROVISIONING) {
-		parse_mesh_pb_gatt_service(buf);
+		bt_mesh_test_parse_mesh_pb_gatt_service(buf);
 	} else {
-		parse_mesh_proxy_service(buf);
+		bt_mesh_test_parse_mesh_proxy_service(buf);
 	}
 
 	LOG_INF("rx: %s", txt_msg);
@@ -234,26 +189,6 @@ static void gatt_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 		LOG_INF("rx completed. stop observer.");
 		k_sem_give(&observer_sem);
 	}
-}
-
-static void rx_gatt_beacons(void)
-{
-	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
-		.options    = BT_LE_SCAN_OPT_NONE,
-		.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
-		.window     = BT_MESH_ADV_SCAN_UNIT(1000)
-	};
-	int err;
-
-	err = bt_le_scan_start(&scan_param, gatt_scan_cb);
-	ASSERT_FALSE_MSG(err && err != -EALREADY, "Starting scan failed (err %d)\n", err);
-
-	err = k_sem_take(&observer_sem, K_SECONDS(20));
-	ASSERT_OK(err);
-
-	err = bt_le_scan_stop();
-	ASSERT_FALSE_MSG(err && err != -EALREADY, "Stopping scan failed (err %d)\n", err);
 }
 
 static void xmit_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
@@ -280,26 +215,6 @@ static void xmit_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type
 		LOG_INF("rx completed. stop observer.");
 		k_sem_give(&observer_sem);
 	}
-}
-
-static void rx_xmit_adv(void)
-{
-	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
-		.options    = BT_LE_SCAN_OPT_NONE,
-		.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
-		.window     = BT_MESH_ADV_SCAN_UNIT(1000)
-	};
-	int err;
-
-	err = bt_le_scan_start(&scan_param, xmit_scan_cb);
-	ASSERT_FALSE_MSG(err && err != -EALREADY, "Starting scan failed (err %d)\n", err);
-
-	err = k_sem_take(&observer_sem, K_SECONDS(20));
-	ASSERT_OK(err);
-
-	err = bt_le_scan_stop();
-	ASSERT_FALSE_MSG(err && err != -EALREADY, "Stopping scan failed (err %d)\n", err);
 }
 
 static void send_order_start_cb(uint16_t duration, int err, void *user_data)
@@ -355,25 +270,10 @@ static void receive_order_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t
 
 static void receive_order(int expect_adv)
 {
-	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
-		.options    = BT_LE_SCAN_OPT_NONE,
-		.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
-		.window     = BT_MESH_ADV_SCAN_UNIT(1000)
-	};
-	int err;
-
-	err = bt_le_scan_start(&scan_param, receive_order_scan_cb);
-	ASSERT_FALSE_MSG(err && err != -EALREADY, "Starting scan failed (err %d)\n", err);
-
 	previous_checker = 0xff;
 	for (int i = 0; i < expect_adv; i++) {
-		err = k_sem_take(&observer_sem, K_SECONDS(10));
-		ASSERT_OK_MSG(err, "Didn't receive adv in time");
+		ASSERT_OK(bt_mesh_test_wait_for_packet(receive_order_scan_cb, &observer_sem, 10));
 	}
-
-	err = bt_le_scan_stop();
-	ASSERT_FALSE_MSG(err && err != -EALREADY, "Stopping scan failed (err %d)\n", err);
 }
 
 static void send_adv_buf(struct bt_mesh_adv *adv, uint8_t curr, uint8_t prev)
@@ -446,7 +346,7 @@ static void test_rx_xmit(void)
 	xmit_param.interval = 20;
 
 	bt_init();
-	rx_xmit_adv();
+	ASSERT_OK(bt_mesh_test_wait_for_packet(xmit_scan_cb, &observer_sem, 20));
 
 	PASS();
 }
@@ -548,7 +448,7 @@ static void test_rx_proxy_mixin(void)
 	bt_init();
 
 	/* Scan pb gatt beacons. */
-	rx_gatt_beacons();
+	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &observer_sem, 20));
 
 	/* Delay to provision dut */
 	k_sleep(K_MSEC(1000));
@@ -558,15 +458,15 @@ static void test_rx_proxy_mixin(void)
 	gatt_param.transmits = 5000 / 1000;
 	gatt_param.interval = 1000;
 	gatt_param.service = MESH_SERVICE_PROXY;
-	rx_gatt_beacons();
+	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &observer_sem, 20));
 
 	/* Scan adv data. */
 	xmit_param.retr = 5;
 	xmit_param.interval = 20;
-	rx_xmit_adv();
+	ASSERT_OK(bt_mesh_test_wait_for_packet(xmit_scan_cb, &observer_sem, 20));
 
 	/* Scan proxy beacons again. */
-	rx_gatt_beacons();
+	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &observer_sem, 20));
 
 	PASS();
 }

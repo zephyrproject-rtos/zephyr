@@ -19,6 +19,8 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="ramdisk_big.overlay"
 
   filesystem.ext2.sdcard:
+    simulation_exclude:
+      - renode
     platform_allow:
       - hifive_unmatched
       - bl5340_dvk_cpuapp

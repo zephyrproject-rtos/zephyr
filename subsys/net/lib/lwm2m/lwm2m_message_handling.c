@@ -46,6 +46,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_obj_access_control.h"
 #include "lwm2m_obj_server.h"
+#include "lwm2m_obj_gateway.h"
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
@@ -479,7 +480,7 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 }
 /* utility functions */
 
-static int coap_options_to_path(struct coap_option *opt, int options_count,
+int coap_options_to_path(struct coap_option *opt, int options_count,
 				struct lwm2m_obj_path *path)
 {
 	uint16_t len,
@@ -723,6 +724,13 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 	if (ret) {
 		lwm2m_reset_message(msg, true);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_NO_MSG_BUFFERING)) {
+		sys_slist_append(&msg->ctx->pending_sends, &msg->node);
+		lwm2m_engine_wake_up();
+		lwm2m_engine_connection_resume(msg->ctx);
+		return 0;
 	}
 
 	if (msg->ctx->buffer_client_messages) {
@@ -2266,6 +2274,15 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 	if (tkl) {
 		msg->tkl = tkl;
 		msg->token = token;
+	}
+
+	if (IS_ENABLED(CONFIG_LWM2M_GATEWAY_OBJ_SUPPORT)) {
+		r = lwm2m_gw_handle_req(msg);
+		if (r == 0) {
+			return 0;
+		} else if (r != -ENOENT) {
+			goto error;
+		}
 	}
 
 	/* parse the URL path into components */

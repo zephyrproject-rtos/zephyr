@@ -17,5 +17,6 @@ config SOC_SERIES_S32K1XX
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_FTM
+	select HAS_MCUX_FLEXCAN
 	help
 	  Enable support for NXP S32K1XX MCU series.

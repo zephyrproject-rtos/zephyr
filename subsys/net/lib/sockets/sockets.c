@@ -684,7 +684,7 @@ int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 
 	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);
 
-	(void)sock_obj_core_alloc_find(sock, new_sock, addr->sa_family, SOCK_STREAM);
+	(void)sock_obj_core_alloc_find(sock, new_sock, SOCK_STREAM);
 
 	return new_sock;
 }
@@ -2445,6 +2445,18 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 		}
+
+		case SO_DOMAIN: {
+			if (*optlen != sizeof(int)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			*(int *)optval = net_context_get_family(ctx);
+
+			return 0;
+		}
+
 		break;
 
 		case SO_RCVBUF:

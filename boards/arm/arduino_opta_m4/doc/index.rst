@@ -71,7 +71,7 @@ Pin Mapping
 ARDUINO OPTA M4 has access to the 9 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `ARDUINO-OPTA website`_.
+For more details please refer to `ARDUINO-OPTA website`_.
 
 Default Zephyr Peripheral Mapping
 ---------------------------------

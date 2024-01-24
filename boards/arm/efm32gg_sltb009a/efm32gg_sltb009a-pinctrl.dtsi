@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gecko-pinctrl-s1.h>
+
+&pinctrl {
+	/* configuration for usart0 device, default state - operating as UART */
+	usart0_default: usart0_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, E, 0)>,
+				<GECKO_PSEL(UART_RX, E, 1)>,
+				<GECKO_LOC(UART_TX, 7)>,
+				<GECKO_LOC(UART_RX, 6)>;
+		};
+	};
+};

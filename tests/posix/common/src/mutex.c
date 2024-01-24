@@ -12,9 +12,9 @@
 
 #define SLEEP_MS 100
 
-pthread_mutex_t mutex;
+static pthread_mutex_t mutex;
 
-void *normal_mutex_entry(void *p1)
+static void *normal_mutex_entry(void *p1)
 {
 	int i, rc;
 
@@ -34,7 +34,7 @@ void *normal_mutex_entry(void *p1)
 	return NULL;
 }
 
-void *recursive_mutex_entry(void *p1)
+static void *recursive_mutex_entry(void *p1)
 {
 	zassert_false(pthread_mutex_lock(&mutex), "mutex is not taken");
 	zassert_false(pthread_mutex_lock(&mutex), "mutex is not taken 2nd time");
@@ -83,7 +83,7 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
  *	    and pthread_mutex_lock are tested with mutex type being
  *	    normal.
  */
-ZTEST(posix_apis, test_mutex_normal)
+ZTEST(mutex, test_mutex_normal)
 {
 	test_mutex_common(PTHREAD_MUTEX_NORMAL, normal_mutex_entry);
 }
@@ -95,7 +95,7 @@ ZTEST(posix_apis, test_mutex_normal)
  *	    twice and unlocked for the same number of time.
  *
  */
-ZTEST(posix_apis, test_mutex_recursive)
+ZTEST(mutex, test_mutex_recursive)
 {
 	test_mutex_common(PTHREAD_MUTEX_RECURSIVE, recursive_mutex_entry);
 }
@@ -105,7 +105,7 @@ ZTEST(posix_apis, test_mutex_recursive)
  *
  * @details Exactly CONFIG_MAX_PTHREAD_MUTEX_COUNT can be in use at once.
  */
-ZTEST(posix_apis, test_mutex_resource_exhausted)
+ZTEST(mutex, test_mutex_resource_exhausted)
 {
 	size_t i;
 	pthread_mutex_t m[CONFIG_MAX_PTHREAD_MUTEX_COUNT + 1];
@@ -129,7 +129,7 @@ ZTEST(posix_apis, test_mutex_resource_exhausted)
  *
  * @details Demonstrate that mutexes may be used over and over again.
  */
-ZTEST(posix_apis, test_mutex_resource_leak)
+ZTEST(mutex, test_mutex_resource_leak)
 {
 	pthread_mutex_t m;
 
@@ -168,7 +168,7 @@ static void *test_mutex_timedlock_fn(void *arg)
 }
 
 /** @brief Test to verify @ref pthread_mutex_timedlock returns ETIMEDOUT */
-ZTEST(posix_apis, test_mutex_timedlock)
+ZTEST(mutex, test_mutex_timedlock)
 {
 	void *ret;
 	pthread_t th;
@@ -194,3 +194,5 @@ ZTEST(posix_apis, test_mutex_timedlock)
 
 	zassert_ok(pthread_mutex_destroy(&mutex));
 }
+
+ZTEST_SUITE(mutex, NULL, NULL, NULL, NULL, NULL);

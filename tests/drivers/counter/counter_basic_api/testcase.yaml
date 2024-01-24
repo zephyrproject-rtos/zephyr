@@ -27,3 +27,12 @@ tests:
     timeout: 600
     extra_configs:
       - CONFIG_COUNTER_RTC_STM32_SUBSECONDS=y
+  drivers.counter.basic_api.rtc_1khz:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: mimxrt685_evk_cm33
+    timeout: 400
+    extra_args:
+      DTC_OVERLAY_FILE="boards/mimxrt685_evk_cm33_rtc_1khz.overlay"

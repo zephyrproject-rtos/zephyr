@@ -24,7 +24,7 @@ static void waker_func(struct k_work *work)
 }
 K_WORK_DELAYABLE_DEFINE(waker, waker_func);
 
-ZTEST(posix_apis, test_sleep)
+ZTEST(sleep, test_sleep)
 {
 	uint32_t then;
 	uint32_t now;
@@ -55,7 +55,7 @@ ZTEST(posix_apis, test_sleep)
 	zassert_true(sleep(sleep_max_s) >= sleep_rem_s);
 }
 
-ZTEST(posix_apis, test_usleep)
+ZTEST(sleep, test_usleep)
 {
 	uint32_t then;
 	uint32_t now;
@@ -86,3 +86,5 @@ ZTEST(posix_apis, test_usleep)
 	zassert_equal(-1, usleep(USEC_PER_SEC - 1));
 	zassert_equal(EINTR, errno);
 }
+
+ZTEST_SUITE(sleep, NULL, NULL, NULL, NULL, NULL);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright (c) 2019-2024 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,8 @@ LOG_MODULE_REGISTER(main);
 /* Nominal RTD (PT100) resistance in ohms */
 #define RTD_NOMINAL_RESISTANCE 100
 
-/* ADC resolution in bits */
-#define ADC_RESOLUTION 24U
-
 /* ADC maximum value (taking sign bit into consideration) */
-#define ADC_MAX BIT_MASK(ADC_RESOLUTION - 1)
+#define ADC_MAX(resolution) BIT_MASK(resolution - 1)
 
 /* Bottom resistor value in ohms */
 #define BOTTOM_RESISTANCE 2000
@@ -42,46 +39,39 @@ static double rtd_temperature(int nom, double resistance)
 
 int main(void)
 {
-	const struct device *const lmp90100 = DEVICE_DT_GET_ONE(ti_lmp90100);
+	const struct adc_dt_spec ch_cfg = ADC_DT_SPEC_GET(DT_PATH(zephyr_user));
+	double adc_max = ADC_MAX(ch_cfg.resolution);
 	double resistance;
 	int32_t buffer;
 	int err;
-	const struct adc_channel_cfg ch_cfg = {
-		.channel_id = 0,
-		.differential = 1,
-		.input_positive = 0,
-		.input_negative = 1,
-		.reference = ADC_REF_EXTERNAL1,
-		.gain = ADC_GAIN_1,
-		.acquisition_time = ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 0)
-	};
-	const struct adc_sequence seq = {
-		.options = NULL,
-		.channels = BIT(0),
+	struct adc_sequence seq = {
 		.buffer = &buffer,
 		.buffer_size = sizeof(buffer),
-		.resolution = ADC_RESOLUTION,
-		.oversampling = 0,
-		.calibrate = 0
 	};
 
-	if (!device_is_ready(lmp90100)) {
+	if (!adc_is_ready_dt(&ch_cfg)) {
 		LOG_ERR("LMP90100 device not ready");
 		return 0;
 	}
 
-	err = adc_channel_setup(lmp90100, &ch_cfg);
-	if (err) {
+	err = adc_channel_setup_dt(&ch_cfg);
+	if (err != 0) {
 		LOG_ERR("failed to setup ADC channel (err %d)", err);
 		return 0;
 	}
 
+	err = adc_sequence_init_dt(&ch_cfg, &seq);
+	if (err != 0) {
+		LOG_ERR("failed to initialize ADC sequence (err %d)", err);
+		return 0;
+	}
+
 	while (true) {
-		err = adc_read(lmp90100, &seq);
-		if (err) {
+		err = adc_read_dt(&ch_cfg, &seq);
+		if (err != 0) {
 			LOG_ERR("failed to read ADC (err %d)", err);
 		} else {
-			resistance = (buffer / (double)ADC_MAX) * BOTTOM_RESISTANCE;
+			resistance = (buffer / adc_max) * BOTTOM_RESISTANCE;
 			printf("R: %.02f ohm\n", resistance);
 			printf("T: %.02f degC\n",
 				rtd_temperature(RTD_NOMINAL_RESISTANCE,

@@ -21,7 +21,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap_internal.h"
+#include "l2cap_br_internal.h"
 #include "sdp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_SDP_LOG_LEVEL

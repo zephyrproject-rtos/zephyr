@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <gd/gd32f4xx/gd32f407.dtsi>
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(512)>;
+};

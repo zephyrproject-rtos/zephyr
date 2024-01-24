@@ -153,7 +153,7 @@ static int microchip_mcp7940n_bbram_read(const struct device *dev, size_t offset
 	size_t i = 0;
 	int32_t rc = 0;
 
-	if ((offset + size) > MICROCHIP_MCP7940N_SRAM_SIZE) {
+	if (size == 0 || (offset + size) > MICROCHIP_MCP7940N_SRAM_SIZE) {
 		return -EINVAL;
 	}
 
@@ -186,7 +186,7 @@ static int microchip_mcp7940n_bbram_write(const struct device *dev, size_t offse
 	size_t i = 0;
 	int32_t rc = 0;
 
-	if ((offset + size) > MICROCHIP_MCP7940N_SRAM_SIZE) {
+	if (size == 0 || (offset + size) > MICROCHIP_MCP7940N_SRAM_SIZE) {
 		return -EINVAL;
 	}
 

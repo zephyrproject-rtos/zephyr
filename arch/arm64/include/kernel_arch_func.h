@@ -48,8 +48,8 @@ extern void z_arm64_set_ttbr0(uint64_t ttbr0);
 extern void z_arm64_mem_cfg_ipi(void);
 
 #ifdef CONFIG_FPU_SHARING
-void z_arm64_flush_local_fpu(void);
-void z_arm64_flush_fpu_ipi(unsigned int cpu);
+void arch_flush_local_fpu(void);
+void arch_flush_fpu_ipi(unsigned int cpu);
 #endif
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK

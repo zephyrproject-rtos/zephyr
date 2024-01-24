@@ -160,13 +160,25 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 		};
 
-		iom4: iom@40054000 {
+		iom4: spi@40054000 {
+			/* IOM4 works as SPI and is wired internally for BLE HCI. */
+			compatible = "ambiq,spi";
 			reg = <0x40054000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <10 0>;
+			cs-gpios = <&gpio32_63 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			clock-frequency = <DT_FREQ_M(24)>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
+
+			bt-hci@0 {
+				compatible = "ambiq,bt-hci-spi";
+				reg = <0>;
+				irq-gpios = <&gpio32_63 21 GPIO_ACTIVE_HIGH>;
+				reset-gpios = <&gpio32_63 23 GPIO_ACTIVE_LOW>;
+				clkreq-gpios = <&gpio32_63 20 GPIO_ACTIVE_HIGH>;
+			};
 		};
 
 		iom5: iom@40055000 {

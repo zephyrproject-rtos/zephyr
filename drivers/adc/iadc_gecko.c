@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(iadc_gecko, CONFIG_ADC_LOG_LEVEL);
 /* Number of channels available. */
 #define GECKO_CHANNEL_COUNT	16
 #define GECKO_INTERNAL_REFERENCE_mV	1210
-#define GECKO_DATA_RES12BIT(DATA)	((DATA & 0xFFF0) >> 4);
+#define GECKO_DATA_RES12BIT(DATA)	((DATA) & 0x0FFF)
 
 struct adc_gecko_channel_config {
 	IADC_CfgAnalogGain_t gain;

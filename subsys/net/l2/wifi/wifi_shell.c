@@ -25,25 +25,30 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
 #include <zephyr/posix/unistd.h>
+#include <zephyr/sys/slist.h>
 
 #include "net_private.h"
 
 #define WIFI_SHELL_MODULE "wifi"
 
+#define WIFI_SHELL_MGMT_EVENTS_COMMON (NET_EVENT_WIFI_SCAN_DONE   |\
+				NET_EVENT_WIFI_CONNECT_RESULT     |\
+				NET_EVENT_WIFI_DISCONNECT_RESULT  |  \
+				NET_EVENT_WIFI_TWT                |\
+				NET_EVENT_WIFI_RAW_SCAN_RESULT    |\
+				NET_EVENT_WIFI_AP_ENABLE_RESULT   |\
+				NET_EVENT_WIFI_AP_DISABLE_RESULT  |\
+				NET_EVENT_WIFI_AP_STA_CONNECTED   |\
+				NET_EVENT_WIFI_AP_STA_DISCONNECTED)
+
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
-#define WIFI_SHELL_MGMT_EVENTS (NET_EVENT_WIFI_RAW_SCAN_RESULT |        \
-				NET_EVENT_WIFI_SCAN_DONE |              \
-				NET_EVENT_WIFI_CONNECT_RESULT |         \
-				NET_EVENT_WIFI_DISCONNECT_RESULT |  \
-				NET_EVENT_WIFI_TWT)
+#define WIFI_SHELL_MGMT_EVENTS (WIFI_SHELL_MGMT_EVENTS_COMMON)
 #else
-#define WIFI_SHELL_MGMT_EVENTS (NET_EVENT_WIFI_SCAN_RESULT |		\
-				NET_EVENT_WIFI_SCAN_DONE |		\
-				NET_EVENT_WIFI_CONNECT_RESULT |		\
-				NET_EVENT_WIFI_DISCONNECT_RESULT |  \
-				NET_EVENT_WIFI_TWT |		\
-				NET_EVENT_WIFI_RAW_SCAN_RESULT)
+#define WIFI_SHELL_MGMT_EVENTS (WIFI_SHELL_MGMT_EVENTS_COMMON |\
+				NET_EVENT_WIFI_SCAN_RESULT)
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY */
+
+#define MAX_BANDS_STR_LEN 64
 
 static struct {
 	const struct shell *sh;
@@ -62,6 +67,14 @@ static struct {
 static uint32_t scan_result;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
+static struct wifi_reg_chan_info chan_info[MAX_REG_CHAN_NUM];
+
+static K_MUTEX_DEFINE(wifi_ap_sta_list_lock);
+struct wifi_ap_sta_node {
+	bool valid;
+	struct wifi_ap_sta_info sta_info;
+};
+static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
 
 #define print(sh, level, fmt, ...)					\
 	do {								\
@@ -125,7 +138,6 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	      wifi_mfp_txt(entry->mfp));
 }
 
-#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 static int wifi_freq_to_channel(int frequency)
 {
 	int channel = 0;
@@ -147,6 +159,7 @@ static int wifi_freq_to_channel(int frequency)
 	return channel;
 }
 
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 static enum wifi_frequency_bands wifi_freq_to_band(int frequency)
 {
 	enum wifi_frequency_bands band = WIFI_FREQ_BAND_2_4_GHZ;
@@ -280,8 +293,13 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 		(const struct wifi_twt_params *)cb->info;
 
 	if (resp->operation == WIFI_TWT_TEARDOWN) {
-		print(context.sh, SHELL_NORMAL, "TWT teardown received for flow ID %d\n",
-		      resp->flow_id);
+		if (resp->teardown_status == WIFI_TWT_TEARDOWN_SUCCESS) {
+			print(context.sh, SHELL_NORMAL, "TWT teardown succeeded for flow ID %d\n",
+			      resp->flow_id);
+		} else {
+			print(context.sh, SHELL_NORMAL, "TWT teardown failed for flow ID %d\n",
+			      resp->flow_id);
+		}
 		return;
 	}
 
@@ -301,6 +319,87 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 	} else {
 		print(context.sh, SHELL_NORMAL, "TWT response timed out\n");
 	}
+}
+
+static void handle_wifi_ap_enable_result(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_status *status =
+		(const struct wifi_status *)cb->info;
+
+	if (status->status) {
+		print(context.sh, SHELL_WARNING,
+		      "AP enable request failed (%d)\n", status->status);
+	} else {
+		print(context.sh, SHELL_NORMAL, "AP enabled\n");
+	}
+}
+
+static void handle_wifi_ap_disable_result(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_status *status =
+		(const struct wifi_status *)cb->info;
+
+	if (status->status) {
+		print(context.sh, SHELL_WARNING,
+		      "AP disable request failed (%d)\n", status->status);
+	} else {
+		print(context.sh, SHELL_NORMAL, "AP disabled\n");
+	}
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	memset(&sta_list, 0, sizeof(sta_list));
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
+}
+
+static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_ap_sta_info *sta_info =
+		(const struct wifi_ap_sta_info *)cb->info;
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+	int i;
+
+	print(context.sh, SHELL_NORMAL, "Station connected: %s\n",
+	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
+				     mac_string_buf, sizeof(mac_string_buf)));
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	for (i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
+		if (!sta_list[i].valid) {
+			sta_list[i].sta_info = *sta_info;
+			sta_list[i].valid = true;
+			break;
+		}
+	}
+	if (i == CONFIG_WIFI_SHELL_MAX_AP_STA) {
+		print(context.sh, SHELL_WARNING, "No space to store station info: "
+			"Increase CONFIG_WIFI_SHELL_MAX_AP_STA\n");
+	}
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
+}
+
+static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_ap_sta_info *sta_info =
+		(const struct wifi_ap_sta_info *)cb->info;
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	print(context.sh, SHELL_NORMAL, "Station disconnected: %s\n",
+	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
+				     mac_string_buf, sizeof(mac_string_buf)));
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	for (int i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
+		if (!sta_list[i].valid) {
+			continue;
+		}
+
+		if (!memcmp(sta_list[i].sta_info.mac, sta_info->mac,
+			    WIFI_MAC_ADDR_LEN)) {
+			sta_list[i].valid = false;
+			break;
+		}
+	}
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
@@ -327,18 +426,33 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		handle_wifi_raw_scan_result(cb);
 		break;
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+	case NET_EVENT_WIFI_AP_ENABLE_RESULT:
+		handle_wifi_ap_enable_result(cb);
+		break;
+	case NET_EVENT_WIFI_AP_DISABLE_RESULT:
+		handle_wifi_ap_disable_result(cb);
+		break;
+	case NET_EVENT_WIFI_AP_STA_CONNECTED:
+		handle_wifi_ap_sta_connected(cb);
+		break;
+	case NET_EVENT_WIFI_AP_STA_DISCONNECTED:
+		handle_wifi_ap_sta_disconnected(cb);
+		break;
 	default:
 		break;
 	}
 }
 
 static int __wifi_args_to_params(size_t argc, char *argv[],
-				struct wifi_connect_req_params *params)
+				struct wifi_connect_req_params *params,
+				enum wifi_iface_mode iface_mode)
 {
 	char *endptr;
 	int idx = 1;
 
 	if (argc < 1) {
+		print(context.sh, SHELL_WARNING,
+		      "SSID not specified\n");
 		return -EINVAL;
 	}
 
@@ -351,20 +465,67 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	params->ssid = argv[0];
 	params->ssid_length = strlen(params->ssid);
 	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
+		print(context.sh, SHELL_WARNING,
+		      "SSID too long (max %d characters)\n",
+		      WIFI_SSID_MAX_LEN);
 		return -EINVAL;
 	}
 
-	/* Channel (optional) */
+	/* Channel (optional: STA, mandatory: AP) */
 	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
-		params->channel = strtol(argv[idx], &endptr, 10);
+		long channel = strtol(argv[idx], &endptr, 10);
+
 		if (*endptr != '\0') {
+			print(context.sh, SHELL_ERROR,
+			      "Failed to parse channel: %s: endp: %s, err: %s\n",
+			      argv[idx],
+			      endptr,
+			      strerror(errno));
 			return -EINVAL;
 		}
 
-		if (params->channel == 0U) {
+		if (iface_mode == WIFI_MODE_INFRA && channel == 0) {
 			params->channel = WIFI_CHANNEL_ANY;
-		}
+		} else {
+			const uint8_t bands[] = {WIFI_FREQ_BAND_2_4_GHZ,
+					       WIFI_FREQ_BAND_5_GHZ,
+					       WIFI_FREQ_BAND_6_GHZ};
+			uint8_t band;
+			bool found = false;
+			char bands_str[MAX_BANDS_STR_LEN] = {0};
+			size_t offset = 0;
 
+			for (band = 0; band < ARRAY_SIZE(bands); band++) {
+				offset += snprintf(bands_str + offset,
+						  sizeof(bands_str) - offset,
+						  "%s%s",
+						  band ? "," : "",
+						  wifi_band_txt(bands[band]));
+				if (offset >= sizeof(bands_str)) {
+					print(context.sh, SHELL_ERROR,
+					      "Failed to parse channel: %s: "
+					      "band string too long\n",
+					      argv[idx]);
+					return -EINVAL;
+				}
+
+				if (wifi_utils_validate_chan(bands[band],
+							     channel)) {
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) {
+				print(context.sh, SHELL_ERROR,
+				      "Invalid channel: %ld, checked bands: %s\n",
+				       channel,
+				       bands_str);
+				return -EINVAL;
+			}
+
+			params->channel = channel;
+		}
 		idx++;
 	}
 
@@ -390,6 +551,14 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			if (idx < argc) {
 				unsigned int mfp = strtol(argv[idx], &endptr, 10);
 
+				if (security == WIFI_SECURITY_TYPE_NONE ||
+				    security == WIFI_SECURITY_TYPE_WPA_PSK) {
+					print(context.sh, SHELL_ERROR,
+					      "MFP not supported for security type %s\n",
+					      wifi_security_txt(security));
+					return -EINVAL;
+				}
+
 				if (mfp <= WIFI_MFP_REQUIRED) {
 					params->mfp = mfp;
 				}
@@ -402,6 +571,10 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		     params->psk_length > WIFI_PSK_MAX_LEN) ||
 		    (params->security == WIFI_SECURITY_TYPE_SAE &&
 		     params->psk_length > WIFI_SAE_PSWD_MAX_LEN)) {
+			print(context.sh, SHELL_ERROR,
+			      "Invalid PSK length (%d) for security type %s\n",
+			      params->psk_length,
+			      wifi_security_txt(params->security));
 			return -EINVAL;
 		}
 	}
@@ -416,13 +589,13 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_connect_req_params cnx_params = { 0 };
 
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
+	context.sh = sh;
+	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_INFRA)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
 
 	context.connecting = true;
-	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
 		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
@@ -497,9 +670,9 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
-			if (!strcmp(optarg, "passive")) {
+			if (!strncasecmp(optarg, "passive", 7)) {
 				params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
-			} else if (!strcmp(optarg, "active")) {
+			} else if (!strncasecmp(optarg, "active", 6)) {
 				params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
 			} else {
 				shell_fprintf(sh, SHELL_ERROR, "Invalid scan type %s\n", optarg);
@@ -778,6 +951,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 					config.twt_flows[i].trigger,
 					config.twt_flows[i].twt_wake_interval,
 					config.twt_flows[i].twt_interval);
+				shell_fprintf(context.sh, SHELL_NORMAL,
+					      "TWT Wake ahead duration : %d us\n",
+					      config.twt_flows[i].twt_wake_ahead_duration);
 			}
 		}
 		return 0;
@@ -816,7 +992,7 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 
 	if (!strncasecmp(argv[1], "legacy", 6)) {
 		params.mode = WIFI_PS_MODE_LEGACY;
-	} else if (!strncasecmp(argv[1], "WMM", 4)) {
+	} else if (!strncasecmp(argv[1], "WMM", 3)) {
 		params.mode = WIFI_PS_MODE_WMM;
 	} else {
 		shell_fprintf(sh, SHELL_WARNING, "Invalid PS mode\n");
@@ -936,7 +1112,7 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 
 	context.sh = sh;
 
-	if (argc != 11) {
+	if (argc != 12) {
 		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
 		shell_help(sh);
 		return -ENOEXEC;
@@ -995,6 +1171,11 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
+
+	if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
+		return -EINVAL;
+	}
+	params.setup.twt_wake_ahead_duration = (uint32_t)value;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed. reason : %s\n",
@@ -1101,12 +1282,13 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
+	context.sh = sh;
+	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
 
-	context.sh = sh;
+	k_mutex_init(&wifi_ap_sta_list_lock);
 
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface, &cnx_params,
 		sizeof(struct wifi_connect_req_params));
@@ -1115,7 +1297,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "AP mode enabled\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode enable requested\n");
 
 	return 0;
 }
@@ -1132,7 +1314,49 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "AP mode disabled\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode disable requested\n");
+	return 0;
+}
+
+static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	size_t id = 1;
+
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+
+	shell_fprintf(sh, SHELL_NORMAL, "AP stations:\n");
+	shell_fprintf(sh, SHELL_NORMAL, "============\n");
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	for (int i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
+		struct wifi_ap_sta_info *sta;
+		uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+		if (!sta_list[i].valid) {
+			continue;
+		}
+
+		sta = &sta_list[i].sta_info;
+
+		shell_fprintf(sh, SHELL_NORMAL, "Station %zu:\n", id++);
+		shell_fprintf(sh, SHELL_NORMAL, "==========\n");
+		shell_fprintf(sh, SHELL_NORMAL, "MAC: %s\n",
+			      net_sprint_ll_addr_buf(sta->mac,
+						     WIFI_MAC_ADDR_LEN,
+						     mac_string_buf,
+						     sizeof(mac_string_buf)));
+		shell_fprintf(sh, SHELL_NORMAL, "Link mode: %s\n",
+			      wifi_link_mode_txt(sta->link_mode));
+		shell_fprintf(sh, SHELL_NORMAL, "TWT: %s\n",
+			      sta->twt_capable ? "Supported" : "Not supported");
+	}
+
+	if (id == 1) {
+		shell_fprintf(sh, SHELL_NORMAL, "No stations connected\n");
+	}
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
 
 	return 0;
 }
@@ -1143,9 +1367,10 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_reg_domain regd = {0};
-	int ret;
+	int ret, chan_idx = 0;
 
 	if (argc == 1) {
+		(&regd)->chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
 	} else if (argc >= 2 && argc <= 3) {
 		regd.oper = WIFI_MGMT_SET;
@@ -1190,6 +1415,19 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	if (regd.oper == WIFI_MGMT_GET) {
 		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain is: %c%c\n",
 			regd.country_code[0], regd.country_code[1]);
+		shell_fprintf(sh, SHELL_NORMAL,
+			"<channel>\t<center frequency>\t<supported(y/n)>\t"
+			"<max power(dBm)>\t<passive scan supported(y/n)>\t<dfs supported(y/n)>\n");
+		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
+				      wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
+				      chan_info[chan_idx].center_frequency,
+				      chan_info[chan_idx].supported ? "y" : "n",
+				      chan_info[chan_idx].max_power,
+				      chan_info[chan_idx].passive_only ? "y" : "n",
+				      chan_info[chan_idx].dfs ? "y" : "n");
+		}
 	} else {
 		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain set to: %c%c\n",
 			regd.country_code[0], regd.country_code[1]);
@@ -1607,14 +1845,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  1, 0),
 	SHELL_CMD_ARG(enable, NULL,
 		  "\"<SSID>\"\n"
-		  "[channel number: 0 means all]\n"
+		  "<channel number>\n"
 		  "[PSK: valid only for secure SSIDs]\n"
 		  "[Security type: valid only for secure SSIDs]\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "[MFP (optional: needs security type to be specified)]\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n",
 		  cmd_wifi_ap_enable,
-		  2, 4),
+		  3, 3),
+	SHELL_CMD_ARG(stations, NULL,
+		  "List stations connected to the AP",
+		  cmd_wifi_ap_stations,
+		  1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
@@ -1627,9 +1869,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
 		"<dialog_token: 1-255> <flow_id: 0-7> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
-		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>.\n",
+		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>.\n"
+		"<twt_wake_ahead_duration>: 0us-2^31us>\n",
 		cmd_wifi_twt_setup,
-		11, 0),
+		12, 0),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
@@ -1674,9 +1917,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz\n"
 		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms\n"
 		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms\n"
-		    "[-s, --ssid : SSID to scan for. Can be provided multiple times\n"
+		    "[-s, --ssid] : SSID to scan for. Can be provided multiple times\n"
 		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535\n"
-		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6-11,14_5:36,149-165,44\n"
+		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6_5:36 or 2:1,6-11,14_5:36,163-177,52. Care should be taken to ensure that configured channels don't exceed CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL\n"
 		    "[-h, --help] : Print out the help for the scan command.\n",
 		  cmd_wifi_scan,
 		  1, 8),

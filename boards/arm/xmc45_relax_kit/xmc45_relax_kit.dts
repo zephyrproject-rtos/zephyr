@@ -133,3 +133,32 @@
 	pinctrl-0 = <&pwm_out_p1_0_ccu40_ch3 &pwm_out_p1_1_ccu40_ch2>;
 	pinctrl-names = "default";
 };
+
+&eth {
+	status = "okay";
+	pinctrl-0 = <&eth_p2_4_rxer &eth_p2_2_rxd0 &eth_p2_3_rxd1
+		     &eth_p15_8_clk_rmii &eth_p15_9_crs_dv &eth_p2_5_tx_en
+		     &eth_p2_8_txd0 &eth_p2_9_txd1>;
+	pinctrl-names = "default";
+
+	rxer-port-ctrl = "P2_4";
+	rxd0-port-ctrl = "P2_2";
+	rxd1-port-ctrl = "P2_3";
+	rmii-rx-clk-port-ctrl = "P15_8";
+	crs-rx-dv-port-ctrl = "P15_9";
+
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	status = "okay";
+	mdi-port-ctrl = "P2_0";
+	pinctrl-0 = <&eth_p2_0_mdo &eth_p2_7_mdc>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+	};
+};

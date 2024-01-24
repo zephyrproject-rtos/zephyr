@@ -659,6 +659,7 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 
 	ret = mxicy_rdcr(dev);
 	if (ret < 0) {
+		release_device(dev);
 		return ret;
 	}
 	current_cr = ret;
@@ -1231,6 +1232,7 @@ static int spi_nor_configure(const struct device *dev)
 	rc = exit_dpd(dev);
 	if (rc < 0) {
 		LOG_ERR("Failed to exit DPD (%d)", rc);
+		release_device(dev);
 		return -ENODEV;
 	}
 
@@ -1280,12 +1282,12 @@ static int spi_nor_configure(const struct device *dev)
 			rc = spi_nor_wrsr(dev, rc & ~cfg->has_lock);
 		}
 
+		release_device(dev);
+
 		if (rc != 0) {
 			LOG_ERR("BP clear failed: %d\n", rc);
 			return -ENODEV;
 		}
-
-		release_device(dev);
 	}
 
 #ifdef CONFIG_SPI_NOR_SFDP_MINIMAL

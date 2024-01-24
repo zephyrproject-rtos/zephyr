@@ -247,6 +247,24 @@ ZTEST(test_log_output, test_thread_id)
 	zassert_equal(strcmp(exp_str, mock_buffer), 0);
 }
 
+ZTEST(test_log_output, test_skip_src)
+{
+	char package[256];
+	const char exp_str[] = TEST_STR "\r\n";
+	uint32_t flags = LOG_OUTPUT_FLAG_SKIP_SOURCE;
+	int err;
+
+	err = cbprintf_package(package, sizeof(package), 0, TEST_STR);
+	zassert_true(err > 0);
+
+	reset_mock_buffer();
+	log_output_process(&log_output, 0, NULL, SNAME, NULL, LOG_LEVEL_INF,
+			   package, NULL, 0, flags);
+
+	mock_buffer[mock_len] = '\0';
+	zassert_equal(strcmp(exp_str, mock_buffer), 0);
+}
+
 static void before(void *notused)
 {
 	reset_mock_buffer();

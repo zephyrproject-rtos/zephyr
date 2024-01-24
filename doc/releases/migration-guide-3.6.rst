@@ -56,6 +56,35 @@ enable all optional modules, and then run ``west update`` again.
 Device Drivers and Device Tree
 ==============================
 
+* The :dtcompatible:`nxp,pcf8574` driver has been renamed to
+  :dtcompatible:`nxp,pcf857x`. (:github:`67054`) to support pcf8574 and pcf8575.
+  The Kconfig option has been renamed from :kconfig:option:`CONFIG_GPIO_PCF8574` to
+  :kconfig:option:`CONFIG_GPIO_PCF857X`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c {
+      status = "okay";
+      pcf8574: pcf857x@20 {
+          compatible = "nxp,pcf857x";
+          status = "okay";
+          reg = <0x20>;
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <8>;
+      };
+
+      pcf8575: pcf857x@21 {
+          compatible = "nxp,pcf857x";
+          status = "okay";
+          reg = <0x21>;
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <16>;
+      };
+    };
+
 * The :dtcompatible:`st,lsm6dsv16x` sensor driver has been changed to support
   configuration of both int1 and int2 pins. The DT attribute ``irq-gpios`` has been
   removed and substituted by two new attributes, ``int1-gpios`` and ``int2-gpios``.
@@ -146,6 +175,60 @@ Device Drivers and Device Tree
   * The main Kconfig option was renamed from ``CONFIG_CAN_NATIVE_POSIX_LINUX`` to
     :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`.
 
+* Two new structures for holding common CAN controller driver configuration (``struct
+  can_driver_config``) and data (``struct can_driver_data``) fields were introduced. Out-of-tree CAN
+  controller drivers need to be updated to use these new, common configuration and data structures
+  along with their initializer macros.
+
+* The optional ``can_get_max_bitrate_t`` CAN controller driver callback was removed in favor of a
+  common accessor function. Out-of-tree CAN controller drivers need to be updated to no longer
+  supply this callback.
+
+* The ``CAN_FILTER_FDF`` flag for filtering classic CAN/CAN FD frames was removed since no known CAN
+  controllers implement support for this. Applications can still filter on classic CAN/CAN FD frames
+  in their receive callback functions as needed.
+
+* The ``CAN_FILTER_DATA`` and ``CAN_FILTER_RTR`` flags for filtering between Data and Remote
+  Transmission Request (RTR) frames were removed since not all CAN controllers implement support for
+  individual RX filtering based on the RTR bit. Applications can now use
+  :kconfig:option:`CONFIG_CAN_ACCEPT_RTR` to either accept incoming RTR frames matching CAN filters
+  or reject all incoming CAN RTR frames (the default). When :kconfig:option:`CONFIG_CAN_ACCEPT_RTR`
+  is enabled, applications can still filter between Data and RTR frames in their receive callback
+  functions as needed.
+
+* The io-channel cells of the following devicetree bindings were reduced from 2 (``positive`` and
+  ``negative``) to the common ``input``, making it possible to use the various ADC DT macros with TI
+  LMP90xxx ADC devices:
+
+  * :dtcompatible:`ti,lmp90077`
+  * :dtcompatible:`ti,lmp90078`
+  * :dtcompatible:`ti,lmp90079`
+  * :dtcompatible:`ti,lmp90080`
+  * :dtcompatible:`ti,lmp90097`
+  * :dtcompatible:`ti,lmp90098`
+  * :dtcompatible:`ti,lmp90099`
+  * :dtcompatible:`ti,lmp90100`
+
+* The io-channel cells of the :dtcompatible:`microchip,mcp3204` and
+  :dtcompatible:`microchip,mcp3208` devicetree bindings were renamed from ``channel`` to the common
+  ``input``, making it possible to use the various ADC DT macros with Microchip MCP320x ADC devices.
+
+* The :dtcompatible:`st,stm32h7-fdcan` CAN controller driver now supports configuring the
+  domain/kernel clock via devicetree. Previously, the driver only supported using the PLL1_Q clock
+  for kernel clock, but now it defaults to the HSE clock, which is the chip default. Boards that
+  use the PLL1_Q clock for FDCAN will need to override the ``clocks`` property as follows:
+
+  .. code-block:: devicetree
+
+    &fdcan1 {
+            clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+                     <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+    };
+
+* Runtime configuration is now disabled by default for Nordic UART drivers. The motivation for the
+  change is that this feature is rarely used and disabling it significantly reduces the memory
+  footprint.
+
 Power Management
 ================
 
@@ -184,6 +267,10 @@ Shell
   * :kconfig:option:`CONFIG_W1_SHELL`
   * :kconfig:option:`CONFIG_WDT_SHELL`
 
+* The ``SHELL_UART_DEFINE`` macro now only requires a ``_name`` argument. In the meantime, the
+  macro accepts additional arguments (ring buffer TX & RX size arguments) for compatibility with
+  previous Zephyr version, but they are ignored, and will be removed in future release.
+
 Bootloader
 ==========
 
@@ -212,6 +299,13 @@ Bluetooth
   Any pointer to a UUID must be prefixed with `const`, otherwise there will be a compilation warning.
   For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
   ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
+* The :c:func:`bt_l2cap_chan_send` API no longer allocates buffers from the same pool as its `buf`
+  parameter when segmenting SDUs into PDUs. In order to reproduce the previous behavior, the
+  application should register the `alloc_seg` channel callback and allocate from the same pool as
+  `buf`.
+* The :c:func:`bt_l2cap_chan_send` API now requires the application to reserve
+  enough bytes for the L2CAP headers. Call ``net_buf_reserve(buf,
+  BT_L2CAP_SDU_CHAN_SEND_RESERVE);`` at buffer allocation time to do so.
 
 * Mesh
 
@@ -225,6 +319,25 @@ Bluetooth
   * Deprecated :kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE`. This option is
     replaced by new option :kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` to
     be aligned with Mesh Protocol Specification v1.1, section 5.4. (:github:`64252`)
+  * Removed the ``CONFIG_BT_MESH_V1d1`` Kconfig option.
+  * Removed the ``CONFIG_BT_MESH_TX_SEG_RETRANS_COUNT``,
+    ``CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_UNICAST``,
+    ``CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_GROUP``, ``CONFIG_BT_MESH_SEG_ACK_BASE_TIMEOUT``,
+    ``CONFIG_BT_MESH_SEG_ACK_PER_HOP_TIMEOUT``, ``BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT``
+    Kconfig options. They are superseded by the
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_SEG_INT_STEP`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_COUNT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_WITHOUT_PROG_COUNT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_COUNT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_INT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_SEG_THRESHOLD`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_ACK_DELAY_INC`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_SEG_INT_STEP`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT` Kconfig options.
+
 
 LoRaWAN
 =======
@@ -269,6 +382,11 @@ Networking
   Before, the same TTL value was used for unicast and multicast packets.
   The IPv6 hop limit value is also changed so that unicast and multicast packets can have a
   different one. (:github:`65886`)
+
+* The Ethernet phy APIs defined in ``<zephyr/net/phy.h>`` are removed from syscall list.
+  The APIs were marked as callable from usermode but in practice this does not work as the device
+  cannot be accessed from usermode thread. This means that the API calls will need to made
+  from supervisor mode thread.
 
 Other Subsystems
 ================

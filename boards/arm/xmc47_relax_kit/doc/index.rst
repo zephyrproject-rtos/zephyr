@@ -60,6 +60,12 @@ The Relax Kit development board configuration supports the following hardware fe
 +-----------+------------+-----------------------+
 | WATCHDOG  | on-chip    | watchdog              |
 +-----------+------------+-----------------------+
+| MDIO      | on-chip    | mdio                  |
++-----------+------------+-----------------------+
+| ETHERNET  | on-chip    | ethernet              |
++-----------+------------+-----------------------+
+| PTP       | on-chip    | ethernet              |
++-----------+------------+-----------------------+
 
 More details about the supported peripherals are available in `XMC4700 TRM`_
 Other hardware features are not currently supported by the Zephyr kernel.

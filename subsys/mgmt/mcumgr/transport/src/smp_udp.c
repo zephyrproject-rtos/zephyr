@@ -111,7 +111,11 @@ static int smp_udp4_tx(struct net_buf *nb)
 	ret = sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
-		ret = MGMT_ERR_EINVAL;
+		if (errno == ENOMEM) {
+			ret = MGMT_ERR_EMSGSIZE;
+		} else {
+			ret = MGMT_ERR_EINVAL;
+		}
 	} else {
 		ret = MGMT_ERR_EOK;
 	}
@@ -131,7 +135,11 @@ static int smp_udp6_tx(struct net_buf *nb)
 	ret = sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
-		ret = MGMT_ERR_EINVAL;
+		if (errno == ENOMEM) {
+			ret = MGMT_ERR_EMSGSIZE;
+		} else {
+			ret = MGMT_ERR_EINVAL;
+		}
 	} else {
 		ret = MGMT_ERR_EOK;
 	}

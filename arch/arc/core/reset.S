@@ -174,7 +174,7 @@ _slave_core_wait:
 	jl z_arc_firq_stack_set
 	pop r0
 #endif
-	j z_arc_slave_start
+	j arch_secondary_cpu_init
 
 _master_core_startup:
 #endif

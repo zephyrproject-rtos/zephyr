@@ -64,7 +64,7 @@ static int gpio_i2c_switch_transfer(const struct device *dev, struct i2c_msg *ms
 	return res;
 }
 
-const struct i2c_driver_api gpio_i2c_switch_api_funcs = {
+static const struct i2c_driver_api gpio_i2c_switch_api_funcs = {
 	.configure = gpio_i2c_switch_configure,
 	.transfer = gpio_i2c_switch_transfer,
 };

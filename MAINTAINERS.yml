@@ -252,10 +252,26 @@ Ambiq Platforms:
     - soc/arm/ambiq/
     - boards/arm/apollo*/
     - dts/arm/ambiq/
-    - dts/bindings/*/ambiq*
-    - drivers/*/*_ambiq*
+    - dts/bindings/*/ambiq,*
+    - drivers/*/*ambiq*
+    - drivers/*/*/*ambiq*
+    - drivers/*/*/*apollo*
   labels:
     - "platform: Ambiq"
+
+BeagleBoard Platforms:
+  status: maintained
+  maintainers:
+    - jadonk
+  collaborators:
+    - ayush1325
+    - con-pax
+    - vaishnavachath
+  files:
+    - boards/arm/beagle*/
+    - boards/riscv/beagle*/
+  labels:
+    - "platform: BeagleBoard"
 
 Benchmarks:
   status: maintained
@@ -297,7 +313,6 @@ Bluetooth:
   files:
     - doc/connectivity/bluetooth/
     - include/zephyr/bluetooth/
-    - include/zephyr/drivers/bluetooth/
     - samples/bluetooth/
     - subsys/bluetooth/
     - subsys/bluetooth/common/
@@ -322,6 +337,28 @@ Bluetooth:
     - tests/bsim/bluetooth/mesh/
     - tests/bluetooth/shell/audio*
   labels:
+    - "area: Bluetooth"
+  tests:
+    - bluetooth
+
+Bluetooth HCI:
+  status: maintained
+  maintainers:
+    - jhedberg
+    - jori-nordic
+  collaborators:
+    - hermabe
+    - alwa-nordic
+    - Thalley
+    - sjanc
+    - theob-pro
+    - HoZHel
+  files:
+    - include/zephyr/drivers/bluetooth/
+    - drivers/bluetooth/
+    - samples/bluetooth/hci_*/
+  labels:
+    - "area: Bluetooth Host"
     - "area: Bluetooth"
   tests:
     - bluetooth
@@ -351,19 +388,15 @@ Bluetooth controller:
 Bluetooth Host:
   status: maintained
   maintainers:
+    - jori-nordic
     - jhedberg
   collaborators:
     - hermabe
-    - jori-nordic
     - alwa-nordic
-    - Vudentz
     - Thalley
-    - asbjornsabo
     - sjanc
     - theob-pro
-    - kruithofa
   files:
-    - drivers/bluetooth/
     - subsys/bluetooth/host/
     - subsys/bluetooth/services/
     - subsys/bluetooth/shell/
@@ -383,6 +416,7 @@ Bluetooth Mesh:
     - alxelax
     - Andrewpini
     - akredalen
+    - HaavardRei
   files:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
@@ -420,6 +454,28 @@ Bluetooth Audio:
     - "area: Bluetooth"
   tests:
     - bluetooth.audio
+
+Bluetooth Classic:
+  status: maintained
+  maintainers:
+    - lylezhu2012
+  collaborators:
+    - jhedberg
+    - sjanc
+  files:
+    - subsys/bluetooth/host/a2dp*
+    - subsys/bluetooth/host/at.*
+    - subsys/bluetooth/host/avdtp*
+    - subsys/bluetooth/host/br.*
+    - subsys/bluetooth/host/hfp*
+    - subsys/bluetooth/host/l2cap_br*
+    - subsys/bluetooth/host/rfcomm*
+    - subsys/bluetooth/host/sdp*
+    - subsys/bluetooth/host/ssp*
+  labels:
+    - "area: Bluetooth Classic"
+  tests:
+    - bluetooth
 
 Bootloaders:
   status: odd fixes
@@ -622,6 +678,7 @@ Common Architecture Interface:
     - dcpleung
     - nashif
   files:
+    - arch/Kconfig
     - include/zephyr/arch/
     - arch/common/
     - include/zephyr/arch/common/
@@ -712,7 +769,6 @@ DFU:
 Devicetree:
   status: maintained
   maintainers:
-    - mbolivar-ampere
     - galak
   files:
     - scripts/dts/
@@ -1164,6 +1220,8 @@ Release Notes:
 
 "Drivers: Ethernet":
   status: odd fixes
+  collaborators:
+    - decsny
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1389,6 +1447,8 @@ Release Notes:
 
 "Drivers: MDIO":
   status: odd fixes
+  collaborators:
+    - decsny
   files:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
@@ -2728,6 +2788,8 @@ POSIX API layer:
   status: maintained
   maintainers:
     - cfriedt
+  collaborators:
+    - ycsin
   files:
     - include/zephyr/posix/
     - lib/posix/
@@ -2958,6 +3020,7 @@ ADI Platforms:
     - galak
     - microbuilder
   files:
+    - boards/arm/adi_*/
     - drivers/*/max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
@@ -2992,10 +3055,9 @@ GD32 Platforms:
     - boards/riscv/gd32*/
     - boards/riscv/longan_nano/
     - drivers/*/*gd32*
-    - dts/*/gigadevice/
+    - dts/*/gd/
     - dts/bindings/*/*gd32*
-    - soc/arm/gigadevice/
-    - soc/riscv/riscv-privileged/gd32vf103/
+    - soc/*/gd_gd32/
     - scripts/west_commands/*/*gd32*
   labels:
     - "platform: GD32"
@@ -3119,7 +3181,6 @@ Intel Platforms (Xtensa):
     - marc-hb
     - kv2019i
     - ceolin
-    - aborisovich
     - tmleman
     - softwarecki
     - jxstelter
@@ -3167,7 +3228,42 @@ Intel Platforms (Agilex):
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
-NXP Platforms:
+NXP Drivers:
+  status: maintained
+  maintainers:
+    - dleach02
+  collaborators:
+    - mmahadevan108
+    - danieldegrasse
+    - decsny
+    - manuargue
+    - dbaluta
+  files:
+    - drivers/*/*imx*
+    - drivers/*/*lpc*.c
+    - drivers/*/*mcux*.c
+    - drivers/*/*.mcux
+    - drivers/*/*.nxp
+    - drivers/*/*nxp*
+    - drivers/*/*kinetis*
+    - drivers/misc/*/nxp*
+    - include/zephyr/dt-bindings/*/*nxp*
+    - include/zephyr/dt-bindings/*/*mcux*
+    - include/zephyr/drivers/*/*nxp*
+    - include/zephyr/drivers/*/*mcux*
+    - arch/arm/core/mpu/nxp_mpu.c
+    - dts/bindings/*/nxp*
+  files-exclude:
+    - drivers/*/*s32*
+    - drivers/misc/*/*s32*/
+    - include/zephyr/dt-bindings/*/*s32*
+    - include/zephyr/drivers/*/*s32*
+    - dts/bindings/*/*s32*
+  labels:
+    - "platform: NXP Drivers"
+  description: NXP Drivers
+
+NXP Platforms (MCUX):
   status: maintained
   maintainers:
     - dleach02
@@ -3178,36 +3274,63 @@ NXP Platforms:
     - yvanderv
     - EmilioCBen
     - decsny
-    - manuargue
-    - PetervdPerk-NXP
-    - bperseghetti
-    - dbaluta
-    - iuliana-prodan
-    - Dat-NguyenDuy
   files:
     - boards/arm/mimx*/
-    - boards/arm/frdm_k*/
+    - boards/arm/frdm*/
     - boards/arm/lpcxpress*/
     - boards/arm/twr_*/
-    - boards/arm/s32*/
-    - boards/arm/mr_canhubk3/
-    - boards/arm/vmu_rt*/
-    - soc/arm/nxp_*/
-    - drivers/*/*imx*
-    - drivers/*/*lpc*.c
-    - drivers/*/*mcux*.c
-    - drivers/*/*.mcux
-    - drivers/*/*.nxp
-    - drivers/*/*nxp*
+    - boards/arm/vmu*/
+    - soc/arm/nxp_imx/
+    - soc/arm/nxp_kinetis/
+    - soc/arm/nxp_lpc/
     - dts/arm/nxp/
-    - dts/bindings/*/nxp*
-    - soc/xtensa/nxp_adsp/
-    - boards/xtensa/nxp_adsp_*/
     - samples/boards/nxp*/
-    - include/zephyr/dt-bindings/*/nxp*
-    - include/zephyr/drivers/*/*nxp*
+  files-exclude:
+    - boards/arm/*s32*/
+    - dts/arm/nxp/*s32*
+    - samples/boards/nxp_s32/
   labels:
     - "platform: NXP"
+  description: NXP Platforms supported by MCUXpresso suite
+
+NXP Platforms (S32):
+  status: maintained
+  maintainers:
+    - manuargue
+  collaborators:
+    - PetervdPerk-NXP
+    - bperseghetti
+    - Dat-NguyenDuy
+  files:
+    - boards/arm/s32*/
+    - boards/arm/mr_canhubk3/
+    - boards/arm/ucans32k1sic/
+    - boards/common/*nxp_s32*
+    - soc/arm/nxp_s32/
+    - drivers/*/*nxp_s32*
+    - drivers/misc/*nxp_s32*/
+    - dts/bindings/*/nxp,s32*
+    - dts/arm/nxp/*s32*
+    - samples/boards/nxp_s32/
+    - include/zephyr/dt-bindings/*/nxp-s32*
+    - include/zephyr/dt-bindings/*/nxp_s32*
+    - include/zephyr/drivers/*/*nxp_s32*
+  labels:
+    - "platform: NXP S32"
+  description: NXP S32 platforms and S32-specific drivers
+
+NXP Platforms (Xtensa):
+  status: maintained
+  maintainers:
+    - dbaluta
+  collaborators:
+    - iuliana-prodan
+  files:
+    - soc/xtensa/nxp_adsp/
+    - boards/xtensa/nxp_adsp_*/
+  labels:
+    - "platform: NXP ADSP"
+  description: NXP Xtensa platforms
 
 Microchip MEC Platforms:
   status: maintained
@@ -3382,9 +3505,10 @@ ITE Platforms:
     - boards/riscv/it8*_evb/
     - drivers/*/*/*it8xxx2*.c
     - drivers/*/*it8xxx2*.c
+    - drivers/*/*_ite_*
     - dts/bindings/*/*ite*
     - dts/riscv/ite/
-    - soc/riscv/riscv-ite/
+    - soc/riscv/ite_ec/
   labels:
     - "platform: ITE"
 
@@ -3473,6 +3597,15 @@ Infineon Platforms:
   description: >-
     Infineon SOCs, dts files and related drivers. Infineon Proto, Pioneer, Eval and Relax
     boards.
+
+Panasonic Platforms:
+  status: maintained
+  maintainers:
+    - pideu-sj
+  files:
+    - boards/arm/pan17*/
+  labels:
+    - "platform: Panasonic"
 
 RTIO:
   status: maintained
@@ -4032,7 +4165,7 @@ West:
   collaborators:
     - erwango
   files:
-    - modules/Kconfig.st
+    - modules/hal_st/Kconfig
   labels:
     - "area: Sensors"
 

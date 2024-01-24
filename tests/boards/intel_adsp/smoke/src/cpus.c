@@ -3,6 +3,7 @@
  */
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/smp.h>
 #include <zephyr/ztest.h>
 #include <zephyr/cache.h>
 
@@ -188,7 +189,7 @@ static void halt_and_restart(int cpu)
 		k_msleep(50);
 	}
 
-	z_smp_start_cpu(cpu);
+	k_smp_cpu_start(cpu, NULL, NULL);
 
 	/* Startup can be slow */
 	k_msleep(50);

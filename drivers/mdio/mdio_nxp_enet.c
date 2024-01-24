@@ -243,6 +243,7 @@ void nxp_enet_mdio_callback(const struct device *dev,
 		data->interrupt_up = true;
 		break;
 	default:
+		break;
 	}
 }
 

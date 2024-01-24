@@ -3,4 +3,4 @@
 
 config BOARD_HIFIVE_UNMATCHED
 	bool "HiFive Unmatched target"
-	depends on SOC_RISCV_SIFIVE_FU740
+	depends on SOC_SIFIVE_FREEDOM_U740

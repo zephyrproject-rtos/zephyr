@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/delete-node/ &mcp3204;
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/delete-node/ &mcp3204_mikroe_adc_click;
 
 &mikrobus_spi {
 	status = "okay";

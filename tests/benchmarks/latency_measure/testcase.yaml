@@ -60,10 +60,11 @@ tests:
 
   # Obtain the benchmark results for various user thread / kernel thread
   # configurations on platforms that support user space.
-  benchmark.user.latency:
+  benchmark.kernel.latency.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     timeout: 300
-    extra_args: CONF_FILE=prj_user.conf
+    extra_configs:
+      - CONFIG_USERSPACE=y
     harness: console
     integration_platforms:
       - qemu_x86
@@ -78,15 +79,15 @@ tests:
   # Obtain the benchmark results with object core statistics enabled for
   # various user thread / kernel thread configurations on platforms that
   # support user space
-  benchmark.user.latency.objcore.stats:
+  benchmark.kernel.latency.userspace.objcore.stats:
     filter: CONFIG_ARCH_HAS_USERSPACE
     timeout: 300
-    extra_args: CONF_FILE=prj_user.conf
     harness: console
     integration_platforms:
       - qemu_x86
       - qemu_cortex_a53
     extra_configs:
+      - CONFIG_USERSPACE=y
       - CONFIG_OBJ_CORE=y
       - CONFIG_OBJ_CORE_STATS=y
     harness_config:
@@ -117,15 +118,15 @@ tests:
         - "PROJECT EXECUTION SUCCESSFUL"
 
   # Obtain the various userspace benchmark results with timeslicing enabled
-  benchmark.user.latency.timeslicing:
+  benchmark.kernel.latency.timeslicing.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     timeout: 300
-    extra_args: CONF_FILE=prj_user.conf
     harness: console
     integration_platforms:
       - qemu_x86
       - qemu_cortex_a53
     extra_configs:
+      - CONFIG_USERSPACE=y
       - CONFIG_TIMESLICING=y
     harness_config:
       type: one_line

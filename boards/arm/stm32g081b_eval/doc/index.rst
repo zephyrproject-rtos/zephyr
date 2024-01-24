@@ -147,7 +147,7 @@ Default Zephyr Peripheral Mapping:
 - LED3        : PD8
 - LED4        : PD9
 
-For mode details please refer to `STM32G0 Evaluation board User Manual`_.
+For more details please refer to `STM32G0 Evaluation board User Manual`_.
 
 Programming and Debugging
 *************************

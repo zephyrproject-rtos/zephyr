@@ -244,6 +244,7 @@ int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx)
 			break;
 		}
 		msg = SYS_SLIST_CONTAINER(msg_node, msg, node);
+		msg->pending->t0 = k_uptime_get();
 		sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 	}
 #endif
@@ -644,7 +645,7 @@ cleanup:
  */
 static void hint_socket_state(struct lwm2m_ctx *ctx, struct lwm2m_message *ongoing_tx)
 {
-	if (!ctx->set_socket_state) {
+	if (!ctx || !ctx->set_socket_state) {
 		return;
 	}
 

@@ -15,12 +15,6 @@ RunTest mesh_beacon_cache \
 	beacon_tx_beacon_cache \
 	beacon_rx_beacon_cache
 
-conf=prj_mesh1d1_conf
-RunTest mesh_beacon_cache \
-	beacon_tx_beacon_cache \
-	beacon_rx_beacon_cache
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_beacon_cache \
 	beacon_tx_beacon_cache \

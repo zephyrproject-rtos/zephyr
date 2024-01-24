@@ -8,7 +8,6 @@ config INPUT_NPCX_KBD
 	default y
 	depends on DT_HAS_NUVOTON_NPCX_KBD_ENABLED
 	select INPUT_KBD_MATRIX
-	select MULTITHREADING
 	help
 	  This option enables the keyboard scan driver for NPCX family of
 	  processors.

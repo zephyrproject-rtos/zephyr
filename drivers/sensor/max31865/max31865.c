@@ -139,6 +139,14 @@ static int max31865_set_vbias(const struct device *dev, bool enable)
 	return configure_device(dev);
 }
 
+static int max31865_set_three_wire(const struct device *dev, bool enable)
+{
+	struct max31865_data *data = dev->data;
+
+	WRITE_BIT(data->config_control_bits, 4, enable);
+	return configure_device(dev);
+}
+
 static char *max31865_error_to_string(uint8_t fault_register)
 {
 	switch (fault_register) {
@@ -242,13 +250,13 @@ static int max31865_init(const struct device *dev)
 
 	WRITE_BIT(data->config_control_bits, 6, config->conversion_mode);
 	WRITE_BIT(data->config_control_bits, 5, config->one_shot);
-	WRITE_BIT(data->config_control_bits, 4, config->three_wire);
 	data->config_control_bits |= config->fault_cycle & 0b00001100;
 	WRITE_BIT(data->config_control_bits, 0, config->filter_50hz);
 
 	configure_device(dev);
 	set_threshold_values(dev);
 	max31865_set_vbias(dev, false);
+	max31865_set_three_wire(dev, config->three_wire);
 	return 0;
 }
 
@@ -274,9 +282,26 @@ static int max31865_channel_get(const struct device *dev, enum sensor_channel ch
 	}
 }
 
+static int max31865_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
+{
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
+		LOG_ERR("Invalid channel provided");
+		return -ENOTSUP;
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_MAX31865_THREE_WIRE:
+		return max31865_set_three_wire(dev, val->val1);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static const struct sensor_driver_api max31865_api_funcs = {
 	.sample_fetch = max31865_sample_fetch,
 	.channel_get = max31865_channel_get,
+	.attr_set = max31865_attr_set,
 };
 
 #define MAX31865_DEFINE(inst)                                                                      \

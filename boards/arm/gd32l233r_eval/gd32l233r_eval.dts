@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32l23x/gd32l233rc.dtsi>
+#include <gd/gd32l23x/gd32l233rc.dtsi>
 #include "gd32l233r_eval-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

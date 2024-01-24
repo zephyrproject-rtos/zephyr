@@ -143,7 +143,7 @@ Default Zephyr Peripheral Mapping:
 - DAC_OUT1 : PA4
 - PWM_2_CH1 : PA5 (might conflict with SPI1)
 
-For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
+For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Programming and Debugging
 *************************

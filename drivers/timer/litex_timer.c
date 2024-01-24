@@ -13,6 +13,8 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/timer/system_timer.h>
 
+#include <soc.h>
+
 #define TIMER_LOAD_ADDR			DT_INST_REG_ADDR_BY_NAME(0, load)
 #define TIMER_RELOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, reload)
 #define TIMER_EN_ADDR			DT_INST_REG_ADDR_BY_NAME(0, en)

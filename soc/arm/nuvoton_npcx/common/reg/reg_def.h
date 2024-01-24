@@ -1725,4 +1725,25 @@ struct shi_reg {
 
 #define IBF_IBHF_EN_MASK                 (BIT(NPCX_EVENABLE_IBFEN) | BIT(NPCX_EVENABLE_IBHFEN))
 
+/* SPIP (SPI Peripheral Interface) registers */
+struct spip_reg {
+	/* 0x000: SPIP Data In/Out */
+	volatile uint16_t SPIP_DATA;
+	/* 0x002: SPIP Control 1 */
+	volatile uint16_t SPIP_CTL1;
+	/* 0x004: SPIP Status */
+	volatile uint8_t SPIP_STAT;
+	volatile uint8_t reserved1;
+};
+
+#define NPCX_SPIP_CTL1_SPIEN            0
+#define NPCX_SPIP_CTL1_MOD              2
+#define NPCX_SPIP_CTL1_EIR              5
+#define NPCX_SPIP_CTL1_EIW              6
+#define NPCX_SPIP_CTL1_SCM              7
+#define NPCX_SPIP_CTL1_SCIDL            8
+#define NPCX_SPIP_CTL1_SCDV             FIELD(9, 7)
+#define NPCX_SPIP_STAT_BSY              0
+#define NPCX_SPIP_STAT_RBF              1
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

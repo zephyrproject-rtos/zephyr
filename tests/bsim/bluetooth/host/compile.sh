@@ -44,6 +44,7 @@ app=tests/bsim/bluetooth/host/att/pipeline/tester compile
 app=tests/bsim/bluetooth/host/att/long_read compile
 app=tests/bsim/bluetooth/host/att/open_close compile
 
+app=tests/bsim/bluetooth/host/gatt/authorization compile
 app=tests/bsim/bluetooth/host/gatt/caching compile
 app=tests/bsim/bluetooth/host/gatt/general compile
 app=tests/bsim/bluetooth/host/gatt/notify compile

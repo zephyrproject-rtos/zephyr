@@ -49,7 +49,7 @@ static int uart_sam_poll_in(const struct device *dev, unsigned char *c)
 	Uart * const uart = cfg->regs;
 
 	if (!(uart->UART_SR & UART_SR_RXRDY)) {
-		return -EBUSY;
+		return -1;
 	}
 
 	/* got a character */

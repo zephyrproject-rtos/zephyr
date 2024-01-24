@@ -22,6 +22,10 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # window. The Mesh Protocol specification does not specify exactly the
 # timing for Proxy ADV messages.
 
+# Note 3: The proxy transmitting device mandates emitting of the secure
+# network beacons. This allows to check that proxy goes back to normal
+# behavior after the device advertises the secure network beacons.
+
 # Test procedure:
 # 1. (0-20 seconds) A single subnet is active on the TX device with GATT
 #    Proxy enabled. RX device verifies that the single subnet has exclusive
@@ -39,14 +43,12 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    to the adv medium again.
 
 
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf
 RunTest proxy_adv_multi_subnet_coex \
 	beacon_tx_proxy_adv_multi_subnet_coex \
 	beacon_rx_proxy_adv_multi_subnet_coex \
 	beacon_tx_proxy_adv_solicit_trigger
 
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf_overlay_psa_conf
 RunTest proxy_adv_multi_subnet_coex \
 	beacon_tx_proxy_adv_multi_subnet_coex \

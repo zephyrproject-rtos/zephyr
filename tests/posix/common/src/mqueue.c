@@ -17,9 +17,9 @@
 #define MESSAGE_SIZE 16
 #define MESG_COUNT_PERMQ 4
 
-char queue[16] = "server";
+static char queue[16] = "server";
 
-char send_data[MESSAGE_SIZE] = "timed data send";
+static char send_data[MESSAGE_SIZE] = "timed data send";
 
 /*
  * For platforms that select CONFIG_KERNEL_COHERENCE, the receive buffer can
@@ -28,9 +28,9 @@ char send_data[MESSAGE_SIZE] = "timed data send";
  * receiver.
  */
 
-char rec_data[MESSAGE_SIZE];
+static char rec_data[MESSAGE_SIZE];
 
-void *sender_thread(void *p1)
+static void *sender_thread(void *p1)
 {
 	mqd_t mqd;
 	struct timespec curtime;
@@ -48,7 +48,7 @@ void *sender_thread(void *p1)
 }
 
 
-void *receiver_thread(void *p1)
+static void *receiver_thread(void *p1)
 {
 	mqd_t mqd;
 	struct timespec curtime;
@@ -66,7 +66,7 @@ void *receiver_thread(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_mqueue)
+ZTEST(mqueue, test_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
@@ -96,3 +96,5 @@ ZTEST(posix_apis, test_mqueue)
 		      "unable to close message queue descriptor.");
 	zassert_false(mq_unlink(queue), "Not able to unlink Queue");
 }
+
+ZTEST_SUITE(mqueue, NULL, NULL, NULL, NULL, NULL);

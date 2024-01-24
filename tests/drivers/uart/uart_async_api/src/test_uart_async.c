@@ -233,7 +233,7 @@ ZTEST_USER(uart_async_multi_rx, test_multiple_rx_enable)
 	const uint32_t rx_buf_size = sizeof(tx_buf);
 	int ret;
 
-	BUILD_ASSERT(rx_buf_size <= sizeof(tdata.rx_first_buffer), "Invalid buf size");
+	BUILD_ASSERT(sizeof(tx_buf) <= sizeof(tdata.rx_first_buffer), "Invalid buf size");
 
 	/* Enable RX without a timeout. */
 	ret = uart_rx_enable(uart_dev, tdata.rx_first_buffer, rx_buf_size, SYS_FOREVER_US);

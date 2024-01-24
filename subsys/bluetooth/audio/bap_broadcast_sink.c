@@ -296,9 +296,12 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
-	ops = stream->ops;
-
 	LOG_DBG("stream %p", stream);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->connected != NULL) {
+		ops->connected(stream);
+	}
 
 	sink = broadcast_sink_lookup_iso_chan(chan);
 	if (sink == NULL) {
@@ -311,7 +314,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
 	} else {
-		LOG_WRN("No callback for connected set");
+		LOG_WRN("No callback for started set");
 	}
 
 	all_connected = true;
@@ -349,9 +352,12 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 		return;
 	}
 
-	ops = stream->ops;
-
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, ep, reason);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->disconnected != NULL) {
+		ops->disconnected(stream, reason);
+	}
 
 	broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_IDLE);
 
@@ -886,7 +892,7 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->rx, &sink->codec_qos);
-	bt_audio_codec_cfg_to_iso_path(iso->chan.qos->rx->path, codec_cfg);
+	bt_bap_iso_configure_data_path(ep, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 

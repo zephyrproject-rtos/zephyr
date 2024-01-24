@@ -94,8 +94,6 @@ static inline uint32_t rv32m1_intmux_line(unsigned int irq)
 	return ((irq >> 8) & 0xff) - 1;
 }
 
-void soc_interrupt_init(void);
-
 #endif	/* !_ASMLANGUAGE */
 
 #if defined(CONFIG_SOC_OPENISA_RV32M1_RI5CY)

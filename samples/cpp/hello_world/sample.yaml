@@ -1,0 +1,24 @@
+sample:
+  description: Hello World C++ sample, the simplest C++ Zephyr application
+  name: hello cpp world
+common:
+  tags: introduction
+  integration_platforms:
+    - qemu_riscv32
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello, C\\+\\+ world! (.*)"
+tests:
+  sample.cpp.helloworld:
+    min_ram: 128
+    arch_exclude:
+      # See #66027
+      - xtensa
+    platform_exclude:
+      # See zephyrproject-rtos/sdk-ng#593
+      - qemu_x86
+      - intel_ish_5_4_1
+      - intel_ish_5_6_0
+      - intel_ish_5_8_0

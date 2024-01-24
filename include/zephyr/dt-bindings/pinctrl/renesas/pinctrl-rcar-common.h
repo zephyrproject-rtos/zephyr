@@ -72,4 +72,8 @@
 #define IP2SR5(shift, func) IPnSR(2, 5, shift, func)
 #define IP3SR5(shift, func) IPnSR(3, 5, shift, func)
 
+#define PIN_VOLTAGE_NONE 0
+#define PIN_VOLTAGE_1P8V 1
+#define PIN_VOLTAGE_3P3V 2
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RCAR_COMMON_H_ */

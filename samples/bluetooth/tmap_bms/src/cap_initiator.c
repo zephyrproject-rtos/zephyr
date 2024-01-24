@@ -16,7 +16,7 @@
 #include <zephyr/bluetooth/audio/tmap.h>
 
 #define BROADCAST_ENQUEUE_COUNT 2U
-#define MOCK_CCID               0xAB
+
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT),
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
@@ -32,8 +32,7 @@ static uint8_t bis_codec_data[] = {BT_AUDIO_CODEC_DATA(
 
 static const uint8_t new_metadata[] = {
 	BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
-	BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, MOCK_CCID),
+			    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA))
 };
 
 static struct bt_bap_lc3_preset broadcast_preset_48_2_1 =
@@ -60,6 +59,7 @@ static void broadcast_started_cb(struct bt_bap_stream *stream)
 static void broadcast_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+
 	k_sem_give(&sem_broadcast_stopped);
 }
 
@@ -151,11 +151,13 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	ext_ad[0].type = BT_DATA_SVC_DATA16;
 	ext_ad[0].data_len = ARRAY_SIZE(tmap_addata);
 	ext_ad[0].data = tmap_addata;
+	/* Broadcast Audio Announcement */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 	net_buf_simple_add_le24(&ad_buf, broadcast_id);
 	ext_ad[1].type = BT_DATA_SVC_DATA16;
 	ext_ad[1].data_len = ad_buf.len + sizeof(ext_ad[1].type);
 	ext_ad[1].data = ad_buf.data;
+
 	err = bt_le_ext_adv_set_data(adv, ext_ad, ARRAY_SIZE(ext_ad), NULL, 0);
 	if (err != 0) {
 		printk("Failed to set extended advertising data: %d\n", err);

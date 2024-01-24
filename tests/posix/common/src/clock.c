@@ -63,7 +63,7 @@ static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct ti
 	return diff >= lo && diff < hi;
 }
 
-ZTEST(posix_apis, test_clock_gettime)
+ZTEST(clock, test_clock_gettime)
 {
 	struct timespec ts;
 
@@ -89,7 +89,7 @@ ZTEST(posix_apis, test_clock_gettime)
 	}
 }
 
-ZTEST(posix_apis, test_gettimeofday)
+ZTEST(clock, test_gettimeofday)
 {
 	struct timeval tv;
 	struct timespec ts;
@@ -114,7 +114,7 @@ ZTEST(posix_apis, test_gettimeofday)
 	zassert_true(tp_ge(&rts, &ts));
 }
 
-ZTEST(posix_apis, test_clock_settime)
+ZTEST(clock, test_clock_settime)
 {
 	int64_t diff_ns;
 	struct timespec ts = {0};
@@ -163,7 +163,7 @@ ZTEST(posix_apis, test_clock_settime)
 	}
 }
 
-ZTEST(posix_apis, test_realtime)
+ZTEST(clock, test_realtime)
 {
 	struct timespec then, now;
 	/*
@@ -213,3 +213,18 @@ ZTEST(posix_apis, test_realtime)
 		CONFIG_TEST_CLOCK_RT_ERROR_MS, lo_wm, cma, hi_wm);
 	zassert_between_inclusive(cma, lo, hi);
 }
+
+ZTEST(clock, test_clock_getcpuclockid)
+{
+	int ret = 0;
+	clockid_t clock_id = CLOCK_INVALID;
+
+	ret = clock_getcpuclockid((pid_t)0, &clock_id);
+	zassert_equal(ret, 0, "POSIX clock_getcpuclock id failed");
+	zassert_equal(clock_id, CLOCK_PROCESS_CPUTIME_ID, "POSIX clock_getcpuclock id failed");
+
+	ret = clock_getcpuclockid((pid_t)2482, &clock_id);
+	zassert_equal(ret, EPERM, "POSIX clock_getcpuclock id failed");
+}
+
+ZTEST_SUITE(clock, NULL, NULL, NULL, NULL, NULL);

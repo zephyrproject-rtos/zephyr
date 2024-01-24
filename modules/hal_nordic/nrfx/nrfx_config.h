@@ -10,12 +10,6 @@
 #include <zephyr/devicetree.h>
 
 /*
- * NRFX API version 2.10 flag.
- * When the flag is set NRFX API is compatible with the newest NRFX release.
- */
-#define NRFX_CONFIG_API_VER_2_10 1
-
-/*
  * These are mappings of Kconfig options enabling nrfx drivers and particular
  * peripheral instances to the corresponding symbols used inside of nrfx.
  * Please note that only subsets of these entries are used for particular SoCs
@@ -117,15 +111,24 @@
 
 #ifdef CONFIG_NRFX_GPIOTE
 #define NRFX_GPIOTE_ENABLED 1
-#if (defined(CONFIG_SOC_SERIES_NRF91X) || defined(CONFIG_SOC_SERIES_NRF53X)) \
-	&& defined(NRF_TRUSTZONE_NONSECURE)
-#define NRFX_GPIOTE1_ENABLED 1
-#else
+#endif
+#ifdef CONFIG_NRFX_GPIOTE0
 #define NRFX_GPIOTE0_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_GPIOTE1
+#define NRFX_GPIOTE1_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_GPIOTE_LOG
-#define NRFX_GPIOTE_CONFIG_LOG_ENABLED 1
+#ifdef CONFIG_NRFX_GPIOTE20
+#define NRFX_GPIOTE20_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_GPIOTE30
+#define NRFX_GPIOTE30_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_GPIOTE130
+#define NRFX_GPIOTE130_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_GPIOTE131
+#define NRFX_GPIOTE131_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
@@ -559,6 +562,18 @@
 #endif
 #ifdef CONFIG_NRFX_UARTE3
 #define NRFX_UARTE3_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG
+#define NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG 1
+#endif
+#ifdef CONFIG_NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG
+#define NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG 1
+#endif
+#ifdef CONFIG_NRFX_UARTE_CONFIG_TX_LINK
+#define NRFX_UARTE_CONFIG_TX_LINK 1
+#endif
+#ifdef CONFIG_NRFX_UARTE_CONFIG_RX_CACHE_ENABLED
+#define NRFX_UARTE_CONFIG_RX_CACHE_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_USBREG

@@ -19,3 +19,8 @@ tests:
   drivers.input.kbd_16_bit:
     extra_configs:
       - CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y
+
+  drivers.input.analog_axis:
+    extra_configs:
+      - CONFIG_ADC=y
+      - CONFIG_SETTINGS=y

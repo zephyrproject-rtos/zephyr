@@ -1177,8 +1177,9 @@ config SMP_BOOT_DELAY
 	depends on SMP
 	help
 	  By default Zephyr will boot all available CPUs during start up.
-	  Select this option to skip this and allow architecture code boot
-	  secondary CPUs at a later time.
+	  Select this option to skip this and allow custom code
+	  (architecture/SoC/board/application) to boot secondary CPUs at
+	  a later time.
 
 config MP_NUM_CPUS
 	int "Number of CPUs/cores [DEPRECATED]"

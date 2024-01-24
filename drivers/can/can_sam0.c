@@ -176,7 +176,6 @@ static const struct can_driver_api can_sam0_driver_api = {
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	.get_core_clock = can_sam0_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.set_state_change_callback =  can_mcan_set_state_change_callback,
 	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
 	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
@@ -199,10 +198,10 @@ static const struct can_mcan_ops can_sam0_ops = {
 static void config_can_##inst##_irq(void)						\
 {											\
 	LOG_DBG("Enable CAN##inst## IRQ");						\
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, line_0, irq),				\
-		    DT_INST_IRQ_BY_NAME(inst, line_0, priority), can_sam0_line_x_isr,	\
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),				\
+		    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_sam0_line_x_isr,	\
 					DEVICE_DT_INST_GET(inst), 0);			\
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, line_0, irq));				\
+	irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));				\
 }
 
 #define CAN_SAM0_CFG_INST(inst)								\

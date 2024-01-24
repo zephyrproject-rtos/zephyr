@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32vf103Xb.dtsi>
+#include <gd/gd32vf103Xb.dtsi>
 #include "gd32vf103c_starter-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

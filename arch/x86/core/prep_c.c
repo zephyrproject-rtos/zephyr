@@ -74,7 +74,7 @@ FUNC_NORETURN void z_prep_c(void *arg)
 #endif
 
 #if defined(CONFIG_SMP)
-	z_x86_ipi_setup();
+	arch_smp_init();
 #endif
 
 	z_cstart();

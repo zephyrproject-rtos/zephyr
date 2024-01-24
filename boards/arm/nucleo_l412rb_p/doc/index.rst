@@ -176,7 +176,7 @@ Available pins:
    :align: center
    :alt: Nucleo L412RB-P
 
-For mode details please refer to `ST Nucleo L412RB-P User Manual`_.
+For more details please refer to `ST Nucleo L412RB-P User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

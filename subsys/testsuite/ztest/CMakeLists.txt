@@ -26,6 +26,8 @@ zephyr_library_sources_ifdef(CONFIG_ZTRESS         src/ztress.c)
 
 if(CONFIG_ARCH_POSIX)
   zephyr_library_sources(src/ztest_posix.c)
+elseif(CONFIG_ZTEST_SHELL)
+  zephyr_library_sources(src/ztest_shell.c)
 else()
   zephyr_library_sources(src/ztest_defaults.c)
 endif()

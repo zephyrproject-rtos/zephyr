@@ -44,7 +44,7 @@ static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char *band_str)
 }
 
 
-static bool wifi_utils_validate_chan_2g(uint16_t chan)
+bool wifi_utils_validate_chan_2g(uint16_t chan)
 {
 	if ((chan >= 1) && (chan <= 14)) {
 		return true;
@@ -54,7 +54,7 @@ static bool wifi_utils_validate_chan_2g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan_5g(uint16_t chan)
+bool wifi_utils_validate_chan_5g(uint16_t chan)
 {
 	uint16_t i;
 
@@ -68,7 +68,7 @@ static bool wifi_utils_validate_chan_5g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan_6g(uint16_t chan)
+bool wifi_utils_validate_chan_6g(uint16_t chan)
 {
 	if (((chan >= 1) && (chan <= 233) && (!((chan - 1)%4))) ||
 	    (chan == 2)) {
@@ -79,7 +79,7 @@ static bool wifi_utils_validate_chan_6g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan(uint8_t band,
+bool wifi_utils_validate_chan(uint8_t band,
 				     uint16_t chan)
 {
 	bool result = false;
@@ -241,8 +241,7 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
 		return -EINVAL;
 	}
 
-	strncpy(parse_str, scan_bands_str, len);
-	parse_str[len] = '\0';
+	strncpy(parse_str, scan_bands_str, sizeof(parse_str));
 
 	band_str = strtok_r(parse_str, ",", &ctx);
 
@@ -368,7 +367,7 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			memset(chan_str, 0, sizeof(chan_str));
 
 			if (chan_start) {
-				if ((chan_idx + (chan_val - chan_start)) >= max_channels) {
+				if ((chan_idx + (chan_val - chan_start)) > max_channels) {
 					NET_ERR("Too many channels specified (%d)", max_channels);
 					return -EINVAL;
 				}

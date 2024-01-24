@@ -183,7 +183,19 @@ enum bt_bap_ascs_reason {
 
 /** @brief Structure storing values of fields of ASE Control Point notification. */
 struct bt_bap_ascs_rsp {
-	/** @brief Value of the Response Code field. */
+	/**
+	 * @brief Value of the Response Code field.
+	 *
+	 * The following response codes are accepted:
+	 * - @ref BT_BAP_ASCS_RSP_CODE_SUCCESS
+	 * - @ref BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED
+	 * - @ref BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED
+	 * - @ref BT_BAP_ASCS_RSP_CODE_CONF_REJECTED
+	 * - @ref BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED
+	 * - @ref BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED
+	 * - @ref BT_BAP_ASCS_RSP_CODE_NO_MEM
+	 * - @ref BT_BAP_ASCS_RSP_CODE_UNSPECIFIED
+	 */
 	enum bt_bap_ascs_rsp_code code;
 
 	/**
@@ -198,16 +210,10 @@ struct bt_bap_ascs_rsp {
 		 * If the Response Code is one of the following:
 		 * - @ref BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED
 		 * - @ref BT_BAP_ASCS_RSP_CODE_CONF_REJECTED
-		 * - @ref BT_BAP_ASCS_RSP_CODE_CONF_INVALID
 		 * all values from @ref bt_bap_ascs_reason can be used.
 		 *
 		 * If the Response Code is one of the following:
 		 * - @ref BT_BAP_ASCS_RSP_CODE_SUCCESS
-		 * - @ref BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED
-		 * - @ref BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH
-		 * - @ref BT_BAP_ASCS_RSP_CODE_INVALID_ASE
-		 * - @ref BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE
-		 * - @ref BT_BAP_ASCS_RSP_CODE_INVALID_DIR
 		 * - @ref BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED
 		 * - @ref BT_BAP_ASCS_RSP_CODE_NO_MEM
 		 * - @ref BT_BAP_ASCS_RSP_CODE_UNSPECIFIED
@@ -221,7 +227,6 @@ struct bt_bap_ascs_rsp {
 		 * If the Response Code is one of the following:
 		 * - @ref BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED
 		 * - @ref BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED
-		 * - @ref BT_BAP_ASCS_RSP_CODE_METADATA_INVALID
 		 * the value of the Metadata Type shall be used.
 		 */
 		enum bt_audio_metadata_type metadata_type;
@@ -576,10 +581,38 @@ struct bt_bap_stream_ops {
 	 *
 	 * This callback is only used if the ISO data path is HCI.
 	 *
-	 * @param chan The channel which has sent data.
+	 * @param stream Stream object.
 	 */
 	void (*sent)(struct bt_bap_stream *stream);
 #endif /* CONFIG_BT_AUDIO_TX */
+
+	/**
+	 * @brief Isochronous channel connected callback
+	 *
+	 * If this callback is provided it will be called whenever the isochronous channel for the
+	 * stream has been connected. This does not mean that the stream is ready to be used, which
+	 * is indicated by the @ref bt_bap_stream_ops.started callback.
+	 *
+	 * If the stream shares an isochronous channel with another stream, then this callback may
+	 * still be called, without the stream going into the started state.
+	 *
+	 * @param stream Stream object.
+	 */
+	void (*connected)(struct bt_bap_stream *stream);
+
+	/**
+	 * @brief Isochronous channel disconnected callback
+	 *
+	 * If this callback is provided it will be called whenever the isochronous channel is
+	 * disconnected, including when a connection gets rejected.
+	 *
+	 * If the stream shares an isochronous channel with another stream, then this callback may
+	 * not be called, even if the stream is leaving the streaming state.
+	 *
+	 * @param stream Stream object.
+	 * @param reason BT_HCI_ERR_* reason for the disconnection.
+	 */
+	void (*disconnected)(struct bt_bap_stream *stream, uint8_t reason);
 };
 
 /**

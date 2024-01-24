@@ -324,15 +324,16 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 #if defined(CONFIG_BT_BROADCASTER) && CONFIG_BT_CTLR_ADV_AUX_SET > 0
 		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_AUX_BASE,
 				    TICKER_ID_ADV_AUX_LAST)) {
-			const struct ll_adv_aux_set *aux;
-
 			*ticks_anchor += ticks_to_expire;
 			*ticks_anchor += ticks_slot;
+			*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+				EVENT_TICKER_RES_MARGIN_US << 1);
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			const struct ll_adv_aux_set *aux;
 
 			aux = ull_adv_aux_get(ticker_id -
 					      TICKER_ID_ADV_AUX_BASE);
-
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			if (aux->lll.adv->sync) {
 				const struct ll_adv_sync_set *sync;
 
@@ -345,12 +346,6 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
-			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-				*ticks_anchor +=
-					MAX(aux->ull.ticks_active_to_start,
-					    aux->ull.ticks_prepare_to_start);
-			}
-
 			return 0;
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
@@ -358,16 +353,8 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    TICKER_ID_ADV_SYNC_LAST)) {
 			*ticks_anchor += ticks_to_expire;
 			*ticks_anchor += ticks_slot;
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-				const struct ll_adv_sync_set *sync;
-
-				sync = ull_adv_sync_get(ticker_id -
-							TICKER_ID_ADV_SYNC_BASE);
-				*ticks_anchor +=
-					MAX(sync->ull.ticks_active_to_start,
-					    sync->ull.ticks_prepare_to_start);
-			}
+			*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+				EVENT_TICKER_RES_MARGIN_US << 1);
 
 			return 0;
 
@@ -376,16 +363,8 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    TICKER_ID_ADV_ISO_LAST)) {
 			*ticks_anchor += ticks_to_expire;
 			*ticks_anchor += ticks_slot;
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-				const struct ll_adv_iso_set *iso;
-
-				iso = ull_adv_iso_get(ticker_id -
-						      TICKER_ID_ADV_ISO_BASE);
-				*ticks_anchor +=
-					MAX(iso->ull.ticks_active_to_start,
-					    iso->ull.ticks_prepare_to_start);
-			}
+			*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+				EVENT_TICKER_RES_MARGIN_US << 1);
 
 			return 0;
 
@@ -398,6 +377,8 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    TICKER_ID_CONN_LAST)) {
 			*ticks_anchor += ticks_to_expire;
 			*ticks_anchor += ticks_slot;
+			*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+				EVENT_TICKER_RES_MARGIN_US << 1);
 
 			return 0;
 #endif /* CONFIG_BT_CONN */

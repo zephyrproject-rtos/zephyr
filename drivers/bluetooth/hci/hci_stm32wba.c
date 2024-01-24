@@ -47,7 +47,7 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #define DIVC(x, y)         (((x)+(y)-1)/(y))
 
-static uint32_t buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
+static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
 
 extern uint8_t ll_state_busy;
 

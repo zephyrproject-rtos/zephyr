@@ -2,4 +2,4 @@
 
 config BOARD_M2GL025_MIV
 	bool "Microchip M2GL025 IGLOO2 dev board with Mi-V CPU"
-	depends on SOC_RISCV32_MIV
+	depends on SOC_MIV

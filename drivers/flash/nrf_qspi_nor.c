@@ -1090,6 +1090,10 @@ static int qspi_nor_init(const struct device *dev)
 
 	qspi_clock_div_restore();
 
+	if (!IS_ENABLED(CONFIG_NORDIC_QSPI_NOR_XIP) && nrfx_qspi_init_check()) {
+		(void)nrfx_qspi_deactivate();
+	}
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	int rc2 = pm_device_runtime_enable(dev);
 
@@ -1382,6 +1386,7 @@ static const struct qspi_nor_config qspi_nor_dev_config = {
 		.sck_delay = DT_INST_PROP(0, sck_delay),
 		.spi_mode = INST_0_SPI_MODE,
 	},
+	.nrfx_cfg.timeout = CONFIG_NORDIC_QSPI_NOR_TIMEOUT_MS,
 
 	.size = INST_0_BYTES,
 	.id = DT_INST_PROP(0, jedec_id),

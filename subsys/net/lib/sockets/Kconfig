@@ -73,6 +73,53 @@ config NET_SOCKET_MAX_SEND_WAIT
 	  The maximum time a socket is waiting for a blocked connection before
 	  returning an ENOBUFS error.
 
+config NET_SOCKETS_SERVICE
+	bool "Socket service support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select EVENTFD
+	help
+	  The socket service can monitor multiple sockets and save memory
+	  by only having one thread listening socket data. If data is received
+	  in the monitored socket, a user supplied work is called.
+	  Note that you need to set CONFIG_NET_SOCKETS_POLL_MAX high enough
+	  so that enough sockets entries can be serviced. This depends on
+	  system needs as multiple services can be activated at the same time
+	  depending on network configuration.
+
+config NET_SOCKETS_SERVICE_THREAD_PRIO
+	int "Priority of the socket service dispatcher thread"
+	default NUM_PREEMPT_PRIORITIES
+	depends on NET_SOCKETS_SERVICE
+	help
+	  Set the priority of the socket service dispatcher thread. This handler
+	  polls the sockets and either places the triggered socket to work queue
+	  for asynchronous handlers, or calls the user supplied callback directly
+	  for synchronous handlers.
+	  The value should be selected carefully because if this thread priority
+	  is too high, the work queue handlers might not be able to run if using
+	  asynchronous handlers that are called via a work queue.
+
+	  Note that >= 0 value means preemptive thread priority, the lowest
+	  value is NUM_PREEMPT_PRIORITIES.
+	  Highest preemptive thread priority is 0.
+	  Lowest cooperative thread priority is -1.
+	  Highest cooperative thread priority is -NUM_COOP_PRIORITIES.
+	  Make sure the priority is lower than workqueue priority so that
+	  we never block the workqueue handler.
+
+config NET_SOCKETS_SERVICE_STACK_SIZE
+	int "Stack size for the thread handling socket services"
+	default 2400 if NET_DHCPV4_SERVER
+	default 1200
+	depends on NET_SOCKETS_SERVICE
+	help
+	  Set the internal stack size for the thread that polls sockets.
+
+config NET_SOCKETS_SERVICE_INIT_PRIO
+	int "Startup priority for the network socket service"
+	default 95
+	depends on NET_SOCKETS_SERVICE
+
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support [EXPERIMENTAL]"
 	imply TLS_CREDENTIALS

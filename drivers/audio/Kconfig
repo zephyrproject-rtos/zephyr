@@ -59,6 +59,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/audio/Kconfig.mpxxdtyy"
 source "drivers/audio/Kconfig.dmic_pdm_nrfx"
+source "drivers/audio/Kconfig.dmic_mcux"
 
 endif # AUDIO_DMIC
 

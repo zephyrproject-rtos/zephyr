@@ -110,6 +110,11 @@ __imr void z_mp_entry(void)
 	__ASSERT(false, "arch_start_cpu() handler should never return");
 }
 
+void mp_resume_entry(void)
+{
+	start_rec.fn(start_rec.arg);
+}
+
 bool arch_cpu_active(int cpu_num)
 {
 	return soc_cpus_active[cpu_num];

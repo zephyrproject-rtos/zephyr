@@ -1052,7 +1052,18 @@ class ProjectBuilder(FilterBuilder):
         return self.run_cmake(args,filter_stages)
 
     def build(self):
-        return self.run_build(['--build', self.build_dir])
+        harness = HarnessImporter.get_harness(self.instance.testsuite.harness.capitalize())
+        build_result = self.run_build(['--build', self.build_dir])
+        try:
+            if harness:
+                harness.instance = self.instance
+                harness.build()
+        except ConfigurationError as error:
+            self.instance.status = "error"
+            self.instance.reason = str(error)
+            logger.error(self.instance.reason)
+            return
+        return build_result
 
     def run(self):
 

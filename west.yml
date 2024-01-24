@@ -142,7 +142,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 323048f916faa84cebcf6dfd73e606d8cf64107a
+      revision: ff4ca358d730536addf336c40c3faa4ebf1df00a
       path: modules/hal/ambiq
       groups:
         - hal
@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e98ce93e916eebdc4a0c5bceef864289447e3d63
+      revision: 67fa60bdffca7ba8ed199aecfaa26f485f24878b
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -183,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 3786c55424d4d64c62dd25219de31618cef26fdf
+      revision: 64bd075a06f6a16d6ea9101cda82b41465a35211
       path: modules/hal/nordic
       groups:
         - hal
@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 4605f6715c6a55121da8fcbff060e01c4383c1e9
+      revision: d6d43cab73f1a0fc73ec26084dab3f54c6324d2e
       path: modules/hal/nxp
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 1471ed3cbf501434a5f3df2f9df520c3bd8e0258
+      revision: 0b1f2fdb99d6386f125a8dba72083e3c56aecc2b
       groups:
         - hal
     - name: hal_rpi_pico
@@ -219,12 +219,12 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 7a6ba7ce989c3c466b4cb450e44858a3bb0a949a
+      revision: 11ab59175a5ded618680a7692dbaae8f4fbd6325
       path: modules/hal/silabs
       groups:
         - hal
     - name: hal_st
-      revision: fb8e79d1a261fd02aadff7c142729f1954163cf3
+      revision: 0643d20ae85b32c658ad11036f7c964a860ddefe
       path: modules/hal/st
       groups:
         - hal
@@ -274,15 +274,15 @@ manifest:
       revision: 842413c5fb98707eb5f26e619e8e792453877897
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 7c61a4cec26402d20c845c95dcad0e39dcd319f8
+      revision: 2b76c641749725ac90c6ac7959ca7718804cf356
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 7053083b0cff8462464e3cbb826e87852fc03da6
+      revision: 66ed2279d6222056af172c188eaf4dcfed481032
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: e9131ee8b8ab9306d8f6ad410fd1e3d8a820ce10
+      revision: b994ba2ce29425587957dcbb6c96d4e1872b5737
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -295,13 +295,13 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 9b985ea6bc237b6ae06f48eb228f2ac7f6e3b96b
+      revision: d17c9d749c817d2522468fa3c0eee3705feb8951
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: da78aea63159771956fe0c9263f2e6985b66e9d5
       path: modules/lib/open-amp
     - name: openthread
-      revision: 4ed44bc7d58d9a98c6cca13a50d38129045ab3df
+      revision: 00076aff3ae571db7c90509ec9dc293457098c35
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
@@ -322,7 +322,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: 33c0f47bcb19721a5c33e6fe1eee9225d00bb5bc
+      revision: 58d0b5367f0fada9dbaddad1e08e302aeb044863
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -332,7 +332,7 @@ manifest:
       groups:
         - tee
     - name: uoscore-uedhoc
-      revision: 5fe2cb613bd7e4590bd1b00c2adf181ac0229379
+      revision: 5024d8c98b3864c6698f0195a53e19c484bc8cd3
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: 67fd8bb88d3136738661fa8bb5f9989103f4599e

@@ -7,3 +7,11 @@ config BBRAM_NPCX
 	depends on DT_HAS_NUVOTON_NPCX_BBRAM_ENABLED
 	help
 	  This option enables the BBRAM driver for NPCX family of processors.
+
+config BBRAM_NPCX_EMUL
+	bool "Emulator for the NPCX BBRAM driver"
+	default y
+	depends on BBRAM_NPCX
+	depends on EMUL
+	help
+	  Enable the emulator for the NPCX BBRAM.

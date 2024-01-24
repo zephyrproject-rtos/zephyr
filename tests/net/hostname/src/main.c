@@ -381,6 +381,14 @@ ZTEST(net_hostname, test_hostname_set)
 		zassert_equal(ret, -EALREADY,
 			      "Could set hostname postfix (%d)", ret);
 	}
+
+	if (IS_ENABLED(CONFIG_NET_HOSTNAME_DYNAMIC)) {
+		int ret;
+
+		ret = net_hostname_set("foobar", sizeof("foobar") - 1);
+		zassert_equal(ret, 0, "Could not set hostname (%d)", ret);
+		zassert_mem_equal("foobar", net_hostname_get(), sizeof("foobar")-1);
+	}
 }
 
 #ifdef CONFIG_NET_MGMT_EVENT

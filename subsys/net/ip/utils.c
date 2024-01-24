@@ -539,7 +539,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 	 * and the offset of starting
 	 */
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {
-		sum = __bswap_16(sum_in);
+		sum = BSWAP_16(sum_in);
 	} else {
 		sum = sum_in;
 	}
@@ -591,7 +591,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 	 * and the offset of starting
 	 */
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {
-		return __bswap_16((uint16_t)sum);
+		return BSWAP_16((uint16_t)sum);
 	} else {
 		return sum;
 	}

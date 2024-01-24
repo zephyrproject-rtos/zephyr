@@ -9,6 +9,7 @@
 #include <ksched.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 
 volatile struct {
@@ -21,6 +22,10 @@ volatile uintptr_t riscv_cpu_boot_flag;
 volatile void *riscv_cpu_sp;
 
 extern void __start(void);
+
+#if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
+void soc_interrupt_init(void);
+#endif
 
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
@@ -43,7 +48,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	}
 }
 
-void z_riscv_secondary_cpu_init(int hartid)
+void arch_secondary_cpu_init(int hartid)
 {
 	unsigned int i;
 	unsigned int cpu_num = 0;
@@ -67,14 +72,15 @@ void z_riscv_secondary_cpu_init(int hartid)
 	z_riscv_pmp_init();
 #endif
 #ifdef CONFIG_SMP
-	irq_enable(RISCV_MACHINE_SOFT_IRQ);
+	irq_enable(RISCV_IRQ_MSOFT);
 #endif
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
 
 #ifdef CONFIG_SMP
 
-#define MSIP(hartid) ((volatile uint32_t *)RISCV_MSIP_BASE)[hartid]
+#define MSIP_BASE 0x2000000UL
+#define MSIP(hartid) ((volatile uint32_t *)MSIP_BASE)[hartid]
 
 static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED	0
@@ -97,14 +103,14 @@ void arch_sched_ipi(void)
 }
 
 #ifdef CONFIG_FPU_SHARING
-void z_riscv_flush_fpu_ipi(unsigned int cpu)
+void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
 	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
 }
 #endif
 
-static void ipi_handler(const void *unused)
+static void sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -120,7 +126,7 @@ static void ipi_handler(const void *unused)
 		/* disable IRQs */
 		csr_clear(mstatus, MSTATUS_IEN);
 		/* perform the flush */
-		z_riscv_flush_local_fpu();
+		arch_flush_local_fpu();
 		/*
 		 * No need to re-enable IRQs here as long as
 		 * this remains the last case.
@@ -144,21 +150,20 @@ void arch_spin_relax(void)
 	if (atomic_test_and_clear_bit(pending_ipi, IPI_FPU_FLUSH)) {
 		/*
 		 * We may not be in IRQ context here hence cannot use
-		 * z_riscv_flush_local_fpu() directly.
+		 * arch_flush_local_fpu() directly.
 		 */
 		arch_float_disable(_current_cpu->arch.fpu_owner);
 	}
 }
 #endif
 
-static int riscv_smp_init(void)
+int arch_smp_init(void)
 {
 
-	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, ipi_handler, NULL, 0);
-	irq_enable(RISCV_MACHINE_SOFT_IRQ);
+	IRQ_CONNECT(RISCV_IRQ_MSOFT, 0, sched_ipi_handler, NULL, 0);
+	irq_enable(RISCV_IRQ_MSOFT);
 
 	return 0;
 }
-
-SYS_INIT(riscv_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif /* CONFIG_SMP */

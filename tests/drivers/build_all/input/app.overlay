@@ -9,6 +9,22 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_adc: adc@adc0adc0 {
+			compatible = "vnd,adc";
+			reg = <0xadc0adc0 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			channel@0 {
+				reg = <0>;
+                                zephyr,gain = "ADC_GAIN_1";
+                                zephyr,reference = "ADC_REF_VDD_1";
+                                zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			};
+		};
+
 		test_gpio: gpio@0 {
 			compatible = "vnd,gpio";
 			gpio-controller;
@@ -26,6 +42,16 @@
 			};
 		};
 
+		gpio-keys-polled {
+			compatible = "gpio-keys";
+			debounce-interval-ms = <30>;
+			button_0 {
+				gpios = <&test_gpio 0 0>;
+				zephyr,code = <0>;
+			};
+			polling-mode;
+		};
+
 		evdev {
 			compatible = "zephyr,native-linux-evdev";
 		};
@@ -38,6 +64,13 @@
 				    <&test_gpio 3 GPIO_ACTIVE_LOW>,
 				    <&test_gpio 4 GPIO_ACTIVE_LOW>;
 			actual-key-mask = <0x0f 0x0a 0x0b>;
+
+			keymap {
+				compatible = "input-keymap";
+				keymap = <0 1 2>;
+				row-size = <2>;
+				col-size = <2>;
+			};
 		};
 
 		kbd-matrix-1 {
@@ -69,6 +102,32 @@
 			zephyr,axis = <0>;
 			sample-time-us = <2000>;
 			idle-timeout-ms = <200>;
+		};
+
+		qdec-gpio-polled {
+			compatible = "gpio-qdec";
+			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
+			led-gpios = <&test_gpio 2 0>;
+			led-pre-us = <5>;
+			steps-per-period = <4>;
+			zephyr,axis = <0>;
+			sample-time-us = <2000>;
+			idle-timeout-ms = <200>;
+			idle-poll-time-us = <5000>;
+		};
+
+		analog_axis {
+			compatible = "analog-axis";
+			axis-x {
+				io-channels = <&test_adc 0>;
+				out-min = <(-127)>;
+				out-max = <127>;
+				out-deadzone = <8>;
+				in-min = <(-100)>;
+				in-max = <100>;
+				zephyr,axis = <0>;
+				invert;
+			};
 		};
 
 		longpress: longpress {

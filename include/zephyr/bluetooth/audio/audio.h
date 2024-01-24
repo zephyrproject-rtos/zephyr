@@ -174,12 +174,14 @@ enum bt_audio_metadata_type {
 };
 
 /**
- * Helper to check whether metadata type is known by the stack.
+ * @brief Helper to check whether metadata type is known by the stack.
+ *
+ * @note @p _type is evaluated thrice.
  */
-#define BT_AUDIO_METADATA_TYPE_IS_KNOWN(_type) \
-	(IN_RANGE(_type, BT_AUDIO_METADATA_TYPE_PREF_CONTEXT, \
-			 BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE) || \
-	 IN_RANGE(_type, BT_AUDIO_METADATA_TYPE_EXTENDED, BT_AUDIO_METADATA_TYPE_VENDOR))
+#define BT_AUDIO_METADATA_TYPE_IS_KNOWN(_type)                                                     \
+	(IN_RANGE((_type), BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,                                    \
+		  BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE) ||                                   \
+	 (_type) == BT_AUDIO_METADATA_TYPE_EXTENDED || (_type) == BT_AUDIO_METADATA_TYPE_VENDOR)
 
 /* Unicast Announcement Type, Generic Audio */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
@@ -209,6 +211,7 @@ enum bt_audio_metadata_type {
 	((struct bt_audio_codec_cfg){                                                              \
 		/* Use HCI data path as default, can be overwritten by application */              \
 		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.ctlr_transcode = false,                                                           \
 		.id = _id,                                                                         \
 		.cid = _cid,                                                                       \
 		.vid = _vid,                                                                       \
@@ -231,6 +234,7 @@ enum bt_audio_metadata_type {
 	((struct bt_audio_codec_cap){                                                              \
 		/* Use HCI data path as default, can be overwritten by application */              \
 		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.ctlr_transcode = false,                                                           \
 		.id = (_id),                                                                       \
 		.cid = (_cid),                                                                     \
 		.vid = (_vid),                                                                     \
@@ -245,7 +249,7 @@ enum bt_audio_metadata_type {
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
  */
 enum bt_audio_location {
-	BT_AUDIO_LOCATION_PROHIBITED = 0,
+	BT_AUDIO_LOCATION_MONO_AUDIO = 0,
 	BT_AUDIO_LOCATION_FRONT_LEFT = BIT(0),
 	BT_AUDIO_LOCATION_FRONT_RIGHT = BIT(1),
 	BT_AUDIO_LOCATION_FRONT_CENTER = BIT(2),
@@ -316,6 +320,12 @@ struct bt_audio_codec_cap {
 	 * vendor specific ID.
 	 */
 	uint8_t path_id;
+	/** Whether or not the local controller should transcode
+	 *
+	 * This effectively sets the coding format for the ISO data path to @ref
+	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
+	 */
+	bool ctlr_transcode;
 	/** Codec ID */
 	uint8_t id;
 	/** Codec Company ID */
@@ -344,6 +354,12 @@ struct bt_audio_codec_cfg {
 	 * vendor specific ID.
 	 */
 	uint8_t path_id;
+	/** Whether or not the local controller should transcode
+	 *
+	 * This effectively sets the coding format for the ISO data path to @ref
+	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
+	 */
+	bool ctlr_transcode;
 	/** Codec ID */
 	uint8_t  id;
 	/** Codec Company ID */

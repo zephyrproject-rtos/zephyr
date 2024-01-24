@@ -20,6 +20,7 @@
 #define USER_DATA_HEAP	4
 #define USER_DATA_FIXED	0
 #define USER_DATA_VAR	63
+#define FIXED_BUFFER_SIZE 128
 
 struct bt_data {
 	void *hci_sync;
@@ -68,7 +69,7 @@ static void fixed_destroy(struct net_buf *buf);
 static void var_destroy(struct net_buf *buf);
 
 NET_BUF_POOL_HEAP_DEFINE(bufs_pool, 10, USER_DATA_HEAP, buf_destroy);
-NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, 128, USER_DATA_FIXED, fixed_destroy);
+NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, FIXED_BUFFER_SIZE, USER_DATA_FIXED, fixed_destroy);
 NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, USER_DATA_VAR, var_destroy);
 
 static void buf_destroy(struct net_buf *buf)
@@ -720,6 +721,78 @@ ZTEST(net_buf_tests, test_net_buf_user_data)
 		"Bad user_data_size");
 	zassert_equal(USER_DATA_VAR, buf->user_data_size,
 		"Bad user_data_size");
+
+	net_buf_unref(buf);
+}
+
+ZTEST(net_buf_tests, test_net_buf_comparison)
+{
+	struct net_buf *buf;
+	size_t written;
+	size_t offset;
+	size_t to_compare;
+	size_t res;
+	uint8_t data[FIXED_BUFFER_SIZE * 2];
+
+	/* Fill data buffer */
+	for (int i = 0; i < sizeof(data); ++i) {
+		data[i] = (uint8_t)i;
+	}
+
+	/* Allocate a single net_buf  */
+	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	written = net_buf_append_bytes(buf, buf->size, data, K_NO_WAIT, NULL, NULL);
+	zassert_equal(written, buf->size, "Failed to fill the buffer");
+	zassert_equal(buf->frags, NULL, "Additional buffer allocated");
+
+	/* Compare the whole buffer */
+	res = net_buf_data_match(buf, 0, data, buf->size);
+	zassert_equal(res, buf->size, "Whole net_buf comparison failed");
+
+	/* Compare from the offset */
+	offset = buf->size / 2;
+	to_compare = written - offset;
+
+	res = net_buf_data_match(buf, offset, &data[offset], to_compare);
+	zassert_equal(res, to_compare, "Comparison with offset failed");
+
+	/* Write more data (it allocates more buffers) */
+	written = net_buf_append_bytes(buf, sizeof(data) - written, &data[buf->size], K_NO_WAIT,
+				       NULL, NULL);
+	zassert_true(buf->frags, "Failed to allocate an additional net_buf");
+
+	/* Compare whole data with buffers' content */
+	res = net_buf_data_match(buf, 0, data, sizeof(data));
+	zassert_equal(res, sizeof(data), "Failed to compare data with multiple buffers");
+
+	/* Compare data with offset at the edge between two fragments */
+	offset = buf->size - (buf->size / 2);
+	res = net_buf_data_match(buf, offset, &data[offset], buf->size);
+	zassert_equal(res, buf->size, "Failed to compare bytes within two buffers with offset");
+
+	/* Compare data with partial matching - change the data in the middle */
+	data[sizeof(data) / 2] += 1;
+	res = net_buf_data_match(buf, 0, data, sizeof(data));
+	zassert_equal(res, sizeof(data) / 2, "Partial matching failed");
+
+	/* No buffer - expect 0 matching bytes */
+	res = net_buf_data_match(NULL, 0, data, sizeof(data));
+	zassert_equal(res, 0, "Matching without a buffer must fail");
+
+	/* No data - expect 0 matching bytes */
+	res = net_buf_data_match(buf, 0, NULL, sizeof(data));
+	zassert_equal(res, 0, "Matching without data must fail");
+
+	/* Too high offset - expect 0 matching bytes */
+	res = net_buf_data_match(buf, FIXED_BUFFER_SIZE * 2, data, sizeof(data));
+	zassert_equal(res, 0, "Matching with too high offset must fail");
+
+	/* Try to match more bytes than are in buffers - expect only partial match */
+	offset = (FIXED_BUFFER_SIZE * 2) - 8;
+	res = net_buf_data_match(buf, offset, &data[offset], 16);
+	zassert_equal(res, 8, "Reaching out of bounds must return a partial match");
 
 	net_buf_unref(buf);
 }

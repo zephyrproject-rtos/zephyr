@@ -11,14 +11,12 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 4. The provisioner scans for an unprovisioned device idx 3 through the node with RPR server;
 # 5. The provisioner checks scanning and provisioning succeeded;
 # 6. The provisioner provisions an unprovisioned device idx 3 through the node with RPR server;
-conf=prj_mesh1d1_conf
 RunTest mesh_prov_pb_remote_parallel \
 	prov_provisioner_pb_remote_client_parallel \
 	prov_device_pb_remote_server_unproved \
 	prov_device_pb_adv_no_oob \
 	prov_device_pb_adv_no_oob
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_parallel_psa \
 	prov_provisioner_pb_remote_client_parallel \

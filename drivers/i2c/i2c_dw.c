@@ -187,7 +187,7 @@ int32_t i2c_dw_idma_tx_transfer(const struct device *dev,
 	}
 
 	if (dma_start(rom->dma_dev, DMA_INTEL_LPSS_TX_CHAN)) {
-		LOG_DBG("Error trnasfer");
+		LOG_DBG("Error transfer");
 		return  -EIO;
 	}
 	i2c_dw_enable_idma(dev, true);
@@ -201,10 +201,10 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t data;
-	uint8_t tx_empty;
-	int8_t rx_empty;
-	uint8_t cnt;
-	uint8_t rx_buffer_depth, tx_buffer_depth;
+	int tx_empty;
+	int rx_empty;
+	int cnt;
+	int rx_buffer_depth, tx_buffer_depth;
 	union ic_comp_param_1_register ic_comp_param_1;
 	uint32_t reg_base = get_regs(dev);
 
@@ -909,7 +909,7 @@ static int i2c_dw_set_slave_mode(const struct device *dev, uint8_t addr)
 	write_tx_tl(0, reg_base);
 	write_rx_tl(0, reg_base);
 
-	LOG_DBG("I2C: Host registed as Slave Device");
+	LOG_DBG("I2C: Host registered as Slave Device");
 
 	return 0;
 }

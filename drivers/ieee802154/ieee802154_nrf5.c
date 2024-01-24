@@ -763,6 +763,7 @@ static int nrf5_init(const struct device *dev)
 
 	nrf5_get_capabilities_at_boot();
 
+	nrf5_radio->rx_on_when_idle = true;
 	nrf5_radio_cfg->irq_config_func(dev);
 
 	k_thread_create(&nrf5_radio->rx_thread, nrf5_radio->rx_stack,
@@ -990,6 +991,7 @@ static int nrf5_configure(const struct device *dev,
 
 	case IEEE802154_CONFIG_RX_ON_WHEN_IDLE:
 		nrf_802154_rx_on_when_idle_set(config->rx_on_when_idle);
+		nrf5_data.rx_on_when_idle = config->rx_on_when_idle;
 		break;
 
 	default:
@@ -1070,7 +1072,13 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (id == DRX_SLOT_RX && error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
-		return;
+		if (!nrf5_data.rx_on_when_idle) {
+			/* Transition to RxOff done automatically by the driver */
+			return;
+		} else if (nrf5_data.event_handler) {
+			/* Notify the higher layer to allow it to transition if needed */
+			nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
+		}
 	}
 #else
 	ARG_UNUSED(id);

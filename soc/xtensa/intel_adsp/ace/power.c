@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/device.h>
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
@@ -149,6 +150,7 @@ static ALWAYS_INLINE void _restore_core_context(void)
 }
 
 void dsp_restore_vector(void);
+void mp_resume_entry(void);
 
 void power_gate_entry(uint32_t core_id)
 {
@@ -179,6 +181,11 @@ void power_gate_exit(void)
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();
 	_restore_core_context();
+
+	/* Secondary core is resumed by set_dx */
+	if (arch_proc_id()) {
+		mp_resume_entry();
+	}
 }
 
 __asm__(".align 4\n\t"
@@ -234,12 +241,16 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 	uint32_t cpu = arch_proc_id();
+	int ret;
+
+	ARG_UNUSED(ret);
 
 	/* save interrupt state and turn off all interrupts */
 	core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 	z_xt_ints_off(0xffffffff);
 
-	if (state == PM_STATE_SOFT_OFF) {
+	switch (state) {
+	case PM_STATE_SOFT_OFF:
 		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		if (cpu == 0) {
@@ -296,12 +307,15 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			hpsram_mask = (1 << ebb_banks) - 1;
 #endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
 			/* do power down - this function won't return */
+			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
+			__ASSERT_NO_MSG(ret == 0);
 			power_down(true, uncache_to_cache(&hpsram_mask),
 				   true);
 		} else {
 			power_gate_entry(cpu);
 		}
-	} else if (state == PM_STATE_RUNTIME_IDLE) {
+		break;
+	case PM_STATE_RUNTIME_IDLE:
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpu_power_down(cpu);
@@ -311,8 +325,12 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			battr |= (DSPBR_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
 			DSPCS.bootctl[cpu].battr = battr;
 		}
+
+		ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
+		__ASSERT_NO_MSG(ret == 0);
 		power_gate_entry(cpu);
-	} else {
+		break;
+	default:
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
 }
@@ -322,6 +340,13 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 	uint32_t cpu = arch_proc_id();
+
+	if (cpu == 0) {
+		int ret = pm_device_runtime_get(INTEL_ADSP_HST_DOMAIN_DEV);
+
+		ARG_UNUSED(ret);
+		__ASSERT_NO_MSG(ret == 0);
+	}
 
 	if (state == PM_STATE_SOFT_OFF) {
 		/* restore clock gating state */

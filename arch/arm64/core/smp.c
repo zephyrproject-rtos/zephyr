@@ -122,7 +122,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		k_panic();
 	}
 
-	/* Wait secondary cores up, see z_arm64_secondary_start */
+	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm64_cpu_boot_params.fn) {
 		wfe();
 	}
@@ -133,9 +133,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 }
 
 /* the C entry of secondary cores */
-void z_arm64_secondary_start(void)
+void arch_secondary_cpu_init(int cpu_num)
 {
-	int cpu_num = arm64_cpu_boot_params.cpu_num;
+	cpu_num = arm64_cpu_boot_params.cpu_num;
 	arch_cpustart_t fn;
 	void *arg;
 
@@ -242,11 +242,11 @@ void flush_fpu_ipi_handler(const void *unused)
 	ARG_UNUSED(unused);
 
 	disable_irq();
-	z_arm64_flush_local_fpu();
+	arch_flush_local_fpu();
 	/* no need to re-enable IRQs here */
 }
 
-void z_arm64_flush_fpu_ipi(unsigned int cpu)
+void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	const uint64_t mpidr = cpu_map[cpu];
 	uint8_t aff0;
@@ -272,14 +272,14 @@ void arch_spin_relax(void)
 		arm_gic_irq_clear_pending(SGI_FPU_IPI);
 		/*
 		 * We may not be in IRQ context here hence cannot use
-		 * z_arm64_flush_local_fpu() directly.
+		 * arch_flush_local_fpu() directly.
 		 */
 		arch_float_disable(_current_cpu->arch.fpu_owner);
 	}
 }
 #endif
 
-static int arm64_smp_init(void)
+int arch_smp_init(void)
 {
 	cpu_map[0] = MPIDR_TO_CORE(GET_MPIDR());
 
@@ -302,6 +302,6 @@ static int arm64_smp_init(void)
 
 	return 0;
 }
-SYS_INIT(arm64_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif

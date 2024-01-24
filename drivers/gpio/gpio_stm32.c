@@ -719,7 +719,9 @@ static int gpio_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	pm_device_init_suspended(dev);
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_init_suspended(dev);
+	}
 	(void)pm_device_runtime_enable(dev);
 
 	return 0;

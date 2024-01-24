@@ -5,32 +5,16 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 
-# TODO check which architecture is being used
-if(CONFIG_ARM)
-    set(CMAKE_C_FLAGS "-mlong-calls" "-mthumb")
+if(NOT CONFIG_MODULES OR CONFIG_LLEXT_TEST_HELLO STREQUAL "m")
 
-    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/hello_world.llext
-	COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c
-		-I ${PROJECT_SOURCE_DIR}/../../../../include
-		-imacros${PROJECT_BINARY_DIR}/../zephyr/include/generated/autoconf.h
-		-o ${PROJECT_BINARY_DIR}/hello_world.llext
-		${PROJECT_SOURCE_DIR}/hello_world.c
-    )
-elseif(CONFIG_XTENSA)
-    set(CMAKE_C_FLAGS "-shared" "-fPIC" "-nostdlib" "-nodefaultlibs")
+  set(llext_src_file ${PROJECT_SOURCE_DIR}/hello_world.c)
+  set(llext_bin_file ${PROJECT_BINARY_DIR}/hello_world.llext)
 
-    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/hello_world.llext
-	COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS}
-		-I ${PROJECT_SOURCE_DIR}/../../../../include
-		-imacros${PROJECT_BINARY_DIR}/../zephyr/include/generated/autoconf.h
-		-o ${PROJECT_BINARY_DIR}/hello_world.pre.llext
-		${PROJECT_SOURCE_DIR}/hello_world.c
-	COMMAND ${CROSS_COMPILE}strip -R .xt.*
-		-o ${PROJECT_BINARY_DIR}/hello_world.llext
-		${PROJECT_BINARY_DIR}/hello_world.pre.llext
-    )
+  add_llext_target(hello_world
+    OUTPUT  ${llext_bin_file}
+    SOURCES ${llext_src_file}
+  )
+
+  set(HELLO_WORLD_LLEXT ${llext_bin_file} PARENT_SCOPE)
+
 endif()
-
-set(HELLO_WORLD_LLEXT ${PROJECT_BINARY_DIR}/hello_world.llext PARENT_SCOPE)
-
-add_custom_target(hello_world DEPENDS ${PROJECT_BINARY_DIR}/hello_world.llext)

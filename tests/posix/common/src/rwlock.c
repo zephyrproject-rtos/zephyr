@@ -47,7 +47,7 @@ static void *thread_top(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_rw_lock)
+ZTEST(rwlock, test_rw_lock)
 {
 	int ret;
 	pthread_t newthread[N_THR];
@@ -116,3 +116,5 @@ ZTEST(posix_apis, test_rw_lock)
 
 	zassert_ok(pthread_rwlock_destroy(&rwlock), "Failed to destroy rwlock");
 }
+
+ZTEST_SUITE(rwlock, NULL, NULL, NULL, NULL, NULL);

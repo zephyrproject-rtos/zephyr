@@ -23,6 +23,15 @@ config ZTEST_TEST_DELAY_MS
 	  Add a delay between between tests to manage output on the console on
 	  systems that can't handle the rapid output rate.
 
+config ZTEST_SHELL
+	bool "Ztest with shell support"
+	select SHELL
+	select SHELL_THREAD_PRIORITY_OVERRIDE
+	select GETOPT_LONG
+	select SHELL_GETOPT
+	help
+	  Enable shell to manage test execution and selection.
+
 config ZTEST_CPU_HOLD_TIME_MS
 	int "Time in milliseconds to hold other CPUs for 1cpu type tests"
 	default 3000

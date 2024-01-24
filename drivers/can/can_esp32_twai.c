@@ -119,7 +119,7 @@ static int can_esp32_twai_set_timing(const struct device *dev, const struct can_
 	uint8_t btr0;
 	uint8_t btr1;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -130,7 +130,7 @@ static int can_esp32_twai_set_timing(const struct device *dev, const struct can_
 	btr1 = TWAI_TIME_SEG1_PREP(timing->phase_seg1 - 1) |
 	       TWAI_TIME_SEG2_PREP(timing->phase_seg2 - 1);
 
-	if ((data->mode & CAN_MODE_3_SAMPLES) != 0) {
+	if ((data->common.mode & CAN_MODE_3_SAMPLES) != 0) {
 		btr1 |= TWAI_TIME_SAMP;
 	}
 
@@ -224,7 +224,6 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 	.set_state_change_callback = can_sja1000_set_state_change_callback,
 	.get_core_clock = can_esp32_twai_get_core_clock,
 	.get_max_filters = can_sja1000_get_max_filters,
-	.get_max_bitrate = can_sja1000_get_max_bitrate,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_sja1000_recover,
 #endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */

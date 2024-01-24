@@ -169,7 +169,7 @@ static void spi_opentitan_xfer(const struct device *dev, const bool gpio_cs_cont
 		}
 
 		/* Keep CS asserted if another Tx segment remains or if two more Rx
-		 * segements remain (because we will handle one Rx segment after the
+		 * segments remain (because we will handle one Rx segment after the
 		 * forthcoming transaction).
 		 */
 		if (ctx->tx_count > 0 || ctx->rx_count > 1)  {

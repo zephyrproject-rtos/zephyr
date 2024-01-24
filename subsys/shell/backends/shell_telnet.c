@@ -76,7 +76,7 @@ static void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 		ret = net_context_send(sh_telnet->client_ctx, msg, len, telnet_sent_cb,
 				       K_FOREVER, NULL);
 
-		if (ret == -EAGAIN) {
+		if (ret == -EAGAIN || ret == -ENOBUFS) {
 			k_sleep(K_MSEC(TELNET_RETRY_SEND_SLEEP_MS));
 			continue;
 		}
@@ -206,7 +206,7 @@ static int telnet_send(void)
 				       len, telnet_sent_cb,
 				       K_FOREVER, NULL);
 
-		if (ret == -EAGAIN) {
+		if (ret == -EAGAIN || ret == -ENOBUFS) {
 			k_sleep(K_MSEC(TELNET_RETRY_SEND_SLEEP_MS));
 			continue;
 		}

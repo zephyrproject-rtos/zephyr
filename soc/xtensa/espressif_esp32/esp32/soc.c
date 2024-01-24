@@ -5,7 +5,7 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include "soc.h"
+#include <soc.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -31,9 +31,9 @@
 #include "esp_app_format.h"
 #include "hal/wdt_hal.h"
 
-#ifndef CONFIG_SOC_SERIES_ESP32_NET
+#ifndef CONFIG_SOC_ESP32_PROCPU
 #include "esp_clk_internal.h"
-#endif /* CONFIG_SOC_SERIES_ESP32_NET */
+#endif /* CONFIG_SOC_ESP32_PROCPU */
 
 #ifdef CONFIG_MCUBOOT
 #include "bootloader_init.h"
@@ -43,47 +43,44 @@
 extern void z_cstart(void);
 extern void esp_reset_reason_init(void);
 
-#ifdef CONFIG_ESP32_NETWORK_CORE
-extern const unsigned char esp32_net_fw_array[];
-extern const int esp_32_net_fw_array_size;
+#ifdef CONFIG_SOC_ESP32_PROCPU
+extern const unsigned char esp32_appcpu_fw_array[];
 
-void __attribute__((section(".iram1"))) start_esp32_net_cpu(void)
+void IRAM_ATTR esp_start_appcpu(void)
 {
-	esp_image_header_t *header = (esp_image_header_t *)&esp32_net_fw_array[0];
+	esp_image_header_t *header = (esp_image_header_t *)&esp32_appcpu_fw_array[0];
 	esp_image_segment_header_t *segment =
-		(esp_image_segment_header_t *)&esp32_net_fw_array[sizeof(esp_image_header_t)];
+		(esp_image_segment_header_t *)&esp32_appcpu_fw_array[sizeof(esp_image_header_t)];
 	uint8_t *segment_payload;
 	uint32_t entry_addr = header->entry_addr;
 	uint32_t idx = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
 
 	for (int i = 0; i < header->segment_count; i++) {
-		segment_payload = (uint8_t *)&esp32_net_fw_array[idx];
+		segment_payload = (uint8_t *)&esp32_appcpu_fw_array[idx];
 
 		if (segment->load_addr >= SOC_IRAM_LOW && segment->load_addr < SOC_IRAM_HIGH) {
 			/* IRAM segment only accepts 4 byte access, avoid memcpy usage here */
 			volatile uint32_t *src = (volatile uint32_t *)segment_payload;
-			volatile uint32_t *dst =
-				(volatile uint32_t *)segment->load_addr;
+			volatile uint32_t *dst = (volatile uint32_t *)segment->load_addr;
 
-			for (int j = 0; j < segment->data_len/4 ; j++) {
+			for (int j = 0; j < segment->data_len / 4; j++) {
 				dst[j] = src[j];
 			}
 		} else if (segment->load_addr >= SOC_DRAM_LOW &&
-			segment->load_addr < SOC_DRAM_HIGH) {
+			   segment->load_addr < SOC_DRAM_HIGH) {
 
-			memcpy((void *)segment->load_addr,
-				(const void *)segment_payload,
-				segment->data_len);
+			memcpy((void *)segment->load_addr, (const void *)segment_payload,
+			       segment->data_len);
 		}
 
 		idx += segment->data_len;
-		segment = (esp_image_segment_header_t *)&esp32_net_fw_array[idx];
+		segment = (esp_image_segment_header_t *)&esp32_appcpu_fw_array[idx];
 		idx += sizeof(esp_image_segment_header_t);
 	}
 
 	esp_appcpu_start((void *)entry_addr);
 }
-#endif /* CONFIG_ESP32_NETWORK_CORE */
+#endif /* CONFIG_SOC_ESP32_PROCPU */
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -138,7 +135,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	wdt_hal_disable(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-#ifndef CONFIG_SOC_SERIES_ESP32_NET
+#ifndef CONFIG_SOC_ESP32_PROCPU
 	/* Configures the CPU clock, RTC slow and fast clocks, and performs
 	 * RTC slow clock calibration.
 	 */
@@ -147,11 +144,9 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 	esp_timer_early_init();
 
-#if CONFIG_ESP32_NETWORK_CORE
-	/* start the esp32 network core before
-	 * start zephyr
-	 */
-	start_esp32_net_cpu();
+#if CONFIG_SOC_ESP32_PROCPU
+	/* start the ESP32 APP CPU */
+	esp_start_appcpu();
 #endif
 
 #if CONFIG_ESP_SPIRAM

@@ -35,7 +35,7 @@ config STM32_LPTIM_CLOCK_LSE
 endchoice
 
 config STM32_LPTIM_CLOCK
-	int "LPTIM clock value"
+	int
 	default 32768 if STM32_LPTIM_CLOCK_LSE
 	default 32000 if STM32_LPTIM_CLOCK_LSI
 

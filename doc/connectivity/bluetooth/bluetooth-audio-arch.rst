@@ -132,7 +132,10 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Commander                     |         |                  | - Not Started         |                                                  |
+   |        | Commander                     |         |                  | - WIP                 | - Feature complete                               |
+   |        |                               |         |                  |                       | - Shell Module                                   |
+   |        |                               |         |                  |                       | - BSIM test                                      |
+   |        |                               |         |                  |                       | - Sample Application                             |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | HAP    | Hearing Aid                   | 1.0     | 3.1              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
@@ -179,40 +182,40 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | PBP    | Public Broadcast Source       |         |                  | - WIP :github:`60777` | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   | PBP    | Public Broadcast Source       |         | 3.5              | - Feature complete    |                                                  |
+   |        |                               |         |                  | - Shell Module        |                                                  |
+   |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Public Broadcast Sink         |         |                  | - WIP :github:`60777` | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Public Broadcast Sink         |         | 3.5              | - Feature complete    |                                                  |
+   |        |                               |         |                  | - Shell Module        |                                                  |
+   |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    |        | Public Broadcast Assistant    |         |                  |                       | - Feature complete                               |
    |        |                               |         |                  |                       | - Shell Module                                   |
    |        |                               |         |                  |                       | - BSIM test                                      |
    |        |                               |         |                  |                       | - Sample Application                             |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | GMAP   | Unicast Game Gateway          |         |                  | - WIP :github:`57032` | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   | GMAP   | Unicast Game Gateway          |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        |                               |         |                  | - Shell Module        |                                                  |
+   |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Game Terminal         |         |                  | - WIP :github:`57032` | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Unicast Game Terminal         |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        |                               |         |                  | - Shell Module        |                                                  |
+   |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Sender         |         |                  | - WIP :github:`57032` | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Broadcast Game Sender         |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        |                               |         |                  | - Shell Module        |                                                  |
+   |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Receiver       |         |                  | - WIP :github:`57032` | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Broadcast Game Receiver       |         | 3.5              | - Feature complete    | - Sample Application                             |
+   |        |                               |         |                  | - Shell Module        |                                                  |
+   |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
 
 Using the Bluetooth Audio Stack

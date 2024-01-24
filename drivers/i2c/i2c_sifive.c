@@ -317,7 +317,7 @@ static int i2c_sifive_init(const struct device *dev)
 }
 
 
-static struct i2c_driver_api i2c_sifive_api = {
+static const struct i2c_driver_api i2c_sifive_api = {
 	.configure = i2c_sifive_configure,
 	.transfer = i2c_sifive_transfer,
 };

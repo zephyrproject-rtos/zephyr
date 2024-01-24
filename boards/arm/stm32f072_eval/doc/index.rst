@@ -110,7 +110,7 @@ Pin Mapping
 STM32F072-EVAL Discovery kit has 6 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to STM32F072-EVAL board User Manual.
+For more details please refer to STM32F072-EVAL board User Manual.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

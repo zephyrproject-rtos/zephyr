@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/posix/pthread.h>
+#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
@@ -158,6 +159,22 @@ int pthread_equal(pthread_t pt1, pthread_t pt2)
 	return (pt1 == pt2);
 }
 
+pid_t getpid(void)
+{
+	/*
+	 * To maintain compatibility with some other POSIX operating systems,
+	 * a PID of zero is used to indicate that the process exists in another namespace.
+	 * PID zero is also used by the scheduler in some cases.
+	 * PID one is usually reserved for the init process.
+	 * Also note, that negative PIDs may be used by kill()
+	 * to send signals to process groups in some implementations.
+	 *
+	 * At the moment, getpid just returns an arbitrary number >= 2
+	 */
+
+	return 42;
+}
+
 static inline void __z_pthread_cleanup_init(struct __pthread_cleanup *c, void (*routine)(void *arg),
 					    void *arg)
 {
@@ -198,39 +215,40 @@ void __z_pthread_cleanup_pop(int execute)
 	}
 }
 
-static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
+static bool is_posix_policy_prio_valid(int priority, int policy)
 {
 	if (priority >= sched_get_priority_min(policy) &&
 	    priority <= sched_get_priority_max(policy)) {
 		return true;
 	}
 
-	LOG_ERR("Invalid piority %d and / or policy %d", priority, policy);
+	LOG_ERR("Invalid priority %d and / or policy %d", priority, policy);
 
 	return false;
 }
 
-static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)
+/* Non-static so that they can be tested in ztest */
+int zephyr_to_posix_priority(int z_prio, int *policy)
 {
+	int priority;
+
 	if (z_prio < 0) {
-		__ASSERT_NO_MSG(z_prio < CONFIG_NUM_COOP_PRIORITIES);
+		__ASSERT_NO_MSG(-z_prio <= CONFIG_NUM_COOP_PRIORITIES);
 	} else {
 		__ASSERT_NO_MSG(z_prio < CONFIG_NUM_PREEMPT_PRIORITIES);
 	}
 
 	*policy = (z_prio < 0) ? SCHED_FIFO : SCHED_RR;
-	return ZEPHYR_TO_POSIX_PRIORITY(z_prio);
+	priority = ZEPHYR_TO_POSIX_PRIORITY(z_prio);
+	__ASSERT_NO_MSG(is_posix_policy_prio_valid(priority, *policy));
+
+	return priority;
 }
 
-static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
+/* Non-static so that they can be tested in ztest */
+int posix_to_zephyr_priority(int priority, int policy)
 {
-	if (policy == SCHED_FIFO) {
-		/* COOP: highest [CONFIG_NUM_COOP_PRIORITIES, -1] lowest */
-		__ASSERT_NO_MSG(priority < CONFIG_NUM_COOP_PRIORITIES);
-	} else {
-		/* PREEMPT: lowest [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1] highest */
-		__ASSERT_NO_MSG(priority < CONFIG_NUM_PREEMPT_PRIORITIES);
-	}
+	__ASSERT_NO_MSG(is_posix_policy_prio_valid(priority, policy));
 
 	return POSIX_TO_ZEPHYR_PRIORITY(priority, policy);
 }
@@ -243,15 +261,14 @@ static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
 int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *schedparam)
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
-	int priority = schedparam->sched_priority;
 
-	if (attr == NULL || !attr->initialized ||
-	    !is_posix_policy_prio_valid(priority, attr->schedpolicy)) {
+	if (attr == NULL || !attr->initialized || schedparam == NULL ||
+	    !is_posix_policy_prio_valid(schedparam->sched_priority, attr->schedpolicy)) {
 		LOG_ERR("Invalid pthread_attr_t or sched_param");
 		return EINVAL;
 	}
 
-	attr->priority = priority;
+	attr->priority = schedparam->sched_priority;
 	return 0;
 }
 
@@ -556,7 +573,9 @@ int pthread_setcancelstate(int state, int *oldstate)
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
-	*oldstate = t->cancel_state;
+	if (oldstate != NULL) {
+		*oldstate = t->cancel_state;
+	}
 	t->cancel_state = state;
 	cancel_pending = t->cancel_pending;
 	k_spin_unlock(&pthread_pool_lock, key);
@@ -589,7 +608,9 @@ int pthread_setcanceltype(int type, int *oldtype)
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
-	*oldtype = t->cancel_type;
+	if (oldtype != NULL) {
+		*oldtype = t->cancel_type;
+	}
 	t->cancel_type = type;
 	k_spin_unlock(&pthread_pool_lock, key);
 
@@ -681,7 +702,7 @@ int pthread_attr_init(pthread_attr_t *_attr)
  */
 int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *param)
 {
-	uint32_t priority;
+	int priority;
 	struct posix_thread *t;
 
 	t = to_posix_thread(pthread);
@@ -867,7 +888,7 @@ int pthread_attr_getdetachstate(const pthread_attr_t *_attr, int *detachstate)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (detachstate == NULL)) {
 		return EINVAL;
 	}
 
@@ -903,7 +924,7 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *_attr, int *policy)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == 0U)) {
+	if ((attr == NULL) || (attr->initialized == 0U) || (policy == NULL)) {
 		return EINVAL;
 	}
 
@@ -937,7 +958,7 @@ int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (stacksize == NULL)) {
 		return EINVAL;
 	}
 
@@ -975,7 +996,8 @@ int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t 
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (stackaddr == NULL) ||
+	    (stacksize == NULL)) {
 		return EINVAL;
 	}
 
@@ -1019,7 +1041,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *_attr, struct sched_param *
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (schedparam == NULL)) {
 		return EINVAL;
 	}
 

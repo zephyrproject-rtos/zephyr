@@ -17,17 +17,12 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #   Check that publication resumes.
 
 RunTest mesh_suspend_disable_resume \
-	suspend_tx_suspend_disable_resume suspend_rx_suspend_disable_resume
-
-conf=prj_mesh1d1_conf
-RunTest mesh_suspend_disable_resume_1d1 \
-	suspend_tx_suspend_disable_resume suspend_rx_suspend_disable_resume
+	suspend_dut_suspend_disable_resume suspend_tester_pub
 
 overlay=overlay_low_lat_conf
 RunTest mesh_suspend_disable_resume_low_lat \
-	suspend_tx_suspend_disable_resume suspend_rx_suspend_disable_resume
+	suspend_dut_suspend_disable_resume suspend_tester_pub
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_suspend_disable_resume_psa \
-	suspend_tx_suspend_disable_resume suspend_rx_suspend_disable_resume
+	suspend_dut_suspend_disable_resume suspend_tester_pub

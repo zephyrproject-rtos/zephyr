@@ -142,6 +142,8 @@ static bool parse_cb(struct bt_data *data, void *user_data)
 static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *data,
 		       size_t data_len)
 {
+	size_t new_buf_len;
+
 	for (uint16_t i = 0U; i < buf->len;) {
 		uint8_t *len = &buf->data[i++];
 		const uint8_t data_type = buf->data[i++];
@@ -162,8 +164,8 @@ static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *
 				if (value + value_len == buf->data + buf->len) {
 					data_len_to_move = 0U;
 				} else {
-					old_next_data_start = value + value_len + 1;
-					new_next_data_start = value + data_len + 1;
+					old_next_data_start = value + value_len;
+					new_next_data_start = value + data_len;
 					data_len_to_move =
 						buf->len - (old_next_data_start - buf->data);
 				}
@@ -207,11 +209,12 @@ static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *
 	}
 
 	/* If we reach here, we did not find the data in the buffer, so we simply add it */
-	if ((buf->len + data_len) <= buf->size) {
-		net_buf_simple_add_u8(buf, data_len + sizeof(type));
-		net_buf_simple_add_u8(buf, type);
+	new_buf_len = buf->len + 1 /* len */ + sizeof(type) + data_len;
+	if (new_buf_len <= buf->size) {
+		net_buf_simple_add_u8(buf, data_len + sizeof(type)); /* len */
+		net_buf_simple_add_u8(buf, type); /* type */
 		if (data_len > 0) {
-			net_buf_simple_add_mem(buf, data, data_len);
+			net_buf_simple_add_mem(buf, data, data_len); /* value */
 		}
 	} else {
 		LOG_DBG("Cannot fit data_len %zu in codec_cfg with len %u and size %u", data_len,

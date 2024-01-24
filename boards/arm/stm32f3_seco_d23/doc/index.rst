@@ -1,12 +1,12 @@
 .. _stm32f3_seco_d23_board:
 
-SECO JUNO SBC-D23 (STM32F302)
-#############################
+SECO SBC-3.5-PX30 (JUNO - D23) (STM32F302)
+##########################################
 
 Overview
 ********
 
-JUNO (SBC-D23) is a Single Board Computer based on embedded Rockchip PX30
+SBC-3.5-PX30 (JUNO - D23) is a Single Board Computer based on embedded Rockchip PX30
 Processor, featuring Quad-Core ARM Cortex-A35 processor. The processor
 integrates a Mali-G31 GPU with High performance dedicated 2D processor,
 supporting OpenGL ES 1.1 / 2.0 / 3.2, Vulkan 1.0, OpenCL 2.0 and Open VG 1.1.
@@ -18,20 +18,20 @@ HDMI are supported. The RMII interface and Micrel KSZ8091 Ethernet Transceiver
 allow the implementation of a Fast Ethernet interface. The networking
 capabilities can be extended by WiFi+BT M.2 module and external modem module.
 The audio functionalities are managed by the AudioCodec embedded in the RK-809
-PMIC. The JUNO board is completed by a series of connectors with various
+PMIC. SBC-3.5-PX30 board is completed by a series of connectors with various
 interfaces (UART, SPI, I2C) managed by the microcontroller STM32F302VCT6.
 
 .. image:: img/stm32f3_seco_d23.jpg
      :align: center
-     :alt: SECO JUNO
+     :alt: SECO SBC-3.5-PX30
 
 More information about the board can be found at the
-`SECO JUNO SBC-D23 website`_.
+`SECO SBC-3.5-PX30 website`_.
 
 Hardware
 ********
 
-SECO JUNO SBC-D23 provides the following hardware components:
+SECO SBC-3.5-PX30 provides the following hardware components:
 
 - STM32F302VCT6
   - ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
@@ -93,10 +93,10 @@ Other hardware features are not yet supported on Zephyr porting.
 Pin Mapping
 ===========
 
-SECO-D23 has 6 GPIO controllers. These controllers are
+SBC-3.5-PX30 has 6 GPIO controllers. These controllers are
 responsible for pin muxing, input/output, pull-up, etc.
 
-For mode details please refer to `SECO JUNO SBC-D23 board User Manual`_.
+For more details please refer to `SECO SBC-3.5-PX30 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -142,14 +142,14 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ============
 
-SECO SBC-D23 System Clock could be driven by internal or external
+SECO SBC-3.5-PX30 System Clock could be driven by internal or external
 oscillator, as well as main PLL clock. By default System clock is driven
 by PLL clock at 72 MHz, driven by an external oscillator at 8 MHz.
 
 Serial Port
 ===========
 
-SECO SBC-D23 has up to 4 U(S)ARTs. The Zephyr console output
+SECO SBC-3.5-PX30 has up to 4 U(S)ARTs. The Zephyr console output
 is assigned to UART1. Default settings are 115200 8N1.
 In debug configuration UART1 is connected to the flashing connector CN56.
 
@@ -161,22 +161,22 @@ UART1 (in alternate config) and UART5 are connected to CN32.
 
 I2C
 ===
-SECO SBC-D23 has up to 2 I2Cs. Both are present in connector CN33.
+SECO SBC-3.5-PX30 has up to 2 I2Cs. Both are present in connector CN33.
 I2C2 is available only on boards where DEBUG serial is not connected.
 
 USB
 ===
-SECO SBC-D23 has a USB 2.0 full-speed device interface available through
+SECO SBC-3.5-PX30 has a USB 2.0 full-speed device interface available through
 its connector CN31.
 
 CAN
 ===
-SECO SBC-D23 has an onboard CAN transceiver (TJA1051T), and it is
+SECO SBC-3.5-PX30 has an onboard CAN transceiver (TJA1051T), and it is
 connected to both CN29 and CN30. PD0 is connected to EC_CAN_STBY.
 
 SPI
 ===
-SECO SBC-D23 has two SPI lines: SPI1 is an internal SPI line connected to the
+SECO SBC-3.5-PX30 has two SPI lines: SPI1 is an internal SPI line connected to the
 main processor (Rockchip PX30) and SPI2 is connected to CN39.
 
 Programming and Debugging
@@ -189,10 +189,10 @@ Applications for the ``stm32f3_seco_d23`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Flashing an application to SECO SBC-D23
--------------------------------------------
+Flashing an application to SECO SBC-3.5-PX30
+--------------------------------------------
 
-First, connect the SECO SBC-D23 to your host computer using
+First, connect the SECO SBC-3.5-PX30 to your host computer using
 CN56 connector to an ST-Link.
 The pinout is (1-8):
 - VDD
@@ -219,7 +219,7 @@ Run a serial host program to connect with your board.
 
    $ minicom -D /dev/<tty device>
 
-Replace <tty_device> with the port where the SBC-D23 board can be
+Replace <tty_device> with the port where the SBC-3.5-PX30 board can be
 found.
 
 You should see the following message on the console:
@@ -229,10 +229,10 @@ You should see the following message on the console:
    Hello World! stm32f3_seco_d23
 
 
-.. _SECO JUNO SBC-D23 website:
-   https://edge.seco.com/juno.html
+.. _SECO SBC-3.5-PX30 website:
+   https://edge.seco.com/sbc-3-5-px30.html
 
-.. _SECO JUNO SBC-D23 board User Manual:
+.. _SECO SBC-3.5-PX30 board User Manual:
    https://www.seco.com/Manuals/SBC-D23_Manual.pdf
 
 .. _STM32F302VC on www.st.com:

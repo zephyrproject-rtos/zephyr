@@ -15,9 +15,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # - PRB is disabled, SNB enabled: second SNB is advertised
 # - KR is initiated, third SNB is advertised with new flags (IVU + KR)
 # - PRB is enabled, SNB is disabled. Third PRB is advertised
-conf=prj_mesh1d1_conf
 RunTest mesh_priv_beacon_interleave beacon_rx_priv_interleave beacon_tx_priv_interleave
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_priv_beacon_interleave_psa beacon_rx_priv_interleave beacon_tx_priv_interleave

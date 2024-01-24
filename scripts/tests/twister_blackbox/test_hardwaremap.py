@@ -105,15 +105,14 @@ class TestHardwaremap:
     def teardown_class(cls):
         pass
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         ('manufacturer', 'product', 'serial', 'runner'),
         TESTDATA_1,
     )
-    def test_generate(self, capfd, manufacturer, product, serial, runner):
+    def test_generate(self, capfd, out_path, manufacturer, product, serial, runner):
         file_name = "test-map.yaml"
         path = os.path.join(ZEPHYR_BASE, file_name)
-        args = ['--generate-hardware-map', file_name]
+        args = ['--outdir', out_path, '--generate-hardware-map', file_name]
 
         if os.path.exists(path):
             os.remove(path)
@@ -165,15 +164,14 @@ class TestHardwaremap:
                         for handler in handlers:
                             logger.removeHandler(handler)
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         ('manufacturer', 'product', 'serial', 'runner'),
         TESTDATA_2,
     )
-    def test_few_generate(self, capfd, manufacturer, product, serial, runner):
+    def test_few_generate(self, capfd, out_path, manufacturer, product, serial, runner):
         file_name = "test-map.yaml"
         path = os.path.join(ZEPHYR_BASE, file_name)
-        args = ['--generate-hardware-map', file_name]
+        args = ['--outdir', out_path, '--generate-hardware-map', file_name]
 
         if os.path.exists(path):
             os.remove(path)
@@ -247,15 +245,14 @@ class TestHardwaremap:
 
         assert str(sys_exit.value) == '0'
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         ('manufacturer', 'product', 'serial', 'location'),
         TESTDATA_3,
     )
-    def test_texas_exeption(self, capfd, manufacturer, product, serial, location):
+    def test_texas_exeption(self, capfd, out_path, manufacturer, product, serial, location):
         file_name = "test-map.yaml"
         path = os.path.join(ZEPHYR_BASE, file_name)
-        args = ['--generate-hardware-map', file_name]
+        args = ['--outdir', out_path, '--generate-hardware-map', file_name]
 
         if os.path.exists(path):
             os.remove(path)

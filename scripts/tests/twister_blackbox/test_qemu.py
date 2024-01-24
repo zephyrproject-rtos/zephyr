@@ -74,8 +74,6 @@ class TestQEMU:
     def teardown_class(cls):
         pass
 
-
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, test_platforms, expected',
         TESTDATA_1,
@@ -84,8 +82,8 @@ class TestQEMU:
             'tests/dummy/device',
         ]
     )
-    def test_emulation_only(self, capfd, test_path, test_platforms, expected):
-        args = ['-i', '-T', test_path, '--emulation-only'] + \
+    def test_emulation_only(self, capfd, out_path, test_path, test_platforms, expected):
+        args = ['-i', '--outdir', out_path, '-T', test_path, '--emulation-only'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]

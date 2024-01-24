@@ -78,7 +78,7 @@ def process_pr(gh, maintainer_file, number):
 
     # one liner PRs should be trivial
     if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1) and not manifest_change:
-        labels = {'trivial'}
+        labels = {'Trivial'}
 
     if len(fn) > 500:
         log(f"Too many files changed ({len(fn)}), skipping....")
@@ -146,7 +146,7 @@ def process_pr(gh, maintainer_file, number):
         log("Submitter is same as Assignee, trying to find another assignee...")
         aff = list(area_counter.keys())[0]
         for area in all_areas:
-            if area.name == aff:
+            if area == aff:
                 if len(area.maintainers) > 1:
                     assignee = area.maintainers[1]
                 else:
@@ -181,14 +181,21 @@ def process_pr(gh, maintainer_file, number):
             existing_reviewers |= set(r.get_page(page))
             page += 1
 
-        for c in collab:
+        # check for reviewers that remove themselves from list of reviewer and
+        # do not attempt to add them again based on MAINTAINERS file.
+        self_removal = []
+        for event in pr.get_issue_events():
+            if event.event == 'review_request_removed' and event.actor == event.requested_reviewer:
+                self_removal.append(event.actor)
+
+        for collaborator in collab:
             try:
-                u = gh.get_user(c)
-                if pr.user != u and gh_repo.has_in_collaborators(u):
-                    if u not in existing_reviewers:
-                        reviewers.append(c)
+                gh_user = gh.get_user(collaborator)
+                if pr.user != gh_user and gh_repo.has_in_collaborators(gh_user):
+                    if gh_user not in existing_reviewers and gh_user not in self_removal:
+                        reviewers.append(collaborator)
             except UnknownObjectException as e:
-                log(f"Can't get user '{c}', account does not exist anymore? ({e})")
+                log(f"Can't get user '{collaborator}', account does not exist anymore? ({e})")
 
         if len(existing_reviewers) < 15:
             reviewer_vacancy = 15 - len(existing_reviewers)

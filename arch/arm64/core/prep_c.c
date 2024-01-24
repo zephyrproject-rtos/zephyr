@@ -69,11 +69,12 @@ void z_prep_c(void)
 	CODE_UNREACHABLE;
 }
 
+
 #if CONFIG_MP_MAX_NUM_CPUS > 1
-extern FUNC_NORETURN void z_arm64_secondary_start(void);
+extern FUNC_NORETURN void arch_secondary_cpu_init(void);
 void z_arm64_secondary_prep_c(void)
 {
-	z_arm64_secondary_start();
+	arch_secondary_cpu_init();
 
 	CODE_UNREACHABLE;
 }

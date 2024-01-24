@@ -321,6 +321,8 @@ Started Guide. pyOCD includes support for Zephyr RTOS-awareness.
 
 These debug host tools are compatible with the following debug probes:
 
+- :ref:`lpclink2-cmsis-onboard-debug-probe`
+- :ref:`mcu-link-cmsis-onboard-debug-probe`
 - :ref:`opensda-daplink-onboard-debug-probe`
 - :ref:`stlink-v21-onboard-debug-probe`
 

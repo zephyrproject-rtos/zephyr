@@ -572,7 +572,10 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			snk_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->snk_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
@@ -599,7 +602,10 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			src_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->src_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
@@ -1134,9 +1140,9 @@ static int cmd_cap_ac_13(const struct shell *sh, size_t argc, char **argv)
 static int cmd_cap_ac_14(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct bap_broadcast_ac_param param = {
-		.name = "AC_13",
+		.name = "AC_14",
 		.stream_cnt = 2U,
-		.chan_cnt = 1U,
+		.chan_cnt = 2U,
 	};
 
 	return cap_ac_broadcast(sh, argc, argv, &param);

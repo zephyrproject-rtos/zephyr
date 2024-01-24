@@ -105,6 +105,8 @@
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_ph13>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 };
 
 &rtc {
@@ -115,4 +117,8 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "disabled";
+};
+
+&mailbox {
+	status = "okay";
 };

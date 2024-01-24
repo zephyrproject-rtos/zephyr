@@ -71,14 +71,13 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			#erase-block-cells = <2>;
 
 			flash0: flash@400000 {
-				compatible = "soc-nv-flash";
-
+				compatible = "atmel,sam-flash", "soc-nv-flash";
 				write-block-size = <16>;
 				erase-block-size = <8192>;
 			};
-
 		};
 
 		wdt: watchdog@400e1850 {
@@ -422,7 +421,7 @@
 			compatible = "atmel,sam-can";
 			reg = <0x40030000 0x100>;
 			interrupts = <35 0>, <36 0>;
-			interrupt-names = "LINE_0", "LINE_1";
+			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
 			divider = <6>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
@@ -435,7 +434,7 @@
 			compatible = "atmel,sam-can";
 			reg = <0x40034000 0x100>;
 			interrupts = <37 0>, <38 0>;
-			interrupt-names = "LINE_0", "LINE_1";
+			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
 			divider = <6>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;

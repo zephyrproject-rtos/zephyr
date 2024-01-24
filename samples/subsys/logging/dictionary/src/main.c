@@ -10,8 +10,9 @@
 #include <string.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
 
-LOG_MODULE_REGISTER(hello_world, 4);
+LOG_MODULE_REGISTER(hello_world, LOG_LEVEL_DBG);
 
 static const char *hexdump_msg = "HEXDUMP! HEXDUMP@ HEXDUMP#";
 
@@ -72,3 +73,16 @@ int main(void)
 #endif
 	return 0;
 }
+
+static int rt_demo_cmd(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	LOG_ERR("demo %s", argc > 1 ? argv[1] : "");
+	LOG_WRN("demo %s", argc > 1 ? argv[1] : "");
+	LOG_INF("demo %s", argc > 1 ? argv[1] : "");
+	LOG_DBG("demo %s", argc > 1 ? argv[1] : "");
+
+	return 0;
+}
+
+SHELL_CMD_REGISTER(log_rt_demo, NULL, "Command can be used to test runtime filtering", rt_demo_cmd);

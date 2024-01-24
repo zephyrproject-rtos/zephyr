@@ -17,6 +17,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* registers */
 #define BMI160_REG_CHIPID		0x00
 #define BMI160_REG_ERR			0x02
@@ -296,9 +300,11 @@ enum bmi160_odr {
 #define BMI160_GYR_RANGE_250DPS		3
 #define BMI160_GYR_RANGE_125DPS		4
 
-#define BMI160_ACC_SCALE(range_g)	((2 * range_g * SENSOR_G) / 65536LL)
-#define BMI160_GYR_SCALE(range_dps)\
-				((2 * range_dps * SENSOR_PI) / 180LL / 65536LL)
+#define BMI160_ACC_SCALE_NUMERATOR(range_g) (2 * (range_g) * SENSOR_G)
+#define BMI160_ACC_SCALE_DENOMINATOR UINT16_MAX
+
+#define BMI160_GYR_SCALE_NUMERATOR(range_dps) (2 * (range_dps) * SENSOR_PI)
+#define BMI160_GYR_SCALE_DENOMINATOR (UINT32_C(180) * UINT16_MAX)
 
 /* default settings, based on menuconfig options */
 
@@ -467,6 +473,7 @@ union bmi160_pmu_status {
 /* Each sample has X, Y and Z */
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
+	uint16_t temperature;
 	struct {
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 		uint16_t gyr[BMI160_AXES];
@@ -478,8 +485,10 @@ union bmi160_sample {
 };
 
 struct bmi160_scale {
-	uint16_t acc; /* micro m/s^2/lsb */
-	uint16_t gyr; /* micro radians/s/lsb */
+	/* numerator / denominator => micro m/s^2/lsb */
+	int32_t acc_numerator;
+	/* numerator / denominator => micro radians/s/lsb */
+	int64_t gyr_numerator;
 };
 
 struct bmi160_data {
@@ -540,5 +549,9 @@ int bmi160_acc_slope_config(const struct device *dev,
 			    const struct sensor_value *val);
 int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_ */

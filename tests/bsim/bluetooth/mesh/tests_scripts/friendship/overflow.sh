@@ -9,12 +9,6 @@ RunTest mesh_friendship_overflow \
 	friendship_friend_overflow \
 	friendship_lpn_overflow
 
-conf=prj_mesh1d1_conf
-RunTest mesh_friendship_overflow_1d1 \
-	friendship_friend_overflow \
-	friendship_lpn_overflow
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_friendship_overflow_psa \
 	friendship_friend_overflow \

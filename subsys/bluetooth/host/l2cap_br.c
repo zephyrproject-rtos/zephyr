@@ -21,7 +21,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap_internal.h"
+#include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
 #include "rfcomm_internal.h"
@@ -236,6 +236,20 @@ static uint8_t l2cap_br_get_ident(void)
 	return ident;
 }
 
+static int l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
+			    bt_conn_tx_cb_t cb, void *user_data)
+{
+	struct bt_l2cap_hdr *hdr;
+
+	LOG_DBG("conn %p cid %u len %zu", conn, cid, buf->len);
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+	hdr->cid = sys_cpu_to_le16(cid);
+
+	return bt_conn_send_cb(conn, buf, cb, user_data);
+}
+
 /* Send the buffer and release it in case of failure.
  * Any other cleanup in failure to send should be handled by the disconnected
  * handler.
@@ -243,7 +257,7 @@ static uint8_t l2cap_br_get_ident(void)
 static inline void l2cap_send(struct bt_conn *conn, uint16_t cid,
 			      struct net_buf *buf)
 {
-	if (bt_l2cap_send(conn, cid, buf)) {
+	if (l2cap_br_send_cb(conn, cid, buf, NULL, NULL)) {
 		net_buf_unref(buf);
 	}
 }
@@ -252,7 +266,8 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 				   struct net_buf *buf, k_timeout_t timeout)
 {
 
-	if (bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf)) {
+	if (l2cap_br_send_cb(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf,
+			     NULL, NULL)) {
 		net_buf_unref(buf);
 		return;
 	}
@@ -1362,7 +1377,7 @@ int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt
 		return -EMSGSIZE;
 	}
 
-	return bt_l2cap_send_cb(br_chan->chan.conn, br_chan->tx.cid, buf, cb, user_data);
+	return l2cap_br_send_cb(br_chan->chan.conn, br_chan->tx.cid, buf, cb, user_data);
 }
 
 int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)

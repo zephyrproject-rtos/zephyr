@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,7 @@
 #define N_THR_E 3
 #define N_THR_T 4
 #define BOUNCES 64
-#define STACKS (MAX(1024, PTHREAD_STACK_MIN) + CONFIG_TEST_EXTRA_STACK_SIZE)
-#define THREAD_PRIORITY 3
 #define ONE_SECOND 1
-
-/* arbitrary number that is also a legal stack size */
-#define OKAY_STACK_SIZE (STACKS + 1)
 
 /* Macros to test invalid states */
 #define PTHREAD_CANCEL_INVALID -1
@@ -26,19 +21,15 @@
 #define PRIO_INVALID -1
 #define PTHREAD_INVALID -1
 
-K_THREAD_STACK_ARRAY_DEFINE(stack_e, N_THR_E, STACKS);
-K_THREAD_STACK_ARRAY_DEFINE(stack_t, N_THR_T, STACKS);
-K_THREAD_STACK_ARRAY_DEFINE(stack_1, 1, 32);
-
-void *thread_top_exec(void *p1);
-void *thread_top_term(void *p1);
+static void *thread_top_exec(void *p1);
+static void *thread_top_term(void *p1);
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cvar0 = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t cvar1 = PTHREAD_COND_INITIALIZER;
 static pthread_barrier_t barrier;
 
-sem_t main_sem;
+static sem_t main_sem;
 
 static int bounce_failed;
 static int bounce_done[N_THR_E];
@@ -48,8 +39,6 @@ static int curr_bounce_thread;
 static int barrier_failed;
 static int barrier_done[N_THR_E];
 static int barrier_return[N_THR_E];
-
-static uint32_t param;
 
 /* First phase bounces execution between two threads using a condition
  * variable, continuously testing that no other thread is mucking with
@@ -64,7 +53,7 @@ static uint32_t param;
  * Test success is signaled to main() using a traditional semaphore.
  */
 
-void *thread_top_exec(void *p1)
+static void *thread_top_exec(void *p1)
 {
 	int i, j, id = (int) POINTER_TO_INT(p1);
 	int policy;
@@ -152,7 +141,7 @@ void *thread_top_exec(void *p1)
 	return NULL;
 }
 
-int bounce_test_done(void)
+static int bounce_test_done(void)
 {
 	int i;
 
@@ -169,7 +158,7 @@ int bounce_test_done(void)
 	return 1;
 }
 
-int barrier_test_done(void)
+static int barrier_test_done(void)
 {
 	int i;
 
@@ -186,10 +175,10 @@ int barrier_test_done(void)
 	return 1;
 }
 
-void *thread_top_term(void *p1)
+static void *thread_top_term(void *p1)
 {
 	pthread_t self;
-	int oldstate, policy, ret;
+	int policy, ret;
 	int id = POINTER_TO_INT(p1);
 	struct sched_param param, getschedparam;
 
@@ -209,18 +198,13 @@ void *thread_top_term(void *p1)
 			getschedparam.sched_priority);
 
 	if (id % 2) {
-		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
+		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		zassert_false(ret, "Unable to set cancel state!");
 	}
 
 	if (id >= 2) {
-		if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-			zassert_false(pthread_detach(self), "failed to set detach state");
-		}
-		ret = pthread_detach(self);
-		if (id == 2) {
-			zassert_equal(ret, EINVAL, "re-detached thread!");
-		}
+		zassert_ok(pthread_detach(self), "failed to set detach state");
+		zassert_equal(pthread_detach(self), EINVAL, "re-detached thread!");
 	}
 
 	printk("Cancelling thread %d\n", id);
@@ -231,38 +215,44 @@ void *thread_top_term(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_pthread_condattr)
+/* Test the internal priority conversion functions */
+int zephyr_to_posix_priority(int z_prio, int *policy);
+int posix_to_zephyr_priority(int priority, int policy);
+ZTEST(pthread, test_pthread_priority_conversion)
 {
-	clockid_t clock_id;
-	pthread_condattr_t att;
+	/*
+	 *    ZEPHYR [-CONFIG_NUM_COOP_PRIORITIES, -1]
+	 *                       TO
+	 * POSIX(FIFO) [0, CONFIG_NUM_COOP_PRIORITIES - 1]
+	 */
+	for (int z_prio = -CONFIG_NUM_COOP_PRIORITIES, prio = CONFIG_NUM_COOP_PRIORITIES - 1,
+		 p_prio, policy;
+	     z_prio <= -1; z_prio++, prio--) {
+		p_prio = zephyr_to_posix_priority(z_prio, &policy);
+		zassert_equal(policy, SCHED_FIFO);
+		zassert_equal(p_prio, prio, "%d %d\n", p_prio, prio);
+		zassert_equal(z_prio, posix_to_zephyr_priority(p_prio, SCHED_FIFO));
+	}
 
-	zassert_ok(pthread_condattr_init(&att), "pthread_condattr_init failed");
-
-	zassert_ok(pthread_condattr_getclock(&att, &clock_id), "pthread_condattr_getclock failed");
-	zassert_equal(clock_id, CLOCK_MONOTONIC, "clock attribute not set correctly");
-
-	zassert_ok(pthread_condattr_setclock(&att, CLOCK_REALTIME),
-		   "pthread_condattr_setclock failed");
-
-	zassert_ok(pthread_condattr_getclock(&att, &clock_id), "pthread_condattr_setclock failed");
-	zassert_equal(clock_id, CLOCK_REALTIME, "clock attribute not set correctly");
-
-	zassert_equal(pthread_condattr_setclock(&att, 42),
-		      -EINVAL, "pthread_condattr_setclock did not return EINVAL");
-
-	zassert_ok(pthread_condattr_destroy(&att), "pthread_condattr_destroy failed");
+	/*
+	 *  ZEPHYR [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1]
+	 *                      TO
+	 * POSIX(RR) [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1]
+	 */
+	for (int z_prio = 0, prio = CONFIG_NUM_PREEMPT_PRIORITIES - 1, p_prio, policy;
+	     z_prio < CONFIG_NUM_PREEMPT_PRIORITIES; z_prio++, prio--) {
+		p_prio = zephyr_to_posix_priority(z_prio, &policy);
+		zassert_equal(policy, SCHED_RR);
+		zassert_equal(p_prio, prio, "%d %d\n", p_prio, prio);
+		zassert_equal(z_prio, posix_to_zephyr_priority(p_prio, SCHED_RR));
+	}
 }
 
-ZTEST(posix_apis, test_pthread_execution)
+ZTEST(pthread, test_pthread_execution)
 {
-	int i, ret, min_prio, max_prio;
-	int dstate, policy;
-	pthread_attr_t attr[N_THR_E] = {};
-	struct sched_param schedparam, getschedparam;
+	int i, ret;
 	pthread_t newthread[N_THR_E];
-	int schedpolicy = SCHED_FIFO;
-	void *retval, *stackaddr;
-	size_t stacksize;
+	void *retval;
 	int serial_threads = 0;
 	static const char thr_name[] = "thread name";
 	char thr_name_buf[CONFIG_THREAD_MAX_NAME_LEN];
@@ -274,51 +264,6 @@ ZTEST(posix_apis, test_pthread_execution)
 	zassert_ok(pthread_barrier_init(&barrier, NULL, N_THR_E));
 
 	sem_init(&main_sem, 0, 1);
-	schedparam.sched_priority = CONFIG_NUM_COOP_PRIORITIES - 1;
-	min_prio = sched_get_priority_min(schedpolicy);
-	max_prio = sched_get_priority_max(schedpolicy);
-
-	ret = (min_prio < 0 || max_prio < 0 ||
-			schedparam.sched_priority < min_prio ||
-			schedparam.sched_priority > max_prio);
-
-	/* TESTPOINT: Check if scheduling priority is valid */
-	zassert_false(ret,
-			"Scheduling priority outside valid priority range");
-
-	/* TESTPOINTS: Try setting attributes before init */
-	ret = pthread_attr_setschedparam(&attr[0], &schedparam);
-	zassert_equal(ret, EINVAL, "uninitialized attr set!");
-
-	ret = pthread_attr_setdetachstate(&attr[0], PTHREAD_CREATE_JOINABLE);
-	zassert_equal(ret, EINVAL, "uninitialized attr set!");
-
-	ret = pthread_attr_setschedpolicy(&attr[0], schedpolicy);
-	zassert_equal(ret, EINVAL, "uninitialized attr set!");
-
-	/* TESTPOINT: Try setting attribute with empty stack */
-	ret = pthread_attr_setstack(&attr[0], 0, STACKS);
-	zassert_equal(ret, EACCES, "empty stack set!");
-
-	/* TESTPOINTS: Try getting attributes before init */
-	ret = pthread_attr_getschedparam(&attr[0], &getschedparam);
-	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
-
-	ret = pthread_attr_getdetachstate(&attr[0], &dstate);
-	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
-
-	ret = pthread_attr_getschedpolicy(&attr[0], &policy);
-	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
-
-	ret = pthread_attr_getstack(&attr[0], &stackaddr, &stacksize);
-	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
-
-	ret = pthread_attr_getstacksize(&attr[0], &stacksize);
-	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
-
-	/* TESTPOINT: Try destroying attr before init */
-	ret = pthread_attr_destroy(&attr[0]);
-	zassert_equal(ret, EINVAL, "uninitialized attr destroyed!");
 
 	/* TESTPOINT: Try getting name of NULL thread (aka uninitialized
 	 * thread var).
@@ -326,59 +271,15 @@ ZTEST(posix_apis, test_pthread_execution)
 	ret = pthread_getname_np(PTHREAD_INVALID, thr_name_buf, sizeof(thr_name_buf));
 	zassert_equal(ret, ESRCH, "uninitialized getname!");
 
+	for (i = 0; i < N_THR_E; i++) {
+		ret = pthread_create(&newthread[i], NULL, thread_top_exec, INT_TO_POINTER(i));
+	}
+
 	/* TESTPOINT: Try setting name of NULL thread (aka uninitialized
 	 * thread var).
 	 */
 	ret = pthread_setname_np(PTHREAD_INVALID, thr_name);
 	zassert_equal(ret, ESRCH, "uninitialized setname!");
-
-	/* TESTPOINT: Try creating thread before attr init */
-	ret = pthread_create(&newthread[0], &attr[0],
-				thread_top_exec, NULL);
-	zassert_equal(ret, EINVAL, "thread created before attr init!");
-
-	for (i = 0; i < N_THR_E; i++) {
-		ret = pthread_attr_init(&attr[i]);
-		if (ret != 0) {
-			zassert_false(pthread_attr_destroy(&attr[i]),
-				      "Unable to destroy pthread object attrib");
-			zassert_false(pthread_attr_init(&attr[i]),
-				      "Unable to create pthread object attrib");
-		}
-
-		/* TESTPOINTS: Retrieve set stack attributes and compare */
-		pthread_attr_setstack(&attr[i], &stack_e[i][0], STACKS);
-		stackaddr = NULL;
-		pthread_attr_getstack(&attr[i], &stackaddr, &stacksize);
-		zassert_equal_ptr(&stack_e[i][0], stackaddr,
-				  "stack attribute addresses do not match!");
-		zassert_equal(STACKS, stacksize, "stack sizes do not match!");
-
-		pthread_attr_getstacksize(&attr[i], &stacksize);
-		zassert_equal(STACKS, stacksize, "stack sizes do not match!");
-
-		pthread_attr_setschedpolicy(&attr[i], schedpolicy);
-		pthread_attr_getschedpolicy(&attr[i], &policy);
-		zassert_equal(schedpolicy, policy,
-				"scheduling policies do not match!");
-
-		pthread_attr_setschedparam(&attr[i], &schedparam);
-		pthread_attr_getschedparam(&attr[i], &getschedparam);
-		zassert_equal(schedparam.sched_priority,
-			      getschedparam.sched_priority,
-			      "scheduling priorities do not match!");
-
-		if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-			ret = pthread_create(&newthread[i], NULL, thread_top_exec,
-					INT_TO_POINTER(i));
-		} else {
-			ret = pthread_create(&newthread[i], &attr[i], thread_top_exec,
-					INT_TO_POINTER(i));
-		}
-
-		/* TESTPOINT: Check if thread is created successfully */
-		zassert_false(ret, "Number of threads exceed max limit");
-	}
 
 	/* TESTPOINT: Try getting thread name with no buffer */
 	ret = pthread_getname_np(newthread[0], NULL, sizeof(thr_name_buf));
@@ -438,118 +339,20 @@ ZTEST(posix_apis, test_pthread_execution)
 	printk("Barrier test OK\n");
 }
 
-ZTEST(posix_apis, test_pthread_errors_errno)
-{
-	pthread_attr_t attr;
-	struct sched_param param;
-	void *stackaddr;
-	size_t stacksize;
-	int policy, detach;
-	static pthread_once_t key;
-
-	/* TESTPOINT: invoke pthread APIs with NULL */
-	zassert_equal(pthread_attr_destroy(NULL), EINVAL,
-		      "pthread destroy NULL error");
-	zassert_equal(pthread_attr_getschedparam(NULL, &param), EINVAL,
-		      "get scheduling param error");
-	zassert_equal(pthread_attr_getstack(NULL, &stackaddr, &stacksize),
-		      EINVAL, "get stack attributes error");
-	zassert_equal(pthread_attr_getstacksize(NULL, &stacksize),
-		      EINVAL, "get stack size error");
-	zassert_equal(pthread_attr_setschedpolicy(NULL, 2),
-		      EINVAL, "set scheduling policy error");
-	zassert_equal(pthread_attr_getschedpolicy(NULL, &policy),
-		      EINVAL, "get scheduling policy error");
-	zassert_equal(pthread_attr_setdetachstate(NULL, 0),
-		      EINVAL, "pthread set detach state with NULL error");
-	zassert_equal(pthread_attr_getdetachstate(NULL, &detach),
-		      EINVAL, "get detach state error");
-	zassert_equal(pthread_detach(PTHREAD_INVALID), ESRCH, "detach with NULL error");
-	zassert_equal(pthread_attr_init(NULL), ENOMEM,
-		      "init with NULL error");
-	zassert_equal(pthread_attr_setschedparam(NULL, &param), EINVAL,
-		      "set sched param with NULL error");
-	zassert_equal(pthread_cancel(PTHREAD_INVALID), ESRCH,
-		      "cancel NULL error");
-	zassert_equal(pthread_join(PTHREAD_INVALID, NULL), ESRCH,
-		      "join with NULL has error");
-	zassert_equal(pthread_once(&key, NULL), EINVAL,
-		      "pthread dynamic package initialization error");
-	zassert_equal(pthread_getschedparam(PTHREAD_INVALID, &policy, &param), ESRCH,
-		      "get schedparam with NULL error");
-	zassert_equal(pthread_setschedparam(PTHREAD_INVALID, policy, &param), ESRCH,
-		      "set schedparam with NULL error");
-
-	attr = (pthread_attr_t){0};
-	zassert_equal(pthread_attr_getdetachstate(&attr, &detach),
-		      EINVAL, "get detach state error");
-
-	/* Initialise thread attribute to ensure won't be return with init error */
-	zassert_false(pthread_attr_init(&attr),
-		      "Unable to create pthread object attr");
-	zassert_false(pthread_attr_setschedpolicy(&attr, SCHED_FIFO),
-		      "set scheduling policy error");
-	zassert_false(pthread_attr_setschedpolicy(&attr, SCHED_RR), "set scheduling policy error");
-	zassert_false(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE),
-		      "set detach state error");
-	zassert_false(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED),
-		      "set detach state error");
-	zassert_equal(pthread_attr_setdetachstate(&attr, 3),
-		      EINVAL, "set detach state error");
-	zassert_false(pthread_attr_getdetachstate(&attr, &detach),
-		      "get detach state error");
-}
-
-ZTEST(posix_apis, test_pthread_termination)
+ZTEST(pthread, test_pthread_termination)
 {
 	int32_t i, ret;
-	int oldstate, policy;
-	pthread_attr_t attr[N_THR_T];
-	struct sched_param schedparam;
-	pthread_t newthread[N_THR_T];
+	pthread_t newthread[N_THR_T] = {0};
 	void *retval;
 
-	/* Creating 4 threads with lowest application priority */
+	/* Creating 4 threads */
 	for (i = 0; i < N_THR_T; i++) {
-		ret = pthread_attr_init(&attr[i]);
-		if (ret != 0) {
-			zassert_false(pthread_attr_destroy(&attr[i]),
-				      "Unable to destroy pthread object attrib");
-			zassert_false(pthread_attr_init(&attr[i]),
-				      "Unable to create pthread object attrib");
-		}
-
-		if (i == 2) {
-			pthread_attr_setdetachstate(&attr[i],
-						    PTHREAD_CREATE_DETACHED);
-		}
-
-		schedparam.sched_priority = 2;
-		pthread_attr_setschedparam(&attr[i], &schedparam);
-		pthread_attr_setstack(&attr[i], &stack_t[i][0], STACKS);
-		if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-			ret = pthread_create(&newthread[i], NULL, thread_top_term,
-						INT_TO_POINTER(i));
-		} else {
-			ret = pthread_create(&newthread[i], &attr[i], thread_top_term,
-						INT_TO_POINTER(i));
-		}
-
-		zassert_false(ret, "Not enough space to create new thread");
+		zassert_ok(pthread_create(&newthread[i], NULL, thread_top_term, INT_TO_POINTER(i)));
 	}
 
 	/* TESTPOINT: Try setting invalid cancel state to current thread */
-	ret = pthread_setcancelstate(PTHREAD_CANCEL_INVALID, &oldstate);
+	ret = pthread_setcancelstate(PTHREAD_CANCEL_INVALID, NULL);
 	zassert_equal(ret, EINVAL, "invalid cancel state set!");
-
-	/* TESTPOINT: Try setting invalid policy */
-	ret = pthread_setschedparam(newthread[0], SCHED_INVALID, &schedparam);
-	zassert_equal(ret, EINVAL, "invalid policy set!");
-
-	/* TESTPOINT: Try setting invalid priority */
-	schedparam.sched_priority = PRIO_INVALID;
-	ret = pthread_setschedparam(newthread[0], SCHED_RR, &schedparam);
-	zassert_equal(ret, EINVAL, "invalid priority set!");
 
 	for (i = 0; i < N_THR_T; i++) {
 		pthread_join(newthread[i], &retval);
@@ -562,32 +365,6 @@ ZTEST(posix_apis, test_pthread_termination)
 	/* TESTPOINT: Try canceling a terminated thread */
 	ret = pthread_cancel(newthread[N_THR_T/2]);
 	zassert_equal(ret, ESRCH, "cancelled a terminated thread!");
-
-	/* TESTPOINT: Try getting scheduling info from terminated thread */
-	ret = pthread_getschedparam(newthread[N_THR_T/2], &policy, &schedparam);
-	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
-}
-
-ZTEST(posix_apis, test_pthread_attr_stacksize)
-{
-	size_t act_size;
-	pthread_attr_t attr;
-	const size_t exp_size = OKAY_STACK_SIZE;
-
-	/* TESTPOINT: specify a custom stack size via pthread_attr_t */
-	zassert_equal(0, pthread_attr_init(&attr), "pthread_attr_init() failed");
-
-	if (PTHREAD_STACK_MIN > 0) {
-		zassert_equal(EINVAL, pthread_attr_setstacksize(&attr, 0),
-			      "pthread_attr_setstacksize() did not fail");
-	}
-
-	zassert_equal(0, pthread_attr_setstacksize(&attr, exp_size),
-		      "pthread_attr_setstacksize() failed");
-	zassert_equal(0, pthread_attr_getstacksize(&attr, &act_size),
-		      "pthread_attr_getstacksize() failed");
-	zassert_equal(exp_size, act_size, "wrong size: act: %zu exp: %zu",
-		exp_size, act_size);
 }
 
 static void *create_thread1(void *p1)
@@ -596,286 +373,42 @@ static void *create_thread1(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_pthread_create_negative)
-{
-	int ret;
-	pthread_t pthread1;
-	pthread_attr_t attr1;
-
-	/* create pthread without attr initialized */
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		ret = pthread_create(&pthread1, NULL, create_thread1, (void *)1);
-		zassert_equal(ret, EAGAIN, "create thread with NULL successful");
-	}
-
-	/* initialized attr without set stack to create thread */
-	ret = pthread_attr_init(&attr1);
-	zassert_false(ret, "attr1 initialized failed");
-
-	attr1 = (pthread_attr_t){0};
-	ret = pthread_create(&pthread1, &attr1, create_thread1, (void *)1);
-	zassert_equal(ret, EINVAL, "create successful with NULL attr");
-
-	/* set stack size 0 to create thread */
-	pthread_attr_setstack(&attr1, &stack_1, 0);
-	ret = pthread_create(&pthread1, &attr1, create_thread1, (void *)1);
-	zassert_equal(ret, EINVAL, "create thread with 0 size");
-}
-
-ZTEST(posix_apis, test_pthread_descriptor_leak)
+ZTEST(pthread, test_pthread_descriptor_leak)
 {
 	pthread_t pthread1;
-	pthread_attr_t attr;
-
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
 
 	/* If we are leaking descriptors, then this loop will never complete */
 	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
-		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
+		zassert_ok(pthread_create(&pthread1, NULL, create_thread1, NULL),
 			   "unable to create thread %zu", i);
-		/*
-		 * k_msleep() should not be necessary, but it is added as a workaround
-		 * for #56163 and #58116, which identified race conditions on some
-		 * platforms.
-		 */
-		k_msleep(100);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
 }
 
-ZTEST(posix_apis, test_sched_policy)
+ZTEST(pthread, test_sched_getparam)
 {
-	/*
-	 * TODO:
-	 * 1. assert that _POSIX_PRIORITY_SCHEDULING is defined
-	 * 2. if _POSIX_SPORADIC_SERVER or _POSIX_THREAD_SPORADIC_SERVER are defined,
-	 *    also check SCHED_SPORADIC
-	 * 3. SCHED_OTHER is mandatory (but may be equivalent to SCHED_FIFO or SCHED_RR,
-	 *    and is implementation defined)
-	 */
-
-	int pmin;
-	int pmax;
-	pthread_t th;
-	pthread_attr_t attr;
 	struct sched_param param;
-	static const int policies[] = {
-		SCHED_FIFO,
-		SCHED_RR,
-		SCHED_OTHER,
-		SCHED_INVALID,
-	};
-	static const char *const policy_names[] = {
-		"SCHED_FIFO",
-		"SCHED_RR",
-		"SCHED_OTHER",
-		"SCHED_INVALID",
-	};
-	static const bool policy_enabled[] = {
-		IS_ENABLED(CONFIG_COOP_ENABLED),
-		IS_ENABLED(CONFIG_PREEMPT_ENABLED),
-		IS_ENABLED(CONFIG_PREEMPT_ENABLED),
-		false,
-	};
-	static int nprio[] = {
-		CONFIG_NUM_COOP_PRIORITIES,
-		CONFIG_NUM_PREEMPT_PRIORITIES,
-		CONFIG_NUM_PREEMPT_PRIORITIES,
-		42,
-	};
-	const char *const prios[] = {"pmin", "pmax"};
+	int rc = sched_getparam(0, &param);
+	int err = errno;
 
-	BUILD_ASSERT(!(SCHED_INVALID == SCHED_FIFO || SCHED_INVALID == SCHED_RR ||
-		       SCHED_INVALID == SCHED_OTHER),
-		     "SCHED_INVALID is itself invalid");
-
-	for (int policy = 0; policy < ARRAY_SIZE(policies); ++policy) {
-		if (!policy_enabled[policy]) {
-			/* test degenerate cases */
-			errno = 0;
-			zassert_equal(-1, sched_get_priority_min(policies[policy]),
-				      "expected sched_get_priority_min(%s) to fail",
-				      policy_names[policy]);
-			zassert_equal(EINVAL, errno, "sched_get_priority_min(%s) did not set errno",
-				      policy_names[policy]);
-
-			errno = 0;
-			zassert_equal(-1, sched_get_priority_max(policies[policy]),
-				      "expected sched_get_priority_max(%s) to fail",
-				      policy_names[policy]);
-			zassert_equal(EINVAL, errno, "sched_get_priority_max(%s) did not set errno",
-				      policy_names[policy]);
-			continue;
-		}
-
-		/* get pmin and pmax for policies[policy] */
-		for (int i = 0; i < ARRAY_SIZE(prios); ++i) {
-			errno = 0;
-			if (i == 0) {
-				pmin = sched_get_priority_min(policies[policy]);
-				param.sched_priority = pmin;
-			} else {
-				pmax = sched_get_priority_max(policies[policy]);
-				param.sched_priority = pmax;
-			}
-
-			zassert_not_equal(-1, param.sched_priority,
-					  "sched_get_priority_%s(%s) failed: %d",
-					  i == 0 ? "min" : "max", policy_names[policy], errno);
-			zassert_ok(errno, "sched_get_priority_%s(%s) set errno to %s",
-				   i == 0 ? "min" : "max", policy_names[policy], errno);
-		}
-
-		/*
-		 * IEEE 1003.1-2008 Section 2.8.4
-		 * conforming implementations should provide a range of at least 32 priorities
-		 *
-		 * Note: we relax this requirement
-		 */
-		zassert_true(pmax > pmin, "pmax (%d) <= pmin (%d)", pmax, pmin,
-			     "%s min/max inconsistency: pmin: %d pmax: %d", policy_names[policy],
-			     pmin, pmax);
-
-		/*
-		 * Getting into the weeds a bit (i.e. whitebox testing), Zephyr
-		 * cooperative threads use [-CONFIG_NUM_COOP_PRIORITIES,-1] and
-		 * preemptive threads use [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1],
-		 * where the more negative thread has the higher priority. Since we
-		 * cannot map those directly (a return value of -1 indicates error),
-		 * we simply map those to the positive space.
-		 */
-		zassert_equal(pmin, 0, "unexpected pmin for %s", policy_names[policy]);
-		zassert_equal(pmax, nprio[policy] - 1, "unexpected pmax for %s",
-			      policy_names[policy]); /* test happy paths */
-
-		for (int i = 0; i < ARRAY_SIZE(prios); ++i) {
-			/* create threads with min and max priority levels */
-			zassert_ok(pthread_attr_init(&attr),
-				   "pthread_attr_init() failed for %s (%d) of %s", prios[i],
-				   param.sched_priority, policy_names[policy]);
-
-			zassert_ok(pthread_attr_setschedpolicy(&attr, policies[policy]),
-				   "pthread_attr_setschedpolicy() failed for %s (%d) of %s",
-				   prios[i], param.sched_priority, policy_names[policy]);
-
-			zassert_ok(pthread_attr_setschedparam(&attr, &param),
-				   "pthread_attr_setschedparam() failed for %s (%d) of %s",
-				   prios[i], param.sched_priority, policy_names[policy]);
-
-			zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS),
-				   "pthread_attr_setstack() failed for %s (%d) of %s", prios[i],
-				   param.sched_priority, policy_names[policy]);
-
-			zassert_ok(pthread_create(&th, &attr, create_thread1, NULL),
-				   "pthread_create() failed for %s (%d) of %s", prios[i],
-				   param.sched_priority, policy_names[policy]);
-
-			zassert_ok(pthread_join(th, NULL),
-				   "pthread_join() failed for %s (%d) of %s", prios[i],
-				   param.sched_priority, policy_names[policy]);
-
-			zassert_ok(pthread_attr_destroy(&attr),
-				   "pthread_attr_destroy() failed for %s (%d) of %s", prios[i],
-				   param.sched_priority, policy_names[policy]);
-		}
-	}
+	zassert_true((rc == -1 && err == ENOSYS));
 }
 
-ZTEST(posix_apis, test_barrier)
+ZTEST(pthread, test_sched_getscheduler)
 {
-	int ret, pshared;
-	pthread_barrierattr_t attr;
+	int rc = sched_getscheduler(0);
+	int err = errno;
 
-	ret = pthread_barrierattr_init(&attr);
-	zassert_equal(ret, 0, "pthread_barrierattr_init failed");
-
-	ret = pthread_barrierattr_getpshared(&attr, &pshared);
-	zassert_equal(ret, 0, "pthread_barrierattr_getpshared failed");
-	zassert_equal(pshared, PTHREAD_PROCESS_PRIVATE, "pshared attribute not set correctly");
-
-	ret = pthread_barrierattr_setpshared(&attr, PTHREAD_PROCESS_PRIVATE);
-	zassert_equal(ret, 0, "pthread_barrierattr_setpshared failed");
-
-	ret = pthread_barrierattr_setpshared(&attr, PTHREAD_PROCESS_PUBLIC);
-	zassert_equal(ret, 0, "pthread_barrierattr_setpshared failed");
-
-	ret = pthread_barrierattr_getpshared(&attr, &pshared);
-	zassert_equal(pshared, PTHREAD_PROCESS_PUBLIC, "pshared attribute not retrieved correctly");
-
-	ret = pthread_barrierattr_setpshared(&attr, 42);
-	zassert_equal(ret, -EINVAL, "pthread_barrierattr_setpshared did not return EINVAL");
-
-	ret = pthread_barrierattr_destroy(&attr);
-	zassert_equal(ret, 0, "pthread_barrierattr_destroy failed");
+	zassert_true((rc == -1 && err == ENOSYS));
 }
 
-ZTEST(posix_apis, test_pthread_equal)
+ZTEST(pthread, test_pthread_equal)
 {
 	zassert_true(pthread_equal(pthread_self(), pthread_self()));
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
 }
 
-/* A 32-bit value to use between threads for validation */
-#define BIOS_FOOD 0xB105F00D
-
-static void *fun(void *arg)
-{
-	*((uint32_t *)arg) = BIOS_FOOD;
-	return NULL;
-}
-
-ZTEST(posix_apis, test_pthread_dynamic_stacks)
-{
-	pthread_t th;
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		ztest_test_skip();
-	}
-
-	zassert_ok(pthread_create(&th, NULL, fun, &param));
-	zassert_ok(pthread_join(th, NULL));
-	zassert_equal(BIOS_FOOD, param);
-}
-
-static void *non_null_retval(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	return (void *)BIOS_FOOD;
-}
-
-ZTEST(posix_apis, test_pthread_return_val)
-{
-	pthread_t pth;
-	void *ret = NULL;
-
-	zassert_ok(pthread_create(&pth, NULL, non_null_retval, NULL));
-	zassert_ok(pthread_join(pth, &ret));
-	zassert_equal(ret, (void *)BIOS_FOOD);
-}
-
-static void *detached(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	return NULL;
-}
-
-ZTEST(posix_apis, test_pthread_join_detached)
-{
-	pthread_t pth;
-
-	zassert_ok(pthread_create(&pth, NULL, detached, NULL));
-	zassert_ok(pthread_detach(pth));
-	/* note, this was required to be EINVAL previously but is now undefined behaviour */
-	zassert_not_equal(0, pthread_join(pth, NULL));
-
-	/* need to allow this thread to be clean-up by the recycler */
-	k_msleep(500);
-}
-
-ZTEST(posix_apis, test_pthread_set_get_concurrency)
+ZTEST(pthread, test_pthread_set_get_concurrency)
 {
 	/* EINVAL if the value specified by new_level is negative */
 	zassert_equal(EINVAL, pthread_setconcurrency(-42));
@@ -920,7 +453,7 @@ static void *test_pthread_cleanup_entry(void *arg)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_pthread_cleanup)
+ZTEST(pthread, test_pthread_cleanup)
 {
 	pthread_t th;
 
@@ -928,60 +461,4 @@ ZTEST(posix_apis, test_pthread_cleanup)
 	zassert_ok(pthread_join(th, NULL));
 }
 
-ZTEST(posix_apis, test_pthread_attr_getguardsize)
-{
-	size_t size_after;
-	pthread_attr_t attr;
-	const size_t size_before = OKAY_STACK_SIZE;
-
-	attr = (pthread_attr_t){0};
-	zassert_equal(pthread_attr_getguardsize(&attr, &size_after), EINVAL);
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_equal(pthread_attr_getguardsize(NULL, NULL), EINVAL);
-	zassert_equal(pthread_attr_getguardsize(NULL, &size_after), EINVAL);
-	zassert_equal(pthread_attr_getguardsize(&attr, NULL), EINVAL);
-	size_after = size_before;
-	zassert_ok(pthread_attr_getguardsize(&attr, &size_after));
-	zassert_not_equal(size_before, size_after);
-	zassert_equal(size_after, CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT);
-	zassert_ok(pthread_attr_destroy(&attr));
-}
-
-ZTEST(posix_apis, test_pthread_attr_setguardsize)
-{
-	size_t size_after;
-	size_t size_before;
-	pthread_attr_t attr;
-	size_t sizes[] = {0, BIT_MASK(CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS / 2),
-			  BIT_MASK(CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS)};
-
-	attr = (pthread_attr_t){0};
-	zassert_equal(pthread_attr_setguardsize(&attr, 0), EINVAL);
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_ok(pthread_attr_getguardsize(&attr, &size_before));
-	zassert_equal(size_before, CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT);
-	zassert_equal(pthread_attr_setguardsize(NULL, SIZE_MAX), EINVAL);
-	zassert_equal(pthread_attr_setguardsize(NULL, 0), EINVAL);
-	zassert_equal(pthread_attr_setguardsize(&attr, SIZE_MAX), EINVAL);
-	for (size_t i = 0; i < ARRAY_SIZE(sizes); ++i) {
-		size_after = ~sizes[i];
-		size_before = sizes[i];
-		zassert_ok(pthread_attr_setguardsize(&attr, size_before));
-		zassert_ok(pthread_attr_getguardsize(&attr, &size_after));
-		zassert_equal(size_before, size_after);
-	}
-	zassert_ok(pthread_attr_destroy(&attr));
-}
-
-ZTEST(posix_apis, test_pthread_attr_large_stacksize)
-{
-	size_t actual_size;
-	const size_t expect_size = BIT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS);
-	pthread_attr_t attr;
-
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_ok(pthread_attr_setstacksize(&attr, expect_size));
-	zassert_ok(pthread_attr_getstacksize(&attr, &actual_size));
-	zassert_equal(actual_size, expect_size);
-	zassert_ok(pthread_attr_destroy(&attr));
-}
+ZTEST_SUITE(pthread, NULL, NULL, NULL, NULL, NULL);

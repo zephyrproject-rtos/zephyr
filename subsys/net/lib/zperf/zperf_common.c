@@ -222,8 +222,6 @@ static int zperf_init(void)
 
 	zperf_udp_uploader_init();
 	zperf_tcp_uploader_init();
-	zperf_udp_receiver_init();
-	zperf_tcp_receiver_init();
 
 	zperf_session_init();
 

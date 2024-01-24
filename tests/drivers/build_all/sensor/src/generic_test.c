@@ -158,7 +158,7 @@ static void run_generic_test(const struct device *dev)
 			enum sensor_channel ch = iodev_all_channels[i];
 
 			rv = emul_sensor_backend_set_channel(
-				emul, ch, channel_table[ch].expected_values[iteration],
+				emul, ch, &channel_table[ch].expected_values[iteration],
 				channel_table[ch].expected_value_shift);
 			zassert_ok(
 				rv,

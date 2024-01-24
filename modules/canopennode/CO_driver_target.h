@@ -69,6 +69,9 @@ typedef struct canopen_rx {
 	CO_CANrxBufferCallback_t pFunct;
 	uint16_t ident;
 	uint16_t mask;
+#ifdef CONFIG_CAN_ACCEPT_RTR
+	bool rtr;
+#endif /* CONFIG_CAN_ACCEPT_RTR */
 } CO_CANrx_t;
 
 typedef struct canopen_tx {

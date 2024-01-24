@@ -64,6 +64,14 @@ config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 	  There are approximately 100 channels allocated across the three supported bands.
 	  The default of 3 allows the 3 most common channels (2.4GHz: 1, 6, 11) to be specified.
 
+config WIFI_SHELL_MAX_AP_STA
+	int "Maximum number of APs and STAs that can be managed in Wi-Fi shell"
+	range 1 5
+	default 1
+	help
+	  This option defines the maximum number of APs and STAs that can be managed
+	  in Wi-Fi shell.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help

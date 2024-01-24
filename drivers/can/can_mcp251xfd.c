@@ -379,7 +379,7 @@ static int mcp251xfd_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct mcp251xfd_data *dev_data = dev->data;
 
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		return -EBUSY;
 	}
 
@@ -408,7 +408,7 @@ static int mcp251xfd_set_mode(const struct device *dev, can_mode_t mode)
 		dev_data->next_mcp251xfd_mode = MCP251XFD_REG_CON_MODE_EXT_LOOPBACK;
 	}
 
-	dev_data->mode = mode;
+	dev_data->common.mode = mode;
 
 	return 0;
 }
@@ -423,7 +423,7 @@ static int mcp251xfd_set_timing(const struct device *dev, const struct can_timin
 		return -EINVAL;
 	}
 
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		return -EBUSY;
 	}
 
@@ -458,7 +458,7 @@ static int mcp251xfd_set_timing_data(const struct device *dev, const struct can_
 		return -EINVAL;
 	}
 
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		return -EBUSY;
 	}
 
@@ -502,7 +502,7 @@ static int mcp251xfd_send(const struct device *dev, const struct can_frame *msg,
 
 	__ASSERT_NO_MSG(callback != NULL);
 
-	if (!dev_data->started) {
+	if (!dev_data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -515,7 +515,7 @@ static int mcp251xfd_send(const struct device *dev, const struct can_frame *msg,
 		return -EINVAL;
 	}
 
-	if ((msg->flags & CAN_FRAME_FDF) && !(dev_data->mode & CAN_MODE_FD)) {
+	if ((msg->flags & CAN_FRAME_FDF) && !(dev_data->common.mode & CAN_MODE_FD)) {
 		return -ENOTSUP;
 	}
 
@@ -573,11 +573,6 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 
 	if (filter_idx >= CONFIG_CAN_MAX_FILTER) {
 		filter_idx = -ENOSPC;
-		goto done;
-	}
-
-	if ((filter->flags & CAN_FILTER_RTR) != 0) {
-		filter_idx = -ENOTSUP;
 		goto done;
 	}
 
@@ -678,8 +673,8 @@ static void mcp251xfd_set_state_change_callback(const struct device *dev,
 {
 	struct mcp251xfd_data *dev_data = dev->data;
 
-	dev_data->state_change_cb = cb;
-	dev_data->state_change_cb_data = user_data;
+	dev_data->common.state_change_cb = cb;
+	dev_data->common.state_change_cb_user_data = user_data;
 }
 
 static int mcp251xfd_get_state(const struct device *dev, enum can_state *state,
@@ -708,7 +703,7 @@ static int mcp251xfd_get_state(const struct device *dev, enum can_state *state,
 		goto done;
 	}
 
-	if (!dev_data->started) {
+	if (!dev_data->common.started) {
 		*state = CAN_STATE_STOPPED;
 		goto done;
 	}
@@ -747,15 +742,6 @@ static int mcp251xfd_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static int mcp251xfd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct mcp251xfd_config *dev_cfg = dev->config;
-
-	*max_bitrate = dev_cfg->max_bitrate;
-
-	return 0;
-}
-
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 static int mcp251xfd_recover(const struct device *dev, k_timeout_t timeout)
 {
@@ -763,7 +749,7 @@ static int mcp251xfd_recover(const struct device *dev, k_timeout_t timeout)
 
 	ARG_UNUSED(timeout);
 
-	if (!dev_data->started) {
+	if (!dev_data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -941,8 +927,9 @@ static int mcp251xfd_handle_cerrif(const struct device *dev)
 		mcp251xfd_reset_tx_fifos(dev, -ENETDOWN);
 	}
 
-	if (dev_data->state_change_cb) {
-		dev_data->state_change_cb(dev, new_state, err_cnt, dev_data->state_change_cb_data);
+	if (dev_data->common.state_change_cb) {
+		dev_data->common.state_change_cb(dev, new_state, err_cnt,
+						 dev_data->common.state_change_cb_user_data);
 	}
 
 done:
@@ -973,7 +960,7 @@ static int mcp251xfd_handle_modif(const struct device *dev)
 	}
 
 	/* try to transition back into our target mode */
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		LOG_INF("Switching back into mode %d", dev_data->next_mcp251xfd_mode);
 		ret =  mcp251xfd_set_mode_internal(dev, dev_data->next_mcp251xfd_mode);
 	}
@@ -1169,15 +1156,15 @@ static int mcp251xfd_start(const struct device *dev)
 	const struct mcp251xfd_config *dev_cfg = dev->config;
 	int ret;
 
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		return -EALREADY;
 	}
 
 	/* in case of a race between mcp251xfd_send() and mcp251xfd_stop() */
 	mcp251xfd_reset_tx_fifos(dev, -ENETDOWN);
 
-	if (dev_cfg->phy != NULL) {
-		ret = can_transceiver_enable(dev_cfg->phy);
+	if (dev_cfg->common.phy != NULL) {
+		ret = can_transceiver_enable(dev_cfg->common.phy);
 		if (ret < 0) {
 			LOG_ERR("Failed to enable CAN transceiver [%d]", ret);
 			return ret;
@@ -1189,12 +1176,12 @@ static int mcp251xfd_start(const struct device *dev)
 	ret = mcp251xfd_set_mode_internal(dev, dev_data->next_mcp251xfd_mode);
 	if (ret < 0) {
 		LOG_ERR("Failed to set the mode [%d]", ret);
-		if (dev_cfg->phy != NULL) {
+		if (dev_cfg->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
-			(void)can_transceiver_disable(dev_cfg->phy);
+			(void)can_transceiver_disable(dev_cfg->common.phy);
 		}
 	} else {
-		dev_data->started = true;
+		dev_data->common.started = true;
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
@@ -1209,7 +1196,7 @@ static int mcp251xfd_stop(const struct device *dev)
 	uint8_t *reg_byte;
 	int ret;
 
-	if (!dev_data->started) {
+	if (!dev_data->common.started) {
 		return -EALREADY;
 	}
 
@@ -1243,11 +1230,11 @@ static int mcp251xfd_stop(const struct device *dev)
 		return ret;
 	}
 
-	dev_data->started = false;
+	dev_data->common.started = false;
 	k_mutex_unlock(&dev_data->mutex);
 
-	if (dev_cfg->phy != NULL) {
-		ret = can_transceiver_disable(dev_cfg->phy);
+	if (dev_cfg->common.phy != NULL) {
+		ret = can_transceiver_disable(dev_cfg->common.phy);
 		if (ret < 0) {
 			LOG_ERR("Failed to disable CAN transceiver [%d]", ret);
 			return ret;
@@ -1265,6 +1252,12 @@ static void mcp251xfd_rx_fifo_handler(const struct device *dev, void *data)
 	uint32_t filhit;
 
 	mcp251xfd_rxobj_to_canframe(rxobj, &dst);
+
+#ifndef CONFIG_CAN_ACCEPT_RTR
+	if ((dst.flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
 	filhit = FIELD_GET(MCP251XFD_OBJ_FILHIT_MASK, rxobj->flags);
 	if ((dev_data->filter_usage & BIT(filhit)) != 0) {
@@ -1302,15 +1295,16 @@ static int mcp251xfd_init_timing_struct(struct can_timing *timing,
 					const struct mcp251xfd_timing_params *timing_params,
 					bool is_nominal)
 {
+	const struct mcp251xfd_config *dev_cfg = dev->config;
 	int ret;
 
-	if (USE_SP_ALGO && timing_params->sample_point > 0) {
+	if (USE_SP_ALGO && dev_cfg->common.sample_point > 0) {
 		if (is_nominal) {
-			ret = can_calc_timing(dev, timing, timing_params->bus_speed,
-					      timing_params->sample_point);
+			ret = can_calc_timing(dev, timing, dev_cfg->common.bus_speed,
+					      dev_cfg->common.sample_point);
 		} else {
-			ret = can_calc_timing_data(dev, timing, timing_params->bus_speed,
-						   timing_params->sample_point);
+			ret = can_calc_timing_data(dev, timing, dev_cfg->common.bus_speed,
+						   dev_cfg->common.sample_point);
 		}
 		if (ret < 0) {
 			return ret;
@@ -1323,7 +1317,7 @@ static int mcp251xfd_init_timing_struct(struct can_timing *timing,
 		timing->prop_seg = timing_params->prop_seg;
 		timing->phase_seg1 = timing_params->phase_seg1;
 		timing->phase_seg2 = timing_params->phase_seg2;
-		ret = can_calc_prescaler(dev, timing, timing_params->bus_speed);
+		ret = can_calc_prescaler(dev, timing, dev_cfg->common.bus_speed);
 		if (ret > 0) {
 			LOG_WRN("Bitrate error: %d", ret);
 		}
@@ -1678,7 +1672,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 	.set_state_change_callback = mcp251xfd_set_state_change_callback,
 	.get_core_clock = mcp251xfd_get_core_clock,
 	.get_max_filters = mcp251xfd_get_max_filters,
-	.get_max_bitrate = mcp251xfd_get_max_bitrate,
 	.timing_min = {
 		.sjw = 1,
 		.prop_seg = 0,
@@ -1717,8 +1710,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 		.prop_seg = DT_INST_PROP_OR(inst, prop_seg##type, 0),                              \
 		.phase_seg1 = DT_INST_PROP_OR(inst, phase_seg1##type, 0),                          \
 		.phase_seg2 = DT_INST_PROP_OR(inst, phase_seg2##type, 0),                          \
-		.bus_speed = DT_INST_PROP(inst, bus_speed##type),                                  \
-		.sample_point = DT_INST_PROP_OR(inst, sample_point##type, 0),                      \
 	}
 
 #if defined(CONFIG_CAN_FD_MODE)
@@ -1744,6 +1735,7 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 		.int_thread_stack = mcp251xfd_int_stack_##inst,                                    \
 	};                                                                                         \
 	static const struct mcp251xfd_config mcp251xfd_config_##inst = {                           \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 8000000),                            \
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.int_gpio_dt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                             \
                                                                                                    \
@@ -1754,8 +1746,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
                                                                                                    \
 		.osc_freq = DT_INST_PROP(inst, osc_freq),                                          \
 		MCP251XFD_SET_TIMING(inst),                                                        \
-		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),                         \
-		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 8000000),                 \
 		.rx_fifo = {.ram_start_addr = MCP251XFD_RX_FIFO_START_ADDR,                        \
 			    .reg_fifocon_addr = MCP251XFD_REG_FIFOCON(MCP251XFD_RX_FIFO_IDX),      \
 			    .capacity = MCP251XFD_RX_FIFO_ITEMS,                                   \

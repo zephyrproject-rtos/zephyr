@@ -443,7 +443,9 @@ static void esp_mgmt_disconnect_work(struct k_work *work)
 	esp_flags_clear(dev, EDF_STA_CONNECTED);
 	esp_mode_switch_submit_if_needed(dev);
 
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
+#endif
 	net_if_dormant_on(dev->net_iface);
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 }
@@ -509,6 +511,7 @@ static void esp_ip_addr_work(struct k_work *work)
 		return;
 	}
 
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	/* update interface addresses */
 	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
 	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
@@ -516,6 +519,7 @@ static void esp_ip_addr_work(struct k_work *work)
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_MANUAL, 0);
 #else
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
+#endif
 #endif
 
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
@@ -761,7 +765,9 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	dev->flags = 0;
 	dev->mode = 0;
 
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
+#endif
 	k_work_submit_to_queue(&dev->workq, &dev->init_work);
 
 	return 0;

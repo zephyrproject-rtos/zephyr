@@ -433,10 +433,17 @@ The following peripherals are currently provided with this board:
 
 .. _nsim_per_flash_simu:
 
-**Flash driver**
-  A flash driver is provided that accesses all flash data through a binary file
-  on the host file system. The behavior of the flash device can be configured
-  through the native_sim board devicetree or Kconfig settings under
+**EEPROM simulator**
+  The EEPROM simulator can also be used in the native targets. In these, you have the added feature
+  of keeping the EEPROM content on a file on the host filesystem.
+  By default this is kept in the file :file:`eeprom.bin` in the current working directory, but you
+  can select the location of this file and its name with the command line parameter ``--eeprom``.
+  Some more information can be found in :ref:`the emulators page <emul_eeprom_simu_brief>`.
+
+**Flash simulator**
+  The flash simulator can also be used in the native targets. In this you have the option to keep
+  the flash content in a binary file on the host file system or in RAM. The behavior of the flash
+  device can be configured through the native_sim board devicetree or Kconfig settings under
   :kconfig:option:`CONFIG_FLASH_SIMULATOR`.
 
   By default the binary data is located in the file :file:`flash.bin` in the current
@@ -446,25 +453,43 @@ The following peripherals are currently provided with this board:
   configuration. In case the file does not exists the driver will take care of
   creating the file, else the existing file is used.
 
+  Some more information can be found in :ref:`the emulators page <emul_flash_simu_brief>`.
+
   The flash content can be accessed from the host system, as explained in the
   `Host based flash access`_ section.
 
 **Input events**
-  A driver is provided to read input events from a Linux evdev input device and
-  inject them back into the Zephyr input subsystem.
+  Two optional native input drivers are available:
 
-  The driver is automatically enabled when :kconfig:option:`CONFIG_INPUT` is
-  enabled and the devicetree contains a node such as:
+  **evdev driver**
+    A driver is provided to read input events from a Linux evdev input device and
+    inject them back into the Zephyr input subsystem.
 
-  .. code-block:: dts
+    The driver is automatically enabled when :kconfig:option:`CONFIG_INPUT` is
+    enabled and the devicetree contains a node such as:
 
-     evdev {
-       compatible = "zephyr,native-linux-evdev";
-     };
+    .. code-block:: dts
 
-  The application then has to be run with a command line option to specify
-  which evdev device node has to be used, for example
-  ``zephyr.exe --evdev=/dev/input/event0``.
+       evdev {
+         compatible = "zephyr,native-linux-evdev";
+       };
+
+    The application then has to be run with a command line option to specify
+    which evdev device node has to be used, for example
+    ``zephyr.exe --evdev=/dev/input/event0``.
+
+  **Input SDL touch**
+    This driver emulates a touch panel input using the SDL library. It can be enabled with
+    :kconfig:option:`CONFIG_INPUT_SDL_TOUCH` and configured with the device tree binding
+    :dtcompatible:`zephyr,input-sdl-touch`.
+
+    More information on using SDL and the Display driver can be found in
+    :ref:`its section <nsim_per_disp_sdl>`.
+
+**CAN controller**
+  It is possible to use a host CAN controller with the native SockerCAN Linux driver. It can be
+  enabled with :kconfig:option:`CONFIG_CAN_NATIVE_LINUX` and configured with the device tree binding
+  :dtcompatible:`zephyr,native-linux-can`.
 
 .. _native_ptty_uart:
 
@@ -654,27 +679,27 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
 .. csv-table:: Drivers/backends vs libC choice
    :header: Driver class, driver name, driver kconfig, libC choices
 
-     adc, ADC emul, :kconfig:option:`CONFIG_ADC_EMUL`, all
-     bluetooth, :ref:`userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, host libC
-     can, can native Linux, :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`, all
-     console backend, :ref:`POSIX arch console <nsim_back_console>`, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, all
-     display, :ref:`display SDL <nsim_per_disp_sdl>`, :kconfig:option:`CONFIG_SDL_DISPLAY`, all
-     entropy, :ref:`native posix entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, all
-     eeprom, eeprom simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, host libC
-     eeprom, eeprom emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, all
-     ethernet, :ref:`eth native_posix <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, all
-     flash, :ref:`flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, all
-     flash, :ref:`host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, host libC
-     gpio, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, all
-     gpio, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, all
-     i2c, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, all
-     input, input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, all
-     input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, all
-     log backend, :ref:`native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, all
-     rtc, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, all
-     serial, :ref:`uart native posix/PTTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, all
-     serial, :ref:`uart native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, all
-     spi, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, all
-     system tick, native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, all
-     tracing, :ref:`Posix tracing backend <nsim_back_trace>`, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, all
-     usb, :ref:`USB native posix <nsim_per_usb>`, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, host libC
+     ADC, ADC emul, :kconfig:option:`CONFIG_ADC_EMUL`, All
+     Bluetooth, :ref:`Userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, Host libC
+     CAN, CAN native Linux, :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`, All
+     Console backend, :ref:`POSIX arch console <nsim_back_console>`, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, All
+     Display, :ref:`Display SDL <nsim_per_disp_sdl>`, :kconfig:option:`CONFIG_SDL_DISPLAY`, All
+     Entropy, :ref:`Native posix entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, All
+     EEPROM, EEPROM simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, Host libC
+     EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
+     Ethernet, :ref:`Eth native_posix <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, All
+     Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
+     Flash, :ref:`Host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, Host libC
+     GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
+     GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
+     I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
+     Input, Input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, All
+     Input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, All
+     Logger backend, :ref:`Native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, All
+     RTC, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, All
+     Serial, :ref:`UART native posix/PTTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, All
+     Serial, :ref:`UART native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, All
+     SPI, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, All
+     System tick, Native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, All
+     Tracing, :ref:`Posix tracing backend <nsim_back_trace>`, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, All
+     USB, :ref:`USB native posix <nsim_per_usb>`, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, Host libC

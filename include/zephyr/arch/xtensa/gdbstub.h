@@ -17,8 +17,8 @@
 #define XTREG_GRP_SPECIAL		0x0200
 #define XTREG_GRP_USER			0x0300
 
-/*
- * Register description fot GDB stub.
+/**
+ * @brief Register description for GDB stub.
  *
  * Values are based on gdb/gdb/xtensa-config.c in the Xtensa overlay,
  * where registers are defined using XTREG() macro:
@@ -35,32 +35,35 @@
  * gpkt_offset : ofs
  */
 struct xtensa_register {
-	/* Register value */
+	/** Register value */
 	uint32_t	val;
 
-	/* GDB register index (for p/P packets) */
+	/** GDB register index (for p/P packets) */
 	uint8_t		idx;
 
-	/* Size of register */
+	/** Size of register */
 	uint8_t		byte_size;
 
-	/* Xtensa register number */
+	/** Xtensa register number */
 	uint16_t	regno;
 
-	/* Offset of this register in GDB G-packet.
+	/**
+	 * Offset of this register in GDB G-packet.
 	 * -1 if register is not in G-packet.
 	 */
 	int16_t		gpkt_offset;
 
-	/* Offset of saved register in stack frame.
+	/**
+	 * Offset of saved register in stack frame.
 	 * 0 if not saved in stack frame.
 	 */
 	int8_t		stack_offset;
 
-	/* Sequence number */
+	/** Sequence number */
 	uint8_t		seqno;
 
-	/* Set 1 to if register should not be written
+	/**
+	 * Set to 1 if register should not be written
 	 * to during debugging.
 	 */
 	uint8_t		is_read_only:1;
@@ -78,26 +81,29 @@ struct xtensa_register {
  */
 #include <gdbstub/soc.h>
 
+/**
+ * @brief Architecture specific GDB context.
+ */
 struct gdb_ctx {
-	/* Exception reason */
+	/** Exception reason */
 	unsigned int		exception;
 
-	/* Register descriptions */
+	/** Register descriptions */
 	struct xtensa_register	*regs;
 
-	/* Number of registers */
+	/** Number of registers */
 	uint8_t			num_regs;
 
-	/* Sequence number */
+	/** Sequence number */
 	uint8_t			seqno;
 
-	/* Index in register descriptions of A0 register */
+	/** Index in register descriptions of A0 register */
 	uint8_t			a0_idx;
 
-	/* Index in register descriptions of AR0 register */
+	/** Index in register descriptions of AR0 register */
 	uint8_t			ar_idx;
 
-	/* Index in register descriptions of WINDOWBASE register */
+	/** Index in register descriptions of WINDOWBASE register */
 	uint8_t			wb_idx;
 };
 

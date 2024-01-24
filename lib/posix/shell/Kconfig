@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+if SHELL
+
+config POSIX_SHELL
+	bool
+	help
+	  Compile the parent `posix` shell command.
+
+rsource "Kconfig.uname"
+
+endif # SHELL

@@ -11,9 +11,11 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
-
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+
+#include <soc.h>
+
 LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 
 /* NEORV32 UART registers offsets */

@@ -567,7 +567,7 @@ static int uart_stm32_configure(const struct device *dev,
 
 	LL_USART_Disable(config->usart);
 
-	/* Set basic parmeters, such as data-/stop-bit, parity, and baudrate */
+	/* Set basic parameters, such as data-/stop-bit, parity, and baudrate */
 	uart_stm32_parameters_set(dev, cfg);
 
 	LL_USART_Enable(config->usart);
@@ -1913,7 +1913,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	LL_USART_SetTransferDirection(config->usart,
 				      LL_USART_DIRECTION_TX_RX);
 
-	/* Set basic parmeters, such as data-/stop-bit, parity, and baudrate */
+	/* Set basic parameters, such as data-/stop-bit, parity, and baudrate */
 	uart_stm32_parameters_set(dev, uart_cfg);
 
 	/* Enable the single wire / half-duplex mode */

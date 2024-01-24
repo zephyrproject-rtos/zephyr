@@ -3,4 +3,4 @@
 
 config BOARD_ADP_XC7K_AE350
 	bool "Andes ADP-XC7K AE350 Platform"
-	depends on SOC_RISCV_ANDES_AE350
+	depends on SOC_ANDES_AE350

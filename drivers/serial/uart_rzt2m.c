@@ -376,7 +376,7 @@ static int rzt2m_uart_init(const struct device *dev)
 	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-	/* Start trasmitter and receiver. */
+	/* Start transmitter and receiver. */
 	*CCR0(config->base) |= (CCR0_MASK_TE | CCR0_MASK_RE);
 	while (!(*CCR0(config->base) & CCR0_MASK_RE)) {
 	}

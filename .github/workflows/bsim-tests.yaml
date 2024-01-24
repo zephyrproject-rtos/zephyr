@@ -20,6 +20,8 @@ on:
       - "include/zephyr/net/openthread.h"
       - "drivers/ieee802154/**"
       - "include/zephyr/net/ieee802154*"
+      - "drivers/serial/*nrfx*"
+      - "tests/drivers/uart/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -36,7 +38,6 @@ jobs:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       EDTT_PATH: ../tools/edtt
@@ -44,6 +45,7 @@ jobs:
       bsim_bt_53_test_results_file: ./bsim_bt/53_bsim_results.xml
       bsim_bt_53split_test_results_file: ./bsim_bt/53_bsim_split_results.xml
       bsim_net_52_test_results_file: ./bsim_net/52_bsim_results.xml
+      bsim_uart_test_results_file: ./bsim_uart/uart_bsim_results.xml
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -78,6 +80,8 @@ jobs:
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check common triggering files
         uses: tj-actions/changed-files@v41
@@ -116,10 +120,20 @@ jobs:
             drivers/ieee802154/**
             include/zephyr/net/ieee802154*
 
+      - name: Check if UART files changed
+        uses: tj-actions/changed-files@v41
+        id: check-uart-files
+        with:
+          files: |
+            tests/bsim/drivers/uart/**
+            drivers/serial/*nrfx*
+            tests/drivers/uart/**
+
       - name: Update BabbleSim to manifest revision
         if: >
           steps.check-bluetooth-files.outputs.any_changed == 'true'
           || steps.check-networking-files.outputs.any_changed == 'true'
+          || steps.check-uart-files.outputs.any_changed == 'true'
           || steps.check-common-files.outputs.any_changed == 'true'
         run: |
           export BSIM_VERSION=$( west list bsim -f {revision} )
@@ -163,6 +177,18 @@ jobs:
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_net_52_test_results_file} \
           SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
 
+      - name: Run UART Tests with BSIM
+        if: steps.check-uart-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
+        run: |
+          echo "UART: Single device tests"
+          ./scripts/twister -T tests/drivers/uart/ --force-color --inline-logs -v -M -p nrf52_bsim \
+            --fixture gpio_loopback -- -uart0_loopback
+          echo "UART: Multi device tests"
+          export ZEPHYR_BASE=${PWD}
+          WORK_DIR=${ZEPHYR_BASE}/bsim_uart nice tests/bsim/drivers/uart/compile.sh
+          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_uart_test_results_file} \
+          SEARCH_PATH=tests/bsim/drivers/uart/ tests/bsim/run_parallel.sh
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v3
@@ -173,6 +199,9 @@ jobs:
             ./bsim_bt/53_bsim_results.xml
             ./bsim_bt/53_bsim_split_results.xml
             ./bsim_net/52_bsim_results.xml
+            ./bsim_uart/uart_bsim_results.xml
+            ./twister-out/twister.xml
+            ./twister-out/twister.json
             ${{ github.event_path }}
           if-no-files-found: warn
 

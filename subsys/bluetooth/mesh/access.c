@@ -922,7 +922,7 @@ static void mod_publish(struct k_work *work)
 		return;
 	}
 
-	LOG_DBG("%u", k_uptime_get_32());
+	LOG_DBG("timestamp: %u", k_uptime_get_32());
 
 	if (pub->count) {
 		pub->count--;
@@ -1504,6 +1504,10 @@ static int element_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple
 		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CTX_ENABLED)) {
+		ctx->rnd_delay = true;
+	}
+
 	net_buf_simple_save(buf, &state);
 	err = op->func(model, ctx, buf);
 	net_buf_simple_restore(buf, &state);
@@ -1578,7 +1582,9 @@ int bt_mesh_model_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 	}
 
 #if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
-	if (ctx->rnd_delay) {
+	/* No sense to use delayable message for unicast loopback. */
+	if (ctx->rnd_delay &&
+	    !(bt_mesh_has_addr(ctx->addr) && BT_MESH_ADDR_IS_UNICAST(ctx->addr))) {
 		return bt_mesh_delayable_msg_manage(ctx, msg, bt_mesh_model_elem(model)->rt->addr,
 						    cb, cb_data);
 	}
@@ -2374,7 +2380,6 @@ size_t bt_mesh_comp_page_size(uint8_t page)
 
 int bt_mesh_comp_store(void)
 {
-#if IS_ENABLED(CONFIG_BT_MESH_V1d1)
 	NET_BUF_SIMPLE_DEFINE(buf, CONFIG_BT_MESH_COMP_PST_BUF_SIZE);
 	int err;
 
@@ -2404,7 +2409,7 @@ int bt_mesh_comp_store(void)
 
 		LOG_DBG("Stored CDP%d", comp_data_pages[i].page);
 	}
-#endif
+
 	return 0;
 }
 

@@ -29,7 +29,7 @@ K_APPMEM_PARTITION_DEFINE(bench_mem_partition);
 #endif
 
 K_THREAD_STACK_DEFINE(start_stack, START_STACK_SIZE);
-K_THREAD_STACK_DEFINE(alt_stack, START_STACK_SIZE);
+K_THREAD_STACK_DEFINE(alt_stack, ALT_STACK_SIZE);
 
 K_SEM_DEFINE(pause_sem, 0, 1);
 
@@ -52,6 +52,9 @@ extern int fifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 extern int lifo_ops(uint32_t num_iterations, uint32_t options);
 extern int lifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 			     uint32_t alt_options);
+extern int event_ops(uint32_t num_iterations, uint32_t options);
+extern int event_blocking_ops(uint32_t num_iterations, uint32_t start_options,
+			      uint32_t alt_options);
 extern void heap_malloc_free(void);
 
 static void test_thread(void *arg1, void *arg2, void *arg3)
@@ -118,6 +121,18 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	lifo_blocking_ops(NUM_ITERATIONS, 0, K_USER);
 	lifo_blocking_ops(NUM_ITERATIONS, K_USER, 0);
 	lifo_blocking_ops(NUM_ITERATIONS, K_USER, K_USER);
+#endif
+
+	event_ops(NUM_ITERATIONS, 0);
+#ifdef CONFIG_USERSPACE
+	event_ops(NUM_ITERATIONS, K_USER);
+#endif
+
+	event_blocking_ops(NUM_ITERATIONS, 0, 0);
+#ifdef CONFIG_USERSPACE
+	event_blocking_ops(NUM_ITERATIONS, 0, K_USER);
+	event_blocking_ops(NUM_ITERATIONS, K_USER, 0);
+	event_blocking_ops(NUM_ITERATIONS, K_USER, K_USER);
 #endif
 
 	sema_test_signal(NUM_ITERATIONS, 0);

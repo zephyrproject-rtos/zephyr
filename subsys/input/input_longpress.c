@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(input_longpress, CONFIG_INPUT_LOG_LEVEL);
 
 struct longpress_config {
 	const struct device *input_dev;
+	struct longpress_data_entry *entries;
 	const uint16_t *input_codes;
 	const uint16_t *short_codes;
 	const uint16_t *long_codes;
@@ -27,11 +28,6 @@ struct longpress_data_entry {
 	struct k_work_delayable work;
 	uint8_t index;
 	bool long_fired;
-};
-
-struct longpress_data {
-	/* support data for every input code */
-	struct longpress_data_entry *entries;
 };
 
 static void longpress_deferred(struct k_work *work)
@@ -53,7 +49,6 @@ static void longpress_deferred(struct k_work *work)
 static void longpress_cb(const struct device *dev, struct input_event *evt)
 {
 	const struct longpress_config *cfg = dev->config;
-	struct longpress_data *data = dev->data;
 	struct longpress_data_entry *entry;
 	int i;
 
@@ -71,7 +66,7 @@ static void longpress_cb(const struct device *dev, struct input_event *evt)
 		return;
 	}
 
-	entry = &data->entries[i];
+	entry = &cfg->entries[i];
 
 	if (evt->value) {
 		entry->long_fired = false;
@@ -90,7 +85,6 @@ static void longpress_cb(const struct device *dev, struct input_event *evt)
 static int longpress_init(const struct device *dev)
 {
 	const struct longpress_config *cfg = dev->config;
-	struct longpress_data *data = dev->data;
 
 	if (cfg->input_dev && !device_is_ready(cfg->input_dev)) {
 		LOG_ERR("input device not ready");
@@ -98,7 +92,7 @@ static int longpress_init(const struct device *dev)
 	}
 
 	for (int i = 0; i < cfg->num_codes; i++) {
-		struct longpress_data_entry *entry = &data->entries[i];
+		struct longpress_data_entry *entry = &cfg->entries[i];
 
 		entry->dev = dev;
 		entry->index = i;
@@ -112,21 +106,29 @@ static int longpress_init(const struct device *dev)
 	BUILD_ASSERT((DT_INST_PROP_LEN(inst, input_codes) ==                                       \
 		      DT_INST_PROP_LEN_OR(inst, short_codes, 0)) ||                                \
 		     !DT_INST_NODE_HAS_PROP(inst, short_codes));                                   \
-	BUILD_ASSERT(DT_INST_PROP_LEN(inst, input_codes) ==                                        \
-		     DT_INST_PROP_LEN(inst, long_codes));                                          \
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, input_codes) == DT_INST_PROP_LEN(inst, long_codes));   \
+	                                                                                           \
 	static void longpress_cb_##inst(struct input_event *evt)                                   \
 	{                                                                                          \
 		longpress_cb(DEVICE_DT_INST_GET(inst), evt);                                       \
 	}                                                                                          \
 	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),                 \
 			      longpress_cb_##inst);                                                \
+	                                                                                           \
 	static const uint16_t longpress_input_codes_##inst[] = DT_INST_PROP(inst, input_codes);    \
+	                                                                                           \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, short_codes), (                                     \
 	static const uint16_t longpress_short_codes_##inst[] = DT_INST_PROP(inst, short_codes);    \
 	));                                                                                        \
+	                                                                                           \
 	static const uint16_t longpress_long_codes_##inst[] = DT_INST_PROP(inst, long_codes);      \
+	                                                                                           \
+	static struct longpress_data_entry longpress_data_entries_##inst[DT_INST_PROP_LEN(         \
+			inst, input_codes)];                                                       \
+	                                                                                           \
 	static const struct longpress_config longpress_config_##inst = {                           \
 		.input_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),                  \
+		.entries = longpress_data_entries_##inst,                                          \
 		.input_codes = longpress_input_codes_##inst,                                       \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, short_codes), (                             \
 		.short_codes = longpress_short_codes_##inst,                                       \
@@ -135,13 +137,9 @@ static int longpress_init(const struct device *dev)
 		.num_codes = DT_INST_PROP_LEN(inst, input_codes),                                  \
 		.long_delays_ms = DT_INST_PROP(inst, long_delay_ms),                               \
 	};                                                                                         \
-	static struct longpress_data_entry longpress_data_entries_##inst[DT_INST_PROP_LEN(         \
-			inst, input_codes)];                                                       \
-	static struct longpress_data longpress_data_##inst = {                                     \
-		.entries = longpress_data_entries_##inst,                                          \
-	};                                                                                         \
+	                                                                                           \
 	DEVICE_DT_INST_DEFINE(inst, longpress_init, NULL,                                          \
-			      &longpress_data_##inst, &longpress_config_##inst,                    \
+			      NULL, &longpress_config_##inst,                                      \
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_LONGPRESS_DEFINE)

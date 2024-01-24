@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2024 Joel Guittet
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc1 3 PWM_MSEC(500)>;
+			label = "Blue PWM LED";
+		};
+	};
+};
+
+&tcc1 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <4>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA15G_TCC1_WO3>;
+		};
+	};
+};

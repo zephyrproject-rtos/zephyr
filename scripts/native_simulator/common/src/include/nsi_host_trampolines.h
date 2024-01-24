@@ -33,6 +33,7 @@ int nsi_host_open(const char *pathname, int flags);
 /* int nsi_host_printf (const char *fmt, ...); Use the nsi_tracing.h equivalents */
 long nsi_host_random(void);
 long nsi_host_read(int fd, void *buffer, unsigned long size);
+void *nsi_host_realloc(void *ptr, unsigned long size);
 void nsi_host_srandom(unsigned int seed);
 char *nsi_host_strdup(const char *s);
 long nsi_host_write(int fd, void *buffer, unsigned long size);

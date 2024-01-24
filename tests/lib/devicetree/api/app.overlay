@@ -29,6 +29,13 @@
 		#size-cells = < 0x1 >;
 		interrupt-parent = <&test_intc>;
 
+		test_cpu_intc: interrupt-controller  {
+			compatible = "vnd,cpu-intc";
+			#address-cells = <0>;
+			#interrupt-cells = < 0x01 >;
+			interrupt-controller;
+		};
+
 		test_pinctrl: pin-controller {
 			compatible = "vnd,pinctrl";
 			test_pincfg_a: pincfg-a {};
@@ -200,6 +207,16 @@
 			gpio-controller;
 			reg = < 0x1234 0x500 >;
 			#gpio-cells = < 0x1 >;
+			status = "okay";
+		};
+
+		test_gpio_4: gpio@1234abcd {
+			compatible = "vnd,gpio-intc-device";
+			reg = <0x1234abcd 0x500>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			interrupt-controller;
+			#interrupt-cells = <0x2>;
 			status = "okay";
 		};
 
@@ -420,6 +437,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 			interrupts = <11 0>;
+			interrupt-parent = <&test_cpu_intc>;
 		};
 
 		/* there should only be one of these */
@@ -429,6 +447,15 @@
 			interrupts = <30 3 40 5 60 7>;
 			interrupt-parent = <&test_intc>;
 			interrupt-names = "err", "stat", "done";
+		};
+
+		/* there should only be one of these */
+		test_irq_extended: interrupt-holder-extended {
+			compatible = "vnd,interrupt-holder-extended";
+			status = "okay";
+			interrupts-extended = <&test_intc 70 7>,
+					      <&test_gpio_4 30 3>;
+			interrupt-names = "int1", "int2";
 		};
 
 		test_fixed_clk: test-fixed-clock {
@@ -650,7 +677,7 @@
 		};
 
 		test-mtd@ffeeddcc {
-			reg = < 0x0 0x1000 >;
+			reg = < 0xffeeddcc 0x1000 >;
 			#address-cells = < 1 >;
 			#size-cells = < 1 >;
 

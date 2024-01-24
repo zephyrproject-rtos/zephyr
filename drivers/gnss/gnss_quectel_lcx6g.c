@@ -211,7 +211,7 @@ static int quectel_lcx6g_suspend(const struct device *dev)
 	struct quectel_lcx6g_data *data = dev->data;
 	int ret;
 
-	ret = modem_chat_run_script_run(&data->chat, &suspend_script);
+	ret = modem_chat_run_script(&data->chat, &suspend_script);
 	if (ret < 0) {
 		modem_pipe_close(data->uart_pipe);
 	}
@@ -649,7 +649,6 @@ static int quectel_lcx6g_init_nmea0183_match(const struct device *dev)
 		.satellites = data->satellites,
 		.satellites_size = ARRAY_SIZE(data->satellites),
 #endif
-		.timeout_ms = 50,
 	};
 
 	return gnss_nmea0183_match_init(&data->match_data, &config);

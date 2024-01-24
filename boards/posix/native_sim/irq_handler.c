@@ -77,13 +77,20 @@ void posix_irq_handler(void)
 		return;
 	}
 
+	irq_nbr = hw_irq_ctrl_get_highest_prio_irq();
+
+	if (irq_nbr == -1) {
+		/* This is a phony interrupt during a busy wait, no need for more */
+		return;
+	}
+
 	if (_kernel.cpus[0].nested == 0) {
 		may_swap = 0;
 	}
 
 	_kernel.cpus[0].nested++;
 
-	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq()) != -1) {
+	do {
 		int last_current_running_prio = hw_irq_ctrl_get_cur_prio();
 		int last_running_irq = currently_running_irq;
 
@@ -95,7 +102,7 @@ void posix_irq_handler(void)
 		currently_running_irq = last_running_irq;
 
 		hw_irq_ctrl_set_cur_prio(last_current_running_prio);
-	}
+	} while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq()) != -1);
 
 	_kernel.cpus[0].nested--;
 
@@ -229,6 +236,11 @@ int posix_get_current_irq(void)
 void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
 		       const void *isr_param_p)
 {
+	if (irq_p >= N_IRQS) {
+		posix_print_error_and_exit("Attempted to configure not existent interrupt %u\n",
+					   irq_p);
+		return;
+	}
 	irq_vector_table[irq_p].irq   = irq_p;
 	irq_vector_table[irq_p].func  = isr_p;
 	irq_vector_table[irq_p].param = isr_param_p;

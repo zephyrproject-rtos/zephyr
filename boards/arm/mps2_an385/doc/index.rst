@@ -226,7 +226,7 @@ Peripheral Mapping:
    - I2C_4_SDA : D40
    - I2C_4_SCL : D41
 
-For mode details please refer to `MPS2 Technical Reference Manual (TRM)`_.
+For more details please refer to `MPS2 Technical Reference Manual (TRM)`_.
 
 System Clock
 ============

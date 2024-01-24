@@ -197,65 +197,72 @@ static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 {
 	struct modem_cmux *cmux = (struct modem_cmux *)user_data;
 
-	if (event == MODEM_PIPE_EVENT_RECEIVE_READY) {
+	switch (event) {
+	case MODEM_PIPE_EVENT_RECEIVE_READY:
 		k_work_schedule(&cmux->receive_work, K_NO_WAIT);
+		break;
+
+	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
+		k_work_schedule(&cmux->transmit_work, K_NO_WAIT);
+		break;
+
+	default:
+		break;
 	}
 }
 
 static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 					  const struct modem_cmux_frame *frame)
 {
-	uint8_t byte;
+	uint8_t buf[MODEM_CMUX_FRAME_SIZE_MAX];
 	uint8_t fcs;
 	uint16_t space;
 	uint16_t data_len;
+	uint16_t buf_idx;
 
 	space = ring_buf_space_get(&cmux->transmit_rb) - MODEM_CMUX_FRAME_SIZE_MAX;
 	data_len = (space < frame->data_len) ? space : frame->data_len;
 
 	/* SOF */
-	byte = 0xF9;
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	buf[0] = 0xF9;
 
 	/* DLCI Address (Max 63) */
-	byte = 0x01 | (frame->cr << 1) | (frame->dlci_address << 2);
-	fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, MODEM_CMUX_FCS_INIT_VALUE, true);
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	buf[1] = 0x01 | (frame->cr << 1) | (frame->dlci_address << 2);
 
 	/* Frame type and poll/final */
-	byte = frame->type | (frame->pf << 4);
-	fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	buf[2] = frame->type | (frame->pf << 4);
 
 	/* Data length */
 	if (data_len > 127) {
-		byte = data_len << 1;
-		fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
-		ring_buf_put(&cmux->transmit_rb, &byte, 1);
-		byte = data_len >> 7;
-		ring_buf_put(&cmux->transmit_rb, &byte, 1);
+		buf[3] = data_len << 1;
+		buf[4] = data_len >> 7;
+		buf_idx = 5;
 	} else {
-		byte = 0x01 | (data_len << 1);
-		ring_buf_put(&cmux->transmit_rb, &byte, 1);
+		buf[3] = 0x01 | (data_len << 1);
+		buf_idx = 4;
 	}
+
+	/* Compute FCS for the header (exclude SOF) */
+	fcs = crc8(&buf[1], (buf_idx - 1), MODEM_CMUX_FCS_POLYNOMIAL, MODEM_CMUX_FCS_INIT_VALUE,
+		   true);
 
 	/* FCS final */
 	if (frame->type == MODEM_CMUX_FRAME_TYPE_UIH) {
-		fcs = 0xFF - crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
+		fcs = 0xFF - fcs;
 	} else {
-		fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
 		fcs = 0xFF - crc8(frame->data, data_len, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
 	}
+
+	/* Frame header */
+	ring_buf_put(&cmux->transmit_rb, buf, buf_idx);
 
 	/* Data */
 	ring_buf_put(&cmux->transmit_rb, frame->data, data_len);
 
-	/* FCS */
-	ring_buf_put(&cmux->transmit_rb, &fcs, 1);
-
-	/* EOF */
-	byte = 0xF9;
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	/* FCS and EOF will be put on the same call */
+	buf[0] = fcs;
+	buf[1] = 0xF9;
+	ring_buf_put(&cmux->transmit_rb, buf, 2);
 	k_work_schedule(&cmux->transmit_work, K_NO_WAIT);
 	return data_len;
 }
@@ -642,13 +649,6 @@ static void modem_cmux_on_frame(struct modem_cmux *cmux)
 	modem_cmux_on_dlci_frame(cmux);
 }
 
-static void modem_cmux_transmit_resync(struct modem_cmux *cmux)
-{
-	static const uint8_t resync[3] = {0xF9, 0xF9, 0xF9};
-
-	modem_pipe_transmit(cmux->pipe, resync, sizeof(resync));
-}
-
 static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t byte)
 {
 	uint8_t fcs;
@@ -656,45 +656,22 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 	switch (cmux->receive_state) {
 	case MODEM_CMUX_RECEIVE_STATE_SOF:
 		if (byte == 0xF9) {
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_ADDRESS;
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC;
 			break;
 		}
 
-		modem_cmux_transmit_resync(cmux);
-		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
 		break;
 
-	case MODEM_CMUX_RECEIVE_STATE_RESYNC_0:
-		if (byte == 0xF9) {
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_1;
-		}
-
-		break;
-
-	case MODEM_CMUX_RECEIVE_STATE_RESYNC_1:
-		if (byte == 0xF9) {
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_2;
-		} else {
-			modem_cmux_transmit_resync(cmux);
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
-		}
-
-		break;
-
-	case MODEM_CMUX_RECEIVE_STATE_RESYNC_2:
-		if (byte == 0xF9) {
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_3;
-		} else {
-			modem_cmux_transmit_resync(cmux);
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
-		}
-
-		break;
-
-	case MODEM_CMUX_RECEIVE_STATE_RESYNC_3:
+	case MODEM_CMUX_RECEIVE_STATE_RESYNC:
+		/*
+		 * Allow any number of consequtive flags (0xF9).
+		 * 0xF9 could also be a valid address field for DLCI 62.
+		 */
 		if (byte == 0xF9) {
 			break;
 		}
+
+		__fallthrough;
 
 	case MODEM_CMUX_RECEIVE_STATE_ADDRESS:
 		/* Initialize */
@@ -865,6 +842,17 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	k_work_schedule(&cmux->receive_work, K_NO_WAIT);
 }
 
+static void modem_cmux_dlci_notify_transmit_idle(struct modem_cmux *cmux)
+{
+	sys_snode_t *node;
+	struct modem_cmux_dlci *dlci;
+
+	SYS_SLIST_FOR_EACH_NODE(&cmux->dlcis, node) {
+		dlci = (struct modem_cmux_dlci *)node;
+		modem_pipe_notify_transmit_idle(&dlci->pipe);
+	}
+}
+
 static void modem_cmux_transmit_handler(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
@@ -872,31 +860,37 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 	uint8_t *reserved;
 	uint32_t reserved_size;
 	int ret;
+	bool transmit_rb_empty;
 
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 
-	/* Reserve data to transmit from transmit ring buffer */
-	reserved_size = ring_buf_get_claim(&cmux->transmit_rb, &reserved, UINT32_MAX);
+	while (true) {
+		transmit_rb_empty = ring_buf_is_empty(&cmux->transmit_rb);
 
-	/* Transmit reserved data */
-	ret = modem_pipe_transmit(cmux->pipe, reserved, reserved_size);
-	if (ret < 1) {
-		ring_buf_get_finish(&cmux->transmit_rb, 0);
-		k_mutex_unlock(&cmux->transmit_rb_lock);
-		k_work_schedule(&cmux->transmit_work, K_NO_WAIT);
+		if (transmit_rb_empty) {
+			break;
+		}
 
-		return;
-	}
+		reserved_size = ring_buf_get_claim(&cmux->transmit_rb, &reserved, UINT32_MAX);
 
-	/* Release remaining reserved data */
-	ring_buf_get_finish(&cmux->transmit_rb, ret);
+		ret = modem_pipe_transmit(cmux->pipe, reserved, reserved_size);
+		if (ret < 0) {
+			ring_buf_get_finish(&cmux->transmit_rb, 0);
+			break;
+		}
 
-	/* Resubmit transmit work if data remains */
-	if (ring_buf_is_empty(&cmux->transmit_rb) == false) {
-		k_work_schedule(&cmux->transmit_work, K_NO_WAIT);
+		ring_buf_get_finish(&cmux->transmit_rb, (uint32_t)ret);
+
+		if (ret < reserved_size) {
+			break;
+		}
 	}
 
 	k_mutex_unlock(&cmux->transmit_rb_lock);
+
+	if (transmit_rb_empty) {
+		modem_cmux_dlci_notify_transmit_idle(cmux);
+	}
 }
 
 static void modem_cmux_connect_handler(struct k_work *item)

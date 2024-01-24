@@ -339,10 +339,11 @@ static inline void xtensa_tlb_autorefill_invalidate(void)
 		for (i = 0; i < entries; i++) {
 			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
 
-			xtensa_dtlb_entry_invalidate_sync(entry);
-			xtensa_itlb_entry_invalidate_sync(entry);
+			xtensa_dtlb_entry_invalidate(entry);
+			xtensa_itlb_entry_invalidate(entry);
 		}
 	}
+	__asm__ volatile("isync");
 }
 
 /**

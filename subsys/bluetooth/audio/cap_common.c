@@ -51,6 +51,24 @@ bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type)
 }
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
+struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
+					      union bt_cap_set_member *member)
+{
+	if (type == BT_CAP_SET_TYPE_CSIP) {
+		struct bt_cap_common_client *client;
+
+		/* We have verified that `client` won't be NULL in
+		 * `valid_change_volume_param`.
+		 */
+		client = bt_cap_common_get_client_by_csis(member->csip);
+		if (client != NULL) {
+			return client->conn;
+		}
+	}
+
+	return member->member;
+}
+
 bool bt_cap_common_proc_is_active(void)
 {
 	return atomic_test_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_ACTIVE);
@@ -61,7 +79,7 @@ bool bt_cap_common_proc_is_aborted(void)
 	return atomic_test_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_ABORTED);
 }
 
-bool bt_cap_common_proc_all_streams_handled(void)
+bool bt_cap_common_proc_all_handled(void)
 {
 	return active_proc.proc_done_cnt == active_proc.proc_initiated_cnt;
 }
@@ -97,21 +115,40 @@ static bool active_proc_is_initiator(void)
 }
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
+#if defined(CONFIG_BT_CAP_COMMANDER)
+static bool active_proc_is_commander(void)
+{
+	switch (active_proc.proc_type) {
+	case BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE:
+		return true;
+	default:
+		return false;
+	}
+}
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+
 bool bt_cap_common_conn_in_active_proc(const struct bt_conn *conn)
 {
 	if (!bt_cap_common_proc_is_active()) {
 		return false;
 	}
 
+	for (size_t i = 0U; i < active_proc.proc_initiated_cnt; i++) {
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-	if (active_proc_is_initiator()) {
-		for (size_t i = 0U; i < active_proc.proc_initiated_cnt; i++) {
+		if (active_proc_is_initiator()) {
 			if (active_proc.proc_param.initiator[i].stream->bap_stream.conn == conn) {
 				return true;
 			}
 		}
-	}
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+#if defined(CONFIG_BT_CAP_COMMANDER)
+		if (active_proc_is_commander()) {
+			if (active_proc.proc_param.commander[i].conn == conn) {
+				return true;
+			}
+		}
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+	}
 
 	return false;
 }

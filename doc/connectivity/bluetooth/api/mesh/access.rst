@@ -168,15 +168,6 @@ needs to be stored.
 Composition Data
 ================
 
-.. note::
-
-   The implementation of the Bluetooth Mesh Protocol Specification version 1.1
-   is currently in an experimental state. For Bluetooth Mesh Profile Specification
-   version 1.0.1, only Composition Data Page 0 is supported. Users that are developing
-   for Bluetooth Mesh Profile Specification version 1.0.1 may therefore disregard all
-   parts of the following section mentioning the :ref:`bluetooth_mesh_lcd_srv`
-   model and Composition Data Pages 1, 2, 128, 129 and 130.
-
 The Composition Data provides information about a mesh device.
 A device's Composition Data holds information about the elements on the
 device, the models that it supports, and other features. The Composition

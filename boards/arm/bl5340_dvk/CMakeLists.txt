@@ -9,7 +9,7 @@ zephyr_library_sources(bl5340_dvk_cpunet_reset.c)
 
 if (CONFIG_BUILD_WITH_TFM)
   zephyr_library_include_directories(
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
   )
 endif()
 

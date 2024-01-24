@@ -775,18 +775,44 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ull_conn_iso_transmit_test_cig_interval(cig->lll.handle, ticks_at_expire);
 }
 
+static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
+				uint32_t cis_offset, uint32_t *ticks_at_expire, uint32_t remainder)
+{
+	uint32_t acl_to_cig_ref_point;
+	uint32_t cis_offs_to_cig_ref;
+	uint32_t remainder_us;
+
+	remainder_us = remainder;
+	hal_ticker_remove_jitter(ticks_at_expire, &remainder_us);
+
+	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
+
+	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
+	 * (cis->offset) by the difference between CIG- and CIS sync delays.
+	 */
+	acl_to_cig_ref_point = cis_offset - cis_offs_to_cig_ref;
+
+	/* Calculate the CIG reference point of first CIG event. This
+	 * calculation is inaccurate. However it is the best estimate available
+	 * until the first anchor point for the leading CIS is available.
+	 */
+	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(*ticks_at_expire),
+						       remainder_us +
+						       EVENT_OVERHEAD_START_US +
+						       acl_to_cig_ref_point);
+	/* Calculate initial ticker offset */
+	return remainder_us + acl_to_cig_ref_point;
+}
+
 void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			uint32_t ticks_at_expire, uint32_t remainder,
 			uint16_t instant_latency)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
-	uint32_t acl_to_cig_ref_point;
-	uint32_t cis_offs_to_cig_ref;
 	uint32_t ticks_remainder;
 	uint32_t ticks_periodic;
 	uint32_t ticker_status;
-	uint32_t remainder_us;
 	int32_t cig_offset_us;
 	uint32_t ticks_slot;
 	uint8_t ticker_id;
@@ -794,9 +820,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	cis = ll_conn_iso_stream_get(cis_handle);
 	cig = cis->group;
 
-	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
-
-	cis->lll.offset = cis_offs_to_cig_ref;
+	cis->lll.offset = cig->sync_delay - cis->sync_delay;
 	cis->lll.handle = cis_handle;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -868,25 +892,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
 
-	remainder_us = remainder;
-	hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
-
-	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
-	 * (cis->offset) by the difference between CIG- and CIS sync delays.
-	 */
-	acl_to_cig_ref_point = cis->offset - cis_offs_to_cig_ref;
-
-	/* Calculate initial ticker offset */
-	cig_offset_us = remainder_us + acl_to_cig_ref_point;
-
-	/* Calculate the CIG reference point of first CIG event. This
-	 * calculation is inaccurate. However it is the best estimate available
-	 * until the first anchor point for the leading CIS is available.
-	 */
-	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_at_expire),
-						       remainder_us +
-						       EVENT_OVERHEAD_START_US +
-						       acl_to_cig_ref_point);
+	cig_offset_us = cig_offset_calc(cig, cis, cis->offset, &ticks_at_expire, remainder);
 
 	if (false) {
 
@@ -900,8 +906,6 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		 */
 		iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval * ISO_INT_UNIT_US) -
 				       cig->lll.window_widening_periodic_us_frac;
-		ticks_periodic  = EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac);
-		ticks_remainder = EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac);
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
 		bool early_start = (cis->offset < EVENT_OVERHEAD_START_US);
@@ -914,22 +918,66 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 				cig_offset_us += (conn->lll.interval * CONN_INT_UNIT_US);
 				cig->cig_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
 							conn->lll.interval * CONN_INT_UNIT_US);
-			} else {
-				LL_ASSERT(instant_latency == 1U);
+			} else if (instant_latency > 1U) {
+				/* We have passed the last possible event for a timely start. For
+				 * early_start this means the latency is actually one less.
+				 */
+				instant_latency--;
 			}
-		} else {
-			/* FIXME: Handle latency due to skipped ACL events around the
-			 * instant to start CIG
-			 */
-			LL_ASSERT(instant_latency == 0U);
 		}
-#else /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
-		/* FIXME: Handle latency due to skipped ACL events around the
-		 * instant to start CIG
-		 */
-		LL_ASSERT(instant_latency == 0U);
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
+		if (instant_latency > 0U) {
+			/* Try to start the CIG late by finding the CIG event relative to current
+			 * ACL event, taking latency into consideration. Adjust ticker periodicity
+			 * with increased window widening.
+			 */
+			uint32_t lost_cig_events;
+			uint32_t iso_interval_us;
+			uint32_t acl_latency_us;
+			uint32_t lost_payloads;
+			uint32_t cis_offset;
+
+			acl_latency_us = instant_latency * conn->lll.interval * CONN_INT_UNIT_US;
+			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+			if (acl_latency_us > iso_interval_us) {
+				/* Latency is greater than the ISO interval - find the offset from
+				 * this ACL event to the next active ISO event, and adjust the event
+				 * counter accordingly.
+				 */
+				lost_cig_events = DIV_ROUND_UP(acl_latency_us - cis->offset,
+							       iso_interval_us);
+				cis_offset = cis->offset + (lost_cig_events * iso_interval_us) -
+					     acl_latency_us;
+			} else {
+				/* Latency is less than- or equal to one ISO interval - start at
+				 * next ISO event.
+				 */
+				lost_cig_events = 1U;
+				cis_offset = cis->offset + iso_interval_us - acl_latency_us;
+			}
+
+			cis->lll.event_count += lost_cig_events;
+
+			lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) * cis->lll.rx.bn;
+			cis->lll.rx.payload_count += lost_payloads;
+
+			lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) * cis->lll.tx.bn;
+			cis->lll.tx.payload_count += lost_payloads;
+
+			/* Adjust for extra window widening */
+			iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval *
+								   ISO_INT_UNIT_US);
+			iso_interval_us_frac -= cig->lll.window_widening_periodic_us_frac *
+						instant_latency;
+			/* Calculate new offset */
+			cig_offset_us = cig_offset_calc(cig, cis, cis_offset, &ticks_at_expire,
+							remainder);
+		}
+
+		ticks_periodic  = EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac);
+		ticks_remainder = EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac);
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	} else if (IS_CENTRAL(cig)) {

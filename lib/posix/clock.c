@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/unistd.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/spinlock.h>
 
@@ -222,3 +223,35 @@ int gettimeofday(struct timeval *tv, void *tz)
 
 	return res;
 }
+
+int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
+{
+	/* We don't allow any process ID but our own.  */
+	if (pid != 0 && pid != getpid()) {
+		return EPERM;
+	}
+
+	*clock_id = CLOCK_PROCESS_CPUTIME_ID;
+
+	return 0;
+}
+
+#ifdef CONFIG_ZTEST
+#include <zephyr/ztest.h>
+static void reset_clock_base(void)
+{
+	K_SPINLOCK(&rt_clock_base_lock) {
+		rt_clock_base = (struct timespec){0};
+	}
+}
+
+static void clock_base_reset_rule_after(const struct ztest_unit_test *test, void *data)
+{
+	ARG_UNUSED(test);
+	ARG_UNUSED(data);
+
+	reset_clock_base();
+}
+
+ZTEST_RULE(clock_base_reset_rule, NULL, clock_base_reset_rule_after);
+#endif /* CONFIG_ZTEST */

@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+if POSIX_UNAME
+
+config POSIX_UNAME_SHELL
+	bool "Support for `uname` command"
+	select SHELL_GETOPT
+	select POSIX_SHELL
+	help
+	  Support for `uname` command in the terminal.
+
+endif # POSIX_UNAME

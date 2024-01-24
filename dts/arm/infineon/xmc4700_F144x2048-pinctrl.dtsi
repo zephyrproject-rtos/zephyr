@@ -985,4 +985,179 @@
 	/omit-if-no-ref/ i2c_scl_dout1_p3_9_u2c0: i2c_scl_dout1_p3_9_u2c0 {
 		pinmux = <XMC4XXX_PINMUX_SET(3, 9, 1)>;
 	};
+
+	/omit-if-no-ref/ eth_p0_9_mdo: eth_p0_9_mdo {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 9, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ eth_p1_11_mdo: eth_p1_11_mdo {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 11, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ eth_p2_0_mdo: eth_p2_0_mdo {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 0)>;
+		hwctrl = "periph1";
+	};
+
+	/omit-if-no-ref/ eth_p0_9_mdio: eth_p0_9_mdio {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_0_mdio: eth_p2_0_mdio {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 0)>;
+	};
+	/omit-if-no-ref/ eth_p1_11_mdio: eth_p1_11_mdio {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 11, 0)>;
+	};
+
+	/omit-if-no-ref/ eth_p0_4_tx_en: eth_p0_4_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 1)>;
+	};
+	/omit-if-no-ref/ eth_p0_5_txd0: eth_p0_5_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 1)>;
+	};
+	/omit-if-no-ref/ eth_p0_6_txd1: eth_p0_6_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 6, 1)>;
+	};
+	/omit-if-no-ref/ eth_p0_10_mdc: eth_p0_10_mdc {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_10_mdc: eth_p1_10_mdc {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_12_tx_en: eth_p1_12_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 12, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_13_txd0: eth_p1_13_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 13, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_14_txd1: eth_p1_14_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_5_tx_en: eth_p2_5_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_7_mdc: eth_p2_7_mdc {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 7, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_8_txd0: eth_p2_8_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 8, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_9_txd1: eth_p2_9_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 9, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_11_txer: eth_p2_11_txer {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 11, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_12_txd2: eth_p2_12_txd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 12, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_12_txd0: eth_p2_12_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 12, 4)>;
+	};
+	/omit-if-no-ref/ eth_p2_13_txd3: eth_p2_13_txd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 13, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_13_txd1: eth_p2_13_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 13, 4)>;
+	};
+	/omit-if-no-ref/ eth_p5_9_tx_en: eth_p5_9_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 9, 4)>;
+	};
+	/omit-if-no-ref/ eth_p6_0_txd2: eth_p6_0_txd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 0, 1)>;
+	};
+	/omit-if-no-ref/ eth_p6_1_txd3: eth_p6_1_txd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 1, 1)>;
+	};
+	/omit-if-no-ref/ eth_p6_2_txer: eth_p6_2_txer {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 1)>;
+	};
+
+	/omit-if-no-ref/ eth_p2_2_rxd0: eth_p2_2_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_2_rxd0: eth_p0_2_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 2, 0)>;
+	};
+	/omit-if-no-ref/ eth_p14_8_rxd0: eth_p14_8_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(14, 8, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_0_rxd0: eth_p5_0_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_3_rxd1: eth_p2_3_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_3_rxd1: eth_p0_3_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p14_9_rxd1: eth_p14_9_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(14, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_1_rxd1: eth_p5_1_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_8_rxd2: eth_p5_8_rxd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_4_rxd2: eth_p6_4_rxd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_9_rxd3: eth_p5_9_rxd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_3_rxd3: eth_p6_3_rxd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_1_clk_rmii: eth_p2_1_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 1, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_0_clk_rmii: eth_p0_0_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 0)>;
+	};
+	/omit-if-no-ref/ eth_p15_8_clk_rmii: eth_p15_8_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(15, 8, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_5_clk_rmii: eth_p6_5_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_5_crs_dv: eth_p2_5_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_1_crs_dv: eth_p0_1_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 0)>;
+	};
+	/omit-if-no-ref/ eth_p15_9_crs_dv: eth_p15_9_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(15, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_2_crs_dv: eth_p5_2_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_11_crs: eth_p5_11_crs {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 11, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_4_crs: eth_p5_4_crs {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 4, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_4_rxer: eth_p2_4_rxer {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_11_rxer: eth_p0_11_rxer {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_3_rxer: eth_p5_3_rxer {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_15_col: eth_p2_15_col {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_5_col: eth_p5_5_col {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 5, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_10_clk_tx: eth_p5_10_clk_tx {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 10, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_6_clk_tx: eth_p6_6_clk_tx {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 0)>;
+	};
 };

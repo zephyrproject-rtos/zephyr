@@ -54,8 +54,11 @@ class MCUmgr:
     def reset_device(self):
         self.run_command('reset')
 
-    def image_upload(self, image: Path | str, timeout: int = 30):
-        self.run_command(f'-t {timeout} image upload {image}')
+    def image_upload(self, image: Path | str, slot: int | None = None, timeout: int = 30):
+        command = f'-t {timeout} image upload {image}'
+        if slot:
+            command += f' -e -n {slot}'
+        self.run_command(command)
         logger.info('Image successfully uploaded')
 
     def get_image_list(self) -> list[MCUmgrImage]:
@@ -88,10 +91,19 @@ class MCUmgr:
 
     def get_hash_to_test(self) -> str:
         image_list = self.get_image_list()
-        if len(image_list) < 2:
-            logger.info(image_list)
-            raise MCUmgrException('Please check image list returned by mcumgr')
-        return image_list[1].hash
+        for image in image_list:
+            if 'active' not in image.flags:
+                return image.hash
+        logger.warning(f'Images returned by mcumgr (no not active):\n{image_list}')
+        raise MCUmgrException('No not active image found')
+
+    def get_hash_to_confirm(self):
+        image_list = self.mcumgr.get_image_list()
+        for image in image_list:
+            if 'confirmed' not in image.flags:
+                return image.hash
+        logger.warning(f'Images returned by mcumgr (no not confirmed):\n{image_list}')
+        raise MCUmgrException('No not confirmed image found')
 
     def image_test(self, hash: str | None = None):
         if not hash:
@@ -100,6 +112,5 @@ class MCUmgr:
 
     def image_confirm(self, hash: str | None = None):
         if not hash:
-            image_list = self.get_image_list()
-            hash = image_list[0].hash
+            hash = self.get_hash_to_confirm()
         self.run_command(f'image confirm {hash}')

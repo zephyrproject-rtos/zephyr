@@ -559,6 +559,8 @@ static inline int services_init(void)
 		return status;
 	}
 
+	net_dhcpv4_server_init();
+
 	dns_init_resolver();
 	websocket_init();
 

@@ -250,7 +250,7 @@ def write_source_file(fp, vt, swt, intlist, syms, shared):
             fp.write("\t/* Level 3 interrupts start here (offset: {}) */\n".
                      format(level3_offset))
 
-        fp.write("\t{{(const void *){0}, (ISR){1}}},\n".format(param, func_as_string))
+        fp.write("\t{{(const void *){0}, (ISR){1}}}, /* {2} */\n".format(param, func_as_string, i))
     fp.write("};\n")
 
 def get_symbols(obj):
@@ -358,6 +358,10 @@ def main():
 
     for irq, flags, func, param in intlist["interrupts"]:
         if flags & ISR_FLAG_DIRECT:
+            if not vt:
+                error("Direct Interrupt %d declared with parameter 0x%x "
+                      "but no vector table in use"
+                      % (irq, param))
             if param != 0:
                 error("Direct irq %d declared, but has non-NULL parameter"
                         % irq)

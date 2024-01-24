@@ -66,7 +66,7 @@ static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *fra
 
 	assert_frame_equal(frame, &test_std_fdf_frame_1, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
-	zassert_equal_ptr(filter, &test_std_fdf_filter_1, "filter does not match");
+	zassert_equal_ptr(filter, &test_std_filter_1, "filter does not match");
 
 	k_sem_give(&rx_callback_sem);
 }
@@ -78,7 +78,7 @@ static void rx_std_callback_fd_2(const struct device *dev, struct can_frame *fra
 
 	assert_frame_equal(frame, &test_std_fdf_frame_2, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
-	zassert_equal_ptr(filter, &test_std_fdf_filter_2, "filter does not match");
+	zassert_equal_ptr(filter, &test_std_filter_2, "filter does not match");
 
 	k_sem_give(&rx_callback_sem);
 }
@@ -252,7 +252,7 @@ ZTEST(canfd, test_send_receive_classic)
  */
 ZTEST(canfd, test_send_receive_fd)
 {
-	send_receive(&test_std_fdf_filter_1, &test_std_fdf_filter_2,
+	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_fdf_frame_1, &test_std_fdf_frame_2);
 }
 
@@ -261,7 +261,7 @@ ZTEST(canfd, test_send_receive_fd)
  */
 ZTEST(canfd, test_send_receive_mixed)
 {
-	send_receive(&test_std_fdf_filter_1, &test_std_filter_2,
+	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_fdf_frame_1, &test_std_frame_2);
 }
 
@@ -292,7 +292,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 	/* Add classic CAN and CAN FD filter */
 	filter_id_1 = add_rx_msgq(can_dev, &test_std_filter_1);
-	filter_id_2 = add_rx_msgq(can_dev, &test_std_fdf_filter_2);
+	filter_id_2 = add_rx_msgq(can_dev, &test_std_filter_2);
 
 	/* Verify classic filter in first mode */
 	send_test_frame(can_dev, &test_std_frame_1);

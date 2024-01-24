@@ -139,6 +139,8 @@
 	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
 };

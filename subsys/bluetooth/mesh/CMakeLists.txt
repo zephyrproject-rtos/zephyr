@@ -18,13 +18,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     cfg_srv.c
     health_srv.c
     va.c
+    transport.c
 )
-
-if (CONFIG_BT_MESH_V1d1)
-    zephyr_library_sources(transport.c)
-else()
-    zephyr_library_sources(transport_legacy.c)
-endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_ADV_LEGACY adv_legacy.c)
 
@@ -134,6 +129,6 @@ zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
 if (CONFIG_BUILD_WITH_TFM)
   target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
   )
 endif()

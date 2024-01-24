@@ -113,6 +113,8 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 |           |            | :ref:`rk055hdmipi4ma0`, and         |
 |           |            | :ref:`g1120b0mipi` display shields  |
 +-----------+------------+-------------------------------------+
+| DMIC      | on-chip    | dmic                                |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

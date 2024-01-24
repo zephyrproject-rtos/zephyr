@@ -9,7 +9,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-#include <nrfx_gpiote.h>
 #include <nrfx_ppi.h>
 #endif
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
@@ -64,6 +63,7 @@ struct spi_nrfx_config {
 	bool anomaly_58_workaround;
 #endif
 	uint32_t wake_pin;
+	nrfx_gpiote_t wake_gpiote;
 };
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
@@ -207,6 +207,8 @@ static int configure(const struct device *dev,
 }
 
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+static const nrfx_gpiote_t gpiote = NRFX_GPIOTE_INSTANCE(0);
+
 /*
  * Brief Workaround for transmitting 1 byte with SPIM.
  *
@@ -226,15 +228,15 @@ static void anomaly_58_workaround_setup(const struct device *dev)
 	NRF_SPIM_Type *spim = dev_config->spim.p_reg;
 	uint32_t ppi_ch = dev_data->ppi_ch;
 	uint32_t gpiote_ch = dev_data->gpiote_ch;
-	uint32_t eep = (uint32_t)&NRF_GPIOTE->EVENTS_IN[gpiote_ch];
+	uint32_t eep = (uint32_t)&gpiote.p_reg->EVENTS_IN[gpiote_ch];
 	uint32_t tep = (uint32_t)&spim->TASKS_STOP;
 
 	dev_data->anomaly_58_workaround_active = true;
 
 	/* Create an event when SCK toggles */
-	nrf_gpiote_event_configure(NRF_GPIOTE, gpiote_ch, spim->PSEL.SCK,
+	nrf_gpiote_event_configure(gpiote.p_reg, gpiote_ch, spim->PSEL.SCK,
 				   GPIOTE_CONFIG_POLARITY_Toggle);
-	nrf_gpiote_event_enable(NRF_GPIOTE, gpiote_ch);
+	nrf_gpiote_event_enable(gpiote.p_reg, gpiote_ch);
 
 	/* Stop the spim instance when SCK toggles */
 	nrf_ppi_channel_endpoint_setup(NRF_PPI, ppi_ch, eep, tep);
@@ -253,7 +255,7 @@ static void anomaly_58_workaround_clear(struct spi_nrfx_data *dev_data)
 
 	if (dev_data->anomaly_58_workaround_active) {
 		nrf_ppi_channel_disable(NRF_PPI, ppi_ch);
-		nrf_gpiote_task_disable(NRF_GPIOTE, gpiote_ch);
+		nrf_gpiote_task_disable(gpiote.p_reg, gpiote_ch);
 
 		dev_data->anomaly_58_workaround_active = false;
 	}
@@ -274,7 +276,7 @@ static int anomaly_58_workaround_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		err_code = nrfx_gpiote_channel_alloc(&dev_data->gpiote_ch);
+		err_code = nrfx_gpiote_channel_alloc(&gpiote, &dev_data->gpiote_ch);
 		if (err_code != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate GPIOTE channel");
 			return -ENODEV;
@@ -291,8 +293,6 @@ static void finish_transaction(const struct device *dev, int error)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 	struct spi_context *ctx = &dev_data->ctx;
-
-	spi_context_cs_control(ctx, false);
 
 	LOG_DBG("Transaction finished with status %d", error);
 
@@ -426,7 +426,8 @@ static int transceive(const struct device *dev,
 		dev_data->busy = true;
 
 		if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-			error = spi_nrfx_wake_request(dev_config->wake_pin);
+			error = spi_nrfx_wake_request(&dev_config->wake_gpiote,
+						      dev_config->wake_pin);
 			if (error == -ETIMEDOUT) {
 				LOG_WRN("Waiting for WAKE acknowledgment timed out");
 				/* If timeout occurs, try to perform the transfer
@@ -467,6 +468,8 @@ static int transceive(const struct device *dev,
 			anomaly_58_workaround_clear(dev_data);
 #endif
 		}
+
+		spi_context_cs_control(&dev_data->ctx, false);
 	}
 
 	spi_context_release(&dev_data->ctx, error);
@@ -574,7 +577,7 @@ static int spi_nrfx_init(const struct device *dev)
 	}
 
 	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-		err = spi_nrfx_wake_init(dev_config->wake_pin);
+		err = spi_nrfx_wake_init(&dev_config->wake_gpiote, dev_config->wake_pin);
 		if (err == -ENODEV) {
 			LOG_ERR("Failed to allocate GPIOTE channel for WAKE");
 			return err;
@@ -665,6 +668,7 @@ static int spi_nrfx_init(const struct device *dev)
 			())						       \
 		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPIM(idx), wake_gpios,     \
 						    WAKE_PIN_NOT_USED),	       \
+		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
 	};								       \
 	BUILD_ASSERT(!SPIM_HAS_PROP(idx, wake_gpios) ||			       \
 		     !(DT_GPIO_FLAGS(SPIM(idx), wake_gpios) & GPIO_ACTIVE_LOW),\

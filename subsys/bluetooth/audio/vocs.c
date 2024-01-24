@@ -134,8 +134,7 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	}
 
 	new_location = sys_get_le32(buf);
-	if (new_location == BT_AUDIO_LOCATION_PROHIBITED ||
-	    (new_location & BT_AUDIO_LOCATION_RFU) > 0) {
+	if ((new_location & BT_AUDIO_LOCATION_RFU) > 0) {
 		LOG_DBG("Invalid location %u", new_location);
 
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);

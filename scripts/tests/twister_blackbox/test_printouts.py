@@ -11,6 +11,7 @@ import mock
 import os
 import pytest
 import sys
+import re
 
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
@@ -73,6 +74,12 @@ class TestPrintOuts:
         ),
     ]
 
+    TESTDATA_4 = [
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy'),
+            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f']
+        )
+    ]
 
     @classmethod
     def setup_class(cls):
@@ -81,13 +88,10 @@ class TestPrintOuts:
         cls.spec = importlib.util.spec_from_loader(cls.loader.name, cls.loader)
         cls.twister_module = importlib.util.module_from_spec(cls.spec)
 
-
     @classmethod
     def teardown_class(cls):
         pass
 
-
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, expected',
         TESTDATA_1,
@@ -96,11 +100,11 @@ class TestPrintOuts:
             'tests/dummy/device',
         ]
     )
-    def test_list_tags(self, capfd, test_path, expected):
-        args = ['-T', test_path, '--list-tags']
+    def test_list_tags(self, capfd, out_path, test_path, expected):
+        args = ['--outdir', out_path, '-T', test_path, '--list-tags']
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
+                pytest.raises(SystemExit) as sys_exit:
             self.loader.exec_module(self.twister_module)
 
         out, err = capfd.readouterr()
@@ -114,8 +118,6 @@ class TestPrintOuts:
 
         assert str(sys_exit.value) == '0'
 
-
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, expected',
         TESTDATA_2,
@@ -124,11 +126,11 @@ class TestPrintOuts:
             'tests/dummy/device',
         ]
     )
-    def test_list_tests(self, capfd, test_path, expected):
-        args = ['-T', test_path, '--list-tests']
+    def test_list_tests(self, capfd, out_path, test_path, expected):
+        args = ['--outdir', out_path, '-T', test_path, '--list-tests']
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
+                pytest.raises(SystemExit) as sys_exit:
             self.loader.exec_module(self.twister_module)
 
         out, err = capfd.readouterr()
@@ -143,8 +145,6 @@ class TestPrintOuts:
 
         assert str(sys_exit.value) == '0'
 
-
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, expected',
         TESTDATA_3,
@@ -153,11 +153,11 @@ class TestPrintOuts:
             'tests/dummy/device',
         ]
     )
-    def test_tree(self, capfd, test_path, expected):
-        args = ['-T', test_path, '--test-tree']
+    def test_tree(self, capfd, out_path, test_path, expected):
+        args = ['--outdir', out_path, '-T', test_path, '--test-tree']
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
+                pytest.raises(SystemExit) as sys_exit:
             self.loader.exec_module(self.twister_module)
 
         out, err = capfd.readouterr()
@@ -165,4 +165,103 @@ class TestPrintOuts:
         sys.stderr.write(err)
 
         assert expected in out
+        assert str(sys_exit.value) == '0'
+
+    @pytest.mark.usefixtures("clear_log")
+    @pytest.mark.parametrize(
+        'test_path, test_platforms',
+        TESTDATA_4,
+        ids=['tests']
+    )
+    def test_timestamps(self, capfd, out_path, test_path, test_platforms):
+
+        args = ['-i', '--outdir', out_path, '-T', test_path, '--timestamps', '-v'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        info_regex = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (?:INFO|DEBUG|ERROR)'
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        output = err.split('\n')
+
+        err_lines = []
+        for line in output:
+            if line.strip():
+
+                match = re.search(info_regex, line)
+                if match is None:
+                    err_lines.append(line)
+
+        if err_lines:
+            assert False, f'No timestamp in line {err_lines}'
+        assert str(sys_exit.value) == '0'
+
+    @pytest.mark.usefixtures("clear_log")
+    @pytest.mark.parametrize(
+        'flag',
+        ['--abcd', '--1234', '-%', '-1']
+    )
+    def test_broken_parameter(self, capfd, flag):
+
+        args = [flag]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        if flag == '-1':
+            assert str(sys_exit.value) == '1'
+        else:
+            assert str(sys_exit.value) == '2'
+
+    @pytest.mark.usefixtures("clear_log")
+    @pytest.mark.parametrize(
+        'flag',
+        ['--help', '-h']
+    )
+    def test_help(self, capfd, flag):
+        args = [flag]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        assert str(sys_exit.value) == '0'
+
+    @pytest.mark.parametrize(
+        'test_path, test_platforms',
+        TESTDATA_4,
+        ids=['tests']
+    )
+    def test_force_color(self, capfd, out_path, test_path, test_platforms):
+
+        args = ['-i', '--outdir', out_path, '-T', test_path, '--force-color'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
         assert str(sys_exit.value) == '0'

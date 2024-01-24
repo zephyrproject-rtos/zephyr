@@ -16,6 +16,8 @@
 #include <zephyr/irq_nextlevel.h>
 #endif
 
+#include <soc.h>
+
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc);

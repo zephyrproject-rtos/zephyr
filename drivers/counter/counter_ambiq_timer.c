@@ -43,7 +43,6 @@ static int counter_ambiq_init(const struct device *dev)
 	tc.ui32PatternLimit = 0;
 
 	am_hal_timer_config(0, &tc);
-	am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(0, AM_HAL_TIMER_COMPARE1));
 
 	k_spin_unlock(&lock, key);
 
@@ -98,6 +97,10 @@ static int counter_ambiq_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
+	/* Enable interrupt, due to counter_ambiq_cancel_alarm() disables it*/
+	am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(0, AM_HAL_TIMER_COMPARE1));
+	am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(0, AM_HAL_TIMER_COMPARE1));
+
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
 		am_hal_timer_compare1_set(0, now + alarm_cfg->ticks);
 	} else {
@@ -119,6 +122,8 @@ static int counter_ambiq_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	am_hal_timer_interrupt_disable(AM_HAL_TIMER_MASK(0, AM_HAL_TIMER_COMPARE1));
+	/* Reset the compare register */
+	am_hal_timer_compare1_set(0, 0);
 	k_spin_unlock(&lock, key);
 
 	return 0;

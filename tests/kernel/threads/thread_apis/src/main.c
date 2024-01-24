@@ -43,7 +43,7 @@ static ZTEST_DMEM int tp = 10;
  */
 ZTEST(threads_lifecycle, test_systhreads_main)
 {
-	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY);
+	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY, "%d", CONFIG_MAIN_THREAD_PRIORITY);
 }
 
 /**
@@ -185,7 +185,7 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 	zassert_equal(ret, -EINVAL, "not a thread object");
 	ret = k_thread_name_copy(&z_main_thread, thread_name,
 				     sizeof(thread_name));
-	zassert_equal(ret, 0, "couldn't get main thread name");
+	zassert_equal(ret, 0, "couldn't get main thread name: %s (%d)", thread_name, ret);
 	LOG_DBG("Main thread name is '%s'", thread_name);
 
 	/* Set and get child thread's name */

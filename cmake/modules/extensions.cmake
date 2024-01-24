@@ -34,6 +34,7 @@ include(CheckCXXCompilerFlag)
 # 5. Zephyr linker functions
 # 5.1. zephyr_linker*
 # 6 Function helper macros
+# 7 Linkable loadable extensions (llext)
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -1330,9 +1331,11 @@ endmacro()
 # The following optional arguments are supported:
 # - NOCOPY: this flag indicates that the file data does not need to be copied
 #   at boot time (For example, for flash XIP).
+# - NOKEEP: suppress the generation of KEEP() statements in the linker script,
+#   to allow any unused code in the given files/library to be discarded.
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
 function(zephyr_code_relocate)
-  set(options NOCOPY)
+  set(options NOCOPY NOKEEP)
   set(single_args LIBRARY LOCATION PHDR)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
@@ -1392,21 +1395,25 @@ function(zephyr_code_relocate)
     endif()
   endif()
   if(NOT CODE_REL_NOCOPY)
-    set(copy_flag COPY)
+    set(flag_list COPY)
   else()
-    set(copy_flag NOCOPY)
+    set(flag_list NOCOPY)
+  endif()
+  if(CODE_REL_NOKEEP)
+    list(APPEND flag_list NOKEEP)
   endif()
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
   endif()
-  # We use the "|" character to separate code relocation directives instead
-  # of using CMake lists. This way, the ";" character can be reserved for
-  # generator expression file lists.
+  # We use the "|" character to separate code relocation directives, instead of
+  # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
+  # each directive can embed multiple CMake lists, representing flags and files,
+  # the latter of which can come from generator expressions.
   get_property(code_rel_str TARGET code_data_relocation_target
     PROPERTY COMPILE_DEFINITIONS)
   set_property(TARGET code_data_relocation_target
     PROPERTY COMPILE_DEFINITIONS
-    "${code_rel_str}|${CODE_REL_LOCATION}:${copy_flag}:${file_list}")
+    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
 endfunction()
 
 # Usage:
@@ -4786,3 +4793,138 @@ macro(zephyr_check_flags_exclusive function prefix)
       )
   endif()
 endmacro()
+
+########################################################
+# 7. Linkable loadable extensions (llext)
+########################################################
+#
+# These functions simplify the creation and management of linkable
+# loadable extensions (llexts).
+#
+
+# Add a custom target that compiles a single source file to a .llext file.
+#
+# Output and source files must be specified using the OUTPUT and SOURCES
+# arguments. Only one source file is currently supported.
+#
+# The llext code will be compiled with mostly the same C compiler flags used
+# in the Zephyr build, but with some important modifications. The list of
+# flags to remove and flags to append is controlled respectively by the
+# LLEXT_REMOVE_FLAGS and LLEXT_APPEND_FLAGS global variables.
+
+# The C_FLAGS argument can be used to pass additional compiler flags to the
+# compilation of this particular llext.
+#
+# Example usage:
+#   add_llext_target(hello_world
+#     OUTPUT  ${PROJECT_BINARY_DIR}/hello_world.llext
+#     SOURCES ${PROJECT_SOURCE_DIR}/src/llext/hello_world.c
+#     C_FLAGS -Werror
+#   )
+# will compile the source file src/llext/hello_world.c to a file
+# ${PROJECT_BINARY_DIR}/hello_world.llext, adding -Werror to the compilation.
+#
+function(add_llext_target target_name)
+  set(single_args OUTPUT)
+  set(multi_args SOURCES;C_FLAGS)
+  cmake_parse_arguments(PARSE_ARGV 1 LLEXT "${options}" "${single_args}" "${multi_args}")
+
+  # Check that the llext subsystem is enabled for this build
+  if (NOT CONFIG_LLEXT)
+    message(FATAL_ERROR "add_llext_target: CONFIG_LLEXT must be enabled")
+  endif()
+
+  # Output file must be provided
+  if(NOT LLEXT_OUTPUT)
+    message(FATAL_ERROR "add_llext_target: OUTPUT argument must be provided")
+  endif()
+
+  # Source list length must currently be 1
+  list(LENGTH LLEXT_SOURCES source_count)
+  if(NOT source_count EQUAL 1)
+    message(FATAL_ERROR "add_llext_target: only one source file is supported")
+  endif()
+
+  set(output_file ${LLEXT_OUTPUT})
+  set(source_file ${LLEXT_SOURCES})
+  get_filename_component(output_name ${output_file} NAME)
+
+  # Add user-visible target and dependency
+  add_custom_target(${target_name}
+    COMMENT "Compiling ${output_name}"
+    DEPENDS ${output_file}
+  )
+
+  # Convert the LLEXT_REMOVE_FLAGS list to a regular expression, and use it to
+  # filter out these flags from the Zephyr target settings
+  list(TRANSFORM LLEXT_REMOVE_FLAGS
+       REPLACE "(.+)" "^\\1$"
+       OUTPUT_VARIABLE llext_remove_flags_regexp
+  )
+  string(REPLACE ";" "|" llext_remove_flags_regexp "${llext_remove_flags_regexp}")
+  set(zephyr_flags
+      "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>"
+  )
+  set(zephyr_filtered_flags
+      "$<FILTER:${zephyr_flags},EXCLUDE,${llext_remove_flags_regexp}>"
+  )
+
+  # Compile the source file to an object file using current Zephyr settings
+  # but a different set of flags
+  add_library(${target_name}_lib OBJECT ${source_file})
+  target_compile_definitions(${target_name}_lib PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
+  )
+  target_compile_options(${target_name}_lib PRIVATE
+    ${zephyr_filtered_flags}
+    ${LLEXT_APPEND_FLAGS}
+    ${LLEXT_C_FLAGS}
+  )
+  target_include_directories(${target_name}_lib PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
+  )
+  target_include_directories(${target_name}_lib SYSTEM PUBLIC
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
+  )
+  add_dependencies(${target_name}_lib
+    zephyr_interface
+    zephyr_generated_headers
+  )
+
+  # Arch-specific conversion of the object file to an llext
+  if(CONFIG_ARM)
+
+    # No conversion required, simply copy the object file
+    add_custom_command(
+      OUTPUT ${output_file}
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:${target_name}_lib> ${output_file}
+      DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
+    )
+
+  elseif(CONFIG_XTENSA)
+
+    # Generate an intermediate file name
+    get_filename_component(output_dir ${output_file} DIRECTORY)
+    get_filename_component(output_name_we ${output_file} NAME_WE)
+    set(pre_output_file ${output_dir}/${output_name_we}.pre.llext)
+
+    # Need to convert the object file to a shared library, then strip some sections
+    add_custom_command(
+      OUTPUT ${output_file}
+      BYPRODUCTS ${pre_output_file}
+      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_APPEND_FLAGS}
+              -o ${pre_output_file}
+              $<TARGET_OBJECTS:${target_name}_lib>
+      COMMAND $<TARGET_PROPERTY:bintools,strip_command>
+              $<TARGET_PROPERTY:bintools,strip_flag>
+              $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
+              $<TARGET_PROPERTY:bintools,strip_flag_infile>${pre_output_file}
+              $<TARGET_PROPERTY:bintools,strip_flag_outfile>${output_file}
+              $<TARGET_PROPERTY:bintools,strip_flag_final>
+      DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
+    )
+
+  else()
+    message(FATAL_ERROR "add_llext_target: unsupported architecture")
+  endif()
+endfunction()

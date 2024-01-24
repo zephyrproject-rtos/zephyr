@@ -10,6 +10,10 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/irq_multilevel.h>
 
+#ifdef CONFIG_RISCV_HAS_PLIC
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#endif
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
@@ -20,11 +24,11 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	mcause = csr_read(mcause);
 
-	mcause &= SOC_MCAUSE_EXP_MASK;
+	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
 	LOG_ERR("Spurious interrupt detected! IRQ: %ld", mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	if (mcause == RISCV_MACHINE_EXT_IRQ) {
+	if (mcause == RISCV_IRQ_MEXT) {
 		unsigned int save_irq = riscv_plic_get_irq();
 		const struct device *save_dev = riscv_plic_get_dev();
 
@@ -39,15 +43,12 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
 {
-	ARG_UNUSED(flags);
-
 	z_isr_install(irq, routine, parameter);
 
-#if defined(CONFIG_RISCV_HAS_PLIC)
-	if (irq_get_level(irq) == 2) {
-		riscv_plic_set_priority(irq, priority);
-	}
+#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC)
+	z_riscv_irq_priority_set(irq, priority, flags);
 #else
+	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);
 #endif
 	return irq;

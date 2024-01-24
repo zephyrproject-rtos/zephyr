@@ -806,7 +806,7 @@ class TestPlan:
                 if ts.required_snippets:
                     missing_snippet = False
                     snippet_args = {"snippets": ts.required_snippets}
-                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [Path(ZEPHYR_BASE), Path(ts.source_dir)])
+                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [*self.env.snippet_roots, Path(ts.source_dir)])
 
                     # Search and check that all required snippet files are found
                     for this_snippet in snippet_args['snippets']:
@@ -820,7 +820,7 @@ class TestPlan:
                     if not missing_snippet:
                         # Look for required snippets and check that they are applicable for these
                         # platforms/boards
-                        for this_snippet in found_snippets:
+                        for this_snippet in snippet_args['snippets']:
                             matched_snippet_board = False
 
                             # If the "appends" key is present with at least one entry then this
@@ -994,7 +994,7 @@ class TestPlan:
         link_path = os.path.join(links_dir_path, link_name)
 
         if os.name == "nt":  # if OS is Windows
-            command = ["mklink", "/J", f"{link_path}", f"{instance.build_dir}"]
+            command = ["mklink", "/J", f"{link_path}", os.path.normpath(instance.build_dir)]
             subprocess.call(command, shell=True)
         else:  # for Linux and MAC OS
             os.symlink(instance.build_dir, link_path)

@@ -10,7 +10,8 @@ config BOARD
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
-	default 98304 if WIFI
+	default 65535 if WIFI && BT
+	default 51200 if WIFI
 	default 40960 if BT
 	default 4096
 
@@ -29,7 +30,7 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	def_int 4096
 
 config KERNEL_BIN_NAME
-	default "esp32_net_firmware"
+	default "esp32_appcpu_firmware"
 endif
 
 config ENTROPY_GENERATOR

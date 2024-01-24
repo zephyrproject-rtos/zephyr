@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2023 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+    uart2_esp8266: uart2_esp8266 {
+	group0 {
+		pinmux = <PC1MFP_UART2_TXD>,
+			 <PC0MFP_UART2_RXD>,
+			 <PC3MFP_UART2_nRTS>,
+			 <PC2MFP_UART2_nCTS>;
+	};
+    };
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	hw-flow-control;
+
+	pinctrl-0 = <&uart2_esp8266>;
+	pinctrl-names = "default";
+
+	esp8266: esp8266 {
+		compatible = "espressif,esp-at";
+		reset-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+		status = "okay";
+    };
+};
+
+&gpioc {
+	status = "okay";
+};

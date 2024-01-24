@@ -27,9 +27,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define BEACON_INTERVAL 10 /*seconds*/
 
 #define BEACON_TYPE_SECURE 0x01
-#if CONFIG_BT_MESH_V1d1
 #define BEACON_TYPE_PRIVATE 0x02
-#endif
 
 static uint8_t test_net_key_2[16] = { 0xca, 0x11, 0xab, 0x1e };
 static struct {
@@ -71,7 +69,6 @@ BT_MESH_BEACON_CB_DEFINE(snb) = {
 
 /* Setting for scanner defining what beacon is expected next, SNB as default */
 static uint8_t expected_beacon = BEACON_TYPE_SECURE;
-#if CONFIG_BT_MESH_V1d1
 static struct bt_mesh_cfg_cli cfg_cli;
 
 static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
@@ -99,7 +96,6 @@ static uint8_t last_random[13];
 static bt_addr_le_t last_beacon_adv_addr;
 
 static struct bt_mesh_key priv_beacon_key;
-#endif /* CONFIG_BT_MESH_V1d1 */
 
 static int random_interval;
 
@@ -330,13 +326,11 @@ static struct k_sem observer_sem;
 static struct {
 	uint8_t flags;
 	uint32_t iv_index;
-#if CONFIG_BT_MESH_V1d1
 	uint8_t random[13];
 	uint64_t pp_hash;
 	uint64_t pp_random;
 	uint64_t net_id;
 	bt_addr_le_t adv_addr;
-#endif
 	bool (*process_cb)(const uint8_t *net_id, void *ctx);
 	void *user_ctx;
 } beacon;
@@ -364,7 +358,6 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 		net_id = net_buf_simple_pull_mem(buf, 8);
 		beacon.iv_index = net_buf_simple_pull_be32(buf);
 	}
-#if CONFIG_BT_MESH_V1d1
 	else if (expected_beacon == BEACON_TYPE_PRIVATE) {
 		uint8_t private_beacon_data[5];
 
@@ -377,7 +370,7 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 		beacon.flags = private_beacon_data[0];
 		beacon.iv_index = sys_get_be32(&private_beacon_data[1]);
 	}
-#endif
+
 	if (!beacon.process_cb || beacon.process_cb(net_id, beacon.user_ctx)) {
 		k_sem_give(&observer_sem);
 	}
@@ -387,22 +380,8 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 static bool wait_for_beacon(bt_le_scan_cb_t scan_cb, uint16_t wait,
 			    bool (*process_cb)(const uint8_t *net_id, void *ctx), void *ctx)
 {
-	struct bt_le_scan_param scan_param = {
-			.type       = BT_HCI_LE_SCAN_PASSIVE,
-			.options    = BT_LE_SCAN_OPT_NONE,
-			.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
-			.window     = BT_MESH_ADV_SCAN_UNIT(1000)
-	};
-	bool received = false;
-	int err;
-
 	beacon.process_cb = process_cb;
 	beacon.user_ctx = ctx;
-
-	err = bt_le_scan_start(&scan_param, scan_cb);
-	if (err && err != -EALREADY) {
-		FAIL("starting scan failed (err %d)", err);
-	}
 
 	/* Listen to beacons ONLY for one beacon interval.
 	 * Tests start quite often the waiting for the next beacon after
@@ -413,17 +392,7 @@ static bool wait_for_beacon(bt_le_scan_cb_t scan_cb, uint16_t wait,
 	 * waiting time (BEACON_INTERVAL + 1) to guarantee that beacon comes
 	 * before timer expiration.
 	 */
-	err = k_sem_take(&observer_sem, K_SECONDS(wait));
-	if (!err) {
-		received = true;
-	} else {
-		LOG_WRN("Didn't receive beacon in time (err: %d)", err);
-	}
-
-	err = bt_le_scan_stop();
-	if (err && err != -EALREADY) {
-		FAIL("stopping scan failed (err %d)", err);
-	}
+	bool received = !bt_mesh_test_wait_for_packet(scan_cb, &observer_sem, wait);
 
 	/* Sleep a little to get to the next beacon interval. Otherwise, calling this function
 	 * again will catch the old beacon. This happens due to a known bug in legacy advertiser,
@@ -514,8 +483,11 @@ static void corrupted_beacon_test(const uint8_t *offsets,
 	}
 
 	/* Now the beacon payload is valid and it shall trigger IV Update on the node. It shall also
-	 * increase the beacon interval.
+	 * increase the beacon interval. We delay the outgoing beacon for a couple of seconds to
+	 * avoid near perfect syncing with the beacon interval cycle of the device we just received
+	 * a beacon from.
 	 */
+	k_sleep(K_SECONDS(3));
 	send_beacon(buf);
 
 	/* The beacon interval shall be changed and the node shall skip transmission of the next
@@ -1084,8 +1056,6 @@ static void test_tx_beacon_cache(void)
 	PASS();
 }
 
-#if CONFIG_BT_MESH_V1d1
-
 typedef void (*priv_beacon_cb)(const struct bt_mesh_prb *prb);
 
 static priv_beacon_cb priv_beacon_cb_ptr;
@@ -1394,7 +1364,7 @@ static void test_tx_priv_interleave(void)
 	struct bt_mesh_subnet *sub;
 
 
-	bt_mesh_test_cfg_set(NULL, BEACON_INTERVAL_WAIT_TIME);
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &prb_comp);
 	provision(&tx_cfg);
 
@@ -1427,6 +1397,8 @@ static void test_tx_priv_interleave(void)
 	k_sleep(K_SECONDS(BEACON_INTERVAL + 5));
 
 	toggle_priv_beacon(tx_cfg.addr, 0);
+	/* Small delay to let beacons complete before subnet update is applied */
+	k_sleep(K_MSEC(20));
 
 	status = bt_mesh_subnet_update(BT_MESH_KEY_PRIMARY, net_key_new);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
@@ -1452,7 +1424,7 @@ static void test_rx_priv_interleave(void)
 	int err;
 	bool same_random = false;
 
-	bt_mesh_test_cfg_set(&rx_cfg, BEACON_INTERVAL_WAIT_TIME);
+	bt_mesh_test_cfg_set(&rx_cfg, WAIT_TIME);
 	bt_mesh_crypto_init();
 	k_sem_init(&observer_sem, 0, 1);
 
@@ -1927,9 +1899,10 @@ static void proxy_adv_confirm_evt(struct expected_proxy_adv_evt *exp_evts, uint8
 
 	for (int i = 0; i < cnt; i++) {
 		if (exp_evts[i].evt_cnt) {
-			LOG_ERR("Missing %d expected %s events in period %llums-%llums",
+			LOG_ERR("Missing %d expected %s idx %d events in period %llums-%llums",
 				exp_evts[i].evt_cnt, proxy_adv_str[exp_evts[i].evt_type],
-				exp_evts[i].time.after, exp_evts[i].time.before);
+				exp_evts[i].net_idx, exp_evts[i].time.after,
+				exp_evts[i].time.before);
 			missing_evts = true;
 		}
 	}
@@ -2011,6 +1984,8 @@ static const struct bt_mesh_test_cfg solicit_trigger_cfg = {
 static void test_tx_proxy_adv_solicit_trigger(void)
 {
 	tx_proxy_adv_common_init(PROXY_ADV_MULTI_SUBNET_COEX_WAIT_TIME, &solicit_trigger_cfg);
+	/* Disable SNB. */
+	bt_mesh_beacon_set(false);
 	ASSERT_OK_MSG(bt_mesh_subnet_add(TEST_NET_IDX2, test_net_key_2),
 		      "Failed to add second subnet");
 
@@ -2028,6 +2003,8 @@ static void test_tx_proxy_adv_solicit_trigger(void)
 static void test_rx_proxy_adv_multi_subnet_coex(void)
 {
 	rx_priv_common_init(PROXY_ADV_MULTI_SUBNET_COEX_WAIT_TIME);
+	/* Disable SNB. */
+	bt_mesh_beacon_set(false);
 	pp_netkey_ctx_init(&pp_net1);
 	pp_netkey_ctx_init(&pp_net2);
 
@@ -2058,23 +2035,23 @@ static void test_rx_proxy_adv_multi_subnet_coex(void)
 		 *  is advertised by this subnet, and that the two others
 		 *  continues to advertise NET_ID.
 		 */
-		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 0, .evt_cnt = 17,
+		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 0, .evt_cnt = 16,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_2,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_3}},
-		{.evt_type = BEACON_TYPE_NODE_ID, .net_idx = 1, .evt_cnt = 17,
+		{.evt_type = BEACON_TYPE_NODE_ID, .net_idx = 1, .evt_cnt = 16,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_2,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_3}},
-		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 2, .evt_cnt = 17,
+		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 2, .evt_cnt = 16,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_2,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_3}},
 
 		/** The first and second subnet gets solicited. Check that
 		 *  PRIVATE_NET_ID is advertised by these subnet,
 		 */
-		{.evt_type = BEACON_TYPE_PRIVATE_NET_ID, .net_idx = 0, .evt_cnt = 9,
+		{.evt_type = BEACON_TYPE_PRIVATE_NET_ID, .net_idx = 0, .evt_cnt = 8,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_3,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_4}},
-		{.evt_type = BEACON_TYPE_PRIVATE_NET_ID, .net_idx = 1, .evt_cnt = 9,
+		{.evt_type = BEACON_TYPE_PRIVATE_NET_ID, .net_idx = 1, .evt_cnt = 8,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_3,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_4}},
 
@@ -2216,8 +2193,6 @@ static void test_rx_priv_gatt_proxy(void)
 
 #endif
 
-#endif /* CONFIG_BT_MESH_V1d1 */
-
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "beacon_" #role "_" #name,          \
@@ -2236,7 +2211,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(tx, secure_beacon_interval, "Beacon: send secure beacons"),
 	TEST_CASE(tx, beacon_cache,   "Beacon: advertise duplicate SNBs"),
-#if CONFIG_BT_MESH_V1d1
 	TEST_CASE(tx, priv_on_iv_update,   "Private Beacon: send on IV update"),
 	TEST_CASE(tx, priv_on_key_refresh,   "Private Beacon: send on Key Refresh"),
 	TEST_CASE(tx, priv_adv,   "Private Beacon: advertise Private Beacons"),
@@ -2251,7 +2225,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, proxy_adv_multi_subnet_coex,   "Proxy Adv: Multi subnet coex proxy adv"),
 	TEST_CASE(tx, proxy_adv_solicit_trigger,   "Proxy Adv: Trigger Solicitation"),
 #endif
-#endif
 
 	TEST_CASE(rx, on_iv_update,   "Beacon: receive with IV update flag"),
 	TEST_CASE(rx, on_key_refresh,  "Beacon: receive with key refresh flag"),
@@ -2260,7 +2233,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(rx, secure_beacon_interval, "Beacon: receive and send secure beacons"),
 	TEST_CASE(rx, beacon_cache,   "Beacon: receive duplicate SNBs"),
-#if CONFIG_BT_MESH_V1d1
 	TEST_CASE(rx, priv_adv,   "Private Beacon: verify random regeneration"),
 	TEST_CASE(rx, priv_invalid,   "Private Beacon: receive invalid beacons"),
 	TEST_CASE(rx, priv_interleave,   "Private Beacon: interleaved with SNB"),
@@ -2271,7 +2243,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, priv_multi_net_id,   "Private Proxy: scan for multiple Net ID"),
 	TEST_CASE(rx, priv_gatt_proxy,   "Private Proxy: Receive Private Beacons over GATT"),
 	TEST_CASE(rx, proxy_adv_multi_subnet_coex,   "Proxy Adv: Multi subnet coex proxy adv"),
-#endif
 #endif
 	BSTEST_END_MARKER
 };

@@ -17,10 +17,25 @@ config NET_HOSTNAME
 	help
 	  The string should be a valid hostname.
 
+config NET_HOSTNAME_DYNAMIC
+	bool "Allow the hostname to be set by the application"
+	depends on !NET_HOSTNAME_UNIQUE_UPDATE
+	help
+	  This will enable the net_hostname_set() function. NET_HOSTNAME
+	  will be used as default hostname.
+
+config NET_HOSTNAME_MAX_LEN
+	int "The maximum allowed hostname length"
+	depends on NET_HOSTNAME_DYNAMIC
+	range 1 63
+	default 63
+	help
+	  This will set the number of bytes allocateed for the hostname.
+
 config NET_HOSTNAME_UNIQUE
 	bool "Make hostname unique"
 	help
-	  This will append link address to hostname to create a unique
+	  This will append link address to NET_HOSTNAME to create a unique
 	  hostname. For example, zephyr00005e005357 could be the hostname
 	  if this setting is enabled.
 

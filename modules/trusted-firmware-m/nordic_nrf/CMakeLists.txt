@@ -36,14 +36,6 @@ target_include_directories(platform_s
         ${board_includes}
 )
 
-target_include_directories(platform_ns
-    PUBLIC
-        include
-        include/util
-        ${partition_includes}
-        ${board_includes}
-)
-
 if(BL2)
     target_include_directories(platform_bl2
         PUBLIC
@@ -54,14 +46,18 @@ if(BL2)
     )
 endif()
 
-if (TFM_PARTITION_PLATFORM)
-install(FILES       include/tfm_ioctl_api.h
-        DESTINATION ${TFM_INSTALL_PATH}/interface/include)
-endif()
-
-#========================= tfm_spm ============================================#
-
 target_sources(tfm_spm
     PRIVATE
         src/tfm_hal_platform.c
 )
+
+if (TFM_PARTITION_PLATFORM)
+install(FILES       include/tfm_ioctl_api.h
+                    include/device_cfg.h
+                    include/RTE_Device.h
+                    include/tfm_ioctl_api.h
+        DESTINATION ${INSTALL_INTERFACE_INC_DIR})
+endif()
+
+install(FILES       ns/CMakeLists.txt
+        DESTINATION ${INSTALL_PLATFORM_NS_DIR})

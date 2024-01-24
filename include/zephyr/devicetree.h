@@ -2288,6 +2288,14 @@
 #define DT_NUM_IRQS(node_id) DT_CAT(node_id, _IRQ_NUM)
 
 /**
+ * @brief Get the interrupt level for the node
+ *
+ * @param node_id node identifier
+ * @return interrupt level
+ */
+#define DT_IRQ_LEVEL(node_id) DT_CAT(node_id, _IRQ_LEVEL)
+
+/**
  * @brief Is @p idx a valid interrupt index?
  *
  * If this returns 1, then DT_IRQ_BY_IDX(node_id, idx) is valid.
@@ -2400,58 +2408,162 @@
 #define DT_IRQ(node_id, cell) DT_IRQ_BY_IDX(node_id, 0, cell)
 
 /**
+ * @brief Get an interrupt specifier's interrupt controller by index
+ *
+ * @code{.dts}
+ *     gpio0: gpio0 {
+ *             interrupt-controller;
+ *             #interrupt-cells = <2>;
+ *     };
+ *
+ *     foo: foo {
+ *             interrupt-parent = <&gpio0>;
+ *             interrupts = <1 1>, <2 2>;
+ *     };
+ *
+ *     bar: bar {
+ *             interrupts-extended = <&gpio0 3 3>, <&pic0 4>;
+ *     };
+ *
+ *     pic0: pic0 {
+ *             interrupt-controller;
+ *             #interrupt-cells = <1>;
+ *
+ *             qux: qux {
+ *                     interrupts = <5>, <6>;
+ *                     interrupt-names = "int1", "int2";
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(foo), 0) // &gpio0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(foo), 1) // &gpio0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(bar), 0) // &gpio0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(bar), 1) // &pic0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(qux), 0) // &pic0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(qux), 1) // &pic0
+ *
+ * @param node_id node identifier
+ * @param idx interrupt specifier's index
+ * @return node_id of interrupt specifier's interrupt controller
+ */
+#define DT_IRQ_INTC_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _IRQ_IDX_, idx, _CONTROLLER)
+
+/**
+ * @brief Get an interrupt specifier's interrupt controller by name
+ *
+ * @code{.dts}
+ *     gpio0: gpio0 {
+ *             interrupt-controller;
+ *             #interrupt-cells = <2>;
+ *     };
+ *
+ *     foo: foo {
+ *             interrupt-parent = <&gpio0>;
+ *             interrupts = <1 1>, <2 2>;
+ *             interrupt-names = "int1", "int2";
+ *     };
+ *
+ *     bar: bar {
+ *             interrupts-extended = <&gpio0 3 3>, <&pic0 4>;
+ *             interrupt-names = "int1", "int2";
+ *     };
+ *
+ *     pic0: pic0 {
+ *             interrupt-controller;
+ *             #interrupt-cells = <1>;
+ *
+ *             qux: qux {
+ *                     interrupts = <5>, <6>;
+ *                     interrupt-names = "int1", "int2";
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(foo), int1) // &gpio0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(foo), int2) // &gpio0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(bar), int1) // &gpio0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(bar), int2) // &pic0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(qux), int1) // &pic0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(qux), int2) // &pic0
+ *
+ * @param node_id node identifier
+ * @param name interrupt specifier's name
+ * @return node_id of interrupt specifier's interrupt controller
+ */
+#define DT_IRQ_INTC_BY_NAME(node_id, name) \
+	DT_CAT4(node_id, _IRQ_NAME_, name, _CONTROLLER)
+
+/**
+ * @brief Get an interrupt specifier's interrupt controller
+ * @note Equivalent to DT_IRQ_INTC_BY_IDX(node_id, 0)
+ *
+ * @code{.dts}
+ *     gpio0: gpio0 {
+ *             interrupt-controller;
+ *             #interrupt-cells = <2>;
+ *     };
+ *
+ *     foo: foo {
+ *             interrupt-parent = <&gpio0>;
+ *             interrupts = <1 1>;
+ *     };
+ *
+ *     bar: bar {
+ *             interrupts-extended = <&gpio0 3 3>;
+ *     };
+ *
+ *     pic0: pic0 {
+ *             interrupt-controller;
+ *             #interrupt-cells = <1>;
+ *
+ *             qux: qux {
+ *                     interrupts = <5>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ *     DT_IRQ_INTC(DT_NODELABEL(foo)) // &gpio0
+ *     DT_IRQ_INTC(DT_NODELABEL(bar)) // &gpio0
+ *     DT_IRQ_INTC(DT_NODELABEL(qux)) // &pic0
+ *
+ * @param node_id node identifier
+ * @return node_id of interrupt specifier's interrupt controller
+ * @see DT_IRQ_INTC_BY_IDX()
+ */
+#define DT_IRQ_INTC(node_id) \
+	DT_IRQ_INTC_BY_IDX(node_id, 0)
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 
-/* DT helper macro to get interrupt-parent node  */
-#define DT_PARENT_INTC_INTERNAL(node_id) DT_PROP(node_id, interrupt_parent)
-/* DT helper macro to get the node's interrupt grandparent node  */
-#define DT_GPARENT_INTC_INTERNAL(node_id) DT_PARENT_INTC_INTERNAL(DT_PARENT_INTC_INTERNAL(node_id))
-/* DT helper macro to check if a node is an interrupt controller */
-#define DT_IS_INTC_INTERNAL(node_id) DT_NODE_HAS_PROP(node_id, interrupt_controller)
-/* DT helper macro to check if the node has a parent interrupt controller */
-#define DT_HAS_PARENT_INTC_INTERNAL(node_id)                                                       \
-	/* node has `interrupt-parent`? */                                                         \
-	IF_ENABLED(DT_NODE_HAS_PROP(node_id, interrupt_parent),                                    \
-		   /* `interrupt-parent` node is an interrupt controller? */                       \
-		   (IF_ENABLED(DT_IS_INTC_INTERNAL(DT_PARENT_INTC_INTERNAL(node_id)),              \
-			       /* `interrupt-parent` node has interrupt cell(s) ? 1 : 0 */         \
-			       (COND_CODE_0(DT_NUM_IRQS(DT_PARENT_INTC_INTERNAL(node_id)), (0),    \
-					    (1))))))
-/* DT helper macro to check if the node has a grandparent interrupt controller */
-#define DT_HAS_GPARENT_INTC_INTERNAL(node_id)                                                      \
-	IF_ENABLED(DT_HAS_PARENT_INTC_INTERNAL(node_id),                                           \
-		   (DT_HAS_PARENT_INTC_INTERNAL(DT_PARENT_INTC_INTERNAL(node_id))))
-
-/**
- * DT helper macro to get the as-seen interrupt number in devicetree,
- * or ARM GIC IRQ encoded output from `gen_defines.py`
- */
-#define DT_IRQN_BY_IDX_INTERNAL(node_id, idx) DT_IRQ_BY_IDX(node_id, idx, irq)
-
-/* DT helper macro to get the node's parent intc's (only) irq number */
-#define DT_PARENT_INTC_IRQN_INTERNAL(node_id) DT_IRQ(DT_PARENT_INTC_INTERNAL(node_id), irq)
-/* DT helper macro to get the node's grandparent intc's (only) irq number */
-#define DT_GPARENT_INTC_IRQN_INTERNAL(node_id) DT_IRQ(DT_GPARENT_INTC_INTERNAL(node_id), irq)
-
+/* DT helper macro to encode a node's IRQN to level 1 according to the multi-level scheme */
+#define DT_IRQN_L1_INTERNAL(node_id, idx) DT_IRQ_BY_IDX(node_id, idx, irq)
 /* DT helper macro to encode a node's IRQN to level 2 according to the multi-level scheme */
 #define DT_IRQN_L2_INTERNAL(node_id, idx)                                                          \
-	(IRQ_TO_L2(DT_IRQN_BY_IDX_INTERNAL(node_id, idx)) |                            \
-	 DT_PARENT_INTC_IRQN_INTERNAL(node_id))
+	(IRQ_TO_L2(DT_IRQN_L1_INTERNAL(node_id, idx)) | DT_IRQ(DT_IRQ_INTC(node_id), irq))
 /* DT helper macro to encode a node's IRQN to level 3 according to the multi-level scheme */
 #define DT_IRQN_L3_INTERNAL(node_id, idx)                                                          \
-	(IRQ_TO_L3(DT_IRQN_BY_IDX_INTERNAL(node_id, idx)) |                            \
-	 IRQ_TO_L2(DT_PARENT_INTC_IRQN_INTERNAL(node_id)) |                            \
-	 DT_GPARENT_INTC_IRQN_INTERNAL(node_id))
+	(IRQ_TO_L3(DT_IRQN_L1_INTERNAL(node_id, idx)) |                                            \
+	 IRQ_TO_L2(DT_IRQ(DT_IRQ_INTC(node_id), irq)) |                                            \
+	 DT_IRQ(DT_IRQ_INTC(DT_IRQ_INTC(node_id)), irq))
+/* DT helper macro for the macros above */
+#define DT_IRQN_LVL_INTERNAL(node_id, idx, level) DT_CAT3(DT_IRQN_L, level, _INTERNAL)(node_id, idx)
+
 /**
  * DT helper macro to encode a node's interrupt number according to the Zephyr's multi-level scheme
  * See doc/kernel/services/interrupts.rst for details
  */
 #define DT_MULTI_LEVEL_IRQN_INTERNAL(node_id, idx)                                                 \
-	COND_CODE_1(DT_HAS_GPARENT_INTC_INTERNAL(node_id), (DT_IRQN_L3_INTERNAL(node_id, idx)),    \
-		    (COND_CODE_1(DT_HAS_PARENT_INTC_INTERNAL(node_id),                             \
-				 (DT_IRQN_L2_INTERNAL(node_id, idx)),                              \
-				 (DT_IRQN_BY_IDX_INTERNAL(node_id, idx)))))
+	DT_IRQN_LVL_INTERNAL(node_id, idx, DT_IRQ_LEVEL(node_id))
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2468,7 +2580,7 @@
 #define DT_IRQN_BY_IDX(node_id, idx)                                                               \
 	COND_CODE_1(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS),                                     \
 		    (DT_MULTI_LEVEL_IRQN_INTERNAL(node_id, idx)),                                  \
-		    (DT_IRQN_BY_IDX_INTERNAL(node_id, idx)))
+		    (DT_IRQ_BY_IDX(node_id, idx, irq)))
 
 /**
  * @brief Get a node's (only) irq number
@@ -3836,6 +3948,14 @@
 #define DT_INST_REG_SIZE(inst) DT_INST_REG_SIZE_BY_IDX(inst, 0)
 
 /**
+ * @brief Get a `DT_DRV_COMPAT` interrupt level
+ *
+ * @param inst instance number
+ * @return interrupt level
+ */
+#define DT_INST_IRQ_LEVEL(inst) DT_IRQ_LEVEL(DT_DRV_INST(inst))
+
+/**
  * @brief Get a `DT_DRV_COMPAT` interrupt specifier value at an index
  * @param inst instance number
  * @param idx logical index into the interrupt specifier array
@@ -3844,6 +3964,34 @@
  */
 #define DT_INST_IRQ_BY_IDX(inst, idx, cell) \
 	DT_IRQ_BY_IDX(DT_DRV_INST(inst), idx, cell)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` interrupt specifier's interrupt controller by index
+ * @param inst instance number
+ * @param idx interrupt specifier's index
+ * @return node_id of interrupt specifier's interrupt controller
+ */
+#define DT_INST_IRQ_INTC_BY_IDX(inst, idx) \
+	DT_IRQ_INTC_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` interrupt specifier's interrupt controller by name
+ * @param inst instance number
+ * @param name interrupt specifier's name
+ * @return node_id of interrupt specifier's interrupt controller
+ */
+#define DT_INST_IRQ_INTC_BY_NAME(inst, name) \
+	DT_IRQ_INTC_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` interrupt specifier's interrupt controller
+ * @note Equivalent to DT_INST_IRQ_INTC_BY_IDX(node_id, 0)
+ * @param inst instance number
+ * @return node_id of interrupt specifier's interrupt controller
+ * @see DT_INST_IRQ_INTC_BY_IDX()
+ */
+#define DT_INST_IRQ_INTC(inst) \
+	DT_INST_IRQ_INTC_BY_IDX(inst, 0)
 
 /**
  * @brief Get a `DT_DRV_COMPAT` interrupt specifier value by name

@@ -27,6 +27,25 @@ extern "C" {
  */
 bool log_backend_net_set_addr(const char *addr);
 
+/**
+ * @brief update the hostname
+ *
+ * @details This function allows to update the hostname displayed by the logging backend. It will be
+ *          called by the network stack if the hostname is set with net_hostname_set().
+ *
+ * @param hostname new hostname as char array.
+ * @param len Length of the hostname array.
+ */
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+void log_backend_net_hostname_set(char *hostname, size_t len);
+#else
+static inline void log_backend_net_hostname_set(const char *hostname, size_t len)
+{
+	ARG_UNUSED(hostname);
+	ARG_UNUSED(len);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
