@@ -60,11 +60,18 @@ config GNSS_INIT_PRIORITY
 	help
 	  Driver initialization priority for GNSS drivers.
 
+config GNSS_U_BLOX_PROTOCOL
+	bool "GNSS U-BLOX protocol"
+	select MODEM_UBX
+	help
+	  Enable gnss u-blox protocol.
+
 module = GNSS
 module-str = gnss
 source "subsys/logging/Kconfig.template.log_config"
 
 rsource "Kconfig.generic"
 rsource "Kconfig.quectel_lcx6g"
+rsource "Kconfig.u_blox_m10"
 
 endif
