@@ -43,4 +43,25 @@ config ENABLE_LC3
 	select LIBLC3
 	select FPU
 
+config USE_USB_AUDIO_OUTPUT
+	bool "Use USB Audio as output"
+	depends on ENABLE_LC3
+	select USB_DEVICE_STACK
+	select USB_DEVICE_AUDIO
+	select RING_BUFFER
+	help
+	  Enables USB audio as output as a USB peripheral. This does not support providing USB
+	  audio to e.g. speakers that are also USB peripherals, but can be connected to e.g. a
+	  phone or PC as a USB-in device (such as a USB microphone).
+	  USB audio only supports a single audio channel.
+
+config TARGET_BROADCAST_CHANNEL
+	int "Broadcast Channel Audio Location to sync to"
+	range 0 2
+	default 1
+	depends on USE_USB_AUDIO_OUTPUT
+	help
+	  Channel Audio Location to sync to. These corresponds to the bt_audio_location,
+	  supporting mono, left and right channels
+
 source "Kconfig.zephyr"
