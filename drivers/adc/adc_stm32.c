@@ -1086,8 +1086,6 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 
 	ARG_UNUSED(status);
 
-	adc_stm32_disable(adc);
-
 	/* Reset acquisition time used for the sequence */
 	data->acq_time_index[0] = -1;
 	data->acq_time_index[1] = -1;
@@ -1095,6 +1093,8 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* Reset channel preselection register */
 	LL_ADC_SetChannelPreselection(adc, 0);
+#else
+	ARG_UNUSED(adc);
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32U5X */
 }
 
