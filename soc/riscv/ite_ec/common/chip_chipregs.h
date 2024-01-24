@@ -708,6 +708,13 @@ struct it82xx2_usb_ep_fifo_regs {
 
 };
 
+/* USB Control registers */
+#define USB_IT82XX2_REGS_BASE \
+	((struct usb_it82xx2_regs *)DT_REG_ADDR(DT_NODELABEL(usb0)))
+
+/* Bit definitions of the register Port0/Port1 MISC Control: 0XE4/0xE8 */
+#define PULL_DOWN_EN	BIT(4)
+
 struct usb_it82xx2_regs {
 	/* 0x00:  Host TX Contrl Register */
 	volatile uint8_t host_tx_ctrl;

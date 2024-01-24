@@ -288,6 +288,13 @@ static int ite_it8xxx2_init(void)
 	struct gpio_it8xxx2_regs *const gpio_regs = GPIO_IT8XXX2_REG_BASE;
 	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb0), disabled)
+	struct usb_it82xx2_regs *const usb_regs = USB_IT82XX2_REGS_BASE;
+
+	usb_regs->port0_misc_control &= ~PULL_DOWN_EN;
+	usb_regs->port1_misc_control &= ~PULL_DOWN_EN;
+#endif
+
 	/*
 	 * bit7: wake up CPU if it is in low power mode and
 	 * an interrupt is pending.

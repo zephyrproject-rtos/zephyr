@@ -62,9 +62,6 @@ enum it82xx2_transaction_types {
 /* The bit definitions of the register Host/Device Control: 0XE0 */
 #define RESET_CORE			BIT(1)
 
-/* Bit definitions of the register Port0/Port1 MISC Control: 0XE4/0xE8 */
-#define PULL_DOWN_EN			BIT(4)
-
 /* ENDPOINT[3..0]_STATUS_REG */
 #define DC_STALL_SENT			BIT(5)
 
