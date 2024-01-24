@@ -2225,7 +2225,7 @@ function(target_ld_options target scope)
     zephyr_check_compiler_flag(C "" ${check})
     set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
-    target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
+    target_link_options_ifdef(${check} ${target} ${scope} ${option})
 
     if(args_NO_SPLIT)
       break()
