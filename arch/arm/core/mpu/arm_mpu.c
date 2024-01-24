@@ -459,6 +459,11 @@ int z_arm_mpu_init(void)
 		return -EINVAL;
 	}
 
+	/* Clear all regions before enabling MPU */
+	for (int i = static_regions_num; i < get_num_regions(); i++) {
+		mpu_clear_region(i);
+	}
+
 	arm_core_mpu_enable();
 
 	/* Program additional fixed flash region for null-pointer
