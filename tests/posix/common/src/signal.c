@@ -320,4 +320,14 @@ ZTEST(signal, test_sigprocmask)
 	}
 }
 
-ZTEST_SUITE(signal, NULL, NULL, NULL, NULL, NULL);
+static void before(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		/* skip redundant testing if there is no thread pool / heap allocation */
+		ztest_test_skip();
+	}
+}
+
+ZTEST_SUITE(signal, NULL, NULL, before, NULL, NULL);
