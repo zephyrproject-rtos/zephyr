@@ -102,7 +102,7 @@ source "drivers/interrupt_controller/Kconfig.nxp_pint"
 
 source "drivers/interrupt_controller/Kconfig.vim"
 
-source "drivers/interrupt_controller/Kconfig.ra"
+source "drivers/interrupt_controller/Kconfig.renesas_ra"
 
 source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
 
