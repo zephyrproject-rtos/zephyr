@@ -10,6 +10,12 @@
 
 static int arm_apollo3_init(void)
 {
+	/* Set the clock frequency. */
+	am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_SYSCLK_MAX, 0);
+
+	/* Enable Flash cache.*/
+	am_hal_cachectrl_config(&am_hal_cachectrl_defaults);
+	am_hal_cachectrl_enable();
 
 	/* Initialize for low power in the power control block */
 	am_hal_pwrctrl_low_power_init();
