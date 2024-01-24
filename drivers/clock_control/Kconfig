@@ -80,7 +80,7 @@ source "drivers/clock_control/Kconfig.nxp_s32"
 
 source "drivers/clock_control/Kconfig.agilex5"
 
-source "drivers/clock_control/Kconfig.ra"
+source "drivers/clock_control/Kconfig.renesas_ra"
 
 source "drivers/clock_control/Kconfig.ambiq"
 
