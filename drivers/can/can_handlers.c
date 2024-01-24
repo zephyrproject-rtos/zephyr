@@ -170,6 +170,14 @@ static inline int z_vrfy_can_set_mode(const struct device *dev, can_mode_t mode)
 }
 #include <syscalls/can_set_mode_mrsh.c>
 
+static inline can_mode_t z_vrfy_can_get_mode(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_get_mode(dev);
+}
+#include <syscalls/can_get_mode_mrsh.c>
+
 static inline int z_vrfy_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
 	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, set_timing));
