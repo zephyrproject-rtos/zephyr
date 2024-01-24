@@ -16,8 +16,6 @@
 #include "timing_sc.h"
 #include <zephyr/tc_util.h>
 
-#define NUM_ITERATIONS  10000
-
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 uint32_t tm_off;
@@ -79,77 +77,77 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	TC_START("Time Measurement");
 	TC_PRINT("Timing results: Clock frequency: %u MHz\n", freq);
 
-	timestamp_overhead_init(NUM_ITERATIONS);
+	timestamp_overhead_init(CONFIG_BENCHMARK_NUM_ITERATIONS);
 
 	/* Preemptive threads context switching */
-	thread_switch_yield(NUM_ITERATIONS, false);
+	thread_switch_yield(CONFIG_BENCHMARK_NUM_ITERATIONS, false);
 
 	/* Cooperative threads context switching */
-	thread_switch_yield(NUM_ITERATIONS, true);
+	thread_switch_yield(CONFIG_BENCHMARK_NUM_ITERATIONS, true);
 
-	int_to_thread(NUM_ITERATIONS);
+	int_to_thread(CONFIG_BENCHMARK_NUM_ITERATIONS);
 
 	/* Thread creation, starting, suspending, resuming and aborting. */
 
-	thread_ops(NUM_ITERATIONS, 0, 0);
+	thread_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, 0);
 #ifdef CONFIG_USERSPACE
-	thread_ops(NUM_ITERATIONS, 0, K_USER);
-	thread_ops(NUM_ITERATIONS, K_USER, K_USER);
-	thread_ops(NUM_ITERATIONS, K_USER, 0);
+	thread_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
+	thread_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
+	thread_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
 #endif
 
-	fifo_ops(NUM_ITERATIONS, 0);
+	fifo_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0);
 #ifdef CONFIG_USERSPACE
-	fifo_ops(NUM_ITERATIONS, K_USER);
+	fifo_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER);
 #endif
 
-	fifo_blocking_ops(NUM_ITERATIONS, 0, 0);
+	fifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, 0);
 #ifdef CONFIG_USERSPACE
-	fifo_blocking_ops(NUM_ITERATIONS, 0, K_USER);
-	fifo_blocking_ops(NUM_ITERATIONS, K_USER, 0);
-	fifo_blocking_ops(NUM_ITERATIONS, K_USER, K_USER);
+	fifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
+	fifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
+	fifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
 #endif
 
 
-	lifo_ops(NUM_ITERATIONS, 0);
+	lifo_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0);
 #ifdef CONFIG_USERSPACE
-	lifo_ops(NUM_ITERATIONS, K_USER);
+	lifo_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER);
 #endif
 
-	lifo_blocking_ops(NUM_ITERATIONS, 0, 0);
+	lifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, 0);
 #ifdef CONFIG_USERSPACE
-	lifo_blocking_ops(NUM_ITERATIONS, 0, K_USER);
-	lifo_blocking_ops(NUM_ITERATIONS, K_USER, 0);
-	lifo_blocking_ops(NUM_ITERATIONS, K_USER, K_USER);
+	lifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
+	lifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
+	lifo_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
 #endif
 
-	event_ops(NUM_ITERATIONS, 0);
+	event_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0);
 #ifdef CONFIG_USERSPACE
-	event_ops(NUM_ITERATIONS, K_USER);
+	event_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER);
 #endif
 
-	event_blocking_ops(NUM_ITERATIONS, 0, 0);
+	event_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, 0);
 #ifdef CONFIG_USERSPACE
-	event_blocking_ops(NUM_ITERATIONS, 0, K_USER);
-	event_blocking_ops(NUM_ITERATIONS, K_USER, 0);
-	event_blocking_ops(NUM_ITERATIONS, K_USER, K_USER);
+	event_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
+	event_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
+	event_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
 #endif
 
-	sema_test_signal(NUM_ITERATIONS, 0);
+	sema_test_signal(CONFIG_BENCHMARK_NUM_ITERATIONS, 0);
 #ifdef CONFIG_USERSPACE
-	sema_test_signal(NUM_ITERATIONS, K_USER);
+	sema_test_signal(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER);
 #endif
 
-	sema_context_switch(NUM_ITERATIONS, 0, 0);
+	sema_context_switch(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, 0);
 #ifdef CONFIG_USERSPACE
-	sema_context_switch(NUM_ITERATIONS, 0, K_USER);
-	sema_context_switch(NUM_ITERATIONS, K_USER, 0);
-	sema_context_switch(NUM_ITERATIONS, K_USER, K_USER);
+	sema_context_switch(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
+	sema_context_switch(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
+	sema_context_switch(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
 #endif
 
-	mutex_lock_unlock(NUM_ITERATIONS, 0);
+	mutex_lock_unlock(CONFIG_BENCHMARK_NUM_ITERATIONS, 0);
 #ifdef CONFIG_USERSPACE
-	mutex_lock_unlock(NUM_ITERATIONS, K_USER);
+	mutex_lock_unlock(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER);
 #endif
 
 	heap_malloc_free();
