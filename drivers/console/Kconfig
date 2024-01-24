@@ -95,16 +95,30 @@ config JAILHOUSE_DEBUG_CONSOLE
 	  Useful in board bring-up if there aren't any working serial
 	  drivers.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_RAM_CONSOLE := zephyr,ram-console
+
 config RAM_CONSOLE
 	bool "Use RAM console"
 	select CONSOLE_HAS_DRIVER
+	select RAM_CONSOLE_BUFFER_SECTION if $(dt_chosen_enabled,$(DT_CHOSEN_Z_RAM_CONSOLE))
 	help
 	  Emit console messages to a RAM buffer "ram_console" which can
 	  be examined at runtime with a debugger. Useful in board bring-up
 	  if there aren't any working serial drivers.
 
+config RAM_CONSOLE_BUFFER_SECTION
+	bool "Use dedicated section as RAM console buffer"
+	depends on RAM_CONSOLE && $(dt_chosen_enabled,$(DT_CHOSEN_Z_RAM_CONSOLE))
+	select KERNEL_DIRECT_MAP if MMU
+	help
+	  Use a dedicated section as the RAM console buffer, whose address is
+	  known before build so that the console output messages can be easily
+	  examined by a debugger or software tool from a parallel-running OS.
+
 config RAM_CONSOLE_BUFFER_SIZE
 	int "Ram Console buffer size"
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_RAM_CONSOLE)) if RAM_CONSOLE_BUFFER_SECTION
 	default 1024
 	depends on RAM_CONSOLE
 	help
