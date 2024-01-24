@@ -7,6 +7,7 @@ menuconfig I2S_STM32
 	bool "STM32 MCU I2S controller driver"
 	default y
 	depends on DT_HAS_ST_STM32_I2S_ENABLED
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	select DMA
 	help
 	  Enable I2S support on the STM32 family of processors.

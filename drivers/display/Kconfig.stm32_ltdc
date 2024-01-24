@@ -8,6 +8,7 @@ menuconfig STM32_LTDC
 	default y
 	depends on DT_HAS_ST_STM32_LTDC_ENABLED
 	select USE_STM32_HAL_LTDC
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
 
