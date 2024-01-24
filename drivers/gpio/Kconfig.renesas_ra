@@ -1,7 +1,7 @@
 # Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config GPIO_RA
+config GPIO_RENESAS_RA
 	bool "Renesas RA Series GPIO driver"
 	default y
 	select GPIO_GET_CONFIG
