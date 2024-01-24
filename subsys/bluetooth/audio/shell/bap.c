@@ -500,7 +500,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 {
 	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
-	print_codec_cfg(ctx_shell, codec_cfg);
+	print_codec_cfg(ctx_shell, 0, codec_cfg);
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
@@ -526,7 +526,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 {
 	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p", stream);
 
-	print_codec_cfg(ctx_shell, codec_cfg);
+	print_codec_cfg(ctx_shell, 0, codec_cfg);
 
 	if (default_stream == NULL) {
 		set_unicast_stream(stream);
@@ -775,7 +775,7 @@ static void print_remote_codec_cap(const struct bt_conn *conn,
 	shell_print(ctx_shell, "conn %p: codec_cap %p dir 0x%02x", conn, codec_cap,
 		    dir);
 
-	print_codec_cap(ctx_shell, codec_cap);
+	print_codec_cap(ctx_shell, 0, codec_cap);
 }
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -2135,8 +2135,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "%s", named_preset->name);
 
-	print_codec_cfg(sh, &named_preset->preset.codec_cfg);
-	print_qos(sh, &named_preset->preset.qos);
+	print_codec_cfg(ctx_shell, 0, &named_preset->preset.codec_cfg);
+	print_qos(ctx_shell, &named_preset->preset.qos);
 
 	return 0;
 }
