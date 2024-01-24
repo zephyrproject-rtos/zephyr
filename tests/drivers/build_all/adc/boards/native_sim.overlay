@@ -315,15 +315,15 @@
 				#io-channel-cells = <1>;
 			};
 
-			test_spi_ad5592: ad5592@16 {
-				compatible = "adi,ad5592";
+			test_spi_ad559x: ad559x@16 {
+				compatible = "adi,ad559x";
 				status = "okay";
 				reg = <0x16>;
 				spi-max-frequency = <0>;
 				reset-gpios = <&test_gpio 0 0>;
 
-				ad5592_adc: adc-controller {
-					compatible = "adi,ad5592-adc";
+				ad559x_adc: adc-controller {
+					compatible = "adi,ad559x-adc";
 					#io-channel-cells = <1>;
 				};
 			};
