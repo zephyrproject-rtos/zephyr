@@ -195,4 +195,14 @@ ZTEST(mutex, test_mutex_timedlock)
 	zassert_ok(pthread_mutex_destroy(&mutex));
 }
 
-ZTEST_SUITE(mutex, NULL, NULL, NULL, NULL, NULL);
+static void before(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		/* skip redundant testing if there is no thread pool / heap allocation */
+		ztest_test_skip();
+	}
+}
+
+ZTEST_SUITE(mutex, NULL, NULL, before, NULL, NULL);
