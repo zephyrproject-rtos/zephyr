@@ -138,10 +138,8 @@ if (CONFIG_GPROF)
 endif()
 
 if (CONFIG_NATIVE_APPLICATION)
-  zephyr_ld_options(
-    -ldl
-    -pthread
-  )
+  zephyr_ld_libraries(dl)
+  zephyr_ld_options(-pthread)
 endif()
 
 # About the -include directive: The reason to do it this way, is because in this

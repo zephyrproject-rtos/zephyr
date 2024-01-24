@@ -28,6 +28,4 @@ if(CONFIG_HAS_SDL)
 	add_subdirectory(${ZEPHYR_BASE}/boards/${ARCH}/common/sdl/ ${CMAKE_CURRENT_BINARY_DIR}/sdl)
 endif()
 
-zephyr_ld_options(
-  -lm
-)
+zephyr_ld_libraries(m)
