@@ -2088,9 +2088,9 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 #define I3C_MCUX_DEVICE(id)							\
 	PINCTRL_DT_INST_DEFINE(id);						\
 	static void mcux_i3c_config_func_##id(const struct device *dev);	\
-	static struct i3c_device_desc mcux_i3c_device_array_##id[] =			\
+	static struct i3c_device_desc mcux_i3c_device_array_##id[] =		\
 		I3C_DEVICE_ARRAY_DT_INST(id);					\
-	static struct i3c_i2c_device_desc mcux_i3c_i2c_device_array_##id[] =		\
+	static struct i3c_i2c_device_desc mcux_i3c_i2c_device_array_##id[] =	\
 		I3C_I2C_DEVICE_ARRAY_DT_INST(id);				\
 	static const struct mcux_i3c_config mcux_i3c_config_##id = {		\
 		.base = (I3C_Type *) DT_INST_REG_ADDR(id),			\
@@ -2104,7 +2104,7 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 		.disable_open_drain_high_pp =					\
-			DT_INST_PROP_OR(id, disable_open_drain_high_pp, false), \
+			DT_INST_PROP(id, disable_open_drain_high_pp),		\
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
 		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\

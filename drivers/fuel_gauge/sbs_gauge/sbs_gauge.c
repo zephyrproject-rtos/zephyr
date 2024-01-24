@@ -311,12 +311,12 @@ static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 
 /* Conditionally defined battery config based on battery cutoff support */
 #define SBS_GAUGE_CONFIG_DEFINE(index)                                                             \
-	COND_CODE_1(DT_INST_PROP_OR(index, battery_cutoff_support, false),                         \
+	COND_CODE_1(DT_INST_PROP(index, battery_cutoff_support),                                   \
 		    (_SBS_GAUGE_CONFIG_DEFINE(index)), (;))
 
 /* Conditionally get the battery config variable name or NULL based on battery cutoff support */
 #define SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index)                                                   \
-	COND_CODE_1(DT_INST_PROP_OR(index, battery_cutoff_support, false),                         \
+	COND_CODE_1(DT_INST_PROP(index, battery_cutoff_support),                                   \
 		    (&_SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME(index)), (NULL))
 
 #define SBS_GAUGE_INIT(index)                                                                      \
