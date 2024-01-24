@@ -74,7 +74,7 @@ endif()
 zephyr_link_libraries(c)
 
 if(CONFIG_NEWLIB_LIBC_NANO)
-  zephyr_link_libraries(
+  zephyr_link_options(
     -specs=nano.specs
     )
   zephyr_compile_options(

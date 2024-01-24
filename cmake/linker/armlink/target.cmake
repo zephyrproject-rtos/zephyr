@@ -11,7 +11,7 @@ endmacro()
 
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
-    zephyr_link_libraries(--undefined=${symbol})
+    zephyr_link_options(--undefined=${symbol})
   endforeach()
 endfunction()
 

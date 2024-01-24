@@ -98,7 +98,7 @@ endif()
 
 if(CONFIG_COVERAGE)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
-  zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY $<TARGET_PROPERTY:linker,coverage>)
+  zephyr_link_options_ifndef(CONFIG_NATIVE_LIBRARY $<TARGET_PROPERTY:linker,coverage>)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)

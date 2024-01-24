@@ -46,13 +46,13 @@ else() # Linux.x86_64
   if (CONFIG_64BIT)
     # some gcc versions fail to build without -fPIC
     zephyr_compile_options(-m64 -fPIC)
-    zephyr_link_libraries(-m64)
+    zephyr_link_options(-m64)
 
     target_link_options(native_simulator INTERFACE "-m64")
     target_compile_options(native_simulator INTERFACE "-m64")
   else ()
     zephyr_compile_options(-m32)
-    zephyr_link_libraries(-m32)
+    zephyr_link_options(-m32)
 
     target_link_options(native_simulator INTERFACE "-m32")
     target_compile_options(native_simulator INTERFACE "-m32")
@@ -132,7 +132,7 @@ endif()
 
 if (CONFIG_GPROF)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,gprof>)
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,gprof>)
+  zephyr_link_options($<TARGET_PROPERTY:linker,gprof>)
 
   target_link_options(native_simulator INTERFACE "-pg")
 endif()
@@ -187,7 +187,7 @@ list(JOIN LLVM_SANITIZERS "," LLVM_SANITIZERS_ARG)
 if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   set(LLVM_SANITIZERS_ARG "-fsanitize=${LLVM_SANITIZERS_ARG}")
   zephyr_compile_options("${LLVM_SANITIZERS_ARG}")
-  zephyr_link_libraries("${LLVM_SANITIZERS_ARG}")
+  zephyr_link_options("${LLVM_SANITIZERS_ARG}")
 
   target_link_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})

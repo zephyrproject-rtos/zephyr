@@ -40,7 +40,7 @@ macro(toolchain_ld_base)
       set(runtime_lib "compiler_rt")
     endif()
 
-    zephyr_link_libraries(
+    zephyr_link_options(
       --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang_${runtime_lib}.cfg
     )
   endif()
@@ -50,7 +50,7 @@ macro(toolchain_ld_base)
     #   error: section: init_array is not contiguous with other relro sections
     #
     # So do not create RELRO program header.
-    zephyr_link_libraries(
+    zephyr_link_options(
       -Wl,-z,norelro
     )
   endif()

@@ -149,7 +149,7 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,
 if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,warnings_as_errors>>)
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,warnings_as_errors>)
+  zephyr_link_options($<TARGET_PROPERTY:linker,warnings_as_errors>)
 endif()
 
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
@@ -391,7 +391,7 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_p
 # In case of CONFIG_NATIVE_LIBRARY we also don't want position independent code,
 # but we cannot tell that to the linker yet as we are first only doing a
 # relocatable link into a static library
-zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY
+zephyr_link_options_ifndef(CONFIG_NATIVE_LIBRARY
                              $<TARGET_PROPERTY:linker,no_position_independent>)
 
 # Allow the user to inject options when calling cmake, e.g.
