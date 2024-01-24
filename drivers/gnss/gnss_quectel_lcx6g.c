@@ -242,11 +242,11 @@ static int quectel_lcx6g_suspend(const struct device *dev)
 	ret = modem_chat_run_script(&data->chat, &suspend_script);
 	if (ret < 0) {
 		LOG_ERR("Failed to suspend GNSS");
-		modem_pipe_close(data->uart_pipe);
-		return ret;
+	} else {
+		LOG_INF("Suspended");
 	}
 
-	LOG_INF("Suspended");
+	modem_pipe_close(data->uart_pipe);
 	return ret;
 }
 
