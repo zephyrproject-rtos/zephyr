@@ -129,17 +129,6 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout);
 struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			      const void *data, size_t size);
 
-/** Allocate a buffer for an HCI Command Complete/Status Event
- *
- *  This will set the buffer type so bt_buf_set_type() does not need to
- *  be explicitly called before bt_recv_prio().
- *
- *  @param timeout Non-negative waiting period to obtain a buffer or one of the
- *                 special values K_NO_WAIT and K_FOREVER.
- *  @return A new buffer.
- */
-struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout);
-
 /** Allocate a buffer for an HCI Event
  *
  *  This will set the buffer type so bt_buf_set_type() does not need to
