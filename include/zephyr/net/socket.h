@@ -1378,7 +1378,7 @@ struct net_socket_register {
 }
 #endif
 
-#include <syscalls/socket.h>
+#include <zephyr/syscalls/socket.h>
 
 /**
  * @}

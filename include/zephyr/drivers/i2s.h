@@ -544,6 +544,6 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 }
 #endif
 
-#include <syscalls/i2s.h>
+#include <zephyr/syscalls/i2s.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I2S_H_ */

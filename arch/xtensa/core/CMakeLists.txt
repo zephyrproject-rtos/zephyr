@@ -48,7 +48,7 @@ add_subdirectory(startup)
 # are the official places where we find core-isa.h. (Also that we
 # undefine __XCC_ because that compiler actually trips an error trying
 # to build this file to protect against mismatched versions.)
-set(CORE_ISA_DM ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.h)
+set(CORE_ISA_DM ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/core-isa-dM.h)
 set(CORE_ISA_IN ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.c)
 file(WRITE ${CORE_ISA_IN} "#include <xtensa/config/core-isa.h>\n")
 add_custom_command(OUTPUT ${CORE_ISA_DM}
@@ -73,7 +73,7 @@ else()
 endif()
 
 # Generates a list of device-specific scratch register choices
-set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zsr.h)
+set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/zsr.h)
 add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
                                $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>

@@ -6,7 +6,7 @@
 
 #include "soc_v5.h"
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/toolchain.h>
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE

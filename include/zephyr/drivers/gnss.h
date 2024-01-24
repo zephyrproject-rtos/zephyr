@@ -493,6 +493,6 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
 }
 #endif
 
-#include <syscalls/gnss.h>
+#include <zephyr/syscalls/gnss.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GNSS_H_ */

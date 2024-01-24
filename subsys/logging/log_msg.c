@@ -337,7 +337,7 @@ static inline void z_vrfy_z_log_msg_static_create(const void *source,
 {
 	return z_impl_z_log_msg_static_create(source, desc, package, data);
 }
-#include <syscalls/z_log_msg_static_create_mrsh.c>
+#include <zephyr/syscalls/z_log_msg_static_create_mrsh.c>
 #endif
 
 void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,

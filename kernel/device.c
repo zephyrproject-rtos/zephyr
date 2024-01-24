@@ -66,7 +66,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 
 	return z_impl_device_get_binding(name_copy);
 }
-#include <syscalls/device_get_binding_mrsh.c>
+#include <zephyr/syscalls/device_get_binding_mrsh.c>
 
 static inline bool z_vrfy_device_is_ready(const struct device *dev)
 {
@@ -74,7 +74,7 @@ static inline bool z_vrfy_device_is_ready(const struct device *dev)
 
 	return z_impl_device_is_ready(dev);
 }
-#include <syscalls/device_is_ready_mrsh.c>
+#include <zephyr/syscalls/device_is_ready_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 size_t z_device_get_all_static(struct device const **devices)

@@ -86,6 +86,6 @@ static inline int sample_driver_set_callback(const struct device *dev,
 	return api->set_callback(dev, cb, context);
 }
 
-#include <syscalls/sample_driver.h>
+#include <zephyr/syscalls/sample_driver.h>
 
 #endif

@@ -90,7 +90,7 @@ static inline void z_vrfy_k_thread_custom_data_set(void *data)
 {
 	z_impl_k_thread_custom_data_set(data);
 }
-#include <syscalls/k_thread_custom_data_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_custom_data_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void *z_impl_k_thread_custom_data_get(void)
@@ -103,7 +103,7 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
 {
 	return z_impl_k_thread_custom_data_get();
 }
-#include <syscalls/k_thread_custom_data_get_mrsh.c>
+#include <zephyr/syscalls/k_thread_custom_data_get_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
@@ -118,7 +118,7 @@ static inline int z_vrfy_k_is_preempt_thread(void)
 {
 	return z_impl_k_is_preempt_thread();
 }
-#include <syscalls/k_is_preempt_thread_mrsh.c>
+#include <zephyr/syscalls/k_is_preempt_thread_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_thread_priority_get(k_tid_t thread)
@@ -132,7 +132,7 @@ static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_priority_get(thread);
 }
-#include <syscalls/k_thread_priority_get_mrsh.c>
+#include <zephyr/syscalls/k_thread_priority_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
@@ -183,7 +183,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	return -ENOSYS;
 #endif /* CONFIG_THREAD_NAME */
 }
-#include <syscalls/k_thread_name_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_name_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 const char *k_thread_name_get(k_tid_t thread)
@@ -304,7 +304,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	return -ENOSYS;
 #endif /* CONFIG_THREAD_NAME */
 }
-#include <syscalls/k_thread_name_copy_mrsh.c>
+#include <zephyr/syscalls/k_thread_name_copy_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_STACK_SENTINEL
@@ -353,7 +353,7 @@ static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_start(thread);
 }
-#include <syscalls/k_thread_start_mrsh.c>
+#include <zephyr/syscalls/k_thread_start_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
@@ -741,7 +741,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 
 	return new_thread;
 }
-#include <syscalls/k_thread_create_mrsh.c>
+#include <zephyr/syscalls/k_thread_create_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
@@ -895,7 +895,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 
 	return 0;
 }
-#include <syscalls/k_thread_stack_space_get_mrsh.c>
+#include <zephyr/syscalls/k_thread_stack_space_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_INIT_STACKS && CONFIG_THREAD_STACK_INFO */
 
@@ -906,7 +906,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_remaining_ticks(thread);
 }
-#include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
+#include <zephyr/syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
 
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 						  const struct k_thread *thread)
@@ -914,7 +914,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_expires_ticks(thread);
 }
-#include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
+#include <zephyr/syscalls/k_thread_timeout_expires_ticks_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING

@@ -1487,6 +1487,6 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_SENSOR_DECODER_DECLARE_INTERNAL)
 }
 #endif
 
-#include <syscalls/sensor.h>
+#include <zephyr/syscalls/sensor.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_ */

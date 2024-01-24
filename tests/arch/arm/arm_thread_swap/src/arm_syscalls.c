@@ -66,7 +66,7 @@ static inline void z_vrfy_test_arm_user_syscall(void)
 {
 	z_impl_test_arm_user_syscall();
 }
-#include <syscalls/test_arm_user_syscall_mrsh.c>
+#include <zephyr/syscalls/test_arm_user_syscall_mrsh.c>
 
 
 void arm_isr_handler(const void *args)
@@ -271,7 +271,7 @@ static inline void z_vrfy_test_arm_cpu_write_reg(void)
 {
 	z_impl_test_arm_cpu_write_reg();
 }
-#include <syscalls/test_arm_cpu_write_reg_mrsh.c>
+#include <zephyr/syscalls/test_arm_cpu_write_reg_mrsh.c>
 
 /**
  * @brief Test CPU scrubs registers after system call

@@ -1022,5 +1022,5 @@ static inline int espi_remove_callback(const struct device *dev,
 /**
  * @}
  */
-#include <syscalls/espi.h>
+#include <zephyr/syscalls/espi.h>
 #endif /* ZEPHYR_INCLUDE_ESPI_H_ */
