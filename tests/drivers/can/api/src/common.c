@@ -15,6 +15,8 @@
  * @brief Global variables.
  */
 ZTEST_DMEM const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+ZTEST_DMEM const struct device *const can_phy =
+	DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_CHOSEN(zephyr_canbus), phys));
 struct k_sem rx_callback_sem;
 struct k_sem tx_callback_sem;
 
