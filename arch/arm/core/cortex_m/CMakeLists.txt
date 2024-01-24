@@ -16,7 +16,7 @@ zephyr_library_sources(
   irq_manage.c
   prep_c.c
   thread.c
-  cpu_idle.S
+  cpu_idle.c
   )
 
 zephyr_library_sources_ifndef(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER irq_init.c)
