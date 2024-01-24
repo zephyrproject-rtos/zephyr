@@ -16,21 +16,12 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/cache.h>
 
 #include "i2s_ll_stm32.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2s_ll_stm32);
-
-#if __DCACHE_PRESENT == 1
-#define DCACHE_INVALIDATE(addr, size) \
-	SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
-#define DCACHE_CLEAN(addr, size) \
-	SCB_CleanDCache_by_Addr((uint32_t *)addr, size)
-#else
-#define DCACHE_INVALIDATE(addr, size) {; }
-#define DCACHE_CLEAN(addr, size) {; }
-#endif
 
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
@@ -561,7 +552,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	}
 
 	/* Assure cache coherency after DMA write operation */
-	DCACHE_INVALIDATE(mblk_tmp, stream->cfg.block_size);
+	sys_cache_data_invd_range(mblk_tmp, stream->cfg.block_size);
 
 	/* All block data received */
 	ret = queue_put(&stream->mem_block_queue, mblk_tmp,
@@ -632,7 +623,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	k_sem_give(&stream->sem);
 
 	/* Assure cache coherency before DMA read operation */
-	DCACHE_CLEAN(stream->mem_block, mem_block_size);
+	sys_cache_data_flush_range(stream->mem_block, mem_block_size);
 
 	ret = reload_dma(stream->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
@@ -794,7 +785,7 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 	k_sem_give(&stream->sem);
 
 	/* Assure cache coherency before DMA read operation */
-	DCACHE_CLEAN(stream->mem_block, mem_block_size);
+	sys_cache_data_flush_range(stream->mem_block, mem_block_size);
 
 	if (stream->master) {
 		LL_I2S_SetTransferMode(cfg->i2s, LL_I2S_MODE_MASTER_TX);
