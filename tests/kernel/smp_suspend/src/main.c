@@ -33,6 +33,19 @@ static void thread_entry(void *p1, void *p2, void *p3)
 
 		thread_counter[self_index]++;
 
+		/*
+		 * Contentious spinlocks embedded within tight loops (such as
+		 * this one) have a CPU bias induced by arch_spin_relax(). We
+		 * counteract this by introducing a configurable delay so that
+		 * other threads have a chance to acquire the spinlock and
+		 * prevent starvation.
+		 */
+
+		for (volatile unsigned int i = 0;
+		     i < CONFIG_SMP_TEST_RELAX;
+		     i++) {
+		}
+
 		if (self_index != 0) {
 			k_thread_suspend(k_current_get());
 		}
@@ -73,7 +86,7 @@ ZTEST(smp_suspend_resume, test_smp_thread_suspend_resume_stress)
 
 		for (i = 0; i < NUM_THREADS; i++) {
 			zassert_false(counter[i] == thread_counter[i],
-				      " -- Thread %u appears to be hung: %llu\n",
+				      " -- Thread %u is starving: %llu\n",
 				      i, thread_counter[i]);
 
 			counter[i] = thread_counter[i];
