@@ -24,7 +24,7 @@ manifest:
     - name: babblesim
       url-base: https://github.com/BabbleSim
     - name: semios
-      url-base: https://github.com/semiosbio
+      url-base: git@github.com:semiosbio
 
   group-filter: [-babblesim, -optional]
 
@@ -144,8 +144,9 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 0c5ea5749245c8ff6ce7aefbf0aa9981943c2857
-	  remote: semios
+      revision: d176b56849bbe2e23487af01833152ac234cb848
+      remote: semios
+      repo-path: hal_ambiq.git
       path: modules/hal/ambiq
       groups:
         - hal

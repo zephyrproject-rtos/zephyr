@@ -21,8 +21,6 @@ struct apollo3_pinctrl_soc_pin {
 	uint32_t input_enable : 1;
 	/** Drive strength, relative to full-driver strength */
 	uint32_t drive_strength : 2;
-	/** Slew rate, may be either false (slow) or true (fast) */
-	uint32_t slew_rate : 1;
 	/** Drive actively high or low */
 	uint32_t push_pull : 1;
 	/** Drive with open drain */
@@ -54,7 +52,6 @@ typedef struct apollo3_pinctrl_soc_pin pinctrl_soc_pin_t;
 		APOLLO3_GET_PIN_ALT_FUNC(DT_PROP_BY_IDX(node_id, prop, idx)),	\
 		DT_PROP(node_id, input_enable),					\
 		DT_ENUM_IDX(node_id, drive_strength),				\
-		DT_ENUM_IDX(node_id, slew_rate),				\
 		DT_PROP(node_id, drive_push_pull),				\
 		DT_PROP(node_id, drive_open_drain),				\
 		DT_PROP(node_id, bias_high_impedance),				\
@@ -75,7 +72,7 @@ typedef struct apollo3_pinctrl_soc_pin pinctrl_soc_pin_t;
 				DT_FOREACH_PROP_ELEM, pinmux,			\
 				Z_PINCTRL_STATE_PIN_INIT)}
 
-#define APOLLO4_GET_PIN_NUM(pinctrl) \
+#define APOLLO3_GET_PIN_NUM(pinctrl) \
 	(((pinctrl) >> APOLLO3_PIN_NUM_POS) & APOLLO3_PIN_NUM_MASK)
 #define APOLLO3_GET_PIN_ALT_FUNC(pinctrl) \
 	(((pinctrl) >> APOLLO3_ALT_FUNC_POS) & APOLLO3_ALT_FUNC_MASK)

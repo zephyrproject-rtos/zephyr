@@ -129,6 +129,10 @@ static int stimer_init(void)
 
 	oldCfg = am_hal_stimer_config(AM_HAL_STIMER_CFG_FREEZE);
 
+#if CONFIG_SOC_SERIES_APOLLO3X
+	#define STIMER_STCFG_CLKSEL_Msk 0xf
+#endif
+
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk))
 			| AM_HAL_STIMER_XTAL_32KHZ
 			| AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);

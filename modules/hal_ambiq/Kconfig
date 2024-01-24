@@ -4,7 +4,7 @@
 
 config AMBIQ_HAL
 	bool "Ambiq HAL drivers support"
-	depends on SOC_SERIES_APOLLO4X
+	depends on SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO3X
 	help
 	  Use the Ambiq HAL
 
