@@ -22,6 +22,8 @@
 
 #include "shell/bt.h"
 
+#define SHELL_PRINT_INDENT_LEVEL_SIZE 2
+
 extern struct bt_csip_set_member_svc_inst *svc_inst;
 
 ssize_t audio_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable,
@@ -168,30 +170,38 @@ static inline void print_qos(const struct shell *sh, const struct bt_audio_codec
 
 struct print_ltv_info {
 	const struct shell *sh;
-	const char *str;
+	size_t indent;
 	size_t cnt;
 };
 
 static bool print_ltv_elem(struct bt_data *data, void *user_data)
 {
 	struct print_ltv_info *ltv_info = user_data;
+	const size_t elem_indent = ltv_info->indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-	shell_print(ltv_info->sh, "%s #%zu: type 0x%02x value_len %u", ltv_info->str, ltv_info->cnt,
-		    data->type, data->data_len);
-	shell_hexdump(ltv_info->sh, data->data, data->data_len);
+	shell_print(ltv_info->sh, "%*s#%zu: type 0x%02x value_len %u", ltv_info->indent, "",
+		    ltv_info->cnt, data->type, data->data_len);
+
+	shell_fprintf(ltv_info->sh, SHELL_NORMAL, "%*s", elem_indent, "");
+
+	for (uint8_t i = 0U; i < data->data_len; i++) {
+		shell_fprintf(ltv_info->sh, SHELL_NORMAL, "%02X", data->data[i]);
+	}
+
+	shell_fprintf(ltv_info->sh, SHELL_NORMAL, "\n");
 
 	ltv_info->cnt++;
 
 	return true;
 }
 
-static void print_ltv_array(const struct shell *sh, const char *str, const uint8_t *ltv_data,
+static void print_ltv_array(const struct shell *sh, size_t indent, const uint8_t *ltv_data,
 			    size_t ltv_data_len)
 {
 	struct print_ltv_info ltv_info = {
 		.sh = sh,
-		.str = str,
 		.cnt = 0U,
+		.indent = indent,
 	};
 
 	bt_audio_data_parse(ltv_data, ltv_data_len, print_ltv_elem, &ltv_info);
@@ -231,42 +241,51 @@ static inline char *context_bit_to_str(enum bt_audio_context context)
 	}
 }
 
-static inline void print_codec_meta_pref_context(const struct shell *sh,
+static inline void print_codec_meta_pref_context(const struct shell *sh, size_t indent,
 						 enum bt_audio_context context)
 {
-	shell_print(sh, "\tPreferred audio contexts:");
+	shell_print(sh, "%*sPreferred audio contexts:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
 	/* There can be up to 16 bits set in the field */
 	for (size_t i = 0U; i < 16; i++) {
 		const uint16_t bit_val = BIT(i);
 
 		if (context & bit_val) {
-			shell_print(sh, "\t\t%s (0x%04X)", context_bit_to_str(bit_val), bit_val);
+			shell_print(sh, "%*s%s (0x%04X)", indent, "", context_bit_to_str(bit_val),
+				    bit_val);
 		}
 	}
 }
 
-static inline void print_codec_meta_stream_context(const struct shell *sh,
+static inline void print_codec_meta_stream_context(const struct shell *sh, size_t indent,
 						   enum bt_audio_context context)
 {
-	shell_print(sh, "\tStreaming audio contexts:");
+	shell_print(sh, "%*sStreaming audio contexts:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
 	/* There can be up to 16 bits set in the field */
 	for (size_t i = 0U; i < 16; i++) {
 		const uint16_t bit_val = BIT(i);
 
 		if (context & bit_val) {
-			shell_print(sh, "\t\t%s (0x%04X)", context_bit_to_str(bit_val), bit_val);
+			shell_print(sh, "%*s%s (0x%04X)", indent, "", context_bit_to_str(bit_val),
+				    bit_val);
 		}
 	}
 }
 
-static inline void print_codec_meta_program_info(const struct shell *sh,
+static inline void print_codec_meta_program_info(const struct shell *sh, size_t indent,
 						 const uint8_t *program_info,
 						 uint8_t program_info_len)
 {
-	shell_fprintf(sh, SHELL_NORMAL, "\tProgram info:\n\t\t");
+	shell_print(sh, "%*sProgram info:", indent, "");
 
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	shell_fprintf(sh, SHELL_NORMAL, "%*s", indent, "");
 	for (uint8_t i = 0U; i < program_info_len; i++) {
 		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)program_info[i]);
 	}
@@ -274,25 +293,27 @@ static inline void print_codec_meta_program_info(const struct shell *sh,
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
 }
 
-static inline void print_codec_meta_language(const struct shell *sh, uint32_t stream_lang)
+static inline void print_codec_meta_language(const struct shell *sh, size_t indent,
+					     uint32_t stream_lang)
 {
 	uint8_t lang_array[3];
 
 	sys_put_be24(stream_lang, lang_array);
 
-	shell_print(sh, "\tLanguage: %c%c%c", (char)lang_array[0], (char)lang_array[1],
+	shell_print(sh, "%*sLanguage: %c%c%c", indent, "", (char)lang_array[0], (char)lang_array[1],
 		    (char)lang_array[2]);
 }
 
-static inline void print_codec_meta_ccid_list(const struct shell *sh, const uint8_t *ccid_list,
-					      uint8_t ccid_list_len)
+static inline void print_codec_meta_ccid_list(const struct shell *sh, size_t indent,
+					      const uint8_t *ccid_list, uint8_t ccid_list_len)
 {
-	shell_print(sh, "\tCCID list:\n");
+	shell_print(sh, "%*sCCID list:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
 	/* There can be up to 16 bits set in the field */
 	for (uint8_t i = 0U; i < ccid_list_len; i++) {
-
-		shell_print(sh, "\t\t0x%02X ", ccid_list[i]);
+		shell_print(sh, "%*s0x%02X ", indent, "", ccid_list[i]);
 	}
 }
 
@@ -336,18 +357,22 @@ static inline char *parental_rating_to_str(enum bt_audio_parental_rating parenta
 	}
 }
 
-static inline void print_codec_meta_parental_rating(const struct shell *sh,
+static inline void print_codec_meta_parental_rating(const struct shell *sh, size_t indent,
 						    enum bt_audio_parental_rating parental_rating)
 {
-	shell_print(sh, "\tRating: %s (0x%02X)", parental_rating_to_str(parental_rating),
-		    (uint8_t)parental_rating);
+	shell_print(sh, "%*sRating: %s (0x%02X)", indent, "",
+		    parental_rating_to_str(parental_rating), (uint8_t)parental_rating);
 }
 
-static inline void print_codec_meta_program_info_uri(const struct shell *sh,
+static inline void print_codec_meta_program_info_uri(const struct shell *sh, size_t indent,
 						     const uint8_t *program_info_uri,
 						     uint8_t program_info_uri_len)
 {
-	shell_fprintf(sh, SHELL_NORMAL, "\tProgram info URI:\n\t\t");
+	shell_print(sh, "%*sProgram info URI:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	shell_fprintf(sh, SHELL_NORMAL, "%*s", indent, "");
 
 	for (uint8_t i = 0U; i < program_info_uri_len; i++) {
 		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)program_info_uri[i]);
@@ -356,38 +381,47 @@ static inline void print_codec_meta_program_info_uri(const struct shell *sh,
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
 }
 
-static inline void print_codec_meta_audio_active_state(const struct shell *sh,
+static inline void print_codec_meta_audio_active_state(const struct shell *sh, size_t indent,
 						       enum bt_audio_active_state state)
 {
-	shell_print(sh, "\tAudio active state: %s (0x%02X)",
+	shell_print(sh, "%*sAudio active state: %s (0x%02X)", indent, "",
 		    state == BT_AUDIO_ACTIVE_STATE_ENABLED ? "enabled" : "disabled",
 		    (uint8_t)state);
 }
 
-static inline void print_codec_meta_bcast_audio_immediate_rend_flag(const struct shell *sh)
+static inline void print_codec_meta_bcast_audio_immediate_rend_flag(const struct shell *sh,
+								    size_t indent)
 {
-	shell_print(sh, "\tBroadcast audio immediate rendering flag set");
+	shell_print(sh, "%*sBroadcast audio immediate rendering flag set", indent, "");
 }
 
-static inline void print_codec_meta_extended(const struct shell *sh, const uint8_t *extended_meta,
-					     size_t extended_meta_len)
+static inline void print_codec_meta_extended(const struct shell *sh, size_t indent,
+					     const uint8_t *extended_meta, size_t extended_meta_len)
 {
-	shell_fprintf(sh, SHELL_NORMAL, "\tExtended metadata:\n\t\t");
+	shell_print(sh, "%*sExtended metadata:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	shell_fprintf(sh, SHELL_NORMAL, "%*s", indent, "");
 
 	for (uint8_t i = 0U; i < extended_meta_len; i++) {
-		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)extended_meta[i]);
+		shell_fprintf(sh, SHELL_NORMAL, "%u", (uint8_t)extended_meta[i]);
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
 }
 
-static inline void print_codec_meta_vendor(const struct shell *sh, const uint8_t *vendor_meta,
-					   size_t vender_meta_len)
+static inline void print_codec_meta_vendor(const struct shell *sh, size_t indent,
+					   const uint8_t *vendor_meta, size_t vender_meta_len)
 {
-	shell_fprintf(sh, SHELL_NORMAL, "\tVender metadata:\n\t\t");
+	shell_print(sh, "%*sVendor metadata:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	shell_fprintf(sh, SHELL_NORMAL, "%*s", indent, "");
 
 	for (uint8_t i = 0U; i < vender_meta_len; i++) {
-		shell_fprintf(sh, SHELL_NORMAL, "%c", (char)vendor_meta[i]);
+		shell_fprintf(sh, SHELL_NORMAL, "%u", (uint8_t)vendor_meta[i]);
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
@@ -427,16 +461,19 @@ static inline char *codec_cap_freq_bit_to_str(enum bt_audio_codec_cap_freq freq)
 	}
 }
 
-static inline void print_codec_cap_freq(const struct shell *sh, enum bt_audio_codec_cap_freq freq)
+static inline void print_codec_cap_freq(const struct shell *sh, size_t indent,
+					enum bt_audio_codec_cap_freq freq)
 {
-	shell_print(sh, "\tSupported sampling frequencies:");
+	shell_print(sh, "%*sSupported sampling frequencies:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 16 bits set in the field */
 	for (size_t i = 0; i < 16; i++) {
 		const uint16_t bit_val = BIT(i);
 
 		if (freq & bit_val) {
-			shell_print(sh, "\t\t%s (0x%04X)", codec_cap_freq_bit_to_str(bit_val),
-				    bit_val);
+			shell_print(sh, "%*s%s (0x%04X)", indent, "",
+				    codec_cap_freq_bit_to_str(bit_val), bit_val);
 		}
 	}
 }
@@ -457,17 +494,19 @@ static inline char *codec_cap_frame_dur_bit_to_str(enum bt_audio_codec_cap_frame
 	}
 }
 
-static inline void print_codec_cap_frame_dur(const struct shell *sh,
+static inline void print_codec_cap_frame_dur(const struct shell *sh, size_t indent,
 					     enum bt_audio_codec_cap_frame_dur frame_dur)
 {
-	shell_print(sh, "\tSupported frame durations:");
+	shell_print(sh, "%*sSupported frame durations:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 8 bits set in the field */
 	for (size_t i = 0; i < 8; i++) {
 		const uint8_t bit_val = BIT(i);
 
 		if (frame_dur & bit_val) {
-			shell_print(sh, "\t\t%s (0x%02X)", codec_cap_frame_dur_bit_to_str(bit_val),
-				    bit_val);
+			shell_print(sh, "%*s%s (0x%02X)", indent, "",
+				    codec_cap_frame_dur_bit_to_str(bit_val), bit_val);
 		}
 	}
 }
@@ -496,149 +535,176 @@ static inline char *codec_cap_chan_count_bit_to_str(enum bt_audio_codec_cap_chan
 	}
 }
 
-static inline void print_codec_cap_chan_count(const struct shell *sh,
+static inline void print_codec_cap_chan_count(const struct shell *sh, size_t indent,
 					      enum bt_audio_codec_cap_chan_count chan_count)
 {
-	shell_print(sh, "\tSupported channel counts:");
+	shell_print(sh, "%*sSupported channel counts:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 8 bits set in the field */
 	for (size_t i = 0; i < 8; i++) {
 		const uint8_t bit_val = BIT(i);
 
 		if (chan_count & bit_val) {
-			shell_print(sh, "\t\t%s (0x%02X)", codec_cap_chan_count_bit_to_str(bit_val),
-				    bit_val);
+			shell_print(sh, "%*s%s (0x%02X)", indent, "",
+				    codec_cap_chan_count_bit_to_str(bit_val), bit_val);
 		}
 	}
 }
 
 static inline void print_codec_cap_octets_per_codec_frame(
-	const struct shell *sh, const struct bt_audio_codec_octets_per_codec_frame *codec_frame)
+	const struct shell *sh, size_t indent,
+	const struct bt_audio_codec_octets_per_codec_frame *codec_frame)
 {
-	shell_print(sh, "\tSupported octets per codec frame counts:\n\t\tMin: %u\n\t\tMax: %u",
-		    codec_frame->min, codec_frame->max);
+	shell_print(sh, "%*sSupported octets per codec frame counts:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+	shell_print(sh, "%*sMin: %u", indent, "", codec_frame->min);
+	shell_print(sh, "%*sMax: %u", indent, "", codec_frame->max);
 }
 
-static inline void print_codec_cap_max_codec_frames_per_sdu(const struct shell *sh,
+static inline void print_codec_cap_max_codec_frames_per_sdu(const struct shell *sh, size_t indent,
 							    uint8_t codec_frames_per_sdu)
 {
-	shell_print(sh, "\tSupported max codec frames per SDU: %u", codec_frames_per_sdu);
+	shell_print(sh, "%*sSupported max codec frames per SDU: %u", indent, "",
+		    codec_frames_per_sdu);
 }
 
-static inline void print_codec_cap(const struct shell *sh,
+static inline void print_codec_cap(const struct shell *sh, size_t indent,
 				   const struct bt_audio_codec_cap *codec_cap)
 {
-	shell_print(sh, "codec cap id 0x%02x cid 0x%04x vid 0x%04x", codec_cap->id, codec_cap->cid,
-		    codec_cap->vid);
+	shell_print(sh, "%*scodec cap id 0x%02x cid 0x%04x vid 0x%04x", indent, "", codec_cap->id,
+		    codec_cap->cid, codec_cap->vid);
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
-	shell_print(sh, "Codec specific capabilities:");
+	shell_print(sh, "%*sCodec specific capabilities:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	if (codec_cap->data_len == 0U) {
-		shell_print(sh, "\tNone");
+		shell_print(sh, "%*sNone", indent, "");
 	} else if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
 		struct bt_audio_codec_octets_per_codec_frame codec_frame;
 		int ret;
 
 		ret = bt_audio_codec_cap_get_freq(codec_cap);
 		if (ret >= 0) {
-			print_codec_cap_freq(sh, (enum bt_audio_codec_cap_freq)ret);
+			print_codec_cap_freq(sh, indent, (enum bt_audio_codec_cap_freq)ret);
 		}
 
 		ret = bt_audio_codec_cap_get_frame_dur(codec_cap);
 		if (ret >= 0) {
-			print_codec_cap_frame_dur(sh, (enum bt_audio_codec_cap_frame_dur)ret);
+			print_codec_cap_frame_dur(sh, indent,
+						  (enum bt_audio_codec_cap_frame_dur)ret);
 		}
 
 		ret = bt_audio_codec_cap_get_supported_audio_chan_counts(codec_cap);
 		if (ret >= 0) {
-			print_codec_cap_chan_count(sh, (enum bt_audio_codec_cap_chan_count)ret);
+			print_codec_cap_chan_count(sh, indent,
+						   (enum bt_audio_codec_cap_chan_count)ret);
 		}
 
 		ret = bt_audio_codec_cap_get_octets_per_frame(codec_cap, &codec_frame);
 		if (ret >= 0) {
-			print_codec_cap_octets_per_codec_frame(sh, &codec_frame);
+			print_codec_cap_octets_per_codec_frame(sh, indent, &codec_frame);
 		}
 
 		ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(codec_cap);
 		if (ret >= 0) {
-			print_codec_cap_max_codec_frames_per_sdu(sh, (uint8_t)ret);
+			print_codec_cap_max_codec_frames_per_sdu(sh, indent, (uint8_t)ret);
 		}
 	} else { /* If not LC3, we cannot assume it's LTV */
-		shell_hexdump(sh, codec_cap->data, codec_cap->data_len);
+		shell_fprintf(sh, SHELL_NORMAL, "%*s", indent, "");
+
+		for (uint8_t i = 0U; i < codec_cap->data_len; i++) {
+			shell_fprintf(sh, SHELL_NORMAL, "%*s%02X", indent, "", codec_cap->data[i]);
+		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
 	}
+
+	/* Reduce for metadata*/
+	indent -= SHELL_PRINT_INDENT_LEVEL_SIZE;
 #endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
-	shell_print(sh, "Codec specific metadata:");
+	shell_print(sh, "%*sCodec capabilities metadata:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	if (codec_cap->meta_len == 0U) {
-		shell_print(sh, "\tNone");
+		shell_print(sh, "%*sNone", indent, "");
 	} else {
 		const uint8_t *data;
 		int ret;
 
 		ret = bt_audio_codec_cap_meta_get_pref_context(codec_cap);
 		if (ret >= 0) {
-			print_codec_meta_pref_context(sh, (enum bt_audio_context)ret);
+			print_codec_meta_pref_context(sh, indent, (enum bt_audio_context)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_stream_context(codec_cap);
 		if (ret >= 0) {
-			print_codec_meta_stream_context(sh, (enum bt_audio_context)ret);
+			print_codec_meta_stream_context(sh, indent, (enum bt_audio_context)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_program_info(codec_cap, &data);
 		if (ret >= 0) {
-			print_codec_meta_program_info(sh, data, (uint8_t)ret);
+			print_codec_meta_program_info(sh, indent, data, (uint8_t)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_stream_lang(codec_cap);
 		if (ret >= 0) {
-			print_codec_meta_language(sh, (uint32_t)ret);
+			print_codec_meta_language(sh, indent, (uint32_t)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_ccid_list(codec_cap, &data);
 		if (ret >= 0) {
-			print_codec_meta_ccid_list(sh, data, (uint8_t)ret);
+			print_codec_meta_ccid_list(sh, indent, data, (uint8_t)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_parental_rating(codec_cap);
 		if (ret >= 0) {
-			print_codec_meta_parental_rating(sh, (enum bt_audio_parental_rating)ret);
+			print_codec_meta_parental_rating(sh, indent,
+							 (enum bt_audio_parental_rating)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_audio_active_state(codec_cap);
 		if (ret >= 0) {
-			print_codec_meta_audio_active_state(sh, (enum bt_audio_active_state)ret);
+			print_codec_meta_audio_active_state(sh, indent,
+							    (enum bt_audio_active_state)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_bcast_audio_immediate_rend_flag(codec_cap);
 		if (ret >= 0) {
-			print_codec_meta_bcast_audio_immediate_rend_flag(sh);
+			print_codec_meta_bcast_audio_immediate_rend_flag(sh, indent);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_extended(codec_cap, &data);
 		if (ret >= 0) {
-			print_codec_meta_extended(sh, data, (uint8_t)ret);
+			print_codec_meta_extended(sh, indent, data, (uint8_t)ret);
 		}
 
 		ret = bt_audio_codec_cap_meta_get_vendor(codec_cap, &data);
 		if (ret >= 0) {
-			print_codec_meta_vendor(sh, data, (uint8_t)ret);
+			print_codec_meta_vendor(sh, indent, data, (uint8_t)ret);
 		}
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0 */
 }
 
-static inline void print_codec_cfg_freq(const struct shell *sh, enum bt_audio_codec_cfg_freq freq)
+static inline void print_codec_cfg_freq(const struct shell *sh, size_t indent,
+					enum bt_audio_codec_cfg_freq freq)
 {
-	shell_print(sh, "\tSampling frequency: %u Hz (%u)",
-		    bt_audio_codec_cfg_freq_to_freq_hz(freq), freq);
+	shell_print(sh, "%*sSampling frequency: %u Hz (0x%04X)", indent, "",
+		    bt_audio_codec_cfg_freq_to_freq_hz(freq), (uint16_t)freq);
 }
 
-static inline void print_codec_cfg_frame_dur(const struct shell *sh,
+static inline void print_codec_cfg_frame_dur(const struct shell *sh, size_t indent,
 					     enum bt_audio_codec_cfg_frame_dur frame_dur)
 {
-	shell_print(sh, "\tFrame duration: %u us (%u)",
-		    bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur), frame_dur);
+	shell_print(sh, "%*sFrame duration: %u us (0x%02X)", indent, "",
+		    bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur), (uint8_t)frame_dur);
 }
 
 static inline char *chan_location_bit_to_str(enum bt_audio_location chan_allocation)
@@ -707,132 +773,152 @@ static inline char *chan_location_bit_to_str(enum bt_audio_location chan_allocat
 	}
 }
 
-static inline void print_codec_cfg_chan_allocation(const struct shell *sh,
+static inline void print_codec_cfg_chan_allocation(const struct shell *sh, size_t indent,
 						   enum bt_audio_location chan_allocation)
 {
-	shell_print(sh, "\tChannel allocation:");
+	shell_print(sh, "%*sChannel allocation:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 32 bits set in the field */
 	for (size_t i = 0; i < 32; i++) {
 		const uint8_t bit_val = BIT(i);
 
 		if (chan_allocation & bit_val) {
-			shell_print(sh, "\t\t%s (0x%08X)", chan_location_bit_to_str(bit_val),
-				    bit_val);
+			shell_print(sh, "%*s%s (0x%08X)", indent, "",
+				    chan_location_bit_to_str(bit_val), bit_val);
 		}
 	}
 }
 
-static inline void print_codec_cfg_octets_per_frame(const struct shell *sh,
+static inline void print_codec_cfg_octets_per_frame(const struct shell *sh, size_t indent,
 						    uint16_t octets_per_frame)
 {
-	shell_print(sh, "\tOctets per codec frame: %u", octets_per_frame);
+	shell_print(sh, "%*sOctets per codec frame: %u", indent, "", octets_per_frame);
 }
 
-static inline void print_codec_cfg_frame_blocks_per_sdu(const struct shell *sh,
+static inline void print_codec_cfg_frame_blocks_per_sdu(const struct shell *sh, size_t indent,
 							uint8_t frame_blocks_per_sdu)
 {
-	shell_print(sh, "\tCodec frame blocks per SDU: %u", frame_blocks_per_sdu);
+	shell_print(sh, "%*sCodec frame blocks per SDU: %u", indent, "", frame_blocks_per_sdu);
 }
 
-static inline void print_codec_cfg(const struct shell *sh,
+static inline void print_codec_cfg(const struct shell *sh, size_t indent,
 				   const struct bt_audio_codec_cfg *codec_cfg)
 {
-	shell_print(sh, "codec cfg id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cfg->id,
-		    codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
+	shell_print(sh, "%*scodec cfg id 0x%02x cid 0x%04x vid 0x%04x count %u", indent, "",
+		    codec_cfg->id, codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-	shell_print(sh, "Codec specific configuration:");
+	shell_print(sh, "%*sCodec specific configuration:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	if (codec_cfg->data_len == 0U) {
-		shell_print(sh, "\tNone");
+		shell_print(sh, "%*sNone", indent, "");
 	} else if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		enum bt_audio_location chan_allocation;
 		int ret;
 
 		ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 		if (ret >= 0) {
-			print_codec_cfg_freq(sh, (enum bt_audio_codec_cfg_freq)ret);
+			print_codec_cfg_freq(sh, indent, (enum bt_audio_codec_cfg_freq)ret);
 		}
 
 		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
 		if (ret >= 0) {
-			print_codec_cfg_frame_dur(sh, (enum bt_audio_codec_cfg_frame_dur)ret);
+			print_codec_cfg_frame_dur(sh, indent,
+						  (enum bt_audio_codec_cfg_frame_dur)ret);
 		}
 
 		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
 		if (ret >= 0) {
-			print_codec_cfg_chan_allocation(sh, chan_allocation);
+			print_codec_cfg_chan_allocation(sh, indent, chan_allocation);
 		}
 
 		ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
 		if (ret >= 0) {
-			print_codec_cfg_octets_per_frame(sh, (uint16_t)ret);
+			print_codec_cfg_octets_per_frame(sh, indent, (uint16_t)ret);
 		}
 
 		ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, false);
 		if (ret >= 0) {
-			print_codec_cfg_frame_blocks_per_sdu(sh, (uint8_t)ret);
+			print_codec_cfg_frame_blocks_per_sdu(sh, indent, (uint8_t)ret);
 		}
 	} else { /* If not LC3, we cannot assume it's LTV */
-		shell_hexdump(sh, codec_cfg->data, codec_cfg->data_len);
+		shell_fprintf(sh, SHELL_NORMAL, "%*s", indent, "");
+
+		for (uint8_t i = 0U; i < codec_cfg->data_len; i++) {
+			shell_fprintf(sh, SHELL_NORMAL, "%*s%02X", indent, "", codec_cfg->data[i]);
+		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
 	}
+
+	/* Reduce for metadata*/
+	indent -= SHELL_PRINT_INDENT_LEVEL_SIZE;
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
-	shell_print(sh, "Codec specific metadata:");
+	shell_print(sh, "%*sCodec specific metadata:", indent, "");
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	if (codec_cfg->meta_len == 0U) {
-		shell_print(sh, "\tNone");
+		shell_print(sh, "%*sNone", indent, "");
 	} else {
 		const uint8_t *data;
 		int ret;
 
 		ret = bt_audio_codec_cfg_meta_get_pref_context(codec_cfg);
 		if (ret >= 0) {
-			print_codec_meta_pref_context(sh, (enum bt_audio_context)ret);
+			print_codec_meta_pref_context(sh, indent, (enum bt_audio_context)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_stream_context(codec_cfg);
 		if (ret >= 0) {
-			print_codec_meta_stream_context(sh, (enum bt_audio_context)ret);
+			print_codec_meta_stream_context(sh, indent, (enum bt_audio_context)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_program_info(codec_cfg, &data);
 		if (ret >= 0) {
-			print_codec_meta_program_info(sh, data, (uint8_t)ret);
+			print_codec_meta_program_info(sh, indent, data, (uint8_t)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_stream_lang(codec_cfg);
 		if (ret >= 0) {
-			print_codec_meta_language(sh, (uint32_t)ret);
+			print_codec_meta_language(sh, indent, (uint32_t)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_ccid_list(codec_cfg, &data);
 		if (ret >= 0) {
-			print_codec_meta_ccid_list(sh, data, (uint8_t)ret);
+			print_codec_meta_ccid_list(sh, indent, data, (uint8_t)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_parental_rating(codec_cfg);
 		if (ret >= 0) {
-			print_codec_meta_parental_rating(sh, (enum bt_audio_parental_rating)ret);
+			print_codec_meta_parental_rating(sh, indent,
+							 (enum bt_audio_parental_rating)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_audio_active_state(codec_cfg);
 		if (ret >= 0) {
-			print_codec_meta_audio_active_state(sh, (enum bt_audio_active_state)ret);
+			print_codec_meta_audio_active_state(sh, indent,
+							    (enum bt_audio_active_state)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_bcast_audio_immediate_rend_flag(codec_cfg);
 		if (ret >= 0) {
-			print_codec_meta_bcast_audio_immediate_rend_flag(sh);
+			print_codec_meta_bcast_audio_immediate_rend_flag(sh, indent);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_extended(codec_cfg, &data);
 		if (ret >= 0) {
-			print_codec_meta_extended(sh, data, (uint8_t)ret);
+			print_codec_meta_extended(sh, indent, data, (uint8_t)ret);
 		}
 
 		ret = bt_audio_codec_cfg_meta_get_vendor(codec_cfg, &data);
 		if (ret >= 0) {
-			print_codec_meta_vendor(sh, data, (uint8_t)ret);
+			print_codec_meta_vendor(sh, indent, data, (uint8_t)ret);
 		}
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
@@ -855,22 +941,40 @@ extern struct broadcast_source default_source;
 static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 					      void *user_data)
 {
+	size_t indent = 2 * SHELL_PRINT_INDENT_LEVEL_SIZE;
 	struct bt_bap_base_codec_id *codec_id = user_data;
 
-	shell_print(ctx_shell, "\t\tBIS index: 0x%02X", bis->index);
+	shell_print(ctx_shell, "%*sBIS index: 0x%02X", indent, "", bis->index);
+
+	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+
 	/* Print CC data */
 	if (codec_id->id == BT_HCI_CODING_FORMAT_LC3) {
-		struct bt_audio_codec_cfg codec_cfg;
+		struct bt_audio_codec_cfg codec_cfg = {
+			.id = codec_id->id,
+			.cid = codec_id->cid,
+			.vid = codec_id->vid,
+		};
 		int err;
 
 		err = bt_bap_base_subgroup_bis_codec_to_codec_cfg(bis, &codec_cfg);
 		if (err == 0) {
-			print_codec_cfg(ctx_shell, &codec_cfg);
+			print_codec_cfg(ctx_shell, indent, &codec_cfg);
 		} else {
-			print_ltv_array(ctx_shell, "\t\tdata", bis->data, bis->data_len);
+			shell_print(ctx_shell, "%*sCodec specific configuration:", indent, "");
+			print_ltv_array(ctx_shell, indent, bis->data, bis->data_len);
 		}
 	} else { /* If not LC3, we cannot assume it's LTV */
-		shell_hexdump(ctx_shell, bis->data, bis->data_len);
+		shell_print(ctx_shell, "%*sCodec specific configuration:", indent, "");
+
+		indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+		shell_fprintf(ctx_shell, SHELL_NORMAL, "%*s", indent, "");
+
+		for (uint8_t i = 0U; i < bis->data_len; i++) {
+			shell_fprintf(ctx_shell, SHELL_NORMAL, "%02X", bis->data[i]);
+		}
+
+		shell_fprintf(ctx_shell, SHELL_NORMAL, "\n");
 	}
 
 	return true;
@@ -879,6 +983,7 @@ static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_
 static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
 					  void *user_data)
 {
+	size_t indent = 1 * SHELL_PRINT_INDENT_LEVEL_SIZE;
 	struct bt_bap_base_codec_id codec_id;
 	struct bt_audio_codec_cfg codec_cfg;
 	uint8_t *data;
@@ -891,24 +996,34 @@ static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *sub
 		return false;
 	}
 
-	shell_print(ctx_shell, "\tCodec Format: 0x%02X", codec_id.id);
-	shell_print(ctx_shell, "\tCompany ID  : 0x%04X", codec_id.cid);
-	shell_print(ctx_shell, "\tVendor ID   : 0x%04X", codec_id.vid);
-
-	ret = bt_bap_base_get_subgroup_codec_data(subgroup, &data);
-	if (ret < 0) {
-		return false;
-	}
+	shell_print(ctx_shell, "%*sCodec Format: 0x%02X", indent, "", codec_id.id);
+	shell_print(ctx_shell, "%*sCompany ID  : 0x%04X", indent, "", codec_id.cid);
+	shell_print(ctx_shell, "%*sVendor ID   : 0x%04X", indent, "", codec_id.vid);
 
 	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
 	if (ret == 0) {
-		print_codec_cfg(ctx_shell, &codec_cfg);
+		print_codec_cfg(ctx_shell, indent, &codec_cfg);
 	} else {
+		/* If we cannot store it in a codec_cfg, then we cannot easily print it as such */
+		ret = bt_bap_base_get_subgroup_codec_data(subgroup, &data);
+		if (ret < 0) {
+			return false;
+		}
+
+		shell_print(ctx_shell, "%*sCodec specific configuration:", indent, "");
+		indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
+
 		/* Print CC data */
 		if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
-			print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
+			print_ltv_array(ctx_shell, indent, data, (uint8_t)ret);
 		} else { /* If not LC3, we cannot assume it's LTV */
-			shell_hexdump(ctx_shell, data, (uint8_t)ret);
+			shell_fprintf(ctx_shell, SHELL_NORMAL, "%*s", indent, "");
+
+			for (uint8_t i = 0U; i < (uint8_t)ret; i++) {
+				shell_fprintf(ctx_shell, SHELL_NORMAL, "%c", data[i]);
+			}
+
+			shell_fprintf(ctx_shell, SHELL_NORMAL, "\n");
 		}
 
 		ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
@@ -916,11 +1031,21 @@ static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *sub
 			return false;
 		}
 
+		shell_print(ctx_shell,
+			    "%*sCodec specific metadata:", indent - SHELL_PRINT_INDENT_LEVEL_SIZE,
+			    "");
+
 		/* Print metadata */
 		if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
-			print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
+			print_ltv_array(ctx_shell, indent, data, (uint8_t)ret);
 		} else { /* If not LC3, we cannot assume it's LTV */
-			shell_hexdump(ctx_shell, data, (uint8_t)ret);
+			shell_fprintf(ctx_shell, SHELL_NORMAL, "%*s", indent, "");
+
+			for (uint8_t i = 0U; i < (uint8_t)ret; i++) {
+				shell_fprintf(ctx_shell, SHELL_NORMAL, "%c", data[i]);
+			}
+
+			shell_fprintf(ctx_shell, SHELL_NORMAL, "\n");
 		}
 	}
 
