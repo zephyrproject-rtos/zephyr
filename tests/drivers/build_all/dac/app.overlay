@@ -235,15 +235,15 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ad5592: ad5592@10 {
-				compatible = "adi,ad5592";
+			test_spi_ad559x: ad559x@10 {
+				compatible = "adi,ad559x";
 				status = "okay";
 				reg = <0x10>;
 				spi-max-frequency = <0>;
 				reset-gpios = <&test_gpio 0 0>;
 
-				ad5592_dac: dac-controller {
-					compatible = "adi,ad5592-dac";
+				ad559x_dac: dac-controller {
+					compatible = "adi,ad559x-dac";
 					#io-channel-cells = <1>;
 				};
 			};

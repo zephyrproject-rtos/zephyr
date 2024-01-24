@@ -18,7 +18,7 @@ config MFD_INIT_PRIORITY
 	help
 	  Multi-function devices initialization priority.
 
-source "drivers/mfd/Kconfig.ad5592"
+source "drivers/mfd/Kconfig.ad559x"
 source "drivers/mfd/Kconfig.axp192"
 source "drivers/mfd/Kconfig.bd8lb600fs"
 source "drivers/mfd/Kconfig.max20335"
