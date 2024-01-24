@@ -13,12 +13,15 @@ menuconfig NET_CONFIG_SETTINGS
 	bool "Set network settings for applications"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select EXPERIMENTAL
 	help
 	  Allow IP addresses to be set in config file for
 	  networking client/server sample applications, or
 	  some link-layer dedicated settings like the channel.
 	  Beware this is not meant to be used for proper
 	  provisioning but quick sampling/testing.
+	  The experimental status is added because this version
+	  starts to use Yaml file based configuration.
 
 if NET_CONFIG_SETTINGS
 
