@@ -44,14 +44,14 @@ struct quectel_lcx6g_config {
 struct quectel_lcx6g_data {
 	struct gnss_nmea0183_match_data match_data;
 #if CONFIG_GNSS_SATELLITES
-	struct gnss_satellite satellites[24];
+	struct gnss_satellite satellites[CONFIG_GNSS_QUECTEL_LCX6G_SAT_ARRAY_SIZE];
 #endif
 
 	/* UART backend */
 	struct modem_pipe *uart_pipe;
 	struct modem_backend_uart uart_backend;
-	uint8_t uart_backend_receive_buf[128];
-	uint8_t uart_backend_transmit_buf[64];
+	uint8_t uart_backend_receive_buf[CONFIG_GNSS_QUECTEL_LCX6G_UART_RX_BUF_SIZE];
+	uint8_t uart_backend_transmit_buf[CONFIG_GNSS_QUECTEL_LCX6G_UART_TX_BUF_SIZE];
 
 	/* Modem chat */
 	struct modem_chat chat;
