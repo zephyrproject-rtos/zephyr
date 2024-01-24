@@ -9,7 +9,7 @@
  * privileged architecture specification
  */
 #include <zephyr/kernel_structs.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <soc.h>

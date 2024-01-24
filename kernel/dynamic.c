@@ -105,7 +105,7 @@ static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, int fla
 {
 	return z_impl_k_thread_stack_alloc(size, flags);
 }
-#include <syscalls/k_thread_stack_alloc_mrsh.c>
+#include <zephyr/syscalls/k_thread_stack_alloc_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static void dyn_cb(const struct k_thread *thread, void *user_data)
@@ -177,5 +177,5 @@ static inline int z_vrfy_k_thread_stack_free(k_thread_stack_t *stack)
 
 	return z_impl_k_thread_stack_free(stack);
 }
-#include <syscalls/k_thread_stack_free_mrsh.c>
+#include <zephyr/syscalls/k_thread_stack_free_mrsh.c>
 #endif /* CONFIG_USERSPACE */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 #include <xtensa/config/tie.h>
 #include <xtensa/config/tie-asm.h>

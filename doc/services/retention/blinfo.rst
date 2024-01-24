@@ -122,7 +122,7 @@ this mode:
 
 	#include <bootutil/boot_status.h>
 	#include <bootutil/image.h>
-	#include <mcuboot_version.h>
+	#include <zephyr/mcuboot_version.h>
 	#include <zephyr/settings/settings.h>
 
 API Reference

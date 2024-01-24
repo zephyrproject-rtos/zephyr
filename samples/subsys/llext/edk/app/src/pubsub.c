@@ -151,7 +151,7 @@ static inline int z_vrfy_publish(enum Channels channel, void *data,
 
 	return ret;
 }
-#include <syscalls/publish_mrsh.c>
+#include <zephyr/syscalls/publish_mrsh.c>
 #endif
 
 int z_impl_receive(enum Channels channel, void *data, size_t data_len)
@@ -182,7 +182,7 @@ static inline int z_vrfy_receive(enum Channels channel, void *data,
 
 	return z_impl_receive(channel, data, data_len);
 }
-#include <syscalls/receive_mrsh.c>
+#include <zephyr/syscalls/receive_mrsh.c>
 #endif
 
 int z_impl_register_subscriber(enum Channels channel, struct k_event *evt)
@@ -218,5 +218,5 @@ static inline int z_vrfy_register_subscriber(enum Channels channel,
 
 	return z_impl_register_subscriber(channel, evt);
 }
-#include <syscalls/register_subscriber_mrsh.c>
+#include <zephyr/syscalls/register_subscriber_mrsh.c>
 #endif

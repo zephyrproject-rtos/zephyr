@@ -5,10 +5,10 @@
  */
 
 #include <xtensa_asm2_s.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <offsets_short.h>
 #include <zephyr/syscall.h>
-#include <zsr.h>
+#include <zephyr/zsr.h>
 
 #include <xtensa/config/core-isa.h>
 

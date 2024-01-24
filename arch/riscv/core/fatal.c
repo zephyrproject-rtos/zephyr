@@ -263,6 +263,6 @@ static void z_vrfy_user_fault(unsigned int reason)
 	z_impl_user_fault(reason);
 }
 
-#include <syscalls/user_fault_mrsh.c>
+#include <zephyr/syscalls/user_fault_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */

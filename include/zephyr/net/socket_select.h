@@ -156,7 +156,7 @@ static inline void FD_SET(int fd, zsock_fd_set *set)
 }
 #endif
 
-#include <syscalls/socket_select.h>
+#include <zephyr/syscalls/socket_select.h>
 
 /**
  * @}

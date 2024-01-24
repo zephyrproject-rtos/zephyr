@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
 
-#include <zsr.h>
+#include <zephyr/zsr.h>
 #include "xtensa_asm2_context.h"
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 /* Assembler header!  This file contains macros designed to be included
  * only by the assembler.

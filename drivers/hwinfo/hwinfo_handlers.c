@@ -13,7 +13,7 @@ ssize_t z_vrfy_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 	return z_impl_hwinfo_get_device_id((uint8_t *)buffer, (size_t)length);
 }
-#include <syscalls/hwinfo_get_device_id_mrsh.c>
+#include <zephyr/syscalls/hwinfo_get_device_id_mrsh.c>
 
 ssize_t z_vrfy_hwinfo_get_device_eui64(uint8_t *buffer)
 {
@@ -21,7 +21,7 @@ ssize_t z_vrfy_hwinfo_get_device_eui64(uint8_t *buffer)
 
 	return z_impl_hwinfo_get_device_eui64((uint8_t *)buffer);
 }
-#include <syscalls/hwinfo_get_device_eui64_mrsh.c>
+#include <zephyr/syscalls/hwinfo_get_device_eui64_mrsh.c>
 
 int z_vrfy_hwinfo_get_reset_cause(uint32_t *cause)
 {
@@ -33,14 +33,14 @@ int z_vrfy_hwinfo_get_reset_cause(uint32_t *cause)
 
 	return ret;
 }
-#include <syscalls/hwinfo_get_reset_cause_mrsh.c>
+#include <zephyr/syscalls/hwinfo_get_reset_cause_mrsh.c>
 
 
 int z_vrfy_hwinfo_clear_reset_cause(void)
 {
 	return z_impl_hwinfo_clear_reset_cause();
 }
-#include <syscalls/hwinfo_clear_reset_cause_mrsh.c>
+#include <zephyr/syscalls/hwinfo_clear_reset_cause_mrsh.c>
 
 int z_vrfy_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
@@ -52,4 +52,4 @@ int z_vrfy_hwinfo_get_supported_reset_cause(uint32_t *supported)
 
 	return ret;
 }
-#include <syscalls/hwinfo_get_supported_reset_cause_mrsh.c>
+#include <zephyr/syscalls/hwinfo_get_supported_reset_cause_mrsh.c>
