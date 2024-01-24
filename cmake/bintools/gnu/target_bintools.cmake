@@ -44,7 +44,7 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_section_remove "--remove-s
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_only "--only-section=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_rename "--rename-section;")
 
-set_property(TARGET bintools PROPERTY elfconvert_flag_lma_adjust "--change-section-lma;*+")
+set_property(TARGET bintools PROPERTY elfconvert_flag_lma_adjust "--change-section-lma;")
 
 # Note, placing a ';' at the end results in the following param  to be a list,
 # and hence space separated.

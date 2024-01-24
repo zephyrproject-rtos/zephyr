@@ -1613,11 +1613,14 @@ endif()
 
 if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
   math(EXPR adjustment "${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT DECIMAL)
+  set(args_adjustment ${CONFIG_BUILD_OUTPUT_ADJUST_LMA_SECTIONS})
+  list(TRANSFORM args_adjustment PREPEND $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>)
+  list(TRANSFORM args_adjustment APPEND +${adjustment})
   list(APPEND
     post_build_commands
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>${adjustment}
+            ${args_adjustment}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_ELF_NAME}
     )
