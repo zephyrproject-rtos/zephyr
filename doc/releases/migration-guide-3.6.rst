@@ -435,6 +435,9 @@ Networking
   cannot be accessed from usermode thread. This means that the API calls will need to made
   from supervisor mode thread.
 
+* The zperf ratio between mbps and kbps, kbps and bps is changed to 1000, instead of 1024,
+  to align with iperf ratios.
+
 zcbor
 =====
 
