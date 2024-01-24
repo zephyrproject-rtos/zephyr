@@ -1062,6 +1062,24 @@ static inline int z_impl_can_get_capabilities(const struct device *dev, can_mode
 }
 
 /**
+ * @brief Get the CAN transceiver associated with the CAN controller
+ *
+ * Get a pointer to the device structure for the CAN transceiver associated with the CAN controller.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return Pointer to the device structure for the associated CAN transceiver driver instance, or
+ *         NULL if no transceiver is associated.
+ */
+__syscall const struct device *can_get_transceiver(const struct device *dev);
+
+static const struct device *z_impl_can_get_transceiver(const struct device *dev)
+{
+	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
+
+	return common->phy;
+}
+
+/**
  * @brief Start the CAN controller
  *
  * Bring the CAN controller out of `CAN_STATE_STOPPED`. This will reset the RX/TX error counters,

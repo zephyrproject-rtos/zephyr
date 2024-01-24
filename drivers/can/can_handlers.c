@@ -146,6 +146,14 @@ static inline int z_vrfy_can_get_capabilities(const struct device *dev, can_mode
 }
 #include <syscalls/can_get_capabilities_mrsh.c>
 
+static inline const struct device *z_vrfy_can_get_transceiver(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_get_transceiver(dev);
+}
+#include <syscalls/can_get_transceiver_mrsh.c>
+
 static inline int z_vrfy_can_start(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, start));
