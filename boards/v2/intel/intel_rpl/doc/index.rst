@@ -33,7 +33,7 @@ Hardware
 
 General information about the board can be found at the `RPL`_.
 
-.. include:: ../../../../soc/x86/raptor_lake/doc/supported_features.txt
+.. include:: ../../../../../soc/v2/intel/raptor_lake/doc/supported_features.txt
 
 
 Connections and IOs
@@ -69,7 +69,7 @@ Build Zephyr application
 Booting the Raptor Lake S CRB Board using UEFI
 ==============================================
 
-.. include:: ../../common/efi_boot.rst
+.. include:: ../../../../../boards/x86/common/efi_boot.rst
    :start-after: start_include_here
 
 .. _RPL: https://edc.intel.com/content/www/us/en/design/products/platforms/details/raptor-lake-s/13th-generation-core-processors-datasheet-volume-1-of-2/
