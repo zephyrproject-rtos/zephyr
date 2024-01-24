@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2023 Sensorfy B.V.
  *
@@ -270,21 +270,6 @@ const char *flash_area_label(const struct flash_area *fa);
  * @return Byte value of erase memory.
  */
 uint8_t flash_area_erased_val(const struct flash_area *fa);
-
-#define FLASH_AREA_LABEL_EXISTS(label) __DEPRECATED_MACRO \
-	DT_HAS_FIXED_PARTITION_LABEL(label)
-
-#define FLASH_AREA_LABEL_STR(lbl) __DEPRECATED_MACRO \
-	DT_PROP(DT_NODE_BY_FIXED_PARTITION_LABEL(lbl), label)
-
-#define FLASH_AREA_ID(label) __DEPRECATED_MACRO \
-	DT_FIXED_PARTITION_ID(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
-
-#define FLASH_AREA_OFFSET(label) __DEPRECATED_MACRO \
-	DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
-
-#define FLASH_AREA_SIZE(label) __DEPRECATED_MACRO \
-	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
 /**
  * Returns non-0 value if fixed-partition of given DTS node label exists.
