@@ -273,6 +273,7 @@ static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
 static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *phy;
 	const struct can_timing *timing_min;
 	const struct can_timing *timing_max;
 	struct can_bus_err_cnt err_cnt;
@@ -365,6 +366,9 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 			    timing_min->phase_seg2, timing_max->phase_seg2,
 			    timing_min->prescaler, timing_max->prescaler);
 	}
+
+	phy = can_get_transceiver(dev);
+	shell_print(sh, "transceiver:     %s", phy != NULL ? phy->name : "passive/none");
 
 #ifdef CONFIG_CAN_STATS
 	shell_print(sh, "statistics:");

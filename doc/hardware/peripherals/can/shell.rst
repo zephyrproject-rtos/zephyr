@@ -79,6 +79,7 @@ more:
    tx errors:       0
    timing:          sjw 1..128, prop_seg 0..0, phase_seg1 2..256, phase_seg2 2..128, prescaler 1..512
    timing data:     sjw 1..16, prop_seg 0..0, phase_seg1 1..32, phase_seg2 1..16, prescaler 1..32
+   transceiver:     passive/none
    statistics:
      bit errors:    0
        bit0 errors: 0
