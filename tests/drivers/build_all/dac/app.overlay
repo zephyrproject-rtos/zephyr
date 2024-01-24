@@ -187,7 +187,7 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ad5676: ad5676@A {
+			test_spi_ad5676: ad5676@a {
 				compatible = "adi,ad5676";
 				reg = <0xA>;
 				spi-max-frequency = <0>;
@@ -195,7 +195,7 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ad5679: ad5679@B {
+			test_spi_ad5679: ad5679@b {
 				compatible = "adi,ad5679";
 				reg = <0xB>;
 				spi-max-frequency = <0>;
@@ -203,7 +203,7 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ad5684: ad5684@C {
+			test_spi_ad5684: ad5684@c {
 				compatible = "adi,ad5684";
 				reg = <0xC>;
 				spi-max-frequency = <0>;
@@ -211,7 +211,7 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ad5686: ad5686@D {
+			test_spi_ad5686: ad5686@d {
 				compatible = "adi,ad5686";
 				reg = <0xD>;
 				spi-max-frequency = <0>;
@@ -219,7 +219,7 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ad5687: ad5687@E {
+			test_spi_ad5687: ad5687@e {
 				compatible = "adi,ad5687";
 				reg = <0xE>;
 				spi-max-frequency = <0>;
@@ -227,7 +227,7 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ad5689: ad5689@F {
+			test_spi_ad5689: ad5689@f {
 				compatible = "adi,ad5689";
 				reg = <0xF>;
 				spi-max-frequency = <0>;
