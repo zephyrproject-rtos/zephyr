@@ -342,6 +342,10 @@ Libraries / Subsystems
   * Fixed issue whereby :kconfig:option:`CONFIG_RETENTION_BUFFER_SIZE` values over 256 would cause
     an infinite loop due to use of 8-bit variables.
 
+* Storage
+
+  * File systems: LittleFS module has been updated to version 2.8.1.
+
 * Binary descriptors
 
 * POSIX API
