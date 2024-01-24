@@ -154,6 +154,12 @@ Drivers and Sensors
 
 * CAN
 
+  * Added system call :c:func:`can_get_mode()` for getting the current operation mode of a CAN
+    controller.
+
+  * Add system call :c:func:`can_get_transceiver()` for getting the CAN transceiver associated with
+    a CAN controller.
+
 * Clock control
 
   * Renesas R-Car clock control driver now supports Gen4 SoCs
