@@ -18,6 +18,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
@@ -53,22 +54,6 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #else
 #error "Invalid LTDC pixel format chosen"
 #endif
-
-#if defined(CONFIG_HAS_CMSIS_CORE_M)
-#include <cmsis_core.h>
-
-#if defined(CONFIG_DCACHE)
-#define CACHE_INVALIDATE(addr, size)	SCB_InvalidateDCache_by_Addr((addr), (size))
-#define CACHE_CLEAN(addr, size)		SCB_CleanDCache_by_Addr((addr), (size))
-#else
-#define CACHE_INVALIDATE(addr, size)
-#define CACHE_CLEAN(addr, size)		barrier_dsync_fence_full();
-#endif /* CONFIG_DCACHE */
-
-#else
-#define CACHE_INVALIDATE(addr, size)
-#define CACHE_CLEAN(addr, size)
-#endif /* CONFIG_HAS_CMSIS_CORE_M */
 
 struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
@@ -215,7 +200,7 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 		for (row = 0; row < desc->height; row++) {
 			(void) memcpy(dst, src, desc->width * data->current_pixel_size);
-			CACHE_CLEAN(dst, desc->width * data->current_pixel_size);
+			sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
 			dst += (config->width * data->current_pixel_size);
 			src += (desc->pitch * data->current_pixel_size);
 		}
@@ -252,7 +237,7 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 
 	for (row = 0; row < desc->height; row++) {
 		(void) memcpy(dst, src, desc->width * data->current_pixel_size);
-		CACHE_CLEAN(dst, desc->width * data->current_pixel_size);
+		sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
 		src += (config->width * data->current_pixel_size);
 		dst += (desc->pitch * data->current_pixel_size);
 	}
