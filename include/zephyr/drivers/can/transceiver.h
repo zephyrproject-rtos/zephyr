@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_TRANSCEIVER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CAN_TRANSCEIVER_H_
 
+#include <zephyr/drivers/can.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus
@@ -30,7 +31,7 @@ extern "C" {
  * @brief Callback API upon enabling CAN transceiver
  * See @a can_transceiver_enable() for argument description
  */
-typedef int (*can_transceiver_enable_t)(const struct device *dev);
+typedef int (*can_transceiver_enable_t)(const struct device *dev, can_mode_t mode);
 
 /**
  * @brief Callback API upon disabling CAN transceiver
@@ -56,15 +57,16 @@ __subsystem struct can_transceiver_driver_api {
  * @see can_start()
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param mode Operation mode.
  * @retval 0 If successful.
  * @retval -EIO General input/output error, failed to enable device.
  */
-static inline int can_transceiver_enable(const struct device *dev)
+static inline int can_transceiver_enable(const struct device *dev, can_mode_t mode)
 {
 	const struct can_transceiver_driver_api *api =
 		(const struct can_transceiver_driver_api *)dev->api;
 
-	return api->enable(dev);
+	return api->enable(dev, mode);
 }
 
 /**

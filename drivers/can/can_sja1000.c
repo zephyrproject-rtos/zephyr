@@ -155,7 +155,7 @@ int can_sja1000_start(const struct device *dev)
 	}
 
 	if (config->common.phy != NULL) {
-		err = can_transceiver_enable(config->common.phy);
+		err = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (err != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
 			return err;

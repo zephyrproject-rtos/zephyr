@@ -435,7 +435,7 @@ static int mcp2515_start(const struct device *dev)
 	}
 
 	if (dev_cfg->common.phy != NULL) {
-		ret = can_transceiver_enable(dev_cfg->common.phy);
+		ret = can_transceiver_enable(dev_cfg->common.phy, dev_data->common.mode);
 		if (ret != 0) {
 			LOG_ERR("Failed to enable CAN transceiver [%d]", ret);
 			return ret;

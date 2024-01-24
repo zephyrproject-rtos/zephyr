@@ -419,7 +419,7 @@ static int can_stm32_start(const struct device *dev)
 	}
 
 	if (cfg->common.phy != NULL) {
-		ret = can_transceiver_enable(cfg->common.phy);
+		ret = can_transceiver_enable(cfg->common.phy, data->common.mode);
 		if (ret != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
 			goto unlock;
