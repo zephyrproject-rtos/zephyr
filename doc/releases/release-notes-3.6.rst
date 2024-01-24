@@ -372,6 +372,20 @@ MCUboot
 Nanopb
 ******
 
+zcbor
+*****
+
+zcbor has been updated from 0.7.0 to 0.8.0.
+Full release notes can be found at:
+https://github.com/zephyrproject-rtos/zcbor/blob/0.8.0/RELEASE_NOTES.md
+
+Highlights:
+
+* Add support for unordered maps
+* Performance improvements
+* Naming improvements for generated code
+* Bugfixes
+
 LVGL
 ****
 
