@@ -447,6 +447,68 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # SHELL_TELNET_BACKEND
 
+config SHELL_BACKEND_BT
+	bool "Bluetooth backend (BLE)"
+	depends on BT
+	help
+	  Enable Bluetooth backend.
+
+if SHELL_BACKEND_BT
+
+config SHELL_PROMPT_BT
+	string "Displayed prompt name"
+	default "bt:~$ "
+
+module = SHELL_BACKEND_BT
+default-timeout = 100
+source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
+
+default-size = 10
+source "subsys/shell/Kconfig.template.shell_log_queue_size"
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_BACKEND_BT_LOG_LEVEL_NONE
+
+config SHELL_BACKEND_BT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_BACKEND_BT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_BACKEND_BT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_BACKEND_BT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_BACKEND_BT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_BACKEND_BT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_PRINTF_BUFF_SIZE
+	default 256 if SHELL_BACKEND_BT
+	#FIXME: Verify max notification size.
+
+config SHELL_BACKEND_BT_LOG_LEVEL
+	int
+	default 0 if SHELL_BACKEND_BT_LOG_LEVEL_NONE
+	default 1 if SHELL_BACKEND_BT_LOG_LEVEL_ERR
+	default 2 if SHELL_BACKEND_BT_LOG_LEVEL_WRN
+	default 3 if SHELL_BACKEND_BT_LOG_LEVEL_INF
+	default 4 if SHELL_BACKEND_BT_LOG_LEVEL_DBG
+	default 5 if SHELL_BACKEND_BT_LOG_LEVEL_DEFAULT
+
+module = SHELL_BT
+module-str = BT shell backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SHELL_BACKEND_BT
+
 config SHELL_BACKEND_DUMMY
 	bool "Dummy backend."
 	help
