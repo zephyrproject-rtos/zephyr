@@ -1018,7 +1018,7 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 					HAL_OSPI_ADDRESS_24_BITS)
 						? SPI_NOR_CMD_READ_FAST
 						: SPI_NOR_CMD_READ_FAST_4B)
-					: SPI_NOR_OCMD_RD)
+					: dev_data->read_opcode)
 				: SPI_NOR_OCMD_DTR_RD;
 	s_command.AddressMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
 				? ((dev_cfg->data_mode == OSPI_SPI_MODE)
@@ -1099,6 +1099,20 @@ static bool stm32_ospi_is_memorymap(const struct device *dev)
 			  OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE) ?
 			  true : false);
 }
+
+static int stm32_ospi_abort(const struct device *dev)
+{
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+	HAL_StatusTypeDef hal_ret;
+
+	hal_ret = HAL_OSPI_Abort(&dev_data->hospi);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("%d: OSPI abort failed", hal_ret);
+		return -EIO;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_STM32_MEMMAP */
 
 /*
@@ -1136,11 +1150,18 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		return -ENOTSUP;
 	}
 
+	ospi_lock_thread(dev);
+
 #ifdef CONFIG_STM32_MEMMAP
 	if (stm32_ospi_is_memorymap(dev)) {
-		LOG_DBG("MemoryMap : cannot erase");
-		return 0;
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_ospi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before erase");
+			goto end_erase;
+		}
 	}
+	/* Continue with Indirect Mode */
 #endif /* CONFIG_STM32_MEMMAP */
 
 	OSPI_RegularCmdTypeDef cmd_erase = {
@@ -1152,8 +1173,6 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		.DQSMode = HAL_OSPI_DQS_DISABLE,
 		.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD,
 	};
-
-	ospi_lock_thread(dev);
 
 	if (stm32_ospi_mem_ready(dev_data,
 		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
@@ -1265,8 +1284,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			ret = stm32_ospi_mem_ready(dev_data, dev_cfg->data_mode,
 						dev_cfg->data_rate);
 		}
-
 	}
+	goto end_erase;
 
 end_erase:
 	ospi_unlock_thread(dev);
@@ -1278,9 +1297,7 @@ end_erase:
 static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
 {
-	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
-	struct flash_stm32_ospi_data *dev_data = dev->data;
-	int ret;
+	int ret = 0;
 
 	if (!ospi_address_is_valid(dev, addr, size)) {
 		LOG_ERR("Error: address or size exceeds expected values: "
@@ -1294,15 +1311,23 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 	}
 
 #ifdef CONFIG_STM32_MEMMAP
-	if (stm32_ospi_is_memorymap(dev)) {
-		LOG_DBG("MemoryMapped Read offset: 0x%lx, len: %zu",
-			(long)(STM32_OSPI_BASE_ADDRESS + addr),
-			size);
-		memcpy(data, (uint8_t *)STM32_OSPI_BASE_ADDRESS + addr, size);
-
-		return 0;
+	/* If not MemMapped then configure it */
+	if (!stm32_ospi_is_memorymap(dev)) {
+		if (stm32_ospi_set_memorymap(dev) != 0) {
+			LOG_ERR("READ failed: cannot enable MemoryMap");
+			return -EIO;
+		}
 	}
-#endif /* CONFIG_STM32_MEMMAP */
+	/* Now in MemMapped mode : read with memcopy */
+	LOG_DBG("MemoryMapped Read offset: 0x%lx, len: %zu",
+		(long)(STM32_OSPI_BASE_ADDRESS + addr),
+		size);
+	memcpy(data, (uint8_t *)STM32_OSPI_BASE_ADDRESS + addr, size);
+
+#else /* CONFIG_STM32_MEMMAP */
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+
 
 	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
@@ -1369,6 +1394,7 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 
 	ospi_unlock_thread(dev);
 
+#endif /* CONFIG_STM32_MEMMAP */
 	return ret;
 }
 
@@ -1395,15 +1421,18 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+	ospi_lock_thread(dev);
+
 #ifdef CONFIG_STM32_MEMMAP
 	if (stm32_ospi_is_memorymap(dev)) {
-		LOG_DBG("MemoryMapped Write offset: 0x%lx, len: %zu",
-			(long)(STM32_OSPI_BASE_ADDRESS + addr),
-			size);
-		memcpy((uint8_t *)STM32_OSPI_BASE_ADDRESS + addr, data, size);
-
-		return 0;
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_ospi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before write");
+			goto end_write;
+		}
 	}
+	/* Continue with Indirect Mode */
 #endif /* CONFIG_STM32_MEMMAP */
 	/* page program for STR or DTR mode */
 	OSPI_RegularCmdTypeDef cmd_pp = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
@@ -1448,7 +1477,6 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	cmd_pp.DummyCycles = 0U;
 
 	LOG_DBG("OSPI: write %zu data", size);
-	ospi_lock_thread(dev);
 
 	ret = stm32_ospi_mem_ready(dev_data,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
@@ -1497,7 +1525,9 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 			break;
 		}
 	}
+	goto end_write;
 
+end_write:
 	ospi_unlock_thread(dev);
 
 	return ret;
