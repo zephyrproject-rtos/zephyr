@@ -126,6 +126,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_mcp3204: mcp3204@0 {
@@ -237,9 +238,9 @@
 			};
 
 
-			test_spi_ads114s08: ads114s08@9 {
+			test_spi_ads114s08: ads114s08@c {
 				compatible = "ti,ads114s08";
-				reg = <0x9>;
+				reg = <0xc>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 				reset-gpios = <&test_gpio 0 0>;
@@ -247,77 +248,77 @@
 				start-sync-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_max11102: max11102@a {
+			test_spi_max11102: max11102@d {
 				compatible = "maxim,max11102";
-				reg = <0xa>;
-				spi-max-frequency = <0>;
-				#io-channel-cells = <1>;
-				chsel-gpios = <&test_gpio 0 0>;
-			};
-
-			test_spi_max11103: max11103@b {
-				compatible = "maxim,max11103";
-				reg = <0xb>;
-				spi-max-frequency = <0>;
-				#io-channel-cells = <1>;
-				chsel-gpios = <&test_gpio 0 0>;
-			};
-
-			test_spi_max11105: max11105@c {
-				compatible = "maxim,max11105";
-				reg = <0xc>;
-				spi-max-frequency = <0>;
-				#io-channel-cells = <1>;
-			};
-
-			test_spi_max11106: max11106@d {
-				compatible = "maxim,max11106";
 				reg = <0xd>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 				chsel-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_max11110: max11110@e {
-				compatible = "maxim,max11110";
+			test_spi_max11103: max11103@e {
+				compatible = "maxim,max11103";
 				reg = <0xe>;
-				spi-max-frequency = <0>;
-				#io-channel-cells = <1>;
-			};
-
-			test_spi_max11111: max11111@f {
-				compatible = "maxim,max11111";
-				reg = <0xf>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 				chsel-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_max11115: max11115@10 {
-				compatible = "maxim,max11115";
-				reg = <0x10>;
+			test_spi_max11105: max11105@f {
+				compatible = "maxim,max11105";
+				reg = <0xf>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 			};
 
-			test_spi_max11116: max11116@11 {
-				compatible = "maxim,max11116";
+			test_spi_max11106: max11106@10 {
+				compatible = "maxim,max11106";
+				reg = <0x10>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11110: max11110@11 {
+				compatible = "maxim,max11110";
 				reg = <0x11>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 			};
 
-			test_spi_max11117: max11117@12 {
-				compatible = "maxim,max11117";
+			test_spi_max11111: max11111@12 {
+				compatible = "maxim,max11111";
 				reg = <0x12>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11115: max11115@13 {
+				compatible = "maxim,max11115";
+				reg = <0x13>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 			};
 
-			test_spi_ad5592: ad5592@13 {
+			test_spi_max11116: max11116@14 {
+				compatible = "maxim,max11116";
+				reg = <0x14>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11117: max11117@15 {
+				compatible = "maxim,max11117";
+				reg = <0x15>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad5592: ad5592@16 {
 				compatible = "adi,ad5592";
 				status = "okay";
-				reg = <0x13>;
+				reg = <0x16>;
 				spi-max-frequency = <0>;
 				reset-gpios = <&test_gpio 0 0>;
 
