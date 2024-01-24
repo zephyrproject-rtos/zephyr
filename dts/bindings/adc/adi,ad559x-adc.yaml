@@ -1,15 +1,15 @@
 # Copyright (c) 2023 Grinn
 # SPDX-License-Identifier: Apache-2.0
 
-description: AD5592 DAC Controller
+description: AD559x ADC Controller
 
-compatible: "adi,ad5592-dac"
+compatible: "adi,ad559x-adc"
 
-include: dac-controller.yaml
+include: adc-controller.yaml
 
 properties:
   "#io-channel-cells":
     const: 1
 
 io-channel-cells:
-  - output
+  - input
