@@ -184,6 +184,11 @@ Device Drivers and Device Tree
   common accessor function. Out-of-tree CAN controller drivers need to be updated to no longer
   supply this callback.
 
+* The CAN transceiver API function :c:func:`can_transceiver_enable` now takes a :c:type:`can_mode_t`
+  argument for propagating the CAN controller operational mode to the CAN transceiver. Out-of-tree
+  CAN controller and CAN transceiver drivers need to be updated to match this new API function
+  signature.
+
 * The ``CAN_FILTER_FDF`` flag for filtering classic CAN/CAN FD frames was removed since no known CAN
   controllers implement support for this. Applications can still filter on classic CAN/CAN FD frames
   in their receive callback functions as needed.
