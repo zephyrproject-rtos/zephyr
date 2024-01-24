@@ -532,6 +532,8 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		can->MCR &= ~CAN_MCR_NART;
 	}
 
+	data->common.mode = mode;
+
 	k_mutex_unlock(&data->inst_mutex);
 
 	return 0;
