@@ -37,7 +37,7 @@ zephyr_library_sources_ifdef(CONFIG_NXP_S32_EIRQ            intc_eirq_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_WKPU            intc_wkpu_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_XMC4XXX_INTC            intc_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_PINT                intc_nxp_pint.c)
-zephyr_library_sources_ifdef(CONFIG_RENESAS_RA_ICU          intc_ra_icu.c)
+zephyr_library_sources_ifdef(CONFIG_RENESAS_RA_ICU          intc_renesas_ra_icu.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_IRQSTEER            intc_nxp_irqsteer.c)
 
 if(CONFIG_INTEL_VTD_ICTL)
