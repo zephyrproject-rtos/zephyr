@@ -9,19 +9,19 @@ source "${bash_source_dir}/_env.sh"
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
-simulation_id="$(basename "$(realpath "$bash_source_dir/..")")"
+simulation_id="host_privacy_peripheral"
 EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 
 Execute "$central_exe" \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -RealEncryption=1 \
-    -flash="${simulation_id}.central.log.bin"
+    -flash="${simulation_id}.central.log.bin" -flash_erase
 
 
 Execute "$peripheral_exe" \
     -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -RealEncryption=1 \
-    -flash="${simulation_id}.peripheral.log.bin"
+    -flash="${simulation_id}.peripheral.log.bin" -flash_erase
 
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
@@ -30,16 +30,16 @@ Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
 wait_for_background_jobs
 
 Execute "$central_exe" \
-    -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -RealEncryption=1 \
+    -v=${verbosity_level} -s=${simulation_id}.2 -d=0 -testid=central -RealEncryption=1 \
     -flash="${simulation_id}.central.log.bin" -flash_rm
 
 
 Execute "$peripheral_exe" \
-    -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -RealEncryption=1 \
+    -v=${verbosity_level} -s=${simulation_id}.2 -d=1 -testid=peripheral -RealEncryption=1 \
     -flash="${simulation_id}.peripheral.log.bin" -flash_rm
 
 
-Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
+Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id}.2 \
     -D=2 -sim_length=70e6 $@
 
 wait_for_background_jobs
