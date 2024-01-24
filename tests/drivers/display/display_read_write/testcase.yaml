@@ -50,3 +50,15 @@ tests:
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+  drivers.display.read_write.ili9340:
+    tags:
+      - shield
+    extra_args:
+      - SHIELD=adafruit_2_8_tft_touch_v2
+      - EXTRA_DTC_OVERLAY_FILE=adafruit_2_8_tft_touch_rgb565.overlay
+    extra_configs:
+      - CONFIG_ILI9XXX_READ=y
+    # Use platform_allow, because we cannot filter the test based on the
+    # presence of the arduino_spi DT nodelabel
+    platform_allow:
+      - mimxrt685_evk/mimxrt685s/cm33
