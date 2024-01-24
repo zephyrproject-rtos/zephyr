@@ -5,9 +5,6 @@
 
 if SOC_RAPTOR_LAKE
 
-config SOC
-	default "raptor_lake"
-
 config PCIE_MMIO_CFG
 	default y
 
