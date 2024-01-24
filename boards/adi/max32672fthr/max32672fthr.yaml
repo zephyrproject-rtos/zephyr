@@ -11,5 +11,6 @@ supported:
   - gpio
   - serial
   - trng
+  - i2c
 ram: 200
 flash: 1024
