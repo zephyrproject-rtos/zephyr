@@ -1,0 +1,33 @@
+# ADI EVAL-ADIN1110EBZ board configuration
+
+# Copyright (c) 2024 BayLibre
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ADI_EVAL_ADIN1110EBZ
+
+config BOARD
+	default "adi_eval_adin1110ebz"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+config MDIO_INIT_PRIORITY
+	default 81
+	depends on MDIO
+
+config PHY_INIT_PRIORITY
+	default 82
+	depends on NET_L2_ETHERNET && ETH_DRIVER
+
+config MEMC
+	default y
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_ADI_EVAL_ADIN1110EBZ
