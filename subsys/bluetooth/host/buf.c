@@ -86,22 +86,6 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout)
-{
-	struct net_buf *buf;
-
-	buf = (struct net_buf *)atomic_ptr_clear((atomic_ptr_t *)&bt_dev.sent_cmd);
-	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_EVT);
-		buf->len = 0U;
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-
-		return buf;
-	}
-
-	return bt_buf_get_rx(BT_BUF_EVT, timeout);
-}
-
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 			       k_timeout_t timeout)
 {
