@@ -187,6 +187,16 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&fdcan2 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan2_rx_pb0 &fdcan2_tx_pb1>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
