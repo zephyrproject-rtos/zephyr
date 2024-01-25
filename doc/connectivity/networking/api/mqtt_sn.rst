@@ -90,7 +90,7 @@ advertisement mechanism, this is not implemented yet in the library.
 
 Call the ``mqtt_sn_connect`` function, which will send a ``CONNECT`` message.
 The application should periodically call the ``mqtt_sn_input`` function to process
-the response received. The appliation does not have to call ``mqtt_sn_input`` if it
+the response received. The application does not have to call ``mqtt_sn_input`` if it
 knows that no data has been received (e.g. when using Bluetooth). Note that
 ``mqtt_sn_input`` is a non-blocking function, if the transport struct contains a
 ``poll`` compatible function pointer.
