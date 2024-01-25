@@ -165,7 +165,7 @@ Deprecated in this release
 
 * Flash Map API macros :c:macro:`FLASH_MAP_`, which have been using DTS node label
   property to reference partitions, have been deprecated and replaced with
-  :c:macro:`FIXED_PARTITION_` whch use DTS node label instead.
+  :c:macro:`FIXED_PARTITION_` which use DTS node label instead.
   Replacement list:
 
   .. table::
@@ -270,7 +270,7 @@ Architectures
   * Reduced callee-saved registers for RV32E.
   * Introduced Zicsr, Zifencei and BitManip as separate extensions.
   * Introduced :kconfig:option:`CONFIG_RISCV_ALWAYS_SWITCH_THROUGH_ECALL` for
-    plaforms that require every ``mret`` to be balanced by ``ecall``.
+    platforms that require every ``mret`` to be balanced by ``ecall``.
   * IRQ vector table is now used for vectored mode.
   * Disabled :kconfig:option:`CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE` for CLIC.
   * ``STRINGIFY`` macro is now used for CSR helpers.
@@ -511,7 +511,7 @@ Drivers and Sensors
   * The STM32 CAN-FD CAN driver clock configuration has been moved from Kconfig to :ref:`devicetree
     <dt-guide>`. See the :dtcompatible:`st,stm32-fdcan` devicetree binding for more information.
   * The filter handling of STM32 bxCAN driver has been simplified and made more reliable.
-  * The STM32 bxCAN driver now supports dual intances.
+  * The STM32 bxCAN driver now supports dual instances.
   * The CAN loopback driver now supports CAN-FD.
   * The CAN shell module has been rewritten to properly support the additions and changes to the CAN
     controller API.
@@ -543,7 +543,7 @@ Drivers and Sensors
 
 * DFU
 
-  * Fixed fetch of the flash write block size from incorect device by
+  * Fixed fetch of the flash write block size from incorrect device by
     ``flash_img``.
   * Fixed possible build failure in the image manager for mcuboot on
     redefinitions of :c:macro:`BOOT_MAX_ALIGN` and :c:macro:`BOOT_MAGIC_SZ`.
@@ -757,7 +757,7 @@ Drivers and Sensors
     for various drivers.
   * Various fixes on ``lpuart``.
   * Added a workaround on bytes dropping on ``nrfx_uarte``.
-  * Fixed compilation error on ``uart_pl011`` when interrupt is diabled.
+  * Fixed compilation error on ``uart_pl011`` when interrupt is disabled.
   * Added power management support on ``stm32``.
   * ``xlnx_ps`` has moved to using ``DEVICE_MMIO`` API.
   * ``gd32`` now supports using reset API to reset hardware and clock
@@ -1398,7 +1398,7 @@ Libraries / Subsystems
     response is now only used for mcumgr errors, shell command
     execution result codes are instead returned in the ``ret``
     variable instead, see :ref:`mcumgr_smp_group_9` for updated
-    information. Legacy bahaviour can be restored by enabling
+    information. Legacy behaviour can be restored by enabling
     :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`.
   * MCUMGR img_mgmt erase command now accepts an optional slot number
     to select which image will be erased, using the ``slot`` input

@@ -260,7 +260,7 @@ Bluetooth
   * Fixed BIS payload sliding window overrun check
   * Fixed CIS Central FT calculation
   * Fixed CIS Central error handling
-  * Fixed CIS assymmetric PHY usage
+  * Fixed CIS asymmetric PHY usage
   * Fixed CIS encryption when DF support enabled
   * Fixed ISO-AL for quality tests and time stamps
   * Fixed PHY value in HCI LE CIS Established Event
@@ -840,7 +840,7 @@ Networking
     When :kconfig:option:`CONFIG_LWM2M_COAP_BLOCK_TRANSFER` is enabled, any content that is larger
     than :kconfig:option:`CONFIG_LWM2M_COAP_MAX_MSG_SIZE` is split into a block-wise transfer.
   * Block-wise transfers don't require tokens to match anymore as this was not in line
-    with CoAP specification (CoAP doesn't require tokens re-use).
+    with CoAP specification (CoAP doesn't require tokens reuse).
   * Various fixes to bootstrap. Now client ensures that Bootstrap-Finish command is sent,
     before closing the DTLS pipe. Also allows Bootstrap server to close the DTLS pipe.
     Added timeout when waiting for bootstrap commands.
@@ -2115,7 +2115,7 @@ Libraries / Subsystems
   * Added support of mounting littlefs on the block device from the shell/fs.
   * Added alignment parameter to FS_LITTLEFS_DECLARE_CUSTOM_CONFIG macro, it can speed up read/write
     operation for SDMMC devices in case when we align buffers on CONFIG_SDHC_BUFFER_ALIGNMENT,
-    because we can avoid extra copy of data from card bffer to read/prog buffer.
+    because we can avoid extra copy of data from card buffer to read/prog buffer.
 
 * Random
 

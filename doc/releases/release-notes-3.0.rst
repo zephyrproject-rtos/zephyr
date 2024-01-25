@@ -380,7 +380,7 @@ Bluetooth
   * Updated the supported Bluetooth HCI version to 5.3
   * Added support for Periodic Advertiser List
   * Added support for Periodic Advertising Synchronization Receive Enable
-  * Added support for filter access list filtering for exended scanning
+  * Added support for filter access list filtering for extended scanning
   * Added support for Advertising Extensions dynamic TX power control
   * Added handling of direct address type in extended adv reports
   * Implemented auxiliary PDU device address matching
@@ -660,7 +660,7 @@ Networking
   * Added support for multiple LwM2M Firmware Update object instances.
   * Improved error handling in LwM2M content writers.
   * Added unit tests for LwM2M content writers.
-  * Implmented LwM2M Security, Server, Connection Monitor objects in version 1.1.
+  * Implemented LwM2M Security, Server, Connection Monitor objects in version 1.1.
   * Multiple minor bugfixes in the LwM2M stack.
   * Added support for the following objects:
 
@@ -678,7 +678,7 @@ Networking
     unaliged access warnings from gcc.
   * Added automatic loopback addresses registration to loopback interface.
   * Fixed source address selection for ARP.
-  * Allow to implment a custom IEEE802154 L2 on top of existing drivers.
+  * Allow to implement a custom IEEE802154 L2 on top of existing drivers.
   * Introduced a network packet filtering framework.
 
 * MQTT:

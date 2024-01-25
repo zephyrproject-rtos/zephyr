@@ -259,7 +259,7 @@ Bluetooth
   * Added the ability to send HCI monitor traces over RTT.
   * Refactored the Bluetooth buffer configuration for simplicity. See the
     commit message of 6483e12a8ac4f495b28279a6b84014f633b0d374 for more info.
-    Note however that the aformentioned commit message has two typos;
+    Note however that the aforementioned commit message has two typos;
 
     * ``BT_CTLR_TX_BUFFER`` should be ``BT_CTLR_TX_BUFFERS``
     * ``BT_CTLR_TX_BUFFERS_SIZE`` should be ``BT_CTLR_TX_BUFFER_SIZE``
@@ -611,7 +611,7 @@ Drivers and Sensors
 * Sensor
 
   * Added support for STM32 internal (CPU) temperature sensor.
-  * Refactored mulitple ST sensor drivers to use gpio_dt_spec macros and common
+  * Refactored multiple ST sensor drivers to use gpio_dt_spec macros and common
     stmemc routines, support multiple instances, and configure ODR/range
     properties in device tree.
   * Added SBS 1.1 compliant fuel gauge driver.
@@ -1038,7 +1038,7 @@ Tests and Samples
      filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
 
 * Add a feature which handles pytest script in twister and provide an example.
-* Provide test excution time per ztest testcase.
+* Provide test execution time per ztest testcase.
 * Added and refined some testcases, most of them are negative testcases, to
   improve the test code coverage:
 

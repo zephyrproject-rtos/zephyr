@@ -197,7 +197,7 @@ Kernel
 * Propagate a distinct error code if a workqueue item is submitted that
   has already been completed
 * Disable preemption when handing fatal errors
-* Fix an issue with the sytsem call stack frame if the system call is
+* Fix an issue with the system call stack frame if the system call is
   preempted and then later tries to Z_OOPS()
 * add k_thread_stack_space_get() system call for analyzing thread stack
   space. Older methods which had problems in some cases or on some
@@ -636,7 +636,7 @@ Bluetooth
     address resolution support
   * Added dynamic TX power control, including a set of vendor-specific commands
     to read and write the TX power
-  * Added a Kconfig option, BT_CTLR_PARAM_CHECK, to enable addtional parameter
+  * Added a Kconfig option, BT_CTLR_PARAM_CHECK, to enable additional parameter
     checking
   * Added basic support for SMI (Stable Modulation Index)
   * Ticker: Implemented dynamic rescheduling
