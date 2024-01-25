@@ -48,6 +48,7 @@ tests:
       - stm32f3_disco
       - nucleo_f429zi
       - stm32f746g_disco
+      - nucleo_f767zi
       - nucleo_g0b1re
       - nucleo_g474re
       - nucleo_h743zi
