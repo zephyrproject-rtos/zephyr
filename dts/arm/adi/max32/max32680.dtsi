@@ -75,5 +75,25 @@
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			status = "disabled";
 		};
+
+		spi0: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 16>;
+			interrupts = <56 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40046000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+			interrupts = <16 0>;
+			status = "disabled";
+		};
 	};
 };
