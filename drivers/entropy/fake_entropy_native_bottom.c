@@ -7,6 +7,9 @@
  * ARCH_POSIX architecture
  */
 
+#undef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <errno.h>
