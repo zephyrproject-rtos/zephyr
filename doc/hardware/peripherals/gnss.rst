@@ -27,7 +27,7 @@ requires little more than implementing power management
 and configuration for the specific GNSS modem.
 
 Adding support for GNSS modems which use other protocols and/or
-busses than the usual NMEA0183 over UART is possible, but will
+buses than the usual NMEA0183 over UART is possible, but will
 require a bit more work from the driver developer.
 
 Configuration Options

@@ -302,7 +302,7 @@ registers only when :c:func:`arch_switch` is called to minimize context
 switching latency. Such architectures must use NULL as the argument to
 :c:func:`z_get_next_switch_handle` to determine if there is a new thread
 to schedule, and follow through with their own :c:func:`arch_switch` or
-derrivative if so, or directly leave interrupt mode otherwise.
+derivative if so, or directly leave interrupt mode otherwise.
 In the former case it is up to that switch code to store the handle
 resulting from the thread that is being switched out in that thread's
 "switch_handle" field after its context has fully been saved.

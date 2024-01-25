@@ -175,7 +175,7 @@ will be ignored and the minimum value will be used instead.
 To force a smaller than minimum value to be used, the application may enable the
 :kconfig:option:`CONFIG_HEAP_MEM_POOL_IGNORE_MIN` option. This can be useful
 when optimizing the heap size and the minimum requirement can be more accurately
-determined for a speficic application.
+determined for a specific application.
 
 Allocating Memory
 =================
