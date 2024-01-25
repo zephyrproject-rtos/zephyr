@@ -129,6 +129,16 @@
 			riscv,ndev = <186>;
 		};
 
+		mbox: mailbox@37020000 {
+			compatible = "microchip,mpfs-mailbox";
+			reg = <0x37020000 0x58>, <0x2000318C 0x40>,
+				<0x37020800 0x100>;
+			interrupt-parent = <&plic>;
+			interrupts = <96 1>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
 		uart0: uart@20000000 {
 			compatible = "ns16550";
 			reg = <0x20000000 0x1000>;
