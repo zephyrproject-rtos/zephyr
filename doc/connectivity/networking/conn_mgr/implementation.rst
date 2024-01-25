@@ -281,7 +281,7 @@ If exceptions to this are absolutely necessary, they should be constrained to sp
 
    While connectivity implementations must not break, it is acceptable for implementations to have potentially unexpected behavior if applications attempt to directly control the association state.
 
-   For instance, if an application directly instructs an underlying technology to dissassociate, it would be acceptable for the connectivity implementation to interpret this as an unexpected connection loss and immediately attempt to re-associate.
+   For instance, if an application directly instructs an underlying technology to disassociate, it would be acceptable for the connectivity implementation to interpret this as an unexpected connection loss and immediately attempt to re-associate.
 
 .. _conn_mgr_impl_guidelines_non_blocking:
 

@@ -63,7 +63,7 @@ is supported. In order to send BINARY data, the :c:func:`websocket_send_msg()`
 must be used.
 
 When done, the Websocket transport socket must be closed. User should handle
-the lifecycle(close/re-use) of tcp socket after websocket_disconnect.
+the lifecycle(close/reuse) of tcp socket after websocket_disconnect.
 
 .. code-block:: c
 
