@@ -9,7 +9,7 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 
-#include "../../../subsys/net/ip/dhcpv6.c"
+#include "../../../subsys/net/lib/dhcpv6/dhcpv6.c"
 
 static struct in6_addr test_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x1 } } };

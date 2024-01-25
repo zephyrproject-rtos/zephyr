@@ -41,6 +41,8 @@ source "subsys/net/lib/capture/Kconfig"
 
 source "subsys/net/lib/dhcpv4/Kconfig"
 
+source "subsys/net/lib/dhcpv6/Kconfig"
+
 source "subsys/net/lib/trickle/Kconfig"
 
 source "subsys/net/lib/zperf/Kconfig"
