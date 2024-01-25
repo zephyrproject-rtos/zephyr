@@ -108,6 +108,10 @@ elseif (CONFIG_NATIVE_LIBRARY)
       $<TARGET_PROPERTY:compiler,no_builtin>
     )
   endif()
+
+  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+    target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
+  endif()
 endif()
 
 if(CONFIG_EXTERNAL_LIBC)
