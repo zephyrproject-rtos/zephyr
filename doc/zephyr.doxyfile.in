@@ -2399,6 +2399,7 @@ PREDEFINED             = __DOXYGEN__ \
 			 XEN_GUEST_HANDLE_64(x)= \
                          _LINKER \
                          __deprecated= \
+			 __sparse_cache= \
                          __packed= \
                          __aligned(x)= \
                          __attribute_nonnull(...)= \

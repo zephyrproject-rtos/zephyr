@@ -335,6 +335,20 @@ size_t arch_icache_line_size_get(void);
 
 #endif /* CONFIG_ICACHE || __DOXYGEN__ */
 
+#if CONFIG_CACHE_DOUBLEMAP  || __DOXYGEN__
+bool arch_cache_is_ptr_cached(void *ptr);
+#define cache_is_ptr_cached(ptr) arch_cache_is_ptr_cached(ptr)
+
+bool arch_cache_is_ptr_uncached(void *ptr);
+#define cache_is_ptr_uncached(ptr) arch_cache_is_ptr_uncached(ptr)
+
+void __sparse_cache *arch_cache_cached_ptr_get(void *ptr);
+#define cache_cached_ptr(ptr) arch_cache_cached_ptr_get(ptr)
+
+void *arch_cache_uncached_ptr_get(void __sparse_cache *ptr);
+#define cache_uncached_ptr(ptr) arch_cache_uncached_ptr_get(ptr)
+#endif /* CONFIG_CACHE_DOUBLEMAP */
+
 /**
  * @}
  */

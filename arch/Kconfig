@@ -730,6 +730,13 @@ config CPU_HAS_DCACHE
 	help
 	  This hidden configuration should be selected when the CPU has a d-cache.
 
+config CPU_CACHE_INCOHERENT
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has
+	  incoherent cache. This applies to intra-CPU multiprocessing
+	  incoherence and makes only sense when MP_NUM_CPUS > 1.
+
 config CPU_HAS_ICACHE
 	bool
 	help
@@ -924,6 +931,17 @@ config ICACHE
 	default y
 	help
 	  This option enables the support for the instruction cache (i-cache).
+
+config CACHE_DOUBLEMAP
+	bool "Cache double-mapping support"
+	depends on CPU_CACHE_INCOHERENT
+	default y
+	help
+	  Double-mapping behavior where a pointer can be cheaply converted to
+	  point to the same cached/uncached memory at different locations.
+
+	  This applies to intra-CPU multiprocessing incoherence and makes only
+	  sense when MP_NUM_CPUS > 1.
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"
