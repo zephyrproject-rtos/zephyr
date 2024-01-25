@@ -31,7 +31,7 @@ structure:
    └── cmake/
        └── sca/
            └── <tool>/         # Name of SCA tool, this is the value given to ZEPHYR_SCA_VARIANT
-               └── sca.cmake   # CMake code that confgures the tool to be used with Zephyr
+               └── sca.cmake   # CMake code that configures the tool to be used with Zephyr
 
 To add ``foo`` under ``/path/to/my_tools/cmake/sca`` create the following structure:
 
