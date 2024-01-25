@@ -182,6 +182,10 @@ Drivers and Sensors
 
 * Flash
 
+  * ``spi_nor`` driver now sleeps between polls in ``spi_nor_wait_until_ready``. If this is not
+    desired (For example due to ROM constraints in a bootloader),
+    :kconfig:option:`CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY` can be disabled.
+
 * GPIO
 
   * Renesas R-Car GPIO driver now supports Gen4 SoCs
