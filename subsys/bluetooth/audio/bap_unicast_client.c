@@ -1047,6 +1047,8 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 			/* or 0x02 (QoS Configured) */
 			case BT_BAP_EP_STATE_QOS_CONFIGURED:
+			/* or 0x04 (Streaming) if there is a disconnect */
+			case BT_BAP_EP_STATE_STREAMING:
 			/* or 0x05 (Disabling) */
 			case BT_BAP_EP_STATE_DISABLING:
 				break;
