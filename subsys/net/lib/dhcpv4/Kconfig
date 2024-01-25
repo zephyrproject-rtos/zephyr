@@ -1,8 +1,50 @@
-# DHCPv4 server implementation for Zephyr
+# DHCPv4 implementation for Zephyr
 
+# Copyright (c) 2016 Intel Corporation.
 # Copyright (c) 2024 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
+
+config NET_DHCPV4
+	bool "DHCPv4 client"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	depends on NET_IPV4 && NET_UDP
+
+if NET_DHCPV4
+
+module = NET_DHCPV4
+module-dep = NET_LOG
+module-str = Log level for DHCPv4 client
+module-help = Enable debug diagnostic from DHCPV4 client.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_DHCPV4_INITIAL_DELAY_MAX
+	int "Maximum time out for initial discover request"
+	depends on NET_DHCPV4
+	default 10
+	range 2 10
+	help
+	  As per RFC2131 4.1.1, we wait a random period between
+	  1 and 10 seconds before sending the initial discover.
+
+config NET_DHCPV4_OPTION_CALLBACKS
+	bool "Option callbacks"
+	depends on NET_DHCPV4
+	help
+	  If set, custom callbacks for arbitrary DHCP options
+	  can be added. These can be used to support otherwise
+	  DHCP options not used by the rest of the system.
+
+config NET_DHCPV4_ACCEPT_UNICAST
+	bool "Accept unicast DHCPv4 traffic"
+	depends on NET_DHCPV4
+	default y
+	help
+	  If set, the network stack will accept unicast DHCPv4 responses from
+	  servers, before the assigned address is configured on the interface.
+
+endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER
 	bool "DHCPv4 server"

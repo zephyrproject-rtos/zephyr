@@ -11,7 +11,7 @@
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv4_server.h>
 
-#include "dhcpv4.h"
+#include "dhcpv4/dhcpv4_internal.h"
 #include "ipv4.h"
 #include "udp_internal.h"
 
