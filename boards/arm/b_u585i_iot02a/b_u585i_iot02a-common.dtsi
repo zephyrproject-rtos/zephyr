@@ -131,11 +131,10 @@ stm32_lp_tick_source: &lptim1 {
 
 	status = "okay";
 
-	mx25lm51245: ospi-nor-flash@0 {
+	mx25lm51245: ospi-nor-flash@70000000 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0>;
+		reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
