@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -234,6 +235,7 @@
 		     &ltdc_hsync_pc6 &ltdc_vsync_pa4>;
 	pinctrl-names = "default";
 	ext-sdram = <&sdram2>;
+	display-controller = <&ili9341>;
 	status = "okay";
 
 	width = <240>;
