@@ -65,7 +65,7 @@ config SOC_RISCV_TELINK_B92
 	select INCLUDE_RESET_VECTOR
 
 config SOC_RISCV_TELINK_B93
-	bool "Telink B92 SoC implementation"
+	bool "Telink B93 SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select CPU_HAS_FPU
 	select INCLUDE_RESET_VECTOR
