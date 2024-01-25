@@ -104,7 +104,7 @@ To test the M4F core, we build the `hello_world` sample with the following comma
 .. code-block:: console
 
    # From the root of the Zephyr repository
-   west build -p -b am62x_m4_phyboard_lyra samples/hello_world
+   west build -p -b phyboard_lyra_am62x/am6234/m4 samples/hello_world
 
 This builds the program and the binary is present in the `build/zephyr` directory as `zephyr.elf`.
 
