@@ -33,7 +33,7 @@ of the interrupt.
 Usage
 *****
 
-When monitor mode debuging is enabled, entering a breakpoint will not halt the
+When monitor mode debugging is enabled, entering a breakpoint will not halt the
 processor, but rather generate an interrupt with ISR implemented under
 ``z_arm_debug_monitor`` symbol.  :kconfig:option:`CONFIG_CORTEX_M_DEBUG_MONITOR_HOOK` config configures this interrupt
 to be the lowest available priority, which will allow other interrupts to execute
