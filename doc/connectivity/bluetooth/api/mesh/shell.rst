@@ -944,7 +944,7 @@ application. This shell module can be used to trigger interaction between Health
 on devices in a Mesh network.
 
 By default, the module will choose the first Health Client instance in the model composition when
-using the Health Client commands. To choose a spesific Health Client instance the user can utilize
+using the Health Client commands. To choose a specific Health Client instance the user can utilize
 the commands ``mesh models health instance set`` and ``mesh models health instance get-all``.
 
 The Health Client may use the general messages parameters set by ``mesh target dst``,

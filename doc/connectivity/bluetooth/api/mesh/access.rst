@@ -179,7 +179,7 @@ the :ref:`bluetooth_mesh_lcd_srv` model.
 Composition Data Page 0
 -----------------------
 
-Composition Data Page 0 provides the fundemental information about a device, and
+Composition Data Page 0 provides the fundamental information about a device, and
 is mandatory for all mesh devices. It contains the element and model composition,
 the supported features, and manufacturer information.
 

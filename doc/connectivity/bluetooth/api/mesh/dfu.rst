@@ -164,7 +164,7 @@ Firmware metadata
 |                        |              | in the New firmware core type field.   |
 +------------------------+--------------+----------------------------------------+
 | Application-specific   | <variable>   | Application-specific data to allow     |
-| data for new firmware  | (Optional)   | application to execut some             |
+| data for new firmware  | (Optional)   | application to execute some            |
 |                        |              | vendor-specific behaviors using        |
 |                        |              | this data before it can respond        |
 |                        |              | with a status message.                 |
