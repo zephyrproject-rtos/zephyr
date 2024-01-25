@@ -35,6 +35,7 @@
 #include <soc/rtc.h>
 #endif /* CONFIG_SOC_SERIES_ESP32xx */
 
+#include <esp_rom_caps.h>
 #include <esp_rom_sys.h>
 #include <esp_rom_uart.h>
 #include <soc/rtc.h>
@@ -518,6 +519,9 @@ static int clock_control_esp32_init(const struct device *dev)
 	rtc_cpu_freq_config_t new_config;
 	bool res;
 
+	/* wait uart output to be cleared */
+	esp_rom_uart_tx_wait_idle(ESP_CONSOLE_UART_NUM);
+
 	/* reset default config to use dts config */
 	if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || rtc_get_reset_reason(0) != CPU_RESET_REASON) {
 		rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
@@ -541,9 +545,6 @@ static int clock_control_esp32_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	/* wait uart output to be cleared */
-	esp_rom_uart_tx_wait_idle(0);
-
 	if (cfg->xtal_div >= 0) {
 		new_config.div = cfg->xtal_div;
 	}
@@ -564,10 +565,10 @@ static int clock_control_esp32_init(const struct device *dev)
 #if ESP_ROM_UART_CLK_IS_XTAL
 	clock_hz = esp_clk_xtal_freq();
 #endif
-	esp_rom_uart_tx_wait_idle(ESP_CONSOLE_UART_NUM);
 
 #if !defined(ESP_CONSOLE_UART_NONE)
-	esp_rom_uart_set_clock_baudrate(ESP_CONSOLE_UART_NUM, clock_hz, ESP_CONSOLE_UART_BAUDRATE);
+	esp_rom_uart_set_clock_baudrate(ESP_CONSOLE_UART_NUM,
+			clock_hz, ESP_CONSOLE_UART_BAUDRATE);
 #endif
 	return 0;
 }
