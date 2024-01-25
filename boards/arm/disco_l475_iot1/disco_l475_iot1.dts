@@ -321,12 +321,10 @@ zephyr_udc0: &usbotg_fs {
 
 	status = "okay";
 
-	mx25r6435f: qspi-nor-flash@0 {
+	mx25r6435f: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
 		qspi-max-frequency = <50000000>;
-		/* 64 Megabits = 8 Megabytes */
-		size = <0x4000000>;
 		status = "okay";
 
 		partitions {

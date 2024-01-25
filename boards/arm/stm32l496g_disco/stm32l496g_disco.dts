@@ -201,11 +201,10 @@ zephyr_udc0: &usbotg_fs {
 	flash-id = <1>;
 	status = "okay";
 
-	mx25r6435: qspi-nor-flash@0 {
+	mx25r6435: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
 		qspi-max-frequency = <8000000>;
-		size = <DT_SIZE_M(64)>; /* 8 MBytes */
 		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_4_4";
