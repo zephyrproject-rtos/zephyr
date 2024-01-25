@@ -1224,6 +1224,13 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 		return -EINVAL;
 	}
 
+	if ((htonl(server_addr->s_addr) >= htonl(base_addr->s_addr)) &&
+	    (htonl(server_addr->s_addr) <
+	     htonl(base_addr->s_addr) + CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT)) {
+		LOG_ERR("Address pool overlaps with server address.");
+		return -EINVAL;
+	}
+
 	netmask = net_if_ipv4_get_netmask(iface);
 	if (net_ipv4_is_addr_unspecified(&netmask)) {
 		LOG_ERR("Failed to obtain subnet mask.");
