@@ -32,7 +32,7 @@
 LOG_MODULE_REGISTER(dma_intel_adsp_hda);
 
 /* Time to poll for DGCS.GBUSY to be cleared when stopping host DMA  */
-#define INTEL_ADSP_HDA_DMA_HOST_STOP_TIMEOUT_US	1000
+#define INTEL_ADSP_HDA_DMA_HOST_STOP_TIMEOUT_US	5000
 
 int intel_adsp_hda_dma_host_in_config(const struct device *dev,
 				       uint32_t channel,
