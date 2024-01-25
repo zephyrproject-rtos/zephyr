@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dns_resolve.h>
 
-#include "dhcpv4.h"
+#include "dhcpv4_internal.h"
 #include "ipv4.h"
 #include "net_stats.h"
 

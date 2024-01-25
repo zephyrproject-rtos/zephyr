@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 
-#include "dhcpv4.h"
+#include "dhcpv4_internal.h"
 #include "net_private.h"
 #include "../../l2/ethernet/arp.h"
 
