@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0a_mosi_p0_5 &spi0a_miso_p0_6 &spi0a_sck_p0_7 &spi0a_ss0_p0_4>;
+	pinctrl-names = "default";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <128000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+};
