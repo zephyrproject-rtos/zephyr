@@ -1,0 +1,5 @@
+board:
+  name: sk_am62
+  vendor: Texas Instruments
+  socs:
+  - name: am6234
