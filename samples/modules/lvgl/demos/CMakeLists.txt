@@ -66,16 +66,15 @@ target_sources_ifdef(CONFIG_LV_USE_DEMO_MUSIC app PRIVATE
 )
 
 target_sources_ifdef(CONFIG_LV_USE_DEMO_BENCHMARK app PRIVATE
-    ${LVGL_DIR}/demos/benchmark/lv_demo_benchmark.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_indexed16.c
-    ${LVGL_DIR}/demos/benchmark/assets/lv_font_bechmark_montserrat_28_compr_az.c.c
-    ${LVGL_DIR}/demos/benchmark/assets/lv_font_bechmark_montserrat_16_compr_az.c.c
+    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_alpha256.c
     ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_argb.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_alpha16.c
+    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_indexed16.c
     ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_rgb.c
-    ${LVGL_DIR}/demos/benchmark/assets/lv_font_bechmark_montserrat_12_compr_az.c.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_chroma_keyed.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_rgb565a8.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_12_compr_az.c.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_16_compr_az.c.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_28_compr_az.c.c
+    ${LVGL_DIR}/demos/transform/assets/img_transform_avatar_15.c
+    ${LVGL_DIR}/demos/benchmark/lv_demo_benchmark.c
 )
 
 target_sources_ifdef(CONFIG_LV_USE_DEMO_STRESS app PRIVATE
@@ -85,6 +84,7 @@ target_sources_ifdef(CONFIG_LV_USE_DEMO_STRESS app PRIVATE
 target_sources_ifdef(CONFIG_LV_USE_DEMO_WIDGETS app PRIVATE
     ${LVGL_DIR}/demos/widgets/assets/img_clothes.c
     ${LVGL_DIR}/demos/widgets/assets/img_demo_widgets_avatar.c
+    ${LVGL_DIR}/demos/widgets/assets/img_demo_widgets_needle.c
     ${LVGL_DIR}/demos/widgets/assets/img_lvgl_logo.c
     ${LVGL_DIR}/demos/widgets/lv_demo_widgets.c
 )
