@@ -140,7 +140,7 @@ static int soc_b9x_init(void)
 	/* system init */
 #if CONFIG_SOC_RISCV_TELINK_B91
 	sys_init(POWER_MODE, VBAT_TYPE);
-#elif CONFIG_SOC_RISCV_TELINK_B92||CONFIG_SOC_RISCV_TELINK_B93
+#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
 	sys_init(POWER_MODE, VBAT_TYPE, GPIO_VOLTAGE_3V3);
 #endif
 
@@ -184,7 +184,7 @@ static int soc_b9x_init(void)
 	clock_32k_init(CLK_32K_RC);
 	clock_cal_32k_rc();
 
-#if CONFIG_SOC_RISCV_TELINK_B92||CONFIG_SOC_RISCV_TELINK_B93
+#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
 	/* Stop 32k watchdog */
 	wd_32k_stop();
 #endif
@@ -212,7 +212,7 @@ void soc_b9x_restore(void)
 	/* system init */
 #if CONFIG_SOC_RISCV_TELINK_B91
 	sys_init(POWER_MODE, VBAT_TYPE);
-#elif CONFIG_SOC_RISCV_TELINK_B92||CONFIG_SOC_RISCV_TELINK_B93
+#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
 	sys_init(POWER_MODE, VBAT_TYPE, GPIO_VOLTAGE_3V3);
 #endif
 
@@ -276,7 +276,7 @@ static int soc_b9x_check_flash(void)
 	case FLASH_SIZE_8M:
 		hw_flash_size = 8 * 1024 * 1024;
 		break;
-#if CONFIG_SOC_RISCV_TELINK_B92||CONFIG_SOC_RISCV_TELINK_B93
+#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
 	case FLASH_SIZE_16M:
 		hw_flash_size = 16 * 1024 * 1024;
 		break;

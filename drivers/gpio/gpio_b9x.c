@@ -734,7 +734,7 @@ static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 
 #endif
 /* (CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION)
- * || defined(CONFIG_BOARD_TLSR9528A_RETENTION)||defined(CONFIG_BOARD_TLSR9253B_RETENTION)))
+ * || defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9253B_RETENTION)))
  */
 
 /* GPIO driver APIs structure */

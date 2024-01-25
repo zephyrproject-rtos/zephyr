@@ -54,7 +54,7 @@ struct __packed uart_b9x_t {
 	uint8_t status;
 	uint8_t txrx_status;
 	uint8_t state;
-#if CONFIG_SOC_RISCV_TELINK_B92||CONFIG_SOC_RISCV_TELINK_B93
+#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
 	uint8_t ctrl4;
 #endif
 };
@@ -594,7 +594,8 @@ static int uart_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION)|| defined(CONFIG_BOARD_TLSR9253B_RETENTION)
+#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION) \
+|| defined(CONFIG_BOARD_TLSR9253B_RETENTION)
 		{
 			extern volatile bool b9x_deep_sleep_retention;
 
@@ -602,7 +603,7 @@ static int uart_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 				uart_b9x_driver_init(dev);
 			}
 		}
-#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION || CONFIG_BOARD_TLSR9528A_RETENTION ||CONFIG_BOARD_TLSR9253B_RETENTION*/
+#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION || CONFIG_BOARD_TLSR9528A_RETENTION */
 		/* reset TX/RX byte index */
 		data->tx_byte_index = 0;
 		data->rx_byte_index = 0;
