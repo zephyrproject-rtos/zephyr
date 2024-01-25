@@ -8,10 +8,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/winstream.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/cache.h>
 
 #include <adsp_memory.h>
 #include <mem_window.h>
-#include <soc.h>
 
 struct k_spinlock trace_lock;
 
@@ -78,7 +78,7 @@ static int winstream_console_init(void)
 	}
 	const struct mem_win_config *config = dev->config;
 	void *buf =
-		arch_xtensa_uncached_ptr((__sparse_force void __sparse_cache *)config->mem_base);
+		sys_cache_uncached_ptr_get((__sparse_force void __sparse_cache *)config->mem_base);
 
 	winstream = sys_winstream_init(buf, config->size);
 	winstream_console_hook_install();

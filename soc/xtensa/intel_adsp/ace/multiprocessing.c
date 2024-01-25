@@ -94,7 +94,7 @@ void soc_mp_init(void)
 	 * Only when more than 1 CPUs is enabled, then this is in uncached area.
 	 * Otherwise, this is in cached area and will fail this test.
 	 */
-	__ASSERT(!arch_xtensa_is_ptr_cached(&g_key_read_holder),
+	__ASSERT(!sys_cache_is_ptr_cached(&g_key_read_holder),
 		 "g_key_read_holder must be uncached");
 #endif /* defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1) */
 	g_key_read_holder = INTEL_ADSP_ACE15_MAGIC_KEY;
