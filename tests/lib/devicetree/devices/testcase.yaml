@@ -5,17 +5,7 @@ tests:
     # will mostly likely be the fastest.
     integration_platforms:
       - native_sim
-    platform_exclude:
-      - hsdk
-      - hsdk_2cores
-      - thingy52_nrf52832
-      - bbc_microbit
-      - bbc_microbit_v2
-      - bt610
-      - bl5340_dvk_cpuapp
-      - bl5340_dvk_cpuapp_ns
-      - m5stack_core2
-      - mimxrt595_evk_cm33
-      - nrf9131ek_nrf9131
-      - nrf9131ek_nrf9131_ns
-      - kincony_kc868_a32
+    # The test instantiate few vnd,i2c devices so it fails with boards with
+    # devices that select I2C.
+    platform_allow:
+      - native_sim
