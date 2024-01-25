@@ -677,7 +677,7 @@ static inline int uc81xx_set_ptl_8(const struct device *dev, uint16_t x, uint16_
 static int uc81xx_set_tres_16(const struct device *dev)
 {
 	const struct uc81xx_config *config = dev->config;
-	const struct uc81xx_tres8 tres = {
+	const struct uc81xx_tres16 tres = {
 		.hres = sys_cpu_to_be16(config->width),
 		.vres = sys_cpu_to_be16(config->height),
 	};
