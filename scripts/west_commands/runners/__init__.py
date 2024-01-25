@@ -47,6 +47,7 @@ _names = [
     'openocd',
     'pyocd',
     'qemu',
+    'sctool',
     'silabs_commander',
     'spi_burn',
     'stm32cubeprogrammer',
