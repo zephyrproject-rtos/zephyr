@@ -241,7 +241,7 @@ static int wpa_supp_band_chan_compat(struct wpa_supplicant *wpa_s, uint8_t band,
 	}
 
 	for (i = 0; i < mode->num_channels; i++) {
-		if (mode->channels[i].freq == channel) {
+		if (mode->channels[i].chan == channel) {
 			return mode->channels[i].freq;
 		}
 	}
