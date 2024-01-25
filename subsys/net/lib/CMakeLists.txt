@@ -15,6 +15,7 @@ add_subdirectory_ifdef(CONFIG_NET_CAPTURE            capture)
 add_subdirectory_ifdef(CONFIG_NET_ZPERF              zperf)
 add_subdirectory_ifdef(CONFIG_NET_SHELL              shell)
 add_subdirectory_ifdef(CONFIG_NET_TRICKLE            trickle)
+add_subdirectory_ifdef(CONFIG_NET_DHCPV6             dhcpv6)
 
 if (CONFIG_NET_DHCPV4 OR CONFIG_NET_DHCPV4_SERVER)
   add_subdirectory(dhcpv4)
