@@ -264,6 +264,8 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 		 * More than 2 channels are enabled, so we need to enable
 		 * secondary channel pairs.
 		 */
+#if (defined(FSL_FEATURE_I2S_SUPPORT_SECONDARY_CHANNEL) && \
+	FSL_FEATURE_I2S_SUPPORT_SECONDARY_CHANNEL)
 		for (uint32_t slot = 1; slot < i2s_cfg->channels / 2; slot++) {
 			/* Position must be set so that data does not overlap
 			 * with previous channel pair. Each channel pair
@@ -272,6 +274,10 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 			I2S_EnableSecondaryChannel(cfg->base, slot - 1, false,
 						   i2s_cfg->word_size * 2 * slot);
 		}
+#else
+		/* No support */
+		return -ENOTSUP;
+#endif
 	}
 
 	/*
