@@ -639,7 +639,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	ret = net_icmp_call_ipv4_handlers(pkt, ip_hdr, icmp_hdr);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOENT) {
 		NET_ERR("ICMPv4 handling failure (%d)", ret);
 	}
 
