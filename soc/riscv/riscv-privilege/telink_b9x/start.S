@@ -40,6 +40,14 @@ entry:
 	.word (0xeb0095ba)              #/ 4 - wire SPI interface
 #endif
 
+#elif CONFIG_SOC_RISCV_TELINK_B93
+	.org 0x24
+#if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
+	.word (0x3b0097a9)              #/ 2 - wire SPI interface
+#else
+	.word (0xeb0095ba)              #/ 4 - wire SPI interface
+#endif
+
 #endif
 
 	.align 2
@@ -153,7 +161,7 @@ _START:
 	j      __start
 
 
-#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION)
+#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION) ||defined(CONFIG_BOARD_TLSR9253B_RETENTION)
 
 /* exports */
 GTEXT(retention_entry)
@@ -216,7 +224,7 @@ _MULTI_ADDRESS_BEGIN:
 	la     t1, g_pm_multi_addr
 	lw     t2, 0(t1)
 	sw     t2, 0x104(t0)            #/ g_pm_multi_addr->0x80140104
-#elif CONFIG_SOC_RISCV_TELINK_B92
+#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
 	/* we are not in ISR so use ISR stack to restore registers */
 	la     sp, z_interrupt_stacks
 	li     t0, CONFIG_ISR_STACK_SIZE
@@ -289,6 +297,6 @@ _IRAMCODE_INIT_BEGIN:
 _RESTORE:
 	j      tl_context_restore
 
-#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION || CONFIG_BOARD_TLSR9528A_RETENTION */
+#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION || CONFIG_BOARD_TLSR9528A_RETENTION || CONFIG_BOARD_TLSR9253B_RETENTION*/
 
 	.option pop

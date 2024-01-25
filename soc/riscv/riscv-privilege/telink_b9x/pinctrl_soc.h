@@ -13,6 +13,8 @@
 #include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
 #elif CONFIG_SOC_RISCV_TELINK_B92
 #include <zephyr/dt-bindings/pinctrl/b92-pinctrl.h>
+#elif CONFIG_SOC_RISCV_TELINK_B93
+#include <zephyr/dt-bindings/pinctrl/b93-pinctrl.h>
 #endif
 
 /**
