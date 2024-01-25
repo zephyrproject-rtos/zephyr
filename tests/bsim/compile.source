@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 function print_error_info(){
   echo -e "\033[0;31mFailure building ${app} ${conf_file} for ${BOARD}\033[0m\n\
   You can rebuild it with\n\
-  ${cmake_cmd[@]} && ninja ${ninja_args}"
+  "${cmake_cmd[@]@Q}" && ninja ${ninja_args}"
 }
 
 function _compile(){
@@ -17,11 +17,12 @@ function _compile(){
   local conf_file="${conf_file:-prj.conf}"
   local conf_overlay="${conf_overlay:-""}"
 
-  local cmake_args="${cmake_args:-"-DCONFIG_COVERAGE=y \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"}"
+  default_cmake_args=(-DCONFIG_COVERAGE=y -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y)
+  local cmake_args=(${cmake_args:-"${default_cmake_args[@]}"})
   local cmake_extra_args="${cmake_extra_args:-""}"
   local ninja_args="${ninja_args:-""}"
-  local cc_flags="${cc_flags:-"-Werror"}"
+  local cc_flags="${cc_flags:-""}"
 
   if [ "${conf_overlay}" ]; then
     overlays="${conf_overlay//;/_}"
@@ -46,23 +47,25 @@ function _compile(){
   if [ $conf_file != "prj.conf" ]; then
     local cmake_cmd+=( -DCONF_FILE=${conf_file})
   fi
+  orifs="$IFS"; IFS=
   local cmake_cmd+=( -DOVERLAY_CONFIG="${conf_overlay}" \
             ${modules_arg} \
-            ${cmake_args} -DCMAKE_C_FLAGS=\"${cc_flags}\" ${cmake_extra_args})
+            "${cmake_args[@]}" ${cc_flags:+-DCMAKE_C_FLAGS=${cc_flags}} ${cmake_extra_args})
   if [ -v sysbuild ]; then
     local cmake_cmd+=( -DAPP_DIR=${app_root}/${app} ${ZEPHYR_BASE}/share/sysbuild/)
   else
     local cmake_cmd+=( ${app_root}/${app})
   fi
+  IFS="$orifs"
 
   # Set INCR_BUILD when calling to only do an incremental build
   if [ ! -v INCR_BUILD ] || [ ! -d "${this_dir}" ]; then
-      [ -d "${this_dir}" ] && rm ${this_dir} -rf
-      mkdir -p ${this_dir} && cd ${this_dir}
-      ${cmake_cmd[@]} &> cmake.out || \
+      [ -d "${this_dir}" ] && rm "${this_dir}" -rf
+      mkdir -p "${this_dir}" && cd "${this_dir}"
+      "${cmake_cmd[@]}" &> cmake.out || \
       { ret="$?"; print_error_info ; cat cmake.out && return $ret; }
   else
-      cd ${this_dir}
+      cd "${this_dir}"
   fi
   ninja ${ninja_args} &> ninja.out || \
   { ret="$?"; print_error_info ; cat ninja.out && return $ret; }
