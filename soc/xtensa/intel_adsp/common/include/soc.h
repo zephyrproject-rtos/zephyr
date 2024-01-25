@@ -26,10 +26,6 @@ extern void soc_start_core(int cpu_num);
 
 extern bool soc_cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 
-/* Legacy cache APIs still used in a few places */
-#define z_soc_cached_ptr(p) arch_xtensa_cached_ptr(p)
-#define z_soc_uncached_ptr(p) arch_xtensa_uncached_ptr(p)
-
 /**
  * @brief Halts and offlines a running CPU
  *

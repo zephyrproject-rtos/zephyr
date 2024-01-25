@@ -13,7 +13,7 @@ ZTEST(adsp_cache, test_adsp_cache_flush_inv_all)
 	uint32_t *cached, *uncached;
 
 	cached = (uint32_t *)LP_SRAM_BASE;
-	uncached = arch_xtensa_uncached_ptr(cached);
+	uncached = sys_cache_uncached_ptr_get(cached);
 
 	*cached = 42;
 	*uncached = 40;
