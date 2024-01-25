@@ -1,0 +1,11 @@
+# Texas Instruments Sitara AM62x-SK-M4 EVM
+#
+# Copyright (c) 2023 Texas Instruments Incorporated
+# Copyright (c) 2023 L Lakshmanan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SK_AM62_AM6234_M4
+	select SOC_AM6234_M4
+	help
+	  TI AM62x M4 Starter Kit (SK) Evaluation Module (EVM)
