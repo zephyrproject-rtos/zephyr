@@ -133,6 +133,40 @@ config PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	help
 	  Elliptic curve public key.
 
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	bool "PSA ECC import key pair support"
+	default y if PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Elliptic curve key pair: import for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	bool "PSA ECC export key pair support"
+	default y if PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Elliptic curve key pair: export for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	bool "PSA ECC generate key pair support"
+	default y if PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Elliptic curve key pair: generate for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
+
 config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
 	bool "PSA RSA key pair type support"
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
@@ -143,6 +177,34 @@ config PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
 	bool "PSA RSA public key support"
 	help
 	  RSA public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+	bool "PSA RSA key pair import key"
+	default y if PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	help
+	  RSA key pair: import key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT
+	bool "PSA RSA key pair export key"
+	default y if PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	help
+	  RSA key pair: export key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+	bool "PSA RSA key pair generate key"
+	default y if PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	help
+	  RSA key pair: key generation for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT || \
+		PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
 
 config PSA_WANT_KEY_TYPE_DH_KEY_PAIR
 	bool "PSA DH key pair type support"
