@@ -13,7 +13,7 @@ Commands
 Buffer Credential (``buf``)
 ===========================
 
-Buffer data incrementaly into the credential buffer so that it can be added using the :ref:`tls_credentials_shell_add_cred` command.
+Buffer data incrementally into the credential buffer so that it can be added using the :ref:`tls_credentials_shell_add_cred` command.
 
 Alternatively, clear the credential buffer.
 

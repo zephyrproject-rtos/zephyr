@@ -27,7 +27,7 @@ Some configuration is required to make sure services can be started using the Co
 
 All services are added to a predefined linker section and all resources for each service also get
 their respective linker sections. If you would have a service ``my_service`` it has to be
-prefixed wth ``coap_resource_`` and added to a linker file:
+prefixed with ``coap_resource_`` and added to a linker file:
 
 .. code-block:: c
     :caption: ``sections-ram.ld``
