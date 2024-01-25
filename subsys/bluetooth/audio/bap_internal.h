@@ -89,3 +89,37 @@ union bt_bap_bass_cp {
 	struct bt_bap_bass_cp_broadcase_code broadcast_code;
 	struct bt_bap_bass_cp_rem_src rem_src;
 };
+
+static inline const char *bt_bap_pa_state_str(uint8_t state)
+{
+	switch (state) {
+	case BT_BAP_PA_STATE_NOT_SYNCED:
+		return "Not synchronized to PA";
+	case BT_BAP_PA_STATE_INFO_REQ:
+		return "SyncInfo Request";
+	case BT_BAP_PA_STATE_SYNCED:
+		return "Synchronized to PA";
+	case BT_BAP_PA_STATE_FAILED:
+		return "Failed to synchronize to PA";
+	case BT_BAP_PA_STATE_NO_PAST:
+		return "No PAST";
+	default:
+		return "unknown state";
+	}
+}
+
+static inline const char *bt_bap_big_enc_state_str(uint8_t state)
+{
+	switch (state) {
+	case BT_BAP_BIG_ENC_STATE_NO_ENC:
+		return "Not encrypted";
+	case BT_BAP_BIG_ENC_STATE_BCODE_REQ:
+		return "Broadcast_Code required";
+	case BT_BAP_BIG_ENC_STATE_DEC:
+		return "Decrypting";
+	case BT_BAP_BIG_ENC_STATE_BAD_CODE:
+		return "Bad_Code (incorrect encryption key)";
+	default:
+		return "unknown state";
+	}
+}
