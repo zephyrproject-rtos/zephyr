@@ -102,11 +102,10 @@
 	flash-id = <1>;
 	status = "okay";
 
-	mt25ql512ab1: qspi-nor-flash-1@0 {
+	mt25ql512ab1: qspi-nor-flash-1@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
-		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		spi-bus-width = <4>;
 		status = "okay";
 
@@ -121,9 +120,9 @@
 		};
 	};
 
-	mt25ql512ab2: qspi-nor-flash-2@1 {
+	mt25ql512ab2: qspi-nor-flash-2@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <1>;
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		status = "okay";
