@@ -13,6 +13,20 @@
 #include "iso_internal.h"
 
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+
+/**
+ * This pool provides storage for incoming HCI events that are
+ * to be handled without delay. This pool is intentionally
+ * small. If the pool is full, the HCI transport flow control
+ * will engage.
+ */
+NET_BUF_POOL_FIXED_DEFINE(isr_evt_pool, 1, BT_HCI_EVT_MAX_SIZE, sizeof(struct bt_buf_data), NULL);
+
+bool bt_buf_isr_only(struct net_buf *buf)
+{
+	return net_buf_pool_get(buf->pool_id) == &isr_evt_pool;
+}
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_ISO)
@@ -89,26 +103,37 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 			       k_timeout_t timeout)
 {
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 
-	switch (evt) {
-#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
-	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		buf = net_buf_alloc(&num_complete_pool, timeout);
-		break;
-#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
-	default:
+	/* If the event is not "prio" it is going to be
+	 * processed delayed. To avoid a copy later, we
+	 * immediately put it into the slow-processing
+	 * buffers.
+	 */
+	if (bt_hci_evt_get_flags(evt) & BT_HCI_EVT_FLAG_RECV) {
 		if (discardable) {
 			buf = net_buf_alloc(&discardable_pool, timeout);
 		} else {
-			return bt_buf_get_rx(BT_BUF_EVT, timeout);
+			buf = bt_buf_get_rx(BT_BUF_EVT, timeout);
 		}
 	}
 
-	if (buf) {
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_EVT);
+	/* If the event is processed immediately (without
+	 * blocking), we can use the small "isr" pool.
+	 *
+	 * We also use the small pool if the slow-processing
+	 * buffer allocation fails. In that case, it will still
+	 * have to be processed fast later by its handler. It's
+	 * up to the handler what to do in this situation. E.g.
+	 * the handler can increment a overrun counter and
+	 * return.
+	 */
+	if (!buf) {
+		buf = net_buf_alloc(&isr_evt_pool, K_FOREVER);
 	}
+
+	net_buf_reserve(buf, BT_BUF_RESERVE);
+	bt_buf_set_type(buf, BT_BUF_EVT);
 
 	return buf;
 }

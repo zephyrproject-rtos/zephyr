@@ -50,6 +50,7 @@ struct bt_hci_evt_hdr {
 	uint8_t  len;
 } __packed;
 #define BT_HCI_EVT_HDR_SIZE             2
+#define BT_HCI_EVT_MAX_SIZE             (BT_HCI_EVT_HDR_SIZE + 255)
 
 #define BT_ACL_START_NO_FLUSH           0x00
 #define BT_ACL_CONT                     0x01

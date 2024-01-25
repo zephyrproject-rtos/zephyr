@@ -43,6 +43,7 @@
 #include "scan.h"
 
 #include "addr_internal.h"
+#include "buf_internal.h"
 #include "conn_internal.h"
 #include "iso_internal.h"
 #include "l2cap_internal.h"
@@ -3848,12 +3849,23 @@ int bt_recv(struct net_buf *buf)
 #endif /* BT_CONN */
 	case BT_BUF_EVT:
 	{
-#if defined(CONFIG_BT_RECV_BLOCKING)
-		hci_event(buf);
-#else
 		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 
+		if (evt_flags & BT_HCI_EVT_FLAG_RECV && bt_buf_isr_only(buf)) {
+			/* This event was put in a fallback isr-only buffer. We
+			 * cannot give it to `hci_event`, since that would
+			 * retain a reference to the buffer. That is not allowed
+			 * for isr-only buffers.
+			 */
+			LOG_WRN("Dropping HCI evt %x %x", buf->data[0], buf->data[2]);
+			net_buf_unref(buf);
+			return 0;
+		}
+
+#if defined(CONFIG_BT_RECV_BLOCKING)
+		hci_event(buf);
+#else
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
 			hci_event_prio(buf);
 		}
