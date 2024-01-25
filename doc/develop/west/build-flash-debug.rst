@@ -179,7 +179,7 @@ it the value ``always``. For example, these commands are equivalent::
 
 By default, ``west build`` makes no attempt to detect if the build directory
 needs to be made pristine. This can lead to errors if you do something like
-try to re-use a build directory for a different ``--board``.
+try to reuse a build directory for a different ``--board``.
 
 Using ``--pristine=auto`` makes ``west build`` detect some of these situations
 and make the build directory pristine before trying the build.

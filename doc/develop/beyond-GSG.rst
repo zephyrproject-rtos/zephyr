@@ -215,7 +215,7 @@ depending on your board.
 The other sample applications in the :zephyr_file:`samples` folder are
 documented in :ref:`samples-and-demos`.
 
-.. note:: If you want to re-use an
+.. note:: If you want to reuse an
    existing build directory for another board or application, you need to
    add the parameter ``-p=auto`` to ``west build`` to clean out settings
    and artifacts from the previous build.
@@ -330,7 +330,7 @@ valgrind.
 .. [#pip]
 
    pip is Python's package installer. Its ``install`` command first tries to
-   re-use packages and package dependencies already installed on your computer.
+   reuse packages and package dependencies already installed on your computer.
    If that is not possible, ``pip install`` downloads them from the Python
    Package Index (PyPI) on the Internet.
 
