@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <audio/bap_internal.h>
 #include "shell/bt.h"
 
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
@@ -551,7 +552,7 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 	}
 
 	if (enc_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
-		shell_error(sh, "Invalid enc_state %lu", enc_state);
+		shell_error(sh, "Invalid enc_state %s", bt_bap_big_enc_state_str(enc_state));
 
 		return -EINVAL;
 	}
@@ -661,7 +662,7 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 	}
 
 	if (enc_state > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
-		shell_error(sh, "Invalid enc_state %lu", enc_state);
+		shell_error(sh, "Invalid enc_state %s", bt_bap_big_enc_state_str(enc_state));
 
 		return -EINVAL;
 	}
@@ -779,7 +780,7 @@ static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc
 	}
 
 	if (pa_sync_state > BT_BAP_PA_STATE_NO_PAST) {
-		shell_error(sh, "Invalid pa_sync_state %ld", pa_sync_state);
+		shell_error(sh, "Invalid pa_sync_state %s", bt_bap_pa_state_str(pa_sync_state));
 
 		return -ENOEXEC;
 	}
