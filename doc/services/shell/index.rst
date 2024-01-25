@@ -654,7 +654,7 @@ RTT Backend Channel Selection
 *****************************
 
 Instead of using the shell as a logger backend, RTT shell backend and RTT log
-backend can also be used simulatenously, but over different channels. By
+backend can also be used simultaneously, but over different channels. By
 separating them, the log can be captured or monitored without shell output or
 the shell may be scripted without log interference. Enabling both the Shell RTT
 backend and the Log RTT backend does not work by default, because both default

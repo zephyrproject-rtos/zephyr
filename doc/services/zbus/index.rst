@@ -402,7 +402,7 @@ rate by following design tips:
    subscribers. So, chose carefully the configurations
    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` and
    :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. They are crucial to a proper VDED execution
-   (delivery garantee) considering message subscribers.
+   (delivery guarantee) considering message subscribers.
 
 .. warning::
    Subscribers will receive only the reference of the changing channel. A data loss may be perceived

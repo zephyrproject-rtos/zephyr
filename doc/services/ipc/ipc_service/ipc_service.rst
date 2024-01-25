@@ -67,7 +67,7 @@ See the following example:
 
    static void bound_cb(void *priv)
    {
-      /* Endpint bounded */
+      /* Endpoint bounded */
    }
 
    static void recv_cb(const void *data, size_t len, void *priv)
@@ -93,7 +93,7 @@ See the following example:
       ret = ipc_service_open_instance(inst0);
       ret = ipc_service_register_endpoint(inst0, &ept0, &ept0_cfg);
 
-      /* Wait for endpint bound (bound_cb called) */
+      /* Wait for endpoint bound (bound_cb called) */
 
       unsigned char message[] = "hello world";
       ret = ipc_service_send(&ept0, &message, sizeof(message));
@@ -117,7 +117,7 @@ See the following example:
 
    static void bound_cb(void *priv)
    {
-      /* Endpint bounded */
+      /* Endpoint bounded */
    }
 
    static void recv_cb_nocopy(const void *data, size_t len, void *priv)
@@ -146,7 +146,7 @@ See the following example:
       ret = ipc_service_open_instance(inst0);
       ret = ipc_service_register_endpoint(inst0, &ept0, &ept0_cfg);
 
-      /* Wait for endpint bound (bound_cb called) */
+      /* Wait for endpoint bound (bound_cb called) */
       void *data;
       unsigned char message[] = "hello world";
       uint32_t len = sizeof(message);
