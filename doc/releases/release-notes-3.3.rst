@@ -742,7 +742,7 @@ Drivers and Sensors
 
   * STM32 OSPI: Now supports DMA transfer on STM32U5.
 
-  * STM32: Flash driver was revisited to simplify re-use of driver for new series, taking
+  * STM32: Flash driver was revisited to simplify reuse of driver for new series, taking
     advantage of device tree compatibles.
 
 * FPGA
