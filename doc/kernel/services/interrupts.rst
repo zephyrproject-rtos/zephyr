@@ -59,7 +59,7 @@ nesting support is enabled.
 
 .. _multi_level_interrupts:
 
-Multi-level Interrupt handling
+Multi-level Interrupt Handling
 ==============================
 
 A hardware platform can support more interrupt lines than natively-provided
@@ -68,7 +68,7 @@ hardware interrupts are combined into one line that is then routed to
 the parent controller.
 
 If nested interrupt controllers are supported, :kconfig:option:`CONFIG_MULTI_LEVEL_INTERRUPTS`
-should be set to 1, and :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPTS` and
+should be enabled, and :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPTS` and
 :kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPTS` configured as well, based on the
 hardware architecture.
 
@@ -608,7 +608,7 @@ connected.
 Going Beyond the Default Supported Number of Interrupts
 -------------------------------------------------------
 
-When generating interrupts in the multilevel configuration, 8-bits per level is the default
+When generating interrupts in the multi-level configuration, 8-bits per level is the default
 mask used when determining which level a given interrupt code belongs to. This can become
 a problem when dealing with CPUs that support more than 255 interrupts per single
 aggregator. In this case it may be desirable to override these defaults and use a custom
@@ -616,11 +616,11 @@ number of bits per level. Regardless of how many bits used for each level, the s
 the total bits used between all levels must sum to be less than or equal to 32-bits,
 fitting into a single 32-bit integer. To modify the bit total per level, override the
 default 8 in `Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
-for the  first level, :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` for the second tier and
-:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS` for the third tier. These masks control the
+for the  first level, :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` for the second level and
+:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS` for the third level. These masks control the
 length of the bit masks and shift to apply when generating interrupt values, when checking the
 interrupts level and converting interrupts to a different level. The logic controlling
-this can be found in `irq.h`
+this can be found in :file:`irq_multilevel.h`
 
 Suggested Uses
 **************
