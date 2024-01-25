@@ -11,13 +11,7 @@ zephyr_sources(
   vector.S
   )
 
-if(!CONFIG_SOC_RISCV_TELINK_B92)
-zephyr_sources(
-	idle.c
-)
-endif()
-
-if(!CONFIG_SOC_RISCV_TELINK_B93)
+if(!CONFIG_SOC_SERIES_RISCV_TELINK_B9X)
 zephyr_sources(
 	idle.c
 )
