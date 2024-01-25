@@ -102,7 +102,7 @@ static int keymap_init(const struct device *dev)
 	{											\
 		keymap_cb(DEVICE_DT_INST_GET(inst), evt);					\
 	}											\
-	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_OR_NULL(DT_INST_PARENT(inst)), keymap_cb_##inst);	\
+	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET(DT_INST_PARENT(inst)), keymap_cb_##inst);		\
 												\
 	DT_INST_FOREACH_PROP_ELEM(inst, keymap, KEYMAP_ENTRY_VALIDATE)				\
 												\
