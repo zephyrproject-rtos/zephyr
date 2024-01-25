@@ -595,6 +595,13 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 
 	LOG_DBG("opcode 0x%x", meta->opcode);
 
+	if (!meta->att_chan ||
+	    !meta->att_chan->att ||
+	    !meta->att_chan->att->conn) {
+		LOG_DBG("Bearer not connected, dropping ATT cb");
+		return;
+	}
+
 	if (meta->err) {
 		LOG_ERR("Got err %d, not calling ATT cb", meta->err);
 		return;
