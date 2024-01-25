@@ -25,6 +25,7 @@ struct uart_rcar_cfg {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
+	bool is_hscif;
 };
 
 struct uart_rcar_data {
@@ -51,6 +52,7 @@ struct uart_rcar_data {
 #define SCLSR           0x24    /* Line Status Register */
 #define DL              0x30    /* Frequency Division Register */
 #define CKS             0x34    /* Clock Select Register */
+#define HSSRR           0x40    /* Sampling Rate Register */
 
 /* SCSMR (Serial Mode Register) */
 #define SCSMR_C_A       BIT(7)  /* Communication Mode */
@@ -104,6 +106,10 @@ struct uart_rcar_data {
 #define SCLSR_TO        BIT(2)  /* Timeout */
 #define SCLSR_ORER      BIT(0)  /* Overrun Error */
 
+/* HSSRR (Sampling Rate Register) */
+#define HSSRR_SRE            BIT(15)      /* Sampling Rate Register Enable */
+#define HSSRR_SRCYC_DEF_VAL  0x7          /* Sampling rate default value */
+
 static uint8_t uart_rcar_read_8(const struct device *dev, uint32_t offs)
 {
 	return sys_read8(DEVICE_MMIO_GET(dev) + offs);
@@ -131,9 +137,14 @@ static void uart_rcar_set_baudrate(const struct device *dev,
 				   uint32_t baud_rate)
 {
 	struct uart_rcar_data *data = dev->data;
+	const struct uart_rcar_cfg *cfg = dev->config;
 	uint8_t reg_val;
 
-	reg_val = ((data->clk_rate + 16 * baud_rate) / (32 * baud_rate) - 1);
+	if (cfg->is_hscif) {
+		reg_val = data->clk_rate / (2 * (HSSRR_SRCYC_DEF_VAL + 1) * baud_rate) - 1;
+	} else {
+		reg_val = ((data->clk_rate + 16 * baud_rate) / (32 * baud_rate) - 1);
+	}
 	uart_rcar_write_8(dev, SCBRR, reg_val);
 }
 
@@ -186,6 +197,7 @@ static int uart_rcar_configure(const struct device *dev,
 			       const struct uart_config *cfg)
 {
 	struct uart_rcar_data *data = dev->data;
+	const struct uart_rcar_cfg *cfg_drv = dev->config;
 
 	uint16_t reg_val;
 	k_spinlock_key_t key;
@@ -228,6 +240,11 @@ static int uart_rcar_configure(const struct device *dev,
 	reg_val &= ~(SCSMR_C_A | SCSMR_CHR | SCSMR_PE | SCSMR_O_E | SCSMR_STOP |
 		     SCSMR_CKS1 | SCSMR_CKS0);
 	uart_rcar_write_16(dev, SCSMR, reg_val);
+
+	if (cfg_drv->is_hscif) {
+		/* TODO: calculate the optimal sampling and bit rates based on error rate */
+		uart_rcar_write_16(dev, HSSRR, HSSRR_SRE | HSSRR_SRCYC_DEF_VAL);
+	}
 
 	/* Set baudrate */
 	uart_rcar_set_baudrate(dev, cfg->baudrate);
@@ -523,47 +540,44 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 };
 
 /* Device Instantiation */
-#define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT)			    \
-	PINCTRL_DT_INST_DEFINE(n);				    \
-	static const struct uart_rcar_cfg uart_rcar_cfg_##n = {	    \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),		    \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
-		.mod_clk.module =				    \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),   \
-		.mod_clk.domain =				    \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),   \
-		.bus_clk.module =				    \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),   \
-		.bus_clk.domain =				    \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),   \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	    \
-		IRQ_FUNC_INIT					    \
+#define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT, compat)					\
+	PINCTRL_DT_INST_DEFINE(n);							\
+	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n = {			\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
+		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),		\
+		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),		\
+		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),		\
+		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		.is_hscif = DT_NODE_HAS_COMPAT(DT_DRV_INST(n), renesas_rcar_hscif),	\
+		IRQ_FUNC_INIT								\
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_RCAR_CONFIG_FUNC(n)				  \
-	static void irq_config_func_##n(const struct device *dev) \
-	{							  \
-		IRQ_CONNECT(DT_INST_IRQN(n),			  \
-			    DT_INST_IRQ(n, priority),		  \
-			    uart_rcar_isr,			  \
-			    DEVICE_DT_INST_GET(n), 0);		  \
-								  \
-		irq_enable(DT_INST_IRQN(n));			  \
+#define UART_RCAR_CONFIG_FUNC(n, compat)					 \
+	static void irq_config_func_##compat##n(const struct device *dev)	 \
+	{									 \
+		IRQ_CONNECT(DT_INST_IRQN(n),					 \
+			    DT_INST_IRQ(n, priority),				 \
+			    uart_rcar_isr,					 \
+			    DEVICE_DT_INST_GET(n), 0);				 \
+										 \
+		irq_enable(DT_INST_IRQN(n));					 \
 	}
-#define UART_RCAR_IRQ_CFG_FUNC_INIT(n) \
-	.irq_config_func = irq_config_func_##n
-#define UART_RCAR_INIT_CFG(n) \
-	UART_RCAR_DECLARE_CFG(n, UART_RCAR_IRQ_CFG_FUNC_INIT(n))
+#define UART_RCAR_IRQ_CFG_FUNC_INIT(n, compat) \
+	.irq_config_func = irq_config_func_##compat##n
+#define UART_RCAR_INIT_CFG(n, compat) \
+	UART_RCAR_DECLARE_CFG(n, UART_RCAR_IRQ_CFG_FUNC_INIT(n, compat), compat)
 #else
-#define UART_RCAR_CONFIG_FUNC(n)
+#define UART_RCAR_CONFIG_FUNC(n, compat)
 #define UART_RCAR_IRQ_CFG_FUNC_INIT
-#define UART_RCAR_INIT_CFG(n) \
-	UART_RCAR_DECLARE_CFG(n, UART_RCAR_IRQ_CFG_FUNC_INIT)
+#define UART_RCAR_INIT_CFG(n, compat) \
+	UART_RCAR_DECLARE_CFG(n, UART_RCAR_IRQ_CFG_FUNC_INIT, compat)
 #endif
 
-#define UART_RCAR_INIT(n)							\
-	static struct uart_rcar_data uart_rcar_data_##n = {			\
+#define UART_RCAR_INIT(n, compat)						\
+	static struct uart_rcar_data uart_rcar_data_##compat##n = {		\
 		.current_config = {						\
 			.baudrate = DT_INST_PROP(n, current_speed),		\
 			.parity = UART_CFG_PARITY_NONE,				\
@@ -573,18 +587,23 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 		},								\
 	};									\
 										\
-	static const struct uart_rcar_cfg uart_rcar_cfg_##n;			\
+	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n;		\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			      uart_rcar_init,					\
 			      NULL,						\
-			      &uart_rcar_data_##n,				\
-			      &uart_rcar_cfg_##n,				\
+			      &uart_rcar_data_##compat##n,			\
+			      &uart_rcar_cfg_##compat##n,			\
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	\
 			      &uart_rcar_driver_api);				\
 										\
-	UART_RCAR_CONFIG_FUNC(n)						\
+	UART_RCAR_CONFIG_FUNC(n, compat)					\
 										\
-	UART_RCAR_INIT_CFG(n);
+	UART_RCAR_INIT_CFG(n, compat);
 
-DT_INST_FOREACH_STATUS_OKAY(UART_RCAR_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_RCAR_INIT, DT_DRV_COMPAT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT renesas_rcar_hscif
+
+DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_RCAR_INIT, DT_DRV_COMPAT)
