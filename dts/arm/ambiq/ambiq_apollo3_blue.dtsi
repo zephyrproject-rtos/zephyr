@@ -175,6 +175,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x80>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		uart1: uart@4001d000 {
@@ -185,6 +186,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x100>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi0: spi@50004000 {

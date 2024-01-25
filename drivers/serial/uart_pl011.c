@@ -33,7 +33,17 @@
 #endif
 
 #include "uart_pl011_registers.h"
+
+#if defined(CONFIG_SOC_FAMILY_AMBIQ)
 #include "uart_pl011_ambiq.h"
+#endif
+
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+#define PM_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
+#else
+#define PM_INST_GET(n) NULL
+#endif
+
 #include "uart_pl011_raspberrypi_pico.h"
 
 struct pl011_config {
@@ -648,33 +658,30 @@ void pl011_isr(const struct device *dev)
 	};
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define PL011_INIT(n)						\
-	PINCTRL_DEFINE(n)					\
-	COMPAT_SPECIFIC_DEFINE(n)				\
-	PL011_CONFIG_PORT(n)					\
-								\
-	static struct pl011_data pl011_data_port_##n = {	\
-		.uart_cfg = {					\
-			.baudrate = DT_INST_PROP(n, current_speed), \
-			.parity = UART_CFG_PARITY_NONE,			\
-			.stop_bits = UART_CFG_STOP_BITS_1,		\
-			.data_bits = UART_CFG_DATA_BITS_8,		\
-			.flow_ctrl = DT_INST_PROP(n, hw_flow_control)	\
-				? UART_CFG_FLOW_CTRL_RTS_CTS		\
-				: UART_CFG_FLOW_CTRL_NONE,		\
-		},							\
-		.clk_freq = COND_CODE_1(                                                \
-			DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock),        \
-			(DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),    \
-	};							\
-								\
-	DEVICE_DT_INST_DEFINE(n, pl011_init,			\
-			NULL,					\
-			&pl011_data_port_##n,			\
-			&pl011_cfg_port_##n,			\
-			PRE_KERNEL_1,				\
-			CONFIG_SERIAL_INIT_PRIORITY,		\
-			&pl011_driver_api);
+#define PL011_INIT(n)                                                                              \
+	PINCTRL_DEFINE(n)                                                                          \
+	COMPAT_SPECIFIC_DEFINE(n)                                                                  \
+	PL011_CONFIG_PORT(n)                                                                       \
+                                                                                                   \
+	static struct pl011_data pl011_data_port_##n = {                                           \
+		.uart_cfg =                                                                        \
+			{                                                                          \
+				.baudrate = DT_INST_PROP(n, current_speed),                        \
+				.parity = UART_CFG_PARITY_NONE,                                    \
+				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
+				.data_bits = UART_CFG_DATA_BITS_8,                                 \
+				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                      \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
+						     : UART_CFG_FLOW_CTRL_NONE,                    \
+			},                                                                         \
+		.clk_freq =                                                                        \
+			COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock),       \
+				    (DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,       \
+			      &pl011_cfg_port_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
+			      &pl011_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 
