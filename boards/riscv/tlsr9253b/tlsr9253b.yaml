@@ -1,0 +1,15 @@
+identifier: tlsr9253b
+name: Telink TLSR9253B
+type: mcu
+arch: riscv32
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 256
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - netif:openthread

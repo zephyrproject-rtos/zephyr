@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TLSR9253B
+	bool "Telink B93 Platform"
+	depends on SOC_RISCV_TELINK_B93
+
+config BOARD_TLSR9253B_RETENTION
+	bool "Telink B93 Platform with retention"
+	depends on SOC_RISCV_TELINK_B93
+
+config BOARD_TLSR9X_NON_RETENTION_RAM_CODE
+	bool "Place Telink RAM code into non retention memory"
+	depends on SOC_SERIES_RISCV_TELINK_B9X && BOARD_TLSR9253B_RETENTION
+	help
+		Place Telink RAM code into non retention memory and restore ram code on each boot.
