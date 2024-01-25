@@ -1,12 +1,12 @@
-.. _am62x_m4_sk:
+.. _sk_am62:
 
-AM62x-SK M4F Core
-#################
+SK-AM62 M4F Core
+################
 
 Overview
 ********
 
-The AM62x-SK board configuration is used by Zephyr applications that run on
+The SK-AM62 board configuration is used by Zephyr applications that run on
 the TI AM62x platform. The board configuration provides support for the ARM
 Cortex-M4F MCU core and the following features:
 
@@ -19,13 +19,13 @@ See the `TI AM62X Product Page`_ for details.
 
 .. figure:: img/sk_am62_angled.webp
    :align: center
-   :alt: TI AM62x-SK EVM
+   :alt: TI SK-AM62 EVM
 
-   Texas Instruments AM62x SK EVM
+   Texas Instruments SK-AM62 EVM
 
 Hardware
 ********
-The AM62x-SK EVM features the AM62x SoC, which is composed of a quad Cortex-A53
+The SK-AM62 EVM features the AM62x SoC, which is composed of a quad Cortex-A53
 cluster and a single Cortex-M4 core in the MCU domain. Zephyr is ported to run on
 the M4F core and the following listed hardware specifications are used:
 
@@ -42,7 +42,7 @@ the M4F core and the following listed hardware specifications are used:
 Supported Features
 ==================
 
-The am62x_m4_sk configuration supports the following hardware features:
+The sk_am62 configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -102,7 +102,7 @@ To test the M4F core, we build the `hello_world` sample with the following comma
 .. code-block:: console
 
    # From the root of the Zephyr repository
-   west build -p -b am62x_m4_sk samples/hello_world
+   west build -p -b sk_am62/am6234/m4 samples/hello_world
 
 This builds the program and the binary is present in the `build/zephyr` directory as `zephyr.elf`.
 
