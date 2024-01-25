@@ -323,7 +323,7 @@ Fix for an issue blocking development.
 
 * *Maintainer*
 
-Maintainer review reqiured.
+Maintainer review required.
 
 * *Security Review*
 
