@@ -189,6 +189,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
+	uint8_t pkt_flags;
 	uint32_t ret;
 	uint8_t phy;
 
@@ -348,31 +349,32 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	}
 	pdu->cssn = lll->cssn;
 
-	/* Encryption */
+	/* Radio packet configuration */
+	pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS, phy,
+					 RADIO_PKT_CONF_CTE_DISABLED);
 	if (pdu->len && lll->enc) {
-		uint8_t pkt_flags;
-
+		/* Encryption */
 		lll->ccm_tx.counter = payload_count;
 
 		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);
 		mem_xor_32(lll->ccm_tx.iv, lll->ccm_tx.iv, access_addr);
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
-						 phy,
-						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (lll->max_pdu + PDU_MIC_SIZE), pkt_flags);
+
 		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&lll->ccm_tx,
 						RADIO_PKT_CONF_PDU_TYPE_BIS,
 						pdu));
 	} else {
-		uint8_t pkt_flags;
+		if (lll->enc) {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    (lll->max_pdu + PDU_MIC_SIZE),
+					    pkt_flags);
+		} else {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    lll->max_pdu, pkt_flags);
+		}
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
-						 phy,
-						 RADIO_PKT_CONF_CTE_DISABLED);
-		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu,
-				    pkt_flags);
 		radio_pkt_tx_set(pdu);
 	}
 
