@@ -1,0 +1,5 @@
+board:
+  name: nucleo_f042k6
+  vendor: st
+  socs:
+    - name: stm32f042x6
