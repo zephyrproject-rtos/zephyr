@@ -390,9 +390,10 @@ Nanopb
 zcbor
 *****
 
-zcbor has been updated from 0.7.0 to 0.8.0.
+zcbor has been updated from 0.7.0 to 0.8.1.
 Full release notes can be found at:
-https://github.com/zephyrproject-rtos/zcbor/blob/0.8.0/RELEASE_NOTES.md
+https://github.com/zephyrproject-rtos/zcbor/blob/0.8.0/RELEASE_NOTES.md and
+https://github.com/zephyrproject-rtos/zcbor/blob/0.8.1/RELEASE_NOTES.md
 
 Highlights:
 
