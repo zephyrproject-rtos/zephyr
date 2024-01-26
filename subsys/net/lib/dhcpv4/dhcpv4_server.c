@@ -14,6 +14,7 @@
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv4_server.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/icmp.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/sys/byteorder.h>
@@ -31,9 +32,28 @@ LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 #define DHCPV4_OPTIONS_CLIENT_ID_MIN_SIZE 2
 
 #define ADDRESS_RESERVED_TIMEOUT K_SECONDS(5)
+#define ADDRESS_PROBE_TIMEOUT K_MSEC(CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT)
+
+#if (CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT > 0)
+#define DHCPV4_SERVER_ICMP_PROBE 1
+#endif
 
 /* RFC 1497 [17] */
 static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
+
+#define DHCPV4_MAX_PARAMETERS_REQUEST_LEN 16
+
+struct dhcpv4_parameter_request_list {
+	uint8_t list[DHCPV4_MAX_PARAMETERS_REQUEST_LEN];
+	uint8_t count;
+};
+
+struct dhcpv4_server_probe_ctx {
+	struct net_icmp_ctx icmp_ctx;
+	struct dhcp_msg discovery;
+	struct dhcpv4_parameter_request_list params;
+	struct dhcpv4_addr_slot *slot;
+};
 
 struct dhcpv4_server_ctx {
 	struct net_if *iface;
@@ -42,18 +62,14 @@ struct dhcpv4_server_ctx {
 	struct dhcpv4_addr_slot addr_pool[CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT];
 	struct in_addr server_addr;
 	struct in_addr netmask;
+#if defined(DHCPV4_SERVER_ICMP_PROBE)
+	struct dhcpv4_server_probe_ctx probe_ctx;
+#endif
 };
 
 static struct dhcpv4_server_ctx server_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static struct zsock_pollfd fds[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static K_MUTEX_DEFINE(server_lock);
-
-#define DHCPV4_MAX_PARAMETERS_REQUEST_LEN 16
-
-struct dhcpv4_parameter_request_list {
-	uint8_t list[DHCPV4_MAX_PARAMETERS_REQUEST_LEN];
-	uint8_t count;
-};
 
 static void dhcpv4_server_timeout_recalc(struct dhcpv4_server_ctx *ctx)
 {
@@ -667,6 +683,167 @@ static uint32_t dhcpv4_get_lease_time(uint8_t *options, uint8_t optlen)
 	return CONFIG_NET_DHCPV4_SERVER_ADDR_LEASE_TIME;
 }
 
+#if defined(DHCPV4_SERVER_ICMP_PROBE)
+static int dhcpv4_probe_address(struct dhcpv4_server_ctx *ctx,
+				 struct dhcpv4_addr_slot *slot)
+{
+	struct sockaddr_in dest_addr = {
+		.sin_family = AF_INET,
+		.sin_addr = slot->addr,
+	};
+	int ret;
+
+	ret = net_icmp_send_echo_request(&ctx->probe_ctx.icmp_ctx, ctx->iface,
+					 (struct sockaddr *)&dest_addr,
+					 NULL, ctx);
+	if (ret < 0) {
+		LOG_ERR("Failed to send ICMP probe");
+	}
+
+	return ret;
+}
+
+static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
+			      struct net_pkt *pkt,
+			      struct net_icmp_ip_hdr *ip_hdr,
+			      struct net_icmp_hdr *icmp_hdr,
+			      void *user_data)
+{
+	struct dhcpv4_server_ctx *ctx = user_data;
+	struct dhcpv4_server_probe_ctx *probe_ctx = &ctx->probe_ctx;
+	struct dhcpv4_addr_slot *new_slot = NULL;
+	struct in_addr peer_addr;
+
+	ARG_UNUSED(icmp_ctx);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(icmp_hdr);
+
+	k_mutex_lock(&server_lock, K_FOREVER);
+
+	if (probe_ctx->slot == NULL) {
+		goto out;
+	}
+
+	if (ip_hdr->family != AF_INET) {
+		goto out;
+	}
+
+	net_ipv4_addr_copy_raw((uint8_t *)&peer_addr, ip_hdr->ipv4->src);
+	if (!net_ipv4_addr_cmp(&peer_addr, &probe_ctx->slot->addr)) {
+		goto out;
+	}
+
+	LOG_DBG("Got ICMP probe response, blocking address %s",
+		net_sprint_ipv4_addr(&probe_ctx->slot->addr));
+
+	probe_ctx->slot->state = DHCPV4_SERVER_ADDR_DECLINED;
+
+	/* Try to find next free address */
+	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
+		struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
+
+		if (slot->state == DHCPV4_SERVER_ADDR_FREE) {
+			new_slot = slot;
+			break;
+		}
+	}
+
+	if (new_slot == NULL) {
+		LOG_DBG("No more free addresses to assign, ICMP probing stopped");
+		probe_ctx->slot = NULL;
+		dhcpv4_server_timeout_recalc(ctx);
+		goto out;
+	}
+
+	if (dhcpv4_probe_address(ctx, new_slot) < 0) {
+		probe_ctx->slot = NULL;
+		dhcpv4_server_timeout_recalc(ctx);
+		goto out;
+	}
+
+	new_slot->state = DHCPV4_SERVER_ADDR_RESERVED;
+	new_slot->expiry = sys_timepoint_calc(ADDRESS_PROBE_TIMEOUT);
+	new_slot->client_id.len = probe_ctx->slot->client_id.len;
+	memcpy(new_slot->client_id.buf, probe_ctx->slot->client_id.buf,
+	       new_slot->client_id.len);
+	new_slot->lease_time = probe_ctx->slot->lease_time;
+
+	probe_ctx->slot = new_slot;
+
+	dhcpv4_server_timeout_recalc(ctx);
+
+out:
+	k_mutex_unlock(&server_lock);
+
+	return 0;
+}
+
+static int dhcpv4_server_probing_init(struct dhcpv4_server_ctx *ctx)
+{
+	return net_icmp_init_ctx(&ctx->probe_ctx.icmp_ctx,
+				 NET_ICMPV4_ECHO_REPLY, 0,
+				 echo_reply_handler);
+}
+
+static void dhcpv4_server_probing_deinit(struct dhcpv4_server_ctx *ctx)
+{
+	(void)net_icmp_cleanup_ctx(&ctx->probe_ctx.icmp_ctx);
+}
+
+static int dhcpv4_server_probe_setup(struct dhcpv4_server_ctx *ctx,
+				     struct dhcpv4_addr_slot *slot,
+				     struct dhcp_msg *msg,
+				     struct dhcpv4_parameter_request_list *params)
+{
+	int ret;
+
+	if (ctx->probe_ctx.slot != NULL) {
+		return -EBUSY;
+	}
+
+	ret = dhcpv4_probe_address(ctx, slot);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ctx->probe_ctx.slot = slot;
+	ctx->probe_ctx.discovery = *msg;
+	ctx->probe_ctx.params = *params;
+
+	return 0;
+}
+
+static void dhcpv4_server_probe_timeout(struct dhcpv4_server_ctx *ctx,
+					struct dhcpv4_addr_slot *slot)
+{
+	/* Probe timer expired, send offer. */
+	ctx->probe_ctx.slot = NULL;
+
+	(void)net_arp_clear_pending(ctx->iface, &slot->addr);
+
+	if (dhcpv4_send_offer(ctx, &ctx->probe_ctx.discovery, &slot->addr,
+			      slot->lease_time, &ctx->probe_ctx.params) < 0) {
+		slot->state = DHCPV4_SERVER_ADDR_FREE;
+		return;
+	}
+
+	slot->expiry = sys_timepoint_calc(ADDRESS_RESERVED_TIMEOUT);
+}
+
+static bool dhcpv4_server_is_slot_probed(struct dhcpv4_server_ctx *ctx,
+					 struct dhcpv4_addr_slot *slot)
+{
+	return (ctx->probe_ctx.slot == slot);
+}
+#else /* defined(DHCPV4_SERVER_ICMP_PROBE) */
+#define dhcpv4_server_probing_init(...) (0)
+#define dhcpv4_server_probing_deinit(...)
+#define dhcpv4_server_probe_setup(...) (-ENOTSUP)
+#define dhcpv4_server_probe_timeout(...)
+#define dhcpv4_server_is_slot_probed(...) (false)
+#endif /* defined(DHCPV4_SERVER_ICMP_PROBE) */
+
 static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 				   struct dhcp_msg *msg, uint8_t *options,
 				   uint8_t optlen)
@@ -674,6 +851,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 	struct dhcpv4_parameter_request_list params = { 0 };
 	struct dhcpv4_addr_slot *selected = NULL;
 	struct dhcpv4_client_id client_id;
+	bool probe = false;
 	int ret;
 
 	ret = dhcpv4_get_client_id(msg, options, optlen, &client_id);
@@ -696,6 +874,12 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 		    slot->client_id.len == client_id.len &&
 		    memcmp(slot->client_id.buf, client_id.buf,
 			    client_id.len) == 0) {
+			if (slot->state == DHCPV4_SERVER_ADDR_RESERVED &&
+			    dhcpv4_server_is_slot_probed(ctx, slot)) {
+				LOG_DBG("ICMP probing in progress, ignore Discovery");
+				return;
+			}
+
 			/* Got match in current bindings. */
 			selected = slot;
 			break;
@@ -720,6 +904,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 				    slot->state == DHCPV4_SERVER_ADDR_FREE) {
 					/* Requested address is free. */
 					selected = slot;
+					probe = true;
 					break;
 				}
 			}
@@ -742,6 +927,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 			if (slot->state == DHCPV4_SERVER_ADDR_FREE) {
 				/* Requested address is free. */
 				selected = slot;
+				probe = true;
 				break;
 			}
 		}
@@ -752,9 +938,26 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 	} else {
 		uint32_t lease_time = dhcpv4_get_lease_time(options, optlen);
 
-		if (dhcpv4_send_offer(ctx, msg, &selected->addr, lease_time,
-				      &params) < 0) {
-			return;
+		if (IS_ENABLED(DHCPV4_SERVER_ICMP_PROBE) && probe) {
+			if (dhcpv4_server_probe_setup(ctx, selected,
+						      msg, &params) < 0) {
+				/* Probing context already in use or failed to
+				 * send probe, ignore Discovery for now and wait
+				 * for retransmission.
+				 */
+				return;
+			}
+
+			selected->expiry =
+				sys_timepoint_calc(ADDRESS_PROBE_TIMEOUT);
+		} else {
+			if (dhcpv4_send_offer(ctx, msg, &selected->addr,
+					      lease_time, &params) < 0) {
+				return;
+			}
+
+			selected->expiry =
+				sys_timepoint_calc(ADDRESS_RESERVED_TIMEOUT);
 		}
 
 		LOG_DBG("DHCPv4 processing Discover - reserved %s",
@@ -764,7 +967,6 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 		selected->client_id.len = client_id.len;
 		memcpy(selected->client_id.buf, client_id.buf, client_id.len);
 		selected->lease_time = lease_time;
-		selected->expiry = sys_timepoint_calc(ADDRESS_RESERVED_TIMEOUT);
 		dhcpv4_server_timeout_recalc(ctx);
 	}
 }
@@ -1061,15 +1263,18 @@ static void dhcpv4_server_timeout(struct k_work *work)
 	struct dhcpv4_server_ctx *ctx =
 		CONTAINER_OF(dwork, struct dhcpv4_server_ctx, timeout_work);
 
-
 	k_mutex_lock(&server_lock, K_FOREVER);
 
 	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
 		struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
 
-		if (slot->state == DHCPV4_SERVER_ADDR_RESERVED ||
-		    slot->state == DHCPV4_SERVER_ADDR_ALLOCATED) {
-			if (sys_timepoint_expired(slot->expiry)) {
+		if ((slot->state == DHCPV4_SERVER_ADDR_RESERVED ||
+		     slot->state == DHCPV4_SERVER_ADDR_ALLOCATED) &&
+		     sys_timepoint_expired(slot->expiry)) {
+			if (slot->state == DHCPV4_SERVER_ADDR_RESERVED &&
+			    dhcpv4_server_is_slot_probed(ctx, slot)) {
+				dhcpv4_server_probe_timeout(ctx, slot);
+			} else {
 				LOG_DBG("Address %s expired",
 					net_sprint_ipv4_addr(&slot->addr));
 				slot->state = DHCPV4_SERVER_ADDR_FREE;
@@ -1310,18 +1515,27 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 				&server_ctx[slot].addr_pool[i].addr));
 	}
 
+	ret = dhcpv4_server_probing_init(&server_ctx[slot]);
+	if (ret < 0) {
+		LOG_ERR("Failed to register probe handler, %d", ret);
+		goto cleanup;
+	}
+
 	ret = net_socket_service_register(&dhcpv4_server, fds, ARRAY_SIZE(fds),
 					  NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to register socket service, %d", ret);
-		memset(&server_ctx[slot], 0, sizeof(server_ctx[slot]));
-		fds[slot].fd = -1;
-		goto error;
+		dhcpv4_server_probing_deinit(&server_ctx[slot]);
+		goto cleanup;
 	}
 
 	k_mutex_unlock(&server_lock);
 
 	return 0;
+
+cleanup:
+	memset(&server_ctx[slot], 0, sizeof(server_ctx[slot]));
+	fds[slot].fd = -1;
 
 error:
 	if (sock >= 0) {
@@ -1361,6 +1575,7 @@ int net_dhcpv4_server_stop(struct net_if *iface)
 	fds[slot].fd = -1;
 	(void)zsock_close(server_ctx[slot].sock);
 
+	dhcpv4_server_probing_deinit(&server_ctx[slot]);
 	k_work_cancel_delayable_sync(&server_ctx[slot].timeout_work, &sync);
 
 	memset(&server_ctx[slot], 0, sizeof(server_ctx[slot]));
