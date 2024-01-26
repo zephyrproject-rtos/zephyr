@@ -16,6 +16,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/usb/usb_ch9.h>
+#include <zephyr/usb/usbd_msg.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
@@ -167,6 +168,8 @@ struct usbd_contex {
 	struct k_mutex mutex;
 	/** Pointer to UDC device */
 	const struct device *dev;
+	/** Notification message recipient callback */
+	usbd_msg_cb_t msg_cb;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
 	/** slist to manage descriptors like string, bos */
@@ -499,6 +502,17 @@ int usbd_register_class(struct usbd_contex *uds_ctx,
 int usbd_unregister_class(struct usbd_contex *uds_ctx,
 			  const char *name,
 			  uint8_t cfg);
+
+/**
+ * @brief Register USB notification message callback
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] cb      Pointer to message callback function
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_msg_register_cb(struct usbd_contex *const uds_ctx,
+			 const usbd_msg_cb_t cb);
 
 /**
  * @brief Initialize USB device
