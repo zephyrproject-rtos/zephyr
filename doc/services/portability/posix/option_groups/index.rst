@@ -486,8 +486,8 @@ _POSIX_TIMEOUTS
    :header: API, Supported
    :widths: 50,10
 
-    mq_timedreceive(),
-    mq_timedsend(),
+    mq_timedreceive(),yes
+    mq_timedsend(),yes
     pthread_mutex_timedlock(),yes
     pthread_rwlock_timedrdlock(),yes
     pthread_rwlock_timedwrlock(),yes
