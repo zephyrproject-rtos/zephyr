@@ -348,7 +348,11 @@ static int get_vco_input_range(uint32_t m_div, uint32_t *range, size_t pll_id)
 
 	vco_freq = get_pllsrc_frequency(pll_id) / m_div;
 
-	if (MHZ(4) <= vco_freq && vco_freq <= MHZ(8)) {
+	if (MHZ(1) <= vco_freq && vco_freq <= MHZ(2)) {
+		*range = LL_RCC_PLLINPUTRANGE_1_2;
+	} else if (MHZ(2) < vco_freq && vco_freq <= MHZ(4)) {
+		*range = LL_RCC_PLLINPUTRANGE_2_4;
+	} else if (MHZ(4) < vco_freq && vco_freq <= MHZ(8)) {
 		*range = LL_RCC_PLLINPUTRANGE_4_8;
 	} else if (MHZ(8) < vco_freq && vco_freq <= MHZ(16)) {
 		*range = LL_RCC_PLLINPUTRANGE_8_16;
