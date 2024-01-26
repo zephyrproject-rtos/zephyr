@@ -6,7 +6,11 @@ common:
     - lvgl
   harness: none
   filter: dt_chosen_enabled("zephyr,display")
-  tags: samples lvgl display gui
+  tags:
+    - samples
+    - display
+    - lvgl
+    - gui
 tests:
   sample.modules.lvgl.demo_music:
     extra_configs:
@@ -17,3 +21,19 @@ tests:
   sample.modules.lvgl.demo_stress:
     extra_configs:
       - CONFIG_LV_Z_DEMO_STRESS=y
+  sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
+    platform_allow: stm32h747i_disco_m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
