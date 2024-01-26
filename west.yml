@@ -335,7 +335,7 @@ manifest:
       revision: 150f4eb2955eaf36ac0f9519d4f4f58d5ade5740
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: dbe20afd00b3ddd6956f4b47f5df202bb49a8707
+      revision: d3093b5684f62268c7f27f8a5079f166772619de
       path: modules/lib/zcbor
 
   self:
