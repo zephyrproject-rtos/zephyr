@@ -6,6 +6,7 @@
 
 #include <zephyr/arch/xtensa/syscall.h>
 
+#ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
 uintptr_t xtensa_syscall_helper(uintptr_t arg1, uintptr_t arg2,
 				uintptr_t arg3, uintptr_t arg4,
 				uintptr_t arg5, uintptr_t arg6,
@@ -27,3 +28,22 @@ uintptr_t xtensa_syscall_helper(uintptr_t arg1, uintptr_t arg2,
 
 	return a2;
 }
+#endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
+
+#if XCHAL_HAVE_THREADPTR == 0
+#include <xtensa/config/core-isa.h>
+#include <xtensa/config/core.h>
+
+bool xtensa_is_user_context(void)
+{
+	uint32_t ret;
+
+	__asm__ volatile(".global xtensa_is_user_context_epc\n"
+			 "        xtensa_is_user_context_epc:\n"
+			 "                syscall\n"
+			 "                mov %0, a2\n"
+			 : "=r"(ret) : : "a2");
+
+	return ret != 0;
+}
+#endif /* XCHAL_HAVE_THREADPTR */

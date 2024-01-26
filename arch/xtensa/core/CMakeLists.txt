@@ -23,8 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_MMU ptables.c mmu.c)
-zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
-zephyr_library_sources_ifdef(CONFIG_XTENSA_SYSCALL_USE_HELPER syscall_helper.c)
+zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S syscall_helper.c)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_SMP smp.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_HIFI_SHARING xtensa_hifi.S)
@@ -57,12 +56,30 @@ add_custom_command(OUTPUT ${CORE_ISA_DM}
           -I${SOC_FULL_DIR}
           ${CORE_ISA_IN} -o ${CORE_ISA_DM})
 
+if(CONFIG_USERSPACE AND NOT CONFIG_THREAD_LOCAL_STORAGE)
+  # It is possible that the SoC does not have THREADPTR.
+  # This means that we cannot use THREADPTR as a shortcut to
+  # in arch_is_user_context(). However, whether a SoC has
+  # THREADPTR is in core-isa.h which can be parsed in gen_zsr.py.
+  # There, if there is no THREADPTR, we need a scratch register
+  # so we can do arch_is_user_context() via syscall.
+  set(MAY_NEED_SYSCALL_SCRATCH_REG true)
+else()
+  # With thread local storage, the variable is_user_mode is
+  # stored in the thread's TLS area. There is no need for
+  # scratch register.
+  set(MAY_NEED_SYSCALL_SCRATCH_REG false)
+endif()
+
 # Generates a list of device-specific scratch register choices
 set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zsr.h)
 add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
                                $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>
+                               $<$<BOOL:${MAY_NEED_SYSCALL_SCRATCH_REG}>:--syscall-scratch>
                                $<$<BOOL:${CONFIG_KERNEL_COHERENCE}>:--coherence>
                                ${CORE_ISA_DM} ${ZSR_H})
 add_custom_target(zsr_h DEPENDS ${ZSR_H})
 add_dependencies(zephyr_interface zsr_h)
+
+unset(MAY_NEED_SYSCALL_SCRATCH_REG)
