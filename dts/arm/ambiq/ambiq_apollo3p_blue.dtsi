@@ -35,21 +35,21 @@
 	/* SRAM */
 	sram0: memory@10010000 {
 		compatible = "mmio-sram";
-		reg = <0x10010000 0x2B0000>;
+		reg = <0x10010000 0xb0000>;
 	};
 
 	soc {
-		flash: flash-controller@18000 {
+		flash: flash-controller@c000 {
 			compatible = "ambiq,flash-controller";
-			reg = <0x00018000 0x1e8000>;
+			reg = <0x0000C000 0x1f4000>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			/* MRAM region */
-			flash0: flash@18000 {
+			flash0: flash@c000 {
 				compatible = "soc-nv-flash";
-				reg = <0x00018000 0x1e8000>;
+				reg = <0x0000C000 0x1f0000>;
 			};
 		};
 
@@ -80,7 +80,7 @@
 			interrupt-names = "UART0";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x200>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x80>;
 		};
 		uart1: uart@4001d000 {
 			compatible = "ambiq,uart", "arm,pl011";
@@ -89,7 +89,7 @@
 			interrupt-names = "UART1";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x400>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x100>;
 		};
 
 		iom0: iom@40050000 {

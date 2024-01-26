@@ -2,8 +2,8 @@ identifier: apollo3p_blue_evb
 name: Apollo3P Blue EVB
 type: mcu
 arch: arm
-ram: 2816
-flash: 1952
+ram: 704
+flash: 1984
 toolchain:
   - zephyr
   - gnuarmemb
