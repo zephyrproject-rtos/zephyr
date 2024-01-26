@@ -5,10 +5,6 @@
 
 if SOC_STM32F105XC || SOC_STM32F105XB
 
-config SOC
-	string
-	default "stm32f105xc"
-
 config NUM_IRQS
 	int
 	default 68
