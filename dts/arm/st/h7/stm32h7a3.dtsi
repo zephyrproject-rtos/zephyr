@@ -152,6 +152,13 @@
 		zephyr,memory-region = "ITCM";
 	};
 
+	ext_memory2: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(256)>; /* max addressable area */
+		zephyr,memory-region = "EXTMEM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+	};
+
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
