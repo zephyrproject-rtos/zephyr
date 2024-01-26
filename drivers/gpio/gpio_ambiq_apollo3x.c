@@ -13,6 +13,39 @@
 
 static bool irq_init = true;
 
+#define PADREG_FLD_76_S         6
+#define PADREG_FLD_FNSEL_S      3
+#define PADREG_FLD_DRVSTR_S     2
+#define PADREG_FLD_INPEN_S      1
+#define PADREG_FLD_PULLUP_S     0
+
+#define GPIOCFG_FLD_INTD_S      3
+#define GPIOCFG_FLD_OUTCFG_S    1
+#define GPIOCFG_FLD_INCFG_S     0
+
+static int ambiq_apollo3x_read_pinconfig(int pin, am_hal_gpio_pincfg_t *pincfg)
+{
+	uint32_t cfg_addr = AM_REGADDR(GPIO, CFGA) + ((pin >> 1) & ~0x3);
+	uint32_t cfg_shift = ((pin & 0x7) >> 2);
+	uint32_t gpio_cfg = (AM_REGVAL(cfg_addr) >> cfg_shift) & 0xF;
+	uint32_t pad_addr = AM_REGADDR(GPIO, PADREGA) + (pin & ~0x3);
+	uint32_t pad_shift = ((pin & 0x3) >> 3);
+	uint32_t pad_cfg = (AM_REGVAL(pad_addr) >> pad_shift) & 0xFF;
+
+	if ((pad_cfg >> PADREG_FLD_PULLUP_S) & 0x1) {
+		pincfg->ePullup = ((pad_cfg >> PADREG_FLD_76_S) & 0x7) + AM_HAL_GPIO_PIN_PULLUP_1_5K;
+	} else {
+		pincfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
+	}
+	pincfg->eGPOutcfg = (gpio_cfg >> GPIOCFG_FLD_OUTCFG_S) & 0x3;
+	pincfg->eCEpol = (gpio_cfg >> GPIOCFG_FLD_INTD_S) & 0x1;
+	pincfg->eIntDir = (gpio_cfg >> GPIOCFG_FLD_INCFG_S) & 0x1;
+	pincfg->eGPInput = (pad_cfg >> PADREG_FLD_INPEN_S) & 0x1;
+	pincfg->uFuncSel = (pad_cfg >> PADREG_FLD_FNSEL_S) & 0x3;
+
+	return 0;
+}
+
 static int ambiq_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
@@ -74,7 +107,7 @@ static int ambiq_gpio_get_config(const struct device *dev, gpio_pin_t pin, gpio_
 
 	pin += dev_cfg->pin_offset;
 
-	am_hal_gpio_pinconfig_get(pin, &pincfg);
+	ambiq_apollo3x_read_pinconfig(pin, &pincfg);
 
 	if (pincfg.eGPOutcfg == AM_HAL_GPIO_PIN_OUTCFG_DISABLE &&
 	    pincfg.eGPInput == AM_HAL_GPIO_PIN_INPUT_NONE) {
@@ -121,7 +154,7 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 	if (inputs != NULL) {
 		for (int i = 0; i < dev_cfg->ngpios; i++) {
 			if ((map >> i) & 1) {
-				am_hal_gpio_pinconfig_get(i + dev_cfg->pin_offset, &pincfg);
+				ambiq_apollo3x_read_pinconfig(i + dev_cfg->pin_offset, &pincfg);
 				if (pincfg.eGPInput == AM_HAL_GPIO_PIN_INPUT_ENABLE) {
 					ip |= BIT(i);
 				}
@@ -132,7 +165,7 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 	if (outputs != NULL) {
 		for (int i = 0; i < dev_cfg->ngpios; i++) {
 			if ((map >> i) & 1) {
-				am_hal_gpio_pinconfig_get(i + dev_cfg->pin_offset, &pincfg);
+				ambiq_apollo3x_read_pinconfig(i + dev_cfg->pin_offset, &pincfg);
 				if (pincfg.eGPOutcfg == AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL ||
 				    pincfg.eGPOutcfg == AM_HAL_GPIO_PIN_OUTCFG_OPENDRAIN) {
 					op |= BIT(i);
@@ -145,38 +178,6 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 	return 0;
 }
 #endif
-
-#define PADREG_FLD_76_S         6
-#define PADREG_FLD_FNSEL_S      3
-#define PADREG_FLD_DRVSTR_S     2
-#define PADREG_FLD_INPEN_S      1
-#define PADREG_FLD_PULLUP_S     0
-
-#define GPIOCFG_FLD_INTD_S      3
-#define GPIOCFG_FLD_OUTCFG_S    1
-#define GPIOCFG_FLD_INCFG_S     0
-
-static int ambiq_apollo3x_read_pinconfig(int pin, am_hal_gpio_pincfg_t *pincfg)
-{
-	uint32_t cfg_addr = AM_REGADDR(GPIO, CFGA) + ((pin >> 1) & ~0x3);
-	uint32_t cfg_shift = ((pin & 0x7) >> 2);
-	uint32_t gpio_cfg = (AM_REGVAL(cfg_addr) >> cfg_shift) & 0xF;
-	uint32_t pad_addr = AM_REGADDR(GPIO, PADREGA) + (pin & ~0x3);
-	uint32_t pad_shift = ((pin & 0x3) >> 3);
-	uint32_t pad_cfg = (AM_REGVAL(pad_addr) >> pad_shift) & 0xFF;
-
-	if ((pad_cfg >> PADREG_FLD_PULLUP_S) & 0x1) {
-		pincfg->ePullup = ((pad_cfg >> PADREG_FLD_76_S) & 0x7) + AM_HAL_GPIO_PIN_PULLUP_1_5K;
-	} else {
-		pincfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
-	}
-	pincfg->eGPOutcfg = (gpio_cfg >> GPIOCFG_FLD_OUTCFG_S) & 0x3;
-	pincfg->eCEpol = (gpio_cfg >> GPIOCFG_FLD_INTD_S) & 0x1;
-	pincfg->eIntDir = (gpio_cfg >> GPIOCFG_FLD_INCFG_S) & 0x1;
-	pincfg->eGPInput = (pad_cfg >> PADREG_FLD_INPEN_S) & 0x1;
-
-	return 0;
-}
 
 static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					      enum gpio_int_mode mode, enum gpio_int_trig trig)
@@ -195,6 +196,8 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 	ret = ambiq_apollo3x_read_pinconfig(gpio_pin, &pincfg);
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
+		uint32_t en_masks[3] = { 0 };
+
 		pincfg.eIntDir = AM_HAL_GPIO_PIN_INTDIR_NONE;
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
 
@@ -204,11 +207,14 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		ret = am_hal_gpio_interrupt_clear(pint_msk);
 		ret = am_hal_gpio_interrupt_disable(pint_msk);
 
-		/*
-		if (all_disabled) {
+		/* Unforunately there is no API in the Ambiq SDK for reading interrupt mask */
+		en_masks[0] = GPIO->INT0EN;
+		en_masks[1] = GPIO->INT1EN;
+		en_masks[2] = GPIO->INT2EN;
+
+		if (!en_masks[0] && !en_masks[1] && !en_masks[2]) {
 			irq_disable(dev_cfg->irq_num);
 		}
-		*/
 
 		k_spin_unlock(&data->lock, key);
 
@@ -228,7 +234,7 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		}
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
 
-		//irq_enable(dev_cfg->irq_num);
+		irq_enable(dev_cfg->irq_num);
 
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -243,7 +249,6 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 static void ambiq_gpio_isr(const struct device *dev)
 {
 	struct ambiq_gpio_data *const data = dev->data;
-	const struct ambiq_gpio_config *const dev_cfg = dev->config;
 
 	AM_HAL_GPIO_MASKCREATE(int_msk);
 
@@ -257,14 +262,11 @@ static void ambiq_gpio_isr(const struct device *dev)
 
 static int ambiq_gpio_init(const struct device *port)
 {
-
 	if (irq_init) {
-		const struct ambiq_gpio_config *const dev_cfg = port->config;
 		irq_init = false;
 		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ambiq_gpio_isr,
 					DEVICE_DT_INST_GET(0), 0);
-		irq_enable(DT_INST_IRQN(0));
 	}
 
 	return 0;
