@@ -3,6 +3,10 @@
 # Copyright (c) 2018 qianfan Zhao
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NUCLEO_F070RB
-	bool "NUCLEO-64 F070RB Development Board"
-	depends on SOC_STM32F070XB
+if BOARD_NUCLEO_F070RB
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_F070RB
