@@ -32,3 +32,29 @@ config VL53L0X_RECONFIGURE_ADDRESS
 	  value from a sensor, it is powered up and its I2C address is reconfigured
 	  from the manufacturer default (0x29) to the address specified in the
 	  device tree.
+
+config VL53L0X_SETUP_MAX_TIME_FOR_RANGING
+	int "config max time for ranging"
+	default 33000
+	depends on VL53L0X
+	help
+	  Set max time for ranging in μs
+	
+config VL53L0X_SETUP_SIGNAL_LIMIT_RATIO
+	int "config signal limit ratio"
+	default 100
+	depends on VL53L0X
+	help
+	  Specify a floating point value multiplied by 1000.
+	  For example, a value of 1 represents 0.001 in real value.
+	  default value 100 is set VL53L0X_SETUP_SIGNAL_LIMIT (0.1 * 65536)
+
+config VL53L0X_SETUP_SIGMA_LIMIT_RATIO
+	int "config sigma limit ratio"
+	default 60000
+	depends on VL53L0X
+	help
+	  Specify a floating point value multiplied by 1000.
+	  For example, a value of 1 represents 0.001 in real value.
+	  default value 60000 is set VL53L0X_SETUP_SIGMA_LIMIT (60 * 65536)
+	
