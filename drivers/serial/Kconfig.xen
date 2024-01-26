@@ -18,7 +18,7 @@ config UART_XEN_HVC
 config UART_XEN_HVC_CONSOLEIO
 	bool "Xen hypervisor consoleio UART driver"
 	select SERIAL_HAS_DRIVER
-	depends on XEN_DOM0 || XEN_DOM0LESS
+	depends on DT_HAS_XEN_HVC_CONSOLEIO_ENABLED && (XEN_DOM0 || XEN_DOM0LESS)
 	default y
 	help
 	  Enable Xen hypervisor console driver. Used for Zephyr as
