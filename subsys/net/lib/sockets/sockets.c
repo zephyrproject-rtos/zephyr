@@ -1134,6 +1134,73 @@ error:
 	return ret;
 }
 
+#if defined(CONFIG_NET_OFFLOAD)
+static bool net_pkt_remote_addr_is_unspecified(struct net_pkt *pkt)
+{
+	bool ret = true;
+
+	if (net_pkt_family(pkt) == AF_INET) {
+		ret = net_ipv4_is_addr_unspecified(&net_sin(&pkt->remote)->sin_addr);
+	} else if (net_pkt_family(pkt) == AF_INET6) {
+		ret = net_ipv6_is_addr_unspecified(&net_sin6(&pkt->remote)->sin6_addr);
+	}
+
+	return ret;
+}
+
+static int sock_get_offload_pkt_src_addr(struct net_pkt *pkt,
+					 struct net_context *ctx,
+					 struct sockaddr *addr,
+					 socklen_t addrlen)
+{
+	int ret = 0;
+
+	if (!addr || !pkt) {
+		return -EINVAL;
+	}
+
+	if (!net_pkt_remote_addr_is_unspecified(pkt)) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		    net_pkt_family(pkt) == AF_INET) {
+			if (addrlen < sizeof(struct sockaddr_in)) {
+				ret = -EINVAL;
+				goto error;
+			}
+
+			memcpy(addr, &pkt->remote, sizeof(struct sockaddr_in));
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			   net_pkt_family(pkt) == AF_INET6) {
+			if (addrlen < sizeof(struct sockaddr_in6)) {
+				ret = -EINVAL;
+				goto error;
+			}
+
+			memcpy(addr, &pkt->remote, sizeof(struct sockaddr_in6));
+		}
+	} else if (ctx->flags & NET_CONTEXT_REMOTE_ADDR_SET) {
+		memcpy(addr, &ctx->remote, MIN(addrlen, sizeof(ctx->remote)));
+	} else {
+		ret = -ENOTSUP;
+	}
+
+error:
+	return ret;
+}
+#else
+static int sock_get_offload_pkt_src_addr(struct net_pkt *pkt,
+					 struct net_context *ctx,
+					 struct sockaddr *addr,
+					 socklen_t addrlen)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+
+	return 0;
+}
+#endif /* CONFIG_NET_OFFLOAD */
+
 void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 {
 	net_pkt_set_rx_stats_tick(pkt, end_tick);
@@ -1337,27 +1404,23 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	if (src_addr && addrlen) {
 		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 		    net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
-			/*
-			 * Packets from offloaded IP stack do not have IP
-			 * headers, so src address cannot be figured out at this
-			 * point. The best we can do is returning remote address
-			 * if that was set using connect() call.
-			 */
-			if (ctx->flags & NET_CONTEXT_REMOTE_ADDR_SET) {
-				memcpy(src_addr, &ctx->remote,
-				       MIN(*addrlen, sizeof(ctx->remote)));
-			} else {
-				errno = ENOTSUP;
+			int ret;
+
+			ret  = sock_get_offload_pkt_src_addr(pkt, ctx, src_addr,
+								*addrlen);
+			if (ret < 0) {
+				errno = -ret;
+				NET_DBG("sock_get_offload_pkt_src_addr %d", ret);
 				goto fail;
 			}
 		} else {
-			int rv;
+			int ret;
 
-			rv = sock_get_pkt_src_addr(pkt, net_context_get_proto(ctx),
+			ret = sock_get_pkt_src_addr(pkt, net_context_get_proto(ctx),
 						   src_addr, *addrlen);
-			if (rv < 0) {
-				errno = -rv;
-				LOG_ERR("sock_get_pkt_src_addr %d", rv);
+			if (ret < 0) {
+				errno = -ret;
+				NET_DBG("sock_get_pkt_src_addr %d", ret);
 				goto fail;
 			}
 		}
