@@ -5,9 +5,6 @@
 
 if BOARD_LEGEND
 
-config BOARD
-	default "legend"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
