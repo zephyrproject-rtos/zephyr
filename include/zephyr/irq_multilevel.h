@@ -12,6 +12,7 @@
 #define ZEPHYR_INCLUDE_IRQ_MULTILEVEL_H_
 
 #ifndef _ASMLANGUAGE
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
@@ -164,6 +165,76 @@ static inline unsigned int irq_parent_level_3(unsigned int irq)
 {
 	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
 		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+}
+
+/**
+ * @brief Return the interrupt number for a given level
+ *
+ * @param irq IRQ number in its zephyr format
+ * @param level IRQ level
+ *
+ * @return IRQ number in the level
+ */
+static inline unsigned int irq_from_level(unsigned int irq, unsigned int level)
+{
+	if (level == 1) {
+		return irq;
+	} else if (level == 2) {
+		return irq_from_level_2(irq);
+	} else if (level == 3) {
+		return irq_from_level_3(irq);
+	}
+
+	/* level is higher than 3 */
+	__ASSERT_NO_MSG(false);
+	return irq;
+}
+
+/**
+ * @brief Converts irq from level 1 to to a given level
+ *
+ * @param irq IRQ number in its zephyr format
+ * @param level IRQ level
+ *
+ * @return Converted IRQ number in the level
+ */
+static inline unsigned int irq_to_level(unsigned int irq, unsigned int level)
+{
+	if (level == 1) {
+		return irq;
+	} else if (level == 2) {
+		return irq_to_level_2(irq);
+	} else if (level == 3) {
+		return irq_to_level_3(irq);
+	}
+
+	/* level is higher than 3 */
+	__ASSERT_NO_MSG(false);
+	return irq;
+}
+
+/**
+ * @brief Returns the parent IRQ of the given level raw IRQ number
+ *
+ * @param irq IRQ number in its zephyr format
+ * @param level IRQ level
+ *
+ * @return IRQ parent of the given level
+ */
+static inline unsigned int irq_parent_level(unsigned int irq, unsigned int level)
+{
+	if (level == 1) {
+		/* doesn't really make sense, but return anyway */
+		return irq;
+	} else if (level == 2) {
+		return irq_parent_level_2(irq);
+	} else if (level == 3) {
+		return irq_parent_level_3(irq);
+	}
+
+	/* level is higher than 3 */
+	__ASSERT_NO_MSG(false);
+	return irq;
 }
 
 /**
