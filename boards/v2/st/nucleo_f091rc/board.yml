@@ -1,0 +1,5 @@
+board:
+  name: nucleo_f091rc
+  vendor: st
+  socs:
+    - name: stm32f091xc
