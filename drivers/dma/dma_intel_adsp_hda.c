@@ -27,6 +27,13 @@
 #include "dma_intel_adsp_hda.h"
 #include <intel_adsp_hda.h>
 
+#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(dma_intel_adsp_hda);
+
+/* Time to poll for DGCS.GBUSY to be cleared when stopping host DMA  */
+#define INTEL_ADSP_HDA_DMA_HOST_STOP_TIMEOUT_US	5000
+
 int intel_adsp_hda_dma_host_in_config(const struct device *dev,
 				       uint32_t channel,
 				       struct dma_config *dma_cfg)
@@ -328,8 +335,9 @@ int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
 
 	/* host dma needs some cycles to completely stop */
 	if (cfg->direction == HOST_TO_MEMORY || cfg->direction == MEMORY_TO_HOST) {
-		if (!WAIT_FOR(!(*DGCS(cfg->base, cfg->regblock_size, channel) & DGCS_GBUSY), 1000,
-				  k_busy_wait(1))) {
+		if (!WAIT_FOR(!(*DGCS(cfg->base, cfg->regblock_size, channel) & DGCS_GBUSY),
+				INTEL_ADSP_HDA_DMA_HOST_STOP_TIMEOUT_US, k_busy_wait(1))) {
+			LOG_ERR("Host DMA stop failed, GBUSY no cleared!");
 			return -EBUSY;
 		}
 	}
