@@ -107,19 +107,21 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 #define RXFIFO_DEFINE(_name, _size, _count, _extra_links) \
 	MFIFO_DEFINE(_name, sizeof(void *), _count); \
 	\
-	static struct { \
-		void *free; \
+	static const struct { \
 		uint16_t size; \
 		uint8_t count; \
 		uint8_t extra_links; \
-		uint8_t pool[MROUND(_size) * (_count)]; \
 	} mem_##_name = { .size = MROUND(_size), .count = _count, \
 			  .extra_links = _extra_links }; \
 	\
 	static struct { \
 		void *free; \
-		uint8_t pool[sizeof(memq_link_t) * \
-		     (_count + _extra_links)]; \
+		uint8_t pool[MROUND(_size) * (_count)]; \
+	} mem_pool_##_name; \
+	\
+	static struct { \
+		void *free; \
+		uint8_t pool[sizeof(memq_link_t) * (_count + _extra_links)]; \
 	} mem_link_##_name
 
 /**
@@ -129,8 +131,8 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
  */
 #define RXFIFO_INIT(_name) \
 	MFIFO_INIT(_name); \
-	mem_init(mem_##_name.pool, mem_##_name.size, \
-		 mem_##_name.count, &mem_##_name.free); \
+	mem_init(mem_pool_##_name.pool, mem_##_name.size, \
+		 mem_##_name.count, &mem_pool_##_name.free); \
 	\
 	mem_init(mem_link_##_name.pool, sizeof(memq_link_t), mem_##_name.count + \
 		 mem_##_name.extra_links, &mem_link_##_name.free)
@@ -142,8 +144,9 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
  */
 #define RXFIFO_ALLOC(_name, _count) \
 	ull_rxfifo_alloc(mfifo_##_name.s, mfifo_##_name.n, mfifo_##_name.f, \
-			 &mfifo_##_name.l, mfifo_##_name.m, &mem_##_name.free, \
-			 &mem_link_##_name.free, _count)
+			 &mfifo_##_name.l, mfifo_##_name.m, \
+			 &mem_pool_##_name.free, &mem_link_##_name.free, \
+			 _count)
 
 /**
  * @brief Initialize and allocate MFIFO and pools
