@@ -206,6 +206,8 @@ extern const struct rtio_iodev_api __sensing_iodev_api;
  *
  * @param reg_ptr Pointer to the device's sensing_sensor_register_info.
  *
+ * @param cb_list_ptr Pointer to devices callback list.
+ *
  * @param init_fn Name of the init function of the driver.
  *
  * @param pm_device PM device resources reference (NULL if device does not use
@@ -245,9 +247,8 @@ extern const struct rtio_iodev_api __sensing_iodev_api;
  *
  * @param ... other parameters as expected by SENSING_SENSORS_DT_DEFINE().
  */
-#define SENSING_SENSORS_DT_INST_DEFINE(inst, reg_ptr, cb_list_ptr, ...)	\
-	SENSING_SENSORS_DT_DEFINE(DT_DRV_INST(inst), reg_ptr,		\
-			cb_list_ptr, __VA_ARGS__)
+#define SENSING_SENSORS_DT_INST_DEFINE(inst, ...)	\
+	SENSING_SENSORS_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Get reporter handles	of a given sensor instance by sensor type.
