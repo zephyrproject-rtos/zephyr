@@ -46,10 +46,11 @@
 	};
 
 	quadspi_memory: memory@90000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x90000000 DT_SIZE_M(256)>;
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		zephyr,memory-region = "QSPI";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 
 	clocks {
