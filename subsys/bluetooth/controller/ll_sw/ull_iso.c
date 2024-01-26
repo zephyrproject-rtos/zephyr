@@ -1543,7 +1543,7 @@ void *ll_iso_rx_get(void)
 			(void)memq_dequeue(memq_ll_iso_rx.tail,
 						&memq_ll_iso_rx.head, NULL);
 			mem_release(link, &mem_link_iso_rx.free);
-			mem_release(rx, &mem_iso_rx.free);
+			mem_release(rx, &mem_pool_iso_rx.free);
 			RXFIFO_ALLOC(iso_rx, 1);
 
 			link = memq_peek(memq_ll_iso_rx.head, memq_ll_iso_rx.tail, (void **)&rx);
@@ -1589,7 +1589,7 @@ void ll_iso_rx_mem_release(void **node_rx)
 
 		switch (rx_free->type) {
 		case NODE_RX_TYPE_ISO_PDU:
-			mem_release(rx_free, &mem_iso_rx.free);
+			mem_release(rx_free, &mem_pool_iso_rx.free);
 			break;
 		default:
 			/* Ignore other types as node may have been initialized due to
