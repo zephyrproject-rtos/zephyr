@@ -144,10 +144,10 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
  *          enqueuing pointers to memory elements with associated memq links.
  */
 #define RXFIFO_ALLOC(_name, _count) \
-	ull_rxfifo_alloc(mfifo_##_name.s, mfifo_##_name.n, mfifo_##_name.f, \
-			 &mfifo_##_name.l, mfifo_##_name.m, \
-			 &mem_pool_##_name.free, &mem_link_##_name.free, \
-			 _count)
+	ull_rxfifo_alloc(mfifo_##_name.s, mfifo_##_name.n, \
+			 mfifo_fifo_##_name.f, &mfifo_fifo_##_name.l, \
+			 mfifo_fifo_##_name.m, &mem_pool_##_name.free, \
+			 &mem_link_##_name.free, _count)
 
 /**
  * @brief Initialize and allocate MFIFO and pools
@@ -161,8 +161,9 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
  * @details Enqueues an RX node back into the FIFO.
  */
 #define RXFIFO_RELEASE(_name, _link, _rx) \
-	ull_rxfifo_release(mfifo_##_name.s, mfifo_##_name.n, mfifo_##_name.f, \
-			   &mfifo_##_name.l, mfifo_##_name.m, _link, \
+	ull_rxfifo_release(mfifo_##_name.s, mfifo_##_name.n, \
+			   mfifo_fifo_##_name.f, &mfifo_fifo_##_name.l, \
+			   mfifo_fifo_##_name.m, _link, \
 			   (struct node_rx_hdr *)_rx)
 
 void ull_rxfifo_alloc(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
