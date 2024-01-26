@@ -66,10 +66,18 @@ class DeviceAdapter(abc.ABC):
 
         if not self.command:
             self.generate_command()
-        self._flash_and_run()
+
+        if self.device_config.type != 'hardware':
+            self._flash_and_run()
+
         self._device_run.set()
         self._start_reader_thread()
         self.connect()
+
+        if self.device_config.type == 'hardware':
+            # On hardware, flash after connecting to COM port, otherwise some messages
+            # from target can be lost.
+            self._flash_and_run()
 
     def close(self) -> None:
         """Disconnect, close device and close reader thread."""
