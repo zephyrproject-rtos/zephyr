@@ -12,7 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 git add -A
 git commit -s -m"pre-patch"
 
-git apply lwm2m_senml_cbor.patch
+git apply --reject lwm2m_senml_cbor.patch
 
 clang-format -i \
 	lwm2m_senml_cbor_decode.c lwm2m_senml_cbor_decode.h \
