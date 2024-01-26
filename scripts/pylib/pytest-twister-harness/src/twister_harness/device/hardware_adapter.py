@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import logging
 import os
-import pty
+if os.name != 'nt':
+    import pty
 import re
 import subprocess
 import time
@@ -150,7 +151,13 @@ class HardwareAdapter(DeviceAdapter):
         """Open a pty pair, run process and return tty name"""
         if not self.device_config.serial_pty:
             return None
-        master, slave = pty.openpty()
+
+        try:
+            master, slave = pty.openpty()
+        except NameError as exc:
+            logger.exception('PTY module is not available.')
+            raise exc
+
         try:
             self._serial_pty_proc = subprocess.Popen(
                 re.split(',| ', self.device_config.serial_pty),
