@@ -1,0 +1,21 @@
+identifier: ttgo_lora32/esp32/procpu
+name: TTGO LoRa32 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - display
+  - lora
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: lilygo
