@@ -87,12 +87,6 @@ properties:
       for PLL and Periheral devices then disable the internal 32KHz
       oscillator to save power.
 
-  pinctrl-0:
-    required: true
-
-  pinctrl-names:
-    required: true
-
   "#clock-cells":
     const: 3
 
