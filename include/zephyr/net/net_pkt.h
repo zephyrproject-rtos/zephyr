@@ -290,6 +290,13 @@ struct net_pkt {
 	 */
 	uint8_t priority;
 
+#if defined(CONFIG_NET_OFFLOAD)
+	/* Remote address of the recived packet. This is only used by
+	 * network interfaces with an offloaded TCP/IP stack.
+	 */
+	struct sockaddr remote;
+#endif /* CONFIG_NET_OFFLOAD */
+
 	/* @endcond */
 };
 
