@@ -22,7 +22,12 @@
 
 #if defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/cache.h>
+#if defined(CONFIG_XTENSA_MMU)
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
+#endif
+#if defined(CONFIG_XTENSA_MPU)
+#include <zephyr/arch/xtensa/mpu.h>
+#endif
 #endif
 
 #if defined(CONFIG_ARC)
@@ -259,6 +264,7 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
 #elif defined(CONFIG_XTENSA)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
+#if defined(CONFIG_XTENSA_MMU)
 	/* Reset way 6 to do identity mapping.
 	 * Complier would complain addr going out of range if we
 	 * simply do addr = i * 0x20000000 inside the loop. So
@@ -274,6 +280,20 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
 
 		addr += 0x20000000;
 	}
+#endif
+
+#if defined(CONFIG_XTENSA_MPU)
+	/* Technically, simply clearing out all foreground MPU entries
+	 * allows the background map to take over, so it is not exactly
+	 * disabling MPU. However, this test is about catching userspace
+	 * trying to manipulate the MPU regions. So as long as there is
+	 * kernel OOPS, we would be fine.
+	 */
+	for (int i = 0; i < XTENSA_MPU_NUM_ENTRIES; i++) {
+		__asm__ volatile("wptlb %0, %1\n\t" : : "a"(i), "a"(0));
+	}
+#endif
+
 #else
 #error "Not implemented for this architecture"
 #endif
