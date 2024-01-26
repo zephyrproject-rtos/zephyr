@@ -5,7 +5,7 @@
 if SOC_APOLLO3P_BLUE
 
 config NUM_IRQS
-	default 33 
+	default 33
 
 DT_NODE_SRAM := /memory@0
 

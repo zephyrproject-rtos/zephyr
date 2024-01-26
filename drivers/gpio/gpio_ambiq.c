@@ -74,4 +74,3 @@ int ambiq_gpio_manage_callback(const struct device *dev, struct gpio_callback *c
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
-

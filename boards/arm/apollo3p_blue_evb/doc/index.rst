@@ -12,7 +12,7 @@ Apollo4P EVB is a board by Ambiq featuring their ultra-low power Apollo4 Plus So
 Hardware
 ********
 
-- Apollo4 Plus SoC with upto 192 MHz operating frequency
+- Apollo4 Plus SoC with up to 192 MHz operating frequency
 - ARM® Cortex® M4F core
 - 64 kB 2-way Associative/Direct-Mapped Cache per core
 - Up to 2 MB of non-volatile memory (NVM) for code/data

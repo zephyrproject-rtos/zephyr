@@ -33,7 +33,8 @@ static int ambiq_apollo3x_read_pinconfig(int pin, am_hal_gpio_pincfg_t *pincfg)
 	uint32_t pad_cfg = (AM_REGVAL(pad_addr) >> pad_shift) & 0xFF;
 
 	if ((pad_cfg >> PADREG_FLD_PULLUP_S) & 0x1) {
-		pincfg->ePullup = ((pad_cfg >> PADREG_FLD_76_S) & 0x7) + AM_HAL_GPIO_PIN_PULLUP_1_5K;
+		pincfg->ePullup = ((pad_cfg >> PADREG_FLD_76_S) & 0x7) +
+							AM_HAL_GPIO_PIN_PULLUP_1_5K;
 	} else {
 		pincfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
 	}
@@ -189,6 +190,7 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 	int gpio_pin = pin + dev_cfg->pin_offset;
 	uint32_t int_status;
 	int ret;
+
 	AM_HAL_GPIO_MASKCREATE(int_msk);
 
 	pint_msk = AM_HAL_GPIO_MASKBIT(pint_msk, gpio_pin);
