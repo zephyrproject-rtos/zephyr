@@ -134,8 +134,9 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 	mem_init(mem_pool_##_name.pool, mem_##_name.size, \
 		 mem_##_name.count, &mem_pool_##_name.free); \
 	\
-	mem_init(mem_link_##_name.pool, sizeof(memq_link_t), mem_##_name.count + \
-		 mem_##_name.extra_links, &mem_link_##_name.free)
+	mem_init(mem_link_##_name.pool, sizeof(memq_link_t), \
+		 (mem_##_name.count + mem_##_name.extra_links), \
+		 &mem_link_##_name.free)
 
 /**
  * @brief   Allocate FIFO elements with backing
