@@ -1,0 +1,5 @@
+board:
+  name: stm32f0_disco
+  vendor: st
+  socs:
+    - name: stm32f051x8
