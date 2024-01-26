@@ -449,7 +449,7 @@ zcbor
 =====
 
 * If you have zcbor-generated code that relies on the zcbor libraries through Zephyr, you must
-  regenerate the files using zcbor 0.8.0. Note that the names of generated types and members has
+  regenerate the files using zcbor 0.8.1. Note that the names of generated types and members has
   been overhauled, so the code using the generated code must likely be changed.
   For example:
 
