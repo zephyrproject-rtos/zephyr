@@ -14,6 +14,8 @@ import re
 def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
 
+    parser.add_argument("--coherence", action="store_true",
+                        help="Enable scratch registers for CONFIG_KERNEL_COHERENCE")
     parser.add_argument("--mmu", action="store_true",
                         help="Enable scratch registers for MMU usage")
     parser.add_argument("coreisa",
@@ -25,9 +27,11 @@ def parse_args():
 
 args = parse_args()
 
-NEEDED = ["A0SAVE", "CPU", "FLUSH"]
+NEEDED = ["A0SAVE", "CPU"]
 if args.mmu:
     NEEDED += ["MMU_0", "MMU_1", "DBLEXC"]
+if args.coherence:
+    NEEDED += ["FLUSH"]
 
 coreisa = args.coreisa
 outfile = args.outfile
