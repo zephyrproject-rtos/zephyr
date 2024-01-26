@@ -47,7 +47,7 @@
 
 	ext_memory: memory@90000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(256)>; /* max addressable area */
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		zephyr,memory-region = "EXTMEM";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
 	};
