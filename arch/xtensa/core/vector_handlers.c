@@ -89,6 +89,10 @@ void xtensa_dump_stack(const z_arch_esf_t *stack)
 #endif
 
 	LOG_ERR(" ** SAR %p", (void *)bsa->sar);
+
+#if XCHAL_HAVE_THREADPTR
+	LOG_ERR(" **  THREADPTR %p", (void *)bsa->threadptr);
+#endif
 }
 
 static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
@@ -121,10 +125,6 @@ static void print_fatal_exception(void *print_stack, int cause,
 	if (is_dblexc) {
 		LOG_ERR(" **  DEPC %p", (void *)depc);
 	}
-
-#ifdef CONFIG_USERSPACE
-	LOG_ERR(" **  THREADPTR %p", (void *)bsa->threadptr);
-#endif /* CONFIG_USERSPACE */
 
 	LOG_ERR(" **  PS %p", (void *)bsa->ps);
 	LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
