@@ -216,7 +216,7 @@ static inline void __z_pthread_cleanup_init(struct __pthread_cleanup *c, void (*
 
 void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void *arg)
 {
-	struct posix_thread *t;
+	struct posix_thread *t = NULL;
 	struct __pthread_cleanup *const c = (struct __pthread_cleanup *)cleanup;
 
 	K_SPINLOCK(&pthread_pool_lock) {
@@ -233,8 +233,8 @@ void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void
 void __z_pthread_cleanup_pop(int execute)
 {
 	sys_snode_t *node;
-	struct __pthread_cleanup *c;
-	struct posix_thread *t;
+	struct __pthread_cleanup *c = NULL;
+	struct posix_thread *t = NULL;
 
 	K_SPINLOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
@@ -689,7 +689,7 @@ int pthread_cancel(pthread_t pthread)
 	int ret = 0;
 	bool cancel_state = PTHREAD_CANCEL_ENABLE;
 	bool cancel_type = PTHREAD_CANCEL_DEFERRED;
-	struct posix_thread *t;
+	struct posix_thread *t = NULL;
 
 	K_SPINLOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread);
@@ -709,7 +709,7 @@ int pthread_cancel(pthread_t pthread)
 		cancel_type = t->attr.canceltype;
 	}
 
-	if (cancel_state == PTHREAD_CANCEL_ENABLE &&
+	if (ret == 0 && cancel_state == PTHREAD_CANCEL_ENABLE &&
 	    cancel_type == PTHREAD_CANCEL_ASYNCHRONOUS) {
 		posix_thread_finalize(t, PTHREAD_CANCELED);
 	}
@@ -725,8 +725,8 @@ int pthread_cancel(pthread_t pthread)
 int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_param *param)
 {
 	int ret = 0;
-	int new_prio;
-	struct posix_thread *t;
+	int new_prio = K_LOWEST_APPLICATION_THREAD_PRIO;
+	struct posix_thread *t = NULL;
 
 	if (param == NULL || !valid_posix_policy(policy) ||
 	    !is_posix_policy_prio_valid(param->sched_priority, policy)) {
@@ -892,7 +892,7 @@ void pthread_exit(void *retval)
 int pthread_join(pthread_t pthread, void **status)
 {
 	int ret = 0;
-	struct posix_thread *t;
+	struct posix_thread *t = NULL;
 
 	if (pthread == pthread_self()) {
 		LOG_ERR("Pthread attempted to join itself (%x)", pthread);
