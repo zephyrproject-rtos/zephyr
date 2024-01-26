@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_F091RC
 
-config BOARD
-	default "nucleo_f091rc"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
