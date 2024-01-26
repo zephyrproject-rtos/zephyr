@@ -40,3 +40,17 @@ tests:
       - mimxrt595_evk_cm33
     integration_platforms:
       - mimxrt1170_evk_cm7
+  sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
+    platform_allow: stm32h747i_disco_m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
