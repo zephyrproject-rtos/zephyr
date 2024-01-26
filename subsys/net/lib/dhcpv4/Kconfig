@@ -85,4 +85,12 @@ config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
 	  The lease time determines when the IPv4 address lease expires if the
 	  client does not renew it.
 
+config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
+	int "Timeout for ICMP probes sent by the server (miliseconds)"
+	default 1000
+	help
+	  DHCPv4 server will probe the offered IP address (send ICMP echo
+	  request) and wait for the time specific by this config before offering
+	  the address. If set to 0, ICMP probing will be disabled.
+
 endif # NET_DHCPV4_SERVER
