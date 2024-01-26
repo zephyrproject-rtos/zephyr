@@ -431,6 +431,51 @@ static int qspi_set_memorymap(const struct device *dev)
 
 	return 0;
 }
+#if 0
+/* Function send a Write Enable and wait it is effective. */
+static int qspi_set_we_memorymap(const struct device *dev)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+	QSPI_AutoPollingTypeDef we_config;
+	QSPI_CommandTypeDef     we_command = {
+		.Instruction = SPI_NOR_CMD_WREN,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.AddressMode = QSPI_ADDRESS_NONE,
+		.DataMode = QSPI_DATA_1_LINE,
+		.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+		.DummyCycles  = 0,
+		.DdrMode = QSPI_DDR_MODE_DISABLE,
+		.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
+		.SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
+	};
+	we_command.NbData = 2;
+
+	/* Enable write operations */
+	if (HAL_QSPI_Command(&dev_data->hqspi, &we_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+	{
+			LOG_ERR("Write Enable Failed to set memory map");
+			return -EIO;
+	}
+	/* Configure automatic polling mode to wait for write enabling */
+	we_config.Match           = 0x0202;
+	we_config.Mask            = 0x0202;
+	we_config.MatchMode       = QSPI_MATCH_MODE_AND;
+	we_config.StatusBytesSize = 2;
+	we_config.Interval        = 0x10;
+	we_config.AutomaticStop   = QSPI_AUTOMATIC_STOP_ENABLE;
+
+	we_command.Instruction    = SPI_NOR_CMD_RDSR;
+	we_command.DataMode       = QSPI_DATA_1_LINE;
+
+	if (HAL_QSPI_AutoPolling(&dev_data->hqspi, &we_command, &we_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+	{
+			LOG_ERR("Write Enable Failed to set memory map");
+			return -EIO;
+	}
+
+	return 0;
+}
+#endif
 #endif /* CONFIG_STM32_MEMMAP */
 
 static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
