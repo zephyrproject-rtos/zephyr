@@ -73,7 +73,7 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 	const unsigned int level = irq_get_level(irq);
 
 	if (intc != NULL) {
-		local_irq = level == 2 ? irq_from_level_2(irq) : irq_from_level_3(irq);
+		local_irq = irq_from_level(irq, level);
 		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
 
 		table_idx = intc->offset + local_irq;
