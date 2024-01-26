@@ -56,7 +56,7 @@ class MCUmgr:
 
     def image_upload(self, image: Path | str, slot: int | None = None, timeout: int = 30):
         command = f'-t {timeout} image upload {image}'
-        if slot:
+        if slot is not None:
             command += f' -e -n {slot}'
         self.run_command(command)
         logger.info('Image successfully uploaded')
@@ -98,7 +98,7 @@ class MCUmgr:
         raise MCUmgrException('No not active image found')
 
     def get_hash_to_confirm(self):
-        image_list = self.mcumgr.get_image_list()
+        image_list = self.get_image_list()
         for image in image_list:
             if 'confirmed' not in image.flags:
                 return image.hash
