@@ -5,7 +5,7 @@ index c12f477cce..f41b81275d 100644
 @@ -4,7 +4,7 @@
   * SPDX-License-Identifier: Apache-2.0
   *
-  * Generated using zcbor version 0.8.0
+  * Generated using zcbor version 0.8.1
 - * https://github.com/NordicSemiconductor/zcbor
 + * https://github.com/zephyrproject-rtos/zcbor
   * Generated with a --default-max-qty of 99
@@ -47,7 +47,7 @@ index a36f8782c6..b913fb78e9 100644
 @@ -4,7 +4,7 @@
   * SPDX-License-Identifier: Apache-2.0
   *
-  * Generated using zcbor version 0.8.0
+  * Generated using zcbor version 0.8.1
 - * https://github.com/NordicSemiconductor/zcbor
 + * https://github.com/zephyrproject-rtos/zcbor
   * Generated with a --default-max-qty of 99
@@ -72,7 +72,7 @@ index 94926c531f..5521917853 100644
 @@ -4,7 +4,7 @@
   * SPDX-License-Identifier: Apache-2.0
   *
-  * Generated using zcbor version 0.8.0
+  * Generated using zcbor version 0.8.1
 - * https://github.com/NordicSemiconductor/zcbor
 + * https://github.com/zephyrproject-rtos/zcbor
   * Generated with a --default-max-qty of 99
@@ -120,7 +120,7 @@ index df2f0ac6a1..8fa1eedb2b 100644
 @@ -4,7 +4,7 @@
   * SPDX-License-Identifier: Apache-2.0
   *
-  * Generated using zcbor version 0.8.0
+  * Generated using zcbor version 0.8.1
 - * https://github.com/NordicSemiconductor/zcbor
 + * https://github.com/zephyrproject-rtos/zcbor
   * Generated with a --default-max-qty of 99
@@ -145,7 +145,7 @@ index 77649036ef..f0a2958072 100644
 @@ -4,7 +4,7 @@
   * SPDX-License-Identifier: Apache-2.0
   *
-  * Generated using zcbor version 0.8.0
+  * Generated using zcbor version 0.8.1
 - * https://github.com/NordicSemiconductor/zcbor
 + * https://github.com/zephyrproject-rtos/zcbor
   * Generated with a --default-max-qty of 99
