@@ -73,87 +73,120 @@ To use the version information in application code, the version file must be inc
 fields can be freely used. The include file name is :file:`app_version.h` (no path is needed), the
 following defines are available:
 
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| Define             | Type              | Field(s)                                             | Example                 |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APPVERSION         | Numerical         | ``VERSION_MAJOR`` (left shifted by 24 bits), |br|    | 0x1020304               |
-|                    |                   | ``VERSION_MINOR`` (left shifted by 16 bits), |br|    |                         |
-|                    |                   | ``PATCHLEVEL`` (left shifted by 8 bits), |br|        |                         |
-|                    |                   | ``VERSION_TWEAK``                                    |                         |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_VERSION_NUMBER | Numerical         | ``VERSION_MAJOR`` (left shifted by 16 bits), |br|    | 0x10203                 |
-|                    |                   | ``VERSION_MINOR`` (left shifted by 8 bits), |br|     |                         |
-|                    |                   | ``PATCHLEVEL``                                       |                         |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_VERSION_MAJOR  | Numerical         | ``VERSION_MAJOR``                                    | 1                       |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_VERSION_MINOR  | Numerical         | ``VERSION_MINOR``                                    | 2                       |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_PATCHLEVEL     | Numerical         | ``PATCHLEVEL``                                       | 3                       |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_VERSION_TWEAK  | Numerical         | ``VERSION_TWEAK``                                    | 4                       |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_VERSION_STRING | String (quoted)   | ``VERSION_MAJOR``, |br|                              | "1.2.3-unstable"        |
-|                    |                   | ``VERSION_MINOR``, |br|                              |                         |
-|                    |                   | ``PATCHLEVEL``, |br|                                 |                         |
-|                    |                   | ``EXTRAVERSION`` |br|                                |                         |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_BUILD_VERSION  | String (unquoted) | None (value of ``git describe --abbrev=12 --always`` | v3.3.0-18-g2c85d9224fca |
-|                    |                   | from application repository)                         |                         |
-+--------------------+-------------------+------------------------------------------------------+-------------------------+
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| Define                      | Type              | Field(s)                                             | Example                 |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APPVERSION                  | Numerical         | ``VERSION_MAJOR`` (left shifted by 24 bits), |br|    | 0x1020304               |
+|                             |                   | ``VERSION_MINOR`` (left shifted by 16 bits), |br|    |                         |
+|                             |                   | ``PATCHLEVEL`` (left shifted by 8 bits), |br|        |                         |
+|                             |                   | ``VERSION_TWEAK``                                    |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_VERSION_NUMBER          | Numerical         | ``VERSION_MAJOR`` (left shifted by 16 bits), |br|    | 0x10203                 |
+|                             |                   | ``VERSION_MINOR`` (left shifted by 8 bits), |br|     |                         |
+|                             |                   | ``PATCHLEVEL``                                       |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_VERSION_MAJOR           | Numerical         | ``VERSION_MAJOR``                                    | 1                       |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_VERSION_MINOR           | Numerical         | ``VERSION_MINOR``                                    | 2                       |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_PATCHLEVEL              | Numerical         | ``PATCHLEVEL``                                       | 3                       |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_VERSION_TWEAK           | Numerical         | ``VERSION_TWEAK``                                    | 4                       |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_VERSION_STRING          | String (quoted)   | ``VERSION_MAJOR``, |br|                              | "1.2.3-unstable"        |
+|                             |                   | ``VERSION_MINOR``, |br|                              |                         |
+|                             |                   | ``PATCHLEVEL``, |br|                                 |                         |
+|                             |                   | ``EXTRAVERSION`` |br|                                |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_VERSION_EXTENDED_STRING | String (quoted)   | ``VERSION_MAJOR``, |br|                              | "1.2.3-unstable+4"      |
+|                             |                   | ``VERSION_MINOR``, |br|                              |                         |
+|                             |                   | ``PATCHLEVEL``, |br|                                 |                         |
+|                             |                   | ``EXTRAVERSION`` |br|                                |                         |
+|                             |                   | ``VERSION_TWEAK`` |br|                               |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_VERSION_TWEAK_STRING    | String (quoted)   | ``VERSION_MAJOR``, |br|                              | "1.2.3+4"               |
+|                             |                   | ``VERSION_MINOR``, |br|                              |                         |
+|                             |                   | ``PATCHLEVEL``, |br|                                 |                         |
+|                             |                   | ``VERSION_TWEAK`` |br|                               |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_BUILD_VERSION           | String (unquoted) | None (value of ``git describe --abbrev=12 --always`` | v3.3.0-18-g2c85d9224fca |
+|                             |                   | from application repository)                         |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
 
 Use in Kconfig
 ==============
 
 The following variables are available for usage in Kconfig files:
 
-+------------------+-----------+-------------------------+----------------+
-| Variable         | Type      | Field(s)                | Example        |
-+------------------+-----------+-------------------------+----------------+
-| $(VERSION_MAJOR) | Numerical | ``VERSION_MAJOR``       | 1              |
-+------------------+-----------+-------------------------+----------------+
-| $(VERSION_MINOR) | Numerical | ``VERSION_MINOR``       | 2              |
-+------------------+-----------+-------------------------+----------------+
-| $(PATCHLEVEL)    | Numerical | ``PATCHLEVEL``          | 3              |
-+------------------+-----------+-------------------------+----------------+
-| $(VERSION_TWEAK) | Numerical | ``VERSION_TWEAK``       | 4              |
-+------------------+-----------+-------------------------+----------------+
-| $(APPVERSION)    | String    | ``VERSION_MAJOR``, |br| | 1.2.3-unstable |
-|                  |           | ``VERSION_MINOR``, |br| |                |
-|                  |           | ``PATCHLEVEL``, |br|    |                |
-|                  |           | ``EXTRAVERSION``        |                |
-+------------------+-----------+-------------------------+----------------+
++--------------------------------+-----------+--------------------------+------------------+
+| Variable                       | Type      | Field(s)                 | Example          |
++--------------------------------+-----------+--------------------------+------------------+
+| $(VERSION_MAJOR)               | Numerical | ``VERSION_MAJOR``        | 1                |
++--------------------------------+-----------+--------------------------+------------------+
+| $(VERSION_MINOR)               | Numerical | ``VERSION_MINOR``        | 2                |
++--------------------------------+-----------+--------------------------+------------------+
+| $(PATCHLEVEL)                  | Numerical | ``PATCHLEVEL``           | 3                |
++--------------------------------+-----------+--------------------------+------------------+
+| $(VERSION_TWEAK)               | Numerical | ``VERSION_TWEAK``        | 4                |
++--------------------------------+-----------+--------------------------+------------------+
+| $(APPVERSION)                  | String    | ``VERSION_MAJOR``, |br|  | 1.2.3-unstable   |
+|                                |           | ``VERSION_MINOR``, |br|  |                  |
+|                                |           | ``PATCHLEVEL``, |br|     |                  |
+|                                |           | ``EXTRAVERSION``         |                  |
++--------------------------------+-----------+--------------------------+------------------+
+| $(APP_VERSION_EXTENDED_STRING) | String    | ``VERSION_MAJOR``, |br|  | 1.2.3-unstable+4 |
+|                                |           | ``VERSION_MINOR``, |br|  |                  |
+|                                |           | ``PATCHLEVEL``, |br|     |                  |
+|                                |           | ``EXTRAVERSION``, |br|   |                  |
+|                                |           | ``VERSION_TWEAK``        |                  |
++--------------------------------+-----------+--------------------------+------------------+
+| $(APP_VERSION_TWEAK_STRING)    | String    | ``VERSION_MAJOR``, |br|  | 1.2.3+4          |
+|                                |           | ``VERSION_MINOR``, |br|  |                  |
+|                                |           | ``PATCHLEVEL``, |br|     |                  |
+|                                |           | ``VERSION_TWEAK``        |                  |
++--------------------------------+-----------+--------------------------+------------------+
 
 Use in CMake
 ============
 
 The following variable are available for usage in CMake files:
 
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| Variable           | Type            | Field(s)                                          | Example        |
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| APPVERSION         | Numerical (hex) | ``VERSION_MAJOR`` (left shifted by 24 bits), |br| | 0x1020304      |
-|                    |                 | ``VERSION_MINOR`` (left shifted by 16 bits), |br| |                |
-|                    |                 | ``PATCHLEVEL`` (left shifted by 8 bits), |br|     |                |
-|                    |                 | ``VERSION_TWEAK``                                 |                |
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| APP_VERSION_NUMBER | Numerical (hex) | ``VERSION_MAJOR`` (left shifted by 16 bits), |br| | 0x10203        |
-|                    |                 | ``VERSION_MINOR`` (left shifted by 8 bits), |br|  |                |
-|                    |                 | ``PATCHLEVEL``                                    |                |
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| APP_VERSION_MAJOR  | Numerical       | ``VERSION_MAJOR``                                 | 1              |
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| APP_VERSION_MINOR  | Numerical       | ``VERSION_MINOR``                                 | 2              |
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| APP_PATCHLEVEL     | Numerical       | ``PATCHLEVEL``                                    | 3              |
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| APP_VERSION_TWEAK  | Numerical       | ``VERSION_TWEAK``                                 | 4              |
-+--------------------+-----------------+---------------------------------------------------+----------------+
-| APP_VERSION_STRING | String          | ``VERSION_MAJOR``, |br|                           | 1.2.3-unstable |
-|                    |                 | ``VERSION_MINOR``, |br|                           |                |
-|                    |                 | ``PATCHLEVEL``, |br|                              |                |
-|                    |                 | ``EXTRAVERSION``                                  |                |
-+--------------------+-----------------+---------------------------------------------------+----------------+
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| Variable                    | Type            | Field(s)                                          | Example          |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APPVERSION                  | Numerical (hex) | ``VERSION_MAJOR`` (left shifted by 24 bits), |br| | 0x1020304        |
+|                             |                 | ``VERSION_MINOR`` (left shifted by 16 bits), |br| |                  |
+|                             |                 | ``PATCHLEVEL`` (left shifted by 8 bits), |br|     |                  |
+|                             |                 | ``VERSION_TWEAK``                                 |                  |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_VERSION_NUMBER          | Numerical (hex) | ``VERSION_MAJOR`` (left shifted by 16 bits), |br| | 0x10203          |
+|                             |                 | ``VERSION_MINOR`` (left shifted by 8 bits), |br|  |                  |
+|                             |                 | ``PATCHLEVEL``                                    |                  |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_VERSION_MAJOR           | Numerical       | ``VERSION_MAJOR``                                 | 1                |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_VERSION_MINOR           | Numerical       | ``VERSION_MINOR``                                 | 2                |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_PATCHLEVEL              | Numerical       | ``PATCHLEVEL``                                    | 3                |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_VERSION_TWEAK           | Numerical       | ``VERSION_TWEAK``                                 | 4                |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_VERSION_STRING          | String          | ``VERSION_MAJOR``, |br|                           | 1.2.3-unstable   |
+|                             |                 | ``VERSION_MINOR``, |br|                           |                  |
+|                             |                 | ``PATCHLEVEL``, |br|                              |                  |
+|                             |                 | ``EXTRAVERSION``                                  |                  |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_VERSION_EXTENDED_STRING | String          | ``VERSION_MAJOR``, |br|                           | 1.2.3-unstable+4 |
+|                             |                 | ``VERSION_MINOR``, |br|                           |                  |
+|                             |                 | ``PATCHLEVEL``, |br|                              |                  |
+|                             |                 | ``EXTRAVERSION``, |br|                            |                  |
+|                             |                 | ``VERSION_TWEAK``                                 |                  |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
+| APP_VERSION_TWEAK_STRING    | String          | ``VERSION_MAJOR``, |br|                           | 1.2.3+4          |
+|                             |                 | ``VERSION_MINOR``, |br|                           |                  |
+|                             |                 | ``PATCHLEVEL``, |br|                              |                  |
+|                             |                 | ``VERSION_TWEAK``                                 |                  |
++-----------------------------+-----------------+---------------------------------------------------+------------------+
 
 Use in MCUboot-supported applications
 =====================================
@@ -161,6 +194,3 @@ Use in MCUboot-supported applications
 No additional configuration needs to be done to the target application so long as it is configured
 to support MCUboot and a signed image is generated, the version information will be automatically
 included in the image data.
-
-The format used for signing is ``VERSION_MAJOR`` . ``VERSION_MINOR`` . ``PATCHLEVEL``, the tweak
-version field is not currently used.
