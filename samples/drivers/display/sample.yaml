@@ -146,3 +146,11 @@ tests:
       - CONFIG_IDLE_STACK_SIZE=400
     harness_config:
       fixture: fixture_display
+  sample.display.builtin:
+    # This test case is intended to insure that this sample builds & runs
+    # correctly for all boards that have a supported built-in display.
+    filter: dt_chosen_enabled("zephyr,display")
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    tags: display
