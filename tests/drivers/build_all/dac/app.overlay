@@ -43,6 +43,18 @@
 				#io-channel-cells = <1>;
 			};
 
+			test_i2c_ad559x: ad559x@3 {
+				compatible = "adi,ad559x";
+				status = "okay";
+				reg = <0x3>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				test_i2c_ad559x_dac: dac-controller {
+					compatible = "adi,ad559x-dac";
+					#io-channel-cells = <1>;
+				};
+			};
+
 			test_i2c_mcp4725: mcp4725@60 {
 				compatible = "microchip,mcp4725";
 				reg = <0x60>;
@@ -242,7 +254,7 @@
 				spi-max-frequency = <0>;
 				reset-gpios = <&test_gpio 0 0>;
 
-				ad559x_dac: dac-controller {
+				test_spi_ad559x_dac: dac-controller {
 					compatible = "adi,ad559x-dac";
 					#io-channel-cells = <1>;
 				};
