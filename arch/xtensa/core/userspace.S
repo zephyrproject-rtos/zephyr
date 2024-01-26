@@ -10,6 +10,8 @@
 #include <zephyr/syscall.h>
 #include <zsr.h>
 
+#include <xtensa/config/core-isa.h>
+
 /**
  *  syscall number     arg1, arg2, arg3, arg4, arg5, arg6
  *  --------------     ----------------------------------
@@ -20,6 +22,37 @@
 .global	xtensa_do_syscall
 .align	4
 xtensa_do_syscall:
+#if XCHAL_HAVE_THREADPTR == 0
+	wsr a2, ZSR_SYSCALL_SCRATCH
+	rsync
+
+	movi a0, xtensa_is_user_context_epc
+	rsr.epc1 a2
+	bne a0, a2, _not_checking_user_context
+
+	addi a2, a2, 3
+	wsr.epc1 a2
+
+	movi a0, PS_RING_MASK
+	rsr.ps a2
+	and a2, a2, a0
+
+	/* Need to set return to 1 if RING != 0,
+	 * so we won't be leaking which ring we are in
+	 * right now.
+	 */
+	beqz a2, _is_user_context_return
+
+	movi a2, 1
+
+_is_user_context_return:
+	rsr a0, ZSR_A0SAVE
+
+	rfe
+
+_not_checking_user_context:
+	rsr a2, ZSR_SYSCALL_SCRATCH
+#endif
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
 	l32i a0, a0, _thread_offset_to_psp
@@ -105,6 +138,7 @@ _id_ok:
 	add a2, a2, a3
 	l32i a2, a2, 0
 
+#if XCHAL_HAVE_THREADPTR
 	/* Clear up the threadptr because it is used
 	 * to check if a thread is running on user mode. Since
 	 * we are in a interruption we don't want the system
@@ -121,6 +155,7 @@ _id_ok:
 	movi a0, 0
 	wur.THREADPTR a0
 #endif
+#endif /* XCHAL_HAVE_THREADPTR */
 
 	/* Set syscall parameters by moving them into place before we do
 	 * a call4 for the syscall function itself.
@@ -189,6 +224,7 @@ _syscall_returned:
 	wsr a3, SCOMPARE1
 #endif
 
+#if XCHAL_HAVE_THREADPTR
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	l32i a3, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
 	movi a0, is_user_mode@tpoff
@@ -200,6 +236,7 @@ _syscall_returned:
 	l32i a3, a3, ___cpu_t_current_OFFSET
 	wur.THREADPTR a3
 #endif
+#endif /* XCHAL_HAVE_THREADPTR */
 
 	l32i a3, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	wsr.ps a3
@@ -265,6 +302,7 @@ xtensa_userspace_enter:
 	l32i a6, a1, 24
 	call4 xtensa_swap_update_page_tables
 
+#if XCHAL_HAVE_THREADPTR
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	rur.threadptr a3
 	movi a0, is_user_mode@tpoff
@@ -276,6 +314,7 @@ xtensa_userspace_enter:
 	l32i a3, a3, ___cpu_t_current_OFFSET
 	wur.THREADPTR a3
 #endif
+#endif /* XCHAL_HAVE_THREADPTR */
 
 	/* Set now z_thread_entry parameters, we are simulating a call4
 	 * call, so parameters start at a6, a7, ...
