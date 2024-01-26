@@ -415,14 +415,20 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 
 	if (has_l2) {
 		zassert_equal(hwirq2, irq_from_level_2(irqn));
+		zassert_equal(hwirq2, irq_from_level(irqn, 2));
 		zassert_equal((hwirq2 + 1) << l2_shift, irq_to_level_2(hwirq2));
+		zassert_equal((hwirq2 + 1) << l2_shift, irq_to_level(hwirq2, 2));
 		zassert_equal(hwirq1, irq_parent_level_2(irqn));
+		zassert_equal(hwirq1, irq_parent_level(irqn, 2));
 	}
 
 	if (has_l3) {
 		zassert_equal(hwirq3, irq_from_level_3(irqn));
+		zassert_equal(hwirq3, irq_from_level(irqn, 3));
 		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level_3(hwirq3));
+		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level(hwirq3, 3));
 		zassert_equal(hwirq2 + 1, irq_parent_level_3(irqn));
+		zassert_equal(hwirq2 + 1, irq_parent_level(irqn, 3));
 	}
 
 	if (has_l3) {
