@@ -546,6 +546,9 @@ void ztest_simple_1cpu_after(void *data);
  * @brief Run the specified test suite.
  *
  * @param suite Test suite to run.
+ * @param shuffle Shuffle tests
+ * @param suite_iter Test suite repetitions.
+ * @param case_iter Test case repetitions.
  */
 #define ztest_run_test_suite(suite, shuffle, suite_iter, case_iter) \
 	z_ztest_run_test_suite(STRINGIFY(suite), shuffle, suite_iter, case_iter)
