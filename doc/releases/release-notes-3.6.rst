@@ -163,6 +163,7 @@ Drivers and Sensors
 * Clock control
 
   * Renesas R-Car clock control driver now supports Gen4 SoCs
+  * Renamed ``CONFIG_CLOCK_CONTROL_RA`` to :kconfig:option:`CONFIG_CLOCK_CONTROL_RENESAS_RA`
 
 * Counter
 
@@ -189,6 +190,7 @@ Drivers and Sensors
 * GPIO
 
   * Renesas R-Car GPIO driver now supports Gen4 SoCs
+  * Renamed ``CONFIG_GPIO_RA`` to :kconfig:option:`CONFIG_GPIO_RENESAS_RA`
 
 * I2C
 
@@ -214,6 +216,7 @@ Drivers and Sensors
 * Pin control
 
   * Renesas R-Car pinctrl driver now supports Gen4 SoCs
+  * Renamed ``CONFIG_PINCTRL_RA`` to :kconfig:option:`CONFIG_PINCTRL_RENESAS_RA`
 
 * PWM
 
@@ -234,6 +237,8 @@ Drivers and Sensors
 * Sensor
 
 * Serial
+
+  * Renamed ``CONFIG_UART_RA`` to :kconfig:option:`CONFIG_UART_RENESAS_RA`
 
 * SPI
 
