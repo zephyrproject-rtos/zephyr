@@ -12,6 +12,19 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(arm_armv6m_systick)
+#define DT_DRV_COMPAT arm_armv6m_systick
+#elif DT_HAS_COMPAT_STATUS_OKAY(arm_armv7m_systick)
+#define DT_DRV_COMPAT arm_armv7m_systick
+#elif DT_HAS_COMPAT_STATUS_OKAY(arm_armv8m_systick)
+#define DT_DRV_COMPAT arm_armv8m_systick
+#elif DT_HAS_COMPAT_STATUS_OKAY(arm_armv8_1m_systick)
+#define DT_DRV_COMPAT arm_armv8_1m_systick
+#else
+#error "Unknown systick compat"
+#endif
+#define SYSTICK_NODE DT_DRV_INST(0)
+
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
@@ -432,15 +445,19 @@ void sys_clock_disable(void)
 
 static int sys_clock_driver_init(void)
 {
+	uint32_t ctrl = SysTick_CTRL_ENABLE_Msk |
+			SysTick_CTRL_TICKINT_Msk;
+
+#if (!DT_PROP(SYSTICK_NODE, external_reference_clock))
+	ctrl |= SysTick_CTRL_CLKSOURCE_Msk;
+#endif
 
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = CYC_PER_TICK;
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
-	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
-			  SysTick_CTRL_TICKINT_Msk |
-			  SysTick_CTRL_CLKSOURCE_Msk);
+	SysTick->CTRL = ctrl;
 	return 0;
 }
 
