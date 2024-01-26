@@ -210,6 +210,20 @@
 					ngpios = <6>;
 				};
 			};
+
+			test_i2c_ad559x: ad559x@e {
+				compatible = "adi,ad559x";
+				status = "okay";
+				reg = <0x0e>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				test_i2c_ad559x_gpio: gpio-controller {
+					compatible = "adi,ad559x-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+				};
+			};
 		};
 
 		nct3807_alert_1 {
@@ -275,7 +289,7 @@
 				spi-max-frequency = <0>;
 				reset-gpios = <&test_gpio 0 0>;
 
-				ad559x_gpio: gpio-controller {
+				test_spi_ad559x_gpio: gpio-controller {
 					compatible = "adi,ad559x-gpio";
 					gpio-controller;
 					#gpio-cells = <2>;
