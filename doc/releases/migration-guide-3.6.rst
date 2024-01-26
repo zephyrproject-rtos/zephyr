@@ -276,6 +276,13 @@ Device Drivers and Device Tree
   * ``DT_INST_IRQ_BY_IDX(inst, idx, irq)`` -> ``DT_INST_IRQN_BY_IDX(inst, idx)``
   * ``DT_INST_IRQ_BY_NAME(inst, name, irq)`` -> ``DT_INST_IRQN_BY_NAME(inst, name)``
 
+* Several Renesas RA series drivers Kconfig options have been renamed:
+
+  * ``CONFIG_CLOCK_CONTROL_RA`` -> :kconfig:option:`CONFIG_CLOCK_CONTROL_RENESAS_RA`
+  * ``CONFIG_GPIO_RA`` -> :kconfig:option:`CONFIG_GPIO_RENESAS_RA`
+  * ``CONFIG_PINCTRL_RA`` -> :kconfig:option:`CONFIG_PINCTRL_RENESAS_RA`
+  * ``CONFIG_UART_RA`` -> :kconfig:option:`CONFIG_UART_RENESAS_RA`
+
 Power Management
 ================
 
