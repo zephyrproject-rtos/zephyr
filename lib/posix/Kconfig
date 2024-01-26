@@ -75,6 +75,7 @@ source "lib/posix/Kconfig.signal"
 source "lib/posix/Kconfig.spinlock"
 source "lib/posix/Kconfig.timer"
 source "lib/posix/Kconfig.uname"
+source "lib/posix/Kconfig.stropts"
 
 rsource "shell/Kconfig"
 
