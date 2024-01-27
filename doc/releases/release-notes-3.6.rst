@@ -147,6 +147,11 @@ Build system and infrastructure
 
 * Fixed an issue whereby using some shields with sysbuild would cause a cmake Kconfig error.
 
+* Fixed an issue where the macros ``_POSIX_C_SOURCE`` and ``_XOPEN_SOURCE`` would be defined
+  globally when building with Picolibc or for the native (``ARCH_POSIX``) targets.
+  After this change users may need to define them for their own applications or libraries if they
+  require them.
+
 Drivers and Sensors
 *******************
 
