@@ -8,7 +8,7 @@ jobs:
     name: Manifest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: zephyrproject/zephyr
           ref: ${{ github.event.pull_request.head.sha }}
