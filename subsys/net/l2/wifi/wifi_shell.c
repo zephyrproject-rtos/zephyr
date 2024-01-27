@@ -52,6 +52,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 
 static struct {
 	const struct shell *sh;
+	uint32_t scan_result;
 
 	union {
 		struct {
@@ -63,8 +64,6 @@ static struct {
 		uint8_t all;
 	};
 } context;
-
-static uint32_t scan_result;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
 static struct wifi_reg_chan_info chan_info[MAX_REG_CHAN_NUM];
@@ -117,9 +116,9 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 		(const struct wifi_scan_result *)cb->info;
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 
-	scan_result++;
+	context.scan_result++;
 
-	if (scan_result == 1U) {
+	if (context.scan_result == 1U) {
 		print(context.sh, SHELL_NORMAL,
 		      "\n%-4s | %-32s %-5s | %-13s | %-4s | %-15s | %-17s | %-8s\n",
 		      "Num", "SSID", "(len)", "Chan (Band)", "RSSI", "Security", "BSSID", "MFP");
@@ -127,7 +126,7 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 
 	print(context.sh, SHELL_NORMAL,
 	      "%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-15s | %-17s | %-8s\n",
-	      scan_result, entry->ssid, entry->ssid_length, entry->channel,
+	      context.scan_result, entry->ssid, entry->ssid_length, entry->channel,
 	      wifi_band_txt(entry->band),
 	      entry->rssi,
 	      wifi_security_txt(entry->security),
@@ -186,9 +185,9 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 	const struct shell *sh = context.sh;
 
-	scan_result++;
+	context.scan_result++;
 
-	if (scan_result == 1U) {
+	if (context.scan_result == 1U) {
 		print(sh, SHELL_NORMAL,
 		      "\n%-4s | %-13s | %-4s |  %-15s | %-15s | %-32s\n",
 		      "Num", "Channel (Band)", "RSSI", "BSSID", "Frame length", "Frame Body");
@@ -199,7 +198,7 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	band = wifi_freq_to_band(raw->frequency);
 
 	print(sh, SHELL_NORMAL, "%-4d | %-4u (%-6s) | %-4d | %s |      %-4d        ",
-	      scan_result,
+	      context.scan_result,
 	      channel,
 	      wifi_band_txt(band),
 	      rssi,
@@ -227,7 +226,7 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 		print(sh, SHELL_NORMAL, "Scan request done\n");
 	}
 
-	scan_result = 0U;
+	context.scan_result = 0U;
 }
 
 static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
@@ -2052,7 +2051,7 @@ static int wifi_shell_init(void)
 
 	context.sh = NULL;
 	context.all = 0U;
-	scan_result = 0U;
+	context.scan_result = 0U;
 
 	net_mgmt_init_event_callback(&wifi_shell_mgmt_cb,
 				     wifi_mgmt_event_handler,
