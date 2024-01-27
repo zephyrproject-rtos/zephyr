@@ -5,6 +5,8 @@
  */
 
 #include <mem.h>
+#include <dt-bindings/pinctrl/bl60x-pinctrl.h>
+#include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -71,6 +73,26 @@
 					  "mtip", /* Machine Timer interrupt    */
 					  "meip", /* Machine External Interrupt */
 					  "csip"; /* CLIC Software Interrupt    */
+		};
+
+		pinctrl: pin-controller@40000000 {
+			compatible = "bflb,bl-pinctrl";
+			reg = <0x40000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x40000000 0x40000000 0x1000>;
+			status = "okay";
+
+			glb: gpio@40000000 {
+				compatible = "bflb,bl-gpio";
+				reg = <0x40000000 0x1000>;
+				interrupts = <1 0>;
+				interrupt-parent = <&ictrl>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#bflb,pin-cells = <2>;
+				status = "disabled";
+			};
 		};
 
 		spi0: spi@4000a200 {
