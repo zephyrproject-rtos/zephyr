@@ -63,6 +63,7 @@
 #include "isoal.h"
 #include "ll_feat_internal.h"
 #include "ull_internal.h"
+#include "ull_chan_internal.h"
 #include "ull_iso_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
@@ -2284,6 +2285,18 @@ static inline int init_reset(void)
 	/* Allocate rx free buffers */
 	mem_link_rx.quota_pdu = RX_CNT;
 	rx_replenish_all();
+
+#if (defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_CTLR_ADV_EXT)) || \
+	defined(CONFIG_BT_CTLR_ADV_PERIODIC) || \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC) || \
+	defined(CONFIG_BT_CONN)
+	/* Initialize channel map */
+	ull_chan_reset();
+#endif /* (CONFIG_BT_BROADCASTER && CONFIG_BT_CTLR_ADV_EXT) ||
+	* CONFIG_BT_CTLR_ADV_PERIODIC ||
+	* CONFIG_BT_CTLR_SYNC_PERIODIC ||
+	* CONFIG_BT_CONN
+	*/
 
 	return 0;
 }
