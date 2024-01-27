@@ -34,8 +34,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	ztest_test_pass();
 }
 
-#ifdef CONFIG_CPU_CORTEX_M
-#include <cmsis_core.h>
+#ifdef CONFIG_COMPILER_ISA_THUMB2
 /* Must clear LSB of function address to access as data. */
 #define FUNC_TO_PTR(x) (void *)((uintptr_t)(x) & ~0x1)
 /* Must set LSB of function address to call in Thumb mode. */
