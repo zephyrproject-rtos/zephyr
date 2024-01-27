@@ -12,13 +12,13 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Checkout the code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
     - name: cache-pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/compliance.yml') }}
@@ -61,7 +61,7 @@ jobs:
         -c origin/${BASE_REF}..
 
     - name: upload-results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       continue-on-error: true
       with:
         name: compliance.xml

@@ -41,7 +41,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload Unit Test Results
         if: always() && steps.twister.outputs.report_needed != 0
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Unit Test Results (Subset ${{ matrix.platform }})
           path: twister-out/twister.xml
@@ -138,7 +138,7 @@ jobs:
     if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Merge Test Results
@@ -149,7 +149,7 @@ jobs:
 
       - name: Upload Unit Test Results in HTML
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: HTML Unit Test Results
           if-no-files-found: ignore
