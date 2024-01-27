@@ -44,7 +44,7 @@ jobs:
 
     steps:
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -70,7 +70,7 @@ jobs:
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: cache-pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('doc/requirements.txt') }}
@@ -116,13 +116,13 @@ jobs:
         tar cfJ api-coverage.tar.xz coverage-report
 
     - name: upload-build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: html-output
         path: html-output.tar.xz
 
     - name: upload-api-coverage
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: api-coverage
         path: api-coverage.tar.xz
@@ -142,7 +142,7 @@ jobs:
         echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: upload-pr-number
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: github.event_name == 'pull_request'
       with:
         name: pr_num
@@ -166,7 +166,7 @@ jobs:
         git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: install-pkgs
       run: |
@@ -174,7 +174,7 @@ jobs:
         apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin
 
     - name: cache-pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('doc/requirements.txt') }}
@@ -210,7 +210,7 @@ jobs:
 
     - name: upload-build
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pdf-output
         if-no-files-found: ignore

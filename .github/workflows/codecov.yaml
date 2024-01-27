@@ -41,7 +41,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload Coverage Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Coverage Data (Subset ${{ matrix.platform }})
           path: coverage/reports/${{ matrix.platform }}.json
@@ -118,11 +118,11 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: coverage/reports
 
@@ -166,7 +166,7 @@ jobs:
 
       - name: Upload Merged Coverage Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Merged Coverage Data
           path: |

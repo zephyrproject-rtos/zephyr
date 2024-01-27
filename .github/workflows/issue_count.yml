@@ -35,7 +35,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: upload-stats
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       continue-on-error: true
       with:
         name: ${{ env.OUTPUT_FILE_NAME }}
