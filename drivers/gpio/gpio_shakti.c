@@ -1,3 +1,33 @@
+/****************************************************************************
+ * Project                               : Secure IoT SoC
+ * Name of the file                      : gpio_shakthi.c
+ * Brief Description of file             : This is a ZEPHYR OS GPIO Driver file for Mindgrove Silicon's GPIO Peripheral.
+ * Name of Author                        : Kishore. J
+ * Email ID                              : <kishore@mindgrovetech.in>  
+
+ Copyright (C) 2019 IIT Madras. All rights reserved.
+ Copyright (C) 2023 Mindgrove Technologies Pvt. Ltd. All rights reserved.
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *****************************************************************************/
+/**
+  @file gpio_shakthi.c
+  @brief Contains the driver routines for GPIO interface.
+  @details The GPIO driver has software functions to configure, set, clear
+  toggle signal over GPIO interface. 
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <soc.h>
@@ -123,19 +153,38 @@ struct gpio_shakti_data {
 // struct gpio_shakti_regs_t *gpio;
 
 /* Initialize's the gpio's*/
+/**
+ * The function initializes the GPIO device and prints a message indicating that initialization is
+ * complete.
+ * 
+ * @param dev The "dev" parameter is a pointer to a structure of type "device". It is used to access
+ * the device-specific registers and configurations.
+ */
 
 int gpio_shakti_init(const struct device *dev){
     
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);
     const struct gpio_shakti_config *cfg = DEV_GPIO_CFG(dev);
 
-    gpio = GPIO_START;
+    *gpio = GPIO_START;
     printk("Initialization Done\n");
 }
 
 
 /*configuration function that configures the whether the gpio pin in input or output */
 
+/**
+ * The function gpio_shakti_pin_configure configures a GPIO pin with the specified flags.
+ * 
+ * @param dev The "dev" parameter is a pointer to a structure representing the GPIO device. It contains
+ * information about the specific GPIO device being configured.
+ * @param pin The "pin" parameter is the pin number of the GPIO pin that needs to be configured.
+ * @param flags The "flags" parameter is of type gpio_flags_t, which is a set of flags that specify the
+ * configuration options for the GPIO pin. These flags can include options such as input, output,
+ * pull-up, pull-down, and interrupt settings.
+ * 
+ * @return an integer value of 0.
+ */
 static int gpio_shakti_pin_configure (const struct device *dev, 
                         gpio_pin_t pin, 
                         gpio_flags_t flags){
@@ -152,6 +201,18 @@ static int gpio_shakti_pin_configure (const struct device *dev,
 
 /* Reads the data from the data register */
 
+/**
+ * The function gpio_shakti_pin_get_raw retrieves the raw value of a GPIO pin.
+ * 
+ * @param dev The "dev" parameter is a pointer to a structure of type "device". This structure contains
+ * information about the specific device that the GPIO pin belongs to. It may include things like the
+ * device's address, configuration settings, and other relevant information.
+ * @param pin The "pin" parameter is the pin number of the GPIO pin for which you want to get the raw
+ * value.
+ * 
+ * @return The function `gpio_shakti_pin_get_raw` returns the value of the `data` register of the GPIO
+ * device.
+ */
 static int gpio_shakti_pin_get_raw(const struct device *dev,
                     gpio_pin_t pin)
 {
@@ -162,6 +223,16 @@ static int gpio_shakti_pin_get_raw(const struct device *dev,
 
 /*Set the value in th selected pin */
 
+/**
+ * The function sets the value of a specific pin in the GPIO register.
+ * 
+ * @param dev The "dev" parameter is a pointer to a structure representing the GPIO device. It is used
+ * to access the GPIO registers and perform operations on the GPIO pins.
+ * @param pin The "pin" parameter is the pin number of the GPIO pin that you want to set the value for.
+ * @param value The value to be set on the GPIO pin. It can be either 0 or 1.
+ * 
+ * @return an integer value of 0.
+ */
 static int gpio_shakti_pin_set_raw(const struct device *dev,
                     gpio_pin_t pin,
                     int value)
@@ -176,6 +247,15 @@ static int gpio_shakti_pin_set_raw(const struct device *dev,
 
 /*Toggle a pin */
 
+/**
+ * The function toggles the state of a specific pin on a Shakti GPIO device.
+ * 
+ * @param dev The "dev" parameter is a pointer to a structure of type "device". It is used to identify
+ * the specific GPIO device that the pin belongs to.
+ * @param pin The "pin" parameter is the pin number of the GPIO pin that you want to toggle.
+ * 
+ * @return 0.
+ */
 static int gpio_shakti_pin_toggle(const struct device *dev,
                     gpio_pin_t pin)
 {
@@ -187,6 +267,17 @@ static int gpio_shakti_pin_toggle(const struct device *dev,
 
 
 /*clear the gpio pins */
+/**
+ * The function clears a specific pin on a GPIO device and prints a message indicating that it has been
+ * cleared.
+ * 
+ * @param dev The "dev" parameter is a pointer to a structure of type "struct device". This structure
+ * represents the GPIO device that the pin belongs to. It contains information about the device, such
+ * as its name, configuration, and other properties.
+ * @param pin The "pin" parameter is the pin number of the GPIO pin that you want to clear.
+ * 
+ * @return an integer value of 0.
+ */
 
 static int gpio_shakti_pin_clear_raw(const struct device *dev,
                     gpio_pin_t pin)
@@ -197,6 +288,12 @@ static int gpio_shakti_pin_clear_raw(const struct device *dev,
 
     return 0;
 }
+
+/* The code is defining a static constant structure `gpio_shakti_driver` that represents the GPIO
+driver API. It specifies the functions that can be called to interact with the GPIO pins, such as
+configuring a pin, getting the raw value of a pin, setting the value of a pin, clearing a pin, and
+toggling a pin. These functions are implemented in the code and are assigned to the corresponding
+fields in the `gpio_shakti_driver` structure. */
 
 static const struct gpio_driver_api gpio_shakti_driver = {
     .pin_configure              = gpio_shakti_pin_configure,
@@ -219,8 +316,12 @@ static const struct gpio_shakti_config gpio_shakti_config0 ={
 
 static struct gpio_shakti_data gpio_shakti_data0;
 
-DEVICE_DT_INST_DEFINE(0,
+/* `DEVICE_DT_INST_DEFINE` is a macro provided by the Zephyr RTOS that is used to define a device
+instance. It is typically used in the board configuration file to define the devices present on the
+board. */
+
                 gpio_shakti_init,
+DEVICE_DT_INST_DEFINE(0,
                 NULL,
                 &gpio_shakti_data0, &gpio_shakti_config0,
                 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
