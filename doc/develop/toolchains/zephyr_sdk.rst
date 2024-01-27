@@ -85,24 +85,24 @@ Zephyr SDK installation
 
    .. group-tab:: Ubuntu
 
-      .. _ubuntu_zephyr_sdk:
+      .. _ubuntu_zephyr_sdk_start
 
       #. Download and verify the `Zephyr SDK bundle`_:
 
-         .. parsed-literal::
+         .. code-block:: bash
 
             cd ~
             wget |sdk-url-linux|
-            wget -O - |sdk-url-linux-sha| | shasum --check --ignore-missing
+            wget -O - |sdk-url-shasum| | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace ``x86_64``
          with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
 
       #. Extract the Zephyr SDK bundle archive:
 
-         .. parsed-literal::
+         .. code-block:: bash
 
-            tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64.tar.xz
+            tar xvf zephyr-sdk-|sdk-version|_linux-x86_64.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -120,9 +120,9 @@ Zephyr SDK installation
 
       #. Run the Zephyr SDK bundle setup script:
 
-         .. parsed-literal::
+         .. code-block:: bash
 
-            cd zephyr-sdk- |sdk-version-ltrim|
+            cd zephyr-sdk-|sdk-version|
             ./setup.sh
 
          .. note::
@@ -134,10 +134,12 @@ Zephyr SDK installation
       #. Install `udev <https://en.wikipedia.org/wiki/Udev>`_ rules, which
          allow you to flash most Zephyr boards as a regular user:
 
-         .. parsed-literal::
+         .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk- |sdk-version-trim| /sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-|sdk-version|/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
+
+      .. _ubuntu_zephyr_sdk_end
 
    .. group-tab:: macOS
 
@@ -145,20 +147,20 @@ Zephyr SDK installation
 
       #. Download and verify the `Zephyr SDK bundle`_:
 
-         .. parsed-literal::
+         .. code-block:: bash
 
             cd ~
             curl -L -O |sdk-url-macos|
-            curl -L |sdk-url-macos-sha| | shasum --check --ignore-missing
+            curl -L |sdk-url-shasum| | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
          ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
 
       #. Extract the Zephyr SDK bundle archive:
 
-         .. parsed-literal::
+         .. code-block:: bash
 
-            tar xvf zephyr-sdk- |sdk-version-trim| _macos-x86_64.tar.xz
+            tar xvf zephyr-sdk-|sdk-version|_macos-x86_64.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -176,9 +178,9 @@ Zephyr SDK installation
 
       #. Run the Zephyr SDK bundle setup script:
 
-         .. parsed-literal::
+         .. code-block:: bash
 
-            cd zephyr-sdk- |sdk-version-ltrim|
+            cd zephyr-sdk-|sdk-version|
             ./setup.sh
 
          .. note::
@@ -195,16 +197,16 @@ Zephyr SDK installation
 
       #. Download the `Zephyr SDK bundle`_:
 
-         .. parsed-literal::
+         .. code-block:: bat
 
             cd %HOMEPATH%
             wget |sdk-url-windows|
 
       #. Extract the Zephyr SDK bundle archive:
 
-         .. parsed-literal::
+         .. code-block:: bat
 
-            7z x zephyr-sdk- |sdk-version-trim| _windows-x86_64.7z
+            7z x zephyr-sdk-|sdk-version-trim|_windows-x86_64.7z
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -218,7 +220,7 @@ Zephyr SDK installation
 
       #. Run the Zephyr SDK bundle setup script:
 
-         .. parsed-literal::
+         .. code-block:: bat
 
             cd zephyr-sdk- |sdk-version-ltrim|
             setup.cmd

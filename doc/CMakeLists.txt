@@ -137,8 +137,11 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_
 #-------------------------------------------------------------------------------
 # html
 
+set(CODE_BLOCKS_SUB_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/code_block_subs.py)
+
 add_doc_target(
   html
+  COMMAND ${PYTHON_EXECUTABLE} ${CODE_BLOCKS_SUB_SCRIPT}
   COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
   ${SPHINXBUILD}
     -b html
@@ -150,6 +153,7 @@ add_doc_target(
     ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}
     ${DOCS_HTML_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${CODE_BLOCKS_SUB_SCRIPT} --post
   USES_TERMINAL
   COMMENT "Running Sphinx HTML build..."
 )

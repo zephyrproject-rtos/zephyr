@@ -226,35 +226,12 @@ The Zephyr SDK supports the following target architectures:
 
 Follow these steps to install the Zephyr SDK:
 
-#. Download and verify the `Zephyr SDK bundle`_:
+.. include:: ../toolchains/zephyr_sdk.rst
+   :start-after: _ubuntu_zephyr_sdk_start
+   :end-before: _ubuntu_zephyr_sdk_end
 
-   .. parsed-literal::
-
-      wget |sdk-url-linux|
-      wget -O - |sdk-url-linux-sha| | shasum --check --ignore-missing
-
-   You can change |sdk-version-literal| to another version if needed; the
-   `Zephyr SDK Releases`_ page contains all available SDK releases.
-
-   If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace
-   ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
-
-#. Extract the Zephyr SDK bundle archive:
-
-   .. parsed-literal::
-
-      cd <sdk download directory>
-      tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64.tar.xz
-
-#. Run the Zephyr SDK bundle setup script:
-
-   .. parsed-literal::
-
-      cd zephyr-sdk- |sdk-version-ltrim|
-      ./setup.sh
-
-   If this fails, make sure Zephyr's dependencies were installed as described
-   in `Install Requirements and Dependencies`_.
+If this fails, make sure Zephyr's dependencies were installed as described
+in `Install Requirements and Dependencies`_.
 
 If you want to uninstall the SDK, remove the directory where you installed it.
 If you relocate the SDK directory, you need to re-run the setup script.
