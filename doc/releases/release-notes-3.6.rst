@@ -104,7 +104,27 @@ Boards & SoC Support
 
 * Made these changes for Xtensa boards:
 
-* Made these changes for POSIX boards:
+* Made these changes for native/POSIX boards:
+
+  * The :ref:`simulated nrf5340 targets<nrf5340bsim>` now include the IPC and MUTEX peripherals,
+    and support OpenAMP to communicate between the cores.
+    It is now possible to run the BLE controller or 802.15.4 driver in the net core, and application
+    and BT host in the app core.
+
+  * The nrf*_bsim simulated targets now include models of the UART peripheral. It is now possible
+    to connect a :ref:`nrf52_bsim<nrf52_bsim>` UART to another, or a UART in loopback, utilizing
+    both the new and legacy nRFx UART drivers, in any mode.
+
+  * For the native simulator based targets it is now possible to set via Kconfig command line
+    options which will be handled by the executable as if they were provided from the invoking
+    shell.
+
+  * For all native boards boards, the native logger backend will also be used even if the UART is
+    enabled.
+
+  * Several bugfixes and other minor additions to the nRF5x HW models.
+
+  * Multiple documentation updates and fixes for all native boards.
 
 * Removed support for these ARC boards:
 
@@ -165,12 +185,18 @@ Drivers and Sensors
   * Add system call :c:func:`can_get_transceiver()` for getting the CAN transceiver associated with
     a CAN controller.
 
+  * The "native linux" driver now supports being built with embedded C libraries.
+
 * Clock control
 
   * Renesas R-Car clock control driver now supports Gen4 SoCs
   * Renamed ``CONFIG_CLOCK_CONTROL_RA`` to :kconfig:option:`CONFIG_CLOCK_CONTROL_RENESAS_RA`
 
 * Counter
+
+  * The nRFx counter driver now works with simulated nrf*_bsim targets.
+
+  * counter_native_posix driver: Added support for top value configuration, and a bugfix.
 
 * DAC
 
@@ -184,7 +210,12 @@ Drivers and Sensors
 
 * Entropy
 
+  * The "native_posix" entropy driver now accepts a new command line option ``seed-random``.
+    When used, the random generator will be seeded from ``/dev/urandom``
+
 * Ethernet
+
+  * The "native_posix" ethernet driver now supports being built with embedded C libraries.
 
 * Flash
 
@@ -423,6 +454,15 @@ Tests and Samples
   test platform.
   :ref:`native_posix<native_posix>` remains supported and used in testing but will be deprecated
   in a future release.
+
+* Bluetooth split stacks tests, where the BT host and controller are run in separate MCUs, are
+  now run in CI based on the :ref:`nrf5340_bsim<nrf5340bsim>` targets.
+  Several other runtime AMP tests based on these targets have been added to CI, including tests
+  of OpenAMP, the mbox and IPC drivers/subsystem, and the logger multidomain functionality.
+
+* Runtime UART tests have been added to CI based on the :ref:`nrf52_bsim<nrf52_bsim>` target.
+  These include tests of the nRFx UART driver and networked BT stack tests with the host and
+  controller in separate devices communicating over the HCI UART driver.
 
 * Fixed an issue in :zephyr:code-sample:`smp-svr` sample whereby if USB was already initialised,
   application would fail to boot properly.
