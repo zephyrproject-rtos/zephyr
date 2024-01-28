@@ -19,5 +19,6 @@ config SOC_SERIES_S32K1XX
 	select HAS_MCUX_FTM
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_WDOG32
+	select HAS_MCUX_RTC
 	help
 	  Enable support for NXP S32K1XX MCU series.
