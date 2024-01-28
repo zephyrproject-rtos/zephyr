@@ -20,7 +20,7 @@ properties:
     type: int
     default: 15
     description: |
-      Peripheral Clock to DAC Clock Ratio. Prescaler value is calcuated as
+      Peripheral Clock to DAC Clock Ratio. Prescaler value is calculated as
       PRESCAL = (MCK / DACClock) - 2. Should be in range from 0 to 15. The
       value will be written to DACC_MR.PRESCALER bit-field. The property is
       applicable only to SAME70, SAMV71 series devices.
