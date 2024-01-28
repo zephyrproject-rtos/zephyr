@@ -183,7 +183,7 @@ properties:
     type: int
     default: 1
     description: |
-      The time in miliseconds the sensor will be in sleep during conversions.
+      The time in milliseconds the sensor will be in sleep during conversions.
       For this property to take effect sensor must be in `duty-cycled` mode.
       Note that to calculate total time between conversions, the conversion time
       itself must be taken into account. The conversion time is dependent

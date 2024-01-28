@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 description: |
-    This will perform signal comparision with threshold established.
+    This will perform signal comparison with threshold established.
 
 compatible: "nuvoton,adc-cmp"
 
