@@ -48,7 +48,7 @@ properties:
     type: boolean
     description: |
       Enables controller PLL, which multiples input clock frequency x10.
-      This parameter also implicity sets whether the clock is from the PLL
+      This parameter also implicitly sets whether the clock is from the PLL
       output or directly from the oscillator.
       If this option is enabled the clock source is the PLL, otherwise its
       the oscillator.
