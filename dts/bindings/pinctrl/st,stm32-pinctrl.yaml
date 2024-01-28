@@ -34,7 +34,7 @@ properties:
 
 child-binding:
   description: |
-      This binding gives a base representation of the STM32 pins configration
+      This binding gives a base representation of the STM32 pins configuration
 
   include:
     - name: pincfg-node.yaml
@@ -76,7 +76,7 @@ child-binding:
         This macro is available here:
           -include/zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h
         Some examples of macro usage:
-           GPIO A9 set as alernate function 2
+           GPIO A9 set as alternate function 2
         ... {
                  pinmux = <STM32_PINMUX('A', 9, AF2)>;
         };

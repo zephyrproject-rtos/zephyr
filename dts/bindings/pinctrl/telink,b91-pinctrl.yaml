@@ -39,7 +39,7 @@ description: |
 
     The 'uart0_tx_pb2_default' child node encodes the pin configurations
     for a particular state of a device; in this case, the default
-    (that is, active) sate. You would specify the low-power configuration for
+    (that is, active) state. You would specify the low-power configuration for
     the same device in a separate child node.
 
     A pin configuration can also specify pin properties such as the
@@ -83,7 +83,7 @@ properties:
 
 child-binding:
   description: |
-      This binding gives a base representation of the Telink B91 pins configration.
+      This binding gives a base representation of the Telink B91 pins configuration.
 
   include:
   - name: pincfg-node.yaml
