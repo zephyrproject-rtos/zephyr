@@ -13,7 +13,7 @@ compatible: "zephyr,uac2"
 # The only reason for putting Audio Streaming interfaces at the end is because
 # Audio Control entities derive their unique ID from child index (+ 1). For most
 # cases the order shouldn't really matter, but if there happen to be maximum
-# possible number of entities (255) then the Audio Streaming would inadvertedly
+# possible number of entities (255) then the Audio Streaming would inadvertently
 # "consume" one of the available IDs.
 
 properties:

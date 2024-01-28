@@ -16,7 +16,7 @@ properties:
     type: int
     description: |
       Clock frequency used by counter in Hz. You can specify a frequency here or specify a clock
-      using the clocks propertie.
+      using the clocks properties.
 
   reset-pulse-length:
     type: int

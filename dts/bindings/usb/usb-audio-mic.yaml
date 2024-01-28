@@ -23,7 +23,7 @@ properties:
     type: string
     description: |
       Type of endpoint synchronization for IN devices.
-      Default value is Sychronous.
+      Default value is Synchronous.
       Adaptive is not supported.
     enum:
       - "No Synchronization"
