@@ -43,7 +43,6 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_API perror.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK clock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK nanosleep.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK sleep.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK timer.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNAL signal.c ${STRSIGNAL_TABLE_H})
@@ -58,6 +57,7 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD_RWLOCK rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_SPINLOCK spinlock.c)
+zephyr_library_sources_ifdef(CONFIG_TIMER timer.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
