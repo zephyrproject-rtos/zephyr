@@ -1536,6 +1536,27 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 
 	ipv6_nd_restart_reachable_timer(nbr, time);
 }
+
+void net_ipv6_nbr_reachability_hint(struct net_if *iface,
+				    const struct in6_addr *ipv6_addr)
+{
+	struct net_nbr *nbr = NULL;
+
+	nbr = nbr_lookup(&net_neighbor.table, iface, ipv6_addr);
+
+	NET_DBG("nbr %p got rechability hint", nbr);
+
+	if (nbr && net_ipv6_nbr_data(nbr)->state != NET_IPV6_NBR_STATE_INCOMPLETE &&
+	    net_ipv6_nbr_data(nbr)->state != NET_IPV6_NBR_STATE_STATIC) {
+		ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_REACHABLE);
+
+		/* We might have active timer from PROBE */
+		net_ipv6_nbr_data(nbr)->reachable = 0;
+		net_ipv6_nbr_data(nbr)->reachable_timeout = 0;
+
+		net_ipv6_nbr_set_reachable_timer(iface, nbr);
+	}
+}
 #endif /* CONFIG_NET_IPV6_ND */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
