@@ -179,7 +179,7 @@ child-binding:
       default: 0
       enum: [0, 2, 4, 8, 16]
       description: |
-        Select the minimim input pulse width, in filter clock cycles that can pass
+        Select the minimum input pulse width, in filter clock cycles that can pass
         through the input filter. The filter latency - the difference in time between
         the input and the response is three clock edges. Default 0 means the filter
         is bypassed. The clock source for programmable input filter is eMIOS clock.

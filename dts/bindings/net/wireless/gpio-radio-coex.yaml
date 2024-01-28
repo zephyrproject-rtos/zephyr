@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Generic representation of Coexistance pin interface for radios. This
+    Generic representation of Coexistence pin interface for radios. This
     interface is usually available on Wifi/Bluetooth/LTE modules to
     interact with each other when sharing same antenna. This prevents
     any collisions between transmissions from different modules. The grant
