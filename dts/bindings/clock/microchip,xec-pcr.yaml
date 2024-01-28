@@ -59,7 +59,7 @@ properties:
     type: int
     required: true
     description: |
-      Mininum number of consecutive 32KHz pulses that pass all monitor tests
+      Minimum number of consecutive 32KHz pulses that pass all monitor tests
 
   xtal-enable-delay-ms:
     type: int
