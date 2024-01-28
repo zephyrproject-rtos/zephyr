@@ -177,6 +177,18 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	enum pm_device_state device_power_state;
 
+#ifndef CONFIG_PM_DEVICE_SYSTEM_MANAGED
+	/* Devices shouldn't have changed state because system managed
+	 * device power management is not enabled.
+	 **/
+	pm_device_state_get(device_a, &device_power_state);
+	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
+			NULL);
+
+	pm_device_state_get(device_c, &device_power_state);
+	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
+			NULL);
+#else
 	/* If testing device order this function does not need to anything */
 	if (testing_device_order) {
 		return;
@@ -213,6 +225,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	 */
 	zassert_false(state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
+#endif
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
@@ -261,7 +274,7 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE);
 
 	pm_device_state_get(device_dummy, &device_power_state);
-	if (testing_device_runtime) {
+	if (testing_device_runtime || !IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED)) {
 		/* If device runtime is enable, the device should still be
 		 * active
 		 */
