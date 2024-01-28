@@ -137,7 +137,7 @@ properties:
       The values are taken in accordance to lsm6dsv16x_data_rate_t enumerative in hal/st
       module. Please note that this values will not change the operating mode, which will remain
       High Performance (device default). Moreover, the values here which will be selected in the
-      DT are the only way to specifiy the odr accuracy even at runtime with
+      DT are the only way to specify the odr accuracy even at runtime with
       SENSOR_ATTR_SAMPLING_FREQUENCY.
       Default is power-up configuration.
 
