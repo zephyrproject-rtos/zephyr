@@ -100,7 +100,7 @@ properties:
          dma1 can connect to lines [8, 11].
       2. For a given interrupt, calculate the service request (SR) number. Note the following
          simple mapping: in USIC0 interrupt 84->SR0, interrupt 85->SR1, ... etc.
-         In USIC1, intterupt 90->SR0, 91->SR1, etc.
+         In USIC1, interrupt 90->SR0, 91->SR1, etc.
       3. Select request_source from Table "DMA Request Source Selection" in XMC4XXX reference
          manual.
 
