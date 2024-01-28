@@ -14,5 +14,6 @@ supported:
   - i2c
   - dma
   - watchdog
+  - spi
 ram: 160
 flash: 384
