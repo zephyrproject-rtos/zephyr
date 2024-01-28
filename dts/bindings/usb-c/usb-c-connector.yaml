@@ -115,7 +115,7 @@ properties:
     type: array
     description: |
       An array of source Power Data Objects (PDOs).
-      Use tht following macros to define the PDOs, defined in
+      Use the following macros to define the PDOs, defined in
       dt-bindings/usb-c/pd.h.
         * PDO_FIXED
         * PDO_BATT
@@ -127,7 +127,7 @@ properties:
     type: array
     description: |
       An array of sink Power Data Objects (PDOs).
-      Use tht following macros to define the PDOs, defined in
+      Use the following macros to define the PDOs, defined in
       dt-bindings/usb-c/pd.h.
         * PDO_FIXED
         * PDO_BATT
@@ -139,7 +139,7 @@ properties:
     type: array
     description: |
       An array of sink Vendor Defined Objects (VDOs).
-      Use tht following macros to define the VDOs, defined in
+      Use the following macros to define the VDOs, defined in
       dt-bindings/usb-c/pd.h.
         * VDO_IDH
         * VDO_CERT
@@ -155,7 +155,7 @@ properties:
     type: array
     description: |
       An array of sink Vendor Defined Objects (VDOs).
-      Use tht following macros to define the VDOs, defined in
+      Use the following macros to define the VDOs, defined in
       dt-bindings/usb-c/pd.h.
         * VDO_IDH
         * VDO_CERT
