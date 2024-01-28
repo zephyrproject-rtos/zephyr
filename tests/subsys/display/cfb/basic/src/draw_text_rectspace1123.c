@@ -38,7 +38,8 @@ static void cfb_test_before(void *text_fixture)
 	memset(read_buffer, 0, sizeof(read_buffer));
 	display_write(dev, 0, 0, &desc, read_buffer);
 
-	cfb_display_init(&disp, dev);
+	zassert_ok(cfb_display_init(&disp, dev, transfer_buf, CONFIG_TEST_CFB_TRANSFER_BUF_SIZE,
+				    command_buf, CONFIG_TEST_CFB_COMMAND_BUF_SIZE));
 	fb = cfb_display_get_framebuffer(&disp);
 
 	for (int idx = 0; idx < cfb_get_numof_fonts(); idx++) {

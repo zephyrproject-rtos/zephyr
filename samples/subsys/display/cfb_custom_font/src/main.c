@@ -11,10 +11,13 @@
 
 #include "cfb_font_dice.h"
 
+static struct cfb_display disp;
+static uint8_t xferbuf[CONFIG_CFB_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE];
+static uint8_t cmdbuf[CONFIG_CFB_CUSTOM_FONT_SAMPLE_COMMAND_BUFFER_SIZE];
+
 int main(void)
 {
 	const struct device *const display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-	struct cfb_display disp;
 	int err;
 
 	if (!device_is_ready(display)) {
@@ -33,7 +36,7 @@ int main(void)
 		return 0;
 	}
 
-	err = cfb_display_init(&disp, display);
+	err = cfb_display_init(&disp, display, xferbuf, sizeof(xferbuf), cmdbuf, sizeof(cmdbuf));
 	if (err) {
 		printk("Could not initialize framebuffer (err %d)\n", err);
 	}

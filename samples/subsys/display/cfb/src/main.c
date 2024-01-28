@@ -9,6 +9,9 @@
 #include <zephyr/display/cfb.h>
 #include <stdio.h>
 
+static uint8_t xferbuf[CONFIG_CFB_SAMPLE_TRANSFER_BUFFER_SIZE];
+static uint8_t cmdbuf[CONFIG_CFB_SAMPLE_COMMAND_BUFFER_SIZE];
+
 int main(void)
 {
 	struct cfb_display disp;
@@ -36,7 +39,7 @@ int main(void)
 
 	printf("Initialized %s\n", dev->name);
 
-	if (cfb_display_init(&disp, dev)) {
+	if (cfb_display_init(&disp, dev, xferbuf, sizeof(xferbuf), cmdbuf, sizeof(cmdbuf))) {
 		printf("Framebuffer initialization failed!\n");
 		return 0;
 	}

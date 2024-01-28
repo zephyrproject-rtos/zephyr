@@ -19,6 +19,8 @@ static const uint32_t display_width = DT_PROP(DT_CHOSEN(zephyr_display), width);
 static const uint32_t display_height = DT_PROP(DT_CHOSEN(zephyr_display), height);
 uint8_t read_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
 		    DT_PROP(DT_CHOSEN(zephyr_display), height) * 4];
+uint32_t transfer_buf[CONFIG_TEST_CFB_TRANSFER_BUF_SIZE];
+uint32_t command_buf[CONFIG_TEST_CFB_COMMAND_BUF_SIZE];
 
 inline uint32_t mono_pixel_order(uint32_t order)
 {

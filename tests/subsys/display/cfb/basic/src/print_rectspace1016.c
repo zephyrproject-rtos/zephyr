@@ -41,7 +41,8 @@ static void cfb_test_before(void *text_fixture)
 
 	zassert_ok(display_blanking_off(dev));
 
-	zassert_ok(cfb_display_init(&disp, dev));
+	zassert_ok(cfb_display_init(&disp, dev, transfer_buf, CONFIG_TEST_CFB_TRANSFER_BUF_SIZE,
+				    command_buf, CONFIG_TEST_CFB_COMMAND_BUF_SIZE));
 	fb = cfb_display_get_framebuffer(&disp);
 
 	for (int idx = 0; idx < cfb_get_numof_fonts(); idx++) {

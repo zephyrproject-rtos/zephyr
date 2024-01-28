@@ -56,3 +56,16 @@ tests:
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
       - CONFIG_TEST_MSB_FIRST_FONT=y
+  cfb.basic.mono01.transfer_buffersize_1:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_TEST_CFB_TRANSFER_BUF_SIZE=1
+      - CONFIG_TEST_CFB_COMMAND_BUF_SIZE=512
+  cfb.basic.mono01.transfer_buffersize_320:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_TEST_CFB_TRANSFER_BUF_SIZE=320
