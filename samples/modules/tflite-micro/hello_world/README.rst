@@ -28,6 +28,17 @@ reference kernels and one with CMSIS-NN optimized kernels.
 .. _the TensorFlow Hello World sample for Zephyr:
    https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/examples/hello_world
 
+Prerequisites
+**************
+
+Tensorflow Lite for Microcontrollers library is an optional Zephyr module and needs to be enabled
+using the following command:
+
+.. code-block:: bash
+
+   west config manifest.group-filter -- +optional
+   west update
+
 Building and Running
 ********************
 
