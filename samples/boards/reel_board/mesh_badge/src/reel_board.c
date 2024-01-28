@@ -55,6 +55,7 @@ struct font_info {
 #define STAT_COUNT 128
 
 static const struct device *const epd_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+static struct cfb_display *epd_disp;
 static bool pressed;
 static uint8_t screen_id = SCREEN_MAIN;
 static struct k_work_delayable epd_work;
@@ -74,11 +75,12 @@ struct k_work_delayable led_timer;
 static size_t print_line(enum font_size font_size, int row, const char *text,
 			 size_t len, bool center)
 {
+	struct cfb_framebuffer *fb = cfb_display_get_framebuffer(epd_disp);
 	uint8_t font_height, font_width;
 	uint8_t line[fonts[FONT_SMALL].columns + 1];
 	int pad;
 
-	cfb_framebuffer_set_font(epd_dev, font_size);
+	cfb_set_font(fb, font_size);
 
 	len = MIN(len, fonts[font_size].columns);
 	memcpy(line, text, len);
@@ -92,7 +94,7 @@ static size_t print_line(enum font_size font_size, int row, const char *text,
 
 	cfb_get_font_size(font_size, &font_width, &font_height);
 
-	if (cfb_print(epd_dev, line, font_width * pad, font_height * row)) {
+	if (cfb_print(fb, line, font_width * pad, font_height * row)) {
 		printk("Failed to print a string\n");
 	}
 
@@ -134,9 +136,10 @@ void board_blink_leds(void)
 
 void board_show_text(const char *text, bool center, k_timeout_t duration)
 {
+	struct cfb_framebuffer *fb = cfb_display_get_framebuffer(epd_disp);
 	int i;
 
-	cfb_framebuffer_clear(epd_dev, false);
+	cfb_clear(fb, false);
 
 	for (i = 0; i < 3; i++) {
 		size_t len;
@@ -156,7 +159,7 @@ void board_show_text(const char *text, bool center, k_timeout_t duration)
 		}
 	}
 
-	cfb_framebuffer_finalize(epd_dev);
+	cfb_finalize(fb);
 
 	if (!K_TIMEOUT_EQ(duration, K_FOREVER)) {
 		k_work_reschedule(&epd_work, duration);
@@ -267,12 +270,13 @@ void board_add_heartbeat(uint16_t addr, uint8_t hops)
 
 static void show_statistics(void)
 {
+	struct cfb_framebuffer *fb = cfb_display_get_framebuffer(epd_disp);
 	int top[4] = { -1, -1, -1, -1 };
 	int len, i, line = 0;
 	struct stat *stat;
 	char str[32];
 
-	cfb_framebuffer_clear(epd_dev, false);
+	cfb_clear(fb, false);
 
 	len = snprintk(str, sizeof(str),
 		       "Own Address: 0x%04x", mesh_get_addr());
@@ -335,16 +339,17 @@ static void show_statistics(void)
 		}
 	}
 
-	cfb_framebuffer_finalize(epd_dev);
+	cfb_finalize(fb);
 }
 
 static void show_sensors_data(k_timeout_t interval)
 {
+	struct cfb_framebuffer *fb = cfb_display_get_framebuffer(epd_disp);
 	struct sensor_value val[3];
 	uint8_t line = 0U;
 	uint16_t len = 0U;
 
-	cfb_framebuffer_clear(epd_dev, false);
+	cfb_clear(fb, false);
 
 	/* hdc1010 */
 	if (get_hdc1010_val(val)) {
@@ -386,7 +391,7 @@ static void show_sensors_data(k_timeout_t interval)
 	len = snprintf(str_buf, sizeof(str_buf), "Proximity:%d\n", val[1].val1);
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
-	cfb_framebuffer_finalize(epd_dev);
+	cfb_finalize(fb);
 
 	k_work_reschedule(&epd_work, interval);
 
@@ -584,17 +589,22 @@ void board_refresh_display(void)
 
 int board_init(void)
 {
+	struct cfb_framebuffer *fb;
+
 	if (!device_is_ready(epd_dev)) {
 		printk("%s: device not ready.\n", epd_dev->name);
 		return -ENODEV;
 	}
 
-	if (cfb_framebuffer_init(epd_dev)) {
+	epd_disp = cfb_display_alloc(epd_dev);
+	if (!epd_disp) {
 		printk("Framebuffer initialization failed\n");
 		return -EIO;
 	}
 
-	cfb_framebuffer_clear(epd_dev, true);
+	fb = cfb_display_get_framebuffer(epd_disp);
+
+	cfb_clear(fb, true);
 
 	if (configure_button()) {
 		printk("Failed to configure button\n");

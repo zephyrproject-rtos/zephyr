@@ -12,6 +12,8 @@
 int main(void)
 {
 	const struct device *dev;
+	struct cfb_display *disp;
+	struct cfb_framebuffer *fb;
 	uint16_t x_res;
 	uint16_t y_res;
 	uint16_t rows;
@@ -34,25 +36,28 @@ int main(void)
 
 	printf("Initialized %s\n", dev->name);
 
-	if (cfb_framebuffer_init(dev)) {
-		printf("Framebuffer initialization failed!\n");
+	disp = cfb_display_alloc(dev);
+	if (!disp) {
+		printf("Framebuffer allocation failed!\n");
 		return 0;
 	}
 
-	cfb_framebuffer_clear(dev, true);
+	fb = cfb_display_get_framebuffer(disp);
+
+	cfb_clear(fb, true);
 
 	display_blanking_off(dev);
 
-	x_res = cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH);
-	y_res = cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH);
-	rows = cfb_get_display_parameter(dev, CFB_DISPLAY_ROWS);
-	ppt = cfb_get_display_parameter(dev, CFB_DISPLAY_PPT);
+	x_res = cfb_get_display_parameter(disp, CFB_DISPLAY_WIDTH);
+	y_res = cfb_get_display_parameter(disp, CFB_DISPLAY_HEIGH);
+	rows = cfb_get_display_parameter(disp, CFB_DISPLAY_ROWS);
+	ppt = cfb_get_display_parameter(disp, CFB_DISPLAY_PPT);
 
 	for (int idx = 0; idx < 42; idx++) {
 		if (cfb_get_font_size(idx, &font_width, &font_height)) {
 			break;
 		}
-		cfb_framebuffer_set_font(dev, idx);
+		cfb_set_font(fb, idx);
 		printf("font width %d, font height %d\n",
 		       font_width, font_height);
 	}
@@ -62,23 +67,23 @@ int main(void)
 	       y_res,
 	       ppt,
 	       rows,
-	       cfb_get_display_parameter(dev, CFB_DISPLAY_COLS));
+	       cfb_get_display_parameter(disp, CFB_DISPLAY_COLS));
 
-	cfb_framebuffer_invert(dev);
+	cfb_invert(fb);
 
-	cfb_set_kerning(dev, 3);
+	cfb_set_kerning(fb, 3);
 
 	while (1) {
 		for (int i = 0; i < MIN(x_res, y_res); i++) {
-			cfb_framebuffer_clear(dev, false);
-			if (cfb_print(dev,
+			cfb_clear(fb, false);
+			if (cfb_print(fb,
 				      "0123456789mMgj!\"§$%&/()=",
 				      i, i)) {
 				printf("Failed to print a string\n");
 				continue;
 			}
 
-			cfb_framebuffer_finalize(dev);
+			cfb_finalize(fb);
 #if defined(CONFIG_ARCH_POSIX)
 			k_sleep(K_MSEC(20));
 #endif
