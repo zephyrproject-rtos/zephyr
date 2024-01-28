@@ -5,7 +5,7 @@ description: |
     Richtek RT1718S TCPC chip
 
     The Richtek RT1718S chip is TCPC, but also has 3 pins, which can be used as
-    a usual GPIO. This node collects common proprties for RT1718S chip e.g. I2C
+    a usual GPIO. This node collects common properties for RT1718S chip e.g. I2C
     address. Feature-specific(GPIO, TCPC) properties should be placed in a child
     node e.g. a number of GPIOs.
 
