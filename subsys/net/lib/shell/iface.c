@@ -218,7 +218,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			name = "<unknown>";
 		}
 
-		PR("Name      : %s\n", name);
+		PR("Virtual name : %s\n", name);
 
 		orig_iface = net_virtual_get_iface(iface);
 		if (orig_iface == NULL) {
