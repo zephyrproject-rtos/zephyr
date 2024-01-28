@@ -487,6 +487,46 @@ ZTEST(pthread, test_pthread_cleanup)
 	zassert_ok(pthread_join(th, NULL));
 }
 
+static bool testcancel_ignored;
+static bool testcancel_failed;
+
+static void *test_pthread_cancel_fn(void *arg)
+{
+	zassert_ok(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL));
+
+	testcancel_ignored = false;
+
+	/* this should be ignored */
+	pthread_testcancel();
+
+	testcancel_ignored = true;
+
+	/* this will mark it pending */
+	zassert_ok(pthread_cancel(pthread_self()));
+
+	/* enable the thread to be cancelled */
+	zassert_ok(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL));
+
+	testcancel_failed = false;
+
+	/* this should terminate the thread */
+	pthread_testcancel();
+
+	testcancel_failed = true;
+
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_testcancel)
+{
+	pthread_t th;
+
+	zassert_ok(pthread_create(&th, NULL, test_pthread_cancel_fn, NULL));
+	zassert_ok(pthread_join(th, NULL));
+	zassert_true(testcancel_ignored);
+	zassert_false(testcancel_failed);
+}
+
 static void before(void *arg)
 {
 	ARG_UNUSED(arg);

@@ -158,7 +158,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_spin_lock);
 		zassert_not_null(pthread_spin_trylock);
 		zassert_not_null(pthread_spin_unlock);
-		/* zassert_not_null(pthread_testcancel); */ /* not implemented */
+		zassert_not_null(pthread_testcancel);
 	}
 }
 #pragma GCC diagnostic pop
