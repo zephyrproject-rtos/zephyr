@@ -16,7 +16,7 @@ properties:
   "#miwu-cells":
     type: int
     required: true
-    description: Number of items to present a MIWU input souce specifier
+    description: Number of items to present a MIWU input source specifier
 
 miwu-cells:
   - group

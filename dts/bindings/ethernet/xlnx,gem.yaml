@@ -303,7 +303,7 @@ properties:
   multicast-hash:
     type: boolean
     description: |
-      Optional feature flag - Enable multicast hash. When set, mutlicast
+      Optional feature flag - Enable multicast hash. When set, multicast
       frames will be accepted when the 6 bit hash function of the desti-
       nation address points to a bit that is set in the hash register.
 
