@@ -52,6 +52,7 @@ LPSPI         on-chip     spi
 FTM           on-chip     pwm
 FlexCAN       on-chip     can
 Watchdog      on-chip     watchdog
+RTC           on-chip     counter
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
