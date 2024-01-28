@@ -5,19 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/can/transceiver.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/pinctrl.h>
-#include <zephyr/sys/util.h>
-#include <string.h>
-#include <zephyr/kernel.h>
+/* Include soc.h prior to Zephyr CAN headers to pull in HAL fixups */
 #include <soc.h>
-#include <errno.h>
-#include <stdbool.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/logging/log.h>
+#include <zephyr/drivers/can/transceiver.h>
+
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
