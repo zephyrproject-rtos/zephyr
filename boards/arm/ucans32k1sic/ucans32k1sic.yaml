@@ -20,3 +20,4 @@ supported:
   - pwm
   - can
   - watchdog
+  - counter
