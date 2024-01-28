@@ -508,6 +508,15 @@ static void spi_stm32_isr(const struct device *dev)
 	SPI_TypeDef *spi = cfg->spi;
 	int err;
 
+	/* Some spurious interrupts are triggered when SPI is not enabled; ignore them.
+	 * Do it only when fifo is enabled to leave non-fifo functionality untouched for now
+	 */
+	if (cfg->fifo_enabled) {
+		if (!LL_SPI_IsEnabled(spi)) {
+			return;
+		}
+	}
+
 	err = spi_stm32_get_err(spi);
 	if (err) {
 		spi_stm32_complete(dev, err);
