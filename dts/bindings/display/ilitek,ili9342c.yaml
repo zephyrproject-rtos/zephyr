@@ -16,7 +16,7 @@ properties:
     default: [0x01]
     description:
       select the desired Gamma curve for the current display.
-      A maximum of 4 fixed gamma curves canbe selected.
+      A maximum of 4 fixed gamma curves can be selected.
 
   ifmode:
     type: uint8-array
