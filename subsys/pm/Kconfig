@@ -44,6 +44,12 @@ config PM_NEED_ALL_DEVICES_IDLE
 	  When this option is enabled, check that no devices are busy before
 	  entering into system low power mode.
 
+config PM_STATE_CUSTOM_DATA
+	bool "Power state custom data"
+	help
+	  This option enables to set a custom data pointer to a specific power state
+	  which can be accessed using the pm_state_custom_data_xxx() APIs.
+
 choice PM_POLICY
 	prompt "Idle State Power Management Policy"
 	default PM_POLICY_DEFAULT

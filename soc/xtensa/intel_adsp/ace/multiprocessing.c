@@ -11,6 +11,7 @@
 #include <zephyr/arch/xtensa/arch.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include <soc.h>
 #include <adsp_boot.h>
@@ -18,8 +19,10 @@
 #include <adsp_ipc_regs.h>
 #include <adsp_memory.h>
 #include <adsp_interrupt.h>
+#include <pm_data.h>
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
+
 
 #define CORE_POWER_CHECK_NUM 128
 
@@ -178,6 +181,12 @@ void soc_start_core(int cpu_num)
 	if (retry == 0) {
 		__ASSERT(false, "%s secondary core has not powered up", __func__);
 	}
+#if CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING
+	/* Clock switching lock needs to be incremented for each active core.
+	 * This increment is specifically for the secondary cores.
+	 */
+	intel_adsp_acquire_clock_switch_lock(pm_state_custom_data_get(PM_STATE_ACTIVE, 0));
+#endif /* CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING */
 }
 
 void soc_mp_startup(uint32_t cpu)
