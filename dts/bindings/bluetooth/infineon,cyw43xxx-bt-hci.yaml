@@ -66,10 +66,10 @@ properties:
     type: int
     description: |
       HCI UART boudrate for feature operation. If not defined
-      bus/current-speed wil be used as default.
+      bus/current-speed will be used as default.
 
   fw-download-speed:
     type: int
     description: |
-      HCI UART boudrate for FW dowload operation. If not defined
-      bus/current-speed wil be used as default.
+      HCI UART boudrate for FW download operation. If not defined
+      bus/current-speed will be used as default.
