@@ -14,5 +14,6 @@ supported:
   - serial
   - trng
   - spi
+  - pwm
 ram: 160
 flash: 384
