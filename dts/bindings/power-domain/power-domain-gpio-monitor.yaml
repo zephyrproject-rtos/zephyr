@@ -6,7 +6,7 @@ description: |
 
   This power domain monitors the state of a GPIO pin to detect whether a power
   rail is on/off. Therefore, performing resume/suspend on power domain won't
-  change physical state of power rails and those action won't be triggerd on
+  change physical state of power rails and those action won't be triggered on
   child nodes. Additionally, due to the asynchronous nature of monitoring a
   pending transaction won't be interrupted by power state change.
 
