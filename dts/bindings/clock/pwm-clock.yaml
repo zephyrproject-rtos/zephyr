@@ -22,7 +22,7 @@ description: |
   property.
 
   The PWM node may need to be properly configured to generate
-  the target period (i.e. using prescaler options). See the documention
+  the target period (i.e. using prescaler options). See the documentation
   for the target PWM driver.
 
 compatible: "pwm-clock"
