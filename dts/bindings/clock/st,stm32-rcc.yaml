@@ -54,7 +54,7 @@ description: |
   Domain clock is independent from the bus/gatted clock and allows access to the device's
   register while the gated clock is off. As it doesn't feed the peripheral's controller, it
   allows peripheral operation, but can't be used for peripheral configuration.
-  It is peripheral driver's responsibility to querry and use clock source information in
+  It is peripheral driver's responsibility to query and use clock source information in
   accordance with clock_control API specifications.
 
   Since the peripheral subsystem rate is dictated by the clock used for peripheral

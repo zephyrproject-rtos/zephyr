@@ -34,5 +34,5 @@ properties:
   phase:
     type: int
     description: |
-      The phase-shift vlaue.
+      The phase-shift value.
       The valid range is 0 to 3
