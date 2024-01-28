@@ -1657,4 +1657,29 @@ ZTEST(net_ipv6, test_no_nd_flag)
 	net_if_flag_clear(iface, NET_IF_IPV6_NO_ND);
 }
 
+ZTEST(net_ipv6, test_nd_reachability_hint)
+{
+	struct net_nbr *nbr;
+
+	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &peer_addr);
+	zassert_not_null(nbr, "Neighbor %s not found in cache\n",
+			 net_sprint_ipv6_addr(&peer_addr));
+
+	/* Configure neighbor's state to STALE. */
+	net_ipv6_nbr_data(nbr)->state = NET_IPV6_NBR_STATE_STALE;
+
+	net_ipv6_nbr_reachability_hint(TEST_NET_IF, &peer_addr);
+	zassert_equal(net_ipv6_nbr_data(nbr)->state, NET_IPV6_NBR_STATE_REACHABLE);
+
+	/* Configure neighbor's state to PROBE. */
+	net_ipv6_nbr_data(nbr)->state = NET_IPV6_NBR_STATE_PROBE;
+
+	/* Additionally ensure that state is not changed for different interface ID. */
+	net_ipv6_nbr_reachability_hint(TEST_NET_IF + 1, &peer_addr);
+	zassert_equal(net_ipv6_nbr_data(nbr)->state, NET_IPV6_NBR_STATE_PROBE);
+
+	net_ipv6_nbr_reachability_hint(TEST_NET_IF, &peer_addr);
+	zassert_equal(net_ipv6_nbr_data(nbr)->state, NET_IPV6_NBR_STATE_REACHABLE);
+}
+
 ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, NULL, NULL, ipv6_teardown);

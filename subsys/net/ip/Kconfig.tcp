@@ -244,4 +244,13 @@ config NET_TCP_REJECT_CONN_WITH_RST
 	  If enabled, TCP stack will reject connection attempts on unbound ports
 	  with TCP RST packet.
 
+config NET_TCP_IPV6_ND_REACHABILITY_HINT
+	bool "Provide a reachability hint for IPv6 Neighbor Discovery"
+	depends on NET_TCP
+	depends on NET_IPV6_ND
+	help
+	  If enabled, TCP stack will inform the IPv6 Neighbor Discovery process
+	  about the active link to a specific neighbor by signaling recent
+	  "forward progress" event as described in RFC 4861.
+
 endif # NET_TCP
