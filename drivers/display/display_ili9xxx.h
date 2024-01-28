@@ -3,6 +3,7 @@
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
+ * Copyright (c) 2024 Kim Bøndergaard <kim@fam-boendergaard.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,10 +64,30 @@ struct ili9xxx_quirks {
 	enum madctl_cmd_set cmd_set;
 };
 
+#ifdef CONFIG_ILI9XXX_PARALLEL
+
+#define ILI9XXX_DATA_WIDTH 8
+
+/** Time (ns) to assert WR pin */
+#define ILI9XXX_WR_TIME 15
+
+struct ili9xxx_parallel_bus {
+	struct gpio_dt_spec rd;
+	struct gpio_dt_spec wr;
+	struct gpio_dt_spec cs;
+	struct gpio_dt_spec data[ILI9XXX_DATA_WIDTH];
+};
+#endif
+
 struct ili9xxx_config {
 	const struct ili9xxx_quirks *quirks;
 
+#ifdef CONFIG_ILI9XXX_SPI
 	struct spi_dt_spec spi;
+#endif
+#ifdef CONFIG_ILI9XXX_PARALLEL
+	struct ili9xxx_parallel_bus parallel_bus;
+#endif
 	struct gpio_dt_spec cmd_data;
 	struct gpio_dt_spec reset;
 	uint8_t pixel_format;
@@ -80,5 +101,9 @@ struct ili9xxx_config {
 
 int ili9xxx_transmit(const struct device *dev, uint8_t cmd,
 		     const void *tx_data, size_t tx_len);
+
+int ili9xxx_transmit_data(const struct device *dev, const void *tx_data, size_t tx_len);
+
+int ili9xxx_bus_init(const struct ili9xxx_config *config);
 
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_ */

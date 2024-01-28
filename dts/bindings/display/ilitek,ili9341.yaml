@@ -8,7 +8,7 @@ description: ILI9341 320x240 display controller
 
 compatible: "ilitek,ili9341"
 
-include: ilitek,ili9xxx-common.yaml
+include: ["ilitek,ili9xxx-common.yaml", "spi-device.yaml"]
 
 properties:
   ifmode:

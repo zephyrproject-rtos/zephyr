@@ -1,0 +1,39 @@
+# Copyright (c) 2020, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ILI9488 320x480 display controller - 8bit parallel mode
+
+compatible: "ilitek,ili9488"
+
+include: ["ilitek,ili9488-common.yaml"]
+
+properties:
+  rd-gpios:
+    type: phandle-array
+    description: RD pin
+
+      For now reading from the display is not support. The pin can be permanently
+      set to 3.3V - or as output always being high
+
+  wr-gpios:
+    type: phandle-array
+    required: true
+    description: WR pin
+
+      The WR pin is active low. On low to high transmission device will latch
+      data pins
+
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: CS pin
+
+      The CS (Chip Select) pin is active low
+      Display only reacts on RD, WR, D/CX when CS is asserted
+
+  data-gpios:
+    type: phandle-array
+    required: true
+    description: Data pins
+
+      The 8 pins used for data in and out

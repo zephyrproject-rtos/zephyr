@@ -8,7 +8,7 @@ description: ILI9342C 320x240 display controller
 
 compatible: "ilitek,ili9342c"
 
-include: ilitek,ili9xxx-common.yaml
+include: ["ilitek,ili9xxx-common.yaml", "spi-device.yaml"]
 
 properties:
   gamset:
