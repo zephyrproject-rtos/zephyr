@@ -59,5 +59,15 @@
 			compatible = "mmio-sram";
 			reg = <0x20024000 DT_SIZE_K(16)>;
 		};
+
+		spi1: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40047000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
 	};
 };
