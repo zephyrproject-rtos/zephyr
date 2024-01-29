@@ -26,6 +26,16 @@ Build System
 * The deprecated ``prj_<board>.conf`` Kconfig file support has been removed, projects that use
   this should switch to using board Kconfig fragments instead (``boards/<board>.conf``).
 
+* Until now ``_POSIX_C_SOURCE``, ``_XOPEN_SOURCE``, and ``_XOPEN_SOURCE_EXTENDED`` were defined
+  globally when building for the native (``ARCH_POSIX``) targets, and ``_POSIX_C_SOURCE`` when
+  building with PicolibC. Since this release, these are set only for the files that need them.
+  If your library or application needed this, you may start getting an "implicit declaration"
+  warning for functions whose prototypes are only exposed if one of these is defined.
+  If so, you can fix it by defining the corresponding macro in your C source file before any
+  include, or by adding the equivalent of
+  ``target_compile_definitions(app PRIVATE _POSIX_C_SOURCE=200809L)`` to your application
+  or ``zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)`` to your library.
+
 Kernel
 ======
 
