@@ -69,6 +69,8 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                 cmd.append('--sectorerase')
             elif erase == 'ERASE_PAGES_INCLUDING_UICR':
                 cmd.append('--sectoranduicrerase')
+            elif erase == 'NO_ERASE':
+                pass
             else:
                 raise RuntimeError(f'Invalid erase mode: {erase}')
 
