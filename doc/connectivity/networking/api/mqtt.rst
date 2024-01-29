@@ -109,7 +109,7 @@ application through the callback function.
 
    fds[0].fd = client_ctx.transport.tcp.sock;
    fds[0].events = ZSOCK_POLLIN;
-   poll(fds, 1, K_MSEC(5000));
+   poll(fds, 1, 5000);
 
    mqtt_input(&client_ctx);
 
