@@ -1,0 +1,11 @@
+description: SSD1322 display controller
+
+compatible: "solomon,ssd1322"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  column-offset:
+    type: int
+    required: true
+    description: First visible column number.
