@@ -3255,7 +3255,7 @@ NXP Drivers:
     - dts/bindings/*/nxp*
   files-exclude:
     - drivers/*/*s32*
-    - drivers/misc/*/*s32*/
+    - drivers/misc/*/*s32*
     - include/zephyr/dt-bindings/*/*s32*
     - include/zephyr/drivers/*/*s32*
     - dts/bindings/*/*s32*
