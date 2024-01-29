@@ -1073,13 +1073,15 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 	/* NOTE: ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER is just information that extra_data
 	 * should be removed in case of this call ull_adv_sync_pdu_alloc.
 	 */
+	extra_data_prev = NULL;
+	extra_data = NULL;
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER, &pdu_prev, &pdu,
 				     &extra_data_prev, &extra_data, ter_idx);
 	if (err != BT_HCI_ERR_SUCCESS) {
 		return err;
 	}
 
-	if (extra_data) {
+	if (extra_data_prev && extra_data) {
 		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data, 0,
 						  ULL_ADV_PDU_HDR_FIELD_CTE_INFO, NULL);
 	}
