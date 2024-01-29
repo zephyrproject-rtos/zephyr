@@ -76,7 +76,7 @@ static int write_state(const struct device *dev, uint32_t state)
 			}
 		}
 
-		LOG_DBG("%s: configuration for instance %i: %04X (position %i)",
+		LOG_DBG("%s: configuration for instance %zu: %04X (position %i)",
 			dev->name,
 			j,
 			state_converted,
