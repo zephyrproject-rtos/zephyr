@@ -14,7 +14,7 @@ description: |
 
   When using speeds above standard mode, user may need adjust clock and data
   lines slew and strength parameters.  In general, slew 0 and minimal strength
-  is enough for short buses and light loads.  As reference, the below
+  is enough for short buses and light loads.  As a reference, the below
   is the lowest power configuration:
 
     std-clk-slew-lim = <0>;
