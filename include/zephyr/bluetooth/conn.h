@@ -1000,6 +1000,20 @@ struct bt_conn_cb {
 	 */
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 
+	/** @brief A connection object has been returned to the pool.
+	 *
+	 * This callback notifies the application that it might be able to
+	 * allocate a connection object. No guarantee, first come, first serve.
+	 *
+	 * Use this to e.g. re-start connectable advertising or scanning.
+	 *
+	 * Treat this callback as an ISR, as it originates from
+	 * @ref bt_conn_unref which is used by the BT stack. Making
+	 * Bluetooth API calls in this context is error-prone and strongly
+	 * discouraged.
+	 */
+	void (*recycled)(void);
+
 	/** @brief LE connection parameter update request.
 	 *
 	 *  This callback notifies the application that a remote device
