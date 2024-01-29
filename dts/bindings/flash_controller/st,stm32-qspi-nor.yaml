@@ -26,13 +26,11 @@ on-bus: qspi
 properties:
   reg:
     required: true
+    description: Flash Memory base address and size in bytes
   qspi-max-frequency:
     type: int
     required: true
     description: Maximum clock frequency of device's QSPI interface in Hz
-  size:
-    required: true
-    description: Flash Memory size in bits
   reset-gpios:
     type: phandle-array
     description: RESETn pin

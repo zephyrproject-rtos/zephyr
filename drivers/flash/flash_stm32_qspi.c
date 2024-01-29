@@ -29,6 +29,9 @@
 #define STM32_QSPI_USE_QUAD_IO 0
 #endif
 
+/* Get the base address of the flash from the DTS node */
+#define STM32_QSPI_BASE_ADDRESS DT_REG_ADDR(DT_INST(0, st_stm32_qspi_nor))
+
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 #define STM32_QSPI_RESET_CMD DT_INST_NODE_HAS_PROP(0, reset_cmd)
 
@@ -382,6 +385,54 @@ static bool qspi_address_is_valid(const struct device *dev, off_t addr,
 	return (addr >= 0) && ((uint64_t)addr + (uint64_t)size <= flash_size);
 }
 
+#ifdef CONFIG_STM32_MEMMAP
+/* Function to return true if the quad-NOR flash is in MemoryMapped else false */
+static bool qspi_is_memorymap(const struct device *dev)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+
+	return ((READ_BIT(dev_data->hqspi.Instance->CCR,
+			  QUADSPI_CCR_FMODE) == QUADSPI_CCR_FMODE) ?
+			  true : false);
+}
+
+
+/* Function to configure the memmapped mode */
+static int qspi_set_memorymap(const struct device *dev)
+{
+	HAL_StatusTypeDef ret;
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+	QSPI_CommandTypeDef s_command = {0};
+	QSPI_MemoryMappedTypeDef s_memmap_cfg;
+
+	/* Reading sequence */
+	s_command.Instruction = SPI_NOR_CMD_4READ; /* 0x6B also supported */
+	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+	s_command.AddressMode = QSPI_ADDRESS_4_LINES;
+	s_command.AddressSize = QSPI_ADDRESS_32_BITS; /* valid for stm32H7 and stm32L4 */
+	s_command.DataMode = QSPI_DATA_4_LINES;
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	s_command.DummyCycles = SPI_NOR_DUMMY_RD_QUAD; /* less than 10 is too short */
+#else
+	s_command.DummyCycles = 4;/* other value than 4 is too short */
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+	s_command.AlternateBytesSize = QSPI_ALTERNATE_BYTES_8_BITS;
+
+	/* Enable the memory-mapping */
+	s_memmap_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE;
+	s_memmap_cfg.TimeOutPeriod = 0;
+
+	ret = HAL_QSPI_MemoryMapped(&dev_data->hqspi, &s_command, &s_memmap_cfg);
+	if (ret != HAL_OK) {
+		LOG_ERR("%d: Failed to set memory map", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_STM32_MEMMAP */
+
 static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
 {
@@ -398,6 +449,15 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+#ifdef CONFIG_STM32_MEMMAP
+	if (qspi_is_memorymap(dev)) {
+		LOG_DBG("MemoryMapped Read offset: 0x%lx, len: %zu",
+			(long)(STM32_QSPI_BASE_ADDRESS + addr),	size);
+		memcpy(data, (uint8_t *)STM32_QSPI_BASE_ADDRESS + addr, size);
+
+		return 0;
+	}
+#endif /* CONFIG_STM32_MEMMAP */
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_READ,
 		.Address = addr,
@@ -456,6 +516,16 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 	if (size == 0) {
 		return 0;
 	}
+
+#ifdef CONFIG_STM32_MEMMAP
+	if (qspi_is_memorymap(dev)) {
+		LOG_DBG("MemoryMapped Write offset: 0x%lx, len: %zu",
+			(long)(STM32_QSPI_BASE_ADDRESS + addr),	size);
+		memcpy((uint8_t *)STM32_QSPI_BASE_ADDRESS + addr, data, size);
+
+		return 0;
+	}
+#endif /* CONFIG_STM32_MEMMAP */
 
 	QSPI_CommandTypeDef cmd_write_en = {
 		.Instruction = SPI_NOR_CMD_WREN,
@@ -537,6 +607,13 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	if (size == 0) {
 		return 0;
 	}
+
+#ifdef CONFIG_STM32_MEMMAP
+	if (qspi_is_memorymap(dev)) {
+		LOG_INF("MemoryMapped : cannot erase");
+		return 0;
+	}
+#endif /* CONFIG_STM32_MEMMAP */
 
 	QSPI_CommandTypeDef cmd_write_en = {
 		.Instruction = SPI_NOR_CMD_WREN,
@@ -910,6 +987,7 @@ static int qspi_write_status_register(const struct device *dev, uint8_t reg_num,
 	return qspi_write_access(dev, &cmd, regs_p, size);
 }
 
+/* Function send a Write Enable and wait it is effective. */
 static int qspi_write_enable(const struct device *dev)
 {
 	uint8_t reg;
@@ -1185,6 +1263,17 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return ret;
 	}
 
+
+#ifdef CONFIG_STM32_MEMMAP
+	/* If MemoryMapped then configure skip init */
+	if (qspi_is_memorymap(dev)) {
+		LOG_INF("NOR init'd in MemMapped mode\n");
+		/* Force HAL instance in correct state */
+		dev_data->hqspi.State = HAL_QSPI_STATE_BUSY_MEM_MAPPED;
+		return 0;
+	}
+#endif /* CONFIG_STM32_MEMMAP */
+
 #if STM32_QSPI_RESET_GPIO
 	flash_stm32_qspi_gpio_reset(dev);
 #endif
@@ -1364,6 +1453,19 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+#ifdef CONFIG_STM32_MEMMAP
+	ret = qspi_set_memorymap(dev);
+
+	if (ret != 0) {
+		LOG_ERR("Error (%d): setting NOR in MemoryMapped mode", ret);
+		return -EINVAL;
+	}
+	LOG_INF("NOR in MemoryMapped mode at 0x%lx (0x%x bytes)",
+		(long)(STM32_QSPI_BASE_ADDRESS),
+		dev_cfg->flash_size);
+
+#endif /* CONFIG_STM32_MEMMAP */
+
 	return 0;
 }
 
@@ -1420,7 +1522,7 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 		.bus = DT_CLOCKS_CELL(STM32_QSPI_NODE, bus)
 	},
 	.irq_config = flash_stm32_qspi_irq_config_func,
-	.flash_size = DT_INST_PROP(0, size) / 8U,
+	.flash_size = DT_REG_ADDR_BY_IDX(DT_INST(0, st_stm32_qspi_nor), 1),
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 #if STM32_QSPI_RESET_GPIO
