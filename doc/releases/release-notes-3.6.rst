@@ -176,6 +176,9 @@ Build system and infrastructure
   After this change users may need to define them for their own applications or libraries if they
   require them.
 
+* Added support for sysbuild setting a signing script (``SIGNING_SCRIPT``), see
+  :ref:`west-extending-signing` for details.
+
 Drivers and Sensors
 *******************
 
