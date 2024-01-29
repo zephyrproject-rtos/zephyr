@@ -971,7 +971,7 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 	}
 
 	return -EBUSY;
-#endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  != 0 */
+#else /* CONFIG_BT_CTLR_CENTRAL_SPACING != 0 */
 
 	*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
 			  (EVENT_TICKER_RES_MARGIN_US << 1U);
@@ -979,6 +979,7 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 	*cis_offset_min += cig->sync_delay - cis->sync_delay;
 
 	return 0;
+#endif /* CONFIG_BT_CTLR_CENTRAL_SPACING != 0 */
 }
 
 #if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
