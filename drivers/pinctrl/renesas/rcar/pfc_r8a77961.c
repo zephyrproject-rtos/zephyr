@@ -5,8 +5,8 @@
  *
  */
 
-#include "pinctrl_soc.h"
-#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a77951.h>
+#include <pinctrl_soc.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a77961.h>
 
 const struct pfc_drive_reg pfc_drive_regs[] = {
 	/* DRVCTRL0 */
