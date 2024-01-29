@@ -1953,6 +1953,20 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 	return call->index;
 }
 
+static void tbs_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct service_inst *inst = data;
+	uint16_t mtu = bt_gatt_get_mtu(conn);
+	size_t len = strlen(inst->provider_name);
+
+	if (len > (mtu - 3)) {
+		len = mtu - 3;
+	}
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_PROVIDER_NAME, inst->attrs,
+			    inst->provider_name, len);
+}
+
 int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 {
 	struct service_inst *inst = inst_lookup_index(bearer_index);
@@ -1970,8 +1984,7 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 
 	(void)utf8_lcpy(inst->provider_name, name, sizeof(inst->provider_name));
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_PROVIDER_NAME, inst->attrs, inst->provider_name,
-			    strlen(inst->provider_name));
+	bt_conn_foreach(BT_CONN_TYPE_LE, tbs_ntf_cb, inst);
 	return 0;
 }
 
@@ -2092,9 +2105,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 
 	LOG_DBG("TBS instance %u uri prefix list is now %s", bearer_index, inst->uri_scheme_list);
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_URI_LIST,
-			    inst->inst.attrs, &inst->uri_scheme_list,
-			    strlen(inst->uri_scheme_list));
+	bt_conn_foreach(BT_CONN_TYPE_LE, tbs_ntf_cb, inst);
 
 	if (IS_ENABLED(CONFIG_BT_GTBS)) {
 		NET_BUF_SIMPLE_DEFINE(uri_scheme_buf, READ_BUF_SIZE);
