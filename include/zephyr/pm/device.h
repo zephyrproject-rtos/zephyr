@@ -56,6 +56,16 @@ enum pm_device_flag {
 
 /** @endcond */
 
+/** @brief Flag indicating that runtime PM API for the device can be called from any context.
+ *
+ * If @ref PM_DEVICE_ISR_SAFE flag is used for device definition, it indicates that PM actions
+ * are synchronous and can be executed from any context. This approach can be used for cases where
+ * suspending and resuming is short as it is executed in the critical section. This mode requires
+ * less resources (~80 byte less RAM) and allows to use device runtime PM from any context
+ * (including interrupts).
+ */
+#define PM_DEVICE_ISR_SAFE 1
+
 /** @brief Device power states. */
 enum pm_device_state {
 	/** Device is in active or regular state. */
@@ -315,30 +325,14 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  *
  * @param dev_id Device id.
  * @param pm_action_cb PM control callback.
+ * @param ... Optional flag to indicate that ISR safe. Use @ref PM_DEVICE_ISR_SAFE or 0.
  *
  * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DT_INST_DEFINE
  */
-#define PM_DEVICE_DEFINE(dev_id, pm_action_cb) \
-	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb, 0)
+#define PM_DEVICE_DEFINE(dev_id, pm_action_cb, ...)			\
+	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb,	\
+			COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (__VA_ARGS__)))
 
-/**
- * Define device PM resources for the given device name.
- *
- * PM actions are synchronous and can be executed from any context. This approach
- * can be used for cases where suspending and resuming is short as it is
- * executed in the critical section. This mode requires less resources (~80 byte
- * less RAM) and allows to use device runtime PM from any context (including
- * interrupts).
- *
- * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
- *
- * @param dev_id Device id.
- * @param pm_action_cb PM control callback.
- *
- * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DT_INST_DEFINE
- */
-#define PM_DEVICE_ISR_SYNC_DEFINE(dev_id, pm_action_cb) \
-	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb, 1)
 /**
  * Define device PM resources for the given node identifier.
  *
@@ -346,30 +340,13 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  *
  * @param node_id Node identifier.
  * @param pm_action_cb PM control callback.
+ * @param ... Optional flag to indicate that device is isr_ok. Use @ref PM_DEVICE_ISR_SAFE or 0.
  *
  * @see #PM_DEVICE_DT_INST_DEFINE, #PM_DEVICE_DEFINE
  */
-#define PM_DEVICE_DT_DEFINE(node_id, pm_action_cb) \
-	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id), pm_action_cb, 0)
-
-/**
- * Define device PM resources for the given node identifier.
- *
- * PM actions are synchronous and can be executed from any context. This approach
- * can be used for cases where suspending and resuming is short as it is
- * executed in the critical section. This mode requires less resources (~80 byte
- * less RAM) and allows to use device runtime PM from any context (including
- * interrupts).
- *
- * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
- *
- * @param node_id Node identifier.
- * @param pm_action_cb PM control callback.
- *
- * @see #PM_DEVICE_DT_INST_DEFINE, #PM_DEVICE_DEFINE
- */
-#define PM_DEVICE_ISR_SAFE_DT_DEFINE(node_id, pm_action_cb) \
-	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id), pm_action_cb, 1)
+#define PM_DEVICE_DT_DEFINE(node_id, pm_action_cb, ...) \
+	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id), pm_action_cb, \
+			COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (__VA_ARGS__)))
 
 /**
  * Define device PM resources for the given instance.
@@ -378,34 +355,15 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  *
  * @param idx Instance index.
  * @param pm_action_cb PM control callback.
+ * @param ... Optional flag to indicate that device is isr_ok. Use @ref PM_DEVICE_ISR_SAFE or 0.
  *
  * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DEFINE
  */
-#define PM_DEVICE_DT_INST_DEFINE(idx, pm_action_cb)			\
+#define PM_DEVICE_DT_INST_DEFINE(idx, pm_action_cb, ...)		\
 	Z_PM_DEVICE_DEFINE(DT_DRV_INST(idx),				\
 			   Z_DEVICE_DT_DEV_ID(DT_DRV_INST(idx)),	\
-			   pm_action_cb, 0)
-
-/**
- * Define device PM resources for the given instance.
- *
- * PM actions are synchronous and can be executed from any context. This approach
- * can be used for cases where suspending and resuming is short as it is
- * executed in the critical section. This mode requires less resources (~80 byte
- * less RAM) and allows to use device runtime PM from any context (including
- * interrupts).
- *
- * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
- *
- * @param idx Instance index.
- * @param pm_action_cb PM control callback.
- *
- * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DEFINE
- */
-#define PM_DEVICE_ISR_SAFE_DT_INST_DEFINE(idx, pm_action_cb)	 \
-	Z_PM_DEVICE_DEFINE(DT_DRV_INST(idx),			 \
-			   Z_DEVICE_DT_DEV_ID(DT_DRV_INST(idx)), \
-			   pm_action_cb, 1)
+			   pm_action_cb,				\
+			   COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (__VA_ARGS__)))
 
 /**
  * @brief Obtain a reference to the device PM resources for the given device.

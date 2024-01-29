@@ -74,11 +74,9 @@ int test_driver_init(const struct device *dev)
 	return 0;
 }
 
-#if CONFIG_TEST_PM_DEVICE_ISR_SAFE
-PM_DEVICE_ISR_SAFE_DEFINE(test_driver, test_driver_action);
-#else
-PM_DEVICE_DEFINE(test_driver, test_driver_action);
-#endif
+#define PM_DEVICE_TYPE COND_CODE_1(CONFIG_TEST_PM_DEVICE_ISR_SAFE, (PM_DEVICE_ISR_SAFE), (0))
+
+PM_DEVICE_DEFINE(test_driver, test_driver_action, PM_DEVICE_TYPE);
 
 static struct test_driver_data data;
 
