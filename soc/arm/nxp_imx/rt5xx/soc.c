@@ -530,6 +530,14 @@ static int nxp_rt500_init(void)
 	CACHE64_DisableCache(CACHE64_CTRL0);
 #endif
 
+	/* Some ROM versions may have errata leaving these pins in a non-reset state,
+	 * which can often cause power leakage on most expected board designs,
+	 * restore the reset state here and leave the pin configuration up to board/user DT
+	 */
+	IOPCTL->PIO[1][15] = 0;
+	IOPCTL->PIO[3][28] = 0;
+	IOPCTL->PIO[3][29] = 0;
+
 	return 0;
 }
 
