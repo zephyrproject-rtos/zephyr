@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include "stm32_min_dev.dtsi"
-
 / {
 	model = "STM32 Minimum Development Board (Black)";
 	compatible = "stm32_min_dev_black", "st,stm32f103c8";
