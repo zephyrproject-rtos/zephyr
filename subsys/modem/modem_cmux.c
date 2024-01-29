@@ -568,7 +568,8 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 	written = ring_buf_put(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
 	k_mutex_unlock(&dlci->receive_rb_lock);
 	if (written != cmux->frame.data_len) {
-		LOG_WRN("DLCI %u receive buffer overrun", dlci->dlci_address);
+		LOG_WRN("DLCI %u receive buffer overrun (dropped %u out of %u bytes)",
+			dlci->dlci_address, cmux->frame.data_len - written, cmux->frame.data_len);
 	}
 	modem_pipe_notify_receive_ready(&dlci->pipe);
 }
@@ -610,15 +611,14 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 {
 	struct modem_cmux_dlci *dlci;
 
+	modem_cmux_log_received_frame(&cmux->frame);
+
 	dlci = modem_cmux_find_dlci(cmux);
-
 	if (dlci == NULL) {
-		LOG_WRN("Could not find DLCI: %u", cmux->frame.dlci_address);
-
+		LOG_WRN("Ignoring frame intended for unconfigured DLCI %u.",
+			cmux->frame.dlci_address);
 		return;
 	}
-
-	modem_cmux_log_received_frame(&cmux->frame);
 
 	switch (cmux->frame.type) {
 	case MODEM_CMUX_FRAME_TYPE_UA:
@@ -647,10 +647,9 @@ static void modem_cmux_on_frame(struct modem_cmux *cmux)
 {
 	if (cmux->frame.dlci_address == 0) {
 		modem_cmux_on_control_frame(cmux);
-		return;
+	} else {
+		modem_cmux_on_dlci_frame(cmux);
 	}
-
-	modem_cmux_on_dlci_frame(cmux);
 }
 
 static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t byte)
@@ -834,6 +833,9 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	/* Receive data from pipe */
 	ret = modem_pipe_receive(cmux->pipe, buf, sizeof(buf));
 	if (ret < 1) {
+		if (ret < 0) {
+			LOG_ERR("Pipe receiving error: %d", ret);
+		}
 		return;
 	}
 
@@ -880,12 +882,17 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 		ret = modem_pipe_transmit(cmux->pipe, reserved, reserved_size);
 		if (ret < 0) {
 			ring_buf_get_finish(&cmux->transmit_rb, 0);
+			if (ret != -EPERM) {
+				LOG_ERR("Failed to %s %u bytes. (%d)",
+					"transmit", reserved_size, ret);
+			}
 			break;
 		}
 
 		ring_buf_get_finish(&cmux->transmit_rb, (uint32_t)ret);
 
 		if (ret < reserved_size) {
+			LOG_DBG("Transmitted only %u out of %u bytes at once.", ret, reserved_size);
 			break;
 		}
 	}
