@@ -405,6 +405,28 @@ ZTEST(pthread, test_sched_getscheduler)
 
 	zassert_true((rc == -1 && err == ENOSYS));
 }
+ZTEST(pthread, test_sched_setparam)
+{
+	struct sched_param param = {
+		.sched_priority = 2,
+	};
+	int rc = sched_setparam(0, &param);
+	int err = errno;
+
+	zassert_true((rc == -1 && err == ENOSYS));
+}
+
+ZTEST(pthread, test_sched_setscheduler)
+{
+	struct sched_param param = {
+		.sched_priority = 2,
+	};
+	int policy = 0;
+	int rc = sched_setscheduler(0, policy, &param);
+	int err = errno;
+
+	zassert_true((rc == -1 && err == ENOSYS));
+}
 
 ZTEST(pthread, test_pthread_equal)
 {
