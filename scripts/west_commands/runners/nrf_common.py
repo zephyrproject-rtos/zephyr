@@ -178,9 +178,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # A map from SoCs which need this check to their UICR address
         # ranges. If self.family isn't in here, do nothing.
         uicr_ranges = {
-            'NRF53': ((0x00FF8000, 0x00FF8800),
-                      (0x01FF8000, 0x01FF8800)),
-            'NRF91': ((0x00FF8000, 0x00FF8800),),
+            'NRF53_FAMILY': ((0x00FF8000, 0x00FF8800),
+                             (0x01FF8000, 0x01FF8800)),
+            'NRF91_FAMILY': ((0x00FF8000, 0x00FF8800),),
         }
 
         if self.family not in uicr_ranges:
