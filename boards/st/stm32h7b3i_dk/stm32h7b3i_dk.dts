@@ -55,7 +55,8 @@
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		/* Frame buffer memory cache will cause screen flickering. */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 	};
 
 	transceiver0: can-phy0 {
