@@ -865,14 +865,17 @@ static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cf
 	/* Note: ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS is just information that extra_data
 	 * is required in case of this ull_adv_sync_pdu_alloc.
 	 */
+	extra_data = NULL;
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS, &pdu_prev, &pdu,
 				     NULL, &extra_data, ter_idx);
 	if (err != BT_HCI_ERR_SUCCESS) {
 		return err;
 	}
 
-	ull_adv_sync_extra_data_set_clear(NULL, extra_data, ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0,
-					  df_cfg);
+	if (extra_data) {
+		ull_adv_sync_extra_data_set_clear(NULL, extra_data, ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+						  0, df_cfg);
+	}
 
 #if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
 	if (df_cfg->cte_count > 1) {
