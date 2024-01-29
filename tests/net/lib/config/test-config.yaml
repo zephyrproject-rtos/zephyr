@@ -1,0 +1,134 @@
+# This is a network configuration data that is used to validate that the
+# configuration can be applied automatically when the device boots.
+#
+# In this test, we have multiple devices and network interface. The test
+# enables the network config library, it reads the configuration when the
+# device boots, and then the test checks that the configuration is applied
+# correctly to the network stack.
+#
+# Some of the network interfaces are dummy ones and some Ethernet ones.
+# The Ethernet devices are needed to validate the VLAN configuration.
+# The virtual interface is used to verity that it can be bound to some
+# other network interface.
+#
+net:
+  network-interfaces:
+    # First Ethernet interface in the system. We change its name in the
+    # testing process.
+    - &main-interface
+      name: eth0
+      set-name: test-eth0
+      set-default: true
+      IPv6:
+        status: enabled
+        addresses:
+          - 2001:db8:110::1
+        multicast-addresses:
+          - ff05::114
+          - ff15::115
+        prefixes:
+          - address: "2001:db8::"
+            len: 64
+            lifetime: 1024
+        hop-limit: 48
+        multicast-hop-limit: 2
+        DHCPv6:
+          status: enabled
+          do-request-address: true
+          do-request-prefix: false
+      IPv4:
+        status: enabled
+        addresses:
+          - 192.0.2.10/24
+        multicast-addresses:
+          - 234.0.0.10
+        gateway: 192.0.2.1
+        time-to-live: 128
+        multicast-time-to-live: 3
+        DHCPv4: enabled
+        IPv4-autoconf: enabled
+
+    # For this interface we do not know its name, but we know what device
+    # it is bound to.
+    - &device-interface
+      device: eth_2
+      set-name: test-eth1
+      flags:
+        - no-auto-start
+      IPv4:
+        status: enabled
+        addresses:
+          - "192.0.2.22/24"
+        gateway: 192.0.2.2
+        time-to-live: 10
+        multicast-time-to-live: 1
+        DHCPv4: disabled
+        DHCPv4-server:
+          status: enabled
+          base-address: 192.0.2.128
+
+    # This virtual interface bound to the first one
+    - name: virt0
+      bind-to: *main-interface
+      IPv6:
+        status: enabled
+        addresses:
+          - 2001:db8:111::2
+      IPv4:
+        status: disabled
+
+    # This VLAN interface that attaches to second Ethernet interface
+    - &vlan-interface
+      set-name: vlan0
+      bind-to: *device-interface
+      VLAN:
+        status: enabled
+        tag: 2432
+      IPv4:
+        status: enabled
+        DHCPv4: enabled
+
+    # This 2nd VLAN interface is attached to one of the Ethernet interfaces
+    - set-name: vlan1
+      bind-to: *main-interface
+      VLAN:
+        status: enabled
+        tag: 1234
+      IPv4:
+        status: enabled
+        DHCPv4: enabled
+
+    # This virtual interface bound to the VLAN interface
+    - name: virt1
+      set-name: virt-over-vlan
+      bind-to: *vlan-interface
+      IPv6:
+        status: enabled
+        addresses:
+          - 2001:db8:abcd::11
+
+    # This interface IPv4 configuration is set to disabled
+    # in which case its IPv4 configuration is skipped
+    - name: dummy0
+      IPv6:
+        status: enabled
+      IPv4:
+        status: disabled
+        addresses:
+          - 192.2.0.2
+        gateway: 192.2.0.1
+        time-to-live: 10
+        multicast-time-to-live: 2
+
+    # This interface IPv4 and IPv6 configuration are both disabled.
+    # Basically the interface is non functional for IP connectivity.
+    - name: dummy1
+      IPv6:
+        status: disabled
+      IPv4:
+        status: disabled
+
+  SNTP:
+    server: sntp.foo.bar
+    timeout: 30
+    bind-to: *vlan-interface
