@@ -212,10 +212,12 @@ config PRIVILEGED_STACK_SIZE
 
 endif # XTENSA_MMU
 
+endif # CPU_HAS_MMU
+
 config XTENSA_SYSCALL_USE_HELPER
 	bool "Use userspace syscall helper"
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
-	depends on USERSPACE
+	depends on XTENSA_MMU && USERSPACE
 	help
 	  Use syscall helpers for passing more then 3 arguments.
 	  This is a workaround for toolchains where they have
@@ -223,9 +225,7 @@ config XTENSA_SYSCALL_USE_HELPER
 
 config XTENSA_INSECURE_USERSPACE
 	bool
-	default y if USERSPACE
-	depends on XTENSA_MMU
-
-endif # CPU_HAS_MMU
+	default y
+	depends on XTENSA_MMU && USERSPACE
 
 endmenu
