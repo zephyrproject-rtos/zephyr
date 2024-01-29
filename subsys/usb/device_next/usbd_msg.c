@@ -94,3 +94,16 @@ void usbd_msg_pub_simple(struct usbd_contex *const ctx,
 		usbd_msg_pub(ctx, msg);
 	}
 }
+
+void usbd_msg_pub_device(struct usbd_contex *const ctx,
+			 const enum usbd_msg_type type, const struct device *const dev)
+{
+	const struct usbd_msg msg = {
+		.type = type,
+		.dev = dev,
+	};
+
+	if (ctx->msg_cb != NULL) {
+		usbd_msg_pub(ctx, msg);
+	}
+}
