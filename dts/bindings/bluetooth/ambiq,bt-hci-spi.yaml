@@ -27,6 +27,6 @@ properties:
     type: phandle-array
     description: |
       This clkreq gpio is used to send the XO32MHz clock request to host from
-      from controller. The host needs to enable XO32MHz when receiving low to
-      high edge interrupt and disable XO32MHz when receiving high to low edge
-      interrupt.
+      controller. The host needs to enable XO32MHz when receiving low to high
+      edge interrupts and disable XO32MHz when receiving high to low edge
+      interrupts.

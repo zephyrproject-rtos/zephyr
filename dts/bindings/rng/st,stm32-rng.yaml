@@ -19,7 +19,7 @@ properties:
                    <&rcc STM32_SRC_MSI CLK48_SEL(3)> /* RNG clock domain set to MSI */
          A correctly configured domain clock is required to allow the integrated low
          sampling clock detection mechanism to behave properly.
-         In provided example, MSI should be configured to provide 48Mhz clock.
+         In the provided example, MSI should be configured to provide 48Mhz clock.
 
   nist-config:
     type: int

@@ -51,7 +51,7 @@ description: |
            ...
   }
   In this example, I2C1 device is assigned HSI as domain clock source.
-  Domain clock is independent from the bus/gatted clock and allows access to the device's
+  Domain clock is independent from the bus/gated clock and allows access to the device's
   register while the gated clock is off. As it doesn't feed the peripheral's controller, it
   allows peripheral operation, but can't be used for peripheral configuration.
   It is peripheral driver's responsibility to query and use clock source information in
