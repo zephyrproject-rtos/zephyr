@@ -277,15 +277,23 @@ fail:
 	k_condvar_broadcast(&wait_start);
 }
 
-K_THREAD_DEFINE(socket_service_monitor, CONFIG_NET_SOCKETS_SERVICE_STACK_SIZE,
-		socket_service_thread, NULL, NULL, NULL,
-		CLAMP(CONFIG_NET_SOCKETS_SERVICE_THREAD_PRIO,
-		      K_HIGHEST_APPLICATION_THREAD_PRIO,
-		      K_LOWEST_APPLICATION_THREAD_PRIO), 0, 0);
-
 static int init_socket_service(void)
 {
-	k_thread_name_set(socket_service_monitor, "net_socket_service");
+	k_tid_t ssm;
+	static struct k_thread service_thread;
+
+	static K_THREAD_STACK_DEFINE(service_thread_stack,
+				     CONFIG_NET_SOCKETS_SERVICE_STACK_SIZE);
+
+	ssm = k_thread_create(&service_thread,
+			      service_thread_stack,
+			      K_THREAD_STACK_SIZEOF(service_thread_stack),
+			      (k_thread_entry_t)socket_service_thread, NULL, NULL, NULL,
+			      CLAMP(CONFIG_NET_SOCKETS_SERVICE_THREAD_PRIO,
+				    K_HIGHEST_APPLICATION_THREAD_PRIO,
+				    K_LOWEST_APPLICATION_THREAD_PRIO), 0, K_NO_WAIT);
+
+	k_thread_name_set(ssm, "net_socket_service");
 
 	return 0;
 }
