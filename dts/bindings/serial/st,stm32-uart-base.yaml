@@ -90,7 +90,7 @@ properties:
   fifo-enable:
     type: boolean
     description: |
-      Enables transmit and receive FIFO using default FIFO configuration (typically thresholds
+      Enables transmit and receive FIFO using default FIFO configuration (typically threshold is
       set to 1/8).
       In TX, FIFO allows to work in burst mode, easing scheduling of loaded applications. It also
       allows more reliable communication with UART devices sensitive to variation of inter-frames

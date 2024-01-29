@@ -19,7 +19,7 @@ description: |
     or a value between <dma-generators>+1  ..  <dma-generators>+<dma-requests>
     3. channel-config: A 32bit mask specifying the DMA channel configuration
     A name custom DMA flags for channel configuration is used
-    which is device dependent see stm32_dma.h:
+    which is device dependent. See stm32_dma.h:
       -bit 5 : DMA  cyclic mode config
                 0x0: STM32_DMA_MODE_NORMAL
                 0x1: STM32_DMA_MODE_CYCLIC

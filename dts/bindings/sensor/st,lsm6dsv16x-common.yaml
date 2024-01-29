@@ -135,7 +135,7 @@ properties:
     description: |
       Specify the default gyro output data rate expressed in samples per second (Hz).
       The values are taken in accordance to lsm6dsv16x_data_rate_t enumerative in hal/st
-      module. Please note that this values will not change the operating mode, which will remain
+      module. Please note that these values will not change the operating mode, which will remain
       High Performance (device default). Moreover, the values here which will be selected in the
       DT are the only way to specify the odr accuracy even at runtime with
       SENSOR_ATTR_SAMPLING_FREQUENCY.
