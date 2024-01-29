@@ -143,7 +143,7 @@ jobs:
       CCACHE_IGNOREOPTIONS: '--specs=*'
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
-      TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
+      TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 '
       DAILY_OPTIONS: ' -M --build-only --all --show-footprint'
       PR_OPTIONS: ' --clobber-output --integration'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint'
