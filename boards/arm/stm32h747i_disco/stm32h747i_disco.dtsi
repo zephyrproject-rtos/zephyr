@@ -118,3 +118,7 @@
 		     &spi5_miso_pj11 &spi5_mosi_pj10>;
 	pinctrl-names = "default";
 };
+
+&mailbox {
+	status = "okay";
+};
