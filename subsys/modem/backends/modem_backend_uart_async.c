@@ -185,8 +185,9 @@ static int modem_backend_uart_async_transmit(void *data, const uint8_t *buf, siz
 	ret = uart_tx(backend->uart, backend->async.transmit_buf, bytes_to_transmit,
 		      CONFIG_MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS * 1000L);
 
-	if (ret < 0) {
-		LOG_WRN("Failed to start async transmit");
+	if (ret != 0) {
+		LOG_ERR("Failed to %s %u bytes. (%d)",
+			"start async transmit for", bytes_to_transmit, ret);
 		return ret;
 	}
 
