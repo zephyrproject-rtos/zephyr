@@ -57,7 +57,7 @@ struct qdec_s32_data {
 	uint32_t counter_CW;
 	uint32_t counter_CCW;
 	int32_t abs_counter;
-	float micro_ticks_per_rev;
+	double micro_ticks_per_rev;
 	uint32_t ticks_per_sec;
 	uint32_t emios_cw_overflow_count;
 	uint32_t emios_ccw_overflow_count;
@@ -423,7 +423,7 @@ static int qdec_s32_initialize(const struct device *dev)
 #define QDEC_NXP_S32_INIT(n)									\
 												\
 	static struct qdec_s32_data qdec_s32_##n##_data = {					\
-		.micro_ticks_per_rev = (float)(DT_INST_PROP(n, micro_ticks_per_rev) / 1000000),	\
+		.micro_ticks_per_rev = (double)(DT_INST_PROP(n, micro_ticks_per_rev) / 1000000),\
 		.counter_CW = 1,								\
 		.counter_CCW = 1,								\
 	};											\
