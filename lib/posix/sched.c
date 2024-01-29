@@ -70,3 +70,34 @@ int sched_getscheduler(pid_t pid)
 
 	return -1;
 }
+
+/**
+ * @brief Set scheduling parameters
+ *
+ * See IEEE 1003.1
+ */
+int sched_setparam(pid_t pid, const struct sched_param *param)
+{
+	ARG_UNUSED(pid);
+	ARG_UNUSED(param);
+
+	errno = ENOSYS;
+
+	return -1;
+}
+
+/**
+ * @brief Set scheduling policy
+ *
+ * See IEEE 1003.1
+ */
+int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param)
+{
+	ARG_UNUSED(pid);
+	ARG_UNUSED(policy);
+	ARG_UNUSED(param);
+
+	errno = ENOSYS;
+
+	return -1;
+}
