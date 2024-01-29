@@ -840,6 +840,25 @@ ZTEST(dhcpv4_server_tests, test_inform)
 	verify_lease_count(0, 0, 0);
 }
 
+/* Verify that the DHCP server can start and validate input properly. */
+ZTEST(dhcpv4_server_tests_no_init, test_initialization)
+{
+	struct in_addr base_addr_wrong_subnet = { { { 192, 0, 3, 10 } } };
+	struct in_addr base_addr_overlap = { { { 192, 0, 2, 1 } } };
+	int ret;
+
+	ret = net_dhcpv4_server_start(test_ctx.iface, &base_addr_wrong_subnet);
+	zassert_equal(ret, -EINVAL, "Started server for wrong subnet");
+
+	ret = net_dhcpv4_server_start(test_ctx.iface, &base_addr_overlap);
+	zassert_equal(ret, -EINVAL, "Started server for overlapping address");
+
+	ret = net_dhcpv4_server_start(test_ctx.iface, &test_base_addr);
+	zassert_ok(ret, "Failed to start server for valid address range");
+
+	net_dhcpv4_server_stop(test_ctx.iface);
+}
+
 static void dhcpv4_server_tests_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
@@ -865,3 +884,5 @@ static void dhcpv4_server_tests_after(void *fixture)
 
 ZTEST_SUITE(dhcpv4_server_tests, NULL, NULL, dhcpv4_server_tests_before,
 	    dhcpv4_server_tests_after, NULL);
+
+ZTEST_SUITE(dhcpv4_server_tests_no_init, NULL, NULL, NULL, NULL, NULL);
