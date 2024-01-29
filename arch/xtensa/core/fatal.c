@@ -132,8 +132,6 @@ FUNC_NORETURN void z_system_halt(unsigned int reason)
 
 FUNC_NORETURN void arch_syscall_oops(void *ssf)
 {
-	ARG_UNUSED(ssf);
-
 	xtensa_arch_kernel_oops(K_ERR_KERNEL_OOPS, ssf);
 
 	CODE_UNREACHABLE;
