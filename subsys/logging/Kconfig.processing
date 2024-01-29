@@ -13,6 +13,10 @@ config LOG_PRINTK
 	  If enabled, printk messages are redirected to the logging subsystem.
 	  The messages are formatted in place and logged unconditionally.
 
+config LOG_PRINTK_STATIC
+	bool "Static processing of printk messages"
+	depends on LOG_PRINTK
+
 if LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
 
 config LOG_MODE_OVERFLOW

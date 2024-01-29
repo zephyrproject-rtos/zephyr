@@ -99,6 +99,7 @@ endif # LOG_MIPI_SYST_ENABLE
 config LOG_DICTIONARY_SUPPORT
 	bool
 	select LOG_DICTIONARY_DB
+	imply LOG_PRINTK_STATIC
 	help
 	  Enable support for dictionary based logging.
 

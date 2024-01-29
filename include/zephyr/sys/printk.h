@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_SYS_PRINTK_H_
 
 #include <zephyr/toolchain.h>
+#include <zephyr/logging/log.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <inttypes.h>
@@ -44,7 +45,16 @@ extern "C" {
  */
 #ifdef CONFIG_PRINTK
 
+#if defined(CONFIG_LOG_PRINTK_STATIC)
+/* If printk is redirected to the logging use the macro which allow build time
+ * logging message creation which is faster and allows format string stripping in
+ * case of dictionary based logging.
+ */
+#define printk(...) LOG_PRINTK(__VA_ARGS__)
+#else
 __printf_like(1, 2) void printk(const char *fmt, ...);
+#endif /* CONFIG_LOG_PRINTK_STATIC */
+
 __printf_like(1, 0) void vprintk(const char *fmt, va_list ap);
 
 #else

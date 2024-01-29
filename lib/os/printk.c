@@ -202,6 +202,7 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
  * @param fmt formatted string to output
  */
 
+#if !CONFIG_LOG_PRINTK_STATIC
 void printk(const char *fmt, ...)
 {
 	va_list ap;
@@ -213,6 +214,8 @@ void printk(const char *fmt, ...)
 	va_end(ap);
 }
 EXPORT_SYMBOL(printk);
+#endif
+
 #endif /* defined(CONFIG_PRINTK) */
 
 #ifndef CONFIG_PICOLIBC
