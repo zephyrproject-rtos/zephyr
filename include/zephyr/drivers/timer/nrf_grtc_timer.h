@@ -113,7 +113,7 @@ int z_nrf_grtc_timer_compare_read(int32_t chan, uint64_t *val);
  *
  * @param chan Channel ID.
  *
- * @param target_time Absolute target time in ticks.
+ * @param target_time Absolute target time in GRTC ticks.
  *
  * @param handler User function called in the context of the GRTC interrupt.
  *
