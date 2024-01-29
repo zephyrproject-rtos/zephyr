@@ -250,6 +250,7 @@
 			interrupts = <6 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c1: i2c@50005000 {
@@ -259,6 +260,7 @@
 			interrupts = <7 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c2: i2c@50006000 {
@@ -268,6 +270,7 @@
 			interrupts = <8 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c3: i2c@50007000 {
@@ -277,6 +280,7 @@
 			interrupts = <9 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c4: i2c@50008000 {
@@ -286,6 +290,7 @@
 			interrupts = <10 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c5: i2c@50009000 {
@@ -295,6 +300,7 @@
 			interrupts = <11 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		adc0: adc@50010000 {
