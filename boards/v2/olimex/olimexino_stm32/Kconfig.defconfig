@@ -5,9 +5,6 @@
 
 if BOARD_OLIMEXINO_STM32
 
-config BOARD
-	default "olimexino_stm32"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
