@@ -5,6 +5,7 @@
  */
 #ifndef ZEPHYR_INCLUDE_POSIX_STROPTS_H_
 #define ZEPHYR_INCLUDE_POSIX_STROPTS_H_
+#define RS_HIPRI BIT(0)
 
 #ifdef __cplusplus
 extern "C" {
