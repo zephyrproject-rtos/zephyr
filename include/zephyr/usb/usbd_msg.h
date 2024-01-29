@@ -44,6 +44,10 @@ enum usbd_msg_type {
 	USBD_MSG_UDC_ERROR,
 	/** Unrecoverable device stack error message  */
 	USBD_MSG_STACK_ERROR,
+	/** CDC ACM Line Coding update */
+	USBD_MSG_CDC_ACM_LINE_CODING,
+	/** CDC ACM Line State update */
+	USBD_MSG_CDC_ACM_CONTROL_LINE_STATE,
 	/** Maximum number of message types */
 	USBD_MSG_MAX_NUMBER,
 };
@@ -57,6 +61,8 @@ static const char *const usbd_msg_type_list[] = {
 	"Bus reset",
 	"Controller error",
 	"Stack error",
+	"CDC ACM line coding",
+	"CDC ACM control line state",
 };
 
 BUILD_ASSERT(ARRAY_SIZE(usbd_msg_type_list) == USBD_MSG_MAX_NUMBER,
