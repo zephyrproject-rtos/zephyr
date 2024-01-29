@@ -19,8 +19,8 @@ description: |
   keypad {
           compatible = "zephyr,lvgl-keypad-input";
           input = <&buttons>;
-          input-codes = <INPUT_KEY_1, INPUT_KEY_2>;
-          lvgl-codes = <LV_KEY_NEXT, LV_KEY_PREV>;
+          input-codes = <INPUT_KEY_1 INPUT_KEY_2>;
+          lvgl-codes = <LV_KEY_NEXT LV_KEY_PREV>;
   };
 
 compatible: "zephyr,lvgl-keypad-input"
