@@ -332,18 +332,21 @@ uint64_t z_nrf_grtc_timer_get_ticks(k_timeout_t t)
 	int64_t curr_tick;
 	int64_t result;
 	int64_t abs_ticks;
+	int64_t grtc_ticks;
 
 	curr_time = counter();
 	curr_tick = sys_clock_tick_get();
 
+	grtc_ticks = t.ticks * CYC_PER_TICK;
 	abs_ticks = Z_TICK_ABS(t.ticks);
 	if (abs_ticks < 0) {
 		/* relative timeout */
-		return (t.ticks > (int64_t)COUNTER_SPAN) ? -EINVAL : (curr_time + t.ticks);
+		return (grtc_ticks > (int64_t)COUNTER_SPAN) ?
+			-EINVAL : (curr_time + grtc_ticks);
 	}
 
 	/* absolute timeout */
-	result = abs_ticks - curr_tick;
+	result = (abs_ticks - curr_tick) * CYC_PER_TICK;
 
 	if (result > (int64_t)COUNTER_SPAN) {
 		return -EINVAL;
