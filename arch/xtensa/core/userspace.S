@@ -265,8 +265,6 @@ xtensa_userspace_enter:
 	/* stash user stack */
 	l32i a0, a1, 4
 
-	addi a1, a1, 28
-
 	/* Go back to user stack */
 	mov a1, a0
 
