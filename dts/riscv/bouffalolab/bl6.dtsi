@@ -24,6 +24,7 @@
 			riscv,pmpregions = <4>;
 
 			ictrl: interrupt-controller {
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
 				interrupt-controller;
@@ -61,7 +62,8 @@
 			reg = <0x2000000 0x10000>;
 			reg-names = "control";
 
-			#interrupt-cells = <1>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 
 			interrupts-extended = <&ictrl 3 &ictrl 7 &ictrl 11 &ictrl 12>;

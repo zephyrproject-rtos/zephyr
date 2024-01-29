@@ -8,6 +8,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 192000000
 
 config NUM_IRQS
-	default 64
+	default 80
+
+config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	default 0
+
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	default 8
 
 endif   # SOC_SERIES_BL6
