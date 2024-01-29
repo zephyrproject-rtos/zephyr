@@ -57,12 +57,12 @@ description: |
   intmux[20 mod 8] |= 0x02 << (20 mod 4);
 
   These results in Cortex-M0+ NVIC line 20 handling PSoC-6 interrupt source 2.
-  The interrupt can be enabled/disable at NVIC at line 20 as usual.
+  The interrupt can be enabled/disabled at NVIC at line 20 as usual.
 
   Notes:
   1) Multiple definitions will generate multiple interrupts
-  2) The interrupt sources are shared between Cortex-M0+/M4. These means, can
-     trigger action in parallel in both processors.
+  2) The interrupt sources are shared between Cortex-M0+/M4. This means, they
+     can trigger actions in parallel on both processors.
   3) User can change priority at Cortex-M0+ NVIC by changing interrupt channels
      at interrupt-parent properties.
   4) Only the peripherals used by Cortex-M0+ should be configured.
