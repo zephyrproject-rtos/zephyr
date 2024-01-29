@@ -8,8 +8,8 @@ Overview
 
 The STM32WB5MM-DK Discovery kit is designed as a complete demonstration
 and development platform for the STMicroelectronics STM32W5MMG module based
-on the Arm |reg| Cortex |reg|-M4 and Arm |reg|  Cortex |reg|-M0+ cores. The
-STM32 device is a multi-protocol wireless and ultra-low-power device
+on the Arm |reg| Cortex |reg|-M4 and Arm |reg|  Cortex |reg|-M0+ cores.
+The STM32 device is a multi-protocol wireless and ultra-low-power device
 embedding a powerful and ultra-low-power radio compliant with the
 Bluetooth |reg| Low Energy (BLE) SIG specification v5.2 and with
 IEEE 802.15.4-2011.
@@ -29,6 +29,7 @@ STM32WB5MM-DK supports the following features:
     - RGB LED
     - Infrared LED
     - 3 push-buttons (2 users and 1 reset) and 1 touch key button
+
 * Board connectors:
     - STMod+
     - ARDUINO |reg| Uno V3 expansion connector
@@ -41,6 +42,7 @@ STM32WB5MM-DK supports the following features:
         - ARDUINO |reg|,
         - external connector,
         - USB charger, or USB power
+
 * On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration
     - Virtual COM port and debug port
 
@@ -49,30 +51,32 @@ STM32WB5MM-DK supports the following features:
    :align: center
    :alt: STM32WB5MM-DK
 
-More information about the board can be found at the `` `STM32WB5MM-DK on www.st.com`_.
+More information about the board can be found in `STM32WB5MM-DK on www.st.com`_.
 
 Hardware
 ********
 
 STM32WB5MMG is an ultra-low-power and small form factor certified 2.4 GHz
-wireless module. It supportsBluetooth |reg| Low Energy 5.4, Zigbee |reg| 3.0,
-OpenThread, dynamic, and static concurrent modes, and 802.15.4proprietary
-protocols. Based on the STMicroelectronics STM32WB55VGY wireless
-microcontroller,STM32WB5MMG provides best-in-class RF performance thanks
-to its high receiver sensitivity and output power signal. Its low-power
-features enable extended battery life, small coin-cell batteries, and
-energy harvesting.
+wireless module. It supports Bluetooth |reg| Low Energy 5.4, Zigbee |reg| 3.0,
+OpenThread, dynamic, and static concurrent modes, and 802.15.4 proprietary
+protocols.
+
+Based on the STMicroelectronics STM32WB55VGY wireless microcontroller,
+STM32WB5MMG provides best-in-class RF performance thanks to its high
+receiver sensitivity and output power signal. Its low-power features
+enable extended battery life, small coin-cell batteries, and energy harvesting.
 
 - Ultra-low-power with FlexPowerControl
 - Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
 - Radio:
-- 2.4GHz
 
+  - 2.4GHz
   - RF transceiver supporting:
 
     - Bluetooth |reg| 5.4 specification,
     - IEEE 802.15.4-2011 PHY and MAC,
-    - Zigbee|reg| 3.0
+    - Zigbee |reg| 3.0
+
   - RX sensitivity:
 
     - -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps),
@@ -130,13 +134,15 @@ Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 To operate bluetooth on STM32WB5MMG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
-Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
+``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``.
+
 For compatibility information with the various versions of these binaries,
 please check `modules/hal/stm32/lib/stm32wb/hci/README`_
-in the hal_stm32 repo.
-Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
-anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
-side.
+in the ``hal_stm32`` repo.
+
+Note that since STM32WB Cube package V1.13.2, `"full stack"` binaries are not
+compatible anymore for a use in Zephyr and only `"HCI Only"` versions should be
+used on the M0 side.
 
 Connections and IOs
 ===================
@@ -162,7 +168,7 @@ Serial Port
 -----------
 
 STM32WB5MM-DK board has 2 (LP)U(S)ARTs. The Zephyr console output is assigned to USART1.
-Default settings are 115200 8N1.
+Default settings are ``115200 8N1``.
 
 
 Programming and Debugging
@@ -174,12 +180,12 @@ usual way (see :ref:`build_an_application`).
 Flashing
 ========
 
-STM32WB5MM-DK has onboard ST-Link to flash and debug the firmware on the
+STM32WB5MM-DK has an on-board ST-Link to flash and debug the firmware on the
 module.
 
 
-Flashing `hello_world` application to STM32WB5MM-DK
-----------------------------------------------------
+Flashing ``hello_world`` application to STM32WB5MM-DK
+------------------------------------------------------
 
 Connect the STM32WB5MM-DK to your host computer using the USB port (CN11).
 Then build and flash an application. Here is an example for the ``hello_world``
