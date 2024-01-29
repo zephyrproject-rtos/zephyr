@@ -122,9 +122,14 @@ _id_ok:
 	wur.THREADPTR a0
 #endif
 
-	/* Set syscall parameters. We have an initial call4 to set up the
-	 * the stack and then a new call4 for the syscall function itself.
-	 * So parameters should be put as if it was a call8.
+	/* Set syscall parameters by moving them into place before we do
+	 * a call4 for the syscall function itself.
+	 * arg1 = a6
+	 * arg2 = a3 (clobbered above, so we need to reload it)
+	 * arg3 = a4
+	 * arg4 = a5
+	 * arg5 = a8
+	 * arg6 = a9
 	 */
 	mov a10, a8
 	mov a11, a9
@@ -141,7 +146,7 @@ _id_ok:
 	wsr.ps a0
 	rsync
 
-	call4 _syscall_call0
+	callx4 a2
 
 	/* copy return value. Lets put it in the top of stack
 	 * because registers will be clobbered in
@@ -151,12 +156,6 @@ _id_ok:
 	s32i a6, a3, ___xtensa_irq_bsa_t_a2_OFFSET
 
 	j _syscall_returned
-
-.align 4
-_syscall_call0:
-	/* We want an ENTRY to set a bit in windowstart */
-	jx a2
-
 
 _syscall_returned:
 	call0 xtensa_restore_high_regs
