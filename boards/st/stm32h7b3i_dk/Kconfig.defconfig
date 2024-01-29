@@ -1,6 +1,7 @@
 # STM32H7B3I DISCOVERY KIT board configuration
 
 # Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_STM32H7B3I_DK
@@ -15,5 +16,39 @@ config INPUT_FT5336_INTERRUPT
 # display buffer to external SDRAM connected to FMC
 config MEMC
 	default y if DISPLAY
+
+if LVGL
+
+config CACHE_MANAGEMENT
+	default y
+
+config LV_USE_GPU_STM32_DMA2D
+	default y
+
+config LV_GPU_DMA2D_CMSIS_INCLUDE
+	default "stm32h7xx.h"
+
+config STM32_LTDC_FB_NUM
+	default 2
+
+config LV_Z_VDB_SIZE
+	default 100
+
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_FULL_REFRESH
+	default y
+
+config LV_Z_VBD_CUSTOM_SECTION
+	default y
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+config LV_Z_BITS_PER_PIXEL
+	default 16 if STM32_LTDC_RGB565
+
+endif # LVGL
 
 endif # BOARD_STM32H7B3I_DK
