@@ -9,6 +9,9 @@
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <am_mcu_apollo.h>
 
@@ -186,6 +189,12 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		return 0;
 	}
 
+	ret = pm_device_runtime_get(dev);
+
+	if (ret < 0) {
+		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+	}
+
 	/* Send out messages */
 	k_sem_take(&data->bus_sem, K_FOREVER);
 
@@ -203,6 +212,15 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	}
 
 	k_sem_give(&data->bus_sem);
+
+	/* Use async put to avoid useless device suspension/resumption
+	 * when doing consecutive transmission.
+	 */
+	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
+
+	if (ret < 0) {
+		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+	}
 
 	return 0;
 }
@@ -259,6 +277,34 @@ static const struct i2c_driver_api i2c_ambiq_driver_api = {
 	.transfer = i2c_ambiq_transfer,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct i2c_ambiq_data *data = dev->data;
+	uint32_t ret;
+	am_hal_sysctrl_power_state_e status;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		status = AM_HAL_SYSCTRL_WAKE;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		status = AM_HAL_SYSCTRL_DEEPSLEEP;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = am_hal_iom_power_ctrl(data->iom_handler, status, true);
+
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		return -EPERM;
+	} else {
+		return 0;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define AMBIQ_I2C_DEFINE(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static int pwr_on_ambiq_i2c_##n(void)                                                      \
@@ -287,7 +333,8 @@ static const struct i2c_driver_api i2c_ambiq_driver_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = i2c_irq_config_func_##n,                                        \
 		.pwr_func = pwr_on_ambiq_i2c_##n};                                                 \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_init, NULL, &i2c_ambiq_data##n,                     \
+	PM_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_pm_action);                                          \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_init, PM_DEVICE_DT_INST_GET(n), &i2c_ambiq_data##n, \
 				  &i2c_ambiq_config##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
 				  &i2c_ambiq_driver_api);
 
