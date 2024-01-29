@@ -34,9 +34,6 @@ struct char_framebuffer {
 	/** Size of the framebuffer */
 	uint32_t size;
 
-	/** Pointer to the font entry array */
-	const struct cfb_font *fonts;
-
 	/** Display pixel format */
 	enum display_pixel_format pixel_format;
 
@@ -51,9 +48,6 @@ struct char_framebuffer {
 
 	/** Number of pixels per tile, typically 8 */
 	uint8_t ppt;
-
-	/** Number of available fonts */
-	uint8_t numof_fonts;
 
 	/** Current font index */
 	uint8_t font_idx;
@@ -86,6 +80,17 @@ static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *
 	return 0;
 }
 
+static inline const struct cfb_font *font_get(uint32_t idx)
+{
+	static const struct cfb_font *fonts = TYPE_SECTION_START(cfb_font);
+
+	if (idx < cfb_get_numof_fonts()) {
+		return fonts + idx;
+	}
+
+	return NULL;
+}
+
 /*
  * Draw the monochrome character in the monochrome tiled framebuffer,
  * a byte is interpreted as 8 pixels ordered vertically among each other.
@@ -94,7 +99,7 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 				char c, int16_t x, int16_t y,
 				bool draw_bg)
 {
-	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+	const struct cfb_font *fptr = font_get(fb->font_idx);
 	const bool font_is_msbfirst = ((fptr->caps & CFB_FONT_MSB_FIRST) != 0);
 	const bool need_reverse =
 		(((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0) != font_is_msbfirst);
@@ -265,11 +270,11 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 	const struct char_framebuffer *fb = &char_fb;
 	const struct cfb_font *fptr;
 
-	if (!fb->fonts || !fb->buf) {
+	if (!fb->buf) {
 		return -ENODEV;
 	}
 
-	fptr = &(fb->fonts[fb->font_idx]);
+	fptr = font_get(fb->font_idx);
 
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
 		for (size_t i = 0; i < strlen(str); i++) {
@@ -514,7 +519,7 @@ int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx)
 {
 	struct char_framebuffer *fb = &char_fb;
 
-	if (idx >= fb->numof_fonts) {
+	if (idx >= cfb_get_numof_fonts()) {
 		return -EINVAL;
 	}
 
@@ -523,12 +528,9 @@ int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx)
 	return 0;
 }
 
-int cfb_get_font_size(const struct device *dev, uint8_t idx, uint8_t *width,
-		      uint8_t *height)
+int cfb_get_font_size(uint8_t idx, uint8_t *width, uint8_t *height)
 {
-	const struct char_framebuffer *fb = &char_fb;
-
-	if (idx >= fb->numof_fonts) {
+	if (idx >= cfb_get_numof_fonts()) {
 		return -EINVAL;
 	}
 
@@ -550,11 +552,15 @@ int cfb_set_kerning(const struct device *dev, int8_t kerning)
 	return 0;
 }
 
-int cfb_get_numof_fonts(const struct device *dev)
+int cfb_get_numof_fonts(void)
 {
-	const struct char_framebuffer *fb = &char_fb;
+	static int numof_fonts;
 
-	return fb->numof_fonts;
+	if (numof_fonts == 0) {
+		STRUCT_SECTION_COUNT(cfb_font, &numof_fonts);
+	}
+
+	return numof_fonts;
 }
 
 int cfb_framebuffer_init(const struct device *dev)
@@ -565,10 +571,6 @@ int cfb_framebuffer_init(const struct device *dev)
 
 	api->get_capabilities(dev, &cfg);
 
-	STRUCT_SECTION_COUNT(cfb_font, &fb->numof_fonts);
-
-	LOG_DBG("number of fonts %d", fb->numof_fonts);
-
 	fb->x_res = cfg.x_resolution;
 	fb->y_res = cfg.y_resolution;
 	fb->ppt = 8U;
@@ -578,7 +580,6 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->kerning = 0;
 	fb->inverted = false;
 
-	fb->fonts = TYPE_SECTION_START(cfb_font);
 	fb->font_idx = 0U;
 
 	fb->size = fb->x_res * fb->y_res / fb->ppt;

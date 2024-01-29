@@ -213,24 +213,23 @@ int cfb_set_kerning(const struct device *dev, int8_t kerning);
 /**
  * @brief Get font size.
  *
- * @param dev Pointer to device structure for driver instance
+ * Get width and height of font that is specified by idx.
+ *
  * @param idx Font index
  * @param width Pointers to the variable where the font width will be stored.
  * @param height Pointers to the variable where the font height will be stored.
  *
- * @return 0 on success, negative value otherwise
+ * @retval 0 on success
+ * @retval -EINVAL If you specify idx for a font that does not exist
  */
-int cfb_get_font_size(const struct device *dev, uint8_t idx, uint8_t *width,
-		      uint8_t *height);
+int cfb_get_font_size(uint8_t idx, uint8_t *width, uint8_t *height);
 
 /**
  * @brief Get number of fonts.
  *
- * @param dev Pointer to device structure for driver instance
- *
  * @return number of fonts
  */
-int cfb_get_numof_fonts(const struct device *dev);
+int cfb_get_numof_fonts(void);
 
 /**
  * @brief Initialize Character Framebuffer.

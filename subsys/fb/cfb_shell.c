@@ -319,7 +319,7 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 
 	idx = strtol(argv[1], NULL, 10);
 
-	err = cfb_get_font_size(dev, idx, &width, &height);
+	err = cfb_get_font_size(idx, &width, &height);
 	if (err) {
 		shell_error(sh, "Invalid font idx=%d err=%d\n", idx, err);
 		return err;
@@ -419,8 +419,8 @@ static int cmd_get_fonts(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	for (int idx = 0; idx < cfb_get_numof_fonts(dev); idx++) {
-		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
+	for (int idx = 0; idx < cfb_get_numof_fonts(); idx++) {
+		if (cfb_get_font_size(idx, &font_width, &font_height)) {
 			break;
 		}
 		shell_print(sh, "idx=%d height=%d width=%d", idx,

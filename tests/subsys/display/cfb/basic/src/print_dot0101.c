@@ -39,8 +39,8 @@ static void cfb_test_before(void *text_fixture)
 
 	zassert_ok(cfb_framebuffer_init(dev));
 
-	for (int idx = 0; idx < cfb_get_numof_fonts(dev); idx++) {
-		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
+	for (int idx = 0; idx < cfb_get_numof_fonts(); idx++) {
+		if (cfb_get_font_size(idx, &font_width, &font_height)) {
 			break;
 		}
 
