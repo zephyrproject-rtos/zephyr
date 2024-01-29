@@ -24,11 +24,26 @@ except ImportError:
 ErrNotAvailableBecauseProtection = 24
 ErrVerify = 25
 
+UICR_RANGES = {
+    'NRF53_FAMILY': {
+        'NRFDL_DEVICE_CORE_APPLICATION': (0x00FF8000, 0x00FF8800),
+        'NRFDL_DEVICE_CORE_NETWORK': (0x01FF8000, 0x01FF8800),
+    },
+    'NRF54H_FAMILY': {
+        'NRFDL_DEVICE_CORE_APPLICATION': (0x0FFF8000, 0x0FFF8800),
+        'NRFDL_DEVICE_CORE_NETWORK': (0x0FFFA000, 0x0FFFA800),
+    },
+    'NRF91_FAMILY': {
+        'NRFDL_DEVICE_CORE_APPLICATION': (0x00FF8000, 0x00FF8800),
+    }
+}
+
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
     def __init__(self, cfg, family, softreset, dev_id, erase=False,
-                 reset=True, tool_opt=[], force=False, recover=False):
+                 reset=True, tool_opt=[], force=False, recover=False,
+                 erase_all_uicrs=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         if family and not family.endswith('_FAMILY'):
@@ -40,6 +55,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
+        self.erase_all_uicrs = bool(erase_all_uicrs)
 
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -59,7 +75,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--nrf-family',
-                            choices=['NRF51', 'NRF52', 'NRF53', 'NRF54L', 'NRF91'],
+                            choices=['NRF51', 'NRF52', 'NRF53', 'NRF54L',
+                                     'NRF54H', 'NRF91'],
                             help='''MCU family; still accepted for
                             compatibility only''')
         parser.add_argument('--softreset', required=False,
@@ -75,6 +92,11 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             help='''erase all user available non-volatile
                             memory and disable read back protection before
                             flashing (erases flash for both cores on nRF53)''')
+        parser.add_argument('--erase-all-uicrs', required=False,
+                            action='store_true',
+                            help='''Erase all UICR registers before flashing
+                            (nRF54H only). When not set, only UICR registers
+                            present in the hex file will be erased.''')
 
         parser.set_defaults(reset=True)
 
@@ -163,6 +185,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             self.family = 'NRF53_FAMILY'
         elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54LX'):
             self.family = 'NRF54L_FAMILY'
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54HX'):
+            self.family = 'NRF54H_FAMILY'
         elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91X'):
             self.family = 'NRF91_FAMILY'
         else:
@@ -174,21 +198,15 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 return True
         return False
 
-    def hex_has_uicr_content(self):
-        # A map from SoCs which need this check to their UICR address
-        # ranges. If self.family isn't in here, do nothing.
-        uicr_ranges = {
-            'NRF53_FAMILY': ((0x00FF8000, 0x00FF8800),
-                             (0x01FF8000, 0x01FF8800)),
-            'NRF91_FAMILY': ((0x00FF8000, 0x00FF8800),),
-        }
+    def hex_get_uicrs(self):
+        hex_uicrs = {}
 
-        if self.family not in uicr_ranges:
-            return
+        if self.family in UICR_RANGES:
+            for uicr_core, uicr_range in UICR_RANGES[self.family].items():
+                if self.hex_refers_region(*uicr_range):
+                    hex_uicrs[uicr_core] = uicr_range
 
-        for region_start, region_end in uicr_ranges[self.family]:
-            if self.hex_refers_region(region_start, region_end):
-                return True
+        return hex_uicrs
 
     def flush(self, force=False):
         try:
@@ -213,7 +231,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 # If there are data in  the UICR region it is likely that the
                 # verify failed du to the UICR not been erased before, so giving
                 # a warning here will hopefully enhance UX.
-                if self.hex_has_uicr_content():
+                if self.hex_get_uicrs():
                     self.logger.warning(
                         'The hex file contains data placed in the UICR, which '
                         'may require a full erase before reprogramming. Run '
@@ -266,10 +284,23 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family == 'NRF53_FAMILY':
             # nRF53 requires special treatment due to the extra coprocessor.
             self.program_hex_nrf53(erase_arg, qspi_erase_opt)
+        elif self.family == 'NRF54H_FAMILY':
+            self.program_hex_nrf54h()
         else:
             self.op_program(self.hex_, erase_arg, qspi_erase_opt, defer=True)
 
         self.flush(force=False)
+
+    def program_hex_nrf54h(self):
+        if self.erase_all_uicrs:
+            uicrs = UICR_RANGES['NRF54H_FAMILY']
+        else:
+            uicrs = self.hex_get_uicrs()
+
+        for uicr_core, range in uicrs.items():
+            self.exec_op('erasepage', defer=True, core=uicr_core, page=range[0])
+
+        self.op_program(self.hex_, 'NO_ERASE', None, defer=True)
 
     def program_hex_nrf53(self, erase_arg, qspi_erase_opt):
         # program_hex() helper for nRF53.
