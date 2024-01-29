@@ -109,7 +109,7 @@ static void wait_for_start_signal(atomic_t *start_flag)
 static inline void smp_init_top(void *arg)
 {
 	struct k_thread dummy_thread;
-	struct cpu_start_cb *csc = arg;
+	struct cpu_start_cb csc = arg ? *(struct cpu_start_cb *)arg : (struct cpu_start_cb){0};
 
 	/* Let start_cpu() know that this CPU has powered up. */
 	(void)atomic_set(&ready_flag, 1);
@@ -120,17 +120,17 @@ static inline void smp_init_top(void *arg)
 	wait_for_start_signal(&cpu_start_flag);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	if ((csc == NULL) || csc->reinit_timer) {
+	if ((arg == NULL) || csc.reinit_timer) {
 		smp_timer_init();
 	}
 #endif
 
 	/* Do additional initialization steps if needed. */
-	if ((csc != NULL) && (csc->fn != NULL)) {
-		csc->fn(csc->arg);
+	if ((arg != NULL) && (csc.fn != NULL)) {
+		csc.fn(csc.arg);
 	}
 
-	if ((csc != NULL) && !csc->invoke_sched) {
+	if ((arg != NULL) && !csc.invoke_sched) {
 		/* Don't invoke scheduler. */
 		return;
 	}
