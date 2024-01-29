@@ -261,8 +261,13 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	ticks_slot_sync += ticks_slot_overhead;
 
 	/* Calculate total overheads due to extended and periodic advertising */
-	if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET)
+	} else if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
 		ticks_slot_overhead = MAX(ticks_slot_aux, ticks_slot_sync);
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
+
 	} else {
 		ticks_slot_overhead = ticks_slot_aux + ticks_slot_sync;
 	}
