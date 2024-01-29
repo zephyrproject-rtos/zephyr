@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mbox.h>
 
@@ -1119,6 +1120,27 @@ ZTEST(devicetree_api, test_io_channels)
 	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch1), 10, "");
 	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch2), 20, "");
 	zassert_equal(DT_INST_IO_CHANNELS_INPUT(0), 10, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+ZTEST(devicetree_api, test_io_channel_names)
+{
+	struct adc_dt_spec adc_spec;
+
+	/* ADC_DT_SPEC_GET_BY_NAME */
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_NAME(TEST_TEMP, ch1);
+	zassert_equal(adc_spec.channel_id, 10, "");
+
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_NAME(TEST_TEMP, ch2);
+	zassert_equal(adc_spec.channel_id, 20, "");
+
+	/* ADC_DT_SPEC_INST_GET_BY_NAME */
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_NAME(0, ch1);
+	zassert_equal(adc_spec.channel_id, 10, "");
+
+	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_NAME(0, ch2);
+	zassert_equal(adc_spec.channel_id, 20, "");
 }
 
 #undef DT_DRV_COMPAT
