@@ -181,6 +181,9 @@ struct _cpu {
 #endif
 
 #ifdef CONFIG_SMP
+	/* True if CPU must wait on another CPU by spinning */
+	volatile bool keep_spinning;
+
 	/* True when _current is allowed to context switch */
 	uint8_t swap_ok;
 #endif

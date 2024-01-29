@@ -496,6 +496,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	z_waitq_init(&new_thread->join_queue);
 
+#ifdef CONFIG_SMP
+	new_thread->spinning_cpus = 0;
+#endif
+
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);

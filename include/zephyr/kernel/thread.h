@@ -264,6 +264,11 @@ struct k_thread {
 	struct z_poller poller;
 #endif
 
+#if defined(CONFIG_SMP)
+	/** Bitmap of CPUs spinning on this thread */
+	uint32_t spinning_cpus;
+#endif
+
 #if defined(CONFIG_EVENTS)
 	struct k_thread *next_event_link;
 

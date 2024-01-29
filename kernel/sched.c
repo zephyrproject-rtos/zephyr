@@ -698,17 +698,26 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 
 	if (is_halting(thread) && (thread != _current)) {
 		if (arch_is_in_isr()) {
-			/* ISRs can only spin waiting another CPU */
+			_current_cpu->keep_spinning = true;
+			thread->spinning_cpus |= (1 << _current_cpu->id);
+
+			/*
+			 * Spin until the other CPU halts the thread and
+			 * lets us know. See halt_thread().
+			 */
+
 			k_spin_unlock(&_sched_spinlock, key);
-			while (is_halting(thread)) {
+			while (_current_cpu->keep_spinning) {
 			}
 
-			/* Now we know it's halting, but not necessarily
-			 * halted (suspended or aborted). Wait for the switch
-			 * to happen!
-			 */
 			key = k_spin_lock(&_sched_spinlock);
-			z_sched_switch_spin(thread);
+
+			/*
+			 * z_sched_switch_spin() is not needed as taking the
+			 * _sched_spinlock above is sufficient to know for this
+			 * case that everything is adequately synchronized.
+			 */
+
 			k_spin_unlock(&_sched_spinlock, key);
 		} else if (active) {
 			/* Threads can wait on a queue */
@@ -1604,6 +1613,18 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		}
 #ifdef CONFIG_SMP
 		unpend_all(&thread->halt_queue);
+
+		/*
+		 * Inform all CPUs that are waiting by spinning for this
+		 * thread they may proceed. See z_thread_halt().
+		 */
+
+		for (uint32_t id = 0; id < CONFIG_MP_MAX_NUM_CPUS; id++) {
+			if (thread->spinning_cpus & (1 << id)) {
+				thread->spinning_cpus &= ~(1 << id);
+				_kernel.cpus[id].keep_spinning = false;
+			}
+		}
 #endif
 		update_cache(1);
 
