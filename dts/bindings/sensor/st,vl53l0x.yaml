@@ -12,3 +12,21 @@ properties:
     type: phandle-array
     description: |
       Xshutdown pin, Active LOW.
+  max-time-for-ranging:
+    type: int
+    description: |
+      Set max time for ranging in μs
+
+  signal-limit-ratio:
+    type: int
+    description: |
+      Specify a floating point value multiplied by 1000.
+      For example, a value of 1 represents 0.001 in real value.
+      default value 100 is set VL53L0X_SETUP_SIGNAL_LIMIT (0.1 * 65536)
+
+  sigma-limit-ratio:
+    type: int
+    description: | 
+      Specify a floating point value multiplied by 1000.
+      For example, a value of 1 represents 0.001 in real value.
+      default value 60000 is set VL53L0X_SETUP_SIGMA_LIMIT (60 * 65536)
