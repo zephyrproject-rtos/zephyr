@@ -106,7 +106,6 @@ static int frame_duration_100us;
 static int frames_per_sdu;
 static int octets_per_frame;
 
-
 /**
  * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
  *
@@ -122,7 +121,7 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 	const float step = 2 * 3.1415f / sine_period_samples;
 
 	for (unsigned int i = 0; i < num_samples; i++) {
-		const float sample = sin(i * step);
+		const float sample = sinf(i * step);
 
 		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
 	}
