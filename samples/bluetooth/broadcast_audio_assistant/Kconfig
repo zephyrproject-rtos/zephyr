@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Demant A/S
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Broadcast Audio Assistant"
+
+config SELECT_SOURCE_NAME
+	string "Selected Broadcast Source name"
+	default ""
+	help
+	  Name of broadcast source device to select. This will be used as a
+	  substring matched against both BT device name and broadcast name.
+	  If empty, the first broadcast source found will be chosen.
+	  Matching is not case sensitive.
+
+config SELECT_SINK_NAME
+	string "Selected Broadcast Sink name"
+	default ""
+	help
+	  Name of broadcast sink device to select. This will be used as a
+	  substring matched against the BT device name.
+	  If empty, the first broadcast sink found will be chosen.
+	  Matching is not case sensitive.
+
+source "Kconfig.zephyr"
