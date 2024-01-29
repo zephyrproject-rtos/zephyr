@@ -337,3 +337,18 @@ test_spi_ens160: ens160@2a {
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_bd8lb600fs: bd8lb600fs@2b {
+	compatible = "rohm,bd8lb600fs";
+	reg = <0x2b>;
+	spi-max-frequency = <0>;
+	reset-gpios = <&test_gpio 0 0>;
+	instance-count = <1>;
+	status = "okay";
+
+	bd8lb600fs_diagnostics: bd8lb600fs_diagnostics {
+		compatible = "rohm,bd8lb600fs-diagnostics";
+		status = "okay";
+		#sensor-cells = <0>;
+	};
+};
