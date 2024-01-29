@@ -41,4 +41,5 @@ available under :zephyr_file:`doc/templates/board.tmpl`.
    v2/seagate/index.rst
    v2/sparkfun/index.rst
    v2/st/index.rst
+   v2/waveshare/index.rst
    v2/wiznet/index.rst
