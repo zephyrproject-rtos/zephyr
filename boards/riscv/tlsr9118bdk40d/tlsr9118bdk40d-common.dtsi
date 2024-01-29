@@ -31,6 +31,7 @@
 		zephyr,sram = &ram_dlm;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &flash_mspi;
+		telink,ipc-interface = &ipc0;
 		zephyr,entropy = &trng0;
 		zephyr,code-partition = &slot0_partition;
 	};

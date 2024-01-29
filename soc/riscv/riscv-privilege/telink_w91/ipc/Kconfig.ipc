@@ -1,0 +1,46 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config TELINK_W91_IPC_DISPATCHER
+	bool "Telink W91 IPC driver"
+	default y
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ENABLED
+	select MBOX
+	select IPC_SERVICE
+	select IPC_SERVICE_BACKEND_ICMSG
+	help
+		This option enables Telink W91 IPC dispatching extension.
+
+config MBOX_INIT_PRIORITY
+	default 50 if TELINK_W91_IPC_DISPATCHER
+
+config TELINK_W91_IPC_DISPATCHER_INIT_PRIORITY
+	int "Telink IPC dispatcher init priority"
+	default 51
+	depends on TELINK_W91_IPC_DISPATCHER
+	help
+		This option sets Telink IPC dispatcher init priority.
+
+config TELINK_W91_IPC_DRIVERS_INIT_PRIORITY
+	int "Telink IPC drivers init priority"
+	default 52
+	depends on TELINK_W91_IPC_DISPATCHER
+	help
+		This option sets Telink IPC drivers init priority.
+
+config TELINK_W91_IPC_DISPATCHER_BOUND_TIMEOUT_MS
+	int "Telink IPC dispatcher bound timeout"
+	default 1000
+	depends on TELINK_W91_IPC_DISPATCHER
+	help
+		This option sets Telink IPC dispatcher bound timeout in mS.
+
+if SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_REMOTE_DCACHE_LINE
+	default 32
+
+config DCACHE_LINE_SIZE
+	default 32
+
+endif # SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS

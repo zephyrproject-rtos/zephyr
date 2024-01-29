@@ -13,6 +13,13 @@ zephyr_sources(
 	sys_heap_alloc_wrap.c
 )
 
+if(CONFIG_TELINK_W91_IPC_DISPATCHER)
+zephyr_sources(
+	ipc/ipc_dispatcher.c
+	ipc/ipc_based_driver.c
+)
+endif()
+
 if(CONFIG_TELINK_W91_DEBUG_ENABLE)
 zephyr_sources(
 	debug.c

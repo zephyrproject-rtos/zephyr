@@ -3,6 +3,8 @@
 
 if SOC_SERIES_RISCV_TELINK_W91
 
+source "soc/riscv/riscv-privilege/telink_w91/ipc/Kconfig.ipc"
+
 config SOC_SERIES
 	string
 	default "telink_w91"
