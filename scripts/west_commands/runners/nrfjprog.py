@@ -32,7 +32,8 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                                     args.dev_id, erase=args.erase,
                                     reset=args.reset,
                                     tool_opt=args.tool_opt, force=args.force,
-                                    recover=args.recover)
+                                    recover=args.recover,
+                                    erase_all_uicrs=args.erase_all_uicrs)
 
     def do_get_boards(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -46,7 +47,8 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         # Translate the op
 
         families = {'NRF51_FAMILY': 'NRF51', 'NRF52_FAMILY': 'NRF52',
-                    'NRF53_FAMILY': 'NRF53', 'NRF54L_FAMILY': 'NRF54L', 'NRF91_FAMILY': 'NRF91'}
+                    'NRF53_FAMILY': 'NRF53', 'NRF54L_FAMILY': 'NRF54L',
+                    'NRF54H_FAMILY': 'NRF54H', 'NRF91_FAMILY': 'NRF91'}
         cores = {'NRFDL_DEVICE_CORE_APPLICATION': 'CP_APPLICATION',
                  'NRFDL_DEVICE_CORE_NETWORK': 'CP_NETWORK'}
 
