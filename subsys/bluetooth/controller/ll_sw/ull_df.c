@@ -860,6 +860,7 @@ static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cf
 
 	cte_info.type = df_cfg->cte_type;
 	cte_info.time = df_cfg->cte_length;
+	cte_info.rfu = 0U;
 
 	/* Note: ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS is just information that extra_data
 	 * is required in case of this ull_adv_sync_pdu_alloc.
