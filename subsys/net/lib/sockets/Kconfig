@@ -117,7 +117,7 @@ config NET_SOCKETS_SERVICE_STACK_SIZE
 
 config NET_SOCKETS_SERVICE_INIT_PRIO
 	int "Startup priority for the network socket service"
-	default 95
+	default 90
 	depends on NET_SOCKETS_SERVICE
 
 config NET_SOCKETS_SOCKOPT_TLS
