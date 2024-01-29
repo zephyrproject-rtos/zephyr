@@ -380,8 +380,8 @@ _POSIX_PRIORITY_SCHEDULING
     sched_getparam(),
     sched_getscheduler(),
     sched_rr_get_interval(),
-    sched_setparam(),
-    sched_setscheduler(),
+    sched_setparam(),yes
+    sched_setscheduler(),yes
     sched_yield(),yes
 
 .. _posix_option_reader_writer_locks:
