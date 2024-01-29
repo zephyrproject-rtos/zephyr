@@ -13,7 +13,7 @@ are two variants of the board:
 - Blue Pill Board
 - Black Pill Board
 
-Zephyr applications can use the stm32_min_dev_blue or stm32_min_dev_black board
+Zephyr applications can use the stm32_min_dev@blue or stm32_min_dev@black board
 configuration to use these boards.
 
 .. figure:: img/stm32_min_dev.jpg
@@ -154,7 +154,7 @@ variants respectively.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32_min_dev_(blue|black)`` board configuration can be
+Applications for the ``stm32_min_dev@(blue|black)`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -165,7 +165,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32_min_dev_blue
+   :board: stm32_min_dev
    :goals: build flash
 
 Debugging
@@ -176,7 +176,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32_min_dev_blue
+   :board: stm32_min_dev
    :maybe-skip-config:
    :goals: debug
 
