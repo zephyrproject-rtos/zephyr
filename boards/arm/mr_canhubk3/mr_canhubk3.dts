@@ -443,6 +443,7 @@
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	local-mac-address = [02 04 9f aa bb cc];
+	phy-handle = <&phy>;
 	status = "okay";
 };
 
@@ -455,6 +456,7 @@
 		compatible = "nxp,tja1103";
 		status = "okay";
 		reg = <0x12>;
+		int-gpios = <&gpiod_l 5 GPIO_ACTIVE_LOW>;
 		master-slave = "slave";
 	};
 };
