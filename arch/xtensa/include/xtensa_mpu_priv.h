@@ -74,6 +74,23 @@
  */
 
 /**
+ * @name Bit shifts and masks for MPU PPTLB return value.
+ *
+ * @{
+ */
+
+/** Bit shift for segment value. */
+#define XTENSA_MPU_PPTLB_ACCESS_RIGHTS_SHIFT		8U
+
+/** Mask for segment value. */
+#define XTENSA_MPU_PPTLB_ACCESS_RIGHTS_MASK		0x00000F00U
+
+/**
+ * @}
+ */
+
+
+/**
  * Define one MPU entry of type struct xtensa_mpu_entry.
  *
  * @note This needs a comma at the end if used in array declaration.
@@ -138,6 +155,21 @@ static ALWAYS_INLINE uint32_t xtensa_mpu_mpuenb_read(void)
 static ALWAYS_INLINE void xtensa_mpu_mpuenb_write(uint32_t mpuenb)
 {
 	__asm__ __volatile__("wsr.mpuenb %0" : : "a"(mpuenb));
+}
+
+/**
+ * @brief Probe for protection TLB entry from an address.
+ *
+ * @param addr Probe address.
+ *
+ * @return Return of the PPTLB instruction.
+ */
+static ALWAYS_INLINE uint32_t xtensa_pptlb_probe(uintptr_t addr)
+{
+	uint32_t ret;
+
+	__asm__ __volatile__("pptlb  %0, %1\n\t" : "=a"(ret) : "a"(addr));
+	return ret;
 }
 
 /**

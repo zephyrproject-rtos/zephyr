@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
@@ -20,6 +21,11 @@
 #include <xtensa/config/core-matmap.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa_mpu_priv.h>
+
+#ifdef CONFIG_USERSPACE
+BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
+	     (CONFIG_PRIVILEGED_STACK_SIZE % XCHAL_MPU_ALIGN) == 0);
+#endif
 
 extern char _heap_end[];
 extern char _heap_start[];
@@ -602,9 +608,24 @@ out:
  *
  * @param map Pointer to foreground MPU map.
  */
+#ifdef CONFIG_USERSPACE
+/* With userspace enabled, the pointer to per memory domain MPU map is stashed
+ * inside the thread struct. If we still only take struct xtensa_mpu_map as
+ * argument, a wrapper function is needed. To avoid the cost associated with
+ * calling that wrapper function, takes thread pointer directly as argument
+ * when userspace is enabled. Not to mention that writing the map to hardware
+ * is already a costly operation per context switch. So every little bit helps.
+ */
+void xtensa_mpu_map_write(struct k_thread *thread)
+#else
 void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
+#endif
 {
 	int entry;
+
+#ifdef CONFIG_USERSPACE
+	struct xtensa_mpu_map *map = thread->arch.mpu_map;
+#endif
 
 	/*
 	 * Clear MPU entries first, then write MPU entries in reverse order.
@@ -698,5 +719,342 @@ void xtensa_mpu_init(void)
 	consolidate_entries(xtensa_mpu_map_fg_kernel.entries, first_enabled_idx);
 
 	/* Write the map into hardware. There is no turning back now. */
+#ifdef CONFIG_USERSPACE
+	struct k_thread dummy_map_thread;
+
+	dummy_map_thread.arch.mpu_map = &xtensa_mpu_map_fg_kernel;
+	xtensa_mpu_map_write(&dummy_map_thread);
+#else
 	xtensa_mpu_map_write(&xtensa_mpu_map_fg_kernel);
+#endif
 }
+
+#ifdef CONFIG_USERSPACE
+int arch_mem_domain_init(struct k_mem_domain *domain)
+{
+	domain->arch.mpu_map = xtensa_mpu_map_fg_kernel;
+
+	return 0;
+}
+
+int arch_mem_domain_max_partitions_get(void)
+{
+	/*
+	 * Due to each memory region requiring 2 MPU entries to describe,
+	 * it is hard to figure out how many partitions are available.
+	 * For example, if all those partitions are contiguous, it only
+	 * needs 2 entries (1 if the end of region already has an entry).
+	 * If they are all disjoint, it will need (2 * n) entries to
+	 * describe all of them. So just use CONFIG_MAX_DOMAIN_PARTITIONS
+	 * here and let the application set this instead.
+	 */
+	return CONFIG_MAX_DOMAIN_PARTITIONS;
+}
+
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				     uint32_t partition_id)
+{
+	int ret;
+	uint32_t perm;
+	struct xtensa_mpu_map *map = &domain->arch.mpu_map;
+	struct k_mem_partition *partition = &domain->partitions[partition_id];
+	uintptr_t end_addr = partition->start + partition->size;
+
+	if (end_addr <= partition->start) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	/*
+	 * This is simply to get rid of the user permissions and retain
+	 * whatever the kernel permissions are. So that we won't be
+	 * setting the memory region permission incorrectly, for example,
+	 * marking read only region writable.
+	 *
+	 * Note that Zephyr does not do RWX partitions so we can treat it
+	 * as invalid.
+	 */
+	switch (partition->attr) {
+	case XTENSA_MPU_ACCESS_P_RO_U_NA:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RX_U_NA:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RO_U_RO:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RX_U_RX:
+		perm = XTENSA_MPU_ACCESS_P_RO_U_NA;
+		break;
+
+	case XTENSA_MPU_ACCESS_P_RW_U_NA:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RWX_U_NA:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RW_U_RO:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RW_U_RW:
+		__fallthrough;
+	case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+		perm = XTENSA_MPU_ACCESS_P_RW_U_NA;
+		break;
+
+	default:
+		/* _P_X_U_NA is not a valid permission for userspace, so ignore.
+		 * _P_NA_U_X becomes _P_NA_U_NA when removing user permissions.
+		 * _P_WO_U_WO has not kernel only counterpart so just force no access.
+		 * If we get here with _P_NA_P_NA, there is something seriously
+		 * wrong with the userspace and/or application code.
+		 */
+		perm = XTENSA_MPU_ACCESS_P_NA_U_NA;
+		break;
+	}
+
+	/*
+	 * Reset the memory region attributes by simply "adding"
+	 * a region with default attributes. If entries already
+	 * exist for the region, the corresponding entries will
+	 * be updated with the default attributes. Or new entries
+	 * will be added to carve a hole in existing regions.
+	 */
+	ret = mpu_map_region_add(map, partition->start, end_addr,
+				 perm,
+				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+				 NULL);
+
+out:
+	return ret;
+}
+
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				  uint32_t partition_id)
+{
+	int ret;
+	struct xtensa_mpu_map *map = &domain->arch.mpu_map;
+	struct k_mem_partition *partition = &domain->partitions[partition_id];
+	uintptr_t end_addr = partition->start + partition->size;
+
+	if (end_addr <= partition->start) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = mpu_map_region_add(map, partition->start, end_addr,
+				 (uint8_t)partition->attr,
+				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+				 NULL);
+
+out:
+	return ret;
+}
+
+int arch_mem_domain_thread_add(struct k_thread *thread)
+{
+	int ret = 0;
+
+	/* New memory domain we are being added to */
+	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
+
+	/*
+	 * this is only set for threads that were migrating from some other
+	 * memory domain; new threads this is NULL.
+	 */
+	struct xtensa_mpu_map *old_map = thread->arch.mpu_map;
+
+	bool is_user = (thread->base.user_options & K_USER) != 0;
+	bool is_migration = (old_map != NULL) && is_user;
+
+	uintptr_t stack_end_addr = thread->stack_info.start + thread->stack_info.size;
+
+	if (stack_end_addr < thread->stack_info.start) {
+		/* Account for wrapping around back to 0. */
+		stack_end_addr = 0xFFFFFFFFU;
+	}
+
+	/*
+	 * Allow USER access to the thread's stack in its new domain if
+	 * we are migrating. If we are not migrating this is done in
+	 * xtensa_user_stack_perms().
+	 */
+	if (is_migration) {
+		/* Add stack to new domain's MPU map. */
+		ret = mpu_map_region_add(&domain->arch.mpu_map,
+					 thread->stack_info.start, stack_end_addr,
+					 XTENSA_MPU_ACCESS_P_RW_U_RW,
+					 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+					 NULL);
+
+		/* Probably this fails due to no more available slots in MPU map. */
+		__ASSERT_NO_MSG(ret == 0);
+	}
+
+	thread->arch.mpu_map = &domain->arch.mpu_map;
+
+	/*
+	 * Remove thread stack from old memory domain if we are
+	 * migrating away from old memory domain. This is done
+	 * by simply remove USER access from the region.
+	 */
+	if (is_migration) {
+		/*
+		 * Remove stack from old MPU map by...
+		 * "adding" a new memory region to the map
+		 * as this carves a hole in the existing map.
+		 */
+		ret = mpu_map_region_add(old_map,
+					 thread->stack_info.start, stack_end_addr,
+					 XTENSA_MPU_ACCESS_P_RW_U_NA,
+					 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+					 NULL);
+	}
+
+	/*
+	 * Need to switch to new MPU map if this is the current
+	 * running thread.
+	 */
+	if (thread == _current_cpu->current) {
+		xtensa_mpu_map_write(thread);
+	}
+
+	return ret;
+}
+
+int arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	uintptr_t stack_end_addr;
+	int ret;
+
+	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
+
+	if ((thread->base.user_options & K_USER) == 0) {
+		ret = 0;
+		goto out;
+	}
+
+	if ((thread->base.thread_state & _THREAD_DEAD) == 0) {
+		/* Thread is migrating to another memory domain and not
+		 * exiting for good; we weren't called from
+		 * z_thread_abort().  Resetting the stack region will
+		 * take place in the forthcoming thread_add() call.
+		 */
+		ret = 0;
+		goto out;
+	}
+
+	stack_end_addr = thread->stack_info.start + thread->stack_info.size;
+	if (stack_end_addr < thread->stack_info.start) {
+		/* Account for wrapping around back to 0. */
+		stack_end_addr = 0xFFFFFFFFU;
+	}
+
+	/*
+	 * Restore permissions on the thread's stack area since it is no
+	 * longer a member of the domain.
+	 */
+	ret = mpu_map_region_add(&domain->arch.mpu_map,
+				 thread->stack_info.start, stack_end_addr,
+				 XTENSA_MPU_ACCESS_P_RW_U_NA,
+				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+				 NULL);
+
+	xtensa_mpu_map_write(thread);
+
+out:
+	return ret;
+}
+
+int arch_buffer_validate(void *addr, size_t size, int write)
+{
+	uintptr_t aligned_addr;
+	size_t aligned_size, addr_offset;
+	int ret = 0;
+
+	/* addr/size arbitrary, fix this up into an aligned region */
+	aligned_addr = ROUND_DOWN((uintptr_t)addr, XCHAL_MPU_ALIGN);
+	addr_offset = (uintptr_t)addr - aligned_addr;
+	aligned_size = ROUND_UP(size + addr_offset, XCHAL_MPU_ALIGN);
+
+	for (size_t offset = 0; offset < aligned_size;
+	     offset += XCHAL_MPU_ALIGN) {
+		uint32_t probed = xtensa_pptlb_probe(aligned_addr + offset);
+
+		uint8_t access_rights = (probed & XTENSA_MPU_PPTLB_ACCESS_RIGHTS_MASK)
+					>> XTENSA_MPU_PPTLB_ACCESS_RIGHTS_SHIFT;
+
+		if (write) {
+			/* Need to check write permission. */
+			switch (access_rights) {
+			case XTENSA_MPU_ACCESS_P_WO_U_WO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RW:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+				/* These permissions are okay. */
+				break;
+			default:
+				ret = -EPERM;
+				goto out;
+			}
+		} else {
+			/* Only check read permission. */
+			switch (access_rights) {
+			case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RO_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RW:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+				/* These permissions are okay. */
+				break;
+			default:
+				ret = -EPERM;
+				goto out;
+			}
+		}
+	}
+
+out:
+	return ret;
+}
+
+void xtensa_user_stack_perms(struct k_thread *thread)
+{
+	int ret;
+
+	uintptr_t stack_end_addr = thread->stack_info.start + thread->stack_info.size;
+
+	if (stack_end_addr < thread->stack_info.start) {
+		/* Account for wrapping around back to 0. */
+		stack_end_addr = 0xFFFFFFFFU;
+	}
+
+	(void)memset((void *)thread->stack_info.start,
+		     (IS_ENABLED(CONFIG_INIT_STACKS)) ? 0xAA : 0x00,
+		     thread->stack_info.size - thread->stack_info.delta);
+
+	/* Add stack to new domain's MPU map. */
+	ret = mpu_map_region_add(thread->arch.mpu_map,
+				 thread->stack_info.start, stack_end_addr,
+				 XTENSA_MPU_ACCESS_P_RW_U_RW,
+				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+				 NULL);
+
+	xtensa_mpu_map_write(thread);
+
+	/* Probably this fails due to no more available slots in MPU map. */
+	ARG_UNUSED(ret);
+	__ASSERT_NO_MSG(ret == 0);
+}
+
+#endif /* CONFIG_USERSPACE */

@@ -191,6 +191,85 @@ struct xtensa_mpu_map {
 };
 
 /**
+ * @name Memory domain and partitions
+ * @{
+ */
+
+typedef uint32_t k_mem_partition_attr_t;
+
+static inline bool xtensa_mem_partition_is_executable(k_mem_partition_attr_t access_rights)
+{
+	bool is_exec;
+
+	switch (access_rights) {
+	case XTENSA_MPU_ACCESS_P_X_U_NA:
+	case XTENSA_MPU_ACCESS_P_NA_U_X:
+	case XTENSA_MPU_ACCESS_P_RX_U_NA:
+	case XTENSA_MPU_ACCESS_P_RWX_U_NA:
+	case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+	case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+	case XTENSA_MPU_ACCESS_P_RX_U_RX:
+	case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+		is_exec = true;
+		break;
+	default:
+		is_exec = false;
+		break;
+	};
+
+	return is_exec;
+}
+
+static inline bool xtensa_mem_partition_is_writable(k_mem_partition_attr_t access_rights)
+{
+	bool is_writable;
+
+	switch (access_rights) {
+	case XTENSA_MPU_ACCESS_P_RW_U_NA:
+	case XTENSA_MPU_ACCESS_P_RWX_U_NA:
+	case XTENSA_MPU_ACCESS_P_WO_U_WO:
+	case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+	case XTENSA_MPU_ACCESS_P_RW_U_RO:
+	case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+	case XTENSA_MPU_ACCESS_P_RW_U_RW:
+	case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+		is_writable = true;
+		break;
+	default:
+		is_writable = false;
+		break;
+	};
+
+	return is_writable;
+}
+
+#define K_MEM_PARTITION_IS_EXECUTABLE(access_rights) \
+	(xtensa_mem_partition_is_executable(access_rights))
+
+#define K_MEM_PARTITION_IS_WRITABLE(access_rights) \
+	(xtensa_mem_partition_is_writable(access_rights))
+
+/* Read-Write access permission attributes */
+#define K_MEM_PARTITION_P_RW_U_RW \
+	((k_mem_partition_attr_t) {XTENSA_MPU_ACCESS_P_RW_U_RW})
+#define K_MEM_PARTITION_P_RW_U_NA \
+	((k_mem_partition_attr_t) {XTENSA_MPU_ACCESS_P_RW_U_NA})
+#define K_MEM_PARTITION_P_RO_U_RO \
+	((k_mem_partition_attr_t) {XTENSA_MPU_ACCESS_P_RO_U_RO})
+#define K_MEM_PARTITION_P_RO_U_NA \
+	((k_mem_partition_attr_t) {XTENSA_MPU_ACCESS_P_RO_U_NA})
+#define K_MEM_PARTITION_P_NA_U_NA \
+	((k_mem_partition_attr_t) {XTENSA_MPU_ACCESS_P_NA_U_NA})
+
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RX_U_RX \
+	((k_mem_partition_attr_t) {XTENSA_MPU_ACCESS_P_RX_U_RX})
+
+/**
+ * @}
+ */
+
+/**
  * Struct to describe a memory region [start, end).
  */
 struct xtensa_mpu_range {
