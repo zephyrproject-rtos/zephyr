@@ -93,6 +93,7 @@ source "drivers/i2c/Kconfig.mchp_mss"
 source "drivers/i2c/Kconfig.sedi"
 source "drivers/i2c/Kconfig.ambiq"
 source "drivers/i2c/Kconfig.numaker"
+source "drivers/i2c/Kconfig.mcux"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
