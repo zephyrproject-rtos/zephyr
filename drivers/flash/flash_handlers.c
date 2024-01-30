@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,7 +95,7 @@ static inline int z_vrfy_flash_sfdp_read(const struct device *dev,
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(data, len));
 	return z_impl_flash_sfdp_read(dev, offset, data, len);
 }
-#include <syscalls/flash_sfdp_read.c>
+#include <syscalls/flash_sfdp_read_mrsh.c>
 
 static inline int z_vrfy_flash_read_jedec_id(const struct device *dev,
 					     uint8_t *id)
@@ -103,7 +104,7 @@ static inline int z_vrfy_flash_read_jedec_id(const struct device *dev,
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(id, 3));
 	return z_impl_flash_read_jedec_id(dev, id);
 }
-#include <syscalls/flash_sfdp_jedec_id.c>
+#include <syscalls/flash_read_jedec_id_mrsh.c>
 
 #endif /* CONFIG_FLASH_JESD216_API */
 
