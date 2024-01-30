@@ -6,13 +6,12 @@ description: |
 
     Representation of a serial flash on a octospi bus:
 
-        mx25lm51245: ospi-nor-flash@0 {
+        mx25lm51245: ospi-nor-flash@70000000 {
                 compatible = "st,stm32-ospi-nor";
-                reg = <0>;
+                reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
                 data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
                 data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
                 ospi-max-frequency = <DT_FREQ_M(50)>;
-                size = <DT_SIZE_M(64*8)>; /* 512 Mbit */
                 status = "okay";
         };
 
@@ -25,13 +24,11 @@ on-bus: ospi
 properties:
   reg:
     required: true
+    description: Flash Memory base address and size in bytes
   ospi-max-frequency:
     type: int
     required: true
     description: Maximum clock frequency of device's OSPI interface in Hz
-  size:
-    required: true
-    description: Flash Memory size in bits
   reset-gpios:
     type: phandle-array
     description: RESETn pin
