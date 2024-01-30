@@ -379,6 +379,10 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_TIMEOUT,
 	/** Connection failed - AP not found */
 	WIFI_STATUS_CONN_AP_NOT_FOUND,
+	/** Last connection status */
+	WIFI_STATUS_CONN_LAST_STATUS,
+	/** Connection disconnected status */
+	WIFI_STATUS_DISCONN_FIRST_STATUS = WIFI_STATUS_CONN_LAST_STATUS,
 };
 
 /** Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -386,7 +390,7 @@ enum wifi_conn_status {
  */
 enum wifi_disconn_reason {
 	/** Unspecified reason */
-	WIFI_REASON_DISCONN_UNSPECIFIED = 0,
+	WIFI_REASON_DISCONN_UNSPECIFIED = WIFI_STATUS_DISCONN_FIRST_STATUS,
 	/** Disconnected due to user request */
 	WIFI_REASON_DISCONN_USER_REQUEST,
 	/** Disconnected due to AP leaving */
