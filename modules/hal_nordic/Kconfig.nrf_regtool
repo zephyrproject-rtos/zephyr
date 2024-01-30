@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "nrf-regtool options"
+	depends on SOC_SERIES_NRF54HX
+
+config NRF_REGTOOL_GENERATE_UICR
+	bool "Generate UICR"
+	help
+	  Generate a UICR hex based on devicetree contents using nrf-regtool.
+	  CPU domains that require UICR allocation aren't bootable without it
+	  being programmed alongside the firmware.
+
+config NRF_REGTOOL_VERBOSITY
+	int "Verbosity level of console output"
+	range 0 3
+	default 0
+	help
+	  Level of verbose output that nrf-regtool will print to the console.
+
+	  0. Only critical information and warnings.
+	  1. Print a pretty, human-readable representation of a peripheral's
+	     configuration. This is recommended for inspecting register values.
+	  2. Print extra details for debugging purposes, such as memory maps of
+	     the peripheral configurations, but in a less readable format.
+	  3. Print even more details, which are typically only useful for
+	     nrf-regtool developers.
+
+config NRF_REGTOOL_EXTRA_GENERATE_ARGS
+	string "Extra arguments to 'nrf-regtool generate'"
+	help
+	  List of additional arguments to every nrf-regtool invocation used for
+	  generating hex files. Example value: "--fill all --fill-byte 0xff".
+	  Run "nrf-regtool generate -h" to see all of the available options.
+
+endmenu
