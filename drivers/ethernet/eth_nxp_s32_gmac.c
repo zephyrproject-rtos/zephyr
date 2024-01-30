@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
 
@@ -42,6 +43,7 @@ struct eth_nxp_s32_config {
 	uint32_t tx_irq;
 	void (*do_config)(void);
 	const struct pinctrl_dev_config *pincfg;
+	const struct device *phy_dev;
 
 	const Gmac_CtrlConfigType ctrl_cfg;
 	GMAC_Type *base;
@@ -50,6 +52,7 @@ struct eth_nxp_s32_config {
 struct eth_nxp_s32_data {
 	struct net_if *iface;
 	uint8_t mac_addr[ETH_NXP_S32_MAC_ADDR_LEN];
+	uint8_t	if_suspended;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_sem;
 	struct k_sem tx_sem;
@@ -76,6 +79,72 @@ static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx, uint16_t vl
 
 	return ctx->iface;
 #endif
+}
+
+static void convert_phy_to_mac_config(Gmac_Ip_ConfigType *gmac_cfg, enum phy_link_speed phy_speed)
+{
+	switch (phy_speed) {
+	case LINK_HALF_10BASE_T:
+		gmac_cfg->Speed = GMAC_SPEED_10M;
+		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
+		break;
+	case LINK_FULL_10BASE_T:
+		gmac_cfg->Speed = GMAC_SPEED_10M;
+		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
+		break;
+	case LINK_HALF_100BASE_T:
+		gmac_cfg->Speed = GMAC_SPEED_100M;
+		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
+		break;
+	case LINK_FULL_100BASE_T:
+		gmac_cfg->Speed = GMAC_SPEED_100M;
+		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
+		break;
+	case LINK_HALF_1000BASE_T:
+		gmac_cfg->Speed = GMAC_SPEED_1G;
+		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
+		break;
+	case LINK_FULL_1000BASE_T:
+		__fallthrough;
+	default:
+		gmac_cfg->Speed = GMAC_SPEED_1G;
+		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
+		break;
+	}
+}
+
+static void phy_link_state_changed(const struct device *pdev,
+				   struct phy_link_state *state,
+				   void *user_data)
+{
+	const struct device *dev = (struct device *)user_data;
+	const struct eth_nxp_s32_config *cfg = dev->config;
+	struct eth_nxp_s32_data *ctx = dev->data;
+	Gmac_Ip_ConfigType gmac_cfg;
+
+	ARG_UNUSED(pdev);
+
+	if (state->is_up) {
+		/* Porting phy link config to mac */
+		convert_phy_to_mac_config(&gmac_cfg, state->speed);
+		/* Set MAC configuration */
+		Gmac_Ip_SetSpeed(cfg->instance, gmac_cfg.Speed);
+
+		cfg->base->MAC_CONFIGURATION |= GMAC_MAC_CONFIGURATION_DM(gmac_cfg.Duplex);
+
+		/* net iface should be down even if PHY link state is up
+		 * till the upper network layers have suspended the iface.
+		 */
+		if (ctx->if_suspended) {
+			return;
+		}
+
+		LOG_DBG("Link up");
+		net_eth_carrier_on(ctx->iface);
+	} else {
+		LOG_DBG("Link down");
+		net_eth_carrier_off(ctx->iface);
+	}
 }
 
 #if defined(CONFIG_SOC_SERIES_S32K3XX)
@@ -167,11 +236,32 @@ static int eth_nxp_s32_init(const struct device *dev)
 static int eth_nxp_s32_start(const struct device *dev)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
+	struct eth_nxp_s32_data *ctx = dev->data;
+	struct phy_link_state state;
 
 	Gmac_Ip_EnableController(cfg->instance);
 
 	irq_enable(cfg->rx_irq);
 	irq_enable(cfg->tx_irq);
+
+	/* If upper layers enable the net iface then mark it as
+	 * not suspended so that PHY Link changes can have the impact
+	 */
+	ctx->if_suspended = false;
+
+	if (cfg->phy_dev) {
+		phy_get_link_state(cfg->phy_dev, &state);
+
+		/* Enable net_iface only when Ethernet PHY link is up or else
+		 * if net_iface is enabled when link is down and tx happens
+		 * in this state then the used tx buffers will never be recovered back.
+		 */
+		if (state.is_up == true) {
+			net_eth_carrier_on(ctx->iface);
+		}
+	} else {
+		net_eth_carrier_on(ctx->iface);
+	}
 
 	LOG_DBG("GMAC%d started", cfg->instance);
 
@@ -181,11 +271,19 @@ static int eth_nxp_s32_start(const struct device *dev)
 static int eth_nxp_s32_stop(const struct device *dev)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
+	struct eth_nxp_s32_data *ctx = dev->data;
 	Gmac_Ip_StatusType status;
 	int err = 0;
 
-	irq_enable(cfg->rx_irq);
-	irq_enable(cfg->tx_irq);
+	irq_disable(cfg->rx_irq);
+	irq_disable(cfg->tx_irq);
+
+	/* If upper layers disable the net iface then mark it as suspended
+	 * in order to save it from the PHY link state changes
+	 */
+	ctx->if_suspended = true;
+
+	net_eth_carrier_off(ctx->iface);
 
 	status = Gmac_Ip_DisableController(cfg->instance);
 	if (status != GMAC_STATUS_SUCCESS) {
@@ -250,12 +348,34 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	net_if_set_link_addr(iface, ctx->mac_addr, sizeof(ctx->mac_addr), NET_LINK_ETHERNET);
+
 	LOG_INF("GMAC%d MAC address %02x:%02x:%02x:%02x:%02x:%02x", cfg->instance,
 		ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
 		ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
 
+	/* Make sure that the net iface state is not suspended unless
+	 * upper layers explicitly stop the iface
+	 */
+	ctx->if_suspended = false;
+
 	/* No PHY available, link is always up and MAC speed/duplex settings are fixed */
-	net_eth_carrier_on(ctx->iface);
+	if (cfg->phy_dev == NULL) {
+		net_if_carrier_on(iface);
+		return;
+	}
+
+	/*
+	 * GMAC controls the PHY. If PHY is configured either as fixed
+	 * link or autoneg, the callback is executed at least once
+	 * immediately after setting it.
+	 */
+	if (!device_is_ready(cfg->phy_dev)) {
+		LOG_ERR("PHY device (%p) is not ready, cannot init iface",
+			cfg->phy_dev);
+		return;
+	}
+
+	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 }
 
 static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
@@ -737,6 +857,11 @@ BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_
 	LISTIFY(__DEBRACKET FEATURE_GMAC_NUM_INSTANCES,					\
 		ETH_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
+#define ETH_NXP_S32_PHY_DEV(n)								\
+	COND_CODE_1(ETH_NXP_S32_IS_FIXED_LINK(n), NULL,					\
+		(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),			\
+			(DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))), NULL)))
+
 #define ETH_NXP_S32_DEVICE(n)								\
 	ETH_NXP_S32_TX_CALLBACK(n)							\
 	ETH_NXP_S32_RX_CALLBACK(n)							\
@@ -757,6 +882,7 @@ BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_
 		.ctrl_cfg = ETH_NXP_S32_CTRL_CONFIG(n),					\
 		.do_config = eth_nxp_s32_init_config_##n,				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		.phy_dev = ETH_NXP_S32_PHY_DEV(n),					\
 		.rx_irq = DT_INST_IRQ_BY_NAME(n, rx, irq),				\
 		.tx_irq = DT_INST_IRQ_BY_NAME(n, tx, irq),				\
 		.tx_ring_idx = 0U,							\
