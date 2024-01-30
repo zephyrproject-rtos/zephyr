@@ -248,8 +248,8 @@ struct bt_gatt_authorization_cb {
 	 *  @retval true  Authorize the operation and allow it to execute.
 	 *  @retval false Reject the operation and prevent it from executing.
 	 */
-	bool (*read_operation_authorize)(struct bt_conn *conn,
-					 const struct bt_gatt_attr *attr);
+	bool (*read_authorize)(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr);
 
 	/** @brief Authorize the GATT write operation.
 	 *
@@ -262,8 +262,8 @@ struct bt_gatt_authorization_cb {
 	 *  @retval true  Authorize the operation and allow it to execute.
 	 *  @retval false Reject the operation and prevent it from executing.
 	 */
-	bool (*write_operation_authorize)(struct bt_conn *conn,
-					  const struct bt_gatt_attr *attr);
+	bool (*write_authorize)(struct bt_conn *conn,
+				const struct bt_gatt_attr *attr);
 };
 
 /** Characteristic Properties Bit field values */
