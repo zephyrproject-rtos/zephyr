@@ -423,8 +423,8 @@ __rom_region_end = LOADADDR(.last_section) + SIZEOF(.last_section);
 SECTION_PROLOGUE(rom_mpu_padding,(NOLOAD),)
 {
 	MPU_ALIGN(__rom_region_size);
-	__rom_region_end = .;
 } GROUP_LINK_IN(ROMABLE_REGION)
+__rom_region_end = LOADADDR(rom_mpu_padding) + SIZEOF(rom_mpu_padding);
 #endif /* !CONFIG_RISCV_PMP */
 __rom_region_size = __rom_region_end - __rom_region_start;
 #endif
