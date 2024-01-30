@@ -333,24 +333,11 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			 .rxDataWidth = 8,                   /* overwrite by cfg  */               \
 			 .txDataWidth = 8,                   /* overwrite by cfg  */               \
 			 .enableMsbFirst = true,             /* overwrite by cfg  */               \
-			 .subMode = DT_INST_PROP_OR(n, sub_mode, CY_SCB_SPI_MOTOROLA),             \
-			 .oversample =                                                             \
-				 DT_INST_PROP_OR(n, oversample, IFX_CAT1_SPI_DEFAULT_OVERSAMPLE),  \
-			 .enableFreeRunSclk = DT_INST_PROP(n, enable_free_run_sclk),               \
-			 .enableInputFilter = DT_INST_PROP(n, enable_input_filter),                \
-			 .enableMisoLateSample =                                                   \
-				 DT_INST_PROP_OR(n, enable_miso_late_sample, true),                \
-			 .enableTransferSeperation =                                               \
-				 DT_INST_PROP(n, enable_transfer_seperation),                      \
-			 .enableWakeFromSleep = DT_INST_PROP(n, enableWakeFromSleep),              \
-			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
-			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
-			 .rxFifoIntEnableMask = DT_INST_PROP_OR(n, rx_fifo_int_enable_mask, 0),    \
-			 .txFifoTriggerLevel = DT_INST_PROP_OR(n, tx_fifo_trigger_level, 0),       \
-			 .txFifoIntEnableMask = DT_INST_PROP_OR(n, tx_fifo_int_enable_mask, 0),    \
-			 .masterSlaveIntEnableMask =                                               \
-				 DT_INST_PROP_OR(n, master_slave_int_enable_mask, 0)},             \
-                                                                                                   \
+			 .subMode = CY_SCB_SPI_MOTOROLA,                                           \
+			 .oversample = IFX_CAT1_SPI_DEFAULT_OVERSAMPLE,                            \
+			 .enableMisoLateSample = true,                                             \
+			 .ssPolarity = CY_SCB_SPI_ACTIVE_LOW,                                      \
+		},                                                                                 \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_spi_init, NULL, &spi_cat1_data_##n,                     \
