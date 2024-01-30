@@ -52,6 +52,10 @@ Bluetooth
 
 * Host
 
+  * Added ``recycled()`` callback to :c:struct:`bt_conn_cb`, which notifies listeners when a
+    connection object has been freed, so it can be utilized for different purposes. No guarantees
+    are made to what listener will be granted the object, as only the first claim is served.
+
 * Mesh
 
   * Added the delayable messages functionality to apply random delays for
