@@ -428,6 +428,13 @@ config NO_OPTIMIZATIONS
 	  default stack sizes in order to avoid stack overflows.
 endchoice
 
+config LTO
+	bool "Link Time Optimization [EXPERIMENTAL]"
+	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
+	select EXPERIMENTAL
+	help
+	  This option enables Link Time Optimization.
+
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
