@@ -10,7 +10,7 @@ Overview
 This sample demonstrates how to use the :ref:`MBOX API <mbox_api>` in data transfer mode.
 It can be used only with mbox driver which supports data transfer mode.
 
-Sample will ping-pong 4 bytes of data between two cores via two mbox channels.
+Sample will ping-pong up to 4 bytes of data between two cores via two mbox channels.
 After each core receives data, it increments it by one and sends it back to other core.
 
 Building and Running
@@ -42,6 +42,15 @@ Building the application for mimxrt1170_evkb_cm7
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mbox_data/
    :board: mimxrt1170_evkb_cm7
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for lpcxpresso55s69_cpu1
+=================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: lpcxpresso55s69_cpu1
    :goals: debug
    :west-args: --sysbuild
 

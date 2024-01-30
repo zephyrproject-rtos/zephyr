@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 
@@ -50,6 +51,13 @@ int main(void)
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(mbox));
 
+	const int max_transfer_size_bytes = mbox_mtu_get(dev);
+	/* Sample currently supports only transfer size up to 4 bytes */
+	if ((max_transfer_size_bytes <= 0) || (max_transfer_size_bytes > 4)) {
+		printk("mbox_mtu_get() error\n");
+		return 0;
+	}
+
 	for (int i_test_channel = 0; i_test_channel < CHANNELS_TO_TEST; i_test_channel++) {
 		mbox_init_channel(&tx_channel, dev,
 				  TEST_CHANNELS[i_test_channel][TX_CHANNEL_INDEX]);
@@ -77,7 +85,7 @@ int main(void)
 			message++;
 
 			msg.data = &message;
-			msg.size = 4;
+			msg.size = max_transfer_size_bytes;
 
 			if (mbox_send(&tx_channel, &msg) < 0) {
 				printk("mbox_send() error\n");

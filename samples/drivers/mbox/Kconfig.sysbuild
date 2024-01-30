@@ -1,5 +1,5 @@
 # Copyright 2023 Nordic Semiconductor ASA
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,3 +14,4 @@ string
 	default "mimxrt1170_evkb_cm4" if $(BOARD) = "mimxrt1170_evkb_cm7"
 	default "mimxrt1170_evk_cm4" if $(BOARD) = "mimxrt1170_evk_cm7"
 	default "mimxrt1160_evk_cm4" if $(BOARD) = "mimxrt1160_evk_cm7"
+	default "lpcxpresso55s69_cpu1" if $(BOARD) = "lpcxpresso55s69_cpu0"
