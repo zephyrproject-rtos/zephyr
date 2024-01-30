@@ -443,7 +443,7 @@ ZTEST_USER(can_classic, test_get_core_clock)
 /**
  * @brief Test getting the CAN controller capabilities.
  */
-ZTEST_USER(can_classic, test_get_capabilities)
+ZTEST_USER(can_classic, test_classic_get_capabilities)
 {
 	can_mode_t cap;
 	int err;
