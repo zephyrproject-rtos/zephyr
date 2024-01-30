@@ -135,7 +135,15 @@ _id_ok:
 	mov a11, a9
 	mov a8, a4
 	mov a9, a5
-	l32i a3, a1, 0
+
+	/* Stack frame pointer is the 7th argument to z_mrsh_*()
+	 * as ssf, and must be put on stack to be consumed.
+	 */
+	mov a3, a1
+	addi a1, a1, -4
+	s32i a3, a1, 0
+
+	l32i a3, a1, 4
 	l32i a7, a3, ___xtensa_irq_bsa_t_a3_OFFSET
 
 
@@ -147,6 +155,12 @@ _id_ok:
 	rsync
 
 	callx4 a2
+
+	/* Going back before stack frame pointer on stack to
+	 * actual the stack frame. So restoration of registers
+	 * can be done properly when finishing syscalls.
+	 */
+	addi a1, a1, 4
 
 	/* copy return value. Lets put it in the top of stack
 	 * because registers will be clobbered in
