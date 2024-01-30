@@ -11,3 +11,10 @@ config NPCX_MIWU
 	  This option enables the Multi-Input Wake-Up Unit (MIWU) driver
 	  for NPCX family of processors.
 	  This is required for GPIO, RTC, LPC/eSPI interrupt support.
+
+config NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	bool
+	default y if SOC_NPCX9M7FB
+	help
+	  Workaround the issue "MIWU Any Edge Trigger Condition"
+	  in the npcx9m7fb SoC errata.

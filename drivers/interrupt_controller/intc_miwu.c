@@ -82,6 +82,10 @@ struct intc_miwu_config {
 struct intc_miwu_data {
 	/* Callback functions list for each MIWU group */
 	sys_slist_t cb_list_grp[8];
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	uint8_t both_edge_pins[8];
+	struct k_spinlock lock;
+#endif
 };
 
 BUILD_ASSERT(sizeof(struct miwu_io_params) == sizeof(gpio_port_pins_t),
@@ -121,6 +125,23 @@ static void intc_miwu_dispatch_isr(sys_slist_t *cb_list, uint8_t mask)
 	}
 }
 
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+static void npcx_miwu_set_pseudo_both_edge(uint8_t table, uint8_t group, uint8_t bit)
+{
+	const struct intc_miwu_config *config = miwu_devs[table]->config;
+	const uint32_t base = config->base;
+	uint8_t pmask = BIT(bit);
+
+	if (IS_BIT_SET(NPCX_WKST(base, group), bit)) {
+		/* Current signal level is high, set falling edge triger. */
+		NPCX_WKEDG(base, group) |= pmask;
+	} else {
+		/* Current signal level is low, set rising edge triger. */
+		NPCX_WKEDG(base, group) &= ~pmask;
+	}
+}
+#endif
+
 static void intc_miwu_isr_pri(int wui_table, int wui_group)
 {
 	const struct intc_miwu_config *config = miwu_devs[wui_table]->config;
@@ -128,10 +149,26 @@ static void intc_miwu_isr_pri(int wui_table, int wui_group)
 	const uint32_t base = config->base;
 	uint8_t mask = NPCX_WKPND(base, wui_group) & NPCX_WKEN(base, wui_group);
 
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	uint8_t new_mask = mask;
+
+	while (new_mask != 0) {
+		uint8_t pending_bit = find_lsb_set(new_mask) - 1;
+		uint8_t pending_mask = BIT(pending_bit);
+
+		NPCX_WKPCL(base, wui_group) = pending_mask;
+		if ((data->both_edge_pins[wui_group] & pending_mask) != 0) {
+			npcx_miwu_set_pseudo_both_edge(wui_table, wui_group, pending_bit);
+		}
+
+		new_mask &= ~pending_mask;
+	};
+#else
 	/* Clear pending bits before dispatch ISR */
 	if (mask) {
 		NPCX_WKPCL(base, wui_group) = mask;
 	}
+#endif
 
 	/* Dispatch registered gpio isrs */
 	intc_miwu_dispatch_isr(&data->cb_list_grp[wui_group], mask);
@@ -143,7 +180,21 @@ void npcx_miwu_irq_enable(const struct npcx_wui *wui)
 	const struct intc_miwu_config *config = miwu_devs[wui->table]->config;
 	const uint32_t base = config->base;
 
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	k_spinlock_key_t key;
+	struct intc_miwu_data *data = miwu_devs[wui->table]->data;
+
+	key = k_spin_lock(&data->lock);
+#endif
+
 	NPCX_WKEN(base, wui->group) |= BIT(wui->bit);
+
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	if ((data->both_edge_pins[wui->group] & BIT(wui->bit)) != 0) {
+		npcx_miwu_set_pseudo_both_edge(wui->table, wui->group, wui->bit);
+	}
+	k_spin_unlock(&data->lock, key);
+#endif
 }
 
 void npcx_miwu_irq_disable(const struct npcx_wui *wui)
@@ -182,10 +233,26 @@ bool npcx_miwu_irq_get_and_clear_pending(const struct npcx_wui *wui)
 {
 	const struct intc_miwu_config *config = miwu_devs[wui->table]->config;
 	const uint32_t base = config->base;
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	k_spinlock_key_t key;
+	struct intc_miwu_data *data = miwu_devs[wui->table]->data;
+#endif
+
 	bool pending = IS_BIT_SET(NPCX_WKPND(base, wui->group), wui->bit);
 
 	if (pending) {
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+		key = k_spin_lock(&data->lock);
+
 		NPCX_WKPCL(base, wui->group) = BIT(wui->bit);
+
+		if ((data->both_edge_pins[wui->group] & BIT(wui->bit)) != 0) {
+			npcx_miwu_set_pseudo_both_edge(wui->table, wui->group, wui->bit);
+		}
+		k_spin_unlock(&data->lock, key);
+#else
+		NPCX_WKPCL(base, wui->group) = BIT(wui->bit);
+#endif
 	}
 
 	return pending;
@@ -197,10 +264,19 @@ int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
 	const struct intc_miwu_config *config = miwu_devs[wui->table]->config;
 	const uint32_t base = config->base;
 	uint8_t pmask = BIT(wui->bit);
+	int ret = 0;
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	struct intc_miwu_data *data = miwu_devs[wui->table]->data;
+	k_spinlock_key_t key;
+#endif
 
 	/* Disable interrupt of wake-up input source before configuring it */
 	npcx_miwu_irq_disable(wui);
 
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	key = k_spin_lock(&data->lock);
+	data->both_edge_pins[wui->group] &= ~BIT(wui->bit);
+#endif
 	/* Handle interrupt for level trigger */
 	if (mode == NPCX_MIWU_MODE_LEVEL) {
 		/* Set detection mode to level */
@@ -215,7 +291,8 @@ int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
 			NPCX_WKEDG(base, wui->group) |= pmask;
 			break;
 		default:
-			return -EINVAL;
+			ret = -EINVAL;
+			goto early_exit;
 		}
 	/* Handle interrupt for edge trigger */
 	} else {
@@ -234,11 +311,17 @@ int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
 			break;
 		/* Handle interrupting on both edges */
 		case NPCX_MIWU_TRIG_BOTH:
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+			NPCX_WKAEDG(base, wui->group) &= ~pmask;
+			data->both_edge_pins[wui->group] |= BIT(wui->bit);
+#else
 			/* Enable any edge */
 			NPCX_WKAEDG(base, wui->group) |= pmask;
+#endif
 			break;
 		default:
-			return -EINVAL;
+			ret = -EINVAL;
+			goto early_exit;
 		}
 	}
 
@@ -251,7 +334,17 @@ int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
 	 */
 	NPCX_WKPCL(base, wui->group) |= pmask;
 
-	return 0;
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	if ((data->both_edge_pins[wui->group] & BIT(wui->bit)) != 0) {
+		npcx_miwu_set_pseudo_both_edge(wui->table, wui->group, wui->bit);
+	}
+#endif
+
+early_exit:
+#ifdef CONFIG_NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	k_spin_unlock(&data->lock, key);
+#endif
+	return ret;
 }
 
 void npcx_miwu_init_gpio_callback(struct miwu_callback *callback,
