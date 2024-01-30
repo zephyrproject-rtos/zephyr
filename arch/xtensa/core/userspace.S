@@ -300,7 +300,12 @@ xtensa_userspace_enter:
 	call4 xtensa_user_stack_perms
 
 	l32i a6, a1, 24
+#ifdef CONFIG_XTENSA_MMU
 	call4 xtensa_swap_update_page_tables
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
 
 #if XCHAL_HAVE_THREADPTR
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
@@ -337,7 +342,14 @@ xtensa_userspace_enter:
 	 * We have to set callinc as well, since the called
 	 * function will do "entry"
 	 */
+#ifdef CONFIG_XTENSA_MMU
 	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(2)
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	/* MPU only has RING 0 and 1. */
+	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(1)
+#endif
+
 	wsr a0, EPS2
 
 	movi a0, 0

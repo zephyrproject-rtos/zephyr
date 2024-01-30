@@ -66,6 +66,9 @@ struct arch_mem_domain {
 	uint8_t asid;
 	bool dirty;
 #endif
+#ifdef CONFIG_XTENSA_MPU
+	struct xtensa_mpu_map mpu_map;
+#endif
 	sys_snode_t node;
 };
 
