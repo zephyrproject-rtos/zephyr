@@ -379,7 +379,7 @@ _POSIX_PRIORITY_SCHEDULING
     sched_get_priority_min(),yes
     sched_getparam(),
     sched_getscheduler(),
-    sched_rr_get_interval(),
+    sched_rr_get_interval(),yes
     sched_setparam(),yes
     sched_setscheduler(),yes
     sched_yield(),yes
