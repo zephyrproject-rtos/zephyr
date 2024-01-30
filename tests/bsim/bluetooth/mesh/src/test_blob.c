@@ -1715,6 +1715,8 @@ static const struct bst_test_instance test_blob_pst[] = {
 	TEST_CASE(cli, stop,
 		  "Client expecting server to stop after reaching configured phase and continuing"),
 	TEST_CASE(srv, stop, "Server stopping after reaching configured xfer phase"),
+
+	BSTEST_END_MARKER
 };
 
 struct bst_test_list *test_blob_pst_install(struct bst_test_list *tests)
