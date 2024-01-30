@@ -624,6 +624,12 @@ class Test(Harness):
             self._match = True
 
         result_match = result_re.match(line)
+        # some testcases are skipped based on predicates and do not show up
+        # during test execution, however they are listed in the summary. Parse
+        # the summary for status and use that status instead.
+
+        summary_re = re.compile(r"- (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds")
+        summary_match = summary_re.match(line)
 
         if result_match:
             matched_status = result_match.group(1)
@@ -633,6 +639,20 @@ class Test(Harness):
             if tc.status == "skipped":
                 tc.reason = "ztest skip"
             tc.duration = float(result_match.group(4))
+            if tc.status == "failed":
+                tc.output = self.testcase_output
+            self.testcase_output = ""
+            self._match = False
+            self.ztest = True
+        elif summary_match:
+            matched_status = summary_match.group(1)
+            self.detected_suite_names.append(summary_match.group(2))
+            name = "{}.{}".format(self.id, summary_match.group(4))
+            tc = self.instance.get_case_or_create(name)
+            tc.status = self.ztest_to_status[matched_status]
+            if tc.status == "skipped":
+                tc.reason = "ztest skip"
+            tc.duration = float(summary_match.group(5))
             if tc.status == "failed":
                 tc.output = self.testcase_output
             self.testcase_output = ""
