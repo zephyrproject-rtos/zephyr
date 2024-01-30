@@ -21,6 +21,9 @@ endif()
 set_compiler_property(PROPERTY optimization_speed -O2)
 set_compiler_property(PROPERTY optimization_size  -Os)
 
+set_compiler_property(PROPERTY optimization_lto -flto)
+set_compiler_property(PROPERTY prohibit_lto -fno-lto)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
