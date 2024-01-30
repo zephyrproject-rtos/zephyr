@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Stepper Motor Device
+
+include: base.yaml
+
+on-bus: motor
+
+compatible: "stepper-motor-device"
+
+properties:
+
+  friendly-name:
+    type: string
+    description: |
+      Human readable string describing the stepper motor. It can be used to
+      distinguish multiple instances of the same model.
+
+  gear-ratio:
+    type: string
+    default: "1.0"
+    description: |
+      Gear ratio from stepper motor to end transmission, This value can be in float and hence
+      the property type string
+
+  micro-step-res:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+      Enter the microstep resolution from one of the enum values
+
+  steps-per-revolution:
+    type: int
+    default: 200
+    description: |
+      Full steps per revolution, a default value of 200 signifies that 1 step rotates the shaft
+      by 1.8°, which is the case in lot of stepper motors
+
+  controller-spec-reg-settings:
+    type: array
+    description: |
+      This property allows for setting controller-spec-register values directly from the dts.
+      The driver will iterate through this array and will treat all even elements are reg_addresses
+      and odd elements as reg_values.
+
+      Note: Enter key-value pairs as follows
+
+      controller-spec-reg-settings = <reg_a_address reg_a_value>, <reg_b_address, reg_b_value>;

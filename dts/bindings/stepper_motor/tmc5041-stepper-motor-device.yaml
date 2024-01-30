@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TMC5041 based Stepper Motor Device
+
+include: stepper-motor-device.yaml
+
+compatible: "tmc5041-stepper-motor-device"
+
+properties:
+  stall-guard-setting:
+    type: int
+    default: 0
+    description: |
+      The signed value controls StallGuard2 level for stall output
+      and sets the optimum measurement range for readout.
+      A lower value gives a higher sensitivity.
+      Zero is the starting value working with most motors.
+      For instance, in case of tmc5041, range is -64 to +63
+      A higher value makes StallGuard2 less sensitive
+      and requires more torque to indicate a stall.

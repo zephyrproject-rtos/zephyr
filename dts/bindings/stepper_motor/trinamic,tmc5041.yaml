@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TRINAMIC TMC5041
+
+compatible: "trinamic,tmc5041"
+
+include: [stepper-motor-controller.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies pin for the INT signal on the module. Tristate
+      interrupt output based on ramp generator flags RAMP_STAT
+      bits 4, 5, 6 & 7. Outputs positive active interrupt signal.
+
+  "#address-cells":
+    default: 1
+    const: 1
+
+  "#size-cells":
+    default: 0
+    const: 0
