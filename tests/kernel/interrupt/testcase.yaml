@@ -52,3 +52,23 @@ tests:
     extra_configs:
       - CONFIG_SHARED_INTERRUPTS=y
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+  arch.shared_interrupt.lto:
+    # excluded because of failures during test_prevent_interruption
+    platform_exclude: qemu_cortex_m0
+    arch_exclude:
+      # same as above, #22956
+      - nios2
+      # test needs 2 working interrupt lines
+      - xtensa
+      # TODO: make test work on this arch
+      - mips
+    tags:
+      - kernel
+      - interrupt
+      - lto
+    extra_configs:
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
