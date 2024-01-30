@@ -20,12 +20,22 @@ from twisterlib.error import TwisterRuntimeError
 class TestError:
     TESTDATA_1 = [
         (
+            os.path.join(TEST_DATA, 'tests', 'dummy'),
             os.path.join('scripts', 'tests', 'twister_blackbox', 'test_data', 'tests',
                          'dummy', 'agnostic', 'group1', 'subgroup1',
                          'dummy.agnostic.group1.subgroup1'),
             SystemExit
         ),
-        ('dummy.agnostic.group1.subgroup1', TwisterRuntimeError),
+        (
+            None,
+            'dummy.agnostic.group1.subgroup1',
+            TwisterRuntimeError
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy'),
+            'dummy.agnostic.group1.subgroup1',
+            SystemExit
+        )
     ]
 
     @classmethod
@@ -40,15 +50,17 @@ class TestError:
         pass
 
     @pytest.mark.parametrize(
-        'test, expected_exception',
+        'testroot, test, expected_exception',
         TESTDATA_1,
-        ids=['valid', 'invalid']
+        ids=['valid', 'invalid', 'valid']
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
-    def test_test(self, out_path, test, expected_exception):
+    def test_test(self, out_path, testroot, test, expected_exception):
         test_platforms = ['qemu_x86', 'frdm_k64f']
-        path = os.path.join(TEST_DATA, 'tests', 'dummy')
-        args = ['-i', '--outdir', out_path, '-T', path, '--test', test, '-y'] + \
+        args = []
+        if testroot:
+            args = ['-T', testroot]
+        args += ['-i', '--outdir', out_path, '--test', test, '-y'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
