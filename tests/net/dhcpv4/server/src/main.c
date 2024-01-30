@@ -7,11 +7,13 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/icmp.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv4_server.h>
 
 #include "dhcpv4/dhcpv4_internal.h"
+#include "icmpv4.h"
 #include "ipv4.h"
 #include "udp_internal.h"
 
@@ -35,11 +37,13 @@ static struct test_dhcpv4_server_ctx {
 	struct k_sem test_proceed;
 	struct net_pkt *pkt;
 	struct in_addr assigned_ip;
+	struct in_addr declined_ip;
 
 	/* Request params */
 	const char *client_id;
 	int lease_time;
 	bool broadcast;
+	bool send_echo_reply;
 } test_ctx;
 
 struct test_lease_count {
@@ -66,8 +70,51 @@ static void server_iface_init(struct net_if *iface)
 	(void)net_if_ipv4_set_netmask(iface, &netmask);
 }
 
+static void send_icmp_echo_reply(struct net_pkt *pkt,
+				 struct net_ipv4_hdr *ipv4_hdr)
+{
+	struct net_pkt *reply;
+	size_t payload_len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+			     NET_ICMPH_LEN;
+
+	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), payload_len,
+					  AF_INET, IPPROTO_ICMP, K_FOREVER);
+	zassert_not_null(reply, "Failed to allocate echo reply");
+
+	zassert_ok(net_ipv4_create(reply, (struct in_addr *)ipv4_hdr->dst,
+				   (struct in_addr *)ipv4_hdr->src),
+		   "Failed to create IPv4 header");
+
+	zassert_ok(net_icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0),
+		   "Failed to create ICMP header");
+	zassert_ok(net_pkt_copy(reply, pkt, payload_len),
+		   "Failed to copy payload");
+
+	net_pkt_cursor_init(reply);
+	net_ipv4_finalize(reply, IPPROTO_ICMP);
+
+	zassert_ok(net_recv_data(test_ctx.iface, reply), "Failed to receive data");
+}
+
 static int server_send(const struct device *dev, struct net_pkt *pkt)
 {
+	NET_PKT_DATA_ACCESS_DEFINE(ipv4_access, struct net_ipv4_hdr);
+	struct net_ipv4_hdr *ipv4_hdr;
+
+	ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
+	zassert_not_null(ipv4_hdr, "Failed to access IPv4 header.");
+
+	if (ipv4_hdr->proto == IPPROTO_ICMP) {
+		if (test_ctx.send_echo_reply) {
+			test_ctx.send_echo_reply = false;
+			memcpy(&test_ctx.declined_ip, ipv4_hdr->dst,
+			       sizeof(struct in_addr));
+			send_icmp_echo_reply(pkt, ipv4_hdr);
+		}
+
+		return 0;
+	}
+
 	test_ctx.pkt = pkt;
 	net_pkt_ref(pkt);
 
@@ -840,6 +887,53 @@ ZTEST(dhcpv4_server_tests, test_inform)
 	verify_lease_count(0, 0, 0);
 }
 
+static void after_probe_address_cb(struct net_if *iface,
+				struct dhcpv4_addr_slot *lease,
+				void *user_data)
+{
+	if (lease->state == DHCPV4_SERVER_ADDR_DECLINED) {
+		zassert_equal(test_ctx.declined_ip.s_addr, lease->addr.s_addr,
+			      "Declined wrong address");
+	}
+
+	if (lease->state == DHCPV4_SERVER_ADDR_RESERVED) {
+		zassert_equal(test_ctx.assigned_ip.s_addr, lease->addr.s_addr,
+			      "Reserved wrong address");
+	}
+}
+
+static void verify_address_after_probe(void)
+{
+	int ret;
+
+	ret = net_dhcpv4_server_foreach_lease(test_ctx.iface,
+					      after_probe_address_cb,
+					      NULL);
+	zassert_ok(ret, "Failed to verify address after probe");
+}
+
+/* Verify that if the server detects conflict with ICMP probe, it assigns
+ * different address.
+ */
+ZTEST(dhcpv4_server_tests, test_icmp_probe)
+{
+	if (CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT == 0) {
+		ztest_test_skip();
+	}
+
+	test_ctx.send_echo_reply = true;
+
+	client_send_discover();
+	verify_offer(false);
+	test_pkt_free();
+
+	verify_lease_count(1, 0, 1);
+	zassert_not_equal(test_ctx.assigned_ip.s_addr,
+			  test_ctx.declined_ip.s_addr,
+			  "DHCPv4 srever offered conflicted address");
+	verify_address_after_probe();
+}
+
 /* Verify that the DHCP server can start and validate input properly. */
 ZTEST(dhcpv4_server_tests_no_init, test_initialization)
 {
@@ -868,6 +962,7 @@ static void dhcpv4_server_tests_before(void *fixture)
 	test_ctx.broadcast = false;
 	test_ctx.pkt = NULL;
 	test_ctx.lease_time = NO_LEASE_TIME;
+	test_ctx.send_echo_reply = false;
 	memset(&test_ctx.assigned_ip, 0, sizeof(test_ctx.assigned_ip));
 
 	net_dhcpv4_server_start(test_ctx.iface, &test_base_addr);
