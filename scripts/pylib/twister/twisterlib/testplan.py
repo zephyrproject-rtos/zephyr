@@ -506,7 +506,8 @@ class TestPlan:
                         suite = TestSuite(root, suite_path, name, data=suite_dict, detailed_test_id=self.options.detailed_test_id)
                         suite.add_subcases(suite_dict, subcases, ztest_suite_names)
                         if testsuite_filter:
-                            if suite.name and suite.name in testsuite_filter:
+                            scenario = os.path.basename(suite.name)
+                            if suite.name and (suite.name in testsuite_filter or scenario in testsuite_filter):
                                 self.testsuites[suite.name] = suite
                         else:
                             self.testsuites[suite.name] = suite
@@ -739,8 +740,10 @@ class TestPlan:
                 if exclude_tag and ts.tags.intersection(exclude_tag):
                     instance.add_filter("Command line testsuite exclude filter", Filters.CMD_LINE)
 
-                if testsuite_filter and ts_name not in testsuite_filter:
-                    instance.add_filter("TestSuite name filter", Filters.CMD_LINE)
+                if testsuite_filter:
+                    normalized_f = [os.path.basename(_ts) for _ts in testsuite_filter]
+                    if ts.id not in normalized_f:
+                        instance.add_filter("Testsuite name filter", Filters.CMD_LINE)
 
                 if arch_filter and plat.arch not in arch_filter:
                     instance.add_filter("Command line testsuite arch filter", Filters.CMD_LINE)

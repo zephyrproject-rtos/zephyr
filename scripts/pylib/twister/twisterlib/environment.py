@@ -203,7 +203,7 @@ Artificially long but functional example:
         and global timeout multiplier (this parameter)""")
 
     test_xor_subtest.add_argument(
-        "-s", "--test", action="append",
+        "-s", "--test", "--scenario", action="append",
         help="Run only the specified testsuite scenario. These are named by "
              "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
@@ -747,8 +747,18 @@ def parse_arguments(parser, args, options = None):
         sys.exit(1)
 
     if not options.testsuite_root:
-        options.testsuite_root = [os.path.join(ZEPHYR_BASE, "tests"),
-                                 os.path.join(ZEPHYR_BASE, "samples")]
+        # if we specify a test scenario which is part of a suite directly, do
+        # not set testsuite root to default, just point to the test directory
+        # directly.
+        if options.test:
+            for scenario in options.test:
+                if dirname := os.path.dirname(scenario):
+                    options.testsuite_root.append(dirname)
+
+        # check again and make sure we have something set
+        if not options.testsuite_root:
+            options.testsuite_root = [os.path.join(ZEPHYR_BASE, "tests"),
+                                     os.path.join(ZEPHYR_BASE, "samples")]
 
     if options.show_footprint or options.compare_report:
         options.enable_size_report = True
