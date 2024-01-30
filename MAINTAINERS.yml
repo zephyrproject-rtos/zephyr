@@ -4188,8 +4188,6 @@ West:
     - erwango
   files:
     - modules/hal_st/Kconfig
-  labels:
-    - "area: Sensors"
 
 "West project: hal_stm32":
   status: maintained
@@ -4228,8 +4226,6 @@ West:
     - mah-eiSmart
   files:
     - modules/Kconfig.wurthelektronik
-  labels:
-    - "area: Sensors"
 
 "West project: hal_xtensa":
   status: maintained
@@ -4548,8 +4544,6 @@ West:
   maintainers:
     - microbuilder
   files: []
-  labels:
-    - "area: Sensors"
 
 "West project: hostap":
   status: maintained
