@@ -211,6 +211,13 @@
 				sleep1-enable;
 				sleep2-enable;
 			};
+
+			cf1133@6 {
+				compatible = "sitronix,cf1133";
+				reg = <0x6>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 		};
 
 		spi@2 {
