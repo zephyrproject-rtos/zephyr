@@ -396,6 +396,8 @@ struct uart_reg {
 	(*(volatile uint8_t *)(base + NPCX_WKINEN_OFFSET(group)))
 #define NPCX_WKMOD(base, group) \
 	(*(volatile uint8_t *)(base + NPCX_WKMOD_OFFSET(group)))
+#define NPCX_WKST(base, group) \
+	(*(volatile uint8_t *)(base + NPCX_WKST_OFFSET(group)))
 
 /*
  * General-Purpose I/O (GPIO) device registers
