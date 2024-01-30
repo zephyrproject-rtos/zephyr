@@ -5,12 +5,12 @@
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Networking backend"
-	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
+	depends on NETWORKING && (NET_UDP || NET_TCP) && !LOG_MODE_IMMEDIATE
 	select LOG_OUTPUT
 	help
 	  Send syslog messages to network server.
-	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP)
-	  specifications for details.
+	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP) and
+	  RFC 6587 (syslog over TCP) specifications for details.
 
 if LOG_BACKEND_NET
 
@@ -25,6 +25,12 @@ config LOG_BACKEND_NET_SERVER
 	  [2001:db8::1]:514
 	  [2001:db8::2]
 	  2001:db::42
+	  If you want to use TCP, add "tcp://" in front of the address
+	  like this
+	  tcp://192.0.2.1:514
+	  tcp://192.0.2.42
+	  tcp://[2001:db8::1]:514
+	  UDP is used by default if the URI is missing.
 
 config LOG_BACKEND_NET_MAX_BUF_SIZE
 	int "Max syslog message size"
