@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_INTERNAL_SMP_H_
 #define ZEPHYR_INCLUDE_KERNEL_INTERNAL_SMP_H_
 
+void z_init_cpu(int id);
 void z_sched_ipi(void);
 
 #endif
