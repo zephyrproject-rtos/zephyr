@@ -213,6 +213,11 @@ endif()
 # Apply the final optimization flag(s)
 zephyr_compile_options(${OPTIMIZATION_FLAG})
 
+if(CONFIG_LTO)
+  add_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
+  add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
+endif()
+
 # @Intent: Obtain compiler specific flags related to C++ that are not influenced by kconfig
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
 
@@ -805,6 +810,10 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
   kernel/include
   ${ARCH_DIR}/${ARCH}/include
   )
+
+# Make sure that LTO will never be enabled when compiling offsets.c
+set_source_files_properties(${OFFSETS_C_PATH} PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
