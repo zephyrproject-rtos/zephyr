@@ -206,7 +206,7 @@ stm32_lp_tick_source: &lptim1 {
 		int1-gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
 		int2-gpios = <&gpiof 15 GPIO_ACTIVE_HIGH>;
 
-		drdy-pin = <2>;
+		drdy-pin = <1>;
 	};
 };
 
@@ -254,6 +254,13 @@ stm32_lp_tick_source: &lptim1 {
 		compatible = "st,lis2mdl";
 		reg = <0x1e>;
 		irq-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	stts22h@38 {
+		compatible = "st,stts22h";
+		reg = <0x38>;
+		int-gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
