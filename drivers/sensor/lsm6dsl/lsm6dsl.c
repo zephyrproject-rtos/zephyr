@@ -211,7 +211,7 @@ static int lsm6dsl_accel_range_set(const struct device *dev, int32_t range)
 		return -EIO;
 	}
 
-	data->accel_sensitivity = (float)(lsm6dsl_accel_fs_sens[fs]
+	data->accel_sensitivity = (double)(lsm6dsl_accel_fs_sens[fs]
 						    * SENSI_GRAIN_XL);
 	return 0;
 }
@@ -274,7 +274,7 @@ static int lsm6dsl_gyro_range_set(const struct device *dev, int32_t range)
 		return -EIO;
 	}
 
-	data->gyro_sensitivity = (float)(lsm6dsl_gyro_fs_sens[fs]
+	data->gyro_sensitivity = (double)(lsm6dsl_gyro_fs_sens[fs]
 						    * SENSI_GRAIN_G);
 	return 0;
 }

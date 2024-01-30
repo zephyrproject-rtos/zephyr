@@ -647,11 +647,11 @@ struct lsm6dsl_data {
 	int accel_sample_x;
 	int accel_sample_y;
 	int accel_sample_z;
-	float accel_sensitivity;
+	double accel_sensitivity;
 	int gyro_sample_x;
 	int gyro_sample_y;
 	int gyro_sample_z;
-	float gyro_sensitivity;
+	double gyro_sensitivity;
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 	int temp_sample;
 #endif
@@ -659,7 +659,7 @@ struct lsm6dsl_data {
 	int magn_sample_x;
 	int magn_sample_y;
 	int magn_sample_z;
-	float magn_sensitivity;
+	double magn_sensitivity;
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
 	int sample_press;
