@@ -287,8 +287,7 @@ BT_GATT_SERVICE_DEFINE(test_svc,
 			       NULL, write_cp_chrc, NULL),
 );
 
-static bool gatt_read_operation_authorize(struct bt_conn *conn,
-					  const struct bt_gatt_attr *attr)
+static bool gatt_read_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
 {
 	if (bt_uuid_cmp(attr->uuid, TEST_UNAUTHORIZED_CHRC_UUID) == 0) {
 		unauthorized_chrc_ctx.auth_read_cnt++;
@@ -301,8 +300,7 @@ static bool gatt_read_operation_authorize(struct bt_conn *conn,
 	}
 }
 
-static bool gatt_write_operation_authorize(struct bt_conn *conn,
-					   const struct bt_gatt_attr *attr)
+static bool gatt_write_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
 {
 	if (bt_uuid_cmp(attr->uuid, TEST_UNAUTHORIZED_CHRC_UUID) == 0) {
 		unauthorized_chrc_ctx.auth_write_cnt++;
@@ -316,8 +314,8 @@ static bool gatt_write_operation_authorize(struct bt_conn *conn,
 }
 
 static const struct bt_gatt_authorization_cb gatt_authorization_callbacks = {
-	.read_operation_authorize = gatt_read_operation_authorize,
-	.write_operation_authorize = gatt_write_operation_authorize,
+	.read_authorize = gatt_read_authorize,
+	.write_authorize = gatt_write_authorize,
 };
 
 static void test_main(void)
