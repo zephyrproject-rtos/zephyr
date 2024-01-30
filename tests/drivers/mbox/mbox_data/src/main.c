@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 
@@ -20,6 +21,7 @@ static uint32_t g_mbox_expected_channel;
 
 static bool g_received_size_error;
 static size_t g_received_size;
+static int g_max_transfer_size_bytes;
 
 static struct mbox_channel g_tx_channel;
 static struct mbox_channel g_rx_channel;
@@ -65,6 +67,14 @@ static void mbox_data_tests_before(void *f)
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(mbox));
 
+	g_max_transfer_size_bytes = mbox_mtu_get(dev);
+	/* Test currently supports only transfer size up to 4 bytes */
+	if ((g_max_transfer_size_bytes < 0) || (g_max_transfer_size_bytes > 4)) {
+		printk("mbox_mtu_get() error\n");
+		zassert_false(1, "mbox invalid maximum transfer unit: %d",
+			      g_max_transfer_size_bytes);
+	}
+
 	mbox_init_channel(&g_tx_channel, dev,
 			  TEST_CHANNELS[current_channel_index][TX_CHANNEL_INDEX]);
 	mbox_init_channel(&g_rx_channel, dev,
@@ -98,14 +108,17 @@ static void mbox_test(const uint32_t data)
 	while (test_count < 100) {
 		/* Main core prepare test data */
 		msg.data = &test_data;
-		msg.size = 4;
+		msg.size = g_max_transfer_size_bytes;
 
 		/* Main core send test data */
 		ret_val = mbox_send(&g_tx_channel, &msg);
 		zassert_false(ret_val < 0, "mbox failed to send. ret_val: %d", ret_val);
 
-		/* Expect next received data will be incremented by one */
-		g_mbox_expected_data = test_data;
+		/* Expect next received data will be incremented by one.
+		 * And based on Maximum Transfer Unit determine expected data.
+		 * Currently supported MTU's are 1, 2, 3, and 4 bytes.
+		 */
+		g_mbox_expected_data = test_data & ~(0xFFFFFFFF << (g_max_transfer_size_bytes * 8));
 		g_mbox_expected_data++;
 
 		k_sem_take(&g_mbox_data_rx_sem, K_FOREVER);
