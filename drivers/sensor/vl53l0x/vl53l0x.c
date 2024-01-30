@@ -35,9 +35,6 @@ LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 #define VL53L0X_INITIAL_ADDR                    0x29
 #define VL53L0X_REG_WHO_AM_I                    0xC0
 #define VL53L0X_CHIP_ID                         0xEEAA
-#define VL53L0X_SETUP_SIGNAL_LIMIT              (0.1 * 65536)
-#define VL53L0X_SETUP_SIGMA_LIMIT               (60 * 65536)
-#define VL53L0X_SETUP_MAX_TIME_FOR_RANGING      33000
 #define VL53L0X_SETUP_PRE_RANGE_VCSEL_PERIOD    18
 #define VL53L0X_SETUP_FINAL_RANGE_VCSEL_PERIOD  14
 
@@ -47,6 +44,9 @@ LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 struct vl53l0x_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec xshut;
+	uint32_t max_time_for_ranging;
+	uint16_t signal_limit_ratio;
+	uint16_t sigma_limit_ratio;
 };
 
 struct vl53l0x_data {
@@ -58,6 +58,8 @@ struct vl53l0x_data {
 static int vl53l0x_setup_single_shot(const struct device *dev)
 {
 	struct vl53l0x_data *drv_data = dev->data;
+	const struct vl53l0x_config *const config = dev->config;
+
 	int ret;
 	uint8_t VhvSettings;
 	uint8_t PhaseCal;
@@ -117,7 +119,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 
 	ret = VL53L0X_SetLimitCheckValue(&drv_data->vl53l0x,
 					 VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
-					 VL53L0X_SETUP_SIGNAL_LIMIT);
+					 config->signal_limit_ratio / 1000 * 65536);
 
 	if (ret) {
 		LOG_ERR("[%s] VL53L0X_SetLimitCheckValue signal rate failed",
@@ -127,7 +129,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 
 	ret = VL53L0X_SetLimitCheckValue(&drv_data->vl53l0x,
 					 VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
-					 VL53L0X_SETUP_SIGMA_LIMIT);
+					 config->sigma_limit_ratio / 1000 * 65536);
 	if (ret) {
 		LOG_ERR("[%s] VL53L0X_SetLimitCheckValue sigma failed",
 			dev->name);
@@ -135,7 +137,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 	}
 
 	ret = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&drv_data->vl53l0x,
-							     VL53L0X_SETUP_MAX_TIME_FOR_RANGING);
+							     config->max_time_for_ranging);
 	if (ret) {
 		LOG_ERR("[%s] VL53L0X_SetMeasurementTimingBudgetMicroSeconds failed",
 			dev->name);
@@ -381,7 +383,10 @@ static int vl53l0x_pm_action(const struct device *dev,
 #define VL53L0X_INIT(inst)						 \
 	static struct vl53l0x_config vl53l0x_##inst##_config = {	 \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),			 \
-		.xshut = GPIO_DT_SPEC_INST_GET_OR(inst, xshut_gpios, {}) \
+		.xshut = GPIO_DT_SPEC_INST_GET_OR(inst, xshut_gpios, {}), \
+		.max_time_for_ranging = DT_INST_PROP_OR(inst, max_time_for_ranging, 33000),\
+		.signal_limit_ratio = DT_INST_PROP_OR(inst, signal_limit_ratio, 100), \
+		.sigma_limit_ratio = DT_INST_PROP_OR(inst, sigma_limit_ratio, 60000) \
 	};								 \
 									 \
 	static struct vl53l0x_data vl53l0x_##inst##_driver;		 \
