@@ -1,11 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 function(gen_kobj gen_dir_out)
-  if (PROJECT_BINARY_DIR)
-    set(gen_dir ${PROJECT_BINARY_DIR}/include/generated)
-  else ()
-    set(gen_dir ${CMAKE_BINARY_DIR}/include/generated)
-  endif ()
+  set(gen_dir ${BINARY_DIR_INCLUDE_GENERATED_H})
 
   set(KOBJ_TYPES ${gen_dir}/kobj-types-enum.h)
   set(KOBJ_OTYPE ${gen_dir}/otype-to-str.h)

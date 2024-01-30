@@ -111,7 +111,7 @@ zephyr_library_named(zephyr)
 
 zephyr_include_directories(
   include
-  ${PROJECT_BINARY_DIR}/include/generated
+  ${BINARY_DIR_INCLUDE_GENERATED_H}
   ${USERINCLUDE}
   ${STDINCLUDE}
 )
@@ -514,9 +514,9 @@ if(ZEPHYR_GIT_INDEX)
 endif()
 
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
+  OUTPUT ${BINARY_DIR_INCLUDE_GENERATED_H}/version.h
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
-    -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    -DOUT_FILE=${BINARY_DIR_INCLUDE_GENERATED_H}/version.h
     -DVERSION_TYPE=KERNEL
     -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
     -DKERNEL_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:version_h,KERNEL_VERSION_CUSTOMIZATION>"
@@ -525,13 +525,13 @@ add_custom_command(
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
   COMMAND_EXPAND_LISTS
 )
-add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
+add_custom_target(version_h DEPENDS ${BINARY_DIR_INCLUDE_GENERATED_H}/version.h)
 
 if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
   add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/include/generated/app_version.h
+    OUTPUT ${BINARY_DIR_INCLUDE_GENERATED_H}/app_version.h
     COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
-      -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/app_version.h
+      -DOUT_FILE=${BINARY_DIR_INCLUDE_GENERATED_H}/app_version.h
       -DVERSION_TYPE=APP
       -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
       -DAPP_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:app_version_h,APP_VERSION_CUSTOMIZATION>"
@@ -540,7 +540,7 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
     COMMAND_EXPAND_LISTS
   )
-  add_custom_target(app_version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/app_version.h)
+  add_custom_target(app_version_h DEPENDS ${BINARY_DIR_INCLUDE_GENERATED_H}/app_version.h)
   add_dependencies(zephyr_interface app_version_h)
 endif()
 
@@ -595,7 +595,7 @@ set(ZEPHYR_CURRENT_CMAKE_DIR)
 get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBRARIES)
 zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
 
-set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
+set(syscall_list_h   ${BINARY_DIR_INCLUDE_GENERATED_H}/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
 set(struct_tags_json ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/struct_tags.json)
 
@@ -726,7 +726,7 @@ add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h} ${picolibc_
 set_property(TARGET ${SYSCALL_LIST_H_TARGET}
              APPEND PROPERTY
              ADDITIONAL_CLEAN_FILES
-             ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
+             ${BINARY_DIR_INCLUDE_GENERATED_H}/syscalls
 )
 
 add_custom_target(${PARSE_SYSCALLS_TARGET}
@@ -746,14 +746,14 @@ if(CONFIG_TIMEOUT_64BIT)
   set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t --split-type k_ticks_t)
 endif()
 
-add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
-  # Also, some files are written to include/generated/syscalls/
+add_custom_command(OUTPUT ${INCLUDE_GENERATED_REL_DIR}/syscall_dispatch.c ${syscall_list_h}
+  # Also, some files are written to ${INCLUDE_GENERATED_REL_DIR}/syscalls/
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
   --json-file        ${syscalls_json}                     # Read this file
-  --base-output      include/generated/syscalls           # Write to this dir
-  --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
+  --base-output      ${INCLUDE_GENERATED_REL_DIR}/syscalls           # Write to this dir
+  --syscall-dispatch ${INCLUDE_GENERATED_REL_DIR}/syscall_dispatch.c # Write this file
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
@@ -765,7 +765,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
 # This is passed into all calls to the gen_kobject_list.py script.
 set(gen_kobject_list_include_args --include-subsystem-list ${struct_tags_json})
 
-set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
+set(DRV_VALIDATION ${BINARY_DIR_INCLUDE_GENERATED_H}/driver-validation.h)
 add_custom_command(
   OUTPUT ${DRV_VALIDATION}
   COMMAND
@@ -798,7 +798,7 @@ add_dependencies(zephyr_generated_headers
 set(OFFSETS_LIB offsets)
 
 set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
-set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
+set(OFFSETS_H_PATH ${BINARY_DIR_INCLUDE_GENERATED_H}/offsets.h)
 
 add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
 target_include_directories(${OFFSETS_LIB} PRIVATE
@@ -966,14 +966,14 @@ if(NOT EXISTS ${LINKER_SCRIPT})
 endif()
 
 if(CONFIG_USERSPACE)
-  set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
-  set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
+  set(APP_SMEM_ALIGNED_LD "${BINARY_DIR_INCLUDE_GENERATED}/app_smem_aligned.ld")
+  set(APP_SMEM_UNALIGNED_LD "${BINARY_DIR_INCLUDE_GENERATED}/app_smem_unaligned.ld")
 
   if(CONFIG_LINKER_USE_PINNED_SECTION)
     set(APP_SMEM_PINNED_ALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
+        "${BINARY_DIR_INCLUDE_GENERATED}/app_smem_pinned_aligned.ld")
     set(APP_SMEM_PINNED_UNALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
+        "${BINARY_DIR_INCLUDE_GENERATED}/app_smem_pinned_unaligned.ld")
 
     if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
       # The libc partition may hold symbols that are required during boot process,
@@ -1145,7 +1145,7 @@ if(CONFIG_USERSPACE)
     PUBLIC $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
   )
 
-  set(KOBJECT_LINKER_HEADER_DATA "${PROJECT_BINARY_DIR}/include/generated/linker-kobject-prebuilt-data.h")
+  set(KOBJECT_LINKER_HEADER_DATA "${BINARY_DIR_INCLUDE_GENERATED_H}/linker-kobject-prebuilt-data.h")
 
   add_custom_command(
     OUTPUT ${KOBJECT_LINKER_HEADER_DATA}
@@ -1153,7 +1153,7 @@ if(CONFIG_USERSPACE)
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_kobject_placeholders.py
     --object $<TARGET_OBJECTS:kobj_prebuilt_hash_output_lib>
-    --outdir ${PROJECT_BINARY_DIR}/include/generated
+    --outdir ${BINARY_DIR_INCLUDE_GENERATED_H}
     --datapct ${CONFIG_KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT}
     --rodata ${CONFIG_KOBJECT_RODATA_AREA_EXTRA_BYTES}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
@@ -1873,7 +1873,7 @@ if(log_dict_db_output)
     ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
     ${KERNEL_ELF_NAME}
     ${log_dict_db_output}
-    --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
+    --build-header ${BINARY_DIR_INCLUDE_GENERATED_H}/version.h
     )
   list(APPEND
     post_build_byproducts

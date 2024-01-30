@@ -45,7 +45,7 @@ find_package(Dtc 1.4.6)
 #      section for more information on the consequences
 #    - DTS_SOURCE: set to the path to the devicetree file which
 #      was used, if one was provided or found
-#    - ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h exists
+#    - ${BINARY_DIR_INCLUDE_GENERATED_H}/devicetree_generated.h exists
 #
 # 2. The following has happened if a devicetree was found and
 #    no errors occurred:
@@ -64,7 +64,7 @@ find_package(Dtc 1.4.6)
 #      after this module
 #
 # Required variables:
-# - BINARY_DIR_INCLUDE_GENERATED: where to put generated include files
+# - BINARY_DIR_INCLUDE_GENERATED_H: where to put generated include files
 # - KCONFIG_BINARY_DIR: where to put generated Kconfig files
 #
 # Optional variables:
@@ -101,7 +101,7 @@ set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 # The generated file containing the final DTS, for debugging.
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
-set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h)
+set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED_H}/devicetree_generated.h)
 # Generated build system internals.
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
