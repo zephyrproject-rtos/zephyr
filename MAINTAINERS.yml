@@ -4608,7 +4608,9 @@ Continuous Integration:
   maintainers:
     - stephanosio
     - nashif
-    - galak
+  collaborators:
+    - fabiobaltieri
+    - kartben
   files:
     - .github/
     - scripts/ci/
