@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(rpmsg_service_remote)
 
-message(STATUS "${BOARD} compile as slave in this sample")
+message(STATUS "${BOARD} compile as remote in this sample")
 
 target_sources(app PRIVATE src/main.c)
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
