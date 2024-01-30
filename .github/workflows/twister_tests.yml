@@ -9,7 +9,7 @@ on:
     - main
     - v*-branch
     paths:
-    - 'scripts/pylib/twister/**'
+    - 'scripts/pylib/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
     - '.github/workflows/twister_tests.yml'
@@ -18,7 +18,7 @@ on:
     - main
     - v*-branch
     paths:
-    - 'scripts/pylib/twister/**'
+    - 'scripts/pylib/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
     - '.github/workflows/twister_tests.yml'
