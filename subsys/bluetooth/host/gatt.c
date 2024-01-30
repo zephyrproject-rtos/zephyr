@@ -1213,17 +1213,15 @@ static int gatt_register(struct bt_gatt_service *svc)
 populate:
 	/* Populate the handles and append them to the list */
 	for (; attrs && count; attrs++, count--) {
-		if (!attrs->handle) {
-			/* Allocate handle if not set already */
-			attrs->handle = ++handle;
-		} else if (attrs->handle > handle) {
-			/* Use existing handle if valid */
-			handle = attrs->handle;
-		} else if (find_attr(attrs->handle)) {
-			/* Service has conflicting handles */
-			LOG_ERR("Unable to register handle 0x%04x", attrs->handle);
-			return -EINVAL;
+		CHECKIF (attrs->handle) {
+			/* App-provided attribute handles are not supported in
+			 * this version. Ensure the attr field is zero. Other
+			 * values are reserved for future.
+			 */
+			LOG_ERR("nonzero attr handle");
 		}
+
+		attrs->handle = ++handle;
 
 		LOG_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x", attrs, attrs->handle,
 			bt_uuid_str(attrs->uuid), attrs->perm);
@@ -1633,6 +1631,8 @@ static int gatt_unregister(struct bt_gatt_service *svc)
 		if (attr->write == bt_gatt_attr_write_ccc) {
 			gatt_unregister_ccc(attr->user_data);
 		}
+
+		attr->handle = 0;
 	}
 
 	return 0;
