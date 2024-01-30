@@ -1844,13 +1844,13 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	uint32_t addend_val;
 
 	/* No change needed */
-	if (ratio == 1.0f) {
+	if (ratio == 1.0L) {
 		return 0;
 	}
 
 	key = irq_lock();
 
-	ratio *= eth_dev_data->clk_ratio_adj;
+	ratio *= (double)eth_dev_data->clk_ratio_adj;
 
 	/* Limit possible ratio */
 	if (ratio * 100 < CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT ||
@@ -1863,7 +1863,7 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	eth_dev_data->clk_ratio_adj = ratio;
 
 	/* Update addend register */
-	addend_val = UINT32_MAX * eth_dev_data->clk_ratio * ratio;
+	addend_val = UINT32_MAX * (double)eth_dev_data->clk_ratio * ratio;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	heth->Instance->MACTSAR = addend_val;
