@@ -3,7 +3,6 @@
 
 config SOC_SERIES_MPS3
 	select ARM
-	select SOC_FAMILY_ARM
 	select GPIO_MMIO32 if GPIO
 
 config SOC_MPS3_AN547
