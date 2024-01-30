@@ -11,8 +11,7 @@ LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_net.h>
-#include <zephyr/net/net_pkt.h>
-#include <zephyr/net/net_context.h>
+#include <zephyr/net/socket.h>
 
 /* Set this to 1 if you want to see what is being sent to server */
 #define DEBUG_PRINTING 0
@@ -37,34 +36,24 @@ struct sockaddr server_addr;
 static bool panic_mode;
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_NET_OUTPUT_DEFAULT;
 
+static struct log_backend_net_ctx {
+	int sock;
+} ctx = {
+	.sock = -1,
+};
+
 const struct log_backend *log_backend_net_get(void);
-
-NET_PKT_SLAB_DEFINE(syslog_tx_pkts, CONFIG_LOG_BACKEND_NET_MAX_BUF);
-NET_PKT_DATA_POOL_DEFINE(syslog_tx_bufs,
-			 ROUND_UP(CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE /
-				  CONFIG_NET_BUF_DATA_SIZE, 1) *
-			 CONFIG_LOG_BACKEND_NET_MAX_BUF);
-
-static struct k_mem_slab *get_tx_slab(void)
-{
-	return &syslog_tx_pkts;
-}
-
-struct net_buf_pool *get_data_pool(void)
-{
-	return &syslog_tx_bufs;
-}
 
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
-	struct net_context *ctx = (struct net_context *)output_ctx;
+	struct log_backend_net_ctx *ctx = (struct log_backend_net_ctx *)output_ctx;
 	int ret = -ENOMEM;
 
 	if (ctx == NULL) {
 		return length;
 	}
 
-	ret = net_context_send(ctx, data, length, NULL, K_NO_WAIT, NULL);
+	ret = zsock_send(ctx->sock, data, length, ZSOCK_MSG_DONTWAIT);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -76,13 +65,12 @@ fail:
 
 LOG_OUTPUT_DEFINE(log_output_net, line_out, output_buf, sizeof(output_buf));
 
-static int do_net_init(void)
+static int do_net_init(struct log_backend_net_ctx *ctx)
 {
 	struct sockaddr *local_addr = NULL;
 	struct sockaddr_in6 local_addr6 = {0};
 	struct sockaddr_in local_addr4 = {0};
 	socklen_t server_addr_len;
-	struct net_context *ctx;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
@@ -104,12 +92,14 @@ static int do_net_init(void)
 
 	local_addr->sa_family = server_addr.sa_family;
 
-	ret = net_context_get(server_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
-			      &ctx);
+	ret = zsock_socket(server_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (ret < 0) {
-		DBG("Cannot get context (%d)\n", ret);
+		ret = -errno;
+		DBG("Cannot get socket (%d)\n", ret);
 		return ret;
 	}
+
+	ctx->sock = ret;
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_ENABLE)) {
 		(void)strncpy(dev_hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
@@ -147,30 +137,35 @@ static int do_net_init(void)
 
 	} else {
 	unknown:
-		DBG("Cannot setup local context\n");
-		return -EINVAL;
+		DBG("Cannot setup local socket\n");
+		ret = -EINVAL;
+		goto err;
 	}
 
-	ret = net_context_bind(ctx, local_addr, server_addr_len);
+	ret = zsock_bind(ctx->sock, local_addr, server_addr_len);
 	if (ret < 0) {
-		DBG("Cannot bind context (%d)\n", ret);
-		return ret;
+		ret = -errno;
+		DBG("Cannot bind socket (%d)\n", ret);
+		goto err;
 	}
 
-	(void)net_context_connect(ctx, &server_addr, server_addr_len,
-				  NULL, K_NO_WAIT, NULL);
-
-	/* We do not care about return value for this UDP connect call that
-	 * basically does nothing. Calling the connect is only useful so that
-	 * we can see the syslog connection in net-shell.
-	 */
-
-	net_context_setup_pools(ctx, get_tx_slab, get_data_pool);
+	ret = zsock_connect(ctx->sock, &server_addr, server_addr_len);
+	if (ret < 0) {
+		ret = -errno;
+		DBG("Cannot connect socket (%d)\n", ret);
+		goto err;
+	}
 
 	log_output_ctx_set(&log_output_net, ctx);
 	log_output_hostname_set(&log_output_net, dev_hostname);
 
 	return 0;
+
+err:
+	(void)zsock_close(ctx->sock);
+	ctx->sock = -1;
+
+	return ret;
 }
 
 static void process(const struct log_backend *const backend,
@@ -182,7 +177,7 @@ static void process(const struct log_backend *const backend,
 		return;
 	}
 
-	if (!net_init_done && do_net_init() == 0) {
+	if (!net_init_done && do_net_init(&ctx) == 0) {
 		net_init_done = true;
 	}
 
@@ -205,18 +200,22 @@ bool log_backend_net_set_addr(const char *addr)
 		/* Release context so it can be recreated with the specified ip address
 		 * next time process() is called
 		 */
-		int released = net_context_put(log_output_net.control_block->ctx);
+		struct log_backend_net_ctx *ctx = log_output_net.control_block->ctx;
+		int released;
 
+		released = zsock_close(ctx->sock);
 		if (released < 0) {
-			LOG_ERR("Cannot release context (%d)", ret);
+			LOG_ERR("Cannot release socket (%d)", ret);
 			ret = false;
 		} else {
-			/* The context is successfully released so we flag it
+			/* The socket is successfully closed so we flag it
 			 * to be recreated with the new ip address
 			 */
 			net_init_done = false;
 			ret = true;
 		}
+
+		ctx->sock = -1;
 
 		if (!ret) {
 			return ret;
@@ -226,7 +225,6 @@ bool log_backend_net_set_addr(const char *addr)
 	net_sin(&server_addr)->sin_port = htons(514);
 
 	ret = net_ipaddr_parse(addr, strlen(addr), &server_addr);
-
 	if (!ret) {
 		LOG_ERR("Cannot parse syslog server address");
 		return ret;
