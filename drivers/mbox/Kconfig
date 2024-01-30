@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MBOX
@@ -14,6 +15,7 @@ if MBOX
 source "drivers/mbox/Kconfig.nrfx"
 source "drivers/mbox/Kconfig.nxp_s32"
 source "drivers/mbox/Kconfig.nxp_imx"
+source "drivers/mbox/Kconfig.nxp_mailbox"
 source "drivers/mbox/Kconfig.andes"
 
 config MBOX_INIT_PRIORITY
