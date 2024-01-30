@@ -37,6 +37,11 @@ zephyr_compile_definitions(_ANSI_SOURCE)
 # used by the network stack
 zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
 
+# define _ZEPHYR_SOURCE so we can get POSIX extensions to ISO C declared in
+# lib/libc/common/include/string.h, to satisfy Rule A.4 of Zephyr's Coding
+# Guidelines.
+zephyr_compile_definitions(_ZEPHYR_SOURCE)
+
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
   # We are using
   # - ${CMAKE_C_LINKER_WRAPPER_FLAG}${CMAKE_LINK_LIBRARY_FLAG}c
