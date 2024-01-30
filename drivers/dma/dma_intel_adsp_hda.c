@@ -324,15 +324,17 @@ int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
 		return 0;
 	}
 
-	intel_adsp_hda_disable(cfg->base, cfg->regblock_size, channel);
-
 	/* host dma needs some cycles to completely stop */
 	if (cfg->direction == HOST_TO_MEMORY || cfg->direction == MEMORY_TO_HOST) {
 		if (!WAIT_FOR(!(*DGCS(cfg->base, cfg->regblock_size, channel) & DGCS_GBUSY), 1000,
 				  k_busy_wait(1))) {
+			printk("DEBUG: %s: Channel%u stuck busy after disable (DGCS: %#x)\n",
+				__func__, channel, *DGCS(cfg->base, cfg->regblock_size, channel));
 			return -EBUSY;
 		}
 	}
+
+	intel_adsp_hda_disable(cfg->base, cfg->regblock_size, channel);
 
 	return pm_device_runtime_put(dev);
 }
