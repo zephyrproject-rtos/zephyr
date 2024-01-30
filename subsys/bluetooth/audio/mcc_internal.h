@@ -25,13 +25,26 @@ struct mcs_instance_t {
 #ifdef CONFIG_BT_MCC_OTS
 	uint16_t icon_obj_id_handle;
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL)
 	uint16_t icon_url_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) */
 	uint16_t track_changed_handle;
+#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE)
 	uint16_t track_title_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 	uint16_t track_duration_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION) || defined(CONFIG_BT_MCC_SET_TRACK_POSITION)
 	uint16_t track_position_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) || defined(CONFIG_BT_MCC_SET_TRACK_POSITION) */
+#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED) || defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED)
 	uint16_t playback_speed_handle;
+#endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) || */
+       /* defined (CONFIG_BT_MCC_SET_PLAYBACK_SPEED) */
+#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
 	uint16_t seeking_speed_handle;
+#endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
 #ifdef CONFIG_BT_MCC_OTS
 	uint16_t segments_obj_id_handle;
 	uint16_t current_track_obj_id_handle;
@@ -39,16 +52,26 @@ struct mcs_instance_t {
 	uint16_t current_group_obj_id_handle;
 	uint16_t parent_group_obj_id_handle;
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) || defined(CONFIG_BT_MCC_SET_PLAYING_ORDER)
 	uint16_t playing_order_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) || defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) */
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED)
 	uint16_t playing_orders_supported_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
 	uint16_t media_state_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 	uint16_t cp_handle;
+#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
 	uint16_t opcodes_supported_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 #ifdef CONFIG_BT_MCC_OTS
 	uint16_t scp_handle;
 	uint16_t search_results_obj_id_handle;
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 	uint16_t content_control_id_handle;
+#endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 
 
 	/* The write buffer is used for
@@ -84,21 +107,37 @@ struct mcs_instance_t {
 
 	struct bt_gatt_subscribe_params player_name_sub_params;
 	struct bt_gatt_subscribe_params track_changed_sub_params;
+#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE_ENABLE_SUBSCRIPTION)
 	struct bt_gatt_subscribe_params track_title_sub_params;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE_ENABLE_SUBSCRIPTION) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 	struct bt_gatt_subscribe_params track_duration_sub_params;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
 	struct bt_gatt_subscribe_params track_position_sub_params;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION)*/
+#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
 	struct bt_gatt_subscribe_params playback_speed_sub_params;
+#endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) */
+#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
 	struct bt_gatt_subscribe_params seeking_speed_sub_params;
+#endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params current_track_obj_sub_params;
 	struct bt_gatt_subscribe_params next_track_obj_sub_params;
 	struct bt_gatt_subscribe_params parent_group_obj_sub_params;
 	struct bt_gatt_subscribe_params current_group_obj_sub_params;
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
 	struct bt_gatt_subscribe_params playing_order_sub_params;
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
 	struct bt_gatt_subscribe_params media_state_sub_params;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 	struct bt_gatt_subscribe_params cp_sub_params;
+#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
 	struct bt_gatt_subscribe_params opcodes_supported_sub_params;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params scp_sub_params;
 	struct bt_gatt_subscribe_params search_results_obj_sub_params;
