@@ -181,6 +181,12 @@ tests:
     extra_configs:
       - CONFIG_BT_MCC_OTS=n
     tags: bluetooth
+  bluetooth.shell.audio.mcc_minimal:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_MCC_MINIMAL=y
+    tags: bluetooth
   bluetooth.shell.audio.no_otsc:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
