@@ -1150,25 +1150,6 @@ BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 );
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-static uint8_t found_attr(const struct bt_gatt_attr *attr, uint16_t handle,
-			  void *user_data)
-{
-	const struct bt_gatt_attr **found = user_data;
-
-	*found = attr;
-
-	return BT_GATT_ITER_STOP;
-}
-
-static const struct bt_gatt_attr *find_attr(uint16_t handle)
-{
-	const struct bt_gatt_attr *attr = NULL;
-
-	bt_gatt_foreach_attr(handle, handle, found_attr, &attr);
-
-	return attr;
-}
-
 static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
 {
 	struct bt_gatt_service *tmp, *prev = NULL;
