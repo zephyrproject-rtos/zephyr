@@ -236,3 +236,4 @@ endif # NRF_802154_RADIO_DRIVER || NRF_802154_SERIALIZATION
 endmenu # HAS_NORDIC_DRIVERS
 
 rsource "nrfx/Kconfig"
+rsource "Kconfig.nrf_regtool"

@@ -11,4 +11,7 @@ config SOC
 config NUM_IRQS
 	default 471
 
+config NRF_REGTOOL_GENERATE_UICR
+	default y
+
 endif # SOC_NRF54H20_ENGA_CPURAD
