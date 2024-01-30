@@ -12,6 +12,11 @@ properties:
     required: true
     description: PHY address
 
+  int-gpios:
+    type: phandle-array
+    description:
+      interrupt GPIO for PHY. Will be pulled high in its default state.
+
   master-slave:
     type: string
     required: true

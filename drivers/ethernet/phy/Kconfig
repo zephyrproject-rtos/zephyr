@@ -11,6 +11,7 @@ module-dep = LOG
 module-str = Log level for Ethernet PHY driver
 module-help = Sets log level for Ethernet PHY Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
+source "drivers/ethernet/phy/Kconfig.tja1103"
 
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
@@ -37,14 +38,6 @@ config PHY_ADIN2111
 	depends on MDIO_ADIN2111
 	help
 	  Enable ADIN2111 PHY driver.
-
-config PHY_TJA1103
-	bool "TJA1103 PHY driver"
-	default y
-	depends on DT_HAS_NXP_TJA1103_ENABLED
-	depends on MDIO
-	help
-	  Enable TJA1103 PHY driver.
 
 config PHY_MICROCHIP_KSZ8081
 	bool "Microchip KSZ8081 Phy Driver"
