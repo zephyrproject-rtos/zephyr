@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 
@@ -41,6 +42,13 @@ int main(void)
 	mbox_init_channel(&tx_channel, dev, TX_ID);
 	mbox_init_channel(&rx_channel, dev, RX_ID);
 
+	const int max_transfer_size_bytes = mbox_mtu_get(dev);
+	/* Sample currently supports only transfer size up to 4 bytes */
+	if ((max_transfer_size_bytes <= 0) || (max_transfer_size_bytes > 4)) {
+		printk("mbox_mtu_get() error\n");
+		return 0;
+	}
+
 	if (mbox_register_callback(&rx_channel, callback, NULL)) {
 		printk("mbox_register_callback() error\n");
 		return 0;
@@ -61,7 +69,7 @@ int main(void)
 		message++;
 
 		msg.data = &message;
-		msg.size = 4;
+		msg.size = max_transfer_size_bytes;
 
 		printk("Server send (on channel %d) value: %d\n", tx_channel.id, message);
 		if (mbox_send(&tx_channel, &msg) < 0) {
