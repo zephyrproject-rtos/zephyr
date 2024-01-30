@@ -47,3 +47,10 @@ tests:
     tags: picolibc
     extra_configs:
       - CONFIG_PICOLIBC=y
+  kernel.common.lto:
+    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+    tags: lto
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
