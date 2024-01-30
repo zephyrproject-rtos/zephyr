@@ -55,8 +55,13 @@ FUNC_ALIAS(z_arm_exc_exit, z_arm_int_exit, void);
 Z_GENERIC_SECTION(.text._HandlerModeExit) void z_arm_exc_exit(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	if (_kernel.ready_q.cache != _kernel.cpus->current) {
-		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+	/* If thread is preemptible */
+	if (_kernel.cpus->current->base.prio >= 0) {
+		/* and cached thread is not current thread */
+		if (_kernel.ready_q.cache != _kernel.cpus->current) {
+			/* trigger a context switch */
+			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+		}
 	}
 #endif /* CONFIG_PREEMPT_ENABLED */
 
