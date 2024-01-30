@@ -227,7 +227,7 @@ static void send_receive(const struct can_filter *filter1,
 /**
  * @brief Test getting the CAN controller capabilities.
  */
-ZTEST(canfd, test_get_capabilities)
+ZTEST(canfd, test_canfd_get_capabilities)
 {
 	can_mode_t cap;
 	int err;
