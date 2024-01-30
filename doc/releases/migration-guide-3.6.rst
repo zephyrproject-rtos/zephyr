@@ -177,6 +177,18 @@ Device Drivers and Device Tree
             status = "okay";
     };
 
+
+* The :dtcompatible:`st,stm32-ospi-nor` and :dtcompatible:`st,stm32-qspi-nor` give the nor flash
+  base address and size (in Bytes) with the **reg** property as follows.
+  The <size> property is not used anymore.
+
+  .. code-block:: devicetree
+
+    mx25lm51245: ospi-nor-flash@70000000 {
+            compatible = "st,stm32-ospi-nor";
+            reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits*/
+    };
+
 * The native Linux SocketCAN driver, which can now be used in both :ref:`native_posix<native_posix>`
   and :ref:`native_sim<native_sim>` with or without an embedded C-library, has been renamed to
   reflect this:
