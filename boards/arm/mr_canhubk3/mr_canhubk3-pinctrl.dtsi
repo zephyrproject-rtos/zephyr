@@ -9,7 +9,7 @@
 &pinctrl {
 	eirq0_default: eirq0_default {
 		group1 {
-			pinmux = <PTD15_EIRQ31>, <PTA18_EIRQ0>, <PTA25_EIRQ5>;
+			pinmux = <PTD15_EIRQ31>, <PTA18_EIRQ0>, <PTA25_EIRQ5>, <PTD5_EIRQ13>;
 			input-enable;
 		};
 	};
