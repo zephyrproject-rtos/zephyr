@@ -16,9 +16,22 @@ tests:
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
-  llext.simple.modules_enabled:
+  llext.simple.modules_enabled_writable:
     platform_key:
       - simulation
+      - arch
+    platform_exclude:
+      - qemu_cortex_a9 # MMU
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+  llext.simple.modules_enabled_readonly:
+    arch_exclude: xtensa # for now
+    platform_key:
+      - simulation
+      - arch
     platform_exclude:
       - qemu_cortex_a9 # MMU
     extra_configs:
