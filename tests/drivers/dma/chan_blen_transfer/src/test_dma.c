@@ -91,7 +91,7 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 	return TC_PASS;
 }
 
-#define DMA_NAME(i, _) test_dma##i
+#define DMA_NAME(i, _) tst_dma##i
 #define DMA_LIST       LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
 
 #if CONFIG_DMA_TRANSFER_BURST16

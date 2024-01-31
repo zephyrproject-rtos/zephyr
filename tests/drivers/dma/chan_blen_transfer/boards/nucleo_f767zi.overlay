@@ -8,7 +8,7 @@
 	status = "okay";
 };
 
-test_dma0: &dma2 {
+tst_dma0: &dma2 {
 	status = "okay";
 };
 
