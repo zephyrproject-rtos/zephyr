@@ -748,6 +748,8 @@
     #include <nrfx_config_nrf54h20_enga_application.h>
 #elif defined(NRF54H20_ENGA_XXAA) && defined(NRF_RADIOCORE)
     #include <nrfx_config_nrf54h20_enga_radiocore.h>
+#elif defined(NRF54H20_ENGA_XXAA) && defined(NRF_PPR)
+    #include <nrfx_config_nrf54h20_enga_ppr.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)
     #include <nrfx_config_nrf91.h>
 #elif defined(NRF54L15_ENGA_XXAA) && defined(NRF_APPLICATION)
