@@ -1450,7 +1450,8 @@ static void comm_sendmsg_recvmsg(int client_sock,
 				 struct sockaddr *server_addr,
 				 socklen_t server_addrlen,
 				 struct msghdr *msg,
-				 void *cmsgbuf, int cmsgbuf_len)
+				 void *cmsgbuf, int cmsgbuf_len,
+				 bool expect_control_data)
 {
 #define MAX_BUF_LEN 64
 #define SMALL_BUF_LEN (sizeof(TEST_STR_SMALL) - 1 - 2)
@@ -1518,6 +1519,13 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	zassert_mem_equal(buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
 			  "wrong data (%s)", rx_buf);
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+
+	/* Control data should be empty */
+	if (!expect_control_data) {
+		zassert_equal(msg->msg_controllen, 0,
+			      "We received control data (%u vs %zu)",
+			      0U, msg->msg_controllen);
+	}
 
 	/* Check the client port */
 	if (addr.sa_family == AF_INET) {
@@ -1592,6 +1600,13 @@ static void comm_sendmsg_recvmsg(int client_sock,
 			  "wrong data in %s", "iov[1]");
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
+	/* Control data should be empty */
+	if (!expect_control_data) {
+		zassert_equal(msg->msg_controllen, 0,
+			      "We received control data (%u vs %zu)",
+			      0U, msg->msg_controllen);
+	}
+
 	/* Then check that the trucation flag is set correctly */
 	sent = sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
@@ -1625,6 +1640,13 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	zassert_mem_equal(buf2, TEST_STR_SMALL, sizeof(buf2),
 			  "wrong data (%s)", buf2);
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+
+	/* Control data should be empty */
+	if (!expect_control_data) {
+		zassert_equal(msg->msg_controllen, 0,
+			      "We received control data (%u vs %zu)",
+			      0U, msg->msg_controllen);
+	}
 }
 
 ZTEST_USER(net_socket_udp, test_27_recvmsg_user)
@@ -1666,7 +1688,7 @@ ZTEST_USER(net_socket_udp, test_27_recvmsg_user)
 			     server_sock,
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr),
-			     &server_msg, NULL, 0);
+			     &server_msg, NULL, 0, false);
 
 	rv = close(client_sock);
 	zassert_equal(rv, 0, "close failed");
@@ -1724,7 +1746,10 @@ static void run_ancillary_recvmsg_test(int client_sock,
 			     server_sock,
 			     server_addr,
 			     server_addr_len,
-			     &server_msg, &cmsgbuf.buf, sizeof(cmsgbuf.buf));
+			     &server_msg,
+			     &cmsgbuf.buf,
+			     sizeof(cmsgbuf.buf),
+			     true);
 
 	for (prevcmsg = NULL, cmsg = CMSG_FIRSTHDR(&server_msg);
 	     cmsg != NULL && prevcmsg != cmsg;
@@ -1769,7 +1794,10 @@ static void run_ancillary_recvmsg_test(int client_sock,
 			     server_sock,
 			     server_addr,
 			     server_addr_len,
-			     &server_msg, &cmsgbuf.buf, sizeof(cmsgbuf.buf));
+			     &server_msg,
+			     &cmsgbuf.buf,
+			     sizeof(cmsgbuf.buf),
+			     true);
 
 	for (cmsg = CMSG_FIRSTHDR(&server_msg); cmsg != NULL;
 	     cmsg = CMSG_NXTHDR(&server_msg, cmsg)) {
@@ -2322,6 +2350,62 @@ ZTEST(net_socket_udp, test_34_v6_hops)
 		       (struct sockaddr *)&server_addr, sizeof(server_addr),
 		       (struct sockaddr *)&server_addr, sizeof(server_addr),
 		       AF_INET6, hops, 0);
+}
+
+ZTEST_USER(net_socket_udp, test_35_recvmsg_msg_controllen_update)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct msghdr msg, server_msg;
+	struct iovec io_vector[1];
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = bind(server_sock,
+		  (struct sockaddr *)&server_addr,
+		  sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+
+	comm_sendmsg_recvmsg(client_sock,
+			     (struct sockaddr *)&client_addr,
+			     sizeof(client_addr),
+			     &msg,
+			     server_sock,
+			     (struct sockaddr *)&server_addr,
+			     sizeof(server_addr),
+			     &server_msg,
+			     &cmsgbuf.buf,
+			     sizeof(cmsgbuf.buf),
+			     false);
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
 }
 
 static void after(void *arg)
