@@ -7,6 +7,13 @@
 #ifndef NRFX_GLUE_H__
 #define NRFX_GLUE_H__
 
+#if defined(CONFIG_CPU_CORTEX_M)
+/* Workaround for missing __ICACHE_PRESENT and __DCACHE_PRESENT symbols in MDK
+ * SoC definitions. To be removed when this is fixed.
+ */
+#include <cmsis_core_m_defaults.h>
+#endif
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/irq.h>
