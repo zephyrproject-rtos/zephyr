@@ -33,7 +33,7 @@ ZTEST(posix_headers, test_sched_h)
 		zassert_not_null(sched_getparam);
 		zassert_not_null(sched_getscheduler);
 
-		/* zassert_not_null(sched_rr_get_interval); */ /* not implemented */
+		zassert_not_null(sched_rr_get_interval);
 
 		zassert_not_null(sched_setparam);
 		zassert_not_null(sched_setscheduler);
