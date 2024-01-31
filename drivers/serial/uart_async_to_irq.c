@@ -105,12 +105,15 @@ static void on_rx_buf_req(const struct device *dev,
 static void on_rx_dis(const struct device *dev, struct uart_async_to_irq_data *data)
 {
 	if (data->flags & A2I_RX_ENABLE) {
-		data->rx.pending_buf_req = 0;
+		int err;
 
-		int err = try_rx_enable(dev, data);
+		err = try_rx_enable(dev, data);
+		if (err == 0) {
+			data->rx.pending_buf_req = 0;
+		}
 
 		LOG_INST_DBG(get_config(dev)->log, "Reenabling RX from RX_DISABLED (err:%d)", err);
-		__ASSERT_NO_MSG(err >= 0);
+		__ASSERT((err >= 0) || (err == -EBUSY), "err: %d", err);
 		return;
 	}
 
