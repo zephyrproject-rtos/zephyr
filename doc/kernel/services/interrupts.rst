@@ -549,7 +549,7 @@ This is an array of struct z_shared_isr_table_entry:
 .. code-block:: c
 
     struct z_shared_isr_table_entry {
-        struct z_shared_isr_client clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
+        struct _isr_table_entry clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
         size_t client_num;
     };
 
@@ -557,15 +557,6 @@ This table keeps track of the registered clients for each of the interrupt
 lines. Whenever an interrupt line becomes shared, :c:func:`z_shared_isr` will
 replace the currently registered ISR in _sw_isr_table. This special ISR will
 iterate through the list of registered clients and invoke the ISRs.
-
-The definition for struct z_shared_isr_client is as follows:
-
-.. code-block:: c
-
-    struct z_shared_isr_client {
-        void (*isr)(const void *arg);
-        const void *arg;
-    };
 
 x86 Details
 -----------
