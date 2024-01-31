@@ -75,12 +75,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 	esp_reset_reason_init();
 
-#ifdef CONFIG_MCUBOOT
-	/* MCUboot early initialisation. */
-	if (bootloader_init()) {
-		abort();
-	}
-#else
+#ifndef CONFIG_MCUBOOT
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
@@ -110,7 +105,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #ifdef CONFIG_SOC_FLASH_ESP32
 	esp_mspi_pin_init();
 	spi_flash_init_chip_state();
-#endif /*CONFIG_SOC_FLASH_ESP32*/
+#endif /* CONFIG_SOC_FLASH_ESP32 */
 
 	esp_mmu_map_init();
 
@@ -152,7 +147,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
-#endif /* CONFIG_MCUBOOT */
+#endif /* !CONFIG_MCUBOOT */
 
 	esp_intr_initialize();
 	/* Start Zephyr */
