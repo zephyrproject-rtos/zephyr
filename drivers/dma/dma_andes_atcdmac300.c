@@ -11,7 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
-#include <soc.h>
 
 #define DT_DRV_COMPAT andestech_atcdmac300
 
