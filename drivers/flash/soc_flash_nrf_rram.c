@@ -30,10 +30,16 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 #define WRITE_BLOCK_SIZE_FROM_DT DT_PROP(RRAM, write_block_size)
 #define ERASE_VALUE              0xFF
 
+#ifdef CONFIG_MULTITHREADING
 static struct k_sem sem_lock;
 #define SYNC_INIT()   k_sem_init(&sem_lock, 1, 1)
 #define SYNC_LOCK()   k_sem_take(&sem_lock, K_FOREVER)
 #define SYNC_UNLOCK() k_sem_give(&sem_lock)
+#else
+#define SYNC_INIT()
+#define SYNC_LOCK()
+#define SYNC_UNLOCK()
+#endif /* CONFIG_MULTITHREADING */
 
 #if CONFIG_NRF_RRAM_WRITE_BUFFER_SIZE > 0
 #define WRITE_BUFFER_ENABLE   1
