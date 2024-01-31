@@ -100,7 +100,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 			continue;
 		}
 
-		if (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X)) {
+		if (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || IS_ENABLED(CONFIG_SOC_SERIES_NRF54LX)) {
 			uint32_t requested_mck =
 				i2s_cfg->frame_clk_freq * ratios[r].ratio_val;
 			/* As specified in the nRF5340 PS:
