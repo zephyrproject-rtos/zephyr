@@ -9,7 +9,7 @@ include(python)
 # <build>/zephyr/include/generated/autoconf.h.
 # A project may request a custom location by setting AUTOCONF_H explicitly before
 # calling 'find_package(Zephyr)' or loading this module.
-set_ifndef(AUTOCONF_H ${PROJECT_BINARY_DIR}/include/generated/autoconf.h)
+set_ifndef(AUTOCONF_H ${PROJECT_BINARY_DIR}/include/generated/zephyr/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 

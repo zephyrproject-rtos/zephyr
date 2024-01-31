@@ -7,7 +7,7 @@
 #ifndef __RTE_DEVICE_H
 #define __RTE_DEVICE_H
 
-#include <autoconf.h>
+#include <zephyr/autoconf.h>
 
 /* ARRAY_SIZE causes a conflict as it is defined both by TF-M and indirectly by devicetree.h */
 #undef ARRAY_SIZE
