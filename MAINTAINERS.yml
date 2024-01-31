@@ -819,6 +819,7 @@ Display drivers:
   status: odd fixes
   collaborators:
     - jfischer-no
+    - danieldegrasse
   files:
     - drivers/display/
     - dts/bindings/display/
