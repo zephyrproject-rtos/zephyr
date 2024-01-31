@@ -1701,7 +1701,7 @@ static int compute_best_vector(void)
 		}
 
 		global_ds->gm_priority.steps_removed =
-			htons(ntohs(best_vector->steps_removed) + 1);
+			ntohs(best_vector->steps_removed) + 1;
 
 		if (&global_ds->gm_priority.src_port_id !=
 		    &best_vector->src_port_id) {
