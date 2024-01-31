@@ -237,12 +237,17 @@ out:
 
 #endif /* MIPI_DBI_SPI_READ_REQUIRED */
 
+static inline bool mipi_dbi_has_pin(const struct gpio_dt_spec *spec)
+{
+	return spec->port != NULL;
+}
+
 static int mipi_dbi_spi_reset(const struct device *dev, uint32_t delay)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 	int ret;
 
-	if (config->reset.port == NULL) {
+	if (!mipi_dbi_has_pin(&config->reset)) {
 		return -ENOTSUP;
 	}
 
@@ -264,7 +269,10 @@ static int mipi_dbi_spi_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (config->cmd_data.port) {
+	if (mipi_dbi_has_pin(&config->cmd_data)) {
+		if (!gpio_is_ready_dt(&config->cmd_data)) {
+			return -ENODEV;
+		}
 		ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
 		if (ret < 0) {
 			LOG_ERR("Could not configure command/data GPIO (%d)", ret);
@@ -272,7 +280,10 @@ static int mipi_dbi_spi_init(const struct device *dev)
 		}
 	}
 
-	if (config->reset.port) {
+	if (mipi_dbi_has_pin(&config->reset)) {
+		if (!gpio_is_ready_dt(&config->reset)) {
+			return -ENODEV;
+		}
 		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not configure reset GPIO (%d)", ret);
