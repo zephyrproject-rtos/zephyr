@@ -11,8 +11,6 @@
 #ifndef _NORDICSEMI_NRF54L_SOC_H_
 #define _NORDICSEMI_NRF54L_SOC_H_
 
-#define __ICACHE_PRESENT    1
-
 #include <soc_nrf_common.h>
 
 #define FLASH_PAGE_ERASE_MAX_TIME_US 8000UL
