@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if RISCV_CORE_NORDIC_VPR
+
+source "soc/riscv/nordic_nrf/common/vpr/Kconfig.defconfig"
+
+endif # RISCV_CORE_NORDIC_VPR
