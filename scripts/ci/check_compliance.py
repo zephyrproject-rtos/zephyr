@@ -433,7 +433,7 @@ class KconfigCheck(ComplianceTest):
 
         with open(kconfig_defconfig_file, 'w') as fp:
             for soc in v2_systems.get_socs():
-                fp.write('source "' + os.path.join(soc.folder, 'Kconfig.defconfig') + '"\n')
+                fp.write('osource "' + os.path.join(soc.folder, 'Kconfig.defconfig') + '"\n')
 
         with open(kconfig_soc_file, 'w') as fp:
             for soc in v2_systems.get_socs():
