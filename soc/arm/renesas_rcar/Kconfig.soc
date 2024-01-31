@@ -1,7 +1,0 @@
-# Renesas R-Car SoC line
-
-# Copyright (c) 2021 IoT.bzh
-# SPDX-License-Identifier: Apache-2.0
-
-
-source "soc/arm/renesas_rcar/*/Kconfig.series"
