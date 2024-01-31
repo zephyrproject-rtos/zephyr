@@ -34,8 +34,11 @@ tests:
   # -std=c++98)
   cpp.main.cpp98:
     arch_exclude: posix
-    # Exclude nRF54L15 as its HAL is not compatible with C++98.
-    platform_exclude: nrf54l15pdk_nrf54l15_cpuapp
+    # Exclude nRF54L15 and nRF54H20 as Nordic HAL is not compatible with C++98.
+    platform_exclude:
+      - nrf54l15pdk_nrf54l15_cpuapp
+      - nrf54h20pdk_nrf54h20_cpuapp
+      - nrf54h20pdk_nrf54h20_cpurad
     build_only: true
     extra_configs:
       - CONFIG_STD_CPP98=y
