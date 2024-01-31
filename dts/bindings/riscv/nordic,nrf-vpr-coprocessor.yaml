@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "nordic,nrf-vpr-coprocessor"
+
+description: |
+  VPR coprocessor
+
+  VPR is a RISC-V CPU implementation. VPR instances are exposed to other CPUs as
+  peripherals.
+
+include: base.yaml
+
+properties:
+  cpu:
+    type: int
+    description: |
+      Processor ID of the VPR core.
+
+  execution-memory:
+    type: phandle
+    required: true
+    description: |
+      Memory area from which the VPR core will execute.
+
+  source-memory:
+    type: phandle
+    description: |
+      Memory area or partition from which the VPR code will be loaded.
