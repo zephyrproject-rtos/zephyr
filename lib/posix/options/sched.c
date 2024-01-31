@@ -101,3 +101,13 @@ int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param)
 
 	return -1;
 }
+
+int sched_rr_get_interval(pid_t pid, struct timespec *interval)
+{
+	ARG_UNUSED(pid);
+	ARG_UNUSED(interval);
+
+	errno = ENOSYS;
+
+	return -1;
+}
