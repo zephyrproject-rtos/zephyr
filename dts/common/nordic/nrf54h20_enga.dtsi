@@ -1,0 +1,310 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nordic/nrf_common.dtsi>
+
+#include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20-enga.h>
+
+/delete-node/ &sw_pwm;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpuapp: cpu@2 {
+			compatible = "arm,cortex-m33";
+			reg = <2>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(320)>;
+		};
+
+		cpurad: cpu@3 {
+			compatible = "arm,cortex-m33";
+			reg = <3>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(256)>;
+		};
+
+		cpuppr: cpu@d {
+			compatible = "nordic,vpr";
+			reg = <13>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(16)>;
+			riscv,isa = "rv32emc";
+			nordic,bus-width = <32>;
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpurad_uicr_ext: memory@e1ff000 {
+			reg = <0xe1ff000 DT_SIZE_K(2)>;
+		};
+
+		cpuapp_uicr_ext: memory@e1ff800 {
+			reg = <0xe1ff800 DT_SIZE_K(2)>;
+		};
+	};
+
+	clocks {
+		fll16m: fll16m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(16)>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mram1x: mram@e000000 {
+			compatible = "nordic,mram";
+			reg = <0xe000000 DT_SIZE_K(2048)>;
+			write-block-size = <16>;
+		};
+
+		cpuapp_uicr: uicr@fff8000 {
+			compatible = "nordic,nrf-uicr-v2";
+			reg = <0xfff8000 DT_SIZE_K(2)>;
+			domain = <2>;
+			ptr-ext-uicr = <&cpuapp_uicr_ext>;
+		};
+
+		cpurad_uicr: uicr@fffa000 {
+			compatible = "nordic,nrf-uicr-v2";
+			reg = <0xfffa000 DT_SIZE_K(2)>;
+			domain = <3>;
+			ptr-ext-uicr = <&cpurad_uicr_ext>;
+		};
+
+		ficr: ficr@fffe000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0xfffe000 DT_SIZE_K(2)>;
+			#nordic,ficr-cells = <1>;
+		};
+
+		cpuapp_ram0: sram@22000000 {
+			compatible = "mmio-sram";
+			reg = <0x22000000 DT_SIZE_K(32)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22000000 0x8000>;
+		};
+
+		cpurad_ram0: sram@23000000 {
+			compatible = "mmio-sram";
+			reg = <0x23000000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x23000000 0x10000>;
+		};
+
+		cpuapp_peripherals: peripheral@52000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x52000000 0x1000000>;
+
+			cpuapp_hsfll: clock@d000 {
+				compatible = "nordic,nrf-hsfll";
+				#clock-cells = <0>;
+				reg = <0xd000 0x1000>;
+				clocks = <&fll16m>;
+				clock-frequency = <DT_FREQ_M(320)>;
+				nordic,ficrs =
+					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
+					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
+					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
+				nordic,ficr-names = "vsup", "coarse", "fine";
+			};
+		};
+
+		cpurad_peripherals: peripheral@53000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x53000000 0x1000000>;
+
+			cpurad_hsfll: clock@d000 {
+				compatible = "nordic,nrf-hsfll";
+				#clock-cells = <0>;
+				reg = <0xd000 0x1000>;
+				clocks = <&fll16m>;
+				clock-frequency = <DT_FREQ_M(256)>;
+				nordic,ficrs =
+					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
+					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
+					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
+				nordic,ficr-names = "vsup", "coarse", "fine";
+			};
+		};
+
+		global_peripherals: peripheral@5f000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x5f000000 0x1000000>;
+
+			cpuppr_vpr: vpr@908000 {
+				compatible = "nordic,nrf-vpr-coprocessor";
+				reg = <0x908000 0x1000>;
+				status = "disabled";
+				cpu = <13>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x908000 0x4000>;
+
+				cpuppr_clic: interrupt-controller@1000 {
+					compatible = "nordic,nrf-clic";
+					reg = <0x1000 0x3000>;
+					status = "disabled";
+					#interrupt-cells = <2>;
+					interrupt-controller;
+					#address-cells = <1>;
+				};
+			};
+
+			gpiote130: gpiote@934000 {
+				compatible = "nordic,nrf-gpiote";
+				reg = <0x934000 0x1000>;
+				status = "disabled";
+				instance = <130>;
+			};
+
+			gpio0: gpio@938000 {
+				compatible = "nordic,nrf-gpio";
+				reg = <0x938000 0x200>;
+				status = "disabled";
+				#gpio-cells = <2>;
+				gpio-controller;
+				gpiote-instance = <&gpiote130>;
+				ngpios = <12>;
+				port = <0>;
+			};
+
+			gpio1: gpio@938200 {
+				compatible = "nordic,nrf-gpio";
+				reg = <0x938200 0x200>;
+				status = "disabled";
+				#gpio-cells = <2>;
+				gpio-controller;
+				gpiote-instance = <&gpiote130>;
+				ngpios = <12>;
+				port = <1>;
+			};
+
+			gpio2: gpio@938400 {
+				compatible = "nordic,nrf-gpio";
+				reg = <0x938400 0x200>;
+				status = "disabled";
+				#gpio-cells = <2>;
+				gpio-controller;
+				gpiote-instance = <&gpiote130>;
+				ngpios = <12>;
+				port = <2>;
+			};
+
+			gpio6: gpio@938c00 {
+				compatible = "nordic,nrf-gpio";
+				reg = <0x938c00 0x200>;
+				status = "disabled";
+				#gpio-cells = <2>;
+				gpio-controller;
+				ngpios = <14>;
+				port = <6>;
+			};
+
+			gpio7: gpio@938e00 {
+				compatible = "nordic,nrf-gpio";
+				reg = <0x938e00 0x200>;
+				status = "disabled";
+				#gpio-cells = <2>;
+				gpio-controller;
+				ngpios = <8>;
+				port = <7>;
+			};
+
+			gpio9: gpio@939200 {
+				compatible = "nordic,nrf-gpio";
+				reg = <0x939200 0x200>;
+				status = "disabled";
+				#gpio-cells = <2>;
+				gpio-controller;
+				gpiote-instance = <&gpiote130>;
+				ngpios = <6>;
+				port = <9>;
+			};
+
+			grtc: grtc@99c000 {
+				compatible = "nordic,nrf-grtc";
+				reg = <0x99c000 0x1000>;
+				status = "disabled";
+				cc-num = <16>;
+			};
+
+			uart135: uart@9c6000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9c6000 0x1000>;
+				status = "disabled";
+				current-speed = <115200>;
+				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			uart136: uart@9d5000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9d5000 0x1000>;
+				status = "disabled";
+				current-speed = <115200>;
+				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+		};
+	};
+
+	cpuapp_ppb: cpuapp-ppb-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuapp_systick: timer@e000e010 {
+			compatible = "arm,armv8m-systick";
+			reg = <0xe000e010 0x10>;
+			status = "disabled";
+		};
+
+		cpuapp_nvic: interrupt-controller@e000e100 {
+			compatible = "arm,v8m-nvic";
+			reg = <0xe000e100 0xc00>;
+			arm,num-irq-priority-bits = <3>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+
+	cpurad_ppb: cpurad-ppb-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpurad_systick: timer@e000e010 {
+			compatible = "arm,armv8m-systick";
+			reg = <0xe000e010 0x10>;
+			status = "disabled";
+		};
+
+		cpurad_nvic: interrupt-controller@e000e100 {
+			compatible = "arm,v8m-nvic";
+			reg = <0xe000e100 0xc00>;
+			arm,num-irq-priority-bits = <3>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+};
