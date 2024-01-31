@@ -17,6 +17,3 @@ config SOC
 
 config SOC_SERIES
 	default "rk3399" if SOC_SERIES_RK3399
-
-config SOC_PART_NUMBER
-	default "RK3399" if SOC_SERIES_RK3399
