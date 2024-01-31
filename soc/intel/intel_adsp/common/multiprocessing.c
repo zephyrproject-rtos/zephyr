@@ -96,7 +96,7 @@ __asm__(".section .text.z_soc_mp_asm_entry, \"x\" \n\t"
 #undef NOP32
 #undef NOP4
 
-__imr void z_mp_entry(void)
+static __imr void __used z_mp_entry(void)
 {
 	cpu_early_init();
 	/* Set up the CPU pointer. */

@@ -99,7 +99,7 @@ static ALWAYS_INLINE void _restore_core_context(void)
 	__asm__ volatile("rsync");
 }
 
-void power_gate_exit(void)
+static void __used power_gate_exit(void)
 {
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();
