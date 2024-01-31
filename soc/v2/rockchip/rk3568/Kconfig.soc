@@ -15,6 +15,3 @@ config SOC
 
 config SOC_SERIES
 	default "rk3568" if SOC_RK3568
-
-config SOC_PART_NUMBER
-	default "RK3568" if SOC_SERIES_RK3568
