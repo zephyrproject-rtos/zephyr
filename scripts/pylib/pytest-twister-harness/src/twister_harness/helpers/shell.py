@@ -45,8 +45,6 @@ class Shell:
                 continue
             if self.prompt in line:
                 logger.debug('Got prompt')
-                time.sleep(0.05)
-                self._device.clear_buffer()
                 return True
         return False
 
