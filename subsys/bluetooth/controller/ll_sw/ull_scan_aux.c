@@ -535,7 +535,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		rx_incomplete = NULL;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-	} else {
+	} else if (!(IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll)) {
 		aux->data_len += data_len;
 
 		/* Flush auxiliary PDU receptions and stop any more ULL
@@ -565,6 +565,24 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		sync_set = HDR_LLL2ULL(sync_lll);
 		sync_set->data_len += data_len;
 		ftr->aux_data_len = sync_set->data_len;
+
+		/* Flush auxiliary PDU receptions and stop any more ULL
+		 * scheduling if accumulated data length exceeds configured
+		 * maximum supported.
+		 */
+		if (sync_set->data_len >= CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) {
+			/* If LLL has already scheduled, then let it proceed.
+			 *
+			 * TODO: LLL to check accumulated data length and
+			 *       stop further reception.
+			 *       Currently LLL will schedule as long as there
+			 *       are free node rx available.
+			 */
+			if (!ftr->aux_lll_sched) {
+				sync_set->data_len = 0U;
+				goto ull_scan_aux_rx_flush;
+			}
+		}
 	} else {
 		if (aux->rx_last) {
 			aux->rx_last->rx_ftr.extra = rx;

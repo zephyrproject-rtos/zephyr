@@ -7484,8 +7484,10 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		return;
 	}
 
+	data_len_total = node_rx->hdr.rx_ftr.aux_data_len;
+
 	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) &&
-	    node_rx->hdr.rx_ftr.aux_failed) {
+	    (node_rx->hdr.rx_ftr.aux_failed || data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
 		struct bt_hci_evt_le_per_advertising_report *sep;
 
 		sep = meta_evt(buf,
@@ -7629,12 +7631,10 @@ no_ext_hdr:
 	data_len_max = CONFIG_BT_BUF_EVT_RX_SIZE -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
 		       sizeof(struct bt_hci_evt_le_per_advertising_report);
-	data_len_total = node_rx->hdr.rx_ftr.aux_data_len;
 
 	evt_buf = buf;
 
-	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) && accept &&
-	    ((data_len_total - data_len) < CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
+	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) && accept) {
 
 		/* Pass verdict in LL.TS.p19 section 4.2.3.6 Extended Scanning,
 		 * Passive, Periodic Advertising Report, RSSI and TX_Power
@@ -7654,9 +7654,6 @@ no_ext_hdr:
 			/* Subsequent reports */
 			tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 		}
-
-		data_len = MIN(data_len, (CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX +
-					  data_len - data_len_total));
 
 		do {
 			struct bt_hci_evt_le_per_advertising_report *sep;
@@ -7690,8 +7687,7 @@ no_ext_hdr:
 				net_buf_frag_add(buf, evt_buf);
 
 				tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
-			} else if (!aux_ptr &&
-				   (data_len_total <= CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
+			} else if (!aux_ptr) {
 				/* No data left, no AuxPtr, mark as complete data. */
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
 			} else if (ftr->aux_sched &&
