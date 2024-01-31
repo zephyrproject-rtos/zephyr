@@ -94,7 +94,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 	nrf_i2s_mck_t best_mck_cfg = 0;
 	uint32_t best_mck = 0;
 
-	for (r = 0; r < ARRAY_SIZE(ratios); ++r) {
+	for (r = 0; (best_diff != 0) && (r < ARRAY_SIZE(ratios)); ++r) {
 		/* Only multiples of the frame width can be used as ratios. */
 		if ((ratios[r].ratio_val % bits_per_frame) != 0) {
 			continue;
@@ -124,11 +124,6 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 				best_mck_cfg = mck_factor * 4096;
 				best_mck = actual_mck;
 				best_r = r;
-				/* Stop if an exact match is found. */
-				if (diff == 0) {
-					break;
-				}
-
 				best_diff = diff;
 			}
 		} else {
@@ -151,7 +146,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 				{ 125, NRF_I2S_MCK_32MDIV125 }
 			};
 
-			for (uint8_t d = 0; d < ARRAY_SIZE(dividers); ++d) {
+			for (uint8_t d = 0; (best_diff != 0) && (d < ARRAY_SIZE(dividers)); ++d) {
 				uint32_t mck_freq =
 					src_freq / dividers[d].divider_val;
 				uint32_t lrck_freq =
@@ -165,11 +160,6 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 					best_mck_cfg = dividers[d].divider_enum;
 					best_mck = mck_freq;
 					best_r = r;
-					/* Stop if an exact match is found. */
-					if (diff == 0) {
-						break;
-					}
-
 					best_diff = diff;
 				}
 
