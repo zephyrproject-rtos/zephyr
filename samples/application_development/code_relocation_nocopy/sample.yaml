@@ -7,6 +7,8 @@ tests:
       - qemu_cortex_m3
       - nrf5340dk/nrf5340/cpuapp
       - stm32f769i_disco
+      - stm32h7b3i_dk
+      - b_u585i_iot02a
     integration_platforms:
       - qemu_cortex_m3
     tags: linker
