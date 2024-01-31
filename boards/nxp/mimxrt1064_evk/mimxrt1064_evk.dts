@@ -149,18 +149,6 @@ arduino_i2c: &lpi2c1 {};
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 
-	mt9m114: mt9m114@48 {
-		compatible = "aptina,mt9m114";
-		reg = <0x48>;
-		status = "okay";
-
-		port {
-			mt9m114_ep_out: endpoint {
-				remote-endpoint = <&csi_ep_in>;
-			};
-		};
-	};
-
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
@@ -271,16 +259,8 @@ zephyr_udc0: &usb1 {
 };
 
 &csi {
-	status = "okay";
-	source = <&mt9m114>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
-
-	port {
-		csi_ep_in: endpoint {
-			remote-endpoint = <&mt9m114_ep_out>;
-		};
-	};
 };
 
 &flexpwm2_pwm3 {
