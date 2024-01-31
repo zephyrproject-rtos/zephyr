@@ -6,7 +6,6 @@ Configuration Options
 This is a non-exhaustive list of specific :ref:`kconfig` options relating to Zephyr's
 implementation of the POSIX API.
 
-* :kconfig:option:`CONFIG_APP_LINK_WITH_POSIX_SUBSYS`
 * :kconfig:option:`CONFIG_EVENTFD`
 * :kconfig:option:`CONFIG_EVENTFD_MAX`
 * :kconfig:option:`CONFIG_FDTABLE`
