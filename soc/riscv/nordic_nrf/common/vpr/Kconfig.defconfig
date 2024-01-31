@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+CPU_PATH := $(dt_nodelabel_path,cpu)
+CPU_ID := $(dt_node_reg_addr_int,$(CPU_PATH))
+
+config RV_BOOT_HART
+	default $(CPU_ID)
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	default 16
+
+config GEN_IRQ_VECTOR_TABLE
+	default y
+
+choice IRQ_VECTOR_TABLE_TYPE
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+endchoice
+
+config ARCH_SW_ISR_TABLE_ALIGN
+	default 64
+
+config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	default y if MULTITHREADING
