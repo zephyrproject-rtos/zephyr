@@ -36,6 +36,9 @@ Build System
   ``target_compile_definitions(app PRIVATE _POSIX_C_SOURCE=200809L)`` to your application
   or ``zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)`` to your library.
 
+* Build type by setting ``CONF_FILE`` to ``prj_<build>.conf`` is now deprecated, users should
+  instead use the new ``-DFILE_SUFFIX`` feature :ref:`application-file-suffixes`.
+
 Kernel
 ======
 
