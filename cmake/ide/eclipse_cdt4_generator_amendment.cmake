@@ -46,7 +46,7 @@
 #   CMAKE_EXTRA_GENERATOR_CXX_SYSTEM_DEFINED_MACROS.
 #
 #3. The amendment function appends the defines from
-#   ${CMAKE_BINARY_DIR}/zephyr/include/generated/autoconf.h to
+#   ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/autoconf.h to
 #   CMAKE_EXTRA_GENERATOR_C_SYSTEM_DEFINED_MACROS.
 #
 function(eclipse_cdt4_generator_amendment _param_defs)
