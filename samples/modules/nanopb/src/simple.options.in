@@ -1,1 +1,2 @@
 SimpleMessage.buffer max_size:@CONFIG_SAMPLE_BUFFER_SIZE@ fixed_length:true
+SimpleMessage.unlucky_number type:@unlucky_number_type@

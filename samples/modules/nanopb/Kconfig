@@ -11,4 +11,9 @@ config SAMPLE_BUFFER_SIZE
 	help
 	  Configure the simple message buffer field's size.
 
+config SAMPLE_UNLUCKY_NUMBER
+	bool "Unlucky number field"
+	help
+	  Enable the unlucky number field.
+
 source "Kconfig.zephyr"

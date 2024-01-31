@@ -33,6 +33,9 @@ bool encode_message(uint8_t *buffer, size_t buffer_size, size_t *message_length)
 	for (int i = 0; i < 8; ++i) {
 		message.buffer[i] = (uint8_t)(i * 2);
 	}
+#ifdef CONFIG_SAMPLE_UNLUCKY_NUMBER
+	message.unlucky_number = 42;
+#endif
 
 	/* Now we are ready to encode the message! */
 	status = pb_encode(&stream, SimpleMessage_fields, &message);
@@ -67,6 +70,9 @@ bool decode_message(uint8_t *buffer, size_t message_length)
 			printk("%s%d", ((i == 0) ? "" : ", "), (int) message.buffer[i]);
 		}
 		printk("\n");
+#ifdef CONFIG_SAMPLE_UNLUCKY_NUMBER
+		printk("Your unlucky number was %d!\n", (int)message.unlucky_number);
+#endif
 	} else {
 		printk("Decoding failed: %s\n", PB_GET_ERROR(&stream));
 	}
