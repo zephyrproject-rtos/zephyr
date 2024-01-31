@@ -130,6 +130,21 @@ int main(void)
 		return 0;
 	}
 
+#if defined(CONFIG_BT_ISO_SAMPLE_BROADCAST_CODE)
+	const char bcode[] = CONFIG_BT_ISO_SAMPLE_BROADCAST_CODE;
+	size_t bcode_len;
+
+	bcode_len = hex2bin(bcode, strlen(bcode), big_create_param.bcode,
+						  sizeof(big_create_param.bcode));
+	if (bcode_len == sizeof(big_create_param.bcode)) {
+		/* Enable encryption */
+		big_create_param.encryption = 1;
+		printk("Encryption enabled ('%s')\n", bcode);
+	} else {
+		printk("Invalid broadcast code ('%s')\n", bcode);
+	}
+#endif /* CONFIG_BT_ISO_SAMPLE_BROADCAST_CODE */
+
 	/* Create BIG */
 	err = bt_iso_big_create(adv, &big_create_param, &big);
 	if (err) {

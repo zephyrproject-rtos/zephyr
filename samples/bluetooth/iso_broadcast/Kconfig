@@ -11,3 +11,12 @@ config ISO_PRINT_INTERVAL
 	default 1
 	help
 	  Only print the packet report once in a given interval of ISO packets.
+
+config BT_ISO_SAMPLE_BROADCAST_CODE
+	string "Isochronous Broadcaster Sample Broadcast Code"
+	depends on BT_ISO_BROADCASTER
+	default ""
+	help
+	  If a valid broadcast code is specified, e.g. '000102030405060708090a0b0c0d0e0f',
+	  the sample will enable encryption with the specified broadcast code. Setting no
+	  code (or invalid) will disable encryption.
