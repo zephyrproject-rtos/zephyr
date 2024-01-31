@@ -750,7 +750,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 {
 	/* No need to free static memory. */
-	res = NULL;
+	ARG_UNUSED(res);
 }
 
 /*
