@@ -10,6 +10,8 @@
 
 #include "posix_types.h"
 
+#include <time.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,6 +55,7 @@ int sched_getscheduler(pid_t pid);
 
 int sched_setparam(pid_t pid, const struct sched_param *param);
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param);
+int sched_rr_get_interval(pid_t pid, struct timespec *interval);
 
 #ifdef __cplusplus
 }
