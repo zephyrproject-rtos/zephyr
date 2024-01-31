@@ -183,6 +183,8 @@ Build system and infrastructure
   application Kconfig fragment file names and devicetree overlay file names, see
   :ref:`application-file-suffixes` and :ref:`sysbuild_file_suffixes` for details.
 
+* Deprecated ``CONF_FILE`` ``prj_<build>.conf`` build type.
+
 Drivers and Sensors
 *******************
 
