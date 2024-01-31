@@ -428,6 +428,18 @@ ZTEST(pthread, test_sched_setscheduler)
 	zassert_true((rc == -1 && err == ENOSYS));
 }
 
+ZTEST(pthread, test_sched_rr_get_interval)
+{
+	struct timespec interval = {
+		.tv_sec = 0,
+		.tv_nsec = 0,
+	};
+	int rc = sched_rr_get_interval(0, &interval);
+	int err = errno;
+
+	zassert_true((rc == -1 && err == ENOSYS));
+}
+
 ZTEST(pthread, test_pthread_equal)
 {
 	zassert_true(pthread_equal(pthread_self(), pthread_self()));
