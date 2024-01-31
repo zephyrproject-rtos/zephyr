@@ -153,7 +153,7 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *chan);
 
 /* Delete channel */
-void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
+void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan);
 
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
 
