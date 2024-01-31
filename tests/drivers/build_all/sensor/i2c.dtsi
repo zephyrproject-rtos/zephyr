@@ -1055,3 +1055,9 @@ test_i2c_shtc1: shtc1@8e {
 	measure-mode = "low-power";
 	clock-stretching;
 };
+
+test_i2c_lm95234: lm95234@8f {
+	compatible = "national,lm95234";
+	reg = <0x8f>;
+	status = "okay";
+};

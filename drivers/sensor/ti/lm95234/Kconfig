@@ -1,0 +1,13 @@
+# LM95234 temperature sensor config
+
+# Copyright (c) 2024 Calian Advanced Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+config LM95234
+	bool "LM95234 Temperature Sensor"
+	default y
+	depends on DT_HAS_NATIONAL_LM95234_ENABLED
+	select I2C
+	help
+	  Enable the driver for the LM95234 Quad Remote Diode and Local
+	  Temperature Sensor with SMBus Interface.
