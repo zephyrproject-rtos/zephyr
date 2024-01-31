@@ -214,6 +214,7 @@ int st_lps28dfw_init(const struct device *dev)
 		lps28dfw_bus_mode_t bus_mode;
 
 		/* Select bus interface */
+		lps28dfw_bus_mode_get(ctx, &bus_mode);
 		bus_mode.filter = LPS28DFW_AUTO;
 		bus_mode.interface = LPS28DFW_SEL_BY_HW;
 		lps28dfw_bus_mode_set(ctx, &bus_mode);

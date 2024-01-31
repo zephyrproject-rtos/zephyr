@@ -168,6 +168,9 @@ int lps2xdf_init_interrupt(const struct device *dev, enum sensor_variant variant
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lps22df)
 		lps22df_int_mode_t mode;
 
+		if (lps22df_interrupt_mode_get(ctx, &mode) < 0) {
+			return -EIO;
+		}
 		mode.drdy_latched = ~cfg->drdy_pulsed;
 		if (lps22df_interrupt_mode_set(ctx, &mode) < 0) {
 			return -EIO;
@@ -177,6 +180,9 @@ int lps2xdf_init_interrupt(const struct device *dev, enum sensor_variant variant
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lps28dfw)
 		lps28dfw_int_mode_t mode;
 
+		if (lps28dfw_interrupt_mode_get(ctx, &mode) < 0) {
+			return -EIO;
+		}
 		mode.drdy_latched = ~cfg->drdy_pulsed;
 		if (lps28dfw_interrupt_mode_set(ctx, &mode) < 0) {
 			return -EIO;
