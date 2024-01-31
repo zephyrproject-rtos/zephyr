@@ -54,6 +54,17 @@ DEFINE_FAKE_VOID_FUNC(fake_can_set_state_change_callback, const struct device *,
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bool);
 
+DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_core_clock, const struct device *, uint32_t *);
+
+static int fake_can_get_core_clock_delegate(const struct device *dev, uint32_t *rate)
+{
+	ARG_UNUSED(dev);
+
+	*rate = 16000000;
+
+	return 0;
+}
+
 #ifdef CONFIG_ZTEST
 static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
@@ -73,19 +84,14 @@ static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void 
 	RESET_FAKE(fake_can_recover);
 	RESET_FAKE(fake_can_set_state_change_callback);
 	RESET_FAKE(fake_can_get_max_filters);
+	RESET_FAKE(fake_can_get_core_clock);
+
+	/* Re-install default delegate for reporting the core clock */
+	fake_can_get_core_clock_fake.custom_fake = fake_can_get_core_clock_delegate;
 }
 
 ZTEST_RULE(fake_can_reset_rule, fake_can_reset_rule_before, NULL);
 #endif /* CONFIG_ZTEST */
-
-static int fake_can_get_core_clock(const struct device *dev, uint32_t *rate)
-{
-	ARG_UNUSED(dev);
-
-	*rate = 16000000;
-
-	return 0;
-}
 
 static const struct can_driver_api fake_can_driver_api = {
 	.start = fake_can_start,
