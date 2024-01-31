@@ -20,34 +20,30 @@ int main(void)
 	struct video_buffer *buffers[2], *vbuf;
 	struct video_format fmt;
 	struct video_caps caps;
-	const struct device *video;
 	unsigned int frame = 0;
 	size_t bsize;
 	int i = 0;
 
-	/* Default to software video pattern generator */
-	video = device_get_binding(VIDEO_DEV_SW);
-	if (video == NULL) {
-		LOG_ERR("Video device %s not found", VIDEO_DEV_SW);
+#if DT_HAS_CHOSEN(zephyr_camera)
+	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+
+	if (!device_is_ready(video_dev)) {
+		LOG_ERR("%s: video device is not ready", video_dev->name);
 		return 0;
 	}
+#else
+	const struct device *const video_dev = device_get_binding(VIDEO_DEV_SW);
 
-	/* But would be better to use a real video device if any */
-#if defined(CONFIG_VIDEO_MCUX_CSI)
-	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_imx_csi);
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("%s: device not ready.\n", dev->name);
+	if (video_dev == NULL) {
+		LOG_ERR("%s: video device not found or failed to initialized", VIDEO_DEV_SW);
 		return 0;
 	}
-
-	video = dev;
 #endif
 
-	printk("- Device name: %s\n", video->name);
+	printk("- Device name: %s\n", video_dev->name);
 
 	/* Get capabilities */
-	if (video_get_caps(video, VIDEO_EP_OUT, &caps)) {
+	if (video_get_caps(video_dev, VIDEO_EP_OUT, &caps)) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
 	}
@@ -65,7 +61,7 @@ int main(void)
 	}
 
 	/* Get default/native format */
-	if (video_get_format(video, VIDEO_EP_OUT, &fmt)) {
+	if (video_get_format(video_dev, VIDEO_EP_OUT, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
 		return 0;
 	}
@@ -85,11 +81,11 @@ int main(void)
 			return 0;
 		}
 
-		video_enqueue(video, VIDEO_EP_OUT, buffers[i]);
+		video_enqueue(video_dev, VIDEO_EP_OUT, buffers[i]);
 	}
 
 	/* Start video capture */
-	if (video_stream_start(video)) {
+	if (video_stream_start(video_dev)) {
 		LOG_ERR("Unable to start capture (interface)");
 		return 0;
 	}
@@ -100,7 +96,7 @@ int main(void)
 	while (1) {
 		int err;
 
-		err = video_dequeue(video, VIDEO_EP_OUT, &vbuf, K_FOREVER);
+		err = video_dequeue(video_dev, VIDEO_EP_OUT, &vbuf, K_FOREVER);
 		if (err) {
 			LOG_ERR("Unable to dequeue video buf");
 			return 0;
@@ -109,7 +105,7 @@ int main(void)
 		printk("Got frame %u! size: %u; timestamp %u ms\n", frame++, vbuf->bytesused,
 		       vbuf->timestamp);
 
-		err = video_enqueue(video, VIDEO_EP_OUT, vbuf);
+		err = video_enqueue(video_dev, VIDEO_EP_OUT, vbuf);
 		if (err) {
 			LOG_ERR("Unable to requeue video buf");
 			return 0;
