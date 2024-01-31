@@ -89,7 +89,7 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          pip3 install gcovr
+          pip3 install gcovr==6.0
           ./scripts/twister -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano
 
       - name: ccache stats post
