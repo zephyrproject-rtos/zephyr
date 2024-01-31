@@ -13,6 +13,9 @@ void bt_l2cap_br_init(void);
 /* Notify BR/EDR L2CAP channels about established new ACL connection */
 void bt_l2cap_br_connected(struct bt_conn *conn);
 
+/* Notify BR/EDR L2CAP channels about ACL disconnection*/
+void bt_l2cap_br_disconnected(struct bt_conn *conn);
+
 /* Lookup BR/EDR L2CAP channel by Receiver CID */
 struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 						uint16_t cid);
