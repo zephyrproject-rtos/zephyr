@@ -30,18 +30,18 @@ if(HWMv1)
   set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/soc/Kconfig.defconfig)
 
   # This loads Zephyr base SoC root defconfigs
-  file(WRITE ${soc_defconfig_file} "osource \"soc/$(ARCH)/*/Kconfig.defconfig\"\n")
+  file(WRITE ${soc_defconfig_file} "osource \"soc/soc_legacy/$(ARCH)/*/Kconfig.defconfig\"\n")
 
   set(OPERATION WRITE)
   foreach(root ${kconfig_soc_root})
     file(APPEND ${soc_defconfig_file}
-         "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n")
+         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig.defconfig\"\n")
     file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.choice
-         "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
+         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig.soc\"\n"
     )
     file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.arch
-         "osource \"${root}/soc/$(ARCH)/Kconfig\"\n"
-         "osource \"${root}/soc/$(ARCH)/*/Kconfig\"\n"
+         "osource \"${root}/soc/soc_legacy/$(ARCH)/Kconfig\"\n"
+         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig\"\n"
     )
     set(OPERATION APPEND)
   endforeach()
