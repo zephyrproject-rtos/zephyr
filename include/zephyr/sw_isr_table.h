@@ -69,13 +69,8 @@ struct _isr_list {
 };
 
 #ifdef CONFIG_SHARED_INTERRUPTS
-struct z_shared_isr_client {
-	void (*isr)(const void *arg);
-	const void *arg;
-};
-
 struct z_shared_isr_table_entry {
-	struct z_shared_isr_client clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
+	struct _isr_table_entry clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
 	size_t client_num;
 };
 
