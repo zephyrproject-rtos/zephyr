@@ -297,6 +297,9 @@ struct tcp { /* TCP connection */
 	};
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
+#if defined(CONFIG_NET_TCP_IPV6_ND_REACHABILITY_HINT)
+	int64_t last_nd_hint_time;
+#endif
 	size_t send_data_total;
 	size_t send_retries;
 	int unacked_len;

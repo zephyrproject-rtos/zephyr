@@ -960,10 +960,22 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 
 static void tcp_nbr_reachability_hint(struct tcp *conn)
 {
-	if (net_context_get_family(conn->context) == AF_INET6) {
-		net_ipv6_nbr_reachability_hint(
-			net_context_get_iface(conn->context),
-			&conn->dst.sin6.sin6_addr);
+	int64_t now;
+	struct net_if *iface;
+
+	if (net_context_get_family(conn->context) != AF_INET6) {
+		return;
+	}
+
+	now = k_uptime_get();
+	iface = net_context_get_iface(conn->context);
+
+	/* Ensure that Neighbor Reachability hints are rate-limited (using threshold
+	 * of half of reachable time).
+	 */
+	if ((now - conn->last_nd_hint_time) > (net_if_ipv6_get_reachable_time(iface) / 2)) {
+		net_ipv6_nbr_reachability_hint(iface, &conn->dst.sin6.sin6_addr);
+		conn->last_nd_hint_time = now;
 	}
 }
 
