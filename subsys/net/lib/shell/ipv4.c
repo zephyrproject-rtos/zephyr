@@ -36,18 +36,18 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (!ipv4->unicast[i].is_used ||
-		    ipv4->unicast[i].address.family != AF_INET) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
 			continue;
 		}
 
 		PR("%s  \t%s    \t%12s/%12s\n",
-		       addrtype2str(ipv4->unicast[i].addr_type),
-		       addrstate2str(ipv4->unicast[i].addr_state),
+		       addrtype2str(ipv4->unicast[i].ipv4.addr_type),
+		       addrstate2str(ipv4->unicast[i].ipv4.addr_state),
 		       net_sprint_ipv4_addr(
-			       &ipv4->unicast[i].address.in_addr),
+			       &ipv4->unicast[i].ipv4.address.in_addr),
 		       net_sprint_ipv4_addr(
-			       &ipv4->netmask));
+			       &ipv4->unicast[i].netmask));
 	}
 }
 #endif /* CONFIG_NET_NATIVE_IPV4 */
@@ -126,6 +126,7 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 		}
 	} else {
 		struct net_if_addr *ifaddr;
+		struct in_addr netmask;
 
 		if (argc < 4) {
 			PR_ERROR("Netmask is missing.\n");
@@ -139,12 +140,12 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOMEM;
 		}
 
-		if (net_addr_pton(AF_INET, argv[3], &addr)) {
+		if (net_addr_pton(AF_INET, argv[3], &netmask)) {
 			PR_ERROR("Invalid netmask: %s", argv[3]);
 			return -EINVAL;
 		}
 
-		net_if_ipv4_set_netmask(iface, &addr);
+		net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 	}
 
 #else /* CONFIG_NET_NATIVE_IPV4 */

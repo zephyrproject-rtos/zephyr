@@ -182,7 +182,9 @@ static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 		return;
 	}
 
-	net_if_ipv4_set_netmask(ipv4auto->iface, &netmask);
+	net_if_ipv4_set_netmask_by_addr(ipv4auto->iface,
+					&ipv4auto->requested_ip,
+					&netmask);
 
 	ipv4auto->state = NET_IPV4_AUTOCONF_ASSIGNED;
 }
