@@ -456,7 +456,7 @@ class RimageSigner(Signer):
 
         preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
         preproc_cmd += ['-imacros',
-                        str(pathlib.Path('zephyr') / 'include' / 'generated' / 'autoconf.h')]
+                        str(pathlib.Path('zephyr') / 'include' / 'generated' / 'zephyr' / 'autoconf.h')]
         preproc_cmd += ['-o', str(subdir / 'rimage_config.toml')]
         self.command.inf(quote_sh_list(preproc_cmd))
         subprocess.run(preproc_cmd, check=True, cwd=self.build_dir)

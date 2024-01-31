@@ -29,6 +29,7 @@ Build System
 
      * - Affected header files
      * - ``app_version.h``
+     * - ``autoconf.h``
      * - ``cmake_intdef.h``
      * - ``core-isa-dM.h``
      * - ``devicetree_generated.h``
