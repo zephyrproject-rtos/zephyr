@@ -5,7 +5,9 @@ description: NRF5 GPIOTE node
 
 compatible: "nordic,nrf-gpiote"
 
-include: base.yaml
+include:
+  - base.yaml
+  - nordic,split-channels.yaml
 
 properties:
   reg:

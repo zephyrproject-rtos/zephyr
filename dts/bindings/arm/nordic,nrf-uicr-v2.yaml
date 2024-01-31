@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic UICR v2 (User Information Configuration Registers)
+
+compatible: "nordic,nrf-uicr-v2"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  domain:
+    type: int
+    required: true
+    description: |
+      Domain ID of the domain associated with this UICR instance. Must be unique
+      across all UICR instances in the system.
+
+  ptr-ext-uicr:
+    type: phandle
+    required: true
+    description: |
+      Handle of a memory region reserved to contain an Extended UICR instance.
+      The address of that node will be stored in the UICR.PTREXTUICR register.
