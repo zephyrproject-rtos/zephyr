@@ -13,8 +13,7 @@ This sample implements Zephyr's :ref:`Dining Philosophers Sample <dining-philoso
 Building and Running
 ********************
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+This project outputs to the console. It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/posix/philosophers
