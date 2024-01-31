@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Intel Corporation.
+ * Copyright (c) 2022-2024 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,16 +38,20 @@ extern "C" {
  */
 struct sensing_sensor_version {
 	union {
-		uint32_t value;
+		uint32_t value; /**< The version represented as a 32-bit value. */
 		struct {
-			uint8_t major;
-			uint8_t minor;
-			uint8_t hotfix;
-			uint8_t build;
+			uint8_t major;  /**< The major version number. */
+			uint8_t minor;  /**< The minor version number. */
+			uint8_t hotfix; /**< The hotfix version number. */
+			uint8_t build;  /**< The build version number. */
 		};
 	};
 };
 
+/**
+ * @brief Macro to create a sensor version value.
+ *
+ */
 #define SENSING_SENSOR_VERSION(_major, _minor, _hotfix, _build)         \
 				(FIELD_PREP(GENMASK(31, 24), _major) |  \
 				 FIELD_PREP(GENMASK(23, 16), _minor) |  \
@@ -83,8 +87,8 @@ struct sensing_sensor_version {
  *
  */
 enum sensing_sensor_state {
-	SENSING_SENSOR_STATE_READY = 0,
-	SENSING_SENSOR_STATE_OFFLINE = 1,
+	SENSING_SENSOR_STATE_READY = 0,   /**< The sensor is ready. */
+	SENSING_SENSOR_STATE_OFFLINE = 1, /**< The sensor is offline. */
 };
 
 /**
@@ -92,12 +96,15 @@ enum sensing_sensor_state {
  *
  */
 enum sensing_sensor_attribute {
-	SENSING_SENSOR_ATTRIBUTE_INTERVAL = 0,
-	SENSING_SENSOR_ATTRIBUTE_SENSITIVITY = 1,
-	SENSING_SENSOR_ATTRIBUTE_LATENCY = 2,
-	SENSING_SENSOR_ATTRIBUTE_MAX,
+	SENSING_SENSOR_ATTRIBUTE_INTERVAL =
+		0, /**< The interval attribute of a sensor configuration. */
+	SENSING_SENSOR_ATTRIBUTE_SENSITIVITY =
+		1, /**< The sensitivity attribute of a sensor configuration. */
+	SENSING_SENSOR_ATTRIBUTE_LATENCY =
+		2, /**< The latency attribute of a sensor configuration. */
+	SENSING_SENSOR_ATTRIBUTE_MAX
+		/**< The maximum number of attributes that a sensor configuration can have. */
 };
-
 
 /**
  * @brief Define Sensing subsystem sensor handle
@@ -105,13 +112,14 @@ enum sensing_sensor_attribute {
  */
 typedef void *sensing_sensor_handle_t;
 
-
 /**
  * @brief Sensor data event receive callback.
  *
  * @param handle The sensor instance handle.
  *
  * @param buf The data buffer with sensor data.
+ *
+ * @param context Sensing data event context.
  */
 typedef void (*sensing_data_event_t)(
 		sensing_sensor_handle_t handle,
@@ -149,8 +157,8 @@ struct sensing_sensor_info {
  *
  */
 struct sensing_callback_list {
-	sensing_data_event_t on_data_event;
-	void *context;
+	sensing_data_event_t on_data_event; /**< Callback function for a sensor data event. */
+	void *context;                      /**< Associated context with on_data_event */
 };
 /**
  * @struct sensing_sensor_config
@@ -158,32 +166,31 @@ struct sensing_callback_list {
  *
  */
 struct sensing_sensor_config {
-	enum sensing_sensor_attribute attri;
+	enum sensing_sensor_attribute attri; /**< Attribute of the sensor configuration. */
 
 	/** \ref SENSING_SENSITIVITY_INDEX_ALL */
-	int8_t data_field;
+	int8_t data_field; /**< Data field of the sensor configuration. */
 
 	union {
-		uint32_t interval;
-		uint32_t sensitivity;
-		uint64_t latency;
+		uint32_t interval;    /**< Interval of the sensor configuration. */
+		uint32_t sensitivity; /**< Sensitivity of the sensor configuration. */
+		uint64_t latency;     /**< Latency of the sensor configuration. */
 	};
 };
 
-
- /**
-  * @brief Get all supported sensor instances' information.
-  *
-  * This API just returns read only information of sensor instances, pointer info will
-  * directly point to internal buffer, no need for caller to allocate buffer,
-  * no side effect to sensor instances.
-  *
-  * @param num_sensors Get number of sensor instances.
-  *
-  * @param info For receiving sensor instances' information array pointer.
-  *
-  * @return 0 on success or negative error value on failure.
-  */
+/**
+ * @brief Get all supported sensor instances' information.
+ *
+ * This API just returns read only information of sensor instances, pointer info will
+ * directly point to internal buffer, no need for caller to allocate buffer,
+ * no side effect to sensor instances.
+ *
+ * @param num_sensors Get number of sensor instances.
+ *
+ * @param info For receiving sensor instances' information array pointer.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
 int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **info);
 
 /**
