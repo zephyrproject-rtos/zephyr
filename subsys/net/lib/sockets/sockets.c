@@ -1492,12 +1492,20 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		}
 	}
 
-	if (msg != NULL && msg->msg_control != NULL && msg->msg_controllen > 0) {
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
-		    net_context_is_recv_pktinfo_set(ctx)) {
-			if (add_pktinfo(ctx, pkt, msg) < 0) {
-				msg->msg_flags |= ZSOCK_MSG_CTRUNC;
+	if (msg != NULL) {
+		if (msg->msg_control != NULL) {
+			if (msg->msg_controllen > 0) {
+				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
+				    net_context_is_recv_pktinfo_set(ctx)) {
+					if (add_pktinfo(ctx, pkt, msg) < 0) {
+						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
+					}
+				} else {
+					msg->msg_controllen = 0U;
+				}
 			}
+		} else {
+			msg->msg_controllen = 0U;
 		}
 	}
 
@@ -1948,6 +1956,10 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 			K_OOPS(k_usermode_to_copy(msg->msg_control,
 						  msg_copy.msg_control,
 						  msg_copy.msg_controllen));
+
+			msg->msg_controllen = msg_copy.msg_controllen;
+		} else {
+			msg->msg_controllen = 0U;
 		}
 
 		k_usermode_to_copy(&msg->msg_iovlen,
