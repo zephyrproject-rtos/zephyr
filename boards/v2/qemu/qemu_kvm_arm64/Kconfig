@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QEMU_KVM_ARM64
-	select SOC_QEMU_VIRT_ARM64
+	select ARM64
+	select QEMU_TARGET
