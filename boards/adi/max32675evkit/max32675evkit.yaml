@@ -10,6 +10,7 @@ toolchain:
 supported:
   - dma
   - gpio
+  - i2c
   - serial
   - trng
   - spi
