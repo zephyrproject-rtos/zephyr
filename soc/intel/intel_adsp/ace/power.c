@@ -179,7 +179,7 @@ void power_gate_entry(uint32_t core_id)
 	z_xt_ints_off(0xffffffff);
 }
 
-void power_gate_exit(void)
+static void __used power_gate_exit(void)
 {
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();
