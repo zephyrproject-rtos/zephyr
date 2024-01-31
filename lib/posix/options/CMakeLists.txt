@@ -6,8 +6,6 @@ zephyr_syscall_header(
   posix_clock.h
 )
 
-zephyr_interface_library_named(posix_subsys)
-
 if(CONFIG_POSIX_API)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
 endif()
@@ -63,6 +61,3 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ARCH_DIR}/${ARCH}/include
 )
-
-zephyr_library_link_libraries(posix_subsys)
-zephyr_library_property(ALLOW_EMPTY TRUE)
