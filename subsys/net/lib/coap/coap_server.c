@@ -127,7 +127,8 @@ static int coap_service_remove_observer(const struct coap_service *service,
 
 static int coap_server_process(int sock_fd)
 {
-	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	static uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+
 	struct sockaddr client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 	struct coap_service *service = NULL;
