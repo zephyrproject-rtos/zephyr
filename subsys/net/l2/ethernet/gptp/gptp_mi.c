@@ -560,6 +560,15 @@ static void gptp_mi_pss_send_state_machine(int port)
 		k_timer_start(&state->half_sync_itv_timer, duration,
 			      K_NO_WAIT);
 
+		/* sourcePortIdentity is set to the portIdentity of this
+		 * PTP Port (see ch. 10.2.12.2.1 and ch 8.5.2).
+		 */
+		memcpy(&state->pss_sync_ptr->sync_info.src_port_id.clk_id,
+			GPTP_DEFAULT_DS()->clk_id,
+			GPTP_CLOCK_ID_LEN);
+		state->pss_sync_ptr->sync_info.src_port_id.port_number = port;
+
+
 		gptp_mi_pss_send_md_sync_send(port);
 
 		__fallthrough;
