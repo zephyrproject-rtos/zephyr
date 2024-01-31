@@ -48,7 +48,9 @@ static void ili9xxx_hw_reset(const struct device *dev)
 {
 	const struct ili9xxx_config *config = dev->config;
 
-	mipi_dbi_reset(config->mipi_dev, ILI9XXX_RESET_PULSE_TIME);
+	if (mipi_dbi_reset(config->mipi_dev, ILI9XXX_RESET_PULSE_TIME) < 0) {
+		return;
+	};
 	k_sleep(K_MSEC(ILI9XXX_RESET_WAIT_TIME));
 }
 
