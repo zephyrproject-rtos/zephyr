@@ -100,16 +100,11 @@ static ALWAYS_INLINE void _restore_core_context(void)
 	__asm__ volatile("rsync");
 }
 
-void power_gate_exit(void)
+static void __attribute__((used)) power_gate_exit(void)
 {
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();
 	_restore_core_context();
-
-	/* Secondary core is resumed by set_dx */
-	if (arch_proc_id()) {
-		mp_resume_entry();
-	}
 }
 
 __asm__(".align 4\n\t"
