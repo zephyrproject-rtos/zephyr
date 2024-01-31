@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+menu "sem_t support"
+
 config SEM_VALUE_MAX
 	int "Maximum semaphore limit"
 	default 32767
@@ -16,3 +18,5 @@ config SEM_NAMELEN_MAX
 	help
 	  Maximum length of name for a named semaphore.
 	  The max value of 255 corresponds to {NAME_MAX}.
+
+endmenu # "sem_t support"

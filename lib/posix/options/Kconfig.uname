@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config POSIX_UNAME
+menuconfig POSIX_UNAME
 	bool "Support for uname"
 	default y if POSIX_API
 	help

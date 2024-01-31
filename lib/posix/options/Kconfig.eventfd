@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config EVENTFD
+menuconfig EVENTFD
 	bool "Support for eventfd"
 	depends on !NATIVE_APPLICATION
 	select POLL

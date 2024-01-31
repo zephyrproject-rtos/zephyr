@@ -6,4 +6,4 @@
 TYPE = PTHREAD_COND
 type = pthread_cond_t
 type-function = pthread_cond_wait
-source "lib/posix/Kconfig.template.pooled_ipc_type"
+rsource "Kconfig.template.pooled_ipc_type"

@@ -1,82 +1,10 @@
-# Copyright (c) 2018 Intel Corporation
-# Copyright (c) 2023 Meta
+# Copyright (c) 2024 Meta
 #
 # SPDX-License-Identifier: Apache-2.0
 
 menu "POSIX API Support"
 
-config POSIX_MAX_FDS
-	int "Maximum number of open file descriptors"
-	default 16 if WIFI_NM_WPA_SUPPLICANT
-	default 16 if POSIX_API
-	default 4
-	help
-	  Maximum number of open file descriptors, this includes
-	  files, sockets, special devices, etc.
-
-config POSIX_API
-	depends on !NATIVE_APPLICATION
-	bool "POSIX APIs"
-	help
-	  Enable mostly-standards-compliant implementations of
-	  various POSIX (IEEE 1003.1) APIs.
-
-# The name of this option is mandated by zephyr_interface_library_named
-# cmake directive.
-config APP_LINK_WITH_POSIX_SUBSYS
-	bool "Make POSIX headers available to application"
-	default y
-	depends on POSIX_API
-	help
-	  Add POSIX subsystem header files to the 'app' include path.
-
-config PTHREAD_IPC
-	bool "POSIX pthread IPC API"
-	default y if POSIX_API
-	depends on POSIX_CLOCK
-	help
-	  This enables a mostly-standards-compliant implementation of
-	  the pthread mutex, condition variable and barrier IPC
-	  mechanisms.
-
-config POSIX_SYSCONF
-	bool "Support for sysconf"
-	default y if POSIX_API
-	help
-	  The sysconf() function provides a method for the application to determine
-	  the current value of a configurable system limit or option (variable).
-
-config POSIX_PAGE_SIZE_BITS
-	int "Number of bits to use for PAGE_SIZE"
-	range 6 16
-	default 12 if POSIX_API
-	default 6
-	help
-	  Define PAGE_SIZE as BIT(n), where n is the value configured here.
-	  PAGE_SIZE is supported in the range [64, 65536]
-	  If CONFIG_POSIX_API=y, PAGE_SIZE defaults to 4096, otherwise, it is 64 bytes.
-
-source "lib/posix/Kconfig.barrier"
-source "lib/posix/Kconfig.clock"
-source "lib/posix/Kconfig.cond"
-source "lib/posix/Kconfig.eventfd"
-source "lib/posix/Kconfig.fnmatch"
-source "lib/posix/Kconfig.fs"
-source "lib/posix/Kconfig.getopt"
-source "lib/posix/Kconfig.key"
-source "lib/posix/Kconfig.limits"
-source "lib/posix/Kconfig.mqueue"
-source "lib/posix/Kconfig.mutex"
-source "lib/posix/Kconfig.pthread"
-source "lib/posix/Kconfig.rwlock"
-source "lib/posix/Kconfig.sched"
-source "lib/posix/Kconfig.semaphore"
-source "lib/posix/Kconfig.signal"
-source "lib/posix/Kconfig.spinlock"
-source "lib/posix/Kconfig.timer"
-source "lib/posix/Kconfig.uname"
-source "lib/posix/Kconfig.stropts"
-
+rsource "options/Kconfig"
 rsource "shell/Kconfig"
 
 endmenu # "POSIX API Support"

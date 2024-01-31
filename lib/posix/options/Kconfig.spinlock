@@ -5,4 +5,4 @@
 TYPE = PTHREAD_SPINLOCK
 type = pthread_spinlock_t
 type-function = pthread_spin_lock
-source "lib/posix/Kconfig.template.pooled_ipc_type"
+rsource "Kconfig.template.pooled_ipc_type"
