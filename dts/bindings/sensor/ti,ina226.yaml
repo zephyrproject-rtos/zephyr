@@ -1,0 +1,103 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI INA226 Bidirectional Current and Power Monitor.
+    The <zephyr/dt-bindings/sensor/ina226.h> file should be included in the
+    DeviceTree and it provides macros that can be used for initializing the
+    configuration registers.
+
+    Example:
+      /* Board - mr_canhubk3. */
+      &lpi2c1 {
+        status = "okay";
+        pinctrl-0 = <&lpi2c1_default>;
+        pinctrl-names = "default";
+        clock-frequency = <I2C_BITRATE_STANDARD>;
+
+        ina226: ina226@41 {
+          compatible = "ti,ina226";
+          reg = <0x41>;
+          current-lsb-microamps = <5000>;
+          rshunt-micro-ohms = <500>;
+        };
+      };
+
+
+compatible: "ti,ina226"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  config:
+    type: int
+    default: 0x0000
+    description: |
+      Value of the configuration register
+      e.g. shunt voltage and bus voltage ADC conversion
+      times and averaging, operating mode for INA226 or
+      delay for initial ADC conversion, shunt full scale range
+      for INA226.
+
+  avg-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+      Default is the power-on reset value.
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1100
+    enum: [140, 204, 332, 588, 1100, 2116, 4156, 8244]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1100
+    enum: [140, 204, 332, 588, 1100, 2116, 4156, 8244]
+
+  operating-mode:
+    type: string
+    description: |
+      Selects mode of operation.
+      Default is the power-on reset value.
+    default: "Shunt and Bus, Continuous"
+    enum:
+      - "Power-Down (or Shutdown)"
+      - "Shunt Voltage, Triggered"
+      - "Bus Voltage, Triggered"
+      - "Shunt and Bus, Triggered"
+      - "Power-Down (or Shutdown)"
+      - "Shunt Voltage, Continuous"
+      - "Bus Voltage, Continuous"
+      - "Shunt and Bus, Continuous"
+
+  current-lsb-microamps:
+    type: int
+    required: true
+    description: |
+      This value should be selected so that measurement resolution is
+      maximized, that is:
+
+        current-lsb(A) = maximum expected current(A) / 2^15
+
+      (sensor has 15 bits). For example, if maximum expected current is 15A:
+
+        current-lsb(A) = 15A / 2^15 ~= 457uA
+
+      Rounded values may be used for convenience, e.g. 500uA/LSB or 1mA/LSB
+      while keeping a good measurement resolution. The units are in uA/LSB
+      so that low maximum currents can be measured with enough resolution.
+
+  rshunt-micro-ohms:
+    type: int
+    required: true
+    description: |
+      Shunt resistor value in micro-ohms.
