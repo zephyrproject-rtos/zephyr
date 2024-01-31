@@ -5,7 +5,9 @@
 TYPE = TIMER
 type = timer_t
 type-function = timer_create
-source "lib/posix/Kconfig.template.pooled_type"
+rsource "Kconfig.template.pooled_type"
+
+if TIMER
 
 config TIMER_CREATE_WAIT
 	int "Time to wait for timer availability (in msec) in POSIX application"
@@ -21,3 +23,5 @@ config TIMER_DELAYTIMER_MAX
 	help
 	  This controls the maximum number of times a timer can overrun before
 	  timer_getoverrun() in POSIX compliant application.
+
+endif # TIMER

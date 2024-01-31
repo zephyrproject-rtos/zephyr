@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config POSIX_CLOCK
-	bool "POSIX clock and sleep APIs"
+	bool "clock and sleep APIs"
 	default y if POSIX_API
 	imply TIMER
 	depends on !NATIVE_LIBC

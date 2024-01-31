@@ -1,6 +1,8 @@
 # Copyright (c) 2024 Meta
 # SPDX-License-Identifier: Apache-2.0
 
+menu "POSIX Shell Utilities"
+
 if SHELL
 
 config POSIX_SHELL
@@ -11,3 +13,5 @@ config POSIX_SHELL
 rsource "Kconfig.uname"
 
 endif # SHELL
+
+endmenu # "POSIX Shell Utilities"
