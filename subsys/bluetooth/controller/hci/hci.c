@@ -7002,6 +7002,11 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			ptr += BDADDR_SIZE;
 		}
 
+		if (h->cte_info) {
+			/* CTEInfo is RFU */
+			ptr += 1;
+		}
+
 		if (h->adi) {
 			adi_curr = (void *)ptr;
 
