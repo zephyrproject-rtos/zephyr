@@ -895,3 +895,9 @@ test_i2c_bmp581: bmp581@7f {
 	reg = <0x7f>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_am2301b: am2301b@80 {
+	compatible = "aosong,am2301b";
+	reg = <0x80>;
+	status = "okay";
+};
