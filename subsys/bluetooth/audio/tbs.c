@@ -454,28 +454,52 @@ static void net_buf_put_current_calls(const struct service_inst *inst, struct ne
 	}
 }
 
+static uint16_t ntf_truncate(struct bt_conn *conn, size_t data_len)
+{
+	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+	uint16_t mtu = bt_gatt_get_mtu(conn);
+
+	if (data_len > (mtu - att_ntf_header_size)) {
+		data_len = mtu - att_ntf_header_size;
+	}
+
+	return data_len;
+}
+
+static void list_calls_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct service_inst *inst = data;
+
+	net_buf_put_current_calls(inst, &read_buf);
+
+	size_t list_calls_len = read_buf.len;
+	uint16_t ntf_len = ntf_truncate(conn, list_calls_len);
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_LIST_CURRENT_CALLS, inst->attrs,
+			    read_buf.data, ntf_len);
+}
+
+static void call_state_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct service_inst *inst = data;
+
+	net_buf_put_call_states(inst, &read_buf);
+
+	size_t call_state_len = read_buf.len;
+	uint16_t ntf_len = ntf_truncate(conn, call_state_len);
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_CALL_STATE, inst->attrs,
+			    read_buf.data, ntf_len);
+}
+
 static int inst_notify_calls(const struct service_inst *inst)
 {
-	int err;
-
 	if (inst->notify_call_states) {
-		net_buf_put_call_states(inst, &read_buf);
-
-		err = bt_gatt_notify_uuid(NULL, BT_UUID_TBS_CALL_STATE, inst->attrs,
-					  read_buf.data, read_buf.len);
-		if (err != 0) {
-			return err;
-		}
+		bt_conn_foreach(BT_CONN_TYPE_LE, call_state_ntf_cb, (void *)inst);
 	}
 
 	if (inst->notify_current_calls) {
-		net_buf_put_current_calls(inst, &read_buf);
-
-		err = bt_gatt_notify_uuid(NULL, BT_UUID_TBS_LIST_CURRENT_CALLS, inst->attrs,
-					  read_buf.data, read_buf.len);
-		if (err != 0) {
-			return err;
-		}
+		bt_conn_foreach(BT_CONN_TYPE_LE, list_calls_ntf_cb, (void *)inst);
 	}
 
 	return 0;
@@ -1876,6 +1900,36 @@ int bt_tbs_remote_terminate(uint8_t call_index)
 	return status;
 }
 
+static void friendly_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct service_inst *inst = data;
+	size_t friendly_name_len = strlen(inst->friendly_name.uri);
+	uint16_t ntf_len = ntf_truncate(conn, friendly_name_len);
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_FRIENDLY_NAME, inst->attrs,
+			    &inst->friendly_name.uri, ntf_len);
+}
+
+static void incoming_uri_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct service_inst *inst = data;
+	size_t incoming_uri_len = strlen(inst->incoming_uri.uri);
+	uint16_t ntf_len = ntf_truncate(conn, incoming_uri_len);
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_INCOMING_URI, inst->attrs,
+			    &inst->incoming_uri.uri, ntf_len);
+}
+
+static void incoming_call_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct service_inst *inst = data;
+	size_t incoming_call_len = strlen(inst->in_call.uri);
+	uint16_t ntf_len = ntf_truncate(conn, incoming_call_len);
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_INCOMING_CALL, inst->attrs,
+			    &inst->in_call.uri, ntf_len);
+}
+
 static void tbs_inst_remote_incoming(struct service_inst *inst, const char *to, const char *from,
 				     const char *friendly_name, const struct bt_tbs_call *call)
 {
@@ -1895,19 +1949,16 @@ static void tbs_inst_remote_incoming(struct service_inst *inst, const char *to, 
 	inst->incoming_uri.call_index = call->index;
 	(void)utf8_lcpy(inst->incoming_uri.uri, to, sizeof(inst->incoming_uri.uri));
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_INCOMING_URI, inst->attrs, &inst->incoming_uri,
-			    local_uri_ind_len);
+	bt_conn_foreach(BT_CONN_TYPE_LE, incoming_uri_ntf_cb, inst);
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_INCOMING_CALL, inst->attrs, &inst->in_call,
-			    remote_uri_ind_len);
+	bt_conn_foreach(BT_CONN_TYPE_LE, incoming_call_ntf_cb, inst);
 
 	if (friendly_name) {
 		inst->friendly_name.call_index = call->index;
 		utf8_lcpy(inst->friendly_name.uri, friendly_name, sizeof(inst->friendly_name.uri));
 		friend_name_ind_len = strlen(from) + 1;
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_TBS_FRIENDLY_NAME, inst->attrs,
-				    &inst->friendly_name, friend_name_ind_len);
+		bt_conn_foreach(BT_CONN_TYPE_LE, friendly_ntf_cb, inst);
 	} else {
 		inst->friendly_name.call_index = BT_TBS_FREE_CALL_INDEX;
 		bt_gatt_notify_uuid(NULL, BT_UUID_TBS_FRIENDLY_NAME, inst->attrs, NULL, 0);
@@ -1953,6 +2004,16 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 	return call->index;
 }
 
+static void bearer_name_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct service_inst *inst = data;
+	size_t bearer_name_len = strlen(inst->provider_name);
+	uint16_t ntf_len = ntf_truncate(conn, bearer_name_len);
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_PROVIDER_NAME, inst->attrs,
+			    inst->provider_name, ntf_len);
+}
+
 int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 {
 	struct service_inst *inst = inst_lookup_index(bearer_index);
@@ -1970,8 +2031,7 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 
 	(void)utf8_lcpy(inst->provider_name, name, sizeof(inst->provider_name));
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_PROVIDER_NAME, inst->attrs, inst->provider_name,
-			    strlen(inst->provider_name));
+	bt_conn_foreach(BT_CONN_TYPE_LE, bearer_name_ntf_cb, inst);
 	return 0;
 }
 
@@ -2049,6 +2109,16 @@ int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags)
 	return 0;
 }
 
+static void uri_list_ntf_cb(struct bt_conn *conn, void *data)
+{
+	struct tbs_service_inst *inst = data;
+	size_t uri_list_len = strlen(inst->uri_scheme_list);
+	uint16_t ntf_len = ntf_truncate(conn, uri_list_len);
+
+	bt_gatt_notify_uuid(conn, BT_UUID_TBS_URI_LIST, inst->inst.attrs,
+			    &inst->uri_scheme_list, ntf_len);
+}
+
 int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 			       uint8_t uri_count)
 {
@@ -2092,9 +2162,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 
 	LOG_DBG("TBS instance %u uri prefix list is now %s", bearer_index, inst->uri_scheme_list);
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_URI_LIST,
-			    inst->inst.attrs, &inst->uri_scheme_list,
-			    strlen(inst->uri_scheme_list));
+	bt_conn_foreach(BT_CONN_TYPE_LE, uri_list_ntf_cb, inst);
 
 	if (IS_ENABLED(CONFIG_BT_GTBS)) {
 		NET_BUF_SIMPLE_DEFINE(uri_scheme_buf, READ_BUF_SIZE);
