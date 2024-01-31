@@ -14,6 +14,70 @@ config LOG_BACKEND_NET
 
 if LOG_BACKEND_NET
 
+config LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	bool "Print structured data according to RFC 5424"
+	help
+	  Print additional structured data as described in
+	  RFC 5424 chapter 6.3. Note that this might increase the
+	  length of the syslog message a lot.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_TZKNOWN
+	bool "RFC 5424 chapter 7.1.1 tzKnown field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  The tzKnown parameter indicates whether the originator knows its time zone.
+	  See RFC 5424 chapter 7.1 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_ISSYNCED
+	bool "RFC 5424 chapter 7.1.2 isSynced field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  The isSynced parameter indicates whether the originator is
+	  synchronized to a reliable external time source, e.g., via NTP.
+	  See RFC 5424 chapter 7.1 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE
+	bool "RFC 5424 chapter 7.2.3 software description field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  Software description parameter uniquely identifies the software that
+	  generated the message.
+	  See RFC 5424 chapter 7.2 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VALUE
+	string "RFC 5424 chapter 7.2.3 software field value"
+	default "zephyr"
+	depends on LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE
+	help
+	  User defined value for the software field.
+	  See RFC 5424 chapter 7.2.3 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VERSION
+	bool "RFC 5424 chapter 7.2.4 software version field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  Software version parameter uniquely identifies the software that
+	  generated the message.
+	  See RFC 5424 chapter 7.2.4 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SEQID
+	bool "RFC 5424 chapter 7.3.1 sequence id field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  Sequence id parameter tracks the sequence in which the
+	  originator submits messages to the syslog transport for sending.
+	  See RFC 5424 chapter 7.3.1 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_UPTIME
+	bool "RFC 5424 chapter 7.3.2 system uptime field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  The system uptime parameter tracks the "time (in hundredths of a
+	  second) since the network management portion of the system was last
+	  re-initialized." For Zephyr this is currently interpreted as the
+	  system uptime.
+	  See RFC 5424 chapter 7.3.2 for details.
+
 config LOG_BACKEND_NET_SERVER
 	string "Syslog server IP address"
 	help

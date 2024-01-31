@@ -197,7 +197,9 @@ err:
 static void process(const struct log_backend *const backend,
 		    union log_msg_generic *msg)
 {
-	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
+			 LOG_OUTPUT_FLAG_TIMESTAMP |
+			 LOG_OUTPUT_FLAG_THREAD;
 
 	if (panic_mode) {
 		return;
