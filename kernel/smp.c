@@ -119,6 +119,13 @@ static inline void smp_init_top(void *arg)
 	 */
 	wait_for_start_signal(&cpu_start_flag);
 
+	if ((csc == NULL) || csc->invoke_sched) {
+		/* Initialize the dummy thread struct so that
+		 * the scheduler can schedule actual threads to run.
+		 */
+		z_dummy_thread_init(&dummy_thread);
+	}
+
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	if ((csc == NULL) || csc->reinit_timer) {
 		smp_timer_init();
@@ -134,11 +141,6 @@ static inline void smp_init_top(void *arg)
 		/* Don't invoke scheduler. */
 		return;
 	}
-
-	/* Initialize the dummy thread struct so that
-	 * the scheduler can schedule actual threads to run.
-	 */
-	z_dummy_thread_init(&dummy_thread);
 
 	/* Let scheduler decide what thread to run next. */
 	z_swap_unlocked();
