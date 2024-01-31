@@ -85,6 +85,12 @@
 	status = "okay";
 };
 
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2a_scl_p0_18 &i2c2a_sda_p0_19>;
+	pinctrl-names = "default";
+};
+
 &trng {
 	status = "okay";
 };
