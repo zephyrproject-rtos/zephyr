@@ -885,6 +885,19 @@ class TestPlan:
                             else:
                                 instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
+                if ts.extra_script:
+                    validate_boards = lambda platform_scope, platform_from_yaml: any(board in platform_scope for board in platform_from_yaml)
+                    for dut in self.env.hwm.duts:
+                        if dut.platform == plat.name and validate_boards(plat.name,ts.extra_script.get("platforms")):
+                            logger.info("Action script detected...")
+                            scripts_to_execute = ts.extra_script.get("script_type")
+                            for script_name in scripts_to_execute:
+                                script_attr = getattr(dut, script_name)
+                                if script_attr is None:
+                                    setattr(dut, script_name, self.create_path_with_script(script_name, plat))
+                                else:
+                                    logger.info(f"{script_name} already implemented")
+
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
                 instance_list.append(instance)
@@ -1005,6 +1018,17 @@ class TestPlan:
 
         self.link_dir_counter += 1
 
+    def create_path_with_script(self, script_name,platform):
+        script_extension = ".sh" if os.name != "nt" else ".bat"
+        if platform.arch == "riscv32":
+            script_path = os.path.join(ZEPHYR_BASE, "boards", "riscv", platform.name, "support", f"{script_name}{script_extension}")
+        else:
+            script_path = os.path.join(ZEPHYR_BASE, "boards", platform.arch, platform.name, "support", f"{script_name}{script_extension}")
+        if Path(script_path).is_file():
+            return script_path
+        else:
+            logger.error(f"{script_name} script not found under path: {script_path}")
+            return None
 
 def change_skip_to_error_if_integration(options, instance):
     ''' All skips on integration_platforms are treated as errors.'''
