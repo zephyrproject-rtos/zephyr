@@ -36,10 +36,8 @@ static struct sockaddr_in *in4_addr_my;
 static zperf_callback udp_session_cb;
 static void *udp_user_data;
 static bool udp_server_running;
-static bool udp_server_stop;
 static uint16_t udp_server_port;
 static struct sockaddr udp_server_addr;
-static K_SEM_DEFINE(udp_server_run, 0, 1);
 
 struct zsock_pollfd fds[SOCK_ID_MAX] = { 0 };
 
@@ -227,26 +225,45 @@ static void udp_received(int sock, const struct sockaddr *addr, uint8_t *data,
 	}
 }
 
+static void udp_receiver_cleanup(void)
+{
+	int i;
+
+	(void)net_socket_service_unregister(&svc_udp);
+
+	for (i = 0; i < ARRAY_SIZE(fds); i++) {
+		if (fds[i].fd >= 0) {
+			zsock_close(fds[i].fd);
+			fds[i].fd = -1;
+		}
+	}
+
+	udp_server_running = false;
+	udp_session_cb = NULL;
+}
+
 static int udp_recv_data(struct net_socket_service_event *pev)
 {
 	static uint8_t buf[UDP_RECEIVER_BUF_SIZE];
-	int i, ret = 0;
-	int family;
+	int ret = 0;
+	int family, sock_error;
 	struct sockaddr addr;
 	socklen_t optlen = sizeof(int);
 	socklen_t addrlen = sizeof(addr);
 
-	if (udp_server_stop) {
-		ret = -ENOENT;
-		goto cleanup;
+	if (!udp_server_running) {
+		return -ENOENT;
 	}
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
 	    (pev->event.revents & ZSOCK_POLLNVAL)) {
 		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 				       SO_DOMAIN, &family, &optlen);
-		NET_ERR("UDP receiver IPv%d socket error",
-			family == AF_INET ? 4 : 6);
+		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
+				       SO_ERROR, &sock_error, &optlen);
+		NET_ERR("UDP receiver IPv%d socket error (%d)",
+			family == AF_INET ? 4 : 6, sock_error);
+		ret = -sock_error;
 		goto error;
 	}
 
@@ -257,10 +274,11 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 	ret = zsock_recvfrom(pev->event.fd, buf, sizeof(buf), 0,
 			     &addr, &addrlen);
 	if (ret < 0) {
+		ret = -errno;
 		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 				       SO_DOMAIN, &family, &optlen);
 		NET_ERR("recv failed on IPv%d socket (%d)",
-			family == AF_INET ? 4 : 6, errno);
+			family == AF_INET ? 4 : 6, -ret);
 		goto error;
 	}
 
@@ -273,16 +291,6 @@ error:
 		udp_session_cb(ZPERF_SESSION_ERROR, NULL, udp_user_data);
 	}
 
-cleanup:
-	for (i = 0; i < ARRAY_SIZE(fds); i++) {
-		if (fds[i].fd >= 0) {
-			zsock_close(fds[i].fd);
-			fds[i].fd = -1;
-		}
-	}
-
-	(void)net_socket_service_unregister(&svc_udp);
-
 	return ret;
 }
 
@@ -294,11 +302,11 @@ static void udp_svc_handler(struct k_work *work)
 
 	ret = udp_recv_data(pev);
 	if (ret < 0) {
-		(void)net_socket_service_unregister(&svc_udp);
+		udp_receiver_cleanup();
 	}
 }
 
-static void zperf_udp_receiver_init(void)
+static int zperf_udp_receiver_init(void)
 {
 	int ret;
 
@@ -314,6 +322,7 @@ static void zperf_udp_receiver_init(void)
 		fds[SOCK_ID_IPV4].fd = zsock_socket(AF_INET, SOCK_DGRAM,
 						    IPPROTO_UDP);
 		if (fds[SOCK_ID_IPV4].fd < 0) {
+			ret = -errno;
 			NET_ERR("Cannot create IPv4 network socket.");
 			goto error;
 		}
@@ -362,6 +371,7 @@ use_any_ipv4:
 		fds[SOCK_ID_IPV6].fd = zsock_socket(AF_INET6, SOCK_DGRAM,
 						    IPPROTO_UDP);
 		if (fds[SOCK_ID_IPV6].fd < 0) {
+			ret = -errno;
 			NET_ERR("Cannot create IPv4 network socket.");
 			goto error;
 		}
@@ -414,12 +424,15 @@ use_any_ipv6:
 	}
 
 error:
-	return;
+
+	return ret;
 }
 
 int zperf_udp_download(const struct zperf_download_params *param,
 		       zperf_callback callback, void *user_data)
 {
+	int ret;
+
 	if (param == NULL || callback == NULL) {
 		return -EINVAL;
 	}
@@ -431,13 +444,15 @@ int zperf_udp_download(const struct zperf_download_params *param,
 	udp_session_cb = callback;
 	udp_user_data  = user_data;
 	udp_server_port = param->port;
-	udp_server_running = true;
-	udp_server_stop = false;
 	memcpy(&udp_server_addr, &param->addr, sizeof(struct sockaddr));
 
-	zperf_udp_receiver_init();
+	ret = zperf_udp_receiver_init();
+	if (ret < 0) {
+		udp_receiver_cleanup();
+		return ret;
+	}
 
-	k_sem_give(&udp_server_run);
+	udp_server_running = true;
 
 	return 0;
 }
@@ -448,8 +463,7 @@ int zperf_udp_download_stop(void)
 		return -EALREADY;
 	}
 
-	udp_server_stop = true;
-	udp_session_cb = NULL;
+	udp_receiver_cleanup();
 
 	return 0;
 }
