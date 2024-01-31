@@ -1000,8 +1000,9 @@ Release Notes:
 "Drivers: Charger":
   status: maintained
   maintainers:
-    - aaronemassey
     - rriveramcrus
+  collaborators:
+    - GRobertZieba
   files:
     - drivers/charger/
     - dts/bindings/charger/
