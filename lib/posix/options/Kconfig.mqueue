@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config POSIX_MQUEUE
-	bool "POSIX message queue"
+menuconfig POSIX_MQUEUE
+	bool "Message queue support"
 	default y if POSIX_API
 	help
 	  This enabled POSIX message queue related APIs.
