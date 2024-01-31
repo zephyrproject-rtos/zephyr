@@ -236,6 +236,10 @@ class RunnerCaps:
     - reset: whether the runner supports a --reset option, which
       resets the device after a flash operation is complete.
 
+    - extload: whether the runner supports a --extload option, which
+      must be given one time and is passed on to the underlying tool
+      that the runner wraps.
+
     - tool_opt: whether the runner supports a --tool-opt (-O) option, which
       can be given multiple times and is passed on to the underlying tool
       that the runner wraps.
@@ -250,6 +254,7 @@ class RunnerCaps:
     flash_addr: bool = False
     erase: bool = False
     reset: bool = False
+    extload: bool = False
     tool_opt: bool = False
     file: bool = False
 
@@ -531,6 +536,10 @@ class ZephyrBinaryRunner(abc.ABC):
                                   "Default action depends on each specific runner."
                                   if caps.reset else argparse.SUPPRESS))
 
+        parser.add_argument('--extload', dest='extload',
+                            help=(cls.extload_help() if caps.extload
+                                  else argparse.SUPPRESS))
+
         parser.add_argument('-O', '--tool-opt', dest='tool_opt',
                             default=[], action='append',
                             help=(cls.tool_opt_help() if caps.tool_opt
@@ -561,6 +570,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--erase')
         if args.reset and not caps.reset:
             _missing_cap(cls, '--reset')
+        if args.extload and not caps.extload:
+            _missing_cap(cls, '--extload')
         if args.tool_opt and not caps.tool_opt:
             _missing_cap(cls, '--tool-opt')
         if args.file and not caps.file:
@@ -648,6 +659,15 @@ class ZephyrBinaryRunner(abc.ABC):
                   which debugger, device, node or instance to
                   target when multiple ones are available or
                   connected.'''
+
+    @classmethod
+    def extload_help(cls) -> str:
+        ''' Get the ArgParse help text for the --extload option.'''
+        return '''External loader to be used by stm32cubeprogrammer
+                  to program the targeted external memory.
+                  The runner requires the external loader (*.stldr) filename.
+                  This external loader (*.stldr) must be located within
+                  STM32CubeProgrammer/bin/ExternalLoader directory.'''
 
     @classmethod
     def tool_opt_help(cls) -> str:
