@@ -149,7 +149,7 @@ l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 static void l2cap_br_chan_cleanup(struct bt_l2cap_chan *chan)
 {
 	bt_l2cap_chan_remove(chan->conn, chan);
-	bt_l2cap_chan_del(chan);
+	bt_l2cap_br_chan_del(chan);
 }
 
 static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
@@ -529,7 +529,7 @@ void bt_l2cap_br_disconnected(struct bt_conn *conn)
 	struct bt_l2cap_chan *chan, *next;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
-		bt_l2cap_chan_del(chan);
+		bt_l2cap_br_chan_del(chan);
 	}
 }
 
@@ -713,6 +713,37 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 	BR_CHAN(chan)->ident = 0U;
 
 	return 0;
+}
+
+void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
+{
+	const struct bt_l2cap_chan_ops *ops = chan->ops;
+
+	LOG_DBG("conn %p chan %p", chan->conn, chan);
+
+	if (!chan->conn) {
+		goto destroy;
+	}
+
+	if (ops->disconnected) {
+		ops->disconnected(chan);
+	}
+
+	chan->conn = NULL;
+
+destroy:
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	/* Reset internal members of common channel */
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
+	BR_CHAN(chan)->psm = 0U;
+#endif
+	if (chan->destroy) {
+		chan->destroy(chan);
+	}
+
+	if (ops->released) {
+		ops->released(chan);
+	}
 }
 
 static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -1153,7 +1184,7 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
 	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
 
-	bt_l2cap_chan_del(&chan->chan);
+	bt_l2cap_br_chan_del(&chan->chan);
 
 	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
@@ -1240,7 +1271,7 @@ static void l2cap_br_disconn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		return;
 	}
 
-	bt_l2cap_chan_del(&chan->chan);
+	bt_l2cap_br_chan_del(&chan->chan);
 }
 
 int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
