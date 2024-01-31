@@ -1,0 +1,46 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic Owned Memory
+
+  Memory region with permission attributes. Each enabled region of this kind
+  will be recorded in the UICR of the compiled domain. Memory ownership and
+  access is then configured for the domain at boot time, based on the UICR.
+
+compatible: "nordic,owned-memory"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  owner-id:
+    type: int
+    description: |
+      Owner ID of the domain that will own this memory region. If not defined,
+      the ownership will default to the domain being compiled.
+
+      Note: owner ID is not the same as domain ID; see the product specification
+      for details.
+
+  perm-read:
+    type: boolean
+    description: Owner has read access to the region.
+
+  perm-write:
+    type: boolean
+    description: Owner has write access to the region.
+
+  perm-execute:
+    type: boolean
+    description: Owner can execute code from the region.
+
+  perm-secure:
+    type: boolean
+    description: Owner has secure-only access to the region.
+
+  non-secure-callable:
+    type: boolean
+    description: Memory region is used for non-secure-callable code.

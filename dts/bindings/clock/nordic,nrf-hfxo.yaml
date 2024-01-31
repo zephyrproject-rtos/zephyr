@@ -5,7 +5,7 @@ description: Nordic nRF high-frequency crystal oscillator
 
 compatible: "nordic,nrf-hfxo"
 
-include: [fixed-clock.yaml]
+include: fixed-clock.yaml
 
 properties:
   clock-frequency:
