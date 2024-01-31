@@ -255,7 +255,7 @@ static int timestamp_print(const struct log_output *output,
 			length = log_custom_timestamp_print(output, timestamp, print_formatted);
 		} else if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 			   flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
-#if defined(CONFIG_NEWLIB_LIBC)
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
 			char time_str[sizeof("1970-01-01T00:00:00")];
 			struct tm *tm;
 			time_t time;
