@@ -31,8 +31,7 @@ config UART_NRFX_UARTE
 config UART_NRFX_UARTE_LEGACY_SHIM
 	bool "Legacy UARTE shim"
 	depends on UART_NRFX_UARTE
-	# NRF54L15 need new UARTE driver
-	depends on !SOC_SERIES_NRF54LX
+	depends on !SOC_SERIES_NRF54LX && !SOC_SERIES_NRF54HX
 	# New shim takes more ROM. Until it is fixed use legacy shim.
 	default y
 
