@@ -17,6 +17,8 @@ A sample showcasing upstream LVGL demos.
       A stress test for LVGL. It contains a lot of object creation, deletion, animations, styles usage, and so on. It can be used if there is any memory corruption during heavy usage or any memory leaks.
 * Widgets
       Shows how the widgets look like out of the box using the built-in material theme.
+* Keypad and encoder
+      Sample for keypad and encoder inputs
 
 Requirements
 ************
@@ -57,5 +59,13 @@ These demos can be built as follows:
    :host-os: unix
    :board: native_sim
    :gen-args: -DCONFIG_LV_Z_DEMO_WIDGETS=y
+   :goals: run
+   :compact:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/lvgl/demos
+   :host-os: unix
+   :board: native_sim
+   :gen-args: -DCONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER=y
    :goals: run
    :compact:

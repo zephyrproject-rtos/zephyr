@@ -31,6 +31,12 @@ config LV_Z_DEMO_WIDGETS
 	help
 	  Build stress testing demo application.
 
+config LV_Z_DEMO_KEYPAD_AND_ENCODER
+	bool "LVGL keypad and encoder demo"
+	select LV_USE_DEMO_KEYPAD_AND_ENCODER
+	help
+	  Build keypad and encoder demo application.
+
 endchoice
 
 source "Kconfig.zephyr"

@@ -88,3 +88,7 @@ target_sources_ifdef(CONFIG_LV_USE_DEMO_WIDGETS app PRIVATE
     ${LVGL_DIR}/demos/widgets/assets/img_lvgl_logo.c
     ${LVGL_DIR}/demos/widgets/lv_demo_widgets.c
 )
+
+target_sources_ifdef(CONFIG_LV_USE_DEMO_KEYPAD_AND_ENCODER app PRIVATE
+    ${LVGL_DIR}/demos/keypad_encoder/lv_demo_keypad_encoder.c
+)

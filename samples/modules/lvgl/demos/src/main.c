@@ -31,6 +31,8 @@ int main(void)
 	lv_demo_stress();
 #elif defined(CONFIG_LV_USE_DEMO_WIDGETS)
 	lv_demo_widgets();
+#elif defined(CONFIG_LV_USE_DEMO_KEYPAD_AND_ENCODER)
+	lv_demo_keypad_encoder();
 #else
 #error Enable one of the demos CONFIG_LV_USE_DEMO_MUSIC, CONFIG_LV_USE_DEMO_BENCHMARK ,\
 	CONFIG_LV_USE_DEMO_STRESS, or CONFIG_LV_USE_DEMO_WIDGETS
