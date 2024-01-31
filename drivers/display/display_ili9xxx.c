@@ -111,12 +111,11 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 	} else {
 		write_h = desc->height;
 		mipi_desc.height = desc->height;
-		mipi_desc.buf_size = desc->buf_size;
+		mipi_desc.buf_size = desc->width * data->bytes_per_pixel * write_h;
 		nbr_of_writes = 1U;
 	}
 
 	mipi_desc.width = desc->width;
-	mipi_desc.height = desc->height;
 	/* Per MIPI API, pitch must always match width */
 	mipi_desc.pitch = desc->width;
 
