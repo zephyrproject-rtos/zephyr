@@ -2574,6 +2574,10 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
           if(EXISTS ${test_file})
             list(APPEND ${FILE_DTS} ${test_file})
 
+            if(DEFINED FILE_BUILD)
+              set(deprecated_file_found y)
+            endif()
+
             if(FILE_NAMES)
               break()
             endif()
@@ -2601,6 +2605,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 
           if(EXISTS ${test_file})
             list(APPEND ${FILE_KCONF} ${test_file})
+
+            if(DEFINED FILE_BUILD)
+              set(deprecated_file_found y)
+            endif()
+
             if(FILE_NAMES)
               break()
             endif()
@@ -2621,6 +2630,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
               "No ${not_found} file(s) was found in the ${FILE_CONF_FILES} folder(s), "
               "please read the Zephyr documentation on application development."
       )
+    endif()
+
+    if(deprecated_file_found)
+      message(DEPRECATION "prj_<build>.conf was deprecated after Zephyr 3.5,"
+                          " you should switch to using -DFILE_SUFFIX instead")
     endif()
   endif()
 endfunction()
@@ -4279,7 +4293,7 @@ function(zephyr_linker_dts_section)
 
   if(DTS_SECTION_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "zephyr_linker_dts_section(${ARGV0} ...) given unknown "
-            "arguments: ${DTS_SECTION_UNPARSED_ARGUMENTS}"
+	    "arguments: ${DTS_SECTION_UNPARSED_ARGUMENTS}"
     )
   endif()
 
