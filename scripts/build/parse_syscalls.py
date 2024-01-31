@@ -68,15 +68,18 @@ def analyze_headers(include_dir, scan_dir, file_list):
     # Get the list of header files which contains syscalls to be emitted.
     # If file_list does not exist, we emit all syscalls.
     if file_list:
-        with open(file_list, "r", encoding="utf-8") as fp:
-            contents = fp.read()
-
-            for one_file in contents.split(";"):
-                if os.path.isfile(one_file):
-                    syscall_files[one_file] = {"emit": True}
-                else:
-                    sys.stderr.write(f"{one_file} does not exists!\n")
-                    sys.exit(1)
+        try:
+            with open(file_list, "r", encoding="utf-8") as fp:
+                contents = fp.read()
+        except UnicodeError:
+                sys.stderr.write(f"File - {path} - failed to read in utf-8, it may contain non utf-8 characters")
+                sys.exit(1)
+        for one_file in contents.split(";"):
+            if os.path.isfile(one_file):
+                syscall_files[one_file] = {"emit": True}
+            else:
+                sys.stderr.write(f"{one_file} does not exists!\n")
+                sys.exit(1)
 
     multiple_directories = set()
     if include_dir:
