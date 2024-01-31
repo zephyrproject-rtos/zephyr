@@ -23,6 +23,7 @@ config UART_$(nrfx_uart_num)_ENHANCED_POLL_OUT
 	depends on !SOC_SERIES_NRF54LX
 	default y
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
+	depends on HAS_HW_NRF_PPI || HAS_HW_NRF_DPPIC
 	select NRFX_PPI if HAS_HW_NRF_PPI
 	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 	help
