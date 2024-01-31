@@ -435,6 +435,169 @@ static void log_msg_hexdump(const struct log_output *output,
 	} while (len);
 }
 
+#if defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SEQID)
+static int32_t get_sequence_id(void)
+{
+	static int32_t id;
+
+	if (++id < 0) {
+		id = 1;
+	}
+
+	return id;
+}
+#endif
+
+#if defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_TZKNOWN)
+static bool is_tzknown(void)
+{
+	/* TODO: use proper implementation */
+	return false;
+}
+#endif
+
+#if defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_ISSYNCED)
+static bool is_synced(void)
+{
+	/* TODO: use proper implementation */
+	return IS_ENABLED(CONFIG_SNTP);
+}
+#endif
+
+static int syslog_print(const struct log_output *output,
+			bool level_on,
+			bool func_on,
+			bool *thread_on,
+			const char *domain,
+			const char *source,
+			k_tid_t tid,
+			uint32_t level,
+			uint32_t length)
+{
+	uint32_t len = length;
+
+	/* The syslog output format is:
+	 * HOSTNAME SP APP-NAME SP PROCID SP MSGID SP STRUCTURED-DATA
+	 */
+
+	/* First HOSTNAME */
+	len += print_formatted(output, "%s ",
+			       output->control_block->hostname ?
+			       output->control_block->hostname :
+			       "zephyr");
+
+	/* Then APP-NAME. We use the thread name here. It should not
+	 * contain any space characters.
+	 */
+	if (*thread_on) {
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			if (strstr(k_thread_name_get(tid), " ") != NULL) {
+				goto do_not_print_name;
+			}
+
+			len += print_formatted(output, "%s ",
+					       tid == NULL ?
+					       "irq" :
+					       k_thread_name_get(tid));
+		} else {
+do_not_print_name:
+			len += print_formatted(output, "%p ", tid);
+		}
+
+		/* Do not print thread id in the message as it was already
+		 * printed above.
+		 */
+		*thread_on = false;
+	} else {
+		/* No APP-NAME */
+		len += print_formatted(output, "- ");
+	}
+
+	if (!IS_ENABLED(CONFIG_LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA)) {
+		/* No PROCID, MSGID or STRUCTURED-DATA */
+		len += print_formatted(output, "- - - ");
+
+		return len;
+	}
+
+
+#if defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE) || \
+	defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VERSION)
+#define STRUCTURED_DATA_ORIGIN_START      "[origin"
+#define STRUCTURED_DATA_ORIGIN_SW         " software=\"%s\""
+#define STRUCTURED_DATA_ORIGIN_SW_VERSION " swVersion=\"%u\""
+#define STRUCTURED_DATA_ORIGIN_END        "]"
+#define STRUCTURED_DATA_ORIGIN						      \
+	    STRUCTURED_DATA_ORIGIN_START				      \
+	    COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE,	      \
+			(STRUCTURED_DATA_ORIGIN_SW), ("%s"))		      \
+	    COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VERSION,\
+			(STRUCTURED_DATA_ORIGIN_SW_VERSION), ("%s"))	      \
+	    STRUCTURED_DATA_ORIGIN_END
+#else
+#define STRUCTURED_DATA_ORIGIN "%s%s"
+#endif
+
+#if defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SEQID) || \
+	defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_UPTIME)
+#define STRUCTURED_DATA_META_START  "[meta"
+#define STRUCTURED_DATA_META_SEQID  " sequenceId=\"%d\""
+#define STRUCTURED_DATA_META_UPTIME " sysUpTime=\"%d\""
+#define STRUCTURED_DATA_META_END    "]"
+#define STRUCTURED_DATA_META						\
+	    STRUCTURED_DATA_META_START					\
+	    COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SEQID,	\
+			(STRUCTURED_DATA_META_SEQID), ("%s"))		\
+	    COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_UPTIME,	\
+			(STRUCTURED_DATA_META_UPTIME), ("%s"))		\
+	    STRUCTURED_DATA_META_END
+#else
+#define STRUCTURED_DATA_META "%s%s"
+#endif
+
+#if defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_TZKNOWN) || \
+	defined(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_ISSYNCED)
+#define STRUCTURED_DATA_TIMEQUALITY_START    "[timeQuality"
+#define STRUCTURED_DATA_TIMEQUALITY_TZKNOWN  " tzKnown=\"%d\""
+#define STRUCTURED_DATA_TIMEQUALITY_ISSYNCED " isSynced=\"%d\""
+#define STRUCTURED_DATA_TIMEQUALITY_END      "]"
+#define STRUCTURED_DATA_TIMEQUALITY					\
+	    STRUCTURED_DATA_TIMEQUALITY_START				\
+	    COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_TZKNOWN,	\
+			(STRUCTURED_DATA_TIMEQUALITY_TZKNOWN), ("%s"))	\
+	    COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_ISSYNCED,	\
+			(STRUCTURED_DATA_TIMEQUALITY_ISSYNCED), ("%s"))	\
+	    STRUCTURED_DATA_TIMEQUALITY_END
+#else
+#define STRUCTURED_DATA_TIMEQUALITY "%s%s"
+#endif
+
+	/* No PROCID or MSGID, but there is structured data.
+	 */
+	len += print_formatted(output,
+		"- - "
+		STRUCTURED_DATA_META
+		STRUCTURED_DATA_ORIGIN
+		STRUCTURED_DATA_TIMEQUALITY,
+		COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SEQID,
+			    (get_sequence_id()), ("")),
+		COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_UPTIME,
+			    /* in hundredths of a sec */
+			    (k_uptime_get_32() / 10), ("")),
+		COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE,
+			    (CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VALUE),
+			    ("")),
+		COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VERSION,
+			    (sys_kernel_version_get()), ("")),
+		COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_TZKNOWN,
+			    (is_tzknown()), ("")),
+		COND_CODE_1(CONFIG_LOG_BACKEND_NET_RFC5424_SDATA_ISSYNCED,
+			    (is_synced()), (""))
+		);
+
+	return len;
+}
+
 static uint32_t prefix_print(const struct log_output *output,
 			     uint32_t flags,
 			     bool func_on,
@@ -466,6 +629,7 @@ static uint32_t prefix_print(const struct log_output *output,
 
 		length += print_formatted(
 			output,
+			 /* <PRI>VERSION */
 			"<%d>1 ",
 			facility * 8 +
 			level_to_rfc5424_severity(level));
@@ -481,11 +645,8 @@ static uint32_t prefix_print(const struct log_output *output,
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
-		length += print_formatted(
-			output, "%s - - - - ",
-			output->control_block->hostname ?
-			output->control_block->hostname :
-			"zephyr");
+		length += syslog_print(output, level_on, func_on, &thread_on, domain,
+				       source_off ? NULL : source, tid, level, length);
 	} else {
 		color_prefix(output, colors_on, level);
 	}
