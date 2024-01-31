@@ -6,7 +6,7 @@
 TYPE = PTHREAD_BARRIER
 type = pthread_barrier_t
 type-function = pthread_barrier_wait
-source "lib/posix/Kconfig.template.pooled_ipc_type"
+rsource "Kconfig.template.pooled_ipc_type"
 
 if PTHREAD_BARRIER
 

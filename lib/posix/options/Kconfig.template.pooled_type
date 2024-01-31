@@ -2,19 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source "lib/posix/Kconfig.template.with_url"
-source "lib/posix/Kconfig.template.with_logging"
+rsource "Kconfig.template.with_url"
 
 # This is mainly for TIMER currently.
-config $(TYPE)
-	bool "POSIX $(type) support"
+menuconfig $(TYPE)
+	bool "$(type) support"
 	help
 	  For more info, see
 	  $(posix-url-base)/$(type-function).html
 
+if $(TYPE)
+
 # eventually, this size should be defaulted to 0 as a safe value
 config MAX_$(TYPE)_COUNT
-	int "Maximum simultaneously active $(type) in POSIX application"
+	int "Maximum number of $(type)"
 	default 5
 	help
 	  Maximum simultaneously active $(type) in a POSIX application.
+
+rsource "Kconfig.template.with_logging"
+
+endif # $(TYPE)

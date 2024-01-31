@@ -5,4 +5,4 @@
 TYPE = PTHREAD_RWLOCK
 type = pthread_rwlock_t
 type-function = pthread_rwlock_timedrdlock
-source "lib/posix/Kconfig.template.pooled_ipc_type"
+rsource "Kconfig.template.pooled_ipc_type"

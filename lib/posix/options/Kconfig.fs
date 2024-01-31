@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config POSIX_FS
+menuconfig POSIX_FS
 	bool "POSIX file system API support"
 	default y if POSIX_API
 	depends on FILE_SYSTEM

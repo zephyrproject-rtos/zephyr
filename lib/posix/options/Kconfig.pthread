@@ -6,7 +6,7 @@
 TYPE = PTHREAD
 type = pthread_t
 type-function = pthread_create
-source "lib/posix/Kconfig.template.pooled_ipc_type"
+rsource "Kconfig.template.pooled_ipc_type"
 
 if PTHREAD
 

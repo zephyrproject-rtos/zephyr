@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config POSIX_PRIORITY_SCHEDULING
-	bool "_POSIX_PRIORITY_SCHEDULING API support"
+	bool "Priority scheduling"
 	default y if PTHREAD
 	default y if POSIX_API
 	depends on PTHREAD

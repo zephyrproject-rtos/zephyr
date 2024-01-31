@@ -6,4 +6,4 @@
 TYPE = PTHREAD_MUTEX
 type = pthread_mutex_t
 type-function = pthread_mutex_lock
-source "lib/posix/Kconfig.template.pooled_ipc_type"
+rsource "Kconfig.template.pooled_ipc_type"

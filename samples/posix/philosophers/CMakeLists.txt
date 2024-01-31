@@ -7,4 +7,4 @@ project(posix_philosophers)
 target_sources(app PRIVATE src/main.c)
 # For translating POSIX scheduler policies and priorities to
 # Zephyr priorities.
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/lib/posix)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/lib/posix/options)
