@@ -58,5 +58,7 @@ struct session *get_session(const struct sockaddr *addr,
 			    enum session_proto proto);
 void zperf_session_init(void);
 void zperf_reset_session_stats(struct session *session);
+/* Reset all sessions for a given protocol. */
+void zperf_session_reset(enum session_proto proto);
 
 #endif /* __ZPERF_SESSION_H */
