@@ -207,6 +207,7 @@ int st_lps22df_init(const struct device *dev)
 		lps22df_bus_mode_t bus_mode;
 
 		/* Select bus interface */
+		lps22df_bus_mode_get(ctx, &bus_mode);
 		bus_mode.filter = LPS22DF_AUTO;
 		bus_mode.interface = LPS22DF_SEL_BY_HW;
 		lps22df_bus_mode_set(ctx, &bus_mode);
