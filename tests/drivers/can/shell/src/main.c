@@ -120,6 +120,8 @@ ZTEST(can_shell, test_can_show)
 	zassert_equal(fake_can_get_capabilities_fake.call_count, 1,
 		      "get_capabilities function not called");
 	zassert_equal(fake_can_get_state_fake.call_count, 1, "get_state function not called");
+	zassert_equal(fake_can_get_core_clock_fake.call_count, 1,
+		      "get_core_clock function not called");
 }
 
 ZTEST(can_shell, test_can_bitrate_missing_value)
