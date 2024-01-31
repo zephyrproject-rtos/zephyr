@@ -117,6 +117,8 @@ static void tcp_receiver_cleanup(void)
 
 	tcp_server_running = false;
 	tcp_session_cb = NULL;
+
+	zperf_session_reset(SESSION_TCP);
 }
 
 static int tcp_recv_data(struct net_socket_service_event *pev)
