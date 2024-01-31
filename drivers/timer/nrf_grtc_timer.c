@@ -7,7 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#endif
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nrf_grtc_timer.h>
 #include <nrfx_grtc.h>
@@ -521,6 +523,7 @@ static int sys_clock_driver_init(void)
 		system_timeout_set(CYC_PER_TICK);
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	static const enum nrf_lfclk_start_mode mode =
 		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)
 			? CLOCK_CONTROL_NRF_LF_START_NOWAIT
@@ -529,6 +532,7 @@ static int sys_clock_driver_init(void)
 				   : CLOCK_CONTROL_NRF_LF_START_STABLE);
 
 	z_nrf_clock_control_lf_on(mode);
+#endif
 
 	return 0;
 }
