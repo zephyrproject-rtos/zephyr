@@ -437,14 +437,16 @@ skip_ipv6:
 
 	PR("IPv4 unicast addresses (max %d):\n", NET_IF_MAX_IPV4_ADDR);
 	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_ADDR; i++) {
-		unicast = &ipv4->unicast[i];
+		unicast = &ipv4->unicast[i].ipv4;
 
 		if (!unicast->is_used) {
 			continue;
 		}
 
-		PR("\t%s %s %s%s\n",
+		PR("\t%s/%s %s %s%s\n",
 		   net_sprint_ipv4_addr(&unicast->address.in_addr),
+		   net_sprint_ipv4_addr(&ipv4->unicast[i].netmask),
+
 		   addrtype2str(unicast->addr_type),
 		   addrstate2str(unicast->addr_state),
 		   unicast->is_infinite ? " infinite" : "");
@@ -480,8 +482,6 @@ skip_ipv4:
 	if (ipv4) {
 		PR("IPv4 gateway : %s\n",
 		   net_sprint_ipv4_addr(&ipv4->gw));
-		PR("IPv4 netmask : %s\n",
-		   net_sprint_ipv4_addr(&ipv4->netmask));
 	}
 #endif /* CONFIG_NET_IPV4 */
 

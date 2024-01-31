@@ -70,7 +70,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
 		struct net_if_addr *if_addr =
-					&iface->config.ip.ipv4->unicast[i];
+					&iface->config.ip.ipv4->unicast[i].ipv4;
 
 		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
 			continue;
@@ -85,7 +85,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
 			 net_addr_ntop(AF_INET,
-				       &iface->config.ip.ipv4->netmask,
+				       &iface->config.ip.ipv4->unicast[i].netmask,
 				       hr_addr, sizeof(hr_addr)));
 		NET_INFO("Router: %s",
 			 net_addr_ntop(AF_INET,
@@ -141,7 +141,7 @@ static void setup_ipv4(struct net_if *iface)
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
-	struct in_addr addr;
+	struct in_addr addr, netmask;
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
@@ -177,11 +177,11 @@ static void setup_ipv4(struct net_if *iface)
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_NETMASK) > 1) {
 		/* If not empty */
 		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
-				  &addr)) {
+				  &netmask)) {
 			NET_ERR("Invalid netmask: %s",
 				CONFIG_NET_CONFIG_MY_IPV4_NETMASK);
 		} else {
-			net_if_ipv4_set_netmask(iface, &addr);
+			net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 		}
 	}
 

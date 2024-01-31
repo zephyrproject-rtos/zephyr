@@ -823,7 +823,9 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			net_if_ipv4_set_netmask(iface, &netmask);
+			net_if_ipv4_set_netmask_by_addr(iface,
+							&iface->config.dhcpv4.requested_ip,
+							&netmask);
 			NET_DBG("options_subnet_mask %s",
 				net_sprint_ipv4_addr(&netmask));
 			break;

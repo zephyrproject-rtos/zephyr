@@ -368,18 +368,27 @@ struct net_if_dhcpv6 {
 #endif
 /** @endcond */
 
+/**
+ * @brief Network Interface unicast IPv4 address and netmask
+ *
+ * Stores the unicast IPv4 address and related netmask.
+ */
+struct net_if_addr_ipv4 {
+	/** IPv4 address */
+	struct net_if_addr ipv4;
+	/** Netmask */
+	struct in_addr netmask;
+};
+
 struct net_if_ipv4 {
 	/** Unicast IP addresses */
-	struct net_if_addr unicast[NET_IF_MAX_IPV4_ADDR];
+	struct net_if_addr_ipv4 unicast[NET_IF_MAX_IPV4_ADDR];
 
 	/** Multicast IP addresses */
 	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
 
 	/** Gateway */
 	struct in_addr gw;
-
-	/** Netmask */
-	struct in_addr netmask;
 
 	/** IPv4 time-to-live */
 	uint8_t ttl;
@@ -2342,6 +2351,18 @@ struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
 					    enum net_addr_state addr_state);
 
 /**
+ * @brief Get IPv4 netmask related to an address of an interface.
+ *
+ * @param iface Interface to use.
+ * @param addr IPv4 address to check.
+ *
+ * @return The netmask set on the interface related to the give address,
+ *         unspecified address if not found.
+ */
+struct in_addr net_if_ipv4_get_netmask_by_addr(struct net_if *iface,
+					       const struct in_addr *addr);
+
+/**
  * @brief Get IPv4 netmask of an interface.
  *
  * @param iface Interface to use.
@@ -2369,6 +2390,32 @@ void net_if_ipv4_set_netmask(struct net_if *iface,
  */
 __syscall bool net_if_ipv4_set_netmask_by_index(int index,
 						const struct in_addr *netmask);
+
+/**
+ * @brief Set IPv4 netmask for an interface index for a given address.
+ *
+ * @param index Network interface index
+ * @param addr IPv4 address related to this netmask
+ * @param netmask IPv4 netmask
+ *
+ * @return True if netmask was added, false otherwise.
+ */
+__syscall bool net_if_ipv4_set_netmask_by_addr_by_index(int index,
+							const struct in_addr *addr,
+							const struct in_addr *netmask);
+
+/**
+ * @brief Set IPv4 netmask for an interface index for a given address.
+ *
+ * @param iface Network interface
+ * @param addr IPv4 address related to this netmask
+ * @param netmask IPv4 netmask
+ *
+ * @return True if netmask was added, false otherwise.
+ */
+bool net_if_ipv4_set_netmask_by_addr(struct net_if *iface,
+				     const struct in_addr *addr,
+				     const struct in_addr *netmask);
 
 /**
  * @brief Set IPv4 gateway for an interface.
