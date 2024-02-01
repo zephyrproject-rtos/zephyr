@@ -1,0 +1,10 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX -License-Identifier: Apache-2.0
+
+config MFD_MAX31790
+	bool "Maxim Integrated MAX31790 I2C configurable PWM controller"
+	default y
+	depends on DT_HAS_MAXIM_MAX31790_ENABLED
+	select I2C
+	help
+	  Enable driver for Maxim Integrated MAX31790.
