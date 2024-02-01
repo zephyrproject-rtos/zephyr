@@ -530,6 +530,11 @@ Networking
 * The zperf ratio between mbps and kbps, kbps and bps is changed to 1000, instead of 1024,
   to align with iperf ratios.
 
+* For network buffer pools maximum allocation size was added to a common structure
+  ``struct net_buf_data_alloc`` as a new field ``max_alloc_size``. Similar member ``data_size`` of
+  ``struct net_buf_pool_fixed`` that was specific only for buffer pools with a fixed size was
+  removed.
+
 zcbor
 =====
 
