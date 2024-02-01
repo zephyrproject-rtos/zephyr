@@ -135,6 +135,7 @@ struct bt_hci_cmd_hdr {
 #define BT_FEAT_HOST_SSP(feat)                  BT_FEAT_TEST(feat, 1, 0, 0)
 #define BT_FEAT_SC(feat)                        BT_FEAT_TEST(feat, 2, 1, 0)
 
+#define BT_FEAT_LMP_SCO_CAPABLE(feat)           BT_FEAT_TEST(feat, 0, 1, 3)
 #define BT_FEAT_LMP_ESCO_CAPABLE(feat)          BT_FEAT_TEST(feat, 0, 3, 7)
 #define BT_FEAT_HV2_PKT(feat)                   BT_FEAT_TEST(feat, 0, 1, 4)
 #define BT_FEAT_HV3_PKT(feat)                   BT_FEAT_TEST(feat, 0, 1, 5)
@@ -293,9 +294,9 @@ struct bt_hci_cmd_hdr {
 #define HCI_PKT_TYPE_HV3                        0x0080
 
 /* eSCO packet types */
-#define HCI_PKT_TYPE_ESCO_HV1                   0x0001
-#define HCI_PKT_TYPE_ESCO_HV2                   0x0002
-#define HCI_PKT_TYPE_ESCO_HV3                   0x0004
+#define HCI_PKT_TYPE_SCO_HV1                    0x0001
+#define HCI_PKT_TYPE_SCO_HV2                    0x0002
+#define HCI_PKT_TYPE_SCO_HV3                    0x0004
 #define HCI_PKT_TYPE_ESCO_EV3                   0x0008
 #define HCI_PKT_TYPE_ESCO_EV4                   0x0010
 #define HCI_PKT_TYPE_ESCO_EV5                   0x0020
@@ -305,12 +306,15 @@ struct bt_hci_cmd_hdr {
 #define HCI_PKT_TYPE_ESCO_3EV5                  0x0200
 
 
-#define ESCO_PKT_MASK                           (HCI_PKT_TYPE_ESCO_HV1 | \
-						 HCI_PKT_TYPE_ESCO_HV2 | \
-						 HCI_PKT_TYPE_ESCO_HV3)
-#define SCO_PKT_MASK                            (HCI_PKT_TYPE_HV1 | \
-						 HCI_PKT_TYPE_HV2 | \
-						 HCI_PKT_TYPE_HV3)
+#define ESCO_PKT_MASK                           (HCI_PKT_TYPE_SCO_HV1 | \
+						 HCI_PKT_TYPE_SCO_HV2 | \
+						 HCI_PKT_TYPE_SCO_HV3 | \
+						 HCI_PKT_TYPE_ESCO_EV3 | \
+						 HCI_PKT_TYPE_ESCO_EV4 | \
+						 HCI_PKT_TYPE_ESCO_EV5)
+#define SCO_PKT_MASK                            (HCI_PKT_TYPE_SCO_HV1 | \
+						 HCI_PKT_TYPE_SCO_HV2 | \
+						 HCI_PKT_TYPE_SCO_HV3)
 #define EDR_ESCO_PKT_MASK                       (HCI_PKT_TYPE_ESCO_2EV3 | \
 						 HCI_PKT_TYPE_ESCO_3EV3 | \
 						 HCI_PKT_TYPE_ESCO_2EV5 | \

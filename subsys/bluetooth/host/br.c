@@ -751,12 +751,16 @@ static int read_ext_features(void)
 void device_supported_pkt_type(void)
 {
 	/* Device supported features and sco packet types */
+	if (BT_FEAT_LMP_SCO_CAPABLE(bt_dev.features)) {
+		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV1);
+	}
+
 	if (BT_FEAT_HV2_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_HV2);
+		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV2);
 	}
 
 	if (BT_FEAT_HV3_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_HV3);
+		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV3);
 	}
 
 	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
