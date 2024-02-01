@@ -240,8 +240,8 @@ config BT_BAP_SCAN_DELEGATOR_BUF_TIMEOUT
 	range 0 1000
 	default 50
 	help
-	  The number of milliseconds that the scan delegator implementation will maximum wait
-	  before rejecting a ASE read or dropping a notification if the scan delegator state is
+	  The maximum number of milliseconds that the scan delegator implementation will wait
+	  before rejecting a read or dropping a notification if the scan delegator state is
 	  being accessed by another thread.
 
 endif # BT_BAP_SCAN_DELEGATOR
