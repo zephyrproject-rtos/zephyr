@@ -2365,31 +2365,37 @@ struct in_addr net_if_ipv4_get_netmask_by_addr(struct net_if *iface,
 /**
  * @brief Get IPv4 netmask of an interface.
  *
+ * @deprecated Use net_if_ipv4_get_netmask_by_addr() instead.
+ *
  * @param iface Interface to use.
  *
  * @return The netmask set on the interface, unspecified address if not found.
  */
-struct in_addr net_if_ipv4_get_netmask(struct net_if *iface);
+__deprecated struct in_addr net_if_ipv4_get_netmask(struct net_if *iface);
 
 /**
  * @brief Set IPv4 netmask for an interface.
  *
+ * @deprecated Use net_if_ipv4_set_netmask_by_addr() instead.
+ *
  * @param iface Interface to use.
  * @param netmask IPv4 netmask
  */
-void net_if_ipv4_set_netmask(struct net_if *iface,
-			     const struct in_addr *netmask);
+__deprecated void net_if_ipv4_set_netmask(struct net_if *iface,
+					  const struct in_addr *netmask);
 
 /**
  * @brief Set IPv4 netmask for an interface index.
+ *
+ * @deprecated Use net_if_ipv4_set_netmask_by_addr() instead.
  *
  * @param index Network interface index
  * @param netmask IPv4 netmask
  *
  * @return True if netmask was added, false otherwise.
  */
-__syscall bool net_if_ipv4_set_netmask_by_index(int index,
-						const struct in_addr *netmask);
+__deprecated __syscall bool net_if_ipv4_set_netmask_by_index(int index,
+							     const struct in_addr *netmask);
 
 /**
  * @brief Set IPv4 netmask for an interface index for a given address.
