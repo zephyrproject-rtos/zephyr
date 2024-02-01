@@ -428,6 +428,7 @@ config BT_CTLR_ADV_ISO_RESERVE_MAX
 config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
 	depends on BT_CTLR_ADV_PERIODIC
+	range 0 4000000
 	default 0
 	help
 	  Define an offset between AUX_ADV_IND and AUX_SYNC_IND when using
@@ -439,6 +440,8 @@ config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	  PDUs are scheduled as periodic events of Extended Advertising
 	  Interval plus 10 milliseconds (Advertising Random Delay) as the
 	  periodic interval.
+	  The offset is in microseconds, limited to an experimental maximum
+	  value of 4 seconds.
 
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
