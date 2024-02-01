@@ -67,7 +67,7 @@ Building and Running
 Example building for :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/helloworld
    :board: nrf52840dk/nrf52840
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build flash
@@ -75,7 +75,7 @@ Example building for :ref:`nrf52840dk_nrf52840`:
 Example building for :ref:`native_sim <native_sim>`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/helloworld
    :board: native_sim
    :goals: build run
 

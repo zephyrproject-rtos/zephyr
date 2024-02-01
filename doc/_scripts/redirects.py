@@ -175,6 +175,7 @@ REDIRECTS = [
     ('samples/net/cloud/google_iot_mqtt/README', 'samples/net/cloud/cloud'),
     ('samples/sensor/wsen_hids/README', 'samples/sensor/sensor'),
     ('samples/sensor/wsen_itds/README', 'samples/sensor/sensor'),
+    ('samples/subsys/display/lvgl/README', 'samples/modules/lvgl/helloworld/README'),
     ('services/portability/posix', 'services/portability/posix/index'),
     # zephyr-keep-sorted-stop
 ]

@@ -2,7 +2,7 @@ sample:
   description: LVGL sample application
   name: lvgl
 tests:
-  sample.display.lvgl.gui:
+  sample.module.lvgl.gui:
     filter: dt_chosen_enabled("zephyr,display")
     # flash usage varies depending on the platform, but ~200K are the bare
     # minimum, give some room by adding 50K more. RAM usage depends largerly on
@@ -20,7 +20,7 @@ tests:
       - lvgl
     integration_platforms:
       - native_sim_64
-  sample.display.lvgl.rk055hdmipi4m:
+  sample.module.lvgl.rk055hdmipi4m:
     # This sample is intended to test the RT1170 and RT595, which require
     # a display shield to work with LVGL
     min_flash: 250
@@ -40,7 +40,7 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
     integration_platforms:
       - mimxrt1170_evk/mimxrt1176/cm7
-  sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
+  sample.module.lvgl.st_b_lcd40_dsi1_mb1166:
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
     harness: console
