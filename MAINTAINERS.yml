@@ -443,6 +443,7 @@ Bluetooth Audio:
     - fredrikdanebjer
     - kruithofa
     - larsgk
+    - pin-zephyr
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
