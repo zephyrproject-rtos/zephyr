@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - adc
   - watchdog
   - counter
   - gpio
