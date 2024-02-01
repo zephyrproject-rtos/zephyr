@@ -13,7 +13,7 @@ config SOC_FAMILY
 	string
 	default "nordic_nrf"
 
-source "soc/arm/nordic_nrf/Kconfig.peripherals"
+source "soc/common/nordic_nrf/Kconfig.peripherals"
 source "soc/arm/nordic_nrf/*/Kconfig.soc"
 
 config NRF_SOC_SECURE_SUPPORTED
