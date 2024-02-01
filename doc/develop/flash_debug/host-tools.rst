@@ -221,6 +221,24 @@ LinkServer is compatible with the following debug probes:
 - :ref:`mcu-link-cmsis-onboard-debug-probe`
 - :ref:`opensda-daplink-onboard-debug-probe`
 
+To use LinkServer with West commands, the install folder should be added to the
+:envvar:`PATH` :ref:`environment variable <env_vars>`.  The default installation
+path to add is:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: console
+
+         /usr/local/LinkServer
+
+   .. group-tab:: Windows
+
+      .. code-block:: console
+
+         c:\nxp\LinkServer_<version>
+
 Supported west commands:
 
 1. flash
