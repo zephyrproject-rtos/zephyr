@@ -11,7 +11,12 @@
 		compatible = "maxim,max31790";
 		status = "okay";
 		reg = <0x20>;
-		pwm-controller;
-		#pwm-cells = <2>;
+
+		max31790_max31790_pwm: max31790_max31790_pwm {
+			compatible = "maxim,max31790-pwm";
+			status = "okay";
+			pwm-controller;
+			#pwm-cells = <2>;
+		};
 	};
 };
