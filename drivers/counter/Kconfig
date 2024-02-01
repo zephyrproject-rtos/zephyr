@@ -68,7 +68,7 @@ source "drivers/counter/Kconfig.maxim_ds3231"
 
 source "drivers/counter/Kconfig.native_posix"
 
-source "drivers/counter/Kconfig.mcux_pit"
+source "drivers/counter/Kconfig.nxp_pit"
 
 source "drivers/counter/Kconfig.xlnx"
 
