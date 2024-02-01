@@ -5,6 +5,9 @@
  */
 #ifndef ZEPHYR_INCLUDE_POSIX_STROPTS_H_
 #define ZEPHYR_INCLUDE_POSIX_STROPTS_H_
+
+#if _POSIX_C_SOURCE >= 200112L
+
 #define RS_HIPRI BIT(0)
 
 #ifdef __cplusplus
@@ -21,6 +24,8 @@ int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif /* ZEPHYR_INCLUDE_POSIX_STROPTS_H_ */

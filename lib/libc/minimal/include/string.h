@@ -18,16 +18,22 @@ extern "C" {
 
 extern char  *strcpy(char *ZRESTRICT d, const char *ZRESTRICT s);
 extern char  *strerror(int errnum);
+#if _POSIX_C_SOURCE >= 200112L
 extern int   strerror_r(int errnum, char *strerrbuf, size_t buflen);
+#endif
 extern char  *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s,
 		      size_t n);
 extern char  *strchr(const char *s, int c);
 extern char  *strrchr(const char *s, int c);
 extern size_t strlen(const char *s);
+#if _POSIX_C_SOURCE >= 200809L
 extern size_t strnlen(const char *s, size_t maxlen);
+#endif
 extern int    strcmp(const char *s1, const char *s2);
 extern int    strncmp(const char *s1, const char *s2, size_t n);
+#if _POSIX_C_SOURCE >= 200112L
 extern char  *strtok_r(char *str, const char *sep, char **state);
+#endif
 extern char *strcat(char *ZRESTRICT dest,
 		    const char *ZRESTRICT src);
 extern char  *strncat(char *ZRESTRICT dest, const char *ZRESTRICT src,

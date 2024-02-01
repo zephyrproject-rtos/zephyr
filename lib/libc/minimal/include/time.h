@@ -49,8 +49,10 @@ typedef _SUSECONDS_T_ suseconds_t;
  * require access to time zone information.
  */
 struct tm *gmtime(const time_t *timep);
+#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _BSD_SOURCE || _SVID_SOURCE || _POSIX_SOURCE
 struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 		    struct tm *ZRESTRICT result);
+#endif
 
 time_t time(time_t *tloc);
 

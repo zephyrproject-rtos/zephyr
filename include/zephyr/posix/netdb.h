@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
 
 #define addrinfo zsock_addrinfo
 
@@ -58,7 +58,7 @@ static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 				 serv, servlen, flags);
 }
 
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+#endif
 
 #ifdef __cplusplus
 }

@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+#if _POSIX_C_SOURCE >= 200112L
+
 /*
  * Other mandatory scheduling policy. Must be numerically distinct. May
  * execute identically to SCHED_RR or SCHED_FIFO. For Zephyr this is a
@@ -53,6 +55,8 @@ int sched_getscheduler(pid_t pid);
 
 int sched_setparam(pid_t pid, const struct sched_param *param);
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param);
+
+#endif
 
 #ifdef __cplusplus
 }

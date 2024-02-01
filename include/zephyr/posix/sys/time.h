@@ -29,7 +29,11 @@ struct timeval {
 extern "C" {
 #endif
 
+#if _POSIX_C_SOURCE >= 200112L
+
 int gettimeofday(struct timeval *tv, void *tz);
+
+#endif
 
 #ifdef __cplusplus
 }

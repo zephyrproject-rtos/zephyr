@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#if _POSIX_C_SOURCE >= 200112L
+
 struct utsname {
 	char sysname[sizeof("Zephyr")];
 	char nodename[CONFIG_POSIX_UNAME_NODENAME_LEN + 1];
@@ -19,6 +21,8 @@ struct utsname {
 };
 
 int uname(struct utsname *name);
+
+#endif
 
 #ifdef __cplusplus
 }

@@ -50,7 +50,11 @@
 extern "C" {
 #endif
 
+#if _POSIX_C_SOURCE >= 2
+
 int fnmatch(const char *, const char *, int);
+
+#endif
 
 #ifdef __cplusplus
 }

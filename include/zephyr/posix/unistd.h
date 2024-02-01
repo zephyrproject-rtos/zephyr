@@ -8,19 +8,13 @@
 
 #include "posix_types.h"
 #include <zephyr/posix/sys/stat.h>
-#ifdef CONFIG_NETWORKING
 /* For zsock_gethostname() */
 #include <zephyr/net/socket.h>
 #include <zephyr/net/hostname.h>
-#endif
 
-#ifdef CONFIG_POSIX_API
 #include <zephyr/fs/fs.h>
-#endif
 
-#ifdef CONFIG_POSIX_SYSCONF
 #include <zephyr/posix/signal.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -224,7 +218,7 @@ extern "C" {
 #define POSIX_REC_XFER_ALIGN	 (4)
 #define SYMLINK_MAX		 _POSIX_SYMLINK_MAX
 
-#ifdef CONFIG_POSIX_API
+#if _POSIX_C_SOURCE >= 200112L
 /* File related operations */
 int close(int file);
 ssize_t write(int file, const void *buffer, size_t count);
@@ -234,29 +228,39 @@ off_t lseek(int file, off_t offset, int whence);
 /* File System related operations */
 int rename(const char *old, const char *newp);
 int unlink(const char *path);
-int stat(const char *path, struct stat *buf);
 int mkdir(const char *path, mode_t mode);
+#endif
+
+#if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || _POSIX_C_SOURCE >= 200112L
+int stat(const char *path, struct stat *buf);
+#endif
 
 FUNC_NORETURN void _exit(int status);
 
-#ifdef CONFIG_NETWORKING
+#if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L
 static inline int gethostname(char *buf, size_t len)
 {
 	return zsock_gethostname(buf, len);
 }
-#endif /* CONFIG_NETWORKING */
+#endif
 
-#endif /* CONFIG_POSIX_API */
-
-#ifdef CONFIG_GETOPT
+#if _POSIX_C_SOURCE >= 2 || _XOPEN_SOURCE
 int getopt(int argc, char *const argv[], const char *optstring);
 extern char *optarg;
 extern int opterr, optind, optopt;
 #endif
 
+#if _POSIX_C_SOURCE >= 200112L
 pid_t getpid(void);
+#endif
+
+#if _POSIX_C_SOURCE >= 200112L
 unsigned sleep(unsigned int seconds);
+#endif
+
+#if _BSD_SOURCE || (_XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED) && !(_POSIX_C_SOURCE >= 200809L || _XOPEN_SOURCE >= 700)
 int usleep(useconds_t useconds);
+#endif
 
 #ifdef CONFIG_POSIX_SYSCONF
 #define __z_posix_sysconf_SC_ADVISORY_INFO		  _POSIX_ADVISORY_INFO
@@ -385,7 +389,9 @@ int usleep(useconds_t useconds);
 #define __z_posix_sysconf_SC_TTY_NAME_MAX		  TTY_NAME_MAX
 #define __z_posix_sysconf_SC_TZNAME_MAX			  TZNAME_MAX
 
+#if _POSIX_C_SOURCE >= 200112L
 #define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
+#endif
 
 #endif /* CONFIG_POSIX_SYSCONF */
 

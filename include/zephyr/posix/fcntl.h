@@ -31,8 +31,12 @@
 extern "C" {
 #endif
 
+#if _POSIX_C_SOURCE >= 200112L
+
 int open(const char *name, int flags, ...);
 int fcntl(int fildes, int cmd, ...);
+
+#endif
 
 #ifdef __cplusplus
 }

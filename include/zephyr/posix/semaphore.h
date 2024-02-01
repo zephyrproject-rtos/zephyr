@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#if _POSIX_C_SOURCE >= 200112L
+
 #define SEM_FAILED ((sem_t *) 0)
 
 int sem_destroy(sem_t *semaphore);
@@ -25,6 +27,8 @@ int sem_wait(sem_t *semaphore);
 sem_t *sem_open(const char *name, int oflags, ...);
 int sem_unlink(const char *name);
 int sem_close(sem_t *sem);
+
+#endif
 
 #ifdef __cplusplus
 }

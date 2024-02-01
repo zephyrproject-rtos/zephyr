@@ -18,7 +18,7 @@ struct linger {
 	int  l_linger;
 };
 
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+#if _POSIX_C_SOURCE >= 200112L
 
 static inline int socket(int family, int type, int proto)
 {
@@ -118,7 +118,7 @@ static inline int getsockname(int sock, struct sockaddr *addr,
 	return zsock_getsockname(sock, addr, addrlen);
 }
 
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+#endif
 
 #ifdef __cplusplus
 }

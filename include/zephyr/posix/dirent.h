@@ -9,12 +9,13 @@
 #include <limits.h>
 #include "posix_types.h"
 
-#ifdef CONFIG_POSIX_FS
 #include <zephyr/fs/fs.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
 
 typedef void DIR;
 
@@ -28,10 +29,10 @@ DIR *opendir(const char *dirname);
 int closedir(DIR *dirp);
 struct dirent *readdir(DIR *dirp);
 
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CONFIG_POSIX_FS */
 
 #endif	/* ZEPHYR_INCLUDE_POSIX_DIRENT_H_ */

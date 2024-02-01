@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
 
 #define fd_set zsock_fd_set
 #define FD_SETSIZE ZSOCK_FD_SETSIZE
@@ -32,7 +32,7 @@ static inline int select(int nfds, fd_set *readfds,
 			    (struct zsock_timeval *)timeout);
 }
 
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+#endif
 
 #ifdef __cplusplus
 }

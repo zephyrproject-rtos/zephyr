@@ -92,17 +92,22 @@ struct sigevent {
 	int sigev_signo;
 };
 
-#ifdef CONFIG_POSIX_SIGNAL
+#if _POSIX_C_SOURCE >= 200809L
 char *strsignal(int signum);
+#endif
+
+#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
 int sigemptyset(sigset_t *set);
 int sigfillset(sigset_t *set);
 int sigaddset(sigset_t *set, int signo);
 int sigdelset(sigset_t *set, int signo);
 int sigismember(const sigset_t *set, int signo);
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
+#endif
 
+#if _POSIX_C_SOURCE >= 199506L || _XOPEN_SOURCE >= 500
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
-#endif /* CONFIG_POSIX_SIGNAL */
+#endif
 
 #ifdef __cplusplus
 }

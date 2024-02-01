@@ -86,9 +86,12 @@ static inline int32_t _ts_to_ms(const struct timespec *to)
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
 
+#if _POSIX_C_SOURCE >= 200112L
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
-int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
+#endif
+
+#if _POSIX_C_SOURCE >= 199309L
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
@@ -96,9 +99,17 @@ int timer_gettime(timer_t timerid, struct itimerspec *its);
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);
 int timer_getoverrun(timer_t timerid);
+#endif
+
+#if _POSIX_C_SOURCE >= 199309L
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
+#endif
+
+#if _XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L
 int clock_nanosleep(clockid_t clock_id, int flags,
 		    const struct timespec *rqtp, struct timespec *rmtp);
+int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
+#endif
 
 #ifdef __cplusplus
 }

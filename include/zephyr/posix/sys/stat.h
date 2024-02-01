@@ -39,6 +39,8 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/_timespec.h>
 
+#if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || _POSIX_C_SOURCE >= 200112L
+
 #ifndef _DEV_T_DECLARED
 typedef int dev_t;
 #define _DEV_T_DECLARED
@@ -270,6 +272,9 @@ int _fstat64(int __fd, struct stat64 *__sbuf);
 #endif
 
 #endif /* !_STAT_H_ */
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
