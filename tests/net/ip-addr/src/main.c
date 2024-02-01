@@ -404,11 +404,15 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 	zassert_true(net_ipv4_is_my_addr(&addr4),
 		     "My IPv4 address check failed");
 
+	net_if_ipv4_set_netmask_by_addr(default_iface, &addr4, &netmask);
+
 	ifaddr1 = net_if_ipv4_addr_add(default_iface,
 				       &lladdr4,
 				       NET_ADDR_MANUAL,
 				       0);
 	zassert_not_null(ifaddr1, "IPv4 interface address add failed");
+
+	net_if_ipv4_set_netmask_by_addr(default_iface, &lladdr4, &netmask2);
 
 	zassert_true(net_ipv4_is_my_addr(&lladdr4),
 		     "My IPv4 address check failed");
@@ -471,10 +475,9 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 	iface = default_iface;
 
 	net_if_ipv4_set_gw(iface, &gw);
-	net_if_ipv4_set_netmask(iface, &netmask);
 
 	zassert_false(net_ipv4_addr_mask_cmp(iface, &fail_addr),
-		"IPv4 wrong match failed");
+		      "IPv4 wrong match failed");
 
 	zassert_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
 		     "IPv4 match failed");
@@ -541,10 +544,10 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr5);
 	zassert_true(ret, "IPv4 address 5 is not broadcast address");
 
-	net_if_ipv4_set_netmask(iface, &netmask2);
-
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr2);
 	zassert_false(ret, "IPv4 address 2 is broadcast address");
+
+	net_if_ipv4_set_netmask_by_addr(iface, &addr4, &netmask2);
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr3);
 	zassert_true(ret, "IPv4 address 3 is not broadcast address");
