@@ -54,9 +54,6 @@ struct uart_async_rx {
 	/* Index of the next buffer to be provided to the driver. */
 	uint8_t drv_buf_idx;
 
-	/* Current buffer to which data is written. */
-	uint8_t wr_buf_idx;
-
 	/* Current buffer from which data is being consumed. */
 	uint8_t rd_buf_idx;
 };
