@@ -353,6 +353,7 @@
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
 			interrupts = <35 5>;
+			fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -363,6 +364,7 @@
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
+			fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -373,6 +375,7 @@
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
+			fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -383,6 +386,7 @@
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <84 5>;
+			fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -393,6 +397,7 @@
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <85 5>;
+			fifo-size = <4>;
 			status = "disabled";
 		};
 
