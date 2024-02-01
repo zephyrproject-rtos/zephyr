@@ -578,7 +578,7 @@ static void test_address_setup(void)
 				      NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
-	net_if_ipv4_set_netmask(iface1, &netmask);
+	net_if_ipv4_set_netmask_by_addr(iface1, &in4addr_my, &netmask);
 
 	ifaddr = net_if_ipv6_addr_add(iface2, &my_addr2,
 				      NET_ADDR_MANUAL, 0);
@@ -594,7 +594,7 @@ static void test_address_setup(void)
 				      NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
-	net_if_ipv4_set_netmask(iface2, &netmask);
+	net_if_ipv4_set_netmask_by_addr(iface2, &in4addr_my2, &netmask);
 
 	net_if_up(iface1);
 	net_if_up(iface2);
