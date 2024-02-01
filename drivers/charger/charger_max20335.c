@@ -18,8 +18,10 @@
 LOG_MODULE_REGISTER(max20335_charger);
 
 #define MAX20335_REG_STATUS_A 0x02
+#define MAX20335_REG_STATUS_B 0x03
 #define MAX20335_REG_INT_A 0x05
 #define MAX20335_REG_INT_B 0x06
+#define MAX20335_INT_A_USB_OK_MASK BIT(3)
 #define MAX20335_INT_A_CHG_STAT_MASK BIT(6)
 #define MAX20335_REG_INT_MASK_A 0x07
 #define MAX20335_REG_INT_MASK_B 0x08
@@ -28,6 +30,7 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_CHGCNTLA_BAT_REG_CFG_MASK GENMASK(4, 1)
 #define MAX20335_ILIMCNTL_MASK GENMASK(1, 0)
 #define MAX20335_STATUS_A_CHG_STAT_MASK GENMASK(2, 0)
+#define MAX20335_STATUS_B_USB_OK_MASK BIT(3)
 #define MAX20335_CHRG_EN_MASK BIT(0)
 #define MAX20335_CHRG_EN BIT(0)
 #define MAX20335_REG_CVC_VREG_MIN_UV 4050000U
@@ -50,6 +53,7 @@ struct charger_max20335_data {
 	struct k_work int_routine_work;
 	struct k_work_delayable int_enable_work;
 	enum charger_status charger_status;
+	enum charger_online charger_online;
 };
 
 static const struct linear_range charger_uv_range =
@@ -103,6 +107,35 @@ static int max20335_get_charger_status(const struct device *dev, enum charger_st
 		break;
 	default:
 		*status = CHARGER_STATUS_UNKNOWN;
+		break;
+	};
+
+	return 0;
+}
+
+static int max20335_get_charger_online(const struct device *dev, enum charger_online *online)
+{
+	enum {
+		MAX20335_CHGIN_IN_NOT_PRESENT_OR_INVALID,
+		MAX20335_CHGIN_IN_PRESENT_AND_VALID,
+	};
+	const struct charger_max20335_config *const config = dev->config;
+	uint8_t val;
+	int ret;
+
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUS_B, &val);
+	if (ret) {
+		return ret;
+	}
+
+	val = FIELD_GET(MAX20335_STATUS_B_USB_OK_MASK, val);
+
+	switch (val) {
+	case MAX20335_CHGIN_IN_PRESENT_AND_VALID:
+		*online = CHARGER_ONLINE_FIXED;
+		break;
+	default:
+		*online = CHARGER_ONLINE_OFFLINE;
 		break;
 	};
 
@@ -276,6 +309,9 @@ static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 	struct charger_max20335_data *data = dev->data;
 
 	switch (prop) {
+	case CHARGER_PROP_ONLINE:
+		val->online = data->charger_online;
+		return 0;
 	case CHARGER_PROP_STATUS:
 		val->status = data->charger_status;
 		return 0;
@@ -357,6 +393,13 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		}
 	}
 
+	if ((int_src_a & MAX20335_INT_A_USB_OK_MASK) != 0) {
+		ret = max20335_get_charger_online(data->dev, &data->charger_online);
+		if (ret < 0) {
+			LOG_WRN("Failed to read charger online %d", ret);
+		}
+	}
+
 	ret = k_work_reschedule(&data->int_enable_work, INT_ENABLE_DELAY);
 	if (ret < 0) {
 		LOG_WRN("Could not reschedule int_enable_work: %d", ret);
@@ -414,6 +457,12 @@ static int max20335_init(const struct device *dev)
 	ret = max20335_get_charger_status(dev, &data->charger_status);
 	if (ret != 0) {
 		LOG_ERR("Failed to read charger status: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_get_charger_online(dev, &data->charger_online);
+	if (ret != 0) {
+		LOG_ERR("Failed to read charger online: %d", ret);
 		return ret;
 	}
 
