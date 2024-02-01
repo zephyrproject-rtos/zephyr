@@ -575,7 +575,7 @@ int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer
 	err = k_sem_take(observer_sem, K_SECONDS(wait));
 	if (err == -EAGAIN) {
 		LOG_WRN("Taking sem timed out (err %d)", err);
-		returned_value = -EAGAIN;
+		returned_value = -ETIMEDOUT;
 	} else if (err) {
 		LOG_ERR("Taking sem failed (err %d)", err);
 		return err;
