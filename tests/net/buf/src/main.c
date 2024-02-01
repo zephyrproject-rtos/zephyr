@@ -436,6 +436,12 @@ ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 	buf = net_buf_alloc_len(&fixed_pool, 20, K_NO_WAIT);
 	zassert_not_null(buf, "Failed to get buffer");
 
+	/* Verify buffer's size and len - even though we requested less bytes we
+	 * should get a buffer with the fixed size.
+	 */
+	zassert_equal(buf->size, FIXED_BUFFER_SIZE, "Invalid fixed buffer size");
+	zassert_equal(buf->len, 0, "Invalid fixed buffer length");
+
 	net_buf_unref(buf);
 
 	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
@@ -796,5 +802,51 @@ ZTEST(net_buf_tests, test_net_buf_comparison)
 
 	net_buf_unref(buf);
 }
+
+ZTEST(net_buf_tests, test_net_buf_fixed_append)
+{
+	struct net_buf *buf;
+	uint8_t data[FIXED_BUFFER_SIZE * 2];
+
+	/* Fill data buffer */
+	for (int i = 0; i < sizeof(data); ++i) {
+		data[i] = (uint8_t)i;
+	}
+
+	/* Fixed Pool */
+	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get fixed buffer");
+	zassert_equal(buf->size, FIXED_BUFFER_SIZE, "Invalid fixed buffer size");
+
+	/* For fixed pool appending less bytes than buffer's free space must
+	 * not add a new fragment
+	 */
+	net_buf_append_bytes(buf, buf->size - 8, data, K_NO_WAIT, NULL, NULL);
+	zassert_equal(buf->len, buf->size - 8, "Invalid buffer len");
+	zassert_is_null(buf->frags, "Unexpected buffer fragment");
+
+	/* Filling rest of the space should not add an additional buffer */
+	net_buf_append_bytes(buf, 8, data, K_NO_WAIT, NULL, NULL);
+	zassert_equal(buf->len, buf->size, "Invalid buffer len");
+	zassert_is_null(buf->frags, "Unexpected buffer fragment");
+
+	/* Appending any number of bytes allocates an additional fragment */
+	net_buf_append_bytes(buf, 1, data, K_NO_WAIT, NULL, NULL);
+	zassert_not_null(buf->frags, "Lack of expected buffer fragment");
+	zassert_equal(buf->frags->len, 1, "Expected single byte in the new fragment");
+	zassert_equal(buf->frags->size, buf->size, "Different size of the fragment");
+
+	/* Remove 1-byte buffer */
+	net_buf_frag_del(buf, buf->frags);
+
+	/* Appending size bigger than single buffer's size will allocate multiple fragments */
+	net_buf_append_bytes(buf, sizeof(data), data, K_NO_WAIT, NULL, NULL);
+	zassert_not_null(buf->frags, "Missing first buffer fragment");
+	zassert_not_null(buf->frags->frags, "Missing second buffer fragment");
+	zassert_is_null(buf->frags->frags->frags, "Unexpected buffer fragment");
+
+	net_buf_unref(buf);
+}
+
 
 ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);
