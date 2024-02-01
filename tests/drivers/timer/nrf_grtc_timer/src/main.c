@@ -24,6 +24,8 @@ ZTEST(nrf_grtc_timer, test_get_ticks)
 	zassert_true((ticks >= exp_ticks) && (ticks <= (exp_ticks + GRTC_SLEW_TICKS)),
 		     "Unexpected result %" PRId64 " (expected: %" PRId64 ")", ticks, exp_ticks);
 
+	k_msleep(1);
+
 	for (uint32_t i = 0; i < NUMBER_OF_TRIES; i++) {
 		/* Absolute timeout 1ms in the past */
 		t = Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() - K_MSEC(1).ticks));
