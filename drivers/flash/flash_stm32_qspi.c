@@ -418,7 +418,6 @@ static int qspi_set_memorymap(const struct device *dev)
 	s_command.DummyCycles = 6;/* other value than 6 is too short */
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-	s_command.AlternateBytesSize = QSPI_ALTERNATE_BYTES_8_BITS;
 
 	/* Enable the memory-mapping */
 	s_memmap_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE;
@@ -1367,15 +1366,20 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
-
+#if !DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && defined(QUADSPI_CR_DFM)
+	/* That means Dual Flash configuration : FlashID is meaningless */
+	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
+	/* Set Dual Flash Mode only on MemoryMapped */
+	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
+#endif /* ! flash_id */
 	HAL_QSPI_Init(&dev_data->hqspi);
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && defined(QUADSPI_CR_DFM)
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
 	HAL_QSPI_SetFlashID(&dev_data->hqspi,
 			    (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
-#endif
+#endif /* flash_id */
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);
 	k_sem_init(&dev_data->sync, 0, 1);
@@ -1455,6 +1459,13 @@ static int flash_stm32_qspi_init(const struct device *dev)
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #ifdef CONFIG_STM32_MEMMAP
+#if !DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && defined(QUADSPI_CR_DFM)
+	/* Force Dual Flash mode now */
+	MODIFY_REG(dev_data->hqspi.Instance->CR, (QUADSPI_CR_DFM), QSPI_DUALFLASH_ENABLE);
+	LOG_DBG("Dual Flash Mode");
+	/*  When the DTS has a FlashID --> not Dual Flash */
+#endif /* !flash_id */
+
 	ret = qspi_set_memorymap(dev);
 
 	if (ret != 0) {
