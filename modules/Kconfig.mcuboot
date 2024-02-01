@@ -103,7 +103,7 @@ config MCUBOOT_ENCRYPTION_KEY_FILE
 
 config MCUBOOT_IMGTOOL_SIGN_VERSION
 	string "Version to pass to imgtool when signing"
-	default "$(VERSION_MAJOR).$(VERSION_MINOR).$(PATCHLEVEL)+$(VERSION_TWEAK)" if "$(VERSION_MAJOR)" != ""
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != ""
 	default "0.0.0+0"
 	help
 	  When signing with imgtool then this setting will be passed as version
