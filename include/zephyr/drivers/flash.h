@@ -255,7 +255,34 @@ struct flash_pages_info {
 	uint32_t index;
 };
 
+/**
+ * @brief Container for flash erase region information
+ *
+ * A flash device is divided into areas with constant erase-block-size. Such
+ * an area is called a flash erase region. There can be multiple flash erase
+ * regions on a flash device.
+ */
+struct flash_erase_region {
+	off_t offset;	/* region offset on the device */
+	size_t size;	/* region size */
+	size_t erase_block_size;
+};
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
+
+/**
+ *  @brief  Get erase region information at offset.
+ *
+ *  @param  dev flash device
+ *  @param  offset offset on the device
+ *  @param  region flash erase region structure to be filled
+ *
+ *  @return  0 on success, -EINVAL if erase region at offset doesn't exist or
+ *           invalid parameters were given.
+ */
+__syscall int flash_get_erase_region(const struct device *dev, off_t offset,
+				     struct flash_erase_region *region);
+
 /**
  *  @brief  Get the size and start offset of flash page at certain flash offset.
  *

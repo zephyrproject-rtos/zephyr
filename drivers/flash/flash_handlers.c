@@ -82,6 +82,17 @@ static inline size_t z_vrfy_flash_get_page_count(const struct device *dev)
 }
 #include <syscalls/flash_get_page_count_mrsh.c>
 
+static inline int
+z_vrfy_flash_get_erase_region(const struct device *dev, off_t offset,
+			      struct flash_erase_region *region)
+{
+	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, page_layout));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(region, sizeof(struct flash_erase_region)));
+	return z_impl_flash_get_erase_region((const struct device *)dev, offset,
+					     region);
+}
+#include <syscalls/flash_get_erase_region_mrsh.c>
+
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #ifdef CONFIG_FLASH_JESD216_API

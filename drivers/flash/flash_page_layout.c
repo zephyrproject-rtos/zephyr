@@ -72,6 +72,40 @@ size_t z_impl_flash_get_page_count(const struct device *dev)
 	return count;
 }
 
+int z_impl_flash_get_erase_region(const struct device *dev, off_t offset,
+				  struct flash_erase_region *region)
+{
+	__ASSERT(dev != NULL, "device must be provided");
+	__ASSERT(region != NULL, "region must be provided");
+
+	if (offset < 0) {
+		return -EINVAL;
+	}
+
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+	const struct flash_pages_layout *layout;
+	size_t layout_size;
+
+	api->page_layout(dev, &layout, &layout_size);
+
+	region->offset = 0;
+	while (layout_size--) {
+		region->size = layout->pages_size * layout->pages_count;
+
+		if (offset < region->size) {
+			region->erase_block_size = layout->pages_size;
+			return 0;
+		}
+
+		region->offset += region->size;
+		offset -= region->size;
+		layout++;
+	}
+
+	return -EINVAL;
+}
+
 void flash_page_foreach(const struct device *dev, flash_page_cb cb,
 			void *data)
 {
