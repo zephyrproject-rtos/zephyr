@@ -511,6 +511,7 @@ _XOPEN_STREAMS
     isastream(),
     putmsg(),
     putpmsg(),
+    putpmsg(),
 
 
 .. _Subprofiling Considerations:
