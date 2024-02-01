@@ -5155,6 +5155,7 @@ endfunction()
 # - lib_target  Target name for the source compilation and/or link step.
 # - lib_output  The binary file resulting from compilation and/or
 #               linking steps.
+# - pkg_input   The file to be used as input for the packaging step.
 # - pkg_output  The final .llext file.
 #
 # Example usage:
@@ -5243,14 +5244,35 @@ function(add_llext_target target_name)
     zephyr_generated_headers
   )
 
+  # Set up an intermediate processing step between compilation and packaging
+  # to be used to support POST_BUILD commands on targets that do not use a
+  # dynamic library.
+  set(llext_proc_target ${target_name}_llext_proc)
+  set(llext_pkg_input ${PROJECT_BINARY_DIR}/${target_name}.llext.pkg_input)
+  add_custom_target(${llext_proc_target} DEPENDS ${llext_pkg_input})
+  set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 0)
+
+  # By default this target must copy the `lib_output` binary file to the
+  # expected `pkg_input` location. If actual POST_BUILD commands are defined,
+  # they will take care of this and the default copy is replaced by a no-op.
+  set(has_post_build_cmds "$<TARGET_PROPERTY:${llext_proc_target},has_post_build_cmds>")
+  set(noop_cmd ${CMAKE_COMMAND} -E true)
+  set(copy_cmd ${CMAKE_COMMAND} -E copy ${llext_lib_output} ${llext_pkg_input})
+  add_custom_command(
+    OUTPUT ${llext_pkg_input}
+    COMMAND "$<IF:${has_post_build_cmds},${noop_cmd},${copy_cmd}>"
+    DEPENDS ${llext_lib_target} ${llext_lib_output}
+    COMMAND_EXPAND_LISTS
+  )
+
   # Arch-specific packaging of the built binary file into an .llext file
   if(CONFIG_ARM)
 
     # No packaging required, simply copy the object file
     add_custom_command(
       OUTPUT ${llext_pkg_output}
-      COMMAND ${CMAKE_COMMAND} -E copy ${llext_lib_output} ${llext_pkg_output}
-      DEPENDS ${llext_lib_target} ${llext_lib_output}
+      COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
+      DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
   elseif(CONFIG_XTENSA)
@@ -5261,10 +5283,10 @@ function(add_llext_target target_name)
       COMMAND $<TARGET_PROPERTY:bintools,strip_command>
               $<TARGET_PROPERTY:bintools,strip_flag>
               $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
-              $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_lib_output}
+              $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_pkg_input}
               $<TARGET_PROPERTY:bintools,strip_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,strip_flag_final>
-      DEPENDS ${llext_lib_target} ${llext_lib_output}
+      DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
   else()
@@ -5280,6 +5302,89 @@ function(add_llext_target target_name)
   set_target_properties(${target_name} PROPERTIES
     lib_target ${llext_lib_target}
     lib_output ${llext_lib_output}
+    pkg_input  ${llext_pkg_input}
     pkg_output ${llext_pkg_output}
+  )
+endfunction()
+
+# Usage:
+#   add_llext_command(
+#     TARGET <target_name>
+#     PRE_BUILD | POST_BUILD | POST_PKG
+#     COMMAND <command> [...]
+#   )
+#
+# Add a custom command to an llext target that will be executed during
+# the build. The command will be executed at the specified build step and
+# can refer to <target>'s properties for build-specific details.
+#
+# The differrent build steps are:
+# - PRE_BUILD:  Before the llext code is linked, if the architecture uses
+#               dynamic libraries. This step can access `lib_target` and
+#               its own properties.
+# - POST_BUILD: After the llext code is built, but before packaging
+#               it in an .llext file. This step is expected to create a
+#               `pkg_input` file by reading the contents of `lib_output`.
+# - POST_PKG:   After the .llext file has been created. This can operate on
+#               the final llext file `pkg_output`.
+#
+# Anything else after COMMAND will be passed to add_custom_command() as-is
+# (including multiple commands and other options).
+function(add_llext_command)
+  set(options     PRE_BUILD POST_BUILD POST_PKG)
+  set(single_args TARGET)
+  # COMMAND and other options are passed to add_custom_command() as-is
+
+  cmake_parse_arguments(PARSE_ARGV 0 LLEXT "${options}" "${single_args}" "${multi_args}")
+  zephyr_check_arguments_required_all("add_llext_command" LLEXT TARGET)
+
+  # Check the target exists and refers to an llext target
+  set(target_name ${LLEXT_TARGET})
+  set(llext_lib_target  ${target_name}_llext_lib)
+  set(llext_proc_target ${target_name}_llext_proc)
+  if(NOT TARGET ${llext_lib_target})
+    message(FATAL_ERROR "add_llext_command: not an llext target: ${target_name}")
+  endif()
+
+  # ARM uses an object file representation so there is no link step.
+  if(CONFIG_ARM AND LLEXT_PRE_BUILD)
+    message(FATAL_ERROR
+	    "add_llext_command: PRE_BUILD not supported on this arch")
+  endif()
+
+  # Determine the build step and the target to attach the command to
+  # based on the provided options
+  if(LLEXT_PRE_BUILD)
+    # > before the object files are linked:
+    #   - execute user command(s) before the lib target's link step.
+    set(cmd_target ${llext_lib_target})
+    set(build_step PRE_LINK)
+  elseif(LLEXT_POST_BUILD)
+    # > after linking, but before llext packaging:
+    #   - stop default file copy to prevent user files from being clobbered;
+    #   - execute user command(s) after the (now empty) `llext_proc_target`.
+    set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 1)
+    set(cmd_target ${llext_proc_target})
+    set(build_step POST_BUILD)
+  elseif(LLEXT_POST_PKG)
+    # > after the final llext binary is ready:
+    #   - execute user command(s) after the main target is done.
+    set(cmd_target ${target_name})
+    set(build_step POST_BUILD)
+  else()
+    message(FATAL_ERROR "add_llext_command: build step must be provided")
+  endif()
+
+  # Check that the first unparsed argument is the word COMMAND
+  list(GET LLEXT_UNPARSED_ARGUMENTS 0 command_str)
+  if(NOT command_str STREQUAL "COMMAND")
+    message(FATAL_ERROR "add_llext_command: COMMAND argument must be provided")
+  endif()
+
+  # Add the actual command(s) to the target
+  add_custom_command(
+    TARGET ${cmd_target} ${build_step}
+    ${LLEXT_UNPARSED_ARGUMENTS}
+    COMMAND_EXPAND_LISTS
   )
 endfunction()

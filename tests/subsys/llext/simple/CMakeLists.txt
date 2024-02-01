@@ -27,4 +27,14 @@ foreach(ext_name hello_world logging relative_jump object syscalls threads_kerne
   )
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
 endforeach()
+
+# Add a dummy custom processing command to test add_llext_command
+get_target_property(proc_in_file hello_world_ext lib_output)
+get_target_property(proc_out_file hello_world_ext pkg_input)
+add_llext_command(
+  TARGET hello_world_ext
+  POST_BUILD
+  COMMAND echo "dummy patching ${proc_in_file} to create ${proc_out_file}"
+  COMMAND ${CMAKE_COMMAND} -E copy ${proc_in_file} ${proc_out_file}
+)
 endif()
