@@ -55,7 +55,9 @@ static int video_sw_generator_stream_start(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	return k_work_schedule(&data->buf_work, K_MSEC(33));
+	k_work_schedule(&data->buf_work, K_MSEC(33));
+
+	return 0;
 }
 
 static int video_sw_generator_stream_stop(const struct device *dev)
