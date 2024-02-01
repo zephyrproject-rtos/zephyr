@@ -163,8 +163,11 @@ size_t uart_async_rx_data_claim(struct uart_async_rx *async_rx, uint8_t **data, 
  *
  * @param async_rx Pointer to the helper instance.
  * @param length Amount of data to consume. It must be less or equal than amount of claimed data.
+ *
+ * @retval true If there are free buffers in the pool after data got consumed.
+ * @retval false If there are no free buffers.
  */
-void uart_async_rx_data_consume(struct uart_async_rx *async_rx, size_t length);
+bool uart_async_rx_data_consume(struct uart_async_rx *async_rx, size_t length);
 
 #ifdef __cplusplus
 }
