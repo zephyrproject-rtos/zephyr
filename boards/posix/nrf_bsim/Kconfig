@@ -6,7 +6,7 @@ if SOC_SERIES_BSIM_NRFXX
 # used by Nordic SoCs, so to make the symbols defined in this file available for
 # the simulated nrf5x_bsim boards, which use the POSIX architecture, the file
 # must be read also from here.
-source "soc/arm/nordic_nrf/Kconfig.peripherals"
+source "soc/common/nordic_nrf/Kconfig.peripherals"
 
 source "boards/$(ARCH)/common/extra_args/Kconfig"
 
