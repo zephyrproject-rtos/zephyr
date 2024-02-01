@@ -209,6 +209,7 @@ static void tx_free(struct bt_conn_tx *tx)
 	k_fifo_put(&free_tx, tx);
 }
 
+#if defined(CONFIG_BT_CONN_TX)
 static void tx_notify(struct bt_conn *conn)
 {
 	LOG_DBG("conn %p", conn);
@@ -246,6 +247,7 @@ static void tx_notify(struct bt_conn *conn)
 		cb(conn, user_data, 0);
 	}
 }
+#endif	/* CONFIG_BT_CONN_TX */
 
 struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 {
@@ -372,12 +374,32 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	bt_l2cap_recv(conn, buf, true);
 }
 
+static void wait_for_tx_work(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_CONN_TX)
+	struct k_work_sync sync;
+
+	/* API docs mention undefined behavior if syncing on work item from wq
+	 * execution context.
+	 */
+	__ASSERT_NO_MSG(k_current_get() != &k_sys_work_q.thread);
+
+	k_work_submit(&conn->tx_complete_work);
+	k_work_flush(&conn->tx_complete_work, &sync);
+#else
+	ARG_UNUSED(conn);
+#endif	/* CONFIG_BT_CONN_TX */
+}
+
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	/* Make sure we notify any pending TX callbacks before processing
 	 * new data for this connection.
+	 *
+	 * Always do so from the same context for sanity. In this case that will
+	 * be the system workqueue.
 	 */
-	tx_notify(conn);
+	wait_for_tx_work(conn);
 
 	LOG_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
@@ -1119,7 +1141,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		switch (old_state) {
 		case BT_CONN_DISCONNECT_COMPLETE:
-			tx_notify(conn);
+			wait_for_tx_work(conn);
 
 			/* Cancel Connection Update if it is pending */
 			if ((conn->type == BT_CONN_TYPE_LE) &&
