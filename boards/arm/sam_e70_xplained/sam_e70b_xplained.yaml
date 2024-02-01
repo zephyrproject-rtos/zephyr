@@ -19,4 +19,5 @@ supported:
   - pwm
   - can
   - hwinfo
+  - counter
 vendor: atmel

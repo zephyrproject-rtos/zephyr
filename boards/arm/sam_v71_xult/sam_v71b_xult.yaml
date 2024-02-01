@@ -24,4 +24,5 @@ supported:
   - xpro_spi
   - can
   - hwinfo
+  - counter
 vendor: atmel
