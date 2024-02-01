@@ -13,6 +13,18 @@
 #include <nrfx_grtc.h>
 #include <zephyr/sys/math_extras.h>
 
+#define GRTC_NODE DT_NODELABEL(grtc)
+
+/* Ensure that GRTC properties in devicetree are defined correctly. */
+#if !DT_NODE_HAS_PROP(GRTC_NODE, owned_channels)
+#error GRTC owned-channels DT property is not defined
+#endif
+#define OWNED_CHANNELS_MASK       NRFX_CONFIG_GRTC_MASK_DT(owned_channels)
+#define CHILD_OWNED_CHANNELS_MASK NRFX_CONFIG_GRTC_MASK_DT(child_owned_channels)
+#if ((OWNED_CHANNELS_MASK | CHILD_OWNED_CHANNELS_MASK) != OWNED_CHANNELS_MASK)
+#error GRTC child-owned-channels DT property must be a subset of owned-channels
+#endif
+
 #define CHAN_COUNT     NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS
 #define EXT_CHAN_COUNT (CHAN_COUNT - 1)
 /* The reset value of waketime is 1, which doesn't seem to work.
@@ -21,8 +33,6 @@
  */
 #define WAKETIME       (4)
 #define TIMEOUT        (WAKETIME + 1)
-
-#define GRTC_NODE DT_NODELABEL(grtc)
 
 #ifndef GRTC_SYSCOUNTERL_VALUE_Msk
 #define GRTC_SYSCOUNTERL_VALUE_Msk GRTC_SYSCOUNTER_SYSCOUNTERL_VALUE_Msk
