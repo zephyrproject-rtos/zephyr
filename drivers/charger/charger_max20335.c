@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/charger.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
@@ -17,6 +18,11 @@
 LOG_MODULE_REGISTER(max20335_charger);
 
 #define MAX20335_REG_STATUS_A 0x02
+#define MAX20335_REG_INT_A 0x05
+#define MAX20335_REG_INT_B 0x06
+#define MAX20335_INT_A_CHG_STAT_MASK BIT(6)
+#define MAX20335_REG_INT_MASK_A 0x07
+#define MAX20335_REG_INT_MASK_B 0x08
 #define MAX20335_REG_ILIMCNTL 0x09
 #define MAX20335_REG_CHG_CNTL_A 0x0A
 #define MAX20335_CHGCNTLA_BAT_REG_CFG_MASK GENMASK(4, 1)
@@ -29,10 +35,21 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_REG_CVC_VREG_MIN_IDX 0x0U
 #define MAX20335_REG_CVC_VREG_MAX_IDX 0x0CU
 
+#define INT_ENABLE_DELAY K_MSEC(500)
+
 struct charger_max20335_config {
 	struct i2c_dt_spec bus;
+	struct gpio_dt_spec int_gpio;
 	uint32_t max_ichg_ua;
 	uint32_t max_vreg_uv;
+};
+
+struct charger_max20335_data {
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+	struct k_work int_routine_work;
+	struct k_work_delayable int_enable_work;
+	enum charger_status charger_status;
 };
 
 enum {
@@ -214,12 +231,55 @@ static int max20335_set_enabled(const struct device *dev, bool enable)
 				      enable ? MAX20335_CHRG_EN : 0);
 }
 
+static int max20335_get_interrupt_source(const struct device *dev, uint8_t *int_a, uint8_t *int_b)
+{
+	const struct charger_max20335_config *config = dev->config;
+	uint8_t dummy;
+	uint8_t *int_src;
+	int ret;
+
+	/* Both INT_A and INT_B registers need to be read to clear all int flags */
+
+	int_src = (int_a != NULL) ? int_a : &dummy;
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INT_A, int_src);
+	if (ret < 0) {
+		return ret;
+	}
+
+	int_src = (int_b != NULL) ? int_b : &dummy;
+
+	return i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INT_B, int_src);
+}
+
+static int max20335_enable_interrupts(const struct device *dev)
+{
+	enum {MASK_A_VAL_ENABLE = 0xFF};
+	const struct charger_max20335_config *config = dev->config;
+	int ret;
+
+	ret = max20335_get_interrupt_source(dev, NULL, NULL);
+	if (ret < 0) {
+		LOG_WRN("Failed to clear pending interrupts: %d", ret);
+		return ret;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INT_MASK_A, MASK_A_VAL_ENABLE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INT_MASK_B, 0);
+}
+
 static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 			     union charger_propval *val)
 {
+	struct charger_max20335_data *data = dev->data;
+
 	switch (prop) {
 	case CHARGER_PROP_STATUS:
-		return max20335_get_charger_status(dev, &val->status);
+		val->status = data->charger_status;
+		return 0;
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		return max20335_get_constant_charge_current(dev,
 							    &val->const_charge_current_ua);
@@ -246,12 +306,135 @@ static int max20335_set_prop(const struct device *dev, charger_prop_t prop,
 	}
 }
 
+static int max20335_enable_interrupt_pin(const struct device *dev, bool enabled)
+{
+	const struct charger_max20335_config *const config = dev->config;
+	gpio_flags_t flags;
+	int ret;
+
+	flags = enabled ? GPIO_INT_LEVEL_ACTIVE : GPIO_INT_DISABLE;
+
+	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
+	if (ret < 0) {
+		LOG_ERR("Could not %s interrupt GPIO callback: %d", enabled ? "enable" : "disable",
+			ret);
+	}
+
+	return ret;
+}
+
+static void max20335_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				   uint32_t pins)
+{
+	struct charger_max20335_data *data = CONTAINER_OF(cb, struct charger_max20335_data,
+							  gpio_cb);
+	int ret;
+
+	(void) max20335_enable_interrupt_pin(data->dev, false);
+
+	ret = k_work_submit(&data->int_routine_work);
+	if (ret < 0) {
+		LOG_WRN("Could not submit int work: %d", ret);
+	}
+}
+
+static void max20335_int_routine_work_handler(struct k_work *work)
+{
+	struct charger_max20335_data *data = CONTAINER_OF(work, struct charger_max20335_data,
+							  int_routine_work);
+	uint8_t int_src_a;
+	int ret;
+
+	ret = max20335_get_interrupt_source(data->dev, &int_src_a, NULL);
+	if (ret < 0) {
+		LOG_WRN("Failed to read interrupt source");
+		return;
+	}
+
+	if ((int_src_a & MAX20335_INT_A_CHG_STAT_MASK) != 0) {
+		ret = max20335_get_charger_status(data->dev, &data->charger_status);
+		if (ret < 0) {
+			LOG_WRN("Failed to read charger status: %d", ret);
+		}
+	}
+
+	ret = k_work_reschedule(&data->int_enable_work, INT_ENABLE_DELAY);
+	if (ret < 0) {
+		LOG_WRN("Could not reschedule int_enable_work: %d", ret);
+	}
+}
+
+static void max20335_int_enable_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct charger_max20335_data *data = CONTAINER_OF(dwork, struct charger_max20335_data,
+							  int_enable_work);
+
+	(void) max20335_enable_interrupt_pin(data->dev, true);
+}
+
+static int max20335_configure_interrupt_pin(const struct device *dev)
+{
+	struct charger_max20335_data *data = dev->data;
+	const struct charger_max20335_config *config = dev->config;
+	int ret;
+
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
+		LOG_ERR("Interrupt GPIO device not ready");
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Could not configure interrupt GPIO");
+		return ret;
+	}
+
+	gpio_init_callback(&data->gpio_cb, max20335_gpio_callback, BIT(config->int_gpio.pin));
+	ret = gpio_add_callback_dt(&config->int_gpio, &data->gpio_cb);
+	if (ret < 0) {
+		LOG_ERR("Could not add interrupt GPIO callback");
+		return ret;
+	}
+
+	return 0;
+}
+
 static int max20335_init(const struct device *dev)
 {
+	struct charger_max20335_data *data = dev->data;
 	const struct charger_max20335_config *config = dev->config;
+	int ret;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
 		return -ENODEV;
+	}
+
+	data->dev = dev;
+
+	ret = max20335_get_charger_status(dev, &data->charger_status);
+	if (ret != 0) {
+		LOG_ERR("Failed to read charger status: %d", ret);
+		return ret;
+	}
+
+	k_work_init(&data->int_routine_work, max20335_int_routine_work_handler);
+	k_work_init_delayable(&data->int_enable_work, max20335_int_enable_work_handler);
+
+	ret = max20335_configure_interrupt_pin(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = max20335_enable_interrupt_pin(dev, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = max20335_enable_interrupts(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable interrupts");
+		return ret;
 	}
 
 	return 0;
@@ -264,13 +447,15 @@ static const struct charger_driver_api max20335_driver_api = {
 };
 
 #define MAX20335_DEFINE(inst)									\
+	static struct charger_max20335_data charger_max20335_data_##inst;			\
 	static const struct charger_max20335_config charger_max20335_config_##inst = {		\
 		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),					\
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
 		.max_ichg_ua = DT_INST_PROP(inst, constant_charge_current_max_microamp),	\
 		.max_vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, NULL,					\
+	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\
 			      &charger_max20335_config_##inst,					\
 			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,				\
 			      &max20335_driver_api);
