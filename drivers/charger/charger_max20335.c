@@ -54,6 +54,9 @@ struct charger_max20335_data {
 	struct k_work_delayable int_enable_work;
 	enum charger_status charger_status;
 	enum charger_online charger_online;
+	bool charger_enabled;
+	uint32_t charge_current_ua;
+	uint32_t charge_voltage_uv;
 };
 
 static const struct linear_range charger_uv_range =
@@ -204,8 +207,8 @@ static int max20335_set_constant_charge_current(const struct device *dev,
 				      val);
 }
 
-static int max20335_get_constant_charge_current(const struct device *dev,
-						uint32_t *current_ua)
+static int __maybe_unused max20335_get_constant_charge_current(const struct device *dev,
+							       uint32_t *current_ua)
 {
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
@@ -236,8 +239,8 @@ static int max20335_get_constant_charge_current(const struct device *dev,
 	return 0;
 }
 
-static int max20335_get_constant_charge_voltage(const struct device *dev,
-						uint32_t *voltage_uv)
+static int __maybe_unused max20335_get_constant_charge_voltage(const struct device *dev,
+							       uint32_t *voltage_uv)
 {
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
@@ -255,7 +258,10 @@ static int max20335_get_constant_charge_voltage(const struct device *dev,
 
 static int max20335_set_enabled(const struct device *dev, bool enable)
 {
+	struct charger_max20335_data *data = dev->data;
 	const struct charger_max20335_config *const config = dev->config;
+
+	data->charger_enabled = enable;
 
 	return i2c_reg_update_byte_dt(&config->bus,
 				      MAX20335_REG_CHG_CNTL_A,
@@ -303,6 +309,57 @@ static int max20335_enable_interrupts(const struct device *dev)
 	return i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INT_MASK_B, 0);
 }
 
+static int max20335_init_properties(const struct device *dev)
+{
+	struct charger_max20335_data *data = dev->data;
+	const struct charger_max20335_config *config = dev->config;
+	int ret;
+
+	data->charge_current_ua = config->max_ichg_ua;
+	data->charge_voltage_uv = config->max_vreg_uv;
+	data->charger_enabled = true;
+
+	ret = max20335_get_charger_status(dev, &data->charger_status);
+	if (ret < 0) {
+		LOG_ERR("Failed to read charger status: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_get_charger_online(dev, &data->charger_online);
+	if (ret < 0) {
+		LOG_ERR("Failed to read charger online: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int max20335_update_properties(const struct device *dev)
+{
+	struct charger_max20335_data *data = dev->data;
+	int ret;
+
+	ret = max20335_set_constant_charge_current(dev, data->charge_current_ua);
+	if (ret < 0) {
+		LOG_ERR("Failed to set charge current: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_set_constant_charge_voltage(dev, data->charge_voltage_uv);
+	if (ret < 0) {
+		LOG_ERR("Failed to set charge voltage: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_set_enabled(dev, data->charger_enabled);
+	if (ret < 0) {
+		LOG_ERR("Failed to set enabled: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 			     union charger_propval *val)
 {
@@ -316,11 +373,11 @@ static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 		val->status = data->charger_status;
 		return 0;
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
-		return max20335_get_constant_charge_current(dev,
-							    &val->const_charge_current_ua);
+		val->const_charge_current_ua = data->charge_current_ua;
+		return 0;
 	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
-		return max20335_get_constant_charge_voltage(dev,
-							    &val->const_charge_voltage_uv);
+		val->const_charge_voltage_uv = data->charge_voltage_uv;
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
@@ -329,13 +386,24 @@ static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 static int max20335_set_prop(const struct device *dev, charger_prop_t prop,
 			     const union charger_propval *val)
 {
+	struct charger_max20335_data *data = dev->data;
+	int ret;
+
 	switch (prop) {
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
-		return max20335_set_constant_charge_current(dev,
-							    val->const_charge_current_ua);
+		ret = max20335_set_constant_charge_current(dev, val->const_charge_current_ua);
+		if (ret == 0) {
+			data->charge_current_ua = val->const_charge_current_ua;
+		}
+
+		return ret;
 	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
-		return max20335_set_constant_charge_voltage(dev,
-							    val->const_charge_voltage_uv);
+		ret =  max20335_set_constant_charge_voltage(dev, val->const_charge_voltage_uv);
+		if (ret == 0) {
+			data->charge_voltage_uv = val->const_charge_voltage_uv;
+		}
+
+		return ret;
 	default:
 		return -ENOTSUP;
 	}
@@ -398,6 +466,10 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger online %d", ret);
 		}
+
+		if (data->charger_online != CHARGER_ONLINE_OFFLINE) {
+			(void) max20335_update_properties(data->dev);
+		}
 	}
 
 	ret = k_work_reschedule(&data->int_enable_work, INT_ENABLE_DELAY);
@@ -454,15 +526,8 @@ static int max20335_init(const struct device *dev)
 
 	data->dev = dev;
 
-	ret = max20335_get_charger_status(dev, &data->charger_status);
-	if (ret != 0) {
-		LOG_ERR("Failed to read charger status: %d", ret);
-		return ret;
-	}
-
-	ret = max20335_get_charger_online(dev, &data->charger_online);
-	if (ret != 0) {
-		LOG_ERR("Failed to read charger online: %d", ret);
+	ret = max20335_init_properties(dev);
+	if (ret < 0) {
 		return ret;
 	}
 
