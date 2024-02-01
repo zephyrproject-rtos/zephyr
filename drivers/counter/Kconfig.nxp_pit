@@ -1,0 +1,11 @@
+# MCUXpresso SDK Periodic Interrupt Timer (PIT)
+
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NXP_PIT
+	bool "NXP PIT driver"
+	default y
+	depends on DT_HAS_NXP_PIT_ENABLED
+	help
+	  Enable support for the NXP Periodic Interrupt Timer (PIT).

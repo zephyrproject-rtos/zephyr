@@ -84,8 +84,8 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_GECKO_STIMER
 	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
 #endif
-#ifdef CONFIG_COUNTER_MCUX_PIT
-	DEVS_FOR_DT_COMPAT(nxp_kinetis_pit)
+#ifdef CONFIG_COUNTER_NXP_PIT
+	DEVS_FOR_DT_COMPAT(nxp_pit)
 #endif
 #ifdef CONFIG_COUNTER_XLNX_AXI_TIMER
 	DEVS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)

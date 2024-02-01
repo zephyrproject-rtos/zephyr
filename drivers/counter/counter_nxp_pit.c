@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_pit
+#define DT_DRV_COMPAT nxp_pit
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>

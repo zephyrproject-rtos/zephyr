@@ -40,6 +40,34 @@ zcbor
 Device Drivers and Devicetree
 *****************************
 
+* The :dtcompatible:`nxp,kinetis-pit` pit driver has changed it's compatible
+  to :dtcompatible:`nxp,pit` and has been updated to support multiple channels.
+  To configure the individual channels, you must add a child node with the
+  compatible :dtcompatible:`nxp,pit-channel` and configure as below.
+  The :kconfig:option:`CONFIG_COUNTER_MCUX_PIT` has also been renamed to
+  :kconfig:option:`CONFIG_COUNTER_NXP_PIT` with regards to the renaming
+  of the binding for the pit.
+  example:
+
+  .. code-block:: devicetree
+
+    / {
+        pit0: pit@40037000 {
+            /* Other Pit DT Attributes */
+            compatible = "nxp,pit";
+            status = "disabled";
+            num-channels = <1>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            pit0_channel0: pit0_channel@0 {
+                compatible = "nxp,pit-channel";
+                reg = <0>;
+                status = "disabled";
+            };
+    };
+
+
 Analog-to-Digital Converter (ADC)
 =================================
 
