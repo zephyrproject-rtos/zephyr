@@ -257,6 +257,10 @@ void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
 	LOG_DBG("type 0x%02x len %u: %s", adv->ctx.type, adv->b.len,
 		bt_hex(adv->b.data, adv->b.len));
 
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
+		LOG_WRN("Sending advertisement while suspended");
+	}
+
 	adv->ctx.cb = cb;
 	adv->ctx.cb_data = cb_data;
 	adv->ctx.busy = 1U;
