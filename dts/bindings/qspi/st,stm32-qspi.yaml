@@ -66,5 +66,7 @@ properties:
       QSPI GPIO banks (defined as 'quadspi_bk[12]' in pinctrl property)
       to communicate with flash memory.
 
+      When NOT set, it means Dual Flash Mode.
+
       For example
          flash-id = <2>;

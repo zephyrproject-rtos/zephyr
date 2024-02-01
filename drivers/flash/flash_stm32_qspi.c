@@ -408,17 +408,20 @@ static int qspi_set_memorymap(const struct device *dev)
 	/* Reading sequence */
 	s_command.Instruction = SPI_NOR_CMD_4READ; /* 0x6B also supported */
 	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+	s_command.AddressMode = QSPI_ADDRESS_1_LINE;
 	s_command.AddressMode = QSPI_ADDRESS_4_LINES;
 	s_command.DataMode = QSPI_DATA_4_LINES;
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 	s_command.AddressSize = QSPI_ADDRESS_32_BITS;
 	s_command.DummyCycles = SPI_NOR_DUMMY_RD_QUAD; /* less than 10 is too short */
+#elif CONFIG_SOC_SERIES_STM32F7X
+	s_command.AddressSize = QSPI_ADDRESS_24_BITS;
+	s_command.DummyCycles = 10;/* other value than 10 is too short */
 #else
 	s_command.AddressSize = QSPI_ADDRESS_24_BITS;
 	s_command.DummyCycles = 6;/* other value than 6 is too short */
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-	s_command.AlternateBytesSize = QSPI_ALTERNATE_BYTES_8_BITS;
 
 	/* Enable the memory-mapping */
 	s_memmap_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE;
@@ -1368,14 +1371,29 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
 
+#if !DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && defined(QUADSPI_CR_DFM)
+	/*
+	 * When the DTS has NO FlashID, it means Dual Flash
+	 * Even in DUAL flash config, the SDFP is read from one single quad-NOR
+	 * else the magic nb is wrong (0x46465353)
+	 * That means that the Dual Flash config is set after the SFDP sequence
+	 */
+	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
+	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
+	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
+	/* Set Dual Flash Mode only on MemoryMapped */
+	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
+#endif /* ! flash_id */
+
 	HAL_QSPI_Init(&dev_data->hqspi);
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && defined(QUADSPI_CR_DFM)
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
 	HAL_QSPI_SetFlashID(&dev_data->hqspi,
 			    (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
-#endif
+#endif /* flash_id */
+
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);
 	k_sem_init(&dev_data->sync, 0, 1);
@@ -1455,8 +1473,22 @@ static int flash_stm32_qspi_init(const struct device *dev)
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #ifdef CONFIG_STM32_MEMMAP
-	ret = qspi_set_memorymap(dev);
 
+#if !DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && defined(QUADSPI_CR_DFM)
+	/*
+	 * When the DTS has NO FlashID, it means Dual Flash
+	 * Force Dual Flash mode now, after the SFDP sequence which is reading
+	 * one quad-NOR only
+	 */
+	MODIFY_REG(dev_data->hqspi.Instance->CR, (QUADSPI_CR_DFM), QSPI_DUALFLASH_ENABLE);
+	LOG_DBG("Dual Flash Mode");
+#endif /* !flash_id */
+
+
+#endif /* CONFIG_STM32_MEMMAP */
+
+#ifdef CONFIG_STM32_MEMMAP
+	ret = qspi_set_memorymap(dev);
 	if (ret != 0) {
 		LOG_ERR("Error (%d): setting NOR in MemoryMapped mode", ret);
 		return -EINVAL;
@@ -1564,4 +1596,4 @@ static void flash_stm32_qspi_irq_config_func(const struct device *dev)
 	irq_enable(DT_IRQN(STM32_QSPI_NODE));
 }
 
-#endif
+#endif /* compat st_stm32_qspi_nor */
