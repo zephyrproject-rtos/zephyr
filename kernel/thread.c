@@ -530,6 +530,15 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 		stack_obj_size = Z_KERNEL_STACK_SIZE_ADJUST(stack_size);
 		stack_buf_start = Z_KERNEL_STACK_BUFFER(stack);
 		stack_buf_size = stack_obj_size - K_KERNEL_STACK_RESERVED;
+
+		/* Zephyr treats stack overflow as an app bug.  But
+		 * this particular overflow can be seen by static
+		 * analysis so needs to be handled somehow.
+		 */
+		if (K_KERNEL_STACK_RESERVED > stack_obj_size) {
+			k_panic();
+		}
+
 	}
 
 	/* Initial stack pointer at the high end of the stack object, may
