@@ -3,14 +3,13 @@
 
 description: Maxim MAX31790 6-channel I2C-bus PWM controller
 
-compatible: "maxim,max31790"
+compatible: "maxim,max31790-pwm"
 
-include: [pwm-controller.yaml, i2c-device.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml]
+
+on-bus: max31790
 
 properties:
-  reg:
-    required: true
-
   "#pwm-cells":
     const: 2
 
