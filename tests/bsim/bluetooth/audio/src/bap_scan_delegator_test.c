@@ -616,6 +616,13 @@ static void remove_all_sources(void)
 
 			printk("[%zu]: Source removed with id %u\n",
 			       i, state->src_id);
+
+			printk("Terminating PA sync\n");
+			err = pa_sync_term(state);
+			if (err) {
+				FAIL("[%zu]: PA sync term failed (err %d)\n", err);
+				return;
+			}
 		}
 	}
 }
