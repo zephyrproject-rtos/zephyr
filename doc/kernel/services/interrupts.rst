@@ -457,6 +457,38 @@ Interrupt tables are set up at build time using some special build tools.  The
 details laid out here apply to all architectures except x86, which are
 covered in the `x86 Details`_ section below.
 
+The invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
+struct _isr_list wich is placed in a special .intList section.
+This section is placed in compiled code on precompilation stages only.
+It is meant to be used by Zephyr script to generate interrupt tables
+and is removed from the final build.
+The script implements different parsers to process the data from .intList section
+and produce the required output.
+
+The default parser generates C arrays filled with arguments and interrupt
+handlers in a form of addresses directly taken from .intList section entries.
+It works with all the architectures and compillers (with the exception mentioned above).
+The limitation of this parser is the fact that after the arrays are generated
+it is expected for the code not to relocate.
+Any relocation on this stage may lead to the situation where the entry in the interrupt array
+is no longer pointing to the function that was expected.
+It means that this parser, being more compatible is limiting us from using Link Time Optimization.
+
+The local isr declaration parser uses different approach to construct
+the same arrays at binnary level.
+All the entries to the arrays are declared and defined locally,
+directly in the file where :c:macro:`IRQ_CONNECT` is used.
+They are placed in a section with the unique, synthetized name.
+The name of the section is then placed in .intList section and it is used to create linker script
+to properly place the created entry in the right place in the memory.
+This parser is now limited to the supported architectures and toolchains but in reward it keeps
+the information about object relations for linker thus allowing the Link Time Optimization.
+
+Implementation using C arrays
+-----------------------------
+
+This is the default configuration available for all Zephyr supported architectures.
+
 Any invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
 struct _isr_list which is placed in a special .intList section:
 
@@ -500,7 +532,7 @@ do not support the notion of interrupt priority, in which case the priority
 argument is ignored.
 
 Vector Table
-------------
+~~~~~~~~~~~~
 A vector table is generated when :kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` is
 enabled.  This data structure is used natively by the CPU and is simply an
 array of function pointers, where each element n corresponds to the IRQ handler
@@ -527,7 +559,7 @@ CONFIG_GEN_IRQ_START_VECTOR needs to be set to properly offset the indices
 in the table.
 
 SW ISR Table
-------------
+~~~~~~~~~~~~
 This is an array of struct _isr_table_entry:
 
 .. code-block:: c
@@ -542,7 +574,7 @@ argument and execute it. The active IRQ line is looked up in an interrupt
 controller register and used to index this table.
 
 Shared SW ISR Table
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 This is an array of struct z_shared_isr_table_entry:
 
@@ -557,6 +589,88 @@ This table keeps track of the registered clients for each of the interrupt
 lines. Whenever an interrupt line becomes shared, :c:func:`z_shared_isr` will
 replace the currently registered ISR in _sw_isr_table. This special ISR will
 iterate through the list of registered clients and invoke the ISRs.
+
+Implementation using linker script
+----------------------------------
+
+This way of prepare and parse .isrList section to implement interrupt vectors arrays
+is called local isr declaration.
+The name comes from the fact that all the entries to the arrays that would create
+interrupt vectors are created locally in place of invocation of :c:macro:`IRQ_CONNECT` macro.
+Then automatically generated linker scripts are used to place it in the right place in the memory.
+
+This option requires enabling by the choose of :kconfig:option:`ISR_TABLES_LOCAL_DECLARATION`.
+If this configuration is supported by the used architecture and toolchaing the
+:kconfig:option:`ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
+See defails of this option for the information about currently supported configurations.
+
+Any invocation of :c:macro:`IRQ_CONNECT` or `IRQ_DIRECT_CONNECT` will declare an instance of struct
+_isr_list_sname which is placde in a special .intList section:
+
+.. code-block:: c
+
+    struct _isr_list_sname {
+        /** IRQ line number */
+        int32_t irq;
+        /** Flags for this IRQ, see ISR_FLAG_* definitions */
+        int32_t flags;
+        /** The section name */
+        const char sname[];
+    };
+
+Note that the section name is placed in flexible array member.
+It means that the size of the initialized structure will warry depending on the
+structure name length.
+The whole entry is used by the script during the build of the application
+and has all the information needed for proper interrupt placement.
+
+Beside of the _isr_list_sname the :c:macro:`IRQ_CONNECT` macro generates an entry
+that would be the part of the interrupt array:
+
+.. code-block:: c
+
+    struct _isr_table_entry {
+        const void *arg;
+        void (*isr)(const void *);
+    };
+
+This array is placed in a section with the name saved in _isr_list_sname structure.
+
+The values created by :c:macro:`IRQ_DIRECT_CONNECT` macro depends on the architecture.
+It can be changed to variable that points to a interrupt handler:
+
+.. code-block:: c
+
+    static uintptr_t <unique name> = ((uintptr_t)func);
+
+Or to actuall naked function that implements a jump to the interrupt handler:
+
+.. code-block:: c
+
+    static void <unique name>(void)
+    {
+        __asm(ARCH_IRQ_VECTOR_JUMP_CODE(func));
+    }
+
+Simillar like for :c:macro:`IRQ_CONNECT`, the created variable or function is placed
+in a section, saved in _isr_list_sname section.
+
+Files generated by the script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The interrupt tables generator script creates 3 files:
+isr_tables.c, isr_tables_swi.ld, and isr_tables_vt.ld.
+
+The isr_tables.c will contain all the structures for interrupts, direct interrupts and
+shared interrupts (if enabled). This file implements only all the structures that
+are not implemented by the application, leaving a comment where the interrupt
+not implemented here can be found.
+
+Then two linker files are used. The isr_tables_vt.ld file is included in place
+where the interrupt vectors are required to be placed in the selected architecture.
+The isr_tables_swi.ld file describes the placement of the software interrupt table
+elements. The separated file is required as it might be placed in writable on nonwritable
+section, depending on the current configuration.
 
 x86 Details
 -----------
