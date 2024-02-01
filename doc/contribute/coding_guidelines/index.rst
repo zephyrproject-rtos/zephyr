@@ -1456,6 +1456,7 @@ Zephyr codebase:
    :header: Function,Source
    :widths: auto
 
+   `gmtime_r()`_,POSIX.1-2001
    `strnlen()`_,POSIX.1-2008
    `strtok_r()`_,POSIX.1-2001
 
@@ -1482,5 +1483,6 @@ these functions can lead to compatibility issues with the third-party
 toolchains that come with their own C standard libraries.
 
 .. _main Zephyr repository: https://github.com/zephyrproject-rtos/zephyr
+.. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
 .. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
 .. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html
