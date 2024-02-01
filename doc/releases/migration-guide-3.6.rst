@@ -465,6 +465,18 @@ Bluetooth
     :kconfig:option:`CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT`,
     :kconfig:option:`CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT` Kconfig options.
 
+* Audio
+
+  * The ``BT_AUDIO_CODEC_LC3_*`` values from ``<zephyr/bluetooth/audio/lc3.h>`` have moved to
+    ``<zephyr/bluetooth/audio/audio.h>`` and have the ``LC3`` part of their names replaced by a
+    more semantically correct name: e.g.
+    ``BT_AUDIO_CODEC_LC3_CHAN_COUNT`` is now ``BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT``,
+    ``BT_AUDIO_CODEC_LC3_FREQ`` is now ``BT_AUDIO_CODEC_CAP_TYPE_FREQ``, and
+    ``BT_AUDIO_CODEC_CONFIG_LC3_FREQ`` is now ``BT_AUDIO_CODEC_CFG_FREQ``, etc.
+    Similarly the ``enum``s have also been renamed.
+    E.g. ``bt_audio_codec_config_freq`` is now ``bt_audio_codec_cfg_freq``,
+    ``bt_audio_codec_capability_type`` is now ``bt_audio_codec_cap_type``,
+    ``bt_audio_codec_config_type`` is now ``bt_audio_codec_cfg_type``, etc. (:github:`67024`)
 
 LoRaWAN
 =======
