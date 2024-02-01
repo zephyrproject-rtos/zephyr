@@ -1,0 +1,13 @@
+# FCX-MLDx5 O2 sensor configuration options
+
+# Copyright (c) 2024, Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config FCX_MLDX5
+	bool "FCX-MLDx5 O2 Sensor"
+	default y
+	depends on DT_HAS_AP_FCX_MLDX5_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
+	select UART
+	help
+	  Enable driver for FCX-MLD25 or FCX-MLD95 O2 Sensor.
