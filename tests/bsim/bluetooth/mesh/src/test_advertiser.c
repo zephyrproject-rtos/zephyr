@@ -580,6 +580,185 @@ static void test_rx_random_order(void)
 	PASS();
 }
 
+static void adv_suspend(void)
+{
+	atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+
+	ASSERT_OK_MSG(bt_mesh_adv_disable(), "Failed to disable advertiser sync");
+}
+
+static void adv_resume(void)
+{
+	atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		bt_mesh_adv_init();
+	}
+
+	ASSERT_OK_MSG(bt_mesh_adv_enable(), "Failed to enable advertiser");
+}
+
+static void adv_disable_work_handler(struct k_work *work)
+{
+	adv_suspend();
+}
+
+static K_WORK_DEFINE(adv_disable_work, adv_disable_work_handler);
+
+struct adv_suspend_ctx {
+	bool suspend;
+	int instance_idx;
+};
+
+static K_SEM_DEFINE(adv_sent_sem, 0, 1);
+static K_SEM_DEFINE(adv_suspended_sem, 0, 1);
+
+static void adv_send_end(int err, void *cb_data)
+{
+	struct adv_suspend_ctx *adv_data = cb_data;
+
+	LOG_DBG("end(): err (%d), suspend (%d), i (%d)", err, adv_data->suspend,
+		adv_data->instance_idx);
+
+	ASSERT_EQUAL(err, 0);
+
+	if (adv_data->suspend) {
+		/* When suspending, the end callback will be called only for the first adv, because
+		 * it was already scheduled.
+		 */
+		ASSERT_EQUAL(adv_data->instance_idx, 0);
+	} else {
+		if (adv_data->instance_idx == CONFIG_BT_MESH_ADV_BUF_COUNT - 1) {
+			k_sem_give(&adv_sent_sem);
+		}
+	}
+}
+
+static void adv_send_start(uint16_t duration, int err, void *cb_data)
+{
+	struct adv_suspend_ctx *adv_data = cb_data;
+
+	LOG_DBG("start(): err (%d), suspend (%d), i (%d)", err, adv_data->suspend,
+		adv_data->instance_idx);
+
+	if (adv_data->suspend) {
+		if (adv_data->instance_idx == 0) {
+			ASSERT_EQUAL(err, 0);
+			k_work_submit(&adv_disable_work);
+		} else {
+			/* For the advs that were pushed to the mesh advertiser by calling
+			 * `bt_mesh_adv_send` function but not sent to the host, the start callback
+			 * shall be called with -ENODEV.
+			 */
+			ASSERT_EQUAL(err, -ENODEV);
+		}
+
+		if (adv_data->instance_idx == CONFIG_BT_MESH_ADV_BUF_COUNT - 1) {
+			k_sem_give(&adv_suspended_sem);
+		}
+	} else {
+		ASSERT_EQUAL(err, 0);
+	}
+}
+
+static void adv_create_and_send(bool suspend, uint8_t first_byte, struct adv_suspend_ctx *adv_data)
+{
+	struct bt_mesh_adv *advs[CONFIG_BT_MESH_ADV_BUF_COUNT];
+	static const struct bt_mesh_send_cb send_cb = {
+		.start = adv_send_start,
+		.end = adv_send_end,
+	};
+
+	for (int i = 0; i < CONFIG_BT_MESH_ADV_BUF_COUNT; i++) {
+		adv_data[i].suspend = suspend;
+		adv_data[i].instance_idx = i;
+
+		advs[i] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+					    BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
+		ASSERT_FALSE_MSG(!advs[i], "Out of advs\n");
+
+		net_buf_simple_add_u8(&advs[i]->b, first_byte);
+		net_buf_simple_add_u8(&advs[i]->b, i);
+	}
+
+	for (int i = 0; i < CONFIG_BT_MESH_ADV_BUF_COUNT; i++) {
+		bt_mesh_adv_send(advs[i], &send_cb, &adv_data[i]);
+		bt_mesh_adv_unref(advs[i]);
+	}
+}
+
+static void test_tx_disable(void)
+{
+	struct adv_suspend_ctx adv_data[CONFIG_BT_MESH_ADV_BUF_COUNT];
+	struct bt_mesh_adv *extra_adv;
+	int err;
+
+	bt_init();
+	adv_init();
+
+	/* Fill up the adv pool and suspend the advertiser in the first start callback call. */
+	adv_create_and_send(true, 0xAA, adv_data);
+
+	err = k_sem_take(&adv_suspended_sem, K_SECONDS(10));
+	ASSERT_OK_MSG(err, "Not all advs were sent");
+
+	extra_adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+				       BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
+	ASSERT_TRUE_MSG(!extra_adv, "Created adv while suspended");
+
+	adv_resume();
+
+	/* Fill up the adv pool and suspend the advertiser and let it send all advs. */
+	adv_create_and_send(false, 0xBB, adv_data);
+
+	err = k_sem_take(&adv_sent_sem, K_SECONDS(10));
+	ASSERT_OK_MSG(err, "Not all advs were sent");
+
+	PASS();
+}
+
+static void suspended_adv_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+				  struct net_buf_simple *buf)
+{
+	uint8_t length;
+	uint8_t type;
+	uint8_t pdu;
+
+	length = net_buf_simple_pull_u8(buf);
+	ASSERT_EQUAL(buf->len, length);
+	ASSERT_EQUAL(length, sizeof(uint8_t) * 3);
+	type = net_buf_simple_pull_u8(buf);
+	ASSERT_EQUAL(BT_DATA_MESH_MESSAGE, type);
+
+	pdu = net_buf_simple_pull_u8(buf);
+	if (pdu == 0xAA) {
+		pdu = net_buf_simple_pull_u8(buf);
+
+		/* Because the advertiser is stopped after the advertisement has been passed to the
+		 * host, the controller could already start sending the message. Therefore, if the
+		 * tester receives an advertisement with the first byte as 0xAA, the second byte can
+		 * only be 0x00. This applies to both advertisers.
+		 */
+		ASSERT_EQUAL(0, pdu);
+	}
+}
+
+static void test_rx_disable(void)
+{
+	int err;
+
+	bt_init();
+
+	/* It is sufficient to check that the advertiser didn't sent PDUs which the end callback was
+	 * not called for.
+	 */
+	err = bt_mesh_test_wait_for_packet(suspended_adv_scan_cb, &observer_sem, 20);
+	/* The error will always be -ETIMEDOUT as the semaphore is never given in the callback. */
+	ASSERT_EQUAL(-ETIMEDOUT, err);
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "adv_" #role "_" #name,             \
@@ -596,11 +775,13 @@ static const struct bst_test_instance test_adv[] = {
 	TEST_CASE(tx, send_order,    "ADV: tx send order"),
 	TEST_CASE(tx, reverse_order, "ADV: tx reversed order"),
 	TEST_CASE(tx, random_order,  "ADV: tx random order"),
+	TEST_CASE(tx, disable,       "ADV: test suspending/resuming advertiser"),
 
 	TEST_CASE(rx, xmit,          "ADV: xmit checker"),
 	TEST_CASE(rx, proxy_mixin,   "ADV: proxy mix-in scanner"),
 	TEST_CASE(rx, receive_order, "ADV: rx receive order"),
 	TEST_CASE(rx, random_order,  "ADV: rx random order"),
+	TEST_CASE(rx, disable,       "ADV: rx adv from resumed advertiser"),
 
 	BSTEST_END_MARKER
 };

@@ -52,6 +52,7 @@ elseif(CONFIG_BT_CTLR_LOW_LAT)
   src/test_friendship.c
   src/test_transport.c
   src/test_suspend.c
+  src/test_advertiser.c
  )
 
 else()
