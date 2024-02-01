@@ -94,7 +94,6 @@ int bt_mesh_scan_disable(void);
 
 int bt_mesh_adv_enable(void);
 
-/* Should not be called from work queue due to undefined behavior */
 int bt_mesh_adv_disable(void);
 
 void bt_mesh_adv_local_ready(void);
