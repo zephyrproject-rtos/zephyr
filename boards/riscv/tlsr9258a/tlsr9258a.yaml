@@ -1,11 +1,11 @@
-identifier: tlsr9253b_retention
-name: Telink TLSR9253B_RETENTION
+identifier: tlsr9258a
+name: Telink TLSR9258A
 type: mcu
 arch: riscv32
 toolchain:
   - cross-compile
   - zephyr
-ram: 128
+ram: 256
 flash: 1024
 supported:
   - gpio

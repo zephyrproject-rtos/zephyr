@@ -23,12 +23,12 @@ config TELINK_B92_PMP
 	help
 		This option enables Telink B92 PMP(memory protection) module.
 
-config TELINK_B93_PMP
+config TELINK_B95_PMP
 	bool "Support Hardware Memory Protection"
-	depends on SOC_RISCV_TELINK_B93
+	depends on SOC_RISCV_TELINK_B95
 	select RISCV_PMP
 	help
-		This option enables Telink B93 PMP(memory protection) module.
+		This option enables Telink B95 PMP(memory protection) module.
 
 config TELINK_B9x_HWDSP
 	bool "Support Hardware DSP"
@@ -64,8 +64,8 @@ config SOC_RISCV_TELINK_B92
 	select CPU_HAS_FPU
 	select INCLUDE_RESET_VECTOR
 
-config SOC_RISCV_TELINK_B93
-	bool "Telink B93 SoC implementation"
+config SOC_RISCV_TELINK_B95
+	bool "Telink B95 SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select CPU_HAS_FPU
 	select INCLUDE_RESET_VECTOR
@@ -119,7 +119,7 @@ config TELINK_B9X_MALLOC_FAILED_HOOK
 
 config TELINK_B9x_MATTER_RETENTION_LAYOUT
 	bool "Support Matter retention layout"
-	depends on SOC_SERIES_RISCV_TELINK_B9X && (BOARD_TLSR9518ADK80D_RETENTION || BOARD_TLSR9528A_RETENTION || BOARD_TLSR9253B_RETENTION)
+	depends on SOC_SERIES_RISCV_TELINK_B9X && (BOARD_TLSR9518ADK80D_RETENTION || BOARD_TLSR9528A_RETENTION || BOARD_TLSR9258A_RETENTION)
 	default n
 	help
 		This option enables support Matter retention layout

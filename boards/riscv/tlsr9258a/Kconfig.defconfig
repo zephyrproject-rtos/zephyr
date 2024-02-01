@@ -1,17 +1,17 @@
 # Copyright (c) 2024 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_TLSR9253B
+if BOARD_TLSR9258A
 
 config BOARD
-	default "tlsr9253b"
+	default "tlsr9258a"
 
 endif
 
-if BOARD_TLSR9253B_RETENTION
+if BOARD_TLSR9258A_RETENTION
 
 config BOARD
-	default "tlsr9253b_retention"
+	default "tlsr9258a_retention"
 
 config BOARD_TLSR9X_NON_RETENTION_RAM_CODE
 	default n
@@ -21,7 +21,7 @@ endif
 config HEAP_MEM_POOL_SIZE
 	default 4096
 
-if BOARD_TLSR9253B || BOARD_TLSR9253B_RETENTION
+if BOARD_TLSR9258A || BOARD_TLSR9258A_RETENTION
 
 config SOC_FLASH_TELINK_B9X
 	default y if FLASH
@@ -52,7 +52,7 @@ config FLASH_LOAD_OFFSET
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 
 # Buffer for image writter shall be less(multiple of access alignment) or
-# equal to flash page. tlsr9253B boards use external P25Q16 IC as
+# equal to flash page. tlsr9258A boards use external P25Q16 IC as
 # flesh memory. Flash page size of the IC is 256 bytes. So that, it is
 # maximum image writer buffer size for such kind of boards.
 config IMG_BLOCK_BUF_SIZE

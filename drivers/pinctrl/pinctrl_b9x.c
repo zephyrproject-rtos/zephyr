@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
 #elif CONFIG_SOC_RISCV_TELINK_B92
 #include <zephyr/dt-bindings/pinctrl/b92-pinctrl.h>
-#elif CONFIG_SOC_RISCV_TELINK_B93
-#include <zephyr/dt-bindings/pinctrl/b93-pinctrl.h>
+#elif CONFIG_SOC_RISCV_TELINK_B95
+#include <zephyr/dt-bindings/pinctrl/b95-pinctrl.h>
 #endif
 #include <zephyr/pm/device.h>
 
@@ -53,7 +53,7 @@
 						(((pin >> 8) == 5) ? 0x26          : 0) +	 \
 						((pin & 0x0f0)     ? 1             : 0)))
 
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
+#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
 /**
  *      Function Multiplexer Register
  *         ADDR              PINS
@@ -96,7 +96,7 @@
 
 
 #if (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9253B_RETENTION)) && defined(CONFIG_PM_DEVICE)
+|| defined(CONFIG_BOARD_TLSR9258A_RETENTION)) && defined(CONFIG_PM_DEVICE)
 
 static int pinctrl_b9x_init(const struct device *dev)
 {
@@ -222,8 +222,8 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pinctrl)
 	reg_pin_mux(pin) = (reg_pin_mux(pin) & mask) | func;
 #elif CONFIG_SOC_RISCV_TELINK_B92
 	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B92_PIN_FUNC_POS)) | (func & B92_PIN_FUNC_POS);
-#elif CONFIG_SOC_RISCV_TELINK_B93
-	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B93_PIN_FUNC_POS)) | (func & B93_PIN_FUNC_POS);
+#elif CONFIG_SOC_RISCV_TELINK_B95
+	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B95_PIN_FUNC_POS)) | (func & B95_PIN_FUNC_POS);
 #endif
 
 	/* set pull value */

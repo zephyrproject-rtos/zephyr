@@ -7,12 +7,12 @@
 /dts-v1/;
 
 #include <freq.h>
-#include <telink/telink_b93.dtsi>
-#include "tlsr9253b-pinctrl.dtsi"
+#include <telink/telink_b95.dtsi>
+#include "tlsr9258a-pinctrl.dtsi"
 
 / {
-	model = "telink,b93";
-	compatible = "telink,tlsr9253b";
+	model = "telink,b95";
+	compatible = "telink,tlsr9258a";
 
 	aliases {
 		led0 = &led_blue;

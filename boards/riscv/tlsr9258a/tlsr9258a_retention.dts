@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "tlsr9253b-common.dtsi"
+#include "tlsr9258a-common.dtsi"
 
 / {
 	soc {

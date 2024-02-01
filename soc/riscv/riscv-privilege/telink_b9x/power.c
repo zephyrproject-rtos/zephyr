@@ -60,7 +60,7 @@ static uint64_t get_mtime(void)
 }
 
 #if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9253B_RETENTION)
+|| defined(CONFIG_BOARD_TLSR9258A_RETENTION)
 static void set_mtime_compare(uint64_t time_cmp)
 {
 	*(volatile uint64_t *const)((uint32_t)(MTIMECMP_REG +
@@ -83,7 +83,7 @@ static void set_mtime(uint64_t time)
 }
 
 #if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9253B_RETENTION)
+|| defined(CONFIG_BOARD_TLSR9258A_RETENTION)
 volatile bool b9x_deep_sleep_retention;
 #endif
 
@@ -117,7 +117,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		}
 		break;
 #if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9253B_RETENTION)
+|| defined(CONFIG_BOARD_TLSR9258A_RETENTION)
 	case PM_STATE_STANDBY:
 		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
@@ -147,7 +147,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 
 #if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9253B_RETENTION)
+|| defined(CONFIG_BOARD_TLSR9258A_RETENTION)
 	b9x_deep_sleep_retention = false;
 #endif
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/pinctrl/b93-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/b95-pinctrl.h>
 
 / {
 	chosen {
@@ -16,10 +16,10 @@
 	pad-mul-sel = <1>;
 
 	uart0_tx_pa3_default: uart0_tx_pa3_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_3, B93_FUNC_UART0_TX)>;
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_3, B95_FUNC_UART0_TX)>;
 	};
 	uart0_rx_pa4_default: uart0_rx_pa4_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_4, B93_FUNC_UART0_RTX_IO)>;
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_4, B95_FUNC_UART0_RTX_IO)>;
 	};
 };
 

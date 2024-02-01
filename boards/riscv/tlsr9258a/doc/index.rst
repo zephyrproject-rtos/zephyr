@@ -1,37 +1,37 @@
-.. _tlsr9253b:
+.. _tlsr9258a:
 
-Telink TLSR9253B
+Telink TLSR9258A
 #####################
 
 Overview
 ********
 
-The TLSR9253B Generic Starter Kit is a hardware platform which
+The TLSR9258A Generic Starter Kit is a hardware platform which
 can be used to verify the `Telink TLSR9 series chipset`_ and develop applications
 for several 2.4 GHz air interface standards including Bluetooth 5.2 (Basic data
 rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
-.. figure:: img/tlsr9253b.jpg
+.. figure:: img/tlsr9258a.jpg
      :align: center
-     :alt: TLSR9253B
+     :alt: TLSR9258A
 
-More information about the board can be found at the `Telink B93 Generic Starter Kit Hardware Guide`_ website.
+More information about the board can be found at the `Telink B95 Generic Starter Kit Hardware Guide`_ website.
 
 Hardware
 ********
 
-The TLSR9253B SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 512
+The TLSR9258A SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 512
 KB SRAM (256 KB of Data Local Memory and 256 KB of Instruction Local Memory first 96 KB of this memory
 supports retention feature), external Flash memory, stereo audio codec, 14 bit AUX ADC,
 analog and digital Microphone input, PWM, flexible IO interfaces, and other peripheral blocks required
 for advanced IoT, hearable, and wearable devices.
 
-.. figure:: img/tlsr9253_block_diagram.jpg
+.. figure:: img/tlsr9258a_block_diagram.jpg
      :align: center
-     :alt: TLSR9253B_SOC
+     :alt: TLSR9258A_SOC
 
-The TLSR9253B default board configuration provides the following hardware components:
+The TLSR9258A default board configuration provides the following hardware components:
 
 - RF conducted antenna
 - 1 MB External SPI Flash memory with reset button. (Possible to mount 1/2/4 MB)
@@ -46,7 +46,7 @@ The TLSR9253B default board configuration provides the following hardware compon
 Supported Features
 ==================
 
-The Zephyr TLSR9253B board configuration supports the following hardware features:
+The Zephyr TLSR9258A board configuration supports the following hardware features:
 
 +----------------+------------+------------------------------+
 | Interface      | Controller | Driver/Component             |
@@ -110,10 +110,10 @@ Default configuration and IOs
 System Clock
 ------------
 
-The TLSR9253B board is configured to use the 24 MHz external crystal oscillator
+The TLSR9258A board is configured to use the 24 MHz external crystal oscillator
 with the on-chip PLL/DIV generating the 48 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-(``boards/riscv/tlsr9253b/tlsr9253b-common.dtsi``):
+(``boards/riscv/tlsr9258a/tlsr9258a-common.dtsi``):
 
 - 16000000
 - 24000000
@@ -131,14 +131,14 @@ The following values also could be assigned to the system clock in the board DTS
 PINs Configuration
 ------------------
 
-The TLSR9253B SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
+The TLSR9258A SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
 currently enabled:
 
 - LED0 (blue): PD0, LED1 (green): PD1, LED2 (white): PE6, LED3 (red): PE7
 - Key Matrix SW2: PD2_PD6, SW3: PD2_PF6, SW4: PD7_PD6, SW5: PD7_PF6
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
-``boards/riscv/tlsr9253b/tlsr9253b-common.dtsi`` file:
+``boards/riscv/tlsr9258a/tlsr9258a-common.dtsi`` file:
 
 - UART0 TX: PB2, RX: PB3
 - UART1 TX: PC6, RX: PC7
@@ -150,7 +150,7 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 Serial Port
 -----------
 
-The TLSR9253B SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
+The TLSR9258A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 Programming and debugging
@@ -170,7 +170,7 @@ Here is an example for the "hello_world" application.
 .. code-block:: console
 
    # From the root of the zephyr repository
-   west build -b tlsr9253b samples/hello_world
+   west build -b tlsr9258a samples/hello_world
 
 Open a serial terminal with the following settings:
 
@@ -185,13 +185,13 @@ serial port:
 .. code-block:: console
 
    *** Booting Zephyr OS version 2.5.0  ***
-   Hello World! tlsr9253b
+   Hello World! tlsr9258a
 
 
 Flashing
 ========
 
-To flash the TLSR9253B board see the sources below:
+To flash the TLSR9258A board see the sources below:
 
 - `Burning and Debugging Tools for all Series`_
 
@@ -217,7 +217,7 @@ References
 .. target-notes::
 
 .. _Telink TLSR9 series chipset: [UNDER_DEVELOPMENT]
-.. _Telink B93 Generic Starter Kit Hardware Guide: [UNDER_DEVELOPMENT]
+.. _Telink B95 Generic Starter Kit Hardware Guide: [UNDER_DEVELOPMENT]
 .. _Burning and Debugging Tools for all Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
 .. _Burning and Debugging Tools for Linux: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_Libusb_BDT-Linux-X64-1.5.2.1.tar
 .. _Burning and Debugging Tools for Windows: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/BDT.zip

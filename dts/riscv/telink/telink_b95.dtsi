@@ -39,7 +39,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "telink,telink_b93-soc";
+		compatible = "telink,telink_b95-soc";
 		ranges;
 
 		ram_ilm: memory@0 {
@@ -71,7 +71,7 @@
 		};
 
 		power: power@80140180 {
-			compatible = "telink,b93-power";
+			compatible = "telink,b95-power";
 			reg = <0x80140180 0x40>;
 			power-mode = "DCDC_1P4_LDO_2P0";
 			vbat-type = "VBAT_MAX_VALUE_GREATER_THAN_3V6";
@@ -190,7 +190,7 @@
 		};
 
 		gspi: spi@8BFFFF00 {
-			compatible = "telink,b93-spi";
+			compatible = "telink,b95-spi";
 			reg = <0x8BFFFF00 0x100>;
 			peripheral-id = "GSPI_MODULE";
 			cs0-pin = "0";
@@ -202,7 +202,7 @@
 		};
 
 		lspi: spi@87FFFF00 {
-			compatible = "telink,b93-spi";
+			compatible = "telink,b95-spi";
 			reg = <0x87FFFF00 0x100>;
 			peripheral-id = "LSPI_MODULE";
 			cs0-pin = "0";

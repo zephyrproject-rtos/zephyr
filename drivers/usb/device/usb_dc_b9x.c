@@ -8,8 +8,8 @@
 #include "driver_b91.h"
 #elif CONFIG_SOC_RISCV_TELINK_B92
 #include "driver_b92.h"
-#elif CONFIG_SOC_RISCV_TELINK_B93
-#include "driver_b93.h"
+#elif CONFIG_SOC_RISCV_TELINK_B95
+#include "driver_b95.h"
 #endif
 
 #include <stdio.h>

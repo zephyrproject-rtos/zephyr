@@ -19,7 +19,7 @@
 #elif CONFIG_SOC_RISCV_TELINK_B92
 #define GPIO_IRQ_REG reg_gpio_irq_ctrl
 #include "gpio.h"
-#elif CONFIG_SOC_RISCV_TELINK_B93
+#elif CONFIG_SOC_RISCV_TELINK_B95
 #define GPIO_IRQ_REG reg_gpio_irq_ctrl
 #include "gpio.h"
 #else
@@ -50,7 +50,7 @@
 #define IS_PORT_D(gpio)         ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpiod)))
 
 /* Check that gpio is port F */
-#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
+#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
 #define IS_PORT_F(gpio)         ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpiof)))
 #else
 #define IS_PORT_F(gpio)         0
@@ -73,7 +73,7 @@
 #elif CONFIG_SOC_RISCV_TELINK_B92
 #define reg_wakeup_trig_pol_base 0x3f
 #define reg_wakeup_trig_en_base  0x45
-#elif CONFIG_SOC_RISCV_TELINK_B93
+#elif CONFIG_SOC_RISCV_TELINK_B95
 #define reg_wakeup_trig_pol_base 0x3f
 #define reg_wakeup_trig_en_base  0x45
 #else
@@ -138,7 +138,7 @@ struct gpio_b9x_data {
 	struct gpio_driver_data common; /* driver data */
 	sys_slist_t callbacks;          /* list of callbacks */
 #if (defined CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9253B_RETENTION)))
+|| defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9258A_RETENTION)))
 	struct gpio_b9x_retention_data gpio_b9x_retention; /* list of necessary retained data */
 #endif
 };
@@ -431,7 +431,7 @@ static int gpio_b9x_pin_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B93
+#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
 	/* Avoid pulls in B92 SoC in PF[0:5] due to silicone limitation */
 	if (IS_PORT_F(gpio) && (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN))
 	&& (pin != 6) && (pin != 7)) {
@@ -622,7 +622,7 @@ static int gpio_b9x_manage_callback(const struct device *dev,
 }
 
 #if (defined CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9253B_RETENTION)))
+|| defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9258A_RETENTION)))
 
 static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action action)
 {
@@ -734,7 +734,7 @@ static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 
 #endif
 /* (CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION)
- * || defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9253B_RETENTION)))
+ * || defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9258A_RETENTION)))
  */
 
 /* GPIO driver APIs structure */
@@ -810,7 +810,7 @@ static void gpio_b9x_irq_connect_4(void)
 #endif
 
 #if (defined CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) \
-|| defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9253B_RETENTION)))
+|| defined(CONFIG_BOARD_TLSR9528A_RETENTION) || defined(CONFIG_BOARD_TLSR9258A_RETENTION)))
 #define PM_DEVICE_INST_DEFINE(n, gpio_b9x_pm_action)  \
 PM_DEVICE_DT_INST_DEFINE(n, gpio_b9x_pm_action);
 #define PM_DEVICE_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
