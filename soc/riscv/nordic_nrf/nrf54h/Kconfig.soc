@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NRF54H20
+	bool "nRF54H20"
+	depends on SOC_SERIES_NRF54HX
+
+if SOC_NRF54H20
+
+choice
+	prompt "nRF54Hx MCU Selection"
+
+config SOC_NRF54H20_ENGA_CPUPPR
+	bool "nRF54H20 ENGA CPUPPR"
+	select RISCV
+
+endchoice
+
+endif # SOC_NRF54H20
