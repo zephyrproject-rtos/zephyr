@@ -926,17 +926,6 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink)
 {
-	if (atomic_test_bit(sink->flags,
-			    BT_BAP_BROADCAST_SINK_FLAG_SRC_ID_VALID)) {
-		int err;
-
-		err = bt_bap_scan_delegator_rem_src(sink->bass_src_id);
-		if (err != 0) {
-			/* This is likely due to the receive state been removed */
-			LOG_DBG("Could not remove Receive State for sink %p: %d", sink, err);
-		}
-	}
-
 	if (sink->stream_count > 0U) {
 		broadcast_sink_cleanup_streams(sink);
 	}
