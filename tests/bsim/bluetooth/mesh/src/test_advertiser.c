@@ -598,13 +598,6 @@ static void adv_resume(void)
 	ASSERT_OK_MSG(bt_mesh_adv_enable(), "Failed to enable advertiser");
 }
 
-static void adv_disable_work_handler(struct k_work *work)
-{
-	adv_suspend();
-}
-
-static K_WORK_DEFINE(adv_disable_work, adv_disable_work_handler);
-
 struct adv_suspend_ctx {
 	bool suspend;
 	int instance_idx;
@@ -644,7 +637,7 @@ static void adv_send_start(uint16_t duration, int err, void *cb_data)
 	if (adv_data->suspend) {
 		if (adv_data->instance_idx == 0) {
 			ASSERT_EQUAL(err, 0);
-			k_work_submit(&adv_disable_work);
+			adv_suspend();
 		} else {
 			/* For the advs that were pushed to the mesh advertiser by calling
 			 * `bt_mesh_adv_send` function but not sent to the host, the start callback
