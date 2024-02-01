@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
+static ZTEST_BMEM struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
 
 /* Interface 2 addresses */
 static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
@@ -1076,7 +1076,7 @@ static void netmask_addr_add(void *p1, void *p2, void *p3)
 	struct in_addr my_netmask = { { { 255, 255, 255, 0 } } };
 	bool ret;
 
-	ret = net_if_ipv4_set_netmask_by_index(1, &my_netmask);
+	ret = net_if_ipv4_set_netmask_by_addr_by_index(1, &my_ipv4_addr1, &my_netmask);
 	zassert_true(ret, "Cannot add IPv4 netmask");
 }
 
