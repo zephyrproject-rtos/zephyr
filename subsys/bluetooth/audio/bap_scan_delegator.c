@@ -913,8 +913,9 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 
 	state = &internal_state->state;
 
-	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
-	    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
+	/* If conn == NULL then it's a local operation and we do not need to ask the application */
+	if (conn != NULL && (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
+			     state->pa_sync_state == BT_BAP_PA_STATE_SYNCED)) {
 		int err;
 
 		/* Terminate PA sync */
