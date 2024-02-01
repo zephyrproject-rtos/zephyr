@@ -8,7 +8,7 @@ tests:
       - shield
       - samples
     extra_args:
-      - platform:mimxrt1064_evk:SHIELD=dvp_fpc24_mt9m114
+      - platform:mimxrt1064_evk:SHIELD="dvp_fpc24_mt9m114;rk043fn66hs_ctg"
     platform_allow:
       - mimxrt1064_evk
       - mm_swiftio

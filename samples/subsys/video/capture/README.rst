@@ -7,9 +7,8 @@
 Description
 ***********
 
-This sample application uses the :ref:`Video API <video_api>` to retrieve video frames from the
-video capture device, writes a frame count message to the console, and then
-discards the video frame data.
+This sample application uses the :ref:`video_api` to capture frames from a video capture
+device then uses the :ref:`display_api` to display them onto an LCD screen (if any).
 
 Requirements
 ************
@@ -37,7 +36,7 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1064_evk
-   :shield: dvp_fpc24_mt9m114
+   :shield: "dvp_fpc24_mt9m114 rk043fn66hs_ctg"
    :goals: build
    :compact:
 
@@ -49,7 +48,7 @@ Sample Output
 
 .. code-block:: console
 
-    - Device name: csi@402bc000
+    Video device: csi@402bc000
     - Capabilities:
       RGBP width [480; 480; 0] height [272; 272; 0]
       YUYV width [480; 480; 0] height [272; 272; 0]
@@ -58,6 +57,12 @@ Sample Output
       RGBP width [1280; 1280; 0] height [720; 720; 0]
       YUYV width [1280; 1280; 0] height [720; 720; 0]
     - Default format: RGBP 480x272
+
+    Display device: display-controller@402b8000
+    - Capabilities:
+      x_resolution = 480, y_resolution = 272, supported_pixel_formats = 40
+      current_pixel_format = 32, current_orientation = 0
+
     Capture started
     Got frame 0! size: 261120; timestamp 249 ms
     Got frame 1! size: 261120; timestamp 282 ms
