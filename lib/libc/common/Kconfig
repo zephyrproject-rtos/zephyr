@@ -6,6 +6,11 @@ config COMMON_LIBC_ABORT
 	help
 	  common implementation of abort().
 
+config COMMON_LIBC_GMTIME_R
+	bool
+	help
+	  common implementation of gmtime_r().
+
 config COMMON_LIBC_TIME
 	bool
 	help
