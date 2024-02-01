@@ -23,7 +23,10 @@
 			bias-pull-up;
 			slew-rate = "fast";
 		};
-		group2 {
+	};
+
+	pinmux_lpi2c6: pinmux_lpi2c6 {
+		group0 {
 			pinmux = <&iomuxc_lpsr_gpio_lpsr_07_lpi2c6_scl>,
 				<&iomuxc_lpsr_gpio_lpsr_06_lpi2c6_sda>;
 			drive-strength = "high";
