@@ -494,6 +494,14 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 	mod_src_param.src_id = recv_state->src_id;
 	mod_src_param.encrypt_state = recv_state->encrypt_state;
 	mod_src_param.broadcast_id = recv_state->broadcast_id;
+	mod_src_param.num_subgroups = sink->subgroup_count;
+	for (uint8_t i = 0U; i < sink->subgroup_count; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup_param = &mod_src_param.subgroups[i];
+		const struct bt_bap_broadcast_sink_subgroup *sink_subgroup = &sink->subgroups[i];
+
+		/* Set the bis_sync value to the indexes available per subgroup */
+		subgroup_param->bis_sync = sink_subgroup->bis_indexes & sink->indexes_bitfield;
+	}
 
 	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
 	if (err != 0) {
