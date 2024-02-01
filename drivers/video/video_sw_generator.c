@@ -72,6 +72,9 @@ static int video_sw_generator_stream_stop(const struct device *dev)
 /* Black, Blue, Red, Purple, Green, Aqua, Yellow, White */
 uint16_t rgb565_colorbar_value[] = {0x0000, 0x001F, 0xF800, 0xF81F, 0x07E0, 0x07FF, 0xFFE0, 0xFFFF};
 
+uint32_t xrgb32_colorbar_value[] = {0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFFFF00FF,
+				    0xFF00FF00, 0xFF00FFFF, 0xFFFFFF00, 0xFFFFFFFF};
+
 static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct video_buffer *vbuf)
 {
 	int bw = data->fmt.width / 8;
@@ -84,6 +87,10 @@ static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct 
 				uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
 				*pixel = rgb565_colorbar_value[color_idx];
 				i += 2;
+			} else if (data->fmt.pixelformat == VIDEO_PIX_FMT_XRGB32) {
+				uint32_t *pixel = (uint32_t *)&vbuf->buffer[i];
+				*pixel = xrgb32_colorbar_value[color_idx];
+				i += 4;
 			}
 		}
 	}
@@ -178,6 +185,14 @@ static int video_sw_generator_flush(const struct device *dev, enum video_endpoin
 
 static const struct video_format_cap fmts[] = {{
 						       .pixelformat = VIDEO_PIX_FMT_RGB565,
+						       .width_min = 64,
+						       .width_max = 1920,
+						       .height_min = 64,
+						       .height_max = 1080,
+						       .width_step = 1,
+						       .height_step = 1,
+					       }, {
+						       .pixelformat = VIDEO_PIX_FMT_XRGB32,
 						       .width_min = 64,
 						       .width_max = 1920,
 						       .height_min = 64,
