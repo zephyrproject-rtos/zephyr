@@ -411,6 +411,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
 				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <35 0>;
+			fifo-size = <16>;
 			status = "disabled";
 		};
 
@@ -422,6 +423,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>,
 				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <36 0>;
+			fifo-size = <16>;
 			status = "disabled";
 		};
 
@@ -433,6 +435,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>,
 				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <51 0>;
+			fifo-size = <16>;
 			status = "disabled";
 		};
 
@@ -443,6 +446,7 @@
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <84 0>;
+			fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -453,6 +457,7 @@
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <85 0>;
+			fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -463,6 +468,7 @@
 			reg = <0x58001400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000020>;
 			interrupts = <86 0>;
+			fifo-size = <8>;
 			status = "disabled";
 		};
 
