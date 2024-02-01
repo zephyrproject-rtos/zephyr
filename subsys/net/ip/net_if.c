@@ -3751,8 +3751,8 @@ out:
  * in this case and set the first one found. Please use
  * net_if_ipv4_set_netmask_by_addr() instead.
  */
-void net_if_ipv4_set_netmask(struct net_if *iface,
-			     const struct in_addr *netmask)
+static void net_if_ipv4_set_netmask_deprecated(struct net_if *iface,
+					       const struct in_addr *netmask)
 {
 	struct net_if_ipv4 *ipv4;
 
@@ -3781,6 +3781,12 @@ out:
 	net_if_unlock(iface);
 }
 
+void net_if_ipv4_set_netmask(struct net_if *iface,
+			     const struct in_addr *netmask)
+{
+	net_if_ipv4_set_netmask_deprecated(iface, netmask);
+}
+
 bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
 					     const struct in_addr *netmask)
 {
@@ -3791,7 +3797,7 @@ bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
 		return false;
 	}
 
-	net_if_ipv4_set_netmask(iface, netmask);
+	net_if_ipv4_set_netmask_deprecated(iface, netmask);
 
 	return true;
 }
