@@ -589,7 +589,6 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
 	static bool scan_cbs_registered;
 	unsigned long broadcast_id;
-	unsigned long pa_sync;
 	int err = 0;
 
 	if (!scan_cbs_registered) {
@@ -614,13 +613,9 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	pa_sync = shell_strtoul(argv[2], 0, &err);
+	auto_scan.pa_sync = shell_strtobool(argv[2], 0, &err);
 	if (err != 0) {
-		shell_error(sh, "failed to parse pa_sync: %d", err);
-
-		return -ENOEXEC;
-	} else if (pa_sync != 0U && pa_sync != 1U) {
-		shell_error(sh, "pa_sync shall be boolean: %lu", pa_sync);
+		shell_error(sh, "Could not parse pa_sync: %d", err);
 
 		return -ENOEXEC;
 	}
@@ -662,7 +657,6 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 
 	/* Store results in the `auto_scan` struct */
 	auto_scan.broadcast_id = broadcast_id;
-	auto_scan.pa_sync = pa_sync;
 	memcpy(&auto_scan.subgroup, &subgroup, sizeof(subgroup));
 
 	return 0;
@@ -819,7 +813,6 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	struct bt_le_per_adv_sync *pa_sync = per_adv_syncs[0];
 	struct bt_le_per_adv_sync_info pa_info;
 	unsigned long broadcast_id;
-	unsigned long pa_sync_req;
 	uint32_t bis_bitfield_req;
 	int err;
 
@@ -840,18 +833,12 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	param.adv_sid = pa_info.sid;
 	param.pa_interval = pa_info.interval;
 
-	pa_sync_req = shell_strtoul(argv[1], 0, &err);
+	param.pa_sync = shell_strtobool(argv[1], 0, &err);
 	if (err != 0) {
-		shell_error(sh, "failed to parse pa_sync: %d", err);
-
-		return -ENOEXEC;
-	} else if (pa_sync_req != 0U && pa_sync_req != 1U) {
-		shell_error(sh, "pa_sync_req shall be boolean: %lu", pa_sync_req);
+		shell_error(sh, "Could not parse pa_sync: %d", err);
 
 		return -ENOEXEC;
 	}
-
-	param.pa_sync = (bool)pa_sync_req;
 
 	broadcast_id = shell_strtoul(argv[2], 0, &err);
 	if (err != 0) {
