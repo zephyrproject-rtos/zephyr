@@ -75,7 +75,6 @@ void uart_async_rx_on_buf_rel(struct uart_async_rx *rx_data, uint8_t *buffer)
 		(struct uart_async_rx_buf *)(buffer - offsetof(struct uart_async_rx_buf, buffer));
 
 	rx_buf->completed = 1;
-	rx_data->wr_buf_idx = inc(rx_data, rx_data->wr_buf_idx);
 }
 
 size_t uart_async_rx_data_claim(struct uart_async_rx *rx_data, uint8_t **data, size_t length)
