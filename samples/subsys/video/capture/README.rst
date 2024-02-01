@@ -7,9 +7,8 @@
 Description
 ***********
 
-This sample application uses the :ref:`Video API <video_api>` to retrieve video frames from the
-video capture device, writes a frame count message to the console, and then
-discards the video frame data.
+This sample application uses the :ref:`Video API <video_api>` to capture frames from
+a video capture device and then display them onto an LCD screen (if any).
 
 Requirements
 ************
