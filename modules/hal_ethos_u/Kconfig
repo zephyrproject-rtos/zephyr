@@ -1,5 +1,5 @@
-# Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
-#
+# SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024 Arm Limited and/or its
+# affiliates <open-source-office@arm.com></text>
 # SPDX-License-Identifier: Apache-2.0
 
 config ARM_ETHOS_U
@@ -45,6 +45,9 @@ choice "ARM_ETHOS_U_LOG_LEVEL_CHOICE"
 	default ARM_ETHOS_U_LOG_LEVEL_WRN
 	depends on STDOUT_CONSOLE
 
+config ARM_ETHOS_U_LOG_LEVEL_NONE
+	bool "None"
+
 config ARM_ETHOS_U_LOG_LEVEL_ERR
 	bool "Error"
 
@@ -65,6 +68,7 @@ endchoice
 config ARM_ETHOS_U_LOG_LEVEL
 	int
 	depends on STDOUT_CONSOLE
+	default 0 if ARM_ETHOS_U_LOG_LEVEL_NONE
 	default 1 if ARM_ETHOS_U_LOG_LEVEL_ERR
 	default 2 if ARM_ETHOS_U_LOG_LEVEL_WRN
 	default 3 if ARM_ETHOS_U_LOG_LEVEL_INF
