@@ -13,6 +13,13 @@ menuconfig SPI_STM32
 
 if SPI_STM32
 
+config SPI_STM32_FIFO
+	bool "STM32 MCU SPI FIFO Support"
+	help
+	  Enable use of FIFO when transmitting and receiving.
+
+	  This comes with RAM, ROM and runtime overhead.
+
 config SPI_STM32_INTERRUPT
 	bool "STM32 MCU SPI Interrupt Support"
 	help

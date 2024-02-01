@@ -6,3 +6,8 @@ description: STM32 SPI controller with embedded Rx and Tx FIFOs
 compatible: "st,stm32-spi-fifo"
 
 include: st,stm32-spi-common.yaml
+
+properties:
+  fifo-size:
+    type: int
+    description: RX/TX FIFO size in bytes

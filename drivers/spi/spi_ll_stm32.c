@@ -340,6 +340,47 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 }
 
 /* Shift a SPI frame as master. */
+#ifdef CONFIG_SPI_STM32_FIFO
+static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
+{
+	unsigned int frame_bytes = bits2bytes(
+		SPI_WORD_SIZE_GET(data->ctx.config->operation));
+	/*
+	 * Store data->MEMBERS in local variables (more likely to be stored in
+	 * CPU registers), mainly for performance benefits.
+	 */
+	size_t tx_fifo_room = data->tx_fifo_room / frame_bytes;
+	size_t transfer_len = data->transfer_len;
+	bool retry_tx = true;
+
+	while (retry_tx) {
+		retry_tx = false;
+
+		while (transfer_len > 0 &&
+		       tx_fifo_room > 0 &&
+		       ll_func_tx_is_not_full(spi)) {
+			spi_stm32_send_next_frame(spi, data, frame_bytes);
+
+			tx_fifo_room--;
+			transfer_len -= frame_bytes;
+		}
+
+		while (ll_func_rx_is_not_empty(spi)) {
+			spi_stm32_read_next_frame(spi, data, frame_bytes);
+
+			tx_fifo_room++;
+			retry_tx = true;
+		}
+	}
+
+	/*
+	 * Save local variables back to data->MEMBERS, so the correct value is
+	 * restored during next function execution.
+	 */
+	data->tx_fifo_room = tx_fifo_room * frame_bytes;
+	data->transfer_len = transfer_len;
+}
+#else /* CONFIG_SPI_STM32_FIFO */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	unsigned int frame_bytes = bits2bytes(
@@ -357,6 +398,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 
 	spi_stm32_read_next_frame(spi, data, frame_bytes);
 }
+#endif /* CONFIG_SPI_STM32_FIFO */
 
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
@@ -725,6 +767,14 @@ static int transceive(const struct device *dev,
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
+
+#ifdef CONFIG_SPI_STM32_FIFO
+	size_t tx_len = spi_context_total_tx_len(&data->ctx);
+	size_t rx_len = spi_context_total_rx_len(&data->ctx);
+
+	data->transfer_len = MAX(tx_len, rx_len);
+	data->tx_fifo_room = cfg->fifo_size;
+#endif
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	ll_func_enable_int_errors(spi);
@@ -1175,6 +1225,9 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi),		\
 		(.mssi_clocks =						\
 			DT_INST_PROP(id, mssi_clock),))			\
+	IF_ENABLED(CONFIG_SPI_STM32_FIFO,				\
+		(.fifo_size =						\
+		    DT_INST_PROP_OR(id, fifo_size, 1),))		\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\

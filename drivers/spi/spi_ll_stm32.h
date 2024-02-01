@@ -34,6 +34,9 @@ struct spi_stm32_config {
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
+#if CONFIG_SPI_STM32_FIFO
+	uint8_t fifo_size;
+#endif
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -61,6 +64,10 @@ struct stream {
 
 struct spi_stm32_data {
 	struct spi_context ctx;
+#if CONFIG_SPI_STM32_FIFO
+	size_t tx_fifo_room;
+	size_t transfer_len;
+#endif /* CONFIG_SPI_STM32_FIFO */
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
 	volatile uint32_t status_flags;
