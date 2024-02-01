@@ -165,6 +165,7 @@ static int tmp108_attr_get(const struct device *dev,
 			   struct sensor_value *val)
 {
 	int result;
+	uint16_t tmp_val;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP && chan != SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
@@ -174,7 +175,9 @@ static int tmp108_attr_get(const struct device *dev,
 	case SENSOR_ATTR_CONFIGURATION:
 		result =  tmp108_reg_read(dev,
 					  TI_TMP108_REG_CONF,
-					  (uint16_t *) &(val->val1));
+					  &tmp_val);
+		val->val1 = tmp_val;
+		val->val2 = 0;
 		break;
 	default:
 		return -ENOTSUP;
