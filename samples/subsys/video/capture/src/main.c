@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
+#include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
@@ -39,7 +40,7 @@ int main(void)
 	}
 #endif
 
-	printk("- Device name: %s\n", video_dev->name);
+	printk("Video device: %s\n", video_dev->name);
 
 	/* Get capabilities */
 	if (video_get_caps(video_dev, VIDEO_EP_OUT, &caps)) {
@@ -68,6 +69,34 @@ int main(void)
 	printk("- Default format: %c%c%c%c %ux%u\n", (char)fmt.pixelformat,
 	       (char)(fmt.pixelformat >> 8), (char)(fmt.pixelformat >> 16),
 	       (char)(fmt.pixelformat >> 24), fmt.width, fmt.height);
+
+#if DT_HAS_CHOSEN(zephyr_display)
+	struct display_capabilities capabilities;
+	struct display_buffer_descriptor buf_desc;
+	const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+
+	if (!device_is_ready(display_dev)) {
+		LOG_ERR("Device %s not found", display_dev->name);
+		return 0;
+	}
+
+	printk("\nDisplay device: %s\n", display_dev->name);
+
+	display_get_capabilities(display_dev, &capabilities);
+
+	printk("- Capabilities:\n");
+	printk("  x_resolution = %u, y_resolution = %u, supported_pixel_formats = %u\n"
+	       "  current_pixel_format = %u, current_orientation = %u\n\n",
+	       capabilities.x_resolution, capabilities.y_resolution,
+	       capabilities.supported_pixel_formats, capabilities.current_pixel_format,
+	       capabilities.current_orientation);
+
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	/* Default output pixel format of the camera pipeline on i.MX RT11XX is XRGB32 */
+	display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+#endif
+
+#endif
 
 	/* Size to allocate for each buffer */
 	bsize = fmt.pitch * fmt.height;
@@ -104,6 +133,16 @@ int main(void)
 		printk("\rGot frame %u! size: %u; timestamp %u ms\n", frame++, vbuf->bytesused,
 		       vbuf->timestamp);
 
+#if DT_HAS_CHOSEN(zephyr_display)
+		buf_desc.buf_size = vbuf->bytesused;
+		buf_desc.width = fmt.width;
+		buf_desc.pitch = buf_desc.width;
+		buf_desc.height = fmt.height;
+
+		display_write(display_dev, 0, 0, &buf_desc, vbuf->buffer);
+
+		display_blanking_off(display_dev);
+#endif
 		err = video_enqueue(video_dev, VIDEO_EP_OUT, vbuf);
 		if (err) {
 			LOG_ERR("Unable to requeue video buf");
