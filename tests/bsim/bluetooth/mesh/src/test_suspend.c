@@ -429,7 +429,7 @@ static void test_tester_gatt(void)
 	ASSERT_EQUAL(dut_status, DUT_SUSPENDED);
 	k_sleep(K_MSEC(500));
 	err = bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10);
-	ASSERT_FALSE(err && err != -EAGAIN);
+	ASSERT_FALSE(err && err != -ETIMEDOUT);
 
 	/* Wait for DUT to resume Mesh and notify Tester, then scan for gatt proxy beacons */
 	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
