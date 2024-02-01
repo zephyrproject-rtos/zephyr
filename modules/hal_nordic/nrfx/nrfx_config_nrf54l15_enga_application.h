@@ -250,36 +250,20 @@
 #endif
 
 /**
+ * @brief NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS
+ *
+ * Integer value.
+ */
+#ifndef NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS
+#define NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS 11
+#endif
+
+/**
  * @brief GRTC CC channels ownership mask.
  */
 #ifndef NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_grtc)
-#if DT_NODE_HAS_PROP(DT_INST(0, nordic_nrf_grtc), owned_channels)
-#define NRFX_CONFIG_BIT_DT(node_id, prop, idx) \
-	BIT(DT_PROP_BY_IDX(node_id, prop, idx))
-#define NRFX_CONFIG_GRTC_MASK_DT(prop) \
-	(COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(0, nordic_nrf_grtc), prop), \
-		(DT_FOREACH_PROP_ELEM_SEP(DT_INST(0, nordic_nrf_grtc), prop, \
-					  NRFX_CONFIG_BIT_DT, (|))), \
-		(0)))
-
-#define NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK \
-	(NRFX_CONFIG_GRTC_MASK_DT(owned_channels) & \
-	 ~NRFX_CONFIG_GRTC_MASK_DT(child_owned_channels))
-#define NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS \
-	(DT_PROP_LEN_OR(DT_INST(0, nordic_nrf_grtc), owned_channels, 0) - \
-	 DT_PROP_LEN_OR(DT_INST(0, nordic_nrf_grtc), child_owned_channels, 0))
-
-#if ((NRFX_CONFIG_GRTC_MASK_DT(owned_channels) | \
-	NRFX_CONFIG_GRTC_MASK_DT(child_owned_channels)) != NRFX_CONFIG_GRTC_MASK_DT(owned_channels))
-#error "`child-owned-channels` property must be a subset of `owned-channels` property"
+#define NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK 0x000007ff
 #endif
-#else
-#error "property `owned-channels` does not exist"
-#endif /* DT_NODE_HAS_PROP(DT_INST(0, nordic_nrf_grtc), owned_channels) */
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_grtc) */
-
-#endif /* NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK */
 
 /**
  * @brief NRFX_GRTC_DEFAULT_CONFIG_IRQ_PRIORITY
