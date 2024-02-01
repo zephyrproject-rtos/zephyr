@@ -160,7 +160,7 @@ jobs:
       - name: Merge coverage files
         run: |
           cd ./coverage/reports
-          pip3 install gcovr
+          pip3 install gcovr==6.0
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
 
