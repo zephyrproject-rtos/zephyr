@@ -152,9 +152,9 @@ static int tmp108_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	uval = ((int32_t)(drv_data->sample) * TMP108_TEMP_MULTIPLIER(dev)) >> 4U;
-	val->val1 = uval / 1000000U;
-	val->val2 = uval % 1000000U;
+	uval = ((int32_t)drv_data->sample * TMP108_TEMP_MULTIPLIER(dev)) / TMP108_TEMP_DIVISOR(dev);
+	val->val1 = uval / 1000000;
+	val->val2 = uval % 1000000;
 
 	return 0;
 }
@@ -237,7 +237,7 @@ static int tmp108_attr_set(const struct device *dev,
 
 	case SENSOR_ATTR_LOWER_THRESH:
 		uval = val->val1 * 1000000 + val->val2;
-		reg_value = (uval << 4U) / TMP108_TEMP_MULTIPLIER(dev);
+		reg_value = (uval * TMP108_TEMP_DIVISOR(dev)) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_LOW_LIMIT,
 					  reg_value);
@@ -245,7 +245,7 @@ static int tmp108_attr_set(const struct device *dev,
 
 	case SENSOR_ATTR_UPPER_THRESH:
 		uval = val->val1 * 1000000 + val->val2;
-		reg_value = (uval << 4U) / TMP108_TEMP_MULTIPLIER(dev);
+		reg_value = (uval * TMP108_TEMP_DIVISOR(dev)) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_HIGH_LIMIT,
 					  reg_value);
