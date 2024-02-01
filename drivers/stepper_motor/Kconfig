@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_MOTOR_CONTROLLER
+	bool "Stepper Motor Controller"
+	help
+		Enable stepper motor controller
+
+if STEPPER_MOTOR_CONTROLLER
+
+module = STEPPER_MOTOR_CONTROLLER
+module-str = stepper_motor_controller
+source "subsys/logging/Kconfig.template.log_config"
+
+config STEPPER_MOTOR_CONTROLLER_INIT_PRIORITY
+	int "Stepper Motor Controller init priority"
+	default 90
+	help
+	  Stepper motor controller initialization priority.
+
+comment "Stepper Motor Controller Drivers"
+
+source "drivers/stepper_motor/tmc5041/Kconfig"
+
+endif

@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+menu "TMC5041 Controller and Device"
+
+config TMC5041_SPI
+	bool "Use TMC5041 with SPI"
+	help
+	  If y, the TMC5041 module uses SPI
+
+config TMC5041
+	bool "Activate driver for TMC5041"
+	default $(dt_compat_enabled,$(DT_COMPACT_TRINAMIC_TMC5041))
+	depends on SPI
+	select TMC5041_SPI
+	help
+	  TMC5041 dual controller/driver for up to two 2-phase bipolar stepper motors.
+
+config TMC5041_INT
+	bool "TMC5041 interrupt handling support via INT pin"
+	depends on TMC5041
+	help
+	  When enabled, the TMC5041 can be provided with a interrupt input GPIO to
+	  in order to react on a position reached event. In case more than one
+	  interrupt source is possible, it is necessary to carefully check for the
+	  actual event, without risking losing an event.
+
+config TMC5041_SHELL
+	bool "TMC5041 shell"
+	depends on TMC5041
+	depends on SHELL
+	default y if !SHELL_MINIMAL
+	help
+	  This shell provides specialised access to basic trinamic tmc5041 shell to
+	  read/write registers. Here, information about the TMC5041 registers are
+	  accessible.
+
+menuconfig TMC5041_STEPPER_MOTOR_DEVICE
+	bool "A tmc5041 based Stepper Motor Device"
+	help
+	  This menu allows to enable a stepper motor device
+
+if TMC5041_STEPPER_MOTOR_DEVICE
+
+config TMC5041_STEPPER_MOTOR_DEVICE_SHELL
+	bool "Shell for a tmc5041 stepper motor device"
+	depends on TMC5041_STEPPER_MOTOR_DEVICE
+	depends on SHELL
+	default y if !SHELL_MINIMAL
+	help
+	  This shell provides specialised access to basic stepper motor device shell
+	  to execute various functions.
+
+module = STEPPER_MOTOR_DEVICE
+module-str = STEPPER_MOTOR_DEVICE
+source "subsys/logging/Kconfig.template.log_config"
+
+config STEPPER_MOTOR_DEVICE_INIT_PRIORITY
+	int "Stepper Motor Device init priority"
+	default 90
+	help
+	  Stepper motor device initialization priority.
+
+endif
+
+endmenu
