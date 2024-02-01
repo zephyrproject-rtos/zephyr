@@ -198,24 +198,23 @@ int z_uart_async_to_irq_fifo_read(const struct device *dev,
 	}
 
 	memcpy(buf, claim_buf, claim_len);
-	uart_async_rx_data_consume(async_rx, claim_len);
+	bool buf_available = uart_async_rx_data_consume(async_rx, claim_len);
 
-	if (data->rx.pending_buf_req) {
+	if (data->rx.pending_buf_req && buf_available) {
 		buf = uart_async_rx_buf_req(async_rx);
-		if (buf) {
-			int err;
-			size_t rx_len = uart_async_rx_get_buf_len(async_rx);
+		__ASSERT_NO_MSG(buf != NULL);
+		int err;
+		size_t rx_len = uart_async_rx_get_buf_len(async_rx);
 
-			atomic_dec(&data->rx.pending_buf_req);
-			err = config->api->rx_buf_rsp(dev, buf, rx_len);
+		atomic_dec(&data->rx.pending_buf_req);
+		err = config->api->rx_buf_rsp(dev, buf, rx_len);
+		if (err < 0) {
+			if (err == -EACCES) {
+				data->rx.pending_buf_req = 0;
+				err = rx_enable(dev, data, buf, rx_len);
+			}
 			if (err < 0) {
-				if (err == -EACCES) {
-					data->rx.pending_buf_req = 0;
-					err = rx_enable(dev, data, buf, rx_len);
-				}
-				if (err < 0) {
-					return err;
-				}
+				return err;
 			}
 		}
 	}
