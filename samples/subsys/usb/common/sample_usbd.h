@@ -27,6 +27,6 @@
  * It returns the configured and initialized USB device context on success,
  * otherwise it returns NULL.
  */
-struct usbd_contex *sample_usbd_init_device(void);
+struct usbd_contex *sample_usbd_init_device(usbd_msg_cb_t msg_cb);
 
 #endif /* ZEPHYR_SAMPLES_SUBSYS_USB_COMMON_SAMPLE_USBD_H */

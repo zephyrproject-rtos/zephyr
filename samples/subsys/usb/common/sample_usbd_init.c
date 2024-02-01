@@ -33,7 +33,7 @@ USBD_CONFIGURATION_DEFINE(sample_config,
 			  attributes,
 			  CONFIG_SAMPLE_USBD_MAX_POWER);
 
-struct usbd_contex *sample_usbd_init_device(void)
+struct usbd_contex *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 {
 	int err;
 
@@ -91,6 +91,14 @@ struct usbd_contex *sample_usbd_init_device(void)
 					    USB_BCC_MISCELLANEOUS, 0x02, 0x01);
 	} else {
 		usbd_device_set_code_triple(&sample_usbd, 0, 0, 0);
+	}
+
+	if (msg_cb != NULL) {
+		err = usbd_msg_register_cb(&sample_usbd, msg_cb);
+		if (err) {
+			LOG_ERR("Failed to register message callback");
+			return NULL;
+		}
 	}
 
 	err = usbd_init(&sample_usbd);
