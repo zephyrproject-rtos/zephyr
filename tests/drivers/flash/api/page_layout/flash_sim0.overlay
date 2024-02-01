@@ -1,0 +1,6 @@
+/* Overlay for board using flash_sim0 */
+/{
+        aliases {
+                dut = &flash_sim0;
+        };
+};
