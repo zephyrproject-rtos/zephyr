@@ -319,7 +319,7 @@ static int counter_sam_initialize(const struct device *dev)
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (retval < 0) {
+	if (retval < 0 && retval != -ENOENT) {
 		return retval;
 	}
 
