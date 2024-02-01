@@ -73,11 +73,12 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
-#ifdef CONFIG_SPI_STM32_DMA
 static uint32_t bits2bytes(uint32_t bits)
 {
 	return bits / 8;
 }
+
+#ifdef CONFIG_SPI_STM32_DMA
 
 /* dummy value used for transferring NOP when tx buf is null
  * and use as dummy sink for when rx buf is null.
@@ -273,33 +274,33 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 #define SPI_STM32_TX_NOP 0x00
 
 static void spi_stm32_send_next_frame(SPI_TypeDef *spi,
-		struct spi_stm32_data *data)
+				      struct spi_stm32_data *data,
+				      unsigned int frame_bytes)
 {
-	const uint8_t frame_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
 	uint32_t tx_frame = SPI_STM32_TX_NOP;
 
-	if (frame_size == 8) {
+	if (frame_bytes == 1) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData8(spi, tx_frame);
-		spi_context_update_tx(&data->ctx, 1, 1);
 	} else {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData16(spi, tx_frame);
-		spi_context_update_tx(&data->ctx, 2, 1);
 	}
+
+	spi_context_update_tx(&data->ctx, frame_bytes, 1);
 }
 
 static void spi_stm32_read_next_frame(SPI_TypeDef *spi,
-		struct spi_stm32_data *data)
+				      struct spi_stm32_data *data,
+				      unsigned int frame_bytes)
 {
-	const uint8_t frame_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
 	uint32_t rx_frame = 0;
 
-	if (frame_size == 8) {
+	if (frame_bytes == 1) {
 		rx_frame = LL_SPI_ReceiveData8(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
@@ -341,17 +342,20 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
+	unsigned int frame_bytes = bits2bytes(
+		SPI_WORD_SIZE_GET(data->ctx.config->operation));
+
 	while (!ll_func_tx_is_not_full(spi)) {
 		/* NOP */
 	}
 
-	spi_stm32_send_next_frame(spi, data);
+	spi_stm32_send_next_frame(spi, data, frame_bytes);
 
 	while (!ll_func_rx_is_not_empty(spi)) {
 		/* NOP */
 	}
 
-	spi_stm32_read_next_frame(spi, data);
+	spi_stm32_read_next_frame(spi, data, frame_bytes);
 }
 
 /* Shift a SPI frame as slave. */
