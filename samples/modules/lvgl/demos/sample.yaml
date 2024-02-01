@@ -21,6 +21,9 @@ tests:
   sample.modules.lvgl.demo_stress:
     extra_configs:
       - CONFIG_LV_Z_DEMO_STRESS=y
+  sample.modules.lvgl.demo_widgets:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_WIDGETS=y
   sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
     platform_allow: stm32h747i_disco_m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
