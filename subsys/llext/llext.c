@@ -5,7 +5,6 @@
  *
  */
 
-#include "zephyr/sys/__assert.h"
 #include <zephyr/sys/util.h>
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/loader.h>
