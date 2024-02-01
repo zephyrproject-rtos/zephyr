@@ -35,6 +35,8 @@ include(CheckCXXCompilerFlag)
 # 5.1. zephyr_linker*
 # 6 Function helper macros
 # 7 Linkable loadable extensions (llext)
+# 7.1 llext_* configuration functions
+# 7.2 add_llext_* build control functions
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -5099,6 +5101,38 @@ endmacro()
 # loadable extensions (llexts).
 #
 
+# 7.1 Configuration functions
+#
+# The following functions simplify access to the compilation/link stage
+# properties of an llext using the same API of the target_* functions.
+#
+
+function(llext_compile_definitions target_name)
+  target_compile_definitions(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_compile_features target_name)
+  target_compile_features(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_compile_options target_name)
+  target_compile_options(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_include_directories target_name)
+  target_include_directories(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_link_options target_name)
+  target_link_options(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+# 7.2 Build control functions
+#
+# The following functions add targets and subcommands to the build system
+# to compile and link an llext.
+#
+
 # Usage:
 #   add_llext_target(<target_name>
 #                    OUTPUT  <output_file>
@@ -5114,9 +5148,6 @@ endmacro()
 # in the Zephyr build, but with some important modifications. The list of
 # flags to remove and flags to append is controlled respectively by the
 # LLEXT_REMOVE_FLAGS and LLEXT_APPEND_FLAGS global variables.
-
-# The C_FLAGS argument can be used to pass additional compiler flags to the
-# compilation of this particular llext.
 #
 # The following custom properties of <target_name> are defined and can be
 # retrieved using the get_target_property() function:
@@ -5130,14 +5161,13 @@ endmacro()
 #   add_llext_target(hello_world
 #     OUTPUT  ${PROJECT_BINARY_DIR}/hello_world.llext
 #     SOURCES ${PROJECT_SOURCE_DIR}/src/llext/hello_world.c
-#     C_FLAGS -Werror
 #   )
 # will compile the source file src/llext/hello_world.c to a file
-# ${PROJECT_BINARY_DIR}/hello_world.llext, adding -Werror to the compilation.
+# named "${PROJECT_BINARY_DIR}/hello_world.llext".
 #
 function(add_llext_target target_name)
   set(single_args OUTPUT)
-  set(multi_args SOURCES;C_FLAGS)
+  set(multi_args SOURCES)
   cmake_parse_arguments(PARSE_ARGV 1 LLEXT "${options}" "${single_args}" "${multi_args}")
 
   # Check that the llext subsystem is enabled for this build
@@ -5201,7 +5231,6 @@ function(add_llext_target target_name)
   target_compile_options(${llext_lib_target} PRIVATE
     ${zephyr_filtered_flags}
     ${LLEXT_APPEND_FLAGS}
-    ${LLEXT_C_FLAGS}
   )
   target_include_directories(${llext_lib_target} PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
