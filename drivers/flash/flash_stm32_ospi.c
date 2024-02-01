@@ -550,9 +550,12 @@ static int stm32_ospi_wait_auto_polling(struct flash_stm32_ospi_data *dev_data,
  * in nor_mode SPI/OPI OSPI_SPI_MODE or OSPI_OPI_MODE
  * and nor_rate transfer STR/DTR OSPI_STR_TRANSFER or OSPI_DTR_TRANSFER
  */
-static int stm32_ospi_mem_erased(struct flash_stm32_ospi_data *dev_data,
-		uint8_t nor_mode, uint8_t nor_rate)
+static int stm32_ospi_mem_erased(const struct device *dev)
 {
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+	uint8_t nor_mode = dev_cfg->data_mode;
+	uint8_t nor_rate = dev_cfg->data_rate;
 	OSPI_HandleTypeDef *hospi = &dev_data->hospi;
 	OSPI_AutoPollingTypeDef s_config = {0};
 	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
@@ -1058,8 +1061,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 			size -= dev_cfg->flash_size;
 			/* Chip (Bulk) erase started, wait until WEL becomes 0 */
-			ret = stm32_ospi_mem_erased(dev_data,
-						   dev_cfg->data_mode, dev_cfg->data_rate);
+			ret = stm32_ospi_mem_erased(dev);
 			if (ret != 0) {
 				LOG_ERR("Chip Erase failed");
 				break;
