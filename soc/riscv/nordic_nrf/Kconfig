@@ -12,4 +12,7 @@ config SOC_FAMILY
 
 source "soc/riscv/nordic_nrf/common/Kconfig"
 
+source "soc/common/nordic_nrf/Kconfig.peripherals"
+source "soc/riscv/nordic_nrf/*/Kconfig.soc"
+
 endif # SOC_FAMILY_NRF

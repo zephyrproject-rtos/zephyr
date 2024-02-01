@@ -3,6 +3,14 @@
 
 if SOC_FAMILY_NRF
 
+source "soc/riscv/nordic_nrf/*/Kconfig.defconfig.series"
 source "soc/riscv/nordic_nrf/common/Kconfig.defconfig"
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000 if NRF_GRTC_TIMER
+	default 32768 if NRF_RTC_TIMER
 
 endif # SOC_FAMILY_NRF
