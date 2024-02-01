@@ -3726,6 +3726,20 @@ Task Watchdog:
   tests:
     - sample.drivers.misc.timeaware_gpio
 
+"Drivers: Morse Code":
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - dts/bindings/misc/zephyr,morse*.yaml
+    - drivers/misc/morse_code/
+    - include/zephyr/drivers/misc/morse_code/
+    - samples/drivers/misc/morse_code/
+  labels:
+    - "area: Morse Code"
+  tests:
+    - sample.drivers.misc.morse_code
+
 TF-M Integration:
   status: maintained
   maintainers:

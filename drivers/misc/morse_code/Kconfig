@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Freedom Veiculos Eletricos
+# Copyright (c) 2024 OS Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config MORSE_CODE
+	bool "Morse Code driver"
+	default y
+	depends on COUNTER
+	depends on DT_HAS_ZEPHYR_MORSE_CODE_ENABLED
+
+if MORSE_CODE
+
+module = MORSE_CODE
+module-str = Morse Code
+source "subsys/logging/Kconfig.template.log_config"
+
+config MORSE_CODE_SHELL
+	bool "Morse Code shell"
+	depends on SHELL
+	help
+	  Enable Morse Code related shell commands.
+
+endif # DAC

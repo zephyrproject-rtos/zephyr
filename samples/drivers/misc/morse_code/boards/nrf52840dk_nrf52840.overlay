@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Freedom Veiculos Eletricos
+ * Copyright (c) 2024 OS Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	morse: morse {
+		compatible = "zephyr,morse-code";
+
+		speed = <20>;
+		gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		timer-unit = <&timer0>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+};
