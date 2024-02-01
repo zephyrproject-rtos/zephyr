@@ -52,7 +52,7 @@ static const struct linear_range charger_uv_range =
 			  MAX20335_REG_CVC_VREG_MIN_IDX,
 			  MAX20335_REG_CVC_VREG_MAX_IDX);
 
-static int max20335_get_status(const struct device *dev, enum charger_status *status)
+static int max20335_get_charger_status(const struct device *dev, enum charger_status *status)
 {
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
@@ -219,7 +219,7 @@ static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 {
 	switch (prop) {
 	case CHARGER_PROP_STATUS:
-		return max20335_get_status(dev, &val->status);
+		return max20335_get_charger_status(dev, &val->status);
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		return max20335_get_constant_charge_current(dev,
 							    &val->const_charge_current_ua);
