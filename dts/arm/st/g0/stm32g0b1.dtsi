@@ -119,6 +119,7 @@
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <26 3>;
+			fifo-size = <4>;
 			status = "disabled";
 		};
 
