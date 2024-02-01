@@ -336,6 +336,48 @@ def dt_chosen_reg(kconf, name, chosen, index=0, unit=None):
         return hex(_dt_chosen_reg_addr(kconf, chosen, index, unit))
 
 
+def _dt_chosen_partition_addr(kconf, chosen, index=0, unit=None):
+    """
+    This function takes a 'chosen' property and treats that property as a path
+    to an EDT node.  If it finds an EDT node, it will look to see if that
+    node has a register, and if that node has a grandparent that has a register
+    at the given 'index'. The addition of both addresses will be returned, if
+    not, we return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
+    """
+    if doc_mode or edt is None:
+        return 0
+
+    node = edt.chosen_node(chosen)
+    if not node:
+        return 0
+
+    p_node = node.parent
+    if not p_node:
+        return 0
+
+    return _node_reg_addr(p_node.parent, index, unit) + _node_reg_addr(node, 0, unit)
+
+
+def dt_chosen_partition_addr(kconf, name, chosen, index=0, unit=None):
+    """
+    This function just routes to the proper function and converts
+    the result to either a string int or string hex value.
+    """
+    if name == "dt_chosen_partition_addr_int":
+        return str(_dt_chosen_partition_addr(kconf, chosen, index, unit))
+    if name == "dt_chosen_partition_addr_hex":
+        return hex(_dt_chosen_partition_addr(kconf, chosen, index, unit))
+
+
 def _dt_node_reg_addr(kconf, path, index=0, unit=None):
     """
     This function takes a 'path' and looks for an EDT node at that path. If it
@@ -863,5 +905,7 @@ functions = {
         "dt_node_parent": (dt_node_parent, 1, 1),
         "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
+        "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
+        "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
