@@ -54,6 +54,17 @@
 			   <21 0 &gpio1 3 0>;	/* D15 */
 	};
 
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc 1>,	/* A0 = P0.4 = AIN1 */
+				 <1 &adc 2>,	/* A1 = P0.5 = AIN2 */
+				 <2 &adc 4>,	/* A2 = P0.6 = AIN4 */
+				 <3 &adc 5>,	/* A3 = P0.7 = AIN5 */
+				 <4 &adc 6>,	/* A4 = P0.25 = AIN6 */
+				 <5 &adc 7>;	/* A5 = P0.26 = AIN7 */
+	};
+
 	pmic {
 		compatible = "nordic,npm1100";
 		nordic,iset-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
@@ -146,6 +157,23 @@ arduino_serial: &uart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_i2c: &i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_spi: &spi4 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
