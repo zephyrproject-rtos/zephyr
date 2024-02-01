@@ -57,13 +57,15 @@ More information about STM32H7B0VB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_h723zg board configuration supports the following hardware
+The Zephyr fk7b0m1_vbt6 board configuration supports the following hardware
 features:
 
 +-------------+------------+-------------------------------------+
 | Interface   | Controller | Driver/Component                    |
 +=============+============+=====================================+
 | NVIC        | on-chip    | nested vector interrupt controller  |
++-------------+------------+-------------------------------------+
+| FLASH       | on-chip    | flash memory                        |
 +-------------+------------+-------------------------------------+
 | UART        | on-chip    | serial port                         |
 +-------------+------------+-------------------------------------+
@@ -75,19 +77,20 @@ features:
 +-------------+------------+-------------------------------------+
 | Backup SRAM | on-chip    | Backup SRAM                         |
 +-------------+------------+-------------------------------------+
+| SPI         | on-chip    | spi bus                             |
++-------------+------------+-------------------------------------+
+| OCTOSPI     | on-chip    | octospi                             |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration per core can be found in
 :zephyr_file:`boards/fanke/fk7b0m1_vbt6/fk7b0m1_vbt6_defconfig`
 
-Connections and IOs
-===================
+Pin Mapping
+===========
 
-Available pins:
----------------
-
-Nucleo FK7B0M1-VBT6 board has 6 GPIO controllers. These controllers are responsible for pin muxing,
+FK7B0M1-VBT6 board has 5 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
 .. figure:: img/fk7b0m1_vbt6_pins.webp
@@ -97,29 +100,17 @@ input/output, pull-up, etc.
 
      FK7B0M1-VBT6 (Credit: FANKE Technology Co., Ltd)
 
-LED
----
+Default Zephyr Peripheral Mapping:
+----------------------------------
 
-- User LED (blue) = PC1
+The FK7B0M1-VBT6 board is configured as follows
 
-Push buttons
--------------------------
-
-- BOOT = SW1 = BOOT0
-- RESET = SW2 = NRST
-- User button = SW3 = PC13
-
-UART
------
-
-- TX device = USART1 PA9
-- RX device = USART1 PA10
-
-USB
----
-
-- USB D- = PA11
-- USB D+ = PA12
+- UART_1 TX/RX : PA9/PA10 (available on the header pins)
+- User LED (blue) : PC1
+- User PB : PC13
+- SPI1 NCS/CLK/MISO/MOSI : PA15/PB3/PB4/PB5 (NOR Flash)
+- QuadSPI NCS/CLK/IO0/IO1/IO2/IO3 : PB6/PB2/PD11/PD12/PE2/PD13 (NOR Flash)
+- USB DM/DP : PA11/PA12
 
 System Clock
 ============
@@ -136,13 +127,19 @@ The Zephyr console output is assigned to UART1. The default communication settin
 Programming and Debugging
 *************************
 
+Applications for the ``fk7b0m1_vbt6`` board configuration can be built and flashed in the usual
+way (see :ref:`build_an_application` and :ref:`application_run` for more details).
+
+Flashing
+========
+
 The FK7B0M1-VBT6 board does not include an on-board debugger. As a result, it requires
 an external debugger, such as ST-Link, for programming and debugging purposes.
 
 The board provides header pins for the Serial Wire Debug (SWD) interface.
 
-Flashing
-========
+Flashing an application to FK7B0M1-VBT6
+---------------------------------------
 
 To begin, connect the ST-Link Debug Programmer to the FK7B0M1-VBT6 board using the SWD
 interface. Next, connect the ST-Link to your host computer via a USB port.
