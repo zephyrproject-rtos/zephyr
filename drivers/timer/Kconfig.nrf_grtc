@@ -54,7 +54,7 @@ config NRF_GRTC_TIMER_AUTO_KEEP_ALIVE
 	bool
 	default y if NRF_GRTC_START_SYSCOUNTER
 	help
-	  This feature prevents the SYSCOUNTER to sleep when any core is in
+	  This feature prevents the SYSCOUNTER from sleeping when any core is in
 	  active state.
 
 endif # NRF_GRTC_TIMER
