@@ -104,7 +104,7 @@ size_t uart_async_rx_data_claim(struct uart_async_rx *rx_data, uint8_t **data, s
 	return MIN(length, rem);
 }
 
-void uart_async_rx_data_consume(struct uart_async_rx *rx_data, size_t length)
+bool uart_async_rx_data_consume(struct uart_async_rx *rx_data, size_t length)
 {
 	struct uart_async_rx_buf *buf = get_buf(rx_data, rx_data->rd_buf_idx);
 
@@ -117,6 +117,8 @@ void uart_async_rx_data_consume(struct uart_async_rx *rx_data, size_t length)
 	atomic_sub(&rx_data->pending_bytes, length);
 
 	__ASSERT_NO_MSG(buf->rd_idx <= buf->wr_idx);
+
+	return rx_data->free_buf_cnt > 0;
 }
 
 void uart_async_rx_reset(struct uart_async_rx *rx_data)
