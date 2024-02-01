@@ -8,6 +8,6 @@
 #define BOARDS_POSIX_NRF_BSIM_SOC_PINCTRL_SOC_H
 
 /* We reuse the real SOC's header: */
-#include "../soc/arm/nordic_nrf/common/pinctrl_soc.h"
+#include "../soc/common/nordic_nrf/pinctrl_soc.h"
 
 #endif /* BOARDS_POSIX_NRF_BSIM_SOC_PINCTRL_SOC_H */
