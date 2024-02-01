@@ -11,7 +11,7 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.6
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
