@@ -52,17 +52,6 @@ struct charger_max20335_data {
 	enum charger_status charger_status;
 };
 
-enum {
-	MAX20335_CHARGER_OFF,
-	MAX20335_CHARGING_SUSPENDED_DUE_TO_TEMPERATURE,
-	MAX20335_PRE_CHARGE_IN_PROGRESS,
-	MAX20335_FAST_CHARGE_IN_PROGRESS_1,
-	MAX20335_FAST_CHARGE_IN_PROGRESS_2,
-	MAX20335_MAINTAIN_CHARGE_IN_PROGRESS,
-	MAX20335_MAIN_CHARGER_TIMER_DONE,
-	MAX20335_CHARGER_FAULT_CONDITION,
-};
-
 static const struct linear_range charger_uv_range =
 	LINEAR_RANGE_INIT(MAX20335_REG_CVC_VREG_MIN_UV,
 			  MAX20335_REG_CVC_VREG_STEP_UV,
@@ -71,6 +60,16 @@ static const struct linear_range charger_uv_range =
 
 static int max20335_get_charger_status(const struct device *dev, enum charger_status *status)
 {
+	enum {
+		MAX20335_CHARGER_OFF,
+		MAX20335_CHARGING_SUSPENDED_DUE_TO_TEMPERATURE,
+		MAX20335_PRE_CHARGE_IN_PROGRESS,
+		MAX20335_FAST_CHARGE_IN_PROGRESS_1,
+		MAX20335_FAST_CHARGE_IN_PROGRESS_2,
+		MAX20335_MAINTAIN_CHARGE_IN_PROGRESS,
+		MAX20335_MAIN_CHARGER_TIMER_DONE,
+		MAX20335_CHARGER_FAULT_CONDITION,
+	};
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
 	int ret;
