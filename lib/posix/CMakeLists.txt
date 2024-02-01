@@ -59,6 +59,7 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_SPINLOCK spinlock.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER timer.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PUTMSG stropts.c)
+zephyr_library_source_ifdef(CONFIG_POSIX_PUTPMSG stropts.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
