@@ -1308,6 +1308,19 @@ config DEVICE_DEFER_INIT
 	  if initialization shall proceed or be deferred. To initialize a
 	  device later, one has to use device_init().
 
+if DEVICE_DEFER_INIT
+
+config DEVICE_DEFER_CALLBACK_SECTION
+	bool
+	help
+	  Places callback on a special section inside the ELF file, usually
+	  close to the kernel initialization code. Useful for platforms that
+	  need memory subsystem initialized to access callbacks on arbitrary
+	  locations, but callback is called earlier than that during
+	  initialization.
+
+endif
+
 endmenu
 
 rsource "Kconfig.vm"

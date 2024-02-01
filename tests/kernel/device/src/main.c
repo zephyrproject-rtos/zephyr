@@ -425,6 +425,7 @@ ZTEST_USER(device, test_deferred_init_user)
 	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
 }
 
+__DEVICE_INIT
 enum device_before_init_result device_defer_cb(const struct device *dev)
 {
 	if (dev == FAKEDEFERDRIVER0 || dev == FAKEDEFERDRIVER1) {

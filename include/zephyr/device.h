@@ -796,6 +796,13 @@ typedef enum device_before_init_result (*device_before_init_cb)(const struct dev
 #define DEVICE_BEFORE_INIT_CALLBACK(callback) \
 	STRUCT_SECTION_ITERABLE(z_device_before_init, _z_device_before_init##callback) = \
 				{.cb = callback}
+
+#ifdef CONFIG_DEVICE_DEFER_CALLBACK_SECTION
+#define __DEVICE_INIT __attribute__((__section__(".device_init_cb")))
+#else
+#define __DEVICE_INIT
+#endif
+
 #endif /* CONFIG_DEVICE_DEFER_INIT */
 
 /**
