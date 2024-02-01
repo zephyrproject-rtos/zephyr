@@ -151,9 +151,9 @@ static uint8_t *fixed_data_alloc(struct net_buf *buf, size_t *size,
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
 
-	*size = MIN(fixed->data_size, *size);
+	*size = pool->alloc->max_alloc_size;
 
-	return fixed->data_pool + fixed->data_size * net_buf_id(buf);
+	return fixed->data_pool + *size * net_buf_id(buf);
 }
 
 static void fixed_data_unref(struct net_buf *buf, uint8_t *data)
@@ -203,6 +203,7 @@ static const struct net_buf_data_cb net_buf_heap_cb = {
 
 const struct net_buf_data_alloc net_buf_heap_alloc = {
 	.cb = &net_buf_heap_cb,
+	.max_alloc_size = 0,
 };
 
 #endif /* K_HEAP_MEM_POOL_SIZE > 0 */
@@ -345,18 +346,14 @@ struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
 					  k_timeout_t timeout, const char *func,
 					  int line)
 {
-	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
-
-	return net_buf_alloc_len_debug(pool, fixed->data_size, timeout, func,
+	return net_buf_alloc_len_debug(pool, pool->alloc->max_alloc_size, timeout, func,
 				       line);
 }
 #else
 struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool,
 				    k_timeout_t timeout)
 {
-	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
-
-	return net_buf_alloc_len(pool, fixed->data_size, timeout);
+	return net_buf_alloc_len(pool, pool->alloc->max_alloc_size, timeout);
 }
 #endif
 
@@ -659,6 +656,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 	struct net_buf *frag = net_buf_frag_last(buf);
 	size_t added_len = 0;
 	const uint8_t *value8 = value;
+	size_t max_size;
 
 	do {
 		uint16_t count = MIN(len, net_buf_tailroom(frag));
@@ -681,7 +679,10 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			 * been provided.
 			 */
 			pool = net_buf_pool_get(buf->pool_id);
-			frag = net_buf_alloc_len(pool, len, timeout);
+			max_size = pool->alloc->max_alloc_size;
+			frag = net_buf_alloc_len(pool,
+						 max_size ? MIN(len, max_size) : len,
+						 timeout);
 		}
 
 		if (!frag) {
