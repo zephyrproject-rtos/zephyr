@@ -89,7 +89,7 @@
 		};
 
 		pit0: pit@76150000 {
-			compatible = "nxp,kinetis-pit";
+			compatible = "nxp,pit";
 			reg = <0x76150000 0x10000>;
 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_P0_REG_INTF_CLK>;
