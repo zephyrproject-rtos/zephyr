@@ -3,7 +3,7 @@ common:
     - clib
   ignore_faults: true
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
 tests:
   libraries.libc.common: {}
   libraries.libc.common.minimal:

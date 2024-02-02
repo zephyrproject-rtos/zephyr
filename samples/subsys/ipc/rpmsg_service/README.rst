@@ -23,20 +23,20 @@ Building the application for nrf5340dk_nrf5340_cpuapp
    :board: nrf5340dk_nrf5340_cpuapp
    :goals: debug
 
-Building the application for mps2_an521
-***************************************
+Building the application for mps2/an521/cpu0
+********************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/rpmsg_service
-   :board: mps2_an521
+   :board: mps2/an521/cpu0
    :goals: debug
 
-Building the application for v2m_musca_b1
-*****************************************
+Building the application for v2m_musca_b1/musca_b1
+**************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/rpmsg_service
-   :board: v2m_musca_b1
+   :board: v2m_musca_b1/musca_b1
    :goals: debug
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the

@@ -39,7 +39,7 @@ tests:
       - qemu_riscv32
       - qemu_riscv32_smp
       - qemu_cortex_m3
-      - mps2_an385
+      - mps2/an385
     extra_configs:
       - CONFIG_NETWORKING=y
       - CONFIG_NET_HOSTNAME_ENABLE=y

@@ -2,7 +2,7 @@ common:
   tags: cpp
   toolchain_exclude: xcc
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
     - qemu_cortex_a53
 
 tests:

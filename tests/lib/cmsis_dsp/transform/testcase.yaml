@@ -10,7 +10,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 512
@@ -38,7 +38,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 512
@@ -66,7 +66,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 1024
@@ -92,7 +92,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 1024
@@ -118,7 +118,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
     tags: cmsis-dsp
     min_flash: 512
     min_ram: 64
@@ -145,7 +145,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
     tags: cmsis-dsp
     min_flash: 512
     min_ram: 64
@@ -172,7 +172,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 1024
@@ -198,7 +198,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 512
@@ -226,7 +226,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 1024
@@ -252,7 +252,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
-      - mps2_an521
+      - mps2/an521/cpu0
       - native_sim
     tags: cmsis-dsp
     min_flash: 1024

@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ["mps2_an385", "native_sim", "qemu_x86", "unit_testing"]
+        platform: ["mps2/an385", "native_sim", "qemu_x86", "unit_testing"]
     steps:
       - name: Apply container owner mismatch workaround
         run: |
