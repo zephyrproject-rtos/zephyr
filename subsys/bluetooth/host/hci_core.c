@@ -854,6 +854,8 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 		return;
 	}
 
+	conn->err = evt->reason;
+
 	bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	bt_conn_unref(conn);
 }
@@ -875,8 +877,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 		LOG_ERR("Unable to look up conn with handle %u", handle);
 		return;
 	}
-
-	conn->err = evt->reason;
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
