@@ -108,7 +108,7 @@ Building Secure/Non-Secure Zephyr applications
 The process requires the following steps:
 
 1. Build the Secure Zephyr application using ``-DBOARD=actinius_icarus_som``.
-2. Build the Non-Secure Zephyr application using ``-DBOARD=actinius_icarus_som_ns``.
+2. Build the Non-Secure Zephyr application using ``-DBOARD=actinius_icarus_som/ns``.
 3. Merge the two binaries together.
 
 If you are using Segger Embedded Studio v4.18 or later, the two binaries are built, merged, and
