@@ -127,7 +127,7 @@ with the :zephyr:code-sample:`led-apa102` sample application.
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/adafruit_itsybitsy_nrf52840/adafruit_itsybitsy_nrf52840.dts`.
+:zephyr_file:`boards/adafruit/adafruit_itsybitsy/adafruit_itsybitsy_nrf52840.dts`.
 
 Programming and Debugging
 *************************
@@ -156,7 +156,7 @@ into the :code:`ITSY840BOOT` drive.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: adafruit_itsybitsy_nrf52840
+      :board: adafruit_itsybitsy/nrf52840
       :goals: build
       :compact:
 
