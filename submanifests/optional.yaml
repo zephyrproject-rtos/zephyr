@@ -60,7 +60,7 @@ manifest:
         - optional
     - name: zscilib
       path: modules/lib/zscilib
-      revision: a4bb6cfd6800e14373261904825f7f34a3a7f2e5
+      revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
       remote: upstream
       groups:
         - optional
