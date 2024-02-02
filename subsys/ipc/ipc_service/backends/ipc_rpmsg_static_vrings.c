@@ -456,6 +456,7 @@ static int deregister_ept(const struct device *instance, void *token)
 {
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
+	static struct k_work_sync sync;
 
 	/* Instance is not ready */
 	if (atomic_get(&data->state) != STATE_INITED) {
@@ -468,6 +469,13 @@ static int deregister_ept(const struct device *instance, void *token)
 	if (!rpmsg_ept) {
 		return -ENOENT;
 	}
+
+	/* Drain pending work items before tearing down channel.
+	 *
+	 * Note: `k_work_flush` Faults on Cortex-M33 with "illegal use of EPSR"
+	 * if `sync` is not declared static.
+	 */
+	k_work_flush(&data->mbox_work, &sync);
 
 	rpmsg_destroy_ept(&rpmsg_ept->ep);
 
