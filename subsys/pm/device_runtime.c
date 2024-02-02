@@ -387,12 +387,6 @@ static int runtime_enable_sync(const struct device *dev)
 	struct pm_device_isr *pm = dev->pm_isr;
 	k_spinlock_key_t k = k_spin_lock(&pm->lock);
 
-	/* Because context is locked we can access flags directly. */
-	if (pm->base.flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		ret = 0;
-		goto unlock;
-	}
-
 	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
 		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret < 0) {
@@ -423,6 +417,10 @@ int pm_device_runtime_enable(const struct device *dev)
 		goto end;
 	}
 
+	if (atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
+		goto end;
+	}
+
 	if (pm_device_state_is_locked(dev)) {
 		ret = -EPERM;
 		goto end;
@@ -435,10 +433,6 @@ int pm_device_runtime_enable(const struct device *dev)
 
 	if (!k_is_pre_kernel()) {
 		(void)k_sem_take(&pm->lock, K_FOREVER);
-	}
-
-	if (atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		goto unlock;
 	}
 
 	/* lazy init of PM fields */
