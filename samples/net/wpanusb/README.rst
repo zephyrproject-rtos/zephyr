@@ -48,7 +48,7 @@ Example building for the Nordic nRF52840 Development Kit:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wpanusb
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 

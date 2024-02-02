@@ -16,7 +16,7 @@ register them.
 Requirements
 ************
 
-* A board with settings support, for instance: nrf52840dk_nrf52840
+* A board with settings support, for instance: nrf52840dk/nrf52840
 * Or qemu_x86 target
 
 Building and Running

@@ -38,12 +38,12 @@ For the NXP TWR-KE18F board:
 Stand alone CAN controller
 ==========================
 
-For the nrf52dk_nrf52832 board combined with the DFRobot CAN bus V2.0 shield that
+For the nrf52dk/nrf52832 board combined with the DFRobot CAN bus V2.0 shield that
 provides the MCP2515 CAN controller:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :shield: dfrobot_can_bus_v2_0
    :goals: build flash
 

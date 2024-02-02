@@ -27,7 +27,7 @@ To build and flash the application (including the external memory part):
 
 .. zephyr-app-commands::
    :zephyr-app: samples/application_development/code_relocation_nocopy
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: build flash
    :compact:
 
@@ -41,4 +41,4 @@ Execution output:
   Address of var_ext_sram_data 0x200000a0 (10)
   Address of function_in_sram 0x20000001
   Address of var_sram_data 0x200000a4 (10)
-  Hello World! nrf5340dk_nrf5340_cpuapp
+  Hello World! nrf5340dk/nrf5340/cpuapp

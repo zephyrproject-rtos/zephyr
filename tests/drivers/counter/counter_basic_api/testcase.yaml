@@ -12,7 +12,7 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     timeout: 400
     extra_configs:
       - CONFIG_ZERO_LATENCY_IRQS=y

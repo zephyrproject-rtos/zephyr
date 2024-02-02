@@ -41,7 +41,7 @@ In this example below the :ref:`nrf52dk_nrf52832` board is used.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/adt7420
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :goals: build flash
 
 Sample Output

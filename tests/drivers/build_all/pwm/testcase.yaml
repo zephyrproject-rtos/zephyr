@@ -31,11 +31,11 @@ tests:
   drivers.pwm.npcx.build:
     platform_allow: npcx7m6fb_evb
   drivers.pwm.nrf.sw.build:
-    platform_allow: nrf51dk_nrf51422
+    platform_allow: nrf51dk/nrf51422
   drivers.pwm.nrf.build:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
   drivers.pwm.pca9685.build:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args: SHIELD=adafruit_pca9685
   drivers.pwm.sam0.tcc.build:
     platform_allow: atsame54_xpro

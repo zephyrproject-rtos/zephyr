@@ -53,7 +53,7 @@ You can build this application for the nRF52840 DK as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/dynamic_pinctrl
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 
