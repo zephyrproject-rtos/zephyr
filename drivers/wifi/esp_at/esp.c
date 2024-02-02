@@ -640,13 +640,13 @@ static void esp_ip_addr_work(struct k_work *work)
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	/* update interface addresses */
-	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
-	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
 #if defined(CONFIG_WIFI_ESP_AT_IP_STATIC)
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_MANUAL, 0);
 #else
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
 #endif
+	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
+	net_if_ipv4_set_netmask_by_addr(dev->net_iface, &dev->ip, &dev->nm);
 #endif
 
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
