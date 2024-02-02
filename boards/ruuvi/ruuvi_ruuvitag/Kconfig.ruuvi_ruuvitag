@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_RUUVI_RUUVITAG
-	bool "Ruuvi-RuuviTag"
-	depends on SOC_NRF52832_QFAA
+	select SOC_NRF52832_QFAA
