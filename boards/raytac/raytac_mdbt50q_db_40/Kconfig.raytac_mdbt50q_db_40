@@ -3,6 +3,7 @@
 # Copyright (c) 2022 Raytac Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_RAYTAC_MDBT50Q_DB_40_NRF52840
-	bool "Raytac MDBT50Q_DB_40_nRF52840"
-	depends on SOC_NRF52840_QIAA
+config BOARD_RAYTAC_MDBT50Q_DB_40
+	bool
+	default y
+	select SOC_NRF52840_QIAA
