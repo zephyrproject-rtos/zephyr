@@ -6,12 +6,7 @@
 config SOC_FAMILY_XILINX_ZYNQ7000
 	bool
 
-if SOC_FAMILY_XILINX_ZYNQ7000
-
 config SOC_FAMILY
-	string
-	default "xilinx_zynq7000"
+	default "xilinx_zynq7000" if SOC_FAMILY_XILINX_ZYNQ7000
 
-source "soc/soc_legacy/arm/xilinx_zynq7000/*/Kconfig.soc"
-
-endif # SOC_FAMILY_XILINX_ZYNQ7000
+rsource "*/Kconfig.soc"
