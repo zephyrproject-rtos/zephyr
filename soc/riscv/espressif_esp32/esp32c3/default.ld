@@ -53,6 +53,8 @@
  * Executing directly from LMA is not possible. */
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
+#undef SECTION_PROLOGUE
+#define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
 
 /* Global symbols required for espressif hal build */
 MEMORY

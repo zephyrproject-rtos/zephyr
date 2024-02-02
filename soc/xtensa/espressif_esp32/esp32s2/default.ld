@@ -57,6 +57,8 @@
  * Executing directly from LMA is not possible. */
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
+#undef SECTION_PROLOGUE
+#define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
 
 MEMORY
 {
@@ -133,7 +135,7 @@ SECTIONS
    * Adding .rodata as first section helps to reduce size of generated binary by
    * few kBs.
    */
-  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(4))
+  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
   {
     _rodata_reserved_start = ABSOLUTE(.);
     __rodata_region_start = ABSOLUTE(.);
@@ -191,7 +193,7 @@ SECTIONS
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  SECTION_PROLOGUE(_RODATA_SECTION_END,,ALIGN(0x10))
+  SECTION_PROLOGUE(_RODATA_SECTION_END,,)
   {
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
