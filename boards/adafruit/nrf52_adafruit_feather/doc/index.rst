@@ -174,7 +174,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf52_adafruit_feather/board.h`.
+:zephyr_file:`boards/adafruit/nrf52_adafruit_feather/board.h`.
 
 
 References
