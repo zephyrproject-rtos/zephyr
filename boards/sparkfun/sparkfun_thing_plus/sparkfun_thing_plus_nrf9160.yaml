@@ -1,4 +1,4 @@
-identifier: sparkfun_thing_plus_nrf9160
+identifier: sparkfun_thing_plus/nrf9160
 name: Sparkfun-Thing-Plus-nRF9160
 type: mcu
 arch: arm
