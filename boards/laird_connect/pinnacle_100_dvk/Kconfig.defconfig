@@ -5,9 +5,6 @@
 
 if BOARD_PINNACLE_100_DVK
 
-config BOARD
-	default "pinnacle_100_dvk"
-
 config MODEM
 	default NETWORKING
 
