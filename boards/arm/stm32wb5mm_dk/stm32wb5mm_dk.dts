@@ -22,11 +22,24 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	rgb_leds:rgb_leds {
+		compatible = "ti,tlc59731";
+		gpios = <&gpioa 7 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		min_period = <10>;
+		max_period = <1500>;
+		min_brightness = <0>;
+		max_brightness = <0xFF>;
+		label = "RGB LED controller";
+		status = "disabled";
+	};
+
 	aliases {
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		rgb-led = &rgb_leds;
 	};
 };
 
