@@ -1,4 +1,4 @@
-identifier: thingy53_nrf5340_cpunet
+identifier: thingy53/nrf5340/cpunet
 name: Thingy53-NRF5340-network-MCU
 type: mcu
 arch: arm
