@@ -8,5 +8,7 @@ config FLASH_AMBIQ
 	select AMBIQ_HAL
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_NO_EXPLICIT_ERASE
 	help
 	  Enables Ambiq flash driver on MRAM.
