@@ -155,7 +155,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf52833dk_nrf52833/nrf52833dk_nrf52833.dts`.
+:zephyr_file:`boards/nordic_nrf/nrf52833dk/nrf52833dk_nrf52833.dts`.
 
 Changing UART1 pins
 *******************
@@ -215,3 +215,27 @@ References
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52833 Product Specification: https://infocenter.nordicsemi.com/pdf/nRF52833_OPS_v0.7.pdf
+
+.. _nrf52833dk_nrf52820:
+
+nRF52820 emulation on nRF52833 DK
+#################################
+
+Overview
+********
+
+The nrf52833dk_nrf52820 board is a modified version of the
+:ref:`nrf52833dk_nrf52833` that enforces the limitations imposed by the nRF52820
+IC, which is a variant of the original nRF52833. Since Nordic does not offer a
+development kit for the nRF52820 you can use this board to develop for this IC
+while using the nRF52833 Development Kit (PCA10100).
+
+See :ref:`nrf52833dk_nrf52833` for more information about the development board
+and `nRF52820 website`_ for the official reference on the IC itself.
+
+References
+**********
+
+.. target-notes::
+
+.. _nRF52820 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52820
