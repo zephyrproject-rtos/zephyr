@@ -1,0 +1,11 @@
+board:
+  name: actinius_icarus
+  vendor: Actinius
+  variants:
+  - name: 'ns'
+  revision:
+    format: major.minor.patch
+    default: "2.0.0"
+    revisions:
+    - name: "1.4.0"
+    - name: "2.0.0"

@@ -1,13 +1,13 @@
-identifier: actinius_icarus
-name: Actinius Icarus
+identifier: actinius_icarus/nrf9160/ns
+name: Actinius Icarus Non-Secure
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
   - xtools
   - zephyr
-ram: 88
-flash: 256
+ram: 128
+flash: 192
 supported:
   - gpio
   - i2c
