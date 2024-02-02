@@ -1,6 +1,9 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config BOARD_QEMU_CORTEX_M0
+	select QEMU_TARGET
+
 config NRF_TIMER_TIMER
 	bool "nRF Timer Counter (NRF_TIMER0) Timer"
 	depends on CLOCK_CONTROL
