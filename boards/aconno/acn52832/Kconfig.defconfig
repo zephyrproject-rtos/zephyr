@@ -3,6 +3,9 @@
 # Copyright (c) 2023 Sven Herrmann <sven.herrmann@posteo.de>
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_ACN52832
-	bool "aconno ACN52832"
-	depends on SOC_NRF52832_QFAA
+if BOARD_ACN52832
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_ACN52832
