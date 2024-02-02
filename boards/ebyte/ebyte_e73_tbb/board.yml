@@ -1,0 +1,5 @@
+board:
+  name: ebyte_e73_tbb
+  vendor: Chengdu Ebyte Electronic Technology
+  socs:
+  - name: nrf52832
