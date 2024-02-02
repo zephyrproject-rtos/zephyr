@@ -26,18 +26,18 @@ See also this URL for details about the board:
 The latest version of EM Starter Kit is 2.3, developer can upgrade from
 2.0/2.1/2.2 to 2.3 using latest firmware.
 The default configuration for EM Starter Kit boards can be found in
-:zephyr_file:`boards/arc/em_starterkit/em_starterkit_defconfig`.
+:zephyr_file:`boards/synopsys/em_starterkit/em_starterkit_defconfig`.
 
 The default SoC for this board supported in Zephyr is the EM9D.
 This configuration is a Harvard Architecture, with a separate
 instruction bus and data bus. Instruction memory is called ICCM
 and data memory is called DCCM. The configuration file for EM9D
-is found in :zephyr_file:`soc/arc/snps_emsk/Kconfig.defconfig.em9d`.
+is found in :zephyr_file:`soc/synopsys/snps_emsk/Kconfig.defconfig.em9d`.
 
 If you have a larger program, you can select the EM7D or EM11D, which gives
 access to 128KB DRAM with i-cache and d-cache. The configuration file for EM7D
-is found in :zephyr_file:`soc/arc/snps_emsk/Kconfig.defconfig.em7d` and EM11D is
-found in :zephyr_file:`soc/arc/snps_emsk/Kconfig.defconfig.em11d`.
+is found in :zephyr_file:`soc/synopsys/snps_emsk/Kconfig.defconfig.em7d` and EM11D is
+found in :zephyr_file:`soc/synopsys/snps_emsk/Kconfig.defconfig.em11d`.
 
 
 Hardware
@@ -64,19 +64,6 @@ Supported Firmware Versions
 The EM Starter Kit has different versions, such as 1.0, 1.1, 2.0, 2.1,
 2.2 and 2.3.
 In Zephyr, only firmware versions 2.2 and 2.3 are supported.
-
-* For EM Starter Kit 2.2, EM7D, EM9D and EM11D core configurations are supported.
-
-  * Use :kconfig:option:`CONFIG_BOARD_EM_STARTERKIT_R22` to select 2.2 version.
-  * Use :kconfig:option:`CONFIG_SOC_EMSK_EM7D`, :kconfig:option:`CONFIG_SOC_EMSK_EM9D` or
-    :kconfig:option:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
-
-* For EM Starter Kit 2.3, EM7D, EM9D and EM11D core configurations are
-  supported.
-
-  * Use :kconfig:option:`CONFIG_BOARD_EM_STARTERKIT_R23` to select 2.3 version.
-  * Use :kconfig:option:`CONFIG_SOC_EMSK_EM7D`, :kconfig:option:`CONFIG_SOC_EMSK_EM9D` or
-    :kconfig:option:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
 
 Supported Features
 ==================

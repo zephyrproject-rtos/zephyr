@@ -12,30 +12,29 @@
 #include "board.dtsi"
 
 / {
-	model = "em_starterkit-em11d";
-	compatible = "snps,em_starterkit-em11d", "snps,em_starterkit";
+	model = "em_starterkit-em9d";
+	compatible = "snps,em_starterkit-em9d", "snps,em_starterkit";
 
 	aliases {
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		uart-2 = &uart2;
-		spi-flash0 = &w25q128bv;
 	};
 
 	chosen {
-		zephyr,sram = &ddr0;
+		zephyr,sram = &dccm0;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 	};
 
 	iccm0: iccm@0 {
 		compatible = "arc,iccm";
-		reg = <0x0 DT_SIZE_K(64)>;
+		reg = <0x0 DT_SIZE_K(256)>;
 	};
 
 	dccm0: dccm@80000000 {
 		compatible = "arc,dccm";
-		reg = <0x80000000 DT_SIZE_K(64)>;
+		reg = <0x80000000 DT_SIZE_K(128)>;
 	};
 
 	xccm@c0000000 {

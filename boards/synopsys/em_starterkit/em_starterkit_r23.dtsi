@@ -5,6 +5,10 @@
  */
 
 / {
+	aliases {
+		spi-flash0 = &w25q128bv;
+	};
+
 	soc {
 		i2c@f0004000 {
 			interrupts = <25 1>;

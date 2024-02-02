@@ -4,8 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EM_STARTERKIT
-	bool "ARC EM Starter Kit"
-	depends on SOC_EMSK
+	select SOC_EMSK
+	select SOC_EMSK_EM7D if BOARD_EM_STARTERKIT_EMSK_EM7D
+	select SOC_EMSK_EM9D if BOARD_EM_STARTERKIT_EMSK_EM9D
+	select SOC_EMSK_EM11D if BOARD_EM_STARTERKIT_EMSK_EM11D
 	help
 	  The DesignWare ARC EM Starter Kit board is a board
 	  that can host up to 3 different SOC FPGA bit files.
