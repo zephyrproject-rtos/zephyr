@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_DEGU_EVK
-	bool "DEGU_EVK"
-	depends on SOC_NRF52840_QIAA
+	select SOC_NRF52840_QIAA
