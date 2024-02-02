@@ -45,7 +45,7 @@ clock is 32 MHz.
 Supported Features
 ==================
 
-The we_proteus3ev_nrf52840 board configuration supports the following
+The we_proteus3ev/nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -100,7 +100,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``we_proteus3ev_nrf52840`` board configuration can be
+Applications for the ``we_proteus3ev/nrf52840`` board configuration can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
@@ -129,7 +129,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: we_proteus3ev_nrf52840
+   :board: we_proteus3ev/nrf52840
    :goals: build flash
 
 Debugging
@@ -151,7 +151,7 @@ LEDs on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly
 on your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/we_proteus3ev_nrf52840/we_proteus3ev_nrf52840.dts`.
+:zephyr_file:`boards/wurth_elektronik/we_proteus3ev/we_proteus3ev_nrf52840.dts`.
 
 References
 **********
