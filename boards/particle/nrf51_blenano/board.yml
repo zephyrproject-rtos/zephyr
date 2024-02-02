@@ -1,3 +1,5 @@
 board:
   name: nrf51_blenano
   vendor: Particle Industries
+  socs:
+  - name: nrf51822
