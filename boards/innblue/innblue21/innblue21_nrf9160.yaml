@@ -1,13 +1,13 @@
-identifier: nrf9160_innblue21_ns
-name: nRF9160-INNBLUE21-Non-Secure
+identifier: innblue21/nrf9160
+name: nRF9160-INNBLUE21
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
   - xtools
   - zephyr
-ram: 128
-flash: 192
+ram: 64
+flash: 256
 supported:
   - i2c
   - pwm
