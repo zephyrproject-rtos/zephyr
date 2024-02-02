@@ -213,11 +213,13 @@ static inline uint32_t intel_adsp_hda_get_buffer_size(uint32_t base,
 static inline void intel_adsp_hda_enable(uint32_t base, uint32_t regblock_size,
 					 uint32_t sid, bool set_fifordy)
 {
-	*DGCS(base, regblock_size, sid) |= DGCS_GEN;
+	uint32_t enable = DGCS_GEN;
 
 	if (set_fifordy) {
-		*DGCS(base, regblock_size, sid) |= DGCS_FIFORDY;
+		enable |= DGCS_FIFORDY;
 	}
+
+	*DGCS(base, regblock_size, sid) |= enable;
 }
 
 /**
