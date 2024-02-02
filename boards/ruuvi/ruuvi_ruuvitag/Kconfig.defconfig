@@ -5,9 +5,6 @@
 
 if BOARD_RUUVI_RUUVITAG
 
-config BOARD
-	default "ruuvi_ruuvitag"
-
 config SPI
 	default y
 
