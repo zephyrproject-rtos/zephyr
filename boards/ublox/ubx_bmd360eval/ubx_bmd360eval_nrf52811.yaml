@@ -1,4 +1,4 @@
-identifier: ubx_bmd360eval_nrf52811
+identifier: ubx_bmd360eval/nrf52811
 name: UBX_BMD360EVAL_NRF52811
 type: mcu
 arch: arm
