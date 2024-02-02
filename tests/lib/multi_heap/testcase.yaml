@@ -10,15 +10,15 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_m0
-      - nsim_em
-      - nsim_em7d_v22
-      - nsim_hs
-      - nsim_hs_mpuv6
-      - nsim_hs5x
-      - nsim_hs6x
-      - qemu_arc_em
-      - qemu_arc_hs
-      - qemu_arc_hs6x
+      - nsim/nsim_em
+      - nsim/nsim_em7d_v22
+      - nsim/nsim_hs
+      - nsim/nsim_hs/mpuv6
+      - nsim/nsim_hs5x
+      - nsim/nsim_hs6x
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
+      - qemu_arc/qemu_arc_hs6x
       - qemu_riscv32
       - qemu_riscv32e
       - qemu_riscv64

@@ -88,7 +88,7 @@ tests:
     tags:
       - kernel
     integration_platforms:
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
   sample.minimal.riscv.runtime:
     extra_args:
       - CONF_FILE='common-runtime.conf;no-timers.conf;no-mt.conf;riscv.conf'
