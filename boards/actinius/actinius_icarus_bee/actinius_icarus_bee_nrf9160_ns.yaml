@@ -1,4 +1,4 @@
-identifier: actinius_icarus_bee_ns
+identifier: actinius_icarus_bee/nrf9160/ns
 name: Actinius Icarus Bee Non-Secure
 type: mcu
 arch: arm
