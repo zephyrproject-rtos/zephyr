@@ -77,4 +77,4 @@
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
  * buffer won't be used.
  */
-#include <../boards/arm/nrf5340dk_nrf5340/nrf5340_shared_sram_planning_conf.dtsi>
+#include <../boards/boards_legacy/arm/nrf5340dk_nrf5340/nrf5340_shared_sram_planning_conf.dtsi>
