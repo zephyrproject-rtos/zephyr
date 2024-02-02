@@ -2425,6 +2425,12 @@ endfunction()
 #
 # returns an updated list of absolute paths
 #
+# Usage:
+#   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>]
+#               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ...]
+#               [BUILD <type>] [REQUIRED]
+#   )
+#
 # CONF_FILES <paths>: Find all configuration files in the list of paths and
 #                     return them in a list. If paths is empty then no configuration
 #                     files are returned. Configuration files will be:
@@ -2438,7 +2444,13 @@ endfunction()
 #                                                revision. Requires BOARD to be specified.
 #
 #                                                If no board is given the current BOARD and
-#                                                BOARD_REVISION will be used.
+#                                                BOARD_REVISION will be used, unless NAMES are
+#                                                specified.
+#
+#                     NAMES <name1> [name2] ...  List of file names to look for and instead of
+#                                                creating file names based on board settings.
+#                                                Only the first match found in <paths> will be
+#                                                returned in the <list>
 #
 #                     DTS <list>:   List to append DTS overlay files in <path> to
 #                     KCONF <list>: List to append Kconfig fragment files in <path> to
@@ -2446,6 +2458,8 @@ endfunction()
 #                                   For example:
 #                                   BUILD debug, will look for <board>_debug.conf
 #                                   and <board>_debug.overlay, instead of <board>.conf
+#                     REQUIRED:     Option to indicate that the <list> specified by DTS or KCONF
+#                                   must contain at least one element, else an error will be raised.
 #
 function(zephyr_file)
   set(file_options APPLICATION_ROOT CONF_FILES)
@@ -2457,11 +2471,12 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
+    set(options REQUIRED)
     set(single_args BOARD BOARD_REVISION DTS KCONF BUILD)
-    set(multi_args CONF_FILES)
+    set(multi_args CONF_FILES NAMES)
   endif()
 
-  cmake_parse_arguments(FILE "" "${single_args}" "${multi_args}" ${ARGN})
+  cmake_parse_arguments(FILE "${options}" "${single_args}" "${multi_args}" ${ARGN})
   if(FILE_UNPARSED_ARGUMENTS)
       message(FATAL_ERROR "zephyr_file(${ARGV0} <val> ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
   endif()
@@ -2518,44 +2533,75 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endif()
     endif()
 
-    zephyr_build_string(filename
-                        BOARD ${FILE_BOARD}
-                        BUILD ${FILE_BUILD}
-    )
-    set(filename_list ${filename})
+    if(FILE_NAMES)
+      set(dts_filename_list ${FILE_NAMES})
+      set(kconf_filename_list ${FILE_NAMES})
+    else()
+      zephyr_build_string(filename
+                          BOARD ${FILE_BOARD}
+                          BUILD ${FILE_BUILD}
+      )
+      set(filename_list ${filename})
 
-    zephyr_build_string(filename
-                        BOARD ${FILE_BOARD}
-                        BOARD_REVISION ${FILE_BOARD_REVISION}
-                        BUILD ${FILE_BUILD}
-    )
-    list(APPEND filename_list ${filename})
-    list(REMOVE_DUPLICATES filename_list)
+      zephyr_build_string(filename
+                          BOARD ${FILE_BOARD}
+                          BOARD_REVISION ${FILE_BOARD_REVISION}
+                          BUILD ${FILE_BUILD}
+      )
+      list(APPEND filename_list ${filename})
+      list(REMOVE_DUPLICATES filename_list)
+      set(dts_filename_list ${filename_list})
+      list(TRANSFORM dts_filename_list APPEND ".overlay")
+
+      set(kconf_filename_list ${filename_list})
+      list(TRANSFORM kconf_filename_list APPEND ".conf")
+    endif()
 
     if(FILE_DTS)
       foreach(path ${FILE_CONF_FILES})
-        foreach(filename ${filename_list})
-          if(EXISTS ${path}/${filename}.overlay)
-            list(APPEND ${FILE_DTS} ${path}/${filename}.overlay)
+        foreach(filename ${dts_filename_list})
+          if(EXISTS ${path}/${filename})
+            list(APPEND ${FILE_DTS} ${path}/${filename})
+            if(FILE_NAMES)
+              break()
+            endif()
           endif()
         endforeach()
       endforeach()
 
       # This updates the provided list in parent scope (callers scope)
       set(${FILE_DTS} ${${FILE_DTS}} PARENT_SCOPE)
+
+      if(NOT ${FILE_DTS})
+        set(not_found ${dts_filename_list})
+      endif()
     endif()
 
     if(FILE_KCONF)
       foreach(path ${FILE_CONF_FILES})
-        foreach(filename ${filename_list})
-          if(EXISTS ${path}/${filename}.conf)
-            list(APPEND ${FILE_KCONF} ${path}/${filename}.conf)
+        foreach(filename ${kconf_filename_list})
+          if(EXISTS ${path}/${filename})
+            list(APPEND ${FILE_KCONF} ${path}/${filename})
+            if(FILE_NAMES)
+              break()
+            endif()
           endif()
         endforeach()
       endforeach()
 
       # This updates the provided list in parent scope (callers scope)
       set(${FILE_KCONF} ${${FILE_KCONF}} PARENT_SCOPE)
+
+      if(NOT ${FILE_KCONF})
+        set(not_found ${kconf_filename_list})
+      endif()
+    endif()
+
+    if(FILE_REQUIRED AND DEFINED not_found)
+      message(FATAL_ERROR
+              "No ${not_found} file(s) was found in the ${FILE_CONF_FILES} folder(s), "
+              "please read the Zephyr documentation on application development."
+      )
     endif()
   endif()
 endfunction()
@@ -4164,7 +4210,7 @@ function(zephyr_linker_dts_section)
 
   if(DTS_SECTION_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "zephyr_linker_dts_section(${ARGV0} ...) given unknown "
-	    "arguments: ${DTS_SECTION_UNPARSED_ARGUMENTS}"
+            "arguments: ${DTS_SECTION_UNPARSED_ARGUMENTS}"
     )
   endif()
 
