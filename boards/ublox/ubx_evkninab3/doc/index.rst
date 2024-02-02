@@ -46,7 +46,7 @@ of 32.768kHz.
 Supported Features
 ==================
 
-The ubx_evkninab3_nrf52840 board configuration supports the following
+The ubx_evkninab3/nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -209,7 +209,7 @@ Digital I/O (J4)
 Programming and Debugging
 *************************
 
-Applications for the ``ubx_evkninab3_nrf52840`` board configuration can be
+Applications for the ``ubx_evkninab3/nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); however, the standard
 debugging targets are not currently available.
@@ -238,7 +238,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: ubx_evkninab3_nrf52840
+   :board: ubx_evkninab3/nrf52840
    :goals: build flash
 
 Debugging
@@ -261,7 +261,7 @@ There are 2 samples that allow you to test that the buttons
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/ubx_evkninab3_nrf52840/ubx_ninab3_nrf52840.dts`.
+:zephyr_file:`boards/ublox/ubx_evkninab3/ubx_ninab3_nrf52840.dts`.
 
 Using UART1
 ***********
