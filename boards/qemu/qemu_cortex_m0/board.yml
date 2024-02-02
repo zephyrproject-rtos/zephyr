@@ -1,3 +1,5 @@
 board:
   name: qemu_cortex_m0
   vendor: Nordic Semiconductor
+  socs:
+  - name: nrf51822
