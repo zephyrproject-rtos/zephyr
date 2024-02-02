@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_BLUECLOVER_PLT_DEMO_V2_NRF52832
-	bool "Blue Clover PLT Demo Board V2"
-	depends on SOC_NRF52832_QFAA
+	select SOC_NRF52832_QFAA
