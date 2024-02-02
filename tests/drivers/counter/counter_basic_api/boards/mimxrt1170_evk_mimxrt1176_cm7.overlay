@@ -4,22 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&pit0_channel0 {
+&pit1_channel0 {
 	status = "okay";
 };
 
-&pit0_channel1 {
+&pit1_channel1 {
 	status = "okay";
 };
 
 /* channel 2 disabled to test disabled channel not breaking things */
 
-&pit0_channel3 {
+&pit1_channel3 {
 	status = "okay";
 };
 
-&qtmr1_timer0 {
+&pit2_channel0 {
 	status = "okay";
-	primary_source = "kQTMR_ClockDivide_128";
-	mode = "kQTMR_PriSrcRiseEdge";
+};
+
+&pit2_channel1 {
+	status = "okay";
+};
+
+/* channel 2 disabled to test disabled channel not breaking things */
+
+&pit2_channel3 {
+	status = "okay";
 };
