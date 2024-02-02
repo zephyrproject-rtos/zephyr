@@ -3,9 +3,6 @@
 
 if BOARD_HSDK
 
-config BOARD
-	default "hsdk"
-
 if SPI_DW
 
 config SPI_DW_ACCESS_WORD_ONLY
@@ -18,6 +15,6 @@ if I2C_DW
 config I2C_DW_CLOCK_SPEED
 	default 200
 
-endif #I2C_DW
+endif # I2C_DW
 
 endif # BOARD_HSDK

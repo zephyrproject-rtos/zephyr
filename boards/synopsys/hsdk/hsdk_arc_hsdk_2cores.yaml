@@ -1,4 +1,4 @@
-identifier: hsdk_2cores
+identifier: hsdk/arc_hsdk/2cores
 name: HS Development Kit(2 cores)
 type: mcu
 arch: arc
