@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HSDK4XD
-	bool "ARC HSDK4XD Development Kit"
-	depends on SOC_ARC_HSDK4XD
+	select SOC_ARC_HSDK4XD
 	help
 	  The ARC HS4x/4xD Development Kit is a ready-to-use software development
 	  platform for the ARC HS4x/4xD family of processor IP. It includes
