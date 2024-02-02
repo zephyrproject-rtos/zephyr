@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_BBC_MICROBIT
-	bool "BBC MICRO:BIT"
-	depends on SOC_NRF51822_QFAA
+	select SOC_NRF51822_QFAA
