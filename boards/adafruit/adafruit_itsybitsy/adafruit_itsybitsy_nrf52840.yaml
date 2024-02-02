@@ -1,4 +1,4 @@
-identifier: adafruit_itsybitsy_nrf52840
+identifier: adafruit_itsybitsy/nrf52840
 name: Adafruit ItsyBitsy nRF52840 Express
 type: mcu
 arch: arm
