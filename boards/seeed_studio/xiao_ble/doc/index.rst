@@ -146,7 +146,7 @@ initialized before any text is printed, as below:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_ble_sense
+         :board: xiao_ble/nrf52840/sense
          :goals: build flash
          :gen-args: -DCONFIG_BOOT_DELAY=5000
 
@@ -177,12 +177,12 @@ properly with Zephyr:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: xiao_ble_sense
+         :board: xiao_ble/nrf52840/sense
          :goals: build flash
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The LED definitions can be found in
-:zephyr_file:`boards/arm/xiao_ble/xiao_ble_common.dtsi`.
+:zephyr_file:`boards/xiao_ble/xiao_ble_common.dtsi`.
 
 Testing shell over USB in the XIAO BLE (Sense)
 **********************************************
@@ -203,7 +203,7 @@ with Zephyr:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/subsys/shell/shell_module
-         :board: xiao_ble_sense
+         :board: xiao_ble/nrf52840/sense
          :goals: build flash
 
 References
