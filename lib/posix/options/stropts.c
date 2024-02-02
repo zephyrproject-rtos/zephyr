@@ -18,3 +18,20 @@ int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr
 	errno = ENOSYS;
 	return -1;
 }
+
+int fdetach(const char *path)
+{
+	ARG_UNUSED(path);
+
+	errno = ENOSYS;
+	return -1;
+}
+
+int fattach(int fildes, const char *path)
+{
+	ARG_UNUSED(fildes);
+	ARG_UNUSED(path);
+
+	errno = ENOSYS;
+	return -1;
+}
