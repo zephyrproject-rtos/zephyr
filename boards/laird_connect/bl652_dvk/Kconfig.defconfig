@@ -5,9 +5,6 @@
 
 if BOARD_BL652_DVK
 
-config BOARD
-	default "bl652_dvk"
-
 config BT_CTLR
 	default BT
 
