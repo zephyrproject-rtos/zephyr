@@ -52,6 +52,9 @@ struct flash_npcx_nor_data {
 static const struct flash_parameters flash_npcx_parameters = {
 	.write_block_size = 1,
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 #define DT_INST_QUAD_EN_PROP_OR(inst)						\

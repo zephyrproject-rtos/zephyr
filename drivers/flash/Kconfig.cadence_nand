@@ -10,6 +10,7 @@ config FLASH_CDNS_NAND
 	depends on DT_HAS_CDNS_NAND_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable Cadence NAND support.
 

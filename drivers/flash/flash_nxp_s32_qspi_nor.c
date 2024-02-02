@@ -1077,6 +1077,9 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 		.flash_parameters = {						\
 			.write_block_size = QSPI_WRITE_BLOCK_SIZE,		\
 			.erase_value = QSPI_ERASE_VALUE,			\
+			.caps = {						\
+				.explicit_erase = true,				\
+			},							\
 		},								\
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,				\
 			(QSPI_PAGE_LAYOUT(n),))					\

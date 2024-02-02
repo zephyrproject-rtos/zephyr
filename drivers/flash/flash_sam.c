@@ -516,6 +516,9 @@ static int sam_flash_init(const struct device *dev)
 		.parameters = {									\
 			.write_block_size = DT_PROP(SAM_FLASH_DEVICE, write_block_size),	\
 			.erase_value = 0xFF,							\
+			.caps = {								\
+				.explicit_erase = true,						\
+			},									\
 		},										\
 		.pages_layouts = sam_flash_pages_layouts##inst,					\
 		.pages_layouts_size = ARRAY_SIZE(sam_flash_pages_layouts##inst),		\

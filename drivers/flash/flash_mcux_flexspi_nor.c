@@ -1144,6 +1144,9 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 		.flash_parameters = {					\
 			.write_block_size = NOR_WRITE_SIZE,		\
 			.erase_value = NOR_ERASE_VALUE,			\
+			.caps = {					\
+				.explicit_erase = true,			\
+			},						\
 		},							\
 	};								\
 									\

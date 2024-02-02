@@ -28,6 +28,9 @@ struct flash_gecko_data {
 static const struct flash_parameters flash_gecko_parameters = {
 	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 static bool write_range_is_valid(off_t offset, uint32_t size);

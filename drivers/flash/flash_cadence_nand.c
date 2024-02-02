@@ -60,8 +60,13 @@ struct flash_cadence_nand_config {
 #endif
 };
 
-static const struct flash_parameters flash_cdns_parameters = {.write_block_size = FLASH_WRITE_SIZE,
-							      .erase_value = 0xFF};
+static const struct flash_parameters flash_cdns_parameters = {
+	.write_block_size = FLASH_WRITE_SIZE,
+	.erase_value = 0xFF,
+	.caps = {
+		.explicit_erase = true,
+	},
+};
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 

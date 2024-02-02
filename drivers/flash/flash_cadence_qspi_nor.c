@@ -30,6 +30,9 @@ struct flash_cad_config {
 static const struct flash_parameters flash_cad_parameters = {
 	.write_block_size = QSPI_BYTES_PER_DEV,
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 #define DEV_DATA(dev)	((struct flash_cad_priv *)((dev)->data))

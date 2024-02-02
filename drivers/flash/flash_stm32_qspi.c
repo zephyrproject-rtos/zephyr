@@ -604,7 +604,10 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 
 static const struct flash_parameters flash_stm32_qspi_parameters = {
 	.write_block_size = 1,
-	.erase_value = 0xff
+	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 static const struct flash_parameters *

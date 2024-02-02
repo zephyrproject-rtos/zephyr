@@ -589,6 +589,9 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 static const struct flash_parameters flash_stm32h7_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 static const struct flash_parameters *

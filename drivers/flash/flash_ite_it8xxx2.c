@@ -89,6 +89,9 @@ enum flash_transaction_cmd {
 static const struct flash_parameters flash_it8xxx2_parameters = {
 	.write_block_size = FLASH_WRITE_BLK_SZ,
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 void __soc_ram_code ramcode_reset_i_cache(void)

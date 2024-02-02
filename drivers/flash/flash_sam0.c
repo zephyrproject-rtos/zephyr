@@ -74,6 +74,9 @@ static const struct flash_parameters flash_sam0_parameters = {
 	.write_block_size = FLASH_WRITE_BLK_SZ,
 #endif
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 static int flash_sam0_write_protection(const struct device *dev, bool enable);
