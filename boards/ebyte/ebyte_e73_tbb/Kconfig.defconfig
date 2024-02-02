@@ -6,9 +6,6 @@
 
 if BOARD_EBYTE_E73_TBB_NRF52832
 
-config BOARD
-	default "ebyte_e73_tbb_nrf52832"
-
 config BT_CTLR
 	default BT
 
