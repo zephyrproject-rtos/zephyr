@@ -54,7 +54,7 @@ jobs:
           python-version: 3.11
 
       - name: Setup Zephyr project
-        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        uses: zephyrproject-rtos/action-zephyr-setup@pull/5/head
         with:
           app-path: zephyr
           toolchains: all
