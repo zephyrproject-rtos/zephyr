@@ -147,7 +147,8 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	  Maximum Fragment Length (MFL) value is automatically chosen based on
 	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
 	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
-	  case of default mbed TLS config).
+	  case of default mbed TLS config). With DTLS, MFL value may be further
+	  limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
 
 	  This is mostly useful for TLS client side to tell TLS server what is
 	  the maximum supported receive record length.
@@ -172,6 +173,20 @@ config NET_SOCKETS_DTLS_TIMEOUT
 	  from connecting. Value of 0 indicates no timeout - resources will be
 	  freed only when connection is gracefully closed by peer sending TLS
 	  notification or socket is closed.
+
+config NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH
+	int "Maximum DTLS fragment size in bytes"
+	default 1024
+	range 512 4096
+	depends on NET_SOCKETS_ENABLE_DTLS
+	depends on NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
+	help
+	  This variable specifies the Maximum Fragment Length (MFL) value to
+	  be used with DTLS connection when MBEDTLS_SSL_OUT_CONTENT_LEN and
+	  MBEDTLS_SSL_IN_CONTENT_LEN are set to larger values (for TLS).
+
+	  With DTLS the MFL should be kept under the network MTU, to avoid
+	  IP fragmentation.
 
 config NET_SOCKETS_TLS_MAX_CONTEXTS
 	int "Maximum number of TLS/DTLS contexts"

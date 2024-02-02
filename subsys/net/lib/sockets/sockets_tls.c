@@ -401,10 +401,8 @@ static inline bool is_handshake_complete(struct tls_context *ctx)
 BUILD_ASSERT(MBEDTLS_TLS_EXT_ADV_CONTENT_LEN >= 512,
 	     "Too small content length!");
 
-static inline unsigned char tls_mfl_code_from_content_len(void)
+static inline unsigned char tls_mfl_code_from_content_len(size_t len)
 {
-	size_t len = MBEDTLS_TLS_EXT_ADV_CONTENT_LEN;
-
 	if (len >= 4096) {
 		return MBEDTLS_SSL_MAX_FRAG_LEN_4096;
 	} else if (len >= 2048) {
@@ -418,14 +416,22 @@ static inline unsigned char tls_mfl_code_from_content_len(void)
 	}
 }
 
-static inline void tls_set_max_frag_len(mbedtls_ssl_config *config)
+static inline void tls_set_max_frag_len(mbedtls_ssl_config *config, enum net_sock_type type)
 {
-	unsigned char mfl_code = tls_mfl_code_from_content_len();
+	unsigned char mfl_code;
+	size_t len = MBEDTLS_TLS_EXT_ADV_CONTENT_LEN;
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (type == SOCK_DGRAM && len > CONFIG_NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH) {
+		len = CONFIG_NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH;
+	}
+#endif
+	mfl_code = tls_mfl_code_from_content_len(len);
 
 	mbedtls_ssl_conf_max_frag_len(config, mfl_code);
 }
 #else
-static inline void tls_set_max_frag_len(mbedtls_ssl_config *config) {}
+static inline void tls_set_max_frag_len(mbedtls_ssl_config *config, enum net_sock_type type) {}
 #endif
 
 /* Allocate TLS context. */
@@ -458,7 +464,6 @@ static struct tls_context *tls_alloc(void)
 
 		mbedtls_ssl_init(&tls->ssl);
 		mbedtls_ssl_config_init(&tls->config);
-		tls_set_max_frag_len(&tls->config);
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		mbedtls_ssl_cookie_init(&tls->cookie);
 		tls->options.dtls_handshake_timeout_min =
@@ -1305,6 +1310,7 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
+	tls_set_max_frag_len(&context->config, context->type);
 
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
 	mbedtls_ssl_conf_legacy_renegotiation(&context->config,
