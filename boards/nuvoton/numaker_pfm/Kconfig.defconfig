@@ -6,9 +6,6 @@
 
 if BOARD_NUMAKER_PFM_M467
 
-config BOARD
-	default "numaker_pfm_m467"
-
 if NETWORKING
 
 config NET_L2_ETHERNET

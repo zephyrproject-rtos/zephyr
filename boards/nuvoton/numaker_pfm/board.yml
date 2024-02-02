@@ -3,3 +3,4 @@ board:
   vendor: Nuvoton
   socs:
   - name: m467
+  - name: m487
