@@ -1,5 +1,7 @@
 board:
   name: actinius_icarus_bee
   vendor: Actinius
-  variants:
-  - name: 'ns'
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'
