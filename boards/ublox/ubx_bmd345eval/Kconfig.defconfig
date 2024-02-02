@@ -4,5 +4,9 @@
 # Copyright (c) 2021 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
-# No special configuration is required.
-# The BMD-345 does not include DCDC components
+if BOARD_UBX_BMD345EVAL_NRF52840
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_UBX_BMD345EVAL_NRF52840
