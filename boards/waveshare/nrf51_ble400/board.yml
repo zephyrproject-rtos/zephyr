@@ -1,0 +1,3 @@
+board:
+  name: nrf51_ble400
+  vendor: Waveshare
