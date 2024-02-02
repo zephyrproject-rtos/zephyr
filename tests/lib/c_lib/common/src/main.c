@@ -1220,7 +1220,8 @@ ZTEST(libc_common, test_rand_reproducibility)
  */
 ZTEST(libc_common, test_abort)
 {
-#ifdef CONFIG_EXTERNAL_LIBC
+/* posix/arch.h uses a real abort() too */
+#if defined(CONFIG_EXTERNAL_LIBC) || defined(CONFIG_ARCH_POSIX)
 	ztest_test_skip();
 #else
 	int a = 0;
