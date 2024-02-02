@@ -1,4 +1,4 @@
-identifier: xiao_ble_sense
+identifier: xiao_ble/nrf52840/sense
 name: XIAO BLE Sense
 type: mcu
 arch: arm
