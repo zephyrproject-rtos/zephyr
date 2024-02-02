@@ -3,12 +3,9 @@
 # Copyright (c) 2021 u-blox AG
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_UBX_EVKNINAB4_NRF52833
-
-config BOARD
-	default "ubx_evkninab4_nrf52833"
+if BOARD_UBX_EVKNINAB4
 
 config BT_CTLR
 	default BT
 
-endif # BOARD_UBX_EVKNINAB4_NRF52833
+endif # BOARD_UBX_EVKNINAB4
