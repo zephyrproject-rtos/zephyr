@@ -4,9 +4,6 @@
 
 if SOC_ARC_IOT
 
-config SOC
-	default "snps_arc_iot"
-
 config CPU_EM4_FPUS
 	default y
 
