@@ -1,4 +1,4 @@
-identifier: ubx_bmd340eval_nrf52840
+identifier: ubx_bmd340eval/nrf52840
 name: UBX_BMD340EVAL_NRF52840
 type: mcu
 arch: arm
