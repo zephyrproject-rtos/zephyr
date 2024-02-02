@@ -1,0 +1,18 @@
+family:
+- name: npcx
+  series:
+  - name: npcx4
+    socs:
+    - name: npcx4m3f
+    - name: npcx4m8f
+  - name: npcx7
+    socs:
+    - name: npcx7m6fb
+    - name: npcx7m6fc
+    - name: npcx7m7fc
+  - name: npcx9
+    socs:
+    - name: npcx9m3f
+    - name: npcx9m6f
+    - name: npcx9m7f
+    - name: npcx9mfp

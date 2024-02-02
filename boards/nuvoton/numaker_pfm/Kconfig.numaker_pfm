@@ -7,3 +7,7 @@
 config BOARD_NUMAKER_PFM_M467
 	bool
 	select SOC_M467
+
+config BOARD_NUMAKER_PFM_M487
+	bool
+	select SOC_M487
