@@ -48,7 +48,7 @@ and solder NFC antenna using NFC_ANT connector.
 Supported Features
 ==================
 
-The ebyte_e73_tbb_nrf52832 board configuration supports the following
+The ebyte_e73_tbb/nrf52832 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -188,7 +188,7 @@ to corresponding pins on your J-Link device, then build and flash the applicatio
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: ebyte_e73_tbb_nrf52832
+   :board: ebyte_e73_tbb/nrf52832
    :goals: build flash
 
 Debugging
@@ -211,7 +211,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/ebyte_e73_tbb_nrf52832/ebyte_e73_tbb_nrf52832.dts`.
+:zephyr_file:`boards/ebyte/ebyte_e73_tbb/ebyte_e73_tbb_nrf52832.dts`.
 
 References
 **********
