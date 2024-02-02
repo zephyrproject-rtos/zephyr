@@ -2,6 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QEMU_CORTEX_R5
-	bool "Cortex-R5 Emulation (QEMU)"
-	depends on SOC_XILINX_ZYNQMP_RPU
-	select QEMU_TARGET
+	select SOC_XILINX_ZYNQMP_RPU
