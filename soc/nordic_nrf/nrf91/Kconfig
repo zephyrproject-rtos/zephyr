@@ -1,0 +1,12 @@
+# Nordic Semiconductor nRF91 MCU line
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NRF91X
+
+config NRF_ENABLE_ICACHE
+	bool "Instruction cache (I-Cache)"
+	default y
+
+endif # SOC_SERIES_NRF91X
