@@ -4,10 +4,7 @@
 
 if SOC_SERIES_AST10X0
 
-source "soc/soc_legacy/arm/aspeed/ast10x0/Kconfig.defconfig.ast10*0"
-
-config SOC_SERIES
-	default "ast10x0"
+rsource "Kconfig.defconfig.ast10*0"
 
 config ICACHE_LINE_SIZE
 	default 32
