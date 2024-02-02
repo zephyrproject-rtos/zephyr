@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NXP
+ * Copyright 2018,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -286,5 +286,9 @@ arduino_spi: &lpspi1 {
 };
 
 &pxp {
+	status = "okay";
+};
+
+&pit0 {
 	status = "okay";
 };

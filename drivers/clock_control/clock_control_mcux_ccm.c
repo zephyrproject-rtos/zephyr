@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -325,6 +325,11 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi2), okay)
 	case IMX_CCM_FLEXSPI2_CLK:
 		*rate = CLOCK_GetClockRootFreq(kCLOCK_Flexspi2ClkRoot);
+		break;
+#endif
+#ifdef CONFIG_COUNTER_NXP_PIT
+	case IMX_CCM_PIT_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_PerClk);
 		break;
 #endif
 	}
