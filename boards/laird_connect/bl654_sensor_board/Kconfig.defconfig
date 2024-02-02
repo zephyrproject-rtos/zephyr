@@ -5,9 +5,6 @@
 
 if BOARD_BL654_SENSOR_BOARD
 
-config BOARD
-	default "bl654_sensor_board"
-
 config BT_CTLR
 	default BT
 
