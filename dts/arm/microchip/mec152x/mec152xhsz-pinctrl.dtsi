@@ -923,24 +923,48 @@
 		pinmux = < MCHP_XEC_PINMUX(0172, MCHP_AF1) >;
 	};
 
+	/omit-if-no-ref/ gpio172_gpio172: gpio172_gpio172 {
+		pinmux = < MCHP_XEC_PINMUX(0172, MCHP_AF0) >;
+	};
+
 	/omit-if-no-ref/ vci_in0_n_gpio253: vci_in0_n_gpio253 {
 		pinmux = < MCHP_XEC_PINMUX(0253, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ gpio253_gpio253: gpio253_gpio253 {
+		pinmux = < MCHP_XEC_PINMUX(0253, MCHP_AF0) >;
 	};
 
 	/omit-if-no-ref/ vci_in1_n_gpio162: vci_in1_n_gpio162 {
 		pinmux = < MCHP_XEC_PINMUX(0162, MCHP_AF1) >;
 	};
 
+	/omit-if-no-ref/ gpio162_gpio162: gpio162_gpio162 {
+		pinmux = < MCHP_XEC_PINMUX(0162, MCHP_AF0) >;
+	};
+
 	/omit-if-no-ref/ vci_in2_n_gpio161: vci_in2_n_gpio161 {
 		pinmux = < MCHP_XEC_PINMUX(0161, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ gpio161_gpio161: gpio161_gpio161 {
+		pinmux = < MCHP_XEC_PINMUX(0161, MCHP_AF0) >;
 	};
 
 	/omit-if-no-ref/ vci_in3_n_gpio000: vci_in3_n_gpio000 {
 		pinmux = < MCHP_XEC_PINMUX(000, MCHP_AF1) >;
 	};
 
+	/omit-if-no-ref/ gpio000_gpio000: gpio000_gpio000 {
+		pinmux = < MCHP_XEC_PINMUX(0000, MCHP_AF0) >;
+	};
+
 	/omit-if-no-ref/ vci_out_gpio250: vci_out_gpio250 {
 		pinmux = < MCHP_XEC_PINMUX(0250, MCHP_AF1) >;
+	};
+
+	/omit-if-no-ref/ gpio250_gpio250: gpio250_gpio250 {
+		pinmux = < MCHP_XEC_PINMUX(0250, MCHP_AF0) >;
 	};
 
 	/omit-if-no-ref/ sys_shdn_n_gpio221: sys_shdn_n_gpio221 {
@@ -1045,6 +1069,10 @@
 
 	/omit-if-no-ref/ sgpio3_clock_gpio163: sgpio3_clock_gpio163 {
 		pinmux = < MCHP_XEC_PINMUX(0163, MCHP_AF2) >;
+	};
+
+	/omit-if-no-ref/ gpio163_gpio163: gpio163_gpio163 {
+		pinmux = < MCHP_XEC_PINMUX(0163, MCHP_AF0) >;
 	};
 
 	/omit-if-no-ref/ sgpio3_datain_gpio242: sgpio3_datain_gpio242 {
