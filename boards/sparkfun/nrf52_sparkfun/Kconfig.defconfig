@@ -6,9 +6,6 @@
 
 if BOARD_NRF52_SPARKFUN
 
-config BOARD
-	default "nrf52_sparkfun"
-
 config BT_CTLR
 	default BT
 
