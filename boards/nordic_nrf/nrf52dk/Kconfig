@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52DK_NRF52810
+if BOARD_NRF52DK
 
 config BOARD_ENABLE_DCDC
 	bool "DCDC mode"
@@ -15,4 +15,4 @@ config BOARD_ENABLE_DCDC
 config BT_CTLR
 	default y if BT
 
-endif # BOARD_NRF52DK_NRF52810
+endif # BOARD_NRF52DK
