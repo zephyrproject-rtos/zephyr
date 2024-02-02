@@ -15,4 +15,8 @@
         dma-buf-addr-alignment = <4>;
 };
 
+&pit0_channel0 {
+	status = "okay";
+};
+
 test_dma: &edma0 { };
