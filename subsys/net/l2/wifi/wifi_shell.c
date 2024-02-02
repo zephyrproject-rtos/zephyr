@@ -672,19 +672,19 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
-			if (!strncasecmp(optarg, "passive", 7)) {
+			if (!strncasecmp(state->optarg, "passive", 7)) {
 				params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
-			} else if (!strncasecmp(optarg, "active", 6)) {
+			} else if (!strncasecmp(state->optarg, "active", 6)) {
 				params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
 			} else {
-				PR_ERROR("Invalid scan type %s\n", optarg);
+				PR_ERROR("Invalid scan type %s\n", state->optarg);
 				return -ENOEXEC;
 			}
 
 			opt_num++;
 			break;
 		case 'b':
-			if (wifi_utils_parse_scan_bands(optarg, &params->bands)) {
+			if (wifi_utils_parse_scan_bands(state->optarg, &params->bands)) {
 				PR_ERROR("Invalid band value(s)\n");
 				return -ENOEXEC;
 			}
@@ -692,7 +692,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'a':
-			val = atoi(optarg);
+			val = atoi(state->optarg);
 
 			if ((val < 5) || (val > 1000)) {
 				PR_ERROR("Invalid dwell_time_active val\n");
@@ -703,7 +703,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'p':
-			val = atoi(optarg);
+			val = atoi(state->optarg);
 
 			if ((val < 10) || (val > 1000)) {
 				PR_ERROR("Invalid dwell_time_passive val\n");
@@ -714,7 +714,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 's':
-			if (wifi_utils_parse_scan_ssids(optarg,
+			if (wifi_utils_parse_scan_ssids(state->optarg,
 							params->ssids,
 							ARRAY_SIZE(params->ssids))) {
 				PR_ERROR("Invalid SSID(s)\n");
@@ -724,7 +724,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'm':
-			val = atoi(optarg);
+			val = atoi(state->optarg);
 
 			if ((val < 0) || (val > 65535)) {
 				PR_ERROR("Invalid max_bss val\n");
@@ -735,7 +735,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'c':
-			if (wifi_utils_parse_scan_chan(optarg,
+			if (wifi_utils_parse_scan_chan(state->optarg,
 						       params->band_chan,
 						       ARRAY_SIZE(params->band_chan))) {
 				PR_ERROR("Invalid band or channel value(s)\n");
@@ -1496,6 +1496,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int option_index = 0;
+	struct getopt_state *state;
 
 	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"sta", no_argument, 0, 's'},
@@ -1507,6 +1508,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 					       {0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:smtpakgh", long_options, &option_index)) != -1) {
+		state = getopt_state_get();
 		switch (opt) {
 		case 's':
 			mode->mode |= WIFI_STA_MODE;
@@ -1524,7 +1526,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			mode->oper = WIFI_MGMT_GET;
 			break;
 		case 'i':
-			mode->if_index = (uint8_t)atoi(optarg);
+			mode->if_index = (uint8_t)atoi(state->optarg);
 			break;
 		case 'h':
 			shell_help(sh);
@@ -1595,6 +1597,7 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int option_index = 0;
+	struct getopt_state *state;
 
 	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"channel", required_argument, 0, 'c'},
@@ -1603,12 +1606,13 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 					       {0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1) {
+		state = getopt_state_get();
 		switch (opt) {
 		case 'c':
-			channel->channel = (uint16_t)atoi(optarg);
+			channel->channel = (uint16_t)atoi(state->optarg);
 			break;
 		case 'i':
-			channel->if_index = (uint8_t)atoi(optarg);
+			channel->if_index = (uint8_t)atoi(state->optarg);
 			break;
 		case 'g':
 			channel->oper = WIFI_MGMT_GET;
@@ -1690,6 +1694,7 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int option_index = 0;
+	struct getopt_state *state;
 
 	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"capture-len", optional_argument, 0, 'b'},
@@ -1702,6 +1707,7 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 					       {0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1) {
+		state = getopt_state_get();
 		switch (opt) {
 		case 'a':
 			filter->filter |= WIFI_PACKET_FILTER_ALL;
@@ -1716,10 +1722,10 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 			filter->filter |= WIFI_PACKET_FILTER_CTRL;
 			break;
 		case 'i':
-			filter->if_index = (uint8_t)atoi(optarg);
+			filter->if_index = (uint8_t)atoi(state->optarg);
 			break;
 		case 'b':
-			filter->buffer_size = (uint16_t)atoi(optarg);
+			filter->buffer_size = (uint16_t)atoi(state->optarg);
 			break;
 		case 'h':
 			shell_help(sh);
