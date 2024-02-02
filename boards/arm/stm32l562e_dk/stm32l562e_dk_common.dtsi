@@ -136,13 +136,14 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	mx25lm51245: ospi-nor-flash@0 {
-		compatible = "st,stm32-ospi-nor";
+		compatible = "jedec,spi-nor";
+		label = "MX25LM51245";
 		reg = <0>;
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		size = <DT_SIZE_M(512)>; /* 64 MBytes */
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
-		four-byte-opcodes;
+		spi-max-frequency = <DT_FREQ_M(50)>;
+		size = <DT_SIZE_M(64)>;
+                jedec-id = [c2 85 3a];
+                duplex = <0>;
+                frame-format = <0>;
 		status = "okay";
 		sfdp-bfp = [
 			53 46 44 50 06 01 02 ff
