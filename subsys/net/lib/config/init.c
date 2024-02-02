@@ -62,13 +62,12 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
-	int i;
 
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
 		return;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+	ARRAY_FOR_EACH(iface->config.ip.ipv4->unicast, i) {
 		struct net_if_addr *if_addr =
 					&iface->config.ip.ipv4->unicast[i].ipv4;
 
