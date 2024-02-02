@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "nrf9160_innblue22_common-pinctrl.dtsi"
+#include "innblue22_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -206,4 +206,4 @@
 };
 
 /* Include partition configuration file */
-#include "nrf9160_innblue22_partition_conf.dtsi"
+#include "innblue22_partition_conf.dtsi"

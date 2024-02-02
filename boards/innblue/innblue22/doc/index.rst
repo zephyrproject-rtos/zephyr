@@ -29,7 +29,7 @@ The following parts are built into the board:
 Supported Features
 ==================
 
-The nrf9160_innblue22 board configuration supports the following
+The innblue22 board configuration supports the following
 hardware (as of nRF9160) features:
 
 +-----------+------------+----------------------+
@@ -86,7 +86,7 @@ Security components
 Programming and Debugging
 *************************
 
-nrf9160_innblue22 supports the Armv8m Security Extension, and by default boots
+innblue22 supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
 Building Secure/Non-Secure Zephyr applications
@@ -94,9 +94,9 @@ Building Secure/Non-Secure Zephyr applications
 
 The process requires the following steps:
 
-1. Build the Secure Zephyr application using ``-DBOARD=nrf9160_innblue22`` and
+1. Build the Secure Zephyr application using ``-DBOARD=innblue22`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application project configuration file.
-2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160_innblue22_ns``.
+2. Build the Non-Secure Zephyr application using ``-DBOARD=innblue22/nrf9160/ns``.
 3. Merge the two binaries together.
 
 When building a Secure/Non-Secure application, the Secure application will
@@ -108,7 +108,7 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf9160_innblue22``.
+and :ref:`application_run`), using ``-DBOARD=innblue22``.
 
 Flashing
 ========
@@ -134,7 +134,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf9160_innblue22
+   :board: innblue22
    :goals: build flash
 
 Debugging
