@@ -3,6 +3,7 @@
 # Copyright (c) 2021 u-blox AG
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_UBX_BMD360EVAL_NRF52811
-	bool "u-blox BMD-360-EVAL"
-	depends on SOC_NRF52811_QFAA
+config BOARD_UBX_BMD360EVAL
+	bool
+	default y
+	select SOC_NRF52811_QFAA

@@ -1,0 +1,5 @@
+board:
+  name: ubx_bmd360eval
+  vendor: U-blox
+  socs:
+  - name: nrf52811
