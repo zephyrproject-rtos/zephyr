@@ -68,13 +68,13 @@ Programming and Debugging
 
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample
-(note you may use ``qemu_arc_em``, ``qemu_arc_hs``,  ``qemu_arc_hs5x`` or
-``qemu_arc_hs6x`` depending on target CPU):
+(note you may use ``qemu_arc/qemu_em``, ``qemu_arc/qemu_hs``,  ``qemu_arc/qemu_hs5x`` or
+``qemu_arc/qemu_hs6x`` depending on target CPU):
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_arc_em
+   :board: qemu_arc/qemu_em
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using
