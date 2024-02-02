@@ -163,6 +163,48 @@ int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb);
 
 #endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+
+/**
+ * @brief Helper to initialize a struct net_dhcpv4_option_callback for encapsulated vendor-specific
+ * options properly
+ * @param callback A valid Application's callback structure pointer.
+ * @param handler A valid handler function pointer.
+ * @param option The DHCP encapsulated vendor-specific option the callback responds to.
+ * @param data A pointer to a buffer for max_length bytes.
+ * @param max_length The maximum length of the data returned.
+ */
+static inline void
+net_dhcpv4_init_option_vendor_callback(struct net_dhcpv4_option_callback *callback,
+				       net_dhcpv4_option_callback_handler_t handler, uint8_t option,
+				       void *data, size_t max_length)
+{
+	__ASSERT(callback, "Callback pointer should not be NULL");
+	__ASSERT(handler, "Callback handler pointer should not be NULL");
+	__ASSERT(data, "Data pointer should not be NULL");
+
+	callback->handler = handler;
+	callback->option = option;
+	callback->data = data;
+	callback->max_length = max_length;
+}
+
+/**
+ * @brief Add an application callback for encapsulated vendor-specific options.
+ * @param cb A valid application's callback structure pointer.
+ * @return 0 if successful, negative errno code on failure.
+ */
+int net_dhcpv4_add_option_vendor_callback(struct net_dhcpv4_option_callback *cb);
+
+/**
+ * @brief Remove an application callback for encapsulated vendor-specific options.
+ * @param cb A valid application's callback structure pointer.
+ * @return 0 if successful, negative errno code on failure.
+ */
+int net_dhcpv4_remove_option_vendor_callback(struct net_dhcpv4_option_callback *cb);
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
+
 /**
  *  @brief Start DHCPv4 client on an iface
  *
