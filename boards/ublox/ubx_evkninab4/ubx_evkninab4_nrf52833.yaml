@@ -1,4 +1,4 @@
-identifier: ubx_evkninab4_nrf52833
+identifier: ubx_evkninab4/nrf52833
 name: EVK-NINA-B4-NRF52833
 type: mcu
 arch: arm
