@@ -4,7 +4,7 @@ common:
     - arm
     - xtensa
   platform_exclude:
-    - nuvoton_pfm_m487 # See #63167
+    - numaker_pfm/m487 # See #63167
 tests:
   llext.simple.readonly:
     arch_exclude: xtensa # for now
