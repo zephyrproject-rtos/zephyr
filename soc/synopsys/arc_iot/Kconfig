@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_ARC_IOT
-	bool "Synopsys ARC IoT SoC"
 	select ARC
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU
