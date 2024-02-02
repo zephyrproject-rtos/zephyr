@@ -6,6 +6,4 @@
 #
 
 config BOARD_QEMU_CORTEX_A9
-	bool "Cortex-A9 Emulation (QEMU)"
-	depends on SOC_XILINX_XC7Z007S
-	select QEMU_TARGET
+	select SOC_XILINX_XC7Z007S

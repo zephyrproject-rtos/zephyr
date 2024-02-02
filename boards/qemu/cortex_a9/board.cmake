@@ -11,7 +11,7 @@ set(QEMU_CPU_TYPE_${ARCH} cortex-a9)
 set(QEMU_FLAGS_${ARCH}
   -nographic
   -machine arm-generic-fdt-7series
-  -dtb ${ZEPHYR_BASE}/boards/boards_legacy/${ARCH}/${BOARD}/fdt-zynq7000s.dtb
+  -dtb ${CMAKE_CURRENT_LIST_DIR}/fdt-zynq7000s.dtb
   )
 
 set(QEMU_KERNEL_OPTION
