@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+chip-select {
+	compatible = "gpio-leds";
+
+	rgb_cs: rgb_cs {
+		gpios = <&gpioh 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		label = "RGB_LED_CS";
+	};
+	status = "okay";
+};
+
+aliases {
+	rgb-led-cs = &rgb_cs;
+};
+
+};
+
+&rgb_leds {
+	status = "okay";
+};

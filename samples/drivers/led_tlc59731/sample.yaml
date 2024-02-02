@@ -1,0 +1,11 @@
+sample:
+  description: Demonstration of the TLC59731 RGB LED driver
+  name: TLC59731 sample
+tests:
+  sample.drivers.led.tlc59731:
+    tags: LED
+    filter: dt_compat_enabled("ti,tlc59731")
+    harness_config:
+      fixture: fixture_led_tlc59731
+    integration_platforms:
+      - stm32wb5mm_dk
