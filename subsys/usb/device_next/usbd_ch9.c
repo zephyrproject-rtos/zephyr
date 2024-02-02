@@ -510,7 +510,7 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 			return -EINVAL;
 		}
 
-		while ((*dhp)->bLength != 0) {
+		while (*dhp != NULL && (*dhp)->bLength != 0) {
 			len = MIN(net_buf_tailroom(buf), (*dhp)->bLength);
 			net_buf_add_mem(buf, *dhp, len);
 			dhp++;
