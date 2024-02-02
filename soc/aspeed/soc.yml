@@ -1,0 +1,4 @@
+series:
+- name: ast10x0
+  socs:
+  - name: ast1030
