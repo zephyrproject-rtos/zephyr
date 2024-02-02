@@ -81,7 +81,7 @@ Hardware
 Supported Features
 ==================
 
-The raytac_mdbt53_db_40_nrf52840_cpuapp board configuration supports the following
+The raytac_mdbt53_db_40_nrf5340_cpuapp board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
