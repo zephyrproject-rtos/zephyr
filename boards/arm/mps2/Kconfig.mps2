@@ -1,0 +1,8 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPS2
+	select SOC_MPS2_AN385 if BOARD_MPS2_AN385
+	select SOC_MPS2_AN521_CPU0 if BOARD_MPS2_AN521_CPU0
+	select SOC_MPS2_AN521_CPU0 if BOARD_MPS2_AN521_CPU0_NS
+	select SOC_MPS2_AN521_CPU1 if BOARD_MPS2_AN521_CPU1
