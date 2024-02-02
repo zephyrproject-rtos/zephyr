@@ -1,4 +1,4 @@
-identifier: ubx_evkninab3_nrf52840
+identifier: ubx_evkninab3/nrf52840
 name: UBX-EVKNINAB3-NRF52840
 type: mcu
 arch: arm
