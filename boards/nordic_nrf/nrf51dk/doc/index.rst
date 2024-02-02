@@ -148,7 +148,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf51dk_nrf51422/nrf51dk_nrf51422.dts`.
+:zephyr_file:`boards/nordic_nrf/nrf51dk/nrf51dk_nrf51422.dts`.
 
 References
 **********
