@@ -4,11 +4,7 @@
 # Copyright (c) 2021-2023 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
-
-config BOARD
-	default "bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
-
+if BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
 config I2C
 	default GPIO || DAC
@@ -41,7 +37,7 @@ config I2C
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
 
-if BOARD_BL5340_DVK_CPUAPP && TRUSTED_EXECUTION_SECURE
+if BOARD_BL5340_DVK_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
 
 config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
@@ -49,9 +45,9 @@ config FLASH_LOAD_SIZE
 config SRAM_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM_PARTITION),0,K)
 
-endif # BOARD_BL5340_DVK_CPUAPP && TRUSTED_EXECUTION_SECURE
+endif # BOARD_BL5340_DVK_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
 
-if BOARD_BL5340_DVK_CPUAPP_NS
+if BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
 config FLASH_LOAD_OFFSET
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
@@ -59,20 +55,7 @@ config FLASH_LOAD_OFFSET
 config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
-endif # BOARD_BL5340_DVK_CPUAPP_NS
-
-endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
-
-config BOARD
-	default "bl5340_dvk_cpunet" if BOARD_BL5340_DVK_CPUNET
-
-config IPM_NRFX
-	default IPM
-
-config MBOX_NRFX_IPC
-	default MBOX
-
-if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
+endif # BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
 choice BT_HCI_BUS_TYPE
 	default BT_HCI_IPC if BT
@@ -92,7 +75,6 @@ if DISPLAY
 
 config INPUT_FT5336_INTERRUPT
 	default y
-
 
 if LVGL
 
@@ -116,9 +98,15 @@ endif # LVGL
 
 endif # DISPLAY
 
-endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
+endif # BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
-if BOARD_BL5340_DVK_CPUNET
+config IPM_NRFX
+	default IPM
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+if BOARD_BL5340_DVK_NRF5340_CPUNET
 
 # BT_CTLR depends on BT. When BT is enabled we should default to also
 # enabling the controller.
@@ -128,4 +116,4 @@ config BT_CTLR
 config BT_ECC
 	default y if BT
 
-endif # BOARD_BL5340_DVK_CPUNET
+endif # BOARD_BL5340_DVK_NRF5340_CPUNET

@@ -6,8 +6,8 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
-#include "bl5340_dvk_cpunet-pinctrl.dtsi"
-#include "bl5340_dvk_cpunet_common.dtsi"
+#include "bl5340_dvk_nrf5340_cpunet-pinctrl.dtsi"
+#include "bl5340_dvk_nrf5340_cpunet_common.dtsi"
 
 / {
 	model = "Laird Connectivity BL5340 (nRF5340) Network";
