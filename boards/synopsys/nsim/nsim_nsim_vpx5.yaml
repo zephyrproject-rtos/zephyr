@@ -1,0 +1,13 @@
+identifier: nsim/nsim_vpx5
+name: VPX5 nSIM simulator
+type: sim
+simulation: nsim
+simulation_exec: nsimdrv
+arch: arc
+toolchain:
+  - arcmwdt
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps
