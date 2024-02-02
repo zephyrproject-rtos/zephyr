@@ -7,7 +7,7 @@ Overview
 ********
 
 The nRF9151 DK (PCA10171) is a single-board development kit for evaluation and
-development on the nRF9151 SiP for DECT NR+ and LTE-M/NB-IoT with GNSS. The nrf9151dk_nrf9151
+development on the nRF9151 SiP for DECT NR+ and LTE-M/NB-IoT with GNSS. The ``nrf9151dk/nrf9151``
 board configuration provides support for the Nordic Semiconductor nRF9151 ARM
 Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 
@@ -41,7 +41,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf9151dk_nrf9151 board configuration supports the following
+The ``nrf9151dk/nrf9151`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -120,7 +120,7 @@ Security components
 Programming and Debugging
 *************************
 
-nrf9151dk_nrf9151 supports the Armv8m Security Extension, and by default boots
+``nrf9151dk/nrf9151`` supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
 Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
@@ -128,9 +128,9 @@ Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
 
 The process requires the following steps:
 
-1. Build the Secure Zephyr application using ``-DBOARD=nrf9151dk_nrf9151`` and
+1. Build the Secure Zephyr application using ``-DBOARD=nrf9151dk/nrf9151`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application project configuration file.
-2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9151dk_nrf9151_ns``.
+2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9151dk/nrf9151/ns``.
 3. Merge the two binaries together.
 
 When building a Secure/Non-Secure application, the Secure application will
@@ -142,7 +142,7 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf9151dk_nrf9151``.
+and :ref:`application_run`), using ``-DBOARD=nrf9151dk/nrf9151``.
 
 Flashing
 ========
@@ -168,7 +168,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf9151dk_nrf9151
+   :board: nrf9151dk/nrf9151
    :goals: build flash
 
 Debugging
@@ -189,7 +189,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf9151dk_nrf9151/nrf9151dk_nrf9151_common.dtsi`.
+:zephyr_file:`boards/nordic_nrf/nrf9151dk/nrf9151dk_nrf9151_common.dtsi`.
 
 References
 **********
