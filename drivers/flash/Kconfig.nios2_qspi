@@ -6,5 +6,6 @@ config SOC_FLASH_NIOS2_QSPI
 	depends on HAS_ALTERA_HAL
 	depends on DT_HAS_ALTR_NIOS2_QSPI_NOR_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enables the Nios-II QSPI flash driver.
