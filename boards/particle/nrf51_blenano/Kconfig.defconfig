@@ -5,9 +5,6 @@
 
 if BOARD_NRF51_BLENANO
 
-config BOARD
-	default "nrf51_blenano"
-
 config BT_CTLR
 	default BT
 
