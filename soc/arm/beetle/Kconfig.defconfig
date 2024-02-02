@@ -5,11 +5,6 @@
 
 if SOC_SERIES_BEETLE
 
-source "soc/soc_legacy/arm/arm/beetle/Kconfig.defconfig.beetle*"
-
-config SOC_SERIES
-	default "beetle"
-
 config NUM_IRQS
 	default 45
 
