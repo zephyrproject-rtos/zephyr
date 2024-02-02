@@ -1,4 +1,4 @@
-identifier: ubx_bmd330eval_nrf52810
+identifier: ubx_bmd330eval/nrf52810
 name: UBX_BMD330EVAL_NRF52810
 type: mcu
 arch: arm
