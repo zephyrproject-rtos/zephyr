@@ -6,9 +6,6 @@ if BOARD_KV260_R5
 config BUILD_OUTPUT_BIN
 	default y
 
-config BOARD
-	default "board_kv260_r5"
-
 if USERSPACE
 
 config COMPILER_ISA_THUMB2
