@@ -3,12 +3,9 @@
 # Copyright (c) 2018-2020 Nordic Semiconductor ASA.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF51DONGLE_NRF51422
-
-config BOARD
-	default "nrf51dongle_nrf51422"
+if BOARD_NRF51DONGLE
 
 config BT_CTLR
 	default BT
 
-endif # BOARD_NRF51DONGLE_NRF51422
+endif # BOARD_NRF51DONGLE

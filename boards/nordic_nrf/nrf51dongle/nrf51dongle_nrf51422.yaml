@@ -1,4 +1,4 @@
-identifier: nrf51dongle_nrf51422
+identifier: nrf51dongle/nrf51422
 name: nRF51-Dongle-nRF51422
 type: mcu
 arch: arm

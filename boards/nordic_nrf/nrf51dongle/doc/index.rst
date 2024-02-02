@@ -120,7 +120,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf51dongle_nrf51422
+   :board: nrf51dongle/nrf51422
    :goals: build flash
 
 Debugging
