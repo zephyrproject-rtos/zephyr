@@ -85,7 +85,7 @@ used for building an application.
 | Good Display | HINK-E0213         | SSD1673 /            | reel_board        |
 | GDEH0213B1   |                    | ssd16xx              |                   |
 +--------------+--------------------+----------------------+-------------------+
-| Good Display | HINK-E0213A22      | SSD1675A /           | reel_board_v2     |
+| Good Display | HINK-E0213A22      | SSD1675A /           | reel_board@2      |
 | GDEH0213B72  |                    | ssd16xx              |                   |
 +--------------+--------------------+----------------------+-------------------+
 
@@ -109,7 +109,7 @@ The mode is controlled by MODE pin (P1.00).
 .. note::
    Actually there is no possibility to reduce energy consumption by the
    Low Power mode. Both voltages are always on, see:
-   :zephyr_file:`boards/arm/reel_board/board.c`
+   :zephyr_file:`boards/phytec/reel_board/board.c`
 
 Supported Features
 ==================
@@ -516,12 +516,12 @@ Then build and flash the application in the usual way.
    :goals: build flash
 
 .. note::
-   Please use reel_board_v2 to build a application for the board equipped with
+   Please use reel_board@2 to build a application for the board equipped with
    the GDEH0213B72, see :ref:`reel_board_display`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: reel_board_v2
+   :board: reel_board@2
    :goals: build flash
 
 Debugging
