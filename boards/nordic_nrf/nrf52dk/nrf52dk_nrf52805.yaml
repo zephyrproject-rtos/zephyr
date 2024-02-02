@@ -1,4 +1,4 @@
-identifier: nrf52dk_nrf52805
+identifier: nrf52dk/nrf52805
 name: nRF52-DK-NRF52805
 type: mcu
 arch: arm
