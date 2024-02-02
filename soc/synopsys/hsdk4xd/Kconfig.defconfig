@@ -3,9 +3,6 @@
 
 if SOC_ARC_HSDK4XD
 
-config SOC
-	default "snps_arc_hsdk4xd"
-
 config CPU_HS4X
 	default y
 

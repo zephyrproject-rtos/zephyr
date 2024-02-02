@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #ifndef _ARC_HSDK4XD_SOC_CTRL_H_
 #define _ARC_HSDK4XD_SOC_CTRL_H_
 
