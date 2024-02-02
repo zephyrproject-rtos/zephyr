@@ -1,5 +1,7 @@
 board:
   name: xiao_ble
   vendor: Seeed Studio
-  variants:
-  - name: 'sense'
+  socs:
+  - name: nrf52840
+    variants:
+    - name: 'sense'
