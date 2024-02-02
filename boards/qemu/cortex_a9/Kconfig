@@ -1,0 +1,9 @@
+#
+# Kconfig - Cortex-A9 QEMU Emulation
+#
+# Copyright (c) 2021, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_QEMU_CORTEX_A9
+	select QEMU_TARGET
