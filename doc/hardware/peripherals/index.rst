@@ -54,6 +54,7 @@ Peripherals
    sensor.rst
    spi.rst
    smbus.rst
+   stepper_motor.rst
    uart.rst
    usbc_vbus.rst
    tcpc.rst
