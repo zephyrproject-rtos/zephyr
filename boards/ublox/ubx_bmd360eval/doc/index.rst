@@ -353,7 +353,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/hello_world
-	:board: ubx_bmd360eval_nrf52811
+	:board: ubx_bmd360eval/nrf52811
 	:goals: build flash
 
 Debugging
@@ -376,7 +376,7 @@ There are 2 samples that allow you to test that the buttons
 
 You can build and flash the examples to make sure Zephyr is
 running correctly on your board. The button and LED definitions
-can be found in :zephyr_file:`boards/arm/ubx_bmd360eval_nrf52811/ubx_bmd360eval_nrf52811.dts`.
+can be found in :zephyr_file:`boards/ublox/ubx_bmd360eval/ubx_bmd360eval_nrf52811.dts`.
 
 References
 **********
