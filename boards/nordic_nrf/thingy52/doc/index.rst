@@ -6,7 +6,7 @@ Thingy:52
 Overview
 ********
 
-Zephyr uses the thingy52_nrf52832 (PCA20020) board configuration for building
+Zephyr uses the thingy52/nrf52832 (PCA20020) board configuration for building
 for the Thingy:52 board. The board has the nRF52832 MCU with ARM Cortex-M4F
 processor, a set of environmental sensors, a pushbutton, and two RGB LEDs.
 
@@ -366,7 +366,7 @@ The green lightwell LED can be tested with the :zephyr:code-sample:`blinky` exam
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: thingy52_nrf52832
+   :board: thingy52/nrf52832
    :goals: build flash
 
 
@@ -376,7 +376,7 @@ sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/hts221
-   :board: thingy52_nrf52832
+   :board: thingy52/nrf52832
    :goals: build flash
 
 References
