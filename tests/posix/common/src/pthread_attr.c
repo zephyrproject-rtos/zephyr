@@ -33,7 +33,8 @@ static void *thread_entry(void *arg)
 	return NULL;
 }
 
-static void create_thread_common(const pthread_attr_t *attrp, bool expect_success, bool joinable)
+static void create_thread_common_entry(const pthread_attr_t *attrp, bool expect_success,
+				       bool joinable, void *(*entry)(void *arg), void *arg)
 {
 	pthread_t th;
 
@@ -42,9 +43,9 @@ static void create_thread_common(const pthread_attr_t *attrp, bool expect_succes
 	}
 
 	if (expect_success) {
-		zassert_ok(pthread_create(&th, attrp, thread_entry, UINT_TO_POINTER(joinable)));
+		zassert_ok(pthread_create(&th, attrp, entry, arg));
 	} else {
-		zassert_not_ok(pthread_create(&th, attrp, thread_entry, UINT_TO_POINTER(joinable)));
+		zassert_not_ok(pthread_create(&th, attrp, entry, arg));
 		return;
 	}
 
@@ -64,6 +65,12 @@ static void create_thread_common(const pthread_attr_t *attrp, bool expect_succes
 	}
 
 	zassert_true(detached_thread_has_finished, "detached thread did not seem to finish");
+}
+
+static void create_thread_common(const pthread_attr_t *attrp, bool expect_success, bool joinable)
+{
+	create_thread_common_entry(attrp, expect_success, joinable, thread_entry,
+				   UINT_TO_POINTER(joinable));
 }
 
 static inline void can_create_thread(const pthread_attr_t *attrp)
@@ -470,7 +477,8 @@ ZTEST(pthread_attr, test_pthread_attr_setscope)
 			zassert_equal(pthread_attr_setscope(NULL, PTHREAD_SCOPE_SYSTEM), EINVAL);
 			zassert_equal(pthread_attr_setscope(NULL, contentionscope), EINVAL);
 			zassert_equal(pthread_attr_setscope((pthread_attr_t *)&uninit_attr,
-				      contentionscope), EINVAL);
+							    contentionscope),
+				      EINVAL);
 		}
 		zassert_equal(pthread_attr_setscope(&attr, 3), EINVAL);
 	}
@@ -479,6 +487,120 @@ ZTEST(pthread_attr, test_pthread_attr_setscope)
 	zassert_ok(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM));
 	zassert_ok(pthread_attr_getscope(&attr, &contentionscope));
 	zassert_equal(contentionscope, PTHREAD_SCOPE_SYSTEM);
+}
+
+ZTEST(pthread_attr, test_pthread_attr_getinheritsched)
+{
+	int inheritsched = BIOS_FOOD;
+
+	/* degenerate cases */
+	{
+		if (false) {
+			/* undefined behaviour */
+			zassert_equal(pthread_attr_getinheritsched(NULL, NULL), EINVAL);
+			zassert_equal(pthread_attr_getinheritsched(NULL, &inheritsched), EINVAL);
+			zassert_equal(pthread_attr_getinheritsched(&uninit_attr, &inheritsched),
+				      EINVAL);
+		}
+		zassert_equal(pthread_attr_getinheritsched(&attr, NULL), EINVAL);
+	}
+
+	zassert_ok(pthread_attr_getinheritsched(&attr, &inheritsched));
+	zassert_equal(inheritsched, PTHREAD_INHERIT_SCHED);
+}
+
+static void *inheritsched_entry(void *arg)
+{
+	int prio;
+	int inheritsched;
+	int pprio = POINTER_TO_INT(arg);
+
+	zassert_ok(pthread_attr_getinheritsched(&attr, &inheritsched));
+
+	prio = k_thread_priority_get(k_current_get());
+
+	if (inheritsched == PTHREAD_INHERIT_SCHED) {
+		/*
+		 * There will be numerical overlap between posix priorities in different scheduler
+		 * policies so only check the Zephyr priority here. The posix policy and posix
+		 * priority are derived from the Zephyr priority in any case.
+		 */
+		zassert_equal(prio, pprio, "actual priority: %d, expected priority: %d", prio,
+			      pprio);
+		return NULL;
+	}
+
+	/* inheritsched == PTHREAD_EXPLICIT_SCHED */
+	int act_prio;
+	int exp_prio;
+	int act_policy;
+	int exp_policy;
+	struct sched_param param;
+
+	/* get the actual policy, param, etc */
+	zassert_ok(pthread_getschedparam(pthread_self(), &act_policy, &param));
+	act_prio = param.sched_priority;
+
+	/* get the expected policy, param, etc */
+	zassert_ok(pthread_attr_getschedpolicy(&attr, &exp_policy));
+	zassert_ok(pthread_attr_getschedparam(&attr, &param));
+	exp_prio = param.sched_priority;
+
+	/* compare actual vs expected */
+	zassert_equal(act_policy, exp_policy, "actual policy: %d, expected policy: %d", act_policy,
+		      exp_policy);
+	zassert_equal(act_prio, exp_prio, "actual priority: %d, expected priority: %d", act_prio,
+		      exp_prio);
+
+	return NULL;
+}
+
+static void test_pthread_attr_setinheritsched_common(bool inheritsched)
+{
+	int prio;
+	int policy;
+	struct sched_param param;
+
+	extern int zephyr_to_posix_priority(int priority, int *policy);
+
+	prio = k_thread_priority_get(k_current_get());
+	zassert_not_equal(prio, K_LOWEST_APPLICATION_THREAD_PRIO);
+
+	/*
+	 * values affected by inheritsched are policy / priority / contentionscope
+	 *
+	 * we only support PTHREAD_SCOPE_SYSTEM, so no need to set contentionscope
+	 */
+	prio = K_LOWEST_APPLICATION_THREAD_PRIO;
+	param.sched_priority = zephyr_to_posix_priority(prio, &policy);
+
+	zassert_ok(pthread_attr_setschedpolicy(&attr, policy));
+	zassert_ok(pthread_attr_setschedparam(&attr, &param));
+	zassert_ok(pthread_attr_setinheritsched(&attr, inheritsched));
+	create_thread_common_entry(&attr, true, true, inheritsched_entry,
+				   UINT_TO_POINTER(k_thread_priority_get(k_current_get())));
+}
+
+ZTEST(pthread_attr, test_pthread_attr_setinheritsched)
+{
+	/* degenerate cases */
+	{
+		if (false) {
+			/* undefined behaviour */
+			zassert_equal(pthread_attr_setinheritsched(NULL, PTHREAD_EXPLICIT_SCHED),
+				      EINVAL);
+			zassert_equal(pthread_attr_setinheritsched(NULL, PTHREAD_INHERIT_SCHED),
+				      EINVAL);
+			zassert_equal(pthread_attr_setinheritsched((pthread_attr_t *)&uninit_attr,
+								   PTHREAD_INHERIT_SCHED),
+				      EINVAL);
+		}
+		zassert_equal(pthread_attr_setinheritsched(&attr, 3), EINVAL);
+	}
+
+	/* valid cases */
+	test_pthread_attr_setinheritsched_common(PTHREAD_INHERIT_SCHED);
+	test_pthread_attr_setinheritsched_common(PTHREAD_EXPLICIT_SCHED);
 }
 
 ZTEST(pthread_attr, test_pthread_attr_large_stacksize)
