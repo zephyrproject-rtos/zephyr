@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include "actinius_icarus_common_1_4_0.dtsi"
+#include "actinius_icarus_common_2_0_0.dtsi"
