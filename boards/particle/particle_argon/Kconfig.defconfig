@@ -5,9 +5,6 @@
 
 if BOARD_PARTICLE_ARGON
 
-config BOARD
-	default "particle_argon"
-
 config BT_CTLR
 	default BT
 
