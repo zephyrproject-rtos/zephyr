@@ -641,7 +641,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	struct getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"type", required_argument, 0, 't'},
+	static const struct option long_options[] = {{"type", required_argument, 0, 't'},
 					       {"bands", required_argument, 0, 'b'},
 					       {"dwell_time_active", required_argument, 0, 'a'},
 					       {"dwell_time_passive", required_argument, 0, 'p'},
@@ -1485,7 +1485,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
+	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"sta", no_argument, 0, 's'},
 					       {"monitor", no_argument, 0, 'm'},
 					       {"ap", no_argument, 0, 'a'},
@@ -1584,7 +1584,7 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
+	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"channel", required_argument, 0, 'c'},
 					       {"get", no_argument, 0, 'g'},
 					       {"help", no_argument, 0, 'h'},
@@ -1679,7 +1679,7 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
+	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"capture-len", optional_argument, 0, 'b'},
 					       {"all", no_argument, 0, 'a'},
 					       {"mgmt", no_argument, 0, 'm'},
