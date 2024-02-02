@@ -1378,14 +1378,6 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 			continue;
 		}
 
-		if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
-		    && tagged_ap) {
-			/* Skip over the argument tag as it is not being
-			 * used here.
-			 */
-			(void)va_arg(ap, int);
-		}
-
 		/* Force union into RAM with conversion state to
 		 * mitigate LLVM code generation bug.
 		 */
@@ -1407,6 +1399,16 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 		char sign = 0;
 
 		fp = extract_conversion(conv, sp);
+
+		if (conv->specifier_cat != SPECIFIER_INVALID) {
+			if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
+			    && tagged_ap) {
+				/* Skip over the argument tag as it is not being
+				 * used here.
+				 */
+				(void)va_arg(ap, int);
+			}
+		}
 
 		/* If dynamic width is specified, process it,
 		 * otherwise set width if present.
