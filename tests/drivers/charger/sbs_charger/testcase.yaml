@@ -19,7 +19,7 @@ tests:
       - hifive_unmatched
       - rcar_h3ulcb_ca57
       - rcar_salvator_xs_m3
-      - numaker_pfm_m467
+      - numaker_pfm/m467
   drivers.charger.sbs.emulated_64_bit_i2c_addr:
     tags:
       - drivers
