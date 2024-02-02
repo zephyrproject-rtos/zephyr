@@ -1,0 +1,5 @@
+board:
+  name: ubx_evkannab1
+  vendor: U-blox
+  socs:
+  - name: nrf52832
