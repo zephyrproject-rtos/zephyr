@@ -18,6 +18,8 @@ struct strbuf {
 };
 
 int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr, int flags);
+int fdetach(const char *path);
+int fattach(int fildes, const char *path);
 
 #ifdef __cplusplus
 }
