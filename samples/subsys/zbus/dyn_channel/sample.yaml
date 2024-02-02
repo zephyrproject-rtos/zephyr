@@ -68,4 +68,4 @@ tests:
     tags: zbus
     integration_platforms:
       - qemu_x86
-      - mps2_an521
+      - mps2/an521/cpu0

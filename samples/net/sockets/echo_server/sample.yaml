@@ -122,7 +122,7 @@ tests:
   sample.net.sockets.echo_server.smsc911x:
     extra_args: OVERLAY_CONFIG="overlay-smsc911x.conf"
     tags: net
-    platform_allow: mps2_an385
+    platform_allow: mps2/an385
   sample.net.sockets.echo_server.userspace:
     extra_args:
       - CONFIG_USERSPACE=y

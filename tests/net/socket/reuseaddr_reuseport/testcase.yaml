@@ -5,10 +5,10 @@ common:
   tags:
     - net
     - socket
-  # FIXME: This test fails very frequently on mps2_an385 due to the system
+  # FIXME: This test fails very frequently on mps2/an385 due to the system
   #        timer stability issues, so keep it disabled until the root cause
   #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
-  platform_exclude: mps2_an385
+  platform_exclude: mps2/an385
 tests:
   net.socket.reuseaddr_reuseport:
     extra_configs:

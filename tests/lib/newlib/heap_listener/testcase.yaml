@@ -6,5 +6,5 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     arch_exclude: posix
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
