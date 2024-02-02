@@ -384,6 +384,49 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 	return 0;
 }
 
+/**
+ * @brief Get scope attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_getscope(const pthread_attr_t *_attr, int *contentionscope)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr) || contentionscope == NULL) {
+		return EINVAL;
+	}
+	*contentionscope = attr->contentionscope;
+	return 0;
+}
+
+/**
+ * @brief Set scope attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_setscope(pthread_attr_t *_attr, int contentionscope)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr)) {
+		LOG_DBG("attr %p is not initialized", attr);
+		return EINVAL;
+	}
+	if (!(contentionscope == PTHREAD_SCOPE_PROCESS ||
+					     contentionscope == PTHREAD_SCOPE_SYSTEM)) {
+		LOG_DBG("%s contentionscope %d", "Invalid", contentionscope);
+		return EINVAL;
+	}
+	if (contentionscope == PTHREAD_SCOPE_PROCESS) {
+		/* Zephyr does not yet support processes or process scheduling */
+		LOG_DBG("%s contentionscope %d", "Unsupported", contentionscope);
+		return ENOTSUP;
+	}
+	attr->contentionscope = contentionscope;
+	return 0;
+}
+
 static void posix_thread_recycle_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
@@ -797,6 +840,7 @@ int pthread_attr_init(pthread_attr_t *_attr)
 
 	*attr = (struct posix_thread_attr){0};
 	attr->guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
+	attr->contentionscope = PTHREAD_SCOPE_SYSTEM;
 
 	if (DYNAMIC_STACK_SIZE > 0) {
 		attr->stack = k_thread_stack_alloc(DYNAMIC_STACK_SIZE + attr->guardsize,
