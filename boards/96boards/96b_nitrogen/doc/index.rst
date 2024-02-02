@@ -77,7 +77,7 @@ board hardware features.
 
 The default configuration can be found in the defconfig file:
 
-        ``boards/arm/96b_nitrogen/96b_nitrogen_defconfig``
+        ``boards/96boards/96b_nitrogen/96b_nitrogen_defconfig``
 
 Pin Mapping
 ===========
