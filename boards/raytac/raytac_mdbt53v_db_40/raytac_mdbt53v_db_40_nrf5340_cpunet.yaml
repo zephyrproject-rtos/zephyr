@@ -2,7 +2,7 @@
 
 # Copyright (c) 2023 Raytac Corporation
 # SPDX-License-Identifier: Apache-2.0
-identifier: raytac_mdbt53v_db_40_nrf5340_cpunet
+identifier: raytac_mdbt53v_db_40/nrf5340/cpunet
 name: RAYTAC MDBT53V-DB-40-NRF5340-network-MCU
 type: mcu
 arch: arm
