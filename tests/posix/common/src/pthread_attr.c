@@ -470,7 +470,8 @@ ZTEST(pthread_attr, test_pthread_attr_setscope)
 			zassert_equal(pthread_attr_setscope(NULL, PTHREAD_SCOPE_SYSTEM), EINVAL);
 			zassert_equal(pthread_attr_setscope(NULL, contentionscope), EINVAL);
 			zassert_equal(pthread_attr_setscope((pthread_attr_t *)&uninit_attr,
-				      contentionscope), EINVAL);
+							    contentionscope),
+				      EINVAL);
 		}
 		zassert_equal(pthread_attr_setscope(&attr, 3), EINVAL);
 	}
@@ -479,6 +480,118 @@ ZTEST(pthread_attr, test_pthread_attr_setscope)
 	zassert_ok(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM));
 	zassert_ok(pthread_attr_getscope(&attr, &contentionscope));
 	zassert_equal(contentionscope, PTHREAD_SCOPE_SYSTEM);
+}
+
+ZTEST(pthread_attr, test_pthread_attr_getinheritsched)
+{
+	int inheritsched = BIOS_FOOD;
+
+	/* degenerate cases */
+	{
+		if (false) {
+			/* undefined behaviour */
+			zassert_equal(pthread_attr_getinheritsched(NULL, NULL), EINVAL);
+			zassert_equal(pthread_attr_getinheritsched(NULL, &inheritsched), EINVAL);
+			zassert_equal(pthread_attr_getinheritsched(&uninit_attr, &inheritsched),
+				      EINVAL);
+		}
+		zassert_equal(pthread_attr_getinheritsched(&attr, NULL), EINVAL);
+	}
+
+	zassert_ok(pthread_attr_getinheritsched(&attr, &inheritsched));
+	zassert_equal(inheritsched, PTHREAD_INHERIT_SCHED);
+}
+
+static int setinheritsched_inheritsched;
+
+static void *test_pthread_attr_set_inheritsched_child_fn(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	struct sched_param param = {
+		.sched_priority = 1,
+	};
+	int policy = SCHED_INVALID;
+
+	int getChildPolicy = SCHED_INVALID;
+	struct sched_param getChildParam = {
+		.sched_priority = 3,
+	};
+
+	pthread_t self = pthread_self();
+
+	zassert_ok(pthread_getschedparam(self, &getChildPolicy, &getChildParam));
+	zassert_ok(pthread_attr_getschedpolicy(&attr, &policy));
+	zassert_ok(pthread_attr_getschedparam(&attr, &param));
+
+	if (setinheritsched_inheritsched == PTHREAD_INHERIT_SCHED) {
+		zassert_equal(getChildPolicy, policy);
+		zassert_equal(getChildParam.sched_priority, param.sched_priority);
+	}
+
+	return NULL;
+}
+
+static void test_pthread_attr_set_inheritsched_parent_fn(bool inheritsched)
+{
+	ARG_UNUSED(arg);
+
+	pthread_t child;
+
+	zassert_ok(pthread_create(&child, NULL, test_pthread_attr_set_inheritsched_child_fn, NULL));
+	zassert_ok(pthread_join(child, NULL));
+
+	return NULL;
+}
+
+static void test_pthread_attr_set_inheritsched_common(int inheritsched)
+{
+	int getinheritsched = BIOS_FOOD;
+	struct sched_param param = {
+		.sched_priority = 2,
+	};
+	int policy = SCHED_RR;
+
+	setinheritsched_inheritsched = inheritsched;
+
+	/* Set inheritsched attribute */
+	zassert_ok(pthread_attr_setinheritsched(&attr, inheritsched));
+	zassert_ok(pthread_attr_getinheritsched(&attr, &getinheritsched));
+	zassert_equal(getinheritsched, inheritsched);
+
+	/* Change priority of thread */
+	zassert_ok(pthread_attr_setschedparam(&attr, &param));
+	zassert_ok(pthread_attr_setschedpolicy(&attr, policy));
+
+	pthread_t parent;
+
+	zassert_ok(
+		pthread_create(&parent, &attr, test_pthread_attr_set_inheritsched_parent_fn, NULL));
+	zassert_ok(pthread_join(parent, NULL));
+}
+
+ZTEST(pthread_attr, test_pthread_attr_setinheritsched)
+{
+	int inheritsched = BIOS_FOOD;
+	/* degenerate cases */
+	{
+		if (false) {
+			/* undefined behaviour */
+			zassert_equal(pthread_attr_setinheritsched(NULL, PTHREAD_EXPLICIT_SCHED),
+				      EINVAL);
+			zassert_equal(pthread_attr_setinheritsched(NULL, inheritsched), EINVAL);
+			zassert_equal(pthread_attr_setinheritsched((pthread_attr_t *)&uninit_attr,
+								   inheritsched),
+				      EINVAL);
+		}
+		zassert_equal(pthread_attr_setinheritsched(&attr, 3), EINVAL);
+	}
+
+	zassert_ok(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED));
+	zassert_ok(pthread_attr_getinheritsched(&attr, &inheritsched));
+	zassert_equal(inheritsched, PTHREAD_EXPLICIT_SCHED);
+
+	test_pthread_attr_set_inheritsched_common(PTHREAD_INHERIT_SCHED);
 }
 
 ZTEST(pthread_attr, test_pthread_attr_large_stacksize)
