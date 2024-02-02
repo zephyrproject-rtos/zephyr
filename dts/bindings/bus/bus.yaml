@@ -1,0 +1,8 @@
+# Common fields for platforms interface
+
+include: [acpi.yaml, pcie-device.yaml]
+
+properties:
+  io-mapped:
+    type: boolean
+    description: specify registers are IO mapped or memory mapped
