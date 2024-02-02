@@ -43,11 +43,11 @@ ZEPHYR_BASE = Path(__file__).parents[2]
 
 def board_v1_to_v2(board_root, board, new_board, group, vendor, soc, variants):
     try:
-        board_path = next(board_root.glob(f"boards/*/{board}"))
+        board_path = next(board_root.glob(f"boards/boards_legacy/*/{board}"))
     except StopIteration:
         sys.exit(f"Board not found: {board}")
 
-    new_board_path = board_root / "boards" / "v2" / group / new_board
+    new_board_path = board_root / "boards" / group / new_board
     if new_board_path.exists():
         print("New board already exists, updating board with additional SoC")
         if not soc:
