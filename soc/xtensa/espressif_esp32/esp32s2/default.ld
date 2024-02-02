@@ -10,6 +10,8 @@
  * Linker script for the esp32s2 platform.
  */
 
+#define Z_VM_KERNEL 1
+
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
@@ -133,7 +135,7 @@ SECTIONS
    * Adding .rodata as first section helps to reduce size of generated binary by
    * few kBs.
    */
-  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(4))
+  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
   {
     _rodata_reserved_start = ABSOLUTE(.);
     __rodata_region_start = ABSOLUTE(.);
@@ -191,7 +193,7 @@ SECTIONS
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  SECTION_PROLOGUE(_RODATA_SECTION_END,,ALIGN(0x10))
+  SECTION_PROLOGUE(_RODATA_SECTION_END,,)
   {
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
@@ -301,7 +303,7 @@ SECTIONS
     */
     . = ALIGN (8);
     . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
   /* Shared RAM */
   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
@@ -326,7 +328,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     __bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
 #if defined(CONFIG_ESP_SPIRAM)
   .ext_ram.bss (NOLOAD):
@@ -358,7 +360,7 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
     . = ALIGN(8);
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
   .dram0.data :
   {
@@ -420,7 +422,7 @@ SECTIONS
   {
     . = ALIGN(4);
     _iram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(IRAM_REGION)
+  } > IRAM_REGION
 
   _image_irom_start = LOADADDR(.flash.text);
   _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
@@ -430,7 +432,7 @@ SECTIONS
   {
     . = ALIGN(4);
     . = SIZEOF(_RODATA_SECTION_NAME);
-  } GROUP_LINK_IN(FLASH_CODE_REGION)
+  } > FLASH_CODE_REGION
 
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
@@ -492,7 +494,7 @@ SECTIONS
     *rtc_wake_stub*.o(.bss .bss.*)
     *rtc_wake_stub*.o(COMMON)
     _rtc_bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(rtc_slow_seg)
+  } > rtc_slow_seg
 
   /* This section located in RTC SLOW Memory area.
      It holds data marked with RTC_SLOW_ATTR attribute.

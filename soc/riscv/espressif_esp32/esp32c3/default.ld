@@ -10,6 +10,8 @@
  * Linker script for the esp32c3 platform.
  */
 
+#define Z_VM_KERNEL 1
+
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
@@ -276,7 +278,7 @@ SECTIONS
     * dram0_0_seg reflect the same address space on different buses.
     */
     . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
  /* Shared RAM */
   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
@@ -299,7 +301,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     __bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
   SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
   {
@@ -307,7 +309,7 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
     . = ALIGN(4);
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
   .dram0.data :
   {
@@ -372,7 +374,7 @@ SECTIONS
   {
     /* C3 memprot requires 512 B alignment for split lines */
     . = ALIGN (16);
-  } GROUP_LINK_IN(IRAM_REGION)
+  } > IRAM_REGION
 
   .iram0.data :
   {
@@ -389,7 +391,7 @@ SECTIONS
 
     . = ALIGN(16);
     _iram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(IRAM_REGION)
+  }  > IRAM_REGION
 
   _image_irom_start = LOADADDR(.flash.text);
   _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
@@ -399,7 +401,7 @@ SECTIONS
   {
     . = SIZEOF(_RODATA_SECTION_NAME);
     . = ALIGN(0x10000) + 0x20;
-  } GROUP_LINK_IN(FLASH_CODE_REGION)
+  }  > FLASH_CODE_REGION
 
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
@@ -454,7 +456,7 @@ SECTIONS
   .rtc.dummy (NOLOAD):
   {
     . = SIZEOF(.rtc.text);
-  } GROUP_LINK_IN(rtc_iram_seg)
+  } > rtc_iram_seg
 
   .rtc.data :
   {
@@ -471,7 +473,7 @@ SECTIONS
     *rtc_wake_stub*.o(.bss .bss.*)
     *rtc_wake_stub*.o(COMMON)
     _rtc_bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(rtc_iram_seg)
+  }  > rtc_iram_seg
 
   /**
    * This section located in RTC SLOW Memory area.

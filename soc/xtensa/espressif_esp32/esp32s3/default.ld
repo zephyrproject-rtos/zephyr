@@ -10,6 +10,8 @@
  * Linker script for the ESP32S3 platform.
  */
 
+#define Z_VM_KERNEL 1
+
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
@@ -165,7 +167,7 @@ SECTIONS
    * Adding .rodata as first section helps to reduce size of generated binary by
    * few kBs.
    */
-  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(0x10))
+  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
   {
     _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
@@ -228,7 +230,7 @@ SECTIONS
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  SECTION_PROLOGUE(_RODATA_SECTION_END,,ALIGN(0x10))
+  SECTION_PROLOGUE(_RODATA_SECTION_END,,)
   {
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(16);
@@ -359,7 +361,7 @@ SECTIONS
      * prefetch and 256B alignment for PMS split lines */
     . = ALIGN(16);
     _iram_text_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(IRAM_REGION)
+  } > IRAM_REGION
 
   .iram0.data :
   {
@@ -376,7 +378,7 @@ SECTIONS
 
     . = ALIGN(16);
     _iram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(IRAM_REGION)
+  } > IRAM_REGION
 
 
   /* This section is required to skip .iram0.text area because iram0_0_seg and
@@ -386,7 +388,7 @@ SECTIONS
   {
     . = ALIGN (8);
     . = ORIGIN(dram0_0_seg) + MAX(_iram_end, SRAM_DIRAM_I_START) - SRAM_DIRAM_I_START;
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
   /* Shared RAM */
   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
@@ -411,7 +413,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     __bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
   ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
 
@@ -421,7 +423,7 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
     . = ALIGN(8) ;
-  } GROUP_LINK_IN(RAMABLE_REGION)
+  } > RAMABLE_REGION
 
   .dram0.data :
   {
@@ -490,7 +492,7 @@ SECTIONS
   {
     . = SIZEOF(_RODATA_SECTION_NAME);
     . = ALIGN(IROM_SEG_ALIGN) + 0x20;
-  } GROUP_LINK_IN(FLASH_CODE_REGION)
+  } > FLASH_CODE_REGION
 
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
