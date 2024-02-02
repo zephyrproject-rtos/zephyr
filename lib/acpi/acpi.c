@@ -457,11 +457,10 @@ int acpi_device_irq_get(struct acpi_dev *child_dev, struct acpi_irq_resource *ir
 			return -ENODEV;
 		}
 
-		if (res->Data.ExtendedIrq.InterruptCount > CONFIG_ACPI_IRQ_VECTOR_MAX) {
+		if (res->Data.ExtendedIrq.InterruptCount > irq_res->irq_vector_max) {
 			return -ENOMEM;
 		}
 
-		memset(irq_res, 0, sizeof(struct acpi_irq_resource));
 		irq_res->irq_vector_max = res->Data.ExtendedIrq.InterruptCount;
 		for (int i = 0; i < irq_res->irq_vector_max; i++) {
 			irq_res->irqs[i] = (uint16_t)res->Data.ExtendedIrq.Interrupts[i];
@@ -470,7 +469,7 @@ int acpi_device_irq_get(struct acpi_dev *child_dev, struct acpi_irq_resource *ir
 		irq_res->flags = arch_acpi_encode_irq_flags(res->Data.ExtendedIrq.Polarity,
 							    res->Data.ExtendedIrq.Triggering);
 	} else {
-		if (res->Data.Irq.InterruptCount > CONFIG_ACPI_IRQ_VECTOR_MAX) {
+		if (res->Data.Irq.InterruptCount > irq_res->irq_vector_max) {
 			return -ENOMEM;
 		}
 
@@ -531,7 +530,7 @@ int acpi_device_mmio_get(struct acpi_dev *child_dev, struct acpi_mmio_resource *
 		}
 
 		res = ACPI_NEXT_RESOURCE(res);
-		if (mmio_cnt >= CONFIG_ACPI_MMIO_ENTRIES_MAX &&
+		if (mmio_cnt >= mmio_res->mmio_max &&
 			 res->Type != ACPI_RESOURCE_TYPE_END_TAG) {
 			return -ENOMEM;
 		}
