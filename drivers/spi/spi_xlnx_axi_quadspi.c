@@ -86,6 +86,9 @@ struct xlnx_quadspi_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint8_t num_ss_bits;
 	uint8_t num_xfer_bytes;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(xlnx_startup_block)
+	bool startup_block;
+#endif
 };
 
 struct xlnx_quadspi_data {
@@ -439,6 +442,54 @@ static void xlnx_quadspi_isr(const struct device *dev)
 	}
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(xlnx_startup_block)
+static int xlnx_quadspi_startup_block_workaround(const struct device *dev)
+{
+	const struct xlnx_quadspi_config *config = dev->config;
+	uint32_t spissr = BIT_MASK(config->num_ss_bits);
+	uint32_t spicr;
+
+	/**
+	 * See https://support.xilinx.com/s/article/52626?language=en_US
+	 * Up to 3 clock cycles must be issued before the output clock signal
+	 * is passed to the output CCLK pin from the SPI core.
+	 * Use JEDEC READ ID as dummy command to chip select 0.
+	 */
+	spissr &= ~BIT(0);
+	xlnx_quadspi_write32(dev, spissr, SPISSR_OFFSET);
+
+	xlnx_quadspi_write32(dev, 0x9F, SPI_DTR_OFFSET);
+	xlnx_quadspi_write32(dev, 0, SPI_DTR_OFFSET);
+	xlnx_quadspi_write32(dev, 0, SPI_DTR_OFFSET);
+
+	spicr = SPICR_MANUAL_SS | SPICR_MASTER | SPICR_SPE;
+	xlnx_quadspi_write32(dev, spicr, SPICR_OFFSET);
+
+	for (int i = 0;
+		 i < 10 && (xlnx_quadspi_read32(dev, SPISR_OFFSET) & SPISR_TX_EMPTY) == 0; i++) {
+		k_msleep(1);
+	}
+	if ((xlnx_quadspi_read32(dev, SPISR_OFFSET) & SPISR_TX_EMPTY) == 0) {
+		LOG_ERR("timeout waiting for TX_EMPTY");
+		return -EIO;
+	}
+	spicr |= SPICR_MASTER_XFER_INH;
+	xlnx_quadspi_write32(dev, spicr, SPICR_OFFSET);
+
+	while ((xlnx_quadspi_read32(dev, SPISR_OFFSET) & SPISR_RX_EMPTY) == 0) {
+		xlnx_quadspi_read32(dev, SPI_DRR_OFFSET);
+	}
+
+	spissr = BIT_MASK(config->num_ss_bits);
+	xlnx_quadspi_write32(dev, spissr, SPISSR_OFFSET);
+
+	/* Reset controller to clean up */
+	xlnx_quadspi_write32(dev, SRR_SOFTRESET_MAGIC, SRR_OFFSET);
+
+	return 0;
+}
+#endif
+
 static int xlnx_quadspi_init(const struct device *dev)
 {
 	int err;
@@ -450,16 +501,25 @@ static int xlnx_quadspi_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	/* Enable DTR Empty interrupt */
-	xlnx_quadspi_write32(dev, IPIXR_DTR_EMPTY, IPIER_OFFSET);
-	xlnx_quadspi_write32(dev, DGIER_GIE, DGIER_OFFSET);
-
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
 		return err;
 	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(xlnx_startup_block)
+	if (config->startup_block) {
+		err = xlnx_quadspi_startup_block_workaround(dev);
+		if (err < 0) {
+			return err;
+		}
+	}
+#endif
+
+	/* Enable DTR Empty interrupt */
+	xlnx_quadspi_write32(dev, IPIXR_DTR_EMPTY, IPIER_OFFSET);
+	xlnx_quadspi_write32(dev, DGIER_GIE, DGIER_OFFSET);
 
 	return 0;
 }
@@ -471,6 +531,11 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 #endif /* CONFIG_SPI_ASYNC */
 	.release = xlnx_quadspi_release,
 };
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(xlnx_startup_block)
+#define STARTUP_BLOCK_INIT(n) .startup_block = DT_INST_PROP(n, xlnx_startup_block),
+#else
+#define STARTUP_BLOCK_INIT(n)
+#endif
 
 #define XLNX_QUADSPI_INIT(n)						\
 	static void xlnx_quadspi_config_func_##n(const struct device *dev);	\
@@ -481,6 +546,7 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 		.num_ss_bits = DT_INST_PROP(n, xlnx_num_ss_bits),	\
 		.num_xfer_bytes =					\
 			DT_INST_PROP(n, xlnx_num_transfer_bits) / 8,	\
+		STARTUP_BLOCK_INIT(n)					\
 	};								\
 									\
 	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {	\
