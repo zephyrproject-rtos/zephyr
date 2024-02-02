@@ -3,9 +3,6 @@
 
 if BOARD_MERCURY_XU
 
-config BOARD
-	default "mercury_xu"
-
 config FLASH_SIZE
 	int
 	default 64
