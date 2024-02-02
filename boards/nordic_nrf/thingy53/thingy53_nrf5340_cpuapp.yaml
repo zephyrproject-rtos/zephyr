@@ -1,13 +1,13 @@
-identifier: thingy53_nrf5340_cpuapp_ns
-name: Thingy53-NRF5340-application-MCU-Non-Secure
+identifier: thingy53/nrf5340/cpuapp
+name: Thingy53-NRF5340-application-MCU
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
   - xtools
   - zephyr
-ram: 192
-flash: 192
+ram: 448
+flash: 1024
 supported:
   - gpio
   - i2c
