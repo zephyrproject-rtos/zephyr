@@ -78,6 +78,8 @@ while(TRUE)
     else()
       set(setting_name SOC_${HWM_TYPE}_${SOC_V2_NAME}_DIR)
     endif()
+    # We support both SOC_foo_DIR and SOC_FOO_DIR.
+    set(${setting_name} ${SOC_V2_DIR})
     string(TOUPPER ${setting_name} setting_name)
     set(${setting_name} ${SOC_V2_DIR})
   endif()
@@ -106,3 +108,10 @@ kconfig_gen("${KCONFIG_BINARY_DIR}/arch" "${arch_kconfig_file}" "${kconfig_arch_
 kconfig_gen("${KCONFIG_BINARY_DIR}/soc" "${soc_defconfig_file}" "${kconfig_soc_source_dir}")
 kconfig_gen("${KCONFIG_BINARY_DIR}/soc" "${soc_zephyr_file}" "${kconfig_soc_source_dir}")
 kconfig_gen("${KCONFIG_BINARY_DIR}/soc" "${soc_kconfig_file}" "${kconfig_soc_source_dir}")
+
+# Clear variables created by cmake_parse_arguments
+unset(SOC_V2_NAME)
+unset(SOC_V2_DIR)
+unset(SOC_V2_HWM)
+unset(ARCH_V2_NAME)
+unset(ARCH_V2_DIR)
