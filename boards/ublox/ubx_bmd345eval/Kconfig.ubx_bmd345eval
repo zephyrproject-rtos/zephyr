@@ -4,6 +4,7 @@
 # Copyright (c) 2021 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_UBX_BMD345EVAL_NRF52840
-	bool "u-blox BMD-345-EVAL"
-	depends on SOC_NRF52840_QIAA
+config BOARD_UBX_BMD345EVAL
+	bool
+	default y
+	select SOC_NRF52840_QIAA
