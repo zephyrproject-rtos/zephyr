@@ -83,7 +83,7 @@ For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: waveshare_epaper_gdeh0213b1
    :goals: build
 

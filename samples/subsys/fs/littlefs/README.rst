@@ -112,7 +112,7 @@ On this device the file system will be placed in the SOC flash.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/littlefs
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 

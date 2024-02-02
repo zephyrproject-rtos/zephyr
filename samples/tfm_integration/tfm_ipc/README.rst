@@ -171,7 +171,7 @@ On nRF5340 and nRF9160:
 =======================
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns`` or ``-DBOARD=nrf9160dk_nrf9160_ns``).
+(``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns`` or ``-DBOARD=nrf9160dk/nrf9160/ns``).
 
    Example, for nRF9160, using ``cmake`` and ``ninja``
 
@@ -180,7 +180,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=nrf9160dk_nrf9160_ns ..
+      cmake -GNinja -DBOARD=nrf9160dk/nrf9160/ns ..
 
 If building with BL2 (MCUboot bootloader) enabled, manually flash
 the MCUboot bootloader image binary (``bl2.hex``).
@@ -203,7 +203,7 @@ On BL5340:
 ==========
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=bl5340_dvk_cpuapp_ns``).
+(``-DBOARD=bl5340_dvk/nrf5340/cpuapp/ns``).
 
    Example using ``cmake`` and ``ninja``
 
@@ -212,7 +212,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=bl5340_dvk_cpuapp_ns ..
+      cmake -GNinja -DBOARD=bl5340_dvk/nrf5340/cpuapp/ns ..
 
 Flash the concatenated TF-M + Zephyr binary.
 

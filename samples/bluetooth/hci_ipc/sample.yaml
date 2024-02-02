@@ -6,91 +6,91 @@ tests:
     harness: bluetooth
     tags: bluetooth
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso_broadcast.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_broadcast-bt_ll_sw_split.conf"
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso_receive.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_receive-bt_ll_sw_split.conf"
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.bis.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_bis-bt_ll_sw_split.conf"
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso_central.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_central-bt_ll_sw_split.conf"
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso_peripheral.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_peripheral-bt_ll_sw_split.conf"
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.cis.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_cis-bt_ll_sw_split.conf"
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
-      - nrf5340_audio_dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
+      - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso-bt_ll_sw_split.conf"
     platform_allow:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.df.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args:
       - CONF_FILE="nrf5340_cpunet_df-bt_ll_sw_split.conf"
       - DTC_OVERLAY_FILE="nrf5340_cpunet_df-bt_ll_sw_split.overlay"
-    platform_allow: nrf5340dk_nrf5340_cpunet
+    platform_allow: nrf5340dk/nrf5340/cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.df.no_phy_coded.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
@@ -98,13 +98,13 @@ tests:
       - CONF_FILE="nrf5340_cpunet_df-bt_ll_sw_split.conf"
       - DTC_OVERLAY_FILE="nrf5340_cpunet_df-bt_ll_sw_split.overlay"
       - CONFIG_BT_CTLR_PHY_CODED=n
-    platform_allow: nrf5340dk_nrf5340_cpunet
+    platform_allow: nrf5340dk/nrf5340/cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.mesh.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_bt_mesh-bt_ll_sw_split.conf"
-    platform_allow: nrf5340dk_nrf5340_cpunet
+    platform_allow: nrf5340dk/nrf5340/cpunet
     integration_platforms:
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet

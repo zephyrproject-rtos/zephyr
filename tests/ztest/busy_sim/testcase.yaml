@@ -4,7 +4,7 @@ common:
   depends_on: counter
 tests:
   testing.ztest.busy_sim:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
   testing.ztest.busy_sim_nrf52840dk_pin:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args: DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_pin.overlay

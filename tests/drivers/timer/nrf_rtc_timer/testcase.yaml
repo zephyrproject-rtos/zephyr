@@ -4,10 +4,10 @@ tests:
       - drivers
       - timer
     platform_allow:
-      - nrf52dk_nrf52832
-      - nrf52840dk_nrf52840
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     extra_configs:
       - CONFIG_ZERO_LATENCY_IRQS=y
 
@@ -16,10 +16,10 @@ tests:
       - drivers
       - timer
     platform_allow:
-      - nrf52dk_nrf52832
-      - nrf52840dk_nrf52840
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
       - nrf52_bsim
       - nrf5340bsim_nrf5340_cpuapp
       - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832

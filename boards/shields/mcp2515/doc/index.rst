@@ -346,14 +346,14 @@ example:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
    :tool: all
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :shield: dfrobot_can_bus_v2_0
    :goals: build flash
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
    :tool: all
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: keyestudio_can_bus_ks0411
    :goals: build flash
 

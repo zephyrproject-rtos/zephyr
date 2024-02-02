@@ -7,7 +7,7 @@ tests:
     depends_on: nvs
     platform_exclude: qemu_x86
     integration_platforms:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     harness: console
     harness_config:
       type: multi_line

@@ -90,7 +90,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
       .. code-block:: console
 
          west build \
-            -b nrf52dk_nrf52832 \
+            -b nrf52dk/nrf52832 \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
             -DEXTRA_CONF_FILE=overlay-bt.conf
@@ -114,7 +114,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
       .. code-block:: console
 
          west build \
-            -b nrf52840dk_nrf52840 \
+            -b nrf52840dk/nrf52840 \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
             -DEXTRA_CONF_FILE=overlay-cdc.conf \

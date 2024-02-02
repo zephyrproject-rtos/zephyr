@@ -33,10 +33,10 @@ tests:
       - mimxrt1170_evk_cm7
       - mimxrt595_evk_cm33
       - mimxrt685_evk_cm33
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - frdm_k64f
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   bootloader.mcuboot.assert:
     tags: mcuboot
     platform_allow:

@@ -11,7 +11,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../remote/zephyr)
 
-if(("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpuapp") OR
+if(("${BOARD}" STREQUAL "nrf5340dk") OR
    ("${BOARD}" STREQUAL "nrf5340bsim_nrf5340_cpuapp") OR
    ("${BOARD}" STREQUAL "adp_xc7k_ae350") OR
    ("${BOARD}" STREQUAL "mimxrt1170_evkb_cm7") OR

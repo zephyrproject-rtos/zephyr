@@ -3,7 +3,7 @@ tests:
     build_only: true
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -14,7 +14,7 @@ tests:
     extra_args: CONF_FILE=dbg.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -25,7 +25,7 @@ tests:
     extra_args: CONF_FILE=friend.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -36,7 +36,7 @@ tests:
     extra_args: CONF_FILE=gatt.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -47,7 +47,7 @@ tests:
     extra_args: CONF_FILE=lpn.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -58,7 +58,7 @@ tests:
     extra_args: CONF_FILE=pb_gatt.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -69,7 +69,7 @@ tests:
     extra_args: CONF_FILE=proxy.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -80,7 +80,7 @@ tests:
     extra_args: CONF_FILE=ext_adv.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:
@@ -91,7 +91,7 @@ tests:
     extra_args: CONF_FILE=multi_ext_adv.conf
     platform_allow:
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
     tags:

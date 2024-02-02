@@ -5,7 +5,7 @@ tests:
     platform_allow:
       - native_posix
       - native_sim
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     build_only: true
     tags: filesystem
   sample.filesystem.format.fat_fs:

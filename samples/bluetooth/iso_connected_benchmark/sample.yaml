@@ -5,6 +5,6 @@ tests:
   sample.bluetooth.iso_connected_benchmark:
     build_only: true
     platform_allow:
-      - nrf5340dk_nrf5340_cpuapp
-      - nrf5340_audio_dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
     tags: bluetooth

@@ -7,12 +7,12 @@ This application demonstrates how to use IPC Service with multiple endpoints.
 By default, it uses the ``icmsg_me`` backend.
 You can also configure it to use the ``icbmsg`` backend.
 
-Building the application for nrf5340dk_nrf5340_cpuapp
+Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/ipc_service/multi_endpoint
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: debug
 
 Open a serial terminal (for example Minicom or PuTTY) and connect the board with the following settings:
@@ -68,6 +68,6 @@ overlay files as follows:
 
 .. code-block:: console
 
-   west build -b nrf5340dk_nrf5340_cpuapp --sysbuild -- \
+   west build -b nrf5340dk/nrf5340/cpuapp --sysbuild -- \
    -DDTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpuapp_icbmsg.overlay \
    -Dremote_DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpunet_icbmsg.overlay

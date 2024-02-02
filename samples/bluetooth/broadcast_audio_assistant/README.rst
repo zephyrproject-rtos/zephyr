@@ -52,5 +52,5 @@ Building for an nrf52840dk
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/broadcast_audio_assistant/
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
