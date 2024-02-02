@@ -15,4 +15,6 @@ else()
   zephyr_ld_options(-Hlib=hs48_slc_full)
 endif()
 
+zephyr_include_directories(.)
+
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
