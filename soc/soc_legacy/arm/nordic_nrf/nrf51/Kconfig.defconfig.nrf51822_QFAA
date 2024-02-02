@@ -1,9 +1,0 @@
-# Nordic Semiconductor nRF51822 MCU
-
-# Copyright (c) 2016 Linaro Limited
-# Copyright (c) 2016 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC
-	default "nRF51822_QFAA"
-	depends on SOC_NRF51822_QFAA
