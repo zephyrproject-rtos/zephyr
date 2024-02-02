@@ -3,9 +3,6 @@
 
 if SOC_ARC_HSDK
 
-config SOC
-	default "snps_arc_hsdk"
-
 config CPU_HS3X
 	default y
 
