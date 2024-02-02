@@ -2173,7 +2173,9 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 				LOG_ERR("Cannot set iface IPv4 addr");
 			}
 
-			net_if_ipv4_set_netmask(iface_ctx.iface, &iface_ctx.subnet);
+			net_if_ipv4_set_netmask_by_addr(iface_ctx.iface,
+							&new_ipv4_addr,
+							&iface_ctx.subnet);
 			net_if_ipv4_set_gw(iface_ctx.iface, &iface_ctx.gateway);
 #endif
 			/* store the new IP addr */
