@@ -35,24 +35,43 @@
 #define ROM_END_OFFSET 0
 #endif
 
+#if defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#else
+#define FLASH_LOAD_OFFSET 0
+#endif
+
 #ifdef CONFIG_XIP
+
+#if CONFIG_FLASH_LOAD_SIZE > 0
+#define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), soc_nv_flash, okay)
-#ifdef CONFIG_FLASH_LOAD_OFFSET
-#define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + \
-				CONFIG_FLASH_LOAD_OFFSET)
-#else /* !CONFIG_FLASH_LOAD_OFFSET */
-#define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
-#endif /* CONFIG_FLASH_LOAD_OFFSET */
+#define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + FLASH_LOAD_OFFSET)
+#ifndef ROM_SIZE
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) - ROM_END_OFFSET)
+#endif
+
 #elif DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), jedec_spi_nor)
 /* For jedec,spi-nor we expect the spi controller to memory map the flash
  * and for that mapping to be the second register property of the spi
  * controller.
  */
 #define SPI_CTRL DT_PARENT(DT_CHOSEN(zephyr_flash))
-#define ROM_BASE DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)
+#define ROM_BASE (DT_REG_ADDR_BY_IDX(SPI_CTRL, 1) + FLASH_LOAD_OFFSET)
+#ifndef ROM_SIZE
 #define ROM_SIZE (DT_REG_SIZE_BY_IDX(SPI_CTRL, 1) - ROM_END_OFFSET)
 #endif
+
+#else /* Use Kconfig to cover the remaining cases */
+#define ROM_BASE (CONFIG_FLASH_BASE_ADDRESS + FLASH_LOAD_OFFSET)
+#ifndef ROM_SIZE
+#define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - FLASH_LOAD_OFFSET - ROM_END_OFFSET)
+#endif
+
+#endif /* DT_NODE_HAS_COMPAT_STATUS */
+
 #else /* CONFIG_XIP */
 #define ROM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define ROM_SIZE (KB(CONFIG_SRAM_SIZE) - ROM_END_OFFSET)
