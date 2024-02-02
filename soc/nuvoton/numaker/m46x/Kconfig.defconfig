@@ -2,4 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source "soc/soc_legacy/arm/nuvoton_numaker/*/Kconfig.series"
+if SOC_SERIES_M46X
+
+rsource "Kconfig.defconfig.m46*"
+
+endif # SOC_SERIES_M46X
