@@ -5,5 +5,4 @@
 
 # V2M (V2 = Versatile Express, M = Motherboard)
 config BOARD_V2M_BEETLE
-	bool "ARM V2M Beetle Board"
-	depends on SOC_BEETLE_R0
+	select SOC_BEETLE_R0
