@@ -1,0 +1,5 @@
+board:
+  name: zybo
+  vendor: Digilent
+  socs:
+  - name: xc7z010
