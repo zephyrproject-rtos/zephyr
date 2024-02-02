@@ -3,9 +3,6 @@
 
 if BOARD_MG100
 
-config BOARD
-	default "mg100"
-
 config MODEM
 	default NETWORKING
 
