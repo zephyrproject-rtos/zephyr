@@ -62,6 +62,7 @@ struct ssd1306_config {
 struct ssd1306_data {
 	uint8_t contrast;
 	uint8_t scan_mode;
+	enum display_pixel_format pf;
 };
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) || \
@@ -332,33 +333,58 @@ static void ssd1306_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
 	const struct ssd1306_config *config = dev->config;
+	struct ssd1306_data *data = dev->data;
+
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
-	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
+	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10 | PIXEL_FORMAT_MONO01;
+	caps->current_pixel_format = data->pf;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
 }
 
 static int ssd1306_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pf)
 {
-	if (pf == PIXEL_FORMAT_MONO10) {
+	struct ssd1306_data *data = dev->data;
+	uint8_t cmd;
+	int ret;
+
+	if (pf == data->pf) {
 		return 0;
 	}
-	LOG_ERR("Unsupported");
-	return -ENOTSUP;
+
+	if (pf == PIXEL_FORMAT_MONO10) {
+		cmd = SSD1306_SET_REVERSE_DISPLAY;
+	} else if (pf == PIXEL_FORMAT_MONO01) {
+		cmd = SSD1306_SET_NORMAL_DISPLAY;
+	} else {
+		LOG_WRN("Unsupported pixel format");
+		return -ENOTSUP;
+	}
+
+	ret = ssd1306_write_bus(dev, &cmd, 1, true);
+	if (ret) {
+		return ret;
+	}
+
+	data->pf = pf;
+
+	return 0;
 }
 
 static int ssd1306_init_device(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
+	struct ssd1306_data *data = dev->data;
 
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_ENTIRE_DISPLAY_OFF,
 		(config->color_inversion ? SSD1306_SET_REVERSE_DISPLAY
 					 : SSD1306_SET_NORMAL_DISPLAY),
 	};
+
+	data->pf = config->color_inversion ? PIXEL_FORMAT_MONO10 : PIXEL_FORMAT_MONO01;
 
 	/* Reset if pin connected */
 	if (config->reset.port) {
