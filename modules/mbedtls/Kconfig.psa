@@ -668,12 +668,12 @@ endmenu # PSA Asymmetric support
 config PSA_WANT_ALG_JPAKE
 	bool
 	prompt "PSA EC J-PAKE support" if !PSA_PROMPTLESS
-	select EXPERIMENTAL
+	select EXPERIMENTAL if !NET_L2_OPENTHREAD
 
 config PSA_WANT_ALG_SPAKE2P
 	bool
 	prompt "PSA SPAKE2+ support" if !PSA_PROMPTLESS
-	select EXPERIMENTAL
+	select EXPERIMENTAL if !CHIP
 
 config PSA_WANT_ALG_SRP_6
 	bool
