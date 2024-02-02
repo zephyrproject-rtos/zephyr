@@ -79,7 +79,7 @@ static bool parse_number(const struct shell *sh, long *param, char *str, long mi
 {
 	char *endptr;
 	char *str_tmp = str;
-	long num = 0;
+	long num;
 
 	if ((str_tmp[0] == '0') && (str_tmp[1] == 'x')) {
 		/* Hexadecimal numbers take base 0 in strtol */
@@ -133,7 +133,7 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 
 static int wifi_freq_to_channel(int frequency)
 {
-	int channel = 0;
+	int channel;
 
 	if (frequency == 2484) { /* channel 14 */
 		channel = 14;
@@ -175,7 +175,6 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	int channel;
 	int band;
 	int rssi;
-	int i = 0;
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 	const struct shell *sh = context.sh;
 
@@ -198,7 +197,7 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	   net_sprint_ll_addr_buf(raw->data + 10, WIFI_MAC_ADDR_LEN, mac_string_buf,
 				  sizeof(mac_string_buf)), raw->frame_length);
 
-	for (i = 0; i < 32; i++) {
+	for (int i = 0; i < 32; i++) {
 		PR("%02X ", *(raw->data + i));
 	}
 
@@ -1351,7 +1350,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	int ret, chan_idx = 0;
 
 	if (argc == 1) {
-		(&regd)->chan_info = &chan_info[0];
+		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
 	} else if (argc >= 2 && argc <= 3) {
 		regd.oper = WIFI_MGMT_SET;
@@ -1397,7 +1396,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		PR("<channel>\t<center frequency>\t<supported(y/n)>\t"
 		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
-			PR("  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
+			PR("  %d\t\t\t%d\t\t\t%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
 			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
 			   chan_info[chan_idx].center_frequency,
 			   chan_info[chan_idx].supported ? "y" : "n",
@@ -1417,7 +1416,7 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
-	long interval = 0;
+	long interval;
 
 	context.sh = sh;
 
