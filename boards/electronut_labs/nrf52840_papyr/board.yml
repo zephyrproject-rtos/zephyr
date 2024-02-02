@@ -1,0 +1,5 @@
+board:
+  name: nrf52840_papyr
+  vendor: Electronut Labs
+  socs:
+  - name: nrf52840
