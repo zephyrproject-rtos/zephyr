@@ -10,7 +10,7 @@
 #include <mem.h>
 #include <arm/nordic/nrf52833.dtsi>
 /* We resuse the pinctrl definitions directly from the real board : */
-#include <../boards/arm/nrf52833dk_nrf52833/nrf52833dk_nrf52833-pinctrl.dtsi>
+#include <../boards/boards_legacy/arm/nrf52833dk_nrf52833/nrf52833dk_nrf52833-pinctrl.dtsi>
 
 / {
 	model = "nrf52 bsim";
