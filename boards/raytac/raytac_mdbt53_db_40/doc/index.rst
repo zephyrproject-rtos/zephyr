@@ -20,8 +20,8 @@ dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
 * a secondary Arm Cortex-M33 core, with a reduced feature set, running
   at a fixed 64 MHz, referred to as the **network core**.
 
-The raytac_mdbt53_db_40_nrf5340_cpuapp build target provides support for the application
-core on the nRF5340 SoC. The raytac_mdbt53_db_40_nrf5340_cpuapp build target provides
+The ``raytac_mdbt53_db_40/nrf5340/cpuapp`` build target provides support for the application
+core on the nRF5340 SoC. The ``raytac_mdbt53_db_40/nrf5340/cpuapp`` build target provides
 support for the network core on the nRF5340 SoC.
 
 nRF5340 SoC provides support for the following devices:
@@ -81,7 +81,7 @@ Hardware
 Supported Features
 ==================
 
-The raytac_mdbt53_db_40_nrf5340_cpuapp board configuration supports the following
+The ``raytac_mdbt53_db_40_nrf5340/cpuapp`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -116,7 +116,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-The raytac_mdbt53_db_40_nrf5340_cpunet board configuration supports the following
+The ``raytac_mdbt53_db_40_nrf5340/cpunet`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -191,7 +191,7 @@ Programming and Debugging
 *************************
 
 nRF5340 application core supports the Armv8-M Security Extension.
-Applications built for the raytac_mdbt53_db_40_nrf5340_cpuapp board by
+Applications built for the ``raytac_mdbt53_db_40/nrf5340/cpuapp`` board by
 default boot in the Secure state.
 
 nRF5340 network core does not support the Armv8-M Security Extension.
