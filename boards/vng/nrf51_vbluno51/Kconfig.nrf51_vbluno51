@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF51_VBLUNO51
-	bool "nRF51 VBLUno51 BLE"
-	depends on SOC_NRF51822_QFAC
+	select SOC_NRF51822_QFAC
