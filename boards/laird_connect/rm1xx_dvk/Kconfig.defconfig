@@ -5,9 +5,6 @@
 
 if BOARD_RM1XX_DVK
 
-config BOARD
-	default "rm1xx_dvk"
-
 config BT_CTLR
 	default BT
 
