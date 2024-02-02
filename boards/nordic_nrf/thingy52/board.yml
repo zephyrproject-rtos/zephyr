@@ -1,0 +1,5 @@
+board:
+  name: thingy52
+  vendor: Nordic Semiconductor
+  socs:
+  - name: nrf52832
