@@ -1,0 +1,5 @@
+board:
+  name: raytac_mdbt50q_db_33
+  vendor: Raytac Corporation
+  socs:
+  - name: nrf52833
