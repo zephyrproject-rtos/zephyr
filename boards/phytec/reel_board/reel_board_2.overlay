@@ -1,14 +1,12 @@
 /*
  * Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include <nordic/nrf52840_qiaa.dtsi>
-#include "reel_board.dtsi"
-#include "reel_board_v2-pinctrl.dtsi"
+#include "reel_board_2-pinctrl.dtsi"
 
 / {
 	model = "reel board v2";
