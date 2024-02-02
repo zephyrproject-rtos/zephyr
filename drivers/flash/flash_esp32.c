@@ -72,6 +72,9 @@ struct flash_esp32_dev_data {
 static const struct flash_parameters flash_esp32_parameters = {
 	.write_block_size = FLASH_WRITE_BLK_SZ,
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 #ifdef CONFIG_MULTITHREADING

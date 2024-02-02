@@ -34,6 +34,9 @@ struct ifx_cat1_flash_data {
 static struct flash_parameters ifx_cat1_flash_parameters = {
 	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
 	.erase_value = 0x00,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 static inline void flash_ifx_sem_take(const struct device *dev)

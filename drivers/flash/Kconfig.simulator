@@ -9,6 +9,7 @@ menuconfig FLASH_SIMULATOR
 	depends on DT_HAS_ZEPHYR_SIM_FLASH_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the flash simulator.
 

@@ -29,6 +29,9 @@ struct flash_priv {
 static const struct flash_parameters flash_cc13xx_cc26xx_parameters = {
 	.write_block_size = FLASH_WRITE_SIZE,
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 

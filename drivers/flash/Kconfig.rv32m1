@@ -7,6 +7,7 @@ config SOC_FLASH_RV32M1
 	depends on DT_HAS_OPENISA_RV32M1_FTFE_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enables the RV32M1 flash shim driver.
 	  WARNING: This driver will disable the system interrupts for

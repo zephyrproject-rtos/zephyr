@@ -32,6 +32,9 @@ struct flash_b91_data {
 static const struct flash_parameters flash_b91_parameters = {
 	.write_block_size = DT_PROP(DT_INST(0, soc_nv_flash), write_block_size),
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 
