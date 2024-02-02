@@ -501,11 +501,12 @@ int pm_device_runtime_disable(const struct device *dev)
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
-	if (pm == NULL) {
-		return -ENOTSUP;
-	}
-
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_disable, dev);
+
+	if (pm == NULL) {
+		ret = -ENOTSUP;
+		goto end;
+	}
 
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		ret = runtime_disable_sync(dev);
