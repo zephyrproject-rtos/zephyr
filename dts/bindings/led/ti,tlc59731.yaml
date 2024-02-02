@@ -1,0 +1,38 @@
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "ti,tlc59731"
+description: TLC59731 RGB LED Controller
+
+properties:
+  gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO to send command data to the controller.
+  min_period:
+    type: int
+    default: 0
+    description: |
+      Minimum acceptable LED blinking time period (in ms).
+      Zero means user-defined in the application code.
+  max_period:
+    type: int
+    default: 0
+    description: |
+      Maximum acceptable LED blinking time period (in ms).
+      Zero means user-defined in the application code.
+  min_brightness:
+    type: int
+    default: 0
+    description: |
+      Minimum acceptable LED brightness value.
+  max_brightness:
+    type: int
+    default: 255
+    description: |
+      Maximum acceptable LED brightness value.
+  label:
+    type: string
+    description: |
+      RGB Label
