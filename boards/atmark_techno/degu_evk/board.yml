@@ -1,3 +1,5 @@
 board:
   name: degu_evk
   vendor: Atmark Techno
+  socs:
+  - name: nrf52840
