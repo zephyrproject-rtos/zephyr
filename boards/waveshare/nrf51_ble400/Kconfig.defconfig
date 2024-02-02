@@ -5,9 +5,6 @@
 
 if BOARD_NRF51_BLE400
 
-config BOARD
-	default "nrf51_ble400"
-
 config BT_CTLR
 	default BT
 
