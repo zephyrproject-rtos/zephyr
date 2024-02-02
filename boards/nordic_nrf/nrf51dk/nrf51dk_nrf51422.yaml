@@ -1,4 +1,4 @@
-identifier: nrf51dk_nrf51422
+identifier: nrf51dk/nrf51422
 name: nRF51-DK-NRF51422
 type: mcu
 arch: arm
