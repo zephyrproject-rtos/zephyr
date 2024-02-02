@@ -1,4 +1,4 @@
-identifier: nrf9160dk_nrf9160
+identifier: nrf9160dk/nrf9160
 name: nRF9160-DK-NRF9160
 type: mcu
 arch: arm
