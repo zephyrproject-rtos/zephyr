@@ -49,6 +49,8 @@ ZTEST(acpi, test_resource_enum)
 	struct acpi_dev *dev;
 	struct acpi_irq_resource irq_res;
 	struct acpi_mmio_resource mmio_res;
+	uint16_t irqs[CONFIG_ACPI_IRQ_VECTOR_MAX];
+	struct acpi_reg_base reg_base[CONFIG_ACPI_MMIO_ENTRIES_MAX];
 	int ret;
 
 	Z_TEST_SKIP_IFNDEF(APCI_TEST_DEV);
@@ -57,10 +59,14 @@ ZTEST(acpi, test_resource_enum)
 
 	zassert_not_null(dev, "Failed to get acpi device with given HID");
 
+	mmio_res.mmio_max = ARRAY_SIZE(reg_base);
+	mmio_res.reg_base = reg_base;
 	ret = acpi_device_mmio_get(dev, &mmio_res);
 
 	zassert_ok(ret, "Failed to get MMIO resources");
 
+	irq_res.irq_vector_max = ARRAY_SIZE(irqs);
+	irq_res.irqs = irqs;
 	ret = acpi_device_irq_get(dev, &irq_res);
 
 	zassert_ok(ret, "Failed to get IRQ resources");
