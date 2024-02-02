@@ -1,0 +1,11 @@
+sample:
+  name: Shell over Bluetooth Sample
+tests:
+  sample.shell.bluetooth:
+    tags:
+      - shell
+      - bluetooth
+    harness: keyboard
+    platform_allow: nrf52833dk_nrf52833
+    integration_platforms:
+      - nrf52833dk_nrf52833
