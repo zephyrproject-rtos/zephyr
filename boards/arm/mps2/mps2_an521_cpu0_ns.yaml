@@ -1,4 +1,4 @@
-identifier: mps2_an521_ns
+identifier: mps2/an521/cpu0/ns
 name: ARM V2M MPS2-AN521_ns
 type: mcu
 arch: arm
