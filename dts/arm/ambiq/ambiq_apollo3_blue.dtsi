@@ -268,9 +268,9 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 		};
 
-		mspi0: spi@40020000 {
+		mspi0: spi@50014000 {
 			compatible = "ambiq,mspi";
-			reg = <0x40020000 0x400>;
+			reg = <0x50014000 0x400>;
 			interrupts = <20 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
