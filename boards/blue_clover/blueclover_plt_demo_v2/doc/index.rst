@@ -112,21 +112,21 @@ NFC
 Programming and Debugging
 *************************
 
-Applications for the ``blueclover_plt_demo_v2_nrf52832`` board configuration
+Applications for the ``blueclover_plt_demo_v2/nrf52832`` board configuration
 can be built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
 Flashing
 ========
 
-Flashing Zephyr onto the ``blueclover_plt_demo_v2_nrf52832`` board requires
+Flashing Zephyr onto the ``blueclover_plt_demo_v2/nrf52832`` board requires
 an external programmer. The programmer is attached to the SWD header.
 
 Build the Zephyr kernel and the :zephyr:code-sample:`led-apa102` sample application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/drivers/led_apa102
-      :board: blueclover_plt_demo_v2_nrf52832
+      :board: blueclover_plt_demo_v2/nrf52832
       :goals: build
       :compact:
 
@@ -134,7 +134,7 @@ Flash the image.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/drivers/led_apa102
-      :board: blueclover_plt_demo_v2_nrf52832
+      :board: blueclover_plt_demo_v2/nrf52832
       :goals: flash
       :compact:
 
