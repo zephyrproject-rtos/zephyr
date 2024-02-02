@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-source "soc/soc_legacy/arm/xilinx_zynq7000/*/Kconfig.defconfig.series"
+rsource "*/Kconfig.defconfig"
 
 if SOC_FAMILY_XILINX_ZYNQ7000
 

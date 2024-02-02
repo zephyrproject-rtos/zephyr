@@ -5,11 +5,6 @@
 
 if SOC_SERIES_XILINX_XC7ZXXXS
 
-rsource "Kconfig.defconfig.xc7z*"
-
-config SOC_SERIES
-	default "xc7zxxxs"
-
 config MP_MAX_NUM_CPUS
 	default 1
 
