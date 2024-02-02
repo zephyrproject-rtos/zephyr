@@ -3,9 +3,6 @@
 
 if BOARD_WE_PROTEUS2EV_NRF52832
 
-config BOARD
-	default "we_proteus2ev_nrf52832"
-
 config BT_CTLR
 	default BT
 
