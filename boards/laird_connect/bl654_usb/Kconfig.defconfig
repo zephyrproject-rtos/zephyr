@@ -5,9 +5,6 @@
 
 if BOARD_BL654_USB
 
-config BOARD
-	default "bl654_usb"
-
 # To let the nRF5 bootloader load an application, the application
 # must be linked after Nordic MBR, that is factory-programmed on the board.
 
