@@ -5,9 +5,6 @@
 
 if BOARD_NRF52_ADAFRUIT_FEATHER
 
-config BOARD
-	default "nrf52_adafruit_feather"
-
 config BT_CTLR
 	default BT
 
