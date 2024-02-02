@@ -9,6 +9,8 @@
 #include <synopsys/arc_hs4xd.dtsi>
 
 / {
+	model = "hsdk4xd";
+	compatible = "snps,hsdk4xd";
 
 	aliases {
 		uart-dbg = &uart_dbg;
