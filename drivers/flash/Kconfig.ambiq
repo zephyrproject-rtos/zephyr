@@ -8,6 +8,8 @@ config FLASH_AMBIQ
 	select AMBIQ_HAL
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_NO_EXPLICIT_ERASE if SOC_SERIES_APOLLO4X
+	select FLASH_HAS_EXPLICIT_ERASE if SOC_SERIES_APOLLO3X
 	help
 	  Enables Ambiq flash driver on MRAM (e.g. Apollo4x) or
 	  flash (e.g. Apollo3x).
