@@ -1,4 +1,4 @@
-identifier: nrf5340dk_nrf5340_cpunet
+identifier: nrf5340dk/nrf5340/cpunet
 name: NRF5340-DK-NRF5340-network-MCU
 type: mcu
 arch: arm

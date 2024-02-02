@@ -1,4 +1,4 @@
-identifier: nrf5340dk_nrf5340_cpuapp
+identifier: nrf5340dk/nrf5340/cpuapp
 name: NRF5340-DK-NRF5340-application-MCU
 type: mcu
 arch: arm
