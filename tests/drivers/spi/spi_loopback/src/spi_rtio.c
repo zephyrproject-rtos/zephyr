@@ -37,7 +37,7 @@ RTIO_DEFINE(r, 8, 8);
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUF_SIZE 17
 #define BUF2_SIZE 36
 
