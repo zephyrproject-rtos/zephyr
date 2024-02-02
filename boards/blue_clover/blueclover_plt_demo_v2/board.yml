@@ -1,0 +1,5 @@
+board:
+  name: blueclover_plt_demo_v2
+  vendor: Blue Clover Devices
+  socs:
+  - name: nrf52832
