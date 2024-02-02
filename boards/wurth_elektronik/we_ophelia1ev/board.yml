@@ -1,0 +1,5 @@
+board:
+  name: we_ophelia1ev
+  vendor: Würth Elektronik
+  socs:
+  - name: nrf52805
