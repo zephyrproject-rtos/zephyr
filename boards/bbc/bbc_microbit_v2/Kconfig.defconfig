@@ -5,9 +5,6 @@
 
 if BOARD_BBC_MICROBIT_V2
 
-config BOARD
-	default "bbc_microbit_v2"
-
 config BT_CTLR
 	default BT
 
