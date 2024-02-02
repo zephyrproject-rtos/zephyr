@@ -440,10 +440,10 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
 
     pthread_attr_getinheritsched(),
     pthread_attr_getschedpolicy(),yes
-    pthread_attr_getscope(),
+    pthread_attr_getscope(),yes
     pthread_attr_setinheritsched(),
     pthread_attr_setschedpolicy(),yes
-    pthread_attr_setscope(),
+    pthread_attr_setscope(),yes
     pthread_getschedparam(),yes
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes
