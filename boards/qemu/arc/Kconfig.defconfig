@@ -3,16 +3,13 @@
 
 if BOARD_QEMU_ARC
 
-config BOARD
-	default "qemu_arc"
-
 if NETWORKING
 
-	config NET_L2_ETHERNET
+config NET_L2_ETHERNET
 	default y
 
-	# Required to satisfy dependency of networking stack on RNG
-	config TEST_RANDOM_GENERATOR
+# Required to satisfy dependency of networking stack on RNG
+config TEST_RANDOM_GENERATOR
 	default y
 
 endif # NETWORKING

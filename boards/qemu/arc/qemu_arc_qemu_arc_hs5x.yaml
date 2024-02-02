@@ -1,4 +1,4 @@
-identifier: qemu_arc_hs5x
+identifier: qemu_arc/qemu_arc_hs5x
 name: QEMU Emulation for ARC HS5x
 type: qemu
 simulation: qemu
