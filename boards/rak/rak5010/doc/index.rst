@@ -48,7 +48,7 @@ Hardware
 Supported Features
 ==================
 
-The rak5010_nrf52840 board configuration supports the following hardware features:
+The ``rak5010/nrf52840`` board configuration supports the following hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
@@ -130,7 +130,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: rak5010_nrf52840
+      :board: rak5010/nrf52840
       :goals: build flash
 
    You should see "Hello World! rak5010_nrf52840" in your terminal.
@@ -143,7 +143,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rak5010_nrf52840
+   :board: rak5010/nrf52840
    :maybe-skip-config:
    :goals: debug
 
