@@ -5,9 +5,6 @@
 
 if  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
-config BOARD
-	default "nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
-
 # Code Partition:
 #
 # For the secure version of the board the firmware is linked at the beginning
@@ -57,9 +54,6 @@ config FLASH_LOAD_SIZE
 endif # BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 endif # BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
-
-config BOARD
-	default "nrf5340dk_nrf5340_cpunet" if BOARD_NRF5340DK_NRF5340_CPUNET
 
 config MBOX_NRFX_IPC
 	default MBOX
