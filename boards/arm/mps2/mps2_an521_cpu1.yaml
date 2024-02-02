@@ -1,5 +1,5 @@
-identifier: mps2_an521_remote
-name: ARM V2M MPS2-AN521_remote
+identifier: mps2/an521/cpu1
+name: ARM V2M MPS2-AN521_cpu1
 type: mcu
 arch: arm
 ram: 512

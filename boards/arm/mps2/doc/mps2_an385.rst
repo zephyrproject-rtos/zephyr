@@ -6,7 +6,7 @@ ARM V2M MPS2
 Overview
 ********
 
-The mps2_an385 board configuration is used by Zephyr applications that run on
+The mps2/an385 board configuration is used by Zephyr applications that run on
 the V2M MPS2 board. It provides support for the ARM Cortex-M3 (AN385) CPU and
 the following devices:
 
@@ -62,7 +62,7 @@ ARM V2M MPS2 provides the following hardware components:
 Supported Features
 ==================
 
-The mps2_an385 board configuration supports the following hardware features:
+The mps2/an385 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -87,11 +87,8 @@ Other hardware features are not currently supported by the port.
 See the `V2M MPS2 Website`_ for a complete list of V2M MPS2 board hardware
 features.
 
-The default configuration can be found in the defconfig file:
-
-.. code-block:: console
-
-   boards/arm/mps2_an385/mps2_an385_defconfig
+The default configuration can be found in
+:zephyr_file:`boards/arm/mps2/mps2_an385_defconfig`
 
 Interrupt Controller
 ====================
@@ -260,7 +257,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mps2_an385
+   :board: mps2/an385
    :goals: build
 
 Connect the V2M MPS2 to your host computer using the USB port and you should
