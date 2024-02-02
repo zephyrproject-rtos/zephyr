@@ -65,7 +65,7 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 		return -EINVAL;
 	}
 
-	while ((*dhp)->bLength != 0) {
+	while (*dhp != NULL && (*dhp)->bLength != 0) {
 		struct usb_if_descriptor *ifd;
 		struct usb_ep_descriptor *ed;
 
