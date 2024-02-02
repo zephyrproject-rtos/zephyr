@@ -97,7 +97,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52dk_nrf52832
+   :board: we_ophelia1ev/nrf52805
    :goals: build flash
 
 Debugging
