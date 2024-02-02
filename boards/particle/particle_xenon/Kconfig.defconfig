@@ -6,9 +6,6 @@
 
 if BOARD_PARTICLE_XENON
 
-config BOARD
-	default "particle_xenon"
-
 config BT_CTLR
 	default BT
 
