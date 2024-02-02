@@ -43,7 +43,7 @@ menuconfig BUILD_WITH_TFM
 	  them, are generated during the normal Zephyr build process.
 
 	  Notes:
-	    Building with the "_ns" BOARD variant (e.g. "mps2_an521_ns")
+	    Building with the "/ns" BOARD variant (e.g. "mps2/an521/cpu0/ns")
 	    ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
 
 	    By default we allow Zephyr preemptible threads be preempted

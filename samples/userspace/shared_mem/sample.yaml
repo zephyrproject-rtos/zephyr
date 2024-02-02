@@ -4,7 +4,7 @@ sample:
   name: protected memory
 common:
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
   tags: userspace
   harness: console
   harness_config:

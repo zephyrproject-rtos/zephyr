@@ -81,7 +81,7 @@ tests:
     extra_configs:
       - CONFIG_SPIN_VALIDATE=n
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   portability.posix.common.signal.strsignal_no_desc:
     extra_configs:
       - CONFIG_POSIX_SIGNAL_STRING_DESC=n

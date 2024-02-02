@@ -15,7 +15,7 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
+      - mps2/an385
       - nrf51dk_nrf51422
       - nucleo_f429zi
       - disco_l475_iot1
@@ -27,7 +27,7 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
+      - mps2/an385
       - nrf51dk_nrf51422
       - nucleo_f429zi
       - disco_l475_iot1
@@ -37,7 +37,7 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
+      - mps2/an385
       - nrf51dk_nrf51422
       - nucleo_f429zi
       - disco_l475_iot1
@@ -47,7 +47,7 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
+      - mps2/an385
       - nrf51dk_nrf51422
       - nucleo_f429zi
       - disco_l475_iot1
@@ -57,7 +57,7 @@ tests:
     platform_allow:
       - reel_board
       - frdm_k64f
-      - mps2_an385
+      - mps2/an385
       - nrf51dk_nrf51422
       - nucleo_f429zi
       - disco_l475_iot1
