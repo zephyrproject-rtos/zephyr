@@ -369,6 +369,9 @@ void __retarget_lock_init(_LOCK_T *lock)
 	__ASSERT(*lock != NULL, "non-recursive lock allocation failed");
 
 	k_sem_init((struct k_sem *)*lock, 1, 1);
+#ifdef CONFIG_USERSPACE
+	k_object_access_all_grant(*lock);
+#endif /* CONFIG_USERSPACE */
 }
 
 /* Create a new dynamic recursive lock */
@@ -385,6 +388,9 @@ void __retarget_lock_init_recursive(_LOCK_T *lock)
 	__ASSERT(*lock != NULL, "recursive lock allocation failed");
 
 	k_mutex_init((struct k_mutex *)*lock);
+#ifdef CONFIG_USERSPACE
+	k_object_access_all_grant(*lock);
+#endif /* CONFIG_USERSPACE */
 }
 
 /* Close dynamic non-recursive lock */
