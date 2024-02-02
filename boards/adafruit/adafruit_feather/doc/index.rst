@@ -103,7 +103,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``adafruit_feather_nrf52840`` board configuration
+Applications for the ``adafruit_feather/nrf52840`` board configuration
 can be built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -117,7 +117,7 @@ Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: adafruit_feather_nrf52840
+      :board: adafruit_feather/nrf52840
       :goals: build
       :compact:
 
@@ -125,7 +125,7 @@ Flash the image.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: adafruit_feather_nrf52840
+      :board: adafruit_feather/nrf52840
       :goals: flash
       :compact:
 
