@@ -20,12 +20,10 @@ LOG_MODULE_REGISTER(flash_ambiq, CONFIG_FLASH_LOG_LEVEL);
 #define SOC_NV_FLASH_SIZE      DT_REG_SIZE(SOC_NV_FLASH_NODE)
 #define MIN_WRITE_SIZE         16
 #define FLASH_WRITE_BLOCK_SIZE MAX(DT_PROP(SOC_NV_FLASH_NODE, write_block_size), MIN_WRITE_SIZE)
-#define FLASH_ERASE_BLOCK_SIZE DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
 BUILD_ASSERT((FLASH_WRITE_BLOCK_SIZE & (MIN_WRITE_SIZE - 1)) == 0,
 	     "The flash write block size must be a multiple of 16!");
 
-#define FLASH_ERASE_BYTE 0xFF
 #define FLASH_ERASE_WORD                                                                           \
 	(((uint32_t)(FLASH_ERASE_BYTE << 24)) | ((uint32_t)(FLASH_ERASE_BYTE << 16)) |             \
 	 ((uint32_t)(FLASH_ERASE_BYTE << 8)) | ((uint32_t)FLASH_ERASE_BYTE))
@@ -43,7 +41,9 @@ static struct k_sem flash_ambiq_sem;
 
 static const struct flash_parameters flash_ambiq_parameters = {
 	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
-	.erase_value = FLASH_ERASE_BYTE,
+	.caps = {
+		.explicit_erase = false,
+	},
 };
 
 static bool flash_ambiq_valid_range(off_t offset, size_t len)
@@ -118,33 +118,6 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 	return ret;
 }
 
-static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
-{
-	ARG_UNUSED(dev);
-
-	int ret = 0;
-
-	if (!flash_ambiq_valid_range(offset, len)) {
-		return -EINVAL;
-	}
-
-	/* The erase address and length alignment check will be done in HAL.*/
-
-	if (len == 0) {
-		return 0;
-	}
-
-	FLASH_SEM_TAKE();
-
-	ret = am_hal_mram_main_fill(AM_HAL_MRAM_PROGRAM_KEY, FLASH_ERASE_WORD,
-				    (uint32_t *)(SOC_NV_FLASH_ADDR + offset),
-				    (len / sizeof(uint32_t)));
-
-	FLASH_SEM_GIVE();
-
-	return ret;
-}
-
 static const struct flash_parameters *flash_ambiq_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -152,30 +125,10 @@ static const struct flash_parameters *flash_ambiq_get_parameters(const struct de
 	return &flash_ambiq_parameters;
 }
 
-#if CONFIG_FLASH_PAGE_LAYOUT
-static const struct flash_pages_layout pages_layout = {
-	.pages_count = SOC_NV_FLASH_SIZE / FLASH_ERASE_BLOCK_SIZE,
-	.pages_size = FLASH_ERASE_BLOCK_SIZE,
-};
-
-static void flash_ambiq_pages_layout(const struct device *dev,
-				     const struct flash_pages_layout **layout, size_t *layout_size)
-{
-	ARG_UNUSED(dev);
-
-	*layout = &pages_layout;
-	*layout_size = 1;
-}
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
-
 static const struct flash_driver_api flash_ambiq_driver_api = {
 	.read = flash_ambiq_read,
 	.write = flash_ambiq_write,
-	.erase = flash_ambiq_erase,
 	.get_parameters = flash_ambiq_get_parameters,
-#ifdef CONFIG_FLASH_PAGE_LAYOUT
-	.page_layout = flash_ambiq_pages_layout,
-#endif
 };
 
 static int flash_ambiq_init(const struct device *dev)
