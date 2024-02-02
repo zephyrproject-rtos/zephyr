@@ -6,7 +6,7 @@ Thingy:53
 Overview
 ********
 
-Zephyr uses the thingy53_nrf5340 board configuration for building
+Zephyr uses the ``thingy53/nrf5340`` board configuration for building
 for the Thingy:53 board. The board has the nRF5340 MCU processor, a set of
 environmental sensors, a pushbutton, and RGB LED.
 
@@ -18,8 +18,8 @@ The nRF5340 is a dual-core SoC based on the Arm® Cortex®-M33 architecture, wit
 * a secondary Arm Cortex-M33 core, with a reduced feature set, running at
   a fixed 64 MHz, referred to as the **network core**.
 
-The nrf5340dk_nrf5340_cpuapp build target provides support for the application
-core on the nRF5340 SoC. The nrf5340dk_nrf5340_cpunet build target provides
+The ``thingy53/nrf5340/cpuapp`` build target provides support for the application
+core on the nRF5340 SoC. The ``thingy53/nrf5340/cpunet`` build target provides
 support for the network core on the nRF5340 SoC.
 
 The `Nordic Semiconductor Infocenter`_ contains the processor's information and
