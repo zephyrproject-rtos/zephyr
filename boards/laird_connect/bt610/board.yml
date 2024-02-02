@@ -1,0 +1,5 @@
+board:
+  name: bt610
+  vendor: Laird Connectivity
+  socs:
+  - name: nrf52840
