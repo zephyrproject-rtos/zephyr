@@ -147,7 +147,7 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
 	data->iface_bm = 0U;
 	data->ep_active = 0U;
 
-	while ((*dhp)->bLength != 0) {
+	while (*dhp != NULL && (*dhp)->bLength != 0) {
 
 		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
 			ifd = (struct usb_if_descriptor *)(*dhp);
