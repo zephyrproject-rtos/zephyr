@@ -207,6 +207,9 @@ int main(void)
 		if (!timeout_counter) {
 			timeout_counter = INITIAL_TIMEOUT_COUNTER;
 
+			/* Let last payload transmission complete */
+			k_sleep(K_MSEC(10));
+
 			printk("BIG Terminate...");
 			err = bt_iso_big_terminate(big);
 			if (err) {

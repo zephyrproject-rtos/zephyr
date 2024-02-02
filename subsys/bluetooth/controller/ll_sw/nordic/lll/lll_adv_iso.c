@@ -658,7 +658,7 @@ static void isr_tx_common(void *param,
 			pdu = (void *)tx->pdu;
 		}
 		pdu->cssn = lll->cssn;
-		pdu->cstf = 0U;
+		pdu->cstf = (lll->term_req || !!(lll->chm_req - lll->chm_ack));
 
 #else /* TEST_WITH_DUMMY_PDU */
 		pdu = radio_pkt_scratch_get();

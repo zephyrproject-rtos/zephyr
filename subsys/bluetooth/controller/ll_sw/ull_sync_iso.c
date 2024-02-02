@@ -120,7 +120,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		if (!IN_RANGE(bis[i], 0x01, 0x1F) || (bis[i] <= last_index)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 
-		} else if (bis[i] > num_bis) {
+		} else if (bis[i] > sync->num_bis) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 		last_index = bis[i];

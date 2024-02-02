@@ -59,6 +59,7 @@ struct ll_sync_set {
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	uint8_t enc : 1;
+	uint8_t num_bis : 5;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
