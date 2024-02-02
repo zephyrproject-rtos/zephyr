@@ -68,15 +68,17 @@ static struct net_if *default_iface;
 			      "Test %s failed.\n", expected);		\
 	} while (0)
 
+#define LL_ADDR_STR_SIZE sizeof("xx:xx:xx:xx:xx:xx")
+
 #define TEST_LL_6_TWO(a, b, c, d, e, f, expected)			\
 	do {								\
 		uint8_t ll1[] = { a, b, c, d, e, f };			\
 		uint8_t ll2[] = { f, e, d, c, b, a };			\
-		char out[2 * sizeof("xx:xx:xx:xx:xx:xx") + 1 + 1];	\
+		char out[2 * LL_ADDR_STR_SIZE + 1 + 1];	\
 		snprintk(out, sizeof(out), "%s ",			\
 			 net_sprint_ll_addr(ll1, sizeof(ll1)));		\
-		snprintk(out + sizeof("xx:xx:xx:xx:xx:xx"),		\
-			 sizeof(out), "%s",				\
+		snprintk(out + LL_ADDR_STR_SIZE,			\
+			 sizeof(out) - LL_ADDR_STR_SIZE, "%s",		\
 			 net_sprint_ll_addr(ll2, sizeof(ll2)));		\
 		zassert_false(strcmp(out, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
