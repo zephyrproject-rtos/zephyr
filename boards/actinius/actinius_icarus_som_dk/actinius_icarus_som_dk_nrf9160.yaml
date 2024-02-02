@@ -1,13 +1,13 @@
-identifier: actinius_icarus_som_dk_ns
-name: Actinius Icarus SoM DK Non-Secure
+identifier: actinius_icarus_som_dk/nrf9160
+name: Actinius Icarus SoM DK
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
   - xtools
   - zephyr
-ram: 128
-flash: 192
+ram: 88
+flash: 256
 supported:
   - gpio
   - i2c
