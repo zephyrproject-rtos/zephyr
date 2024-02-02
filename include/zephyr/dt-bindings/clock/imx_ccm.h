@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2022, NXP
+ * Copyright 2017-2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,5 +60,7 @@
 
 #define IMX_CCM_FLEXSPI_CLK		0x0F00UL
 #define IMX_CCM_FLEXSPI2_CLK		0x0F01UL
+
+#define IMX_CCM_PIT_CLK                 0x1000UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_H_ */

@@ -1127,6 +1127,72 @@
 			status = "disabled";
 		};
 
+		pit1: pit@400D8000 {
+			compatible = "nxp,pit";
+			reg = <0x400D8000 0x4000>;
+			clocks = <&ccm IMX_CCM_PIT_CLK 0x0 0>;
+			interrupts = <155 0>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit1_channel0: pit1_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit1_channel1: pit1_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit1_channel2: pit1_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit1_channel3: pit1_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
+		pit2: pit@40CB0000 {
+			compatible = "nxp,pit";
+			reg = <0x40CB0000 0x4000>;
+			clocks = <&ccm IMX_CCM_PIT1_CLK 0x0 0>;
+			interrupts = <156 0>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit2_channel0: pit2_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+				};
+			pit2_channel1: pit2_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+				};
+			pit2_channel2: pit2_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+			pit2_channel3: pit2_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
