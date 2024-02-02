@@ -2,8 +2,8 @@ tests:
   libraries.mpsc_pbuf:
     tags: mpsc_pbuf
     platform_allow:
-      - qemu_arc_em
-      - qemu_arc_hs
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
       - qemu_cortex_a53
       - qemu_cortex_m0
       - qemu_cortex_m3

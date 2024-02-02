@@ -14,10 +14,10 @@ tests:
       - qemu_cortex_m0
       - qemu_cortex_m3
       - qemu_cortex_r5
-      - qemu_arc_em
-      - qemu_arc_hs
-      - qemu_arc_hs5x
-      - qemu_arc_hs6x
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
+      - qemu_arc/qemu_arc_hs5x
+      - qemu_arc/qemu_arc_hs6x
       - qemu_riscv32
       - qemu_riscv32e
       - qemu_riscv64
