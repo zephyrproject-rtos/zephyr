@@ -1,4 +1,4 @@
-identifier: raytac_mdbt53_db_40_nrf5340_cpuapp
+identifier: raytac_mdbt53_db_40/nrf5340/cpuapp
 name: RAYTAC-MDBT53-DB-40-NRF5340-application-MCU
 type: mcu
 arch: arm
