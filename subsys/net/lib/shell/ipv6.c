@@ -62,7 +62,6 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 	const struct shell *sh = data->sh;
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	const char *extra;
-	int i;
 
 	ARG_UNUSED(user_data);
 
@@ -77,7 +76,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 
 	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_ipv6_prefix *prefix;
 		char remaining_str[sizeof("01234567890")];
 		uint64_t remaining;
