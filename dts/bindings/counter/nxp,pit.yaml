@@ -14,16 +14,6 @@ properties:
   clocks:
     required: true
 
-  pit-channel:
-    type: int
-    required: true
-    description: pit channel to active
-
-  pit-period:
-    type: int
-    required: true
-    description: pit default period in us
-
   max-load-value:
     type: int
     required: true
