@@ -60,8 +60,6 @@ struct ssd1306_config {
 };
 
 struct ssd1306_data {
-	uint8_t contrast;
-	uint8_t scan_mode;
 	enum display_pixel_format pf;
 };
 
@@ -335,12 +333,12 @@ static void ssd1306_get_capabilities(const struct device *dev,
 	const struct ssd1306_config *config = dev->config;
 	struct ssd1306_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10 | PIXEL_FORMAT_MONO01;
 	caps->current_pixel_format = data->pf;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
+	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static int ssd1306_set_pixel_format(const struct device *dev,
@@ -431,8 +429,6 @@ static int ssd1306_init_device(const struct device *dev)
 static int ssd1306_init(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
-
-	LOG_DBG("");
 
 	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
 
