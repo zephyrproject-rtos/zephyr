@@ -1,5 +1,5 @@
-identifier: em_starterkit_em7d
-name: EM Starterkit EM7D
+identifier: em_starterkit/emsk_em9d
+name: EM Starterkit
 type: mcu
 arch: arc
 toolchain:
