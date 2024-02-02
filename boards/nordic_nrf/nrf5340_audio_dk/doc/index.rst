@@ -13,7 +13,7 @@ You can use this board for developing LE-Audio-compatible applications that supp
 connected isochronous streams (CIS) and broadcast isochronous streams (BIS),
 and offer support for acting as a audio source, audio sink and source + sink.
 
-Zephyr uses the nrf5340_audio_dk_nrf5340 board configuration for building
+Zephyr uses the ``nrf5340_audio_dk/nrf5340`` board configuration for building
 for the nRF5340 Audio DK.
 
 Hardware
@@ -49,8 +49,8 @@ The nRF5340 Audio DK is built around the nRF5340 SoC, which has the following ch
 * A secondary Arm Cortex-M33 core, with a reduced feature set,
   running at a fixed 64 MHz, referred to as the **network core**.
 
-The nrf5340_audio_dk_nrf5340_cpuapp build target provides support for the application
-core on the nRF5340 SoC. The nrf5340_audio_dk_nrf5340_cpunet build target provides
+The ``nrf5340_audio_dk/nrf5340/cpuapp`` build target provides support for the application
+core on the nRF5340 SoC. The ``nrf5340_audio_dk/nrf5340/cpunet`` build target provides
 support for the network core on the nRF5340 SoC.
 
 The `Nordic Semiconductor Infocenter`_ contains the processor's information and
