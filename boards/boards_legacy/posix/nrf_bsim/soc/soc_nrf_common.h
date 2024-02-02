@@ -8,6 +8,6 @@
 #define BOARDS_POSIX_NRF_BSIM_SOC_SOC_NRF_COMMON_H
 
 /* We reuse the real SOC's header: */
-#include "../soc/arm/nordic_nrf/common/soc_nrf_common.h"
+#include "../soc/soc_legacy/arm/nordic_nrf/common/soc_nrf_common.h"
 
 #endif /* BOARDS_POSIX_NRF_BSIM_SOC_SOC_NRF_COMMON_H */
