@@ -6,9 +6,14 @@
 #
 # Boards which don't meet this convention can set this variable before
 # including this script.
-if (NOT DEFINED OPENOCD_NRF5_SUBFAMILY)
+if(NOT DEFINED OPENOCD_NRF5_SUBFAMILY)
   string(REGEX MATCH nrf5. OPENOCD_NRF5_SUBFAMILY "${BOARD}")
+
+  if(HWMv2 AND "${OPENOCD_NRF5_SUBFAMILY}" STREQUAL "")
+    string(REGEX MATCH nrf5. OPENOCD_NRF5_SUBFAMILY "${BOARD_IDENTIFIER}")
+  endif()
 endif()
+
 if("${OPENOCD_NRF5_SUBFAMILY}" STREQUAL "")
   message(FATAL_ERROR
     "Can't match nrf5 subfamily from BOARD name. "
