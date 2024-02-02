@@ -3,7 +3,7 @@
 # Copyright (c) 2022 Raytac Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_RAYTAC_MDBT50Q_DB_40_NRF52840
+if BOARD_RAYTAC_MDBT50Q_DB_40
 
 config BOARD_ENABLE_DCDC
 	bool "DCDC mode"
@@ -15,4 +15,4 @@ config BOARD_ENABLE_DCDC_HV
 	select SOC_DCDC_NRF52X_HV
 	default y
 
-endif # BOARD_RAYTAC_MDBT50Q_DB_40_NRF52840
+endif # BOARD_RAYTAC_MDBT50Q_DB_40
