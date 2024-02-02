@@ -2,7 +2,7 @@
 board_runner_args(openocd "--use-elf")
 
 if(${CONFIG_MP_MAX_NUM_CPUS} EQUAL 2)
-board_runner_args(openocd "--config=${CMAKE_CURRENT_LIST_DIR}/support/openocd-2-cores.cfg")
+  board_runner_args(openocd "--config=${CMAKE_CURRENT_LIST_DIR}/support/openocd-2-cores.cfg")
 endif()
 
 board_runner_args(mdb-hw "--jtag=digilent" "--cores=${CONFIG_MP_MAX_NUM_CPUS}")
