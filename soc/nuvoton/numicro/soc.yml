@@ -1,0 +1,6 @@
+family:
+- name: numicro
+  series:
+  - name: m48x
+    socs:
+    - name: m487

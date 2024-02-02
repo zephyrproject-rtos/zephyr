@@ -5,13 +5,5 @@
 
 config SOC_FAMILY_NUMICRO
 	select PLATFORM_SPECIFIC_INIT
-	bool
 
-if SOC_FAMILY_NUMICRO
-config SOC_FAMILY
-	string
-	default "nuvoton_numicro"
-
-source "soc/soc_legacy/arm/nuvoton_numicro/*/Kconfig.soc"
-
-endif # SOC_FAMILY_NUMICRO
+rsource "*/Kconfig"
