@@ -3,11 +3,7 @@
 # Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
-
-config BOARD
-	default "reel_board" if BOARD_REEL_BOARD
-	default "reel_board_v2" if BOARD_REEL_BOARD_V2
+if BOARD_REEL_BOARD
 
 config I2C
 	default y
@@ -41,4 +37,4 @@ config LV_Z_VDB_SIZE
 
 endif # LVGL
 
-endif # BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
+endif # BOARD_REEL_BOARD
