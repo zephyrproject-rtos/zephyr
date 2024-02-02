@@ -11,12 +11,12 @@ This application demonstrates how to use IPC Service and the icmsg backend with
 Zephyr. It is designed to demonstrate how to integrate it with Zephyr both
 from a build perspective and code.
 
-Building the application for nrf5340dk_nrf5340_cpuapp
+Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/ipc_service/icmsg
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: debug
    :west-args: --sysbuild
 

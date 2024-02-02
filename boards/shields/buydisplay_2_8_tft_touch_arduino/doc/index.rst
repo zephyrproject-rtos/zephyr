@@ -61,7 +61,7 @@ Set ``-DSHIELD=buydisplay_2_8_tft_touch_arduino`` when you invoke
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: buydisplay_2_8_tft_touch_arduino
    :goals: build
 

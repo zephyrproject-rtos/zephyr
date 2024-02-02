@@ -32,7 +32,7 @@ For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_pwm
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: adafruit_pca9685
    :goals: build
 

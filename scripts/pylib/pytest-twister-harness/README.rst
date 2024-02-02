@@ -24,7 +24,7 @@ Run exemplary test shell application by Twister:
   ./scripts/twister -p native_sim -p qemu_x86 -T samples/subsys/testsuite/pytest/shell
 
   # hardware
-  ./scripts/twister -p nrf52840dk_nrf52840 --device-testing --device-serial /dev/ttyACM0 -T samples/subsys/testsuite/pytest/shell
+  ./scripts/twister -p nrf52840dk/nrf52840 --device-testing --device-serial /dev/ttyACM0 -T samples/subsys/testsuite/pytest/shell
 
 or build shell application by west and call pytest directly:
 
@@ -43,5 +43,5 @@ or build shell application by west and call pytest directly:
   pytest --twister-harness --device-type=qemu --build-dir=build -p twister_harness.plugin
 
   # hardware
-  west build -p -b nrf52840dk_nrf52840
+  west build -p -b nrf52840dk/nrf52840
   pytest --twister-harness --device-type=hardware --device-serial=/dev/ttyACM0 --build-dir=build -p twister_harness.plugin

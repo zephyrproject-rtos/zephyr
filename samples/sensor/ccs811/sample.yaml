@@ -12,7 +12,7 @@ tests:
     harness: sensor
     tags: sensors
     platform_allow:
-      - thingy52_nrf52832
+      - thingy52/nrf52832
       - efr32mg_sltb004a
     integration_platforms:
       - efr32mg_sltb004a

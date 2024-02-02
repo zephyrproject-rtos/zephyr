@@ -13,13 +13,13 @@ The following are some of the boards that can be used with TF-M:
    * - :ref:`mps3_an547_board`
      - ``mps3_an547_ns`` (qemu supported)
    * - :ref:`bl5340_dvk`
-     - ``bl5340_dvk_cpuapp_ns``
+     - ``bl5340_dvk/nrf5340/cpuapp/ns``
    * - :ref:`lpcxpresso55s69`
      - ``lpcxpresso55s69_ns``
    * - :ref:`nrf9160dk_nrf9160`
-     - ``nrf9160dk_nrf9160_ns``
+     - ``nrf9160dk/nrf9160/ns``
    * - :ref:`nrf5340dk_nrf5340`
-     - ``nrf5340dk_nrf5340_cpuapp_ns``
+     - ``nrf5340dk/nrf5340/cpuapp/ns``
    * - :ref:`b_u585i_iot02a_board`
      - ``b_u585i_iot02a_ns``
    * - :ref:`nucleo_l552ze_q_board`

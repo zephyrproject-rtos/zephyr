@@ -6,8 +6,8 @@ tests:
     tags: usb
     arch_exclude: posix
     integration_platforms:
-      - nrf52840dk_nrf52840
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
     harness: console
     harness_config:
       type: multi_line

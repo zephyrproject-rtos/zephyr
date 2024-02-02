@@ -43,7 +43,7 @@ tests:
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
     integration_platforms:
-      - nrf52833dk_nrf52833
+      - nrf52833dk/nrf52833
   sample.shell.shell_module.login:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell

@@ -7,7 +7,7 @@ common:
     fixture: gpio_loopback
   platform_allow:
     - b_u585i_iot02a
-    - nrf5340dk_nrf5340_cpuapp
+    - nrf5340dk/nrf5340/cpuapp
 
 tests:
   modem.backends.uart.async:

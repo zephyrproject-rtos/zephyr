@@ -188,7 +188,7 @@ for details.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: [ frdm_k64f | nrf52840dk_nrf52840 | nucleo_f767zi ]
+    :board: [ frdm_k64f | nrf52840dk/nrf52840 | nucleo_f767zi ]
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-wifi.conf;overlay-prj.conf"
     :shield: esp_8266_arduino
@@ -208,7 +208,7 @@ uses PPP over GSM modem, see :zephyr:code-sample:`gsm-modem` sample application.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: [ frdm_k64f | nrf52840dk_nrf52840 | nucleo_f767zi ]
+    :board: [ frdm_k64f | nrf52840dk/nrf52840 | nucleo_f767zi ]
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-modem.conf;overlay-prj.conf" \
       -DDTC_OVERLAY_FILE=arduino.overlay
@@ -227,7 +227,7 @@ tested with both native linux driver and ``atusb`` and with ``wpanusb`` sample.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: nrf52840dk_nrf52840
+    :board: nrf52840dk/nrf52840
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-802154.conf;overlay-prj.conf"
     :goals: build
@@ -255,7 +255,7 @@ tested with native linux driver and an USB dongle.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: nrf52840dk_nrf52840
+    :board: nrf52840dk/nrf52840
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-ipsp.conf;overlay-prj.conf"
     :goals: build
@@ -273,7 +273,7 @@ gateway was tested using two boards with OpenThread 1.1.1 on NCP mode.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: nrf52840dk_nrf52840
+    :board: nrf52840dk/nrf52840
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-ot.conf;overlay-prj.conf"
     :goals: build

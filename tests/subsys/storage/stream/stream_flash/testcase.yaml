@@ -18,7 +18,7 @@ tests:
   storage.stream_flash.mpu_allow_flash_write:
     extra_args: OVERLAY_CONFIG=mpu_allow_flash_write.overlay
     platform_allow:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     tags: stream_flash

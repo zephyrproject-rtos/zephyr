@@ -4,5 +4,5 @@ tests:
       - usb
       - drivers
     platform_allow:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
       - native_sim_64

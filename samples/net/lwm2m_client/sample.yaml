@@ -56,7 +56,7 @@ tests:
     harness: net
     extra_args: OVERLAY_CONFIG=overlay-bt.conf
     platform_allow:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
       - disco_l475_iot1
     tags:
       - net
@@ -80,7 +80,7 @@ tests:
     extra_args: SHIELD=wnc_m14a2a
     platform_allow:
       - frdm_k64f
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - frdm_k64f
     tags:

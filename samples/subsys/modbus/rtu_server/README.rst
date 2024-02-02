@@ -58,7 +58,7 @@ The following commands build and flash RTU server sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/modbus/rtu_server
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 
@@ -66,7 +66,7 @@ The following commands build and flash RTU server sample using CDC ACM UART.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/modbus/rtu_server
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :gen-args: -DDTC_OVERLAY_FILE=cdc-acm.overlay -DEXTRA_CONF_FILE=overlay-cdc-acm.conf
    :compact:

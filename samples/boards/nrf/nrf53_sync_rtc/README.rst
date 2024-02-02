@@ -22,12 +22,12 @@ interrupt handling.
 
 For simplicity and low latency sample is not using more sophisticated IPM protocols.
 
-Building the application for nrf5340dk_nrf5340_cpuapp
+Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/nrf53_sync_rtc
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: flash
    :flash-args: --hex-file build/nrf53_sync_rtc/zephyr/zephyr.hex
    :west-args: --sysbuild

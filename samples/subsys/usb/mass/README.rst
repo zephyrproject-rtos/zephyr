@@ -61,7 +61,7 @@ to use the external 16 MiBi QSPI flash chip with a 2 MiBy FAT partition.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: adafruit_feather_nrf52840
+   :board: adafruit_feather/nrf52840
    :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
    :goals: build
    :compact:
@@ -128,7 +128,7 @@ be connected to SPI using e.g. a shield, example can be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: waveshare_epaper_gdeh0154a07
    :gen-args: -DCONFIG_APP_MSC_STORAGE_SDCARD=y
    :goals: build
@@ -162,7 +162,7 @@ This board configures to use the external 64 MiBi QSPI flash chip with a
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
    :goals: build
    :compact:

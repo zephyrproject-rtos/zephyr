@@ -26,9 +26,9 @@ tests:
   drivers.adc.npcx.build:
     platform_allow: npcx7m6fb_evb
   drivers.adc.nrf.build:
-    platform_allow: nrf51dk_nrf51422
+    platform_allow: nrf51dk/nrf51422
   drivers.adc.nrf.saadc.build:
-    platform_allow: nrf21540dk_nrf52840
+    platform_allow: nrf21540dk/nrf52840
   drivers.adc.sam0.build:
     platform_allow: atsame54_xpro
   drivers.adc.sam.afec.build:

@@ -10,4 +10,4 @@ tests:
       - usb
       - bluetooth
     # FIXME: exclude due to build error
-    platform_exclude: 96b_carbon stm32l562e_dk
+    platform_exclude: 96b_carbon/stm32f401xe stm32l562e_dk
