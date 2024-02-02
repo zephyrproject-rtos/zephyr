@@ -4,6 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QEMU_CORTEX_M0
-	bool "Cortex-M0 Emulation (QEMU)"
-	depends on SOC_NRF51822_QFAA
-	select QEMU_TARGET
+	select SOC_NRF51822_QFAA

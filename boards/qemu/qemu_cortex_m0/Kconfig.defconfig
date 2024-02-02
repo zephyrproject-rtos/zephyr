@@ -5,9 +5,6 @@
 
 if BOARD_QEMU_CORTEX_M0
 
-config BOARD
-	default "qemu_cortex_m0"
-
 config NRF_RTC_TIMER
 	default n if SYS_CLOCK_EXISTS
 
