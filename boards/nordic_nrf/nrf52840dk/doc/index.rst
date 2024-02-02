@@ -110,7 +110,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52840dk_nrf52840`` board configuration can be
+Applications for the ``nrf52840dk/nrf52840`` board configuration can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
@@ -139,7 +139,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
 
 Debugging
@@ -162,7 +162,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf52840dk_nrf52840/nrf52840dk_nrf52840.dts`.
+:zephyr_file:`boards/nordic_nrf/nrf52840dk/nrf52840dk_nrf52840.dts`.
 
 Changing UART1 pins
 *******************
@@ -213,6 +213,30 @@ In the table 7.1.1 'aQFN73 ball assignments' select the pins marked
 'General purpose I/O'.  Note that pins marked as 'low frequency I/O only' can only be used
 in under-10KHz applications. They are not suitable for 115200 speed of UART.
 
+.. _nrf52840dk_nrf52811:
+
+nRF52811 emulation on nRF52840 DK
+#################################
+
+Overview
+********
+
+The nrf52840dk/nrf52811 board variant is a modified version of the
+:ref:`nrf52840dk/nrf52840` that enforces the limitations imposed by the nRF52811
+IC, which is a variant of the original nRF52840. Since Nordic does not offer a
+development kit for the nRF52811 you can use this board to develop for this IC
+while using the nRF52840 Development Kit (PCA10056).
+
+See :ref:`nrf52840dk_nrf52840` for more information about the development board
+and `nRF52811 website`_ for the official reference on the IC itself.
+
+
+References
+**********
+
+.. target-notes::
+
+.. _nRF52811 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52811
 References
 **********
 
@@ -222,3 +246,4 @@ References
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52840 Product Specification: http://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf
+.. _nRF52811 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52811
