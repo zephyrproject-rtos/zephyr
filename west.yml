@@ -121,7 +121,7 @@ manifest:
       groups:
         - hal
     - name: cmsis-dsp
-      revision: ff7b5fd1ea5f094665c090c343ec44e74dc0b193
+      revision: 6489e771e9c405f1763b52d64a3f17a1ec488ace
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
       revision: 0c8669d81381ccf3b1a01d699f3b68b50134a99f
