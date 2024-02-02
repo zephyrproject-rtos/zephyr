@@ -35,7 +35,7 @@ size_t usbd_class_desc_len(struct usbd_class_node *const c_nd,
 	 * If the desired descriptor is available, count to the last element,
 	 * which must be a pointer to a nil descriptor.
 	 */
-	while (dhp != NULL && (*dhp)->bLength != 0U) {
+	while (dhp != NULL && (*dhp != NULL) && (*dhp)->bLength != 0U) {
 		len += (*dhp)->bLength;
 		dhp++;
 	}
