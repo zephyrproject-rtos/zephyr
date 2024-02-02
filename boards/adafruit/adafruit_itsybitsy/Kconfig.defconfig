@@ -3,10 +3,7 @@
 # Copyright (c) 2022 Embla Flatlandsmo <embla.flatlandsmo@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_ADAFRUIT_ITSYBITSY_NRF52840
-
-config BOARD
-	default "adafruit_itsybitsy_nrf52840"
+if BOARD_ADAFRUIT_ITSYBITSY
 
 config BT_CTLR
 	default BT
@@ -53,4 +50,4 @@ endif # LOG
 
 endif # BOARD_SERIAL_BACKEND_CDC_ACM
 
-endif # BOARD_ADAFRUIT_ITSYBITSY_NRF52840
+endif # BOARD_ADAFRUIT_ITSYBITSY
