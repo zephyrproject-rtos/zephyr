@@ -111,6 +111,9 @@
 /* Automatically assign Entity IDs based on entities order in devicetree */
 #define ENTITY_ID(e) UTIL_INC(DT_NODE_CHILD_IDX(e))
 
+/* Name of uint8_t array holding descriptor data */
+#define DESCRIPTOR_NAME(prefix, node) uac2_## prefix ## _ ## node
+
 /* Connected Entity ID or 0 if property is not defined. Rely on devicetree
  * "required: true" to fail compilation if mandatory handle (e.g. clock source)
  * is absent.
@@ -285,7 +288,21 @@
 		OUTPUT_TERMINAL_DESCRIPTOR(entity)				\
 	))
 
+#define ENTITY_HEADER_ARRAYS(entity)						\
+	IF_ENABLED(UTIL_NOT(IS_EMPTY(ENTITY_HEADER(entity))), (			\
+		static uint8_t DESCRIPTOR_NAME(ac_entity, entity)[] = {		\
+			ENTITY_HEADER(entity)					\
+		};								\
+	))
+
+#define ENTITY_HEADER_PTRS(entity)						\
+	IF_ENABLED(UTIL_NOT(IS_EMPTY(ENTITY_HEADER(entity))), (			\
+		(struct usb_desc_header *) &DESCRIPTOR_NAME(ac_entity, entity),	\
+	))
+
 #define ENTITY_HEADERS(node) DT_FOREACH_CHILD(node, ENTITY_HEADER)
+#define ENTITY_HEADERS_ARRAYS(node) DT_FOREACH_CHILD(node, ENTITY_HEADER_ARRAYS)
+#define ENTITY_HEADERS_PTRS(node) DT_FOREACH_CHILD(node, ENTITY_HEADER_PTRS)
 #define ENTITY_HEADERS_LENGTH(node) sizeof((uint8_t []){ENTITY_HEADERS(node)})
 
 #define AUDIO_STREAMING_CONTROLS(node)						\
@@ -365,6 +382,18 @@
 	AUDIO_STREAMING_GENERAL_DESCRIPTOR(node)				\
 	AUDIO_STREAMING_FORMAT_TYPE_DESCRIPTOR(node)
 
+#define AUDIO_STREAMING_INTERFACE_DESCRIPTORS_ARRAYS(node)			\
+	static uint8_t DESCRIPTOR_NAME(as_general_desc, node)[] = {		\
+		AUDIO_STREAMING_GENERAL_DESCRIPTOR(node)			\
+	};									\
+	static uint8_t DESCRIPTOR_NAME(as_format_desc, node)[] = {		\
+		AUDIO_STREAMING_FORMAT_TYPE_DESCRIPTOR(node)			\
+	};
+
+#define AUDIO_STREAMING_INTERFACE_DESCRIPTORS_PTRS(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(as_general_desc, node),	\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(as_format_desc, node),
+
 /* 4.7.2 Class-Specific AC Interface Descriptor */
 #define AC_INTERFACE_HEADER_DESCRIPTOR(node)					\
 	0x09,						/* bLength */		\
@@ -374,6 +403,14 @@
 	DT_PROP(node, audio_function),			/* bCategory */		\
 	U16_LE(9 + ENTITY_HEADERS_LENGTH(node)),	/* wTotalLength */	\
 	0x00,						/* bmControls */	\
+
+#define AC_INTERFACE_HEADER_DESCRIPTOR_ARRAY(node)				\
+	static uint8_t DESCRIPTOR_NAME(ac_header, node)[] = {			\
+		AC_INTERFACE_HEADER_DESCRIPTOR(node)				\
+	};
+
+#define AC_INTERFACE_HEADER_DESCRIPTOR_PTR(node)				\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(ac_header, node),
 
 #define IS_AUDIOSTREAMING_INTERFACE(node)					\
 	DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming)
@@ -393,6 +430,14 @@
 	AF_VERSION_02_00,				/* bFunctionProtocol */	\
 	0x00,						/* iFunction */
 
+#define UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_ARRAY(node)			\
+	static uint8_t DESCRIPTOR_NAME(iad, node)[] = {				\
+		UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)					\
+	};
+
+#define UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_PTR(node)				\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(iad, node),
+
 /* 4.7.1 Standard AC Interface Descriptor */
 #define AC_INTERFACE_DESCRIPTOR(node)						\
 	0x09,						/* bLength */		\
@@ -405,6 +450,14 @@
 	IP_VERSION_02_00,				/* bInterfaceProtocol */\
 	0x00,						/* iInterface */
 
+#define AC_INTERFACE_DESCRIPTOR_ARRAY(node)					\
+	static uint8_t DESCRIPTOR_NAME(ac_interface, node)[] = {		\
+		AC_INTERFACE_DESCRIPTOR(node)					\
+	};
+
+#define AC_INTERFACE_DESCRIPTOR_PTR(node)					\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(ac_interface, node),
+
 /* 4.8.2.1 Standard AC Interrupt Endpoint Descriptor */
 #define AC_ENDPOINT_DESCRIPTOR(node)						\
 	0x07,						/* bLength */		\
@@ -413,6 +466,14 @@
 	USB_EP_TYPE_INTERRUPT,				/* bmAttributes */	\
 	0x06,						/* wMaxPacketSize */	\
 	0x01,						/* bInterval */		\
+
+#define AC_ENDPOINT_DESCRIPTOR_ARRAY(node)					\
+	static uint8_t DESCRIPTOR_NAME(ac_endpoint, node)[] = {			\
+		AC_ENDPOINT_DESCRIPTOR(node)					\
+	};
+
+#define AC_ENDPOINT_DESCRIPTOR_PTR(node)					\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(ac_endpoint, node),
 
 #define FIND_AUDIOSTREAMING(node, fn, ...)					\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
@@ -486,6 +547,14 @@
 	AUDIOSTREAMING,					/* bInterfaceSubClass */\
 	IP_VERSION_02_00,				/* bInterfaceProtocol */\
 	0x00,						/* iInterface */
+
+#define AS_INTERFACE_DESCRIPTOR_ARRAY(node, alternate, numendpoints)		\
+	static uint8_t DESCRIPTOR_NAME(as_if_alt##alternate, node)[] = {	\
+		AS_INTERFACE_DESCRIPTOR(node, alternate, numendpoints)		\
+	};
+
+#define AS_INTERFACE_DESCRIPTOR_PTR(node, alternate)				\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(as_if_alt##alternate, node),
 
 #define COUNT_AS_OUT_ENDPOINTS_BEFORE_IDX(node, idx)				\
 	+ AS_IS_USB_ISO_OUT(node) * (DT_NODE_CHILD_IDX(node) < idx)
@@ -569,6 +638,18 @@
 	STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)			\
 	CLASS_SPECIFIC_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)
 
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_ARRAYS(node)			\
+	static uint8_t DESCRIPTOR_NAME(std_data_ep, node)[] = {			\
+		STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)		\
+	};									\
+	static uint8_t DESCRIPTOR_NAME(cs_data_ep, node)[] = {			\
+		CLASS_SPECIFIC_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)	\
+	};
+
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_PTRS(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(std_data_ep, node),		\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(cs_data_ep, node),
+
 #define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)				\
 	0x07,						/* bLength */		\
 	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
@@ -576,6 +657,14 @@
 	0x11,						/* bmAttributes */	\
 	U16_LE(0x03), /* FIXME: 4 on High-Speed*/	/* wMaxPacketSize */	\
 	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */	/* bInterval */
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_ARRAY(node)			\
+	static uint8_t DESCRIPTOR_NAME(feedback_ep, node)[] = {			\
+		AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)			\
+	};
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_PTR(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(feedback_ep, node),
 
 #define AS_DESCRIPTORS(node)							\
 	AS_INTERFACE_DESCRIPTOR(node, 0, 0)					\
@@ -589,9 +678,40 @@
 			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)))	\
 	))
 
+#define AS_DESCRIPTORS_ARRAYS(node)						\
+	AS_INTERFACE_DESCRIPTOR_ARRAY(node, 0, 0)				\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_INTERFACE_DESCRIPTOR_ARRAY(node, 1,				\
+			AS_INTERFACE_NUM_ENDPOINTS(node))))			\
+	AUDIO_STREAMING_INTERFACE_DESCRIPTORS_ARRAYS(node)			\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_ARRAYS(node)		\
+		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_ARRAY(node)))	\
+	))
+
+#define AS_DESCRIPTORS_PTRS(node)						\
+	AS_INTERFACE_DESCRIPTOR_PTR(node, 0)					\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_INTERFACE_DESCRIPTOR_PTR(node, 1)))				\
+	AUDIO_STREAMING_INTERFACE_DESCRIPTORS_PTRS(node)			\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_PTRS(node)		\
+		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_PTR(node)))	\
+	))
+
 #define AS_DESCRIPTORS_IF_AUDIOSTREAMING(node)					\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		AS_DESCRIPTORS(node)))
+
+#define AS_DESCRIPTORS_ARRAYS_IF_AUDIOSTREAMING(node)				\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
+		AS_DESCRIPTORS_ARRAYS(node)))
+
+#define AS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node)				\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
+		AS_DESCRIPTORS_PTRS(node)))
 
 #define UAC2_AUDIO_CONTROL_DESCRIPTORS(node)					\
 	AC_INTERFACE_DESCRIPTOR(node)						\
@@ -599,6 +719,31 @@
 	ENTITY_HEADERS(node)							\
 	IF_ENABLED(DT_PROP(node, interrupt_endpoint), (				\
 		AC_ENDPOINT_DESCRIPTOR(node)))
+
+#define UAC2_AUDIO_CONTROL_DESCRIPTOR_ARRAYS(node)				\
+	AC_INTERFACE_DESCRIPTOR_ARRAY(node)					\
+	AC_INTERFACE_HEADER_DESCRIPTOR_ARRAY(node)				\
+	ENTITY_HEADERS_ARRAYS(node)						\
+	IF_ENABLED(DT_PROP(node, interrupt_endpoint), (				\
+		AC_ENDPOINT_DESCRIPTOR_ARRAY(node)))
+
+#define UAC2_AUDIO_CONTROL_DESCRIPTOR_PTRS(node)				\
+	AC_INTERFACE_DESCRIPTOR_PTR(node)					\
+	AC_INTERFACE_HEADER_DESCRIPTOR_PTR(node)				\
+	ENTITY_HEADERS_PTRS(node)						\
+	IF_ENABLED(DT_PROP(node, interrupt_endpoint), (				\
+		AC_ENDPOINT_DESCRIPTOR_PTR(node)))
+
+#define UAC2_DESCRIPTOR_ARRAYS(node)						\
+	UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_ARRAY(node)			\
+	UAC2_AUDIO_CONTROL_DESCRIPTOR_ARRAYS(node)				\
+	DT_FOREACH_CHILD(node, AS_DESCRIPTORS_ARRAYS_IF_AUDIOSTREAMING)
+
+#define UAC2_DESCRIPTOR_PTRS(node)						\
+	UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_PTR(node)				\
+	UAC2_AUDIO_CONTROL_DESCRIPTOR_PTRS(node)				\
+	DT_FOREACH_CHILD(node, AS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING)		\
+	NULL
 
 #define UAC2_DESCRIPTORS(node)							\
 	UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)				\
@@ -650,6 +795,52 @@
 	UAC2_DESCRIPTOR_AS_DESC_END_OFFSET(node)				\
 	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_SIZE(node)			\
 	+ offsetof(struct usb_ep_descriptor, bEndpointAddress)
+
+/* Helper macros to determine endpoint descriptor offset within descriptor set */
+#define COUNT_PTRS(...) sizeof((struct usb_desc_header *[]){__VA_ARGS__})	\
+	/ sizeof(struct usb_desc_header *)
+
+#define COUNT_AS_DESCRIPTORS_UP_TO_IDX(node, idx)				\
+	(COUNT_PTRS(AS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node))) *		\
+	(DT_NODE_CHILD_IDX(node) <= idx)
+
+#define UAC2_DESCRIPTOR_AS_DESC_END_COUNT(node)					\
+	(COUNT_PTRS(								\
+		UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_PTR(DT_PARENT(node))	\
+		UAC2_AUDIO_CONTROL_DESCRIPTOR_PTRS(DT_PARENT(node))		\
+	)) + DT_FOREACH_CHILD_SEP_VARGS(DT_PARENT(node),			\
+		COUNT_AS_DESCRIPTORS_UP_TO_IDX, (+),				\
+		DT_NODE_CHILD_IDX(node))
+
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_COUNT(node)			\
+	COUNT_PTRS(AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_PTRS(node))
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_COUNT(node)			\
+	COND_CODE_1(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node),			\
+		(COUNT_PTRS(							\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_PTR(node)	\
+		)), (0))
+
+/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) poiting to data
+ * endpoint descriptor belonging to given AudioStreaming interface node.
+ *
+ * It is programmer error to call this macro with node other than AudioStreaming
+ * or when AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) is 0.
+ */
+#define UAC2_DESCRIPTOR_AS_DATA_EP_INDEX(node)					\
+	UAC2_DESCRIPTOR_AS_DESC_END_COUNT(node)					\
+	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_COUNT(node)			\
+	- AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_COUNT(node)
+
+/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) poiting to feedback
+ * endpoint descriptor belonging to given AudioStreaming interface node.
+ *
+ * It is programmer error to call this macro with node other than AudioStreaming
+ * or when AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node) is 0.
+ */
+#define UAC2_DESCRIPTOR_AS_FEEDBACK_EP_INDEX(node)				\
+	UAC2_DESCRIPTOR_AS_DESC_END_COUNT(node)					\
+	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_COUNT(node)
 
 /* Helper macros to validate USB Audio Class 2 devicetree entries.
  * Macros above do rely on the assumptions checked below.
