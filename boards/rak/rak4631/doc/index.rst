@@ -40,7 +40,7 @@ programming/debug interface.
 Supported Features
 ==================
 
-The rak4631_nrf52840 board configuration supports the following hardware features:
+The ``rak4631/nrf52840`` board configuration supports the following hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
@@ -77,9 +77,8 @@ The rak4631_nrf52840 board configuration supports the following hardware feature
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-The default board configuration can be found in the defconfig file:
-
-        ``boards/arm/rak4631_nrf52840/rak4631_nrf52840_defconfig``
+The default board configuration can be found in
+:zephyr_file:`boards/rak/rak4631/rak4631_nrf52840_defconfig`
 
 Connections and IOs
 ===================
@@ -126,7 +125,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: rak4631_nrf52840
+      :board: rak4631/nrf52840
       :goals: build flash
 
    You should see "Hello World! rak4631_nrf52840" in your terminal.
@@ -139,7 +138,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rak4631_nrf52840
+   :board: rak4631/nrf52840
    :maybe-skip-config:
    :goals: debug
 
