@@ -1,3 +1,5 @@
 board:
   name: bbc_microbit
   vendor: BBC
+  socs:
+  - name: nrf51822
