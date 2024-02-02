@@ -6,7 +6,7 @@ ARM MPS2+ AN521
 Overview
 ********
 
-The mps2_an521 board configuration is used by Zephyr applications that run
+The mps2/an521 board configuration is used by Zephyr applications that run
 on the MPS2+ AN521 board. It provides support for the MPS2+ AN521 ARM Cortex-M33
 CPU and the following devices:
 
@@ -44,11 +44,11 @@ The BOARD options are summarized below:
 +----------------------+-------------------------------------------------------+
 | BOARD                | Description                                           |
 +======================+=======================================================+
-| mps2_an521           | For building Secure (or Secure-only) firmware on CPU0 |
+| mps2/an521/cpu0      | For building Secure (or Secure-only) firmware on CPU0 |
 +----------------------+-------------------------------------------------------+
-| mps2_an521_ns        | For building Non-Secure firmware for CPU0             |
+| mps2/an521/cpu0/ns   | For building Non-Secure firmware for CPU0             |
 +----------------------+-------------------------------------------------------+
-| mps2_an521_remote    | For building firmware on CPU1                         |
+| mps2/an521/cpu1      | For building firmware on CPU1                         |
 +----------------------+-------------------------------------------------------+
 
 Memory Partitioning
@@ -63,17 +63,17 @@ The following memory map and partitioning schemes are used by default, where
 the offset value is the offset from the base of the 4MB code or SRAM block,
 ignoring the S/NS alias difference.
 
-+-------------------+-----+----------------+----------------+------------+
-| Board             | CPU | Code (Offset)  | SRAM (Offset)  | S/NS Alias |
-+===================+=====+================+================+============+
-| mps2_an521        | 0   | 4MB (0)        | 4MB (0)        | S          |
-+-------------------+-----+----------------+----------------+------------+
-| mps2_an521_ns     | 0   | 512KB (1MB)    | 512KB (1MB)    | NS         |
-+-------------------+-----+----------------+----------------+------------+
-| mps2_an521_remote | 1   | 468KB (3628KB) | 512KB (1.5MB)  | NS         |
-+-------------------+-----+----------------+----------------+------------+
++-------------------------+-----+----------------+----------------+------------+
+| Board                   | CPU | Code (Offset)  | SRAM (Offset)  | S/NS Alias |
++=========================+=====+================+================+============+
+| mps2/an521/cpu0    | 0   | 4MB (0)        | 4MB (0)        | S          |
++-------------------------+-----+----------------+----------------+------------+
+| mps2/an521/cpu0/ns | 0   | 512KB (1MB)    | 512KB (1MB)    | NS         |
++-------------------------+-----+----------------+----------------+------------+
+| mps2/an521/cpu1    | 1   | 468KB (3628KB) | 512KB (1.5MB)  | NS         |
++-------------------------+-----+----------------+----------------+------------+
 
-The ``mps2_an521_ns`` board target is intended to be used with TF-M, with the
+The ``mps2/an521/cpu0/ns`` board target is intended to be used with TF-M, with the
 Zephyr memory map matching the AN521 memory map defined upstream in TF-M. TF-M
 boots the secure processing environment before initialising Zephyr in the
 non-secure processing environment. The non-secure Zephyr image is offset to
@@ -81,7 +81,7 @@ make room for the secure bootloader, and the secure firmware (TF-M), resulting
 in a starting address of 0x00100000. SRAM begins with a 1MB offset at
 0x28100000.
 
-The ``mps2_an521_remote`` board target is setup for the second core on the
+The ``mps2/an521/cpu1`` board target is setup for the second core on the
 AN521, using the final 468KB code memory in the 4MB code block. This value
 is chosen to maintain compatibility with TF-M, which marks that final 468KB
 code region as ``Unused``. Code memory thus starts with an offset of
@@ -92,9 +92,9 @@ This memory map enables the two alternative board targets to be used together
 if required, at the cost of reducing the amount of code memory available on
 the second core to the worst-case scenario from TF-M.
 
-When using one of the alternative board targets (``mps2_an521_ns`` or
-``mps2_an521_remote``), care needs to be taken with the amount of code or
-SRAM memory used on the primary board target (``mps2_an521``) since there is
+When using one of the alternative board targets (``mps2/an521/cpu0/ns`` or
+``mps2/an521/cpu1``), care needs to be taken with the amount of code or
+SRAM memory used on the primary board target (``mps2/an521``) since there is
 some overlap in the memory maps.
 
 Hardware
@@ -140,7 +140,7 @@ ARM MPS2+ AN521 provides the following hardware components:
 User push buttons
 =================
 
-The mps2_an521 board provides the following user push buttons:
+The mps2/an521 board provides the following user push buttons:
 
 - ON power on
 - nSRST: Cortex-M33 system reset and CoreSight debug reset
@@ -150,7 +150,7 @@ The mps2_an521 board provides the following user push buttons:
 Supported Features
 ===================
 
-The mps2_an521 board configuration supports the following hardware features:
+The mps2/an521 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -175,8 +175,8 @@ Other hardware features are not currently supported by the port.
 See the `MPS2 FPGA Website`_ for a complete list of MPS2+ AN521 board hardware
 features.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/mps2_an521/mps2_an521_defconfig``.
+The default configuration can be found in
+:zephyr_file:`boards/arm/mps2/mps2_an521_cpu0_defconfig`.
 
 Interrupt Controller
 ====================
@@ -385,7 +385,7 @@ Programming and Debugging
 *************************
 
 MPS2+ AN521 (CPU0) supports the Armv8m Security Extension.
-Applications built for the mps2_an521 board by default
+Applications built for the mps2/an521 board by default
 boot in the Secure state.
 
 MPS2+ AN521 (CPU1) does not support the Armv8m Security Extension.
@@ -410,7 +410,7 @@ The process to build the Secure firmware image using TF-M and the Non-Secure
 firmware image using Zephyr requires the following steps:
 
 1. Build the Non-Secure Zephyr application
-   for MPS2+ AN521 (CPU0) using ``-DBOARD=mps2_an521_ns``.
+   for MPS2+ AN521 (CPU0) using ``-DBOARD=mps2/an521/cpu0/ns``.
    To invoke the building of TF-M the Zephyr build system requires the
    Kconfig option ``BUILD_WITH_TFM`` to be enabled, which is done by
    default when building Zephyr as a Non-Secure application.
@@ -434,18 +434,18 @@ The process to build the Secure and the Non-Secure firmware images
 using Zephyr requires the following steps:
 
 1. Build the Secure Zephyr application for MPS2+ AN521 (CPU0)
-   using ``-DBOARD=mps2_an521`` and
+   using ``-DBOARD=mps2/an521`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` and ``CONFIG_BUILD_WITH_TFM=n``
    in the application project configuration file.
 2. Build the Non-Secure Zephyr application for MPS2+ AN521 (CPU0)
-   using ``-DBOARD=mps2_an521_ns``.
+   using ``-DBOARD=mps2/an521/cpu0/ns``.
 3. Merge the two binaries together.
 
 Building a Secure only application on MPS2+ AN521 (CPU0)
 ========================================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=mps2_an521`` for
+and :ref:`application_run`), using ``-DBOARD=mps2/an521`` for
 the firmware running on the MPS2+ AN521 (CPU0).
 
 When building a Secure/Non-Secure application for the MPS2+ AN521 (CPU0),
@@ -472,7 +472,7 @@ Applications may be built for the second Cortex-M33
 (remote) core of MPS2+ AN521. The core is referred to as CPU1.
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=mps2_an521_remote`` for
+and :ref:`application_run`), using ``-DBOARD=mps2/an521/cpu1`` for
 the firmware running on the MPS2+ AN521 (CPU1).
 
 The Zephyr build will automatically trigger building a minimal (empty)
@@ -494,7 +494,7 @@ a secure-only application for CPU0.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mps2_an521
+   :board: mps2/an521
    :goals: build
 
 

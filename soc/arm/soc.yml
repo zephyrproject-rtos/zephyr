@@ -1,6 +1,13 @@
 family:
 - name: arm
   series:
+  - name: mps2
+    socs:
+    - name: an385
+    - name: an521
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
   - name: mps3
     socs:
     - name: an547
