@@ -20,7 +20,6 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 	const struct shell *sh = data->sh;
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	const char *extra;
-	int i;
 
 	ARG_UNUSED(user_data);
 
@@ -35,7 +34,7 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 
 	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		if (!ipv4->unicast[i].ipv4.is_used ||
 		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
 			continue;

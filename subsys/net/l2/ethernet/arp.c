@@ -220,13 +220,12 @@ static inline struct in_addr *if_get_addr(struct net_if *iface,
 					  struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	int i;
 
 	if (!ipv4) {
 		return NULL;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		if (ipv4->unicast[i].ipv4.is_used &&
 		    ipv4->unicast[i].ipv4.address.family == AF_INET &&
 		    ipv4->unicast[i].ipv4.addr_state == NET_ADDR_PREFERRED &&
