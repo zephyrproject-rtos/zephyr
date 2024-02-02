@@ -416,11 +416,12 @@ int pm_device_runtime_enable(const struct device *dev)
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
-	if (pm == NULL) {
-		return -ENOTSUP;
-	}
-
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_enable, dev);
+
+	if (pm == NULL) {
+		ret = -ENOTSUP;
+		goto end;
+	}
 
 	if (pm_device_state_is_locked(dev)) {
 		ret = -EPERM;
