@@ -55,7 +55,7 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
 
