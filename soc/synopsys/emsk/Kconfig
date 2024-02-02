@@ -3,5 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_EMSK
-	bool "Synopsys ARC EM Starter Kit SoC"
 	select ARC
+
+config SOC_EMSK_EM7D
+	select CPU_HAS_MPU
+
+config SOC_EMSK_EM9D
+	select CPU_HAS_FPU
+
+config SOC_EMSK_EM11D
+	select CPU_HAS_FPU
