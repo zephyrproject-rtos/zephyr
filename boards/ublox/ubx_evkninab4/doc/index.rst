@@ -36,7 +36,7 @@ found at `NINA-B40 product page`_ and `EVK-NINA-B4 product page`_.
 Supported Features
 ==================
 
-The ubx_evkninab4_nrf52833 board configuration supports the following
+The ubx_evkninab4/nrf52833 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -108,7 +108,7 @@ modules share the same pinout and can be interchanged, see
 Programming and Debugging
 *************************
 
-Applications for the ``ubx_evkninab4_nrf52833`` board configuration can be
+Applications for the ``ubx_evkninab4/nrf52833`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); however, the standard
 debugging targets are not currently available.
@@ -130,7 +130,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: ubx_evknina4_nrf52833
+   :board: ubx_evkninab4/nrf52833
    :goals: build flash
 
 Debugging
@@ -153,7 +153,7 @@ and LEDs on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running
 correctly on your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/ubx_evkninab4_nrf52833/ubx_evkninab4_nrf52833.dts`.
+:zephyr_file:`boards/ublox/ubx_evkninab4/ubx_evkninab4_nrf52833.dts`.
 
 Note that the buttons on the EVK-NINA-B4 are marked SW1 and SW2, which
 are named sw0 and sw1 in the dts file.
