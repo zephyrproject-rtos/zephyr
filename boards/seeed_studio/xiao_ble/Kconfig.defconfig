@@ -5,13 +5,8 @@
 
 if BOARD_XIAO_BLE
 
-config BOARD
-	default "xiao_ble"
-
 config BT_CTLR
 	default BT
-
-endif # BOARD_XIAO_BLE
 
 if USB_DEVICE_STACK
 
@@ -22,3 +17,5 @@ config USB_DEVICE_INITIALIZE_AT_BOOT
 	default y
 
 endif # USB_DEVICE_STACK
+
+endif # BOARD_XIAO_BLE
