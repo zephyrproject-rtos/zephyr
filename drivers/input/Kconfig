@@ -6,6 +6,7 @@ if INPUT
 menu "Input drivers"
 
 # zephyr-keep-sorted-start
+source "drivers/input/Kconfig.adc_keys"
 source "drivers/input/Kconfig.analog_axis"
 source "drivers/input/Kconfig.cap1203"
 source "drivers/input/Kconfig.cst816s"
