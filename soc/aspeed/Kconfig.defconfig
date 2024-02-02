@@ -2,4 +2,4 @@
 #
 # Copyright (c) 2021 ASPEED Technology Inc.
 
-source "soc/soc_legacy/arm/aspeed/*/Kconfig.defconfig.series"
+rsource "*/Kconfig.defconfig"

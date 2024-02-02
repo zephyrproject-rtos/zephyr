@@ -2,4 +2,7 @@
 #
 # Copyright (c) 2021 ASPEED Technology Inc.
 
-source "soc/soc_legacy/arm/aspeed/*/Kconfig.series"
+config SOC_FAMILY_ASPEED
+	select PLATFORM_SPECIFIC_INIT
+
+rsource "*/Kconfig"
