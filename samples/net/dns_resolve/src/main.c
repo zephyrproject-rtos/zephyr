@@ -168,6 +168,7 @@ static void print_dhcpv4_addr(struct net_if *iface, struct net_if_addr *if_addr,
 {
 	bool *found = (bool *)user_data;
 	char hr_addr[NET_IPV4_ADDR_LEN];
+	struct in_addr netmask;
 
 	if (*found) {
 		return;
@@ -181,10 +182,11 @@ static void print_dhcpv4_addr(struct net_if *iface, struct net_if_addr *if_addr,
 		net_addr_ntop(AF_INET, &if_addr->address.in_addr,
 			      hr_addr, NET_IPV4_ADDR_LEN));
 	LOG_INF("Lease time: %u seconds", iface->config.dhcpv4.lease_time);
+
+	netmask = net_if_ipv4_get_netmask_by_addr(iface,
+						  &if_addr->address.in_addr);
 	LOG_INF("Subnet: %s",
-		net_addr_ntop(AF_INET,
-			      &iface->config.ip.ipv4->netmask,
-			      hr_addr, NET_IPV4_ADDR_LEN));
+		net_addr_ntop(AF_INET, &netmask, hr_addr, NET_IPV4_ADDR_LEN));
 	LOG_INF("Router: %s",
 		net_addr_ntop(AF_INET,
 			      &iface->config.ip.ipv4->gw,
