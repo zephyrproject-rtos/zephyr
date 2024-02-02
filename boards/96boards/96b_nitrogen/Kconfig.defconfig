@@ -5,9 +5,6 @@
 
 if BOARD_96B_NITROGEN
 
-config BOARD
-	default "96b_nitrogen"
-
 config BT_CTLR
 	default BT
 

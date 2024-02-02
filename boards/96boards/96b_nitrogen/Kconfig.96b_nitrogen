@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_NITROGEN
-	bool "96Boards Nitrogen"
-	depends on SOC_NRF52832_QFAA
+	select SOC_NRF52832_QFAA
