@@ -204,6 +204,43 @@ static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_ip_gateway(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	struct net_if *iface;
+	int idx;
+	struct in_addr addr;
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net ipv4 gateway <index> <gateway_ip>\n");
+		return -ENOEXEC;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET, argv[2], &addr)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	net_if_ipv4_set_gw(iface, &addr);
+
+#else /* CONFIG_NET_NATIVE_IPV4 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV4", "IPv4");
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip,
 	SHELL_CMD(add, NULL,
 		  "'net ipv4 add <index> <address> [<netmask>]' adds the address to the interface.",
@@ -211,6 +248,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip,
 	SHELL_CMD(del, NULL,
 		  "'net ipv4 del <index> <address>' deletes the address from the interface.",
 		  cmd_net_ip_del),
+	SHELL_CMD(gateway, NULL,
+		  "'net ipv4 gateway <index> <gateway_ip>' sets IPv4 gateway for the interface.",
+		  cmd_net_ip_gateway),
 	SHELL_SUBCMD_SET_END
 );
 
