@@ -74,9 +74,6 @@
 			clk32kmon-valid-min = <4>;
 			xtal-enable-delay-ms = <300>;
 			pll-lock-timeout-ms = <30>;
-			/* pin configured only if the sources is set to PIN */
-			pinctrl-0 = <&clk_32khz_in_gpio165>;
-			pinctrl-names = "default";
 			#clock-cells = <3>;
 		};
 		ecia: ecia@4000e000 {
