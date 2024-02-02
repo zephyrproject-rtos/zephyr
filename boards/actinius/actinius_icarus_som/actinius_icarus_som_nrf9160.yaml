@@ -1,4 +1,4 @@
-identifier: actinius_icarus_som
+identifier: actinius_icarus_som/nrf9160
 name: Actinius Icarus SoM
 type: mcu
 arch: arm
