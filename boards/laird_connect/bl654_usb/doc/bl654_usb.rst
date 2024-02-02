@@ -103,9 +103,9 @@ Programming and Debugging
 
 Applications for the ``bl654_usb`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details). The
-``bl654_usb`` board cannot be used for debugging. The compatible BL654_DVK
-board can be used for development. Documentation can be found at the `BL654_DVK
-Zephyr site`_ and :zephyr_file:`boards/arm/bl654_dvk/doc/bl654_dvk.rst`
+``bl654_usb`` board cannot be used for debugging. The compatible BL654 DVK
+board can be used for development. Documentation can be found at the :ref:`bl654_dvk`
+site and :zephyr_file:`boards/laird_connect/bl654_dvk/doc/bl654_dvk.rst`
 
 Flashing
 ========
@@ -175,7 +175,7 @@ the board is working properly with Zephyr:
 
 You can build and flash the example to make sure Zephyr is running correctly on
 your board. The LED definitions can be found in
-:zephyr_file:`boards/arm/bl654_usb/bl654_usb.dts`.
+:zephyr_file:`boards/laird_connect/bl654_usb/bl654_usb.dts`.
 
 
 References
@@ -188,4 +188,3 @@ References
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _Creating a secure bootloader image: https://www.lairdconnect.com/documentation/application-note-creating-secure-bootloader-image-bl654-usb
 .. _nrfutil: https://github.com/NordicSemiconductor/pc-nrfutil
-.. _BL654_DVK Zephyr site: https://docs.zephyrproject.org/latest/boards/arm/bl654_dvk/doc/bl654_dvk.html
