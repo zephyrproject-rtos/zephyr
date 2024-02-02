@@ -59,7 +59,7 @@ Hardware
 Supported Features
 ==================
 
-The raytac_mdbt50q_db_40_nrf52840 board configuration supports the following
+The raytac_mdbt50q_db_40/nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -131,12 +131,12 @@ UART
 Programming and Debugging
 *************************
 
-Applications for the ``raytac_mdbt50q_db_40_nrf52840`` board configuration can be
+Applications for the ``raytac_mdbt50q_db_40/nrf52840`` board configuration can be
 built, flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
 
 .. note::
-   Flashing and Debugging Zephyr onto the raytac_mdbt50q_db_40_nrf52840 board
+   Flashing and Debugging Zephyr onto the raytac_mdbt50q_db_40/nrf52840 board
    requires an	external J-Link programmer. The programmer is attached to the J1
    or J9 SWD connector.
 
@@ -151,7 +151,7 @@ applications as usual (see :ref:`build_an_application` and
 
 Here is an example for the :ref:`hello_world` application.
 
-Use a USB to TTL converter to connect the computer and raytac_mdbt50q_db_40_nrf52840
+Use a USB to TTL converter to connect the computer and raytac_mdbt50q_db_40/nrf52840
 J10 connector. Then run your favorite terminal program to listen for output.
 
 .. code-block:: console
@@ -165,13 +165,13 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: raytac_mdbt50q_db_40_nrf52840
+   :board: raytac_mdbt50q_db_40/nrf52840
    :goals: build flash
 
 Debugging
 =========
 
-The ``raytac_mdbt50q_db_40_nrf52840`` board does not have an on-board-J-Link debug IC,
+The ``raytac_mdbt50q_db_40/nrf52840`` board does not have an on-board-J-Link debug IC,
 however, instructions from the :ref:`nordic_segger` page also apply to this board.
 Use the Debug out connector of nRF52x DK to connect to the J1 connector, and use SEGGER
 J-Link OB IF to debug.
@@ -189,7 +189,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/raytac_mdbt50q_db_40_nrf52840/raytac_mdbt50q_db_40_nrf52840.dts`.
+:zephyr_file:`boards/raytac/raytac_mdbt50q_db_40/raytac_mdbt50q_db_40_nrf52840.dts`.
 
 Selecting the pins
 ==================
