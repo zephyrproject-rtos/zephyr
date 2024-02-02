@@ -28,7 +28,7 @@ connect an HT16K33 LED driver at address 0x70 on the I2C-0 bus.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ht16k33
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 

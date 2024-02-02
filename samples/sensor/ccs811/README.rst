@@ -17,12 +17,12 @@ human presence.
 Building and Running
 ********************
 
-Building and Running on thingy52_nrf52832
+Building and Running on thingy52/nrf52832
 =========================================
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ccs811
-   :board: thingy52_nrf52832
+   :board: thingy52/nrf52832
    :goals: build flash
    :compact:
 
@@ -32,7 +32,7 @@ Sample Output
 
 The sample output below is from a `Nordic Thingy:52
 <https://www.nordicsemi.com/Software-and-tools/Prototyping-platforms/Nordic-Thingy-52>`_
-(thingy52_nrf52832) that includes this sensor (and others).
+(thingy52/nrf52832) that includes this sensor (and others).
 After a soft reset, there is a 5-second startup period
 where readings are unstable, and then we can see steady
 reported measurements of about 400 ppm eC02 and 0 ppb eTVOC.

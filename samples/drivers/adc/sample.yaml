@@ -13,8 +13,8 @@ tests:
       - cy8cproto_063_ble
       - stm32l496g_disco
       - stm32h735g_disco
-      - nrf51dk_nrf51422
-      - nrf52840dk_nrf52840
+      - nrf51dk/nrf51422
+      - nrf52840dk/nrf52840
       - mec172xevb_assy6906
       - gd32f350r_eval
       - gd32f450i_eval
@@ -31,7 +31,7 @@ tests:
       - longan_nano_lite
     integration_platforms:
       - nucleo_l073rz
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     harness: console
     timeout: 10
     harness_config:

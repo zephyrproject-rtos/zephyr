@@ -6,5 +6,5 @@ tests:
       - usb_device
       - i2s
     tags: usb i2s
-    platform_allow: nrf5340dk_nrf5340_cpuapp
+    platform_allow: nrf5340dk/nrf5340/cpuapp
     harness: TBD

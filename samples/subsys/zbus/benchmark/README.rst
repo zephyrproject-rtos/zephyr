@@ -56,9 +56,9 @@ The complete benchmark command using Robot framework is:
 
 .. code-block:: console
 
-    robot --variable serial_port:/dev/ttyACM0 --variable board:nrf52dk_nrf52832 -d /tmp/benchmark_out   benchmark_256KB.robot
+    robot --variable serial_port:/dev/ttyACM0 --variable board:nrf52dk/nrf52832 -d /tmp/benchmark_out   benchmark_256KB.robot
 
-An example of execution using the ``nrf52dk_nrf52832`` board would generate a file like this:
+An example of execution using the ``nrf52dk/nrf52832`` board would generate a file like this:
 
 .. code-block::
 

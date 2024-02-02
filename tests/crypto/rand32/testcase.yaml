@@ -33,4 +33,4 @@ tests:
     tags:
       - psa-crypto
     integration_platforms:
-      - nrf5340dk_nrf5340_cpuapp_ns
+      - nrf5340dk/nrf5340/cpuapp/ns

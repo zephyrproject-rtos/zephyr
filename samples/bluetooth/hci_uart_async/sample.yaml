@@ -13,7 +13,7 @@ tests:
   sample.bluetooth.hci_uart_async.nrf5:
     harness: bluetooth
     platform_allow:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     tags:
       - uart
       - bluetooth
