@@ -1,5 +1,5 @@
-identifier: emsdp
-name: EM Software Development Platform (EM11D)
+identifier: emsdp/emsdp_em4
+name: EM Software Development Platform (EM4)
 type: mcu
 arch: arc
 toolchain:
@@ -7,8 +7,6 @@ toolchain:
   - cross-compile
   - xtools
 ram: 128
-supported:
-  - spi
 testing:
   ignore_tags:
     - net

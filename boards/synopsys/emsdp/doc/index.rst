@@ -24,11 +24,10 @@ Hardware
 ********
 
 The EM Software Development Platform supports different core configurations, such as EM4,
-EM5D, EM6, EM7D, EM9D, EM9D+ESP, EM11D, the default core configuration is EM11D. Use
-:kconfig:option:`CONFIG_SOC_EMSDP_EM4`, :kconfig:option:`CONFIG_SOC_EMSDP_EM5D`,
-:kconfig:option:`CONFIG_SOC_EMSDP_EM6`, :kconfig:option:`CONFIG_SOC_EMSDP_EM7D`,
-:kconfig:option:`CONFIG_SOC_EMSDP_EM7D_ESP`, :kconfig:option:`CONFIG_SOC_EMSDP_EM9D` or
-:kconfig:option:`CONFIG_SOC_EMSDP_EM11D` to select different core configuration.
+EM5D, EM6, EM7D, EM7D+ESP, EM9D, EM11D. The core must be supplied as the variant of the base
+board which takes the form ``emsdp/<core>`` whereby core is ``emsdp_em4`` for EM4,
+``emsdp_em5D`` for EM5D, ``emsdp_em6`` for EM6, ``emsdp_em7d`` for EM7D, ``emsdp_em7d_esp``
+for EM7D+ESP, ``emsdp_em9d`` for EM9D and ``emsdp_em11d`` for EM11D.
 
 The following table shows the hardware features supported for different core configuration:
 
@@ -171,10 +170,11 @@ Configuring
 You may need to write a prj_arc.conf file if the sample doesn't have one.
 Next, you can use the menuconfig rule to configure the target. By specifying
 ``emsdp`` as the board configuration, you can select the ARC EM Software
-Development Platform board support for Zephyr.
+Development Platform board support for Zephyr, note that the core also need to
+be supplied, for example for the em7d:
 
 .. zephyr-app-commands::
-   :board: emsdp
+   :board: emsdp/emsdp_em7d
    :zephyr-app: samples/hello_world
    :goals: menuconfig
 
@@ -184,10 +184,10 @@ Building
 
 You can build an application in the usual way.  Refer to
 :ref:`build_an_application` for more details. Here is an example for
-:ref:`hello_world`.
+:ref:`hello_world` for the em4.
 
 .. zephyr-app-commands::
-   :board: emsdp
+   :board: emsdp/emsdp_em4
    :zephyr-app: samples/hello_world
    :maybe-skip-config:
    :goals: build
@@ -222,10 +222,10 @@ Using the latest version of Zephyr SDK(>=0.9), you can debug and flash IoT
 Development Kit directly.
 
 One option is to build and debug the application using the usual
-Zephyr build system commands.
+Zephyr build system commands, for example for the em6
 
 .. zephyr-app-commands::
-   :board: emsdp
+   :board: emsdp/emsdp_em6
    :app: <my app>
    :goals: debug
 
@@ -235,7 +235,7 @@ At this point you can do your normal debug session. Set breakpoints and then
 The other option is to launch a debug server, as follows.
 
 .. zephyr-app-commands::
-   :board: emsdp
+   :board: emsdp/emsdp_em6
    :app: <my app>
    :goals: debugserver
 
@@ -259,7 +259,7 @@ If you just want to download the application to the EM Software Development
 Platform's CCM and run, you can do so in the usual way.
 
 .. zephyr-app-commands::
-   :board: emsdp
+   :board: emsdp/emsdp_em6
    :app: <my app>
    :goals: flash
 

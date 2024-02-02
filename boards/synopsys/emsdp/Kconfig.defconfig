@@ -5,9 +5,6 @@
 
 if BOARD_EMSDP
 
-config BOARD
-	default "emsdp"
-
 if SPI
 
 config SPI_DW
