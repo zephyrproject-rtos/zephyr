@@ -279,7 +279,7 @@ if(DEFINED BOARD_REVISION)
 endif()
 
 if(DEFINED BOARD_IDENTIFIER)
-  string(REGEX REPLACE "^/" "variant: " board_message_identifier "${BOARD_IDENTIFIER}")
+  string(REGEX REPLACE "^/" "identifier: " board_message_identifier "${BOARD_IDENTIFIER}")
   set(board_message "${board_message}, ${board_message_identifier}")
 endif()
 
