@@ -5,9 +5,6 @@
 
 if BOARD_DEGU_EVK
 
-config BOARD
-	default "degu_evk"
-
 if USB_DEVICE_STACK
 
 config USB_DEVICE_PRODUCT
