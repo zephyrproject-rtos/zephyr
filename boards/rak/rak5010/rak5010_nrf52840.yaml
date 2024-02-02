@@ -1,4 +1,4 @@
-identifier: rak5010_nrf52840
+identifier: rak5010/nrf52840
 name: RAK5010-NRF52840
 type: mcu
 arch: arm
