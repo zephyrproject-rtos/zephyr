@@ -86,18 +86,19 @@ struct uac2_ctx {
 /* UAC2 device constant data */
 struct uac2_cfg {
 	struct usbd_class_node *const node;
+	const struct usb_desc_header **descriptors;
 	/* Entity 1 type is at entity_types[0] */
 	const entity_type_t *entity_types;
-	/* Array of offsets to data endpoint bEndpointAddress in descriptors.
-	 * First AudioStreaming interface is at ep_offsets[0]. Offset is 0 if
+	/* Array of indexes to data endpoint descriptor in descriptors set.
+	 * First AudioStreaming interface is at ep_indexes[0]. Index is 0 if
 	 * the interface is external interface (Type IV), i.e. no endpoint.
 	 */
-	const uint16_t *ep_offsets;
-	/* Same as ep_offsets, but for explicit feedback endpoints. */
-	const uint16_t *fb_offsets;
+	const uint16_t *ep_indexes;
+	/* Same as ep_indexes, but for explicit feedback endpoints. */
+	const uint16_t *fb_indexes;
 	/* First AudioStreaming interface Terminal ID is at as_terminals[0]. */
 	const uint8_t *as_terminals;
-	/* Number of interfaces (ep_offsets, fb_offset and as_terminals size) */
+	/* Number of interfaces (ep_indexes, fb_indexes and as_terminals size) */
 	uint8_t num_ifaces;
 	/* Number of entities (entity_type array size) */
 	uint8_t num_entities;
@@ -120,15 +121,13 @@ get_as_data_ep(struct usbd_class_node *const node, int as_idx)
 {
 	const struct device *dev = node->data->priv;
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = node->data->desc;
+	const struct usb_desc_header *desc = NULL;
 
-	if ((as_idx < cfg->num_ifaces) && cfg->ep_offsets[as_idx]) {
-		return CONTAINER_OF(&desc[cfg->ep_offsets[as_idx]],
-				    const struct usb_ep_descriptor,
-				    bEndpointAddress);
+	if ((as_idx < cfg->num_ifaces) && cfg->ep_indexes[as_idx]) {
+		desc = cfg->descriptors[cfg->ep_indexes[as_idx]];
 	}
 
-	return NULL;
+	return (const struct usb_ep_descriptor *)desc;
 }
 
 static const struct usb_ep_descriptor *
@@ -136,36 +135,36 @@ get_as_feedback_ep(struct usbd_class_node *const node, int as_idx)
 {
 	const struct device *dev = node->data->priv;
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = node->data->desc;
+	const struct usb_desc_header *desc = NULL;
 
-	if ((as_idx < cfg->num_ifaces) && cfg->fb_offsets[as_idx]) {
-		return CONTAINER_OF(&desc[cfg->fb_offsets[as_idx]],
-				    const struct usb_ep_descriptor,
-				    bEndpointAddress);
+	if ((as_idx < cfg->num_ifaces) && cfg->fb_indexes[as_idx]) {
+		desc = cfg->descriptors[cfg->fb_indexes[as_idx]];
 	}
 
-	return NULL;
+	return (const struct usb_ep_descriptor *)desc;
 }
 
 static int ep_to_as_interface(const struct device *dev, uint8_t ep, bool *fb)
 {
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = cfg->node->data->desc;
+	const struct usb_ep_descriptor *desc;
 
 	for (int i = 0; i < cfg->num_ifaces; i++) {
-		if (!cfg->ep_offsets[i]) {
+		if (!cfg->ep_indexes[i]) {
 			/* If there is no data endpoint there cannot be feedback
 			 * endpoint. Simply skip external interfaces.
 			 */
 			continue;
 		}
 
-		if (ep == desc[cfg->ep_offsets[i]]) {
+		desc = get_as_data_ep(cfg->node, i);
+		if (desc && (ep == desc->bEndpointAddress)) {
 			*fb = false;
 			return i;
 		}
 
-		if (cfg->fb_offsets[i] && (ep == desc[cfg->fb_offsets[i]])) {
+		desc = get_as_feedback_ep(cfg->node, i);
+		if (desc && (ep == desc->bEndpointAddress)) {
 			*fb = true;
 			return i;
 		}
@@ -226,15 +225,16 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		   void *data, uint16_t size)
 {
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = cfg->node->data->desc;
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
+	const struct usb_ep_descriptor *desc;
 	uint8_t ep = 0;
 	int as_idx = terminal_to_as_interface(dev, terminal);
 	int ret;
 
-	if ((as_idx >= 0) && cfg->ep_offsets[as_idx]) {
-		ep = desc[cfg->ep_offsets[as_idx]];
+	desc = get_as_data_ep(cfg->node, as_idx);
+	if (desc) {
+		ep = desc->bEndpointAddress;
 	}
 
 	if (!ep) {
@@ -387,7 +387,7 @@ void uac2_update(struct usbd_class_node *const node,
 
 	LOG_DBG("iface %d alt %d", iface, alternate);
 
-	iad = (const struct usb_association_descriptor *)node->data->desc;
+	iad = (const struct usb_association_descriptor *)cfg->descriptors[0];
 
 	/* AudioControl interface (bFirstInterface) doesn't have alternate
 	 * configurations, therefore the iface must be AudioStreaming.
@@ -617,8 +617,8 @@ static void uac2_sof(struct usbd_class_node *const node)
 {
 	struct device *dev = node->data->priv;
 	const struct usb_ep_descriptor *data_ep;
+	const struct usb_ep_descriptor *feedback_ep;
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = node->data->desc;
 	struct uac2_ctx *ctx = dev->data;
 	int as_idx;
 
@@ -637,7 +637,8 @@ static void uac2_sof(struct usbd_class_node *const node)
 		}
 
 		/* Skip interfaces without explicit feedback endpoint */
-		if (cfg->fb_offsets[as_idx] == 0) {
+		feedback_ep = get_as_feedback_ep(node, as_idx);
+		if (feedback_ep == NULL) {
 			continue;
 		}
 
@@ -658,9 +659,22 @@ static void uac2_sof(struct usbd_class_node *const node)
 		 * previous SOF is "gone" even if USB host did not attempt to
 		 * read it).
 		 */
-		write_explicit_feedback(node, desc[cfg->fb_offsets[as_idx]],
+		write_explicit_feedback(node, feedback_ep->bEndpointAddress,
 					cfg->as_terminals[as_idx]);
 	}
+}
+
+static void *uac2_get_desc(struct usbd_class_node *const node,
+			   const enum usbd_speed speed)
+{
+	struct device *dev = usbd_class_get_private(node);
+	const struct uac2_cfg *cfg = dev->config;
+
+	if (speed == USBD_SPEED_FS) {
+		return cfg->descriptors;
+	}
+
+	return NULL;
 }
 
 static int uac2_init(struct usbd_class_node *const node)
@@ -681,6 +695,7 @@ struct usbd_class_api uac2_api = {
 	.control_to_host = uac2_control_to_host,
 	.request = uac2_request,
 	.sof = uac2_sof,
+	.get_desc = uac2_get_desc,
 	.init = uac2_init,
 };
 
@@ -698,15 +713,15 @@ struct usbd_class_api uac2_api = {
 		ENTITY_TYPE_INVALID						\
 	))									\
 	, /* Comma here causes unknown types to fail at compile time */
-#define DEFINE_AS_EP_OFFSETS(node)						\
+#define DEFINE_AS_EP_INDEXES(node)						\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		COND_CODE_1(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node),		\
-			(UAC2_DESCRIPTOR_AS_DATA_EP_OFFSET(node),), (0,))	\
+			(UAC2_DESCRIPTOR_AS_DATA_EP_INDEX(node),), (0,))	\
 	))
-#define DEFINE_AS_FB_OFFSETS(node)						\
+#define DEFINE_AS_FB_INDEXES(node)						\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		COND_CODE_1(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node),		\
-			(UAC2_DESCRIPTOR_AS_FEEDBACK_EP_OFFSET(node),), (0,))	\
+			(UAC2_DESCRIPTOR_AS_FEEDBACK_EP_INDEX(node),), (0,))	\
 	))
 #define DEFINE_AS_TERMINALS(node)						\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
@@ -725,11 +740,11 @@ struct usbd_class_api uac2_api = {
 	static const entity_type_t entity_types_##i[] = {			\
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_ENTITY_TYPES)	\
 	};									\
-	static const uint16_t ep_offsets_##i[] = {				\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_EP_OFFSETS)	\
+	static const uint16_t ep_indexes_##i[] = {				\
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_EP_INDEXES)	\
 	};									\
-	static const uint16_t fb_offsets_##i[] = {				\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_FB_OFFSETS)	\
+	static const uint16_t fb_indexes_##i[] = {				\
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_FB_INDEXES)	\
 	};									\
 	static const uint8_t as_terminals_##i[] = {				\
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_TERMINALS)	\
@@ -739,26 +754,26 @@ struct usbd_class_api uac2_api = {
 #define DEFINE_UAC2_CLASS_DATA(inst)						\
 	DT_INST_FOREACH_CHILD(inst, VALIDATE_NODE)				\
 	static struct uac2_ctx uac2_ctx_##inst;					\
-	static uint8_t uac2_descriptor_##inst[] = {				\
-		UAC2_DESCRIPTORS(DT_DRV_INST(inst))				\
-		0x00, 0x00 /* terminator required by USBD stack */		\
+	UAC2_DESCRIPTOR_ARRAYS(DT_DRV_INST(inst))				\
+	static const struct usb_desc_header *uac2_descriptors_##inst[] = {	\
+		UAC2_DESCRIPTOR_PTRS(DT_DRV_INST(inst))				\
 	};									\
 	static struct usbd_class_data uac2_class_##inst = {			\
-		.desc = (struct usb_desc_header *)uac2_descriptor_##inst,	\
 		.priv = (void *)DEVICE_DT_GET(DT_DRV_INST(inst)),		\
 	};									\
 	USBD_DEFINE_CLASS(uac2_##inst, &uac2_api, &uac2_class_##inst);		\
 	DEFINE_LOOKUP_TABLES(inst)						\
 	static const struct uac2_cfg uac2_cfg_##inst = {			\
 		.node = &uac2_##inst,						\
+		.descriptors = uac2_descriptors_##inst,				\
 		.entity_types = entity_types_##inst,				\
-		.ep_offsets = ep_offsets_##inst,				\
-		.fb_offsets = fb_offsets_##inst,				\
+		.ep_indexes = ep_indexes_##inst,				\
+		.fb_indexes = fb_indexes_##inst,				\
 		.as_terminals = as_terminals_##inst,				\
-		.num_ifaces = ARRAY_SIZE(ep_offsets_##inst),			\
+		.num_ifaces = ARRAY_SIZE(ep_indexes_##inst),			\
 		.num_entities = ARRAY_SIZE(entity_types_##inst),		\
 	};									\
-	BUILD_ASSERT(ARRAY_SIZE(ep_offsets_##inst) <= 32,			\
+	BUILD_ASSERT(ARRAY_SIZE(ep_indexes_##inst) <= 32,			\
 		"UAC2 implementation supports up to 32 AS interfaces");		\
 	BUILD_ASSERT(ARRAY_SIZE(entity_types_##inst) <= 255,			\
 		"UAC2 supports up to 255 entities");				\
