@@ -1,3 +1,5 @@
 board:
   name: pan1781_evb
   vendor: Panasonic Industrial Devices Europe GmbH
+  socs:
+  - name: nrf52820
