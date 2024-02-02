@@ -474,11 +474,6 @@ static int runtime_disable_sync(const struct device *dev)
 	int ret;
 	k_spinlock_key_t k = k_spin_lock(&pm->lock);
 
-	if (!(pm->base.flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED))) {
-		ret = 0;
-		goto unlock;
-	}
-
 	if (pm->base.state == PM_DEVICE_STATE_SUSPENDED) {
 		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_RESUME);
 		if (ret < 0) {
@@ -508,6 +503,10 @@ int pm_device_runtime_disable(const struct device *dev)
 		goto end;
 	}
 
+	if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
+		goto end;
+	}
+
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		ret = runtime_disable_sync(dev);
 		goto end;
@@ -515,10 +514,6 @@ int pm_device_runtime_disable(const struct device *dev)
 
 	if (!k_is_pre_kernel()) {
 		(void)k_sem_take(&pm->lock, K_FOREVER);
-	}
-
-	if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		goto unlock;
 	}
 
 	if (!k_is_pre_kernel()) {
