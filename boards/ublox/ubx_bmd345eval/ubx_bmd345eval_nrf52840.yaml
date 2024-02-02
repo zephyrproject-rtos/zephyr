@@ -1,4 +1,4 @@
-identifier: ubx_bmd345eval_nrf52840
+identifier: ubx_bmd345eval/nrf52840
 name: BMD-345-EVAL
 type: mcu
 arch: arm
