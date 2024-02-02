@@ -1,4 +1,4 @@
-identifier: nrf52840dk_nrf52840
+identifier: nrf52840dk/nrf52840
 name: nRF52840-DK-NRF52840
 type: mcu
 arch: arm
