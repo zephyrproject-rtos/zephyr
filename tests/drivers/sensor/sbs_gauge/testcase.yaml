@@ -17,7 +17,7 @@ tests:
     platform_allow:
       - native_sim
       - qemu_cortex_a9
-      - qemu_arc_hs
+      - qemu_arc/qemu_arc_hs
     integration_platforms:
       - native_sim
     extra_configs:
