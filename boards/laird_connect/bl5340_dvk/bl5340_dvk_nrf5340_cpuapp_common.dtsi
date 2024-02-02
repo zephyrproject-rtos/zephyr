@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "bl5340_dvk_cpuapp_common-pinctrl.dtsi"
+#include "bl5340_dvk_nrf5340_cpuapp_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -378,4 +378,4 @@
 };
 
 /* Include partition configuration file */
-#include "bl5340_dvk_cpuapp_partition_conf.dtsi"
+#include "bl5340_dvk_nrf5340_cpuapp_partition_conf.dtsi"
