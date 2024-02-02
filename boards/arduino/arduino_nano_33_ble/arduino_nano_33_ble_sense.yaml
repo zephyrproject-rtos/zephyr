@@ -1,4 +1,4 @@
-identifier: arduino_nano_33_ble_sense
+identifier: arduino_nano_33_ble//sense
 name: Arduino Nano 33 BLE Sense
 type: mcu
 arch: arm
