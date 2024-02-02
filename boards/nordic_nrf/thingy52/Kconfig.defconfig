@@ -3,6 +3,9 @@
 # Copyright (c) 2018 Aapo Vienamo
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_THINGY52_NRF52832
-	bool "Thingy52 NRF52832"
-	depends on SOC_NRF52832_QFAA
+if BOARD_THINGY52
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_THINGY52
