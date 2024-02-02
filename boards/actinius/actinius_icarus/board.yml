@@ -1,8 +1,10 @@
 board:
   name: actinius_icarus
   vendor: Actinius
-  variants:
-  - name: 'ns'
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'
   revision:
     format: major.minor.patch
     default: "2.0.0"

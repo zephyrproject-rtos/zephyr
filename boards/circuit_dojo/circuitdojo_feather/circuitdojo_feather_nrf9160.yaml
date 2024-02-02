@@ -1,4 +1,4 @@
-identifier: circuitdojo_feather_nrf9160
+identifier: circuitdojo_feather/nrf9160
 name: CircuitDojo-Feather-nRF9160
 type: mcu
 arch: arm
