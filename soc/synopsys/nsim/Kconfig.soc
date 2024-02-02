@@ -1,0 +1,94 @@
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NSIM
+	bool
+
+config SOC_NSIM_EM
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC EM4 in nSIM
+
+config SOC_NSIM_EM7D_V22
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC EM7D_V22 in nSIM
+
+config SOC_NSIM_EM11D
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC EM11D in nSIM
+
+config SOC_NSIM_SEM
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC SEM in nSIM
+
+config SOC_NSIM_HS
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC HS3X in nSIM
+
+config SOC_NSIM_HS_SMP
+	bool
+	select SOC_NSIM
+	help
+	  Multi-core Synopsys ARC HS3X in nSIM
+
+config SOC_NSIM_HS_MPUV6
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC HS3X with MPU v6 in nSIM
+
+config SOC_NSIM_VPX5
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC VPX5 in nSIM
+
+config SOC_NSIM_HS5X
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC HS5x in nSIM
+
+config SOC_NSIM_HS5X_SMP
+	bool
+	select SOC_NSIM
+	help
+	  Multi-core Synopsys ARC HS5x in nSIM
+
+config SOC_NSIM_HS6X
+	bool
+	select SOC_NSIM
+	help
+	  Synopsys ARC HS6x in nSIM
+
+config SOC_NSIM_HS6X_SMP
+	bool
+	select SOC_NSIM
+	help
+	  Multi-core Synopsys ARC HS6x in nSIM
+
+config SOC
+	default "nsim_em" if SOC_NSIM_EM
+	default "nsim_em7d_v22" if SOC_NSIM_EM7D_V22
+	default "nsim_em11d" if SOC_NSIM_EM11D
+	default "nsim_sem" if SOC_NSIM_SEM
+	default "nsim_hs" if SOC_NSIM_HS
+	default "nsim_hs_smp" if SOC_NSIM_HS_SMP
+	default "nsim_hs_mpuv6" if SOC_NSIM_HS_MPUV6
+	default "nsim_vpx5" if SOC_NSIM_VPX5
+	default "nsim_hs5x" if SOC_NSIM_HS5X
+	default "nsim_hs5x_smp" if SOC_NSIM_HS5X_SMP
+	default "nsim_hs6x" if SOC_NSIM_HS6X
+	default "nsim_hs6x_smp" if SOC_NSIM_HS6X_SMP
+
+config SOC_SERIES
+	default "nsim" if SOC_NSIM
