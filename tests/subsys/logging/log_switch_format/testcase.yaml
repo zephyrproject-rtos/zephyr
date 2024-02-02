@@ -13,7 +13,7 @@ common:
 tests:
   logging.format.switch.deferred:
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
@@ -28,7 +28,7 @@ tests:
   logging.format.switch.immediate:
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
@@ -36,7 +36,7 @@ tests:
   logging.format.switch.custom_output:
     extra_args: OVERLAY_CONFIG=overlay_custom_output.conf
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
