@@ -1,0 +1,5 @@
+board:
+  name: hsdk4xd
+  vendor: Synopsys
+  socs:
+  - name: arc_hsdk4xd

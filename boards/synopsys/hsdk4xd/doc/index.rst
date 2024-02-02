@@ -391,7 +391,7 @@ You can try many of the :ref:`sample applications and demos
 Configuring
 -----------
 
-You may need to write a ``prj_arc.conf`` file if the sample doesn't have one.
+You may need to write a ``prj.conf`` file if the sample doesn't have one.
 Next, you can use the menuconfig rule to configure the target. By specifying
 ``hsdk4xd`` as the board configuration, you can select the ARC HS4x/HS4xD Development
 Kit board support for Zephyr.
