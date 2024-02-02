@@ -2414,7 +2414,7 @@ endfunction()
 # Usage:
 #   print(BOARD)
 #
-# will print: "BOARD: nrf52dk_nrf52832"
+# will print: "BOARD: nrf52dk"
 function(print arg)
   message(STATUS "${arg}: ${${arg}}")
 endfunction()

@@ -7,9 +7,9 @@ common:
 tests:
   sample.boards.nrf.nrf53_sync_rtc.real_hw:
     platform_allow:
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
     harness: remote
   sample.boards.nrf.nrf53_sync_rtc.simu:
     platform_allow:

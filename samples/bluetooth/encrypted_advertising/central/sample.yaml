@@ -3,5 +3,5 @@ sample:
 tests:
   sample.bluetooth.central_ead:
     harness: bluetooth
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     tags: bluetooth

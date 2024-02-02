@@ -171,7 +171,7 @@ built and executed for the :ref:`bl5340_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: bl5340_dvk_cpuapp
+   :board: bl5340_dvk/nrf5340/cpuapp
    :goals: build flash
    :compact:
 

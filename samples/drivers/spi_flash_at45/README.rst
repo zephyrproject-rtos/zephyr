@@ -30,7 +30,7 @@ Requirements
 ************
 
 This sample has been tested on the Nordic Semiconductor nRF9160 DK
-(nrf9160dk_nrf9160) board with the AT45DB321E chip connected.
+(nrf9160dk/nrf9160) board with the AT45DB321E chip connected.
 It can be easily adjusted to be usable on other boards and with other
 AT45 family chips by just providing a corresponding overlay file.
 
@@ -43,7 +43,7 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
+   :board: nrf9160dk/nrf9160
    :goals: build flash
    :compact:
 
@@ -51,7 +51,7 @@ To build and flash with device power management enabled:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
+   :board: nrf9160dk/nrf9160
    :gen-args: -DEXTRA_CONF_FILE=overlay-pm.conf
    :goals: build flash
    :compact:
@@ -60,7 +60,7 @@ To build and flash with flash page layout enabled:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
+   :board: nrf9160dk/nrf9160
    :gen-args: -DEXTRA_CONF_FILE=overlay-page_layout.conf
    :goals: build flash
    :compact:
@@ -70,7 +70,7 @@ layout enabled:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160dk_nrf9160
+   :board: nrf9160dk/nrf9160
    :gen-args: -DEXTRA_CONF_FILE="overlay-pm.conf overlay-page_layout.conf"
    :goals: build flash
    :compact:

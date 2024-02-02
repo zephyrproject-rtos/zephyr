@@ -7,21 +7,21 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim_nrf5340_cpuapp
     integration_platforms:
       - qemu_x86
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
     tags: bluetooth
     sysbuild: true
   sample.bluetooth.broadcast_audio_sink.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
       - nrf52_bsim
-      - nrf52833dk_nrf52820
-      - nrf52833dk_nrf52833
+      - nrf52833dk/nrf52820
+      - nrf52833dk/nrf52833
     integration_platforms:
       - nrf52_bsim
-      - nrf52833dk_nrf52833
+      - nrf52833dk/nrf52833
     extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
     tags: bluetooth

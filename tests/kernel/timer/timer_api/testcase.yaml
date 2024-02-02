@@ -13,7 +13,7 @@ tests:
       - litex_vexriscv
       - rv32m1_vega_zero_riscy
       - rv32m1_vega_ri5cy
-      - nrf5340dk_nrf5340_cpunet
+      - nrf5340dk/nrf5340/cpunet
     tags:
       - kernel
       - timer
