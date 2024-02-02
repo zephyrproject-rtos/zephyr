@@ -305,7 +305,7 @@ manifest:
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 799c8e9be79381d798595bf6734d7808b36c0d44
+      revision: ef7ef54031081e638f698a32bdb9403ea909a613
       groups:
         - debug
     - name: picolibc
