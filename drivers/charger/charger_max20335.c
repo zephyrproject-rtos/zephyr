@@ -188,7 +188,7 @@ static int max20335_get_constant_charge_current(const struct device *dev,
 }
 
 static int max20335_get_constant_charge_voltage(const struct device *dev,
-						uint32_t *current_uv)
+						uint32_t *voltage_uv)
 {
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
@@ -201,7 +201,7 @@ static int max20335_get_constant_charge_voltage(const struct device *dev,
 
 	val = FIELD_GET(MAX20335_CHGCNTLA_BAT_REG_CFG_MASK, val);
 
-	return linear_range_get_value(&charger_uv_range, val, current_uv);
+	return linear_range_get_value(&charger_uv_range, val, voltage_uv);
 }
 
 static int max20335_set_enabled(const struct device *dev, bool enable)
