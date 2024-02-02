@@ -4,7 +4,7 @@ tests:
       - benchmark
       - kernel
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     slow: true
     harness: console

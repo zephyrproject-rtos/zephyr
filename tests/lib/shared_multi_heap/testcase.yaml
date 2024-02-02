@@ -5,7 +5,7 @@ tests:
   libraries.shared_multi_heap:
     platform_allow:
       - qemu_cortex_a53
-      - mps2_an521
+      - mps2/an521/cpu0
     integration_platforms:
       - qemu_cortex_a53
     tags:

@@ -6,7 +6,7 @@ common:
   tags: posix
   platform_exclude: m2gl025_miv
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
 tests:
   sample.posix.eventfd:
     min_ram: 32

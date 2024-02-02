@@ -15,7 +15,7 @@ tests:
   sample.logger.syst.deferred:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     harness: console
@@ -95,7 +95,7 @@ tests:
   sample.logger.syst.immediate_cpp:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     harness: console
     harness_config:
