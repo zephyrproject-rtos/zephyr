@@ -509,7 +509,7 @@ _XOPEN_STREAMS
     getpmsg(),
     ioctl(),yes
     isastream(),
-    putmsg(),
+    putmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     putpmsg(),
 
 
