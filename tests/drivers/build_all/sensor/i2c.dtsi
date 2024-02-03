@@ -915,3 +915,8 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 
 	low-power;
 };
+
+test_i2c_sht21@82 {
+	compatible = "sensirion,sht21";
+	reg = <0x82>;
+};
