@@ -36,6 +36,8 @@
 		led0 = &led0;
 		watchdog0 = &wdt0;
 		accel0 = &lis3dh;
+		modem-uart = &uart0;
+		modem = &modem;
 	};
 };
 
@@ -56,20 +58,15 @@
 };
 
 &uart0 {
-	compatible = "nordic,nrf-uart";
+	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
-
-	/* QUECTEL BG9X */
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
-	quectel_bg9x: quectel_bg9x {
-		compatible = "quectel,bg9x";
-		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
-		mdm-reset-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
-		mdm-dtr-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
-		mdm-wdisable-gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+	modem: modem {
+		compatible = "quectel,bg95";
+		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
