@@ -109,7 +109,7 @@ POSIX System Interfaces
     _XOPEN_CRYPT, -1,
     _XOPEN_REALTIME, -1,
     _XOPEN_REALTIME_THREADS, -1,
-    :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, -1, :kconfig:option:`CONFIG_NET_SOCKETS`
+    :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, -1, :ref:`†<posix_undefined_behaviour>`
     _XOPEN_UNIX, -1,
 
 POSIX Shell and Utilities
