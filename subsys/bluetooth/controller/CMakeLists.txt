@@ -7,6 +7,7 @@ if(CONFIG_BT_CTLR_ADVANCED_FEATURES)
 endif()
 
 zephyr_library()
+zephyr_library_link_libraries(subsys__bluetooth)
 
 zephyr_library_sources(
   util/mem.c
@@ -165,17 +166,6 @@ zephyr_library_sources_ifdef(
   flash/soc_flash_nrf_ticker.c
   )
 
-add_subdirectory_ifdef(
-  CONFIG_BT_CTLR_COEX_DRIVERS
-  coex
-  )
-
-if(CONFIG_SOC_COMPATIBLE_NRF)
-  include(ll_sw/nrf.cmake)
-elseif(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
-  include(ll_sw/openisa.cmake)
-endif()
-
 zephyr_library_include_directories(
   .
   include
@@ -184,16 +174,41 @@ zephyr_library_include_directories(
 zephyr_library_include_directories_ifdef(
   CONFIG_BT_CTLR_CRYPTO
   ../crypto
-)
+  )
 
 zephyr_library_include_directories_ifdef(
   CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
   ${ZEPHYR_BASE}/drivers/flash
-)
+  )
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_SOC_COMPATIBLE_NRF
+  ll_sw/nordic
+  hci/nordic
+  )
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_SOC_OPENISA_RV32M1_RISCV32
+  ll_sw/openisa
+  hci/openisa
+  )
+
+add_subdirectory_ifdef(
+  CONFIG_BT_CTLR_COEX_DRIVERS
+  coex
+  )
+
+add_subdirectory_ifdef(
+  CONFIG_SOC_COMPATIBLE_NRF
+  ll_sw/nordic
+  )
+
+add_subdirectory_ifdef(
+  CONFIG_SOC_OPENISA_RV32M1_RISCV32
+  ll_sw/openisa
+  )
 
 zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED
   ${OPTIMIZE_FOR_SPEED_FLAG}
   )
-
-zephyr_library_link_libraries(subsys__bluetooth)
