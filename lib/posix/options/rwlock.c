@@ -57,19 +57,19 @@ static struct posix_rwlock *get_posix_rwlock(pthread_rwlock_t rwlock)
 
 	/* if the provided rwlock does not claim to be initialized, its invalid */
 	if (!is_pthread_obj_initialized(rwlock)) {
-		LOG_ERR("RWlock is uninitialized (%x)", rwlock);
+		LOG_DBG("RWlock is uninitialized (%x)", rwlock);
 		return NULL;
 	}
 
 	/* Mask off the MSB to get the actual bit index */
 	if (sys_bitarray_test_bit(&posix_rwlock_bitarray, bit, &actually_initialized) < 0) {
-		LOG_ERR("RWlock is invalid (%x)", rwlock);
+		LOG_DBG("RWlock is invalid (%x)", rwlock);
 		return NULL;
 	}
 
 	if (actually_initialized == 0) {
 		/* The rwlock claims to be initialized but is actually not */
-		LOG_ERR("RWlock claims to be initialized (%x)", rwlock);
+		LOG_DBG("RWlock claims to be initialized (%x)", rwlock);
 		return NULL;
 	}
 
@@ -87,7 +87,7 @@ struct posix_rwlock *to_posix_rwlock(pthread_rwlock_t *rwlock)
 
 	/* Try and automatically associate a posix_rwlock */
 	if (sys_bitarray_alloc(&posix_rwlock_bitarray, 1, &bit) < 0) {
-		LOG_ERR("Unable to allocate pthread_rwlock_t");
+		LOG_DBG("Unable to allocate pthread_rwlock_t");
 		return NULL;
 	}
 
