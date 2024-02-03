@@ -57,19 +57,19 @@ static struct k_mutex *get_posix_mutex(pthread_mutex_t mu)
 
 	/* if the provided mutex does not claim to be initialized, its invalid */
 	if (!is_pthread_obj_initialized(mu)) {
-		LOG_ERR("Mutex is uninitialized (%x)", mu);
+		LOG_DBG("Mutex is uninitialized (%x)", mu);
 		return NULL;
 	}
 
 	/* Mask off the MSB to get the actual bit index */
 	if (sys_bitarray_test_bit(&posix_mutex_bitarray, bit, &actually_initialized) < 0) {
-		LOG_ERR("Mutex is invalid (%x)", mu);
+		LOG_DBG("Mutex is invalid (%x)", mu);
 		return NULL;
 	}
 
 	if (actually_initialized == 0) {
 		/* The mutex claims to be initialized but is actually not */
-		LOG_ERR("Mutex claims to be initialized (%x)", mu);
+		LOG_DBG("Mutex claims to be initialized (%x)", mu);
 		return NULL;
 	}
 
@@ -88,7 +88,7 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 
 	/* Try and automatically associate a posix_mutex */
 	if (sys_bitarray_alloc(&posix_mutex_bitarray, 1, &bit) < 0) {
-		LOG_ERR("Unable to allocate pthread_mutex_t");
+		LOG_DBG("Unable to allocate pthread_mutex_t");
 		return NULL;
 	}
 
@@ -130,12 +130,12 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 		case PTHREAD_MUTEX_NORMAL:
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				k_spin_unlock(&pthread_mutex_spinlock, key);
-				LOG_ERR("Timeout locking mutex %p", m);
+				LOG_DBG("Timeout locking mutex %p", m);
 				return EBUSY;
 			}
 			/* On most POSIX systems, this usually results in an infinite loop */
 			k_spin_unlock(&pthread_mutex_spinlock, key);
-			LOG_ERR("Attempt to relock non-recursive mutex %p", m);
+			LOG_DBG("Attempt to relock non-recursive mutex %p", m);
 			do {
 				(void)k_sleep(K_FOREVER);
 			} while (true);
@@ -143,12 +143,12 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 			break;
 		case PTHREAD_MUTEX_RECURSIVE:
 			if (m->lock_count >= MUTEX_MAX_REC_LOCK) {
-				LOG_ERR("Mutex %p locked recursively too many times", m);
+				LOG_DBG("Mutex %p locked recursively too many times", m);
 				ret = EAGAIN;
 			}
 			break;
 		case PTHREAD_MUTEX_ERRORCHECK:
-			LOG_ERR("Attempt to recursively lock non-recursive mutex %p", m);
+			LOG_DBG("Attempt to recursively lock non-recursive mutex %p", m);
 			ret = EDEADLK;
 			break;
 		default:
@@ -162,7 +162,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 	if (ret == 0) {
 		ret = k_mutex_lock(m, timeout);
 		if (ret == -EAGAIN) {
-			LOG_ERR("Timeout locking mutex %p", m);
+			LOG_DBG("Timeout locking mutex %p", m);
 			/*
 			 * special quirk - k_mutex_lock() returns EAGAIN if a timeout occurs, but
 			 * for pthreads, that means something different
@@ -172,7 +172,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("k_mutex_unlock() failed: %d", ret);
+		LOG_DBG("k_mutex_unlock() failed: %d", ret);
 		ret = -ret;
 	}
 
@@ -264,7 +264,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mu)
 
 	ret = k_mutex_unlock(m);
 	if (ret < 0) {
-		LOG_ERR("k_mutex_unlock() failed: %d", ret);
+		LOG_DBG("k_mutex_unlock() failed: %d", ret);
 		return -ret;
 	}
 

@@ -144,12 +144,12 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 
 	/* if the provided thread does not claim to be initialized, its invalid */
 	if (!is_pthread_obj_initialized(pthread)) {
-		LOG_ERR("pthread is not initialized (%x)", pthread);
+		LOG_DBG("pthread is not initialized (%x)", pthread);
 		return NULL;
 	}
 
 	if (bit >= CONFIG_MAX_PTHREAD_COUNT) {
-		LOG_ERR("Invalid pthread (%x)", pthread);
+		LOG_DBG("Invalid pthread (%x)", pthread);
 		return NULL;
 	}
 
@@ -165,7 +165,7 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 				  t->attr.detachstate == PTHREAD_CREATE_DETACHED));
 
 	if (!actually_initialized) {
-		LOG_ERR("Pthread claims to be initialized (%x)", pthread);
+		LOG_DBG("Pthread claims to be initialized (%x)", pthread);
 		return NULL;
 	}
 
@@ -257,7 +257,7 @@ static bool is_posix_policy_prio_valid(int priority, int policy)
 		return true;
 	}
 
-	LOG_ERR("Invalid priority %d and / or policy %d", priority, policy);
+	LOG_DBG("Invalid priority %d and / or policy %d", priority, policy);
 
 	return false;
 }
@@ -306,7 +306,7 @@ static bool __attr_is_runnable(const struct posix_thread_attr *attr)
 
 	/* require a valid scheduler policy */
 	if (!valid_posix_policy(attr->schedpolicy)) {
-		LOG_ERR("Invalid scheduler policy %d", attr->schedpolicy);
+		LOG_DBG("Invalid scheduler policy %d", attr->schedpolicy);
 		return false;
 	}
 
@@ -338,7 +338,7 @@ int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *
 
 	if (!__attr_is_initialized(attr) || schedparam == NULL ||
 	    !is_posix_policy_prio_valid(schedparam->sched_priority, attr->schedpolicy)) {
-		LOG_ERR("Invalid pthread_attr_t or sched_param");
+		LOG_DBG("Invalid pthread_attr_t or sched_param");
 		return EINVAL;
 	}
 
@@ -357,13 +357,13 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if (stackaddr == NULL) {
-		LOG_ERR("NULL stack address");
+		LOG_DBG("NULL stack address");
 		return EACCES;
 	}
 
 	if (!__attr_is_initialized(attr) || stacksize == 0 || stacksize < PTHREAD_STACK_MIN ||
 	    stacksize > PTHREAD_STACK_MAX) {
-		LOG_ERR("Invalid stacksize %zu", stacksize);
+		LOG_DBG("Invalid stacksize %zu", stacksize);
 		return EINVAL;
 	}
 
@@ -531,7 +531,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 
 	if (t == NULL) {
 		/* no threads are ready */
-		LOG_ERR("No threads are ready");
+		LOG_DBG("No threads are ready");
 		return EAGAIN;
 	}
 
@@ -620,7 +620,7 @@ int pthread_setcancelstate(int state, int *oldstate)
 	bool cancel_type = PTHREAD_CANCEL_ENABLE;
 
 	if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE) {
-		LOG_ERR("Invalid pthread state %d", state);
+		LOG_DBG("Invalid pthread state %d", state);
 		return EINVAL;
 	}
 
@@ -659,7 +659,7 @@ int pthread_setcanceltype(int type, int *oldtype)
 	struct posix_thread *t;
 
 	if (type != PTHREAD_CANCEL_DEFERRED && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
-		LOG_ERR("Invalid pthread cancel type %d", type);
+		LOG_DBG("Invalid pthread cancel type %d", type);
 		return EINVAL;
 	}
 
@@ -789,7 +789,7 @@ int pthread_attr_init(pthread_attr_t *_attr)
 	struct posix_thread_attr *const attr = (struct posix_thread_attr *)_attr;
 
 	if (attr == NULL) {
-		LOG_ERR("Invalid attr pointer");
+		LOG_DBG("Invalid attr pointer");
 		return ENOMEM;
 	}
 
@@ -924,7 +924,7 @@ int pthread_join(pthread_t pthread, void **status)
 	struct posix_thread *t = NULL;
 
 	if (pthread == pthread_self()) {
-		LOG_ERR("Pthread attempted to join itself (%x)", pthread);
+		LOG_DBG("Pthread attempted to join itself (%x)", pthread);
 		return EDEADLK;
 	}
 
@@ -957,10 +957,10 @@ int pthread_join(pthread_t pthread, void **status)
 
 	switch (ret) {
 	case ESRCH:
-		LOG_ERR("Pthread %p has already been joined", &t->thread);
+		LOG_DBG("Pthread %p has already been joined", &t->thread);
 		return ret;
 	case EINVAL:
-		LOG_ERR("Pthread %p is not a joinable", &t->thread);
+		LOG_DBG("Pthread %p is not a joinable", &t->thread);
 		return ret;
 	case 0:
 		break;
@@ -1001,7 +1001,7 @@ int pthread_detach(pthread_t pthread)
 
 		if (posix_thread_q_get(t) == POSIX_THREAD_READY_Q ||
 		    t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
-			LOG_ERR("Pthread %p cannot be detached", &t->thread);
+			LOG_DBG("Pthread %p cannot be detached", &t->thread);
 			ret = EINVAL;
 			K_SPINLOCK_BREAK;
 		}
