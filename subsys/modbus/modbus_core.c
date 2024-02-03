@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(modbus, CONFIG_MODBUS_LOG_LEVEL);
 #define DT_DRV_COMPAT zephyr_modbus_serial
 
 #define MB_RTU_DEFINE_GPIO_CFG(inst, prop)				\
-	static struct gpio_dt_spec prop##_cfg_##inst = {		\
+	static const struct gpio_dt_spec prop##_cfg_##inst = {		\
 		.port = DEVICE_DT_GET(DT_INST_PHANDLE(inst, prop)),	\
 		.pin = DT_INST_GPIO_PIN(inst, prop),			\
 		.dt_flags = DT_INST_GPIO_FLAGS(inst,  prop),		\
