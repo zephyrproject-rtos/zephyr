@@ -1,0 +1,88 @@
+# Copyright (c) 2024-2025 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common GPIO-driven 7-Segment Display
+
+  A 7-segment display is a form of electronic display device for displaying
+  decimal numerals that is an alternative to the more complex dot matrix
+  displays. Seven-segment displays are widely used in digital clocks, electronic
+  meters, basic calculators, and other electronic devices that display numerical
+  information.
+
+  This driver supports 7-segment displays driven by GPIOs, in a widely used
+  circuit design either common anode or common cathode.
+
+  In common anode design, digit-gpios and segment-gpios are configured as active
+  high and active low respectively, meaning that the current flows from
+  digit-gpios to segment-gpios. Vice versa for common cathode.
+
+  Example:
+
+  #include <zephyr/dt-bindings/gpio/gpio.h>
+
+  / {
+          auxdisplay_0: digi-display {
+                  compatible = "gpio-7-segment";
+                  columns = <3>;
+                  rows = <1>;
+                  segment-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>, /* A */
+                                  <&gpio0 1 GPIO_ACTIVE_LOW>, /* B */
+                                  <&gpio0 2 GPIO_ACTIVE_LOW>, /* C */
+                                  <&gpio0 3 GPIO_ACTIVE_LOW>, /* D */
+                                  <&gpio0 4 GPIO_ACTIVE_LOW>, /* E */
+                                  <&gpio0 5 GPIO_ACTIVE_LOW>, /* F */
+                                  <&gpio0 6 GPIO_ACTIVE_LOW>, /* G */
+                                  <&gpio0 7 GPIO_ACTIVE_LOW>; /* DP */
+                  digit-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,  /* DIG1 */
+                                <&gpio1 1 GPIO_ACTIVE_HIGH>,  /* DIG2 */
+                                <&gpio1 2 GPIO_ACTIVE_HIGH>;  /* DIG3 */
+                  refresh-period-ms = <1>;
+          };
+  };
+
+compatible: "gpio-7-segment"
+
+include: auxdisplay-device.yaml
+
+properties:
+  segment-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIOs used to control the segments.
+
+      Segments are usually labeled A to G, and DP for the decimal point. The
+      GPIOs must be listed in the order A, B, C, D, E, F, G and an optional DP.
+      The following diagram shows the segment layout:
+
+           -- A --
+          |       |
+          F       B
+          |       |
+           -- G --
+          |       |
+          E       C
+          |       |
+           -- D --  (DP)
+
+      The number of GPIOs must be 7 for a 7-segment display, or 8 for a 7-segment
+      display with a decimal point.
+
+  digit-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIOs used to control the digits (the common anodes or cathodes).
+
+      The number of GPIOs must match the number of digits.
+
+  refresh-period-ms:
+    type: int
+    required: true
+    description: |
+      The refresh period in milliseconds.
+
+      This is the time between the display of each digit. The refresh period
+      must be long enough to allow the segments to be driven and the digit to
+      be selected.
