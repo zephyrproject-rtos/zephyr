@@ -26,7 +26,9 @@ static K_MUTEX_DEFINE(nsem_mutex);
 
 static inline void nsem_list_lock(void)
 {
-	k_mutex_lock(&nsem_mutex, K_FOREVER);
+	__unused int ret = k_mutex_lock(&nsem_mutex, K_FOREVER);
+
+	__ASSERT(ret == 0, "nsem_list_lock() failed: %d", ret);
 }
 
 static inline void nsem_list_unlock(void)
