@@ -81,9 +81,8 @@ static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 /* Copied here from `hci_raw.c`. Unregurgitatizes this driver. */
-int bt_recv_prio(struct net_buf *buf)
+static int bt_recv_prio(struct net_buf *buf)
 {
 	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
 		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
@@ -98,7 +97,6 @@ int bt_recv_prio(struct net_buf *buf)
 
 	return bt_recv(buf);
 }
-#endif /* CONFIG_BT_RECV_BLOCKING */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 

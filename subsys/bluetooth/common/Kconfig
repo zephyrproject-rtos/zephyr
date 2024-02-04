@@ -95,7 +95,6 @@ config BT_BUF_ACL_RX_SIZE
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default NET_BUF_RX_COUNT if NET_L2_BT
-	default 3 if BT_RECV_BLOCKING
 	default 6
 	range 1 64
 	help
@@ -126,7 +125,6 @@ config BT_BUF_EVT_RX_SIZE
 
 config BT_BUF_EVT_RX_COUNT
 	int "Number of HCI Event buffers"
-	default 3 if BT_RECV_BLOCKING
 	default 20 if (BT_MESH && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
 	default 10
 	range 2 255

@@ -79,12 +79,7 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	}
 
 	net_buf_add_mem(buf, data, len);
-	if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) &&
-	    (packet_type == h4_event) && (flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
-		bt_recv_prio(buf);
-	} else {
-		bt_recv(buf);
-	}
+	bt_recv(buf);
 
 	sl_btctrl_hci_transmit_complete(0);
 

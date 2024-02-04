@@ -29,7 +29,7 @@
 	sizeof(struct bt_hci_cp_host_num_completed_packets) +          \
 	MAX_EVENT_COUNT * sizeof(struct bt_hci_handle_count))
 /* Dedicated pool for HCI_Number_of_Completed_Packets. This event is always
- * consumed synchronously by bt_recv_prio() so a single buffer is enough.
+ * consumed synchronously by bt_recv() so a single buffer is enough.
  * Having a dedicated pool for it ensures that exhaustion of the RX pool
  * cannot block the delivery of this priority event.
  */
