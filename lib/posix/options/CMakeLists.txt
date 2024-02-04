@@ -61,3 +61,5 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ARCH_DIR}/${ARCH}/include
 )
+
+zephyr_library_property(ALLOW_EMPTY TRUE)
