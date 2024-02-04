@@ -3881,6 +3881,7 @@ int bt_recv(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_RECV_BLOCKING)
 int bt_recv_prio(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
@@ -3891,6 +3892,7 @@ int bt_recv_prio(struct net_buf *buf)
 
 	return 0;
 }
+#endif /* CONFIG_BT_RECV_BLOCKING */
 
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
