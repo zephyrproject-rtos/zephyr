@@ -30,7 +30,7 @@ static void cfb_test_before(void *text_fixture)
 		.height = display_height,
 		.pitch = display_width,
 		.width = display_width,
-		.buf_size = display_height * display_width / 8,
+		.buf_size = display_buf_size(dev),
 	};
 
 	memset(read_buffer, 0, sizeof(read_buffer));
@@ -53,7 +53,7 @@ ZTEST(invert_area, test_invert_area_whole_screen)
 	zassert_ok(cfb_invert_area(fb, 0, 0, 320, 240));
 	zassert_ok(cfb_finalize(fb), "cfb_finalize failed");
 
-	zassert_true(verify_color_inside_rect(0, 0, 320, 240, 0xFFFFFF));
+	zassert_true(verify_color_inside_rect(0, 0, 320, 240, COLOR_WHITE));
 }
 
 ZTEST(invert_area, test_invert_area_overlapped_2times)
@@ -62,10 +62,10 @@ ZTEST(invert_area, test_invert_area_overlapped_2times)
 	zassert_ok(cfb_invert_area(fb, 100, 37, 53, 77));
 	zassert_ok(cfb_finalize(fb), "cfb_finalize failed");
 
-	zassert_true(verify_color_inside_rect(33, 37, 67, 77, 0xFFFFFF));
-	zassert_true(verify_color_inside_rect(100, 37, 12, 77, 0x0));
-	zassert_true(verify_color_inside_rect(112, 37, 41, 77, 0xFFFFFF));
-	zassert_true(verify_color_outside_rect(33, 37, 120, 77, 0x0));
+	zassert_true(verify_color_inside_rect(33, 37, 67, 77, COLOR_WHITE));
+	zassert_true(verify_color_inside_rect(100, 37, 12, 77, COLOR_BLACK));
+	zassert_true(verify_color_inside_rect(112, 37, 41, 77, COLOR_WHITE));
+	zassert_true(verify_color_outside_rect(33, 37, 120, 77, COLOR_BLACK));
 }
 
 ZTEST(invert_area, test_invert_area_overlap_top_left)
@@ -73,8 +73,8 @@ ZTEST(invert_area, test_invert_area_overlap_top_left)
 	zassert_ok(cfb_invert_area(fb, -10, -10, 20, 20));
 	zassert_ok(cfb_finalize(fb));
 
-	zassert_true(verify_color_inside_rect(0, 0, 10, 10, 0xFFFFFF));
-	zassert_true(verify_color_outside_rect(0, 0, 10, 10, 0x0));
+	zassert_true(verify_color_inside_rect(0, 0, 10, 10, COLOR_WHITE));
+	zassert_true(verify_color_outside_rect(0, 0, 10, 10, COLOR_BLACK));
 }
 
 ZTEST(invert_area, test_invert_area_overlap_top_right)
@@ -82,8 +82,8 @@ ZTEST(invert_area, test_invert_area_overlap_top_right)
 	zassert_ok(cfb_invert_area(fb, display_width - 10, -10, 20, 20));
 	zassert_ok(cfb_finalize(fb));
 
-	zassert_true(verify_color_inside_rect(display_width - 10, 0, 10, 10, 0xFFFFFF));
-	zassert_true(verify_color_outside_rect(display_width - 10, 0, 10, 10, 0x0));
+	zassert_true(verify_color_inside_rect(display_width - 10, 0, 10, 10, COLOR_WHITE));
+	zassert_true(verify_color_outside_rect(display_width - 10, 0, 10, 10, COLOR_BLACK));
 }
 
 ZTEST(invert_area, test_invert_area_overlap_bottom_left)
@@ -91,8 +91,8 @@ ZTEST(invert_area, test_invert_area_overlap_bottom_left)
 	zassert_ok(cfb_invert_area(fb, -10, display_height - 10, 20, 20));
 	zassert_ok(cfb_finalize(fb));
 
-	zassert_true(verify_color_inside_rect(0, display_height - 10, 10, 10, 0xFFFFFF));
-	zassert_true(verify_color_outside_rect(0, display_height - 10, 10, 10, 0x0));
+	zassert_true(verify_color_inside_rect(0, display_height - 10, 10, 10, COLOR_WHITE));
+	zassert_true(verify_color_outside_rect(0, display_height - 10, 10, 10, COLOR_BLACK));
 }
 
 ZTEST(invert_area, test_invert_area_overlap_bottom_right)
@@ -101,9 +101,9 @@ ZTEST(invert_area, test_invert_area_overlap_bottom_right)
 	zassert_ok(cfb_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(display_width - 10, display_height - 10, 10, 10,
-					      0xFFFFFF));
-	zassert_true(
-		verify_color_outside_rect(display_width - 10, display_height - 10, 10, 10, 0x0));
+					      COLOR_WHITE));
+	zassert_true(verify_color_outside_rect(display_width - 10, display_height - 10, 10, 10,
+					       COLOR_BLACK));
 }
 
 ZTEST(invert_area, test_invert_area_outside_top_left)
@@ -111,7 +111,7 @@ ZTEST(invert_area, test_invert_area_outside_top_left)
 	zassert_ok(cfb_invert_area(fb, -10, -10, 10, 10));
 	zassert_ok(cfb_finalize(fb));
 
-	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0x0));
+	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, COLOR_BLACK));
 }
 
 ZTEST(invert_area, test_invert_area_outside_bottom_right)
@@ -119,7 +119,37 @@ ZTEST(invert_area, test_invert_area_outside_bottom_right)
 	zassert_ok(cfb_invert_area(fb, display_width, display_height, 20, 20));
 	zassert_ok(cfb_finalize(fb));
 
-	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0x0));
+	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, COLOR_BLACK));
+}
+
+ZTEST(invert_area, test_invert_area_color)
+{
+	SKIP_MONO_DISP();
+
+	zassert_ok(cfb_set_fg_color(fb, 0x4D, 0x75, 0xBA, 0));
+	zassert_ok(cfb_set_bg_color(fb, 0xAA, 0xAA, 0xAA, 0));
+
+	zassert_ok(cfb_print(fb, " ", 40, 40));
+	zassert_ok(cfb_invert_area(fb, 0, 0, display_width, 50));
+	zassert_ok(cfb_finalize(fb));
+
+	zassert_true(verify_color_inside_rect(0, 0, display_width, 40, COLOR_WHITE));
+	zassert_true(verify_color_inside_rect(0, 40, 40, 10, COLOR_WHITE));
+	zassert_true(verify_color_inside_rect(50, 40, 270, 10, COLOR_WHITE));
+	zassert_true(verify_color_inside_rect(0, 56, display_width, 184, COLOR_BLACK));
+	zassert_true(verify_color_inside_rect(0, 50, 40, 6, COLOR_BLACK));
+	zassert_true(verify_color_inside_rect(50, 50, 270, 6, COLOR_BLACK));
+
+	zassert_true(verify_color_inside_rect(41, 41, 8, 9, 0x00555555));
+	zassert_true(verify_color_inside_rect(41, 50, 8, 5, COLOR_TEST_BG));
+
+	zassert_true(verify_color_inside_rect(40, 40, 1, 10, ~COLOR_TEST_COLOR));
+	zassert_true(verify_color_inside_rect(40, 40, 10, 1, ~COLOR_TEST_COLOR));
+	zassert_true(verify_color_inside_rect(49, 40, 1, 10, ~COLOR_TEST_COLOR));
+
+	zassert_true(verify_color_inside_rect(40, 50, 1, 6, COLOR_TEST_COLOR));
+	zassert_true(verify_color_inside_rect(40, 55, 10, 1, COLOR_TEST_COLOR));
+	zassert_true(verify_color_inside_rect(49, 50, 1, 6, COLOR_TEST_COLOR));
 }
 
 ZTEST_SUITE(invert_area, NULL, NULL, cfb_test_before, cfb_test_after, NULL);
