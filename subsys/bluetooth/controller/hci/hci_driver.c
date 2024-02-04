@@ -81,6 +81,30 @@ static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
 
+#if !defined(CONFIG_BT_RECV_BLOCKING)
+/* Copied here from `hci_raw.c`, which would be used in
+ * conjunction with this driver when serializing HCI over wire.
+ * This serves as a converter from the more complicated
+ * `CONFIG_BT_RECV_BLOCKING` API to the normal single-receiver
+ * `bt_recv` API.
+ */
+int bt_recv_prio(struct net_buf *buf)
+{
+	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
+		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
+
+		if ((evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) &&
+		    (evt_flags & BT_HCI_EVT_FLAG_RECV)) {
+			/* Avoid queuing the event twice */
+			return 0;
+		}
+	}
+
+	return bt_recv(buf);
+}
+#endif /* CONFIG_BT_RECV_BLOCKING */
+
 #if defined(CONFIG_BT_CTLR_ISO)
 
 #define SDU_HCI_HDR_SIZE (BT_HCI_ISO_HDR_SIZE + BT_HCI_ISO_TS_DATA_HDR_SIZE)
