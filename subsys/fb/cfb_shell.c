@@ -15,11 +15,12 @@
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/display/cfb.h>
+#include <zephyr/sys/math_extras.h>
 
 #define HELP_NONE "[none]"
-#define HELP_INIT "[[<devname>] <pixfmt>] [<xferbuf_size> [<cmdbuf_size>]]"
-#define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
-#define HELP_DRAW_POINT "<x> <y0>"
+#define HELP_INIT "[[<devname>] <pixfmt> [<xferbuf_size> [<cmdbuf_size>]]]"
+#define HELP_PRINT "<x> <y> \"<text>\""
+#define HELP_DRAW_POINT "<x> <y>"
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
 #define HELP_INVERT "[<x> <y> <width> <height>]"
@@ -29,6 +30,9 @@
 static struct cfb_display *disp;
 static const char * const param_name[] = {
 	"height", "width", "ppt", "rows", "cols"};
+
+static const char *const pixfmt_name[] = {"RGB_888",   "MONO01",  "MONO10",
+					  "ARGB_8888", "RGB_565", "BGR_565"};
 
 static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -59,17 +63,14 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-static int cmd_cfb_print(const struct shell *sh, int col, int row, char *str)
+static int cmd_cfb_print(const struct shell *sh, int x, int y, char *str)
 {
 	int err;
-	uint8_t ppt;
 
 	if (!disp) {
 		shell_error(sh, HELP_INIT);
 		return -ENODEV;
 	}
-
-	ppt = cfb_get_display_parameter(disp, CFB_DISPLAY_PPT);
 
 	err = cfb_clear(&disp->fb, false);
 	if (err) {
@@ -77,7 +78,7 @@ static int cmd_cfb_print(const struct shell *sh, int col, int row, char *str)
 		return err;
 	}
 
-	err = cfb_print(&disp->fb, str, col, row * ppt);
+	err = cfb_print(&disp->fb, str, x, y);
 	if (err) {
 		shell_error(sh, "Failed to print the string %s error=%d",
 		      str, err);
@@ -97,26 +98,17 @@ static int cmd_cfb_print(const struct shell *sh, int col, int row, char *str)
 static int cmd_print(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-	int col, row;
+	int x, y;
 
 	if (!disp) {
 		shell_error(sh, HELP_INIT);
 		return -ENODEV;
 	}
 
-	col = strtol(argv[1], NULL, 10);
-	if (col > cfb_get_display_parameter(disp, CFB_DISPLAY_COLS)) {
-		shell_error(sh, "Invalid col=%d position", col);
-		return -EINVAL;
-	}
+	x = strtol(argv[1], NULL, 10);
+	y = strtol(argv[2], NULL, 10);
 
-	row = strtol(argv[2], NULL, 10);
-	if (row > cfb_get_display_parameter(disp, CFB_DISPLAY_ROWS)) {
-		shell_error(sh, "Invalid row=%d position", row);
-		return -EINVAL;
-	}
-
-	err = cmd_cfb_print(sh, col, row, argv[3]);
+	err = cmd_cfb_print(sh, x, y, argv[3]);
 	if (err) {
 		shell_error(sh, "Failed printing to Framebuffer error=%d",
 			    err);
@@ -227,40 +219,26 @@ static int cmd_draw_rect(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_scroll_vert(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
-	int col, row;
-	int boundary;
+	int x, y;
 
 	if (!disp) {
 		shell_error(sh, HELP_INIT);
 		return -ENODEV;
 	}
 
-	col = strtol(argv[1], NULL, 10);
-	if (col > cfb_get_display_parameter(disp, CFB_DISPLAY_COLS)) {
-		shell_error(sh, "Invalid col=%d position", col);
-		return -EINVAL;
-	}
+	x = strtol(argv[1], NULL, 10);
+	y = strtol(argv[2], NULL, 10);
 
-	row = strtol(argv[2], NULL, 10);
-	if (row > cfb_get_display_parameter(disp, CFB_DISPLAY_ROWS)) {
-		shell_error(sh, "Invalid row=%d position", row);
-		return -EINVAL;
-	}
-
-	boundary = cfb_get_display_parameter(disp, CFB_DISPLAY_ROWS) - row;
-
-	for (int i = 0; i < boundary; i++) {
-		err = cmd_cfb_print(sh, col, row, argv[3]);
+	for (; y < cfb_get_display_parameter(disp, CFB_DISPLAY_HEIGH); y++) {
+		err = cmd_cfb_print(sh, x, y, argv[3]);
+		k_sleep(K_USEC(10000000 / cfb_get_display_parameter(disp, CFB_DISPLAY_HEIGH)));
 		if (err) {
 			shell_error(sh,
 				    "Failed printing to Framebuffer error=%d",
 				    err);
 			break;
 		}
-		row++;
 	}
-
-	cmd_cfb_print(sh, 0, 0, "");
 
 	return err;
 }
@@ -268,41 +246,26 @@ static int cmd_scroll_vert(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_scroll_horz(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
-	int col, row;
-	int boundary;
+	int x, y;
 
 	if (!disp) {
 		shell_error(sh, HELP_INIT);
 		return -ENODEV;
 	}
 
-	col = strtol(argv[1], NULL, 10);
-	if (col > cfb_get_display_parameter(disp, CFB_DISPLAY_COLS)) {
-		shell_error(sh, "Invalid col=%d position", col);
-		return -EINVAL;
-	}
+	x = strtol(argv[1], NULL, 10);
+	y = strtol(argv[2], NULL, 10);
 
-	row = strtol(argv[2], NULL, 10);
-	if (row > cfb_get_display_parameter(disp, CFB_DISPLAY_ROWS)) {
-		shell_error(sh, "Invalid row=%d position", row);
-		return -EINVAL;
-	}
-
-	col++;
-	boundary = cfb_get_display_parameter(disp, CFB_DISPLAY_COLS) - col;
-
-	for (int i = 0; i < boundary; i++) {
-		err = cmd_cfb_print(sh, col, row, argv[3]);
+	for (; x < cfb_get_display_parameter(disp, CFB_DISPLAY_WIDTH); x++) {
+		err = cmd_cfb_print(sh, x, y, argv[3]);
+		k_sleep(K_USEC(10000000 / cfb_get_display_parameter(disp, CFB_DISPLAY_WIDTH)));
 		if (err) {
 			shell_error(sh,
 				    "Failed printing to Framebuffer error=%d",
 				    err);
 			break;
 		}
-		col++;
 	}
-
-	cmd_cfb_print(sh, 0, 0, "");
 
 	return err;
 }
@@ -761,7 +724,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(print, NULL, HELP_PRINT, cmd_print, 4, 0),
 	SHELL_CMD(scroll, &sub_cmd_scroll, "scroll a text in vertical or "
 		  "horizontal direction", NULL),
-	SHELL_CMD(draw, &sub_cmd_draw, "drawing text", NULL),
+	SHELL_CMD(draw, &sub_cmd_draw, "draw operations", NULL),
 	SHELL_CMD_ARG(clear, NULL, HELP_NONE, cmd_clear, 1, 0),
 	SHELL_CMD_ARG(foreground, NULL, HELP_FOREGROUND, cmd_foreground, 0, 5),
 	SHELL_CMD_ARG(background, NULL, HELP_BACKGROUND, cmd_background, 0, 5),
