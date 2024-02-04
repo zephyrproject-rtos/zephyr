@@ -279,6 +279,32 @@ config NET_TC_NUM_PRIORITIES
 	default NUM_COOP_PRIORITIES if NET_TC_THREAD_COOPERATIVE
 	default NUM_PREEMPT_PRIORITIES if NET_TC_THREAD_PREEMPTIVE
 
+config NET_TC_THREAD_PRIO_CUSTOM
+	bool "Customize traffic class thread priority"
+	help
+	  Customise net threads priority by each.
+
+if NET_TC_THREAD_PRIO_CUSTOM
+config NET_TC_TX_THREAD_BASE_PRIO
+	int "Transmit traffic class base thread priority"
+	default 0
+	help
+	  Transmit traffic class threads priority will increase/decrease
+	  from this priority.
+	  If NET_TC_TX_COUNT is 1, this will be transmit traffic class
+	  thread priority.
+
+config NET_TC_RX_THREAD_BASE_PRIO
+	int "Receive traffic class base thread priority"
+	default 0
+	help
+	  Receive traffic class threads priority will increase/decrease
+	  from this priority.
+	  If NET_TC_RX_COUNT is 1, this will be receive traffic class
+	  thread priority.
+
+endif # NET_TC_THREAD_CUSTOM_PRIO
+
 choice
 	prompt "Priority to traffic class mapping"
 	help
