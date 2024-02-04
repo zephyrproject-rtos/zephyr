@@ -115,7 +115,8 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				compatible = "st,stm32l0-nv-flash", "st,stm32-nv-flash",
+					     "soc-nv-flash";
 
 				write-block-size = <4>;
 				/* maximum erase time(ms) for a 128B page */

@@ -25,6 +25,8 @@ typedef uint64_t flash_prg_t;
 typedef uint32_t flash_prg_t;
 #elif FLASH_STM32_WRITE_BLOCK_SIZE == 2
 typedef uint16_t flash_prg_t;
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 1
+typedef uint8_t flash_prg_t;
 #else
 #error Unknown write block size
 #endif
