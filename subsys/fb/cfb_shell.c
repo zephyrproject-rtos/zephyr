@@ -1,7 +1,7 @@
 /** @file
- * @brief Monochrome Character Framebuffer shell module
+ * @brief Compact Framebuffer shell module
  *
- * Provide some Character Framebuffer shell commands that can be useful for
+ * Provide some Compact Framebuffer shell commands that can be useful for
  * testing.
  */
 
@@ -731,5 +731,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(cfb, &cfb_cmds, "Character Framebuffer shell commands",
-		   NULL);
+SHELL_CMD_REGISTER(cfb, &cfb_cmds, "Compact Framebuffer shell commands", NULL);

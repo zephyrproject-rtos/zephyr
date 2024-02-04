@@ -7,7 +7,7 @@
 
 /**
  * @file
- * @brief Public Monochrome Character Framebuffer API
+ * @brief Public Compact Framebuffer subsystem API
  */
 
 #ifndef __CFB_H__
@@ -23,8 +23,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Public Monochrome Character Framebuffer API
- * @defgroup monochrome_character_framebuffer Monochrome Character Framebuffer
+ * @brief Public Compact Framebuffer subsystem API
+ * @defgroup compact_framebuffer Compact Framebuffer
  * @ingroup utilities
  * @{
  */
