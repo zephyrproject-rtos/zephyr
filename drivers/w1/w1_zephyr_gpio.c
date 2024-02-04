@@ -156,10 +156,11 @@ static int w1_gpio_reset_bus(const struct device *dev)
 	}
 
 	W1_GPIO_WAIT_US(timing->i);
-	ret = gpio_pin_get_dt(spec) ^ 0x01;
+	ret = gpio_pin_get_dt(spec);
 	if (ret < 0) {
 		goto out;
 	}
+	ret ^= 0x01;
 
 	W1_GPIO_WAIT_US(timing->j);
 out:
@@ -190,10 +191,11 @@ static int w1_gpio_read_bit(const struct device *dev)
 	}
 
 	W1_GPIO_WAIT_US(timing->e);
-	ret = gpio_pin_get_dt(spec) & 0x01;
+	ret = gpio_pin_get_dt(spec);
 	if (ret < 0) {
 		goto out;
 	}
+	ret &= 0x01;
 
 	W1_GPIO_WAIT_US(timing->f);
 out:
