@@ -24,13 +24,6 @@ int main(void)
 		printk("Display device not ready\n");
 	}
 
-	if (display_set_pixel_format(display, PIXEL_FORMAT_MONO10) != 0) {
-		if (display_set_pixel_format(display, PIXEL_FORMAT_MONO01) != 0) {
-			printk("Failed to set required pixel format");
-			return 0;
-		}
-	}
-
 	if (display_blanking_off(display) != 0) {
 		printk("Failed to turn off display blanking\n");
 		return 0;

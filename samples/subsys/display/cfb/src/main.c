@@ -30,13 +30,6 @@ int main(void)
 		return 0;
 	}
 
-	if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
-		if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO01) != 0) {
-			printf("Failed to set required pixel format");
-			return 0;
-		}
-	}
-
 	printf("Initialized %s\n", dev->name);
 
 	if (cfb_display_init(&disp, dev, xferbuf, sizeof(xferbuf), cmdbuf, sizeof(cmdbuf))) {
