@@ -148,8 +148,6 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	presp = &ctx->tx_adu.data[1];
 	memset(presp, 0, num_bytes);
 
-	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_adu.data[1];
 	/* Start with bit 0 in response byte data mask. */
 	bit_mask = BIT(0);
 	/* Initialize loop counter. */
@@ -246,11 +244,9 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 	/* Clear bytes in response */
 	presp = &ctx->tx_adu.data[1];
 	for (di_cntr = 0; di_cntr < num_bytes; di_cntr++) {
-		*presp++ = 0x00;
+		presp[di_cntr] = 0x00;
 	}
 
-	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_adu.data[1];
 	/* Start with bit 0 in response byte data mask. */
 	bit_mask = BIT(0);
 	/* Initialize loop counter. */
