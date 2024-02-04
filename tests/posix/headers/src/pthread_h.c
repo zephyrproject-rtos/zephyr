@@ -53,8 +53,8 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_equal(-1, PTHREAD_PROCESS_SHARED);
 	zassert_not_equal(-1, PTHREAD_PROCESS_PRIVATE);
 
-	/* zassert_not_equal(-1, PTHREAD_SCOPE_PROCESS); */ /* not implemented */
-	/* zassert_not_equal(-1, PTHREAD_SCOPE_SYSTEM); */ /* not implemented */
+	zassert_not_equal(-1, PTHREAD_SCOPE_PROCESS);
+	zassert_not_equal(-1, PTHREAD_SCOPE_SYSTEM);
 
 	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 	pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
@@ -68,7 +68,7 @@ ZTEST(posix_headers, test_pthread_h)
 		/* zassert_not_null(pthread_attr_getinheritsched); */ /* not implemented */
 		zassert_not_null(pthread_attr_getschedparam);
 		zassert_not_null(pthread_attr_getschedpolicy);
-		/* zassert_not_null(pthread_attr_getscope); */ /* not implemented */
+		zassert_not_null(pthread_attr_getscope);
 		zassert_not_null(pthread_attr_getstack);
 		zassert_not_null(pthread_attr_getstacksize);
 		zassert_not_null(pthread_attr_init);
@@ -77,7 +77,7 @@ ZTEST(posix_headers, test_pthread_h)
 		/* zassert_not_null(pthread_attr_setinheritsched); */ /* not implemented */
 		zassert_not_null(pthread_attr_setschedparam);
 		zassert_not_null(pthread_attr_setschedpolicy);
-		/* zassert_not_null(pthread_attr_setscope); */ /* not implemented */
+		zassert_not_null(pthread_attr_setscope);
 		zassert_not_null(pthread_attr_setstack);
 		zassert_not_null(pthread_attr_setstacksize);
 		zassert_not_null(pthread_barrier_destroy);

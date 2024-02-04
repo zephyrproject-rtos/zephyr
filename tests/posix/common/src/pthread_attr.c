@@ -439,6 +439,48 @@ ZTEST(pthread_attr, test_pthread_attr_setstacksize)
 	}
 }
 
+ZTEST(pthread_attr, test_pthread_attr_getscope)
+{
+	int contentionscope = BIOS_FOOD;
+
+	/* degenerate cases */
+	{
+		if (false) {
+			/* undefined behaviour */
+			zassert_equal(pthread_attr_getscope(NULL, NULL), EINVAL);
+			zassert_equal(pthread_attr_getscope(NULL, &contentionscope), EINVAL);
+			zassert_equal(pthread_attr_getscope(&uninit_attr, &contentionscope),
+				      EINVAL);
+		}
+		zassert_equal(pthread_attr_getscope(&attr, NULL), EINVAL);
+	}
+
+	zassert_ok(pthread_attr_getscope(&attr, &contentionscope));
+	zassert_equal(contentionscope, PTHREAD_SCOPE_SYSTEM);
+}
+
+ZTEST(pthread_attr, test_pthread_attr_setscope)
+{
+	int contentionscope = BIOS_FOOD;
+
+	/* degenerate cases */
+	{
+		if (false) {
+			/* undefined behaviour */
+			zassert_equal(pthread_attr_setscope(NULL, PTHREAD_SCOPE_SYSTEM), EINVAL);
+			zassert_equal(pthread_attr_setscope(NULL, contentionscope), EINVAL);
+			zassert_equal(pthread_attr_setscope((pthread_attr_t *)&uninit_attr,
+				      contentionscope), EINVAL);
+		}
+		zassert_equal(pthread_attr_setscope(&attr, 3), EINVAL);
+	}
+
+	zassert_equal(pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS), ENOTSUP);
+	zassert_ok(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM));
+	zassert_ok(pthread_attr_getscope(&attr, &contentionscope));
+	zassert_equal(contentionscope, PTHREAD_SCOPE_SYSTEM);
+}
+
 ZTEST(pthread_attr, test_pthread_attr_large_stacksize)
 {
 	size_t actual_size;
