@@ -11,8 +11,8 @@
 
 #include "cfb_font_dice.h"
 
-#if CONFIG_CHARACTER_FRAMEBUFFER_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE != 0
-static uint8_t transfer_buffer[CONFIG_CHARACTER_FRAMEBUFFER_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE];
+#if CONFIG_CFB_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+static uint8_t transfer_buffer[CONFIG_CFB_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE];
 #endif
 
 int main(void)
@@ -21,7 +21,7 @@ int main(void)
 	struct cfb_display *disp;
 	struct cfb_framebuffer *fb;
 	int err;
-#if CONFIG_CHARACTER_FRAMEBUFFER_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+#if CONFIG_CFB_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE != 0
 	struct cfb_display display;
 	struct cfb_display_init_param param = {
 		.dev = dev,
@@ -39,7 +39,7 @@ int main(void)
 		return 0;
 	}
 
-#if CONFIG_CHARACTER_FRAMEBUFFER_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+#if CONFIG_CFB_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE != 0
 	disp = &display;
 	err = cfb_display_init(disp, &param);
 	if (err) {

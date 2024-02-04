@@ -25,7 +25,7 @@ BBC micro:bit Display
 
 .. doxygengroup:: mb_display
 
-Monochrome Character Framebuffer
-================================
+Compact Framebuffer APIs
+========================
 
-.. doxygengroup:: monochrome_character_framebuffer
+.. doxygengroup:: compact_framebuffer_subsystem

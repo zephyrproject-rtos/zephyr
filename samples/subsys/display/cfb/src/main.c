@@ -9,8 +9,8 @@
 #include <zephyr/display/cfb.h>
 #include <stdio.h>
 
-#if CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE != 0
-static uint8_t transfer_buffer[CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE];
+#if CONFIG_CFB_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+static uint8_t transfer_buffer[CONFIG_CFB_SAMPLE_TRANSFER_BUFFER_SIZE];
 #endif
 
 int main(void)
@@ -24,7 +24,7 @@ int main(void)
 	uint8_t ppt;
 	uint8_t font_width;
 	uint8_t font_height;
-#if CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+#if CONFIG_CFB_SAMPLE_TRANSFER_BUFFER_SIZE != 0
 	static struct cfb_display display;
 	struct cfb_display_init_param param = {
 		.dev = dev,
@@ -40,7 +40,7 @@ int main(void)
 
 	printf("Initialized %s\n", dev->name);
 
-#if CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+#if CONFIG_CFB_SAMPLE_TRANSFER_BUFFER_SIZE != 0
 	disp = &display;
 	if (cfb_display_init(disp, &param)) {
 		printf("Framebuffer initialization failed!\n");

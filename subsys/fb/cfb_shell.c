@@ -1,8 +1,8 @@
 /** @file
- * @brief Monochrome Character Framebuffer shell module
+ * @brief Compact Framebuffer Subsystem shell module
  *
- * Provide some Character Framebuffer shell commands that can be useful for
- * testing.
+ * Provide some Compact Framebuffer Subsystem shell commands that can be
+ * useful for testing.
  */
 
 /*
@@ -74,10 +74,10 @@ static const char * const param_name[] = {
 static const char *const pixfmt_name[] = {"RGB_888",   "MONO01",  "MONO10",
 					  "ARGB_8888", "RGB_565", "BGR_565"};
 
-#if CONFIG_CHARACTER_FRAMEBUFFER_SHELL_TRANSFER_BUFFER_SIZE != 0
+#if CONFIG_CFB_SHELL_TRANSFER_BUFFER_SIZE != 0
 static struct cfb_display display;
-static uint8_t transfer_buffer[CONFIG_CHARACTER_FRAMEBUFFER_SHELL_TRANSFER_BUFFER_SIZE];
-static uint8_t command_buffer[CONFIG_CHARACTER_FRAMEBUFFER_SHELL_COMMAND_BUFFER_SIZE];
+static uint8_t transfer_buffer[CONFIG_CFB_SHELL_TRANSFER_BUFFER_SIZE];
+static uint8_t command_buffer[CONFIG_CFB_SHELL_COMMAND_BUFFER_SIZE];
 #endif
 
 static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
@@ -723,7 +723,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	struct display_capabilities cfg;
 	int err;
 
-#if CONFIG_CHARACTER_FRAMEBUFFER_SHELL_TRANSFER_BUFFER_SIZE != 0
+#if CONFIG_CFB_SHELL_TRANSFER_BUFFER_SIZE != 0
 	struct cfb_display_init_param param = {
 		.dev = dev,
 		.transfer_buf = transfer_buffer,
@@ -744,7 +744,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-#if CONFIG_CHARACTER_FRAMEBUFFER_SHELL_TRANSFER_BUFFER_SIZE != 0
+#if CONFIG_CFB_SHELL_TRANSFER_BUFFER_SIZE != 0
 	disp = &display;
 	if (cfb_display_init(disp, &param)) {
 		printf("Framebuffer initialization failed!\n");
@@ -817,5 +817,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(cfb, &cfb_cmds, "Character Framebuffer shell commands",
-		   NULL);
+SHELL_CMD_REGISTER(cfb, &cfb_cmds, "Compact Framebuffer Subsystem shell commands", NULL);

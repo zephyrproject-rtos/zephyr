@@ -3,35 +3,35 @@
 # Copyright (c) 2018 Phytec Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig CHARACTER_FRAMEBUFFER
-	bool "Character framebuffer for dot matrix displays"
+menuconfig CFB
+	bool "Compact framebuffer subsystem"
 	help
-	  Character framebuffer for dot matrix displays.
+	  Compact graphics subsystem for systems with tiny memory.
 
-if CHARACTER_FRAMEBUFFER
+if CFB
 
-config CHARACTER_FRAMEBUFFER_USE_DEFAULT_FONTS
+config CFB_USE_DEFAULT_FONTS
 	bool "Use default fonts"
 	default y
 	help
 	  Use default fonts.
 
-config CHARACTER_FRAMEBUFFER_SHELL
-	bool "Character Framebuffer shell"
+config CFB_SHELL
+	bool "Compact Framebuffer shell"
 	depends on SHELL
 	help
 	  Activate shell module that provides Framebuffer commands to the
 	  console.
 
-if CHARACTER_FRAMEBUFFER_SHELL
+if CFB_SHELL
 
-config CHARACTER_FRAMEBUFFER_SHELL_TRANSFER_BUFFER_SIZE
+config CFB_SHELL_TRANSFER_BUFFER_SIZE
 	int "Set size of buffer for image transfer"
 	default 0
 	help
 	  Dynamically allocate display object if set 0
 
-config CHARACTER_FRAMEBUFFER_SHELL_COMMAND_BUFFER_SIZE
+config CFB_SHELL_COMMAND_BUFFER_SIZE
 	int "Set size of buffer for store commands"
 	default 0
 
@@ -41,4 +41,4 @@ module = CFB
 module-str = cfb
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # CHARACTER_FRAMEBUFFER
+endif # CFB

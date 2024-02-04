@@ -1,13 +1,13 @@
 .. zephyr:code-sample:: cfb-shell-sample
-   :name: Character Framebuffer shell module
-   :relevant-api: monochrome_character_framebuffer
+   :name: Compact Framebuffer Subsystem shell module
+   :relevant-api: compact_framebuffer_subsystem
 
-   Use the CFB shell module to interact with a monochrome display.
+   Use the CFB shell module to interact with a display.
 
 Overview
 ********
-This is a simple shell module that exercises displays using the Character
-Framebuffer subsystem.
+This is a simple shell module that exercises displays using the Compact
+Framebuffer (CFB) subsystem.
 
 Building and Running
 ********************
@@ -25,9 +25,7 @@ Shell Module Command Help
 
 .. code-block:: console
 
-         cfb - Character Framebuffer shell commands
-         Options:
-                 -h, --help  :Show command help.
+         cfb - Compact Framebuffer Subsystem shell commands
          Subcommands:
                  init        :[none]
                  get_device  :[none]

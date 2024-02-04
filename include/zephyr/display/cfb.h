@@ -7,7 +7,7 @@
 
 /**
  * @file
- * @brief Public Monochrome Character Framebuffer API
+ * @brief Compact FrameBuffer (CFB) API
  */
 
 #ifndef __CFB_H__
@@ -22,8 +22,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Public Monochrome Character Framebuffer API
- * @defgroup monochrome_character_framebuffer Monochrome Character Framebuffer
+ * @brief The Compact Framebuffer (CFB) subsystem provides fundamental graphics
+ * functionality with low memory consumption and footprint size.
+ * @defgroup compact_framebuffer_subsystem Compact FrameBuffer subsystem
  * @ingroup utilities
  * @{
  */

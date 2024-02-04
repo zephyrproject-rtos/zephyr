@@ -3,7 +3,7 @@
 
 mainmenu "CFB Sample Application"
 
-config CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE
+config CFB_SAMPLE_TRANSFER_BUFFER_SIZE
 	int "Buffer size for image transfer"
 	default 0
 	help
