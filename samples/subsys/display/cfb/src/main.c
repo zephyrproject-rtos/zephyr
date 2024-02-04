@@ -9,9 +9,13 @@
 #include <zephyr/display/cfb.h>
 #include <stdio.h>
 
+#if CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+static uint8_t transfer_buffer[CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE];
+#endif
+
 int main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	struct cfb_display *disp;
 	struct cfb_framebuffer *fb;
 	uint16_t x_res;
@@ -20,27 +24,35 @@ int main(void)
 	uint8_t ppt;
 	uint8_t font_width;
 	uint8_t font_height;
+#if CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+	static struct cfb_display display;
+	struct cfb_display_init_param param = {
+		.dev = dev,
+		.transfer_buf = transfer_buffer,
+		.transfer_buf_size = sizeof(transfer_buffer),
+	};
+#endif
 
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(dev)) {
 		printf("Device %s not ready\n", dev->name);
 		return 0;
 	}
 
-	if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
-		if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO01) != 0) {
-			printf("Failed to set required pixel format");
-			return 0;
-		}
-	}
-
 	printf("Initialized %s\n", dev->name);
 
+#if CONFIG_CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE != 0
+	disp = &display;
+	if (cfb_display_init(disp, &param)) {
+		printf("Framebuffer initialization failed!\n");
+		return 0;
+	}
+#else
 	disp = cfb_display_alloc(dev);
 	if (!disp) {
 		printf("Framebuffer allocation failed!\n");
 		return 0;
 	}
+#endif
 
 	fb = cfb_display_get_framebuffer(disp);
 

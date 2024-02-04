@@ -1,0 +1,12 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "CFB Sample Application"
+
+config CHARACTER_FRAMEBUFFER_SAMPLE_TRANSFER_BUFFER_SIZE
+	int "Buffer size for image transfer"
+	default 0
+	help
+	  Dynamically allocate display object if set 0 to this option,
+
+source "Kconfig.zephyr"
