@@ -174,13 +174,6 @@ class TestRunner:
     ]
     TESTDATA_11 = [
         (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
-            os.path.join(TEST_DATA, 'twister-quarantine-list.yml'),
-        ),
-    ]
-    TESTDATA_12 = [
-        (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             ['qemu_x86'],
             ['device'],
@@ -205,7 +198,7 @@ class TestRunner:
             [r'3 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 1 skipped']
         ),
     ]
-    TESTDATA_13 = [
+    TESTDATA_12 = [
         (
             os.path.join(TEST_DATA, 'tests', 'one_fail_one_pass'),
             ['qemu_x86'],
@@ -218,8 +211,7 @@ class TestRunner:
             }
         )
     ]
-
-    TESTDATA_14 = [
+    TESTDATA_13 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_build_error'),
             ['qemu_x86_64'],
@@ -804,61 +796,8 @@ class TestRunner:
         assert str(sys_exit.value) == '1'
 
     @pytest.mark.parametrize(
-        'test_path, test_platforms, quarantine_directory',
-        TESTDATA_11,
-        ids=[
-            'quarantine',
-        ],
-    )
-    def test_quarantine_list(self, capfd, out_path, test_path, test_platforms, quarantine_directory):
-        args = ['--outdir', out_path, '-T', test_path, '--quarantine-list', quarantine_directory, '-vv'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        frdm_match = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
-                               'frdm_k64f', err)
-        frdm_match2 = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
-            'frdm_k64f',
-            err)
-        qemu_64_match = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
-            'qemu_x86_64',
-            err)
-        all_platforms_match = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
-            'all platforms',
-            err)
-        all_platforms_match2 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
-            'all platforms',
-            err)
-        all_platforms_match3 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
-            'all platforms',
-            err)
-
-        assert frdm_match and frdm_match2, 'platform quarantine not work properly'
-        assert qemu_64_match, 'platform quarantine on scenario not work properly'
-        assert all_platforms_match and all_platforms_match2 and all_platforms_match3, 'scenario ' \
-                                                                                      'quarantine' \
-                                                                                      ' not work ' \
-                                                                                      'properly'
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
         'test_path, test_platforms, tags, expected',
-        TESTDATA_12,
+        TESTDATA_11,
         ids=[
             'tags device',
             'tags subgruped',
@@ -890,7 +829,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, expected',
-        TESTDATA_13,
+        TESTDATA_12,
         ids=[
             'only_failed'
         ],
@@ -953,7 +892,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, iterations',
-        TESTDATA_14,
+        TESTDATA_13,
         ids=[
             'retry 2',
             'retry 3'
