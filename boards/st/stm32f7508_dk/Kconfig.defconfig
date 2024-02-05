@@ -5,9 +5,6 @@
 
 if BOARD_STM32F7508_DK
 
-config BOARD
-	default "stm32f7508_dk"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
