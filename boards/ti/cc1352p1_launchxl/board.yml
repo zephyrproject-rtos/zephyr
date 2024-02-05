@@ -1,0 +1,5 @@
+board:
+  name: cc1352p1_launchxl
+  vendor: Texas Instruments
+  socs:
+  - name: cc1352p
