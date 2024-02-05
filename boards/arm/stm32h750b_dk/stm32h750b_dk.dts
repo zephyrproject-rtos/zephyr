@@ -124,7 +124,6 @@
 		compatible = "st,stm32-qspi-nor";
 		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
-		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		status = "okay";
 	};
 };
