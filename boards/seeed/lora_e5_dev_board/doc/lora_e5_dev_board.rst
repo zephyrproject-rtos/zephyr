@@ -111,10 +111,9 @@ features:
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration can be found in the defconfig and dts files:
-
-- :zephyr_file:`boards/arm/lora_e5_dev_board/lora_e5_dev_board_defconfig`
-- :zephyr_file:`boards/arm/lora_e5_dev_board/lora_e5_dev_board.dts`
+The default configuration can be found in:
+- :zephyr_file:`boards/seeed/lora_e5_dev_board/lora_e5_dev_board_defconfig`
+- :zephyr_file:`boards/seeed/lora_e5_dev_board/lora_e5_dev_board.dts`
 
 
 Connections and IOs
