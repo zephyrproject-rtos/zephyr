@@ -69,6 +69,17 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
+			label = "BTN0";
+		};
+		button1: button_1 {
+			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
+			label = "BTN1";
+		};
+	};
 };
 
 &uart0 {
