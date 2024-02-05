@@ -42,3 +42,14 @@ family:
     - name: stm32f437xx
     - name: stm32f446xx
     - name: stm32f469xx
+  - name: stm32f7x
+    socs:
+    - name: stm32f722xx
+    - name: stm32f723xx
+    - name: stm32f745xx
+    - name: stm32f746xx
+    - name: stm32f750xx
+    - name: stm32f756xx
+    - name: stm32f765xx
+    - name: stm32f767xx
+    - name: stm32f769xx
