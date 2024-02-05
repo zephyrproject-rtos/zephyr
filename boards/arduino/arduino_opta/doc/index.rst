@@ -1,7 +1,7 @@
 .. _arduino_opta_m4_board:
 
 Arduino OPTA M4-Core
-#######################
+####################
 
 Overview
 ********
@@ -63,7 +63,7 @@ The current Zephyr arduino_opta_m4 board configuration supports the following ha
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration per core can be found in the defconfig files:
-``boards/arm/arduino_opta_m4/arduino_opta_m4_defconfig``
+:zephyr_file:`boards/arduino/arduino_opta/arduino_opta_m4_defconfig`
 
 Pin Mapping
 ===========
@@ -107,7 +107,7 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
-Applications for the ``arduino_opta_m4`` use the regular Zephyr build commands.
+Applications for the ``arduino_opta`` use the regular Zephyr build commands.
 See :ref:`build_an_application` for more information about application builds.
 
 Flashing
@@ -135,7 +135,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_opta_m4
+   :board: arduino_opta/stm32h747xx/m4
    :goals: build flash
 
 Starting the application on the ARDUINO OPTA M4
