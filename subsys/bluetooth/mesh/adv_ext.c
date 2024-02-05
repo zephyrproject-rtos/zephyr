@@ -42,8 +42,6 @@ enum {
 	ADV_FLAG_PROXY,
 	/** The proxy has been start, but maybe pending. */
 	ADV_FLAG_PROXY_START,
-	/** The send-call has been scheduled. */
-	ADV_FLAG_SCHEDULED,
 	/** The send-call has been pending. */
 	ADV_FLAG_SCHEDULE_PENDING,
 	/** Custom adv params have been set, we need to update the parameters on
@@ -267,13 +265,7 @@ static void send_pending_adv(struct k_work *work)
 
 			ext_adv->adv = NULL;
 		}
-
-		(void)schedule_send(ext_adv);
-
-		return;
 	}
-
-	atomic_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULED);
 
 	while ((adv = bt_mesh_adv_get_by_tag(ext_adv->tags, K_NO_WAIT))) {
 		/* busy == 0 means this was canceled */
@@ -325,7 +317,7 @@ static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_ACTIVE)) {
 		atomic_set_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
 		return false;
-	} else if (atomic_test_and_set_bit(ext_adv->flags, ADV_FLAG_SCHEDULED)) {
+	} else if (k_work_is_pending(&ext_adv->work)) {
 		return false;
 	}
 
