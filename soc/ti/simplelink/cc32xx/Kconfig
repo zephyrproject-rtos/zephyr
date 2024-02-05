@@ -1,20 +1,17 @@
 # Texas Instruments CC32XX
-
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "TI SimpleLink MCU Selection"
-	depends on SOC_SERIES_CC32XX
+config SOC_SERIES_CC32XX
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select DYNAMIC_INTERRUPTS
 
 config SOC_CC3220SF
-	bool "CC3220SF"
 	select HAS_CC3220SDK
 
 config SOC_CC3235SF
-	bool "CC3235SF"
 	select HAS_CC3220SDK
-
-endchoice
 
 config CC3220SF_DEBUG
 	bool "Prepend debug header, disabling flash verification" if XIP
