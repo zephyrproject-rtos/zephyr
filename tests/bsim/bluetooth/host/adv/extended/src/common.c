@@ -22,18 +22,3 @@ void test_init(void)
 	bst_ticker_set_next_tick_absolute(WAIT_TIME);
 	bst_result = In_progress;
 }
-
-extern struct bst_test_list *test_ext_adv_advertiser(struct bst_test_list *tests);
-extern struct bst_test_list *test_ext_adv_scanner(struct bst_test_list *tests);
-
-bst_test_install_t test_installers[] = {
-	test_ext_adv_advertiser,
-	test_ext_adv_scanner,
-	NULL
-};
-
-int main(void)
-{
-	bst_main();
-	return 0;
-}

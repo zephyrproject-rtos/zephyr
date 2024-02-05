@@ -22,7 +22,8 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 app=tests/bsim/bluetooth/host/adv/resume compile
 app=tests/bsim/bluetooth/host/adv/resume conf_file=prj_2.conf compile
 app=tests/bsim/bluetooth/host/adv/chain compile
-app=tests/bsim/bluetooth/host/adv/extended compile
+app=tests/bsim/bluetooth/host/adv/extended conf_file=prj_advertiser.conf compile
+app=tests/bsim/bluetooth/host/adv/extended conf_file=prj_scanner.conf compile
 app=tests/bsim/bluetooth/host/adv/periodic compile
 app=tests/bsim/bluetooth/host/adv/periodic conf_file=prj_long_data.conf compile
 app=tests/bsim/bluetooth/host/adv/encrypted/css_sample_data compile

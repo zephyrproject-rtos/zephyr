@@ -147,9 +147,8 @@ static void main_ext_adv_scanner(void)
 	PASS("Extended adv scanner passed\n");
 }
 
-static void main_ext_adv_conn_scanner(void)
+static void scan_connect_and_disconnect_cycle(void)
 {
-	common_init();
 	start_scan();
 
 	printk("Waiting for extended advertisements...\n");
@@ -166,9 +165,15 @@ static void main_ext_adv_conn_scanner(void)
 
 	printk("Clearing flag for seen extended advertisements...\n");
 	UNSET_FLAG(flag_ext_adv_seen);
+}
+
+static void main_ext_adv_conn_scanner(void)
+{
+	common_init();
+
+	scan_connect_and_disconnect_cycle();
 
 	start_scan();
-
 	printk("Waiting to extended advertisements (again)...\n");
 	WAIT_FOR_FLAG(flag_ext_adv_seen);
 
@@ -187,7 +192,8 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 	{
 		.test_id = "ext_adv_conn_scanner",
 		.test_descr = "Basic extended advertising scanning test. "
-			      "Will just scan an extended advertiser.",
+			      "Will scan an extended advertiser, connect "
+			      "and verify it's detected after disconnection",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_ext_adv_conn_scanner
@@ -198,4 +204,15 @@ static const struct bst_test_instance ext_adv_scanner[] = {
 struct bst_test_list *test_ext_adv_scanner(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, ext_adv_scanner);
+}
+
+bst_test_install_t test_installers[] = {
+	test_ext_adv_scanner,
+	NULL
+};
+
+int main(void)
+{
+	bst_main();
+	return 0;
 }
