@@ -140,6 +140,11 @@ static struct net_pkt *esp_socket_prepare_pkt(struct esp_socket *sock,
 	net_pkt_set_context(pkt, sock->context);
 	net_pkt_cursor_init(pkt);
 
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+	memcpy(&pkt->remote, &sock->context->remote, sizeof(pkt->remote));
+	pkt->family = sock->dst.sa_family;
+#endif
+
 	return pkt;
 }
 
