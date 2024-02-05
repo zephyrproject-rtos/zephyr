@@ -138,6 +138,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_unref(g_conn);
 	g_conn = NULL;
+	UNSET_FLAG(flag_connected);
 }
 
 static void recycled(void)
@@ -171,13 +172,9 @@ static void main_ext_adv_advertiser(void)
 	PASS("Extended advertiser passed\n");
 }
 
-static void main_ext_conn_adv_advertiser(void)
+static void adv_connect_and_disconnect_cycle(void)
 {
 	struct bt_le_ext_adv *ext_adv;
-
-	common_init();
-
-	bt_conn_cb_register(&conn_cbs);
 
 	create_ext_adv_set(&ext_adv, true);
 	start_ext_adv_set(ext_adv);
@@ -186,12 +183,24 @@ static void main_ext_conn_adv_advertiser(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	disconnect_from_target();
+	WAIT_FOR_FLAG_UNSET(flag_connected);
 
 	printk("Waiting for Connection object to be recycled...\n");
 	WAIT_FOR_FLAG(flag_conn_recycled);
 
 	stop_ext_adv_set(ext_adv);
 	delete_adv_set(ext_adv);
+}
+
+static void main_ext_conn_adv_advertiser(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+
+	common_init();
+
+	bt_conn_cb_register(&conn_cbs);
+
+	adv_connect_and_disconnect_cycle();
 
 	create_ext_adv_set(&ext_adv, false);
 	start_ext_adv_set(ext_adv);
@@ -230,4 +239,15 @@ static const struct bst_test_instance ext_adv_advertiser[] = {
 struct bst_test_list *test_ext_adv_advertiser(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, ext_adv_advertiser);
+}
+
+bst_test_install_t test_installers[] = {
+	test_ext_adv_advertiser,
+	NULL
+};
+
+int main(void)
+{
+	bst_main();
+	return 0;
 }
