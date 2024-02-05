@@ -44,7 +44,7 @@ static float pwm_rpi_get_clkdiv(const struct device *dev, int slice)
 
 	/* the divider is a fixed point 8.4 convert to float for use in pico-sdk */
 	return (float)cfg->slice_configs[slice].integral +
-		(float)cfg->slice_configs[slice].frac / 16.0;
+		(float)cfg->slice_configs[slice].frac / 16.0f;
 }
 
 static inline uint32_t pwm_rpi_channel_to_slice(uint32_t channel)
