@@ -224,12 +224,11 @@ zephyr_udc0: &usbotg_fs {
 			&octospim_p2_dqs_pg15>;
 	pinctrl-names = "default";
 
-	mx25lm51245: ospi-nor-flash@0 {
+	mx25lm51245: ospi-nor-flash@90000000 {
 		status = "okay";
 		compatible = "st,stm32-ospi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(25)>;
-		size = <DT_SIZE_M(512)>; /* 512 Mbits = 64 MBytes */
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		four-byte-opcodes;
