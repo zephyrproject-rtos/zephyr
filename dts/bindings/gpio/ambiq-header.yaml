@@ -3,9 +3,13 @@
 
 description: |
     GPIO pins exposed on Ambiq Apollo4p EVB headers
+
     The Ambiq Apollo4p EVB layout provides 5x16 and 1x20 pin headers.
+
     The binding provides a nexus mapping for these pins as depicted below.
+
             J7                              J12
+
     VDD_MCU - VDD_MCU -             GPIO22 22 GND     -
     VDD_EXT - VDD_EXT -             GPIO23 23 GPIO24 24
     nRST    - GND     -             VDD_MCU - GND     -
@@ -16,6 +20,7 @@ description: |
     VDDH2   - GPIO97  97            GPIO47 47 GPIO68 68
                                     GPIO49 49 GPIO69 69
             J9                      GPIO48 48 GPIO70 70
+
     GPIO19 19 GPIO96  96                    J11
     GPIO18 18 GPIO95  95
     GPIO17 17 GPIO98  98            GPIO53 53 GPIO71 71
@@ -26,7 +31,9 @@ description: |
     GPIO12 12 GPIO36  36            GPIO10 10 GPIO33 33
                                     GPIO8  8  GPIO32 32
                                     GPIO9  9  GPIO31 31
+
                                             J10
+
                                     GPIO28 28 GPIO60 60
                                     GPIO30 30 GPIO59 59
                                     GPIO94 94 GPIO58 58
@@ -35,7 +42,9 @@ description: |
                                     GPIO51 51 GPIO1  1
                                     GPIO2  2  GPIO50 50
                                     GPIO3  3  GPIO4  4
+
                                       Voltage Header
+
                                     VDD_EXT - VDD_5V -
                                     GND     - GND    -
                                     BIAS    - BIAS   -
@@ -44,6 +53,7 @@ description: |
                                     D1P     - DON    -
                                     D1N     - DOP    -
                                     GND     - GND    -
+
 compatible: "ambiq-header"
 
 include: [gpio-nexus.yaml, base.yaml]
