@@ -18,3 +18,16 @@ int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr
 	errno = ENOSYS;
 	return -1;
 }
+
+int putpmsg(int fildes, const struct strbuf *ctlptr,
+const struct strbuf *dataptr, int band, int flags)
+{
+	ARG_UNUSED(fildes);
+	ARG_UNUSED(ctlptr);
+	ARG_UNUSED(dataptr);
+	ARG_UNUSED(band);
+	ARG_UNUSED(flags);
+
+	errno = ENOSYS;
+	return -1;
+}

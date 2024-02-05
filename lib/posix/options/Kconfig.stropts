@@ -7,3 +7,9 @@ config POSIX_PUTMSG
 	default y if POSIX_API
 	help
 	  This option provides support for the putmsg function used in message passing.
+
+config POSIX_PUTPMSG
+	bool "Support for putpmsg function"
+	default y if POSIX_API
+	help
+	  This option provides support for the putpmsg function used in message passing.
