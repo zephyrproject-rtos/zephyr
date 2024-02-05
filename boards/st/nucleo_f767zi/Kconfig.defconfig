@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_F767ZI
 
-config BOARD
-	default "nucleo_f767zi"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
