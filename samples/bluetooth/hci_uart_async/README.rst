@@ -1,7 +1,11 @@
-.. _bluetooth-hci-uart-async-sample:
+.. zephyr:code-sample:: bluetooth-hci-uart-async-sample
+   :name: Bluetooth: HCI UART (async)
+   :relevant-api: hci_raw
 
-Bluetooth: HCI UART based on ASYNC UART
-#######################################
+   Expose a Bluetooth controller over async serial using the H4 HCI transport
+
+Overview
+********
 
 Expose a Zephyr Bluetooth Controller over a standard Bluetooth HCI UART interface.
 

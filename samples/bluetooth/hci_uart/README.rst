@@ -1,7 +1,8 @@
-.. _bluetooth-hci-uart-sample:
+.. zephyr:code-sample:: bluetooth-hci-uart-sample
+   :name: Bluetooth: HCI UART
+   :relevant-api: hci_raw
 
-Bluetooth: HCI UART
-####################
+   Expose a Bluetooth controller over serial using the H4 HCI transport
 
 Overview
 *********

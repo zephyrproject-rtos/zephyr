@@ -37,9 +37,9 @@ To use Angle of Arrival mode only, build this application as follows, changing
    :compact:
 
 To run the application on nRF5340DK, a Bluetooth controller application must
-also run on the network core. The :zephyr_file:`samples/bluetooth/hci_ipc`
-sample application may be used. To build this sample with direction finding
-support enabled:
+also run on the network core. The :zephyr:code-sample:`HCI IPC sample
+<bluetooth-hci-ipc-sample>` sample application may be used. To build this sample
+with direction finding support enabled:
 
 * Copy
   :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/nrf52833dk_nrf52833.overlay`
@@ -73,9 +73,9 @@ this overlay. See :ref:`set-devicetree-overlays` for information on setting up
 and using overlays.
 
 Note that antenna matrix configuration for the nRF5340 SoC is part of the
-network core application. When :ref:`bluetooth-hci-ipc-sample` is used as
-network core application, the antenna matrix configuration should be stored in
-the file
+network core application. When :zephyr:code-sample:`HCI IPC sample
+<bluetooth-hci-ipc-sample>` is used as network core application, the antenna
+matrix configuration should be stored in the file
 :file:`samples/bluetooth/hci_ipc/boards/nrf5340dk_nrf5340_cpunet.overlay`
 instead.
 

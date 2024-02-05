@@ -166,10 +166,12 @@ Using a Zephyr-based BLE Controller
 Depending on which hardware you have available, you can choose between two
 transports when building a single-mode, Zephyr-based BLE Controller:
 
-* UART: Use the :ref:`hci_uart <bluetooth-hci-uart-sample>` sample and follow
-  the instructions in :ref:`bluetooth-hci-uart-qemu-posix`.
-* USB: Use the :ref:`hci_usb <bluetooth-hci-usb-sample>` sample and then
-  treat it as a Host System Bluetooth Controller (see previous section)
+* UART: Use the :zephyr:code-sample:`HCI UART sample
+  <bluetooth-hci-uart-sample>` sample and follow the instructions in
+  :ref:`bluetooth-hci-uart-qemu-posix`.
+* USB: Use the :zephyr:code-sample:`HCI USB sample <bluetooth-hci-usb-sample>`
+  sample and then treat it as a Host System Bluetooth Controller (see previous
+  section)
 
 .. _bluetooth-hci-tracing:
 

@@ -1,7 +1,8 @@
-.. _bluetooth-hci-usb-sample:
+.. zephyr:code-sample:: bluetooth-hci-usb-sample
+   :name: Bluetooth: HCI USB
+   :relevant-api: hci_raw
 
-Bluetooth: HCI USB
-##################
+   Expose a Bluetooth controller using the native USB HCI transport
 
 Overview
 ********

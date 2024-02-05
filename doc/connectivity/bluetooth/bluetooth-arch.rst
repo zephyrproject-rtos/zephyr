@@ -97,9 +97,9 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   the Link Layer and a special application. This application is different
   depending on the physical transport chosen for HCI:
 
-  * :ref:`hci_uart <bluetooth-hci-uart-sample>`
-  * :ref:`hci_usb <bluetooth-hci-usb-sample>`
-  * :ref:`hci_spi <bluetooth-hci-spi-sample>`
+  * :zephyr:code-sample:`HCI UART sample <bluetooth-hci-uart-sample>`
+  * :zephyr:code-sample:`HCI USB sample <bluetooth-hci-usb-sample>`
+  * :zephyr:code-sample:`HCI SPI sample <bluetooth-hci-spi-sample>`
 
   This application acts as a bridge between the UART, SPI or USB peripherals and
   the Controller subsystem, listening for HCI commands, sending application data
@@ -160,9 +160,9 @@ must be built with different configurations, yielding two separate images that
 must be programmed into each of the chips respectively. The Host build image
 contains the application, the BLE Host and the selected HCI driver (UART or
 SPI), while the Controller build runs either the
-:ref:`hci_uart <bluetooth-hci-uart-sample>`, or the
-:ref:`hci_spi <bluetooth-hci-spi-sample>` app to provide an interface to
-the BLE Controller.
+:zephyr:code-sample:`HCI UART sample <bluetooth-hci-uart-sample>`, or the
+:zephyr:code-sample:`HCI SPI sample <bluetooth-hci-spi-sample>` app to provide
+an interface to the BLE Controller.
 
 This configuration is not limited to using a Zephyr OS Host, as the right side
 of the image shows. One can indeed take one of the many existing GNU/Linux

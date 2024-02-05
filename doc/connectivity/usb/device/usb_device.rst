@@ -64,7 +64,7 @@ the next interface, preventing other composite functions from working.
 Because of this problem, HCI USB should not be used in a composite configuration.
 This problem is fixed in the implementation for new USB support.
 
-See :ref:`bluetooth-hci-usb-sample` sample for reference.
+See :zephyr:code-sample:`HCI USB sample <bluetooth-hci-usb-sample>` sample for reference.
 
 .. _usb_device_cdc_acm:
 
@@ -168,7 +168,7 @@ List of few Zephyr specific chosen properties which can be used to select
 CDC ACM UART as backend for a subsystem or application:
 
 * ``zephyr,bt-c2h-uart`` used in Bluetooth,
-  for example see :ref:`bluetooth-hci-uart-sample`
+  for example see :zephyr:code-sample:`HCI UART sample <bluetooth-hci-uart-sample>`
 * ``zephyr,ot-uart`` used in OpenThread,
   for example see :zephyr:code-sample:`coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
@@ -572,39 +572,39 @@ and documented requests.
 
 The following Product IDs are currently used:
 
-+----------------------------------------------------+--------+
-| Sample                                             | PID    |
-+====================================================+========+
-| :zephyr:code-sample:`usb-cdc-acm`                  | 0x0001 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-cdc-acm-composite`        | 0x0002 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-hid-cdc`                  | 0x0003 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-cdc-acm-console`          | 0x0004 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-dfu` (Run-Time)           | 0x0005 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-hid`                      | 0x0006 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-hid-mouse`                | 0x0007 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-mass`                     | 0x0008 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`testusb-app`                  | 0x0009 |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`webusb`                       | 0x000A |
-+----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-sample`                    | 0x000B |
-+----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`wpan-usb`                     | 0x000D |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
-+----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
-+----------------------------------------------------+--------+
++-----------------------------------------------------------------------+--------+
+| Sample                                                                | PID    |
++=======================================================================+========+
+| :zephyr:code-sample:`usb-cdc-acm`                                     | 0x0001 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-cdc-acm-composite`                           | 0x0002 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid-cdc`                                     | 0x0003 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-cdc-acm-console`                             | 0x0004 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-dfu` (Run-Time)                              | 0x0005 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid`                                         | 0x0006 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid-mouse`                                   | 0x0007 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-mass`                                        | 0x0008 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`testusb-app`                                     | 0x0009 |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`webusb`                                          | 0x000A |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`HCI USB sample <bluetooth-hci-usb-sample>`       | 0x000B |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`HCI USB-H4 sample <bluetooth-hci-usb-h4-sample>` | 0x000C |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`wpan-usb`                                        | 0x000D |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`uac2-explicit-feedback`                          | 0x000E |
++-----------------------------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-dfu` (DFU Mode)                              | 0xFFFF |
++-----------------------------------------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
 the Zephyr kernel major and minor versions as a binary coded decimal value.

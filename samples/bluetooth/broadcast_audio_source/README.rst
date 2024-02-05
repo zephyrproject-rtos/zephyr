@@ -52,7 +52,7 @@ If you prefer to only build the application core image, you can do so by doing i
    :goals: build
 
 In that case you can pair this application core image with the
-:ref:`hci_ipc sample <bluetooth-hci-ipc-sample>`
+:zephyr:code-sample:`HCI IPC sample <bluetooth-hci-ipc-sample>`
 :zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_iso-bt_ll_sw_split.conf` configuration.
 
 Building for a simulated nrf5340bsim

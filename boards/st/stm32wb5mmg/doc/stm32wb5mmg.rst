@@ -242,10 +242,10 @@ In this case the firmware will be uploaded on the STM32WB5MMG module.
 Flashing `hci_uart` application to STM32WB5MMG
 ----------------------------------------------
 
-Connect the B-U585I-IOT02A to your host computer using the USB port. Put
-the SW4 (MCU SWD) in OFF mode and SW5 (SWD BLE) in ON mode. Then build
-and flash an application. Here is an example for the
-:ref:`hci_uart <bluetooth-hci-uart-sample>` application.
+Connect the B-U585I-IOT02A to your host computer using the USB port. Put the SW4
+(MCU SWD) in OFF mode and SW5 (SWD BLE) in ON mode. Then build and flash an
+application. Here is an example for the :zephyr:code-sample:`HCI UART sample
+<bluetooth-hci-uart-sample>` application.
 
 Run a serial host program to connect with your B-U585I-IOT02A board:
 
@@ -286,8 +286,8 @@ Rest the board and you should see the following messages on the console:
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hci_uart <bluetooth-hci-uart-sample>` application.
+You can debug an application in the usual way. Here is an example for the
+:zephyr:code-sample:`HCI UART sample <bluetooth-hci-uart-sample>` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer

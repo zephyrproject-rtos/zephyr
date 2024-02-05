@@ -18,10 +18,10 @@ documentation and are prefixed with :literal:`hci_` in their folder names.
 .. note::
    If you want to run any bluetooth sample on the nRF5340 device (build using
    ``-DBOARD=nrf5340dk/nrf5340/cpuapp`` or
-   ``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns``) you must also build
-   and program the corresponding sample for the nRF5340 network core
-   :ref:`bluetooth-hci-ipc-sample` which implements the Bluetooth
-   Low Energy controller.
+   ``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns``) you must also build and program the
+   corresponding sample for the nRF5340 network core :zephyr:code-sample:`HCI
+   IPC sample <bluetooth-hci-ipc-sample>` which implements the Bluetooth Low
+   Energy controller.
 
 .. note::
    The mutually-shared encryption key created during host-device paring may get

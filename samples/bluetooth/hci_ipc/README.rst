@@ -1,13 +1,14 @@
-.. _bluetooth-hci-ipc-sample:
+.. zephyr:code-sample:: bluetooth-hci-ipc-sample
+   :name: Bluetooth: HCI over IPC
+   :relevant-api: hci_raw
 
-Bluetooth: HCI IPC
-##################
+   Expose a Bluetooth controller to another CPU core over IPC.
 
 Overview
 ********
 
 This sample exposes :ref:`bluetooth_controller` support
-to another device or CPU using IPC subsystem.
+to another device or CPU using the IPC subsystem.
 
 Requirements
 ************

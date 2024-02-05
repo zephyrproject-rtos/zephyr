@@ -36,9 +36,9 @@ changing ``nrf52833dk/nrf52833`` as needed for your board:
    :compact:
 
 To run the application on nRF5340DK, a Bluetooth controller application must
-also run on the network core. The :ref:`bluetooth-hci-ipc-sample` sample
-application may be used. To build this sample with direction finding support
-enabled:
+also run on the network core. The :zephyr:code-sample:`HCI IPC sample
+<bluetooth-hci-ipc-sample>` sample application may be used. To build this sample
+with direction finding support enabled:
 
 * Copy
   :zephyr_file:`samples/bluetooth/direction_finding_peripheral/boards/nrf52833dk_nrf52833.overlay`

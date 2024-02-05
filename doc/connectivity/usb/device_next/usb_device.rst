@@ -24,7 +24,7 @@ Supported USB classes
 Bluetooth HCI USB transport layer
 =================================
 
-See :ref:`bluetooth-hci-usb-sample` sample for reference.
+See :zephyr:code-sample:`HCI USB sample <bluetooth-hci-usb-sample>` sample for reference.
 To build the sample for the new device support, set the configuration
 ``-DCONF_FILE=usbd_next_prj.conf`` either directly or via ``west``.
 
