@@ -108,7 +108,7 @@
 
 		ws2812: ws2812 {
 			status = "okay";
-			output-pin = <17>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
 					 LED_COLOR_ID_RED
