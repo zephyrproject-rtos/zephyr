@@ -128,7 +128,7 @@
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		dc-gpios = <&portc 6 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&portc 7 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&portc 7 GPIO_ACTIVE_LOW>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		spi-dev = <&sercom7>;

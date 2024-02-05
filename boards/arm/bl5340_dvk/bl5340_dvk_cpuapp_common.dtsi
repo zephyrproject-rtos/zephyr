@@ -110,7 +110,7 @@
 
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
-		reset-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		spi-dev = <&spi2>;
 		write-only;
