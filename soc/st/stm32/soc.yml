@@ -100,3 +100,9 @@ family:
     - name: stm32f303xe
     - name: stm32f334x8
     - name: stm32f373xc
+  - name: stm32wlx
+    socs:
+    - name: stm32wle4xx
+    - name: stm32wle5xx
+    - name: stm32wl54xx
+    - name: stm32wl55xx
