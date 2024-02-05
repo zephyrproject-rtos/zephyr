@@ -95,6 +95,12 @@ Input
 Interrupt Controller
 ====================
 
+LED Strip
+=========
+
+* The property ``in-gpios`` defined in :dtcompatible:`worldsemi,ws2812-gpio` has been
+  renamed to ``gpios``.
+
 Sensors
 =======
 
