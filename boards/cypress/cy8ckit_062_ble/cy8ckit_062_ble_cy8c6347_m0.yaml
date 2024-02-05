@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: cy8ckit_062_ble_m0
+identifier: cy8ckit_062_ble/cy8c6347/m0
 name: Cypress PSoC6 BLE Pioneer Kit (M0)
 type: mcu
 arch: arm
