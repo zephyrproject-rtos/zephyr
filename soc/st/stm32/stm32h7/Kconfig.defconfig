@@ -8,10 +8,7 @@
 
 if SOC_SERIES_STM32H7X
 
-source "soc/soc_legacy/arm/st_stm32/stm32h7/Kconfig.defconfig.stm32h7*"
-
-config SOC_SERIES
-	default "stm32h7"
+rsource "Kconfig.defconfig.stm32h7*"
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
