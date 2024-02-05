@@ -149,6 +149,17 @@ Boards & SoC Support
 Build system and infrastructure
 *******************************
 
+* Added functionality for Link Time Optimization.
+  This change includes interrupt script generator rebuilding and adding following options:
+
+  - :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION` Kconfig option:
+    LTO compatible interrupt tables parser,
+  - :kconfig:option:`CONFIG_LTO` Kconfig option: Enable Link Time Optimization.
+
+  Currently the LTO compatible interrupt tables parser is only supported by ARM architectures and
+  GCC compiler/linker.
+  See `pull request :github:`66392` for details.
+
 * Dropped the ``COMPAT_INCLUDES`` option, it was unused since 3.0.
 
 * Fixed an issue whereby board revision ``0`` did not include overlay files for that revision.
