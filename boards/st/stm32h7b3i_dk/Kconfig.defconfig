@@ -5,9 +5,6 @@
 
 if BOARD_STM32H7B3I_DK
 
-config BOARD
-	default "stm32h7b3i_dk"
-
 config INPUT
 	default y if LVGL
 
