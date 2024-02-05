@@ -220,6 +220,7 @@
 					compatible = "ambiq,gpio-bank";
 					gpio-controller;
 					#gpio-cells = <2>;
+					ngpios = <10>;
 					reg = <64>;
 					interrupts = <13 0>;
 					status = "disabled";
