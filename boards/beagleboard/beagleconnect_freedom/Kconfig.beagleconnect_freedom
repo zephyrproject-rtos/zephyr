@@ -1,0 +1,8 @@
+# BeagleConnect Freedom board configuration
+
+# Copyright (c) 2020 Erik Larson
+# Copyright (c) 2021 Jason Kridner, BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLECONNECT_FREEDOM
+	select SOC_CC1352P7
