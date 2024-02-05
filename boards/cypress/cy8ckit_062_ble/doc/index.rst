@@ -110,9 +110,9 @@ The board configuration supports the following hardware features:
 
 
 The default configurations can be found in the Kconfig
-:zephyr_file:`boards/arm/cy8ckit_062_ble/cy8ckit_062_ble_m0_defconfig` for
+:zephyr_file:`boards/cypress/cy8ckit_062_ble/cy8ckit_062_ble_cy8c6347_m0_defconfig` for
 Cortex-M0+ and on the Kconfig
-:zephyr_file:`boards/arm/cy8ckit_062_ble/cy8ckit_062_ble_m4_defconfig` for
+:zephyr_file:`boards/cypress/cy8ckit_062_ble/cy8ckit_062_ble_cy8c6347_m4_defconfig` for
 Cortex-M4
 
 System Clock
@@ -158,7 +158,7 @@ Cy_WDT_Disable().
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: cy8ckit_062_ble_m0
+      :board: cy8ckit_062_ble/cy8c6347/m0
       :goals: build
       :compact:
 
@@ -181,11 +181,11 @@ Cy_WDT_Disable().
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: cy8ckit_062_ble_m0
+      :board: cy8ckit_062_ble/cy8c6347/m0
       :goals: flash
       :compact:
 
-   You should see "Hello World! cy8ckit_062_ble_m0" in your terminal.
+   You should see "Hello World! cy8ckit_062_ble" in your terminal.
 
 Running on Dual Core
 ********************
@@ -194,7 +194,7 @@ Running on Dual Core
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: cy8ckit_062_ble_m4
+      :board: cy8ckit_062_ble/cy8c6347/m4
       :goals: build
       :compact:
 
@@ -219,7 +219,7 @@ Running on Dual Core
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: cy8ckit_062_ble_m4
+      :board: cy8ckit_062_ble/cy8c6347/m4
       :goals: flash
       :compact:
 
@@ -232,13 +232,13 @@ Running on Dual Core
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: cy8ckit_062_ble_m0
+      :board: cy8ckit_062_ble/cy8c6347/m0
       :goals: build flash
       :gen-args: -DCONFIG_SOC_PSOC6_M0_ENABLES_M4=y
       :compact:
 
    Now you can press button SW-2 and see LED-9 blink at same time you have the
-   "Hello World! cy8ckit_062_ble_m0" in the your terminal.
+   "Hello World! cy8ckit_062_ble" in the your terminal.
 
 Board Revision
 **************
@@ -253,7 +253,7 @@ are only possible after rework the board and using the revision 1.0.0.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: cy8ckit_062_ble_m0@1.0.0
+      :board: cy8ckit_062_ble@1.0.0/cy8c6347/m0
       :goals: build
       :compact:
 
