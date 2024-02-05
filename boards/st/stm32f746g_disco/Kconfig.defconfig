@@ -5,9 +5,6 @@
 
 if BOARD_STM32F746G_DISCO
 
-config BOARD
-	default "stm32f746g_disco"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
