@@ -19,7 +19,7 @@
 		 * Arduino D11 / P0.25, which was chosen to match the pin
 		 * used in nrf52dk_nrf52832.overlay.
 		 */
-		in-gpios = <&gpio0 25 0>;
+		gpios = <&gpio0 25 0>;
 	};
 
 	aliases {

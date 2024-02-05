@@ -14,7 +14,7 @@ compatible: "worldsemi,ws2812-gpio"
 include: [base.yaml, ws2812.yaml]
 
 properties:
-  in-gpios:
+  gpios:
     type: phandle-array
     required: true
     description: |
