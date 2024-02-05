@@ -1,14 +1,8 @@
 # Texas Instruments SimpleLink CC13x2 / CC26x2
-
 # Copyright (c) 2019 Brett Witherspoon
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_CC13X2_CC26X2
-
-source "soc/soc_legacy/arm/ti_simplelink/cc13x2_cc26x2/Kconfig.defconfig.cc*"
-
-config SOC_SERIES
-	default "cc13x2_cc26x2"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768

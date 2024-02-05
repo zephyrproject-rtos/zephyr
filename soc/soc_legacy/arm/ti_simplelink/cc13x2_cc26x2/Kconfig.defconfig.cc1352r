@@ -1,9 +1,0 @@
-# Texas Instruments SimpleLink CC1352R
-#
-# Copyright (c) 2019 Brett Witherspoon
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC
-	default "cc1352r"
-	depends on SOC_CC1352R
