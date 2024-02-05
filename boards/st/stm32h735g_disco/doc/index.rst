@@ -77,8 +77,8 @@ The current Zephyr stm32h735g_disco board configuration supports the following h
 
 Other hardware features are not yet supported on Zephyr porting.
 
-The default configuration per core can be found in the defconfig file:
-``boards/arm/stm32h735g_disco/stm32h735g_disco_defconfig``
+The default configuration can be found in the defconfig file:
+:zephyr_file:`boards/st/stm32h735g_disco/stm32h735g_disco_defconfig`
 
 Pin Mapping
 ===========
