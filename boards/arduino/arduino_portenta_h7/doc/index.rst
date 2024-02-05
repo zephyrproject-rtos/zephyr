@@ -1,7 +1,7 @@
 .. _arduino_portenta_h7_board:
 
 Arduino Portenta H7
-#######################
+###################
 
 Overview
 ********
@@ -103,7 +103,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: arduino_portenta_h7_m7
+   :board: arduino_portenta_h7/stm32h747xx/m7
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -116,7 +116,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! arduino_portenta_m7
+   Hello World! arduino_portenta_h7
 
 Similarly, you can build and flash samples on the M4 target. For this, please
 take care of the resource sharing (UART port used for console for instance).
@@ -125,7 +125,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_portenta_h7_m4
+   :board: arduino_portenta_h7/stm32h747xx/m4
    :goals: build flash
 
 .. _ARDUINO_PORTENTA_H7 website:
