@@ -882,11 +882,7 @@ static int adin2111_init(const struct device *dev)
 		return ret;
 	}
 
-#if CONFIG_ETH_ADIN2111_SPI_CFG0
 	val |= ADIN2111_CONFIG2_CRC_APPEND;
-#else
-	val &= ~ADIN2111_CONFIG2_CRC_APPEND;
-#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 	/* configure forwarding of frames with unknown destination address */
 	/* to the other port. This forwarding is done in hardware.         */
