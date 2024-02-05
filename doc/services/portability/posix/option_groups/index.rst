@@ -505,8 +505,8 @@ _XOPEN_STREAMS
 
     fattach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     fdetach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    getmsg(),
-    getpmsg(),
+    getmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    getpmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     ioctl(),yes
     isastream(),
     putmsg(),
