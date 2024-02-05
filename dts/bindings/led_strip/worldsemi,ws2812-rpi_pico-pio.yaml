@@ -47,18 +47,16 @@ child-binding:
     Worldsemi WS2812 or compatible LED strip driver based on RaspberryPi Pico's PIO
     The LED strip node can put up to 4 instances under a single PIO node.
 
-  include: ws2812.yaml
+  include: ws2812-gpio.yaml
 
   properties:
-    output-pin:
-      type: int
-      required: true
+    gpios:
       description: |
-        Select the output pin.
+        Inherited from ws2812-gpio.yaml.
 
         Note: This driver does not configure the output pin.
         You need to configure the pin with pinctrl that is in the parent node configuration
-        for use by PIO.
+        for use by PIO. This property only uses the GPIO pin number and ignores flags.
 
     frequency:
       type: int
