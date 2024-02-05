@@ -5,9 +5,6 @@
 
 if BOARD_STM32F769I_DISCO
 
-config BOARD
-	default "stm32f769i_disco"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
