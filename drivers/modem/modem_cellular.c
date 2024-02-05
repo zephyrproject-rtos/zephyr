@@ -445,13 +445,13 @@ MODEM_CHAT_MATCHES_DEFINE(dial_abort_matches,
 static void modem_cellular_log_state_changed(enum modem_cellular_state last_state,
 					     enum modem_cellular_state new_state)
 {
-	LOG_INF("switch from %s to %s", modem_cellular_state_str(last_state),
+	LOG_DBG("switch from %s to %s", modem_cellular_state_str(last_state),
 		modem_cellular_state_str(new_state));
 }
 
 static void modem_cellular_log_event(enum modem_cellular_event evt)
 {
-	LOG_INF("event %s", modem_cellular_event_str(evt));
+	LOG_DBG("event %s", modem_cellular_event_str(evt));
 }
 
 static void modem_cellular_start_timer(struct modem_cellular_data *data, k_timeout_t timeout)
