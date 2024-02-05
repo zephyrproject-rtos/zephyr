@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_IA32
+	bool
+
+config SOC
+	default "ia32" if SOC_IA32
