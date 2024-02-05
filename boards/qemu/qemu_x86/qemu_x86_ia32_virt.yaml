@@ -1,5 +1,5 @@
-identifier: qemu_x86_nokpti
-name: QEMU Emulation for X86 (KPTI disabled)
+identifier: qemu_x86/ia32/virt
+name: QEMU Emulation for X86 (Run in Virtual Address Space)
 type: qemu
 arch: x86
 simulation: qemu
