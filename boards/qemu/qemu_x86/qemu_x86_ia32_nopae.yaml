@@ -1,13 +1,11 @@
-identifier: qemu_x86_64_nokpti
-name: QEMU Emulation for X86_64 (KPTI disabled)
+identifier: qemu_x86/ia32/nopae
+name: QEMU Emulation for X86 (32-bit page tables)
 type: qemu
 arch: x86
+simulation: qemu
 toolchain:
   - zephyr
   - xtools
-supported:
-  - smp
-simulation: qemu
 testing:
   default: true
   only_tags:
