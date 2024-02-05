@@ -251,12 +251,12 @@ static int mipi_dbi_spi_reset(const struct device *dev, uint32_t delay)
 		return -ENOTSUP;
 	}
 
-	ret = gpio_pin_set_dt(&config->reset, 0);
+	ret = gpio_pin_set_dt(&config->reset, 1);
 	if (ret < 0) {
 		return ret;
 	}
 	k_msleep(delay);
-	return gpio_pin_set_dt(&config->reset, 1);
+	return gpio_pin_set_dt(&config->reset, 0);
 }
 
 static int mipi_dbi_spi_init(const struct device *dev)
