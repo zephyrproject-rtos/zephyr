@@ -90,8 +90,8 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration per core can be found in the defconfig files:
-``boards/arm/stm32h747i_disco/stm32h747i_disco_defconfig_m7`` and
-``boards/arm/stm32h747i_disco/stm32h747i_disco_defconfig_m4``
+:zephyr_file:`boards/st/stm32h747i_disco/stm32h747i_disco_stm32h747xx_m7_defconfig` and
+:zephyr_file:`boards/st/stm32h747i_disco/stm32h747i_disco_stm32h747xx_m4_defconfig`
 
 Pin Mapping
 ===========
@@ -168,7 +168,7 @@ command, for example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: stm32h747i_disco_m7
+   :board: stm32h747i_disco/stm32h747xx/m7
    :shield: st_b_lcd40_dsi1_mb1166
    :goals: build flash
 
@@ -195,7 +195,7 @@ Programming and Debugging
 *************************
 
 Applications for the ``stm32h747i_disco`` board should be built per core target,
-using either ``stm32h747i_disco_m7`` or ```stm32h747i_disco_m4`` as the target.
+using either ``stm32h747i_disco/stm32h747xx/m7`` or ```stm32h747i_disco/stm32h747xx/m4`` as the target.
 See :ref:`build_an_application` for more information about application builds.
 
 .. note::
@@ -214,7 +214,8 @@ Flashing
 Flashing operation will depend on the target to be flashed and the SoC
 option bytes configuration.
 It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
-configuration and flash ``stm32h747i_disco_m7`` and ``stm32h747i_disco_m4`` targets.
+configuration and flash ``stm32h747i_disco/stm32h747xx/m7`` and
+``stm32h747i_disco/stm32h747xx/m7`` targets.
 
 By default:
 
@@ -247,7 +248,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h747i_disco_m7
+   :board: stm32h747i_disco/stm32h747xx/m7
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -260,7 +261,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! stm32h747i_disco_m7
+   Hello World! stm32h747i_disco
 
 .. note::
   Sometimes, flashing is not working. It is necessary to erase the flash
@@ -273,7 +274,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32h747i_disco_m4
+   :board: stm32h747i_disco/stm32h747xx/m7
    :goals: build flash
 
 Debugging
@@ -284,7 +285,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h747i_disco_m7
+   :board: stm32h747i_disco/stm32h747xx/m7
    :goals: debug
 
 Debugging with west is currently not available on Cortex M4 side.
