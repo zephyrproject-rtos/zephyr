@@ -12,6 +12,7 @@
 
 #include <am_mcu_apollo.h>
 
+<<<<<<< HEAD
 #include "gpio_ambiq.h"
 
 int ambiq_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
