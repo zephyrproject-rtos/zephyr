@@ -19,8 +19,8 @@ struct strbuf {
 
 int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr, int flags);
 
-int putpmsg(int fildes, const struct strbuf *ctlptr,
-const struct strbuf *dataptr, int band, int flags);
+int putpmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr, int band,
+	    int flags);
 
 #ifdef __cplusplus
 }

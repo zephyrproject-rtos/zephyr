@@ -19,8 +19,8 @@ int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr
 	return -1;
 }
 
-int putpmsg(int fildes, const struct strbuf *ctlptr,
-const struct strbuf *dataptr, int band, int flags)
+int putpmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr, int band,
+	    int flags)
 {
 	ARG_UNUSED(fildes);
 	ARG_UNUSED(ctlptr);

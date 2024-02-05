@@ -18,4 +18,17 @@ ZTEST(stropts, test_putmsg)
 	zassert_equal(errno, ENOSYS, "Expected errno ENOSYS, got %d", errno);
 }
 
+ZTEST(stropts, test_putpmsg)
+{
+	const struct strbuf *ctrl = NULL;
+	const struct strbuf *data = NULL;
+	int fd = -1;
+	int band = 0;
+	int flags = 0;
+	int ret = putpmsg(fd, ctrl, data, band, flags);
+
+	zassert_equal(ret, -1, "Expected return value -1, got %d", ret);
+	zassert_equal(errno, ENOSYS, "Expected errno ENOSYS, got %d", errno);
+}
+
 ZTEST_SUITE(stropts, NULL, NULL, NULL, NULL, NULL);

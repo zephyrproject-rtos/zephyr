@@ -26,3 +26,10 @@ ZTEST(posix_headers, test_stropts_h)
 	zassert_not_equal(RS_HIPRI, ~RS_HIPRI);
 	#endif
 }
+
+ZTEST(posix_headers, test_stropts_putpmsg)
+{
+	#ifdef CONFIG_POSIX_API
+	zassert_not_null((void *)putpmsg, "putpmsg is null");
+	#endif
+}
