@@ -1,4 +1,4 @@
-identifier: arduino_opta_m4
+identifier: arduino_opta/stm32h747xx/m4
 name: ARDUINO OPTA (M4)
 type: mcu
 arch: arm
