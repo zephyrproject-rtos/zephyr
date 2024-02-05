@@ -100,10 +100,10 @@ The Zephyr LoRa-E5 mini configuration supports the following hardware features:
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration can be found in the defconfig and dts files:
+The default configuration can be found in:
 
-- :zephyr_file:`boards/arm/lora_e5_mini/lora_e5_mini_defconfig`
-- :zephyr_file:`boards/arm/lora_e5_mini/lora_e5_mini.dts`
+- :zephyr_file:`boards/seeed/lora_e5_mini/lora_e5_mini_defconfig`
+- :zephyr_file:`boards/seeed/lora_e5_mini/lora_e5_mini.dts`
 
 
 Connections and IOs
