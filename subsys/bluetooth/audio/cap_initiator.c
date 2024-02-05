@@ -192,7 +192,7 @@ int bt_cap_initiator_broadcast_audio_create(
 		bap_subgroup_params[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 	struct bt_bap_broadcast_source_stream_param
 		bap_stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
-	struct bt_bap_broadcast_source_param bap_create_param;
+	struct bt_bap_broadcast_source_param bap_create_param = {0};
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
