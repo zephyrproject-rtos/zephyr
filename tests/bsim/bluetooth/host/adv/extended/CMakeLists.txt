@@ -7,9 +7,16 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_ext_adv)
 
 target_sources(app PRIVATE
-    src/main.c
-    src/ext_adv_advertiser.c
+    src/common.c
+)
+
+
+target_sources_ifdef(CONFIG_BT_CENTRAL app PRIVATE
     src/ext_adv_scanner.c
+)
+
+target_sources_ifdef(CONFIG_BT_PERIPHERAL app PRIVATE
+    src/ext_adv_advertiser.c
 )
 
 zephyr_include_directories(
