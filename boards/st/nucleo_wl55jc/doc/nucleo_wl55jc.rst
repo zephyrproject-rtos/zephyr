@@ -211,10 +211,10 @@ features:
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration can be found in the defconfig and dts files:
+The default configuration can be found in:
 
-- :zephyr_file:`boards/arm/nucleo_wl55jc/nucleo_wl55jc_defconfig`
-- :zephyr_file:`boards/arm/nucleo_wl55jc/nucleo_wl55jc.dts`
+- :zephyr_file:`boards/st/nucleo_wl55jc/nucleo_wl55jc_defconfig`
+- :zephyr_file:`boards/st/nucleo_wl55jc/nucleo_wl55jc.dts`
 
 
 Connections and IOs
