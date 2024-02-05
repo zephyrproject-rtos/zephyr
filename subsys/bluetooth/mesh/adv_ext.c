@@ -292,13 +292,13 @@ static void send_pending_adv(struct k_work *work)
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) ||
-	    !(ext_adv->tags & BT_MESH_ADV_TAG_BIT_PROXY)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) &&
+	    !bt_mesh_sol_send()) {
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) &&
-	    !bt_mesh_sol_send()) {
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) ||
+	    !(ext_adv->tags & BT_MESH_ADV_TAG_BIT_PROXY)) {
 		return;
 	}
 
