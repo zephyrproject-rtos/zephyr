@@ -1,0 +1,5 @@
+board:
+  name: nucleo_f746zg
+  vendor: st
+  socs:
+    - name: stm32f746xx
