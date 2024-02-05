@@ -99,7 +99,7 @@ The board configuration supports the following hardware features:
 
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/cy8ckit_062_wifi_bt/cy8ckit_062_wifi_bt_m0_defconfig`.
+:zephyr_file:`boards/cypress/cy8ckit_062_wifi_bt/cy8ckit_062_wifi_bt_cy8c6247_m0_defconfig`.
 
 
 System Clock
@@ -151,7 +151,7 @@ the current configuration. The CM0+/CM4 Flash/SRAM areas are defined in
 Build the project for CM0+
 
 .. zephyr-app-commands::
-   :board: cy8ckit_062_wifi_bt_m0
+   :board: cy8ckit_062_wifi_bt/cy8c6247/m0
    :goals: build
 
 Switch the DevKit into CMSIS-DAP mode using SW3 (LED2 should blink) and flash
@@ -180,7 +180,7 @@ serial port:
 .. code-block:: console
 
    ***** Booting Zephyr OS zephyr-v1.13.0-1877-g9d14874db1 *****
-   Hello World! cy8ckit_062_wifi_bt_m0
+   Hello World! cy8ckit_062_wifi_bt
 
 
 References
