@@ -1,4 +1,4 @@
-identifier: arduino_giga_r1_m7
+identifier: arduino_giga_r1/stm32h747xx/m7
 name: Arduino GIGA R1 WiFi (M7)
 type: mcu
 arch: arm

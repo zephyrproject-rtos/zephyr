@@ -103,7 +103,7 @@ Programming and Debugging
 *************************
 
 Applications for the ``arduino_giga_r1`` board should be built per core target,
-using either ``arduino_giga_r1_m7`` or ``arduino_giga_r1_m4`` as the target.
+using either ``arduino_giga_r1/stm32h747xx/m7`` or ``arduino_giga_r1/stm32h747xx/m4`` as the target.
 
 See :ref:`build_an_application` for more information about application builds.
 
@@ -134,7 +134,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: arduino_giga_r1_m7
+   :board: arduino_giga_r1/stm32h747xx/m7
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -147,7 +147,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! arduino_giga_r1_m7
+   Hello World! arduino_giga_r1
 
 Similarly, you can build and flash samples on the M4 target.
 
@@ -155,7 +155,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_giga_r1_m4
+   :board: arduino_giga_r1/stm32h747xx/m4
    :goals: build flash
 
 Debugging
