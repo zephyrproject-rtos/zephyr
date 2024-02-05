@@ -81,10 +81,10 @@ hardware features:
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration can be found in the defconfig and dts files:
+The default configuration can be found in:
 
-- :zephyr_file:`boards/arm/olimex_lora_stm32wl_devkit/olimex_lora_stm32wl_devkit_defconfig`
-- :zephyr_file:`boards/arm/olimex_lora_stm32wl_devkit/olimex_lora_stm32wl_devkit.dts`
+- :zephyr_file:`boards/olimex/olimex_lora_stm32wl_devkit/olimex_lora_stm32wl_devkit_defconfig`
+- :zephyr_file:`boards/olimex/olimex_lora_stm32wl_devkit/olimex_lora_stm32wl_devkit.dts`
 
 Programming and Debugging
 *************************
