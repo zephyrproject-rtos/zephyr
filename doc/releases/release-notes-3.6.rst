@@ -448,6 +448,41 @@ HALs
 MCUboot
 *******
 
+  * Fixed compatible sector checking in bootutil.
+
+  * Fixed Kconfig issue with saving encrypted TLVs not depending on encryption being enabled.
+
+  * Fixed issue with missing condition check for applications in sysflash include file.
+
+  * Fixed issue with single slot encrypted image listing support in boot_serial.
+
+  * Fixed issue with allowing MBEDTLS Kconfig selection when tinycrypt is used.
+
+  * Fixed missing response if echo command was disabled in boot_serial.
+
+  * Fixed issue with USB configurations not generating usable images.
+
+  * Added debug logging for boot status write in bootutil.
+
+  * Added estimated image overhead size to cache in sysbuild.
+
+  * Added firmware loader operating mode which allows for a dedicated secondary slot image that
+    is used to update the primary image.
+
+  * Added error if main thread is not pre-emptible when USB CDC serial recovery is enabled.
+
+  * Added error if USB CDC and console are both enabled and set to the same device.
+
+  * Removed the deprecated ``CONFIG_ZEPHYR_TRY_MASS_ERASE`` Kconfig option.
+
+  * Updated zcbor to version 0.8.1 and re-generated boot_serial files.
+
+  * Moved IO functions out of main to separate file.
+
+  * Made ``align`` parameter of imgtool optional.
+
+  * The MCUboot version in this release is version ``2.1.0+0-dev``.
+
 Nanopb
 ******
 
