@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_CC1352R1_LAUNCHXL
-	bool "TI CC1352R1 LaunchXL"
-	depends on SOC_CC1352R
+	select SOC_CC1352R
