@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_IA32
-	bool "Generic IA32 SoC"
 	select X86
 	select CPU_ATOM
 	select X86_CPU_HAS_MMX
