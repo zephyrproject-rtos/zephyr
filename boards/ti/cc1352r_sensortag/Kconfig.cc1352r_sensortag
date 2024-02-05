@@ -5,5 +5,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_CC1352R_SENSORTAG
-	bool "TI CC1352R SensorTag"
-	depends on SOC_CC1352R
+	select SOC_CC1352R
