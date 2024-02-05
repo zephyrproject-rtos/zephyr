@@ -1,11 +1,13 @@
-identifier: qemu_x86_virt
-name: QEMU Emulation for X86 (Run in Virtual Address Space)
+identifier: qemu_x86_64/ia32/nokpti
+name: QEMU Emulation for X86_64 (KPTI disabled)
 type: qemu
 arch: x86
-simulation: qemu
 toolchain:
   - zephyr
   - xtools
+supported:
+  - smp
+simulation: qemu
 testing:
   default: true
   only_tags:
