@@ -200,7 +200,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         # flash image and run application
         dl_file = self.cfg.elf_file if self._use_elf else self.cfg.hex_file
         if dl_file is None:
-            raise RuntimeError(f'cannot flash; no download file was specified')
+            raise RuntimeError('cannot flash; no download file was specified')
         elif not os.path.isfile(dl_file):
             raise RuntimeError(f'download file {dl_file} does not exist')
         self.check_call(cmd + ["--download", dl_file, "--start"])
