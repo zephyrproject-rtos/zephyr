@@ -451,7 +451,9 @@ static void esp_mgmt_disconnect_work(struct k_work *work)
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
 #endif
-	net_if_dormant_on(dev->net_iface);
+	if (!esp_flags_are_set(dev, EDF_AP_ENABLED)) {
+		net_if_dormant_on(dev->net_iface);
+	}
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 }
 
@@ -1074,12 +1076,18 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 
 	ret = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
 
+	net_if_dormant_off(data->net_iface);
+
 	return ret;
 }
 
 static int esp_mgmt_ap_disable(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
+
+	if (!esp_flags_are_set(data, EDF_STA_CONNECTED)) {
+		net_if_dormant_on(data->net_iface);
+	}
 
 	return esp_mode_flags_clear(data, EDF_AP_ENABLED);
 }
@@ -1127,6 +1135,9 @@ static void esp_init_work(struct k_work *work)
 #endif
 #if defined(CONFIG_WIFI_ESP_AT_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
+#endif
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+		SETUP_CMD_NOHANDLE("AT+CIPDINFO=1"),
 #endif
 		SETUP_CMD("AT+"_CIPSTAMAC"?", "+"_CIPSTAMAC":",
 			  on_cmd_cipstamac, 1U, ""),
