@@ -850,7 +850,7 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 			if (!IN_RANGE(io_qos->max_pdu,
 				      BT_ISO_BROADCAST_PDU_MIN,
 				      BT_ISO_PDU_MAX)) {
-				LOG_DBG("Invalid PDU %u", io_qos->max_pdu);
+				LOG_DBG("Invalid broadcast PDU %u", io_qos->max_pdu);
 
 				return false;
 			}
@@ -858,7 +858,7 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 			if (!IN_RANGE(io_qos->max_pdu,
 				      BT_ISO_CONNECTED_PDU_MIN,
 				      BT_ISO_PDU_MAX)) {
-				LOG_DBG("Invalid PDU %u", io_qos->max_pdu);
+				LOG_DBG("Invalid unicast PDU %u", io_qos->max_pdu);
 
 				return false;
 			}
