@@ -5,9 +5,6 @@
 
 if SOC_STM32WLE5XX
 
-config SOC
-	default "stm32wle5xx"
-
 config NUM_IRQS
 	default 62
 
