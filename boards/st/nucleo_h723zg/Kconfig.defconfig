@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_H723ZG
 
-config BOARD
-	default "nucleo_h723zg"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
