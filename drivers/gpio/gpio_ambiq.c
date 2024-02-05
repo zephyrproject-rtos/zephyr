@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,17 +13,17 @@
 
 #include <am_mcu_apollo.h>
 
-<<<<<<< HEAD
 #include "gpio_ambiq.h"
 
 int ambiq_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 					  gpio_port_value_t value)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+	uint32_t pin_offset = dev_cfg->offset >> 2;
 
 	for (int i = 0; i < dev_cfg->ngpios; i++) {
 		if ((mask >> i) & 1) {
-			am_hal_gpio_state_write(i + dev_cfg->pin_offset, ((value >> i) & 1));
+			am_hal_gpio_state_write(i + pin_offset, ((value >> i) & 1));
 		}
 	}
 
@@ -32,10 +33,11 @@ int ambiq_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t ma
 int ambiq_gpio_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+	uint32_t pin_offset = dev_cfg->offset >> 2;
 
 	for (int i = 0; i < dev_cfg->ngpios; i++) {
 		if ((pins >> i) & 1) {
-			am_hal_gpio_state_write(i + dev_cfg->pin_offset, AM_HAL_GPIO_OUTPUT_SET);
+			am_hal_gpio_state_write(i + pin_offset, AM_HAL_GPIO_OUTPUT_SET);
 		}
 	}
 
@@ -45,10 +47,11 @@ int ambiq_gpio_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins
 int ambiq_gpio_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+	uint32_t pin_offset = dev_cfg->offset >> 2;
 
 	for (int i = 0; i < dev_cfg->ngpios; i++) {
 		if ((pins >> i) & 1) {
-			am_hal_gpio_state_write(i + dev_cfg->pin_offset, AM_HAL_GPIO_OUTPUT_CLEAR);
+			am_hal_gpio_state_write(i + pin_offset, AM_HAL_GPIO_OUTPUT_CLEAR);
 		}
 	}
 
@@ -58,10 +61,11 @@ int ambiq_gpio_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pi
 int ambiq_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+	uint32_t pin_offset = dev_cfg->offset >> 2;
 
 	for (int i = 0; i < dev_cfg->ngpios; i++) {
 		if ((pins >> i) & 1) {
-			am_hal_gpio_state_write(i + dev_cfg->pin_offset, AM_HAL_GPIO_OUTPUT_TOGGLE);
+			am_hal_gpio_state_write(i + pin_offset, AM_HAL_GPIO_OUTPUT_TOGGLE);
 		}
 	}
 
