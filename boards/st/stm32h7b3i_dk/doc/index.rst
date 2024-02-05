@@ -68,8 +68,8 @@ The current Zephyr stm32h7b3i_dk board configuration supports the following hard
 
 Other hardware features have not been enabled yet for this board.
 
-The default configuration per core can be found in the defconfig file:
-``boards/arm/stm32h7b3i_dk/stm32h7b3i_dk_defconfig``
+The default configuration can be found in the defconfig file:
+:zephyr_file:`boards/st/stm32h7b3i_dk/stm32h7b3i_dk_defconfig`
 
 Pin Mapping
 ===========
