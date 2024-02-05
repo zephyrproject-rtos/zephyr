@@ -84,3 +84,36 @@ class TestTooling:
         # Normally, board not supporting our toolchain would be filtered, so we check against that
         assert len(filtered_j) == 1
         assert filtered_j[0][3] != 'filtered'
+
+    @pytest.mark.parametrize(
+        'test_path, test_platforms',
+        [
+            (
+                os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+                ['qemu_x86'],
+            )
+        ],
+        ids=[
+            'ninja',
+        ]
+    )
+    @pytest.mark.parametrize(
+        'flag',
+        ['--ninja', '-N']
+    )
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    def test_ninja(self, capfd, out_path, test_path, test_platforms, flag):
+        args = ['--outdir', out_path, '-T', test_path, flag] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+            pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        assert str(sys_exit.value) == '0'

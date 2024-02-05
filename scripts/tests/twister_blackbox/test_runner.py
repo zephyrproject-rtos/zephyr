@@ -481,33 +481,6 @@ class TestRunner:
         'test_path, test_platforms',
         TESTDATA_4,
         ids=[
-            'ninja',
-        ]
-    )
-    @pytest.mark.parametrize(
-        'flag',
-        ['--ninja', '-N']
-    )
-    def test_ninja(self, capfd, out_path, test_path, test_platforms, flag):
-        args = ['--outdir', out_path, '-T', test_path, flag] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms',
-        TESTDATA_4,
-        ids=[
             'dry_run',
         ],
     )
