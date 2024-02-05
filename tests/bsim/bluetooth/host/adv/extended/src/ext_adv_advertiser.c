@@ -128,6 +128,16 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	SET_FLAG(flag_connected);
 }
 
+static void free_conn_object_work_fn(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	bt_conn_unref(g_conn);
+	g_conn = NULL;
+}
+
+static K_WORK_DELAYABLE_DEFINE(free_conn_object_work, free_conn_object_work_fn);
+
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -136,8 +146,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected: %s (reason %u)\n", addr, reason);
 
-	bt_conn_unref(g_conn);
-	g_conn = NULL;
+	/* Schedule to cause de-sync between disconnected and recycled events,
+	 * in order to prove the test is relying properly on it.
+	 */
+	k_work_schedule(&free_conn_object_work, K_MSEC(100));
+
 	UNSET_FLAG(flag_connected);
 }
 
@@ -188,6 +201,8 @@ static void adv_connect_and_disconnect_cycle(void)
 	printk("Waiting for Connection object to be recycled...\n");
 	WAIT_FOR_FLAG(flag_conn_recycled);
 
+	/* Iteration Cleanup */
+	UNSET_FLAG(flag_conn_recycled);
 	stop_ext_adv_set(ext_adv);
 	delete_adv_set(ext_adv);
 }
@@ -216,6 +231,30 @@ static void main_ext_conn_adv_advertiser(void)
 	PASS("Extended advertiser passed\n");
 }
 
+static void main_ext_conn_adv_advertiser_x5(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+
+	common_init();
+
+	bt_conn_cb_register(&conn_cbs);
+
+	for (size_t i = 0 ; i < 5 ; i++) {
+		printk("Iteration %d...\n", i);
+		adv_connect_and_disconnect_cycle();
+	}
+
+	/* Advertise for a bit */
+	create_ext_adv_set(&ext_adv, false);
+	start_ext_adv_set(ext_adv);
+	k_sleep(K_SECONDS(5));
+	stop_ext_adv_set(ext_adv);
+	delete_adv_set(ext_adv);
+	ext_adv = NULL;
+
+	PASS("Extended advertiser passed\n");
+}
+
 static const struct bst_test_instance ext_adv_advertiser[] = {
 	{
 		.test_id = "ext_adv_advertiser",
@@ -232,6 +271,15 @@ static const struct bst_test_instance ext_adv_advertiser[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_ext_conn_adv_advertiser
+	},
+	{
+		.test_id = "ext_adv_conn_advertiser_x5",
+		.test_descr = "Basic connectable extended advertising test. "
+			      "Starts extended advertising, and restarts it after disconnecting, "
+			      "repeated over 5 times",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = main_ext_conn_adv_advertiser_x5
 	},
 	BSTEST_END_MARKER
 };
