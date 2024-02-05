@@ -1,4 +1,4 @@
-identifier: nucleo_h745zi_q_m4
+identifier: nucleo_h745zi_q/stm32h745xx/m4
 name: ST Nucleo H745ZI-Q (M4)
 type: mcu
 arch: arm
