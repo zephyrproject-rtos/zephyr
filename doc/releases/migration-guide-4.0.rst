@@ -91,6 +91,83 @@ LED Strip
 Sensors
 =======
 
+* The :dtcompatible:`we,wsen-itds` driver has been renamed to
+  :dtcompatible:`we,wsen-itds-2533020201601`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c0 {
+      itds:itds-2533020201601@19 {
+        compatible = "we,wsen-itds-2533020201601";
+        reg = <0x19>;
+        odr = "400";
+        op-mode = "high-perf";
+        power-mode = "normal";
+        events-interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        drdy-interrupt-gpios = < &gpio1 2 GPIO_ACTIVE_HIGH >;
+      };
+    };
+
+* The :dtcompatible:`we,wsen-hids` driver has been renamed to
+  :dtcompatible:`we,wsen-hids-2525020210001`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c0 {
+      hids:hids-2525020210001@5F {
+        compatible = "we,wsen-hids-2525020210001";
+        reg = < 0x5F >;
+        odr = "1";
+        drdy-gpios =  <&gpio1 1 GPIO_ACTIVE_HIGH>;
+      };
+    };
+
+  * The :dtcompatible:`we,wsen-pads` driver has been renamed to
+    :dtcompatible:`we,wsen-pads-2511020213301`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        pads:pads-2511020213301@5d {
+          compatible = "we,wsen-pads-2511020213301";
+          reg = <0x5d>;
+          odr = < 10 >;
+          interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        };
+      };
+
+  * The :dtcompatible:`we,wsen-pdus` driver has been renamed to
+    :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        pdus:pdus-25131308XXXXX@78 {
+          compatible = "we,wsen-pdus-25131308XXXXX";
+          reg = < 0x78 >;
+          sensor-type = < 4 >;
+        };
+      };
+
+  * The :dtcompatible:`we,wsen-tids` driver has been renamed to
+    :dtcompatible:`we,wsen-tids-2521020222501`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        tids:tids-2521020222501@3F {
+          compatible = "we,wsen-tids-2521020222501";
+          reg = < 0x3F >;
+          odr = < 25 >;
+          interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+        };
+      };
+
 Serial
 ======
 

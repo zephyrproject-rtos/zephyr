@@ -166,6 +166,23 @@ Drivers and Sensors
 
 * Sensors
 
+  * WE
+
+    * Replaced outdated :dtcompatible:`we,wsen-itds` accelerometer driver
+      and renamed it to :dtcompatible:`we,wsen-itds-2533020201601`.
+    * Replaced outdated :dtcompatible:`we,wsen-hids` humidity sensor driver
+      and renamed it to :dtcompatible:`we,wsen-hids-2525020210001`.
+    * Added Würth Elektronik HIDS-2525020210002
+      :dtcompatible:`we,wsen-hids-2525020210002` humidity sensor driver.
+    * Replaced outdated :dtcompatible:`we,wsen-pads` absolute pressure sensor driver
+      and renamed it to :dtcompatible:`we,wsen-pads-2511020213301`.
+    * Replaced outdated :dtcompatible:`we,wsen-pdus` differential pressure sensor driver
+      and renamed it to :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
+    * Added Würth Elektronik ISDS-2536030320001
+      :dtcompatible:`we,wsen-isds-2536030320001` 6-axis IMU sensor driver.
+    * Replaced outdated :dtcompatible:`we,wsen-tids` temperature sensor driver
+      and renamed it to :dtcompatible:`we,wsen-tids-2521020222501`.
+
 * Serial
 
   * LiteX: Renamed the ``compatible`` from ``litex,uart0`` to :dtcompatible:`litex,uart`.
