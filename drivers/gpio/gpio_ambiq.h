@@ -15,7 +15,7 @@ typedef void (*ambiq_gpio_cfg_func_t)(void);
 struct ambiq_gpio_config {
 	struct gpio_driver_config common;
 	uint32_t base;
-	uint32_t pin_offset;
+	uint32_t offset;
 	uint32_t irq_num;
 	ambiq_gpio_cfg_func_t cfg_func;
 	uint8_t ngpios;

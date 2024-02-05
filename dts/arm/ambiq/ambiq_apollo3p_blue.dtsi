@@ -182,32 +182,48 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			gpio0_31: gpio0_31@0 {
+			gpio: gpio@40010000 {
 				compatible = "ambiq,gpio";
-				gpio-controller;
+				gpio-map-mask = <0xffffffe0 0xffffffc0>;
+				gpio-map-pass-thru = <0x1f 0x3f>;
+				gpio-map = <
+					0x00 0x0 &gpio0_31 0x0 0x0
+					0x20 0x0 &gpio32_63 0x0 0x0
+					0x40 0x0 &gpio64_73 0x0 0x0
+				>;
+				reg = <0x40010000>;
 				#gpio-cells = <2>;
-				reg = <0>;
-				interrupts = <13 0>;
-				status = "disabled";
-			};
+				#address-cells = <1>;
+				#size-cells = <0>;
+				ranges;
 
-			gpio32_63: gpio32_63@20 {
-				compatible = "ambiq,gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <32>;
-				interrupts = <13 0>;
-				status = "disabled";
-			};
+				gpio0_31: gpio0_31@0 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0>;
+					ngpios = <32>;
+					interrupts = <13 0>;
+					status = "disabled";
+				};
 
-			gpio64_73: gpio64_73@40 {
-				compatible = "ambiq,gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <10>;
-				reg = <64>;
-				interrupts = <13 0>;
-				status = "disabled";
+				gpio32_63: gpio32_63@20 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <32>;
+					interrupts = <13 0>;
+					status = "disabled";
+				};
+
+				gpio64_73: gpio64_73@40 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <64>;
+					interrupts = <13 0>;
+					status = "disabled";
+				};
 			};
 		};
 

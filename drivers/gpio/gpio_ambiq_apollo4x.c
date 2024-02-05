@@ -1,4 +1,4 @@
-#define DT_DRV_COMPAT ambiq_gpio
+#define DT_DRV_COMPAT ambiq_gpio_bank
 
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
@@ -15,7 +15,7 @@ static int ambiq_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
 
-	*value = (*AM_HAL_GPIO_RDn(dev_cfg->pin_offset));
+	*value = (*AM_HAL_GPIO_RDn(dev_cfg->offset >> 2));
 
 	return 0;
 }
@@ -24,7 +24,7 @@ static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
 
-	pin += dev_cfg->pin_offset;
+	pin += (dev_cfg->offset >> 2);
 
 	am_hal_gpio_pincfg_t pincfg = am_hal_gpio_pincfg_default;
 
@@ -69,7 +69,7 @@ static int ambiq_gpio_get_config(const struct device *dev, gpio_pin_t pin, gpio_
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
 	am_hal_gpio_pincfg_t pincfg;
 
-	pin += dev_cfg->pin_offset;
+	pin += (dev_cfg->offset >> 2);
 
 	am_hal_gpio_pinconfig_get(pin, &pincfg);
 
@@ -114,11 +114,12 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 	am_hal_gpio_pincfg_t pincfg;
 	gpio_port_pins_t ip = 0;
 	gpio_port_pins_t op = 0;
+	uint32_t pin_offset = dev_cfg->offset >> 2;
 
 	if (inputs != NULL) {
 		for (int i = 0; i < dev_cfg->ngpios; i++) {
 			if ((map >> i) & 1) {
-				am_hal_gpio_pinconfig_get(i + dev_cfg->pin_offset, &pincfg);
+				am_hal_gpio_pinconfig_get(i + pin_offset, &pincfg);
 				if (pincfg.GP.cfg_b.eGPInput == AM_HAL_GPIO_PIN_INPUT_ENABLE) {
 					ip |= BIT(i);
 				}
@@ -129,7 +130,7 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 	if (outputs != NULL) {
 		for (int i = 0; i < dev_cfg->ngpios; i++) {
 			if ((map >> i) & 1) {
-				am_hal_gpio_pinconfig_get(i + dev_cfg->pin_offset, &pincfg);
+				am_hal_gpio_pinconfig_get(i + pin_offset, &pincfg);
 				if (pincfg.GP.cfg_b.eGPOutCfg == AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL ||
 				    pincfg.GP.cfg_b.eGPOutCfg == AM_HAL_GPIO_PIN_OUTCFG_OPENDRAIN) {
 					op |= BIT(i);
@@ -150,7 +151,7 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 	struct ambiq_gpio_data *const data = dev->data;
 
 	am_hal_gpio_pincfg_t pincfg;
-	int gpio_pin = pin + dev_cfg->pin_offset;
+	int gpio_pin = pin + (dev_cfg->offset >> 2);
 	uint32_t int_status;
 	int ret;
 
@@ -159,8 +160,6 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		pincfg.GP.cfg_b.eIntDir = AM_HAL_GPIO_PIN_INTDIR_NONE;
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
-
-		irq_disable(dev_cfg->irq_num);
 
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -252,7 +251,7 @@ static const struct gpio_driver_api ambiq_gpio_drv_api = {
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
 			},                                                                         \
 		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
-		.pin_offset = DT_INST_REG_ADDR(n),                                                 \
+		.offset = DT_INST_REG_ADDR(n),                                                 \
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
 		.irq_num = DT_INST_IRQN(n),                                                        \
 		.cfg_func = ambiq_gpio_cfg_func_##n};                                              \
