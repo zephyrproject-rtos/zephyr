@@ -301,7 +301,7 @@ static const struct gpio_driver_api ambiq_gpio_drv_api = {
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
 			},                                                                         \
 		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
-		.pin_offset = DT_INST_REG_ADDR(n),                                                 \
+		.offset = DT_INST_REG_ADDR(n),                                                 \
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
 		.irq_num = DT_INST_IRQN(n),                                                        \
 		.cfg_func = NULL};                                              \
