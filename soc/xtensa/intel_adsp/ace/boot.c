@@ -44,10 +44,6 @@ __imr void boot_d3_restore(void)
 	ADSP_L2PCFG_REG = 0;
 #endif
 
-#ifdef RESET_MEMORY_HOLE
-	/* reset memory hole */
-	CAVS_SHIM.l2mecs = 0;
-#endif
 	extern void hp_sram_init(uint32_t memory_size);
 	hp_sram_init(L2_SRAM_SIZE);
 
