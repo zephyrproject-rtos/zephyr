@@ -75,7 +75,7 @@ Connections and IOs
 ====================
 
 Peripherals on the CC3235SF LaunchXL are mapped to the following pins in
-the file :zephyr_file:`boards/arm/cc3235sf_launchxl/pinmux.c`.
+the file :zephyr_file:`boards/ti/cc3235sf_launchxl/pinmux.c`.
 
 +------------+-------+-------+
 | Function   | PIN   | GPIO  |
@@ -96,7 +96,7 @@ the file :zephyr_file:`boards/arm/cc3235sf_launchxl/pinmux.c`.
 +------------+-------+-------+
 
 The default configuration can be found in the Kconfig file at
-:zephyr_file:`boards/arm/cc3235sf_launchxl/cc3235sf_launchxl_defconfig`.
+:zephyr_file:`boards/ti/cc3235sf_launchxl/cc3235sf_launchxl_defconfig`.
 
 
 Programming and Debugging
@@ -168,7 +168,7 @@ Prerequisites:
    the one in the Zephyr SDK. If for some reason you wish to continue to use
    your TI OpenOCD installation, you can set the OPENOCD and
    OPENOCD_DEFAULT_PATH variables in
-   :zephyr_file:`boards/arm/cc3220sf_launchxl/board.cmake` to point the build
+   :zephyr_file:`boards/ti/cc3220sf_launchxl/board.cmake` to point the build
    to the paths of the OpenOCD binary and its scripts, before
    including the common openocd.board.cmake file:
 
