@@ -43,7 +43,7 @@ ZEPHYR_BASE = Path(__file__).parents[2]
 
 def board_v1_to_v2(board_root, board, new_board, group, vendor, soc, variants):
     try:
-        board_path = next(board_root.glob(f"boards/*/{board}"))
+        board_path = next(board_root.glob(f"boards/boards_legacy/*/{board}"))
     except StopIteration:
         sys.exit(f"Board not found: {board}")
 
