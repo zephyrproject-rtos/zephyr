@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <version.h>
+
 #include <zephyr/sys/printk.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/init.h>
@@ -32,15 +34,10 @@
 static int cmd_kernel_version(const struct shell *sh,
 			      size_t argc, char **argv)
 {
-	uint32_t version = sys_kernel_version_get();
-
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "Zephyr version %d.%d.%d",
-		      SYS_KERNEL_VER_MAJOR(version),
-		      SYS_KERNEL_VER_MINOR(version),
-		      SYS_KERNEL_VER_PATCHLEVEL(version));
+	shell_print(sh, "Zephyr version %s", KERNEL_VERSION_STRING);
 	return 0;
 }
 
