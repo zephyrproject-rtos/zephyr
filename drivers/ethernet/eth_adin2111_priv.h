@@ -92,7 +92,7 @@
 /*!< Mask Bit for P1_RX_RDY. Generic SPI only.*/
 #define ADIN2111_IMASK1_P1_RX_RDY_MASK		BIT(4)
 /*!< Mask Bit for TX_FRM_DONE. Generic SPI only.*/
-#define ADIN2111_IMASK1_TX_RDY_MASK		BIT(4)
+#define ADIN2111_IMASK1_TX_RDY_MASK		BIT(3)
 
 /* MAC Tx Frame Size Register */
 #define ADIN2111_TX_FSIZE			0x30U
