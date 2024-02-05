@@ -624,13 +624,15 @@ static int spi_nor_wrsr(const struct device *dev,
 {
 	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
-	if (ret == 0) {
-		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr,
-				     sizeof(sr));
-		spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+	if (ret != 0) {
+		return ret;
 	}
-
-	return ret;
+	ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr,
+					sizeof(sr));
+	if (ret != 0) {
+		return ret;
+	}
+	return spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
 }
 
 #if ANY_INST_HAS_MXICY_MX25R_POWER_MODE
@@ -692,18 +694,23 @@ static int mxicy_wrcr(const struct device *dev,
 		}
 
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
-
-		if (ret == 0) {
-			uint8_t data[] = {
-				sr,
-				cr & 0xFF,	/* Configuration register 1 */
-				cr >> 8		/* Configuration register 2 */
-			};
-
-			ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0,
-				data, sizeof(data));
-			spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+		if (ret != 0) {
+			return ret;
 		}
+
+		uint8_t data[] = {
+			sr,
+			cr & 0xFF,	/* Configuration register 1 */
+			cr >> 8		/* Configuration register 2 */
+		};
+
+		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0,
+			data, sizeof(data));
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
 	}
 
 	return ret;
@@ -851,7 +858,10 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 			src = (const uint8_t *)src + to_write;
 			addr += to_write;
 
-			spi_nor_wait_until_ready(dev, WAIT_READY_WRITE);
+			ret = spi_nor_wait_until_ready(dev, WAIT_READY_WRITE);
+			if (ret != 0) {
+				break;
+			}
 		}
 	}
 
@@ -889,11 +899,14 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	ret = spi_nor_write_protection_set(dev, false);
 
 	while ((size > 0) && (ret == 0)) {
-		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		if (ret) {
+			break;
+		}
 
 		if (size == flash_size) {
 			/* chip erase */
-			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
 			size -= flash_size;
 		} else {
 			const struct jesd216_erase_type *erase_types =
@@ -913,7 +926,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 				}
 			}
 			if (bet != NULL) {
-				spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
+				ret = spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
 				addr += BIT(bet->exp);
 				size -= BIT(bet->exp);
 			} else {
@@ -922,18 +935,11 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 				ret = -EINVAL;
 			}
 		}
+		if (ret != 0) {
+			break;
+		}
 
-#ifdef __XCC__
-		/*
-		 * FIXME: remove this hack once XCC is fixed.
-		 *
-		 * Without this volatile return value, XCC would segfault
-		 * compiling this file complaining about failure in CGPREP
-		 * phase.
-		 */
-		volatile int xcc_ret =
-#endif
-		spi_nor_wait_until_ready(dev, WAIT_READY_ERASE);
+		ret = spi_nor_wait_until_ready(dev, WAIT_READY_ERASE);
 	}
 
 	int ret2 = spi_nor_write_protection_set(dev, true);
@@ -1321,9 +1327,13 @@ static int spi_nor_configure(const struct device *dev)
 	rc = spi_nor_rdsr(dev);
 	if (rc > 0 && (rc & SPI_NOR_WIP_BIT)) {
 		LOG_WRN("Waiting until flash is ready");
-		spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
+		rc = spi_nor_wait_until_ready(dev, WAIT_READY_REGISTER);
 	}
 	release_device(dev);
+	if (rc < 0) {
+		LOG_ERR("Failed to wait until flash is ready (%d)", rc);
+		return -ENODEV;
+	}
 
 	/* now the spi bus is configured, we can verify SPI
 	 * connectivity by reading the JEDEC ID.
