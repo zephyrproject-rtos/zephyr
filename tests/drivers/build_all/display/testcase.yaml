@@ -1,9 +1,10 @@
 common:
+  tags:
+    - drivers
+    - display
   build_only: true
-  min_ram: 32
-  tags: drivers display
+  platform_allow:
+    - native_posix
+    - native_sim
 tests:
-  drivers.display.ili9342c.build:
-    extra_args: CONF_FILE=display_ili9342c.conf
-  drivers.display.gc9x01x.build:
-    extra_args: CONF_FILE=display_gc9x01x.conf
+  drivers.display.default: {}
