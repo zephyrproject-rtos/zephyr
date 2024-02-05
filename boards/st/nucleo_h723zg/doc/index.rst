@@ -118,8 +118,8 @@ features:
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration per core can be found in the defconfig files:
-``boards/arm/nucleo_h723zg/nucleo_h723zg_defconfig``
+The default configuration can be found in the defconfig files:
+:zephyr_file:`boards/st/nucleo_h723zg/nucleo_h723zg_defconfig``
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
