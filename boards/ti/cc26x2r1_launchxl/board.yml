@@ -1,0 +1,5 @@
+board:
+  name: cc26x2r1_launchxl
+  vendor: Texas Instruments
+  socs:
+  - name: cc2652r
