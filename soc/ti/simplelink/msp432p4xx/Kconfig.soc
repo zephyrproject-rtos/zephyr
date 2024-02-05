@@ -1,0 +1,21 @@
+# Texas Instruments MSP432P401R
+# Copyright (c) 2017, Linaro Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MSP432P4XX
+	bool
+	select SOC_FAMILY_TI_SIMPLELINK
+	help
+	  Enable support for TI SimpleLink MSP432P4XX.
+
+config SOC_MSP432P401R
+	bool
+	select SOC_SERIES_MSP432P4XX
+	help
+	  MSP432P401R
+
+config SOC_SERIES
+	default "msp432p4xx" if SOC_SERIES_MSP432P4XX
+
+config SOC
+	default "msp432p401r" if SOC_MSP432P401R

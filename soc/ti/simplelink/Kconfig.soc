@@ -1,0 +1,10 @@
+# Texas Instruments SimpleLink Family
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_TI_SIMPLELINK
+	bool
+
+config SOC_FAMILY
+	default "ti_simplelink" if SOC_FAMILY_TI_SIMPLELINK
+
+rsource "*/Kconfig.soc"
