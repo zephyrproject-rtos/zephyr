@@ -74,6 +74,7 @@ Using the CAP Initiator
 
 When the Bluetooth stack has been initialized (:code:`bt init`), the Initiator can discover CAS and
 the optionally included CSIS instance by calling (:code:`cap_initiator discover`).
+The CAP initiator also supports broadcast audio as a source.
 
 .. code-block:: console
 
@@ -163,6 +164,53 @@ used.
 
    uart:~$ cap_initiator unicast_stop all
    Unicast stop completed
+
+When doing broadcast
+--------------------
+
+To start a broadcast as the CAP initiator there are a few steps to be done:
+
+1. Create and configure an extended advertising set with periodic advertising
+2. Create and configure a broadcast source
+3. Setup extended and periodic advertising data
+
+The following commands will setup a CAP broadcast source using the 16_2_1 preset (defined by BAP):
+
+
+.. code-block:: console
+
+   bt init
+   bap init
+   bt adv-create nconn-nscan ext-adv name
+   bt per-adv-param
+   cap_initiator ac_12 16_2_1
+   bt adv-data discov
+   bt per-adv-data
+   cap_initiator broadcast_start
+
+
+The broadcast source is created by the :code:`cap_initiator ac_12`, :code:`cap_initiator ac_13`,
+and :code:`cap_initiator ac_14` commands, configuring the broadcast source for the defined audio
+configurations from BAP. The broadcast source can then be stopped with
+:code:`cap_initiator broadcast_stop` or deleted with :code:`cap_initiator broadcast_delete`.
+
+The metadata of the broadcast source can be updated at any time, including when it is already
+streaming. To update the metadata the :code:`cap_initiator broadcast_update` command can be used.
+The command takes an array of data, and the only requirement (besides having valid data) is that the
+streaming context shall be set. For example to set the streaming context to media, the command can
+be used as
+
+.. code-block:: console
+
+   cap_initiator broadcast_update 03020400
+   CAP Broadcast source updated with new metadata. Update the advertised base via `bt per-adv-data`
+   bt per-adv-data
+
+The :code:`bt per-adv-data` command should be used afterwards to update the data is the advertised
+BASE. The data must be little-endian, so in the above example the metadata :code:`03020400` is
+setting the metadata entry with :code:`03` as the length, :code:`02` as the type (streaming context)
+and :code:`0400` as the value :code:`BT_AUDIO_CONTEXT_TYPE_MEDIA`
+(which has the numeric value of 0x).
 
 CAP Commander
 *************
