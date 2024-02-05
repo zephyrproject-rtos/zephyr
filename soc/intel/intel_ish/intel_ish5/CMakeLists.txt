@@ -1,7 +1,9 @@
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+
+zephyr_include_directories(.)
 
 zephyr_cc_option(-march=pentium -mtune=i486)
 
