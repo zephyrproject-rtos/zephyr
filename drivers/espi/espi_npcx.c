@@ -38,7 +38,7 @@ struct espi_npcx_config {
 struct espi_npcx_data {
 	sys_slist_t callbacks;
 	uint8_t plt_rst_asserted;
-	uint8_t espi_rst_asserted;
+	uint8_t espi_rst_level;
 	uint8_t sx_state;
 #if defined(CONFIG_ESPI_OOB_CHANNEL)
 	struct k_sem oob_rx_lock;
@@ -611,11 +611,11 @@ static void espi_vw_espi_rst_isr(const struct device *dev, struct npcx_wui *wui)
 	struct espi_npcx_data *const data = dev->data;
 	struct espi_event evt = { ESPI_BUS_RESET, 0, 0 };
 
-	data->espi_rst_asserted = !IS_BIT_SET(inst->ESPISTS,
-						NPCX_ESPISTS_ESPIRST_LVL);
-	LOG_DBG("eSPI RST asserted is %d!", data->espi_rst_asserted);
+	data->espi_rst_level = IS_BIT_SET(inst->ESPISTS,
+					  NPCX_ESPISTS_ESPIRST_LVL);
+	LOG_DBG("eSPI RST level is %d!", data->espi_rst_level);
 
-	evt.evt_data = data->espi_rst_asserted;
+	evt.evt_data = data->espi_rst_level;
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
