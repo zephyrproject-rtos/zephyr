@@ -3,6 +3,10 @@
 # Copyright (c) 2021 Electrolance Solutions
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NUCLEO_H7A3ZI_Q
-	bool "Nucleo H75A3ZI-Q Development Board"
-	depends on SOC_STM32H7A3XXQ
+if BOARD_NUCLEO_H7A3ZI_Q
+
+config USB_DC_HAS_HS_SUPPORT
+	default y
+	depends on USB_DC_STM32
+
+endif # BOARD_NUCLEO_H7A3ZI_Q
