@@ -1,0 +1,7 @@
+# TI CC1352R LaunchXL board
+
+# Copyright (c) 2021 Florin Stancu
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CC1352P1_LAUNCHXL
+	select SOC_CC1352P
