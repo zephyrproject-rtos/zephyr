@@ -251,11 +251,10 @@ zephyr_udc0: &usbotg_fs {
 
 	status = "okay";
 
-	mx25r6435f: ospi-nor-flash@0 {
+	mx25r6435f: ospi-nor-flash@90000000 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
-		size = <DT_SIZE_M(64)>; /* 64 Megabits */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc="PP_1_4_4";
