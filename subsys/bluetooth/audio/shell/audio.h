@@ -33,6 +33,9 @@ ssize_t csis_ad_data_add(struct bt_data *data, const size_t data_size, const boo
 size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool discoverable);
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size);
 size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
+ssize_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+				  const bool discoverable, const bool connectable);
+ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
 
 #if defined(CONFIG_BT_AUDIO)
 /* Must guard before including audio.h as audio.h uses Kconfigs guarded by
@@ -91,6 +94,7 @@ struct shell_stream {
 };
 
 struct broadcast_source {
+	bool is_cap;
 	union {
 		struct bt_bap_broadcast_source *bap_source;
 		struct bt_cap_broadcast_source *cap_source;
