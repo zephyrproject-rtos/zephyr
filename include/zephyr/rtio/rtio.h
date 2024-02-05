@@ -470,6 +470,9 @@ struct rtio_iodev {
 /** An operation that transceives (reads and writes simultaneously) */
 #define RTIO_OP_TXRX (RTIO_OP_CALLBACK+1)
 
+/** An operation to recover I2C buses */
+#define RTIO_OP_I2C_RECOVER (RTIO_OP_TXRX+1)
+
 
 /**
  * @brief Prepare a nop (no op) submission
