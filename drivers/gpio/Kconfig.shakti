@@ -1,13 +1,19 @@
-# SiFive Freedom GPIO configuration option
+# Secure-IOT GPIO configuration option
 
-# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (c) 2024 Mindgrove Technologies Pvt Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 config GPIO_SHAKTI
 	bool "Mindgrove Silicon Secure-iot-SoC GPIO driver"
 	default y
-	depends on CONFIG_GPIO
+	depends on SOC_RISCV64_secure-iot
 	help
-	  Enable driver for the SiFive Freedom GPIO controller.
+	  Enable the secure-iot GPIO driver.
 
 	  Says n if not sure.
+
+config GPIO_INIT_PRIORITY
+	int "GPIO init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  GPIO driver device initialization priority.

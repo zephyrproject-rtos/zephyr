@@ -3,7 +3,7 @@
  * Name of the file                      : gpio_shakthi.c
  * Brief Description of file             : This is a ZEPHYR OS GPIO Driver file for Mindgrove Silicon's GPIO Peripheral.
  * Name of Author                        : Kishore. J
- * Email ID                              : <kishore@mindgrovetech.in>  
+ * Email ID                              : <kishore@mindgrovetech.in>
 
  Copyright (C) 2019 IIT Madras. All rights reserved.
  Copyright (C) 2023 Mindgrove Technologies Pvt. Ltd. All rights reserved.
@@ -22,11 +22,11 @@
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *****************************************************************************/
 /**
-  @file gpio_shakthi.c
+  @file gpio_shakti.c
   @brief Contains the driver routines for GPIO interface.
   @details The GPIO driver has software functions to configure, set, clear
-  toggle signal over GPIO interface. 
- */
+  toggle signal over GPIO interface.
+*/
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -43,17 +43,17 @@
 #endif
 
 
-#define GPIO_START 0x00040200 //GPIO Start Address */
+#define GPIO_START 0x00040200 //GPIO Start Address 
 #define GPIO_OFFSET 0x08 /*!Generic offset used to access GPIO registers*/
 
 
-#define GPIO_DIRECTION_CNTRL_REG  (GPIO_START + (0 * GPIO_OFFSET ))
-#define GPIO_DATA_REG             (GPIO_START + (1 * GPIO_OFFSET ))
-#define GPIO_SET_REG              (GPIO_START + (2 * GPIO_OFFSET ))
-#define GPIO_CLEAR_REG            (GPIO_START + (3 * GPIO_OFFSET ))
-#define GPIO_TOGGLE_REG           (GPIO_START + (4 * GPIO_OFFSET ))
-#define GPIO_QUAL_REG             (GPIO_START + (5 * GPIO_OFFSET ))
-#define GPIO_INTERRUPT_CONFIG_REG (GPIO_START + (6 * GPIO_OFFSET ))
+#define GPIO_DIRECTION_CNTRL_REG  (GPIO_START + (0 * GPIO_OFFSET))
+#define GPIO_DATA_REG             (GPIO_START + (1 * GPIO_OFFSET))
+#define GPIO_SET_REG              (GPIO_START + (2 * GPIO_OFFSET))
+#define GPIO_CLEAR_REG            (GPIO_START + (3 * GPIO_OFFSET))
+#define GPIO_TOGGLE_REG           (GPIO_START + (4 * GPIO_OFFSET))
+#define GPIO_QUAL_REG             (GPIO_START + (5 * GPIO_OFFSET))
+#define GPIO_INTERRUPT_CONFIG_REG (GPIO_START + (6 * GPIO_OFFSET))
 
 #define GPIO_INPUT  0
 #define GPIO_OUTPUT 1
@@ -118,7 +118,6 @@ struct gpio_shakti_regs_t
     uint16_t  reserved6;              /*! reserved for future use */
     uint32_t  reserved12;              /*! reserved for future use */
     uint32_t  intr_config;     /*! interrupt configuration register */
-//  uint16_t  reserved13;              /*! reserved for future use */
     uint32_t  reserved7;              /*! reserved for future use */
 };
 
@@ -150,13 +149,12 @@ struct gpio_shakti_data {
 #define DEV_GPIO_DATA(dev)				\
 	((struct gpio_shakti_data *)(dev)->data)
 
-// struct gpio_shakti_regs_t *gpio;
 
 /* Initialize's the gpio's*/
 /**
- * The function initializes the GPIO device and prints a message indicating that initialization is
+ * @fn int gpio_shakti_init(const struct device *dev)
+ * @brief The function initializes the GPIO device and prints a message indicating that initialization is
  * complete.
- * 
  * @param dev The "dev" parameter is a pointer to a structure of type "device". It is used to access
  * the device-specific registers and configurations.
  */
@@ -176,6 +174,7 @@ int gpio_shakti_init(const struct device *dev){
 /**
  * The function gpio_shakti_pin_configure configures a GPIO pin with the specified flags.
  * 
+ * @fn static int gpio_shakti_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
  * @param dev The "dev" parameter is a pointer to a structure representing the GPIO device. It contains
  * information about the specific GPIO device being configured.
  * @param pin The "pin" parameter is the pin number of the GPIO pin that needs to be configured.
@@ -191,7 +190,6 @@ static int gpio_shakti_pin_configure (const struct device *dev,
 
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);
     // const struct gpio_shakti_regs_t *cfg = DEV_GPIO_CFG(dev);
-    printk("Configuration Done11111111111\n");
 
     gpio->direction |= (flags << pin);
     printk("Configuration Done2\n");
@@ -204,6 +202,7 @@ static int gpio_shakti_pin_configure (const struct device *dev,
 /**
  * The function gpio_shakti_pin_get_raw retrieves the raw value of a GPIO pin.
  * 
+ * @fn static int gpio_shakti_pin_get_raw(const struct device *dev, gpio_pin_t pin)
  * @param dev The "dev" parameter is a pointer to a structure of type "device". This structure contains
  * information about the specific device that the GPIO pin belongs to. It may include things like the
  * device's address, configuration settings, and other relevant information.
@@ -226,6 +225,7 @@ static int gpio_shakti_pin_get_raw(const struct device *dev,
 /**
  * The function sets the value of a specific pin in the GPIO register.
  * 
+ * @fn static int gpio_shakti_pin_set_raw(const struct device *dev, gpio_pin_t pin, int value)
  * @param dev The "dev" parameter is a pointer to a structure representing the GPIO device. It is used
  * to access the GPIO registers and perform operations on the GPIO pins.
  * @param pin The "pin" parameter is the pin number of the GPIO pin that you want to set the value for.
@@ -250,6 +250,7 @@ static int gpio_shakti_pin_set_raw(const struct device *dev,
 /**
  * The function toggles the state of a specific pin on a Shakti GPIO device.
  * 
+ * @fn static int gpio_shakti_pin_toggle(const struct device *dev, gpio_pin_t pin)
  * @param dev The "dev" parameter is a pointer to a structure of type "device". It is used to identify
  * the specific GPIO device that the pin belongs to.
  * @param pin The "pin" parameter is the pin number of the GPIO pin that you want to toggle.
@@ -271,6 +272,7 @@ static int gpio_shakti_pin_toggle(const struct device *dev,
  * The function clears a specific pin on a GPIO device and prints a message indicating that it has been
  * cleared.
  * 
+ * @fn static int gpio_shakti_pin_clear_raw(const struct device *dev, gpio_pin_t pin)
  * @param dev The "dev" parameter is a pointer to a structure of type "struct device". This structure
  * represents the GPIO device that the pin belongs to. It contains information about the device, such
  * as its name, configuration, and other properties.
@@ -320,137 +322,9 @@ static struct gpio_shakti_data gpio_shakti_data0;
 instance. It is typically used in the board configuration file to define the devices present on the
 board. */
 
-                gpio_shakti_init,
 DEVICE_DT_INST_DEFINE(0,
+                gpio_shakti_init,
                 NULL,
                 &gpio_shakti_data0, &gpio_shakti_config0,
                 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
                 &gpio_shakti_driver);
-
-
-                
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// typedef void (*shakti_cfg_func_t)(void);
-
-// // #define GPIO_DIRECTION_CNTRL_REG  (GPIO_START + (0 * GPIO_OFFSET ))
-// // #define GPIO_DATA_REG             (GPIO_START + (1 * GPIO_OFFSET ))
-// // #define GPIO_SET_REG              (GPIO_START + (2 * GPIO_OFFSET ))
-// // #define GPIO_CLEAR_REG            (GPIO_START + (3 * GPIO_OFFSET ))
-// // #define GPIO_TOGGLE_REG           (GPIO_START + (4 * GPIO_OFFSET ))
-// // #define GPIO_QUAL_REG             (GPIO_START + (5 * GPIO_OFFSET ))
-// // #define GPIO_INTERRUPT_CONFIG_REG (GPIO_START + (6 * GPIO_OFFSET ))
-
-// // #define GPIO_IN  0
-// // #define GPIO_OUT 1
-// // #define GPIO_QUAL_MAX_CYCLES 15
-// // #define ALL_GPIO_PINS -1
-
-// struct gpio_shakti_reg_t
-// {
-//     uint32_t  direction;
-//     uint32_t  reserved0;
-//     uint32_t  data;
-//     uint32_t  reserved1;
-//     uint32_t  set;
-//     uint32_t  reserved2;
-//     uint32_t  clear;
-//     uint32_t  reserved3;
-//     uint32_t  toggle;
-//     uint32_t  reserved4;
-//     uint8_t  qualification;
-//     uint8_t  reserved5;
-//     uint16_t  reserved6;
-//     uint32_t  reserved12;
-//     uint32_t  intr_config;
-//     uint32_t  reserved7;
-// };
-
-
-
-// struct gpio_shakti_config {
-// 	/* gpio_driver_config needs to be first */
-// 	struct gpio_driver_config common;
-// 	uintptr_t            GPIO_START;
-// 	/* multi-level encoded interrupt corresponding to pin 0 */
-// 	uint32_t                GPIO_INTERRUPT_CONFIG_REG;
-// 	shakti_cfg_func_t    gpio_cfg_func;
-// };
-
-
-// struct gpio_shakti_data {
-// 	/* gpio_driver_data needs to be first */
-// 	struct gpio_driver_data common;
-// 	/* list of callbacks */
-// 	sys_slist_t cb;
-// };
-
-

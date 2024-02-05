@@ -61,13 +61,8 @@ uart0: serial@11300 {
          reg= < 0x0 0x11300 0x0 0x1000>;
   };
 
-
 GPIO: gpio@40200 {
           compatible = "shakti,GPIO";
           reg = < 0x0 0x40200 0x0 0x08>;
-	  gpio-controller;
-	  #gpio-cells = <2>;
-	  ngpios = <32>;
-	  label = "GPIO";	
   };
 };
