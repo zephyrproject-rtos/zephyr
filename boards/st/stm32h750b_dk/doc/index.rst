@@ -59,8 +59,8 @@ The current Zephyr stm32h750b_dk board configuration supports the following hard
 
 Other hardware features are not yet supported on Zephyr porting.
 
-The default configuration per core can be found in the defconfig file:
-``boards/arm/stm32h750b_dk/stm32h750b_dk_defconfig``
+The default configuration can be found in the defconfig file:
+:zephyr_file:`boards/st/stm32h750b_dk/stm32h750b_dk_defconfig`
 
 Pin Mapping
 ===========
