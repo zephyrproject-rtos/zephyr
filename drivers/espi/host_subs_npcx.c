@@ -147,7 +147,7 @@ struct host_sub_npcx_config {
 struct host_sub_npcx_data {
 	sys_slist_t *callbacks; /* pointer on the espi callback list */
 	uint8_t plt_rst_asserted; /* current PLT_RST# status */
-	uint8_t espi_rst_asserted; /* current ESPI_RST# status */
+	uint8_t espi_rst_level; /* current ESPI_RST# status */
 	const struct device *host_bus_dev; /* device for eSPI/LPC bus */
 #ifdef CONFIG_ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_MULTI_BYTE
 	struct ring_buf port80_ring_buf;
