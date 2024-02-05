@@ -1,25 +1,19 @@
 # Texas Instruments SimpleLink CC13x2 / CC26x2
-
 # Copyright (c) 2022 Vaishnav Achath
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "TI SimpleLink MCU Selection"
-	depends on SOC_SERIES_CC13X2X7_CC26X2X7
-
-config SOC_CC2652R7
-	bool "CC2652R7"
-
-config SOC_CC1352R7
-	bool "CC1352R7"
-
-config SOC_CC2652P7
-	bool "CC2652P7"
-
-config SOC_CC1352P7
-	bool "CC1352P7"
-
-endchoice
+config SOC_SERIES_CC13X2X7_CC26X2X7
+	bool
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select DYNAMIC_INTERRUPTS
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_CC13X2X7_CC26X2X7_SDK
+	select HAS_TI_CCFG if !BOOTLOADER_MCUBOOT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_PM
 
 menu "Customer Configuration (CCFG)"
 depends on SOC_SERIES_CC13X2X7_CC26X2X7
