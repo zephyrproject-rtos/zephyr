@@ -752,6 +752,7 @@ Device Driver Model:
     - "area: Device Model"
   tests:
     - kernel.device
+    - init
 
 DFU:
   status: maintained
@@ -2289,6 +2290,8 @@ Memory Management:
     - include/zephyr/mem_mgmt/mem_attr.h
     - tests/lib/mem_blocks_stats/
     - tests/drivers/mm/
+  tests:
+    - mem_mgmt
 
 Laird Connectivity platforms:
   status: maintained
@@ -4476,10 +4479,12 @@ West:
   files:
     - modules/thrift/
     - samples/modules/thrift/
-    - tests/lib/thrift/
+    - tests/modules/thrift/
   labels:
     - "area: Thrift"
     - "area: Serialization"
+  tests:
+    - thrift
 
 "West project: tinycrypt":
   status: odd fixes
@@ -4645,6 +4650,8 @@ Test Framework (Ztest):
     - doc/develop/test/ztest.rst
   labels:
     - "area: Testsuite"
+  tests:
+    - testing
 
 Emulation:
   status: maintained
@@ -4667,6 +4674,8 @@ Emulation:
     - doc/hardware/emulator/
   labels:
     - "area: HW Emulation"
+  tests:
+    - emul
 
 Random:
   status: maintained
