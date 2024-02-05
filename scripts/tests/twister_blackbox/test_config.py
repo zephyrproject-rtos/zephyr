@@ -56,3 +56,38 @@ class TestConfig:
         assert str(sys_exit.value) == '0'
 
         assert len(filtered_j) == 3
+
+    @pytest.mark.parametrize(
+        'level, expected_tests',
+        [
+            ('smoke', 5),
+            ('acceptance', 6),
+        ],
+        ids=['smoke', 'acceptance']
+    )
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    def test_level(self, out_path, level, expected_tests):
+        test_platforms = ['qemu_x86', 'frdm_k64f']
+        path = os.path.join(TEST_DATA, 'tests', 'dummy')
+        config_path = os.path.join(TEST_DATA, 'test_config.yaml')
+        args = ['-i','--outdir', out_path, '-T', path, '--level', level, '-y',
+                '--test-config', config_path] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        with open(os.path.join(out_path, 'testplan.json')) as f:
+            j = json.load(f)
+        filtered_j = [
+            (ts['platform'], ts['name'], tc['identifier']) \
+                for ts in j['testsuites'] \
+                for tc in ts['testcases'] if 'reason' not in tc
+        ]
+
+        assert str(sys_exit.value) == '0'
+
+        assert expected_tests == len(filtered_j)
