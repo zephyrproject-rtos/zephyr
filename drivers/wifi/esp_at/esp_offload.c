@@ -20,16 +20,6 @@ LOG_MODULE_REGISTER(wifi_esp_at_offload, CONFIG_WIFI_LOG_LEVEL);
 
 #include "esp.h"
 
-static int esp_bind(struct net_context *context, const struct sockaddr *addr,
-		    socklen_t addrlen)
-{
-	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
-		return 0;
-	}
-
-	return -EAFNOSUPPORT;
-}
-
 static int esp_listen(struct net_context *context, int backlog)
 {
 	return -ENOTSUP;
@@ -43,7 +33,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	struct sockaddr dst;
 	int ret;
 
-	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
 		return -ENETUNREACH;
 	}
 
@@ -62,9 +52,9 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 			 ntohs(net_sin(&dst)->sin_port));
 	} else {
 		snprintk(connect_msg, sizeof(connect_msg),
-			 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d",
+			 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d",
 			 sock->link_id, addr_str,
-			 ntohs(net_sin(&dst)->sin_port));
+			 ntohs(net_sin(&dst)->sin_port), ntohs(net_sin(&dst)->sin_port));
 	}
 
 	LOG_DBG("link %d, ip_proto %s, addr %s", sock->link_id,
@@ -104,6 +94,40 @@ void esp_connect_work(struct k_work *work)
 		sock->connect_cb(sock->context, ret, sock->conn_user_data);
 	}
 	k_mutex_unlock(&sock->lock);
+}
+
+static int esp_bind(struct net_context *context, const struct sockaddr *addr,
+		    socklen_t addrlen)
+{
+	struct esp_socket *sock;
+	struct esp_data *dev;
+
+	sock = (struct esp_socket *)context->offload_context;
+	dev = esp_socket_to_dev(sock);
+
+	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+		LOG_DBG("link %d", sock->link_id);
+
+		if (esp_socket_connected(sock)) {
+			return -EISCONN;
+		}
+
+		k_mutex_lock(&sock->lock, K_FOREVER);
+		sock->dst = *addr;
+		sock->connect_cb = NULL;
+		sock->conn_user_data = NULL;
+		k_mutex_unlock(&sock->lock);
+
+		_sock_connect(dev, sock);
+
+		return 0;
+	}
+
+	return -EAFNOSUPPORT;
 }
 
 static int esp_connect(struct net_context *context,
@@ -204,7 +228,7 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	};
 	struct sockaddr dst;
 
-	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
 		return -ENETUNREACH;
 	}
 
@@ -360,7 +384,7 @@ static int esp_sendto(struct net_pkt *pkt,
 
 	LOG_DBG("link %d, timeout %d", sock->link_id, timeout);
 
-	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
 		return -ENETUNREACH;
 	}
 
@@ -386,11 +410,8 @@ static int esp_sendto(struct net_pkt *pkt,
 			if (ret < 0) {
 				return ret;
 			}
-		} else if (dst_addr && memcmp(dst_addr, &sock->dst, addrlen)) {
-			/* This might be unexpected behaviour but the ESP
-			 * doesn't support changing endpoint.
-			 */
-			return -EISCONN;
+		} else if (esp_socket_type(sock) == SOCK_DGRAM) {
+			memcpy(&sock->dst, dst_addr, addrlen);
 		}
 	}
 
@@ -406,11 +427,17 @@ static int esp_send(struct net_pkt *pkt,
 }
 
 #define CIPRECVDATA_CMD_MIN_LEN (sizeof("+CIPRECVDATA,L:") - 1)
+
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL,\"255.255.255.255\",65535:") - 1)
+#else
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL:") - 1)
+#endif
 
 static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 				 struct net_buf *buf, uint16_t len,
-				 int *data_offset, int *data_len)
+				 int *data_offset, int *data_len, char *ip_str,
+				 int *port)
 {
 	char cmd_buf[CIPRECVDATA_CMD_MAX_LEN + 1];
 	char *endptr;
@@ -427,6 +454,23 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 	cmd_buf[match_len] = 0;
 
 	*data_len = strtol(&cmd_buf[len], &endptr, 10);
+
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+	char *strstart = endptr + 1;
+	char *strend = strchr(strstart, ',');
+
+	if (strstart == NULL || strend == NULL) {
+		return -EAGAIN;
+	}
+
+	memcpy(ip_str, strstart, strend - strstart);
+	ip_str[strend - strstart] = '\0';
+	*port = strtol(strend + 1, &endptr, 10);
+#else
+	ARG_UNUSED(ip_str);
+	ARG_UNUSED(port);
+#endif
+
 	if (endptr == &cmd_buf[len] ||
 	    (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
 	    *data_len > CIPRECVDATA_MAX_LEN) {
@@ -461,8 +505,16 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	int data_offset, data_len;
 	int err;
 
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+	char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
+	int port = 0;
+
 	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
-				    &data_len);
+				    &data_len, raw_remote_ip, &port);
+#else
+	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
+				    &data_len, NULL, NULL);
+#endif
 	if (err) {
 		if (err == -EAGAIN) {
 			return -EAGAIN;
@@ -471,6 +523,31 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 		return err;
 	}
 
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+	struct sockaddr_in *recv_addr =
+			(struct sockaddr_in *) &sock->context->remote;
+
+	recv_addr->sin_port = ntohs(port);
+	recv_addr->sin_family = AF_INET;
+
+	/* IP addr comes within quotation marks, which is disliked by
+	 * conv function. So we remove them by subtraction 2 from
+	 * raw_remote_ip length and index from &raw_remote_ip[1].
+	 */
+	char remote_ip_addr[INET_ADDRSTRLEN];
+	size_t remote_ip_str_len;
+
+	remote_ip_str_len = MIN(sizeof(remote_ip_addr) - 1,
+				strlen(raw_remote_ip) - 2);
+	strncpy(remote_ip_addr, &raw_remote_ip[1], remote_ip_str_len);
+	remote_ip_addr[remote_ip_str_len] = '\0';
+
+	if (net_addr_pton(AF_INET, remote_ip_addr, &recv_addr->sin_addr) < 0) {
+		LOG_ERR("Invalid src addr %s", remote_ip_addr);
+		err = -EIO;
+		return err;
+	}
+#endif
 	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
 	return data_offset + data_len;
