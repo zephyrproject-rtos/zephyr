@@ -21,7 +21,7 @@ Hardware
 - Interface-to-Sensor peripherals (I2C, SPI, UART, I3C, GPIO, DMA).
 - Inter Process Communications (IPC) to core processor and other IP processors.
 
-.. include:: ../../../../../soc/soc_legacy/x86/intel_ish/doc/supported_features.txt
+.. include:: ../../../../soc/intel/intel_ish/doc/supported_features.txt
 
 Programming and Debugging
 *************************
