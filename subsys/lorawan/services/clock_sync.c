@@ -191,11 +191,6 @@ static int clock_sync_app_time_req(void)
 
 	lorawan_services_schedule_uplink(LORAWAN_PORT_CLOCK_SYNC, tx_buf, tx_pos, 0);
 
-	if (ctx.nb_transmissions > 0) {
-		ctx.nb_transmissions--;
-		lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(CLOCK_RESYNC_DELAY));
-	}
-
 	return 0;
 }
 
@@ -205,10 +200,15 @@ static void clock_sync_resync_handler(struct k_work *work)
 
 	clock_sync_app_time_req();
 
-	/* Add +-30s jitter to actual periodicity as required */
-	periodicity = ctx.periodicity - 30 + sys_rand32_get() % 61;
+	if (ctx.nb_transmissions > 0) {
+		ctx.nb_transmissions--;
+		lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(CLOCK_RESYNC_DELAY));
+	} else {
+		/* Add +-30s jitter to actual periodicity as required */
+		periodicity = ctx.periodicity - 30 + sys_rand32_get() % 61;
 
-	lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(periodicity));
+		lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(periodicity));
+	}
 }
 
 int lorawan_clock_sync_get(uint32_t *gps_time)
