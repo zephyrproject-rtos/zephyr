@@ -108,7 +108,7 @@ static int ambiq_gpio_get_config(const struct device *dev, gpio_pin_t pin, gpio_
 
 	pin += (dev_cfg->offset >> 2);
 
-	am_hal_gpio_pinconfig_get(pin, &pincfg);
+	ambiq_apollo3x_read_pinconfig(pin, &pincfg);
 
 	if (pincfg.eGPOutcfg == AM_HAL_GPIO_PIN_OUTCFG_DISABLE &&
 	    pincfg.eGPInput == AM_HAL_GPIO_PIN_INPUT_NONE) {
@@ -237,7 +237,7 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		}
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
 
-		//irq_enable(dev_cfg->irq_num);
+		irq_enable(dev_cfg->irq_num);
 
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -265,14 +265,11 @@ static void ambiq_gpio_isr(const struct device *dev)
 
 static int ambiq_gpio_init(const struct device *port)
 {
-
 	if (irq_init) {
-		const struct ambiq_gpio_config *const dev_cfg = port->config;
 		irq_init = false;
 		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ambiq_gpio_isr,
 					DEVICE_DT_INST_GET(0), 0);
-		irq_enable(DT_INST_IRQN(0));
 	}
 
 	return 0;
