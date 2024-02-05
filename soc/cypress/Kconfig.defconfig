@@ -1,0 +1,8 @@
+# Copyright (c) 2018, Cypress
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_PSOC6 || SOC_FAMILY_INFINEON_CAT1
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_PSOC6 || SOC_FAMILY_INFINEON_CAT1
