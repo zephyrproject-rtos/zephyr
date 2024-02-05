@@ -43,6 +43,7 @@ rsource "Kconfig.signal"
 rsource "Kconfig.spinlock"
 rsource "Kconfig.stropts"
 rsource "Kconfig.sysconf"
+rsource "Kconfig.syslog"
 rsource "Kconfig.timer"
 rsource "Kconfig.uname"
 
