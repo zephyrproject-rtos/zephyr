@@ -1,0 +1,5 @@
+board:
+  name: nucleo_h7a3zi_q
+  vendor: st
+  socs:
+    - name: stm32h7a3xx
