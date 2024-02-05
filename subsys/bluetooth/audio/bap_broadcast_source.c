@@ -86,7 +86,7 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		}
 		break;
 	case BT_BAP_EP_STATE_ENABLING:
-		if (state != BT_BAP_EP_STATE_STREAMING) {
+		if (state != BT_BAP_EP_STATE_STREAMING && state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
 			LOG_DBG("Invalid broadcast sync endpoint state transition");
 			return;
 		}
