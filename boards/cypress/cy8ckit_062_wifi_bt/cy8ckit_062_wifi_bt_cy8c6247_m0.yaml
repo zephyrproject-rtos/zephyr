@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: cy8ckit_062_wifi_bt_m4
-name: Cypress PSoC6 WiFi-BT Pioneer Kit (M4)
+identifier: cy8ckit_062_wifi_bt/cy8c6247/m0
+name: Cypress PSoC6 WiFi-BT Pioneer Kit (M0)
 type: mcu
 arch: arm
 ram: 288
