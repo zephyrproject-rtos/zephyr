@@ -1,8 +1,0 @@
-# STM32F722ZE Nucleo board configuration
-
-# Copyright (c) 2023 Evan Perry Grove
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_F722ZE
-	bool "Nucleo F722ZE Development Board"
-	depends on SOC_STM32F722XX
