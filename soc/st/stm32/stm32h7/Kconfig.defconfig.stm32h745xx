@@ -3,12 +3,12 @@
 # Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_STM32H745XX
+if SOC_STM32H745XX_M7 || SOC_STM32H745XX_M4
 
-config SOC
-	default "stm32h745xx"
+config STM32H7_DUAL_CORE
+	default y
 
 config NUM_IRQS
 	default 150
 
-endif # SOC_STM32H745XX
+endif # SOC_STM32H745XX_M7 || SOC_STM32H745XX_M4
