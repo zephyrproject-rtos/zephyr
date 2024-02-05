@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2022-2024 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "qemu_x86_tiny.dts"
 
 /* Override with 768KB DRAM */
 &dram0 {

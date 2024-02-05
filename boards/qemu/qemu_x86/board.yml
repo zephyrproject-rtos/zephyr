@@ -4,11 +4,11 @@ boards:
     socs:
       - name: ia32
         variants:
-        - name: 'nokpti'
-        - name: 'nommu'
-        - name: 'nopae'
-        - name: 'virt'
-        - name: 'xip'
+          - name: 'nokpti'
+          - name: 'nommu'
+          - name: 'nopae'
+          - name: 'virt'
+          - name: 'xip'
 
   - name: qemu_x86_lakemont
     socs:
@@ -18,13 +18,10 @@ boards:
     socs:
       - name: ia32
         variants:
-        - name: 'nokpti'
+          - name: 'nokpti'
 
   - name: qemu_x86_tiny
     socs:
       - name: ia32
-    revision:
-      format: custom
-      default: ''
-      revisions:
-        - name: '768'
+        variants:
+          - name: '768'
