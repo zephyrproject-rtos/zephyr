@@ -279,6 +279,10 @@ static inline uint16_t dev_page_size(const struct device *dev)
 static const struct flash_parameters flash_nor_parameters = {
 	.write_block_size = 1,
 	.erase_value = 0xff,
+	.caps = {
+		/* So far every NOR type device requires erase */
+		.explicit_erase = true,
+	},
 };
 
 /* Capture the time at which the device entered deep power-down. */
