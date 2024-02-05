@@ -5,10 +5,6 @@
 
 if SOC_STM32H7B0XX || SOC_STM32H7B0XXQ
 
-config SOC
-	default "stm32h7b0xxQ" if SOC_STM32H7B0XXQ
-	default "stm32h7b0xx" if SOC_STM32H7B0XX
-
 config NUM_IRQS
 	default 155
 
