@@ -16,7 +16,7 @@
 				 LED_COLOR_ID_RED
 				 LED_COLOR_ID_BLUE>;
 		/* P0: */
-		in-gpios = <&gpio0 3 0>;
+		gpios = <&gpio0 3 0>;
 	};
 
 	aliases {
