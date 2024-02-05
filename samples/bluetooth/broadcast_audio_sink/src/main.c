@@ -364,7 +364,6 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	sink_stream->valid_cnt = 0U;
 	sink_stream->error_cnt = 0U;
 
-
 #if defined(CONFIG_LIBLC3)
 	int err;
 
@@ -458,6 +457,15 @@ static bool find_valid_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation);
 	if (err != 0) {
 		printk("Could not find channel allocation (err=%d)\n", err);
+		if (err == -ENODATA && strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
+			/* Accept no channel allocation data available
+			 * if TARGET_BROADCAST_NAME defined. Use current index.
+			 */
+			*bis_index = bis->index;
+
+			return false;
+		}
+
 		return true;
 	}
 
