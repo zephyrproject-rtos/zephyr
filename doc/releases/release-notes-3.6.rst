@@ -269,6 +269,20 @@ Drivers and Sensors
 
 * Input
 
+  * The ``short-codes`` property of :dtcompatible:`zephyr,input-longpress` is
+    now optional, the node can be used by specifying only input and long codes.
+  * Added support for keyboard matrix drivers, including a new
+    :dtcompatible:`gpio-kbd-matrix` and :dtcompatible:`input-keymap` drivers,
+    see :ref:`gpio-kbd` for more details.
+  * Added a pair of input codes to HID codes translation functions, see
+    :c:func:`input_to_hid_code` and :c:func:`input_to_hid_modifier`.
+  * Added power management support to :dtcompatible:`gpio-keys`
+    :dtcompatible:`focaltech,ft5336`.
+  * Added a :dtcompatible:`zephyr,native-linux-evdev` device node for getting
+    input events from a Linux evdev device node.
+  * Added support for optical encoders and power management to :dtcompatible:`gpio-qdec`.
+  * New drivers :dtcompatible:`espressif,esp32-touch`, :dtcompatible:`analog-axis`.
+
 * PCIE
 
 * ACPI
