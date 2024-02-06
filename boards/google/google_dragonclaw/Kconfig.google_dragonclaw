@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_GOOGLE_DRAGONCLAW
-	bool "Google Dragonclaw Development Board"
-	depends on SOC_STM32F412CX
+	select SOC_STM32F412CX
