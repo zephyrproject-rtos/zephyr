@@ -56,11 +56,12 @@ the optionally included CSIS instance by calling (:code:`cap_initiator discover`
    cap_initiator - Bluetooth CAP initiator shell commands
    Subcommands:
      discover        :Discover CAS
-     unicast-start   :Unicast Start [csip] [sinks <cnt> (default 1)] [sources <cnt>
+     unicast_start   :Unicast Start [csip] [sinks <cnt> (default 1)] [sources <cnt>
                       (default 1)] [conns (<cnt> | all) (default 1)]
-     unicast-list    :Unicast list streams
-     unicast-update  :Unicast Update <all | stream [stream [stream...]]>
-     unicast-stop    :Unicast stop all streams
+     unicast_list    :Unicast list streams
+     unicast_update  :Unicast Update <all | stream [stream [stream...]]>
+     unicast_stop    :Unicast stop all streams
+     unicast_cancel  :Unicast cancel current procedure
 
 Before being able to perform any stream operation, the device must also perform the
 :code:`bap discover` operation to discover the ASEs and PAC records. The :code:`bap init`

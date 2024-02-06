@@ -1215,18 +1215,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	cap_initiator_cmds,
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	SHELL_CMD_ARG(discover, NULL, "Discover CAS", cmd_cap_initiator_discover, 1, 0),
-	SHELL_CMD_ARG(unicast-start, NULL,
+	SHELL_CMD_ARG(unicast_start, NULL,
 		      "Unicast Start [csip] [sinks <cnt> (default 1)] "
 		      "[sources <cnt> (default 1)] "
 		      "[conns (<cnt> | all) (default 1)]",
 		      cmd_cap_initiator_unicast_start, 1, 7),
-	SHELL_CMD_ARG(unicast-list, NULL, "Unicast list streams", cmd_cap_initiator_unicast_list,
-		      1, 0),
-	SHELL_CMD_ARG(unicast-update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
+	SHELL_CMD_ARG(unicast_list, NULL, "Unicast list streams", cmd_cap_initiator_unicast_list, 1,
+		      0),
+	SHELL_CMD_ARG(unicast_update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
 		      cmd_cap_initiator_unicast_update, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
-	SHELL_CMD_ARG(unicast-stop, NULL, "Unicast stop all streams",
+	SHELL_CMD_ARG(unicast_stop, NULL, "Unicast stop all streams",
 		      cmd_cap_initiator_unicast_stop, 1, 0),
-	SHELL_CMD_ARG(unicast-cancel, NULL, "Unicast cancel current procedure",
+	SHELL_CMD_ARG(unicast_cancel, NULL, "Unicast cancel current procedure",
 		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #if UNICAST_SINK_SUPPORTED
 	SHELL_CMD_ARG(ac_1, NULL, "<sink preset>", cmd_cap_ac_1, 2, 0),
