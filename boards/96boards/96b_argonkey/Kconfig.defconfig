@@ -5,9 +5,6 @@
 
 if BOARD_96B_ARGONKEY
 
-config BOARD
-	default "96b_argonkey"
-
 if LSM6DSL
 
 choice LSM6DSL_TRIGGER_MODE
