@@ -50,7 +50,7 @@ The board configuration supports the following hardware features:
 +-----------+------------+-----------------------+
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/cy8ckit_062s4/cy8ckit_062s4_m4_defconfig`.
+:zephyr_file:`boards/cypress/cy8ckit_062s4/cy8ckit_062s4_defconfig`.
 
 Clock Configuration
 ===================
@@ -80,7 +80,7 @@ Build and flash hello world sample
 .. code-block:: console
 
    cd zephyr/samples/hello_world
-   west build -p auto -b cy8ckit_062s4_m4 --pristine
+   west build -p auto -b cy8ckit_062s4 --pristine
    west flash
    picocom /dev/ttyACM0 -b 115200
 
