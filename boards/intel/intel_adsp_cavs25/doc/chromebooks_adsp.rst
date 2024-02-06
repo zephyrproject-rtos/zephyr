@@ -366,7 +366,7 @@ the Crouton environment installed above.  Copy them:
 
 .. code-block:: console
 
-    dev$ scp soc/xtensa/intel_adsp/tools/cavstool.py user@crouton:
+    dev$ scp soc/intel/intel_adsp/tools/cavstool.py user@crouton:
 
 Then start the service in the Crouton environment:
 
