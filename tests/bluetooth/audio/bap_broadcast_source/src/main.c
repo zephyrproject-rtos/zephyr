@@ -228,7 +228,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 			struct bt_bap_stream *bap_stream = create_param->params[i].params[j].stream;
 
 			/* Since BAP doesn't care about the `buf` we can just provide NULL */
-			err = bt_bap_stream_send(bap_stream, NULL, 0, BT_ISO_TIMESTAMP_NONE);
+			err = bt_bap_stream_send(bap_stream, NULL, 0);
 			zassert_equal(0, err,
 				      "Unable to send on broadcast stream[%zu][%zu]: err %d", i, j,
 				      err);

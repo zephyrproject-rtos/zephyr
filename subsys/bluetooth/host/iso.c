@@ -731,8 +731,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 #endif /* CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER */
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
-static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan,
-				      uint32_t ts)
+static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan)
 {
 	size_t max_controller_data_len;
 	uint16_t max_data_len;
@@ -752,11 +751,11 @@ static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan,
 	return max_data_len;
 }
 
-int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
-		     uint16_t seq_num, uint32_t ts)
+static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *buf,
+			 uint8_t hdr_size)
 {
+	const struct bt_conn *iso_conn;
 	uint16_t max_data_len;
-	struct bt_conn *iso_conn;
 
 	CHECKIF(!chan || !buf) {
 		LOG_DBG("Invalid parameters: chan %p buf %p", chan, buf);
@@ -776,46 +775,67 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		return -EINVAL;
 	}
 
-	if (ts == BT_ISO_TIMESTAMP_NONE &&
-	    buf->size < BT_HCI_ISO_DATA_HDR_SIZE) {
+	if (buf->size < hdr_size) {
 		LOG_DBG("Cannot send ISO packet with buffer size %u", buf->size);
-
-		return -EMSGSIZE;
-	} else if (buf->size < BT_HCI_ISO_TS_DATA_HDR_SIZE) {
-		LOG_DBG("Cannot send ISO packet with timestamp with buffer size %u", buf->size);
 
 		return -EMSGSIZE;
 	}
 
-	max_data_len = iso_chan_max_data_len(chan, ts);
+	max_data_len = iso_chan_max_data_len(chan);
 	if (buf->len > max_data_len) {
 		LOG_DBG("Cannot send %u octets, maximum %u", buf->len, max_data_len);
 		return -EMSGSIZE;
 	}
 
-	if (ts == BT_ISO_TIMESTAMP_NONE) {
-		struct bt_hci_iso_data_hdr *hdr;
+	return 0;
+}
 
-		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->sn = sys_cpu_to_le16(seq_num);
-		hdr->slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
-								- sizeof(*hdr),
-								BT_ISO_DATA_VALID));
-	} else {
-		struct bt_hci_iso_ts_data_hdr *hdr;
+int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num)
+{
+	struct bt_hci_iso_data_hdr *hdr;
+	struct bt_conn *iso_conn;
+	int err;
 
-		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->ts = ts;
-		hdr->data.sn = sys_cpu_to_le16(seq_num);
-		hdr->data.slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
-								     - sizeof(*hdr),
-								     BT_ISO_DATA_VALID));
+	err = validate_send(chan, buf, BT_HCI_ISO_DATA_HDR_SIZE);
+	if (err != 0) {
+		return err;
 	}
 
-	return bt_conn_send_iso_cb(iso_conn,
-				   buf,
-				   bt_iso_send_cb,
-				   ts != BT_ISO_TIMESTAMP_NONE);
+	BT_ISO_DATA_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->sn = sys_cpu_to_le16(seq_num);
+	hdr->slen = sys_cpu_to_le16(
+		bt_iso_pkt_len_pack(net_buf_frags_len(buf) - sizeof(*hdr), BT_ISO_DATA_VALID));
+
+	iso_conn = chan->iso;
+
+	return bt_conn_send_iso_cb(iso_conn, buf, bt_iso_send_cb, false);
+}
+
+int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
+			uint32_t ts)
+{
+	struct bt_hci_iso_ts_data_hdr *hdr;
+	struct bt_conn *iso_conn;
+	int err;
+
+	err = validate_send(chan, buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+	if (err != 0) {
+		return err;
+	}
+
+	BT_ISO_DATA_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->ts = ts;
+	hdr->data.sn = sys_cpu_to_le16(seq_num);
+	hdr->data.slen = sys_cpu_to_le16(
+		bt_iso_pkt_len_pack(net_buf_frags_len(buf) - sizeof(*hdr), BT_ISO_DATA_VALID));
+
+	iso_conn = chan->iso;
+
+	return bt_conn_send_iso_cb(iso_conn, buf, bt_iso_send_cb, true);
 }
 
 #if defined(CONFIG_BT_ISO_CENTRAL) || defined(CONFIG_BT_ISO_BROADCASTER)

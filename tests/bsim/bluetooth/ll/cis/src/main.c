@@ -553,8 +553,7 @@ static void test_cis_central(void)
 				}
 
 				printk("ISO send: seq_num %u, chan %d\n", seq_num, chan);
-				ret = bt_iso_chan_send(&iso_chan[chan], buf,
-						       seq_num, BT_ISO_TIMESTAMP_NONE);
+				ret = bt_iso_chan_send(&iso_chan[chan], buf, seq_num);
 				if (ret < 0) {
 					FAIL("Unable to send data on channel %d : %d\n", chan, ret);
 					net_buf_unref(buf);
@@ -781,8 +780,7 @@ static void test_cis_peripheral(void)
 				}
 
 				printk("ISO send: seq_num %u, chan %d\n", seq_num, chan);
-				ret = bt_iso_chan_send(&iso_chan_p[chan], buf, seq_num,
-						       BT_ISO_TIMESTAMP_NONE);
+				ret = bt_iso_chan_send(&iso_chan_p[chan], buf, seq_num);
 				if (ret < 0) {
 					FAIL("Unable to send data on channel %d : %d\n", chan, ret);
 					net_buf_unref(buf);

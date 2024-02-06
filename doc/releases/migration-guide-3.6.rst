@@ -435,6 +435,9 @@ Bluetooth
 * The :c:func:`bt_l2cap_chan_send` API now requires the application to reserve
   enough bytes for the L2CAP headers. Call ``net_buf_reserve(buf,
   BT_L2CAP_SDU_CHAN_SEND_RESERVE);`` at buffer allocation time to do so.
+* `BT_ISO_TIMESTAMP_NONE` has been removed and the `ts` parameter of :c:func:`bt_iso_chan_send` has
+  as well. :c:func:`bt_iso_chan_send` now always sends without timestamp. To send with a timestamp,
+  :c:func:`bt_iso_chan_send_ts` can be used.
 
 * Mesh
 
@@ -479,6 +482,13 @@ Bluetooth
     E.g. ``bt_audio_codec_config_freq`` is now ``bt_audio_codec_cfg_freq``,
     ``bt_audio_codec_capability_type`` is now ``bt_audio_codec_cap_type``,
     ``bt_audio_codec_config_type`` is now ``bt_audio_codec_cfg_type``, etc. (:github:`67024`)
+  * The `ts` parameter of :c:func:`bt_bap_stream_send` has been removed.
+    :c:func:`bt_bap_stream_send` now always sends without timestamp.
+    To send with a timestamp, :c:func:`bt_bap_stream_send_ts` can be used.
+  * The `ts` parameter of :c:func:`bt_cap_stream_send` has been removed.
+    :c:func:`bt_cap_stream_send` now always sends without timestamp.
+    To send with a timestamp, :c:func:`bt_cap_stream_send_ts` can be used.
+
 
 LoRaWAN
 =======

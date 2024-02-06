@@ -98,7 +98,7 @@ static void audio_send_timeout(struct k_work *work)
 			LOG_DBG("Sending data to stream %p len %d seq %d", bap_stream, size,
 				stream->last_req_seq_num);
 
-			err = bt_bap_stream_send(bap_stream, buf, 0, BT_ISO_TIMESTAMP_NONE);
+			err = bt_bap_stream_send(bap_stream, buf, 0);
 			if (err != 0) {
 				LOG_ERR("Failed to send audio data to stream %p, err %d",
 					bap_stream, err);
