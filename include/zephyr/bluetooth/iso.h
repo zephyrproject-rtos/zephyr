@@ -118,14 +118,6 @@ extern "C" {
 /** Maximum pre-transmission offset */
 #define BT_ISO_PTO_MAX              0x0FU
 
-
-/** Omit time stamp when sending to controller
- *
- * Using this value will enqueue the ISO SDU in a FIFO manner, instead of
- * transmitting it at a specified timestamp.
- */
-#define BT_ISO_TIMESTAMP_NONE 0U
-
 /** @brief Life-span states of ISO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
  *  context.
@@ -843,7 +835,27 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
  */
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
 
-/** @brief Send data to ISO channel
+/** @brief Send data to ISO channel without timestamp
+ *
+ *  Send data from buffer to the channel. If credits are not available, buf will
+ *  be queued and sent as and when credits are received from peer.
+ *  Regarding to first input parameter, to get details see reference description
+ *  to bt_iso_chan_connect() API above.
+ *
+ *  @note Buffer ownership is transferred to the stack in case of success, in
+ *  case of an error the caller retains the ownership of the buffer.
+ *
+ *  @param chan     Channel object.
+ *  @param buf      Buffer containing data to be sent.
+ *  @param seq_num  Packet Sequence number. This value shall be incremented for
+ *                  each call to this function and at least once per SDU
+ *                  interval for a specific channel.
+ *
+ *  @return Bytes sent in case of success or negative value in case of error.
+ */
+int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num);
+
+/** @brief Send data to ISO channel with timestamp
  *
  *  Send data from buffer to the channel. If credits are not available, buf will
  *  be queued and sent as and when credits are received from peer.
@@ -860,14 +872,12 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *                  interval for a specific channel.
  *  @param ts       Timestamp of the SDU in microseconds (us).
  *                  This value can be used to transmit multiple
- *                  SDUs in the same SDU interval in a CIG or BIG. Can be
- *                  omitted by using @ref BT_ISO_TIMESTAMP_NONE which will
- *                  simply enqueue the ISO SDU in a FIFO manner.
+ *                  SDUs in the same SDU interval in a CIG or BIG.
  *
  *  @return Bytes sent in case of success or negative value in case of error.
  */
-int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
-		     uint16_t seq_num, uint32_t ts);
+int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
+			uint32_t ts);
 
 /** @brief ISO Unicast TX Info Structure */
 struct bt_iso_unicast_tx_info {

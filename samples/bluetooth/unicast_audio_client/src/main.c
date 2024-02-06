@@ -206,9 +206,7 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 				buf_to_send = net_buf_clone(buf, K_FOREVER);
 			}
 
-			ret = bt_bap_stream_send(stream, buf_to_send,
-						   get_and_incr_seq_num(stream),
-						   BT_ISO_TIMESTAMP_NONE);
+			ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
 			if (ret < 0) {
 				printk("  Failed to send LC3 audio data on streams[%zu] (%d)\n",
 				       i, ret);
@@ -337,9 +335,7 @@ static void audio_timer_timeout(struct k_work *work)
 			buf_to_send = net_buf_clone(buf, K_FOREVER);
 		}
 
-		ret = bt_bap_stream_send(stream, buf_to_send,
-					   get_and_incr_seq_num(stream),
-					   BT_ISO_TIMESTAMP_NONE);
+		ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu]: (%d)\n",
 			       i, ret);
