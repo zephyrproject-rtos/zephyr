@@ -141,7 +141,7 @@ undocumented rimage precedence rules it's best to use only one way at a time.
 
 - For board-specific needs you can define WEST_SIGN_OPTS in
   ``boards/my/board/board.cmake``, see example in
-  ``soc/xtensa/intel_adsp/common/CMakeLists.txt``
+  ``soc/intel/intel_adsp/common/CMakeLists.txt``
 
 Starting with Zephyr 3.6.0, ``west flash`` does not invoke ``west sign``
 anymore and you cannot pass rimage parameters to ``west flash`` anymore. To
@@ -162,16 +162,16 @@ this point onward, we will refer to the board as the "remote host" and your
 development machine as the "local host".
 
 Copy the below scripts to the cAVS board.
-:zephyr_file:`soc/xtensa/intel_adsp/tools/remote-fw-service.py` will receive
+:zephyr_file:`soc/intel/intel_adsp/tools/remote-fw-service.py` will receive
 the binary sent over the network by West and invoke
-:zephyr_file:`soc/xtensa/intel_adsp/tools/cavstool.py` (referred to as the
+:zephyr_file:`soc/intel/intel_adsp/tools/cavstool.py` (referred to as the
 "cAVS tool"), which performs the flash and captures the log. Start
 :file:`remote-fw-service.py`.
 
 .. code-block:: console
 
-   scp -r $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool.py username@remotehostname
-   scp -r $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/remote-fw-service.py username@remotehostname
+   scp -r $ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool.py username@remotehostname
+   scp -r $ZEPHYR_BASE/soc/intel/intel_adsp/tools/remote-fw-service.py username@remotehostname
    ssh username@remotehostname
    sudo ./remote-fw-service.py
 
@@ -179,7 +179,7 @@ the binary sent over the network by West and invoke
 communicate. It forwards logs collected by :file:`cavstool.py` on port 9999
 (referred to as its "log port") and services requests on port 10000
 (its "requests port"). When you run West or Twister on your local host,
-it sends requests using the :zephyr_file:`soc/xtensa/intel_adsp/tools/cavstool_client.py`
+it sends requests using the :zephyr_file:`soc/intel/intel_adsp/tools/cavstool_client.py`
 script (referred to as "cAVS tool client"). It also uses ports 9999 and 10000 on
 your local host, so be sure those ports are free.
 
@@ -193,7 +193,7 @@ Running tests with Twister is slightly more complicated.
 
 .. code-block:: console
 
-   twister -p intel_adsp_cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,remotehostname,-l" --west-flash="--remote-host=remotehostname" -T samples/hello_world
+   twister -p intel_adsp_cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname,-l" --west-flash="--remote-host=remotehostname" -T samples/hello_world
 
 If your network is set up such that the TCP connection from
 :file:`cavstool_client.py` to :file:`remote-fw-service.py` is forwarded through
@@ -204,7 +204,7 @@ the port numbers to the intermediate host name.
 .. code-block:: console
 
    west flash --remote-host intermediatehost:reqport --pty remotehostname:logport
-   twister -p intel_adsp_cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,remotehostname:logport,-l" --west-flash="--remote-host=remotehostname:reqport" -T samples/hello_world
+   twister -p intel_adsp_cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname:logport,-l" --west-flash="--remote-host=remotehostname:reqport" -T samples/hello_world
 
 You can also save this information to a hardware map file and pass that to
 Twister.
@@ -222,7 +222,7 @@ Here's a sample ``cavs.map``:
      platform: intel_adsp_cavs25
      product: None
      runner: intel_adsp
-     serial_pty: "/home/zephyrus/zephyrproject/zephyr/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,remotehostname:logport,-l"
+     serial_pty: "/home/zephyrus/zephyrproject/zephyr/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname:logport,-l"
      runner_params:
      - --remote-host=remotehostname:reqport
 
