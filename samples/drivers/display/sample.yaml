@@ -127,7 +127,7 @@ tests:
     harness_config:
       fixture: fixture_display
   sample.display.st_b_lcd40_dsi1_mb1166:
-    platform_allow: stm32h747i_disco_m7
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
     tags:
       - display
