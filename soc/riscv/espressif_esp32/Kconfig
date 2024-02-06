@@ -10,6 +10,7 @@ config SOC_FAMILY
 	string
 	default "espressif_esp32"
 
+source "soc/riscv/espressif_esp32/common/Kconfig.esptool"
 source "soc/riscv/espressif_esp32/common/Kconfig.soc"
 source "soc/riscv/espressif_esp32/*/Kconfig.soc"
 

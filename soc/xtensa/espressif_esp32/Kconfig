@@ -10,6 +10,7 @@ config SOC_FAMILY
 	string
 	default "espressif_esp32"
 
+source "soc/xtensa/espressif_esp32/common/Kconfig.esptool"
 source "soc/xtensa/espressif_esp32/common/Kconfig.soc"
 source "soc/xtensa/espressif_esp32/common/Kconfig.spiram"
 source "soc/xtensa/espressif_esp32/*/Kconfig.soc"

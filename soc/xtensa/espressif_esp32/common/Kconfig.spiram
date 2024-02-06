@@ -52,10 +52,8 @@ endchoice # SPIRAM_MODE
 
 choice SPIRAM_TYPE
 	prompt "Type of SPI RAM chip in use"
-	default SPIRAM_TYPE_AUTO
-
-config SPIRAM_TYPE_AUTO
-	bool "Auto-detect"
+	default SPIRAM_TYPE_ESPPSRAM16 if SPIRAM_MODE_QUAD
+	default SPIRAM_TYPE_ESPPSRAM64
 
 config SPIRAM_TYPE_ESPPSRAM16
 	bool "ESP-PSRAM16 or APS1604"
