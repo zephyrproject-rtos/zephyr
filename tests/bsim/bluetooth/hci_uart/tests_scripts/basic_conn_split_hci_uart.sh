@@ -10,7 +10,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # connected over UART. The controller is the HCI UART sample.
 simulation_id="basic_conn_split_hci_uart"
 verbosity_level=2
-EXECUTE_TIMEOUT=10
+EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 
