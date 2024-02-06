@@ -6,3 +6,254 @@ description: MT9M114 CMOS video sensor
 compatible: "aptina,mt9m114"
 
 include: i2c-device.yaml
+
+properties:
+  cam-aet-aemode:
+    type: int
+    default: 0
+    description: |
+      AE mode
+
+  cam-aet-min-frame-rate:
+    type: int
+    default: 7680
+    description: |
+      The minimum frame rate in Hertz (unity=256).
+
+  cam-aet-max-frame-rate:
+    type: int
+    default: 7680
+    description: |
+      The maximum frame rate in Hertz (unity=256).
+
+  cam-crop-cropmode:
+    type: int
+    default: 3
+    description: |
+      Crop mode
+
+  cam-crop-window-width:
+    type: int
+    default: 1280
+    description: |
+      This value needs to be inside the real limits internally there is no
+      clipping. The Refresh command will be rejected if this value is bigger
+      than the output image as the scaler only scales down.
+
+  cam-crop-window-height:
+    type: int
+    default: 720
+    description: |
+      This value needs to be inside the real limits internally there is no
+      clipping. The Refresh command will be rejected if this value is bigger
+      than the output image as the scaler only scales down.
+
+  cam-crop-window-xoffset:
+    type: int
+    default: 0
+    description: |
+      This value is relative to the sensor output including demosaic. For
+      example a 648 x 488 image from the sensor would be a 640 x 480 image after
+      demosaic. The crop will have the coordinates for the 640 x 480 image. This
+      value needs to be inside the real limits internally there is no clipping
+      or error message.
+
+  cam-crop-window-yoffset:
+    type: int
+    default: 120
+    description: |
+      This value is relative to the sensor output including demosaic. For
+      example a 648 x 88 image from the sensor would be a 640 x 480 image after
+      demosaic. The crop will have the coordinates for the 640 x 480 image. This
+      value needs to be inside the real limits internally there is no clipping
+      or error message.
+
+  cam-output-width:
+    type: int
+    default: 1280
+    description: |
+      The horizontal width (pixels) of the output window
+
+  cam-output-height:
+    type: int
+    default: 720
+    description: |
+      The vertical height (lines) of the output window
+
+  cam-port-output-control:
+    type: int
+    default: 0x8000
+    description: |
+      Controls port output
+
+  cam-sensor-cfg-cpipe-last-row:
+    type: int
+    default: 963
+    description: |
+      Last row to cpipe.
+
+  cam-sensor-cfg-fine-correction:
+    type: int
+    default: 96
+    description: |
+      Fine Correction (fine integration time).
+
+  cam-sensor-cfg-fine-integ-time-max:
+    type: int
+    default: 1986
+    description: |
+      Maximum fine integration time.
+
+  cam-sensor-cfg-fine-integ-time-min:
+    type: int
+    default: 219
+    description: |
+      Minimum fine integration time.
+
+  cam-sensor-cfg-frame-length-lines:
+    type: int
+    default: 1007
+    description: |
+      The number of complete lines (rows) in the output frame. This includes
+      visible lines and vertical blanking lines. When manually controlling this
+      register the host must ensure that
+      cam_sensor_cfg_frame_length_lines>=coarse_integration_time+2
+
+  cam-sensor-cfg-line-length-pck:
+    type: int
+    default: 1589
+    description: |
+      The number of pixel clock periods in one line (row) time. This includes
+      visible pixels and horizontal blanking.
+
+  cam-sensor-cfg-pixclk:
+    type: int
+    default: 48000000
+    description: |
+      The sensor’s pixel clock speed in Hertz
+
+  cam-sensor-cfg-reg-0-data:
+    type: int
+    default: 32
+    description: |
+      Column correction 3 register inside the sensor. Number of column
+      correction rows to read during vertical blanking. Only even values
+      supported. Frame rate can be reduced by setting this value low at the cost
+      of more frames coming out before the column correction starts correcting.
+
+  cam-sensor-cfg-row-speed:
+    type: int
+    default: 1
+    description: |
+      Unused in this implementation
+
+  cam-sensor-cfg-x-addr-start:
+    type: int
+    default: 4
+    description: |
+      The first column of visible pixels to be read out (not counting any dark
+      columns that may be read). Must be a multiple of 4 (8 in binning mode).
+
+  cam-sensor-cfg-y-addr-start:
+    type: int
+    default: 4
+    description: |
+      The first row of visible pixels to be read out (not counting any dark rows
+      that may be read). Must be an even value.
+
+  cam-sensor-cfg-x-addr-end:
+    type: int
+    default: 0x050B
+    description: |
+      The last column of visible pixels to be read out. Must be an odd value.
+      This value + 1 must be a multiple of 4 (8 in binning mode).
+
+  cam-sensor-cfg-y-addr-end:
+    type: int
+    default: 0x03CB
+    description: |
+      The last row of visible pixels to be read out. Must be an odd value.
+
+  cam-sensor-control-read-mode:
+    type: int
+    default: 0
+    description: |
+      Read mode
+
+  cam-stat-ae-initial-window-xstart:
+    type: int
+    default: 0
+    description: |
+      Start pixel for the X−coordinate of AE histograms window. This is only
+      the first window of the 5x5 grid.
+
+  cam-stat-ae-initial-window-ystart:
+    type: int
+    default: 0
+    description: |
+      Start pixel for the Y−coordinate of AE histograms window. This is only
+      the first window of the 5x5 grid.
+
+  cam-stat-ae-initial-window-xend:
+    type: int
+    default: 255
+    description: |
+      End pixel for the X−coordinate of AE histograms window. This is only the
+      first window of the 5x5 grid.
+
+  cam-stat-ae-initial-window-yend:
+    type: int
+    default: 143
+    description: |
+      End pixel for the Y−coordinate of AE histograms window. This is only the
+      first window of the 5x5 grid.
+
+  cam-stat-awb-clip-window-xstart:
+    type: int
+    default: 0
+    description: |
+      Start pixel for the X−coordinate of AWB and CLIP windows
+
+  cam-stat-awb-clip-window-ystart:
+    type: int
+    default: 0
+    description: |
+      Start pixel for the Y−coordinate of AWB and CLIP windows
+
+  cam-stat-awb-clip-window-xend:
+    type: int
+    default: 1279
+    description: |
+      End pixel for the X−coordinate of AWB and CLIP windows
+
+  cam-stat-awb-clip-window-yend:
+    type: int
+    default: 719
+    description: |
+      End pixel for the Y−coordinate of AWB and CLIP windows
+
+  cam-sysctl-pll-divider-m-n:
+    type: int
+    default: 0x0120
+    description: |
+      PLL m and n dividers
+
+  cam-sysctl-pll-divider-p:
+    type: int
+    default: 0x0700
+    description: |
+      PLL p dividers
+
+  cam-sysctl-pll-enable:
+    type: int
+    default: 1
+    description: |
+      Enable or disable PLL
+
+  logical-address-access:
+    type: int
+    default: 0x1000
+    description: |
+      Address of logical access; Used for camera control
+      (i.e. register/variable updates) by user.  A write to this address
+      establishes the Logical Access state.

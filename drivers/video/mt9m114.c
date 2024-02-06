@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,8 @@
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mt9m114);
+
+#define DT_PROP_MT9M114(prop) DT_PROP(DT_NODELABEL(mt9m114), prop)
 
 #define MT9M114_CHIP_ID_VAL				0x2481
 
@@ -66,44 +69,44 @@ struct mt9m114_reg {
 	uint32_t value;
 };
 
-static struct mt9m114_reg mt9m114_vga_24mhz_pll[] = {
-	{ 0x98E,  2, 0x1000	},
-	{ 0xC97E, 2, 0x01	}, /* cam_sysctl_pll_enable = 1 */
-	{ 0xC980, 2, 0x0120	}, /* cam_sysctl_pll_divider_m_n = 288 */
-	{ 0xC982, 2, 0x0700	}, /* cam_sysctl_pll_divider_p = 1792 */
-	{ 0xC984, 2, 0x8000	}, /* cam_port_output_control = 32776 */
-	{ 0xC800, 2, 0x0000	}, /* cam_sensor_cfg_y_addr_start = 0 */
-	{ 0xC802, 2, 0x0000	}, /* cam_sensor_cfg_x_addr_start = 0 */
-	{ 0xC804, 2, 0x03CD	}, /* cam_sensor_cfg_y_addr_end = 973 */
-	{ 0xC806, 2, 0x050D	}, /* cam_sensor_cfg_x_addr_end = 1293 */
-	{ 0xC808, 4, 0x2DC6C00	}, /* cam_sensor_cfg_pixclk = 48000000 */
-	{ 0xC80C, 2, 0x0001	}, /* cam_sensor_cfg_row_speed = 1 */
-	{ 0xC80E, 2, 0x00DB	}, /* cam_sensor_cfg_fine_integ_min = 219 */
-	{ 0xC810, 2, 0x07C2	}, /* cam_sensor_cfg_fine_integ_max = 1986 */
-	{ 0xC812, 2, 0x02FE	}, /* cam_sensor_cfg_frame_length_lines = 766 */
-	{ 0xC814, 2, 0x0845	}, /* cam_sensor_cfg_line_length_pck = 2117 */
-	{ 0xC816, 2, 0x0060	}, /* cam_sensor_cfg_fine_correction = 96 */
-	{ 0xC818, 2, 0x01E3	}, /* cam_sensor_cfg_cpipe_last_row = 483 */
-	{ 0xC826, 2, 0x0020	}, /* cam_sensor_cfg_reg_0_data = 32 */
-	{ 0xC834, 2, 0x0110	}, /* cam_sensor_control_read_mode = 272 */
-	{ 0xC854, 2, 0x0000	}, /* cam_crop_window_xoffset = 0 */
-	{ 0xC856, 2, 0x0000	}, /* cam_crop_window_yoffset = 0 */
-	{ 0xC858, 2, 0x0280	}, /* cam_crop_window_width = 640 */
-	{ 0xC85A, 2, 0x01E0	}, /* cam_crop_window_height = 480 */
-	{ 0xC85C, 1, 0x03	}, /* cam_crop_cropmode = 3 */
-	{ 0xC868, 2, 0x0280	}, /* cam_output_width = 640 */
-	{ 0xC86A, 2, 0x01E0	}, /* cam_output_height = 480 */
-	{ 0xC878, 1, 0x00	}, /* cam_aet_aemode = 0 */
-	{ 0xC88C, 2, 0x1D9A	}, /* cam_aet_max_frame_rate = 7578 */
-	{ 0xC914, 2, 0x0000	}, /* cam_stat_awb_clip_window_xstart = 0 */
-	{ 0xC88E, 2, 0x1D9A	}, /* cam_aet_min_frame_rate = 7578 */
-	{ 0xC916, 2, 0x0000	}, /* cam_stat_awb_clip_window_ystart = 0 */
-	{ 0xC918, 2, 0x027F	}, /* cam_stat_awb_clip_window_xend = 639 */
-	{ 0xC91A, 2, 0x01DF	}, /* cam_stat_awb_clip_window_yend = 479 */
-	{ 0xC91C, 2, 0x0000	}, /* cam_stat_ae_initial_window_xstart = 0 */
-	{ 0xC91E, 2, 0x0000	}, /* cam_stat_ae_initial_window_ystart = 0 */
-	{ 0xC920, 2, 0x007F	}, /* cam_stat_ae_initial_window_xend = 127 */
-	{ 0xC922, 2, 0x005F	}, /* cam_stat_ae_initial_window_yend = 95 */
+static struct mt9m114_reg mt9m114_reg_init[] = {
+	{ 0x98E,  2, DT_PROP_MT9M114(logical_address_access)},
+	{ 0xC97E, 2, DT_PROP_MT9M114(cam_sysctl_pll_enable)},
+	{ 0xC980, 2, DT_PROP_MT9M114(cam_sysctl_pll_divider_m_n)},
+	{ 0xC982, 2, DT_PROP_MT9M114(cam_sysctl_pll_divider_p)},
+	{ 0xC984, 2, DT_PROP_MT9M114(cam_port_output_control)},
+	{ 0xC800, 2, DT_PROP_MT9M114(cam_sensor_cfg_y_addr_start)},
+	{ 0xC802, 2, DT_PROP_MT9M114(cam_sensor_cfg_x_addr_start)},
+	{ 0xC804, 2, DT_PROP_MT9M114(cam_sensor_cfg_y_addr_end)},
+	{ 0xC806, 2, DT_PROP_MT9M114(cam_sensor_cfg_x_addr_end)},
+	{ 0xC808, 4, DT_PROP_MT9M114(cam_sensor_cfg_pixclk)},
+	{ 0xC80C, 2, DT_PROP_MT9M114(cam_sensor_cfg_row_speed)},
+	{ 0xC80E, 2, DT_PROP_MT9M114(cam_sensor_cfg_fine_integ_time_min)},
+	{ 0xC810, 2, DT_PROP_MT9M114(cam_sensor_cfg_fine_integ_time_max)},
+	{ 0xC812, 2, DT_PROP_MT9M114(cam_sensor_cfg_frame_length_lines)},
+	{ 0xC814, 2, DT_PROP_MT9M114(cam_sensor_cfg_line_length_pck)},
+	{ 0xC816, 2, DT_PROP_MT9M114(cam_sensor_cfg_fine_correction)},
+	{ 0xC818, 2, DT_PROP_MT9M114(cam_sensor_cfg_cpipe_last_row)},
+	{ 0xC826, 2, DT_PROP_MT9M114(cam_sensor_cfg_reg_0_data)},
+	{ 0xC834, 2, DT_PROP_MT9M114(cam_sensor_control_read_mode)},
+	{ 0xC854, 2, DT_PROP_MT9M114(cam_crop_window_xoffset)},
+	{ 0xC856, 2, DT_PROP_MT9M114(cam_crop_window_yoffset)},
+	{ 0xC858, 2, DT_PROP_MT9M114(cam_crop_window_width)},
+	{ 0xC85A, 2, DT_PROP_MT9M114(cam_crop_window_height)},
+	{ 0xC85C, 1, DT_PROP_MT9M114(cam_crop_cropmode)},
+	{ 0xC868, 2, DT_PROP_MT9M114(cam_output_width)},
+	{ 0xC86A, 2, DT_PROP_MT9M114(cam_output_height)},
+	{ 0xC878, 1, DT_PROP_MT9M114(cam_aet_aemode)},
+	{ 0xC88C, 2, DT_PROP_MT9M114(cam_aet_max_frame_rate)},
+	{ 0xC914, 2, DT_PROP_MT9M114(cam_stat_awb_clip_window_xstart)},
+	{ 0xC88E, 2, DT_PROP_MT9M114(cam_aet_min_frame_rate)},
+	{ 0xC916, 2, DT_PROP_MT9M114(cam_stat_awb_clip_window_ystart)},
+	{ 0xC918, 2, DT_PROP_MT9M114(cam_stat_awb_clip_window_xend)},
+	{ 0xC91A, 2, DT_PROP_MT9M114(cam_stat_awb_clip_window_yend)},
+	{ 0xC91C, 2, DT_PROP_MT9M114(cam_stat_ae_initial_window_xstart)},
+	{ 0xC91E, 2, DT_PROP_MT9M114(cam_stat_ae_initial_window_ystart)},
+	{ 0xC920, 2, DT_PROP_MT9M114(cam_stat_ae_initial_window_xend)},
+	{ 0xC922, 2, DT_PROP_MT9M114(cam_stat_ae_initial_window_yend)},
 	{ /* NULL terminated */ }
 };
 
@@ -294,8 +297,9 @@ static int mt9m114_set_fmt(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* we only support one format size for now (VGA) */
-	if (fmt->height != 480 || fmt->width != 640) {
+	/* Confirm camera configuration matches requested resolution */
+	if (fmt->height != DT_PROP_MT9M114(cam_output_height) ||
+		fmt->width != DT_PROP_MT9M114(cam_output_width)) {
 		LOG_ERR("Unsupported output size format");
 		return -ENOTSUP;
 	}
@@ -308,7 +312,7 @@ static int mt9m114_set_fmt(const struct device *dev,
 	drv_data->fmt = *fmt;
 
 	/* Configure Sensor */
-	ret = mt9m114_write_all(dev, mt9m114_vga_24mhz_pll);
+	ret = mt9m114_write_all(dev, mt9m114_reg_init);
 	if (ret) {
 		LOG_ERR("Unable to write mt9m114 config");
 		return ret;
@@ -360,8 +364,10 @@ static int mt9m114_stream_stop(const struct device *dev)
 	}
 
 static const struct video_format_cap fmts[] = {
-	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),  	/* VGA  RGB565 	*/
-	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   	/* VGA  YUYV 	*/
+	MT9M114_VIDEO_FORMAT_CAP(DT_PROP_MT9M114(cam_output_width),
+		DT_PROP_MT9M114(cam_output_height), VIDEO_PIX_FMT_RGB565),
+	MT9M114_VIDEO_FORMAT_CAP(DT_PROP_MT9M114(cam_output_width),
+		DT_PROP_MT9M114(cam_output_width), VIDEO_PIX_FMT_YUYV),
 	{ 0 }
 };
 
@@ -401,11 +407,11 @@ static int mt9m114_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* set default/init format VGA RGB565 */
+	/* set default/init format RGB565 */
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = 640;
-	fmt.height = 480;
-	fmt.pitch = 640 * 2;
+	fmt.width = DT_PROP_MT9M114(cam_output_width);
+	fmt.height = DT_PROP_MT9M114(cam_output_height);
+	fmt.pitch = DT_PROP_MT9M114(cam_output_width) * 2;
 
 	ret = mt9m114_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
