@@ -1,11 +1,7 @@
-boards:
-
-  - name: intel_adsp_cavs25
-    vendor: intel
-    socs:
-      - name: intel_tgl_adsp
-
-  - name: intel_adsp_cavs25_tgph
-    vendor: intel
-    socs:
-      - name: intel_tgl_adsp
+board:
+  name: intel_adsp_cavs25
+  vendor: intel
+  socs:
+    - name: intel_tgl_adsp
+      variants:
+        - name: 'tgph'
