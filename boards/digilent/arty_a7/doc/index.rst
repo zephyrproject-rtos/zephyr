@@ -44,7 +44,7 @@ following websites:
 Supported Features
 ==================
 
-The ``arty_a7_arm_designstart_m1`` board configuration supports the following
+The ``arty_a7/designstart_fpga_cortex_m1`` board configuration supports the following
 hardware features of the Cortex-M1 reference design:
 
 +-----------+------------+-------------------------------------+
@@ -63,9 +63,9 @@ hardware features of the Cortex-M1 reference design:
 +-----------+------------+-------------------------------------+
 
 The default configuration for the Cortex-M1 can be found in the defconfig file:
-:file:`boards/arm/arty/arty_a7_arm_designstart_m1_defconfig`.
+:file:`boards/digilent/arty_a7/arty_a7_designstart_fpga_cortex_m1_defconfig`.
 
-In addition to the above, the ``arty_a7_arm_designstart_m3`` board configuration
+In addition to the above, the ``arty_a7/designstart_fpga_cortex_m3`` board configuration
 supports the following hardware features of the Cortex-M3 reference design:
 
 +-----------+------------+-------------------------------------+
@@ -75,7 +75,7 @@ supports the following hardware features of the Cortex-M3 reference design:
 +-----------+------------+-------------------------------------+
 
 The default configuration for the Cortex-M3 can be found in the defconfig file:
-:file:`boards/arm/arty/arty_a7_arm_designstart_m3_defconfig`.
+:file:`boards/digilent/arty_a7/arty_a7_designstart_fpga_cortex_m3_defconfig`.
 
 Other hardware features are not currently supported by the port.
 
@@ -164,7 +164,7 @@ for the Cortex-M1 reference design:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: arty_a7_arm_designstart_m1
+   :board: arty_a7/designstart_fpga_cortex_m1
    :goals: flash
 
 After flashing, you should see message similar to the following in the terminal:
@@ -172,7 +172,7 @@ After flashing, you should see message similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v2.3.99  ***
-   Hello World! arty_a7_arm_designstart_m1
+   Hello World! arty_a7
 
 The same procedure can be used for the Cortex-M3 reference design.
 
@@ -195,7 +195,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: arty_a7_arm_designstart_m1
+   :board: arty_a7/designstart_fpga_cortex_m1
    :goals: debug
 
 Step through the application in your debugger, and you should see a message
@@ -204,7 +204,7 @@ similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v2.3.99  ***
-   Hello World! arty_a7_arm_designstart_m1
+   Hello World! arty_a7
 
 .. _Digilent Arty:
    https://store.digilentinc.com/arty
