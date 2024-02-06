@@ -74,6 +74,8 @@ struct nsos_mid_pollfd {
 	int fd;
 	short events;
 	short revents;
+
+	void (*cb)(struct nsos_mid_pollfd *pollfd_mid);
 };
 
 struct nsos_mid_addrinfo {
@@ -109,6 +111,8 @@ int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
 int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 			struct nsos_mid_sockaddr *addr, size_t *addrlen);
 
+void nsos_adapt_poll_add(struct nsos_mid_pollfd *pollfd);
+void nsos_adapt_poll_remove(struct nsos_mid_pollfd *pollfd);
 
 int nsos_adapt_fcntl_getfl(int fd);
 int nsos_adapt_fcntl_setfl(int fd, int flags);
