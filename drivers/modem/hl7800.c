@@ -4047,7 +4047,7 @@ static void sockreadrecv_cb_work(struct k_work *work)
 	}
 }
 
-static void sock_read(struct net_buf **buf, uint16_t len)
+static void sock_read(struct net_buf **buf)
 {
 	struct hl7800_socket *sock = NULL;
 	struct net_buf *frag;
@@ -4153,7 +4153,7 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 	}
 
 	frag = NULL;
-	len = net_buf_findcrlf(*buf, &frag);
+	(void)net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
 		LOG_WRN("Unable to find OK start");
 		goto all_rx_data;
@@ -4217,7 +4217,7 @@ static bool on_cmd_connect(struct net_buf **buf, uint16_t len)
 
 	if (sock->state == SOCK_RX) {
 		remove_data_from_buffer = false;
-		sock_read(buf, len);
+		sock_read(buf);
 	} else {
 		k_sem_give(&sock->sock_send_sem);
 	}
