@@ -68,6 +68,12 @@ As of 2022-01-01, LTS1 (1.14.x) is not supported and has reached end of life (EO
 Release Notes
 *************
 
+Release notes contain a list of changes that have been made to the different
+areas of the project during the development cycle of the release.
+Changes that require the user to modify their own application to support the new
+release may be mentioned in the release notes, but the details regarding `what`
+needs to be changed are to be detailed in the release's migration guide.
+
 .. toctree::
    :maxdepth: 1
    :glob:
@@ -82,6 +88,20 @@ Migration Guides
 
 Zephyr provides migration guides for all major releases, in order to assist
 users transition from the previous release.
+
+As mentioned in the previous section, changes in the code that require an action
+(i.e. a modification of the source code or configuration files) on the part of
+the user in order to keep the existing behavior of their application belong in
+in the migration guide. This includes:
+
+- Breaking API changes
+- Deprecations
+- Devicetree or Kconfig changes that affect the user (changes to defaults,
+  renames, etc)
+- Treewide changes that have an effect (e.g. changing the include path or
+  defaulting to a different C standard library)
+- Anything else that can affect the compilation or runtime behavior of an
+  existing application
 
 .. toctree::
    :maxdepth: 1
