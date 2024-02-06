@@ -854,6 +854,12 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 
 		LOG_DBG("GINTSTS 0x%x", int_status);
 
+		if (int_status & USB_DWC2_GINTSTS_SOF) {
+			/* Clear USB SOF interrupt. */
+			sys_write32(USB_DWC2_GINTSTS_SOF, gintsts_reg);
+			udc_submit_event(dev, UDC_EVT_SOF, 0);
+		}
+
 		if (int_status & USB_DWC2_GINTSTS_USBRST) {
 			/* Clear and handle USB Reset interrupt. */
 			sys_write32(USB_DWC2_GINTSTS_USBRST, gintsts_reg);
@@ -1541,7 +1547,8 @@ static int udc_dwc2_init(const struct device *dev)
 	/* Unmask interrupts */
 	sys_write32(USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
 		    USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
-		    USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP,
+		    USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
+		    USB_DWC2_GINTSTS_SOF,
 		    (mem_addr_t)&base->gintmsk);
 
 
