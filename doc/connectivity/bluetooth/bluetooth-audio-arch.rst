@@ -120,9 +120,10 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Assistant           | 1.0.1   | 3.3              | - Feature complete    | - Sample Application                             |
+   |        | Broadcast Assistant           | 1.0.1   | 3.3              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
+   |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | CAP    | Acceptor                      | 1.0     | 3.2              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
