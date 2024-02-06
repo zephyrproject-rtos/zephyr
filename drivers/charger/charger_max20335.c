@@ -54,6 +54,8 @@ struct charger_max20335_data {
 	struct k_work_delayable int_enable_work;
 	enum charger_status charger_status;
 	enum charger_online charger_online;
+	charger_status_notifier_t charger_status_notifier;
+	charger_online_notifier_t charger_online_notifier;
 	bool charger_enabled;
 	uint32_t charge_current_ua;
 	uint32_t charge_voltage_uv;
@@ -404,6 +406,12 @@ static int max20335_set_prop(const struct device *dev, charger_prop_t prop,
 		}
 
 		return ret;
+	case CHARGER_PROP_STATUS_NOTIFICATION:
+		data->charger_status_notifier = val->status_notification;
+		return 0;
+	case CHARGER_PROP_ONLINE_NOTIFICATION:
+		data->charger_online_notifier = val->online_notification;
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
@@ -458,6 +466,10 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		ret = max20335_get_charger_status(data->dev, &data->charger_status);
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger status: %d", ret);
+		} else {
+			if (data->charger_status_notifier != NULL) {
+				data->charger_status_notifier(data->charger_status);
+			}
 		}
 	}
 
@@ -465,6 +477,10 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		ret = max20335_get_charger_online(data->dev, &data->charger_online);
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger online %d", ret);
+		} else {
+			if (data->charger_online_notifier != NULL) {
+				data->charger_online_notifier(data->charger_online);
+			}
 		}
 
 		if (data->charger_online != CHARGER_ONLINE_OFFLINE) {
