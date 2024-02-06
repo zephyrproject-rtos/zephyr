@@ -3,6 +3,10 @@
 # Copyright (c) 2018 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_96B_STM32_SENSOR_MEZ
-	bool "96Boards STM32 Sensor Mezzanine Board"
-	depends on SOC_STM32F446XX
+if BOARD_96B_STM32_SENSOR_MEZ
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_96B_STM32_SENSOR_MEZ
