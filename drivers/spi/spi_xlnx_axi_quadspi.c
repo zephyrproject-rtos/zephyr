@@ -86,6 +86,7 @@ struct xlnx_quadspi_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint8_t num_ss_bits;
 	uint8_t num_xfer_bytes;
+	uint16_t fifo_size;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(xlnx_startup_block)
 	bool startup_block;
 #endif
@@ -235,6 +236,7 @@ static void xlnx_quadspi_start_tx(const struct device *dev)
 	uint32_t spicr = 0U;
 	uint32_t spisr;
 	uint32_t dtr = 0U;
+	uint32_t fifo_avail_words = config->fifo_size ? config->fifo_size : 1;
 
 	if (!spi_context_tx_on(ctx) && !spi_context_rx_on(ctx)) {
 		/* All done, de-assert slave select */
@@ -285,9 +287,19 @@ static void xlnx_quadspi_start_tx(const struct device *dev)
 		xlnx_quadspi_write32(dev, dtr, SPI_DTR_OFFSET);
 		spi_context_update_tx(ctx, config->num_xfer_bytes, 1);
 
-		spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
-		if (spisr & SPISR_TX_FULL) {
-			break;
+		if (--fifo_avail_words == 0) {
+			spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
+			if (spisr & SPISR_TX_FULL) {
+				break;
+			}
+			if (!config->fifo_size) {
+				fifo_avail_words = 1;
+			} else if (spisr & SPISR_TX_EMPTY) {
+				fifo_avail_words = config->fifo_size;
+			} else {
+				fifo_avail_words = config->fifo_size -
+					 xlnx_quadspi_read32(dev, SPI_TX_FIFO_OCR_OFFSET) - 1;
+			}
 		}
 	}
 
@@ -396,19 +408,21 @@ static void xlnx_quadspi_isr(const struct device *dev)
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
-	uint32_t temp;
-	uint32_t drr;
+	uint32_t ipisr;
 
 	/* Acknowledge interrupt */
-	temp = xlnx_quadspi_read32(dev, IPISR_OFFSET);
-	xlnx_quadspi_write32(dev, temp, IPISR_OFFSET);
+	ipisr = xlnx_quadspi_read32(dev, IPISR_OFFSET);
+	xlnx_quadspi_write32(dev, ipisr, IPISR_OFFSET);
 
-	if (temp & IPIXR_DTR_EMPTY) {
-		temp = xlnx_quadspi_read32(dev, SPISR_OFFSET);
+	if (ipisr & IPIXR_DTR_EMPTY) {
+		uint32_t spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
+		/* RX FIFO occupancy register only exists if FIFO is implemented */
+		uint32_t rx_fifo_words = config->fifo_size ?
+			xlnx_quadspi_read32(dev, SPI_RX_FIFO_OCR_OFFSET) + 1 : 1;
 
 		/* Read RX data */
-		while (!(temp & SPISR_RX_EMPTY)) {
-			drr = xlnx_quadspi_read32(dev, SPI_DRR_OFFSET);
+		while (!(spisr & SPISR_RX_EMPTY)) {
+			uint32_t drr = xlnx_quadspi_read32(dev, SPI_DRR_OFFSET);
 
 			if (spi_context_rx_buf_on(ctx)) {
 				switch (config->num_xfer_bytes) {
@@ -432,13 +446,17 @@ static void xlnx_quadspi_isr(const struct device *dev)
 
 			spi_context_update_rx(ctx, config->num_xfer_bytes, 1);
 
-			temp = xlnx_quadspi_read32(dev, SPISR_OFFSET);
+			if (--rx_fifo_words == 0) {
+				spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
+				rx_fifo_words = config->fifo_size ?
+					xlnx_quadspi_read32(dev, SPI_RX_FIFO_OCR_OFFSET) + 1 : 1;
+			}
 		}
 
 		/* Start next TX */
 		xlnx_quadspi_start_tx(dev);
 	} else {
-		LOG_WRN("unhandled interrupt, ipisr = 0x%08x", temp);
+		LOG_WRN("unhandled interrupt, ipisr = 0x%08x", ipisr);
 	}
 }
 
@@ -546,6 +564,7 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 		.num_ss_bits = DT_INST_PROP(n, xlnx_num_ss_bits),	\
 		.num_xfer_bytes =					\
 			DT_INST_PROP(n, xlnx_num_transfer_bits) / 8,	\
+		.fifo_size = DT_INST_PROP_OR(n, fifo_size, 0),		\
 		STARTUP_BLOCK_INIT(n)					\
 	};								\
 									\
