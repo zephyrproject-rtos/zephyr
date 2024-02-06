@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 set -e
 
@@ -13,8 +13,8 @@ set -e
 #  export CAVS_RIMAGE=$HOME/rimage
 #
 #  twister -p intel_adsp_cavs25 --device-testing \
-#     --device-serial-pty=$ZEPHYR_BASE/soc/soc_legacy/xtensa/intel_adsp/tools/cavstwist.sh \
-#     --west-flash=$ZEPHYR_BASE/soc/soc_legacy/xtensa/intel_adsp/tools/cavstwist.sh
+#     --device-serial-pty=$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstwist.sh \
+#     --west-flash=$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstwist.sh
 #
 # The CAVS_OLD_FLASHER is necessary because now the client-server-based
 # cavstool works by default. This is to tell the build system to use
@@ -80,7 +80,7 @@ fi
 
 ########################################################################
 
-CAVSTOOL=$ZEPHYR_BASE/soc/soc_legacy/xtensa/intel_adsp/tools/cavstool.py
+CAVSTOOL=$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool.py
 IMAGE=$ZEPHYR_BASE/_cavstmp.ri
 IMAGE2=$ZEPHYR_BASE/_cavstmp2.ri
 
