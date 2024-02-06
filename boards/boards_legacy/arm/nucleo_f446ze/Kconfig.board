@@ -1,8 +1,0 @@
-# STM32F446ZE Nucleo board configuration
-
-# Copyright (c) 2021 Tom Owen
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_F446ZE
-	bool "Nucleo F446ZE Development Board"
-	depends on SOC_STM32F446XX
