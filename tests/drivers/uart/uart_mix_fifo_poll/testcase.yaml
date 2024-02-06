@@ -20,7 +20,6 @@ tests:
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
-    tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_fifo:
     extra_configs:
@@ -28,7 +27,6 @@ tests:
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
-    tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_async_api:
     extra_configs:
@@ -37,7 +35,6 @@ tests:
       - CONFIG_UART_0_ASYNC=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
-    tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_async_api_const:
     extra_args: TEST_CONST_BUFFER=1
