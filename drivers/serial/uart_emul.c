@@ -172,6 +172,7 @@ static int uart_emul_fifo_read(const struct device *dev, uint8_t *rx_data, int s
 
 	K_SPINLOCK(&data->rx_lock) {
 		bytes_to_read = MIN(config->latch_buffer_size, ring_buf_size_get(data->rx_rb));
+		bytes_to_read = MIN(bytes_to_read, size);
 		ring_buf_get(data->rx_rb, rx_data, bytes_to_read);
 	}
 
