@@ -40,8 +40,7 @@ static void dai_ssp_update_bits(struct dai_intel_ssp *dp, uint32_t reg, uint32_t
 {
 	uint32_t dest = dai_base(dp) + reg;
 
-	LOG_INF("%s base %x, reg %x, mask %x, value %x", __func__,
-		dai_base(dp), reg, mask, val);
+	LOG_DBG("base %x, reg %x, mask %x, value %x", dai_base(dp), reg, mask, val);
 
 	sys_write32((sys_read32(dest) & (~mask)) | (val & mask), dest);
 }
@@ -146,8 +145,8 @@ static int dai_ssp_setup_initial_mclk_source(struct dai_intel_ssp *dp, uint32_t 
 	int i;
 
 	if (mclk_id >= DAI_INTEL_SSP_NUM_MCLK) {
-		LOG_ERR("%s can't configure MCLK %d, only %d mclk[s] existed!",
-			__func__, mclk_id, DAI_INTEL_SSP_NUM_MCLK);
+		LOG_ERR("can't configure MCLK %d, only %d mclk[s] existed!",
+			mclk_id, DAI_INTEL_SSP_NUM_MCLK);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -161,7 +160,7 @@ static int dai_ssp_setup_initial_mclk_source(struct dai_intel_ssp *dp, uint32_t 
 	}
 
 	if (clk_index < 0) {
-		LOG_ERR("%s MCLK %d, no valid source", __func__, mclk_rate);
+		LOG_ERR("MCLK %d, no valid source", mclk_rate);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -200,19 +199,19 @@ static int dai_ssp_check_current_mclk_source(struct dai_intel_ssp *dp, uint16_t 
 	uint32_t mdivc;
 	int ret = 0;
 
-	LOG_INF("%s MCLK %d, source = %d", __func__, mclk_rate, mp->mclk_source_clock);
+	LOG_INF("MCLK %d, source = %d", mclk_rate, mp->mclk_source_clock);
 
 	if (ft[mp->mclk_source_clock].freq % mclk_rate != 0) {
-		LOG_ERR("%s MCLK %d, no valid configuration for already selected source = %d",
-			__func__, mclk_rate, mp->mclk_source_clock);
+		LOG_ERR("MCLK %d, no valid configuration for already selected source = %d",
+			mclk_rate, mp->mclk_source_clock);
 		ret = -EINVAL;
 	}
 
 	/* if the mclk is already used, can't change its divider, just increase ref count */
 	if (mp->mclk_sources_ref[mclk_id] > 0) {
 		if (mp->mclk_rate[mclk_id] != mclk_rate) {
-			LOG_ERR("%s Can't set MCLK %d to %d, it is already configured to %d",
-				__func__, mclk_id, mclk_rate, mp->mclk_rate[mclk_id]);
+			LOG_ERR("Can't set MCLK %d to %d, it is already configured to %d",
+				mclk_id, mclk_rate, mp->mclk_rate[mclk_id]);
 			return -EINVAL;
 		}
 
@@ -240,7 +239,7 @@ static int dai_ssp_set_mclk_divider(struct dai_intel_ssp *dp, uint16_t mclk_id, 
 {
 	uint32_t mdivr;
 
-	LOG_INF("%s mclk_id %d mdivr_val %d", __func__, mclk_id, mdivr_val);
+	LOG_INF("mclk_id %d mdivr_val %d", mclk_id, mdivr_val);
 	switch (mdivr_val) {
 	case 1:
 		mdivr = 0x00000fff; /* bypass divider for MCLK */
@@ -249,7 +248,7 @@ static int dai_ssp_set_mclk_divider(struct dai_intel_ssp *dp, uint16_t mclk_id, 
 		mdivr = mdivr_val - 2; /* 1/n */
 		break;
 	default:
-		LOG_ERR("%s invalid mdivr_val %d", __func__, mdivr_val);
+		LOG_ERR("invalid mdivr_val %d", mdivr_val);
 		return -EINVAL;
 	}
 
@@ -266,7 +265,7 @@ static int dai_ssp_mn_set_mclk(struct dai_intel_ssp *dp, uint16_t mclk_id, uint3
 	int ret = 0;
 
 	if (mclk_id >= DAI_INTEL_SSP_NUM_MCLK) {
-		LOG_ERR("%s mclk ID (%d) >= %d", __func__, mclk_id, DAI_INTEL_SSP_NUM_MCLK);
+		LOG_ERR("mclk ID (%d) >= %d", mclk_id, DAI_INTEL_SSP_NUM_MCLK);
 		return -EINVAL;
 	}
 
@@ -282,8 +281,7 @@ static int dai_ssp_mn_set_mclk(struct dai_intel_ssp *dp, uint16_t mclk_id, uint3
 		goto out;
 	}
 
-	LOG_INF("%s mclk_rate %d, mclk_source_clock %d", __func__,
-		mclk_rate, mp->mclk_source_clock);
+	LOG_INF("mclk_rate %d, mclk_source_clock %d", mclk_rate, mp->mclk_source_clock);
 
 	ret = dai_ssp_set_mclk_divider(dp, mclk_id, ft[mp->mclk_source_clock].freq / mclk_rate);
 	if (!ret) {
@@ -352,7 +350,7 @@ static bool dai_ssp_find_mn(uint32_t freq, uint32_t bclk, uint32_t *out_scr_div,
 	uint32_t m, n, mn_div;
 	uint32_t scr_div = freq / bclk;
 
-	LOG_INF("%s for freq %d bclk %d", __func__, freq, bclk);
+	LOG_INF("for freq %d bclk %d", freq, bclk);
 	/* check if just SCR is enough */
 	if (freq % bclk == 0 && scr_div < (SSCR0_SCR_MASK >> 8) + 1) {
 		*out_scr_div = scr_div;
@@ -395,7 +393,7 @@ static bool dai_ssp_find_mn(uint32_t freq, uint32_t bclk, uint32_t *out_scr_div,
 	*out_m = m;
 	*out_n = n;
 
-	LOG_INF("%s m %d n %d", __func__, m, n);
+	LOG_INF("m %d n %d", m, n);
 	return true;
 }
 
@@ -422,8 +420,8 @@ static int dai_ssp_find_bclk_source(struct dai_intel_ssp *dp, uint32_t bclk, uin
 			return mp->mclk_source_clock;
 		}
 
-		LOG_WRN("%s BCLK %d warning: cannot use MCLK source %d",
-			__func__, bclk, ft[mp->mclk_source_clock].freq);
+		LOG_WRN("BCLK %d warning: cannot use MCLK source %d", bclk,
+			ft[mp->mclk_source_clock].freq);
 	}
 
 	/* searching the smallest possible bclk source */
@@ -502,7 +500,7 @@ static int dai_ssp_setup_initial_bclk_mn_source(struct dai_intel_ssp *dp, uint32
 	int clk_index = dai_ssp_find_bclk_source(dp, bclk, scr_div, m, n);
 
 	if (clk_index < 0) {
-		LOG_ERR("%s BCLK %d, no valid source", __func__, bclk);
+		LOG_ERR("BCLK %d, no valid source", bclk);
 		return -EINVAL;
 	}
 
@@ -533,8 +531,7 @@ static void dai_ssp_reset_bclk_mn_source(struct dai_intel_ssp *dp)
 	int clk_index = dai_ssp_find_clk_ssp_index(dp, DAI_INTEL_SSP_CLOCK_XTAL_OSCILLATOR);
 
 	if (clk_index < 0) {
-		LOG_ERR("%s BCLK reset failed, no SSP_CLOCK_XTAL_OSCILLATOR source!",
-			__func__);
+		LOG_ERR("BCLK reset failed, no SSP_CLOCK_XTAL_OSCILLATOR source!");
 		return;
 	}
 
@@ -570,8 +567,8 @@ static int dai_ssp_setup_current_bclk_mn_source(struct dai_intel_ssp *dp, uint32
 		goto out;
 	}
 
-	LOG_ERR("%s BCLK %d, no valid configuration for already selected source = %d",
-		__func__, bclk, mp->bclk_source_mn_clock);
+	LOG_ERR("BCLK %d, no valid configuration for already selected source = %d",
+		bclk, mp->bclk_source_mn_clock);
 	ret = -EINVAL;
 
 out:
@@ -619,8 +616,7 @@ static int dai_ssp_mn_set_bclk(struct dai_intel_ssp *dp, uint32_t dai_index, uin
 	if (ret >= 0) {
 		mp->bclk_sources[dai_index] = MN_BCLK_SOURCE_MN;
 
-		LOG_INF("%s bclk_rate %d, *out_scr_div %d, m %d, n %d",
-			__func__, bclk_rate, *out_scr_div, m, n);
+		LOG_INF("bclk_rate %d, *out_scr_div %d, m %d, n %d", bclk_rate, *out_scr_div, m, n);
 
 		sys_write32(m, dai_mn_base(dp) + MN_MDIV_M_VAL(dai_index));
 		sys_write32(n, dai_mn_base(dp) + MN_MDIV_N_VAL(dai_index));
@@ -669,8 +665,7 @@ static int dai_ssp_poll_for_register_delay(uint32_t reg, uint32_t mask,
 					   uint32_t val, uint64_t us)
 {
 	if (!WAIT_FOR((sys_read32(reg) & mask) == val, us, k_busy_wait(1))) {
-		LOG_ERR("%s poll timeout reg %u mask %u val %u us %u",
-			__func__, reg, mask, val, (uint32_t)us);
+		LOG_ERR("poll timeout reg %u mask %u val %u us %u", reg, mask, val, (uint32_t)us);
 		return -EIO;
 	}
 
@@ -690,7 +685,7 @@ static inline void dai_ssp_pm_runtime_dis_ssp_clk_gating(struct dai_intel_ssp *d
 
 	sys_write32(shim_reg, dai_shim_base(dp) + SHIM_CLKCTL);
 
-	LOG_INF("%s index %d CLKCTL %08x", __func__, index, shim_reg);
+	LOG_INF("index %d CLKCTL %08x", index, shim_reg);
 #endif
 }
 
@@ -707,7 +702,7 @@ static inline void dai_ssp_pm_runtime_en_ssp_clk_gating(struct dai_intel_ssp *dp
 
 	sys_write32(shim_reg, dai_shim_base(dp) + SHIM_CLKCTL);
 
-	LOG_INF("%s index %d CLKCTL %08x", __func__, index, shim_reg);
+	LOG_INF("index %d CLKCTL %08x", index, shim_reg);
 #endif
 }
 
@@ -716,7 +711,7 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 #if CONFIG_DAI_SSP_HAS_POWER_CONTROL
 	int ret;
 
-	LOG_INF("%s en_ssp_power index %d", __func__, index);
+	LOG_INF("SSP%d", dp->index);
 #if CONFIG_SOC_INTEL_ACE15_MTPM || CONFIG_SOC_SERIES_INTEL_ADSP_CAVS
 	sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) | I2SLCTL_SPA(index),
 		    dai_ip_base(dp) + I2SLCTL_OFFSET);
@@ -737,10 +732,8 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 #error need to define SOC
 #endif
 	if (ret) {
-		LOG_WRN("%s warning: timeout", __func__);
+		LOG_WRN("SSP%d: timeout", dp->index);
 	}
-
-	LOG_INF("%s I2SLCTL", __func__);
 #else
 	ARG_UNUSED(dp);
 	ARG_UNUSED(index);
@@ -752,7 +745,7 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 #if CONFIG_DAI_SSP_HAS_POWER_CONTROL
 	int ret;
 
-	LOG_INF("%s index %d", __func__, index);
+	LOG_INF("SSP%d", dp->index);
 #if CONFIG_SOC_INTEL_ACE15_MTPM || CONFIG_SOC_SERIES_INTEL_ADSP_CAVS
 	sys_write32(sys_read32(dai_ip_base(dp) + I2SLCTL_OFFSET) & (~I2SLCTL_SPA(index)),
 		    dai_ip_base(dp) + I2SLCTL_OFFSET);
@@ -773,10 +766,8 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 #error need to define SOC
 #endif
 	if (ret) {
-		LOG_WRN("%s warning: timeout", __func__);
+		LOG_WRN("SSP%d: timeout", dp->index);
 	}
-
-	LOG_INF("%s I2SLCTL", __func__);
 #else
 	ARG_UNUSED(dp);
 	ARG_UNUSED(index);
@@ -826,7 +817,7 @@ static void dai_ssp_empty_tx_fifo(struct dai_intel_ssp *dp)
 					       (DAI_INTEL_SSP_FIFO_DEPTH - 1) / 2);
 
 	if (ret) {
-		LOG_WRN("%s warning: timeout", __func__);
+		LOG_WRN("timeout");
 	}
 
 	sssr = sys_read32(dai_base(dp) + SSSR);
@@ -919,8 +910,8 @@ static int dai_ssp_mclk_prepare_enable(struct dai_intel_ssp *dp)
 	/* MCLK config */
 	ret = dai_ssp_mn_set_mclk(dp, ssp->params.mclk_id, ssp->params.mclk_rate);
 	if (ret < 0) {
-		LOG_ERR("%s invalid mclk_rate = %d for mclk_id = %d", __func__,
-			ssp->params.mclk_rate, ssp->params.mclk_id);
+		LOG_ERR("invalid mclk_rate = %d for mclk_id = %d", ssp->params.mclk_rate,
+			ssp->params.mclk_id);
 	} else {
 		ssp->clk_active |= SSP_CLK_MCLK_ACTIVE;
 	}
@@ -964,13 +955,13 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 	ret = dai_ssp_mn_set_bclk(dp, config->dai_index, ssp->params.bclk_rate,
 				  &mdiv, &need_ecs);
 	if (ret < 0) {
-		LOG_ERR("%s invalid bclk_rate = %d for dai_index = %d", __func__,
+		LOG_ERR("invalid bclk_rate = %d for dai_index = %d",
 			ssp->params.bclk_rate, config->dai_index);
 		goto out;
 	}
 #else
 	if (ft[DAI_INTEL_SSP_DEFAULT_IDX].freq % ssp->params.bclk_rate != 0) {
-		LOG_ERR("%s invalid bclk_rate = %d for dai_index = %d", __func__,
+		LOG_ERR("invalid bclk_rate = %d for dai_index = %d",
 			ssp->params.bclk_rate, config->dai_index);
 		ret = -EINVAL;
 		goto out;
@@ -988,7 +979,7 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 
 	/* divisor must be within SCR range */
 	if (mdiv > (SSCR0_SCR_MASK >> 8)) {
-		LOG_ERR("%s divisor %d is not within SCR range", __func__, mdiv);
+		LOG_ERR("divisor %d is not within SCR range", mdiv);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -999,7 +990,7 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 
 	sys_write32(sscr0, dai_base(dp) + SSCR0);
 
-	LOG_INF("%s sscr0 = 0x%08x", __func__, sscr0);
+	LOG_INF("sscr0 = 0x%08x", sscr0);
 out:
 	if (!ret) {
 		ssp->clk_active |= SSP_CLK_BCLK_ACTIVE;
@@ -1023,16 +1014,15 @@ static void dai_ssp_bclk_disable_unprepare(struct dai_intel_ssp *dp)
 
 static void dai_ssp_log_ssp_data(struct dai_intel_ssp *dp)
 {
-	LOG_INF("%s dai index: %u", __func__, dp->index);
-	LOG_INF("%s plat_data base: %u", __func__, dp->plat_data.base);
-	LOG_INF("%s plat_data irq: %u", __func__, dp->plat_data.irq);
-	LOG_INF("%s plat_data fifo playback offset: %u", __func__,
-		dp->plat_data.fifo[DAI_DIR_PLAYBACK].offset);
-	LOG_INF("%s plat_data fifo playback handshake: %u", __func__,
+	LOG_INF("dai index: %u", dp->index);
+	LOG_INF("plat_data base: %u", dp->plat_data.base);
+	LOG_INF("plat_data irq: %u", dp->plat_data.irq);
+	LOG_INF("plat_data fifo playback offset: %u", dp->plat_data.fifo[DAI_DIR_PLAYBACK].offset);
+	LOG_INF("plat_data fifo playback handshake: %u",
 		dp->plat_data.fifo[DAI_DIR_PLAYBACK].handshake);
-	LOG_INF("%s plat_data fifo capture offset: %u", __func__,
+	LOG_INF("plat_data fifo capture offset: %u",
 		dp->plat_data.fifo[DAI_DIR_CAPTURE].offset);
-	LOG_INF("%s plat_data fifo capture handshake: %u", __func__,
+	LOG_INF("plat_data fifo capture handshake: %u",
 		dp->plat_data.fifo[DAI_DIR_CAPTURE].handshake);
 }
 
@@ -1079,19 +1069,19 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 	if (ssp->state[DAI_DIR_PLAYBACK] > DAI_STATE_READY ||
 	    ssp->state[DAI_DIR_CAPTURE] > DAI_STATE_READY) {
 		if (!memcmp(&ssp->params, bespoke_cfg, sizeof(struct dai_intel_ipc3_ssp_params))) {
-			LOG_INF("%s Already configured. Ignore config", __func__);
+			LOG_INF("Already configured. Ignore config");
 			goto clk;
 		}
 
 		if (ssp->clk_active & (SSP_CLK_MCLK_ACTIVE | SSP_CLK_BCLK_ACTIVE)) {
-			LOG_WRN("%s SSP active, cannot change config", __func__);
+			LOG_WRN("SSP active, cannot change config");
 			goto clk;
 		}
 
 		/* safe to proceed and change HW config */
 	}
 
-	LOG_INF("%s", __func__);
+	LOG_INF("SSP%d", dp->index);
 
 	/* reset SSP settings */
 	/* sscr0 dynamic settings are DSS, EDSS, SCR, FRDC, ECS */
@@ -1150,7 +1140,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		/* FIXME: this mode has not been tested */
 		break;
 	default:
-		LOG_ERR("%s format & PROVIDER_MASK EINVAL", __func__);
+		LOG_ERR("format & PROVIDER_MASK EINVAL");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1170,7 +1160,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		inverted_bclk = true; /* handled later with bclk idle */
 		break;
 	default:
-		LOG_ERR("%s format & INV_MASK EINVAL", __func__);
+		LOG_ERR("format & INV_MASK EINVAL");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1203,9 +1193,9 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		SSCR1_LBM : 0;
 
 	if (ssp->params.quirks & DAI_INTEL_IPC3_SSP_QUIRK_LBM) {
-		LOG_INF("%s going for loopback!", __func__);
+		LOG_INF("going for loopback!");
 	} else {
-		LOG_INF("%s no loopback!", __func__);
+		LOG_INF("no loopback!");
 	}
 
 	/* Transmit data are driven at the same/opposite clock edge specified
@@ -1234,24 +1224,23 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 	if (!ssp->params.mclk_rate ||
 	    ssp->params.mclk_rate > ft[DAI_INTEL_SSP_MAX_FREQ_INDEX].freq) {
-		LOG_ERR("%s invalid MCLK = %d Hz (valid < %d)", __func__,
-			ssp->params.mclk_rate,
+		LOG_ERR("invalid MCLK = %d Hz (valid < %d)", ssp->params.mclk_rate,
 			ft[DAI_INTEL_SSP_MAX_FREQ_INDEX].freq);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	if (!ssp->params.bclk_rate || ssp->params.bclk_rate > ssp->params.mclk_rate) {
-		LOG_ERR("%s BCLK %d Hz = 0 or > MCLK %d Hz", __func__,
-			ssp->params.bclk_rate, ssp->params.mclk_rate);
+		LOG_ERR("BCLK %d Hz = 0 or > MCLK %d Hz", ssp->params.bclk_rate,
+			ssp->params.mclk_rate);
 		ret = -EINVAL;
 		goto out;
 	}
 
-	/* calc frame width based on BCLK and rate - must be divisable */
+	/* calc frame width based on BCLK and rate - must be divisible */
 	if (ssp->params.bclk_rate % ssp->params.fsync_rate) {
-		LOG_ERR("%s BCLK %d is not divisable by rate %d", __func__,
-			ssp->params.bclk_rate, ssp->params.fsync_rate);
+		LOG_ERR("BCLK %d is not divisible by rate %d", ssp->params.bclk_rate,
+			ssp->params.fsync_rate);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1259,17 +1248,15 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 	/* must be enough BCLKs for data */
 	bdiv = ssp->params.bclk_rate / ssp->params.fsync_rate;
 	if (bdiv < ssp->params.tdm_slot_width * ssp->params.tdm_slots) {
-		LOG_ERR("%s not enough BCLKs need %d", __func__,
-			ssp->params.tdm_slot_width *
-			ssp->params.tdm_slots);
+		LOG_ERR("not enough BCLKs need %d",
+			ssp->params.tdm_slot_width * ssp->params.tdm_slots);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	/* tdm_slot_width must be <= 38 for SSP */
 	if (ssp->params.tdm_slot_width > 38) {
-		LOG_ERR("%s tdm_slot_width %d > 38", __func__,
-			ssp->params.tdm_slot_width);
+		LOG_ERR("tdm_slot_width %d > 38", ssp->params.tdm_slot_width);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1278,16 +1265,14 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		   (ssp->params.tdm_per_slot_padding_flag ?
 		    ssp->params.tdm_slot_width : ssp->params.sample_valid_bits);
 	if (bdiv < bdiv_min) {
-		LOG_ERR("%s bdiv(%d) < bdiv_min(%d)", __func__,
-			bdiv, bdiv_min);
+		LOG_ERR("bdiv(%d) < bdiv_min(%d)", bdiv, bdiv_min);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	frame_end_padding = bdiv - bdiv_min;
 	if (frame_end_padding > SSPSP2_FEP_MASK) {
-		LOG_ERR("%s frame_end_padding too big: %u", __func__,
-			frame_end_padding);
+		LOG_ERR("frame_end_padding too big: %u", frame_end_padding);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1301,7 +1286,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		sscr0 |= SSCR0_FRDC(ssp->params.tdm_slots);
 
 		if (bdiv % 2) {
-			LOG_ERR("%s bdiv %d is not divisible by 2", __func__, bdiv);
+			LOG_ERR("bdiv %d is not divisible by 2", bdiv);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1322,8 +1307,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		 * of each slot
 		 */
 		if (frame_end_padding % 2) {
-			LOG_ERR("%s frame_end_padding %d is not divisible by 2",
-				__func__, frame_end_padding);
+			LOG_ERR("frame_end_padding %d is not divisible by 2", frame_end_padding);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1332,8 +1316,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 		if (slot_end_padding > DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX) {
 			/* too big padding */
-			LOG_ERR("%s slot_end_padding > %d", __func__,
-				DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX);
+			LOG_ERR("slot_end_padding > %d", DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1354,7 +1337,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		sscr2 &= ~SSCR2_LJDFD;
 
 		if (bdiv % 2) {
-			LOG_ERR("%s bdiv %d is not divisible by 2", __func__, bdiv);
+			LOG_ERR("bdiv %d is not divisible by 2", bdiv);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1375,8 +1358,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		 * of each slot
 		 */
 		if (frame_end_padding % 2) {
-			LOG_ERR("%s frame_end_padding %d is not divisible by 2",
-				__func__, frame_end_padding);
+			LOG_ERR("frame_end_padding %d is not divisible by 2", frame_end_padding);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1385,8 +1367,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 		if (slot_end_padding > 15) {
 			/* can't handle padding over 15 bits */
-			LOG_ERR("%s slot_end_padding %d > 15 bits", __func__,
-				slot_end_padding);
+			LOG_ERR("slot_end_padding %d > 15 bits", slot_end_padding);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1420,8 +1401,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		/* frame_pulse_width must less or equal 38 */
 		if (ssp->params.frame_pulse_width >
 			DAI_INTEL_IPC3_SSP_FRAME_PULSE_WIDTH_MAX) {
-			LOG_ERR("%s frame_pulse_width > %d", __func__,
-				DAI_INTEL_IPC3_SSP_FRAME_PULSE_WIDTH_MAX);
+			LOG_ERR("frame_pulse_width > %d", DAI_INTEL_IPC3_SSP_FRAME_PULSE_WIDTH_MAX);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1450,7 +1430,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 			if (slot_end_padding >
 				DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX) {
-				LOG_ERR("%s slot_end_padding > %d", __func__,
+				LOG_ERR("slot_end_padding > %d",
 					DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX);
 				ret = -EINVAL;
 				goto out;
@@ -1465,8 +1445,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 		break;
 	default:
-		LOG_ERR("%s invalid format 0x%04x", __func__,
-			config->format);
+		LOG_ERR("invalid format 0x%04x", config->format);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1497,8 +1476,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		sample_width = 4;
 		break;
 	default:
-		LOG_ERR("%s sample_valid_bits %d", __func__,
-			ssp->params.sample_valid_bits);
+		LOG_ERR("sample_valid_bits %d", ssp->params.sample_valid_bits);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1521,12 +1499,12 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 	sys_write32(sstsa, dai_base(dp) + SSTSA);
 	sys_write32(ssrsa, dai_base(dp) + SSRSA);
 
-	LOG_INF("%s sscr0 = 0x%08x, sscr1 = 0x%08x, ssto = 0x%08x, sspsp = 0x%0x",
-		__func__, sscr0, sscr1, ssto, sspsp);
-	LOG_INF("%s sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x, ssioc = 0x%08x",
-		__func__, sscr2, sspsp2, sscr3, ssioc);
-	LOG_INF("%s ssrsa = 0x%08x, sstsa = 0x%08x",
-		__func__, ssrsa, sstsa);
+	LOG_INF("sscr0 = 0x%08x, sscr1 = 0x%08x, ssto = 0x%08x, sspsp = 0x%0x",
+		sscr0, sscr1, ssto, sspsp);
+	LOG_INF("sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x, ssioc = 0x%08x",
+		sscr2, sspsp2, sscr3, ssioc);
+	LOG_INF("ssrsa = 0x%08x, sstsa = 0x%08x",
+		ssrsa, sstsa);
 
 	ssp->state[DAI_DIR_PLAYBACK] = DAI_STATE_PRE_RUNNING;
 	ssp->state[DAI_DIR_CAPTURE] = DAI_STATE_PRE_RUNNING;
@@ -1542,8 +1520,7 @@ clk:
 
 			ssp->clk_active |= SSP_CLK_MCLK_ES_REQ;
 
-			LOG_INF("%s hw_params stage: enabled MCLK clocks for SSP%d...",
-				__func__, dp->index);
+			LOG_INF("hw_params stage: enabled MCLK clocks for SSP%d...", dp->index);
 		}
 
 		if (ssp->params.clks_control & DAI_INTEL_IPC3_SSP_CLKCTRL_BCLK_ES) {
@@ -1564,35 +1541,31 @@ clk:
 				/* enable port */
 				dai_ssp_update_bits(dp, SSCR0, SSCR0_SSE, SSCR0_SSE);
 
-				LOG_INF("%s SSE set for SSP%d", __func__, dp->index);
+				LOG_INF("SSE set for SSP%d", dp->index);
 			}
 
-			LOG_INF("%s hw_params stage: enabled BCLK clocks for SSP%d...",
-				__func__, dp->index);
+			LOG_INF("hw_params stage: enabled BCLK clocks for SSP%d...", dp->index);
 		}
 		break;
 	case DAI_INTEL_IPC3_SSP_CONFIG_FLAGS_HW_FREE:
 		/* disable SSP port if no users */
 		if (ssp->state[DAI_DIR_CAPTURE] != DAI_STATE_PRE_RUNNING ||
 		    ssp->state[DAI_DIR_PLAYBACK] != DAI_STATE_PRE_RUNNING) {
-			LOG_INF("%s hw_free stage: ignore since SSP%d still in use",
-				__func__, dp->index);
+			LOG_INF("hw_free stage: ignore since SSP%d still in use", dp->index);
 			break;
 		}
 
 		if (ssp->params.clks_control & DAI_INTEL_IPC3_SSP_CLKCTRL_BCLK_ES) {
-			LOG_INF("%s hw_free stage: releasing BCLK clocks for SSP%d...",
-				__func__, dp->index);
+			LOG_INF("hw_free stage: releasing BCLK clocks for SSP%d...", dp->index);
 			if (ssp->clk_active & SSP_CLK_BCLK_ACTIVE) {
 				dai_ssp_update_bits(dp, SSCR0, SSCR0_SSE, 0);
-				LOG_INF("%s SSE clear for SSP%d", __func__, dp->index);
+				LOG_INF("SSE clear for SSP%d", dp->index);
 			}
 			dai_ssp_bclk_disable_unprepare(dp);
 			ssp->clk_active &= ~SSP_CLK_BCLK_ES_REQ;
 		}
 		if (ssp->params.clks_control & DAI_INTEL_IPC3_SSP_CLKCTRL_MCLK_ES) {
-			LOG_INF("%s hw_free stage: releasing MCLK clocks for SSP%d...",
-				__func__, dp->index);
+			LOG_INF("hw_free stage: releasing MCLK clocks for SSP%d...", dp->index);
 			dai_ssp_mclk_disable_unprepare(dp);
 			ssp->clk_active &= ~SSP_CLK_MCLK_ES_REQ;
 		}
@@ -1641,14 +1614,14 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 		return 0;
 #endif
 	default:
-		LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
+		LOG_ERR("undefined aux data type %u", aux_tlv->type);
 		return -EINVAL;
 	}
 
 	/* check for malformed struct, size greater than aux_data or described in tlv */
 	size_left = aux_len - parsed_len - sizeof(struct ssp_intel_aux_tlv);
 	if (size > size_left || size != aux_tlv->size) {
-		LOG_ERR("%s malformed struct, size %d, size_left %d, tlv_size %d", __func__, size,
+		LOG_ERR("malformed struct, size %d, size_left %d, tlv_size %d", size,
 			size_left, aux_tlv->size);
 		return -EINVAL;
 	}
@@ -1690,39 +1663,39 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 		switch (aux_tlv->type) {
 		case SSP_MN_DIVIDER_CONTROLS:
 			mn = (struct ssp_intel_mn_ctl *)&aux_tlv->val;
-			LOG_INF("%s mn div_m %u, div_n %u", __func__, mn->div_m, mn->div_n);
+			LOG_INF("mn div_m %u, div_n %u", mn->div_m, mn->div_n);
 			break;
 		case SSP_DMA_CLK_CONTROLS:
 			clk = (struct ssp_intel_clk_ctl *)&aux_tlv->val;
-			LOG_INF("%s clk start %u, stop %u", __func__, clk->start, clk->stop);
+			LOG_INF("clk start %u, stop %u", clk->start, clk->stop);
 			break;
 		case SSP_DMA_TRANSMISSION_START:
 		case SSP_DMA_TRANSMISSION_STOP:
 			tr = (struct ssp_intel_tr_ctl *)&aux_tlv->val;
-			LOG_INF("%s tr sampling frequency %u, bit_depth %u, channel_map %u,",
-				__func__, tr->sampling_frequency, tr->bit_depth, tr->channel_map);
+			LOG_INF("tr sampling frequency %u, bit_depth %u, channel_map %u,",
+				tr->sampling_frequency, tr->bit_depth, tr->channel_map);
 			LOG_INF("channel_config %u, interleaving_style %u, format %u",
 				tr->channel_config, tr->interleaving_style, tr->format);
 			break;
 		case SSP_DMA_ALWAYS_RUNNING_MODE:
 			run = (struct ssp_intel_run_ctl *)&aux_tlv->val;
-			LOG_INF("%s run enabled %u", __func__, run->enabled);
+			LOG_INF("run enabled %u", run->enabled);
 			break;
 		case SSP_DMA_SYNC_DATA:
 			sync = (struct ssp_intel_sync_ctl *)&aux_tlv->val;
-			LOG_INF("%s sync sync_denominator %u, count %u", __func__,
+			LOG_INF("sync sync_denominator %u, count %u",
 				sync->sync_denominator, sync->count);
 			node = (struct ssp_intel_node_ctl *)((uint8_t *)sync +
 							     sizeof(struct ssp_intel_sync_ctl));
 			for (j = 0; j < sync->count; j++) {
-				LOG_INF("%s node node_id %u, sampling_rate %u", __func__,
+				LOG_INF("node node_id %u, sampling_rate %u",
 					node->node_id, node->sampling_rate);
 				node++;
 			}
 			break;
 		case SSP_DMA_CLK_CONTROLS_EXT:
 			ext = (struct ssp_intel_ext_ctl *)&aux_tlv->val;
-			LOG_INF("%s ext ext_data %u", __func__, ext->ext_data);
+			LOG_INF("ext ext_data %u", ext->ext_data);
 			break;
 		case SSP_LINK_CLK_SOURCE:
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
@@ -1737,11 +1710,11 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 				    I2CLCTL_MLCS(link->clock_source), dai_i2svss_base(dp) +
 				    I2SLCTL_OFFSET);
 #endif
-			LOG_INF("%s link clock_source %u", __func__, link->clock_source);
+			LOG_INF("link clock_source %u", link->clock_source);
 #endif
 			break;
 		default:
-			LOG_ERR("%s undefined aux data type %u", __func__, aux_tlv->type);
+			LOG_ERR("undefined aux data type %u", aux_tlv->type);
 			return -EINVAL;
 		}
 
@@ -1757,8 +1730,7 @@ static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
 {
 	/* currently we only support 1 divider */
 	if (cc->mdivrcnt != 1) {
-		LOG_ERR("%s bad clock divider count %u", __func__,
-			cc->mdivrcnt);
+		LOG_ERR("bad clock divider count %u", cc->mdivrcnt);
 		return -EINVAL;
 	}
 
@@ -1792,9 +1764,10 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 	ssrsa = SSRSA_GET(regs->ssrsa);
 	sscr1 = regs->ssc1 & ~(SSCR1_RSRE | SSCR1_TSRE);
 
+	LOG_ERR("SSP%d configuration:", dp->index);
 	if (regs->sstsa & SSTSA_TXEN || regs->ssrsa & SSRSA_RXEN ||
 	    regs->ssc1 & (SSCR1_RSRE | SSCR1_TSRE)) {
-		LOG_INF("%s: Ignoring %s%s%s%sfrom blob", __func__,
+		LOG_INF(" Ignoring %s%s%s%sfrom blob",
 			regs->sstsa & SSTSA_TXEN ? "SSTSA:TXEN " : "",
 			regs->ssrsa & SSRSA_RXEN ? "SSRSA:RXEN " : "",
 			regs->ssc1 & SSCR1_TSRE ? "SSCR1:TSRE " : "",
@@ -1814,11 +1787,11 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 	sys_write32(sstsa, dai_base(dp) + SSTSA);
 	sys_write32(ssrsa, dai_base(dp) + SSRSA);
 
-	LOG_INF("%s sscr0 = 0x%08x, sscr1 = 0x%08x, ssto = 0x%08x, sspsp = 0x%0x", __func__,
+	LOG_INF(" sscr0 = 0x%08x, sscr1 = 0x%08x, ssto = 0x%08x, sspsp = 0x%0x",
 		ssc0, sscr1, regs->sscto, regs->sspsp);
-	LOG_INF("%s sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x", __func__,
+	LOG_INF(" sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x",
 		regs->ssc2, regs->sspsp2, regs->ssc3);
-	LOG_INF("%s ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x", __func__,
+	LOG_INF(" ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x",
 		regs->ssioc, ssrsa, sstsa);
 
 	ssp->params.sample_valid_bits = SSCR0_DSIZE_GET(ssc0);
@@ -1882,8 +1855,6 @@ static int dai_ssp_pre_start(struct dai_intel_ssp *dp)
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	int ret = 0;
 
-	LOG_INF("%s", __func__);
-
 	/*
 	 * We will test if mclk/bclk is configured in
 	 * ssp_mclk/bclk_prepare_enable/disable functions
@@ -1916,13 +1887,11 @@ static void dai_ssp_post_stop(struct dai_intel_ssp *dp)
 	if (ssp->state[DAI_DIR_PLAYBACK] != DAI_STATE_RUNNING &&
 	    ssp->state[DAI_DIR_CAPTURE] != DAI_STATE_RUNNING) {
 		if (!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)) {
-			LOG_INF("%s releasing BCLK clocks for SSP%d...",
-				__func__, dp->index);
+			LOG_INF("releasing BCLK clocks for SSP%d...", dp->index);
 			dai_ssp_bclk_disable_unprepare(dp);
 		}
 		if (!(ssp->clk_active & SSP_CLK_MCLK_ES_REQ)) {
-			LOG_INF("%s releasing MCLK clocks for SSP%d...",
-				__func__, dp->index);
+			LOG_INF("releasing MCLK clocks for SSP%d...", dp->index);
 			dai_ssp_mclk_disable_unprepare(dp);
 		}
 	}
@@ -1936,16 +1905,20 @@ static void dai_ssp_early_start(struct dai_intel_ssp *dp, int direction)
 	key = k_spin_lock(&dp->lock);
 
 	/* RX fifo must be cleared before start */
-	if (direction == DAI_DIR_CAPTURE)
+	if (direction == DAI_DIR_CAPTURE) {
+		LOG_INF("SSP%d RX", dp->index);
 		ssp_empty_rx_fifo_on_start(dp);
+	} else {
+		LOG_INF("SSP%d TX", dp->index);
+	}
 
 	/* request mclk/bclk */
 	dai_ssp_pre_start(dp);
 
 	if (!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)) {
 		/* enable port */
+		LOG_INF("SSP%d: set SSE", dp->index);
 		dai_ssp_update_bits(dp, SSCR0, SSCR0_SSE, SSCR0_SSE);
-		LOG_INF("%s SSE set for SSP%d", __func__, dp->index);
 	}
 
 	k_spin_unlock(&dp->lock, key);
@@ -1959,13 +1932,14 @@ static void dai_ssp_start(struct dai_intel_ssp *dp, int direction)
 
 	key = k_spin_lock(&dp->lock);
 
-	LOG_INF("%s", __func__);
 
 	/* enable DMA */
 	if (direction == DAI_DIR_PLAYBACK) {
+		LOG_INF("SSP%d TX", dp->index);
 		dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE, SSCR1_TSRE);
 		dai_ssp_update_bits(dp, SSTSA, SSTSA_TXEN, SSTSA_TXEN);
 	} else {
+		LOG_INF("SSP%d RX", dp->index);
 		dai_ssp_update_bits(dp, SSCR1, SSCR1_RSRE, SSCR1_RSRE);
 		dai_ssp_update_bits(dp, SSRSA, SSRSA_RXEN, SSRSA_RXEN);
 	}
@@ -2015,21 +1989,21 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 	/* stop Rx if neeed */
 	if (direction == DAI_DIR_CAPTURE &&
 	    ssp->state[DAI_DIR_CAPTURE] != DAI_STATE_PRE_RUNNING) {
+		LOG_INF("SSP%d RX", dp->index);
 		dai_ssp_update_bits(dp, SSRSA, SSRSA_RXEN, 0);
 		dai_ssp_update_bits(dp, SSCR1, SSCR1_RSRE, 0);
 		ssp_empty_rx_fifo_on_stop(dp);
 		ssp->state[DAI_DIR_CAPTURE] = DAI_STATE_PRE_RUNNING;
-		LOG_INF("%s RX stop", __func__);
 	}
 
 	/* stop Tx if needed */
 	if (direction == DAI_DIR_PLAYBACK &&
 	    ssp->state[DAI_DIR_PLAYBACK] != DAI_STATE_PRE_RUNNING) {
+		LOG_INF("SSP%d TX", dp->index);
 		dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE, 0);
 		dai_ssp_empty_tx_fifo(dp);
 		dai_ssp_update_bits(dp, SSTSA, SSTSA_TXEN, 0);
 		ssp->state[DAI_DIR_PLAYBACK] = DAI_STATE_PRE_RUNNING;
-		LOG_INF("%sTX stop", __func__);
 	}
 
 	/* disable SSP port if no users */
@@ -2037,8 +2011,8 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 	    ssp->state[DAI_DIR_PLAYBACK] == DAI_STATE_PRE_RUNNING &&
 	    COND_CODE_1(CONFIG_INTEL_ADSP_CAVS,
 			(!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)), (true))) {
+		LOG_INF("SSP%d: clear SSE", dp->index);
 		dai_ssp_update_bits(dp, SSCR0, SSCR0_SSE, 0);
-		LOG_INF("%s SSE clear for SSP%d", __func__, dp->index);
 	}
 
 	dai_ssp_post_stop(dp);
@@ -2051,9 +2025,9 @@ static void dai_ssp_pause(struct dai_intel_ssp *dp, int direction)
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 
 	if (direction == DAI_DIR_CAPTURE) {
-		LOG_INF("%s RX", __func__);
+		LOG_INF("SSP%d RX", dp->index);
 	} else {
-		LOG_INF("%s TX", __func__);
+		LOG_INF("SSP%d TX", dp->index);
 	}
 
 	ssp->state[direction] = DAI_STATE_PAUSED;
@@ -2066,7 +2040,7 @@ static int dai_ssp_trigger(const struct device *dev, enum dai_dir dir,
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	int array_index = SSP_ARRAY_INDEX(dir);
 
-	LOG_DBG("%s cmd %d", __func__, cmd);
+	LOG_DBG("SSP%d: cmd %d", dp->index, cmd);
 
 	switch (cmd) {
 	case DAI_TRIGGER_START:
@@ -2153,10 +2127,8 @@ static const struct dai_properties *dai_ssp_get_properties(const struct device *
 		prop->reg_init_delay = ssp->params.bclk_delay;
 	}
 
-	LOG_INF("%s dai_index %u", __func__, dp->index);
-	LOG_INF("%s fifo %u", __func__, prop->fifo_address);
-	LOG_INF("%s handshake %u", __func__, prop->dma_hs_id);
-	LOG_INF("%s init delay %u", __func__, prop->reg_init_delay);
+	LOG_INF("SSP%u: fifo %u, handshake %u, init delay %u", dp->index, prop->fifo_address,
+		prop->dma_hs_id, prop->reg_init_delay);
 
 	return prop;
 }
@@ -2172,7 +2144,7 @@ static int dai_ssp_probe(struct dai_intel_ssp *dp)
 	/* allocate private data */
 	ssp = k_calloc(1, sizeof(*ssp));
 	if (!ssp) {
-		LOG_ERR("%s alloc failed", __func__);
+		LOG_ERR("SSP%d: alloc failed", dp->index);
 		return -ENOMEM;
 	}
 	dai_set_drvdata(dp, ssp);
