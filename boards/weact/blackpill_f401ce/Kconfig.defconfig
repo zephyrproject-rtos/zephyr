@@ -5,9 +5,6 @@
 
 if BOARD_BLACKPILL_F401CE
 
-config BOARD
-	default "blackpill_f401ce"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
