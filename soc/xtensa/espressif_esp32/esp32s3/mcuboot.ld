@@ -51,8 +51,8 @@ iram_dram_offset = 0x6f0000;
 
 bootloader_usable_dram_end = 0x3fce9700;
 
-bootloader_stack_overhead = 0x0000; /* For safety margin between bootloader data section and startup stacks */
-bootloader_dram_seg_len = 0x6000;
+bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
+bootloader_dram_seg_len = 0x6600;
 bootloader_iram_loader_seg_len = 0x3000;
 bootloader_iram_seg_len = 0x9000;
 
@@ -122,11 +122,6 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
-    _thread_local_start = ABSOLUTE(.);
-    *(.tdata)
-    *(.tdata.*)
-    *(.tbss)
-    *(.tbss.*)
     *(.rodata_wlog)
     *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
@@ -134,7 +129,6 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  #include <zephyr/linker/common-rom/common-rom-cpp.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
@@ -143,11 +137,6 @@ SECTIONS
   .dram0.data :
   {
     __data_start = ABSOLUTE(.);
-
-    _btdm_data_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.data .data.*)
-    . = ALIGN (4);
-    _btdm_data_end = ABSOLUTE(.);
 
     *(.data)
     *(.data.*)
@@ -238,7 +227,7 @@ SECTIONS
     *libzephyr.a:bootloader_flash_config_esp32s3.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_common_loader.*(.literal .text .literal.* .text.*)
-*libzephyr.a:bootloader_init_common.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_init_common.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_random.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
@@ -246,7 +235,7 @@ SECTIONS
     *libzephyr.a:bootloader_efuse_esp32s3.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_sha.*(.literal .text .literal.* .text.*)
-*libzephyr.a:bootloader_console.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_console.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_console_loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_panic.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_soc.*(.literal .text .literal.* .text.*)
@@ -257,8 +246,8 @@ SECTIONS
     *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
-        *libzephyr.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
-*libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_fields.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_api.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_utility.*(.literal .text .literal.* .text.*)
@@ -296,14 +285,6 @@ SECTIONS
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.); /* required by bluetooth library */
     __bss_start = ABSOLUTE(.);
-
-    _btdm_bss_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _btdm_bss_end = ABSOLUTE(.);
-
-    /* Buffer for system heap should be placed in dram_seg */
-    *libkernel.a:mempool.*(.noinit.kheap_buf__system_heap .noinit.*.kheap_buf__system_heap)
 
     *(.dynsbss)
     *(.sbss)
