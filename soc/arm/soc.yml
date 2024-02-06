@@ -15,6 +15,10 @@ family:
     socs:
     - name: musca_b1
     - name: musca_s1
+  - name: designstart
+    socs:
+    - name: designstart_fpga_cortex_m1
+    - name: designstart_fpga_cortex_m3
 - name: arm64
   series:
   - name: fvp_aemv8a
