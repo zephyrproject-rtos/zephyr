@@ -11,16 +11,25 @@
 #include <em_cmu.h>
 #include <em_timer.h>
 
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif /* CONFIG_PINCTRL */
+
 /** PWM configuration. */
 struct pwm_gecko_config {
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif /* CONFIG_PINCTRL */
 	TIMER_TypeDef *timer;
 	CMU_Clock_TypeDef clock;
 	uint16_t prescaler;
 	TIMER_Prescale_TypeDef prescale_enum;
 	uint8_t channel;
+#ifndef CONFIG_PINCTRL
 	uint8_t location;
 	uint8_t port;
 	uint8_t pin;
+#endif /* !CONFIG_PINCTRL */
 };
 
 static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
@@ -33,6 +42,7 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 	if (BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL,
 		_TIMER_CC_CTRL_MODE_MASK) != timerCCModePWM) {
 
+#ifndef CONFIG_PINCTRL
 #ifdef _TIMER_ROUTE_MASK
 		BUS_RegMaskedWrite(&cfg->timer->ROUTE,
 			_TIMER_ROUTE_LOCATION_MASK,
@@ -46,7 +56,8 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 		BUS_RegMaskedSet(&cfg->timer->ROUTEPEN, 1 << channel);
 #else
 #error Unsupported device
-#endif
+#endif /* _TIMER_ROUTE_MASK */
+#endif /* !CONFIG_PINCTRL */
 
 		compare_config.mode = timerCCModePWM;
 		TIMER_InitCC(cfg->timer, channel, &compare_config);
@@ -85,7 +96,15 @@ static int pwm_gecko_init(const struct device *dev)
 	CMU_ClockEnable(cfg->clock, true);
 
 	CMU_ClockEnable(cmuClock_GPIO, true);
+
+#ifdef CONFIG_PINCTRL
+	int err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#else
 	GPIO_PinModeSet(cfg->port, cfg->pin, gpioModePushPull, 0);
+#endif /* CONFIG_PINCTRL */
 
 	timer.prescale = cfg->prescale_enum;
 	TIMER_Init(cfg->timer, &timer);
@@ -97,6 +116,25 @@ static int pwm_gecko_init(const struct device *dev)
 #define PRESCALING_FACTOR(factor) \
 	((_CONCAT(timerPrescale, factor)))
 
+#ifdef CONFIG_PINCTRL
+
+#define PWM_GECKO_INIT(index)							\
+	PINCTRL_DT_INST_DEFINE(index);					        \
+										\
+	static const struct pwm_gecko_config pwm_gecko_config_##index = {	\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		        \
+		.timer = (TIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),	\
+		.clock = CLOCK_TIMER(index),					\
+		.prescaler = DT_INST_PROP(index, prescaler),			\
+		.prescale_enum = (TIMER_Prescale_TypeDef)			\
+			PRESCALING_FACTOR(DT_INST_PROP(index, prescaler)),	\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(index, &pwm_gecko_init, NULL, NULL,		\
+				&pwm_gecko_config_##index, POST_KERNEL,		\
+				CONFIG_PWM_INIT_PRIORITY,			\
+				&pwm_gecko_driver_api);
+#else
 #define PWM_GECKO_INIT(index)							\
 	static const struct pwm_gecko_config pwm_gecko_config_##index = {	\
 		.timer = (TIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),	\
@@ -114,5 +152,6 @@ static int pwm_gecko_init(const struct device *dev)
 				&pwm_gecko_config_##index, POST_KERNEL,		\
 				CONFIG_PWM_INIT_PRIORITY,			\
 				&pwm_gecko_driver_api);
+#endif /* CONFIG_PINCTRL */
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GECKO_INIT)

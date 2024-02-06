@@ -1,0 +1,10 @@
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+
+&pinctrl {
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <GECKO_PSEL(TIM_CC, A, 0)>,
+				<GECKO_LOC(TIM, 0)>;
+		};
+	};
+};

@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <silabs/efm32hg.dtsi>
+#include <silabs/efm32hg-pinctrl.dtsi>
 
 / {
 	sram0: memory@20000000 {
