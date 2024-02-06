@@ -5,9 +5,6 @@
 
 if BOARD_96B_CARBON
 
-config BOARD
-	default "96b_carbon"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
