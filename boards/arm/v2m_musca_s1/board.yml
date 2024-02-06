@@ -1,0 +1,7 @@
+board:
+  name: v2m_musca_s1
+  vendor: ARM
+  socs:
+  - name: musca_s1
+    variants:
+    - name: 'ns'
