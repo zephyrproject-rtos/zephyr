@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Sebastian Schwabe <sebastian.schwabe@mailbox.tu-dresden.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F303K8
+	select SOC_STM32F303X8
