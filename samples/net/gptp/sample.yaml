@@ -17,7 +17,7 @@ tests:
       - native_sim_64
       - nucleo_f767zi
       - nucleo_h743zi
-      - nucleo_h745zi_q_m7
+      - nucleo_h745zi_q/stm32h745xx/m7
     depends_on: netif
     integration_platforms:
       - frdm_k64f
