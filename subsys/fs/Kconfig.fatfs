@@ -25,7 +25,8 @@ config FS_FATFS_READ_ONLY
 	  ELM FAT module.
 
 config FS_FATFS_MKFS
-	bool
+	bool "mkfs support for FAT FS"
+	default y if FILE_SYSTEM_MKFS
 	help
 	  Adds code for creating disks with FAT file system.
 	  This option affects FF_USE_MKFS defined in ffconf.h, inside
@@ -48,7 +49,7 @@ config FS_FATFS_MOUNT_MKFS
 	  prior to connecting to a device, otherwise it will not be
 	  mountable.
 
-if FS_FATFS_MOUNT_MKFS
+if FS_FATFS_MKFS
 
 config FS_FATFS_MAX_ROOT_ENTRIES
 	int "Max number of entries in FAT FS root directory"
@@ -59,7 +60,7 @@ config FS_FATFS_MAX_ROOT_ENTRIES
 	  formatting new FAT system to a device.
 	  Note that this should be multiply of FS_FATFS_MAX_SS / 32.
 
-endif # FS_FATFS_MOUNT_MKFS
+endif # FS_FATFS_MKFS
 
 config FS_FATFS_EXFAT
 	bool "ExFAT support"
