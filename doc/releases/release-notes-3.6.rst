@@ -275,6 +275,9 @@ Drivers and Sensors
     desired (For example due to ROM constraints in a bootloader),
     :kconfig:option:`CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY` can be disabled.
 
+  * ``nordic_qspi_nor`` driver now supports user-configurable QSPI timeout with
+    :kconfig:option:`CONFIG_NORDIC_QSPI_NOR_TIMEOUT_MS`.
+
 * GPIO
 
   * Renesas R-Car GPIO driver now supports Gen4 SoCs
