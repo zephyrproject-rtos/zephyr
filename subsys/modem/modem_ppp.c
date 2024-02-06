@@ -319,6 +319,7 @@ static void modem_ppp_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 		k_work_submit(&ppp->process_work);
 		break;
 
+	case MODEM_PIPE_EVENT_OPENED:
 	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
 		k_work_submit(&ppp->send_work);
 		break;
@@ -467,12 +468,14 @@ const struct ppp_api modem_ppp_ppp_api = {
 
 int modem_ppp_attach(struct modem_ppp *ppp, struct modem_pipe *pipe)
 {
-	if (atomic_test_and_set_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT) == true) {
+	if (atomic_test_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT) == true) {
 		return 0;
 	}
 
-	modem_pipe_attach(pipe, modem_ppp_pipe_callback, ppp);
 	ppp->pipe = pipe;
+	modem_pipe_attach(pipe, modem_ppp_pipe_callback, ppp);
+
+	atomic_set_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT);
 	return 0;
 }
 
