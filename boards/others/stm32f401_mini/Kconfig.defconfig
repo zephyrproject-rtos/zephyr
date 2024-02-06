@@ -5,9 +5,6 @@
 
 if BOARD_STM32F401_MINI
 
-config BOARD
-	default "stm32f401_mini"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
