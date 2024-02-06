@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_USE_SWITCH=y
+CONFIG_SMP=y
+CONFIG_MP_MAX_NUM_CPUS=4
