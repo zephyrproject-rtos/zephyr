@@ -1,11 +1,11 @@
 # Intel CAVS SoC family default configuration options
 #
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_INTEL_ADSP
-source "soc/soc_legacy/xtensa/intel_adsp/*/Kconfig.defconfig.series"
 
+rsource "*/Kconfig.defconfig.series"
 
 config XTENSA_RPO_CACHE
 	def_bool y
