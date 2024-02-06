@@ -481,24 +481,6 @@ static int uart_mux_err_check(const struct device *dev)
 	return -ENOTSUP;
 }
 
-static int uart_mux_configure(const struct device *dev,
-			      const struct uart_config *cfg)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
-
-	return -ENOTSUP;
-}
-
-static int uart_mux_config_get(const struct device *dev,
-			       struct uart_config *cfg)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
-
-	return -ENOTSUP;
-}
-
 static int uart_mux_fifo_fill(const struct device *dev,
 			      const uint8_t *tx_data, int len)
 {
@@ -714,8 +696,6 @@ static struct uart_mux_driver_api uart_mux_driver_api = {
 	.uart_api.poll_in = uart_mux_poll_in,
 	.uart_api.poll_out = uart_mux_poll_out,
 	.uart_api.err_check = uart_mux_err_check,
-	.uart_api.configure = uart_mux_configure,
-	.uart_api.config_get = uart_mux_config_get,
 	.uart_api.fifo_fill = uart_mux_fifo_fill,
 	.uart_api.fifo_read = uart_mux_fifo_read,
 	.uart_api.irq_tx_enable = uart_mux_irq_tx_enable,
