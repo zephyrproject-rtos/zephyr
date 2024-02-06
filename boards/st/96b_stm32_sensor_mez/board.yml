@@ -1,0 +1,5 @@
+board:
+  name: 96b_stm32_sensor_mez
+  vendor: st
+  socs:
+    - name: stm32f446xx
