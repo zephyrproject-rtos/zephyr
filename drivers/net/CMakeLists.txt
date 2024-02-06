@@ -18,6 +18,10 @@ if(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
   zephyr_library_sources(nsos_fcntl.c)
   zephyr_library_sources(nsos_netdb.c)
   zephyr_library_sources(nsos_sockets.c)
+  target_compile_options(native_simulator BEFORE INTERFACE
+    -I${BOARD_DIR}
+    -DNSOS_EPOLL_WAIT_INTERVAL=${CONFIG_NET_NATIVE_OFFLOADED_SOCKETS_EPOLL_WAIT_INTERVAL}
+  )
   target_sources(native_simulator INTERFACE nsos_adapt.c)
   target_sources(native_simulator INTERFACE nsos_errno.c)
   target_sources(native_simulator INTERFACE nsos_fcntl.c)

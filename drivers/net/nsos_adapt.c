@@ -17,6 +17,7 @@
 #include <poll.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -25,9 +26,20 @@
 #include "nsos_fcntl.h"
 #include "nsos_netdb.h"
 
+#include "board_soc.h"
+#include "irq_ctrl.h"
+#include "nsi_hws_models_if.h"
+#include "nsi_tasks.h"
 #include "nsi_tracing.h"
 
 #include <stdio.h>
+
+static int nsos_epoll_fd;
+static int nsos_adapt_nfds;
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#endif
 
 #ifndef CONTAINER_OF
 #define CONTAINER_OF(ptr, type, field)                               \
@@ -456,6 +468,71 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 	return ret;
 }
 
+#define MAP_POLL_EPOLL(_event_from, _event_to)	\
+	if (events_from & (_event_from)) {	\
+		events_from &= ~(_event_from);	\
+		events_to |= _event_to;		\
+	}
+
+static int nsos_poll_to_epoll_events(int events_from)
+{
+	int events_to = 0;
+
+	MAP_POLL_EPOLL(POLLIN, EPOLLIN);
+	MAP_POLL_EPOLL(POLLOUT, EPOLLOUT);
+	MAP_POLL_EPOLL(POLLERR, EPOLLERR);
+
+	return events_to;
+}
+
+static int nsos_epoll_to_poll_events(int events_from)
+{
+	int events_to = 0;
+
+	MAP_POLL_EPOLL(EPOLLIN, POLLIN);
+	MAP_POLL_EPOLL(EPOLLOUT, POLLOUT);
+	MAP_POLL_EPOLL(EPOLLERR, POLLERR);
+
+	return events_to;
+}
+
+#undef MAP_POLL_EPOLL
+
+static uint64_t nsos_adapt_poll_time = NSI_NEVER;
+
+void nsos_adapt_poll_add(struct nsos_mid_pollfd *pollfd)
+{
+	struct epoll_event ev = {
+		.data.ptr = pollfd,
+		.events = nsos_poll_to_epoll_events(pollfd->events),
+	};
+	int err;
+
+	nsos_adapt_nfds++;
+
+	err = epoll_ctl(nsos_epoll_fd, EPOLL_CTL_ADD, pollfd->fd, &ev);
+	if (err) {
+		nsi_print_error_and_exit("error in EPOLL_CTL_ADD: errno=%d\n", errno);
+		return;
+	}
+
+	nsos_adapt_poll_time = nsi_hws_get_time() + 1;
+	nsi_hws_find_next_event();
+}
+
+void nsos_adapt_poll_remove(struct nsos_mid_pollfd *pollfd)
+{
+	int err;
+
+	err = epoll_ctl(nsos_epoll_fd, EPOLL_CTL_DEL, pollfd->fd, NULL);
+	if (err) {
+		nsi_print_error_and_exit("error in EPOLL_CTL_ADD: errno=%d\n", errno);
+		return;
+	}
+
+	nsos_adapt_nfds--;
+}
+
 struct nsos_addrinfo_wrap {
 	struct nsos_mid_addrinfo addrinfo_mid;
 	struct nsos_mid_sockaddr_storage addr_storage;
@@ -619,3 +696,54 @@ int nsos_adapt_fcntl_setfl(int fd, int flags)
 
 	return 0;
 }
+
+static void nsos_adapt_init(void)
+{
+	nsos_epoll_fd = epoll_create(1);
+	if (nsos_epoll_fd < 0) {
+		nsi_print_error_and_exit("error from epoll_create(): errno=%d\n", errno);
+		return;
+	}
+}
+
+NSI_TASK(nsos_adapt_init, HW_INIT, 500);
+
+static void nsos_adapt_poll_triggered(void)
+{
+	static struct epoll_event events[1024];
+	int ret;
+
+	if (nsos_adapt_nfds == 0) {
+		nsos_adapt_poll_time = NSI_NEVER;
+		return;
+	}
+
+	ret = epoll_wait(nsos_epoll_fd, events, ARRAY_SIZE(events), 0);
+	if (ret < 0) {
+		if (errno == EINTR) {
+			nsi_print_warning("interrupted epoll_wait()\n");
+			nsos_adapt_poll_time = nsi_hws_get_time() + 1;
+			return;
+		}
+
+		nsi_print_error_and_exit("error in nsos_adapt poll(): errno=%d\n", errno);
+
+		nsos_adapt_poll_time = NSI_NEVER;
+		return;
+	}
+
+	for (int i = 0; i < ret; i++) {
+		struct nsos_mid_pollfd *pollfd = events[i].data.ptr;
+
+		pollfd->revents = nsos_epoll_to_poll_events(events[i].events);
+	}
+
+	if (ret > 0) {
+		hw_irq_ctrl_set_irq(NSOS_IRQ);
+		nsos_adapt_poll_time = nsi_hws_get_time() + 1;
+	} else {
+		nsos_adapt_poll_time = nsi_hws_get_time() + NSOS_EPOLL_WAIT_INTERVAL;
+	}
+}
+
+NSI_HW_EVENT(nsos_adapt_poll_time, nsos_adapt_poll_triggered, 500);
