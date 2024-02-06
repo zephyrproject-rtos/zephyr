@@ -22,4 +22,6 @@
 
 #include "nsi_cpu0_interrupts.h"
 
+#define NSOS_IRQ 3
+
 #endif /* BOARDS_POSIX_NATIVE_SIM_BOARD_SOC_H */

@@ -228,7 +228,7 @@ endif # NET_CAN
 # Native simulator offloaded sockets
 #
 
-config NET_NATIVE_OFFLOADED_SOCKETS
+menuconfig NET_NATIVE_OFFLOADED_SOCKETS
 	bool "Native Simulator offloaded sockets"
 	depends on ARCH_POSIX
 	depends on NATIVE_LIBRARY
@@ -239,5 +239,19 @@ config NET_NATIVE_OFFLOADED_SOCKETS
 
 	  This driver main advantage is that it is possible to use this driver without any
 	  additional setup on the host side, unlike with the native TAP Ethernet driver.
+
+if NET_NATIVE_OFFLOADED_SOCKETS
+
+config NET_NATIVE_OFFLOADED_SOCKETS_EPOLL_WAIT_INTERVAL
+	int "Interval between epoll_wait() calls (in simulated microseconds)"
+	default 1000
+	help
+	  Number of simulated microseconds before next epoll_wait() call, when there were no pending
+	  events detected.
+
+	  Decrease that value when lower network traffic latency is expected, at the expense of more
+	  CPU processing overhead.
+
+endif # NET_NATIVE_OFFLOADED_SOCKETS
 
 endif # NET_DRIVERS
