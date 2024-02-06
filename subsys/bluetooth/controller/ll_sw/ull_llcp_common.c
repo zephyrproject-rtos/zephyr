@@ -646,7 +646,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		if (!ull_cp_remote_dle_pending(conn)) {
+		if (feature_dle(conn) && !ull_cp_remote_dle_pending(conn)) {
 			if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
@@ -662,6 +662,10 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			/* REQ was received from peer and RSP not yet sent
 			 * lets piggy-back on RSP instead af sending REQ
 			 * thus we can complete local req
+			 *
+			 * OR
+			 *
+			 * Data Length Update procedure no longer supported
 			 */
 			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;

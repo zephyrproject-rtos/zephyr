@@ -1032,6 +1032,16 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 {
 	struct proc_ctx *ctx;
 
+	if (!feature_dle(conn)) {
+		/* Data Length Update procedure not supported */
+
+		/* Returning BT_HCI_ERR_SUCCESS here might seem counter-intuitive,
+		 * but nothing in the specification seems to suggests
+		 * BT_HCI_ERR_UNSUPP_REMOTE_FEATURE.
+		 */
+		return BT_HCI_ERR_SUCCESS;
+	}
+
 	ctx = llcp_create_local_procedure(PROC_DATA_LENGTH_UPDATE);
 
 	if (!ctx) {
