@@ -24,12 +24,11 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 #define RRAM_START DT_REG_ADDR(RRAM)
 #define RRAM_SIZE  DT_REG_SIZE(RRAM)
 
-#define RRAM_WORD_SIZE 4
-
 #define PAGE_SIZE  DT_PROP(RRAM, erase_block_size)
 #define PAGE_COUNT ((RRAM_SIZE) / (PAGE_SIZE))
 
-#define ERASE_VALUE 0xFF
+#define WRITE_BLOCK_SIZE_FROM_DT DT_PROP(RRAM, write_block_size)
+#define ERASE_VALUE              0xFF
 
 static struct k_sem sem_lock;
 #define SYNC_INIT()   k_sem_init(&sem_lock, 1, 1)
@@ -37,13 +36,20 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK() k_sem_give(&sem_lock)
 
 #if CONFIG_NRF_RRAM_WRITE_BUFFER_SIZE > 0
-#define WRITE_BUFFER_ENABLE 1
-#define WRITE_BUFFER_SIZE   CONFIG_NRF_RRAM_WRITE_BUFFER_SIZE
-#define WRITE_LINE_SIZE     16 /* In bytes, one line is 128 bits. */
+#define WRITE_BUFFER_ENABLE   1
+#define WRITE_BUFFER_SIZE     CONFIG_NRF_RRAM_WRITE_BUFFER_SIZE
+#define WRITE_LINE_SIZE       16 /* In bytes, one line is 128 bits. */
+#define WRITE_BUFFER_MAX_SIZE (WRITE_BUFFER_SIZE * WRITE_LINE_SIZE)
+BUILD_ASSERT((PAGE_SIZE % (WRITE_LINE_SIZE) == 0), "erase-block-size must be a multiple of 16");
+BUILD_ASSERT((WRITE_BLOCK_SIZE_FROM_DT % (WRITE_LINE_SIZE) == 0),
+	     "if NRF_RRAM_WRITE_BUFFER_SIZE > 0, then write-block-size must be a multiple of 16");
 #else
-#define WRITE_BUFFER_ENABLE 0
-#define WRITE_BUFFER_SIZE   0
-#define WRITE_LINE_SIZE     RRAM_WORD_SIZE
+#define WRITE_BUFFER_ENABLE   0
+#define WRITE_BUFFER_SIZE     0
+#define WRITE_LINE_SIZE       WRITE_BLOCK_SIZE_FROM_DT
+#define WRITE_BUFFER_MAX_SIZE 16 /* In bytes, one line is 128 bits. */
+BUILD_ASSERT((PAGE_SIZE % (WRITE_LINE_SIZE) == 0),
+	     "erase-block-size must be a multiple of write-block-size");
 #endif
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -58,12 +64,6 @@ static struct k_sem sem_lock;
 #define FLASH_SLOT_WRITE 4000
 #else
 #define FLASH_SLOT_WRITE 8000 /* longest write takes 7107 us */
-#endif
-
-#if WRITE_BUFFER_ENABLE
-#define RRAM_MAX_WRITE_BUFFER (WRITE_BUFFER_SIZE * WRITE_LINE_SIZE)
-#else
-#define RRAM_MAX_WRITE_BUFFER (WRITE_LINE_SIZE * 32)
 #endif
 
 static int write_op(void *context); /* instance of flash_op_handler_t */
@@ -86,7 +86,7 @@ static void commit_changes(size_t len)
 		return;
 	}
 
-	if ((len % (WRITE_LINE_SIZE * WRITE_BUFFER_SIZE)) == 0) {
+	if ((len % (WRITE_BUFFER_MAX_SIZE)) == 0) {
 		/* Our last operation was buffer size-aligned, so we're done. */
 		return;
 	}
@@ -144,7 +144,7 @@ static int write_op(void *context)
 	}
 
 	while (w_ctx->len > 0) {
-		len = (RRAM_MAX_WRITE_BUFFER < w_ctx->len) ? RRAM_MAX_WRITE_BUFFER : w_ctx->len;
+		len = (WRITE_BUFFER_MAX_SIZE < w_ctx->len) ? WRITE_BUFFER_MAX_SIZE : w_ctx->len;
 
 		rram_write(w_ctx->flash_addr, (const void *)w_ctx->data_addr, len);
 
@@ -181,7 +181,7 @@ static int write_synchronously(off_t addr, const void *data, size_t len)
 
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-static int flash_nrf_write(off_t addr, const void *data, size_t len)
+static int nrf_write(off_t addr, const void *data, size_t len)
 {
 	int ret = 0;
 
@@ -212,7 +212,7 @@ static int flash_nrf_write(off_t addr, const void *data, size_t len)
 	return ret;
 }
 
-static int flash_nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
+static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -226,21 +226,25 @@ static int flash_nrf_rram_read(const struct device *dev, off_t addr, void *data,
 	return 0;
 }
 
-static int flash_nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
+static int nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
-	return flash_nrf_write(addr, data, len);
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	return nrf_write(addr, data, len);
 }
 
-static int flash_nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
+static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
 
-	return flash_nrf_write(addr, NULL, len);
+	return nrf_write(addr, NULL, len);
 }
 
-static const struct flash_parameters *flash_nrf_rram_get_parameters(const struct device *dev)
+static const struct flash_parameters *nrf_rram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -253,9 +257,8 @@ static const struct flash_parameters *flash_nrf_rram_get_parameters(const struct
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void flash_nrf_rram_page_layout(const struct device *dev,
-				       const struct flash_pages_layout **layout,
-				       size_t *layout_size)
+static void nrf_rram_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
+				 size_t *layout_size)
 {
 	ARG_UNUSED(dev);
 
@@ -269,17 +272,17 @@ static void flash_nrf_rram_page_layout(const struct device *dev,
 }
 #endif
 
-static const struct flash_driver_api flash_nrf_rram_api = {
-	.read = flash_nrf_rram_read,
-	.write = flash_nrf_rram_write,
-	.erase = flash_nrf_rram_erase,
-	.get_parameters = flash_nrf_rram_get_parameters,
+static const struct flash_driver_api nrf_rram_api = {
+	.read = nrf_rram_read,
+	.write = nrf_rram_write,
+	.erase = nrf_rram_erase,
+	.get_parameters = nrf_rram_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = flash_nrf_rram_page_layout,
+	.page_layout = nrf_rram_page_layout,
 #endif
 };
 
-static int flash_nrf_rram_init(const struct device *dev)
+static int nrf_rram_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -300,5 +303,5 @@ static int flash_nrf_rram_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, flash_nrf_rram_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_nrf_rram_api);
+DEVICE_DT_INST_DEFINE(0, nrf_rram_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
+		      &nrf_rram_api);
