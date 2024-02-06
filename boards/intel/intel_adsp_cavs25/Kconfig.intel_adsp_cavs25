@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INTEL_ADSP_CAVS25
+	select SOC_INTEL_CAVS_V25
