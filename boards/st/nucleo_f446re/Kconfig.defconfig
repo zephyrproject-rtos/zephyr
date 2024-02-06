@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_F446RE
 
-config BOARD
-	default "nucleo_f446re"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
