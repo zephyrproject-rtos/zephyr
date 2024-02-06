@@ -5,9 +5,6 @@
 
 if BOARD_ADI_SDP_K1
 
-config BOARD
-	default "adi_sdp_k1"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
