@@ -13,6 +13,16 @@
 .gitattributes
 .gitignore
 .mailmap
+.github/workflows/codecov.yaml
+.github/workflows/issue_count.yml
+.github/workflows/stats_merged_prs.yml
+.github/workflows/assigner.yml
+.github/workflows/daily_test_version.yml
+.github/workflows/do_not_merge.yml
+.github/workflows/stale_issue.yml
+.github/workflows/stale-workflow-queue-cleanup.yml
+.github/workflows/greet_first_time_contributor.yml
+.github/workflows/issues-report-config.json
 CODEOWNERS
 MAINTAINERS.yml
 LICENSE
@@ -28,6 +38,7 @@ scripts/ci/test_plan.py
 scripts/ci/twister_ignore.txt
 scripts/ci/what_changed.py
 scripts/ci/version_mgr.py
+scripts/ci/stats/*
 scripts/requirements*
 scripts/checkpatch/*
 scripts/checkpatch.pl
