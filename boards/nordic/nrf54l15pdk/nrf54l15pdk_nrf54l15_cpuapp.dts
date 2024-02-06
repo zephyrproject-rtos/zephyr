@@ -132,6 +132,10 @@
 	status = "okay";
 };
 
+&temp {
+	status = "okay";
+};
+
 &rram0 {
 	partitions {
 		compatible = "fixed-partitions";
