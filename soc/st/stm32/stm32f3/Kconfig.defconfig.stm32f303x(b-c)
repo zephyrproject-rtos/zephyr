@@ -1,4 +1,4 @@
-# ST Microelectronics STM32F303XC MCU
+# STMicroelectronics STM32F303XC MCU
 
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
@@ -7,10 +7,10 @@
 # size differ).
 if SOC_STM32F303XB || SOC_STM32F303XC
 
-config SOC
-	default "stm32f303xc"
-
 config NUM_IRQS
 	default 82
+
+config CPU_HAS_ARM_MPU
+	default y
 
 endif # SOC_STM32F303XB || SOC_STM32F303XC
