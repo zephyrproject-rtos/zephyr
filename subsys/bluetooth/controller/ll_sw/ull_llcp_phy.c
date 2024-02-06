@@ -618,6 +618,7 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	default:
 		/* Ignore other evts */
