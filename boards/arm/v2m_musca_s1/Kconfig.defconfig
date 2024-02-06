@@ -1,11 +1,7 @@
 # Copyright (c) 2019-2020 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MUSCA_S1
-
-config BOARD
-	default "musca_s1" if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
-	default "musca_s1_ns"
+if BOARD_V2M_MUSCA_S1
 
 if SERIAL
 
@@ -14,4 +10,4 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-endif
+endif # BOARD_V2M_MUSCA_S1
