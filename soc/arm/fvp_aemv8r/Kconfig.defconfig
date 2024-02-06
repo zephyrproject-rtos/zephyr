@@ -9,8 +9,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NUM_IRQS
 	default 128
 
-if SOC_FVP_AEMV8R_AARCH64
-
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
@@ -21,8 +19,7 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config MAX_DOMAIN_PARTITIONS
-	default 8
-
-endif # SOC_FVP_AEMV8R_AARCH64
+	default 8 if SOC_FVP_AEMV8R_AARCH64
+	default 24 if USERSPACE && SOC_FVP_AEMV8R_AARCH32
 
 endif # SOC_SERIES_FVP_AEMV8R
