@@ -513,6 +513,7 @@ class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
     TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
+    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
     TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
     FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
 
@@ -594,6 +595,9 @@ class Gtest(Harness):
         test_pass_match = re.search(self.TEST_PASS_PATTERN, line)
         if test_pass_match:
             return "passed", "{}.{}.{}".format(self.id, test_pass_match.group("suite_name"), test_pass_match.group("test_name"))
+        test_skip_match = re.search(self.TEST_SKIP_PATTERN, line)
+        if test_skip_match:
+            return "skipped", "{}.{}.{}".format(self.id, test_skip_match.group("suite_name"), test_skip_match.group("test_name"))
         test_fail_match = re.search(self.TEST_FAIL_PATTERN, line)
         if test_fail_match:
             return "failed", "{}.{}.{}".format(self.id, test_fail_match.group("suite_name"), test_fail_match.group("test_name"))
