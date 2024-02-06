@@ -74,7 +74,7 @@ The board configuration supports the following hardware features:
 
 The default configuration can be found in the Kconfig
 
-:zephyr_file:`boards/arm/cy8cproto_062_4343w/cy8cproto_062_4343w_defconfig`
+:zephyr_file:`boards/cypress/cy8cproto_062_4343w/cy8cproto_062_4343w_defconfig`
 
 
 System Clock
@@ -88,7 +88,7 @@ system clock are provided in the SOC, depending on your system requirements.
 Fetch Binary Blobs
 ******************
 
-cy8cproto_062_4343w board requires fetch binary files
+cy8cproto_062_4343w board optionally uses binary blobs for features
 (e.g WIFI/Bluetooth chip firmware, CM0p prebuilt images, etc).
 
 To fetch Binary Blobs:

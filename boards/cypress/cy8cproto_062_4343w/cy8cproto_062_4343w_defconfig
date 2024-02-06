@@ -3,10 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Choice PSoC 6 Series and MPN
-CONFIG_SOC_SERIES_PSOC_62=y
-CONFIG_SOC_CY8C624ABZI_S2D44=y
-
 # General configuration
 CONFIG_CORTEX_M_SYSTICK=y
 CONFIG_BUILD_OUTPUT_HEX=y
