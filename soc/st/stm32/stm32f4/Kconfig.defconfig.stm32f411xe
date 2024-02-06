@@ -5,9 +5,6 @@
 
 if SOC_STM32F411XE
 
-config SOC
-	default "stm32f411xe"
-
 config NUM_IRQS
 	default 86
 
