@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_F413ZH
 
-config BOARD
-	default "nucleo_f413zh"
-
 if NETWORKING
 
 config USB_DEVICE_STACK
