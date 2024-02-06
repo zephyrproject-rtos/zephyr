@@ -9,6 +9,7 @@ toolchain:
 ram: 128
 flash: 192
 supported:
+  - tfm-ns
   - gpio
   - i2c
   - pwm

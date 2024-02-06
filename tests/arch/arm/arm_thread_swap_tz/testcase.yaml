@@ -1,5 +1,6 @@
 common:
-  filter: (CONFIG_TFM_BOARD != "") and CONFIG_ARM_NONSECURE_FIRMWARE
+  depends_on:
+    - tfm-ns
   tags:
     - arm
     - fpu

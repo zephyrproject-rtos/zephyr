@@ -9,6 +9,8 @@ toolchain:
   - gnuarmemb
   - zephyr
   - xtools
+supported:
+  - tfm-ns
 testing:
   default: true
   only_tags:

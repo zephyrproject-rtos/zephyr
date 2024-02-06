@@ -6,6 +6,8 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - tfm-ns
 ram: 256
 flash: 511
 vendor: arm

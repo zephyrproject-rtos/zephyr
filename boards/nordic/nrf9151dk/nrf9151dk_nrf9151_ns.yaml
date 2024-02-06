@@ -9,6 +9,7 @@ toolchain:
 ram: 128
 flash: 192
 supported:
+  - tfm-ns
   - arduino_gpio
   - arduino_i2c
   - arduino_serial

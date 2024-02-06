@@ -6,6 +6,8 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - tfm-ns
 ram: 786
 flash: 512
 vendor: st

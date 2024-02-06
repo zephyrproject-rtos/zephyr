@@ -6,6 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - tfm-ns
   - gpio
   - dac
 ram: 192

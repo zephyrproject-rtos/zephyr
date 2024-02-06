@@ -25,8 +25,9 @@ tests:
     integration_platforms:
       - native_sim
   drivers.rand32.random_psa_crypto:
-    filter: CONFIG_BUILD_WITH_TFM
     arch_exclude: posix
+    depends_on:
+      - tfm-ns
     extra_args:
       - DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay
       - CONF_FILE=prj_hw_random_psa_crypto.conf

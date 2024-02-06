@@ -8,6 +8,8 @@ type: sim
 toolchain:
   - zephyr
   - cross-compile
+supported:
+  - tfm-ns
 ram: 2048
 flash: 64
 vendor: arm
