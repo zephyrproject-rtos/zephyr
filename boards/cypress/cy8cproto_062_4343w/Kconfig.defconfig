@@ -5,9 +5,6 @@
 
 if BOARD_CY8CPROTO_062_4343W
 
-config BOARD
-	default "cy8cproto_062_4343w"
-
 if WIFI || BT
 
 # Select AIROC part and module
