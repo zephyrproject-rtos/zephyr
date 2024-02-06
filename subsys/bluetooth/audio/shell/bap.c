@@ -351,7 +351,7 @@ static void lc3_audio_send_data(struct k_work *work)
 		}
 	}
 
-	err = bt_bap_stream_send(bap_stream, buf, sh_stream->seq_num, BT_ISO_TIMESTAMP_NONE);
+	err = bt_bap_stream_send(bap_stream, buf, sh_stream->seq_num);
 	if (err < 0) {
 		shell_error(ctx_shell, "Failed to send LC3 audio data (%d)", err);
 		net_buf_unref(buf);
@@ -2546,8 +2546,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 	net_buf_add_mem(buf, data, len);
 
-	ret = bt_bap_stream_send(default_stream, buf, get_next_seq_num(default_stream),
-				 BT_ISO_TIMESTAMP_NONE);
+	ret = bt_bap_stream_send(default_stream, buf, get_next_seq_num(default_stream));
 	if (ret < 0) {
 		shell_print(sh, "Unable to send: %d", -ret);
 		net_buf_unref(buf);

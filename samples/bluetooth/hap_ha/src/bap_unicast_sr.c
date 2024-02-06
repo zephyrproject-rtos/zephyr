@@ -159,9 +159,7 @@ static void audio_timer_timeout(struct k_work *work)
 
 		net_buf_add_mem(buf, buf_data, len_to_send);
 
-		ret = bt_bap_stream_send(stream, buf,
-					   get_and_incr_seq_num(stream),
-					   BT_ISO_TIMESTAMP_NONE);
+		ret = bt_bap_stream_send(stream, buf, get_and_incr_seq_num(stream));
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n",
 			       i, stream, ret);
