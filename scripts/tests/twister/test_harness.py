@@ -28,6 +28,7 @@ from twisterlib.harness import HarnessImporter
 
 GTEST_START_STATE = " RUN      "
 GTEST_PASS_STATE = "       OK "
+GTEST_SKIP_STATE = " DISABLED "
 GTEST_FAIL_STATE = "  FAILED  "
 SAMPLE_GTEST_START = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Running all tests.[0m"
@@ -525,6 +526,26 @@ def test_gtest_failed(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "failed"
 
 
+def test_gtest_skipped(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_SKIP_STATE, suite="suite_name", test="test_name"
+            ),
+        ],
+    )
+    assert gtest.state is None
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "skipped"
+
+
 def test_gtest_all_pass(gtest):
     process_logs(
         gtest,
@@ -544,6 +565,35 @@ def test_gtest_all_pass(gtest):
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
     assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
+
+
+def test_gtest_one_skipped(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name1"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_SKIP_STATE, suite="suite_name", test="test_name1"
+            ),
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.state == "passed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name1") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name1").status == "skipped"
 
 
 def test_gtest_one_fail(gtest):
