@@ -519,7 +519,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-cdc-acm-console`          | 0x0004 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-dfu`                      | 0x0005 |
+| :zephyr:code-sample:`usb-dfu` (Run-Time)           | 0x0005 |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-hid`                      | 0x0006 |
 +----------------------------------------------------+--------+
@@ -538,6 +538,8 @@ The following Product IDs are currently used:
 | :zephyr:code-sample:`wpan-usb`                     | 0x000D |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
 +----------------------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
