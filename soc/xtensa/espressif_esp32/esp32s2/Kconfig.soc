@@ -50,13 +50,6 @@ choice SOC_PART_NUMBER
 
 endchoice # SOC_PART_NUMBER
 
-config SPIRAM_SPEED
-	int
-	default 80 if SPIRAM_SPEED_80M
-	default 40 if SPIRAM_SPEED_40M
-	default 40 if SPIRAM_SPEED_26M
-	default 40 if SPIRAM_SPEED_20M
-
 config ESP_SYSTEM_RTC_EXT_XTAL
 	bool
 
@@ -188,27 +181,6 @@ config ESP32S2_DATA_CACHE_SIZE
 	default 0x0000
 
 endmenu  # Cache config
-
-menu "PSRAM clock and cs IO for ESP32-S2"
-	depends on ESP_SPIRAM
-
-config DEFAULT_PSRAM_CLK_IO
-	int "PSRAM CLK IO number"
-	range 0 33
-	default 30
-	help
-	  The PSRAM CLOCK IO can be any unused GPIO, user can config
-	  it based on hardware design.
-
-config DEFAULT_PSRAM_CS_IO
-	int "PSRAM CS IO number"
-	range 0 33
-	default 26
-	help
-	  The PSRAM CS IO can be any unused GPIO, user can config it
-	  based on hardware design.
-
-endmenu # PSRAM clock and cs IO for ESP32S2
 
 choice ESP32S2_UNIVERSAL_MAC_ADDRESSES
 	bool "Number of universally administered (by IEEE) MAC address"

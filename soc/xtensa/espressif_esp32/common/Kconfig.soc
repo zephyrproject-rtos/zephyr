@@ -3,137 +3,125 @@
 
 if SOC_FAMILY_ESP32
 
-config ESPTOOLPY_FLASHFREQ_80M
-	bool
-
 config FLASH_SIZE
 	int
 
 config FLASH_BASE_ADDRESS
 	hex
 
-config ESP_SPIRAM
-	bool "Support for external, SPI-connected RAM"
-	default n if MCUBOOT
-	help
-	  This enables support for an external SPI RAM chip, connected in
-	  parallel with the main SPI flash chip.
-
-config ESP_HEAP_MIN_EXTRAM_THRESHOLD
-	int "Minimum threshold for external RAM allocation"
-	default 8192
-	range 1024 131072
-	depends on ESP_SPIRAM
-	help
-	  Threshold to decide if memory will be allocated from DRAM
-	  or SPIRAM. If value of allocation size is less than this value,
-	  memory will be allocated from internal RAM.
-
-config ESP_HEAP_SEARCH_ALL_REGIONS
-	bool "Search for all available heap regions"
-	depends on ESP_SPIRAM
-	default y
-	help
-	  This configuration enables searching all available heap
-	  regions. If the region of desired capability is exhausted,
-	  memory will be allocated from other available region.
-
-config ESP_SPIRAM_HEAP_SIZE
-	int "Size of SPIRAM heap"
-	default 262134 if SYS_HEAP_SMALL_ONLY
-	default 1048576 if !SYS_HEAP_SMALL_ONLY
-	depends on ESP_SPIRAM
-	help
-	  Specify size of SPIRAM heap.
-
-menu "SPI RAM config"
-	depends on ESP_SPIRAM
-
-choice SPIRAM_MODE
-	prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
-	default SPIRAM_MODE_QUAD
-
-config SPIRAM_MODE_QUAD
-	bool "Quad Mode PSRAM"
-
-endchoice # SPIRAM_MODE
-
-choice SPIRAM_TYPE
-	prompt "Type of SPI RAM chip in use"
-	depends on ESP_SPIRAM
-	default SPIRAM_TYPE_ESPPSRAM16
-
-config SPIRAM_TYPE_ESPPSRAM16
-	bool "ESP-PSRAM16 or APS1604"
-
-config SPIRAM_TYPE_ESPPSRAM32
-	bool "ESP-PSRAM32 or IS25WP032"
-
-config SPIRAM_TYPE_ESPPSRAM64
-	bool "ESP-PSRAM64 or LY68L6400"
-
-endchoice # SPIRAM_TYPE
-
-config ESP_SPIRAM_SIZE
-	int "Size of SPIRAM part"
-	default 2097152 if SPIRAM_TYPE_ESPPSRAM16
-	default 4194304 if SPIRAM_TYPE_ESPPSRAM32
-	default 8388608 if SPIRAM_TYPE_ESPPSRAM64
-	help
-	  Specify size of SPIRAM part.
-	  NOTE: If SPIRAM size is greater than 4MB, only
-	  lower 4MB can be allocated using k_malloc().
-
-choice SPIRAM_SPEED
-	prompt "Set RAM clock speed"
-	default SPIRAM_SPEED_40M
-	help
-	  Select the speed for the SPI RAM chip.
-	  If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
-
-	  1. Flash SPI running at 40MHz and RAM SPI running at 40MHz
-	  2. Flash SPI running at 80MHz and RAM SPI running at 40MHz
-	  3. Flash SPI running at 80MHz and RAM SPI running at 80MHz
-
-	  Note: If the third mode(80MHz+80MHz) is enabled for SPI RAM of type 32MBit, one of the HSPI/VSPI host
-	  will be occupied by the system. Which SPI host to use can be selected by the config item
-	  SPIRAM_OCCUPY_SPI_HOST. Application code should never touch HSPI/VSPI hardware in this case. The
-	  option to select 80MHz will only be visible if the flash SPI speed is also 80MHz.
-	  (ESPTOOLPY_FLASHFREQ_79M is true)
-
-config SPIRAM_SPEED_26M
-	bool "26MHz clock speed"
-	depends on SOC_SERIES_ESP32S2
-
-config SPIRAM_SPEED_20M
-	bool "20MHz clock speed"
-	depends on SOC_SERIES_ESP32S2
-
-config SPIRAM_SPEED_40M
-	bool "40MHz clock speed"
-
-config SPIRAM_SPEED_80M
-	depends on ESPTOOLPY_FLASHFREQ_80M
-	bool "80MHz clock speed"
-
-config SPIRAM_SPEED_120M
-	depends on SPIRAM_MODE_QUAD && SOC_SERIES_ESP32S3
-	bool "120MHz clock speed"
-
-endchoice # SPIRAM_SPEED
-
-config SPIRAM
-	bool
-	default y if ESP_SPIRAM
-
-endmenu # SPI RAM config
-
-config APP_BUILD_USE_FLASH_SECTIONS
-	bool # Whether to place code/data into memory-mapped flash sections
-	default y if !MCUBOOT
-
 config MMU_PAGE_SIZE
 	hex
 	default 0x10000
+
+config SPI_FLASH_VENDOR_MXIC_SUPPORTED
+	bool
+	default y
+
+config SPI_FLASH_SUPPORT_ISSI_CHIP
+	bool "ISSI"
+	default y
+	help
+	  Enable this to support auto detection of ISSI chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_MXIC_CHIP
+	bool "MXIC"
+	default y
+	help
+	  Enable this to support auto detection of MXIC chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_GD_CHIP
+	bool "GigaDevice"
+	default y
+	help
+	  Enable this to support auto detection of GD (GigaDevice) chips if chip vendor not
+	  directly given by ``chip_drv`` member of the chip struct. If you are using Wrover
+	  modules, please don't disable this, otherwise your flash may not work in 4-bit
+	  mode.
+
+	  This adds support for variant chips, however will extend detecting time and image
+	  size. Note that the default chip driver supports the GD chips with product ID
+	  60H.
+
+config SPI_FLASH_SUPPORT_WINBOND_CHIP
+	bool "Winbond"
+	default y
+	help
+	  Enable this to support auto detection of Winbond chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_BOYA_CHIP
+	bool "BOYA"
+	default y if !SOC_SERIES_ESP32
+	help
+	  Enable this to support auto detection of BOYA chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_TH_CHIP
+	bool "TH"
+	default y if !SOC_SERIES_ESP32
+	help
+	  Enable this to support auto detection of TH chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+	bool "mxic (opi)"
+	depends on SOC_SERIES_ESP32S3
+	default y
+	help
+	  Enable this to support auto detection of Octal MXIC chips if chip vendor not directly
+	  given by ``chip_drv`` member of the chip struct. This adds support for variant
+	  chips, however will extend detecting time.
+
+config SPI_FLASH_ROM_DRIVER_PATCH
+	bool "SPI flash ROM driver patched functions"
+	default y
+	help
+	  Enable this flag to use patched versions of SPI flash ROM driver functions.
+	  This option should be enabled, if any one of the following is true: (1) need to write
+	  to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
+	  SPI flash chip is manufactured by ISSI.
+
+config BOOTLOADER_FLASH_XMC_SUPPORT
+	bool "Support flash chips of XMC (READ HELP FIRST)"
+	default y
+	help
+	  Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
+	  XMC chips will be forbidden to be used, when this option is disabled.
+
+	  DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+choice BOOTLOADER_VDDSDIO_BOOST
+	bool "VDDSDIO LDO voltage"
+	default BOOTLOADER_VDDSDIO_BOOST_1_9V
+	help
+	  If this option is enabled, and VDDSDIO LDO is set to 1.8V (using eFuse
+	  or MTDI bootstrapping pin), bootloader will change LDO settings to
+	  output 1.9V instead. This helps prevent flash chip from browning out
+	  during flash programming operations.
+
+	  This option has no effect if VDDSDIO is set to 3.3V, or if the internal
+	  VDDSDIO regulator is disabled via eFuse.
+
+	config BOOTLOADER_VDDSDIO_BOOST_1_8V
+		bool "1.8V"
+		depends on !CONFIG_ESPTOOLPY_FLASHFREQ_80M
+	config BOOTLOADER_VDDSDIO_BOOST_1_9V
+		bool "1.9V"
+endchoice
+
+config BOOTLOADER_REGION_PROTECTION_ENABLE
+	bool "Protect unmapped memory regions from unintended accesses"
+	default y
+	help
+	  Protects the unmapped memory regions of the entire address space from unintended accesses.
+	  This will ensure that an exception will be triggered whenever the CPU performs a memory
+	  operation on unmapped regions of the address space.
 
 endif # SOC_FAMILY_ESP32

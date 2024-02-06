@@ -67,12 +67,6 @@ config ESP32S3_APPCPU_DRAM
 	help
 	  Defines APPCPU DRAM area in bytes.
 
-config SPIRAM_SPEED
-	int
-	default 120 if SPIRAM_SPEED_120M
-	default 80 if SPIRAM_SPEED_80M
-	default 40 if SPIRAM_SPEED_40M
-
 choice ESP32_RTC_CLK_SRC
 	prompt "RTC clock source"
 	default ESP32_RTC_CLK_SRC_INT_RC
@@ -316,24 +310,5 @@ config MAC_BB_PD
 	  by a small amount but increases RAM use by approximat
 
 endmenu  # Cache config
-
-menu "PSRAM Clock and CS IO for ESP32S3"
-	depends on ESP_SPIRAM
-
-config DEFAULT_PSRAM_CLK_IO
-	int "PSRAM CLK IO number"
-	range 0 33
-	default 30
-	help
-	  The PSRAM Clock IO can be any unused GPIO, please refer to your hardware design.
-
-config DEFAULT_PSRAM_CS_IO
-	int "PSRAM CS IO number"
-	range 0 33
-	default 26
-	help
-	  The PSRAM CS IO can be any unused GPIO, please refer to your hardware design.
-
-endmenu # PSRAM clock and cs IO for ESP32S3
 
 endif # SOC_SERIES_ESP32S3

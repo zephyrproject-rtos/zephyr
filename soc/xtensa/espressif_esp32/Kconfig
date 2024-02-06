@@ -11,6 +11,7 @@ config SOC_FAMILY
 	default "espressif_esp32"
 
 source "soc/xtensa/espressif_esp32/common/Kconfig.soc"
+source "soc/xtensa/espressif_esp32/common/Kconfig.spiram"
 source "soc/xtensa/espressif_esp32/*/Kconfig.soc"
 
 endif # SOC_FAMILY_ESP32
