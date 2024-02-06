@@ -1,14 +1,7 @@
-# Copyright (c) 2020,2022 Intel Corporation
+# Copyright (c) 2020,2022-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_INTEL_CAVS_V25
-
-config SOC_TOOLCHAIN_NAME
-	string
-	default "intel_tgl_adsp"
-
-config SOC
-	default "intel_tgl_adsp"
 
 # For backward compatibility, to be removed
 config SOC_SERIES_INTEL_CAVS_V25
