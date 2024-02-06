@@ -595,8 +595,13 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	bool fifo_empty = WAIT_FOR(dw_read(dev_cfg->base, DW_CFG_LOW(channel)) & DW_CFGL_FIFO_EMPTY,
 				DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT/10));
 	if (!fifo_empty) {
-		LOG_ERR("%s: dma %d channel drain time out", __func__, channel);
-		return -ETIMEDOUT;
+		LOG_WRN("%s: dma %d channel drain time out", __func__, channel);
+
+		/* Continue even if draining timed out to make sure that the channel is going to be
+		 * disabled.
+		 * The same channel might be requested for other purpose (or for same) next time
+		 * which will fail if the channel has been left enabled.
+		 */
 	}
 #endif
 
