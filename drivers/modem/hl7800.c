@@ -959,15 +959,18 @@ static void event_handler(enum mdm_hl7800_event event, void *event_data)
 {
 	sys_snode_t *node;
 	struct mdm_hl7800_callback_agent *agent;
+	int ret;
 
-	k_sem_take(&cb_lock, K_FOREVER);
-	SYS_SLIST_FOR_EACH_NODE(&hl7800_event_callback_list, node) {
-		agent = CONTAINER_OF(node, struct mdm_hl7800_callback_agent, node);
-		if (agent->event_callback != NULL) {
-			agent->event_callback(event, event_data);
+	ret = k_sem_take(&cb_lock, K_FOREVER);
+	if (ret == 0) {
+		SYS_SLIST_FOR_EACH_NODE(&hl7800_event_callback_list, node) {
+			agent = CONTAINER_OF(node, struct mdm_hl7800_callback_agent, node);
+			if (agent->event_callback != NULL) {
+				agent->event_callback(event, event_data);
+			}
 		}
+		k_sem_give(&cb_lock);
 	}
-	k_sem_give(&cb_lock);
 }
 
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr)
