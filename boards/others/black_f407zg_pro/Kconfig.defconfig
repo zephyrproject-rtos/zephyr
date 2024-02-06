@@ -5,9 +5,6 @@
 
 if BOARD_BLACK_F407ZG_PRO
 
-config BOARD
-	default "black_f407zg_pro"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
