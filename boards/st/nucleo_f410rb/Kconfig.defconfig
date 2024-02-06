@@ -3,6 +3,10 @@
 # Copyright (c) 2020 Hans Unzner
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NUCLEO_F410RB
-	bool "Nucleo F410RB Development Board"
-	depends on SOC_STM32F410RX
+if BOARD_NUCLEO_F410RB
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_F410RB
