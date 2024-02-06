@@ -5,4 +5,4 @@
 
 /dts-v1/;
 
-#include "fvp_baser_aemv8r_aarch32.dts"
+#include "fvp_baser_aemv8r_fvp_aemv8r_aarch32.dts"

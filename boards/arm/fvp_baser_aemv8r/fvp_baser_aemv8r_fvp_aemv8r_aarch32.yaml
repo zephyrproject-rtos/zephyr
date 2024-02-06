@@ -2,7 +2,7 @@
 # Copyright (c) 2022 IoT.bzh
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: fvp_baser_aemv8r_aarch32
+identifier: fvp_baser_aemv8r/fvp_aemv8r_aarch32
 name: FVP Emulation FVP_BaseR_AEMv8R AArch32
 arch: arm
 type: sim
