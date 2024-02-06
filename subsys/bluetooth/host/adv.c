@@ -2064,7 +2064,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 		response = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response));
 		info.tx_power = response->tx_power;
 		info.rssi = response->rssi;
-		info.cte_type = BIT(response->cte_type);
+		info.cte_type = bt_get_df_cte_type(response->cte_type);
 		info.response_slot = response->response_slot;
 
 		if (buf->len < response->data_length) {
