@@ -5,9 +5,6 @@
 
 if BOARD_96B_NEONKEY
 
-config BOARD
-	default "96b_neonkey"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
