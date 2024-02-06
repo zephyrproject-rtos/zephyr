@@ -668,11 +668,19 @@ class TestPlan:
         for ts_name, ts in self.testsuites.items():
             if ts.build_on_all and not platform_filter and platform_config.get('increased_platform_scope', True):
                 platform_scope = self.platforms
-            elif ts.integration_platforms and self.options.integration:
+            elif ts.integration_platforms:
                 self.verify_platforms_existence(
                     ts.integration_platforms, f"{ts_name} - integration_platforms")
-                platform_scope = list(filter(lambda item: item.name in ts.integration_platforms, \
-                                         self.platforms))
+                integration_platforms = list(filter(lambda item: item.name in ts.integration_platforms,
+                                                    self.platforms))
+                if self.options.integration:
+                    platform_scope = integration_platforms
+                else:
+                    # if not in integration mode, still add integration platforms to the list
+                    if not platform_filter:
+                        platform_scope = platforms + integration_platforms
+                    else:
+                        platform_scope = platforms
             else:
                 platform_scope = platforms
 
@@ -909,7 +917,10 @@ class TestPlan:
                     else:
                         self.add_instances(instance_list)
                 else:
-                    instances = list(filter(lambda ts: ts.platform.name in self.default_platforms, instance_list))
+                    # add integration platforms to the list of default
+                    # platforms, even if we are not in integration mode
+                    _platforms = self.default_platforms + ts.integration_platforms
+                    instances = list(filter(lambda ts: ts.platform.name in _platforms, instance_list))
                     self.add_instances(instances)
             elif integration:
                 instances = list(filter(lambda item:  item.platform.name in ts.integration_platforms, instance_list))
