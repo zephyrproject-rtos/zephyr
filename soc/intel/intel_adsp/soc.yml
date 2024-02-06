@@ -1,0 +1,10 @@
+family:
+  - name: intel_adsp
+    series:
+      - name: ace
+        socs:
+          - name: intel_ace15_mtpm
+          - name: intel_ace20_lnl
+      - name: cavs
+        socs:
+          - name: intel_tgl_adsp
