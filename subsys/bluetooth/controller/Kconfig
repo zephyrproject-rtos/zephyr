@@ -992,6 +992,14 @@ config BT_CTLR_ASSERT_HANDLER
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
 
+config BT_CTLR_VS_SCAN_REQ_RX
+	bool "Use scan request reporting"
+	depends on BT_HCI_VS_EXT && !BT_CTLR_ADV_EXT
+	select BT_HCI_VS_EVT
+	select BT_CTLR_SCAN_REQ_NOTIFY
+	help
+	  Enables usage of VS Scan Request Reports Command and Scan Request Received Event
+
 endif # BT_CTLR
 
 config BT_CTLR_DEBUG_PINS_CPUAPP
