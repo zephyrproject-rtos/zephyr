@@ -1,4 +1,4 @@
-# ST Microelectronics STM32F3 MCU line
+# STMicroelectronics STM32F3 MCU line
 
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
@@ -7,7 +7,7 @@
 
 if SOC_SERIES_STM32F3X
 
-source "soc/soc_legacy/arm/st_stm32/stm32f3/Kconfig.defconfig.stm32f3*"
+rsource "Kconfig.defconfig.stm32f3*"
 
 config SOC_SERIES
 	default "stm32f3"
