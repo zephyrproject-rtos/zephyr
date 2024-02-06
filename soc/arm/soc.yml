@@ -11,6 +11,10 @@ family:
   - name: mps3
     socs:
     - name: an547
+  - name: musca
+    socs:
+    - name: musca_b1
+    - name: musca_s1
 - name: arm64
   series:
   - name: fvp_aemv8a
