@@ -107,7 +107,7 @@ Set ``-DSHIELD="st_b_lcd40_dsi1_mb1166"`` when you invoke ``west build``. For ex
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: stm32h747i_disco_m7
+   :board: stm32h747i_disco/stm32h747xx/m7
    :shield: st_b_lcd40_dsi1_mb1166
    :goals: build
 

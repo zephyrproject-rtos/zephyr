@@ -20,7 +20,7 @@ tests:
     platform_exclude:
       - nucleo_h723zg
       - nucleo_h743zi
-      - nucleo_h745zi_q
+      - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_h753zi
   sample.modules.canopennode.program_download:
     sysbuild: true
