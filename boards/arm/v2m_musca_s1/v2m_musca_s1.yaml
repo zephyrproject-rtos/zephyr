@@ -1,4 +1,4 @@
-identifier: v2m_musca_s1
+identifier: v2m_musca_s1/musca_s1
 name: ARM V2M MUSCA-S1
 type: mcu
 arch: arm
