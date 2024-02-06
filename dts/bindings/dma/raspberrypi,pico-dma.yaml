@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Raspberry Pi Pico GPIO
+  Raspberry Pi Pico DMA
 
   channel: Select channel for data transmitting
 
