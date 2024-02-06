@@ -23,7 +23,7 @@ An ISR has the following key properties:
 
 * An **interrupt request (IRQ) signal** that triggers the ISR.
 * A **priority level** associated with the IRQ.
-* An **interrupt handler function** that is invoked to handle the interrupt.
+* An **interrupt service routine** that is invoked to handle the interrupt.
 * An **argument value** that is passed to that function.
 
 An :abbr:`IDT (Interrupt Descriptor Table)` or a vector table is used
@@ -44,10 +44,10 @@ in mid-execution if a higher priority interrupt is signaled. The lower
 priority ISR resumes execution once the higher priority ISR has completed
 its processing.
 
-An ISR's interrupt handler function executes in the kernel's **interrupt
-context**. This context has its own dedicated stack area (or, on some
-architectures, stack areas). The size of the interrupt context stack must be
-capable of handling the execution of multiple concurrent ISRs if interrupt
+An ISR executes in the kernel's **interrupt context**. This context has its
+own dedicated stack area (or, on some architectures, stack areas). The size
+of the interrupt context stack must be capable of handling the execution of
+multiple concurrent ISRs if interrupt
 nesting support is enabled.
 
 .. important::
