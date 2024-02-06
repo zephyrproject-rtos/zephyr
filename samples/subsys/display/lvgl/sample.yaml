@@ -41,7 +41,7 @@ tests:
     integration_platforms:
       - mimxrt1170_evk_cm7
   sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
-    platform_allow: stm32h747i_disco_m7
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
     harness: console
     harness_config:
