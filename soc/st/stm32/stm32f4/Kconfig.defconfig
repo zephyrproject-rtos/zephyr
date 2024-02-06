@@ -1,4 +1,4 @@
-# ST Microelectronics STM32F4 MCU line
+# STMicroelectronics STM32F4 MCU line
 
 # Copyright (c) 2016 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
@@ -7,10 +7,7 @@
 
 if SOC_SERIES_STM32F4X
 
-source "soc/soc_legacy/arm/st_stm32/stm32f4/Kconfig.defconfig.stm32f4*"
-
-config SOC_SERIES
-	default "stm32f4"
+rsource "Kconfig.defconfig.stm32f4*"
 
 # adjust the fallback because of the LSI oscaillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY
