@@ -424,6 +424,22 @@ uint8_t bt_get_phy(uint8_t hci_phy)
 	}
 }
 
+int bt_get_df_cte_type(uint8_t hci_cte_type)
+{
+	switch (hci_cte_type) {
+	case BT_HCI_LE_AOA_CTE:
+		return BT_DF_CTE_TYPE_AOA;
+	case BT_HCI_LE_AOD_CTE_1US:
+		return BT_DF_CTE_TYPE_AOD_1US;
+	case BT_HCI_LE_AOD_CTE_2US:
+		return BT_DF_CTE_TYPE_AOD_2US;
+	case BT_HCI_LE_NO_CTE:
+		return BT_DF_CTE_TYPE_NONE;
+	default:
+		return BT_DF_CTE_TYPE_NONE;
+	}
+}
+
 #if defined(CONFIG_BT_CONN_TX)
 static void hci_num_completed_packets(struct net_buf *buf)
 {
