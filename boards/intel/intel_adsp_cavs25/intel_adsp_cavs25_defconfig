@@ -1,3 +1,5 @@
+# Copyright (c) 2020-2024 Intel Corporation
+#
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_MAIN_STACK_SIZE=2048
