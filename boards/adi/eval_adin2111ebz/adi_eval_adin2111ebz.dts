@@ -162,6 +162,11 @@
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
+	dmas = <&dmamux1 2 13 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC |
+		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>,
+		       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
+		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>;
+	dma-names = "tx", "rx";
 
 	adin2111: adin2111@0 {
 		compatible = "adi,adin2111";
@@ -169,6 +174,8 @@
 		spi-max-frequency = <25000000>;
 		int-gpios = <&gpioa 12 GPIO_ACTIVE_LOW>;
 		status = "okay";
+		spi-oa;
+		spi-oa-protection;
 
 		port1 {
 			local-mac-address = [ 00 E0 22 FE DA C9 ];
