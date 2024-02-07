@@ -135,8 +135,8 @@ struct bap_unicast_ac_param {
 extern struct bt_bap_unicast_group *default_unicast_group;
 extern struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 extern struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
-extern const struct named_lc3_preset *default_sink_preset;
-extern const struct named_lc3_preset *default_source_preset;
+extern struct named_lc3_preset default_sink_preset;
+extern struct named_lc3_preset default_source_preset;
 
 int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
 				struct shell_stream *snk_uni_streams[], size_t snk_cnt,
