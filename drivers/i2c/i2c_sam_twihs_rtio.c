@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/spinlock.h>
 #define DT_DRV_COMPAT atmel_sam_i2c_twihs
 
 /** @file
@@ -15,7 +14,6 @@
  * Only I2C Controller Mode with 7 bit addressing is currently supported.
  */
 
-
 #include <errno.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
@@ -23,9 +21,9 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
-#include <zephyr/rtio/rtio.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -55,14 +53,7 @@ struct i2c_sam_twihs_dev_cfg {
 
 /* Device run time data */
 struct i2c_sam_twihs_dev_data {
-	struct k_spinlock lock;
-	struct k_sem block_lock;
-	struct i2c_dt_spec dt_spec;
-	struct rtio_iodev iodev;
-	struct rtio *r;
-	struct rtio_mpsc io_q;
-	struct rtio_iodev_sqe *iodev_sqe;
-	const struct rtio_sqe *sqe;
+	struct i2c_rtio *ctx;
 	uint32_t buf_idx;
 };
 
@@ -184,7 +175,7 @@ static void i2c_sam_twihs_start(const struct device *dev)
 	struct i2c_sam_twihs_dev_data *const dev_data = dev->data;
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = dev->config;
 	Twihs *const twihs = dev_cfg->regs;
-	const struct rtio_sqe *const sqe = dev_data->sqe;
+	struct rtio_sqe *sqe = &dev_data->ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 
 	/* Clear pending interrupts, such as NACK. */
@@ -210,64 +201,29 @@ static void i2c_sam_twihs_start(const struct device *dev)
 	}
 }
 
-static void i2c_sam_twihs_next(const struct device *dev, bool completion)
-{
-	struct i2c_sam_twihs_dev_data *data = dev->data;
-
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
-
-	if (!completion && data->iodev_sqe != NULL) {
-		k_spin_unlock(&data->lock, key);
-		return;
-	}
-
-	struct rtio_mpsc_node *next = rtio_mpsc_pop(&data->io_q);
-
-	if (next == NULL) {
-		data->iodev_sqe = NULL;
-		data->sqe = NULL;
-		k_spin_unlock(&data->lock, key);
-		return;
-	}
-
-	data->iodev_sqe = CONTAINER_OF(next, struct rtio_iodev_sqe, q);
-	data->sqe = data->iodev_sqe->sqe;
-	k_spin_unlock(&data->lock, key);
-
-	i2c_sam_twihs_start(dev);
-}
-
 static void i2c_sam_twihs_complete(const struct device *dev, int status)
 {
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = dev->config;
-	struct i2c_sam_twihs_dev_data *const dev_data = dev->data;
 	Twihs *const twihs = dev_cfg->regs;
-	struct rtio_iodev_sqe *iodev_sqe = dev_data->iodev_sqe;
+	struct i2c_rtio *const ctx = ((struct i2c_sam_twihs_dev_data *)
+		dev->data)->ctx;
 
 	/* Disable all enabled interrupts */
 	twihs->TWIHS_IDR = twihs->TWIHS_IMR;
 
-	if (status < 0) {
-		rtio_iodev_sqe_err(iodev_sqe, status);
-		i2c_sam_twihs_next(dev, true);
-		return;
-	}
-
-	if (dev_data->sqe->flags & RTIO_SQE_TRANSACTION) {
-		dev_data->sqe = rtio_spsc_next(iodev_sqe->r->sq, dev_data->sqe);
+	if (i2c_rtio_complete(ctx, status)) {
 		i2c_sam_twihs_start(dev);
-	} else {
-		rtio_iodev_sqe_ok(iodev_sqe, status);
-		i2c_sam_twihs_next(dev, true);
 	}
 }
 
 static void i2c_sam_twihs_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
-	struct i2c_sam_twihs_dev_data *const dev_data = dev->data;
+	struct i2c_rtio *const ctx = ((struct i2c_sam_twihs_dev_data *)
+		dev->data)->ctx;
 
-	rtio_mpsc_push(&dev_data->io_q, &iodev_sqe->q);
-	i2c_sam_twihs_next(dev, false);
+	if (i2c_rtio_submit(ctx, iodev_sqe)) {
+		i2c_sam_twihs_start(dev);
+	}
 }
 
 static void i2c_sam_twihs_isr(const struct device *dev)
@@ -275,7 +231,7 @@ static void i2c_sam_twihs_isr(const struct device *dev)
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = dev->config;
 	struct i2c_sam_twihs_dev_data *const dev_data = dev->data;
 	Twihs *const twihs = dev_cfg->regs;
-	const struct rtio_sqe *const sqe = dev_data->sqe;
+	struct rtio_sqe *sqe = &dev_data->ctx->txn_curr->sqe;
 	uint32_t isr_status;
 
 	/* Retrieve interrupt status */
@@ -325,39 +281,10 @@ static void i2c_sam_twihs_isr(const struct device *dev)
 static int i2c_sam_twihs_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 				  uint16_t addr)
 {
-	struct i2c_sam_twihs_dev_data *const dev_data = dev->data;
-	struct rtio_iodev *iodev = &dev_data->iodev;
-	struct rtio *const r = dev_data->r;
-	struct rtio_sqe *sqe = NULL;
-	struct rtio_cqe *cqe = NULL;
-	int res = 0;
+	struct i2c_rtio *const ctx = ((struct i2c_sam_twihs_dev_data *)
+		dev->data)->ctx;
 
-	k_sem_take(&dev_data->block_lock, K_FOREVER);
-
-	dev_data->dt_spec.addr = addr;
-
-	sqe = i2c_rtio_copy(r, iodev, msgs, num_msgs);
-	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
-		res = -ENOMEM;
-		goto out;
-	}
-
-	sqe->flags &= ~RTIO_SQE_TRANSACTION;
-
-	rtio_submit(r, 1);
-
-	cqe = rtio_cqe_consume(r);
-	__ASSERT(cqe != NULL, "Expected valid completion");
-	while (cqe != NULL) {
-		res = cqe->result;
-		cqe = rtio_cqe_consume(r);
-	}
-	rtio_cqe_release_all(r);
-
-out:
-	k_sem_give(&dev_data->block_lock);
-	return res;
+	return i2c_rtio_transfer(ctx, msgs, num_msgs, addr);
 }
 
 static int i2c_sam_twihs_initialize(const struct device *dev)
@@ -392,11 +319,7 @@ static int i2c_sam_twihs_initialize(const struct device *dev)
 		return ret;
 	}
 
-	k_sem_init(&dev_data->block_lock, 1, 1);
-	dev_data->dt_spec.bus = dev;
-	dev_data->iodev.api = &i2c_iodev_api;
-	dev_data->iodev.data = &dev_data->dt_spec;
-	rtio_mpsc_init(&dev_data->io_q);
+	i2c_rtio_init(dev_data->ctx, dev);
 
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
@@ -421,9 +344,9 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);						\
 	}											\
 												\
-	RTIO_DEFINE(_i2c##n##_sam_rtio,								\
-		    CONFIG_I2C_SAM_TWIHS_SQ_SIZE,						\
-		    CONFIG_I2C_SAM_TWIHS_CQ_SIZE);						\
+	I2C_RTIO_DEFINE(_i2c##n##_sam_rtio,							\
+		    DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),			\
+		    DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));			\
 												\
 	static const struct i2c_sam_twihs_dev_cfg i2c##n##_sam_config = {			\
 		.regs = (Twihs *)DT_INST_REG_ADDR(n),						\
@@ -435,7 +358,7 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 	};											\
 												\
 	static struct i2c_sam_twihs_dev_data i2c##n##_sam_data = {				\
-		.r = &_i2c##n##_sam_rtio,							\
+		.ctx = &_i2c##n##_sam_rtio,							\
 	};											\
 												\
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twihs_initialize,					\
