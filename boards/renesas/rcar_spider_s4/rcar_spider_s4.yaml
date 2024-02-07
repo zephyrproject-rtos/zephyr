@@ -1,4 +1,4 @@
-identifier: rcar_spider_cr52
+identifier: rcar_spider_s4
 name: Cortex r52 for Renesas Spider
 type: mcu
 arch: arm

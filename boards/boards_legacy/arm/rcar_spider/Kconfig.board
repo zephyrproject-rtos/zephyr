@@ -1,6 +1,0 @@
-# Copyright (c) 2023 IoT.bzh
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_RCAR_SPIDER_CR52
-	bool "Cortex-R52 for Renesas Spider"
-	depends on SOC_R8A779F0

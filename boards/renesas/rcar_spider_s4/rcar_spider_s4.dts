@@ -7,12 +7,12 @@
 
 /dts-v1/;
 #include <arm/renesas/rcar/gen4/r8a779f0.dtsi>
-#include "rcar_spider_cr52-pinctrl.dtsi"
+#include "rcar_spider_s4-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Renesas Spider board";
-	compatible = "renesas,spider-cr52";
+	compatible = "renesas,spider-s4";
 
 	chosen {
 		zephyr,sram = &sram0;
