@@ -2649,6 +2649,10 @@ uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface)
 
 	net_if_lock(iface);
 
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv6) {
 		goto out;
 	}
@@ -2670,6 +2674,10 @@ void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit)
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
 
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv6) {
 		goto out;
 	}
@@ -2689,6 +2697,10 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 	int ret = 0;
 
 	net_if_lock(iface);
+
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv6) {
 		goto out;
@@ -2710,6 +2722,10 @@ void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
+
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv6) {
 		goto out;
