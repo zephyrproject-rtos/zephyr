@@ -626,6 +626,21 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 		return -ETIMEDOUT;
 	}
 
+	/* mask any unmasked IRQs after channel is stopped */
+	dw_write(dev_cfg->base, DW_MASK_ERR, DW_CHAN_MASK(channel));
+	dw_write(dev_cfg->base, DW_MASK_TFR, DW_CHAN_MASK(channel));
+	dw_write(dev_cfg->base, DW_MASK_BLOCK, DW_CHAN_MASK(channel));
+
+	/* clear any pending IRQs - some configuration may not
+	 * assign any handlers or care, but new transfers need to start
+	 * with a clean slate.
+	 */
+	dw_write(dev_cfg->base, DW_CLEAR_TFR, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_BLOCK, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_SRC_TRAN, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_DST_TRAN, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_ERR, 0x1 << channel);
+
 	chan_data->state = DW_DMA_IDLE;
 	ret = pm_device_runtime_put(dev);
 out:
