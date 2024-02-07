@@ -93,6 +93,10 @@ Drivers and Sensors
     validating the bitrate.
   * Made the ``sample-point`` and ``sample-point-data`` devicetree properties optional.
 
+* Charger
+
+  * Added ``chgin-to-sys-current-limit-microamp`` property to ``maxim,max20335-charger``.
+
 * Clock control
 
 * Counter

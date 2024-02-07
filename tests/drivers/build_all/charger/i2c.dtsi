@@ -24,7 +24,7 @@ max20335@1 {
 	charger: charger {
 		compatible = "maxim,max20335-charger";
 
-		constant-charge-current-max-microamp = <100000>;
+		chgin-to-sys-current-limit-microamp = <100000>;
 		constant-charge-voltage-max-microvolt = <4050000>;
 		int-gpios = <&test_gpio 0 0>;
 	};
