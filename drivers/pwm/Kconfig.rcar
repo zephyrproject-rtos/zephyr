@@ -6,7 +6,7 @@
 config PWM_RCAR
 	bool "Renesas R-Car PWM Driver"
 	default y
-	depends on SOC_FAMILY_RCAR
+	depends on SOC_FAMILY_RENESAS_RCAR
 	depends on DT_HAS_RENESAS_PWM_RCAR_ENABLED
 	help
 	  Enable Renesas R-Car PWM Driver.
