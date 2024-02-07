@@ -511,13 +511,6 @@ struct mcp251xfd_data {
 
 };
 
-struct mcp251xfd_timing_params {
-	uint8_t sjw;
-	uint8_t prop_seg;
-	uint8_t phase_seg1;
-	uint8_t phase_seg2;
-};
-
 struct mcp251xfd_config {
 	const struct can_driver_config common;
 
@@ -533,12 +526,6 @@ struct mcp251xfd_config {
 	uint8_t clko_div;
 
 	uint16_t timestamp_prescaler;
-
-	/* CAN Timing */
-	struct mcp251xfd_timing_params timing_params;
-#if defined(CONFIG_CAN_FD_MODE)
-	struct mcp251xfd_timing_params timing_params_data;
-#endif
 
 	const struct device *clk_dev;
 	uint8_t clk_id;
