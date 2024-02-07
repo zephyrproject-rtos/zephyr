@@ -7,6 +7,7 @@ menuconfig ETH_DRIVER
 	bool "Ethernet drivers"
 	default y
 	depends on NET_L2_ETHERNET
+	depends on !NET_TEST
 
 if ETH_DRIVER
 
