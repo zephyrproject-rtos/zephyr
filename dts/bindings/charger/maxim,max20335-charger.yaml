@@ -10,6 +10,19 @@ compatible: "maxim,max20335-charger"
 properties:
   constant-charge-voltage-max-microvolt:
     required: true
+    enum:
+      - 4050000
+      - 4100000
+      - 4150000
+      - 4200000
+      - 4250000
+      - 4300000
+      - 4350000
+      - 4400000
+      - 4450000
+      - 4500000
+      - 4550000
+      - 4600000
 
   chgin-to-sys-current-limit-microamp:
     type: int
