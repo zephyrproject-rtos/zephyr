@@ -115,7 +115,7 @@ Hints:
 endforeach()
 
 if((HWMv1 AND NOT EXISTS ${BOARD_DIR}/${BOARD}_defconfig)
-   OR (HWMv2 AND NOT EXISTS ${BOARD_DIR}))
+   OR (HWMv2 AND NOT EXISTS ${BOARD_DIR}/board.yml))
   message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
                   "Trying to find new location."
   )
@@ -152,20 +152,26 @@ if(NOT BOARD_DIR)
       message("Board alias ${BOARD_ALIAS} is hiding the real board of same name")
     endif()
   endif()
+endif()
 
-  set(format_str "{NAME}\;{DIR}\;{HWM}\;")
-  set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
-  set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{IDENTIFIERS}")
+set(format_str "{NAME}\;{DIR}\;{HWM}\;")
+set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
+set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{IDENTIFIERS}")
 
-  execute_process(${list_boards_commands} --board=${BOARD}
-    --cmakeformat=${format_str}
-                  OUTPUT_VARIABLE ret_board
-                  ERROR_VARIABLE err_board
-                  RESULT_VARIABLE ret_val
-  )
-  if(ret_val)
-    message(FATAL_ERROR "Error finding board: ${BOARD}\nError message: ${err_board}")
-  endif()
+if(BOARD_DIR)
+  set(board_dir_arg "--board-dir=${BOARD_DIR}")
+endif()
+execute_process(${list_boards_commands} --board=${BOARD} ${board_dir_arg}
+  --cmakeformat=${format_str}
+                OUTPUT_VARIABLE ret_board
+                ERROR_VARIABLE err_board
+                RESULT_VARIABLE ret_val
+)
+if(ret_val)
+  message(FATAL_ERROR "Error finding board: ${BOARD}\nError message: ${err_board}")
+endif()
+
+if(NOT "${ret_board}" STREQUAL "")
   string(STRIP "${ret_board}" ret_board)
   set(single_val "NAME;DIR;HWM;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
   set(multi_val  "REVISIONS;SOCS;IDENTIFIERS")
@@ -178,9 +184,12 @@ if(NOT BOARD_DIR)
   # CMake variable: HWMv2=True, when HWMv2 is in use.
   set(HWM       ${BOARD_HWM} CACHE INTERNAL "Zephyr hardware model version")
   set(HWM${HWM} True   CACHE INTERNAL "Zephyr hardware model")
-endif()
-
-if(NOT BOARD_DIR)
+elseif(BOARD_DIR)
+  message(FATAL_ERROR "Error finding board: ${BOARD} in ${BOARD_DIR}.\n"
+          "This indicates the board has been removed, renamed, or placed at a new location.\n"
+	  "Please run a pristine build."
+  )
+else()
   message("No board named '${BOARD}' found.\n\n"
           "Please choose one of the following boards:\n"
   )
@@ -260,7 +269,6 @@ elseif(HWMv2)
             `${BOARD}` not found. Please specify a valid board.\n"
             "Valid board identifiers for ${BOARD_NAME} are:\n${BOARD_IDENTIFIERS}\n")
     endif()
-    set(BOARD_IDENTIFIER ${BOARD_IDENTIFIER} CACHE INTERNAL "Board identifier")
   endif()
 else()
   message(FATAL_ERROR "Unknown hw model (${HWM}) for board: ${BOARD}.")
