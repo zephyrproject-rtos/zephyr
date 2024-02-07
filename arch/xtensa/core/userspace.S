@@ -276,13 +276,12 @@ xtensa_userspace_enter:
 	 */
 	entry a1, 16
 
+	SPILL_ALL_WINDOWS
+
 	/* We have to switch to kernel stack before spill kernel data and
 	 * erase user stack to avoid leak from previous context.
 	 */
 	mov a1, a7 /* stack start (low address) */
-	addi a1, a1, -16
-
-	SPILL_ALL_WINDOWS
 
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
@@ -329,11 +328,8 @@ xtensa_userspace_enter:
 	l32i a8, a1, 12
 	l32i a9, a1, 8
 
-	/* stash user stack */
-	l32i a0, a1, 4
-
 	/* Go back to user stack */
-	mov a1, a0
+	l32i a1, a1, 4
 
 	movi a0, z_thread_entry
 	wsr.epc2 a0
@@ -352,6 +348,7 @@ xtensa_userspace_enter:
 
 	wsr a0, EPS2
 
+	/* Wipe out a0 (thre is no return from this function */
 	movi a0, 0
 
 	rfi 2
