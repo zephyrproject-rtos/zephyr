@@ -22,4 +22,4 @@ testing:
     - nfc
 ram: 256
 flash: 64
-vendor: arrow
+vendor: 96boards
