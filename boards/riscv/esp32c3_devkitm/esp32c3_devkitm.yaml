@@ -1,7 +1,7 @@
 identifier: esp32c3_devkitm
 name: ESP32-C3
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 supported:

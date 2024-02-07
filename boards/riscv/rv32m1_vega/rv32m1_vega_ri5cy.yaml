@@ -1,7 +1,7 @@
 identifier: rv32m1_vega_ri5cy
 name: RV32M1-VEGA (RI5CY)
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - cross-compile
   - zephyr

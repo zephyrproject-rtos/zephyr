@@ -1,7 +1,7 @@
 identifier: titanium_ti60_f225
 name: titanium_ti60_f225 FPGA development kit with Efinix Sapphire riscv SoC
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 ram: 196608

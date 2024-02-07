@@ -4,7 +4,7 @@
 identifier: gd32vf103v_eval
 name: GigaDevice GD32VF103V-EVAL
 type: mcu
-arch: riscv32
+arch: riscv
 ram: 32
 flash: 128
 toolchain:

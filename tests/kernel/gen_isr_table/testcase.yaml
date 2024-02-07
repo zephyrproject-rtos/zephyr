@@ -68,9 +68,7 @@ tests:
       - CONFIG_ARC_FIRQ_STACK=y
       - CONFIG_TEST_HW_STACK_PROTECTION=n
   arch.interrupt.gen_isr_table.riscv_direct:
-    arch_allow:
-      - riscv32
-      - riscv64
+    arch_allow: riscv
     platform_exclude:
       - m2gl025_miv
       - adp_xc7k_ae350
@@ -79,9 +77,7 @@ tests:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y
   arch.interrupt.gen_isr_table.riscv_no_direct:
     platform_exclude: m2gl025_miv
-    arch_allow:
-      - riscv32
-      - riscv64
+    arch_allow: riscv
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=n

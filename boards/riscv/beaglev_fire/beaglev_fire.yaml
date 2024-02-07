@@ -1,7 +1,7 @@
 identifier: beaglev_fire
 name: Beagleboard BeagleV-Fire
 type: mcu
-arch: riscv64
+arch: riscv
 toolchain:
   - zephyr
 ram: 3840

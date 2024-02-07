@@ -2,7 +2,7 @@ identifier: qemu_riscv64_smp
 name: QEMU Emulation for RISC-V 64-bit SMP
 type: qemu
 simulation: qemu
-arch: riscv64
+arch: riscv
 toolchain:
   - zephyr
 supported:
