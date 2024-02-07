@@ -152,7 +152,7 @@ config HWINFO_SAM0
 config HWINFO_SMARTBOND
 	bool "Smartbond device reset cause"
 	default y
-	depends on SOC_FAMILY_SMARTBOND
+	depends on SOC_FAMILY_RENESAS_SMARTBOND
 	help
 	  Enable Smartbond reset cause hwinfo driver.
 

@@ -3,11 +3,6 @@
 
 if SOC_SERIES_DA1469X
 
-source "soc/soc_legacy/arm/renesas_smartbond/da1469x/Kconfig.defconfig.da1469*"
-
-config SOC_SERIES
-	default "da1469x"
-
 config NUM_IRQS
 	default 40
 
