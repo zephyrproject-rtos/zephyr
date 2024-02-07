@@ -1,7 +1,7 @@
 identifier: neorv32
 name: NEORV32 Processor (SoC)
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - cross-compile
   - zephyr

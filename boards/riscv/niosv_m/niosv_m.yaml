@@ -1,7 +1,7 @@
 identifier: niosv_m
 name: INTEL FPGA niosv_m
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 ram: 256
