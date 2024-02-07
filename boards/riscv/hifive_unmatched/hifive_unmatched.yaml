@@ -1,7 +1,7 @@
 identifier: hifive_unmatched
 name: SiFive HiFive Unmatched
 type: mcu
-arch: riscv64
+arch: riscv
 toolchain:
   - zephyr
 ram: 3840

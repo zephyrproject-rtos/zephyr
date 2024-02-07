@@ -1,7 +1,7 @@
 identifier: hifive1
 name: SiFive HiFive1
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 ram: 16

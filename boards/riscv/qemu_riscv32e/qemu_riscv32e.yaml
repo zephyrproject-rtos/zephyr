@@ -2,7 +2,7 @@ identifier: qemu_riscv32e
 name: QEMU Emulation for RISC-V (RV32E) 32-bit
 type: qemu
 simulation: qemu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
   - xtools
