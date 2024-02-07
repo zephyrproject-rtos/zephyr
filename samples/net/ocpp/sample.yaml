@@ -1,0 +1,10 @@
+sample:
+  description: OCPP sample application
+  name: OCPP charge point
+tests:
+  sample.net.ocpp:
+    harness: net
+    depends_on: netif
+    tags:
+      - net
+      - ocpp
