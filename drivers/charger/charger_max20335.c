@@ -154,11 +154,6 @@ static int max20335_set_constant_charge_voltage(const struct device *dev,
 	uint8_t val;
 	int ret;
 
-	if (voltage_uv > config->max_vreg_uv) {
-		LOG_WRN("Exceeded max constant charge voltage!");
-		return -EINVAL;
-	}
-
 	ret = linear_range_get_index(&charger_uv_range, voltage_uv, &idx);
 	if (ret == -EINVAL) {
 		return ret;
@@ -176,11 +171,6 @@ static int max20335_set_chgin_to_sys_current_limit(const struct device *dev, uin
 {
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
-
-	if (current_ua > config->max_ichgin_to_sys_ua) {
-		LOG_WRN("Exceeded max constant charge current!");
-		return -EINVAL;
-	}
 
 	switch (current_ua) {
 	case 0:
@@ -205,23 +195,6 @@ static int max20335_set_chgin_to_sys_current_limit(const struct device *dev, uin
 				      MAX20335_REG_ILIMCNTL,
 				      MAX20335_ILIMCNTL_MASK,
 				      val);
-}
-
-static int __maybe_unused max20335_get_constant_charge_voltage(const struct device *dev,
-							       uint32_t *voltage_uv)
-{
-	const struct charger_max20335_config *const config = dev->config;
-	uint8_t val;
-	int ret;
-
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_CHG_CNTL_A, &val);
-	if (ret) {
-		return ret;
-	}
-
-	val = FIELD_GET(MAX20335_CHGCNTLA_BAT_REG_CFG_MASK, val);
-
-	return linear_range_get_value(&charger_uv_range, val, voltage_uv);
 }
 
 static int max20335_set_enabled(const struct device *dev, bool enable)
