@@ -3,6 +3,5 @@
 # Copyright (c) 2023 Schlumberger
 
 config BOARD_XMC47_RELAX_KIT
-	bool "Infineon XMC4700 Relax Kit"
-	depends on SOC_SERIES_XMC_4XXX
+	select SOC_XMC4700
 	select SOC_PART_NUMBER_F144X2048
