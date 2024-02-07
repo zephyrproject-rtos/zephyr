@@ -802,6 +802,8 @@ add_dependencies(zephyr_generated_headers
 
 set(OFFSETS_LIB offsets)
 
+cmake_path(CONVERT "${ARCH_DIR}" TO_CMAKE_PATH_LIST ARCH_DIR)
+
 set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
