@@ -6,8 +6,7 @@ menu "RISCV Options"
 
 config ARCH
 	string
-	default "riscv64" if 64BIT
-	default "riscv32"
+	default "riscv"
 
 config FLOAT_HARD
 	bool "Hard-float calling convention"
