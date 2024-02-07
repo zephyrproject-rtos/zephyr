@@ -194,17 +194,17 @@ The default configuration can be found in the defconfig and dts files:
 
 - Common:
 
-  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_common.dtsi`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_common.dtsi`
 
 - Secure target:
 
-  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_defconfig`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_defconfig`
   - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk.dts`
 
 - Non-Secure target:
 
-  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_ns_defconfig`
-  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_ns.dts`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_ns_defconfig`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_ns.dts`
 
 Zephyr board options
 ====================
@@ -214,20 +214,20 @@ for building for both Secure and Non-Secure firmware.
 
 The BOARD options are summarized below:
 
-+----------------------+-----------------------------------------------+
-|   BOARD              | Description                                   |
-+======================+===============================================+
-| stm32l562e_dk        | For building Secure (or Secure-only) firmware |
-+----------------------+-----------------------------------------------+
-| stm32l562e_dk_ns     | For building Non-Secure firmware              |
-+----------------------+-----------------------------------------------+
++------------------------------+-------------------------------------------+
+| BOARD                        | Description                               |
++==============================+===========================================+
+| stm32l562e_dk                | For building Trust Zone Disabled firmware |
++------------------------------+-------------------------------------------+
+| stm32l562e_dk/stm32l562xx/ns | For building Non-Secure firmware          |
++------------------------------+-------------------------------------------+
 
 Here are the instructions to build Zephyr with a non-secure configuration,
 using `tfm_ipc_` sample:
 
    .. code-block:: bash
 
-      $ west build -b stm32l562e_dk_ns samples/tfm_integration/tfm_ipc/
+      $ west build -b stm32l562e_dk/stm32l562xx/ns samples/tfm_integration/tfm_ipc/
 
 Once done, before flashing, you need to first run a generated script that
 will set platform option bytes config and erase platform (among others,
@@ -334,11 +334,11 @@ Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
 
 The TF-M integration sample :ref:`tfm_ipc` can be run on a ST STM32L562E-DK Discovery.
 In TF-M configuration, Zephyr is run on the non-secure domain. A non-secure image
-can be generated using ``stm32l562e_dk_ns`` as build target.
+can be generated using ``stm32l562e_dk/stm32l562xx/ns`` as build target.
 
 .. code-block:: bash
 
-   $ west build -b stm32l562e_dk_ns path/to/source/directory
+   $ west build -b stm32l562e_dk/stm32l562xx/ns path/to/source/directory
 
 Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
 is run automatically in a post-build step to make some required flash layout changes.
