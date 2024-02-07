@@ -1,0 +1,5 @@
+board:
+  name: rcar_salvator_xs
+  vendor: Renesas
+  socs:
+  - name: r8a77961
