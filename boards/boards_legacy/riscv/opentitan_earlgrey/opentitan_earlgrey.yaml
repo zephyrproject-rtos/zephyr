@@ -1,7 +1,7 @@
 identifier: opentitan_earlgrey
 name: OpenTitan Earl Grey
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 ram: 128
