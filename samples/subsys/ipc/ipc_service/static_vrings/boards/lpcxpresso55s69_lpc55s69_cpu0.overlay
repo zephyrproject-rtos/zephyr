@@ -1,0 +1,74 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+ / {
+	chosen {
+		/* Delete ipc chosen property where old IPM mailbox driver bellow is
+		 * configured.
+		 */
+		/delete-property/ zephyr,ipc;
+		/delete-property/ zephyr,ipc_shm;
+	};
+
+	/* Define memory regions for IPC
+	 * Note that shared memory must have specific MPU attributes set.
+	 */
+	sram4_ipc0: memory@20040000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20040000 DT_SIZE_K(8)>;
+		zephyr,memory-region="SRAM4_IPC0";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	sram4_ipc1: memory@20042000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20042000 DT_SIZE_K(8)>;
+		zephyr,memory-region="SRAM4_IPC1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	soc {
+		/* Delete IPM Driver node nxp,lpc-mailbox */
+		/delete-node/ mailbox@8b000;
+
+		/* Attach MBOX driver to Mailbox Unit */
+		mbox:mailbox0@5008b000 {
+			compatible = "nxp,mbox-mailbox";
+			reg = <0x5008b000 0xEC>;
+			interrupts = <31 0>;
+			rx-channels = <4>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	 };
+
+	ipc {
+		/delete-node/ ipc0;
+
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram4_ipc0>;
+			mboxes = <&mbox 0>, <&mbox 1>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram4_ipc1>;
+			mboxes = <&mbox 2>, <&mbox 3>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
+			status = "okay";
+		 };
+	 };
+ };
