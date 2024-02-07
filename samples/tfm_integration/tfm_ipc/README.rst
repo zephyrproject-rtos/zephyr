@@ -118,7 +118,7 @@ Build Zephyr with a non-secure configuration:
 
    .. code-block:: bash
 
-      $ west build -b nucleo_l552ze_q_ns samples/tfm_integration/tfm_ipc/
+      $ west build -b nucleo_l552ze_q/stm32l552xx/ns samples/tfm_integration/tfm_ipc/
 
    Example, for building non-secure configuration for STM32L562E-DK Discovery
 
