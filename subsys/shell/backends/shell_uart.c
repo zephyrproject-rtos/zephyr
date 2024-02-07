@@ -166,7 +166,8 @@ static void dtr_timer_handler(struct k_timer *timer)
 
 static void uart_tx_handle(const struct device *dev, struct shell_uart_int_driven *sh_uart)
 {
-	uint32_t len;
+	uint32_t avail;
+	uint32_t written;
 	const uint8_t *data;
 
 	if (!uart_dtr_check(dev)) {
@@ -176,16 +177,22 @@ static void uart_tx_handle(const struct device *dev, struct shell_uart_int_drive
 		return;
 	}
 
-	len = ring_buf_get_claim(&sh_uart->tx_ringbuf, (uint8_t **)&data,
-				 sh_uart->tx_ringbuf.size);
-	if (len) {
-		int err;
+	do {
+		avail = ring_buf_get_claim(&sh_uart->tx_ringbuf, (uint8_t **)&data,
+					sh_uart->tx_ringbuf.size);
+		if (avail) {
+			int err;
 
-		len = uart_fifo_fill(dev, data, len);
-		err = ring_buf_get_finish(&sh_uart->tx_ringbuf, len);
-		__ASSERT_NO_MSG(err == 0);
-		ARG_UNUSED(err);
-	} else {
+			written = uart_fifo_fill(dev, data, avail);
+			err = ring_buf_get_finish(&sh_uart->tx_ringbuf, written);
+			__ASSERT_NO_MSG(err == 0);
+			ARG_UNUSED(err);
+		} else {
+			written = 0;
+		}
+	} while (avail && written);
+
+	if (avail == 0) {
 		uart_irq_tx_disable(dev);
 		sh_uart->tx_busy = 0;
 	}
