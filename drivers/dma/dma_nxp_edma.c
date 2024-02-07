@@ -610,6 +610,7 @@ static int edma_init(const struct device *dev)
 	 */
 	data->channel_flags = ATOMIC_INIT(0);
 	data->ctx.atomic = &data->channel_flags;
+	data->ctx.dma_channels = data->hal_cfg->channels;
 
 	return 0;
 }
@@ -656,7 +657,6 @@ static struct edma_config edma_config_##inst = {				\
 										\
 static struct edma_data edma_data_##inst = {					\
 	.channels = channels_##inst,						\
-	.ctx.dma_channels = ARRAY_SIZE(channels_##inst),			\
 	.ctx.magic = DMA_MAGIC,							\
 	.hal_cfg = &EDMA_HAL_CFG_GET(inst),					\
 };										\
