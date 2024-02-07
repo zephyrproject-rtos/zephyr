@@ -80,6 +80,9 @@ Charger
 * Dropped ``constant-charge-current-max-microamp`` property in ``charger_max20335`` driver because
   it did not reflect real chip functionality.
 
+* Added enum key to ``constant-charge-voltage-max-microvolt`` property in ``maxim,max20335-charger``
+  binding to indicate invalid devicetree values at build time.
+
 Controller Area Network (CAN)
 =============================
 
