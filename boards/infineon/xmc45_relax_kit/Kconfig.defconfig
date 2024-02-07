@@ -5,9 +5,6 @@
 
 if BOARD_XMC45_RELAX_KIT
 
-config BOARD
-	default "xmc45_relax_kit"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
