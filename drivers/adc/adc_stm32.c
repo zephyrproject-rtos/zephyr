@@ -767,7 +767,9 @@ static void dma_callback(const struct device *dev, void *user_data,
 		} else if (status < 0) {
 			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 			LL_ADC_REG_StopConversion(adc);
+#endif
 			dma_stop(data->dma.dma_dev, data->dma.channel);
 			adc_context_complete(&data->ctx, status);
 		}
@@ -1024,13 +1026,23 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
+	const struct device *dev = data->dev;
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
+	/* Remove warning for some series */
+	ARG_UNUSED(adc);
 
 	data->repeat_buffer = data->buffer;
 
 #ifdef CONFIG_ADC_STM32_DMA
-	adc_stm32_dma_start(data->dev, data->buffer, data->channel_count);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	/* Make sure DMA bit of ADC register CR2 is set to 0 before starting a DMA transfer */
+	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
 #endif
-	adc_stm32_start_conversion(data->dev);
+	adc_stm32_dma_start(dev, data->buffer, data->channel_count);
+#endif
+	adc_stm32_start_conversion(dev);
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx,
