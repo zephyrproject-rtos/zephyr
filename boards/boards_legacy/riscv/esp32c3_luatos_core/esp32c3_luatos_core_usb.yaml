@@ -1,7 +1,7 @@
 identifier: esp32c3_luatos_core_usb
 name: ESP32C3 LuatOS Core USB
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 supported:

@@ -6,7 +6,6 @@ tests:
       - userspace
     arch_allow:
       - arm
-      - riscv32
-      - riscv64
+      - riscv
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0

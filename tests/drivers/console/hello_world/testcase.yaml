@@ -23,8 +23,7 @@ tests:
     arch_allow:
       - arm
       - arm64
-      - riscv32
-      - riscv64
+      - riscv
     platform_type:
       - qemu
     extra_args: CONF_FILE=prj_semihost.conf
