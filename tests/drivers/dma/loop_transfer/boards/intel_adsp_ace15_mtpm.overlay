@@ -5,4 +5,4 @@
  * Author: Tomasz Leman <tomasz.m.leman@intel.com>
  */
 
-test_dma0: &lpgpdma0 { };
+tst_dma0: &lpgpdma0 { };
