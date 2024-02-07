@@ -1,4 +1,4 @@
-identifier: stm32l562e_dk_ns
+identifier: stm32l562e_dk/stm32l562xx/ns
 name: ST STM32L562E-DK Discovery non secure
 type: mcu
 arch: arm
