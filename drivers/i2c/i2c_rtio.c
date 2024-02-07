@@ -4,18 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/rtio/rtio.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/rtio/rtio_spsc.h>
+#include <zephyr/drivers/i2c/rtio.h>
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/rtio/rtio_mpsc.h>
 #include <zephyr/sys/__assert.h>
+
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(i2c_rtio);
 
 const struct rtio_iodev_api i2c_iodev_api = {
 	.submit = i2c_iodev_submit,
 };
 
-struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
-			       struct rtio_iodev *iodev,
-			       const struct i2c_msg *msgs,
+struct rtio_sqe *i2c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const struct i2c_msg *msgs,
 			       uint8_t num_msgs)
 {
 	__ASSERT(num_msgs > 0, "Expecting at least one message to copy");
@@ -31,14 +34,15 @@ struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
 		}
 
 		if (msgs[i].flags & I2C_MSG_READ) {
-			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-					   msgs[i].buf, msgs[i].len, NULL);
+			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, msgs[i].buf, msgs[i].len,
+					   NULL);
 		} else {
-			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-					    msgs[i].buf, msgs[i].len, NULL);
+			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM, msgs[i].buf, msgs[i].len,
+					    NULL);
 		}
 		sqe->flags |= RTIO_SQE_TRANSACTION;
-		sqe->iodev_flags = ((msgs[i].flags & I2C_MSG_STOP) ? RTIO_IODEV_I2C_STOP : 0) |
+		sqe->iodev_flags =
+			((msgs[i].flags & I2C_MSG_STOP) ? RTIO_IODEV_I2C_STOP : 0) |
 			((msgs[i].flags & I2C_MSG_RESTART) ? RTIO_IODEV_I2C_RESTART : 0) |
 			((msgs[i].flags & I2C_MSG_ADDR_10_BITS) ? RTIO_IODEV_I2C_10_BITS : 0);
 	}
@@ -115,7 +119,7 @@ bool i2c_rtio_complete(struct i2c_rtio *ctx, int status)
 }
 bool i2c_rtio_submit(struct i2c_rtio *ctx, struct rtio_iodev_sqe *iodev_sqe)
 {
-	rtio_mpsc_push(&ctx->iodev.iodev_sq, &iodev_sqe->q);
+	rtio_mpsc_push(&ctx->io_q, &iodev_sqe->q);
 	return i2c_rtio_next(ctx, false);
 }
 
