@@ -148,3 +148,7 @@
 		t-exit-dpd = <35000>;
 	};
 };
+
+&adc {
+	status = "okay";
+};
