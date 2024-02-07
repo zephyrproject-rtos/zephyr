@@ -472,7 +472,7 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	return TC_PASS;
 }
 
-#define DMA_NAME(i, _)	test_dma ## i
+#define DMA_NAME(i, _)	tst_dma ## i
 #define DMA_LIST	LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
 
 #define TEST_LOOP(dma_name)                                                                        \
