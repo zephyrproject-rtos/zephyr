@@ -31,8 +31,15 @@ if(HWMv2)
   # (read: multi-core and multi-arch SoC).
   set(ARCH ${CONFIG_ARCH})
   string(TOUPPER "${ARCH}" arch_upper)
-  cmake_path(GET ARCH_V2_${arch_upper}_DIR PARENT_PATH ARCH_DIR)
 
+  if(NOT ARCH)
+    message(FATAL_ERROR "ARCH not defined. Check that BOARD=${BOARD}, is selecting "
+            "an appropriate SoC in Kconfig, SoC=${CONFIG_SOC}, and that the SoC "
+            "is selecting the correct architecture."
+    )
+  endif()
+
+  cmake_path(GET ARCH_V2_${arch_upper}_DIR PARENT_PATH ARCH_DIR)
   if(NOT ARCH_DIR)
     message(FATAL_ERROR "Could not find ARCH=${ARCH} for BOARD=${BOARD}, \
 please check your installation. ARCH roots searched: \n\
