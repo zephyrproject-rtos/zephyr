@@ -302,6 +302,7 @@ def test_pytest__generate_parameters_for_hardware(pty_value, hardware_value):
     hardware.post_script = 'post_script'
 
     pytest_test = Pytest()
+    pytest_test.configure(instance)
 
     #Act
     if hardware_value == 0:
