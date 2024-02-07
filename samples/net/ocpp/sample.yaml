@@ -1,0 +1,16 @@
+sample:
+  description: OCPP sample application
+  name: OCPP charge point
+common:
+  harness: net
+  tags:
+    - net
+    - ocpp
+
+tests:
+  sample.net.ocpp:
+    platform_allow:
+      - stm32f769i_disco
+    tags:
+      - net
+      - ocpp
