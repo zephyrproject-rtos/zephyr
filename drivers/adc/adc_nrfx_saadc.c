@@ -279,9 +279,18 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	ARG_UNUSED(ctx);
 
 	if (!repeat) {
-		nrf_saadc_value_t *buffer =
-			(uint8_t *)nrf_saadc_buffer_pointer_get(NRF_SAADC) +
-				samples_to_bytes(&ctx->sequence, nrfy_saadc_amount_get(NRF_SAADC));
+		nrf_saadc_value_t *buffer;
+
+		#if (NRF_SAADC_8BIT_SAMPLE_WIDTH == 8)
+		if (nrfy_saadc_resolution_get(NRF_SAADC) == NRF_SAADC_RESOLUTION_8BIT) {
+			buffer = (uint8_t *)nrfy_saadc_buffer_pointer_get(NRF_SAADC) +
+				 nrfy_saadc_amount_get(NRF_SAADC);
+		} else
+		#endif
+		{
+			buffer = (uint16_t *)nrfy_saadc_buffer_pointer_get(NRF_SAADC) +
+				 nrfy_saadc_amount_get(NRF_SAADC);
+		}
 
 		nrfy_saadc_buffer_pointer_set(NRF_SAADC, buffer);
 	}
