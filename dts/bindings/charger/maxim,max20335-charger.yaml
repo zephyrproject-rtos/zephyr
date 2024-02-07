@@ -8,11 +8,20 @@ include: battery.yaml
 compatible: "maxim,max20335-charger"
 
 properties:
-  constant-charge-current-max-microamp:
-    required: true
-
   constant-charge-voltage-max-microvolt:
     required: true
+
+  chgin-to-sys-current-limit-microamp:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 100000
+      - 500000
+      - 1000000
+    description: |
+      CHGIN to SYS path current limitter configuration.
+      Refer to ILimCntl register description for details.
 
   int-gpios:
     type: phandle-array

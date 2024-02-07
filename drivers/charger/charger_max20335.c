@@ -43,8 +43,8 @@ LOG_MODULE_REGISTER(max20335_charger);
 struct charger_max20335_config {
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec int_gpio;
-	uint32_t max_ichg_ua;
 	uint32_t max_vreg_uv;
+	uint32_t max_ichgin_to_sys_ua;
 };
 
 struct charger_max20335_data {
@@ -57,7 +57,6 @@ struct charger_max20335_data {
 	charger_status_notifier_t charger_status_notifier;
 	charger_online_notifier_t charger_online_notifier;
 	bool charger_enabled;
-	uint32_t charge_current_ua;
 	uint32_t charge_voltage_uv;
 };
 
@@ -173,13 +172,12 @@ static int max20335_set_constant_charge_voltage(const struct device *dev,
 				      val);
 }
 
-static int max20335_set_constant_charge_current(const struct device *dev,
-						uint32_t current_ua)
+static int max20335_set_chgin_to_sys_current_limit(const struct device *dev, uint32_t current_ua)
 {
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
 
-	if (current_ua > config->max_ichg_ua) {
+	if (current_ua > config->max_ichgin_to_sys_ua) {
 		LOG_WRN("Exceeded max constant charge current!");
 		return -EINVAL;
 	}
@@ -207,38 +205,6 @@ static int max20335_set_constant_charge_current(const struct device *dev,
 				      MAX20335_REG_ILIMCNTL,
 				      MAX20335_ILIMCNTL_MASK,
 				      val);
-}
-
-static int __maybe_unused max20335_get_constant_charge_current(const struct device *dev,
-							       uint32_t *current_ua)
-{
-	const struct charger_max20335_config *const config = dev->config;
-	uint8_t val;
-	int ret;
-
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_ILIMCNTL, &val);
-	if (ret) {
-		return ret;
-	}
-
-	switch (val) {
-	case 0x00:
-		*current_ua = 0;
-		break;
-	case 0x01:
-		*current_ua = 100000;
-		break;
-	case 0x02:
-		*current_ua = 500000;
-		break;
-	case 0x03:
-		*current_ua = 1000000;
-		break;
-	default:
-		return -ENOTSUP;
-	};
-
-	return 0;
 }
 
 static int __maybe_unused max20335_get_constant_charge_voltage(const struct device *dev,
@@ -317,7 +283,6 @@ static int max20335_init_properties(const struct device *dev)
 	const struct charger_max20335_config *config = dev->config;
 	int ret;
 
-	data->charge_current_ua = config->max_ichg_ua;
 	data->charge_voltage_uv = config->max_vreg_uv;
 	data->charger_enabled = true;
 
@@ -339,11 +304,12 @@ static int max20335_init_properties(const struct device *dev)
 static int max20335_update_properties(const struct device *dev)
 {
 	struct charger_max20335_data *data = dev->data;
+	const struct charger_max20335_config *config = dev->config;
 	int ret;
 
-	ret = max20335_set_constant_charge_current(dev, data->charge_current_ua);
+	ret = max20335_set_chgin_to_sys_current_limit(dev, config->max_ichgin_to_sys_ua);
 	if (ret < 0) {
-		LOG_ERR("Failed to set charge current: %d", ret);
+		LOG_ERR("Failed to set chgin-to-sys current limit: %d", ret);
 		return ret;
 	}
 
@@ -374,9 +340,6 @@ static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 	case CHARGER_PROP_STATUS:
 		val->status = data->charger_status;
 		return 0;
-	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
-		val->const_charge_current_ua = data->charge_current_ua;
-		return 0;
 	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
 		val->const_charge_voltage_uv = data->charge_voltage_uv;
 		return 0;
@@ -392,13 +355,6 @@ static int max20335_set_prop(const struct device *dev, charger_prop_t prop,
 	int ret;
 
 	switch (prop) {
-	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
-		ret = max20335_set_constant_charge_current(dev, val->const_charge_current_ua);
-		if (ret == 0) {
-			data->charge_current_ua = val->const_charge_current_ua;
-		}
-
-		return ret;
 	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
 		ret =  max20335_set_constant_charge_voltage(dev, val->const_charge_voltage_uv);
 		if (ret == 0) {
@@ -580,8 +536,8 @@ static const struct charger_driver_api max20335_driver_api = {
 	static const struct charger_max20335_config charger_max20335_config_##inst = {		\
 		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),					\
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
-		.max_ichg_ua = DT_INST_PROP(inst, constant_charge_current_max_microamp),	\
 		.max_vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),	\
+		.max_ichgin_to_sys_ua = DT_INST_PROP(inst, chgin_to_sys_current_limit_microamp),\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\
