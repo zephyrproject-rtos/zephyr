@@ -100,9 +100,6 @@ struct nrf5_802154_data {
 	/* The TX power in dBm. */
 	int8_t txpwr;
 
-	/* The radio channel. */
-	uint8_t channel;
-
 #if defined(CONFIG_NRF_802154_SER_HOST) && defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	/* The last configured value of CSL period in units of 10 symbols. */
 	uint32_t csl_period;
