@@ -3165,6 +3165,10 @@ uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
 
 	net_if_lock(iface);
 
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv4) {
 		goto out;
 	}
@@ -3186,6 +3190,10 @@ void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_lock(iface);
 
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv4) {
 		goto out;
 	}
@@ -3205,6 +3213,10 @@ uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface)
 	int ret = 0;
 
 	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv4) {
 		goto out;
@@ -3226,6 +3238,10 @@ void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
 {
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv4) {
 		goto out;
