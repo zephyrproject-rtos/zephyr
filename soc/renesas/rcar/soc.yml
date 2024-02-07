@@ -1,0 +1,13 @@
+family:
+  - name: renesas_rcar
+    series:
+      - name: rcar_gen3
+        socs:
+          - name: r8a77951
+            cpuclusters:
+              - name: r7
+              - name: a57
+          - name: r8a77961
+      - name: rcar_gen4
+        socs:
+          - name: r8a779f0
