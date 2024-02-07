@@ -13,3 +13,7 @@ supported:
 ram: 2048
 flash: 64
 vendor: arm
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

@@ -16,3 +16,7 @@ supported:
   - watchdog
   - counter
 vendor: actinius
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

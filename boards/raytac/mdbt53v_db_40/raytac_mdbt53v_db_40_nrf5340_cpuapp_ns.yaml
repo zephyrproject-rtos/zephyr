@@ -15,3 +15,7 @@ supported:
   - watchdog
   - netif:openthread
   - gpio
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

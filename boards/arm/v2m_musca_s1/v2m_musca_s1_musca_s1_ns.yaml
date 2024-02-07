@@ -11,3 +11,7 @@ supported:
 ram: 256
 flash: 511
 vendor: arm
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

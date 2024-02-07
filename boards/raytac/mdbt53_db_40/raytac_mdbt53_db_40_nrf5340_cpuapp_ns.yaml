@@ -20,3 +20,7 @@ supported:
   - usb_device
   - netif:openthread
   - gpio
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

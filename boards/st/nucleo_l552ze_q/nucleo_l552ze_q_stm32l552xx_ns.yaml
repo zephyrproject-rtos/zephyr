@@ -12,3 +12,7 @@ supported:
 ram: 192
 flash: 328
 vendor: st
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

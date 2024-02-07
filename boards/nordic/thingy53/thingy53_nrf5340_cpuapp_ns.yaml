@@ -18,3 +18,7 @@ supported:
   - usb_device
   - netif:openthread
 vendor: nordic
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

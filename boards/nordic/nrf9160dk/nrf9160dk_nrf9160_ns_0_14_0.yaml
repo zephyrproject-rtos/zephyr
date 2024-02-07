@@ -20,3 +20,7 @@ supported:
   - netif:modem
   - gpio
 vendor: nordic
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

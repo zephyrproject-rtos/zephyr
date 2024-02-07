@@ -14,3 +14,7 @@ supported:
   - pwm
   - watchdog
   - netif:modem
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

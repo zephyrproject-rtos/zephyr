@@ -24,3 +24,7 @@ supported:
   - spi
   - watchdog
 vendor: nxp
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

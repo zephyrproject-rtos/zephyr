@@ -19,3 +19,7 @@ supported:
   - watchdog
   - netif:modem
 vendor: nordic
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

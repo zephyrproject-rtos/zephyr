@@ -19,3 +19,7 @@ supported:
   - gpio
   - spi
 vendor: nordic
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

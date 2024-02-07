@@ -22,3 +22,7 @@ supported:
   - arduino_i2c
   - arduino_spi
 vendor: actinius
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

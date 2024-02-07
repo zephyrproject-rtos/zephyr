@@ -21,3 +21,7 @@ supported:
   - arduino_serial
   - arduino_spi
 vendor: actinius
+testing:
+  ignore_tags:
+    - kernel
+    - userspace

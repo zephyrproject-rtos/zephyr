@@ -13,3 +13,7 @@ supported:
   - i2c
   - pwm
   - watchdog
+testing:
+  ignore_tags:
+    - kernel
+    - userspace
