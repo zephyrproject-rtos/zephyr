@@ -476,6 +476,8 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 		goto out;
 	}
 
+	LOG_INF("%s: channel %d start", dev->name, channel);
+
 	struct dw_lli *lli = chan_data->lli_current;
 
 #ifdef CONFIG_DMA_DW_HW_LLI
@@ -576,7 +578,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	int i;
 #endif
 
-	LOG_DBG("%s: channel %d stop", dev->name, channel);
+	LOG_INF("%s: channel %d stop", dev->name, channel);
 
 	/* Validate the channel state */
 	if (chan_data->state != DW_DMA_ACTIVE &&
