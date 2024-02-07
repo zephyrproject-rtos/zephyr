@@ -23,9 +23,9 @@ The following are some of the boards that can be used with TF-M:
    * - :ref:`b_u585i_iot02a_board`
      - ``b_u585i_iot02a_ns``
    * - :ref:`nucleo_l552ze_q_board`
-     - ``nucleo_l552ze_q_ns``
+     - ``nucleo_l552ze_q/stm32l552xx/ns``
    * - :ref:`stm32l562e_dk_board`
-     - ``stm32l562e_dk_ns``
+     - ``stm32l562e_dk/stm32l562xx/ns``
    * - :ref:`v2m_musca_b1_board`
      - ``v2m_musca_b1_ns``
    * - :ref:`v2m_musca_s1_board`

@@ -57,7 +57,7 @@ tests:
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32l562e_dk
-      - stm32l562e_dk_ns
+      - stm32l562e_dk/stm32l562xx/ns
     integration_platforms:
       - nucleo_f103rb
     filter: (dt_compat_enabled("st,stm32-flash-controller") or
