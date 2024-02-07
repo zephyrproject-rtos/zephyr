@@ -5,9 +5,6 @@
 
 if SOC_XMC4700
 
-config SOC
-	default "XMC4700"
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 144000000
 

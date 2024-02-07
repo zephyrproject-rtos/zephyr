@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+config SOC_FAMILY_INFINEON_XMC
+	bool
+
+config SOC_FAMILY
+	default "infineon_xmc" if SOC_FAMILY_INFINEON_XMC
+
+rsource "*/Kconfig.soc"
