@@ -1,4 +1,4 @@
-identifier: rcar_h3ulcb_ca57
+identifier: rcar_h3ulcb/r8a77951/a57
 name: Renesas H3ULCB based on r8a77951
 type: mcu
 arch: arm64
