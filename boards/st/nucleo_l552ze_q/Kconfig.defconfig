@@ -3,10 +3,7 @@
 # Copyright (c) 2020 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NUCLEO_L552ZE_Q
-
-config BOARD
-	default "nucleo_l552ze_q"
+if BOARD_NUCLEO_L552ZE_Q_STM32L552XX_NS
 
 if TRUSTED_EXECUTION_NONSECURE
 
@@ -16,4 +13,4 @@ config USE_DT_CODE_PARTITION
 
 endif # TRUSTED_EXECUTION_NONSECURE
 
-endif # BOARD_NUCLEO_L552ZE_Q
+endif # BOARD_NUCLEO_L552ZE_Q_STM32L552XX_NS
