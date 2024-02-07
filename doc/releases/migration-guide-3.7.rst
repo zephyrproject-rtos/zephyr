@@ -74,6 +74,12 @@ Analog-to-Digital Converter (ADC)
 Bluetooth HCI
 =============
 
+Charger
+=======
+
+* Dropped ``constant-charge-current-max-microamp`` property in ``charger_max20335`` driver because
+  it did not reflect real chip functionality.
+
 Controller Area Network (CAN)
 =============================
 
