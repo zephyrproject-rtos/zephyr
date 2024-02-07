@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_REG_ILIMCNTL 0x09
 #define MAX20335_REG_CHG_CNTL_A 0x0A
 #define MAX20335_CHGCNTLA_BAT_REG_CFG_MASK GENMASK(4, 1)
-#define MAX20335_ILIMCNTL_MASK GENMASK(1, 0)
+#define MAX20335_ILIMCNTL_ILIMCNTL_MASK GENMASK(1, 0)
 #define MAX20335_STATUS_A_CHG_STAT_MASK GENMASK(2, 0)
 #define MAX20335_STATUS_B_USB_OK_MASK BIT(3)
 #define MAX20335_CHRG_EN_MASK BIT(0)
@@ -189,11 +189,11 @@ static int max20335_set_chgin_to_sys_current_limit(const struct device *dev, uin
 		return -ENOTSUP;
 	};
 
-	val = FIELD_PREP(MAX20335_ILIMCNTL_MASK, val);
+	val = FIELD_PREP(MAX20335_ILIMCNTL_ILIMCNTL_MASK, val);
 
 	return i2c_reg_update_byte_dt(&config->bus,
 				      MAX20335_REG_ILIMCNTL,
-				      MAX20335_ILIMCNTL_MASK,
+				      MAX20335_ILIMCNTL_ILIMCNTL_MASK,
 				      val);
 }
 
