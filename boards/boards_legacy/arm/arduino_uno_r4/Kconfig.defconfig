@@ -1,9 +1,0 @@
-# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_ARDUINO_UNO_R4_MINIMA
-
-config BOARD
-	default "arduino_uno_r4_minima" if BOARD_ARDUINO_UNO_R4_MINIMA
-
-endif # BOARD_ARDUINO_UNO_R4_MINIMA
