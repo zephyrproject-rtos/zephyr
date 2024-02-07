@@ -16,14 +16,36 @@
 
 	aliases {
 		led0 = &led_red;
+		led1 = &led_green;
+		sw0 = &key_1;
+		sw1 = &key_2;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		led_red: led_0 {
-			gpios = <&gpio0 20 0>;
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 			label = "LED Red";
+		};
+
+		led_green: led_1 {
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+			label = "LED Green";
+		};
+	};
+	/* Short TL_Key1 (J20 pin 11) to ground (J20 pin 25-35) */
+	keys {
+		compatible = "gpio-keys";
+
+		key_1: button_1 {
+			label = "User KEY1";
+			gpios = <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+
+		key_2: button_2 {
+			label = "User KEY2";
+			gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 

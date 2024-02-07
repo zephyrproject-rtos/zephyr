@@ -6,6 +6,16 @@
 config GPIO_TELINK_W91
 	bool "Telink W91-series GPIO driver"
 	default y
-	depends on DT_HAS_TELINK_W91_GPIO_ENABLED
+	depends on DT_HAS_TELINK_W91_GPIO_ENABLED && TELINK_W91_IPC_DISPATCHER
 	help
 		Enables the W91-series GPIO driver.
+
+if GPIO_TELINK_W91
+
+config GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 10
+	help
+		This option sets Telink IPC dispatcher response driver timeout in mS.
+
+endif # GPIO_TELINK_W91

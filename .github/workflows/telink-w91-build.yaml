@@ -43,10 +43,16 @@ jobs:
         cd ..
         west build -b tlsr9118bdk40d             -d build_blinky_w91                    zephyr/samples/basic/blinky
 
+    - name: Build W91 basic/button
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_button_w91                    zephyr/samples/basic/button
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
         cp ../build_blinky_w91/zephyr/zephyr.bin                    telink_build_artifacts/w91_blinky.bin
+        cp ../build_button_w91/zephyr/zephyr.bin                    telink_build_artifacts/w91_button.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
