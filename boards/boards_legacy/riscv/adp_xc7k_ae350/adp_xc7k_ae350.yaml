@@ -1,7 +1,7 @@
 identifier: adp_xc7k_ae350
 name: Andes ADP-XC7K AE350
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
   - cross-compile
