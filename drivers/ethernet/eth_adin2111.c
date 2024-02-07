@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(eth_adin2111, CONFIG_ETHERNET_LOG_LEVEL);
 #include "phy/phy_adin2111_priv.h"
 #include "eth_adin2111_priv.h"
 
+#define DT_DRV_COMPAT adi_adin2111
+
 /* SPI Communication check retry delay */
 #define ADIN2111_DEV_AWAIT_DELAY_POLL_US	100U
 /* Number of retries SPI Communication check */
@@ -46,6 +48,10 @@ LOG_MODULE_REGISTER(eth_adin2111, CONFIG_ETHERNET_LOG_LEVEL);
 #define ADIN2111_UNICAST_P1_ADDR_SLOT		2U
 /* MAC Address Rule and DA Filter Port 2 slot/idx */
 #define ADIN2111_UNICAST_P2_ADDR_SLOT		3U
+/* As per RM rev. A table 3, t3 >= 50ms, delay for SPI interface to be ready */
+#define ADIN2111_SPI_ACTIVE_DELAY_MS		50U
+/* As per RM rev. A page 20: approximately 10 ms (maximum) for internal logic to be ready */
+#define ADIN2111_SW_RESET_DELAY_MS		10U
 
 int eth_adin2111_lock(const struct device *dev, k_timeout_t timeout)
 {
@@ -61,43 +67,288 @@ int eth_adin2111_unlock(const struct device *dev)
 	return k_mutex_unlock(&ctx->lock);
 }
 
-int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg,
-			   const uint32_t val)
+static inline bool eth_adin2111_oa_get_parity(const uint32_t x)
 {
-	const struct adin2111_config *cfg = dev->config;
-	size_t header_size = ADIN2111_WRITE_HEADER_SIZE;
-	size_t data_size = sizeof(uint32_t);
-#if CONFIG_ETH_ADIN2111_SPI_CFG0
-	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE_CRC] = { 0 };
-#else
-	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE] = { 0 };
-#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
+	uint32_t y;
 
-	/* spi header */
-	*(uint16_t *)buf = htons((ADIN2111_WRITE_TXN_CTRL | reg));
-#if CONFIG_ETH_ADIN2111_SPI_CFG0
-	buf[2] = crc8_ccitt(0, buf, header_size);
-	++header_size;
-#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
+	y = x ^ (x >> 1);
+	y = y ^ (y >> 2);
+	y = y ^ (y >> 4);
+	y = y ^ (y >> 8);
+	y = y ^ (y >> 16);
 
-	/* reg */
-	*(uint32_t *)(buf + header_size) = htonl(val);
-#if CONFIG_ETH_ADIN2111_SPI_CFG0
-	buf[header_size + data_size] = crc8_ccitt(0, &buf[header_size], data_size);
-	++data_size;
-#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
-
-	const struct spi_buf spi_tx_buf = {
-		.buf = buf,
-		.len = header_size + data_size
-	};
-	const struct spi_buf_set tx = { .buffers = &spi_tx_buf, .count = 1U };
-
-	return spi_write_dt(&cfg->spi, &tx);
+	return !(y & 1);
 }
 
-int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
-			  uint32_t *val)
+int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t *buf_tx, int len)
+{
+	const struct adin2111_config *cfg = dev->config;
+
+	struct spi_buf tx_buf[1];
+	struct spi_buf rx_buf[1];
+	struct spi_buf_set tx;
+	struct spi_buf_set rx;
+	int ret;
+
+	tx_buf[0].buf = buf_tx;
+	tx_buf[0].len = len;
+	rx_buf[0].buf = buf_rx;
+	rx_buf[0].len = len;
+
+	rx.buffers = rx_buf;
+	rx.count = 1;
+	tx.buffers = tx_buf;
+	tx.count = 1;
+
+	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
+	if (ret < 0) {
+		LOG_ERR("ERRR dma!\n");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg,
+				    uint32_t *val)
+{
+	struct adin2111_data *ctx = dev->data;
+	uint32_t pval;
+	uint32_t *hdr = (uint32_t *)ctx->oa_tx_buf;
+	int len;
+	int ret;
+
+	*hdr = reg << 8;
+	if (reg >= 0x30) {
+		*hdr |= ADIN2111_OA_CTL_MMS;
+	}
+
+	*hdr |= eth_adin2111_oa_get_parity(*hdr);
+	*hdr = sys_cpu_to_be32(*hdr);
+
+	len = (ctx->oa_prot) ? ADIN2111_OA_CTL_LEN_PROT : ADIN2111_OA_CTL_LEN;
+
+	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*val = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[8]);
+
+	/* In protected mode read data is followed by its compliment value */
+	if (ctx->oa_prot) {
+		pval = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[12]);
+		if (*val != ~pval) {
+			LOG_ERR("OA protected mode rx error !");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t reg,
+				     uint32_t val)
+{
+	struct adin2111_data *ctx = dev->data;
+	uint32_t pval;
+	uint32_t *hdr = (uint32_t *)ctx->oa_tx_buf;
+	int len;
+	int ret;
+
+	*hdr = reg << 8 | ADIN2111_OA_CTL_WNR;
+	if (reg >= 0x30) {
+		*hdr |= ADIN2111_OA_CTL_MMS;
+	}
+
+	*hdr |= eth_adin2111_oa_get_parity(*hdr);
+	*hdr = sys_cpu_to_be32(*hdr);
+
+	len = (ctx->oa_prot) ? ADIN2111_OA_CTL_LEN_PROT : ADIN2111_OA_CTL_LEN;
+
+	*(uint32_t *)&ctx->oa_tx_buf[4] = sys_cpu_to_be32(val);
+	if (ctx->oa_prot) {
+		*(uint32_t *)&ctx->oa_tx_buf[8] = sys_cpu_to_be32(~val);
+	}
+
+	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (ctx->oa_prot) {
+		pval = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[12]);
+		if (val != ~pval) {
+			LOG_ERR("OA protected mode tx error !");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int eth_adin2111_oa_data_read(const struct device *dev, int port)
+{
+	struct adin2111_data *ctx = dev->data;
+	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port]->data)->iface;
+	struct net_pkt *pkt;
+	uint32_t hdr, ftr;
+	int i, len, rx_pos, ret, rca, swo;
+
+	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &rca);
+	if (ret < 0) {
+		LOG_ERR("can't read BUFSTS");
+		return -EIO;
+	}
+
+	rca &= ADIN2111_BUFSTS_RCA_MASK;
+
+	/* Preare all tx headers */
+	for (i = 0, len = 0; i < rca; ++i) {
+		hdr = ADIN2111_OA_DATA_HDR_DNC;
+		hdr |= eth_adin2111_oa_get_parity(hdr);
+
+		*(uint32_t *)&ctx->oa_tx_buf[len] = sys_cpu_to_be32(hdr);
+
+		len += sizeof(uint32_t) + ctx->oa_cps;
+	}
+
+	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, len);
+	if (ret < 0) {
+		LOG_ERR("SPI xfer failed");
+		return ret;
+	}
+
+	for (i = 0, rx_pos = 0; i < rca; ++i) {
+
+		ftr = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[rx_pos + ctx->oa_cps]);
+
+		if (eth_adin2111_oa_get_parity(ftr)) {
+			LOG_ERR("OA RX: Footer parity error !");
+			return -EIO;
+		}
+		if (!(ftr & ADIN2111_OA_DATA_FTR_SYNC)) {
+			LOG_ERR("OA RX: Configuration not in sync !");
+			return -EIO;
+		}
+		if (!(ftr & ADIN2111_OA_DATA_FTR_DV)) {
+			LOG_DBG("OA RX: Data chunk not valid, skip !");
+			goto update_pos;
+		}
+		if (ftr & ADIN2111_OA_DATA_FTR_SV) {
+			swo = (ftr & ADIN2111_OA_DATA_FTR_SWO_MSK) >> ADIN2111_OA_DATA_FTR_SWO;
+			if (swo != 0) {
+				LOG_ERR("OA RX: Misalignbed start of frame !");
+				return -EIO;
+			}
+			/* Reset store cursor */
+			ctx->scur = 0;
+		}
+
+		len = (ftr & ADIN2111_OA_DATA_FTR_EV) ?
+		       ((ftr & ADIN2111_OA_DATA_FTR_EBO_MSK) >> ADIN2111_OA_DATA_FTR_EBO) + 1 :
+		       ctx->oa_cps;
+		memcpy(&ctx->buf[ctx->scur], &ctx->oa_rx_buf[rx_pos], len);
+		ctx->scur += len;
+
+		if (ftr & ADIN2111_OA_DATA_FTR_EV) {
+			pkt = net_pkt_rx_alloc_with_buffer(iface, CONFIG_ETH_ADIN2111_BUFFER_SIZE,
+							   AF_UNSPEC, 0,
+							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
+			if (!pkt) {
+				LOG_ERR("OA RX: cannot allcate packet space, skipping.");
+				return -EIO;
+			}
+			/* Skipping CRC32 */
+			ret = net_pkt_write(pkt, ctx->buf, ctx->scur - sizeof(uint32_t));
+			if (ret < 0) {
+				net_pkt_unref(pkt);
+				LOG_ERR("Failed to write pkt, scur %d, err %d", ctx->scur, ret);
+				return ret;
+			}
+			ret = net_recv_data(iface, pkt);
+			if (ret < 0) {
+				net_pkt_unref(pkt);
+				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
+					port, ret);
+				return ret;
+			}
+		}
+update_pos:
+		rx_pos += ctx->oa_cps + sizeof(uint32_t);
+	}
+
+	return ret;
+}
+
+/*
+ * Setting up for a single dma transfer.
+ */
+static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *pkt, int port)
+{
+	struct adin2111_data *ctx = dev->data;
+	uint16_t clen, len = net_pkt_get_len(pkt);
+	uint32_t hdr;
+	uint8_t chunks, i;
+	int ret, txc, cur;
+
+	chunks = len / ctx->oa_cps;
+
+	if (len % ctx->oa_cps) {
+		chunks++;
+	}
+
+	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &txc);
+	if (ret < 0) {
+		LOG_ERR("Cannot read txc");
+		return -EIO;
+	}
+
+	txc = (txc & ADIN2111_BUFSTS_TXC_MASK) >> ADIN2111_BUFSTS_TXC;
+	if (txc < chunks) {
+		return -EIO;
+	}
+
+	/* Prepare for single dma transfer */
+	for (i = 1, cur = 0; i <= chunks; i++) {
+		hdr = ADIN2111_OA_DATA_HDR_DNC | ADIN2111_OA_DATA_HDR_DV |
+			ADIN2111_OA_DATA_HDR_NORX;
+		hdr |= (!!port << ADIN2111_OA_DATA_HDR_VS);
+		if (i == 1) {
+			hdr |= ADIN2111_OA_DATA_HDR_SV;
+		}
+		if (i == chunks) {
+			hdr |= ADIN2111_OA_DATA_HDR_EV;
+			hdr |= (ctx->oa_cps - 1) << ADIN2111_OA_DATA_HDR_EBO;
+		}
+
+		hdr |= eth_adin2111_oa_get_parity(hdr);
+
+		*(uint32_t *)&ctx->oa_tx_buf[cur] = sys_cpu_to_be32(hdr);
+		cur += sizeof(uint32_t);
+
+		clen = len > ctx->oa_cps ? ctx->oa_cps : len;
+		ret = net_pkt_read(pkt, &ctx->oa_tx_buf[cur], clen);
+		if (ret < 0) {
+			LOG_ERR("Cannot read from tx packet");
+			return ret;
+		}
+		cur += ctx->oa_cps;
+		len -= clen;
+	}
+
+	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, cur);
+	if (ret < 0) {
+		LOG_ERR("Error on SPI xfer");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int eth_adin2111_reg_read_generic(const struct device *dev,
+					 const uint16_t reg,
+					 uint32_t *val)
 {
 	const struct adin2111_config *cfg = dev->config;
 	size_t header_len = ADIN2111_READ_HEADER_SIZE;
@@ -147,6 +398,72 @@ int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
 	*val = ntohl((*(uint32_t *)(&buf[header_len])));
 
 	return ret;
+}
+
+static int eth_adin2111_reg_write_generic(const struct device *dev,
+					  const uint16_t reg,
+					  const uint32_t val)
+{
+	const struct adin2111_config *cfg = dev->config;
+	size_t header_size = ADIN2111_WRITE_HEADER_SIZE;
+	size_t data_size = sizeof(uint32_t);
+#if CONFIG_ETH_ADIN2111_SPI_CFG0
+	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE_CRC] = { 0 };
+#else
+	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE] = { 0 };
+#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
+
+	/* spi header */
+	*(uint16_t *)buf = htons((ADIN2111_WRITE_TXN_CTRL | reg));
+	#if CONFIG_ETH_ADIN2111_SPI_CFG0
+	buf[2] = crc8_ccitt(0, buf, header_size);
+	++header_size;
+#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
+
+	/* reg */
+	*(uint32_t *)(buf + header_size) = htonl(val);
+#if CONFIG_ETH_ADIN2111_SPI_CFG0
+	buf[header_size + data_size] = crc8_ccitt(0, &buf[header_size], data_size);
+	++data_size;
+#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
+
+	const struct spi_buf spi_tx_buf = {
+		.buf = buf,
+		.len = header_size + data_size
+	};
+	const struct spi_buf_set tx = { .buffers = &spi_tx_buf, .count = 1U };
+
+	return spi_write_dt(&cfg->spi, &tx);
+}
+
+int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
+			  uint32_t *val)
+{
+	struct adin2111_data *ctx = dev->data;
+	int rval;
+
+	if (ctx->oa) {
+		rval = eth_adin2111_reg_read_oa(dev, reg, val);
+	} else {
+		rval = eth_adin2111_reg_read_generic(dev, reg, val);
+	}
+
+	return rval;
+}
+
+int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg,
+			   const uint32_t val)
+{
+	struct adin2111_data *ctx = dev->data;
+	int rval;
+
+	if (ctx->oa) {
+		rval = eth_adin2111_reg_write_oa(dev, reg, val);
+	} else {
+		rval = eth_adin2111_reg_write_generic(dev, reg, val);
+	}
+
+	return rval;
 }
 
 static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
@@ -302,11 +619,13 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 			goto continue_unlock;
 		}
 
+		if (!ctx->oa) {
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
-		if (status0 & ADIN2111_STATUS1_SPI_ERR) {
-			LOG_WRN("Detected TX SPI CRC error");
+			if (status0 & ADIN2111_STATUS1_SPI_ERR) {
+				LOG_WRN("Detected TX SPI CRC error");
+			}
+#endif
 		}
-#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 		/* handle port 1 phy interrupts */
 		if (status0 & ADIN2111_STATUS0_PHYINT) {
@@ -316,6 +635,22 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 		/* handle port 2 phy interrupts */
 		if ((status1 & ADIN2111_STATUS1_PHYINT) && is_adin2111) {
 			adin2111_port_on_phyint(ctx->port[1]);
+		}
+
+		if (ctx->oa) {
+			if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
+				ret = eth_adin2111_oa_data_read(dev, 0);
+				if (ret < 0) {
+					break;
+				}
+			}
+			if (status1 & ADIN2111_STATUS1_P2_RX_RDY) {
+				ret = eth_adin2111_oa_data_read(dev, 1);
+				if (ret < 0) {
+					break;
+				}
+			}
+			goto continue_unlock;
 		}
 
 		/* handle port 1 rx */
@@ -368,7 +703,7 @@ continue_unlock:
 			LOG_ERR("Failed to write IMASK1, %d", ret);
 		}
 		eth_adin2111_unlock(dev);
-	};
+	}
 }
 
 static void adin2111_int_callback(const struct device *dev,
@@ -415,6 +750,31 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	int ret;
 
 	eth_adin2111_lock(adin, K_FOREVER);
+
+	if (ctx->oa) {
+		uint32_t val, rca = 0;
+		/*
+		 * By high-traffic zperf test, noted that ADIN2111 does not like we send
+		 * if there is something to be received. It stops to issue rx interrupts
+		 * and zperf transfer hangs. Forcing a receive for this case.
+		 */
+		ret = eth_adin2111_reg_read(adin, ADIN2111_BUFSTS, &val);
+		if (ret < 0) {
+			return ret;
+		}
+		rca = val & ADIN2111_BUFSTS_RCA_MASK;
+
+		if (rca > 0) {
+			eth_adin2111_unlock(adin);
+			k_sem_give(&ctx->offload_sem);
+			k_yield();
+			eth_adin2111_lock(adin, K_FOREVER);
+		}
+
+		ret = eth_adin2111_send_oa_frame(cfg->adin, pkt, htons(cfg->port_idx));
+
+		goto end_check;
+	}
 
 	/* query remaining tx fifo space */
 	ret = adin2111_read_tx_space(adin, &tx_space);
@@ -497,6 +857,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 
 	ret = spi_write_dt(&((const struct adin2111_config *) adin->config)->spi,
 			   &tx);
+end_check:
 	if (ret < 0) {
 		eth_stats_update_errors_tx(data->iface);
 		LOG_ERR("Port %u frame SPI write failed, %d", cfg->port_idx, ret);
@@ -670,7 +1031,7 @@ static void adin2111_port_iface_init(struct net_if *iface)
 
 		/* all ifaces are done, start INT processing */
 		k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
-				CONFIG_ETH_ADIN2111_IRQ_THREAD_STACK_SIZE,
+				K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack),
 				adin2111_offload_thread,
 				(void *)adin, NULL, NULL,
 				CONFIG_ETH_ADIN2111_IRQ_THREAD_PRIO,
@@ -839,6 +1200,8 @@ static int adin2111_init(const struct device *dev)
 		return ret;
 	}
 
+	k_msleep(ADIN2111_SPI_ACTIVE_DELAY_MS);
+
 	ret = adin2111_check_spi(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to communicate over SPI, %d", ret);
@@ -851,6 +1214,8 @@ static int adin2111_init(const struct device *dev)
 		LOG_ERR("MACPHY software reset failed, %d", ret);
 		return ret;
 	}
+
+	k_msleep(ADIN2111_SW_RESET_DELAY_MS);
 
 	ret = adin2111_await_device(dev);
 	if (ret < 0) {
@@ -870,6 +1235,10 @@ static int adin2111_init(const struct device *dev)
 	/* RXCTE must be disabled for Generic SPI */
 	val &= ~ADIN2111_CONFIG0_RXCTE;
 	val &= ~(ADIN2111_CONFIG0_TXCTE | ADIN2111_CONFIG0_TXFCSVE);
+
+	if (ctx->oa) {
+		val |= ADIN2111_CONFIG0_ZARFE;
+	}
 
 	ret = eth_adin2111_reg_write(dev, ADIN2111_CONFIG0, val);
 	if (ret < 0) {
@@ -966,12 +1335,11 @@ static const struct ethernet_api adin2111_port_api = {
 				 NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 #define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
-
 #define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\
 	static uint8_t __aligned(4) name##_buffer_##inst[CONFIG_ETH_ADIN2111_BUFFER_SIZE];	\
 	static const struct adin2111_config name##_config_##inst = {				\
-		.id = dev_id,								\
-		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION, 1),			\
+		.id = dev_id,									\
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION, 0),			\
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, { 0 }),			\
 	};											\
@@ -981,6 +1349,9 @@ static const struct ethernet_api adin2111_port_api = {
 		.offload_sem = Z_SEM_INITIALIZER(name##_data_##inst.offload_sem, 0, 1),         \
 		.lock = Z_MUTEX_INITIALIZER(name##_data_##inst.lock),				\
 		.buf = name##_buffer_##inst,							\
+		.oa = DT_INST_PROP(inst, spi_oa),						\
+		.oa_prot = DT_INST_PROP(inst, spi_oa_protection),				\
+		.oa_cps = 64,									\
 	};											\
 	/* adin */										\
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL,				\
