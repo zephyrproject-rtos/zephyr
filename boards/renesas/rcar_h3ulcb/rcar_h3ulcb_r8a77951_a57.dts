@@ -8,7 +8,7 @@
 /dts-v1/;
 #include <mem.h>
 #include <arm64/renesas/r8a77951.dtsi>
-#include "rcar_h3ulcb_ca57-pinctrl.dtsi"
+#include "rcar_h3ulcb_r8a77951_a57-pinctrl.dtsi"
 
 / {
 	model = "H3ULCB CA57";
