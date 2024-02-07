@@ -168,17 +168,17 @@ The default configuration can be found in the defconfig and dts files:
 
 - Common:
 
-  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q-common.dtsi`
+  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q-common.dtsi`
 
 - Secure target:
 
-  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_defconfig`
-  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q.dts`
+  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_defconfig`
+  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q.dts`
 
 - Non-Secure target:
 
-  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_ns_defconfig`
-  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_ns.dts`
+  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx_ns_defconfig`
+  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx_ns.dts`
 
 Zephyr board options
 ====================
@@ -188,20 +188,20 @@ for building for both Secure and Non-Secure firmware.
 
 The BOARD options are summarized below:
 
-+----------------------+-----------------------------------------------+
-|   BOARD              | Description                                   |
-+======================+===============================================+
-| nucleo_l552ze_q      | For building Secure (or Secure-only) firmware |
-+----------------------+-----------------------------------------------+
-| nucleo_l552ze_q_ns   | For building Non-Secure firmware              |
-+----------------------+-----------------------------------------------+
++--------------------------------+-------------------------------------------+
+| BOARD                          | Description                               |
++================================+===========================================+
+| nucleo_l552ze_q                | For building Trust Zone Disabled firmware |
++--------------------------------+-------------------------------------------+
+| nucleo_l552ze_q/stm32l552xx/ns | For building Non-Secure firmware          |
++--------------------------------+-------------------------------------------+
 
 Here are the instructions to build Zephyr with a non-secure configuration,
 using `tfm_ipc_` sample:
 
    .. code-block:: bash
 
-      $ west build -b nucleo_l552ze_q_ns samples/tfm_integration/tfm_ipc/
+      $ west build -b nucleo_l552ze_q/stm32l552xx/ns samples/tfm_integration/tfm_ipc/
 
 Once done, before flashing, you need to first run a generated script that
 will set platform option bytes config and erase platform (among others,
@@ -332,11 +332,11 @@ Building a secure/non-secure with Arm |reg| TrustZone |reg|
 
 The TF-M integration sample :ref:`tfm_ipc` can be run on a ST Nucleo L552ZE Q.
 In TF-M configuration, Zephyr is run on the non-secure domain. A non-secure image
-can be generated using ``nucleo_l552ze_q_ns`` as build target.
+can be generated using ``nucleo_l552ze_q/stm32l552xx/ns`` as build target.
 
 .. code-block:: bash
 
-   $ west build -b nucleo_l552ze_q_ns path/to/source/directory
+   $ west build -b nucleo_l552ze_q/stm32l552xx/ns path/to/source/directory
 
 Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
 is run automatically in a post-build step to make some required flash layout changes.
