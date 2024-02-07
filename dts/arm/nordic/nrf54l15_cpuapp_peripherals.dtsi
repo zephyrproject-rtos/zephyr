@@ -106,6 +106,7 @@ i2c20: i2c@c6000 {
 	reg = <0xc6000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -140,6 +141,7 @@ i2c21: i2c@c7000 {
 	reg = <0xc7000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -174,6 +176,7 @@ i2c22: i2c@c8000 {
 	reg = <0xc8000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
@@ -344,6 +347,7 @@ i2c30: i2c@104000 {
 	reg = <0x104000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
+	easydma-maxcnt-bits = <16>;
 	status = "disabled";
 };
 
