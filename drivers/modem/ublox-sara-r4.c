@@ -2035,7 +2035,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 {
 	/* using static result from offload_getaddrinfo() -- no need to free */
-	res = NULL;
+	ARG_UNUSED(res);
 }
 
 static const struct socket_dns_offload offload_dns_ops = {
