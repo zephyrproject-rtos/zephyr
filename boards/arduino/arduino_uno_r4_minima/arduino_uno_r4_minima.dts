@@ -6,13 +6,14 @@
 
 /dts-v1/;
 
+#include <renesas/ra/r7fa4m1ab3cfm.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
-#include "arduino_uno_r4_common.dtsi"
 #include "arduino_uno_r4_minima-pinctrl.dtsi"
 
 / {
 	model = "Arduino Uno R4 Minima";
+        compatible = "arduino,uno-r4-minima";
 
 	chosen {
 		zephyr,console = &uart2;
