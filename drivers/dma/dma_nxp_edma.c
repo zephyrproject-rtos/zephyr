@@ -573,6 +573,23 @@ static int edma_get_attribute(const struct device *dev, uint32_t type, uint32_t 
 	return 0;
 }
 
+static bool edma_channel_filter(const struct device *dev, int chan_id, void *param)
+{
+	int *requested_channel;
+
+	if (!param) {
+		return false;
+	}
+
+	requested_channel = param;
+
+	if (*requested_channel == chan_id && lookup_channel(dev, chan_id)) {
+		return true;
+	}
+
+	return false;
+}
+
 static const struct dma_driver_api edma_api = {
 	.reload = edma_reload,
 	.config = edma_config,
@@ -582,6 +599,7 @@ static const struct dma_driver_api edma_api = {
 	.resume = edma_start,
 	.get_status = edma_get_status,
 	.get_attribute = edma_get_attribute,
+	.chan_filter = edma_channel_filter,
 };
 
 static int edma_init(const struct device *dev)
