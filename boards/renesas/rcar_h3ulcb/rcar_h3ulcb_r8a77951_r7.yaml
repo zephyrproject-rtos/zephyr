@@ -1,4 +1,4 @@
-identifier: rcar_h3ulcb_cr7
+identifier: rcar_h3ulcb/r8a77951/r7
 name: Cortex r7 for Renesas H3ULCB
 type: mcu
 arch: arm
