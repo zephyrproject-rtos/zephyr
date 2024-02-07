@@ -498,14 +498,17 @@ config PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128
 config PSA_WANT_ALG_TLS12_PRF
 	bool
 	prompt "PSA PRF support (TLS1.2)" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_HMAC
 
 config PSA_WANT_ALG_TLS12_PSK_TO_MS
 	bool
 	prompt "PSA TLS 1.2 PSK to MS support" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_HMAC
 
 config PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
 	bool
 	prompt "PSA TLS 1.2 EC J-PAKE to PMS support" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_SHA_256
 
 endmenu # PSA Key derivation support
 
