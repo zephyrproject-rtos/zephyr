@@ -1,6 +1,5 @@
-CONFIG_SOC_R8A77961=y
-CONFIG_SOC_SERIES_RCAR_GEN3=y
-CONFIG_BOARD_RCAR_SALVATOR_XS_M3=y
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
 
 # Cache management
 CONFIG_CACHE_MANAGEMENT=y
