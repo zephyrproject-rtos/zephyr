@@ -1,0 +1,18 @@
+# Copyright (c) 2023 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RCAR_GEN4
+	bool
+	select SOC_FAMILY_RENESAS_RCAR
+
+config SOC_R8A779F0
+	bool
+	select SOC_SERIES_RCAR_GEN4
+	help
+	  r8a779f0
+
+config SOC_SERIES
+	default "rcar_gen4" if SOC_SERIES_RCAR_GEN4
+
+config SOC
+	default "r8a779f0" if SOC_R8A779F0
