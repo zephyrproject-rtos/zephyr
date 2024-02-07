@@ -1424,6 +1424,456 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
+static ssize_t parse_config_data_args(const struct shell *sh, size_t argn, size_t argc,
+				      char *argv[], struct bt_audio_codec_cfg *codec_cfg)
+{
+	for (; argn < argc; argn++) {
+		const char *arg = argv[argn];
+		unsigned long val;
+		int err = 0;
+
+		if (strcmp(arg, "freq") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse freq from %s: %d", arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT8_MAX) {
+				shell_error(sh, "Invalid freq value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_set_freq(codec_cfg,
+							  (enum bt_audio_codec_cfg_freq)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set freq with value %lu: %d", val, err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "dur") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse dur from %s: %d", arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT8_MAX) {
+				shell_error(sh, "Invalid dur value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_set_frame_dur(
+				codec_cfg, (enum bt_audio_codec_cfg_frame_dur)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set dur with value %lu: %d", val, err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "chan_alloc") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse chan alloc from %s: %d", arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT32_MAX) {
+				shell_error(sh, "Invalid chan alloc value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_set_chan_allocation(codec_cfg,
+								     (enum bt_audio_location)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set chan alloc with value %lu: %d", val,
+					    err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "frame_len") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to frame len from %s: %d", arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT16_MAX) {
+				shell_error(sh, "Invalid frame len value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_set_octets_per_frame(codec_cfg, (uint16_t)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set frame len with value %lu: %d", val,
+					    err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "frame_blks") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse frame blks from %s: %d", arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT8_MAX) {
+				shell_error(sh, "Invalid frame blks value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_set_frame_blocks_per_sdu(codec_cfg, (uint8_t)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set frame blks with value %lu: %d", val,
+					    err);
+
+				return -1;
+			}
+		} else { /* we are no longer parsing codec config values */
+			/* Decrement to return taken argument */
+			argn--;
+			break;
+		}
+	}
+
+	return argn;
+}
+
+static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_t argc,
+				      char *argv[], struct bt_audio_codec_cfg *codec_cfg)
+{
+	for (; argn < argc; argn++) {
+		const char *arg = argv[argn];
+		unsigned long val;
+		int err = 0;
+
+		if (strcmp(arg, "pref_ctx") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse pref ctx from %s: %d", arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT16_MAX) {
+				shell_error(sh, "Invalid pref ctx value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_meta_set_pref_context(codec_cfg,
+								       (enum bt_audio_context)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set pref ctx with value %lu: %d", val,
+					    err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "stream_ctx") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse stream ctx from %s: %d", arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT16_MAX) {
+				shell_error(sh, "Invalid stream ctx value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_meta_set_stream_context(
+				codec_cfg, (enum bt_audio_context)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set stream ctx with value %lu: %d", val,
+					    err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "program_info") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			err = bt_audio_codec_cfg_meta_set_program_info(codec_cfg, arg, strlen(arg));
+			if (err != 0) {
+				shell_error(sh, "Failed to set program info with value %s: %d", arg,
+					    err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "stream_lang") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			if (strlen(arg) != 3) {
+				shell_error(sh, "Failed to parse stream lang from %s", arg);
+
+				return -1;
+			}
+
+			val = sys_get_le24(arg);
+
+			err = bt_audio_codec_cfg_meta_set_stream_lang(codec_cfg, (uint32_t)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set stream lang with value %lu: %d", val,
+					    err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "ccid_list") == 0) {
+			uint8_t ccid_list[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE];
+			size_t ccid_list_len;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			ccid_list_len = hex2bin(arg, strlen(arg), ccid_list, sizeof(ccid_list));
+			if (ccid_list_len == 0) {
+				shell_error(sh, "Failed to parse ccid list from %s", arg);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_meta_set_ccid_list(codec_cfg, ccid_list,
+								    ccid_list_len);
+			if (err < 0) {
+				shell_error(sh, "Failed to set ccid list with value %s: %d", arg,
+					    err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "parental_rating") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse parental rating from %s: %d", arg,
+					    err);
+
+				return -1;
+			}
+
+			if (val > UINT8_MAX) {
+				shell_error(sh, "Invalid parental rating value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_meta_set_parental_rating(
+				codec_cfg, (enum bt_audio_parental_rating)val);
+			if (err < 0) {
+				shell_error(sh, "Failed to set parental rating with value %lu: %d",
+					    val, err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "program_info_uri") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			err = bt_audio_codec_cfg_meta_set_program_info_uri(codec_cfg, arg,
+									   strlen(arg));
+			if (err < 0) {
+				shell_error(sh, "Failed to set program info URI with value %s: %d",
+					    arg, err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "audio_active_state") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse audio active state from %s: %d",
+					    arg, err);
+
+				return -1;
+			}
+
+			if (val > UINT8_MAX) {
+				shell_error(sh, "Invalid audio active state value: %lu", val);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_meta_set_audio_active_state(
+				codec_cfg, (enum bt_audio_active_state)val);
+			if (err < 0) {
+				shell_error(sh,
+					    "Failed to set audio active state with value %lu: %d",
+					    val, err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "bcast_flag") == 0) {
+			err = bt_audio_codec_cfg_meta_set_bcast_audio_immediate_rend_flag(
+				codec_cfg);
+			if (err < 0) {
+				shell_error(sh, "Failed to set audio active state: %d", err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "extended") == 0) {
+			uint8_t extended[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE];
+			size_t extended_len;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			extended_len = hex2bin(arg, strlen(arg), extended, sizeof(extended));
+			if (extended_len == 0) {
+				shell_error(sh, "Failed to parse extended meta from %s", arg);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_meta_set_extended(codec_cfg, extended,
+								   extended_len);
+			if (err < 0) {
+				shell_error(sh, "Failed to set extended meta with value %s: %d",
+					    arg, err);
+
+				return -1;
+			}
+		} else if (strcmp(arg, "vendor") == 0) {
+			uint8_t vendor[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE];
+			size_t vendor_len;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			arg = argv[argn];
+
+			vendor_len = hex2bin(arg, strlen(arg), vendor, sizeof(vendor));
+			if (vendor_len == 0) {
+				shell_error(sh, "Failed to parse vendor meta from %s", arg);
+
+				return -1;
+			}
+
+			err = bt_audio_codec_cfg_meta_set_vendor(codec_cfg, vendor, vendor_len);
+			if (err < 0) {
+				shell_error(sh, "Failed to set vendor meta with value %s: %d", arg,
+					    err);
+
+				return -1;
+			}
+		} else { /* we are no longer parsing codec config meta values */
+			/* Decrement to return taken argument */
+			argn--;
+			break;
+		}
+	}
+
+	return argn;
+}
+
 static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct named_lc3_preset *named_preset;
@@ -1447,6 +1897,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc > 2) {
+		struct bt_audio_codec_cfg *codec_cfg;
+
 		named_preset = bap_get_named_preset(unicast, dir, argv[2]);
 		if (named_preset == NULL) {
 			shell_error(sh, "Unable to parse named_preset %s", argv[2]);
@@ -1454,19 +1906,89 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (!strcmp(argv[1], "sink")) {
-			memcpy(&default_sink_preset, named_preset, sizeof(default_sink_preset));
+			named_preset = memcpy(&default_sink_preset, named_preset,
+					      sizeof(default_sink_preset));
+			codec_cfg = &default_sink_preset.preset.codec_cfg;
 		} else if (!strcmp(argv[1], "source")) {
-			memcpy(&default_source_preset, named_preset, sizeof(default_sink_preset));
+			named_preset = memcpy(&default_source_preset, named_preset,
+					      sizeof(default_sink_preset));
+			codec_cfg = &default_source_preset.preset.codec_cfg;
 		} else if (!strcmp(argv[1], "broadcast")) {
-			memcpy(&default_broadcast_source_preset, named_preset,
-			       sizeof(default_sink_preset));
+			named_preset = memcpy(&default_broadcast_source_preset, named_preset,
+					      sizeof(default_sink_preset));
+			codec_cfg = &default_broadcast_source_preset.preset.codec_cfg;
+		} else {
+			shell_error(sh, "Invalid dir: %s", argv[1]);
+
+			return -ENOEXEC;
+		}
+
+		if (argc > 3) {
+			struct bt_audio_codec_cfg codec_cfg_backup;
+
+			memcpy(&codec_cfg_backup, codec_cfg, sizeof(codec_cfg_backup));
+
+			for (size_t argn = 3; argn < argc; argn++) {
+				const char *arg = argv[argn];
+
+				if (strcmp(arg, "config") == 0) {
+					ssize_t ret;
+
+					if (++argn == argc) {
+						shell_help(sh);
+
+						memcpy(codec_cfg, &codec_cfg_backup,
+						       sizeof(codec_cfg_backup));
+
+						return SHELL_CMD_HELP_PRINTED;
+					}
+
+					ret = parse_config_data_args(sh, argn, argc, argv,
+								     codec_cfg);
+					if (ret < 0) {
+						memcpy(codec_cfg, &codec_cfg_backup,
+						       sizeof(codec_cfg_backup));
+
+						return -ENOEXEC;
+					}
+
+					argn = ret;
+				} else if (strcmp(arg, "meta") == 0) {
+					ssize_t ret;
+
+					if (++argn == argc) {
+						shell_help(sh);
+
+						memcpy(codec_cfg, &codec_cfg_backup,
+						       sizeof(codec_cfg_backup));
+
+						return SHELL_CMD_HELP_PRINTED;
+					}
+
+					ret = parse_config_meta_args(sh, argn, argc, argv,
+								     codec_cfg);
+					if (ret < 0) {
+						memcpy(codec_cfg, &codec_cfg_backup,
+						       sizeof(codec_cfg_backup));
+
+						return -ENOEXEC;
+					}
+
+					argn = ret;
+				} else {
+					shell_error(sh, "Invalid argument: %s", arg);
+					shell_help(sh);
+
+					return -ENOEXEC;
+				}
+			}
 		}
 	}
 
 	shell_print(sh, "%s", named_preset->name);
 
-	print_codec_cfg(ctx_shell, &named_preset->preset.codec_cfg);
-	print_qos(ctx_shell, &named_preset->preset.qos);
+	print_codec_cfg(sh, &named_preset->preset.codec_cfg);
+	print_qos(sh, &named_preset->preset.qos);
 
 	return 0;
 }
@@ -2819,6 +3341,21 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
+/* 31 is a unit separater - without t the tab is seemingly ignored*/
+#define HELP_SEP "\n\31\t"
+
+#define HELP_CFG_DATA                                                                              \
+	"\n[config" HELP_SEP "[freq <frequency>]" HELP_SEP "[dur <duration>]" HELP_SEP             \
+	"[chan_alloc <location>]" HELP_SEP "[frame_len <frame length>]" HELP_SEP                   \
+	"[frame_blks <frame blocks>]]"
+
+#define HELP_CFG_META                                                                              \
+	"\n[meta" HELP_SEP "[pref_ctx <context>]" HELP_SEP "[stream_ctx <context>]" HELP_SEP       \
+	"[program_info <program info>]" HELP_SEP "[stream_lang <ISO 639-3 lang>]" HELP_SEP         \
+	"[ccid_list <ccids>]" HELP_SEP "[parental_rating <rating>]" HELP_SEP                       \
+	"[program_info_uri <URI>]" HELP_SEP "[audio_active_state <state>]" HELP_SEP                \
+	"[bcast_flag]" HELP_SEP "[extended <meta>]" HELP_SEP "[vendor <meta>]]"
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	bap_cmds, SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
@@ -2861,7 +3398,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(select_unicast, NULL, "<stream>", cmd_select_unicast, 2, 0),
 #endif /* CONFIG_BT_BAP_UNICAST */
-	SHELL_CMD_ARG(preset, NULL, "<sink, source, broadcast> [preset]", cmd_preset, 2, 1),
+	SHELL_CMD_ARG(preset, NULL,
+		      "<sink, source, broadcast> [preset] " HELP_CFG_DATA " " HELP_CFG_META,
+		      cmd_preset, 2, 34),
 #if defined(CONFIG_BT_AUDIO_TX)
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]", cmd_send, 1, 1),
 #if defined(CONFIG_LIBLC3)
