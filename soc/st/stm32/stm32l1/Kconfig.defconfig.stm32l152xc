@@ -1,13 +1,9 @@
-# ST Microelectronics STM32L152XC MCU
+# STMicroelectronics STM32L152XC MCU
 
 # Copyright (c) 2020 Abel Sensors
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_STM32L152XC
-
-config SOC
-	string
-	default "stm32l152xc"
 
 config NUM_IRQS
 	int
