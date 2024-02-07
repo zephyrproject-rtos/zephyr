@@ -4,6 +4,5 @@
 # Author: Parthiban Nallathambi <parthiban@linumiz.com>
 
 config BOARD_XMC45_RELAX_KIT
-	bool "Infineon Relax Kit"
-	depends on SOC_SERIES_XMC_4XXX
+	select SOC_XMC4500
 	select SOC_PART_NUMBER_F100X1024
