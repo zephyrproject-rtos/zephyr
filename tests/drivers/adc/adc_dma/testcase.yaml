@@ -11,6 +11,7 @@ tests:
     platform_allow:
       - frdm_k82f
       - frdm_k64f
+      - nucleo_f401re
       - nucleo_h743zi
       - nucleo_u575zi_q
       - nucleo_l476rg
