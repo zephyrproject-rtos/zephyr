@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(nxp_edma);
 
 /* used to register an ISR/arg pair. TODO: should we also use the priority? */
 #define _EDMA_INT_CONNECT(idx, inst)				\
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq),		\
+	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(inst, idx),		\
 		    0, edma_isr,				\
 		    &channels_##inst[idx], 0)
 
@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(nxp_edma);
 {									\
 	.id = DT_INST_PROP_BY_IDX(inst, valid_channels, idx),		\
 	.dev = DEVICE_DT_INST_GET(inst),				\
-	.irq = DT_INST_IRQ_BY_IDX(inst, idx, irq),			\
+	.irq = DT_INST_IRQN_BY_IDX(inst, idx),				\
 }
 
 /* used to declare a struct edma_channel by the explicit macro suite */
@@ -67,7 +67,7 @@ LOG_MODULE_REGISTER(nxp_edma);
 {									\
 	.id = idx,							\
 	.dev = DEVICE_DT_INST_GET(inst),				\
-	.irq = DT_INST_IRQ_BY_IDX(inst, idx, irq),			\
+	.irq = DT_INST_IRQN_BY_IDX(inst, idx),				\
 }
 
 /* used to create an array of channel IDs via the valid-channels property */
