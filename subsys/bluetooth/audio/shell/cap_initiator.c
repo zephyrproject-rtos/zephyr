@@ -242,7 +242,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].member.member = conn;
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = snk_ep;
-			copy_unicast_stream_preset(uni_stream, default_sink_preset);
+			copy_unicast_stream_preset(uni_stream, &default_sink_preset);
 			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 
 			group_stream_params[start_param.count].stream =
@@ -273,7 +273,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].member.member = conn;
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = src_ep;
-			copy_unicast_stream_preset(uni_stream, default_source_preset);
+			copy_unicast_stream_preset(uni_stream, &default_source_preset);
 			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
@@ -368,9 +368,9 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			stream_params[param.count].stream = stream;
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
-				copy_unicast_stream_preset(uni_stream, default_sink_preset);
+				copy_unicast_stream_preset(uni_stream, &default_sink_preset);
 			} else {
-				copy_unicast_stream_preset(uni_stream, default_source_preset);
+				copy_unicast_stream_preset(uni_stream, &default_source_preset);
 			}
 
 			stream_params[param.count].meta = uni_stream->codec_cfg.meta;
@@ -410,9 +410,9 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			stream_params[param.count].stream = stream;
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
-				copy_unicast_stream_preset(uni_stream, default_sink_preset);
+				copy_unicast_stream_preset(uni_stream, &default_sink_preset);
 			} else {
-				copy_unicast_stream_preset(uni_stream, default_source_preset);
+				copy_unicast_stream_preset(uni_stream, &default_source_preset);
 			}
 
 			stream_params[param.count].meta = uni_stream->codec_cfg.meta;

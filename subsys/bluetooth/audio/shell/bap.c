@@ -133,9 +133,12 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 };
 
 /* Default to 16_2_1 */
-const struct named_lc3_preset *default_sink_preset = &lc3_unicast_presets[3];
-const struct named_lc3_preset *default_source_preset = &lc3_unicast_presets[3];
-static const struct named_lc3_preset *default_broadcast_source_preset = &lc3_broadcast_presets[3];
+struct named_lc3_preset default_sink_preset = {
+	"16_2_1", BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
+struct named_lc3_preset default_source_preset = {
+	"16_2_1", BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
+static struct named_lc3_preset default_broadcast_source_preset = {
+	"16_2_1", BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT)};
 static bool initialized;
 
 static struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
@@ -1035,7 +1038,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		dir = BT_AUDIO_DIR_SINK;
 		ep = snks[conn_index][index];
 
-		named_preset = default_sink_preset;
+		named_preset = &default_sink_preset;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
@@ -1043,7 +1046,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		dir = BT_AUDIO_DIR_SOURCE;
 		ep = srcs[conn_index][index];
 
-		named_preset = default_source_preset;
+		named_preset = &default_source_preset;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 	} else {
 		shell_error(sh, "Unsupported dir: %s", argv[1]);
@@ -1429,15 +1432,15 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	if (!strcmp(argv[1], "sink")) {
 		dir = BT_AUDIO_DIR_SINK;
-		named_preset = default_sink_preset;
+		named_preset = &default_sink_preset;
 	} else if (!strcmp(argv[1], "source")) {
 		dir = BT_AUDIO_DIR_SOURCE;
-		named_preset = default_source_preset;
+		named_preset = &default_source_preset;
 	} else if (!strcmp(argv[1], "broadcast")) {
 		unicast = false;
 		dir = BT_AUDIO_DIR_SOURCE;
 
-		named_preset = default_broadcast_source_preset;
+		named_preset = &default_broadcast_source_preset;
 	} else {
 		shell_error(sh, "Unsupported dir: %s", argv[1]);
 		return -ENOEXEC;
@@ -1451,11 +1454,12 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (!strcmp(argv[1], "sink")) {
-			default_sink_preset = named_preset;
+			memcpy(&default_sink_preset, named_preset, sizeof(default_sink_preset));
 		} else if (!strcmp(argv[1], "source")) {
-			default_source_preset = named_preset;
+			memcpy(&default_source_preset, named_preset, sizeof(default_sink_preset));
 		} else if (!strcmp(argv[1], "broadcast")) {
-			default_broadcast_source_preset = named_preset;
+			memcpy(&default_broadcast_source_preset, named_preset,
+			       sizeof(default_sink_preset));
 		}
 	}
 
@@ -2024,7 +2028,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	named_preset = default_broadcast_source_preset;
+	named_preset = &default_broadcast_source_preset;
 
 	for (size_t i = 1U; i < argc; i++) {
 		char *arg = argv[i];
