@@ -114,7 +114,7 @@ def find_arch2board_set(args):
     ret = defaultdict(set)
 
     for root in args.board_roots:
-        for arch, boards in find_arch2board_set_in(root, arches).items():
+        for arch, boards in find_arch2board_set_in(root, arches, args.board_dir).items():
             if args.board is not None:
                 ret[arch] |= {b for b in boards if b.name == args.board}
             else:
@@ -145,7 +145,7 @@ def find_arches_in(root):
 
     return ret
 
-def find_arch2board_set_in(root, arches):
+def find_arch2board_set_in(root, arches, board_dir):
     ret = defaultdict(set)
     boards = root / 'boards'
 
@@ -156,6 +156,8 @@ def find_arch2board_set_in(root, arches):
         for maybe_board in (boards / "boards_legacy" / arch).iterdir():
             if not maybe_board.is_dir():
                 continue
+            if board_dir is not None and board_dir != maybe_board:
+                continue
             for maybe_defconfig in maybe_board.iterdir():
                 file_name = maybe_defconfig.name
                 if file_name.endswith('_defconfig'):
@@ -163,6 +165,63 @@ def find_arch2board_set_in(root, arches):
                     ret[arch].add(Board(board_name, maybe_board, 'v1', arch=arch))
 
     return ret
+
+
+def load_v2_boards(board_name, board_yml, systems):
+    boards = []
+    if board_yml.is_file():
+        with board_yml.open('r') as f:
+            b = yaml.safe_load(f.read())
+
+        try:
+            pykwalify.core.Core(source_data=b, schema_data=board_schema).validate()
+        except pykwalify.errors.SchemaError as e:
+            sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
+                     .format(board_yml.as_posix(), e))
+
+        mutual_exclusive = {'board', 'boards'}
+        if len(mutual_exclusive - b.keys()) < 1:
+            sys.exit(f'ERROR: Malformed content in file: {board_yml.as_posix()}\n'
+                     f'{mutual_exclusive} are mutual exclusive at this level.')
+
+        board_array = b.get('boards', [ b.get('board', None) ])
+        for board in board_array:
+            if board_name is not None:
+                if board['name'] != board_name:
+                    # Not the board we're looking for, ignore.
+                    continue
+
+            board_revision = board.get('revision')
+            if board_revision is not None and board_revision.get('format') != 'custom':
+                if board_revision.get('default') is None:
+                    sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
+                             "Cannot find required key 'default'. Path: '/board/revision.'")
+                if board_revision.get('revisions') is None:
+                    sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
+                             "Cannot find required key 'revisions'. Path: '/board/revision.'")
+
+            mutual_exclusive = {'socs', 'variants'}
+            if len(mutual_exclusive - board.keys()) < 1:
+                sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
+                         f'{mutual_exclusive} are mutual exclusive at this level.')
+            socs = [Soc.from_soc(systems.get_soc(s['name']), s.get('variants', []))
+                    for s in board.get('socs', {})]
+
+            board = Board(
+                name=board['name'],
+                dir=board_yml.parent,
+                vendor=board.get('vendor'),
+                revision_format=board.get('revision', {}).get('format'),
+                revision_default=board.get('revision', {}).get('default'),
+                revision_exact=board.get('revision', {}).get('exact', False),
+                revisions=[Revision.from_dict(v) for v in
+                           board.get('revision', {}).get('revisions', [])],
+                socs=socs,
+                variants=[Variant.from_dict(v) for v in board.get('variants', [])],
+                hwm='v2',
+            )
+            boards.append(board)
+    return boards
 
 
 def find_v2_boards(args):
@@ -175,58 +234,8 @@ def find_v2_boards(args):
         board_files.extend((root / 'boards').rglob(BOARD_YML))
 
     for board_yml in board_files:
-        if board_yml.is_file():
-            with board_yml.open('r') as f:
-                b = yaml.safe_load(f.read())
-
-            try:
-                pykwalify.core.Core(source_data=b, schema_data=board_schema).validate()
-            except pykwalify.errors.SchemaError as e:
-                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                         .format(board_yml.as_posix(), e))
-
-            mutual_exclusive = {'board', 'boards'}
-            if len(mutual_exclusive - b.keys()) < 1:
-                sys.exit(f'ERROR: Malformed content in file: {board_yml.as_posix()}\n'
-                         f'{mutual_exclusive} are mutual exclusive at this level.')
-
-            board_array = b.get('boards', [ b.get('board', None) ])
-            for board in board_array:
-                if args.board is not None:
-                    if board['name'] != args.board:
-                        # Not the board we're looking for, ignore.
-                        continue
-
-                board_revision = board.get('revision')
-                if board_revision is not None and board_revision.get('format') != 'custom':
-                    if board_revision.get('default') is None:
-                        sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                                 "Cannot find required key 'default'. Path: '/board/revision.'")
-                    if board_revision.get('revisions') is None:
-                        sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                                 "Cannot find required key 'revisions'. Path: '/board/revision.'")
-
-                mutual_exclusive = {'socs', 'variants'}
-                if len(mutual_exclusive - board.keys()) < 1:
-                    sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                             f'{mutual_exclusive} are mutual exclusive at this level.')
-                socs = [Soc.from_soc(systems.get_soc(s['name']), s.get('variants', []))
-                        for s in board.get('socs', {})]
-
-                board = Board(
-                    name=board['name'],
-                    dir=board_yml.parent,
-                    vendor=board.get('vendor'),
-                    revision_format=board.get('revision', {}).get('format'),
-                    revision_default=board.get('revision', {}).get('default'),
-                    revision_exact=board.get('revision', {}).get('exact', False),
-                    revisions=[Revision.from_dict(v) for v in
-                               board.get('revision', {}).get('revisions', [])],
-                    socs=socs,
-                    variants=[Variant.from_dict(v) for v in board.get('variants', [])],
-                    hwm='v2',
-                )
-                boards.append(board)
+        b = load_v2_boards(args.board, board_yml, systems)
+        boards.extend(b)
     return boards
 
 
@@ -251,6 +260,8 @@ def add_args(parser):
                         help='add a soc root, may be given more than once')
     parser.add_argument("--board", dest='board', default=None,
                         help='lookup the specific board, fail if not found')
+    parser.add_argument("--board-dir", default=None, type=Path,
+                        help='Only look for boards at the specific location')
 
 
 def add_args_formatting(parser):
@@ -290,7 +301,12 @@ def board_v2_identifiers(board):
 
 
 def dump_v2_boards(args):
-    boards = find_v2_boards(args)
+    if args.board_dir:
+        root_args = argparse.Namespace(**{'soc_roots': args.soc_roots})
+        systems = list_hardware.find_v2_systems(root_args)
+        boards = load_v2_boards(args.board, args.board_dir / BOARD_YML, systems)
+    else:
+        boards = find_v2_boards(args)
 
     for b in boards:
         identifiers = board_v2_identifiers(b)
