@@ -8,6 +8,10 @@
 #include "npcx/npcx9.dtsi"
 
 / {
+	chosen {
+		zephyr,entropy = &drbg0;
+	};
+
 	flash0: flash@10058000 {
 		reg = <0x10058000 DT_SIZE_K(416)>;
 	};
@@ -25,6 +29,15 @@
 	bootloader_ram: memory@200d7000 {
 		compatible = "mmio-sram";
 		reg = <0x200D7000 DT_SIZE_K(4)>;
+	};
+
+	soc {
+		drbg0: drbg@110 {
+			compatible = "nuvoton,npcx-drbg";
+			reg = <0x110 0x2c 0x15c 0x04>;
+			context-buffer-size = <240>;
+			status = "disabled";
+		};
 	};
 
 	soc-id {
