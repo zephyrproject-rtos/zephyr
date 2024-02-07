@@ -366,6 +366,8 @@ class Pytest(Harness):
         hardware = handler.get_hardware()
         if not hardware:
             raise PytestHarnessException('Hardware is not available')
+        # update the instance with the device id to have it in the summary report
+        self.instance.dut = hardware.id
 
         self.reserved_serial = hardware.serial_pty or hardware.serial
         if hardware.serial_pty:
