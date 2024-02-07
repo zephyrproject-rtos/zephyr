@@ -173,10 +173,6 @@ struct can_rcar_cfg {
 	const struct device *clock_dev;
 	struct rcar_cpg_clk mod_clk;
 	struct rcar_cpg_clk bus_clk;
-	uint8_t sjw;
-	uint8_t prop_seg;
-	uint8_t phase_seg1;
-	uint8_t phase_seg2;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -1059,26 +1055,16 @@ static int can_rcar_init(const struct device *dev)
 		return ret;
 	}
 
-	if (config->common.sample_point) {
-		ret = can_calc_timing(dev, &timing, config->common.bus_speed,
-				      config->common.sample_point);
-		if (ret == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
-			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
-		LOG_DBG("Sample-point err : %d", ret);
-	} else {
-		timing.sjw = config->sjw;
-		timing.prop_seg = config->prop_seg;
-		timing.phase_seg1 = config->phase_seg1;
-		timing.phase_seg2 = config->phase_seg2;
-		ret = can_calc_prescaler(dev, &timing, config->common.bus_speed);
-		if (ret) {
-			LOG_WRN("Bitrate error: %d", ret);
-		}
+	ret = can_calc_timing(dev, &timing, config->common.bus_speed,
+			      config->common.sample_point);
+	if (ret == -EINVAL) {
+		LOG_ERR("Can't find timing for given param");
+		return -EIO;
 	}
+
+	LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
+		timing.prescaler, timing.phase_seg1, timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", ret);
 
 	ret = can_set_timing(dev, &timing);
 	if (ret) {
@@ -1197,10 +1183,6 @@ static const struct can_driver_api can_rcar_driver_api = {
 		.bus_clk.domain =						\
 			DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),		\
 		.bus_clk.rate = 40000000,					\
-		.sjw = DT_INST_PROP(n, sjw),					\
-		.prop_seg = DT_INST_PROP_OR(n, prop_seg, 0),			\
-		.phase_seg1 = DT_INST_PROP_OR(n, phase_seg1, 0),		\
-		.phase_seg2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};									\
 	static struct can_rcar_data can_rcar_data_##n;				\

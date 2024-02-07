@@ -59,10 +59,6 @@ struct mcp2515_config {
 	int int_thread_priority;
 
 	/* CAN timing */
-	uint8_t tq_sjw;
-	uint8_t tq_prop;
-	uint8_t tq_bs1;
-	uint8_t tq_bs2;
 	uint32_t osc_freq;
 };
 

@@ -1237,13 +1237,7 @@ struct can_mcan_config {
 	uint16_t mram_elements[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	uint16_t mram_offsets[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	size_t mram_size;
-	uint16_t sjw;
-	uint16_t prop_ts1;
-	uint16_t ts2;
 #ifdef CONFIG_CAN_FD_MODE
-	uint8_t sjw_data;
-	uint8_t prop_ts1_data;
-	uint8_t ts2_data;
 	uint8_t tx_delay_comp_offset;
 #endif
 	const void *custom;
@@ -1306,13 +1300,6 @@ struct can_mcan_config {
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
-		.sjw = DT_PROP(node_id, sjw),                                                      \
-		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
-		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),                                         \
-		.sjw_data = DT_PROP(node_id, sjw_data),                                            \
-		.prop_ts1_data = DT_PROP_OR(node_id, prop_seg_data, 0) +                           \
-				 DT_PROP_OR(node_id, phase_seg1_data, 0),                          \
-		.ts2_data = DT_PROP_OR(node_id, phase_seg2_data, 0),                               \
 		.tx_delay_comp_offset = DT_PROP(node_id, tx_delay_comp_offset),                    \
 		.custom = _custom,                                                                 \
 	}
@@ -1325,9 +1312,6 @@ struct can_mcan_config {
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
-		.sjw = DT_PROP(node_id, sjw),                                                      \
-		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
-		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),                                         \
 		.custom = _custom,                                                                 \
 	}
 #endif /* !CONFIG_CAN_FD_MODE */

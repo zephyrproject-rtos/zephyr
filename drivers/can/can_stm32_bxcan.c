@@ -24,23 +24,6 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_bxcan
 
-#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
-
-/* Macro to exclude the sample point algorithm from compilation if not used
- * Without the macro, the algorithm would always waste ROM
- */
-#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
-
-#define SP_AND_TIMING_NOT_SET(inst) \
-	(!DT_INST_NODE_HAS_PROP(inst, sample_point) && \
-	!(DT_INST_NODE_HAS_PROP(inst, prop_seg) && \
-	DT_INST_NODE_HAS_PROP(inst, phase_seg1) && \
-	DT_INST_NODE_HAS_PROP(inst, phase_seg2))) ||
-
-#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_NOT_SET) 0
-#error You must either set a sampling-point or timings (phase-seg* and prop-seg)
-#endif
-
 #define CAN_STM32_NUM_FILTER_BANKS (14)
 #define CAN_STM32_MAX_FILTER_ID \
 	(CONFIG_CAN_MAX_EXT_ID_FILTER + CONFIG_CAN_MAX_STD_ID_FILTER * 2)
@@ -82,9 +65,6 @@ struct can_stm32_config {
 	const struct can_driver_config common;
 	CAN_TypeDef *can;   /*!< CAN Registers*/
 	CAN_TypeDef *master_can;   /*!< CAN Registers for shared filter */
-	uint8_t sjw;
-	uint8_t prop_ts1;
-	uint8_t ts2;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
 	const struct pinctrl_dev_config *pcfg;
@@ -660,26 +640,15 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
-	if (cfg->common.sample_point && USE_SP_ALGO) {
-		ret = can_calc_timing(dev, &timing, cfg->common.bus_speed,
-				      cfg->common.sample_point);
-		if (ret == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
-			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
-		LOG_DBG("Sample-point err : %d", ret);
-	} else {
-		timing.sjw = cfg->sjw;
-		timing.prop_seg = 0;
-		timing.phase_seg1 = cfg->prop_ts1;
-		timing.phase_seg2 = cfg->ts2;
-		ret = can_calc_prescaler(dev, &timing, cfg->common.bus_speed);
-		if (ret) {
-			LOG_WRN("Bitrate error: %d", ret);
-		}
+	ret = can_calc_timing(dev, &timing, cfg->common.bus_speed,
+			      cfg->common.sample_point);
+	if (ret == -EINVAL) {
+		LOG_ERR("Can't find timing for given param");
+		return -EIO;
 	}
+	LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
+		timing.prescaler, timing.phase_seg1, timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", ret);
 
 	ret = can_set_timing(dev, &timing);
 	if (ret) {
@@ -1152,10 +1121,6 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 	.can = (CAN_TypeDef *)DT_INST_REG_ADDR(inst),                    \
 	.master_can = (CAN_TypeDef *)DT_INST_PROP_OR(inst,               \
 		master_can_reg, DT_INST_REG_ADDR(inst)),                 \
-	.sjw = DT_INST_PROP_OR(inst, sjw, 1),                            \
-	.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +                 \
-		    DT_INST_PROP_OR(inst, phase_seg1, 0),                \
-	.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                     \
 	.pclken = {                                                      \
 		.enr = DT_INST_CLOCKS_CELL(inst, bits),                  \
 		.bus = DT_INST_CLOCKS_CELL(inst, bus),                   \
