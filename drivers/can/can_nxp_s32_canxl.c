@@ -56,29 +56,6 @@
 
 LOG_MODULE_REGISTER(nxp_s32_canxl, CONFIG_CAN_LOG_LEVEL);
 
-#define SP_AND_TIMING_NOT_SET(inst)				\
-	(!DT_INST_NODE_HAS_PROP(inst, sample_point) &&		\
-	!(DT_INST_NODE_HAS_PROP(inst, prop_seg) &&		\
-	DT_INST_NODE_HAS_PROP(inst, phase_seg1) &&		\
-	DT_INST_NODE_HAS_PROP(inst, phase_seg2))) ||
-
-#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_NOT_SET) 0
-#error You must either set a sampling-point or timings (phase-seg* and prop-seg)
-#endif
-
-#ifdef CAN_NXP_S32_FD_MODE
-
-#define SP_AND_TIMING_DATA_NOT_SET(inst)			\
-	(!DT_INST_NODE_HAS_PROP(inst, sample_point_data) &&	\
-	!(DT_INST_NODE_HAS_PROP(inst, prop_seg_data) &&		\
-	DT_INST_NODE_HAS_PROP(inst, phase_seg1_data) &&		\
-	DT_INST_NODE_HAS_PROP(inst, phase_seg2_data))) ||
-
-#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_DATA_NOT_SET) 0
-#error You must either set a sampling-point-data or timings (phase-seg-data* and prop-seg-data)
-#endif
-#endif
-
 struct can_nxp_s32_config {
 	const struct can_driver_config common;
 	CANXL_SIC_Type *base_sic;
@@ -91,16 +68,6 @@ struct can_nxp_s32_config {
 	uint8 instance;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	uint32_t sjw;
-	uint32_t prop_seg;
-	uint32_t phase_seg1;
-	uint32_t phase_seg2;
-#ifdef CAN_NXP_S32_FD_MODE
-	uint32_t sjw_data;
-	uint32_t prop_seg_data;
-	uint32_t phase_seg1_data;
-	uint32_t phase_seg2_data;
-#endif
 	const struct pinctrl_dev_config *pin_cfg;
 	Canexcel_Ip_ConfigType *can_cfg;
 	void (*irq_config_func)(void);
@@ -971,50 +938,30 @@ static int can_nxp_s32_init(const struct device *dev)
 	IP_MC_RGM->PRST_0[0].PRST_0 &=
 		~(MC_RGM_PRST_0_PERIPH_16_RST_MASK | MC_RGM_PRST_0_PERIPH_24_RST_MASK);
 
-	data->timing.sjw = config->sjw;
-	if (config->common.sample_point) {
-		err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
-						config->common.sample_point);
-		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		if (err > 0) {
-			LOG_WRN("Sample-point error : %d", err);
-		}
-	} else {
-		data->timing.prop_seg = config->prop_seg;
-		data->timing.phase_seg1 = config->phase_seg1;
-		data->timing.phase_seg2 = config->phase_seg2;
-		err = can_calc_prescaler(dev, &data->timing, config->common.bus_speed);
-		if (err) {
-			LOG_WRN("Bitrate error: %d", err);
-		}
+	err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
+			      config->common.sample_point);
+	if (err == -EINVAL) {
+		LOG_ERR("Can't find timing for given param");
+		return -EIO;
+	}
+
+	if (err > 0) {
+		LOG_WRN("Sample-point error : %d", err);
 	}
 
 	LOG_DBG("Setting CAN bitrate %d:", config->common.bus_speed);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing, &config->can_cfg->bitrate);
 
 #ifdef CAN_NXP_S32_FD_MODE
-	data->timing_data.sjw = config->sjw_data;
-	if (config->common.sample_point_data) {
-		err = can_calc_timing_data(dev, &data->timing_data, config->common.bus_speed_data,
-						config->common.sample_point_data);
-		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing data for given param");
-			return -EIO;
-		}
-		if (err > 0) {
-			LOG_WRN("Sample-point-data err : %d", err);
-		}
-	} else {
-		data->timing_data.prop_seg = config->prop_seg_data;
-		data->timing_data.phase_seg1 = config->phase_seg1_data;
-		data->timing_data.phase_seg2 = config->phase_seg2_data;
-		err = can_calc_prescaler(dev, &data->timing_data, config->common.bus_speed_data);
-		if (err) {
-			LOG_WRN("Bitrate data error: %d", err);
-		}
+	err = can_calc_timing_data(dev, &data->timing_data, config->common.bus_speed_data,
+				   config->common.sample_point_data);
+	if (err == -EINVAL) {
+		LOG_ERR("Can't find timing data for given param");
+		return -EIO;
+	}
+
+	if (err > 0) {
+		LOG_WRN("Sample-point-data err : %d", err);
 	}
 
 	LOG_DBG("Setting CAN FD bitrate %d:", config->common.bus_speed_data);
@@ -1150,14 +1097,8 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	}
 
 #if defined(CAN_NXP_S32_FD_MODE)
-#define CAN_NXP_S32_TIMING_DATA_CONFIG(n)						\
-		.sjw_data = DT_INST_PROP(n, sjw_data),					\
-		.prop_seg_data = DT_INST_PROP_OR(n, prop_seg_data, 0),			\
-		.phase_seg1_data = DT_INST_PROP_OR(n, phase_seg1_data, 0),		\
-		.phase_seg2_data = DT_INST_PROP_OR(n, phase_seg2_data, 0),
 #define CAN_NXP_S32_BRS		1
 #else
-#define CAN_NXP_S32_TIMING_DATA_CONFIG(n)
 #define CAN_NXP_S32_BRS		0
 #endif
 
@@ -1234,11 +1175,6 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)				\
 				DT_INST_CLOCKS_CELL(n, name),				\
-		.sjw = DT_INST_PROP(n, sjw),						\
-		.prop_seg = DT_INST_PROP_OR(n, prop_seg, 0),				\
-		.phase_seg1 = DT_INST_PROP_OR(n, phase_seg1, 0),			\
-		.phase_seg2 = DT_INST_PROP_OR(n, phase_seg2, 0),			\
-		CAN_NXP_S32_TIMING_DATA_CONFIG(n)					\
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.can_cfg = (Canexcel_Ip_ConfigType *)&can_nxp_s32_default_config##n,	\
 		.irq_config_func = can_irq_config_##n					\

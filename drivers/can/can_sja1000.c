@@ -770,26 +770,14 @@ int can_sja1000_init(const struct device *dev)
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
 
-	if (config->common.sample_point != 0) {
-		err = can_calc_timing(dev, &timing, config->common.bus_speed,
-				      config->common.sample_point);
-		if (err == -EINVAL) {
-			LOG_ERR("bitrate/sample point cannot be met (err %d)", err);
-			return err;
-		}
-
-		LOG_DBG("initial sample point error: %d", err);
-	} else {
-		timing.sjw = config->sjw;
-		timing.prop_seg = 0;
-		timing.phase_seg1 = config->phase_seg1;
-		timing.phase_seg2 = config->phase_seg2;
-
-		err = can_calc_prescaler(dev, &timing, config->common.bus_speed);
-		if (err != 0) {
-			LOG_WRN("initial bitrate error: %d", err);
-		}
+	err = can_calc_timing(dev, &timing, config->common.bus_speed,
+			      config->common.sample_point);
+	if (err == -EINVAL) {
+		LOG_ERR("bitrate/sample point cannot be met (err %d)", err);
+		return err;
 	}
+
+	LOG_DBG("initial sample point error: %d", err);
 
 	/* Configure timing */
 	err = can_set_timing(dev, &timing);

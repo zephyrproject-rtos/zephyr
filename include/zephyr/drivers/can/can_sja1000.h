@@ -105,9 +105,6 @@ struct can_sja1000_config {
 	const struct can_driver_config common;
 	can_sja1000_read_reg_t read_reg;
 	can_sja1000_write_reg_t write_reg;
-	uint32_t sjw;
-	uint32_t phase_seg1;
-	uint32_t phase_seg2;
 	uint8_t ocr;
 	uint8_t cdr;
 	const void *custom;
@@ -128,9 +125,6 @@ struct can_sja1000_config {
 		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 1000000),                              \
 		.read_reg = _read_reg,                                                             \
 		.write_reg = _write_reg,                                                           \
-		.sjw = DT_PROP(node_id, sjw),                                                      \
-		.phase_seg1 = DT_PROP_OR(node_id, phase_seg1, 0),                                  \
-		.phase_seg2 = DT_PROP_OR(node_id, phase_seg2, 0),                                  \
 		.ocr = _ocr,                                                                       \
 		.cdr = _cdr,                                                                       \
 		.custom = _custom,                                                                 \

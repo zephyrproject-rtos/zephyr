@@ -1457,46 +1457,25 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-	if (config->common.sample_point) {
-		err = can_calc_timing(dev, &timing, config->common.bus_speed,
-				      config->common.sample_point);
-		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		LOG_DBG("Presc: %d, TS1: %d, TS2: %d", timing.prescaler, timing.phase_seg1,
-			timing.phase_seg2);
-		LOG_DBG("Sample-point err : %d", err);
-	} else if (config->prop_ts1) {
-		timing.sjw = config->sjw;
-		timing.prop_seg = 0U;
-		timing.phase_seg1 = config->prop_ts1;
-		timing.phase_seg2 = config->ts2;
-		err = can_calc_prescaler(dev, &timing, config->common.bus_speed);
-		if (err != 0) {
-			LOG_WRN("Bitrate error: %d", err);
-		}
+	err = can_calc_timing(dev, &timing, config->common.bus_speed,
+			      config->common.sample_point);
+	if (err == -EINVAL) {
+		LOG_ERR("Can't find timing for given param");
+		return -EIO;
 	}
-#ifdef CONFIG_CAN_FD_MODE
-	if (config->common.sample_point_data) {
-		err = can_calc_timing_data(dev, &timing_data, config->common.bus_speed_data,
-					   config->common.sample_point_data);
-		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing for given dataphase param");
-			return -EIO;
-		}
 
-		LOG_DBG("Sample-point err data phase: %d", err);
-	} else if (config->prop_ts1_data) {
-		timing_data.sjw = config->sjw_data;
-		timing_data.prop_seg = 0U;
-		timing_data.phase_seg1 = config->prop_ts1_data;
-		timing_data.phase_seg2 = config->ts2_data;
-		err = can_calc_prescaler(dev, &timing_data, config->common.bus_speed_data);
-		if (err != 0) {
-			LOG_WRN("Dataphase bitrate error: %d", err);
-		}
+	LOG_DBG("Presc: %d, TS1: %d, TS2: %d", timing.prescaler, timing.phase_seg1,
+		timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", err);
+#ifdef CONFIG_CAN_FD_MODE
+	err = can_calc_timing_data(dev, &timing_data, config->common.bus_speed_data,
+				   config->common.sample_point_data);
+	if (err == -EINVAL) {
+		LOG_ERR("Can't find timing for given dataphase param");
+		return -EIO;
 	}
+
+	LOG_DBG("Sample-point err data phase: %d", err);
 #endif /* CONFIG_CAN_FD_MODE */
 
 	err = can_set_timing(dev, &timing);

@@ -10,43 +10,9 @@ properties:
       Initial data phase bitrate in bit/s.
   sample-point-data:
     type: int
+    required: true
     description: |
       Initial data phase sample point in per mille (e.g. 875 equals 87.5%).
-
-      This property is required unless the timing is specified using time quanta based properties
-      (`sjw-data`, `prop-seg-data`, `phase-seg1-data`, and `phase-seg2-data`).
-
-      If this property is present, the time quanta based timing properties are ignored.
-  sjw-data:
-    type: int
-    deprecated: true
-    default: 1
-    description: |
-      Initial time quanta of resynchronization jump width for the data phase (ISO11898-1:2015).
-
-      Deprecated in favor of automatic calculation of a suitable default SJW based on existing
-      timing parameters. Default of 1 matches the default value previously used for all in-tree CAN
-      controller devicetree instances.
-
-      Applications can still manually set the SJW using the CAN timing APIs.
-  prop-seg-data:
-    type: int
-    deprecated: true
-    description: |
-      Initial time quanta of propagation segment for the data phase (ISO11898-1:2015). Deprecated in
-      favor of setting advanced timing parameters from the application.
-  phase-seg1-data:
-    type: int
-    deprecated: true
-    description: |
-      Initial time quanta of phase buffer 1 segment for the data phase (ISO11898-1:2015). Deprecated
-      in favor of setting advanced timing parameters from the application.
-  phase-seg2-data:
-    type: int
-    deprecated: true
-    description: |
-      Initial time quanta of phase buffer 2 segment for the data phase (ISO11898-1:2015). Deprecated
-      in favor of setting advanced timing parameters from the application.
   tx-delay-comp-offset:
     type: int
     default: 0
