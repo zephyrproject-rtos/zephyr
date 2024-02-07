@@ -5,10 +5,6 @@
 
 if SOC_STM32L152XE
 
-config SOC
-	string
-	default "stm32l152xe"
-
 config NUM_IRQS
 	int
 	default 57
