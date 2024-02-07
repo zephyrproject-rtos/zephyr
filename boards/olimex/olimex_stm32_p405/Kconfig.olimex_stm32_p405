@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_OLIMEX_STM32_P405
-	select SOC_STM32F405XG
+	select SOC_STM32F405XX
