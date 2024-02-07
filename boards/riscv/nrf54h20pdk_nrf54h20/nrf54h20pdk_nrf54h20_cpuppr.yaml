@@ -4,7 +4,7 @@
 identifier: nrf54h20pdk_nrf54h20_cpuppr
 name: nRF54H20-PDK-nRF54H20-PPR
 type: mcu
-arch: riscv
+arch: riscv32
 toolchain:
   - zephyr
 ram: 28
