@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_REG_CVC_VREG_MIN_UV 4050000U
 #define MAX20335_REG_CVC_VREG_STEP_UV 50000U
 #define MAX20335_REG_CVC_VREG_MIN_IDX 0x0U
-#define MAX20335_REG_CVC_VREG_MAX_IDX 0x0CU
+#define MAX20335_REG_CVC_VREG_MAX_IDX 0x0BU
 
 #define INT_ENABLE_DELAY K_MSEC(500)
 
@@ -155,7 +155,7 @@ static int max20335_set_constant_charge_voltage(const struct device *dev,
 	int ret;
 
 	ret = linear_range_get_index(&charger_uv_range, voltage_uv, &idx);
-	if (ret == -EINVAL) {
+	if (ret < 0) {
 		return ret;
 	}
 
