@@ -205,11 +205,11 @@ Flashing
 
 First of all, open your serial terminal.
 
-Applications for the ``rcar_h3ulcb_cr7`` board configuration can be built in the usual way (see :ref:`build_an_application` for more details).
+Applications for the ``rcar_h3ulcb/r8a77951/r7`` board configuration can be built in the usual way (see :ref:`build_an_application` for more details).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rcar_h3ulcb_cr7
+   :board: rcar_h3ulcb/r8a77951/r7
    :goals: flash
 
 You should see the following message in the terminal:
@@ -217,7 +217,7 @@ You should see the following message in the terminal:
 .. code-block:: console
 
 	*** Booting Zephyr OS build v2.6.0-rc1 ***
-	Hello World! rcar_h3ulcb_cr7
+	Hello World! rcar_h3ulcb
 
 Debugging
 =========
@@ -228,7 +228,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rcar_h3ulcb_cr7
+   :board: rcar_h3ulcb/r8a77951/r7
    :goals: debug
 
 You will then get access to a GDB session for debug.
@@ -238,7 +238,7 @@ By continuing the app, you should see the following message in the terminal:
 .. code-block:: console
 
 	*** Booting Zephyr OS build v2.6.0-rc1 ***
-	Hello World! rcar_h3ulcb_cr7
+	Hello World! rcar_h3ulcb
 
 References
 **********

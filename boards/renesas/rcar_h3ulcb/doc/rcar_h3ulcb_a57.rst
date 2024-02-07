@@ -61,9 +61,8 @@ hardware features:
 
 Other hardware features have not been enabled yet for this board.
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/arm64/rcar_h3ulcb_ca57/rcar_h3ulcb_ca57_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/renesas/rcar_h3ulcb/rcar_h3ulcb_r8a77951_a57_defconfig``
 
 Programming and Debugging
 *************************
