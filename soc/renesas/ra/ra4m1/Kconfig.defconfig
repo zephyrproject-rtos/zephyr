@@ -3,11 +3,6 @@
 
 if SOC_SERIES_RA4M1
 
-rsource "Kconfig.defconfig.r7fa4*"
-
-config SOC_SERIES
-	default "ra4m1"
-
 config NUM_IRQS
 	default 32
 
