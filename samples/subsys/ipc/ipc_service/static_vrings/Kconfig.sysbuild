@@ -1,4 +1,5 @@
 # Copyright 2023 Nordic Semiconductor ASA
+# Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -7,3 +8,7 @@ source "share/sysbuild/Kconfig"
 config NET_CORE_BOARD
 string
 	default "nrf5340dk/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"
+	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
+	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
+	default "mimxrt1170_evk/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evk"
+	default "mimxrt1170_evkb/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evkb"
