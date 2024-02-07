@@ -5,9 +5,11 @@
 
 if BOARD_ADI_EVAL_ADIN1110EBZ
 
-config SPI_STM32_INTERRUPT
+config BOARD
+	default "adi_eval_adin1110ebz"
+
+config SPI_STM32_DMA
 	default y
-	depends on SPI
 
 config MDIO_INIT_PRIORITY
 	default 81

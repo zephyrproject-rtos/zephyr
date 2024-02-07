@@ -5,9 +5,8 @@
 
 if BOARD_ADI_EVAL_ADIN2111EBZ
 
-config SPI_STM32_INTERRUPT
-	default y
-	depends on SPI
+config BOARD
+	default "adi_eval_adin2111ebz"
 
 config MDIO_INIT_PRIORITY
 	default 81
@@ -16,6 +15,9 @@ config MDIO_INIT_PRIORITY
 config PHY_INIT_PRIORITY
 	default 82
 	depends on NET_L2_ETHERNET && ETH_DRIVER
+
+config SPI_STM32_DMA
+	default y
 
 if NETWORKING
 
