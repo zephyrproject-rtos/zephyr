@@ -1,4 +1,4 @@
-.. _rcar_salvator_xs_m3:
+.. _rcar_salvator_xs:
 
 R-CAR Salvator XS M3 ARM CA57 (ARMv8)
 #####################################
@@ -31,7 +31,7 @@ The R-Car M3-W includes:
 
 Supported Features
 ==================
-The Renesas rcar_salvator_xs_m3 board configuration supports the following
+The Renesas rcar_salvator_xs board configuration supports the following
 hardware features:
 
 +-----------+------------------------------+--------------------------------+
@@ -46,9 +46,8 @@ hardware features:
 
 Other hardware features have not been enabled yet for this board.
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/arm64/rcar_salvator_xs_m3/rcar_salvator_xs_m3_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/renesas/rcar_salvator_xs/rcar_salvator_xs_defconfig`
 
 Programming and Debugging
 *************************

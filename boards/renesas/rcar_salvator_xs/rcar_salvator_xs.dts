@@ -8,7 +8,7 @@
 /dts-v1/;
 #include <mem.h>
 #include <arm64/renesas/r8a77961.dtsi>
-#include "salvator_xs_m3-pinctrl.dtsi"
+#include "rcar_salvator_xs-pinctrl.dtsi"
 
 / {
 	model = "Salvator XS M3";
