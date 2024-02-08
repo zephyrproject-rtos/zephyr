@@ -16,39 +16,14 @@
 
 #include "shell/bt.h"
 
-#define TMAP_CG_SUPPORTED                                                                          \
-	(IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&        \
-	 IS_ENABLED(CONFIG_BT_TBS) && IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR))
-
-#define TMAP_CT_SUPPORTED                                                                          \
-	(IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&         \
-	 IS_ENABLED(CONFIG_BT_TBS_CLIENT) &&                                                       \
-	 (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK) &&                                                    \
-	  IS_ENABLED(CONFIG_BT_VCP_VOL_REND) == IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)))
-
-#define TMAP_UMS_SUPPORTED                                                                         \
-	(IS_ENABLED(CONFIG_BT_CAP_INITIATOR) &&                                                    \
-	 IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR) && \
-	 IS_ENABLED(CONFIG_BT_MCS))
-
-#define TMAP_UMR_SUPPORTED                                                                         \
-	(IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) && IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK) &&               \
-	 IS_ENABLED(CONFIG_BT_VCP_VOL_REND))
-
-#define TMAP_BMS_SUPPORTED                                                                         \
-	(IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE))
-
-#define TMAP_BMR_SUPPORTED                                                                         \
-	(IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) && IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK))
-
 static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 {
-	const enum bt_tmap_role role = (TMAP_CG_SUPPORTED ? BT_TMAP_ROLE_CG : 0U) |
-				       (TMAP_CT_SUPPORTED ? BT_TMAP_ROLE_CT : 0U) |
-				       (TMAP_UMS_SUPPORTED ? BT_TMAP_ROLE_UMS : 0U) |
-				       (TMAP_UMR_SUPPORTED ? BT_TMAP_ROLE_UMR : 0U) |
-				       (TMAP_BMS_SUPPORTED ? BT_TMAP_ROLE_BMS : 0U) |
-				       (TMAP_BMR_SUPPORTED ? BT_TMAP_ROLE_BMR : 0U);
+	const enum bt_tmap_role role = (BT_TMAP_CG_SUPPORTED ? BT_TMAP_ROLE_CG : 0U) |
+				       (BT_TMAP_CT_SUPPORTED ? BT_TMAP_ROLE_CT : 0U) |
+				       (BT_TMAP_UMS_SUPPORTED ? BT_TMAP_ROLE_UMS : 0U) |
+				       (BT_TMAP_UMR_SUPPORTED ? BT_TMAP_ROLE_UMR : 0U) |
+				       (BT_TMAP_BMS_SUPPORTED ? BT_TMAP_ROLE_BMS : 0U) |
+				       (BT_TMAP_BMR_SUPPORTED ? BT_TMAP_ROLE_BMR : 0U);
 	int err;
 
 	shell_info(sh, "Registering TMAS with role: %u", role);
