@@ -5,10 +5,7 @@
 
 if SOC_SERIES_STM32G4X
 
-source "soc/soc_legacy/arm/st_stm32/stm32g4/Kconfig.defconfig.stm32g4*"
-
-config SOC_SERIES
-	default "stm32g4"
+rsource "Kconfig.defconfig.stm32g4*"
 
 if PM
 config PM_DEVICE
