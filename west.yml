@@ -25,6 +25,8 @@ manifest:
       url-base: https://github.com/BabbleSim
     - name: nordicsemi
       url-base: https://github.com/NordicSemiconductor
+    - name: mcutools
+      url-base: https://github.com/mcu-tools
 
   group-filter: [-babblesim, -optional]
 
@@ -284,8 +286,9 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: a4eda30f5b0cfd0cf15512be9dcd559239dbfc91
+      revision: pull/1900/head
       path: bootloader/mcuboot
+      remote: mcutools
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
