@@ -315,6 +315,11 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 	LOG_DBG("stream %p ep %p dir %s receiver_ready %u",
 		stream, ep, bt_audio_dir_str(ep->dir), ep->receiver_ready);
 
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	/* reset sequence number */
+	stream->_prev_seq_num = 0U;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
+
 	stream_ops = stream->ops;
 	if (stream_ops != NULL && stream_ops->connected != NULL) {
 		stream_ops->connected(stream);
