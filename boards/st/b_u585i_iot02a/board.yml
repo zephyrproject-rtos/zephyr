@@ -1,0 +1,7 @@
+board:
+  name: b_u585i_iot02a
+  vendor: st
+  socs:
+    - name: stm32u585xx
+      variants:
+        - name: ns

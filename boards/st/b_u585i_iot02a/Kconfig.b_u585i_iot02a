@@ -1,0 +1,5 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_B_U585I_IOT02A
+	select SOC_STM32U585XX
