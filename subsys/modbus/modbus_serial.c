@@ -444,6 +444,58 @@ static int configure_gpio(struct modbus_context *ctx)
 	return 0;
 }
 
+static inline int configure_uart(struct modbus_context *ctx,
+				 struct modbus_iface_param *param)
+{
+	struct modbus_serial_config *cfg = ctx->cfg;
+	struct uart_config uart_cfg = {
+		.baudrate = param->serial.baud,
+		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
+	};
+
+	if (ctx->mode == MODBUS_MODE_ASCII) {
+		uart_cfg.data_bits = UART_CFG_DATA_BITS_7;
+	} else {
+		uart_cfg.data_bits = UART_CFG_DATA_BITS_8;
+	}
+
+	switch (param->serial.parity) {
+	case UART_CFG_PARITY_ODD:
+	case UART_CFG_PARITY_EVEN:
+		uart_cfg.parity = param->serial.parity;
+		uart_cfg.stop_bits = UART_CFG_STOP_BITS_1;
+		break;
+	case UART_CFG_PARITY_NONE:
+		/* Use of no parity requires 2 stop bits */
+		uart_cfg.parity = param->serial.parity;
+		uart_cfg.stop_bits = UART_CFG_STOP_BITS_2;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (ctx->client) {
+		/* Allow custom stop bit settings only in client mode */
+		switch (param->serial.stop_bits_client) {
+		case UART_CFG_STOP_BITS_0_5:
+		case UART_CFG_STOP_BITS_1:
+		case UART_CFG_STOP_BITS_1_5:
+		case UART_CFG_STOP_BITS_2:
+			uart_cfg.stop_bits = param->serial.stop_bits_client;
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+
+	if (uart_configure(cfg->dev, &uart_cfg) != 0) {
+		LOG_ERR("Failed to configure UART");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 void modbus_serial_rx_disable(struct modbus_context *ctx)
 {
 	modbus_serial_rx_off(ctx);
@@ -505,7 +557,6 @@ int modbus_serial_init(struct modbus_context *ctx,
 	struct modbus_serial_config *cfg = ctx->cfg;
 	const uint32_t if_delay_max = 3500000;
 	const uint32_t numof_bits = 11;
-	struct uart_config uart_cfg;
 
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
@@ -521,47 +572,10 @@ int modbus_serial_init(struct modbus_context *ctx,
 		return -ENODEV;
 	}
 
-	uart_cfg.baudrate = param.serial.baud,
-	uart_cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
-
-	if (ctx->mode == MODBUS_MODE_ASCII) {
-		uart_cfg.data_bits = UART_CFG_DATA_BITS_7;
-	} else {
-		uart_cfg.data_bits = UART_CFG_DATA_BITS_8;
-	}
-
-	switch (param.serial.parity) {
-	case UART_CFG_PARITY_ODD:
-	case UART_CFG_PARITY_EVEN:
-		uart_cfg.parity = param.serial.parity;
-		uart_cfg.stop_bits = UART_CFG_STOP_BITS_1;
-		break;
-	case UART_CFG_PARITY_NONE:
-		/* Use of no parity requires 2 stop bits */
-		uart_cfg.parity = param.serial.parity;
-		uart_cfg.stop_bits = UART_CFG_STOP_BITS_2;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	if (ctx->client) {
-		/* Allow custom stop bit settings only in client mode */
-		switch (param.serial.stop_bits_client) {
-		case UART_CFG_STOP_BITS_0_5:
-		case UART_CFG_STOP_BITS_1:
-		case UART_CFG_STOP_BITS_1_5:
-		case UART_CFG_STOP_BITS_2:
-			uart_cfg.stop_bits = param.serial.stop_bits_client;
-			break;
-		default:
+	if (IS_ENABLED(CONFIG_UART_USE_RUNTIME_CONFIGURE)) {
+		if (configure_uart(ctx, &param) != 0) {
 			return -EINVAL;
 		}
-	}
-
-	if (uart_configure(cfg->dev, &uart_cfg) != 0) {
-		LOG_ERR("Failed to configure UART");
-		return -EINVAL;
 	}
 
 	if (param.serial.baud <= 38400) {
