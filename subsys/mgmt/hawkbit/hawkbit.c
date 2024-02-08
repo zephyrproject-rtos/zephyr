@@ -680,6 +680,12 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 				break;
 			}
 
+			if (rsp->http_status_code / 100 == 4) {
+				LOG_ERR("HTTP request denied: %d", rsp->http_status_code);
+				hb_context.code_status = HAWKBIT_PERMISSION_ERROR;
+				break;
+			}
+
 			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
 			ret = json_obj_parse(hb_context.response_data,
 					     hb_context.dl.downloaded_size, json_ctl_res_descr,
@@ -1223,6 +1229,10 @@ static void autohandler(struct k_work *work)
 
 	case HAWKBIT_NETWORKING_ERROR:
 		LOG_INF("Network error");
+		break;
+
+	case HAWKBIT_PERMISSION_ERROR:
+		LOG_INF("Permission error");
 		break;
 
 	case HAWKBIT_METADATA_ERROR:
