@@ -1,0 +1,11 @@
+# Kinetis KL2x series configuration options
+
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KINETIS_KL2X
+
+config NUM_IRQS
+	default 32 if SOC_MKL25Z4
+
+endif # SOC_SERIES_KINETIS_KL2X
