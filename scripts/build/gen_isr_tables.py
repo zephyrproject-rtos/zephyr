@@ -200,7 +200,7 @@ class gen_isr_config:
         irq1 = irq & self.int_lvl_masks[0]
         # Figure out third level interrupt position
         if irq3:
-            list_index = self.get_irq_index(irq2, 3)
+            list_index = self.get_irq_index(irq2 - 1, 3)
             irq3_pos = self.get_irq_baseoffset(3) + self.__max_irq_per * list_index + irq3 - 1
             self.__log.debug('IRQ_level = 3')
             self.__log.debug('IRQ_Indx = ' + str(irq3))
