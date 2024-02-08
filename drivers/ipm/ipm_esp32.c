@@ -95,7 +95,7 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 {
 	struct esp32_ipm_data *dev_data = (struct esp32_ipm_data *)dev->data;
 
-	if (data == NULL) {
+	if (size > 0 && data == NULL) {
 		LOG_ERR("Invalid data source");
 		return -EINVAL;
 	}
