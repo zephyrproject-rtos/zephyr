@@ -24,6 +24,10 @@ family:
     - name: stm32f103xe
     - name: stm32f105xc
     - name: stm32f107xc
+  - name: stm32f2x
+    socs:
+    - name: stm32f205xx
+    - name: stm32f207xx
   - name: stm32f3x
     socs:
     - name: stm32f302x8
