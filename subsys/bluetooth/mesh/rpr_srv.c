@@ -968,6 +968,12 @@ static int handle_link_close(const struct bt_mesh_model *mod, struct bt_mesh_msg
 	 * which will be used in the link report when the link is fully closed.
 	 */
 
+	/* Disable randomization for the Remote Provisioning Link Status message to avoid reordering
+	 * of it with the Remote Provisioning Link Report message that shall be sent in a sequence
+	 * when closing an active link (see section 4.4.5.5.3.3 of MshPRTv1.1).
+	 */
+	ctx->rnd_delay = false;
+
 	link_status_send(ctx, BT_MESH_RPR_SUCCESS);
 	link_close(BT_MESH_RPR_ERR_LINK_CLOSED_BY_CLIENT, reason);
 
