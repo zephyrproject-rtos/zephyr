@@ -28,5 +28,12 @@ config SOC_FAMILY
 	  SoC if the SoC belongs to a SoC family. Usually a SoC family also
 	  indicates the vendor of the SoC.
 
+config SOC_PART_NUMBER
+	string
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
 # Source all Kconfig HWMv2 from SoC roots.
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc"
