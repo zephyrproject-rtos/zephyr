@@ -52,7 +52,7 @@ static void call_log_generic(uint32_t source_id, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	log2_generic(LOG_LEVEL_INF, fmt, ap);
+	log_generic(LOG_LEVEL_INF, fmt, ap);
 	va_end(ap);
 }
 
