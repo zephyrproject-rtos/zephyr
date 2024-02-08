@@ -32,7 +32,7 @@ this implementation, the connection between cloud and device is secured using
 TLS/DTLS, and the signed firmware binary is confirmed by MCUboot before the
 upgrade occurs.
 
-1. A working sample can be found on the `Golioth Zephyr-SDK repository`_
+1. A working sample can be found on the `Golioth Firmware SDK repository`_
 2. The `Golioth OTA documentation`_ includes complete information about the
    versioning process
 
@@ -79,7 +79,7 @@ available but it does not demonstrate the firmware update feature.
 
 .. _MCUboot bootloader: https://mcuboot.com/
 .. _Golioth: https://golioth.io/
-.. _Golioth Zephyr-SDK repository: https://github.com/golioth/zephyr-sdk/tree/main/samples/dfu
-.. _Golioth OTA documentation: https://docs.golioth.io/cloud/services/ota
+.. _Golioth Firmware SDK repository: https://github.com/golioth/golioth-firmware-sdk/tree/main/examples/zephyr/fw_update
+.. _Golioth OTA documentation: https://docs.golioth.io/device-management/ota
 .. _Eclipse hawkBit: https://www.eclipse.org/hawkbit/
 .. _UpdateHub: https://updatehub.io/
