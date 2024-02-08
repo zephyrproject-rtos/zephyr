@@ -15,7 +15,7 @@ Building and Running
 
 This project outputs sensor data to the console. FXOS8700
 sensor is present on the :ref:`frdm_k64f`, :ref:`frdm_k22f`,
-:ref:`frdm_kw41z`, :ref:`hexiwear_k64`, and :ref:`twr_ke18f` boards.
+:ref:`frdm_kw41z`, :ref:`hexiwear`, and :ref:`twr_ke18f` boards.
 Accelerometer only devices are present on the :ref:`frdm_kl25z`,
 :ref:`bbc_microbit`, and :ref:`reel_board` boards. It does not work on
 QEMU.

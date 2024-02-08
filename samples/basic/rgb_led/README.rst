@@ -39,7 +39,7 @@ an unsupported board:
    Unsupported board: green-pwm-led devicetree alias is not defined
    Unsupported board: blue-pwm-led devicetree alias is not defined
 
-See :zephyr_file:`boards/arm/hexiwear_k64/hexiwear_k64.dts` for an example
+See :zephyr_file:`boards/nxp/hexiwear/hexiwear_mk64f12.dts` for an example
 :file:`BOARD.dts` file which supports this sample.
 
 Wiring
@@ -53,12 +53,12 @@ Otherwise, LEDs should be connected to the appropriate PWM channels.
 Building and Running
 ********************
 
-For example, to build and flash this board for :ref:`hexiwear_k64`:
+For example, to build and flash this board for :ref:`hexiwear`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/rgb_led
-   :board: hexiwear_k64
+   :board: hexiwear/mk64f12
    :goals: build flash
    :compact:
 
-Change ``hexiwear_k64`` appropriately for other supported boards.
+Change ``hexiwear/mk64f12`` appropriately for other supported boards.

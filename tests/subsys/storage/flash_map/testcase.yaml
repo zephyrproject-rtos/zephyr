@@ -17,7 +17,7 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - frdm_k64f
-      - hexiwear_k64
+      - hexiwear/mk64f12
       - twr_ke18f
     integration_platforms:
       - nrf52840dk/nrf52840
