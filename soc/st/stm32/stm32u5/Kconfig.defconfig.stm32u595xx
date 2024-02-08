@@ -5,9 +5,6 @@
 
 if SOC_STM32U595XX
 
-config SOC
-	default "stm32u595xx"
-
 config NUM_IRQS
 	default 132
 
