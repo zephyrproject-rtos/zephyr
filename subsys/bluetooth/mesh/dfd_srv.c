@@ -1148,6 +1148,14 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_cancel(struct bt_mesh_dfd_srv *srv,
 		return BT_MESH_DFD_ERR_INTERNAL;
 	}
 
+	if (prev_phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE && ctx) {
+		/* Disable randomization for the Firmware Distribution State message to avoid
+		 * reordering when Firmware Distribution Server sends 2 messages in a row when
+		 * cancelling the update (see section 6.2.3.10 of MshDFUv1.0).
+		 */
+		ctx->rnd_delay = false;
+	}
+
 	if (ctx != NULL) {
 		status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
 	}
