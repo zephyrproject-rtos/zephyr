@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_F207ZG
 
-config BOARD
-	default "nucleo_f207zg"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
