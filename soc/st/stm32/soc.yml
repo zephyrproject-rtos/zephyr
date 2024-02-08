@@ -138,6 +138,14 @@ family:
   - name: stm32mp1x
     socs:
     - name: stm32mp157cxx
+  - name: stm32u5x
+    socs:
+    - name: stm32u5a5xx
+    - name: stm32u5a9xx
+    - name: stm32u575xx
+    - name: stm32u585xx
+    - name: stm32u595xx
+    - name: stm32u599xx
   - name: stm32wlx
     socs:
     - name: stm32wle4xx
