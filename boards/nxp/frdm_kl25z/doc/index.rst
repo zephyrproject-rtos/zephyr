@@ -65,7 +65,7 @@ The frdm_kl25z board configuration supports the following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/frdm_kl25z/frdm_kl25z_defconfig``
+	``boards/nxp/frdm_kl25z/frdm_kl25z_defconfig``
 
 Other hardware features are not currently supported by the port.
 
