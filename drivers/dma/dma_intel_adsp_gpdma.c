@@ -68,7 +68,7 @@ static void intel_adsp_gpdma_dump_registers(const struct device *dev, uint32_t c
 	llpl = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
 	llpu = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
 
-	LOG_INF("channel: %d cap %x, ctl %x, ipptr %x, llpc %x, llpl %x, llpu %x",
+	LOG_INF("%s: channel: %d cap %x, ctl %x, ipptr %x, llpc %x, llpl %x, llpu %x", dev->name,
 		channel, cap, ctl, ipptr, llpc, llpl, llpu);
 
 	/* Channel Register Dump */
@@ -149,8 +149,7 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 	switch (cfg->channel_direction) {
 	case MEMORY_TO_PERIPHERAL:
 	case PERIPHERAL_TO_MEMORY:
-		LOG_DBG("%s: dma %s configuring llp for %x",
-			__func__, dev->name, cfg->dma_slot);
+		LOG_DBG("%s: channel %d configuring llp for %x", dev->name, channel, cfg->dma_slot);
 		intel_adsp_gpdma_llp_config(dev, channel, cfg->dma_slot);
 		break;
 	default:
@@ -342,8 +341,7 @@ static int intel_adsp_gpdma_power_on(const struct device *dev)
 	ret = intel_adsp_gpdma_enable(dev);
 
 	if (ret != 0) {
-		LOG_ERR("%s: dma %s failed to initialize", __func__,
-			dev->name);
+		LOG_ERR("%s: failed to initialize", dev->name);
 		goto out;
 	}
 #endif
@@ -357,16 +355,14 @@ static int intel_adsp_gpdma_power_on(const struct device *dev)
 	/* Disable all channels and Channel interrupts */
 	ret = dw_dma_setup(dev);
 	if (ret != 0) {
-		LOG_ERR("%s: dma %s failed to initialize", __func__,
-			dev->name);
+		LOG_ERR("%s: failed to initialize", dev->name);
 		goto out;
 	}
 
 	/* Configure interrupts */
 	dev_cfg->dw_cfg.irq_config();
 
-	LOG_INF("%s: dma %s initialized", __func__,
-		dev->name);
+	LOG_INF("%s: initialized", dev->name);
 
 out:
 	return 0;
@@ -375,8 +371,7 @@ out:
 #ifdef CONFIG_PM_DEVICE
 static int intel_adsp_gpdma_power_off(const struct device *dev)
 {
-	LOG_INF("%s: dma %s power off", __func__,
-		dev->name);
+	LOG_INF("%s: power off", dev->name);
 	/* Enabling dynamic clock gating */
 	intel_adsp_gpdma_clock_disable(dev);
 
