@@ -30,5 +30,8 @@ properties:
   write-only:
     type: boolean
     description: |
-      Controller is not readable, IE only DOUT pin is connected on the SPI
-      interface.
+      Only writes to display controller, do not perform reads.
+      If all controllers are write-only, read functions will be
+      optimized out for size.
+      It can also be used as an alternative to half duplex when
+      only one data line is connected.
