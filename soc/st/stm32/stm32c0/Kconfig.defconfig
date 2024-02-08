@@ -5,9 +5,6 @@
 
 if SOC_SERIES_STM32C0X
 
-source "soc/soc_legacy/arm/st_stm32/stm32c0/Kconfig.defconfig.stm32c0*"
-
-config SOC_SERIES
-	default "stm32c0"
+rsource "Kconfig.defconfig.stm32c0*"
 
 endif # SOC_SERIES_STM32C0X

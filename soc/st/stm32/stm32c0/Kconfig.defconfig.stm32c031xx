@@ -5,9 +5,6 @@
 
 if SOC_STM32C031XX
 
-config SOC
-	default "stm32c031xx"
-
 config NUM_IRQS
 	default 29
 
