@@ -12,6 +12,8 @@ properties:
     description: |
       SPI Duplex mode, full or half. By default it's always full duplex thus 0
       as this is, by far, the most common mode.
+      Selecting half duplex allows to use SPI MOSI as a bidirectional line,
+      typically used when only one data line is connected.
       Use the macros not the actual enum value, here is the concordance
       list (see dt-bindings/spi/spi.h)
         0    SPI_FULL_DUPLEX
