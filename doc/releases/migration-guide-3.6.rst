@@ -246,7 +246,9 @@ Device Drivers and Device Tree
 
 * ILI9XXX based displays now use the MIPI DBI driver class. These displays
   must now be declared within a MIPI DBI driver wrapper device, which will
-  manage interfacing with the display. For an example, see below:
+  manage interfacing with the display. Note that the `cmd-data-gpios` pin has
+  changed polarity with this update, to align better with the new
+  `dc-gpios` name. For an example, see below:
 
   .. code-block:: devicetree
 
@@ -269,7 +271,7 @@ Device Drivers and Device Tree
     mipi_dbi {
         compatible = "zephyr,mipi-dbi-spi";
         reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
-        dc-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+        dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
         spi-dev = <&spi2>;
         #address-cells = <1>;
         #size-cells = <0>;
