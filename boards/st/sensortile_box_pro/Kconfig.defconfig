@@ -5,9 +5,6 @@
 
 if BOARD_SENSORTILE_BOX_PRO
 
-config BOARD
-	default "sensortile_box_pro"
-
 if BT
 
 config SPI
