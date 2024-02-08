@@ -56,6 +56,20 @@ family:
     - name: stm32f765xx
     - name: stm32f767xx
     - name: stm32f769xx
+  - name: stm32g0x
+    socs:
+    - name: stm32g030xx
+    - name: stm32g031xx
+    - name: stm32g041xx
+    - name: stm32g050xx
+    - name: stm32g051xx
+    - name: stm32g061xx
+    - name: stm32g070xx
+    - name: stm32g071xx
+    - name: stm32g081xx
+    - name: stm32g0b0xx
+    - name: stm32g0b1xx
+    - name: stm32g0c1xx
   - name: stm32l1x
     socs:
     - name: stm32l151xb
