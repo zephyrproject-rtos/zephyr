@@ -2549,12 +2549,13 @@
 #define DT_IRQN_L1_INTERNAL(node_id, idx) DT_IRQ_BY_IDX(node_id, idx, irq)
 /* DT helper macro to encode a node's IRQN to level 2 according to the multi-level scheme */
 #define DT_IRQN_L2_INTERNAL(node_id, idx)                                                          \
-	(IRQ_TO_L2(DT_IRQN_L1_INTERNAL(node_id, idx)) | DT_IRQ(DT_IRQ_INTC(node_id), irq))
+	(IRQ_TO_L2(DT_IRQN_L1_INTERNAL(node_id, idx)) |                                            \
+	 DT_IRQ(DT_IRQ_INTC_BY_IDX(node_id, idx), irq))
 /* DT helper macro to encode a node's IRQN to level 3 according to the multi-level scheme */
 #define DT_IRQN_L3_INTERNAL(node_id, idx)                                                          \
 	(IRQ_TO_L3(DT_IRQN_L1_INTERNAL(node_id, idx)) |                                            \
-	 IRQ_TO_L2(DT_IRQ(DT_IRQ_INTC(node_id), irq)) |                                            \
-	 DT_IRQ(DT_IRQ_INTC(DT_IRQ_INTC(node_id)), irq))
+	 IRQ_TO_L2(DT_IRQ(DT_IRQ_INTC_BY_IDX(node_id, idx), irq)) |                                \
+	 DT_IRQ(DT_IRQ_INTC(DT_IRQ_INTC_BY_IDX(node_id, idx)), irq))
 /* DT helper macro for the macros above */
 #define DT_IRQN_LVL_INTERNAL(node_id, idx, level) DT_CAT3(DT_IRQN_L, level, _INTERNAL)(node_id, idx)
 
