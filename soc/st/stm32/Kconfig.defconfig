@@ -56,4 +56,8 @@ config MEMC_STM32
 	default y
 	depends on MEMC
 
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
+
 endif # SOC_FAMILY_STM32
