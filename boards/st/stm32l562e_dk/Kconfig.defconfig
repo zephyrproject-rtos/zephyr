@@ -27,15 +27,3 @@ config BT_HCI_VS_EXT
 endif # BT
 
 endif # BOARD_STM32L562E_DK
-
-if BOARD_STM32L562E_DK_STM32L562XX_NS
-
-if TRUSTED_EXECUTION_NONSECURE
-
-# Get flash configuration for NS image from dts flash partition
-config USE_DT_CODE_PARTITION
-	default y
-
-endif # TRUSTED_EXECUTION_NONSECURE
-
-endif # BOARD_STM32L562E_DK_STM32L562XX_NS
