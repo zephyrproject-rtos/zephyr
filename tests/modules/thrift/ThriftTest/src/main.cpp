@@ -29,9 +29,11 @@ ctx context;
 static K_THREAD_STACK_DEFINE(ThriftTest_server_stack, CONFIG_THRIFTTEST_SERVER_STACK_SIZE);
 static const char cert_pem[] = {
 #include "qemu_cert.pem.inc"
+	'\0'
 };
 static const char key_pem[] = {
 #include "qemu_key.pem.inc"
+	'\0'
 };
 
 static void *server_func(void *arg)
