@@ -19,7 +19,11 @@ combination of these.
 Each element is stored in flash as metadata (8 byte) and data. The metadata is
 written in a table starting from the end of a nvs sector, the data is
 written one after the other from the start of the sector. The metadata consists
-of: id, data offset in sector, data length, part (unused) and a crc.
+of: id, data offset in sector, data length, part (unused), and a CRC. The CRC is
+only calculated over the metadata and only ensures that a write has been
+completed. The actual data of the element is not protected by a CRC. It is
+encouraged to include a CRC as part of the data and to take appropriate
+corrective actions when the data CRC does not match its expected value.
 
 A write of data to nvs always starts with writing the data, followed by a write
 of the metadata. Data that is written in flash without metadata is ignored
