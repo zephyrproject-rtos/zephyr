@@ -25,6 +25,7 @@
 #define W5500_SHAR		0x0009 /* Source MAC address */
 #define W5500_IR		0x0015 /* Interrupt Register */
 #define W5500_COMMON_REGS_LEN	0x0040
+#define W5500_PHYCFGR		0x002E /* PHY Configuration register */
 
 #define W5500_Sn_MR		0x0000 /* Sn Mode Register */
 #define W5500_Sn_CR		0x0001 /* Sn Command Register */
@@ -97,6 +98,7 @@ struct w5500_runtime {
 	struct gpio_callback gpio_cb;
 	struct k_sem tx_sem;
 	struct k_sem int_sem;
+	bool link_up;
 	void (*generate_mac)(uint8_t *mac);
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
 };

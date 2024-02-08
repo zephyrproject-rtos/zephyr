@@ -164,12 +164,12 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
 		if (!reg) {
 			break;
-			}
+		}
 		if (sys_timepoint_expired(end)) {
 			return -EIO;
-			}
-		k_busy_wait(W5500_PHY_ACCESS_DELAY);
 		}
+		k_busy_wait(W5500_PHY_ACCESS_DELAY);
+	}
 	return 0;
 }
 
@@ -275,6 +275,30 @@ static void w5500_rx(const struct device *dev)
 	w5500_command(dev, S0_CR_RECV);
 }
 
+static void w5500_update_link_status(const struct device *dev)
+{
+	uint8_t phycfgr;
+	struct w5500_runtime *ctx = dev->data;
+
+	if (w5500_spi_read(dev, W5500_PHYCFGR, &phycfgr, 1) < 0) {
+		return;
+	}
+
+	if (phycfgr & 0x01) {
+		if (ctx->link_up != true) {
+			LOG_INF("%s: Link up", dev->name);
+			ctx->link_up = true;
+			net_eth_carrier_on(ctx->iface);
+		}
+	} else {
+		if (ctx->link_up != false) {
+			LOG_INF("%s: Link down", dev->name);
+			ctx->link_up = false;
+			net_eth_carrier_off(ctx->iface);
+		}
+	}
+}
+
 static void w5500_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -282,32 +306,43 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 
 	const struct device *dev = p1;
 	uint8_t ir;
+	int res;
 	struct w5500_runtime *ctx = dev->data;
 	const struct w5500_config *config = dev->config;
 
 	while (true) {
-		k_sem_take(&ctx->int_sem, K_FOREVER);
+		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 
-		while (gpio_pin_get_dt(&(config->interrupt))) {
-			/* Read interrupt */
-			w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
+		if (res == 0) {
+			/* semaphore taken, update link status and receive packets */
+			if (ctx->link_up != true) {
+				w5500_update_link_status(dev);
+			}
 
-			if (ir) {
-				/* Clear interrupt */
-				w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
+			while (gpio_pin_get_dt(&(config->interrupt))) {
+				/* Read interrupt */
+				w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
 
-				LOG_DBG("IR received");
+				if (ir) {
+					/* Clear interrupt */
+					w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
 
-				if (ir & S0_IR_SENDOK) {
-					k_sem_give(&ctx->tx_sem);
-					LOG_DBG("TX Done");
-				}
+					LOG_DBG("IR received");
 
-				if (ir & S0_IR_RECV) {
-					w5500_rx(dev);
-					LOG_DBG("RX Done");
+					if (ir & S0_IR_SENDOK) {
+						k_sem_give(&ctx->tx_sem);
+						LOG_DBG("TX Done");
+					}
+
+					if (ir & S0_IR_RECV) {
+						w5500_rx(dev);
+						LOG_DBG("RX Done");
+					}
 				}
 			}
+		} else if (res == -EAGAIN) {
+			/* semaphore timeout period expired, check link status */
+			w5500_update_link_status(dev);
 		}
 	}
 }
@@ -326,6 +361,9 @@ static void w5500_iface_init(struct net_if *iface)
 	}
 
 	ethernet_init(iface);
+
+	/* Do not start the interface until PHY link is up */
+	net_if_carrier_off(iface);
 }
 
 static enum ethernet_hw_caps w5500_get_capabilities(const struct device *dev)
@@ -504,6 +542,8 @@ static int w5500_init(const struct device *dev)
 	uint8_t rtr[2];
 	const struct w5500_config *config = dev->config;
 	struct w5500_runtime *ctx = dev->data;
+
+	ctx->link_up = false;
 
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
