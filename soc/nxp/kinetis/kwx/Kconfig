@@ -1,0 +1,62 @@
+# Kinetis KWx MCU series
+
+# Copyright (c) 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_KWX
+	select ARM
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL
+	select PLATFORM_SPECIFIC_INIT
+
+config SOC_MKW22D5
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select HAS_MCUX_RCM
+
+config SOC_MKW24D5
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select HAS_MCUX_RCM
+
+config SOC_MKW40Z4
+	select CPU_CORTEX_M0PLUS
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_SIM
+	select HAS_MCUX_TRNG
+	select HAS_OSC
+	select HAS_MCG
+	select HAS_MCUX_RCM
+
+config SOC_MKW41Z4
+	select CPU_CORTEX_M0PLUS
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_RTC
+	select HAS_MCUX_SIM
+	select HAS_MCUX_TPM
+	select HAS_MCUX_TRNG
+	select HAS_OSC
+	select HAS_MCG
+	select HAS_MCUX_RCM
