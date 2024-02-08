@@ -151,6 +151,7 @@ static int mock_pdu_send(const struct bt_mesh_model *model, struct bt_mesh_msg_c
 			       struct net_buf_simple *buf)
 {
 	/* Device becomes unresponsive and doesn't communicate with other nodes anymore */
+	k_sleep(K_MSEC(10));
 	bt_mesh_suspend();
 
 	k_sem_give(&pdu_send_sem);
