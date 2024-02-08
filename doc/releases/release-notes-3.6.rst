@@ -344,6 +344,10 @@ Drivers and Sensors
 
 * PCIE
 
+  * Fixed MMIO size calculation by disabling IO/memory decoding beforehand.
+
+  * Modified to use PNP ID for PRT retrieval.
+
 * ACPI
 
 * Pin control
