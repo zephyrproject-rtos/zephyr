@@ -5,9 +5,6 @@
 
 if SOC_STM32G491XX
 
-config SOC
-	default "stm32g491xx"
-
 config NUM_IRQS
 	default 102
 
