@@ -5,9 +5,6 @@
 
 if BOARD_TWR_KV58F220M
 
-config BOARD
-	default "twr_kv58f220m"
-
 config OSC_XTAL0_FREQ
 	default 50000000
 
