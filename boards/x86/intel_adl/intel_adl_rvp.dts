@@ -11,7 +11,11 @@
 	compatible = "intel,alder-lake-rvp";
 
 	chosen {
-		zephyr,console = &uart0_legacy;
-		zephyr,shell-uart = &uart0_legacy;
+		zephyr,console = &uart_legacy_0;
+		zephyr,shell-uart = &uart_legacy_0;
 	};
+};
+
+&uart_legacy_0 {
+	status = "okay";
 };

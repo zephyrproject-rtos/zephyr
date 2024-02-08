@@ -1,0 +1,287 @@
+/*
+ * Copyright (c) 2023 Intel Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <zephyr/dt-bindings/pcie/pcie.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "intel,x86_64";
+			device_type = "cpu";
+			d-cache-line-size = <64>;
+			reg = <0>;
+		};
+	};
+
+	dram0: memory@0 {
+		device_type = "memory";
+		reg = <0x0 DT_DRAM_SIZE>;
+	};
+
+	intc: ioapic@fec00000  {
+		compatible = "intel,ioapic";
+		#interrupt-cells = <3>;
+		#address-cells = <1>;
+		reg = <0xfec00000 0x1000>;
+		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000  {
+		compatible = "intel,loapic";
+		#interrupt-cells = <3>;
+		#address-cells = <1>;
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
+	};
+
+	pcie0: pcie0 {
+		compatible = "intel,pcie";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		smbus0: smbus0 {
+			compatible = "intel,pch-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		uart0: uart0 {
+			compatible = "ns16550";
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+
+			status = "disabled";
+		};
+
+		uart1: uart1 {
+			compatible = "ns16550";
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+
+			status = "disabled";
+		};
+
+		uart2: uart2 {
+			compatible = "ns16550";
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+
+			status = "disabled";
+		};
+
+		spi0: spi0 {
+			compatible = "intel,penwell-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		spi1: spi1 {
+			compatible = "intel,penwell-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		spi2: spi2 {
+			compatible = "intel,penwell-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c0: i2c0 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c1: i2c1 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c2: i2c2 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c3: i2c3 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c4: i2c4 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c5: i2c5 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c6: i2c6 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c7: i2c7 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		vtd: vtd@fed91000 {
+			compatible = "intel,vt-d";
+			reg = <0xfed91000 0x1000>;
+
+			status = "disabled";
+		};
+
+		uart_legacy_0: uart@3f8 {
+			compatible = "ns16550";
+			reg = <0x000003f8 0x100>;
+			io-mapped;
+			clock-frequency = <1843200>;
+			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			io-mapped;
+
+			status = "disabled";
+		};
+
+		tgpio: tgpio@fe001200 {
+			compatible = "intel,timeaware-gpio";
+			reg = <0xfe001200 0x100>;
+			timer-clock = <19200000>;
+			max-pins = <2>;
+
+			status = "disabled";
+		};
+
+		rtc: counter: rtc@70 {
+			compatible = "motorola,mc146818";
+			reg = <0x70 0x0D 0x71 0x0D>;
+			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			alarms-count = <1>;
+
+			status = "okay";
+		};
+
+		hpet: hpet@fed00000 {
+			compatible = "intel,hpet";
+			reg = <0xfed00000 0x400>;
+			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		tco_wdt: tco_wdt@400 {
+			compatible = "intel,tco-wdt";
+			reg = <0x0400 0x20>;
+
+			status = "disabled";
+		};
+	};
+};
