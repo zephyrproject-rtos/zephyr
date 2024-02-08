@@ -4,7 +4,7 @@
 
 #include <nxp/nxp_k6x.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include "hexiwear_k64-pinctrl.dtsi"
+#include "hexiwear_mk64f12-pinctrl.dtsi"
 
 / {
 	model = "Hexiwear K64 board";

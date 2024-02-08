@@ -3,7 +3,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_kw40z.dtsi>
-#include "hexiwear_kw40z-pinctrl.dtsi"
+#include "hexiwear_mkw40z4-pinctrl.dtsi"
 
 / {
 	model = "Hexiwear KW40 board";
