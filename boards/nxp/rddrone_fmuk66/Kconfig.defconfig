@@ -5,9 +5,6 @@
 
 if BOARD_RDDRONE_FMUK66
 
-config BOARD
-	default "rddrone_fmuk66"
-
 config OSC_XTAL0_FREQ
 	default 16000000
 
