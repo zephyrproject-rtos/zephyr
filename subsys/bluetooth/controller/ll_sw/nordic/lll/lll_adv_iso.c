@@ -342,6 +342,17 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 			lll->cssn++;
 		}
 
+		/* Calculate the Access Address for the control subevent */
+		util_bis_aa_le32(0, lll->seed_access_addr, access_addr);
+		data_chan_id = lll_chan_id(access_addr);
+
+		/* Calculate the radio channel to use for ISO event */
+		data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
+						   lll->data_chan_map,
+						   lll->data_chan_count,
+						   &lll->data_chan_prn_s,
+						   &lll->data_chan_remap_idx);
+
 		lll->ctrl_chan_use = data_chan_use;
 		pdu->cstf = 1U;
 	} else {

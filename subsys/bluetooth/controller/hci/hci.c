@@ -7717,6 +7717,7 @@ no_ext_hdr:
 		struct bt_hci_evt_le_biginfo_adv_report *sep;
 		struct pdu_big_info *bi;
 		uint8_t bi_size;
+		uint8_t phy;
 
 		/* FIXME: Parse and find the BIGInfo */
 		if (acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] != BT_DATA_BIG_INFO) {
@@ -7725,6 +7726,14 @@ no_ext_hdr:
 
 		bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
 		bi = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
+
+		/* Do not report if phy is invalid or unsupported */
+		phy = (bi->chm_phy[4] >> 5);
+		if ((phy > EXT_ADV_AUX_PHY_LE_CODED) ||
+			(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+			 (phy == EXT_ADV_AUX_PHY_LE_CODED))) {
+			return;
+		}
 
 		/* Allocate new event buffer if periodic advertising report was
 		 * constructed with the caller supplied buffer.
