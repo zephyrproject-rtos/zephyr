@@ -137,6 +137,15 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 #define SAI_RX_SYNC_MODE(inst)\
 	DT_INST_PROP_OR(inst, rx_sync_mode, kSAI_ModeAsync)
 
+/* used to retrieve the handshake value for given direction. The handshake
+ * is computed as follows:
+ *	handshake = CHANNEL_ID | (MUX_VALUE << 8)
+ * The channel ID and MUX value are each encoded in 8 bits.
+ */
+#define SAI_TX_RX_DMA_HANDSHAKE(inst, dir)\
+	((DT_INST_DMAS_CELL_BY_NAME(inst, dir, channel) & GENMASK(7, 0)) |\
+	 ((DT_INST_DMAS_CELL_BY_NAME(inst, dir, mux) << 8) & GENMASK(15, 8)))
+
 /* utility macros */
 
 /* invert a clock's polarity. This works because a clock's polarity is expressed
