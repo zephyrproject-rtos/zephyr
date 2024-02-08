@@ -1,0 +1,78 @@
+# Copyright (c), 2021 NXP
+# Copyright (c), 2024 Lothar Felten <lothar.felten@gmail.com>
+# SPDX -License-Identifier: Apache-2.0
+
+description: |
+  AXP2101 PMIC
+
+  The PMIC has five DCDC converters and nine LDOs.
+  All need to be defined as children nodes.
+  For example:
+
+  i2c {
+    pmic@34 {
+      reg = <0x34>;
+      ...
+      regulators {
+        compatible = "x-powers,axp2101-regulator";
+
+        DCDC1 {
+          /* all properties for DCDC1 */
+        };
+        DCDC2 {
+          /* all properties for DCDC2 */
+        };
+        DCDC3 {
+          /* all properties for DCDC3 */
+        };
+        DCDC4 {
+          /* all properties for DCDC4 */
+        };
+        DCDC5 {
+          /* all properties for DCDC5 */
+        };
+        ALDO1 {
+          /* all properties for ALDO1 */
+        };
+        ALDO2 {
+          /* all properties for ALDO2 */
+        };
+        ALDO3 {
+          /* all properties for ALDO3 */
+        };
+        ALDO4 {
+          /* all properties for ALDO4 */
+        };
+        BLDO1 {
+          /* all properties for BLDO1 */
+        };
+        BLDO2 {
+          /* all properties for BLDO2 */
+        };
+        CPUSLDO {
+          /* all properties for CPUSLDO */
+        };
+        DLDO1 {
+          /* all properties for DLDO1 */
+        };
+        DLDO2 {
+          /* all properties for DLDO2 */
+        };
+      };
+    };
+  };
+
+compatible: "x-powers,axp2101-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
