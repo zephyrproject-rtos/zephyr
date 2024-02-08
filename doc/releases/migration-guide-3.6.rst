@@ -591,6 +591,43 @@ Other Subsystems
   zbus options are renamed. Instead, the new :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC`
   and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` options should be used.
 
+Userspace
+=========
+
+* A number of userspace related functions have been moved out of the ``z_`` namespace
+  and into the kernel namespace.
+
+  * ``Z_OOPS`` to :c:macro:`K_OOPS`
+  * ``Z_SYSCALL_MEMORY`` to :c:macro:`K_SYSCALL_MEMORY`
+  * ``Z_SYSCALL_MEMORY_READ`` to :c:macro:`K_SYSCALL_MEMORY_READ`
+  * ``Z_SYSCALL_MEMORY_WRITE`` to :c:macro:`K_SYSCALL_MEMORY_WRITE`
+  * ``Z_SYSCALL_DRIVER_OP`` to :c:macro:`K_SYSCALL_DRIVER_OP`
+  * ``Z_SYSCALL_SPECIFIC_DRIVER`` to :c:macro:`K_SYSCALL_SPECIFIC_DRIVER`
+  * ``Z_SYSCALL_OBJ`` to :c:macro:`K_SYSCALL_OBJ`
+  * ``Z_SYSCALL_OBJ_INIT`` to :c:macro:`K_SYSCALL_OBJ_INIT`
+  * ``Z_SYSCALL_OBJ_NEVER_INIT`` to :c:macro:`K_SYSCALL_OBJ_NEVER_INIT`
+  * ``z_user_from_copy`` to :c:func:`k_usermode_from_copy`
+  * ``z_user_to_copy`` to :c:func:`k_usermode_to_copy`
+  * ``z_user_string_copy`` to :c:func:`k_usermode_string_copy`
+  * ``z_user_string_alloc_copy`` to :c:func:`k_usermode_string_alloc_copy`
+  * ``z_user_alloc_from_copy```` to :c:func:`k_usermode_alloc_from_copy`
+  * ``z_user_string_nlen`` to :c:func:`k_usermode_string_nlen`
+  * ``z_dump_object_error`` to :c:func:`k_object_dump_error`
+  * ``z_object_validate`` to :c:func:`k_object_validate`
+  * ``z_object_find`` to :c:func:`k_object_find`
+  * ``z_object_wordlist_foreach`` to :c:func:`k_object_wordlist_foreach`
+  * ``z_thread_perms_inherit`` to :c:func:`k_thread_perms_inherit`
+  * ``z_thread_perms_set`` to :c:func:`k_thread_perms_set`
+  * ``z_thread_perms_clear`` to :c:func:`k_thread_perms_clear`
+  * ``z_thread_perms_all_clear`` to :c:func:`k_thread_perms_all_clear`
+  * ``z_object_uninit`` to :c:func:`k_object_uninit`
+  * ``z_object_recycle`` to :c:func:`k_object_recycle`
+  * ``z_obj_validation_check`` to :c:func:`k_object_validation_check`
+  * ``Z_SYSCALL_VERIFY_MSG`` to :c:macro:`K_SYSCALL_VERIFY_MSG`
+  * ``z_object`` to :c:struct:`k_object`
+  * ``z_object_init`` to :c:func:`k_object_init`
+  * ``z_dynamic_object_aligned_create`` to :c:func:`k_object_create_dynamic_aligned`
+
 Xtensa
 ======
 
