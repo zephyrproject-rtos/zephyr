@@ -2805,33 +2805,72 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
+	uint8_t bcode[BT_AUDIO_BROADCAST_CODE_SIZE] = {0};
+	bool bcode_set = false;
 	uint32_t bis_bitfield;
 	size_t stream_cnt;
 	int err = 0;
 
 	bis_bitfield = 0;
 	stream_cnt = 0U;
-	for (int i = 1; i < argc; i++) {
-		unsigned long val;
+	for (size_t argn = 1U; argn < argc; argn++) {
+		const char *arg = argv[argn];
 
-		val = shell_strtoul(argv[i], 0, &err);
-		if (err != 0) {
-			shell_error(sh, "Could not parse BIS index val: %d",
-				    err);
+		if (strcmp(argv[argn], "bcode") == 0) {
+			size_t len;
 
-			return -ENOEXEC;
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			arg = argv[argn];
+
+			len = hex2bin(arg, strlen(arg), bcode, sizeof(bcode));
+			if (len == 0) {
+				shell_print(sh, "Invalid broadcast code: %s", arg);
+
+				return -ENOEXEC;
+			}
+
+			bcode_set = true;
+		} else if (strcmp(argv[argn], "bcode_str") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			arg = argv[argn];
+
+			if (strlen(arg) == 0U || strlen(arg) > sizeof(bcode)) {
+				shell_print(sh, "Invalid broadcast code: %s", arg);
+
+				return -ENOEXEC;
+			}
+
+			memcpy(bcode, arg, strlen(arg));
+			bcode_set = true;
+		} else {
+			unsigned long val;
+
+			val = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Could not parse BIS index val: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			if (!IN_RANGE(val, BT_ISO_BIS_INDEX_MIN, BT_ISO_BIS_INDEX_MAX)) {
+				shell_error(sh, "Invalid index: %lu", val);
+
+				return -ENOEXEC;
+			}
+
+			bis_bitfield |= BIT(val);
+			stream_cnt++;
 		}
-
-		if (!IN_RANGE(val,
-			      BT_ISO_BIS_INDEX_MIN,
-			      BT_ISO_BIS_INDEX_MAX)) {
-			shell_error(sh, "Invalid index: %lu", val);
-
-			return -ENOEXEC;
-		}
-
-		bis_bitfield |= BIT(val);
-		stream_cnt++;
 	}
 
 	if (default_broadcast_sink.bap_sink == NULL) {
@@ -2845,7 +2884,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_bap_broadcast_sink_sync(default_broadcast_sink.bap_sink, bis_bitfield, streams,
-					 NULL);
+					 bcode_set ? bcode : NULL);
 	if (err != 0) {
 		shell_error(sh, "Failed to sync to broadcast: %d", err);
 		return err;
@@ -3416,8 +3455,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	SHELL_CMD_ARG(create_broadcast_sink, NULL, "0x<broadcast_id>", cmd_create_broadcast_sink, 2,
 		      0),
-	SHELL_CMD_ARG(sync_broadcast, NULL, "0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]",
-		      cmd_sync_broadcast, 2, ARRAY_SIZE(broadcast_sink_streams) - 1),
+	SHELL_CMD_ARG(sync_broadcast, NULL,
+		      "0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...] "
+		      "[bcode <broadcast code> || bcode_str <broadcast code as string>]",
+		      cmd_sync_broadcast, 2, ARRAY_SIZE(broadcast_sink_streams) + 1),
 	SHELL_CMD_ARG(stop_broadcast_sink, NULL, "Stops broadcast sink", cmd_stop_broadcast_sink, 1,
 		      0),
 	SHELL_CMD_ARG(term_broadcast_sink, NULL, "", cmd_term_broadcast_sink, 1, 0),
