@@ -586,12 +586,6 @@ static int do_send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 	unsigned int key;
 	int err = 0;
 
-	/* Check for disconnection while waiting for pkts_sem */
-	if (conn->state != BT_CONN_CONNECTED) {
-		err = -ENOTCONN;
-		goto fail;
-	}
-
 	LOG_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
 		flags);
 
@@ -667,6 +661,14 @@ static int send_frag(struct bt_conn *conn,
 	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
 		LOG_DBG("no controller bufs");
 		return -ENOBUFS;
+	}
+
+	/* Check for disconnection. It can't be done higher up (ie `send_buf`)
+	 * as `create_frag` blocks with K_FOREVER and the connection could
+	 * change state after waiting.
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	/* Add the data to the buffer */
