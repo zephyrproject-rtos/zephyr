@@ -1562,6 +1562,8 @@ Release Notes:
   maintainers:
     - mbolivar-ampere
     - simonguinot
+  collaborators:
+    - soburi
   files:
     - drivers/led_strip/
     - dts/bindings/led_strip/
