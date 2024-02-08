@@ -70,7 +70,7 @@ The USB-KW24D512 board configuration supports the following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/usb_kw24d512/usb_kw24d512_defconfig``
+	``boards/nxp/usb_kw24d512/usb_kw24d512_defconfig``
 
 Other hardware features are not currently supported by the port.
 
