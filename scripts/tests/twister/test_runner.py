@@ -131,6 +131,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
         os.path.join('zephyr', 'zephyr.elf'),
         os.path.join('zephyr', 'zephyr.exe'),
     ]
+    project_builder.testsuite.sysbuild = False
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(default_binaries)
 
@@ -138,6 +139,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
 def test_if_binaries_from_platform_are_taken_properly(project_builder: ProjectBuilder):
     platform_binaries = ['spi_image.bin']
     project_builder.platform.binaries = platform_binaries
+    project_builder.testsuite.sysbuild = False
     platform_binaries_expected = [os.path.join('zephyr', bin) for bin in platform_binaries]
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(platform_binaries_expected)
@@ -1638,6 +1640,7 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
     bins = [os.path.join('zephyr', 'file.bin')]
 
     instance_mock = mock.Mock()
+    instance_mock.testsuite.sysbuild = False
     build_dir = os.path.join('build', 'dir')
     instance_mock.build_dir = build_dir
     env_mock = mock.Mock()
@@ -1687,7 +1690,12 @@ def test_projectbuilder_get_binaries(
     runner_binaries,
     expected_binaries
 ):
+    def mock_get_domains(*args, **kwargs):
+        return []
+
     instance_mock = mock.Mock()
+    instance_mock.build_dir = os.path.join('build', 'dir')
+    instance_mock.domains.get_domains.side_effect = mock_get_domains
     instance_mock.platform = mock.Mock()
     instance_mock.platform.binaries = platform_binaries
     env_mock = mock.Mock()
@@ -1702,9 +1710,9 @@ def test_projectbuilder_get_binaries(
 
 
 TESTDATA_10 = [
-    (None, []),
-    ({'dummy': 'dummy'}, []),
-    (
+    (None, None, []),
+    (None, {'dummy': 'dummy'}, []),
+    (   None,
         {
             'config': {
                 'elf_file': '/absolute/path/dummy.elf',
@@ -1713,20 +1721,31 @@ TESTDATA_10 = [
         },
         ['/absolute/path/dummy.elf', os.path.join('zephyr', 'path/dummy.bin')]
     ),
+    (   'test_domain',
+        {
+            'config': {
+                'elf_file': '/absolute/path/dummy.elf',
+                'bin_file': 'path/dummy.bin'
+            }
+        },
+        ['/absolute/path/dummy.elf', os.path.join('test_domain', 'zephyr', 'path/dummy.bin')]
+    ),
 ]
 
 @pytest.mark.parametrize(
-    'runners_content, expected_binaries',
+    'domain, runners_content, expected_binaries',
     TESTDATA_10,
-    ids=['no file', 'no config', 'valid']
+    ids=['no file', 'no config', 'valid', 'with domain']
 )
 def test_projectbuilder_get_binaries_from_runners(
     mocked_jobserver,
+    domain,
     runners_content,
     expected_binaries
 ):
     def mock_exists(fname):
-        assert fname == os.path.join('build', 'dir', 'zephyr', 'runners.yaml')
+        assert fname == os.path.join('build', 'dir', domain if domain else '',
+                                     'zephyr', 'runners.yaml')
         return runners_content is not None
 
     instance_mock = mock.Mock()
@@ -1738,7 +1757,10 @@ def test_projectbuilder_get_binaries_from_runners(
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock.mock_open()), \
          mock.patch('yaml.safe_load', return_value=runners_content):
-        bins = pb._get_binaries_from_runners()
+        if domain:
+            bins = pb._get_binaries_from_runners(domain)
+        else:
+            bins = pb._get_binaries_from_runners()
 
     assert all(bin in expected_binaries for bin in bins)
     assert all(bin in bins for bin in expected_binaries)
