@@ -155,7 +155,6 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	struct adin2111_data *ctx = dev->data;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	size_t header_len = ADIN2111_READ_HEADER_SIZE;
 	uint16_t fsize_reg = ((port == 0U) ? ADIN2111_P1_RX_FSIZE : ADIN2111_P2_RX_FSIZE);
 	uint16_t rx_reg = ((port == 0U) ? ADIN2111_P1_RX : ADIN2111_P2_RX);
 	uint32_t fsize;
@@ -189,7 +188,6 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	cmd_buf[2] = crc8_ccitt(0, cmd_buf, ADIN2111_SPI_HEADER_SIZE);
 	/* TA */
 	cmd_buf[3] = 0U;
-	++header_len;
 #else
 	/* TA */
 	cmd_buf[2] = 0U;
