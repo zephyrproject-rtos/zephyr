@@ -1,0 +1,19 @@
+/dts-v1/;
+
+/ {
+model = "dummy";
+compatible = "dummycompany,dummy";
+
+chosen { };
+
+/*
+ * Your board-specific hardware: buttons, LEDs, sensors, etc.
+ */
+
+leds { };
+
+buttons { };
+
+/* These aliases are provided for compatibility with samples */
+aliases { };
+};
