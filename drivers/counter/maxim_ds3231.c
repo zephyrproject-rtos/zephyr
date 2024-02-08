@@ -92,8 +92,6 @@ struct ds3231_data {
 	struct maxim_ds3231_syncpoint syncpoint;
 	struct maxim_ds3231_syncpoint new_sp;
 
-	time_t rtc_registers;
-	time_t rtc_base;
 	uint32_t syncclock_base;
 
 	/* Pointer to the structure used to notify when a synchronize
@@ -432,8 +430,7 @@ static uint32_t decode_rtc(struct ds3231_data *data)
 		tm.tm_year += 100;
 	}
 
-	data->rtc_registers = timeutil_timegm(&tm);
-	return data->rtc_registers;
+	return timeutil_timegm(&tm);
 }
 
 static int update_registers(const struct device *dev)
@@ -451,7 +448,6 @@ static int update_registers(const struct device *dev)
 	if (rc < 0) {
 		return rc;
 	}
-	data->rtc_base = decode_rtc(data);
 
 	return 0;
 }
