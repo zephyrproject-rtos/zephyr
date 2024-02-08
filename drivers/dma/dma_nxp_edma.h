@@ -241,7 +241,8 @@ static inline int channel_change_state(struct edma_channel *chan,
 		}
 		break;
 	case CHAN_STATE_CONFIGURED:
-		if (next != CHAN_STATE_STARTED) {
+		if (next != CHAN_STATE_STARTED &&
+		    next != CHAN_STATE_CONFIGURED) {
 			return -EPERM;
 		}
 		break;
