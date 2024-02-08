@@ -1,8 +1,0 @@
-# STM32 Nucleo-64 development board with STM32G0B1RE MCU configuration
-
-# Copyright (c) 2019 Thomas Stranger
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_G0B1RE
-	bool "NUCLEO-64 G0B1RE Development Board"
-	depends on SOC_STM32G0B1XX
