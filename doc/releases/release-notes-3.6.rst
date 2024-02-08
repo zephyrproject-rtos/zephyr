@@ -39,6 +39,8 @@ Architectures
 
   * Removed the unused Kconfig option ``CONFIG_XTENSA_NO_IPC``.
 
+  * Added userspace support via MMU.
+
 * x86
 
 * POSIX

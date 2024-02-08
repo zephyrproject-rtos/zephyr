@@ -634,6 +634,25 @@ Xtensa
 * :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer has a default in
   the architecture layer. Instead, SoCs or boards will need to define it.
 
+* Scratch registers ``ZSR_ALLOCA`` has been renamed to ``ZSR_A0SAVE``.
+
+* Renamed files with hyhphens to underscores:
+
+  * ``xtensa-asm2-context.h`` to ``xtensa_asm2_context.h``
+
+  * ``xtensa-asm2-s.h`` to ``xtensa_asm2_s.h``
+
+* ``xtensa_asm2.h`` has been removed. Use ``xtensa_asm2_context.h`` instead for
+  stack frame structs.
+
+* Renamed functions out of ``z_`` namespace into ``xtensa_`` namespace.
+
+  * ``z_xtensa_irq_enable`` to :c:func:`xtensa_irq_enable`
+
+  * ``z_xtensa_irq_disable`` to :c:func:`xtensa_irq_disable`
+
+  * ``z_xtensa_irq_is_enabled`` to :c:func:`xtensa_irq_is_enabled`
+
 Recommended Changes
 *******************
 
