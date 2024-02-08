@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <stm32_ll_system.h>
+#include <soc.h>
 
 #include <cmsis_core.h>
 #if defined(PWR_CR3_UCPD_DBDIS)
