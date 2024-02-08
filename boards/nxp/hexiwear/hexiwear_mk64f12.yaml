@@ -1,4 +1,4 @@
-identifier: hexiwear_k64
+identifier: hexiwear/mk64f12
 name: Hexiwear
 type: mcu
 arch: arm
