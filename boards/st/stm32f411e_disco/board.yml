@@ -3,7 +3,7 @@ board:
   vendor: st
   revision:
     format: letter
-    default: "B"
+    default: "D"
     revisions:
       - name: "B"
       - name: "D"
