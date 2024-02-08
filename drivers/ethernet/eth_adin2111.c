@@ -758,10 +758,14 @@ static int adin2111_await_device(const struct device *dev)
 
 	/* await reset complete (RESETC) and clear it */
 	for (count = 0U; count < ADIN2111_RESETC_AWAIT_RETRY_COUNT; ++count) {
-		ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS0, &val);
+		ret = eth_adin2111_reg_read(dev, ADIN2111_PHYID, &val);
 		if (ret >= 0) {
-			/* if out of reset */
-			if (val & ADIN2111_STATUS0_RESETC) {
+			/*
+			 * Even after getting RESETC, for some milliseconds registers are
+			 * still not properly readable (they reads 0),
+			 * so checking OUI read-only value instead.
+			 */
+			if ((val >> 10) == ADIN2111_PHYID_OUI) {
 				/* clear RESETC */
 				ret = eth_adin2111_reg_write(dev, ADIN2111_STATUS0,
 							 ADIN2111_STATUS0_RESETC);

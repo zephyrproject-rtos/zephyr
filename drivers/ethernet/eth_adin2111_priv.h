@@ -158,6 +158,9 @@
 /* Number of buffer bytes in TxFIFO to provide frame margin upon writes */
 #define ADIN2111_TX_FIFO_BUFFER_MARGIN		4U
 
+/* Manufacturer unique ID */
+#define ADIN2111_PHYID_OUI			0xa0ef
+
 enum adin2111_chips_id {
 	ADIN2111_MAC = 0,
 	ADIN1110_MAC,
