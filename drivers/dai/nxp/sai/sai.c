@@ -865,13 +865,13 @@ BUILD_ASSERT(SAI_TX_SYNC_MODE(inst) != SAI_RX_SYNC_MODE(inst) ||		\
 static const struct dai_properties sai_tx_props_##inst = {			\
 	.fifo_address = SAI_TX_FIFO_BASE(inst),					\
 	.fifo_depth = SAI_FIFO_DEPTH(inst) * CONFIG_SAI_FIFO_WORD_SIZE,		\
-	.dma_hs_id = SAI_TX_DMA_MUX(inst),					\
+	.dma_hs_id = SAI_TX_RX_DMA_HANDSHAKE(inst, tx),				\
 };										\
 										\
 static const struct dai_properties sai_rx_props_##inst = {			\
 	.fifo_address = SAI_RX_FIFO_BASE(inst),					\
 	.fifo_depth = SAI_FIFO_DEPTH(inst) * CONFIG_SAI_FIFO_WORD_SIZE,		\
-	.dma_hs_id = SAI_RX_DMA_MUX(inst),					\
+	.dma_hs_id = SAI_TX_RX_DMA_HANDSHAKE(inst, rx),				\
 };										\
 										\
 void irq_config_##inst(void)							\
