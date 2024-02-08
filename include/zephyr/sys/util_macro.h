@@ -49,6 +49,19 @@ extern "C" {
 #define BIT64(_n) (1ULL << (_n))
 
 /**
+ * @brief Read bits between high and low indices
+ *
+ * The argument @p var is a variable whose value is written to as a
+ * side effect.
+ *
+ * @param var Variable to be altered
+ * @param high High bit number
+ * @param low Low bit number
+ */
+#define READ_BITS(var, high, low) \
+	(var >> low) & ((1L << (high - low + 1)) - 1)
+
+/**
  * @brief Set or clear a bit depending on a boolean value
  *
  * The argument @p var is a variable whose value is written to as a
@@ -60,6 +73,24 @@ extern "C" {
  */
 #define WRITE_BIT(var, bit, set) \
 	((var) = (set) ? ((var) | BIT(bit)) : ((var) & ~BIT(bit)))
+
+/**
+ * @brief Extend sign (32-bit)
+ */
+#define SIGN_EXTEND32(var, size) \
+	(int32_t)(var << (31 - size)) >> (31 - size)
+
+/**
+ * @brief Extend sign (64-bit)
+ */
+#define SIGN_EXTEND64(var, size) \
+	(int32_t)(var << (63 - size)) >> (63 - size)
+
+/**
+ * @brief Align @p var to @p align byte boundary
+ */
+#define ALIGN_TO(var, align) \
+	(align == 0) ? var : (var + align - 1) & ~(align - 1)
 
 /**
  * @brief Bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,

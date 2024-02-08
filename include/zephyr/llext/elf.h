@@ -371,6 +371,7 @@ struct elf64_rela {
 #define R_ARM_ABS32 2
 #define R_ARM_REL32 3
 #define R_ARM_COPY 4
+#define R_ARM_THM_CALL 10
 #define R_ARM_CALL 28
 #define R_ARM_V4BX 40
 
