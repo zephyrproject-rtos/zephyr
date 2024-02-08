@@ -13,8 +13,10 @@ target_include_directories(testbinary PRIVATE include)
 
 target_sources(testbinary
   PRIVATE
-    ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
-    src/main.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
+  src/main.c
     src/test_common.c
     src/test_volume.c
+    src/test_broadcast_reception.c
 )
