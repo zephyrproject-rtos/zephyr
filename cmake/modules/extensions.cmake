@@ -2488,7 +2488,6 @@ endfunction()
 #                     files are returned. Configuration files will be:
 #                     - DTS:       Overlay files (.overlay)
 #                     - Kconfig:   Config fragments (.conf)
-#                     - defconfig: defconfig files (_defconfig)
 #                     The conf file search will return existing configuration
 #                     files for the current board.
 #                     CONF_FILES takes the following additional arguments:
@@ -2507,7 +2506,6 @@ endfunction()
 #
 #                     DTS <list>:    List to append DTS overlay files in <path> to
 #                     KCONF <list>:  List to append Kconfig fragment files in <path> to
-#                     DEFCONF <list>: List to append _defconfig files in <path> to
 #                     BUILD <type>:  Build type to include for search.
 #                                    For example:
 #                                    BUILD debug, will look for <board>_debug.conf
@@ -2688,19 +2686,6 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     if(deprecated_file_found)
       message(DEPRECATION "prj_<build>.conf was deprecated after Zephyr 3.5,"
                           " you should switch to using -DFILE_SUFFIX instead")
-    endif()
-
-    if(FILE_DEFCONFIG)
-      foreach(path ${FILE_CONF_FILES})
-        foreach(filename ${filename_list})
-          if(EXISTS ${path}/${filename}_defconfig)
-            list(APPEND ${FILE_DEFCONFIG} ${path}/${filename}_defconfig)
-          endif()
-        endforeach()
-      endforeach()
-
-      # This updates the provided list in parent scope (callers scope)
-      set(${FILE_DEFCONFIG} ${${FILE_DEFCONFIG}} PARENT_SCOPE)
     endif()
   endif()
 endfunction()
