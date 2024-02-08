@@ -113,7 +113,7 @@ configuration supports the following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/frdm_k64f/frdm_k64f_defconfig``
+	``boards/nxp/frdm_k64f/frdm_k64f_defconfig``
 
 Other hardware features are not currently supported by the port.
 
