@@ -4,10 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32U5X
-	bool "STM32U5x Series MCU"
 	select ARM
 	select CPU_CORTEX_M33
-	select SOC_FAMILY_STM32
 	select ARM_TRUSTZONE_M
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
@@ -17,5 +15,3 @@ config SOC_SERIES_STM32U5X
 	select HAS_STM32CUBE
 	select HAS_PM
 	select HAS_POWEROFF
-	help
-	  Enable support for STM32U5 MCU series
