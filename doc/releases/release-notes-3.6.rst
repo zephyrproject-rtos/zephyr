@@ -382,7 +382,30 @@ Drivers and Sensors
 
 * Serial
 
-  * Renamed ``CONFIG_UART_RA`` to :kconfig:option:`CONFIG_UART_RENESAS_RA`
+  * Added drivers to support UART on Renesas RA and RZ/T2M.
+
+  * Added support for higher baud rate for ITE IT8xxx2.
+
+  * Added driver to support Intel Lightweight UART.
+
+  * Added UART asynchronous RX helper.
+
+  * Added support for async API on NS16550 driver.
+
+  * Updated ``uart_esp32`` to use serial port configuration from devicetree.
+
+  * Added an adaptation API to provide interrupt driven API for drivers
+    which have only implemented async API.
+
+  * Emulated UART driver (:file:`drivers/serial/uart_emul.c`):
+
+    * Added emulated interrupt based TX.
+
+    * Added emulated error for testing.
+
+    * Modified to use local work queue for data transfer.
+
+    * Modified FIFO size and its handling to be more aligned with real hardware.
 
 * SPI
 
