@@ -12,10 +12,6 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-# Get flash configuration for NS image from dts flash partition
-config USE_DT_CODE_PARTITION
-	default y if TRUSTED_EXECUTION_NONSECURE
-
 if BUILD_WITH_TFM
 
 # Initial Attestation key provisioned by the BL1 bootloader
