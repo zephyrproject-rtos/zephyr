@@ -168,6 +168,11 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 
 	LOG_DBG("stream %p ep %p", stream, ep);
 
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	/* reset sequence number */
+	stream->_prev_seq_num = 0U;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
+
 	ops = stream->ops;
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(stream);
