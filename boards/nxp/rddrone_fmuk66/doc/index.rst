@@ -86,7 +86,7 @@ The rddrone-fmuk66 board configuration supports the following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/rddrone_fmuk66/rddrone_fmuk66_defconfig``
+	``boards/nxp/rddrone_fmuk66/rddrone_fmuk66_defconfig``
 
 Other hardware features are not currently supported by the port.
 
