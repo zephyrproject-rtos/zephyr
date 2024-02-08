@@ -1,0 +1,5 @@
+board:
+  name: usb_kw24d512
+  vendor: nxp
+  socs:
+    - name: mkw24d5
