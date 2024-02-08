@@ -90,7 +90,7 @@ The frdm_kw41z board configuration supports the following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/frdm_kw41z/frdm_kw41z_defconfig``
+	``boards/nxp/frdm_kw41z/frdm_kw41z_defconfig``
 
 Other hardware features are not currently supported by the port.
 
