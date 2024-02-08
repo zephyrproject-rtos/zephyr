@@ -1052,7 +1052,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			}
 		} else {
 			/* Sector or Block erase depending on the size */
-			LOG_INF("Sector/Block Erase");
+			LOG_DBG("Sector/Block Erase");
 
 			cmd_erase.AddressMode =
 				(dev_cfg->data_mode == OSPI_OPI_MODE)
@@ -1098,7 +1098,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 					bet = NULL;
 				}
 			}
-			LOG_INF("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
+			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
 				cmd_erase.Address, cmd_erase.AddressSize,
 				cmd_erase.AddressMode, cmd_erase.Instruction);
 
