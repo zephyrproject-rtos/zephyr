@@ -5,9 +5,6 @@
 
 if BOARD_FRDM_K82F
 
-config BOARD
-	default "frdm_k82f"
-
 config OSC_XTAL0_FREQ
 	default 12000000
 
