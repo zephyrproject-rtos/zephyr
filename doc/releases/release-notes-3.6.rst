@@ -292,6 +292,34 @@ Drivers and Sensors
   * The Legacy Virtual Register defines have been renamed from ``I3C_DCR_I2C_*``
     to ``I3C_LVR_I2C_*``.
 
+  * Added the ability to specify a start address when searching for a free I3C
+    address to be reserved. This requires a new function argument to
+    :c:func:`i3c_addr_slots_next_free_find`.
+
+  * Added a field named ``num_xfer`` in :c:struct:`i3c_msg` and
+    :c:struct:`i3c_ccc_taget_payload` as an output to indicate the actual
+    number of bytes transferred.
+
+  * Cadence I3C driver (:file:`drivers/i3c/i3c_cdns.c`):
+
+    * Added support to handle controller abort where target does not emit
+      end of data for register read but continues sending data.
+
+    * Updated the timeout calculation to be coupled with CPU speed instead of
+      a fixed number of retries.
+
+  * NXP MCUX I3C driver (:file:`drivers/i3c/i3c_mcux.c`):
+
+    * Fixed ``mcux_i3c_config_get()`` of not returning the configuration to caller.
+
+    * Sped up the FIFO read routine to support higher transfer rate.
+
+    * Removed the infinite wait for MCTRLDONE in auto IBI.
+
+    * Added ``disable-open-drain-high-pp`` property to
+      :dtcompatible:`nxp,mcux-i3c`, which allows alternative high time for
+      open-drain clock.
+
 * IEEE 802.15.4
 
   * Removed :kconfig:option:`CONFIG_IEEE802154_SELECTIVE_TXPOWER` Kconfig option.
