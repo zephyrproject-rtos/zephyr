@@ -722,6 +722,23 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	return frag;
 }
 
+/* Tentatively send a buffer to the HCI driver.
+ *
+ * This is designed to be async, as in most failures due to lack of resources
+ * are not fatal. The caller should call `send_buf()` again later.
+ *
+ * Return values:
+ *
+ * - 0: `buf` sent. `buf` ownership transferred to lower layers.
+ *
+ * - -EIO: buffer failed to send due to HCI error. `buf` ownership returned to
+ *    caller BUT `buf` is popped from the TX queue. The caller shall destroy
+ *    `buf` and its TX context.
+ *
+ * - Any other error: buffer failed to send. `buf` ownership returned to caller
+ *   and `buf` is still the head of the TX queue
+ *
+ */
 static int send_buf(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
@@ -931,6 +948,12 @@ void bt_conn_process_tx(struct bt_conn *conn)
 	err = send_buf(conn, buf);
 	net_buf_unref(buf);
 
+	/* HCI driver error. `buf` may have been popped from `tx_queue` and
+	 * should be destroyed.
+	 *
+	 * TODO: In that case we might want to disable Bluetooth or at the very
+	 * least tear down the connection.
+	 */
 	if (err  == -EIO) {
 		struct bt_conn_tx *tx = tx_data(buf)->tx;
 
