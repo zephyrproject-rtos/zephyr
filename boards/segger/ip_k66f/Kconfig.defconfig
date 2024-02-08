@@ -5,9 +5,6 @@
 
 if BOARD_IP_K66F
 
-config BOARD
-	default "ip_k66f"
-
 config OSC_XTAL0_FREQ
 	default 12000000
 
