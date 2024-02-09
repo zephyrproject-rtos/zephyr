@@ -64,6 +64,47 @@ ZTEST(util, test_u8_to_dec) {
 		      "Length of converted value using 0 byte buffer isn't 0");
 }
 
+ZTEST(util, test_sign_extend) {
+	uint8_t u8;
+	uint16_t u16;
+	uint32_t u32;
+
+	u8 = 0x0f;
+	zassert_equal(sign_extend(u8, 3), -1);
+	zassert_equal(sign_extend(u8, 4), 0xf);
+
+	u16 = 0xfff;
+	zassert_equal(sign_extend(u16, 11), -1);
+	zassert_equal(sign_extend(u16, 12), 0xfff);
+
+	u32 = 0xfffffff;
+	zassert_equal(sign_extend(u32, 27), -1);
+	zassert_equal(sign_extend(u32, 28), 0xfffffff);
+}
+
+ZTEST(util, test_sign_extend_64) {
+	uint8_t u8;
+	uint16_t u16;
+	uint32_t u32;
+	uint64_t u64;
+
+	u8 = 0x0f;
+	zassert_equal(sign_extend_64(u8, 3), -1);
+	zassert_equal(sign_extend_64(u8, 4), 0xf);
+
+	u16 = 0xfff;
+	zassert_equal(sign_extend_64(u16, 11), -1);
+	zassert_equal(sign_extend_64(u16, 12), 0xfff);
+
+	u32 = 0xfffffff;
+	zassert_equal(sign_extend_64(u32, 27), -1);
+	zassert_equal(sign_extend_64(u32, 28), 0xfffffff);
+
+	u64 = 0xfffffffffffffff;
+	zassert_equal(sign_extend_64(u64, 59), -1);
+	zassert_equal(sign_extend_64(u64, 60), 0xfffffffffffffff);
+}
+
 ZTEST(util, test_COND_CODE_1) {
 	#define TEST_DEFINE_1 1
 	#define TEST_DEFINE_0 0
