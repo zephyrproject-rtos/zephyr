@@ -6,4 +6,7 @@ if BOARD_XENVM
 config BUILD_OUTPUT_BIN
 	default y
 
+config HEAP_MEM_POOL_SIZE
+	default 16384 if BOARD_XENVM_XENVM
+
 endif # BOARD_XENVM
