@@ -40,8 +40,8 @@ The zybo board configuration supports the following hardware features:
 |            |            | serial port-interrupt               |
 +------------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/zybo/zybo_defconfig``.
+The default configuration can be found in
+:zephyr_file:`boards/digilent/zybo/zybo_defconfig`
 
 Other hardware features are not currently supported by the port.
 

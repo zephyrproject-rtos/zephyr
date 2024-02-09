@@ -77,9 +77,8 @@ features:
 More information about the board can be found at the
 `ARGONKEY website`_.
 
-The default board configuration can be found in the defconfig file:
-
-        ``boards/arm/96b_argonkey/96b_argonkey_defconfig``
+The default board configuration can be found in
+:zephyr_file:`boards/96boards/96b_argonkey/96b_argonkey_defconfig`
 
 Connections and IOs
 ===================

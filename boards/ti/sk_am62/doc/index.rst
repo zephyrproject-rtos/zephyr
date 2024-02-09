@@ -84,11 +84,8 @@ Download TI's official `WIC`_ and flash the WIC file with an etching software
 onto an SD-card. This will boot Linux on the A53 application cores of the EVM.
 These cores will then load the zephyr binary on the M4 core using remoteproc.
 
-The default configuration can be found in the defconfig file:
-
-.. code-block:: console
-
-   boards/arm/am62x_m4/am62x_m4_sk_defconfig
+The default configuration can be found in
+:zephyr_file:`boards/ti/sk_am62/sk_am62_am6234_m4_defconfig`
 
 Flashing
 ********
