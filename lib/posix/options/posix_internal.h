@@ -30,6 +30,7 @@ struct posix_thread_attr {
 	int8_t priority;
 	uint8_t schedpolicy: 2;
 	bool contentionscope: 1;
+	bool inheritsched: 1;
 	union {
 		bool caller_destroys: 1;
 		bool initialized: 1;
