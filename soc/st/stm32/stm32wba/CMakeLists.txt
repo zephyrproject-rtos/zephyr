@@ -19,4 +19,6 @@ if(CONFIG_BT_STM32WBA)
   zephyr_sources(hci_if/stm32_timer.c)
 endif()
 
+zephyr_include_directories(.)
+
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
