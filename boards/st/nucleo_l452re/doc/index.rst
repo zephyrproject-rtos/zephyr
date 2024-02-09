@@ -134,6 +134,9 @@ Other hardware features are not yet supported on this Zephyr port.
 The default configuration can be found in the defconfig file:
 ``boards/st/nucleo_l452re/nucleo_l452re_defconfig``
 
+And for Nucleo L452RE-P in this defconfig file:
+``boards/st/nucleo_l452re/nucleo_l452re_stm32l452xx_p_defconfig``
+
 
 Connections and IOs
 ===================
@@ -216,6 +219,13 @@ Now build and flash an application. Here is an example for
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: nucleo_l452re
+   :goals: build flash
+
+For Nucleo L452RE-P, use this command instead:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_l452re/stm32l452xx/p
    :goals: build flash
 
 You should see the following message on the console:

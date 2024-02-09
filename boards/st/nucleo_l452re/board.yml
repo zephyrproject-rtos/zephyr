@@ -3,3 +3,5 @@ board:
   vendor: st
   socs:
     - name: stm32l452xx
+      variants:
+        - name: p
