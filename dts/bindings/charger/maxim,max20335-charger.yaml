@@ -36,6 +36,23 @@ properties:
       CHGIN to SYS path current limitter configuration.
       Refer to ILimCntl register description for details.
 
+  system-voltage-min-threshold-microvolt:
+    type: int
+    required: true
+    enum:
+      - 3600000
+      - 3700000
+      - 3800000
+      - 3900000
+      - 4000000
+      - 4100000
+      - 4200000
+      - 4300000
+    description: |
+      System voltage minimum threshold. When SYS path
+      voltage drops to this level, the charger current
+      is reduced to prevent battery damage.
+
   int-gpios:
     type: phandle-array
     required: true

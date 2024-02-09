@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_INTA_USBOK_MASK BIT(3)
 #define MAX20335_INTA_CHGSTAT_MASK BIT(6)
 #define MAX20335_ILIMCNTL_ILIMCNTL_MASK GENMASK(1, 0)
+#define MAX20335_ILIMCNTL_SYSMIN_MASK GENMASK(7, 5)
 #define MAX20335_STATUSA_CHGSTAT_MASK GENMASK(2, 0)
 #define MAX20335_STATUSB_USBOK_MASK BIT(3)
 #define MAX20335_CHGCNTLA_BATREG_MASK GENMASK(4, 1)
@@ -40,6 +41,11 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_REG_CVC_VREG_MIN_IDX 0x0U
 #define MAX20335_REG_CVC_VREG_MAX_IDX 0x0BU
 
+#define MAX20335_ILIMCNTL_SYSMIN_MIN_UV 3600000U
+#define MAX20335_ILIMCNTL_SYSMIN_STEP_UV 100000U
+#define MAX20335_ILIMCNTL_SYSMIN_MIN_IDX 0x0U
+#define MAX20335_ILIMCNTL_SYSMIN_MAX_IDX 0x7U
+
 #define INT_ENABLE_DELAY K_MSEC(500)
 
 struct charger_max20335_config {
@@ -47,6 +53,7 @@ struct charger_max20335_config {
 	struct gpio_dt_spec int_gpio;
 	uint32_t max_vreg_uv;
 	uint32_t max_ichgin_to_sys_ua;
+	uint32_t min_vsys_uv;
 };
 
 struct charger_max20335_data {
@@ -67,6 +74,12 @@ static const struct linear_range charger_uv_range =
 			  MAX20335_REG_CVC_VREG_STEP_UV,
 			  MAX20335_REG_CVC_VREG_MIN_IDX,
 			  MAX20335_REG_CVC_VREG_MAX_IDX);
+
+static const struct linear_range system_uv_range =
+	LINEAR_RANGE_INIT(MAX20335_ILIMCNTL_SYSMIN_MIN_UV,
+			  MAX20335_ILIMCNTL_SYSMIN_STEP_UV,
+			  MAX20335_ILIMCNTL_SYSMIN_MIN_IDX,
+			  MAX20335_ILIMCNTL_SYSMIN_MAX_IDX);
 
 static int max20335_get_charger_status(const struct device *dev, enum charger_status *status)
 {
@@ -199,6 +212,26 @@ static int max20335_set_chgin_to_sys_current_limit(const struct device *dev, uin
 				      val);
 }
 
+static int max20335_set_sys_voltage_min_threshold(const struct device *dev, uint32_t voltage_uv)
+{
+	const struct charger_max20335_config *const config = dev->config;
+	uint16_t idx;
+	uint8_t val;
+	int ret;
+
+	ret = linear_range_get_index(&system_uv_range, voltage_uv, &idx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	val = FIELD_PREP(MAX20335_ILIMCNTL_SYSMIN_MASK, idx);
+
+	return i2c_reg_update_byte_dt(&config->bus,
+				      MAX20335_REG_ILIMCNTL,
+				      MAX20335_ILIMCNTL_SYSMIN_MASK,
+				      val);
+}
+
 static int max20335_set_enabled(const struct device *dev, bool enable)
 {
 	struct charger_max20335_data *data = dev->data;
@@ -285,6 +318,12 @@ static int max20335_update_properties(const struct device *dev)
 	ret = max20335_set_chgin_to_sys_current_limit(dev, config->max_ichgin_to_sys_ua);
 	if (ret < 0) {
 		LOG_ERR("Failed to set chgin-to-sys current limit: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_set_sys_voltage_min_threshold(dev, config->min_vsys_uv);
+	if (ret < 0) {
+		LOG_ERR("Failed to set minimum system voltage threshold: %d", ret);
 		return ret;
 	}
 
@@ -513,6 +552,7 @@ static const struct charger_driver_api max20335_driver_api = {
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
 		.max_vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),	\
 		.max_ichgin_to_sys_ua = DT_INST_PROP(inst, chgin_to_sys_current_limit_microamp),\
+		.min_vsys_uv = DT_INST_PROP(inst, system_voltage_min_threshold_microvolt),	\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\
