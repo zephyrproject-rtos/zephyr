@@ -6,11 +6,19 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+flash: 1024
+ram: 128
 supported:
-  - netif:eth
+  - adc
+  - counter
   - gpio
-  - spi
+  - hwinfo
+  - i2c
+  - netif:eth
+  - pwm
   - sdhc
+  - spi
+  - uart
   - watchdog
   - xpro_gpio
   - xpro_i2c
