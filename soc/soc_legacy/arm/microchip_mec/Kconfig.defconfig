@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/soc_legacy/arm/microchip_mec/*/Kconfig.defconfig.series"
