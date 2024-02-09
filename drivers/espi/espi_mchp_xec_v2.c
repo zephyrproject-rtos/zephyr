@@ -1436,6 +1436,12 @@ static int xec_register_vw_handlers(const struct device *dev)
 		const struct espi_vw_isr *vwi = &m2s_vwires_isr[i];
 		struct xec_signal signal_info = vw_tbl[vwi->signal];
 		uint8_t xec_id = signal_info.xec_reg_idx;
+		uint8_t en = (signal_info.flags & BIT(MCHP_DT_ESPI_VW_FLAG_STATUS_POS));
+
+		if (!en) {
+			LOG_INF("VW %d not enabled, skipping", vwi->signal);
+			continue;
+		}
 
 		/* enables interrupt in eSPI MSVWn register */
 		xec_espi_vw_intr_ctrl(dev, xec_id, signal_info.bit,
