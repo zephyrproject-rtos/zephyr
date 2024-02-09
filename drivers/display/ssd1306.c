@@ -318,28 +318,6 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	return ssd1306_write_default(dev, x, y, desc, buf, buf_len);
 }
 
-static int ssd1306_read(const struct device *dev, const uint16_t x,
-			const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			void *buf)
-{
-	LOG_ERR("Unsupported");
-	return -ENOTSUP;
-}
-
-static void *ssd1306_get_framebuffer(const struct device *dev)
-{
-	LOG_ERR("Unsupported");
-	return NULL;
-}
-
-static int ssd1306_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	LOG_WRN("Unsupported");
-	return -ENOTSUP;
-}
-
 static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast)
 {
 	uint8_t cmd_buf[] = {
@@ -360,14 +338,6 @@ static void ssd1306_get_capabilities(const struct device *dev,
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
-}
-
-static int ssd1306_set_orientation(const struct device *dev,
-				   const enum display_orientation
-				   orientation)
-{
-	LOG_ERR("Unsupported");
-	return -ENOTSUP;
 }
 
 static int ssd1306_set_pixel_format(const struct device *dev,
@@ -467,13 +437,9 @@ static struct display_driver_api ssd1306_driver_api = {
 	.blanking_on = ssd1306_suspend,
 	.blanking_off = ssd1306_resume,
 	.write = ssd1306_write,
-	.read = ssd1306_read,
-	.get_framebuffer = ssd1306_get_framebuffer,
-	.set_brightness = ssd1306_set_brightness,
 	.set_contrast = ssd1306_set_contrast,
 	.get_capabilities = ssd1306_get_capabilities,
 	.set_pixel_format = ssd1306_set_pixel_format,
-	.set_orientation = ssd1306_set_orientation,
 };
 
 #define SSD1306_CONFIG_SPI(node_id)                                                                \

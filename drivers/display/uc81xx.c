@@ -491,32 +491,6 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	return 0;
 }
 
-static int uc81xx_read(const struct device *dev, const uint16_t x, const uint16_t y,
-		       const struct display_buffer_descriptor *desc, void *buf)
-{
-	LOG_ERR("not supported");
-	return -ENOTSUP;
-}
-
-static void *uc81xx_get_framebuffer(const struct device *dev)
-{
-	LOG_ERR("not supported");
-	return NULL;
-}
-
-static int uc81xx_set_brightness(const struct device *dev,
-				 const uint8_t brightness)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
-static int uc81xx_set_contrast(const struct device *dev, uint8_t contrast)
-{
-	LOG_WRN("not supported");
-	return -ENOTSUP;
-}
-
 static void uc81xx_get_capabilities(const struct device *dev,
 				    struct display_capabilities *caps)
 {
@@ -528,14 +502,6 @@ static void uc81xx_get_capabilities(const struct device *dev,
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
-}
-
-static int uc81xx_set_orientation(const struct device *dev,
-				  const enum display_orientation
-				  orientation)
-{
-	LOG_ERR("Unsupported");
-	return -ENOTSUP;
 }
 
 static int uc81xx_set_pixel_format(const struct device *dev,
@@ -792,13 +758,8 @@ static struct display_driver_api uc81xx_driver_api = {
 	.blanking_on = uc81xx_blanking_on,
 	.blanking_off = uc81xx_blanking_off,
 	.write = uc81xx_write,
-	.read = uc81xx_read,
-	.get_framebuffer = uc81xx_get_framebuffer,
-	.set_brightness = uc81xx_set_brightness,
-	.set_contrast = uc81xx_set_contrast,
 	.get_capabilities = uc81xx_get_capabilities,
 	.set_pixel_format = uc81xx_set_pixel_format,
-	.set_orientation = uc81xx_set_orientation,
 };
 
 #define UC81XX_MAKE_ARRAY_OPT(n, p)					\
