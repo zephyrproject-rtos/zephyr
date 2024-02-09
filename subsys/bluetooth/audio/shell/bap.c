@@ -27,6 +27,14 @@
 #include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
+#if defined(CONFIG_LIBLC3)
+#include "lc3.h"
+
+#define LC3_MAX_SAMPLE_RATE       48000
+#define LC3_MAX_FRAME_DURATION_US 10000
+#define LC3_MAX_NUM_SAMPLES       ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE) / USEC_PER_SEC)
+#endif /* CONFIG_LIBLC3 */
+
 #include "shell/bt.h"
 #include "audio.h"
 
@@ -182,23 +190,16 @@ NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-#include "lc3.h"
 #include "math.h"
 
-#define MAX_SAMPLE_RATE         48000
-#define MAX_FRAME_DURATION_US   10000
-#define MAX_NUM_SAMPLES         ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 #define AUDIO_VOLUME            (INT16_MAX - 3000) /* codec does clipping above INT16_MAX - 3000 */
 #define AUDIO_TONE_FREQUENCY_HZ   400
 
-static int16_t audio_buf[MAX_NUM_SAMPLES];
+static int16_t lc3_tx_buf[LC3_MAX_NUM_SAMPLES];
 static lc3_encoder_t lc3_encoder;
 static lc3_encoder_mem_48k_t lc3_encoder_mem;
-static int lc3_freq_hz;
-static int lc3_frame_duration_us;
-static int lc3_frame_duration_100us;
-static int lc3_frames_per_sdu;
-static int lc3_octets_per_frame;
+static int lc3_encoder_freq_hz;
+static int lc3_encoder_frame_duration_us;
 
 static void clear_lc3_sine_data(struct bt_bap_stream *bap_stream)
 {
@@ -216,7 +217,7 @@ static void clear_lc3_sine_data(struct bt_bap_stream *bap_stream)
  * @param frequency_hz frequency in Hz
  * @param sample_rate_hz sample-rate in Hz.
  */
-static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, int sample_rate_hz)
+static void fill_lc3_tx_buf_sin(int16_t *buf, int length_us, int frequency_hz, int sample_rate_hz)
 {
 	const uint32_t sine_period_samples = sample_rate_hz / frequency_hz;
 	const size_t num_samples = (length_us * sample_rate_hz) / USEC_PER_SEC;
@@ -229,66 +230,42 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 	}
 }
 
-static int init_lc3(const struct bt_bap_stream *stream)
+static int init_lc3_encoder(const struct shell_stream *sh_stream)
 {
 	size_t num_samples;
-	int ret;
 
-	if (stream == NULL || stream->codec_cfg == NULL) {
+	if (sh_stream == NULL) {
 		shell_error(ctx_shell, "invalid stream to init LC3");
 		return -EINVAL;
 	}
 
-	ret = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
-	if (ret > 0) {
-		lc3_freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
-	} else {
-		return ret;
-	}
+	if (sh_stream->lc3_freq_hz == 0 || sh_stream->lc3_frame_duration_us == 0) {
+		shell_error(ctx_shell, "Invalid freq (%u) or frame duration (%u)",
+			    sh_stream->lc3_freq_hz, sh_stream->lc3_frame_duration_us);
 
-	ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
-	if (ret > 0) {
-		lc3_frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
-	} else {
-		return ret;
-	}
-
-	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
-	lc3_frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
-	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
-
-	if (lc3_freq_hz < 0) {
-		printk("Error: Codec frequency not set, cannot start codec.");
 		return -EINVAL;
-	}
-
-	if (lc3_frame_duration_us < 0) {
-		printk("Error: Frame duration not set, cannot start codec.");
-		return -EINVAL;
-	}
-
-	if (lc3_octets_per_frame < 0) {
-		printk("Error: Octets per frame not set, cannot start codec.");
-		return -EINVAL;
-	}
-
-	lc3_frame_duration_100us = lc3_frame_duration_us / 100;
-
-	/* Fill audio buffer with Sine wave only once and repeat encoding the same tone frame */
-	fill_audio_buf_sin(audio_buf, lc3_frame_duration_us, AUDIO_TONE_FREQUENCY_HZ, lc3_freq_hz);
-
-	num_samples = ((lc3_frame_duration_us * lc3_freq_hz) / USEC_PER_SEC);
-	for (size_t i = 0; i < num_samples; i++) {
-		printk("%zu: %6i\n", i, audio_buf[i]);
 	}
 
 	/* Create the encoder instance. This shall complete before stream_started() is called. */
-	lc3_encoder = lc3_setup_encoder(lc3_frame_duration_us, lc3_freq_hz, 0, /* No resampling */
+	lc3_encoder = lc3_setup_encoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
+					0, /* No resampling */
 					&lc3_encoder_mem);
 
 	if (lc3_encoder == NULL) {
-		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+		shell_error(ctx_shell, "Failed to setup LC3 encoder - wrong parameters?\n");
 		return -EINVAL;
+	}
+
+	lc3_encoder_freq_hz = sh_stream->lc3_freq_hz;
+	lc3_encoder_frame_duration_us = sh_stream->lc3_frame_duration_us;
+
+	/* Fill audio buffer with Sine wave only once and repeat encoding the same tone frame */
+	fill_lc3_tx_buf_sin(lc3_tx_buf, lc3_encoder_frame_duration_us, AUDIO_TONE_FREQUENCY_HZ,
+			    lc3_encoder_freq_hz);
+
+	num_samples = ((lc3_encoder_frame_duration_us * lc3_encoder_freq_hz) / USEC_PER_SEC);
+	for (size_t i = 0; i < num_samples; i++) {
+		printk("%zu: %6i\n", i, lc3_tx_buf[i]);
 	}
 
 	return 0;
@@ -299,7 +276,7 @@ static void lc3_audio_send_data(struct k_work *work)
 	struct shell_stream *sh_stream = CONTAINER_OF(k_work_delayable_from_work(work),
 						      struct shell_stream, audio_send_work);
 	struct bt_bap_stream *bap_stream = &sh_stream->stream.bap_stream;
-	const uint16_t tx_sdu_len = lc3_frames_per_sdu * lc3_octets_per_frame;
+	const uint16_t tx_sdu_len = sh_stream->lc3_frames_per_sdu * sh_stream->lc3_octets_per_frame;
 	struct net_buf *buf;
 	uint8_t *net_buffer;
 	off_t offset = 0;
@@ -320,6 +297,14 @@ static void lc3_audio_send_data(struct k_work *work)
 		return;
 	}
 
+	if (tx_sdu_len == 0U) {
+		shell_error(
+			ctx_shell,
+			"Cannot send 0 length SDU (from frames per sdu %u and %u octets per frame)",
+			sh_stream->lc3_frames_per_sdu, sh_stream->lc3_octets_per_frame);
+		return;
+	}
+
 	if (atomic_get(&sh_stream->lc3_enqueue_cnt) == 0U) {
 		shell_error(ctx_shell, "Stream %p enqueue count was 0", bap_stream);
 
@@ -335,12 +320,12 @@ static void lc3_audio_send_data(struct k_work *work)
 	net_buffer = net_buf_tail(buf);
 	buf->len += tx_sdu_len;
 
-	for (int i = 0; i < lc3_frames_per_sdu; i++) {
+	for (uint8_t i = 0U; i < sh_stream->lc3_frames_per_sdu; i++) {
 		int lc3_ret;
 
-		lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, audio_buf, 1,
-				     lc3_octets_per_frame, net_buffer + offset);
-		offset += lc3_octets_per_frame;
+		lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, lc3_tx_buf, 1,
+				     sh_stream->lc3_octets_per_frame, net_buffer + offset);
+		offset += sh_stream->lc3_octets_per_frame;
 
 		if (lc3_ret == -1) {
 			shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
@@ -382,7 +367,7 @@ static void lc3_audio_send_data(struct k_work *work)
 	}
 }
 
-void sdu_sent_cb(struct bt_bap_stream *bap_stream)
+static void lc3_sent_cb(struct bt_bap_stream *bap_stream)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(bap_stream);
 	int err;
@@ -2447,6 +2432,71 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST)
+static void stream_configured_cb(struct bt_bap_stream *stream,
+				 const struct bt_audio_codec_qos_pref *pref)
+{
+#if defined(CONFIG_LIBLC3)
+	if (stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		struct shell_stream *sh_stream = shell_stream_from_bap_stream(stream);
+		int ret;
+
+		ret = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
+		if (ret > 0) {
+			ret = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+
+			if (ret > 0) {
+				if (ret == 8000 || ret == 16000 || ret == 24000 || ret == 32000 ||
+				    ret == 48000) {
+					sh_stream->lc3_freq_hz = (uint32_t)ret;
+				} else {
+					shell_error(ctx_shell, "Unsupported frequency for LC3: %d",
+						    ret);
+					sh_stream->lc3_freq_hz = 0U;
+				}
+			} else {
+				shell_error(ctx_shell, "Invalid frequency: %d", ret);
+				sh_stream->lc3_freq_hz = 0U;
+			}
+		} else {
+			shell_error(ctx_shell, "Could not get frequency: %d", ret);
+			sh_stream->lc3_freq_hz = 0U;
+		}
+
+		ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
+		if (ret > 0) {
+			ret = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+			if (ret > 0) {
+				sh_stream->lc3_frame_duration_us = (uint32_t)ret;
+			} else {
+				shell_error(ctx_shell, "Invalid frame duration: %d", ret);
+				sh_stream->lc3_frame_duration_us = 0U;
+			}
+		} else {
+			shell_error(ctx_shell, "Could not get frame duration: %d", ret);
+			sh_stream->lc3_frame_duration_us = 0U;
+		}
+
+		ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
+		if (ret > 0) {
+			sh_stream->lc3_frames_per_sdu = (uint8_t)ret;
+		} else {
+			shell_error(ctx_shell, "Could not get frame blocks per SDU: %d", ret);
+			sh_stream->lc3_frames_per_sdu = 0U;
+		}
+
+		ret = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
+		if (ret > 0) {
+			sh_stream->lc3_octets_per_frame = (uint16_t)ret;
+		} else {
+			shell_error(ctx_shell, "Could not get octets per frame: %d", ret);
+			sh_stream->lc3_octets_per_frame = 0U;
+		}
+	}
+#endif /* CONFIG_LIBLC3 */
+
+	shell_print(ctx_shell, "Stream %p configured\n", stream);
+}
+
 static void stream_released_cb(struct bt_bap_stream *stream)
 {
 	shell_print(ctx_shell, "Stream %p released\n", stream);
@@ -2500,13 +2550,14 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = audio_recv,
 #endif /* CONFIG_BT_AUDIO_RX */
 #if defined(CONFIG_BT_BAP_UNICAST)
+	.configured = stream_configured_cb,
 	.released = stream_released_cb,
 	.enabled = stream_enabled_cb,
 #endif /* CONFIG_BT_BAP_UNICAST */
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 #if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
-	.sent = sdu_sent_cb,
+	.sent = lc3_sent_cb,
 #endif
 };
 
@@ -3087,12 +3138,19 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_LIBLC3)
-static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
+static bool stream_start_sine_verify(const struct shell_stream *sh_stream)
 {
+	const struct bt_bap_stream *bap_stream;
 	struct bt_bap_ep_info info;
 	int err;
 
-	if (bap_stream == NULL || bap_stream->qos == NULL) {
+	if (sh_stream == NULL) {
+		return false;
+	}
+
+	bap_stream = &sh_stream->stream.bap_stream;
+
+	if (bap_stream->qos == NULL) {
 		return false;
 	}
 
@@ -3105,29 +3163,15 @@ static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	err = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
-	if (err > 0) {
-		if (bt_audio_codec_cfg_freq_to_freq_hz(err) != lc3_freq_hz) {
-			return false;
-		}
-	} else {
-		return false;
-	}
-
-	err = bt_audio_codec_cfg_get_frame_dur(bap_stream->codec_cfg);
-	if (err > 0) {
-		if (bt_audio_codec_cfg_frame_dur_to_frame_dur_us(err) != lc3_frame_duration_us) {
-			return false;
-		}
-	} else {
+	if (sh_stream->lc3_freq_hz != lc3_encoder_freq_hz ||
+	    sh_stream->lc3_frame_duration_us != lc3_encoder_frame_duration_us) {
 		return false;
 	}
 
 	return true;
 }
-static int stream_start_sine(struct bt_bap_stream *bap_stream)
+static int stream_start_sine(struct shell_stream *sh_stream)
 {
-	struct shell_stream *sh_stream = shell_stream_from_bap_stream(bap_stream);
 	int err;
 
 	k_work_init_delayable(&sh_stream->audio_send_work, lc3_audio_send_data);
@@ -3138,7 +3182,7 @@ static int stream_start_sine(struct bt_bap_stream *bap_stream)
 	}
 
 	sh_stream->tx_active = true;
-	sh_stream->seq_num = get_next_seq_num(bap_stream);
+	sh_stream->seq_num = get_next_seq_num(&sh_stream->stream.bap_stream);
 
 	return 0;
 }
@@ -3162,10 +3206,11 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 		bool lc3_initialized = false;
 
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-			struct bt_bap_stream *bap_stream = &unicast_streams[i].stream.bap_stream;
+			struct shell_stream *sh_stream = &unicast_streams[i];
+			struct bt_bap_stream *bap_stream = &sh_stream->stream.bap_stream;
 
 			if (!lc3_initialized) {
-				err = init_lc3(bap_stream);
+				err = init_lc3_encoder(sh_stream);
 				if (err != 0) {
 					shell_error(sh, "Failed to init LC3 %d", err);
 
@@ -3175,11 +3220,11 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 				lc3_initialized = true;
 			}
 
-			if (!stream_start_sine_verify(bap_stream)) {
+			if (!stream_start_sine_verify(sh_stream)) {
 				continue;
 			}
 
-			err = stream_start_sine(bap_stream);
+			err = stream_start_sine(sh_stream);
 			if (err != 0) {
 				shell_error(sh, "Failed to start TX for stream %p: %d", bap_stream,
 					    err);
@@ -3190,11 +3235,11 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-			struct bt_bap_stream *bap_stream =
-				&broadcast_source_streams[i].stream.bap_stream;
+			struct shell_stream *sh_stream = &broadcast_source_streams[i];
+			struct bt_bap_stream *bap_stream = &sh_stream->stream.bap_stream;
 
 			if (!lc3_initialized) {
-				err = init_lc3(bap_stream);
+				err = init_lc3_encoder(sh_stream);
 				if (err != 0) {
 					shell_error(sh, "Failed to init LC3 %d", err);
 
@@ -3204,11 +3249,11 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 				lc3_initialized = true;
 			}
 
-			if (!stream_start_sine_verify(bap_stream)) {
+			if (!stream_start_sine_verify(sh_stream)) {
 				continue;
 			}
 
-			err = stream_start_sine(bap_stream);
+			err = stream_start_sine(sh_stream);
 			if (err != 0) {
 				shell_error(sh, "Failed to start TX for stream %p: %d", bap_stream,
 					    err);
@@ -3218,19 +3263,21 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			shell_print(sh, "Started transmitting on broadcast stream %p", bap_stream);
 		}
 	} else {
-		err = init_lc3(default_stream);
+		struct shell_stream *sh_stream = shell_stream_from_bap_stream(default_stream);
+
+		err = init_lc3_encoder(sh_stream);
 		if (err != 0) {
 			shell_error(sh, "Failed to init LC3 %d", err);
 
 			return -ENOEXEC;
 		}
 
-		if (!stream_start_sine_verify(default_stream)) {
+		if (!stream_start_sine_verify(sh_stream)) {
 			shell_error(sh, "Invalid stream %p", default_stream);
 			return -ENOEXEC;
 		}
 
-		err = stream_start_sine(default_stream);
+		err = stream_start_sine(sh_stream);
 		if (err != 0) {
 			shell_error(sh, "Failed to start TX for stream %p: %d", default_stream,
 				    err);
