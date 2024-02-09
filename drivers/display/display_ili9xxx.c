@@ -407,6 +407,11 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)
 
+#define ILI9XXX_MIPI_DBI_MODE_SPI(n, t)                                        \
+	(DT_PROP(INST_DT_ILI9XXX(n, t), spi2mcu_shift) == 16U)                 \
+		? MIPI_DBI_MODE_SPI_4WIRE_16BIT                                \
+		: MIPI_DBI_MODE_SPI_4WIRE
+
 #define ILI9XXX_INIT(n, t)                                                     \
 	ILI##t##_REGS_INIT(n);                                                 \
 									       \
@@ -414,7 +419,7 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.quirks = &ili##t##_quirks,                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),   \
 		.dbi_config = {                                                \
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,                       \
+			.mode = ILI9XXX_MIPI_DBI_MODE_SPI(n, t),               \
 			.config = MIPI_DBI_SPI_CONFIG_DT(                      \
 						INST_DT_ILI9XXX(n, t),         \
 						SPI_OP_MODE_MASTER |           \
