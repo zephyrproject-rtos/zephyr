@@ -1,7 +1,7 @@
 .. _sam4s_xplained:
 
 SAM4S Xplained
-################
+##############
 
 Overview
 ********
@@ -40,31 +40,33 @@ features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
+| ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
+| COUNTER   | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
-| SMC       | on-chip    | memc (PSRAM)                        |
+| I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| SMC       | on-chip    | memc (PSRAM)                        |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| USART     | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/sam4s_xplained/sam4s_xplained_defconfig`.
+:zephyr_file:`boards/atmel/sam/sam4s_xplained/sam4s_xplained_defconfig`.
 
 Connections and IOs
 ===================
@@ -89,7 +91,8 @@ The section flashing uses the UART from the Segger USB debug connection.
 Programming and Debugging
 *************************
 
-The SAM4S Xplained board comes with Segger `J-Link OB <https://www.segger.com/jlink-ob.html>`_. This provides a debug
+The SAM4S Xplained board comes with Segger
+`J-Link OB <https://www.segger.com/jlink-ob.html>`_. This provides a debug
 interface to the SAM4S16C chip. You can use Ozone or JLink to communicate with
 the SAM4S16C.
 

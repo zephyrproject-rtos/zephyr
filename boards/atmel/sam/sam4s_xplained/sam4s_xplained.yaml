@@ -6,9 +6,13 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+flash: 1024
+ram: 128
 supported:
   - adc
+  - counter
   - gpio
+  - hwinfo
   - memc
   - pwm
   - spi
@@ -17,5 +21,4 @@ supported:
   - xplained_i2c
   - xplained_serial
   - xplained_spi
-  - hwinfo
 vendor: atmel
