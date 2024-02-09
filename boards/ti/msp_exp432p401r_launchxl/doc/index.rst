@@ -84,7 +84,7 @@ Prerequisites:
    the one in the Zephyr SDK. If for some reason you wish to continue to use
    your TI OpenOCD installation, you can set the OPENOCD and
    OPENOCD_DEFAULT_PATH variables in
-   :zephyr_file:`boards/arm/msp_exp432p401r_launchxl/board.cmake` to point the build
+   :zephyr_file:`boards/ti/msp_exp432p401r_launchxl/board.cmake` to point the build
    to the paths of the OpenOCD binary and its scripts, before
    including the common openocd.board.cmake file:
 
