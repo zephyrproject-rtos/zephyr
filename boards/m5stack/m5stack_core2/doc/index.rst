@@ -21,6 +21,7 @@ M5Stack Core2 features the following integrated components:
 - RTC BM8563
 - USB CP2104
 - SD-Card slot
+- Grove connector
 - IMO 6-axis IMU MPU6886
 - MIC SPM1423
 - Battery 390mAh 3,7V
@@ -50,39 +51,44 @@ of the M5Stack Core2 board.
 .. _PMU-AXP192: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/core/AXP192_datasheet_en.pdf
 .. _VIB-1072_RFN01: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/core/1027RFN01-33d.pdf
 
-+------------------+--------------------------------------------------------------------------+------------+
-| Key Component    | Description                                                              | Status     |
-+==================+==========================================================================+============+
-|| ESP32-D0WDQ6-V2 || This `MPU-ESP32`_ module provides complete Wi-Fi and Bluetooth          || supported |
-|| module          || functionalities and integrates a 16-MB SPI flash.                       ||           |
-+------------------+--------------------------------------------------------------------------+------------+
-|| 32.768 kHz RTC  || External precision 32.768 kHz crystal oscillator serves as a clock with || supported |
-||                 || low-power consumption while the chip is in Deep-sleep mode.             ||           |
-+------------------+--------------------------------------------------------------------------+------------+
-| Status LED       | One user LED connected to the GPIO pin.                                  | supported  |
-+------------------+--------------------------------------------------------------------------+------------+
-|| USB Port        || USB interface. Power supply for the board as well as the                || supported |
-||                 || communication interface between a computer and the board.               ||           |
-||                 || Contains: TypeC x 1, GROVE(I2C+I/O+UART) x 1                            ||           |
-+------------------+--------------------------------------------------------------------------+------------+
-| Reset button     | Reset button                                                             | supported  |
-+------------------+--------------------------------------------------------------------------+------------+
-| Power Switch     | Power on/off button.                                                     | supported  |
-+------------------+--------------------------------------------------------------------------+------------+
-|| LCD screen      || Built-in LCD TFT display \(`LCD-ILI9342C`_, 2", 320x240 px\)            || supported |
-||                 || controlled via SPI interface                                            ||           |
-+------------------+--------------------------------------------------------------------------+------------+
-| SD-Card slot     | SD-Card connection via SPI-mode.                                         | supported  |
-+------------------+--------------------------------------------------------------------------+------------+
-|| 6-axis IMU      || The `MPU-6886`_ is a 6-axis motion tracker (6DOF IMU) device that       || todo      |
-|| MPU6886         || combines a 3-axis gyroscope and a 3-axis accelerometer.                 ||           |
-||                 || For details please refer to :ref:`m5stack_core2_ext`                    ||           |
-+------------------+--------------------------------------------------------------------------+------------+
-|| Built-in        || The `SPM-1423`_ I2S driven microphone.                                  || todo      |
-|| microphone      ||                                                                         ||           |
-+------------------+--------------------------------------------------------------------------+------------+
-| Built-in speaker | 1W speaker for audio output via I2S interface.                           | todo       |
-+------------------+--------------------------------------------------------------------------+------------+
++------------------+--------------------------------------------------------------------------+-----------+
+| Key Component    | Description                                                              | Status    |
++==================+==========================================================================+===========+
+| ESP32-D0WDQ6-V2  | This `MPU-ESP32`_ module provides complete Wi-Fi and Bluetooth           | supported |
+| module           | functionalities and integrates a 16-MB SPI flash.                        |           |
++------------------+--------------------------------------------------------------------------+-----------+
+| 32.768 kHz RTC   | External precision 32.768 kHz crystal oscillator serves as a clock with  | supported |
+|                  | low-power consumption while the chip is in Deep-sleep mode.              |           |
++------------------+--------------------------------------------------------------------------+-----------+
+| Status LED       | One user LED connected to the GPIO pin.                                  | supported |
++------------------+--------------------------------------------------------------------------+-----------+
+| USB Port         | USB interface. Power supply for the board as well as the                 | supported |
+|                  | communication interface between a computer and the board.                |           |
+|                  | Contains: TypeC x 1, GROVE(I2C+I/O+UART) x 1                             |           |
++------------------+--------------------------------------------------------------------------+-----------+
+| Reset button     | Reset button                                                             | supported |
++------------------+--------------------------------------------------------------------------+-----------+
+| Power Switch     | Power on/off button.                                                     | supported |
++------------------+--------------------------------------------------------------------------+-----------+
+| LCD screen       | Built-in LCD TFT display \(`LCD-ILI9342C`_, 2", 320x240 px\)             | supported |
+|                  | controlled via SPI interface                                             |           |
++------------------+--------------------------------------------------------------------------+-----------+
+| SD-Card slot     | SD-Card connection via SPI-mode.                                         | supported |
++------------------+--------------------------------------------------------------------------+-----------+
+| 6-axis IMU       | The `MPU-6886`_ is a 6-axis motion tracker (6DOF IMU) device that        | supported |
+| MPU6886          | combines a 3-axis gyroscope and a 3-axis accelerometer.                  |           |
+|                  | For details please refer to :ref:`m5stack_core2_ext`                     |           |
++------------------+--------------------------------------------------------------------------+-----------+
+| Grove port       | Note: Grove port requires 5V to be enabled via `bus_5v` regulator        | supported |
++------------------+--------------------------------------------------------------------------+-----------+
+| Built-in         | The `SPM-1423`_ I2S driven microphone.                                   | todo      |
+| microphone       |                                                                          |           |
++------------------+--------------------------------------------------------------------------+-----------+
+| Built-in speaker | 1W speaker for audio output via I2S interface.                           | todo      |
++------------------+--------------------------------------------------------------------------+-----------+
+| Battery-support  | Power supply via battery is supported automatically. But there is no     | todo      |
+|                  | possibility to query current battery status.                             |           |
++------------------+--------------------------------------------------------------------------+-----------+
 
 Supported Features
 ==================
@@ -190,7 +196,7 @@ M5Stack Core2 debugging is not supported due to pinout limitations.
 Related Documents
 *****************
 
-- `M5StickC PLUS schematic <https://static-cdn.m5stack.com/resource/docs/products/core/m5stickc_plus/m5stickc_plus_sch_03.webp>`_ (WEBP)
+- `M5Stack-Core2 schematic <https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/schematic/Core/CORE2_V1.0_SCH.pdf>`_ (PDF)
 - `ESP32-PICO-D4 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 - `M5StickC PLUS docs <https://docs.m5stack.com/en/core/m5stickc_plus>`_
 - `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
