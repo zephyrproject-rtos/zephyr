@@ -5,9 +5,6 @@
 
 if SOC_STM32WBA52XX
 
-config SOC
-	default "stm32wba52xx"
-
 config NUM_IRQS
 	default 70
 

@@ -5,10 +5,7 @@
 
 if SOC_SERIES_STM32WBAX
 
-source "soc/soc_legacy/arm/st_stm32/stm32wba/Kconfig.defconfig.stm32wba*"
-
-config SOC_SERIES
-	default "stm32wba"
+rsource "Kconfig.defconfig.stm32wba*"
 
 config STM32_LPTIM_TIMER
 	default y if PM
