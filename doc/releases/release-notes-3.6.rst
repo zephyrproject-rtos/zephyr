@@ -548,6 +548,19 @@ Highlights:
 LVGL
 ****
 
+LVGL has been updated from 8.3.7 to 8.3.11.
+Detailed release notes can be found at:
+https://github.com/zephyrproject-rtos/lvgl/blob/zephyr/docs/CHANGELOG.md
+
+Additionally the following changes in Zephyr were done:
+
+  * Added the :dtcompatible:`zephyr,lvgl-keypad-input` compatible for keypad input.
+
+  * Fixed issue with the Zephyr log levels not mapping properly to LVGL log levels.
+
+  * Fixed issue where setting :kconfig:option:`CONFIG_LV_Z_FULL_REFRESH` did not
+    set :kconfig:option:`CONFIG_LV_Z_VDB_SIZE` to 100 percent.
+
 Trusted Firmware-A
 ******************
 
@@ -573,3 +586,6 @@ Tests and Samples
 
 * Fixed an issue in :zephyr:code-sample:`smp-svr` sample whereby if USB was already initialised,
   application would fail to boot properly.
+
+* Added a LVGL sample :zephyr:code-sample:`lvgl-accelerometer-chart` showcasing displaying of live
+  sensor data in a chart widget.
