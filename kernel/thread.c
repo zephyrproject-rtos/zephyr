@@ -451,6 +451,7 @@ void z_impl_k_thread_start(struct k_thread *thread)
 
 	z_sched_start(thread);
 }
+EXPORT_SYSCALL(k_thread_start);
 
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_start(struct k_thread *thread)
@@ -745,6 +746,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 
 	return new_thread;
 }
+EXPORT_SYMBOL(z_impl_k_thread_create);
 
 
 #ifdef CONFIG_USERSPACE

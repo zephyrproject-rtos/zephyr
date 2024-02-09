@@ -68,6 +68,7 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 
 	return 0;
 }
+EXPORT_SYSCALL(k_mutex_init);
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)

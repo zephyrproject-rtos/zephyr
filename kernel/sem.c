@@ -28,6 +28,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/llext/symbol.h>
 
 /* We use a system-wide lock to synchronize semaphores, which has
  * unfortunate performance impact vs. using a per-object lock
@@ -71,6 +72,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 
 	return 0;
 }
+EXPORT_SYSCALL(k_sem_init);
 
 #ifdef CONFIG_USERSPACE
 int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
@@ -119,6 +121,7 @@ void z_impl_k_sem_give(struct k_sem *sem)
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
 }
+EXPORT_SYSCALL(k_sem_give);
 
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_sem_give(struct k_sem *sem)
@@ -162,6 +165,7 @@ out:
 
 	return ret;
 }
+EXPORT_SYSCALL(k_sem_take);
 
 void z_impl_k_sem_reset(struct k_sem *sem)
 {
