@@ -32,11 +32,10 @@ The following hardware features are supported:
 
 The kernel currently does not support other hardware features on this platform.
 
-The default configuration using GICv2 can be found in
-:zephyr_file:`boards/xenvm/xenvm_defconfig`
+The default configuration for this board can be found in these files:
 
-The default configuration using GICv3 can be found in
-:zephyr_file:`boards/xenvm/xenvm_xenvm_gicv3_defconfig`
+- ``boards/arm64/xenvm/Kconfig.defconfig``
+- ``boards/arm64/xenvm/xenvm_defconfig``
 
 Devices
 ========
@@ -57,10 +56,10 @@ Interrupt Controller
 --------------------
 
 Depending on the version of the GIC on your hardware, you may choose one of the
-following board configurations:
+following board configuration variants:
 
-- ``xenvm_defconfig`` selects GICv2
-- ``xenvm_xenvm_gicv3_defconfig`` selects GICv3
+- ``xenvm`` selects GICv2
+- ``xenvm//gicv3`` selects GICv3
 
 CPU Core type
 -------------
