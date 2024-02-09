@@ -138,7 +138,7 @@ The Zephyr nucleo_l4a6zg board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_l4a6zg/nucleo_l4a6zg_defconfig``
+``boards/st/nucleo_l4a6zg/nucleo_l4a6zg_defconfig``
 
 
 Connections and IOs
