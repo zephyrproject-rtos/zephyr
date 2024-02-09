@@ -677,7 +677,7 @@ static void stream_recv(struct bt_bap_stream *stream,
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
-	if (u_stream->already_sent == false) {
+	if ((u_stream->already_sent == false) && (info->flags & BT_ISO_FLAGS_VALID)) {
 		/* For now, send just a first packet, to limit the number
 		 * of logs and not unnecessarily spam through btp.
 		 */
