@@ -22,6 +22,7 @@ family:
       - name: cpunet
   - name: nrf91
     socs:
+    - name: nrf9131
+    - name: nrf9151
     - name: nrf9160
     - name: nrf9161
-    - name: nrf9131
