@@ -6,9 +6,6 @@
 
 if BOARD_NUCLEO_WBA55CG
 
-config BOARD
-	default "nucleo_wba55cg"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
