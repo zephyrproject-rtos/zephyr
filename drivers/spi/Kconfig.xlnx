@@ -7,5 +7,6 @@ config SPI_XLNX_AXI_QUADSPI
 	bool "Xilinx AXI Quad SPI driver"
 	default y
 	depends on DT_HAS_XLNX_XPS_SPI_2_00_A_ENABLED
+	select EVENTS
 	help
 	  Enable Xilinx AXI Quad SPI v3.2 driver.
