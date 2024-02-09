@@ -190,6 +190,18 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t cyc = (last_ticks + last_elapsed + ticks) * CYC_PER_TICK;
 
+	/**
+	 * Ensure that we don't allow more than half the range of a cycle_diff_t
+	 * worth of cycles to elapse since the last timer ISR.
+	 * Otherwise we can have a situation where a timeout is set near the maximum
+	 * interval into the future, and then repeatedly set again near the maximum interval
+	 * before the timer ISR ever fires, causing our calculations for cycle differences
+	 * to eventually overflow.
+	 */
+	if (cyc - last_count > (cycle_diff_t)-1 / 2) {
+		cyc = last_count + (cycle_diff_t)-1 / 2;
+	}
+
 	set_mtimecmp(cyc);
 	k_spin_unlock(&lock, key);
 }
