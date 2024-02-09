@@ -410,7 +410,11 @@ enum net_ip_mtu {
 	/** IPv6 MTU length. We must be able to receive this size IPv6 packet
 	 * without fragmentation.
 	 */
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	NET_IPV6_MTU = CONFIG_NET_IPV6_MTU,
+#else
 	NET_IPV6_MTU = 1280,
+#endif
 
 	/** IPv4 MTU length. We must be able to receive this size IPv4 packet
 	 * without fragmentation.
