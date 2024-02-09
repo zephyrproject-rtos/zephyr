@@ -17,22 +17,24 @@
 #include "zephyr/logging/log.h"
 LOG_MODULE_REGISTER(max20335_charger);
 
-#define MAX20335_REG_STATUS_A 0x02
-#define MAX20335_REG_STATUS_B 0x03
-#define MAX20335_REG_INT_A 0x05
-#define MAX20335_REG_INT_B 0x06
-#define MAX20335_INT_A_USB_OK_MASK BIT(3)
-#define MAX20335_INT_A_CHG_STAT_MASK BIT(6)
-#define MAX20335_REG_INT_MASK_A 0x07
-#define MAX20335_REG_INT_MASK_B 0x08
+#define MAX20335_REG_STATUSA 0x02
+#define MAX20335_REG_STATUSB 0x03
+#define MAX20335_REG_INTA 0x05
+#define MAX20335_REG_INTB 0x06
+#define MAX20335_REG_INTMASKA 0x07
+#define MAX20335_REG_INTMASKB 0x08
 #define MAX20335_REG_ILIMCNTL 0x09
-#define MAX20335_REG_CHG_CNTL_A 0x0A
-#define MAX20335_CHGCNTLA_BAT_REG_CFG_MASK GENMASK(4, 1)
+#define MAX20335_REG_CHGCNTLA 0x0A
+
+#define MAX20335_INTA_USBOK_MASK BIT(3)
+#define MAX20335_INTA_CHGSTAT_MASK BIT(6)
 #define MAX20335_ILIMCNTL_ILIMCNTL_MASK GENMASK(1, 0)
-#define MAX20335_STATUS_A_CHG_STAT_MASK GENMASK(2, 0)
-#define MAX20335_STATUS_B_USB_OK_MASK BIT(3)
-#define MAX20335_CHRG_EN_MASK BIT(0)
-#define MAX20335_CHRG_EN BIT(0)
+#define MAX20335_STATUSA_CHGSTAT_MASK GENMASK(2, 0)
+#define MAX20335_STATUSB_USBOK_MASK BIT(3)
+#define MAX20335_CHGCNTLA_BATREG_MASK GENMASK(4, 1)
+#define MAX20335_CHGCNTLA_CHRGEN_MASK BIT(0)
+#define MAX20335_CHGCNTLA_CHRGEN BIT(0)
+
 #define MAX20335_REG_CVC_VREG_MIN_UV 4050000U
 #define MAX20335_REG_CVC_VREG_STEP_UV 50000U
 #define MAX20335_REG_CVC_VREG_MIN_IDX 0x0U
@@ -82,12 +84,12 @@ static int max20335_get_charger_status(const struct device *dev, enum charger_st
 	uint8_t val;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUS_A, &val);
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUSA, &val);
 	if (ret) {
 		return ret;
 	}
 
-	val = FIELD_GET(MAX20335_STATUS_A_CHG_STAT_MASK, val);
+	val = FIELD_GET(MAX20335_STATUSA_CHGSTAT_MASK, val);
 
 	switch (val) {
 	case MAX20335_CHARGER_OFF:
@@ -127,12 +129,12 @@ static int max20335_get_charger_online(const struct device *dev, enum charger_on
 	uint8_t val;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUS_B, &val);
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUSB, &val);
 	if (ret) {
 		return ret;
 	}
 
-	val = FIELD_GET(MAX20335_STATUS_B_USB_OK_MASK, val);
+	val = FIELD_GET(MAX20335_STATUSB_USBOK_MASK, val);
 
 	switch (val) {
 	case MAX20335_CHGIN_IN_PRESENT_AND_VALID:
@@ -159,11 +161,11 @@ static int max20335_set_constant_charge_voltage(const struct device *dev,
 		return ret;
 	}
 
-	val = FIELD_PREP(MAX20335_CHGCNTLA_BAT_REG_CFG_MASK, idx);
+	val = FIELD_PREP(MAX20335_CHGCNTLA_BATREG_MASK, idx);
 
 	return i2c_reg_update_byte_dt(&config->bus,
-				      MAX20335_REG_CHG_CNTL_A,
-				      MAX20335_CHGCNTLA_BAT_REG_CFG_MASK,
+				      MAX20335_REG_CHGCNTLA,
+				      MAX20335_CHGCNTLA_BATREG_MASK,
 				      val);
 }
 
@@ -205,9 +207,9 @@ static int max20335_set_enabled(const struct device *dev, bool enable)
 	data->charger_enabled = enable;
 
 	return i2c_reg_update_byte_dt(&config->bus,
-				      MAX20335_REG_CHG_CNTL_A,
-				      MAX20335_CHRG_EN_MASK,
-				      enable ? MAX20335_CHRG_EN : 0);
+				      MAX20335_REG_CHGCNTLA,
+				      MAX20335_CHGCNTLA_CHRGEN_MASK,
+				      enable ? MAX20335_CHGCNTLA_CHRGEN : 0);
 }
 
 static int max20335_get_interrupt_source(const struct device *dev, uint8_t *int_a, uint8_t *int_b)
@@ -220,19 +222,19 @@ static int max20335_get_interrupt_source(const struct device *dev, uint8_t *int_
 	/* Both INT_A and INT_B registers need to be read to clear all int flags */
 
 	int_src = (int_a != NULL) ? int_a : &dummy;
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INT_A, int_src);
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INTA, int_src);
 	if (ret < 0) {
 		return ret;
 	}
 
 	int_src = (int_b != NULL) ? int_b : &dummy;
 
-	return i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INT_B, int_src);
+	return i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INTB, int_src);
 }
 
 static int max20335_enable_interrupts(const struct device *dev)
 {
-	enum {MASK_A_VAL_ENABLE = 0xFF};
+	enum {MASKA_VAL_ENABLE = 0xFF};
 	const struct charger_max20335_config *config = dev->config;
 	int ret;
 
@@ -242,12 +244,12 @@ static int max20335_enable_interrupts(const struct device *dev)
 		return ret;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INT_MASK_A, MASK_A_VAL_ENABLE);
+	ret = i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INTMASKA, MASKA_VAL_ENABLE);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INT_MASK_B, 0);
+	return i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INTMASKB, 0);
 }
 
 static int max20335_init_properties(const struct device *dev)
@@ -391,7 +393,7 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		return;
 	}
 
-	if ((int_src_a & MAX20335_INT_A_CHG_STAT_MASK) != 0) {
+	if ((int_src_a & MAX20335_INTA_CHGSTAT_MASK) != 0) {
 		ret = max20335_get_charger_status(data->dev, &data->charger_status);
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger status: %d", ret);
@@ -402,7 +404,7 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		}
 	}
 
-	if ((int_src_a & MAX20335_INT_A_USB_OK_MASK) != 0) {
+	if ((int_src_a & MAX20335_INTA_USBOK_MASK) != 0) {
 		ret = max20335_get_charger_online(data->dev, &data->charger_online);
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger online %d", ret);
