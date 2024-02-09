@@ -414,7 +414,7 @@ int pthread_attr_setscope(pthread_attr_t *_attr, int contentionscope)
 		return EINVAL;
 	}
 	if (!(contentionscope == PTHREAD_SCOPE_PROCESS ||
-					     contentionscope == PTHREAD_SCOPE_SYSTEM)) {
+	      contentionscope == PTHREAD_SCOPE_SYSTEM)) {
 		LOG_DBG("%s contentionscope %d", "Invalid", contentionscope);
 		return EINVAL;
 	}
@@ -424,6 +424,45 @@ int pthread_attr_setscope(pthread_attr_t *_attr, int contentionscope)
 		return ENOTSUP;
 	}
 	attr->contentionscope = contentionscope;
+	return 0;
+}
+
+/**
+ * @brief Get inherit scheduler attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_getinheritsched(const pthread_attr_t *_attr, int *inheritsched)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr) || inheritsched == NULL) {
+		return EINVAL;
+	}
+	*inheritsched = attr->inheritsched;
+	return 0;
+}
+
+/**
+ * @brief Set inherit scheduler attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_setinheritsched(pthread_attr_t *_attr, int inheritsched)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr)) {
+		LOG_DBG("attr %p is not initialized", attr);
+		return EINVAL;
+	}
+
+	if (inheritsched != PTHREAD_INHERIT_SCHED && inheritsched != PTHREAD_EXPLICIT_SCHED) {
+		LOG_DBG("Invalid inheritsched %d", inheritsched);
+		return EINVAL;
+	}
+
+	attr->inheritsched = inheritsched;
 	return 0;
 }
 
@@ -598,6 +637,19 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		/* copy user-provided attr into thread, caller must destroy attr at a later time */
 		t->attr = *(struct posix_thread_attr *)_attr;
 	}
+
+	struct posix_thread *self = NULL;
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		self = to_posix_thread(pthread_self());
+		if (self == NULL) {
+-			K_SPINLOCK_BREAK;
+		}
+		if (self->attr.inheritsched == PTHREAD_INHERIT_SCHED) {
+			t->attr.priority = self->attr.priority;
+			t->attr.schedpolicy = self->attr.schedpolicy;
+			t->attr.inheritsched = self->attr.inheritsched;
+		}
 
 	/* spawn the thread */
 	k_thread_create(
@@ -841,6 +893,7 @@ int pthread_attr_init(pthread_attr_t *_attr)
 	*attr = (struct posix_thread_attr){0};
 	attr->guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
 	attr->contentionscope = PTHREAD_SCOPE_SYSTEM;
+	attr->inheritsched = PTHREAD_INHERIT_SCHED;
 
 	if (DYNAMIC_STACK_SIZE > 0) {
 		attr->stack = k_thread_stack_alloc(DYNAMIC_STACK_SIZE + attr->guardsize,
