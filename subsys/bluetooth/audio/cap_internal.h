@@ -36,6 +36,7 @@ enum bt_cap_common_proc_type {
 	BT_CAP_COMMON_PROC_TYPE_START,
 	BT_CAP_COMMON_PROC_TYPE_UPDATE,
 	BT_CAP_COMMON_PROC_TYPE_STOP,
+	BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE,
@@ -87,6 +88,14 @@ struct bt_cap_commander_proc_param {
 			struct bt_vocs *vocs;
 		} change_offset;
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+		struct {
+			bt_addr_le_t addr;
+			uint8_t adv_sid;
+			uint32_t broadcast_id;
+			uint16_t pa_interval;
+			uint8_t num_subgroups;
+			struct bt_bap_bass_subgroup *subgroups;
+		} broadcast_reception_start;
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 		struct {
