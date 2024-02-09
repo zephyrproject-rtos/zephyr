@@ -2,14 +2,14 @@ identifier: arduino_due
 name: Arduino Due
 type: mcu
 arch: arm
-ram: 96
-flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+flash: 512
+ram: 96
 supported:
-  - watchdog
-  - gpio
   - arduino_i2c
+  - gpio
+  - watchdog
 vendor: arduino
