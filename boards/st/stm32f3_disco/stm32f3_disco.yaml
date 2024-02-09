@@ -1,5 +1,5 @@
 identifier: stm32f3_disco
-name: ST STM32F3 Discovery
+name: ST STM32F3 Discovery rev B
 type: mcu
 arch: arm
 toolchain:
