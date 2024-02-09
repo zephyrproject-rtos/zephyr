@@ -3,6 +3,10 @@
 # Copyright (c) 2021 Matija Tudan
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NUCLEO_L433RC_P
-	bool "Nucleo L433RC-P Development Board"
-	depends on SOC_STM32L433XX
+if BOARD_NUCLEO_L433RC_P
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_L433RC_P
