@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_L412RB_P
 
-config BOARD
-	default "nucleo_l412rb_p"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
