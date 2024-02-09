@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Tisilicon
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PANDORA_STM32L475
+	select SOC_STM32L475XX
