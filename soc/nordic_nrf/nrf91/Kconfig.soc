@@ -36,13 +36,7 @@ config SOC_NRF9151_LACA
 	select SOC_NRF9120
 
 config SOC
-	default "nRF9131_LACA"
-	depends on SOC_NRF9131_LACA
-
-config SOC
-	default "nRF9160_SICA"
-	depends on SOC_NRF9160_SICA
-
-config SOC
-	default "nRF9161_LACA"
-	depends on SOC_NRF9161_LACA
+	default "nRF9131_LACA" if SOC_NRF9131_LACA
+	default "nRF9151_LACA" if SOC_NRF9151_LACA
+	default "nRF9160_SICA" if SOC_NRF9160_SICA
+	default "nRF9161_LACA" if SOC_NRF9161_LACA
