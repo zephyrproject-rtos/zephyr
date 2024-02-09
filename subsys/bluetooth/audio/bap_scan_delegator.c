@@ -88,19 +88,6 @@ static bool bits_subset_of(uint32_t a, uint32_t b)
 	return (((a) & (~(b))) == 0);
 }
 
-static bool valid_bis_syncs(uint32_t bis_sync)
-{
-	if (bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
-		return true;
-	}
-
-	if (bis_sync > BIT_MASK(31)) { /* Max BIS index */
-		return false;
-	}
-
-	return true;
-}
-
 static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
 					uint32_t aggregated_bis_syncs)
 {
