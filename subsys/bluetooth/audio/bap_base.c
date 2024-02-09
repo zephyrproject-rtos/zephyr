@@ -32,7 +32,8 @@ LOG_MODULE_REGISTER(bt_bap_base, CONFIG_BT_BAP_BASE_LOG_LEVEL);
 	 BASE_BIS_INDEX_SIZE + BASE_BIS_CC_LEN_SIZE)
 #define BASE_MIN_SIZE                                                                              \
 	(BT_UUID_SIZE_16 + BASE_PD_SIZE + BASE_SUBGROUP_COUNT_SIZE + BASE_SUBGROUP_MIN_SIZE)
-#define BASE_SUBGROUP_MAX_COUNT (BASE_MAX_SIZE / BASE_SUBGROUP_MIN_SIZE)
+#define BASE_SUBGROUP_MAX_COUNT                                                                    \
+	((BASE_MAX_SIZE - BASE_PD_SIZE - BASE_SUBGROUP_COUNT_SIZE) / BASE_SUBGROUP_MIN_SIZE)
 
 static uint32_t base_pull_pd(struct net_buf_simple *net_buf)
 {
