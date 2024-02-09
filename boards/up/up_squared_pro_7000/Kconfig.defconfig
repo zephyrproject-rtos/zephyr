@@ -32,14 +32,23 @@ config HEAP_MEM_POOL_ADD_SIZE_ACPI
 	default 64000000
 config MAIN_STACK_SIZE
 	default 320000
-config ACPI_PRT_BUS_NAME
-	default "_SB.PC00"
 
 if SHELL
 config SHELL_STACK_SIZE
 	default 320000
 endif # SHELL
 endif # ACPI
+
+if DMA
+config DMA_64BIT
+  default y
+config DMA_DW_HW_LLI
+  default n
+config DMA_DW_CHANNEL_COUNT
+  default 2
+endif
+config UART_NS16550_INTEL_LPSS_DMA
+  default y
 
 config HAS_COVERAGE_SUPPORT
 	default y
