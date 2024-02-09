@@ -86,11 +86,8 @@ an etching software onto an SD-card. This will boot Linux on the A53 application
 cores of the SoM. These cores will then load the zephyr binary on the M4 core
 using remoteproc.
 
-The default configuration can be found in the defconfig file:
-
-.. code-block:: console
-
-   boards/arm/am62x_m4/am62x_m4_phyboard_lyra_defconfig
+The default configuration can be found in
+:zephyr_file:`boards/phytec/phyboard_lyra_am63x/phyboard_lyra_am62x_am6234_m4_defconfig`
 
 Flashing
 ********

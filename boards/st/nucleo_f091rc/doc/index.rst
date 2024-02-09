@@ -111,8 +111,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 
 Other hardware features are not yet supported in this Zephyr port.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_f091rc/nucleo_f091rc_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/st/nucleo_f091rc/nucleo_f091rc_defconfig`
 
 Connections and IOs
 ===================

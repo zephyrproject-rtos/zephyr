@@ -90,8 +90,8 @@ The Zephyr nucleo_401re board configuration supports the following hardware feat
 
 Other hardware features are not yet supported on Zephyr porting.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_f401re/nucleo_f401re_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/st/nucleo_f401re/nucleo_f401re_defconfig`
 
 
 Pin Mapping

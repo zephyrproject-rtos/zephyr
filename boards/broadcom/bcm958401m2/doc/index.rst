@@ -31,9 +31,8 @@ features:
 
 Other hardware features have not been enabled yet for this board.
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/arm/bcm958401m2/bcm958401m2_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/broadcom/bcm958401m2/bcm958401m2_defconfig`
 
 Connections and IOs
 ===================
