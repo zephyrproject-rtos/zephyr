@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 NXP
+ * Copyright 2024 TiaC Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@
  *     1. 9 write clocks per byte, final bit is command/data selection bit
  *     2. Same as above, but 16 write clocks per byte
  *     3. 8 write clocks per byte. Command/data selected via GPIO pin
+ *     4. Same as above, but 16 write clocks per byte
  * The current driver interface only supports type C modes 1 and 3
  */
 
@@ -75,6 +77,28 @@ extern "C" {
  *          -'-------------------------------'-------------------------------'-
  */
 #define MIPI_DBI_MODE_SPI_4WIRE 0x2
+/**
+ * SPI 4 wire (Type C4). Uses 16 write clocks to send a byte of data. Generic
+ * data (GRAM) is passed through in 16 bit alignment with odd-length stuffing.
+ * an additional C/D pin will be use to indicate whether the byte is a
+ * command or data byte
+ *
+ *           .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-.
+ *     SCK  -' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '---
+ *
+ *          -.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.-
+ *     DOUT  |D15|D14|D13|D12|D11|D10| D9| D8| D7| D6| D5| D4| D3| D2| D1| D0|
+ *          -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'-
+ *           | Word 1             (stuffing) :                        (byte) |
+ *
+ *          -.								     .-
+ *     CS    '---------------------------------------------------------------'
+ *
+ *          -.---------------------------------------------------------------.-
+ *     CD    |                              D/C                              |
+ *          -'---------------------------------------------------------------'-
+ */
+#define MIPI_DBI_MODE_SPI_4WIRE_16BIT 0x3
 
 /**
  * @brief initialize a MIPI DBI SPI configuration struct from devicetree
