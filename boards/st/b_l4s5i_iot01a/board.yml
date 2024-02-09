@@ -1,0 +1,5 @@
+board:
+  name: b_l4s5i_iot01a
+  vendor: st
+  socs:
+    - name: stm32l4s5xx
