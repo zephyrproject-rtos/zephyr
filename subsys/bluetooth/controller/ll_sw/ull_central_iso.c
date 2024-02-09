@@ -836,8 +836,17 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 	/* ACL connection of the new CIS */
 	conn = ll_conn_get(cis->lll.acl_handle);
+
+	/* WORKAROUND:
+	 * Some peer controller implementations are not able to establish CIS
+	 * if the instant is equal to the current event count where CIS_IND PDU
+	 * is received.
+	 * ull_conn_event_counter() returns the current event count, CIS_IND PDU
+	 * will be transmitted in the next event, hence add 2 so that the
+	 * instant is one ahead of the event where CIS_IND PDU is transmitted.
+	 */
 	event_counter = ull_conn_event_counter(conn);
-	instant = MAX(*conn_event_count, event_counter + 1);
+	instant = MAX(*conn_event_count, event_counter + 2U);
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint32_t cis_offset;
@@ -948,7 +957,15 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 
 	conn = ll_conn_get(cis->lll.acl_handle);
 
-	cis->central.instant = ull_conn_event_counter(conn) + 3U;
+	/* WORKAROUND:
+	 * Some peer controller implementations are not able to establish CIS
+	 * if the instant is equal to the current event count where CIS_IND PDU
+	 * is received.
+	 * ull_conn_event_counter() returns the current event count, CIS_REQ PDU
+	 * CIS_RSP PDU and CIS_IND PDU take 3 connection events. Add 1 extra so
+	 * that the instant is one ahead of where CIS_IND PDU is transmitted.
+	 */
+	cis->central.instant = ull_conn_event_counter(conn) + 4U;
 	*conn_event_count = cis->central.instant;
 
 	/* Provide CIS offset range
