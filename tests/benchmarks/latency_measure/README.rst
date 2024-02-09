@@ -74,6 +74,8 @@ Sample output of the benchmark (without userspace enabled)::
         semaphore.take.immediate.kernel          - Take a semaphore (no blocking)                     :      69 cycles ,      575 ns :
         semaphore.take.blocking.k_to_k           - Take a semaphore (context switch)                  :     494 cycles ,     4116 ns :
         semaphore.give.wake+ctx.k_to_k           - Give a semaphore (context switch)                  :     599 cycles ,     4992 ns :
+        condvar.wait.blocking.k_to_k             - Wait for a condvar (context switch)                :     692 cycles ,     5767 ns :
+        condvar.signal.wake+ctx.k_to_k           - Signal a condvar (context switch)                  :     715 cycles ,     5958 ns :
         mutex.lock.immediate.recursive.kernel    - Lock a mutex                                       :     100 cycles ,      833 ns :
         mutex.unlock.immediate.recursive.kernel  - Unlock a mutex                                     :      40 cycles ,      333 ns :
         heap.malloc.immediate                    - Average time for heap malloc                       :     627 cycles ,     5225 ns :
@@ -183,6 +185,14 @@ Sample output of the benchmark (with userspace enabled)::
         semaphore.give.wake+ctx.k_to_u           - Give a semaphore (context switch)                  :    1434 cycles ,    11957 ns :
         semaphore.take.blocking.u_to_u           - Take a semaphore (context switch)                  :    1690 cycles ,    14090 ns :
         semaphore.give.wake+ctx.u_to_u           - Give a semaphore (context switch)                  :    1800 cycles ,    15000 ns :
+        condvar.wait.blocking.k_to_k             - Wait for a condvar (context switch)                :    1385 cycles ,    11542 ns :
+        condvar.signal.wake+ctx.k_to_k           - Signal a condvar (context switch)                  :    1420 cycles ,    11833 ns :
+        condvar.wait.blocking.k_to_u             - Wait for a condvar (context switch)                :    1537 cycles ,    12815 ns :
+        condvar.signal.wake+ctx.u_to_k           - Signal a condvar (context switch)                  :    1950 cycles ,    16250 ns :
+        condvar.wait.blocking.u_to_k             - Wait for a condvar (context switch)                :    2025 cycles ,    16875 ns :
+        condvar.signal.wake+ctx.k_to_u           - Signal a condvar (context switch)                  :    1715 cycles ,    14298 ns :
+        condvar.wait.blocking.u_to_u             - Wait for a condvar (context switch)                :    2313 cycles ,    19279 ns :
+        condvar.signal.wake+ctx.u_to_u           - Signal a condvar (context switch)                  :    2225 cycles ,    18541 ns :
         mutex.lock.immediate.recursive.kernel    - Lock a mutex                                       :     155 cycles ,     1291 ns :
         mutex.unlock.immediate.recursive.kernel  - Unlock a mutex                                     :      57 cycles ,      475 ns :
         mutex.lock.immediate.recursive.user      - Lock a mutex                                       :     665 cycles ,     5541 ns :
