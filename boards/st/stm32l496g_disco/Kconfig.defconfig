@@ -6,9 +6,6 @@
 
 if BOARD_STM32L496G_DISCO
 
-config BOARD
-	default "stm32l496g_disco"
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
