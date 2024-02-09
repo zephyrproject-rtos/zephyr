@@ -33,5 +33,5 @@ commands.
 
 .. code-block:: bash
 
-    $ west build -b mps3_an547 zephyr/samples/modules/tflite-micro/tflm_ethosu
+    $ west build -b mps3/an547 zephyr/samples/modules/tflite-micro/tflm_ethosu
     $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
