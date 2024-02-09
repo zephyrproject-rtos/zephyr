@@ -114,8 +114,8 @@ The Zephyr nucleo_f429zi board configuration supports the following hardware fea
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_f429zi/nucleo_f429zi_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/st/nucleo_f429zi/nucleo_f429zi_defconfig`
 
 
 Connections and IOs

@@ -73,9 +73,8 @@ hardware features:
 | I2S       | on-chip    | i2s                                 |
 +-----------+------------+-------------------------------------+
 
-The default board configuration can be found in the defconfig file:
-
-        ``boards/arm/96b_stm32_sensor_mez/96b_stm32_sensor_mez_defconfig``
+The default board configuration can be found in
+:zephyr_file:`boards/96boards/96b_stm32_sensor_mez/96b_stm32_sensor_mez_defconfig`
 
 Connections and IOs
 ===================

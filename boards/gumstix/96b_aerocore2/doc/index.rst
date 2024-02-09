@@ -79,9 +79,8 @@ features:
 
 More details about the board can be found at `96Boards website`_.
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/arm/96b_aerocore2/96b_aerocore2_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/gumstix/96b_aerocore2/96b_aerocore2_defconfig`
 
 Connections and IOs
 ===================

@@ -102,9 +102,8 @@ The Zephyr stm32f469i_disco board configuration supports the following hardware 
 
 Other hardware features are not yet supported on Zephyr porting.
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/stm32f469i_disco/stm32f469i_disco_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/st/stm32f469i_disco/stm32f469i_disco_defconfig`
 
 
 Pin Mapping

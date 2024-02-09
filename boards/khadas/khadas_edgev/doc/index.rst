@@ -31,9 +31,8 @@ hardware features:
 
 Other hardware features have not been enabled yet for this board.
 
-The default configuration can be found in the defconfig file for NON-SMP:
-
-        ``boards/arm64/khadas_edgev/khadas_edgev_defconfig``
+The default configuration can be found in (NON-SMP)
+:zephyr_file:`boards/khadas/khadas_edgev/khadas_edgev_defconfig`
 
 There are multiple serial ports on the board: Zephyr is using
 uart2 as serial console.
