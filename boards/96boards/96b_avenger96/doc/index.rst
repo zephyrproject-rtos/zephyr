@@ -163,8 +163,8 @@ features:
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/96b_avenger96/96b_avenger96_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/96boards/96b_avenger96/96b_avenger96_defconfig`
 
 
 Connections and IOs

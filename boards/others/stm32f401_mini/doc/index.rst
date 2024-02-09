@@ -69,9 +69,8 @@ hardware features:
 | USB OTG FS | on-chip    | USB device                          |
 +------------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/arm/stm32f401_mini/stm32f401_mini_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/others/stm32f401_mini/stm32f401_mini_defconfig`
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

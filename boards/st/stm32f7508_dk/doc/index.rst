@@ -116,8 +116,8 @@ The Zephyr stm32f7508_dk board configuration supports the following hardware fea
 
 Other hardware features are not yet supported on Zephyr porting.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/stm32f7508_dk/stm32f7508_dk_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/st/stm32f7508_dk/stm32f7508_dk_defconfig`
 
 Pin Mapping
 ===========

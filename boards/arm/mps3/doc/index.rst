@@ -44,9 +44,9 @@ The BOARD options are summarized below:
 +----------------------+-----------------------------------------------+
 |   BOARD              | Description                                   |
 +======================+===============================================+
-| mps3_an547           | For building Secure (or Secure-only) firmware |
+| ``mps3/an547``       | For building Secure (or Secure-only) firmware |
 +----------------------+-----------------------------------------------+
-| mps3_an547_ns        | For building Non-Secure firmware              |
+| ``mps3/an547/ns``    | For building Non-Secure firmware              |
 +----------------------+-----------------------------------------------+
 
 Hardware
@@ -89,7 +89,7 @@ ARM MPS3 AN547 provides the following hardware components:
 Supported Features
 ===================
 
-The mps3_an547 board configuration supports the following hardware features:
+The ``mps3/an547`` board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -108,8 +108,8 @@ Other hardware features are not currently supported by the port.
 See the `MPS3 FPGA Website`_ for a complete list of MPS3 AN547 board hardware
 features.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/mps3_an547/mps3_an547_defconfig``.
+The default configuration can be found in
+:zephyr_file:`boards/arm/mps3/mps3_an547_defconfig`.
 
 For more details refer to `MPS3 AN547 Technical Reference Manual (TRM)`_.
 
@@ -146,7 +146,7 @@ the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mps3_an547
+   :board: mps3/an547
    :goals: build
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -161,7 +161,7 @@ serial port:
 
 .. code-block:: console
 
-   Hello World! mps3_an547
+   Hello World! mps3
 
 Uploading an application to MPS3 AN547
 ---------------------------------------
@@ -197,7 +197,7 @@ serial port:
 
 .. code-block:: console
 
-   Hello World! mps3_an547
+   Hello World! mps3
 
 
 FVP Usage

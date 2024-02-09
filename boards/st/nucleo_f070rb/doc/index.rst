@@ -97,8 +97,8 @@ The Zephyr nucleo_f070rb board configuration supports the following hardware fea
 
 Other hardware features are not yet supported in this Zephyr port.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_f070rb/nucleo_f070rb_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/st/nucleo_f070rb/nucleo_f070rb_defconfig`
 
 Connections and IOs
 ===================

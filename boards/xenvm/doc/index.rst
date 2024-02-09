@@ -32,11 +32,11 @@ The following hardware features are supported:
 
 The kernel currently does not support other hardware features on this platform.
 
-The default configuration using GICv2 can be found in the defconfig file:
-    ``boards/arm64/xenvm/xenvm_defconfig``
+The default configuration using GICv2 can be found in
+:zephyr_file:`boards/xenvm/xenvm_defconfig`
 
-The default configuration using GICv3 can be found in the defconfig file:
-    ``boards/arm64/xenvm/xenvm_gicv3_defconfig``
+The default configuration using GICv3 can be found in
+:zephyr_file:`boards/xenvm/xenvm_xenvm_gicv3_defconfig`
 
 Devices
 ========
