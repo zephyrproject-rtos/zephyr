@@ -8,6 +8,6 @@ choice
 # This loads custom SoC root Kconfig (only available if custom SoC root are defined)
 osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc.choice"
 # This loads Zephyr base SoC scheme v1 root Kconfig
-osource "soc/$(ARCH)/*/Kconfig.soc"
+osource "soc/soc_legacy/$(ARCH)/*/Kconfig.soc"
 
 endchoice

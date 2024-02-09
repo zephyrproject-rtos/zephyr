@@ -1,4 +1,0 @@
-# Copyright (c) 2017 Christian Taedcke
-# SPDX-License-Identifier: Apache-2.0
-
-source "soc/arm/silabs_exx32/*/Kconfig.series"
