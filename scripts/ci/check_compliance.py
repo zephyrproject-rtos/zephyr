@@ -478,7 +478,7 @@ class KconfigCheck(ComplianceTest):
         os.environ["SOC_DIR"] = "soc/"
         os.environ["ARCH_DIR"] = "arch/"
         os.environ["BOARD"] = "boards"
-        os.environ["ARCH"] = "[!v][!2]*"
+        os.environ["ARCH"] = "*"
         os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
         os.environ['DEVICETREE_CONF'] = "dummy"
         os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
@@ -504,12 +504,12 @@ class KconfigCheck(ComplianceTest):
             v1_file = os.path.join(kconfiglib_dir, "Kconfig.v1")
             v1_syms_file = os.path.join(kconfiglib_boards_dir, 'Kconfig.syms.v1')
             with open(v1_file, 'w') as fp:
-                fp.write('source "boards/[!v][!2]*/*/Kconfig.defconfig"\n')
-                fp.write('osource "soc/[!v][!2]*/*/Kconfig.defconfig"\n')
+                fp.write('source "boards/boards_legacy/*/*/Kconfig.defconfig"\n')
+                fp.write('osource "soc/soc_legacy/*/*/Kconfig.defconfig"\n')
                 fp.write('source "boards/Kconfig"\n')
                 fp.write('source "soc/Kconfig"\n')
 
-            os.environ["BOARD_DIR"] = "boards/[!v][!2]*/*"
+            os.environ["BOARD_DIR"] = "boards/boards_legacy/*/*"
             self.get_v1_model_syms(v1_file, v1_syms_file)
 
         if hwm is None or hwm == "v2":
