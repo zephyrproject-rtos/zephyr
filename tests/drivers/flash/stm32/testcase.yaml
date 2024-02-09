@@ -14,7 +14,7 @@ tests:
             dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
   drivers.flash.stm32.l4:
     platform_allow:
-      - nucleo_l452re_p
+      - nucleo_l452re/stm32l452xx/p
       - disco_l475_iot1
     extra_configs:
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
