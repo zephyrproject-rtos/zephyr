@@ -1,0 +1,6 @@
+family:
+  - name: sifive_freedom
+    series:
+      - name: fe300
+        socs:
+          - name: fe310
