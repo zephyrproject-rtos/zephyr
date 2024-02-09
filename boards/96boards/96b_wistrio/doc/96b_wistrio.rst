@@ -70,9 +70,8 @@ features:
 | EEPROM    | on-chip    | eeprom                              |
 +-----------+------------+-------------------------------------+
 
-The default board configuration can be found in the defconfig file:
-
-        ``boards/arm/96b_wistrio/96b_wistrio_defconfig``
+The default board configuration can be found in
+:zephyr_file:`boards/96boards/96b_wistrio/96b_wistrio_defconfig`
 
 Connections and IOs
 ===================

@@ -59,8 +59,8 @@ hardware features:
 
 Other hardware features are not yet supported on this Zephyr porting.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/stm32f030_demo/stm32f030_demo_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/others/stm32f030_demo/stm32f030_demo_defconfig`
 
 Pin Mapping
 ===========

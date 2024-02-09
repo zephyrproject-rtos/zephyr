@@ -44,8 +44,8 @@ features:
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/arm/quick_feather/quick_feather_defconfig`.
+The default configuration can be found in
+:zephyr_file:`boards/quicklogic/quick_feather/quick_feather_defconfig`.
 
 Connections and IOs
 ===================

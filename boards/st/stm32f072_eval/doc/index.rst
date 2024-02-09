@@ -99,9 +99,8 @@ The Zephyr stm32f072_eval board configuration supports the following hardware fe
 
 Other hardware features are not yet supported on this Zephyr porting.
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/stm32f072_eval/stm32f072_eval_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/st/stm32f072_eval/stm32f072_eval_defconfig`
 
 
 Pin Mapping

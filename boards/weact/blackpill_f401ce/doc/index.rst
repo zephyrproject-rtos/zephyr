@@ -71,9 +71,8 @@ hardware features:
 | USB OTG FS | on-chip    | USB device                          |
 +------------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/arm/blackpill_f401ce/blackpill_f401ce_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/weact/blackpill_f401ce/blackpill_f401ce_defconfig`
 
 Pin Mapping
 ===========
