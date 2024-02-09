@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_HIFIVE1
-
-config BOARD
-	default "hifive1"
+if BOARD_HIFIVE1_FE310
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128
 
-endif
+endif # BOARD_HIFIVE1_FE310
