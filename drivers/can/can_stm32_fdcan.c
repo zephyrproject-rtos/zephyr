@@ -202,6 +202,7 @@ static inline uint16_t can_stm32fd_remap_reg(uint16_t reg)
 	case CAN_MCAN_TXEFC:
 		__ASSERT_NO_MSG(false);
 		remap = CAN_STM32FD_REGISTER_UNSUPPORTED;
+		break;
 	case CAN_MCAN_XIDAM:
 		remap = CAN_STM32FD_XIDAM;
 		break;
@@ -275,58 +276,23 @@ static int can_stm32fd_read_reg(const struct device *dev, uint16_t reg, uint32_t
 
 	switch (reg) {
 	case CAN_MCAN_IR:
-		/* Remap IR bits */
-		*val |= FIELD_PREP(CAN_MCAN_IR_ARA,  FIELD_GET(CAN_STM32FD_IR_ARA, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_PED,  FIELD_GET(CAN_STM32FD_IR_PED, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_PEA,  FIELD_GET(CAN_STM32FD_IR_PEA, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_WDI,  FIELD_GET(CAN_STM32FD_IR_WDI, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_BO,   FIELD_GET(CAN_STM32FD_IR_BO, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_EW,   FIELD_GET(CAN_STM32FD_IR_EW, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_EP,   FIELD_GET(CAN_STM32FD_IR_EP, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_ELO,  FIELD_GET(CAN_STM32FD_IR_ELO, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TOO,  FIELD_GET(CAN_STM32FD_IR_TOO, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_MRAF, FIELD_GET(CAN_STM32FD_IR_MRAF, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TSW,  FIELD_GET(CAN_STM32FD_IR_TSW, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TEFL, FIELD_GET(CAN_STM32FD_IR_TEFL, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TEFF, FIELD_GET(CAN_STM32FD_IR_TEFF, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TEFN, FIELD_GET(CAN_STM32FD_IR_TEFN, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TFE,  FIELD_GET(CAN_STM32FD_IR_TFE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TCF,  FIELD_GET(CAN_STM32FD_IR_TCF, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_TC,   FIELD_GET(CAN_STM32FD_IR_TC, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_HPM,  FIELD_GET(CAN_STM32FD_IR_HPM, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_RF1L, FIELD_GET(CAN_STM32FD_IR_RF1L, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_RF1F, FIELD_GET(CAN_STM32FD_IR_RF1F, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_RF1N, FIELD_GET(CAN_STM32FD_IR_RF1N, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_RF0L, FIELD_GET(CAN_STM32FD_IR_RF0L, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_RF0F, FIELD_GET(CAN_STM32FD_IR_RF0F, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IR_RF0N, FIELD_GET(CAN_STM32FD_IR_RF0N, bits));
-		break;
+		__fallthrough;
 	case CAN_MCAN_IE:
-		/* Remap IE bits */
-		*val |= FIELD_PREP(CAN_MCAN_IE_ARAE,  FIELD_GET(CAN_STM32FD_IE_ARAE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_PEDE,  FIELD_GET(CAN_STM32FD_IE_PEDE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_PEAE,  FIELD_GET(CAN_STM32FD_IE_PEAE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_WDIE,  FIELD_GET(CAN_STM32FD_IE_WDIE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_BOE,   FIELD_GET(CAN_STM32FD_IE_BOE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_EWE,   FIELD_GET(CAN_STM32FD_IE_EWE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_EPE,   FIELD_GET(CAN_STM32FD_IE_EPE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_ELOE,  FIELD_GET(CAN_STM32FD_IE_ELOE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TOOE,  FIELD_GET(CAN_STM32FD_IE_TOOE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_MRAFE, FIELD_GET(CAN_STM32FD_IE_MRAFE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TSWE,  FIELD_GET(CAN_STM32FD_IE_TSWE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TEFLE, FIELD_GET(CAN_STM32FD_IE_TEFLE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TEFFE, FIELD_GET(CAN_STM32FD_IE_TEFFE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TEFNE, FIELD_GET(CAN_STM32FD_IE_TEFNE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TFEE,  FIELD_GET(CAN_STM32FD_IE_TFEE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TCFE,  FIELD_GET(CAN_STM32FD_IE_TCFE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_TCE,   FIELD_GET(CAN_STM32FD_IE_TCE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_HPME,  FIELD_GET(CAN_STM32FD_IE_HPME, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_RF1LE, FIELD_GET(CAN_STM32FD_IE_RF1LE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_RF1FE, FIELD_GET(CAN_STM32FD_IE_RF1FE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_RF1NE, FIELD_GET(CAN_STM32FD_IE_RF1NE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_RF0LE, FIELD_GET(CAN_STM32FD_IE_RF0LE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_RF0FE, FIELD_GET(CAN_STM32FD_IE_RF0FE, bits));
-		*val |= FIELD_PREP(CAN_MCAN_IE_RF0NE, FIELD_GET(CAN_STM32FD_IE_RF0NE, bits));
+		/* Remap IR/IE bits, ignoring unsupported bits */
+		/* Group 1 map bits 23-16 (stm32fd) to 29-22 (mcan) */
+		*val |= ((bits & GENMASK(23, 16)) << 6);
+
+		/* Group 2 map bits 15-11 (stm32fd) to 18-14 (mcan) */
+		*val |= ((bits & GENMASK(15, 11)) << 3);
+
+		/* Group 3 map bits 10-4 (stm32fd) to 12-6 (mcan) */
+		*val |= ((bits & GENMASK(10, 4)) << 2);
+
+		/* Group 4 map bits 3-1 (stm32fd) to 4-2 (mcan) */
+		*val |= ((bits & GENMASK(3, 1)) << 1);
+
+		/* Group 5 map bits 0 (mcan) to 0 (stm32fd) */
+		*val |= ((bits & GENMASK(0, 0)) << 0);
 		break;
 	case CAN_MCAN_ILS:
 		/* Only remap ILS groups used in can_mcan.c */
@@ -366,58 +332,23 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 
 	switch (reg) {
 	case CAN_MCAN_IR:
-		/* Remap IR bits, ignoring unsupported bits */
-		bits |= FIELD_PREP(CAN_STM32FD_IR_ARA,  FIELD_GET(CAN_MCAN_IR_ARA, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_PED,  FIELD_GET(CAN_MCAN_IR_PED, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_PEA,  FIELD_GET(CAN_MCAN_IR_PEA, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_WDI,  FIELD_GET(CAN_MCAN_IR_WDI, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_BO,   FIELD_GET(CAN_MCAN_IR_BO, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_EW,   FIELD_GET(CAN_MCAN_IR_EW, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_EP,   FIELD_GET(CAN_MCAN_IR_EP, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_ELO,  FIELD_GET(CAN_MCAN_IR_ELO, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TOO,  FIELD_GET(CAN_MCAN_IR_TOO, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_MRAF, FIELD_GET(CAN_MCAN_IR_MRAF, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TSW,  FIELD_GET(CAN_MCAN_IR_TSW, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TEFL, FIELD_GET(CAN_MCAN_IR_TEFL, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TEFF, FIELD_GET(CAN_MCAN_IR_TEFF, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TEFN, FIELD_GET(CAN_MCAN_IR_TEFN, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TFE,  FIELD_GET(CAN_MCAN_IR_TFE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TCF,  FIELD_GET(CAN_MCAN_IR_TCF, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_TC,   FIELD_GET(CAN_MCAN_IR_TC, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_HPM,  FIELD_GET(CAN_MCAN_IR_HPM, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_RF1L, FIELD_GET(CAN_MCAN_IR_RF1L, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_RF1F, FIELD_GET(CAN_MCAN_IR_RF1F, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_RF1N, FIELD_GET(CAN_MCAN_IR_RF1N, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_RF0L, FIELD_GET(CAN_MCAN_IR_RF0L, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_RF0F, FIELD_GET(CAN_MCAN_IR_RF0F, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IR_RF0N, FIELD_GET(CAN_MCAN_IR_RF0N, val));
-		break;
+		__fallthrough;
 	case CAN_MCAN_IE:
-		/* Remap IE bits, ignoring unsupported bits */
-		bits |= FIELD_PREP(CAN_STM32FD_IE_ARAE,  FIELD_GET(CAN_MCAN_IE_ARAE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_PEDE,  FIELD_GET(CAN_MCAN_IE_PEDE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_PEAE,  FIELD_GET(CAN_MCAN_IE_PEAE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_WDIE,  FIELD_GET(CAN_MCAN_IE_WDIE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_BOE,   FIELD_GET(CAN_MCAN_IE_BOE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_EWE,   FIELD_GET(CAN_MCAN_IE_EWE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_EPE,   FIELD_GET(CAN_MCAN_IE_EPE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_ELOE,  FIELD_GET(CAN_MCAN_IE_ELOE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TOOE,  FIELD_GET(CAN_MCAN_IE_TOOE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_MRAFE, FIELD_GET(CAN_MCAN_IE_MRAFE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TSWE,  FIELD_GET(CAN_MCAN_IE_TSWE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TEFLE, FIELD_GET(CAN_MCAN_IE_TEFLE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TEFFE, FIELD_GET(CAN_MCAN_IE_TEFFE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TEFNE, FIELD_GET(CAN_MCAN_IE_TEFNE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TFEE,  FIELD_GET(CAN_MCAN_IE_TFEE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TCFE,  FIELD_GET(CAN_MCAN_IE_TCFE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_TCE,   FIELD_GET(CAN_MCAN_IE_TCE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_HPME,  FIELD_GET(CAN_MCAN_IE_HPME, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_RF1LE, FIELD_GET(CAN_MCAN_IE_RF1LE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_RF1FE, FIELD_GET(CAN_MCAN_IE_RF1FE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_RF1NE, FIELD_GET(CAN_MCAN_IE_RF1NE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_RF0LE, FIELD_GET(CAN_MCAN_IE_RF0LE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_RF0FE, FIELD_GET(CAN_MCAN_IE_RF0FE, val));
-		bits |= FIELD_PREP(CAN_STM32FD_IE_RF0NE, FIELD_GET(CAN_MCAN_IE_RF0NE, val));
+		/* Remap IR/IE bits, ignoring unsupported bits */
+		/* Group 1 map bits 29-22 (mcan) to 23-16 (stm32fd) */
+		bits |= ((val & GENMASK(29, 22)) >> 6);
+
+		/* Group 2 map bits 18-14 (mcan) to 15-11 (stm32fd) */
+		bits |= ((val & GENMASK(18, 14)) >> 3);
+
+		/* Group 3 map bits 12-6 (mcan) to 10-4 (stm32fd) */
+		bits |= ((val & GENMASK(12, 6)) >> 2);
+
+		/* Group 4 map bits 4-2 (mcan) to 3-1 (stm32fd) */
+		bits |= ((val & GENMASK(4, 2)) >> 1);
+
+		/* Group 5 map bits 0 (mcan) to 0 (stm32fd) */
+		bits |= ((val & GENMASK(0, 0)) >> 0);
 		break;
 	case CAN_MCAN_ILS:
 		/* Only remap ILS groups used in can_mcan.c */
