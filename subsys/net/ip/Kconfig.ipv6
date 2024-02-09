@@ -39,6 +39,14 @@ config NET_IF_IPV6_PREFIX_COUNT
 
 if NET_NATIVE_IPV6
 
+config NET_IPV6_MTU
+	int "Initial IPv6 MTU value"
+	default 1280
+	range 1280 1500
+	help
+	  The value should normally be 1280 which is the minimum IPv6 packet
+	  size that implementations need to support without fragmentation.
+
 config NET_INITIAL_HOP_LIMIT
 	int "Initial IPv6 hop limit value for unicast packets"
 	default 64
