@@ -3,11 +3,6 @@
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_SAM_E70_XPLAINED
-
-config BOARD
-	default "sam_e70_xplained"
-
 if ETH_SAM_GMAC
 
 # Read MAC address from AT24MAC402 EEPROM
@@ -30,5 +25,3 @@ config NET_L2_ETHERNET
 	default y
 
 endif # NETWORKING
-
-endif # BOARD_SAM_E70_XPLAINED
