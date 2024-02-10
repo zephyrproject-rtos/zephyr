@@ -46,6 +46,13 @@ config CLOCK_STM32_MUX
 	  for a specific domain. For instance per_ck clock on STM32H7 or
 	  CLK48 clock
 
+config CLOCK_STM32_MCO
+	bool "STM32 clock MCO driver"
+	default y
+	depends on DT_HAS_ST_STM32_MCO_CLOCK_ENABLED
+	help
+	  Enable driver for STM32 clock MCO clock output.
+
 # Micro-controller Clock output configuration options
 
 choice
