@@ -8,12 +8,12 @@
 
 #include <atmel/samc21.dtsi>
 #include <atmel/samx2xx18.dtsi>
-#include "atsamc21n_xpro-pinctrl.dtsi"
+#include "samc21n_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM C21N Xplained Pro";
-	compatible = "atsamc21n,xpro", "atmel,samc21n18a", "atmel,samc21";
+	compatible = "samc21n,xpro", "atmel,samc21n18a", "atmel,samc21";
 
 	chosen {
 		zephyr,console = &sercom4;
