@@ -1,8 +1,0 @@
-# SAM L21 Xplained Pro board configuration
-
-# Copyright (c) 2021 Argentum Systems Ltd.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ATSAML21_XPRO
-	bool "SAM L21 Xplained Pro"
-	depends on SOC_PART_NUMBER_SAML21J18B
