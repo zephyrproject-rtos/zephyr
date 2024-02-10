@@ -6,12 +6,12 @@
 
 /dts-v1/;
 #include <atmel/saml21.dtsi>
-#include "atsaml21_xpro-pinctrl.dtsi"
+#include "saml21_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM L21 Xplained Pro";
-	compatible = "atsaml21,xpro", "atmel,saml21j18b", "atmel,saml21";
+	compatible = "saml21,xpro", "atmel,saml21j18b", "atmel,saml21";
 
 	chosen {
 		zephyr,console = &sercom3;
