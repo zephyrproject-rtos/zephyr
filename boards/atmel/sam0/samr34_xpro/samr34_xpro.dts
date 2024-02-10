@@ -6,12 +6,12 @@
 
 /dts-v1/;
 #include <atmel/samr34.dtsi>
-#include "atsamr34_xpro-pinctrl.dtsi"
+#include "samr34_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM R34 Xplained Pro";
-	compatible = "atmel,atsamr34xpro", "atmel,samr34j18b", "atmel,samr34";
+	compatible = "samr34,xpro", "atmel,samr34j18b", "atmel,samr34";
 
 	chosen {
 		zephyr,console = &sercom0;
