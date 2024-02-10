@@ -53,6 +53,18 @@ properties:
       voltage drops to this level, the charger current
       is reduced to prevent battery damage.
 
+  re-charge-threshold-microvolt:
+    type: int
+    required: true
+    enum:
+      - 70000
+      - 120000
+      - 170000
+      - 220000
+    description: |
+      Recharge threshold in relation to BatReg.
+      Refer to ChgCntlA register description for details.
+
   int-gpios:
     type: phandle-array
     required: true
