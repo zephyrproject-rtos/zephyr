@@ -1,0 +1,25 @@
+# Copyright (c) 2024, Maritn Kiepfer
+# SPDX-License-Identifier: Apache-2.0
+
+description: Backlight PWM node
+
+compatible: "backlight-pwm"
+
+include: [base.yaml, backlight.yaml]
+
+properties:
+  pwms:
+    required: true
+    type: phandle-array
+    description: |
+      Reference to a PWM instance.
+
+      The period field is used by the set_brightness function of the
+      Backlight-PWM API.
+      Its value should at least be greater than 100 nanoseconds (for a full
+      brigtness granularity) and lesser than 50 milliseconds (average visual
+      persistence time of the human eye). Typical values for the PWM period
+      are 10 or 20 milliseconds.
+
+clock-cells:
+  - id
