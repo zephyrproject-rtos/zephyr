@@ -1,4 +1,4 @@
-.. _tdk_robokit1:
+.. _robokit1:
 
 TDK RoboKit 1
 #############
@@ -107,7 +107,7 @@ features:
      - N/A
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/tdk_robokit1/tdk_robokit1_defconfig`.
+:zephyr_file:`boards/tdk/robokit1/robokit1_defconfig`.
 
 Connections and IOs
 ===================
@@ -157,10 +157,10 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: tdk_robokit1
+      :board: robokit1
       :goals: build flash
 
-   You should see "Hello World! tdk_robokit1" in your terminal.
+   You should see "Hello World! robokit1" in your terminal.
 
 Debugging
 =========
@@ -170,7 +170,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: tdk_robokit1
+   :board: robokit1
    :maybe-skip-config:
    :goals: debug
 
