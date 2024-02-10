@@ -50,35 +50,43 @@ features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| AFEC      | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| CAN FD    | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| I2S       | on-chip    | i2s                                 |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
+| USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC via AFEC                        |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| CAN FD    | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
+| XDMAC     | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/sam_v71_xult/sam_v71_xult_defconfig`.
+:zephyr_file:`boards/atmel/sam/sam_v71_xult/sam_v71_xult_samv71q21_defconfig`.
 
 Connections and IOs
 ===================
@@ -141,19 +149,19 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: sam_v71_xult
+      :board: sam_v71_xult/samv71q21
       :goals: build flash
 
    You should see "Hello World! sam_v71_xult" in your terminal.
 
-#. To use the SoC variation B IC, you need type "sam_v71b_xult".
+#. To use the SoC variation B IC, you need type "sam_v71_xult/samv71q21b".
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: sam_v71b_xult
+      :board: sam_v71_xult/samv71q21b
       :goals: build flash
 
-   You should see "Hello World! sam_v71b_xult" in your terminal.
+   You should see "Hello World! sam_v71_xult" in your terminal.
 
 You can flash the image using an external debug adapter such as J-Link
 or ULINK, connected to the 20-pin JTAG header. Supply the name of the
@@ -170,7 +178,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sam_v71_xult
+   :board: sam_v71_xult/samv71q21
    :maybe-skip-config:
    :goals: debug
 
