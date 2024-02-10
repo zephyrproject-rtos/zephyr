@@ -65,6 +65,18 @@ properties:
       Recharge threshold in relation to BatReg.
       Refer to ChgCntlA register description for details.
 
+  thermistor-monitoring-mode:
+    type: string
+    required: true
+    enum:
+      - "disabled"
+      - "thermistor"
+      - "JEITA-1"
+      - "JEITA-2"
+    description: |
+      Thermistor monitoring mode.
+      Refer to ThrmCfg register description and Table 2 for details.
+
   int-gpios:
     type: phandle-array
     required: true
