@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Bryan O'Donoghue
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +9,12 @@
 #include <freq.h>
 #include <atmel/samd21.dtsi>
 #include <atmel/samx2xx18.dtsi>
-#include "atsamd21_xpro-pinctrl.dtsi"
+#include "samd21_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM D21 Xplained Pro";
-	compatible = "atsamd21,xpro", "atmel,samd21j18a", "atmel,samd21";
+	compatible = "samd21,xpro", "atmel,samd21j18a", "atmel,samd21";
 
 	chosen {
 		zephyr,console = &sercom3;
