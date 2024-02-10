@@ -86,6 +86,10 @@ Boards & SoC Support
 
   * Added support for Renesas R-Car Spider board CR52: ``rcar_spider_cr52``
 
+  * Added support for Adafruit QTPy RP2040 board: ``adafruit_qt_py_rp2040``
+
+  * Added support for Wiznet W5500 Evaluation Pico board: ``w5500_evb_pico``
+
 * Added support for these ARM64 boards:
 
 * Added support for these RISC-V boards:
