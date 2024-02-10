@@ -8,12 +8,12 @@
 #include <freq.h>
 #include <atmel/samd20.dtsi>
 #include <atmel/samx2xx18.dtsi>
-#include "atsamd20_xpro-pinctrl.dtsi"
+#include "samd20_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM D20 Xplained Pro";
-	compatible = "atsamd20,xpro", "atmel,samd20j18", "atmel,samd20";
+	compatible = "samd20,xpro", "atmel,samd20j18", "atmel,samd20";
 
 	chosen {
 		zephyr,console = &sercom3;
