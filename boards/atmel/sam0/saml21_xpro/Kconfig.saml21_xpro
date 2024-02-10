@@ -1,0 +1,6 @@
+# Copyright (c) 2021 Argentum Systems Ltd.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SAML21_XPRO
+	select SOC_SAML21J18B
