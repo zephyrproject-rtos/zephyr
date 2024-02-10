@@ -1,0 +1,5 @@
+board:
+  name: samr34_xpro
+  vendor: atmel
+  socs:
+    - name: samr34j18b
