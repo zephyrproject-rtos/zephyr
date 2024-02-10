@@ -199,6 +199,38 @@ The actual key mask can be changed at runtime by enabling
 :kconfig:option:`CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC` and the using the
 :c:func:`input_kbd_matrix_actual_key_mask_set` API.
 
+Keymap configuration
+********************
+
+Keyboard matrix devices report a series of x/y/touch events. These can be
+mapped to normal key events using the :dtcompatible:`input-keymap` driver.
+
+For example, the following would setup a ``keymap`` device that take the
+x/y/touch events as an input and generate corresponding key events as an
+output:
+
+.. code-block:: devicetree
+
+  kbd {
+      ...
+      keymap {
+          compatible = "input-keymap";
+          keymap = <
+              MATRIX_KEY(0, 0, INPUT_KEY_1)
+              MATRIX_KEY(0, 1, INPUT_KEY_2)
+              MATRIX_KEY(0, 2, INPUT_KEY_3)
+              MATRIX_KEY(1, 0, INPUT_KEY_4)
+              MATRIX_KEY(1, 1, INPUT_KEY_5)
+              MATRIX_KEY(1, 2, INPUT_KEY_6)
+              MATRIX_KEY(2, 0, INPUT_KEY_7)
+              MATRIX_KEY(2, 1, INPUT_KEY_8)
+              MATRIX_KEY(2, 2, INPUT_KEY_9)
+          >;
+          row-size = <3>;
+          col-size = <3>;
+      };
+  };
+
 Keyboard matrix shell commands
 ******************************
 
