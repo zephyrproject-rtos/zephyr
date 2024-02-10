@@ -1,4 +1,4 @@
-.. _atsamc21n_xpro:
+.. _samc21n_xpro:
 
 SAM C21N Xplained Pro Evaluation Kit
 ####################################
@@ -14,12 +14,12 @@ hardware.
 
 .. image:: img/atsamc21n_xpro.jpg
      :align: center
-     :alt: ATSAMC21N-XPRO
+     :alt: SAMC21N-XPRO
 
 Hardware
 ********
 
-- ATSAMC21N18A ARM Cortex-M0+ processor at 48 MHz
+- SAMC21N18A ARM Cortex-M0+ processor at 48 MHz
 - 32.768 kHz crystal oscillator
 - 256 KiB flash memory, 32 KiB of RAM, 8KB RRW flash
 - One yellow user LED
@@ -32,7 +32,7 @@ Hardware
 Supported Features
 ==================
 
-The atsamc21n_xpro board configuration supports the following hardware
+The samc21n_xpro board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -78,7 +78,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-``boards/arm/atsamc21n_xpro/atsamc21n_xpro_defconfig``.
+``boards/atmel/sam0/samc21n_xpro/samc21n_xpro_defconfig``.
 
 Pin Mapping
 ===========
@@ -147,7 +147,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamc21n_xpro
+      :board: samc21n_xpro
       :goals: build
       :compact:
 
@@ -173,11 +173,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamc21n_xpro
+      :board: samc21n_xpro
       :goals: flash
       :compact:
 
-   You should see "Hello World! atsamc21n_xpro" in your terminal.
+   You should see "Hello World! samc21n_xpro" in your terminal.
 
 References
 **********
