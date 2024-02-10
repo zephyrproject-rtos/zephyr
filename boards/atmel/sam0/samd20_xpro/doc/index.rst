@@ -1,4 +1,4 @@
-.. _atsamd20_xpro:
+.. _samd20_xpro:
 
 SAM D20 Xplained Pro Evaluation Kit
 ###################################
@@ -15,14 +15,14 @@ hardware.
 .. figure:: img/atsamd20_xpro.jpg
     :width: 500px
     :align: center
-    :alt: ATSAMD20-XPRO
+    :alt: SAMD20-XPRO
 
-    ATSAMD20-XPRO (Credit: `Microchip Technology`_)
+    SAMD20-XPRO (Credit: `Microchip Technology`_)
 
 Hardware
 ********
 
-- ATSAMD20J18 ARM Cortex-M0+ processor at 48 MHz
+- SAMD20J18 ARM Cortex-M0+ processor at 48 MHz
 - 32.768 kHz crystal oscillator
 - 256 KiB flash memory and 32 KiB of RAM
 - One yellow user LED
@@ -33,7 +33,7 @@ Hardware
 Supported Features
 ==================
 
-The atsamd20_xpro board configuration supports the following hardware
+The samd20_xpro board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -73,7 +73,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/atsamd20_xpro/atsamd20_xpro_defconfig`.
+:zephyr_file:`boards/atmel/sam0/samd20_xpro/samd20_xpro_defconfig`.
 
 Connections and IOs
 ===================
@@ -114,7 +114,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamd20_xpro
+      :board: samd20_xpro
       :goals: build
       :compact:
 
@@ -140,11 +140,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamd20_xpro
+      :board: samd20_xpro
       :goals: flash
       :compact:
 
-   You should see "Hello World! atsamd20_xpro" in your terminal.
+   You should see "Hello World! samd20_xpro" in your terminal.
 
 References
 **********
