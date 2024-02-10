@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "tdk_robokit1-pinctrl.dtsi"
+#include "robokit1-pinctrl.dtsi"
 
 / {
 	aliases {
