@@ -13,6 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_pat912x.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
@@ -47,6 +48,10 @@ LOG_MODULE_REGISTER(input_pat912x, CONFIG_INPUT_LOG_LEVEL);
 #define WRITE_PROTECT_ENABLE 0x00
 #define WRITE_PROTECT_DISABLE 0x5a
 #define MOTION_STATUS_MOTION BIT(7)
+#define RES_SCALING_FACTOR 5
+#define RES_MAX (UINT8_MAX * RES_SCALING_FACTOR)
+#define OPERATION_MODE_SLEEP_1_EN BIT(4)
+#define OPERATION_MODE_SLEEP_12_EN (BIT(4) | BIT(3))
 
 #define PAT912X_DATA_SIZE_BITS 12
 
@@ -57,6 +62,12 @@ struct pat912x_config {
 	struct gpio_dt_spec motion_gpio;
 	int32_t axis_x;
 	int32_t axis_y;
+	int16_t res_x_cpi;
+	int16_t res_y_cpi;
+	bool invert_x;
+	bool invert_y;
+	bool sleep1_enable;
+	bool sleep2_enable;
 };
 
 struct pat912x_data {
@@ -102,6 +113,13 @@ static void pat912x_motion_work_handler(struct k_work *work)
 	x = sign_extend(x, PAT912X_DATA_SIZE_BITS - 1);
 	y = sign_extend(y, PAT912X_DATA_SIZE_BITS - 1);
 
+	if (cfg->invert_x) {
+		x *= -1;
+	}
+	if (cfg->invert_y) {
+		y *= -1;
+	}
+
 	LOG_DBG("x=%4d y=%4d", x, y);
 
 	if (cfg->axis_x >= 0) {
@@ -126,6 +144,41 @@ static void pat912x_motion_handler(const struct device *gpio_dev,
 			cb, struct pat912x_data, motion_cb);
 
 	k_work_submit(&data->motion_work);
+}
+
+int pat912x_set_resolution(const struct device *dev,
+			   int16_t res_x_cpi, int16_t res_y_cpi)
+{
+	const struct pat912x_config *cfg = dev->config;
+	int ret;
+
+	if (res_x_cpi >= 0) {
+		if (!IN_RANGE(res_x_cpi, 0, RES_MAX)) {
+			LOG_ERR("res_x_cpi out of range: %d", res_x_cpi);
+			return -EINVAL;
+		}
+
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, PAT912X_RES_X,
+					    res_x_cpi / RES_SCALING_FACTOR);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (res_y_cpi >= 0) {
+		if (!IN_RANGE(res_y_cpi, 0, RES_MAX)) {
+			LOG_ERR("res_y_cpi out of range: %d", res_y_cpi);
+			return -EINVAL;
+		}
+
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, PAT912X_RES_Y,
+					    res_y_cpi / RES_SCALING_FACTOR);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
 }
 
 static int pat912x_configure(const struct device *dev)
@@ -154,6 +207,29 @@ static int pat912x_configure(const struct device *dev)
 	ret = i2c_reg_write_byte_dt(&cfg->i2c, PAT912X_CONFIGURATION, CONFIGURATION_CLEAR);
 	if (ret < 0) {
 		return ret;
+	}
+
+	ret = pat912x_set_resolution(dev, cfg->res_x_cpi, cfg->res_y_cpi);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (cfg->sleep1_enable && cfg->sleep2_enable) {
+		ret = i2c_reg_update_byte_dt(&cfg->i2c,
+					     PAT912X_OPERATION_MODE,
+					     OPERATION_MODE_SLEEP_12_EN,
+					     OPERATION_MODE_SLEEP_12_EN);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (cfg->sleep1_enable) {
+		ret = i2c_reg_update_byte_dt(&cfg->i2c,
+					     PAT912X_OPERATION_MODE,
+					     OPERATION_MODE_SLEEP_12_EN,
+					     OPERATION_MODE_SLEEP_1_EN);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return 0;
@@ -249,11 +325,25 @@ static int pat912x_pm_action(const struct device *dev,
 #endif
 
 #define PAT912X_INIT(n)								\
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, res_x_cpi), 0, RES_MAX),		\
+		     "invalid res-x-cpy");					\
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, res_y_cpi), 0, RES_MAX),		\
+		     "invalid res-y-cpy");					\
+	BUILD_ASSERT(DT_INST_PROP(n, sleep1_enable) ||				\
+		     !DT_INST_PROP(n, sleep2_enable),				\
+		     "invalid sleep configuration");				\
+										\
 	static const struct pat912x_config pat912x_cfg_##n = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(n),					\
 		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),		\
 		.axis_x = DT_INST_PROP_OR(n, zephyr_axis_x, -1),		\
 		.axis_y = DT_INST_PROP_OR(n, zephyr_axis_y, -1),		\
+		.res_x_cpi = DT_INST_PROP_OR(n, res_x_cpi, -1),			\
+		.res_y_cpi = DT_INST_PROP_OR(n, res_y_cpi, -1),			\
+		.invert_x = DT_INST_PROP(n, invert_x),				\
+		.invert_y = DT_INST_PROP(n, invert_y),				\
+		.sleep1_enable = DT_INST_PROP(n, sleep1_enable),		\
+		.sleep2_enable = DT_INST_PROP(n, sleep2_enable),		\
 	};									\
 										\
 	static struct pat912x_data pat912x_data_##n;				\

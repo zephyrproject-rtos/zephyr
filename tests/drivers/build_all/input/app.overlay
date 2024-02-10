@@ -204,6 +204,12 @@
 				motion-gpios = <&test_gpio 0 0>;
 				zephyr,axis-x = <0>;
 				zephyr,axis-y = <1>;
+				res-x-cpi = <0>;
+				res-y-cpi = <0>;
+				invert-x;
+				invert-y;
+				sleep1-enable;
+				sleep2-enable;
 			};
 		};
 
