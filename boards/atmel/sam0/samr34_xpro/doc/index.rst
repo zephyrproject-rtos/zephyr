@@ -1,4 +1,4 @@
- .. _atsamr34_xpro:
+ .. _samr34_xpro:
 
 SAM R34 Xplained Pro Evaluation Kit
 ###################################
@@ -19,12 +19,12 @@ This board is also referred to as DM320111.
 
 .. image:: img/atsamr34-xpro.jpg
      :align: center
-     :alt: ATSAMR34-XPRO
+     :alt: SAMR34-XPRO
 
 Hardware
 ********
 
-- ATSAMR34J18 ARM Cortex-M0+ processor at 48 MHz
+- SAMR34J18 ARM Cortex-M0+ processor at 48 MHz
 - 32.768 kHz crystal oscillator
 - 256 KiB flash memory, 32 KiB of SRAM, 8KB Low Power SRAM
 - One yellow user LED
@@ -35,7 +35,7 @@ Hardware
 Supported Features
 ==================
 
-The atsamr34_xpro board configuration supports the following hardware
+The samr34_xpro board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -91,7 +91,7 @@ supported by the SOC:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-``boards/arm/atsamr34_xpro/atsamr34_xpro_defconfig``.
+``boards/atmel/sam0/samr34_xpro/samr34_xpro_defconfig``.
 
 Pin Mapping
 ===========
@@ -104,7 +104,7 @@ Xplained Pro Schematic`_.
 
 .. image:: img/atsamr34-xpro-pinout.jpg
      :align: center
-     :alt: ATSAMR34-XPRO-pinout
+     :alt: SAMR34-XPRO-pinout
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -168,7 +168,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamr34_xpro
+      :board: samr34_xpro
       :goals: build
       :compact:
 
@@ -191,11 +191,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamr34_xpro
+      :board: samr34_xpro
       :goals: flash
       :compact:
 
-   You should see "Hello World! atsamr34_xpro" in your terminal.
+   You should see "Hello World! samr34_xpro" in your terminal.
 
 References
 **********
