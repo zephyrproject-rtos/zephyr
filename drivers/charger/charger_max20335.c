@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_REG_INTMASKB 0x08
 #define MAX20335_REG_ILIMCNTL 0x09
 #define MAX20335_REG_CHGCNTLA 0x0A
+#define MAX20335_REG_THRMCFG 0x18
 
 #define MAX20335_INTA_USBOK_MASK BIT(3)
 #define MAX20335_INTA_CHGSTAT_MASK BIT(6)
@@ -36,6 +37,7 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_CHGCNTLA_BATREG_MASK GENMASK(4, 1)
 #define MAX20335_CHGCNTLA_CHRGEN_MASK BIT(0)
 #define MAX20335_CHGCNTLA_CHRGEN BIT(0)
+#define MAX20335_THRMCFG_THERMEN_MASK GENMASK(1, 0)
 
 #define MAX20335_REG_CVC_VREG_MIN_UV 4050000U
 #define MAX20335_REG_CVC_VREG_STEP_UV 50000U
@@ -49,6 +51,14 @@ LOG_MODULE_REGISTER(max20335_charger);
 
 #define INT_ENABLE_DELAY K_MSEC(500)
 
+enum charger_max20335_therm_mode {
+	MAX20335_THERM_MODE_DISABLED,
+	MAX20335_THERM_MODE_THERMISTOR,
+	MAX20335_THERM_MODE_JEITA_1,
+	MAX20335_THERM_MODE_JEITA_2,
+	MAX20335_THERM_MODE_UNKNOWN,
+};
+
 struct charger_max20335_config {
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec int_gpio;
@@ -56,6 +66,7 @@ struct charger_max20335_config {
 	uint32_t max_ichgin_to_sys_ua;
 	uint32_t min_vsys_uv;
 	uint32_t recharge_threshold_uv;
+	char *therm_mon_mode;
 };
 
 struct charger_max20335_data {
@@ -264,6 +275,37 @@ static int max20335_set_sys_voltage_min_threshold(const struct device *dev, uint
 				      val);
 }
 
+static int max20335_set_thermistor_mode(const struct device *dev,
+					enum charger_max20335_therm_mode mode)
+{
+	const struct charger_max20335_config *const config = dev->config;
+	uint8_t val;
+
+	switch (mode) {
+	case MAX20335_THERM_MODE_DISABLED:
+		val = 0x00;
+		break;
+	case MAX20335_THERM_MODE_THERMISTOR:
+		val = 0x01;
+		break;
+	case MAX20335_THERM_MODE_JEITA_1:
+		val = 0x02;
+		break;
+	case MAX20335_THERM_MODE_JEITA_2:
+		val = 0x03;
+		break;
+	default:
+		return -ENOTSUP;
+	};
+
+	val = FIELD_PREP(MAX20335_THRMCFG_THERMEN_MASK, val);
+
+	return i2c_reg_update_byte_dt(&config->bus,
+				      MAX20335_REG_THRMCFG,
+				      MAX20335_THRMCFG_THERMEN_MASK,
+				      val);
+}
+
 static int max20335_set_enabled(const struct device *dev, bool enable)
 {
 	struct charger_max20335_data *data = dev->data;
@@ -341,10 +383,30 @@ static int max20335_init_properties(const struct device *dev)
 	return 0;
 }
 
+enum charger_max20335_therm_mode max20335_string_to_therm_mode(const char *mode_string)
+{
+	static const char * const modes[] = {
+		[MAX20335_THERM_MODE_DISABLED] = "disabled",
+		[MAX20335_THERM_MODE_THERMISTOR] = "thermistor",
+		[MAX20335_THERM_MODE_JEITA_1] = "JEITA-1",
+		[MAX20335_THERM_MODE_JEITA_2] = "JEITA-2",
+	};
+	enum charger_max20335_therm_mode i;
+
+	for (i = MAX20335_THERM_MODE_DISABLED; i < ARRAY_SIZE(modes); i++) {
+		if (strncmp(mode_string, modes[i], strlen(modes[i])) == 0) {
+			return i;
+		}
+	}
+
+	return MAX20335_THERM_MODE_UNKNOWN;
+}
+
 static int max20335_update_properties(const struct device *dev)
 {
 	struct charger_max20335_data *data = dev->data;
 	const struct charger_max20335_config *config = dev->config;
+	enum charger_max20335_therm_mode therm_mode;
 	int ret;
 
 	ret = max20335_set_chgin_to_sys_current_limit(dev, config->max_ichgin_to_sys_ua);
@@ -362,6 +424,13 @@ static int max20335_update_properties(const struct device *dev)
 	ret = max20335_set_recharge_threshold(dev, config->recharge_threshold_uv);
 	if (ret < 0) {
 		LOG_ERR("Failed to set recharge threshold: %d", ret);
+		return ret;
+	}
+
+	therm_mode = max20335_string_to_therm_mode(config->therm_mon_mode);
+	ret = max20335_set_thermistor_mode(dev, therm_mode);
+	if (ret < 0) {
+		LOG_ERR("Failed to set thermistor mode: %d", ret);
 		return ret;
 	}
 
@@ -592,6 +661,7 @@ static const struct charger_driver_api max20335_driver_api = {
 		.max_ichgin_to_sys_ua = DT_INST_PROP(inst, chgin_to_sys_current_limit_microamp),\
 		.min_vsys_uv = DT_INST_PROP(inst, system_voltage_min_threshold_microvolt),	\
 		.recharge_threshold_uv = DT_INST_PROP(inst, re_charge_threshold_microvolt),	\
+		.therm_mon_mode = DT_INST_PROP(inst, thermistor_monitoring_mode),		\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\
