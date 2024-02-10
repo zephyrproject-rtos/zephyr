@@ -27,6 +27,7 @@ max20335@1 {
 		chgin-to-sys-current-limit-microamp = <100000>;
 		constant-charge-voltage-max-microvolt = <4050000>;
 		system-voltage-min-threshold-microvolt = <3600000>;
+		re-charge-threshold-microvolt = <170000>;
 		int-gpios = <&test_gpio 0 0>;
 	};
 };

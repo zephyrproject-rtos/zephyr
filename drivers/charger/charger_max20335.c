@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(max20335_charger);
 #define MAX20335_ILIMCNTL_SYSMIN_MASK GENMASK(7, 5)
 #define MAX20335_STATUSA_CHGSTAT_MASK GENMASK(2, 0)
 #define MAX20335_STATUSB_USBOK_MASK BIT(3)
+#define MAX20335_CHGCNTLA_BATRECHG_MASK GENMASK(6, 5)
 #define MAX20335_CHGCNTLA_BATREG_MASK GENMASK(4, 1)
 #define MAX20335_CHGCNTLA_CHRGEN_MASK BIT(0)
 #define MAX20335_CHGCNTLA_CHRGEN BIT(0)
@@ -54,6 +55,7 @@ struct charger_max20335_config {
 	uint32_t max_vreg_uv;
 	uint32_t max_ichgin_to_sys_ua;
 	uint32_t min_vsys_uv;
+	uint32_t recharge_threshold_uv;
 };
 
 struct charger_max20335_data {
@@ -159,6 +161,36 @@ static int max20335_get_charger_online(const struct device *dev, enum charger_on
 	};
 
 	return 0;
+}
+
+static int max20335_set_recharge_threshold(const struct device *dev, uint32_t voltage_uv)
+{
+	const struct charger_max20335_config *const config = dev->config;
+	uint8_t val;
+
+	switch (voltage_uv) {
+	case 70000:
+		val = 0x00;
+		break;
+	case 120000:
+		val = 0x01;
+		break;
+	case 170000:
+		val = 0x02;
+		break;
+	case 220000:
+		val = 0x03;
+		break;
+	default:
+		return -ENOTSUP;
+	};
+
+	val = FIELD_PREP(MAX20335_CHGCNTLA_BATRECHG_MASK, val);
+
+	return i2c_reg_update_byte_dt(&config->bus,
+				      MAX20335_REG_CHGCNTLA,
+				      MAX20335_CHGCNTLA_BATRECHG_MASK,
+				      val);
 }
 
 static int max20335_set_constant_charge_voltage(const struct device *dev,
@@ -324,6 +356,12 @@ static int max20335_update_properties(const struct device *dev)
 	ret = max20335_set_sys_voltage_min_threshold(dev, config->min_vsys_uv);
 	if (ret < 0) {
 		LOG_ERR("Failed to set minimum system voltage threshold: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_set_recharge_threshold(dev, config->recharge_threshold_uv);
+	if (ret < 0) {
+		LOG_ERR("Failed to set recharge threshold: %d", ret);
 		return ret;
 	}
 
@@ -553,6 +591,7 @@ static const struct charger_driver_api max20335_driver_api = {
 		.max_vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),	\
 		.max_ichgin_to_sys_ua = DT_INST_PROP(inst, chgin_to_sys_current_limit_microamp),\
 		.min_vsys_uv = DT_INST_PROP(inst, system_voltage_min_threshold_microvolt),	\
+		.recharge_threshold_uv = DT_INST_PROP(inst, re_charge_threshold_microvolt),	\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\
