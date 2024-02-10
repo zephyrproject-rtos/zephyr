@@ -1,4 +1,4 @@
-.. _atsamd21_xpro:
+.. _samd21_xpro:
 
 SAM D21 Xplained Pro Evaluation Kit
 ###################################
@@ -15,14 +15,14 @@ hardware.
 .. figure:: img/atsamd21_xpro.jpg
     :width: 500px
     :align: center
-    :alt: ATSAMD21-XPRO
+    :alt: SAMD21-XPRO
 
-    ATSAMD21-XPRO (Credit: `Microchip Technology`_)
+    SAMD21-XPRO (Credit: `Microchip Technology`_)
 
 Hardware
 ********
 
-- ATSAMD21J18 ARM Cortex-M0+ processor at 48 MHz
+- SAMD21J18 ARM Cortex-M0+ processor at 48 MHz
 - 32.768 kHz crystal oscillator
 - 256 KiB flash memory and 32 KiB of RAM
 - One yellow user LED
@@ -33,7 +33,7 @@ Hardware
 Supported Features
 ==================
 
-The atsamd21_xpro board configuration supports the following hardware
+The samd21_xpro board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -79,7 +79,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-``boards/arm/atsamd21_xpro/atsamd21_xpro_defconfig``.
+``boards/atmel/sam0/samd21_xpro/samd21_xpro_defconfig``.
 
 Pin Mapping
 ===========
@@ -92,7 +92,7 @@ Xplained Pro Schematic`_.
 
 .. image:: img/ATSAMD21-XPRO-pinout.jpg
      :align: center
-     :alt: ATSAMD21-XPRO-pinout
+     :alt: SAMD21-XPRO-pinout
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -155,7 +155,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamd21_xpro
+      :board: samd21_xpro
       :goals: build
       :compact:
 
@@ -181,11 +181,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamd21_xpro
+      :board: samd21_xpro
       :goals: flash
       :compact:
 
-   You should see "Hello World! atsamd21_xpro" in your terminal.
+   You should see "Hello World! samd21_xpro" in your terminal.
 
 References
 **********
