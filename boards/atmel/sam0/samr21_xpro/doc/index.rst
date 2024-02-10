@@ -1,4 +1,4 @@
-.. _atsamr21_xpro:
+.. _samr21_xpro:
 
 SAM R21 Xplained Pro Evaluation Kit
 ###################################
@@ -7,19 +7,19 @@ Overview
 ********
 
 The SAM R21 Xplained Pro is a compact evaluation board by Atmel featuring a
-ATSAMR21G18A SoC. The SoC includes a SAMR21 ARM Cortex-M0+ micro-controller
+SAMR21G18A SoC. The SoC includes a SAMR21 ARM Cortex-M0+ micro-controller
 bundled with Atmel's AT86RF233, a 2.4GHz IEEE802.15.4 compatible radio.
 The kit includes Atmel’s Embedded Debugger (EDBG), which provides a full
 debug interface without the need for additional hardware.
 
 .. image:: img/atsamr21_xpro.jpg
      :align: center
-     :alt: ATSAMR21-XPRO
+     :alt: SAMR21-XPRO
 
 Hardware
 ********
 
-- ATSAMR21G18A ARM Cortex-M0+ processor at 48 MHz
+- SAMR21G18A ARM Cortex-M0+ processor at 48 MHz
 - 32.768 kHz crystal oscillator
 - 256 KiB flash memory and 32 KiB of RAM
 - One yellow user LED
@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The atsamr21_xpro board configuration supports the following hardware
+The samr21_xpro board configuration supports the following hardware
 features:
 
 +-----------+------------+--------------------------------------+
@@ -56,7 +56,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-``boards/arm/atsamr21_xpro/atsamr21_xpro_defconfig``.
+``boards/atmel/sam0/samr21_xpro/samr21_xpro_defconfig``.
 
 Pin Mapping
 ===========
@@ -69,7 +69,7 @@ Xplained Pro Schematic`_.
 
 .. image:: img/ATSAMR21-XPRO-pinout.jpg
      :align: center
-     :alt: ATSAMR21-XPRO-pinout
+     :alt: SAMR21-XPRO-pinout
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -178,7 +178,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamr21_xpro
+      :board: samr21_xpro
       :goals: build
       :compact:
 
@@ -204,11 +204,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsamr21_xpro
+      :board: samr21_xpro
       :goals: flash
       :compact:
 
-   You should see "Hello World! atsamr21_xpro" in your terminal.
+   You should see "Hello World! samr21_xpro" in your terminal.
 
 References
 **********
