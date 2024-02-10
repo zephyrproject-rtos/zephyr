@@ -102,6 +102,7 @@ Drivers and Sensors
 
   * Added ``chgin-to-sys-current-limit-microamp`` property to ``maxim,max20335-charger``.
   * Added ``system-voltage-min-threshold-microvolt`` property to ``maxim,max20335-charger``.
+  * Added ``re-charge-threshold-microvolt`` property to ``maxim,max20335-charger``.
 
 * Clock control
 
