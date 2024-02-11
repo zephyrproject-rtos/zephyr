@@ -1564,6 +1564,7 @@ Release Notes:
     - simonguinot
   collaborators:
     - soburi
+    - thedjnK
   files:
     - drivers/led_strip/
     - dts/bindings/led_strip/
