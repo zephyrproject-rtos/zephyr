@@ -1,10 +1,8 @@
-# Copyright (C) 2023, Intel Corporation
+# Copyright (C) 2023-2024, Intel Corporation
+#
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_NIOSV
-
-config SOC_SERIES
-	default "niosv"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
@@ -18,4 +16,4 @@ config RISCV_GP
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-endif # SOC_NIOSV
+endif # SOC_SERIES_NIOSV
