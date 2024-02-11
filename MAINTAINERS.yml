@@ -3383,10 +3383,9 @@ Microchip SAM Platforms:
     - mnkp
     - stephanosio
   files:
-    - boards/arm/atsam*/
-    - boards/arm/sam*/
+    - boards/atmel/
     - dts/arm/atmel/
-    - soc/arm/atmel_sam*/
+    - soc/atmel/
     - drivers/*/*sam*.c
     - dts/bindings/*/atmel,*
   labels:
