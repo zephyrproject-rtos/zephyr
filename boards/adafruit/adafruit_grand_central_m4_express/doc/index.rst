@@ -61,7 +61,7 @@ hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/arm/adafruit_grand_central_m4_express/adafruit_grand_central_m4_express_defconfig`.
+:zephyr_file:`boards/adafruit/adafruit_grand_central_m4_express/adafruit_grand_central_m4_express_defconfig`.
 
 Connections and IOs
 ===================
