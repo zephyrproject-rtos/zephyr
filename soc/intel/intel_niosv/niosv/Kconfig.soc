@@ -1,0 +1,28 @@
+# Copyright (C) 2023-2024, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NIOSV
+	bool
+	select SOC_FAMILY_INTEL_NIOSV
+	help
+	  Intel FPGA NIOSV
+
+config SOC_SERIES
+	default "niosv" if SOC_SERIES_NIOSV
+
+config SOC_NIOSV_M
+	bool
+	select SOC_SERIES_NIOSV
+	help
+	  Intel FPGA NIOSV Microcontroller Core Processor
+
+config SOC_NIOSV_G
+	bool
+	select SOC_SERIES_NIOSV
+	help
+	  Intel FPGA NIOSV General Purpose Processor
+
+config SOC
+	default "niosv_m" if SOC_NIOSV_M
+	default "niosv_g" if SOC_NIOSV_G
