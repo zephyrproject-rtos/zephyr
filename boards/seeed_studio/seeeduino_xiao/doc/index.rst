@@ -41,11 +41,11 @@ features:
 +-----------+------------+------------------------------------------+
 | HWINFO    | on-chip    | Hardware info                            |
 +-----------+------------+------------------------------------------+
+| I2C       | on-chip    | Inter-Integrated Circuit                 |
++-----------+------------+------------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller       |
 +-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | Inter-Integrated Circuit                 |
 +-----------+------------+------------------------------------------+
 | SYSTICK   | on-chip    | systick                                  |
 +-----------+------------+------------------------------------------+
@@ -59,7 +59,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/arm/seeeduino_xiao/seeeduino_xiao_defconfig`.
+:zephyr_file:`boards/seeed/seeeduino_xiao/seeeduino_xiao_defconfig`.
 
 Connections and IOs
 ===================
