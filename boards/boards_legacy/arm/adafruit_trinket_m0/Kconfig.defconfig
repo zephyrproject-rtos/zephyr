@@ -1,8 +1,0 @@
-# Adafruit Trinket M0 board configuration
-
-# Copyright (c) 2018 Google LLC.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "adafruit_trinket_m0"
-	depends on BOARD_ADAFRUIT_TRINKET_M0
