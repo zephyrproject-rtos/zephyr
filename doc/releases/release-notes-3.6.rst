@@ -247,6 +247,7 @@ Drivers and Sensors
 
 * Flash
 
+  * Atmel SAM: Redesign controller to fully utilize flash page layout.
   * ``spi_nor`` driver now sleeps between polls in ``spi_nor_wait_until_ready``. If this is not
     desired (For example due to ROM constraints in a bootloader),
     :kconfig:option:`CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY` can be disabled.
@@ -309,6 +310,8 @@ Drivers and Sensors
   * Retained memory API status changed from experimental to unstable.
 
 * RTC
+
+  * Atmel SAM: Added RTC driver.
 
 * SDHC
 
@@ -427,6 +430,8 @@ Libraries / Subsystems
 * Modem modules
 
 * Power management
+
+  * Atmel SAM: introduced SUPC functions to allow wakeup sources and poweroff.
 
 * Random
 
