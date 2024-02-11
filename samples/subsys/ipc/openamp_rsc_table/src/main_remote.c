@@ -17,6 +17,10 @@
 #include <metal/device.h>
 #include <resource_table.h>
 
+#ifdef CONFIG_SHELL_BACKEND_RPMSG
+#include <zephyr/shell/shell_rpmsg.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
@@ -362,6 +366,10 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 		ret = -1;
 		goto task_end;
 	}
+
+#ifdef CONFIG_SHELL_BACKEND_RPMSG
+	(void)shell_backend_rpmsg_init_transport(rpdev);
+#endif
 
 	/* start the rpmsg clients */
 	k_sem_give(&data_sc_sem);
