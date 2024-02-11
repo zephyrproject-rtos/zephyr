@@ -1,4 +1,4 @@
-.. _atsame54_xpro:
+.. _same54_xpro:
 
 SAM E54 Xplained Pro Evaluation Kit
 ###################################
@@ -14,12 +14,12 @@ hardware.
 
 .. image:: img/atsame54_xpro.jpg
      :align: center
-     :alt: ATSAME54-XPRO
+     :alt: SAME54-XPRO
 
 Hardware
 ********
 
-- ATSAME54P20A ARM Cortex-M4F processor at 120 MHz
+- SAME54P20A ARM Cortex-M4F processor at 120 MHz
 - 32.768 kHz crystal oscillator
 - 12 MHz crystal oscillator
 - 1024 KiB flash memory and 256 KiB of RAM
@@ -43,7 +43,7 @@ Hardware
 Supported Features
 ==================
 
-The atsame54_xpro board configuration supports the following hardware
+The same54_xpro board configuration supports the following hardware
 features:
 
 +---------------+------------+----------------------------+
@@ -97,7 +97,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-``boards/arm/atsame54_xpro/atsame54_xpro_defconfig``.
+``boards/atmel/sam0/same54_xpro/same54_xpro_defconfig``.
 
 Pin Mapping
 ===========
@@ -110,7 +110,7 @@ Xplained Pro Schematic`_.
 
 .. image:: img/ATSAME54-XPRO-pinout.jpg
      :align: center
-     :alt: ATSAME54-XPRO-pinout
+     :alt: SAME54-XPRO-pinout
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -183,7 +183,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsame54_xpro
+      :board: same54_xpro
       :goals: build
       :compact:
 
@@ -209,11 +209,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: atsame54_xpro
+      :board: same54_xpro
       :goals: flash
       :compact:
 
-   You should see "Hello World! atsame54_xpro" in your terminal.
+   You should see "Hello World! same54_xpro" in your terminal.
 
 References
 **********
