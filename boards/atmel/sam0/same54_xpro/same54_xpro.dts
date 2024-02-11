@@ -6,12 +6,12 @@
 
 /dts-v1/;
 #include <atmel/same5xx20.dtsi>
-#include "atsame54_xpro-pinctrl.dtsi"
+#include "same54_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM E54 Xplained Pro";
-	compatible = "atsame54,xpro", "atmel,same54p20a", "atmel,same54";
+	compatible = "same54,xpro", "atmel,same54p20a", "atmel,same54";
 
 	chosen {
 		zephyr,console = &sercom2;
@@ -51,6 +51,10 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
 };
 
 &tcc0 {
