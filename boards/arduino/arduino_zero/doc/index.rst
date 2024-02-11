@@ -58,7 +58,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/arduino_zero/arduino_zero_defconfig`.
+:zephyr_file:`boards/arduino/arduino_zero/arduino_zero_defconfig`.
 
 Connections and IOs
 ===================
