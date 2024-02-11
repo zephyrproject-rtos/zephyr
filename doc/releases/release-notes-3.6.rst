@@ -108,6 +108,8 @@ Boards & SoC Support
 
 * Made these changes for RISC-V boards:
 
+  * ``longan_nano``: Enabled ADC support.
+
 * Made these changes for X86 boards:
 
 * Made these changes for Xtensa boards:
