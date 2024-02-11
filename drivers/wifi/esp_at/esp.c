@@ -7,6 +7,9 @@
 
 #define DT_DRV_COMPAT espressif_esp_at
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
@@ -16,6 +19,7 @@ LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
@@ -319,7 +323,7 @@ MODEM_CMD_DEFINE(on_cmd_cwjap)
 	}
 
 	strncpy(status->ssid, ssid, sizeof(status->ssid));
-	status->ssid_len = strlen(status->ssid);
+	status->ssid_len = strnlen(status->ssid, sizeof(status->ssid));
 
 	err = net_bytes_from_str(status->bssid, sizeof(status->bssid), bssid);
 	if (err) {
