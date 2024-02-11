@@ -64,7 +64,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/arduino_nano_33_iot/arduino_nano_33_iot_defconfig`.
+:zephyr_file:`boards/arduino/arduino_nano_33_iot/arduino_nano_33_iot_defconfig`.
 
 Connections and IOs
 ===================
