@@ -546,16 +546,50 @@ Networking
 
 * CoAP:
 
-  * Emit observer/service network events using the Network Event subsystem.
-
+  * Added support for Echo and Request-Tag CoAP options (RFC 9175).
+  * Changed :c:func:`coap_remove_observer` API function return type to bool.
+  * Introduced CoAP service library, which simplifies implementation of CoAP
+    server functionality.
+  * Updated CoAP server example to use CoAP service library.
+  * Added shell module for CoAP server.
+  * Fixed NULL pointer dereference in :c:func:`coap_packet_remove_option`
+  * Added CoAP observer/service network events using the Network Event subsystem.
+  * Changed :c:func:`coap_pending_init` API function to take
+    :c:struct:`coap_transmission_parameters` instead of retry count.
   * Added new API functions:
 
     * :c:func:`coap_get_transmission_parameters`
     * :c:func:`coap_set_transmission_parameters`
+    * :c:func:`coap_handle_request_len`
+    * :c:func:`coap_well_known_core_get_len`
+    * :c:func:`coap_uri_path_match`
+    * :c:func:`coap_packet_is_request`
+    * :c:func:`coap_find_observer`
+    * :c:func:`coap_find_observer_by_token`
+    * :c:func:`coap_pendings_count`
+    * :c:func:`coap_header_set_code`
 
 * Connection Manager:
 
+  * Added a generic Wi-Fi connectivity backend.
+
 * DHCP:
+
+  * Added missing DHCPv6 state structure initialization when initializing
+    network interface.
+  * DHCP-assigned IPv4 address is now removed when interface goes down.
+  * Added DHCPv4 server implementation.
+  * Rearranged DHCPv4 file structure, all DHCPv4 related files are now grouped
+    within ``subsys/net/lib/dhcpv4``.
+  * Moved DHCPv6 files to ``subsys/net/lib/dhcpv6`` to align with DHCPv4.
+
+* DNS:
+
+  * Added support for enabling mDNS listener on all network interfaces.
+  * Added VLAN support to the ``mdns_responder`` sample.
+  * Fixed TTL/hop limit set on DNS packets.
+  * Added :kconfig:option:`CONFIG_DNS_RESOLVER_AUTO_INIT` which allows to disable
+    automatic initialization of the default DNS context on boot.
 
 * Ethernet:
 
@@ -573,38 +607,185 @@ Networking
 
 * ICMP:
 
-* IPv6:
+  * Fixed an error being emitted when unhandled ICMP message was received.
+  * Fixed a bug, where ICMP Echo Reply could be sent without proper source IP
+    address set.
+  * Fixed a packet leak in ICMP Echo Request handlers, in case priority check
+    failed.
+  * Improved thread safety of the module handling Neighbor Discovery.
+  * Added support for IPv6 Neighbor reachability hints, allowing to reduce
+    ICMPv6 traffic for active connections.
 
-* LwM2M:
+* IP:
 
-* Misc:
-
+  * Fixed L3/L4 checksum calculation/validation for IP-fragmented packets on
+    interfaces that support checksum offload.
+  * Fixed net_context not being set on IP fragmented packets, preventing send
+    callback from being called.
   * It is now possible to have separate IPv4 TTL value and IPv6 hop limit value for
     unicast and multicast packets. This can be controlled in each socket via
     :c:func:`setsockopt` API.
+  * Improved source IP address verification in the IP stack. Addresses received
+    to/from loopback address on non-loopback interfaces are dropped.
+  * Added new functions to verify if IPv6 address is site local or global.
+  * Added support for setting peer IP address in :c:struct:`net_pkt` structure
+    for offloaded interfaces. This allows for :c:func:`recvfrom` to return a
+    valid address in offloaded case.
+
+* LwM2M:
+
+  * Added :kconfig:option:`CONFIG_LWM2M_UPDATE_PERIOD` which allows to configure LwM2M
+    Update period regardless of the lifetime value.
+  * Fixed composite read/write access rights check.
+  * Added shell command to delete object and resource instances.
+  * Fixed a bug in block-wise transfer, where block-wise ACKs were sent with
+    wrong response code.
+  * Fixed object version reporting for LwM2M version 1.1.
+  * Added support for DTLS Connection Identifier in LwM2M engine.
+  * Added support for LwM2M Server Disable executable resource.
+  * Implemented fallback mechanism for LwM2M server selection during registration
+    phase. The engine will now try to choose different server if the current one
+    becomes unavailable or disabled.
+  * Added support for storing LwM2M error list in settings.
+  * Fixed pmin observer attribute handling in tickless mode.
+  * Added support for notifying the application about ongoing CoAP transmissions
+    with ``set_socket_state()`` callback.
+  * Deprecated unsigned 64-bit integer value type, as it's not represented in the spec.
+    Use signed 64-bit integer instead.
+  * Added a callback for LwM2M Gateway object, which allows to handle LwM2M messages
+    with prefixed path.
+  * Added LwM2M-specific macros for object initialization during boot.
+  * Several other minor bugfixes ans improvements.
+
+* Misc:
 
   * Added support for compile time network event handlers using the macro
     :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER`.
-
   * The :kconfig:option:`CONFIG_NET_MGMT_EVENT_WORKER` choice is added to
     allow emitting network events using the system work queue or synchronously.
+  * Removed redundant Network Connectivity API documentation page.
+  * Improved thread safety of the network connections subsystem.
+  * Removed ``eth_native_posix`` sample.
+  * Removed redundant ``arb`` and ``fv2015`` fields  from
+    ``struct net_pkt_cb_ieee802154``.
+  * Introduced a separate mutex for TX at the network interface level, to prevent
+    concurrent access on TX to drivers that are not re-entrant.
+  * Fixed netmask not being registered for loopback address.
+  * Added support for binding to a specific network interface at the net_context
+    level.
+  * Added IGMPv3 support.
+  * Added a new network event, ``NET_EVENT_HOSTNAME_CHANGED``, triggered upon
+    hostname change.
+  * Refactored net_context option getters/setters to reduce code duplication.
+  * Fixed a possible packet leak at the ARP level, in case of errors during ARP
+    packet creation.
+  * Added support for analyzing SNTP time uncertainty.
+  * Fixed network interface being brought up even when underlying device is not
+    ready.
+  * Added start/stop functions for dummy interfaces.
+  * Added a detailed :ref:`network configuration <network_configuration_guide>`
+    guide to the documentation.
+  * Added :kconfig:option:`CONFIG_NET_HOSTNAME_DYNAMIC` option, which allows to
+    enable setting hostname at runtime.
 
 * MQTT-SN:
 
+  * Added :c:func:`mqtt_sn_get_topic_name` API function.
+  * Fixed handling of incoming Register messages when wildcard subscription is used.
+
 * OpenThread:
+
+  * Implemented the following OpenThread platform APIs:
+
+    * ``otPlatRadioSetRxOnWhenIdle()``
+    * ``otPlatResetToBootloader()``
+    * ``otPlatCryptoPbkdf2GenerateKey()``
+
+  * Updated OpenThread platform UART driver, so that it no longer waits for
+    communication with host to start during boot.
+  * Added BLE TCAT implementation in OpenThread platform.
+  * Updated Crypto PSA backend for OpenThread with additional algorithms.
+  * Fixed ``otPlatAssertFail()``, so that it prints the location of the actual
+    assert instead of the function itself.
 
 * PPP:
 
+  * Fixed PPP connection termination when interface goes down.
+
+* Shell:
+
+  * Refactored networking shell module, so that instead of large single file, it
+    is split into submodules, at per command basis.
+  * Fixed unexpected timeout message when executing loopback ping.
+  * Added ``net sockets`` command to print information about open sockets and
+    socket services.
+  * Join IPv4/IPv6 multicast groups, if needed, when adding IPv4/IPv6 multicast
+    addresses via shell.
+  * Fixed ``tcp connect`` command operation (TCP context released prematurely).
+  * Added support for Echo option in telnet shell backend.
+  * Fixed unnecessary connection close in telnet shell backend in case of
+    non-fatal EAGAIN or ENOBUFS errors.
+  * Fixed double packet dereference in ping reply handler.
+  * Fixed possible deadlock when executing ``net arp`` command.
+  * Added more detailed Ethernet statistics printout for ``net stats`` command.
+  * Added ``net dhcpv4 server`` commands for DHCPv4 server management.
+  * Added shell module to manage TLS credentials.
+
 * Sockets:
 
-  * Added support for IPv4 multicast ``IP_ADD_MEMBERSHIP`` and ``IP_DROP_MEMBERSHIP`` socket options.
-  * Added support for IPv6 multicast ``IPV6_ADD_MEMBERSHIP`` and ``IPV6_DROP_MEMBERSHIP`` socket options.
+  * Added support for v4-mapping-to-v6, which allows IPv4 and IPv6 to share the
+    same port space.
+  * Added support for :c:macro:`IPV6_V6ONLY` socket option.
+  * Added support for :c:macro:`SO_ERROR` socket option.
+  * Fixed :c:func:`select` not setting ``writefds`` in case of errors.
+  * Added support for object core, which allows to track networks sockets and
+    their statistics.
+  * Added support for :c:func:`recvmsg`.
+  * Added support for :c:macro:`IP_PKTINFO` and :c:macro:`IPV6_RECVPKTINFO`
+    socket options.
+  * Added support for :c:macro:`IP_TTL` socket option.
+  * Added support for IPv4 multicast :c:macro:`IP_ADD_MEMBERSHIP` and
+    :c:macro:`IP_DROP_MEMBERSHIP` socket options.
+  * Added support for IPv6 multicast :c:macro:`IPV6_ADD_MEMBERSHIP` and
+    :c:macro:`IPV6_DROP_MEMBERSHIP` socket options.
+  * Improved doxygen documentation of BSD socket API.
+  * Fixed POLLERR error reporting in TLS sockets.
+  * Fixed DTLS handshake processing during :c:func:`poll`.
+  * Aligned DTLS socket :c:func:`connect` behavior with regular TLS (handshake
+    during connect call).
+  * Added Socket Services library, which allows to register multiple socket based
+    network services, and process them within a single thread.
+  * Added a new ``echo_service`` sample for Socket Services.
+  * Added support for :c:macro:`SO_DOMAIN` socket option.
+  * Fixed DTLS connection timeout when monitoring socket with :c:func:`poll`.
+  * Fixed NULL link layer address pointer dereference on packet socket, in case
+    of packet loopback.
+  * Several other minor bugfixes ans improvements.
 
 * TCP:
 
+  * TCP stack now replies with RST packet in response to connection attempt on
+    a closed port.
+  * Fixed remote address passed in :c:func:`accept` call.
+  * Fixed reference counting during active handshake, to prevent TCP context
+    being released prematurely.
+  * Fixed compilation with :kconfig:option:`CONFIG_NET_TCP_CONGESTION_AVOIDANCE`
+    disabled.
+  * Reworked TCP data queueing API, to prevent TCP stack from overflowing TX window.
+  * Fixed possible race condition between TCP workqueue and other threads, when
+    releasing TCP context.
+  * Fixed possible race condition between input thread and TCP workqueue.
+  * Added support for TCP Keep-Alive feature.
+  * Fixed a bug, where TCP state machine could get stuck in LAST_ACK state
+    during passive connection close.
+  * Fixed a bug, where TCP state machine could get stuck in FIN_WAIT_1 state
+    in case peer did not respond.
+  * Several other minor bugfixes ans improvements.
+
 * TFTP:
 
-* WebSocket
+  * Fixed potential buffer overflow when copying TFTP error message.
+  * Improved logging in case of errors.
 
 * Wi-Fi:
 
@@ -614,6 +795,17 @@ Networking
   * Added Wi-Fi bindings to connection manager.
   * Fixed Wi-Fi shell. SSID print fixes. Help text fixes. Channel validation fixes.
   * Fixed TWT functionality. Teardown status was not updated. Powersave fixes.
+
+* zperf:
+
+  * Improved IP address binding. Zperf will bind to any address by default and
+    allow to override this with Kconfig/API provided address.
+  * Fixed TCP packet counting when transmitting.
+  * Refactored UDP/TCP received to use Socket Services to save memory.
+  * Fixed zperf session leak on interrupted downloads.
+  * Fixed the calculation ratio between Mbps, Kbps and bps.
+  * Allow network code relocation to RAM in zperf sample for platforms that
+    support it.
 
 USB
 ***
