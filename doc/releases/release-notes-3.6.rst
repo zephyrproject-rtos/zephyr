@@ -215,7 +215,30 @@ Drivers and Sensors
   * Add system call :c:func:`can_get_transceiver()` for getting the CAN transceiver associated with
     a CAN controller.
 
-  * The "native linux" driver now supports being built with embedded C libraries.
+  * Added accessor functions for the CAN statistics.
+
+  * Added common bit error counter to the CAN statistics.
+
+  * Added CAN statistics support to the following drivers:
+
+    * :dtcompatible:`microchip,mcp2515`
+    * :dtcompatible:`espressif,esp32-twai`
+    * :dtcompatible:`kvaser,pcican`
+
+  * Added CAN controller driver for the Nuvoton NuMaker series
+    (:dtcompatible:`nuvoton,numaker-canfd`).
+
+  * Added CAN controller driver for the Infineon XMC4xxx family
+    (:dtcompatible:`infineon,xmc4xxx-can` and :dtcompatible:`infineon,xmc4xxx-can-node`).
+
+  * Added support for the NXP S32K1xx family to the :dtcompatible:`nxp,flexcan` driver.
+
+  * Use named IRQs "int0" and "int1" in all Bosch M_CAN-based front-end drivers.
+
+  * The :dtcompatible:`zephyr,native-linux-can` driver now supports being built with embedded C
+    libraries.
+
+  * Added support for setting "raw" timing values from the :ref:`CAN shell <can_shell>`.
 
 * Clock control
 
@@ -453,8 +476,6 @@ Libraries / Subsystems
 * POSIX API
 
 * LoRa/LoRaWAN
-
-* CAN ISO-TP
 
 * RTIO
 
