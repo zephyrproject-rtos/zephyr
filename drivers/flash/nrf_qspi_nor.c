@@ -637,7 +637,8 @@ static int configure_chip(const struct device *dev)
 		bool qe_value = (prot_if->writeoc == NRF_QSPI_WRITEOC_PP4IO) ||
 				(prot_if->writeoc == NRF_QSPI_WRITEOC_PP4O)  ||
 				(prot_if->readoc == NRF_QSPI_READOC_READ4IO) ||
-				(prot_if->readoc == NRF_QSPI_READOC_READ4O);
+				(prot_if->readoc == NRF_QSPI_READOC_READ4O)  ||
+				(prot_if->readoc == NRF_QSPI_READOC_READ2IO);
 		uint8_t sr_num = 0;
 		uint8_t qe_mask = 0;
 
