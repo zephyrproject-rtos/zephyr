@@ -7,6 +7,7 @@
 #include <xtensa/xtensa.dtsi>
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/dt-bindings/dai/esai.h>
 
 / {
 	cpus {
@@ -132,6 +133,20 @@
 		dai-index = <1>;
 		dmas = <&edma0 15 0>, <&edma0 14 0>;
 		dma-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	esai0: dai@59010000 {
+		compatible = "nxp,dai-esai";
+		reg = <0x59010000 DT_SIZE_K(64)>;
+		dmas = <&edma0 7 0>, <&edma0 6 0>;
+		dma-names = "tx", "rx";
+		esai-pin-modes = <ESAI_PIN_HCKR ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_HCKT ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO4_SDI1 ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO3_SDI2 ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO2_SDI3 ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO1 ESAI_PIN_DISCONNECTED>;
 		status = "disabled";
 	};
 
