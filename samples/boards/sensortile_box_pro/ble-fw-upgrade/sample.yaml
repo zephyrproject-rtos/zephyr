@@ -1,0 +1,13 @@
+sample:
+  description: SensorTile.box Pro board ble firmware upgrade
+  name: SensorTile.box Pro fw upgrade
+tests:
+  sample.board.sensortile_box_pro.ble-fw-upgrade:
+    harness: bluetooth
+    platform_allow: sensortile_box_pro
+    tags: bluetooth
+    depends_on:
+      - gpio
+      - uart
+    extra_configs:
+      - CONFIG_BLOB_ENABLED=n

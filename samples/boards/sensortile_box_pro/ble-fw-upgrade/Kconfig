@@ -1,0 +1,10 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Sensortile.box PRO ble f/w upgrade"
+
+config BLOB_ENABLED
+	bool "Use ble f/w image blob"
+	default y
+
+source "Kconfig.zephyr"
