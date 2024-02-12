@@ -5,10 +5,6 @@
 
 if SOC_NRF54L15_ENGA_CPUAPP
 
-config SOC
-	string
-	default "nrf54l15_cpuapp"
-
 config NUM_IRQS
 	default 271
 
