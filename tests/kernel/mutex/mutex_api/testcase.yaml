@@ -3,3 +3,9 @@ tests:
     tags:
       - kernel
       - userspace
+
+  kernel.mutex.scalable:
+    tags:
+      - kernel
+    extra_configs:
+      - CONFIG_WAITQ_SCALABLE=y
