@@ -389,15 +389,19 @@ static void get_reserved_address(struct in_addr *reserved)
 	zassert_ok(ret, "Failed to obtain reserved address");
 }
 
-static void client_get_lease(void)
+static void client_get_lease(bool verify)
 {
 	client_send_discover();
-	verify_lease_count(1, 0, 0);
+	if (verify) {
+		verify_lease_count(1, 0, 0);
+	}
 	get_reserved_address(&test_ctx.assigned_ip);
 	test_pkt_free();
 
 	client_send_request_solicit();
-	verify_lease_count(0, 1, 0);
+	if (verify) {
+		verify_lease_count(0, 1, 0);
+	}
 	test_pkt_free();
 }
 
@@ -799,7 +803,7 @@ ZTEST(dhcpv4_server_tests, test_request)
  */
 ZTEST(dhcpv4_server_tests, test_renew)
 {
-	client_get_lease();
+	client_get_lease(true);
 
 	client_send_request_renew();
 	verify_ack(false, true);
@@ -812,7 +816,7 @@ ZTEST(dhcpv4_server_tests, test_renew)
  */
 ZTEST(dhcpv4_server_tests, test_rebind)
 {
-	client_get_lease();
+	client_get_lease(true);
 
 	client_send_request_rebind();
 	verify_ack(false, true);
@@ -824,7 +828,7 @@ ZTEST(dhcpv4_server_tests, test_rebind)
 ZTEST(dhcpv4_server_tests, test_expiry)
 {
 	test_ctx.lease_time = 1;
-	client_get_lease();
+	client_get_lease(true);
 
 	/* Add extra 10ms to avoid race. */
 	k_msleep(1000 + 10);
@@ -836,7 +840,7 @@ ZTEST(dhcpv4_server_tests, test_expiry)
  */
 ZTEST(dhcpv4_server_tests, test_release)
 {
-	client_get_lease();
+	client_get_lease(true);
 
 	client_send_release();
 	verify_lease_count(0, 0, 0);
@@ -865,16 +869,52 @@ static void verify_declined_address(struct in_addr *declined)
 }
 
 /* Verify that the DHCP server blocks the address after receiving Decline
- * message.
+ * message, and gets released after configured time.
  */
 ZTEST(dhcpv4_server_tests, test_decline)
 {
-	client_get_lease();
+	client_get_lease(true);
 	verify_lease_count(0, 1, 0);
 
 	client_send_decline();
 	verify_lease_count(0, 0, 1);
 	verify_declined_address(&test_ctx.assigned_ip);
+
+	/* Add extra 10ms to avoid race. */
+	k_msleep(1000 + 10);
+	verify_lease_count(0, 0, 0);
+}
+
+/* Verify that if all of the address leases get blocked (due to conflict), the
+ * server will try to reuse the oldest blocked entry on Discovery.
+ */
+ZTEST(dhcpv4_server_tests, test_declined_reuse)
+{
+	struct in_addr oldest_addr;
+
+	for (int i = 0; i < CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT; i++) {
+		client_get_lease(false);
+		if (i == 0) {
+			oldest_addr = test_ctx.assigned_ip;
+		}
+		client_send_decline();
+		k_msleep(10);
+	}
+
+	verify_lease_count(0, 0, 4);
+
+	client_send_discover();
+	verify_offer(false);
+	verify_lease_count(1, 0, 3);
+	test_pkt_free();
+
+	client_send_request_solicit();
+	verify_ack(false, false);
+	verify_lease_count(0, 1, 3);
+	test_pkt_free();
+
+	zassert_equal(oldest_addr.s_addr, test_ctx.assigned_ip.s_addr,
+		      "Should've reassing oldest declined address");
 }
 
 /* Verify that the DHCP server replies with ACK for a Inform message, w/o
