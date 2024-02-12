@@ -600,6 +600,35 @@ Libraries / Subsystems
 
 * POSIX API
 
+  * conformance: complete support for ``POSIX_THREADS_EXT``, ``XSI_THREADS_EXT``,
+    ``POSIX_CLOCK_SELECTION``, and ``POSIX_SEMAPHORES`` Option Groups.
+
+  * conformance: complete support for ``_POSIX_MESSAGE_PASSING`` and
+    ``_POSIX_PRIORITY_SCHEDULING`` Options.
+
+  * coverity: fix CID 211585, 334906, 334909, and 340851
+
+  * documentation: improve structure and accuracy of POSIX docs
+
+  * menuconfig: improved navigation and organization of POSIX options
+
+  * pthread: allocate and free stacks with pthread_attr_t, embed attr in thread structure
+
+  * pthread: support deferred and asynchronous thread cancellation
+
+  * pthread: support stack sizes up to 8MB
+
+  * samples: add dining philosophers sample app
+
+  * semaphores: add support for named semaphores
+
+  * shell: add a top-level ``posix`` command in the Zephyr shell. Zephyr shell utilities for
+    the POSIX API can be added as subcommands (e.g. ``posix uname -a``)
+
+  * timers: use async thread cancellation, add support for ``SIGEV_THREAD``, ``CLOCK_REALTIME``
+
+  * unistd: add compile-time-constant sysconf() implementation
+
 * LoRa/LoRaWAN
 
 * RTIO
