@@ -394,7 +394,7 @@ ll_cig_parameters_commit_retry:
 		mpt_c = PDU_CIS_MAX_US(cis->lll.tx.max_pdu, tx, cis->lll.tx.phy);
 		mpt_p = PDU_CIS_MAX_US(cis->lll.rx.max_pdu, rx, cis->lll.rx.phy);
 
-		se[i].length = mpt_c + EVENT_IFS_US + mpt_p + EVENT_MSS_US;
+		se[i].length = mpt_c + EVENT_IFS_MAX_US + mpt_p + EVENT_MSS_MAX_US;
 		max_se_length = MAX(max_se_length, se[i].length);
 
 		/* Total number of subevents needed */
