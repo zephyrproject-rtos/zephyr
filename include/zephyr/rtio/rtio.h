@@ -276,6 +276,8 @@ struct rtio_sqe {
 			uint8_t *rx_buf;
 		};
 
+		/** OP_I2C_CONFIGURE */
+		uint32_t i2c_config;
 	};
 };
 
@@ -473,6 +475,8 @@ struct rtio_iodev {
 /** An operation to recover I2C buses */
 #define RTIO_OP_I2C_RECOVER (RTIO_OP_TXRX+1)
 
+/** An operation to configure I2C buses */
+#define RTIO_OP_I2C_CONFIGURE (RTIO_OP_I2C_RECOVER+1)
 
 /**
  * @brief Prepare a nop (no op) submission
