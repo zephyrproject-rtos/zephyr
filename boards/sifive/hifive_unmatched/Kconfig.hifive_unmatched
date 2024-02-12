@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HIFIVE_UNMATCHED
-	bool "HiFive Unmatched target"
-	depends on SOC_SIFIVE_FREEDOM_U740
+	select SOC_SIFIVE_FREEDOM_FU740
