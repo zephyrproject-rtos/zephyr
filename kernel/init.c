@@ -198,7 +198,7 @@ void z_bss_zero(void)
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 /**
- * @brief Clear BSS within the bot region
+ * @brief Clear BSS within the boot region
  *
  * This routine clears the BSS within the boot region.
  * This is separate from z_bss_zero() as boot region may
@@ -574,6 +574,15 @@ FUNC_NORETURN void z_cstart(void)
 
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
+
+#ifdef CONFIG_DELAY_DATA_RELOCATION
+	extern void bss_zeroing_relocation_delayed(void);
+	extern void data_copy_xip_relocation_delayed(void);
+
+	bss_zeroing_relocation_delayed();
+	data_copy_xip_relocation_delayed();
+#endif	/* CONFIG_DELAY_DATA_RELOCATION */
+
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES

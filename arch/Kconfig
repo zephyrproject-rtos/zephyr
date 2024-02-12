@@ -864,6 +864,17 @@ config CODE_DATA_RELOCATION
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
 
+config DELAY_DATA_RELOCATION
+	bool "Support delayed data relocation/bss init"
+	depends on ARCH_HAS_CODE_DATA_RELOCATION
+	depends on CODE_DATA_RELOCATION
+	help
+	  Enable support for delaying data relocation and bss zero initialization. Enable this option when
+	  relocation must be delayed after the device driver initialization is finished.
+	  Delayed relocation will only be applied to memory regions (compatible zephyr,memory-region)
+	  which have delay-relocation property set. The delayed routines will be run
+	  after PRE_KERNEL_1 initialization has completed.
+
 menu "DSP Options"
 
 config DSP_SHARING
