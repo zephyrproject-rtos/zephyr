@@ -313,7 +313,7 @@ static void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, ui
 		return;
 	}
 
-	strncpy(data->model_id, argv[1], sizeof(data->model_id));
+	strncpy(data->model_id, argv[1], sizeof(data->model_id) - 1);
 }
 
 static void modem_cellular_chat_on_cgmi(struct modem_chat *chat, char **argv, uint16_t argc,
