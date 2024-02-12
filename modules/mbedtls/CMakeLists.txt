@@ -81,6 +81,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform_util.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/poly1305.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_util.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ripemd160.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/rsa_alt_helpers.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/rsa.c
@@ -93,10 +94,6 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version.c
       zephyr_init.c
     )
-
-    if (NOT DEFINED ZEPHYR_NRF_MODULE_DIR)
-      list(APPEND mbedtls_base_src ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_util.c)
-    endif()
 
     zephyr_library_sources(${mbedtls_base_src})
 
