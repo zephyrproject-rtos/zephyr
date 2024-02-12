@@ -236,8 +236,6 @@ Drivers and Sensors
 
 * DMA
 
-* EEPROM
-
 * Entropy
 
   * The "native_posix" entropy driver now accepts a new command line option ``seed-random``.
