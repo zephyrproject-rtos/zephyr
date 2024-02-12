@@ -6,10 +6,9 @@
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <fsl_common.h>
-#include <fsl_iocon.h>
 #include <soc.h>
 
-static int lpcxpresso_55s69_pinmux_init(void)
+static int lpcxpresso_55s69_board_init(void)
 {
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay)) && \
@@ -52,4 +51,4 @@ static int lpcxpresso_55s69_pinmux_init(void)
 	return 0;
 }
 
-SYS_INIT(lpcxpresso_55s69_pinmux_init,  PRE_KERNEL_1, 0);
+SYS_INIT(lpcxpresso_55s69_board_init,  PRE_KERNEL_1, 0);
