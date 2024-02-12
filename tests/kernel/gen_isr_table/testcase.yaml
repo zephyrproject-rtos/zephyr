@@ -70,7 +70,7 @@ tests:
     arch_allow: riscv
     platform_exclude:
       - m2gl025_miv
-      - adp_xc7k_ae350
+      - adp_xc7k/ae350
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y
