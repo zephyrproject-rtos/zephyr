@@ -42,7 +42,7 @@ Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in the defconfig file:
 
-        ``boards/arm64/intel_socfpga_agilex_socdk/intel_socfpga_agilex_socdk_defconfig``
+        ``boards/intel/intel_socfpga_agilex_socdk/intel_socfpga_agilex_socdk_defconfig``
 
 Programming and Debugging
 *************************
