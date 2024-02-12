@@ -100,7 +100,7 @@ static union {
 
 static struct k_work_delayable hawkbit_work_handle;
 
-static struct k_sem probe_sem;
+K_SEM_DEFINE(probe_sem, 1, 1);
 
 static const struct json_obj_descr json_href_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_href, href, JSON_TOK_STRING),
@@ -615,7 +615,6 @@ int hawkbit_init(void)
 		}
 	}
 
-	k_sem_init(&probe_sem, 1, 1);
 
 	return ret;
 }
