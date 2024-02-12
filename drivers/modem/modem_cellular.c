@@ -370,7 +370,7 @@ static void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, ui
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
-	strncpy(data->imsi, (char *)argv[1], sizeof(data->imsi));
+	strncpy(data->imsi, argv[1], sizeof(data->imsi) - 1);
 }
 
 static bool modem_cellular_is_registered(struct modem_cellular_data *data)
