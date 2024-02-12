@@ -1,10 +1,7 @@
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_AGILEX5
-
-config SOC
-	default "intel_socfpga_agilex5"
 
 # must be >= the highest interrupt number used
 # - include the UART interrupts 173 or 204
