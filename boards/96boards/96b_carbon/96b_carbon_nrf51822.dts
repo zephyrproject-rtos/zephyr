@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
-#include "96b_carbon_nrf51-pinctrl.dtsi"
+#include "96b_carbon_nrf51822-pinctrl.dtsi"
 
 / {
 	model = "Seeed Studio Carbon nRF51 96board";
