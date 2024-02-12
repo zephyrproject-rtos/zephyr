@@ -1,0 +1,36 @@
+# MAX32672FTHR boards configuration
+
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MAX32672FTHR
+
+if DISPLAY
+
+if LVGL
+
+# LVGL should allocate buffers equal to size of display
+config LV_Z_VDB_SIZE
+	default 64
+
+# Default Dot Per Inch. [px/inch]
+# Used to initialize default sizes such as widgets sized, style paddings.
+config LV_DPI_DEF
+	default 128
+
+config LV_Z_BITS_PER_PIXEL
+	default 1
+
+# Use offloaded render thread
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1  # 1 byte per pixel
+endchoice
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # BOARD_MAX32672FTHR
