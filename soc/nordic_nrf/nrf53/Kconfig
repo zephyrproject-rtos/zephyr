@@ -3,7 +3,20 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NRF53X
+config SOC_SERIES_NRF53X
+	bool
+	select ARM
+	select SOC_COMPATIBLE_NRF53X
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	imply XIP
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_SWO
+	help
+	 Enable support for NRF53 MCU series
 
 config SOC_NRF5340_CPUAPP
 	select CPU_HAS_NRF_IDAU
@@ -20,6 +33,8 @@ config SOC_NRF5340_CPUNET
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	imply SOC_NRF53_RTC_PRETICK if !WDT_NRFX
 	imply SOC_NRF53_ANOMALY_168_WORKAROUND
+
+if SOC_SERIES_NRF53X
 
 config SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	bool "Workaround for nRF5340 anomaly 160"

@@ -3,9 +3,6 @@
 
 if SOC_NRF54H20_ENGA_CPUPPR
 
-config SOC
-	default "nrf54h20_enga_cpuppr"
-
 config NUM_IRQS
 	default 496
 

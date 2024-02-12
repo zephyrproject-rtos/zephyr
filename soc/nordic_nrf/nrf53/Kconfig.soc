@@ -3,6 +3,12 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_SERIES_NRF53X
+	bool
+	select SOC_FAMILY_NRF
+	help
+	 Enable support for NRF53 MCU series
+
 config SOC_NRF5340_CPUAPP
 	bool
 	select SOC_SERIES_NRF53X
@@ -20,9 +26,5 @@ config SOC_NRF5340_CPUNET_QKAA
 	select SOC_NRF5340_CPUNET
 
 config SOC
-	default "nRF5340_CPUAPP_QKAA"
-	depends on SOC_NRF5340_CPUAPP_QKAA
-
-config SOC
-	default "nRF5340_CPUNET_QKAA"
-	depends on SOC_NRF5340_CPUNET_QKAA
+	default "nRF5340_CPUAPP_QKAA" if SOC_NRF5340_CPUAPP_QKAA
+	default "nRF5340_CPUNET_QKAA" if SOC_NRF5340_CPUNET_QKAA
