@@ -269,6 +269,22 @@ Drivers and Sensors
 * Ethernet
 
   * The "native_posix" ethernet driver now supports being built with embedded C libraries.
+  * Enabled HW checksum offloading for STM32H7.
+  * Added implementation of Open Alliance's TC6 T1S driver.
+  * Added xmc4xxx driver.
+  * Added NXP enet driver with PTP support.
+  * Added KSZ8081 PHY driver.
+  * Added proper IPv4 multicast support to NXP mcux driver.
+  * Added LAN8651 T1S support.
+  * Added DSA support to STM32.
+  * Added tja1103 PHY support.
+  * Added Nuvoton numaker support.
+  * Fixed lan865x driver. Transmission speed improvements, IRQ handling fixes.
+  * Fixed s32_gmac driver. Link up/down handling fixes.
+  * Fixed phy_mii driver. The invalid phy id was incorrectly checked.
+  * Fixed sam_gmac driver. PTP clock adjustment was wrong for negative values.
+  * Fixed adin2111 driver. Initialization was done incorrectly when working with adin2110.
+  * Fixed ksz8081 driver. Logging changes, RMII clock fixes, GPIO pin fixes.
 
 * Flash
 
@@ -415,7 +431,12 @@ Drivers and Sensors
 
 * USB
 
-* WiFi
+* Wi-Fi
+
+  * Added Infineon airoc driver.
+  * Fixed esp32 driver. Decreased minimum heap size, disabled automatic reconnection on leaving.
+  * Fixed esp_at driver. Allow building without IPv4 support. Passive Receive mode fixes. Depend on UART runtime configuration.
+  * Fixed winc1500 driver. Disconnect result event was not returned when disconnecting.
 
 Networking
 **********
@@ -435,7 +456,17 @@ Networking
 
 * Ethernet:
 
+  * Allow manual registration of ARP entries.
+  * Added PHY mode selection to device tree.
+  * Added TX-Injection mode support.
+
 * gPTP:
+
+  * Use local port identity when forwarding sync messages.
+  * Fix double converted byte order of BMCA info.
+  * Always use GM PRIO root system id for announce messages.
+  * Create gPTP handler thread stack size Kconfig option.
+  * Invert the priority of outgoing packets.
 
 * ICMP:
 
@@ -474,6 +505,12 @@ Networking
 
 * Wi-Fi:
 
+  * Added Wi-Fi driver version information to Wi-Fi shell.
+  * Added AP (Access Point) mode support to Wi-Fi shell.
+  * Added Regulatory channel information.
+  * Added Wi-Fi bindings to connection manager.
+  * Fixed Wi-Fi shell. SSID print fixes. Help text fixes. Channel validation fixes.
+  * Fixed TWT functionality. Teardown status was not updated. Powersave fixes.
 
 USB
 ***
