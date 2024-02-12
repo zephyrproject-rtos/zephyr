@@ -37,6 +37,7 @@ app=tests/bsim/bluetooth/host/misc/unregister_conn_cb compile
 
 app=tests/bsim/bluetooth/host/privacy/central compile
 app=tests/bsim/bluetooth/host/privacy/peripheral compile
+app=tests/bsim/bluetooth/host/privacy/peripheral conf_file=prj_rpa_expired.conf compile
 app=tests/bsim/bluetooth/host/privacy/peripheral conf_file=prj_rpa_sharing.conf compile
 app=tests/bsim/bluetooth/host/privacy/device compile
 app=tests/bsim/bluetooth/host/privacy/legacy compile

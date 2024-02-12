@@ -156,6 +156,10 @@ struct bt_le_ext_adv_cb {
 	 * the advertising set has expired. The user can use this callback
 	 * to synchronize the advertising payload update with the RPA rotation.
 	 *
+	 * If rpa sharing is enabled and rpa expired cb of any adv-sets belonging
+	 * to same adv id returns false, then adv-sets will continue with old rpa
+	 * through out the rpa rotations.
+	 *
 	 * @param adv  The advertising set object.
 	 *
 	 * @return true to rotate the current RPA, or false to use it for the
