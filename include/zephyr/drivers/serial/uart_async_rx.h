@@ -23,15 +23,10 @@ struct uart_async_rx_buf {
 	/* Write index which is incremented whenever new data is reported to be
 	 * received to that buffer.
 	 */
-	uint8_t wr_idx;
-
-	/* Read index which is incremented whenever data is consumed from the buffer.
-	 * Read index cannot be higher than the write index.
-	 */
-	uint8_t rd_idx;
+	uint8_t wr_idx:7;
 
 	/* Set to one if buffer is released by the driver. */
-	uint8_t completed;
+	uint8_t completed:1;
 
 	/* Location which is passed to the UART driver. */
 	uint8_t buffer[];
@@ -56,6 +51,11 @@ struct uart_async_rx {
 
 	/* Current buffer from which data is being consumed. */
 	uint8_t rd_buf_idx;
+
+	/* Current read index in the buffer from which data is being consumed.
+	 * Read index which is incremented whenever data is consumed from the buffer.
+	 */
+	uint8_t rd_idx;
 };
 
 /** @brief UART asynchronous RX helper configuration structure. */
