@@ -193,17 +193,17 @@ extern "C" {
 /**
  * @brief Equivalent to the I2C_MSG_STOP flag
  */
-#define RTIO_IODEV_I2C_STOP BIT(0)
+#define RTIO_IODEV_I2C_STOP BIT(1)
 
 /**
  * @brief Equivalent to the I2C_MSG_RESTART flag
  */
-#define RTIO_IODEV_I2C_RESTART BIT(1)
+#define RTIO_IODEV_I2C_RESTART BIT(2)
 
 /**
  * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
  */
-#define RTIO_IODEV_I2C_10_BITS BIT(2)
+#define RTIO_IODEV_I2C_10_BITS BIT(3)
 
 /** @cond ignore */
 struct rtio;
