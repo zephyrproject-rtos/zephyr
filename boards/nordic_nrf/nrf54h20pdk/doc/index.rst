@@ -16,9 +16,9 @@ The nRF54H20 is a multicore SoC with:
 * an Arm Cortex-M33 core with DSP instructions, FPU, and Armv8-M Security
   Extensions, running at up to 256 MHz, referred to as the **radio core**.
 
-The ``nrf54h20pdk_nrf54h20_cpuapp`` build target provides support for
+The ``nrf54h20pdk/nrf54h20/cpuapp`` build target provides support for
 the application core on the nRF54H20 SoC.
-The ``nrf54h20pdk_nrf54h20_cpurad`` build target provides support for
+The ``nrf54h20pdk/nrf54h20/cpurad`` build target provides support for
 the radio core on the nRF54H20 SoC.
 
 nRF54H20 SoC provides support for the following devices:
@@ -54,7 +54,7 @@ nRF54H20 PDK has two crystal oscillators:
 Supported Features
 ==================
 
-The nrf54h20pdk_nrf54h20_cpuapp board configuration supports the following
+The ``nrf54h20pdk/nrf54h20/cpuapp`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -69,7 +69,7 @@ hardware features:
 | UART      | on-chip    | serial               |
 +-----------+------------+----------------------+
 
-The nrf54h20pdk_nrf54h20_cpurad board configuration supports the following
+The ``nrf54h20pdk/nrf54h20/cpurad`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -109,8 +109,8 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for both the ``nrf54h20pdk_nrf54h20_cpuapp`` and
-``nrf54h20pdk_nrf54h20_cpurad`` targets can be built, flashed,
+Applications for both the ``nrf54h20pdk/nrf54h20/cpuapp`` and
+``nrf54h20pdk/nrf54h20/cpurad`` targets can be built, flashed,
 and debugged in the usual way. See :ref:`build_an_application`
 and :ref:`application_run` for more details on building and running.
 
@@ -131,7 +131,7 @@ Next, build the sample by running the following command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf54h20pdk_nrf54h20_cpuapp
+   :board: nrf54h20pdk/nrf54h20/cpuapp
    :goals: build flash
 
 Testing the LEDs and buttons in the nRF54H20 PDK
@@ -145,4 +145,4 @@ on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf54h20pdk_nrf54h20/nrf54h20pdk_nrf54h20_cpuapp.dts`.
+:zephyr_file:`boards/nordic_nrf/nrf54h20pdk/nrf54h20pdk_nrf54h20_cpuapp.dts`.
