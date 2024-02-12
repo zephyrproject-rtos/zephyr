@@ -1906,10 +1906,9 @@ static void dns_work_cb(struct k_work *work)
 	if (!valid_address && IS_ENABLED(CONFIG_NET_IPV4)) {
 		/* IPv6 DNS string is not valid, replace it with IPv4 address and recheck */
 		strncpy(iface_ctx.dns_v6_string, iface_ctx.dns_v4_string,
-			strlen(iface_ctx.dns_v4_string));
+			sizeof(iface_ctx.dns_v6_string) - 1);
 		valid_address = net_ipaddr_parse(iface_ctx.dns_v6_string,
-						 strlen(iface_ctx.dns_v6_string),
-						 &temp_addr);
+						 strlen(iface_ctx.dns_v6_string), &temp_addr);
 	}
 #else
 	valid_address =
