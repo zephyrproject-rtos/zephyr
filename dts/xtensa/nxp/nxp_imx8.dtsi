@@ -114,6 +114,16 @@
 		reg = <0x92c00000 DT_SIZE_K(512)>;
 	};
 
+	edma0: dma@591f0000 {
+		compatible = "nxp,edma";
+		reg = <0x591f0000 (DT_SIZE_K(64) * 33)>;
+		valid-channels = <6>, <7>, <14>, <15>;
+		interrupts-extended = <&master6 58>, <&master6 58>,
+				<&master5 29>, <&master5 29>;
+		#dma-cells = <2>;
+		status = "disabled";
+	};
+
 	/* LSIO MU2, used to interact with the SCFW */
 	scu_mu: mailbox@5d1d0000 {
 		reg = <0x5d1d0000 DT_SIZE_K(64)>;
