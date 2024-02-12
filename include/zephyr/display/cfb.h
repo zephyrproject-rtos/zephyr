@@ -429,8 +429,12 @@ struct cfb_framebuffer {
 	/** Framebuffer height in pixels */
 	uint16_t height;
 
-	/** Number of pixels per tile, typically 8 */
-	uint8_t ppt;
+	/**
+	 * Bytes per pixel(bpp) or number of pixels per tile(ppt).
+	 * This measn bpp if this value is positive, if not so,
+	 * this means ppt.
+	 */
+	int8_t bpp_ppt;
 
 	/**
 	 * @param disp Pointer to display instance

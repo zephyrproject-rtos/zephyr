@@ -146,6 +146,12 @@ static bool check_font_in_rect(int16_t x, int16_t y, const struct cfb_font *fptr
 	return true;
 }
 
+static inline uint8_t fb_ppt(const struct cfb_framebuffer *fb)
+{
+	return fb->bpp_ppt < 0 ? -fb->bpp_ppt : 1;
+}
+
+
 /*
  * Draw the monochrome character in the monochrome tiled framebuffer,
  * a byte is interpreted as 8 pixels ordered vertically among each other.
@@ -542,9 +548,9 @@ static int process_command_list(struct fb_info *info, uint16_t x, uint16_t y, ui
 
 	if (fb->size < w) {
 		w = DIV_ROUND_UP(w, DIV_ROUND_UP(w, fb->size)) / 8U;
-		h = info->fb->ppt;
+		h = fb_ppt(fb);
 	} else {
-		h = MIN((fb->size / w) * 8U, h);
+		h = MIN((fb->size / w) * fb_ppt(fb), h);
 	}
 
 	for (; y < draw_height; y += h) {
@@ -896,17 +902,17 @@ int cfb_get_display_parameter(const struct cfb_display *disp, enum cfb_display_p
 	case CFB_DISPLAY_WIDTH:
 		return disp->x_res;
 	case CFB_DISPLAY_PPT:
-		return disp->fb.ppt;
+		return fb_ppt(&disp->fb);
 	case CFB_DISPLAY_ROWS:
 		if (disp->fb.screen_info & SCREEN_INFO_MONO_VTILED) {
-			return disp->y_res / disp->fb.ppt;
+			return disp->y_res / fb_ppt(&disp->fb);
 		}
 		return disp->y_res;
 	case CFB_DISPLAY_COLS:
 		if (disp->fb.screen_info & SCREEN_INFO_MONO_VTILED) {
 			return disp->x_res;
 		}
-		return disp->x_res / disp->fb.ppt;
+		return disp->x_res / fb_ppt(&disp->fb);
 	}
 	return 0;
 }
@@ -961,10 +967,10 @@ int cfb_display_init(struct cfb_display *disp, const struct device *dev, void *x
 	disp->fb.width = cfg.x_resolution;
 	disp->fb.height = cfg.y_resolution;
 	disp->fb.pixel_format = cfg.current_pixel_format;
-	disp->fb.ppt = 1U;
+	disp->fb.bpp_ppt = 1U;
 	if ((cfg.current_pixel_format == PIXEL_FORMAT_MONO01) ||
 	    (cfg.current_pixel_format == PIXEL_FORMAT_MONO10)) {
-		disp->fb.ppt = 8U;
+		disp->fb.bpp_ppt = -8;
 	}
 
 	disp->fb.finalize = display_finalize;
