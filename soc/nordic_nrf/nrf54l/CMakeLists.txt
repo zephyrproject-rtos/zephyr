@@ -3,8 +3,10 @@
 
 zephyr_library_sources(
   soc.c
-  ../validate_rram_partitions.c)
+  ../validate_rram_partitions.c
+  )
+zephyr_include_directories(.)
 
-if (CONFIG_ELV_GRTC_LFXO_ALLOWED)
+if(CONFIG_ELV_GRTC_LFXO_ALLOWED)
   message(WARNING "WARNING! ELV mode feature is EXPERIMENTAL and may brick your device!")
 endif()

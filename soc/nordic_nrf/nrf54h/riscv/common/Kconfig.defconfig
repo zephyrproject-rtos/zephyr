@@ -3,6 +3,6 @@
 
 if RISCV_CORE_NORDIC_VPR
 
-source "soc/soc_legacy/riscv/nordic_nrf/common/vpr/Kconfig.defconfig"
+rsource "vpr/Kconfig.defconfig"
 
 endif # RISCV_CORE_NORDIC_VPR
