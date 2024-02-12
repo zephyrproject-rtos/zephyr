@@ -1,0 +1,9 @@
+boards:
+
+  - name: acrn
+    socs:
+      - name: ia32
+
+  - name: acrn_ehl_crb
+    socs:
+      - name: elkhart_lake
