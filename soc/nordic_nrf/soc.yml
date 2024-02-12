@@ -20,6 +20,18 @@ family:
       cpuclusters:
       - name: cpuapp
       - name: cpunet
+  - name: nrf54l
+    socs:
+    - name: nrf54l15
+      cpuclusters:
+      - name: cpuapp
+  - name: nrf54h
+    socs:
+    - name: nrf54h20
+      cpuclusters:
+      - name: cpuapp
+      - name: cpurad
+      - name: cpuppr
   - name: nrf91
     socs:
     - name: nrf9131

@@ -5,7 +5,9 @@
 
 if SOC_FAMILY_NRF
 
-rsource "*/Kconfig.defconfig.series"
+rsource "*/Kconfig.defconfig"
+
+if ARM
 
 # If the kernel has timer support, enable clock control
 if SYS_CLOCK_EXISTS
@@ -41,5 +43,7 @@ config GPIO
 
 config UART_USE_RUNTIME_CONFIGURE
 	default n
+
+endif # ARM
 
 endif # SOC_FAMILY_NRF

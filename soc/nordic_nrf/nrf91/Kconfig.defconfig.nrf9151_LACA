@@ -5,9 +5,6 @@
 
 if SOC_NRF9151_LACA
 
-config SOC
-	default "nRF9151_LACA"
-
 config NUM_IRQS
 	default 65
 
