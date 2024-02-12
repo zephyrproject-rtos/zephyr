@@ -448,6 +448,14 @@ Libraries / Subsystems
   * Fixed an issue whereby messages that were too large to be sent over the UDP transport would
     wrongly return :c:enum:`MGMT_ERR_EINVAL` instead of :c:enum:`MGMT_ERR_EMSGSIZE`.
 
+  * Fixed an issue where confirming an image in Direct XIP mode would always confirm the image in
+    the primary slot even when executing from the secondary slot, now the currently active image is
+    always confirmed.
+
+  * Added support for retrieving registered command groups, to support registering and deregistering
+    default command groups at runtime, allowing an application to support multiple implementations
+    for the same command group.
+
 * File systems
 
 * Modem modules
