@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-# This file contains Zephyr hw modul v2 Kconfig description for
+# This file contains Zephyr hw module v2 Kconfig description for
 # Nordic Semiconductor SoCs.
 # The hw model v2 is generic and contains no Kconfig references outside its own
 # tree structure and is therefore reusable in Kconfig trees outside a Zephyr build.
@@ -11,15 +11,15 @@ config SOC_SERIES
 	default "nrf51" if SOC_SERIES_NRF51X
 	default "nrf52" if SOC_SERIES_NRF52X
 	default "nrf53" if SOC_SERIES_NRF53X
+	default "nrf54h" if SOC_SERIES_NRF54HX
+	default "nrf54l" if SOC_SERIES_NRF54LX
 	default "nrf91" if SOC_SERIES_NRF91X
 
 config SOC_FAMILY_NRF
 	bool
 
 config SOC_FAMILY
-	string
-	default "nordic_nrf"
-	depends on SOC_FAMILY_NRF
+	default "nordic_nrf" if SOC_FAMILY_NRF
 
 config SOC_SERIES_NRF51X
 	bool
@@ -37,6 +37,18 @@ config SOC_SERIES_NRF53X
 	select SOC_FAMILY_NRF
 	help
 	 Enable support for NRF53 MCU series
+
+config SOC_SERIES_NRF54HX
+	bool
+	select SOC_FAMILY_NRF
+	help
+	  Nordic Semiconductor nRF54H series MCU
+
+config SOC_SERIES_NRF54LX
+	bool
+	select SOC_FAMILY_NRF
+	help
+	  Nordic Semiconductor nRF54L series MCU
 
 config SOC_SERIES_NRF91X
 	bool

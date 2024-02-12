@@ -8,17 +8,12 @@
 
 config SOC_FAMILY_NRF
 	select SOC_COMPATIBLE_NRF
-	select PLATFORM_SPECIFIC_INIT
-
-rsource "*/Kconfig.series"
+	select PLATFORM_SPECIFIC_INIT if ARM
 
 if SOC_FAMILY_NRF
-config SOC_FAMILY
-	string
-	default "nordic_nrf"
 
 source "soc/common/nordic_nrf/Kconfig.peripherals"
-rsource "*/Kconfig.soc"
+rsource "*/Kconfig"
 
 config NRF_SOC_SECURE_SUPPORTED
 	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)

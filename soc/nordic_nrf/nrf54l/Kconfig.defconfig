@@ -7,9 +7,6 @@ if SOC_SERIES_NRF54LX
 
 rsource "Kconfig.defconfig.nrf54l*"
 
-config SOC_SERIES
-	default "nrf54l"
-
 config CORTEX_M_SYSTICK
 	default !NRF_GRTC_TIMER
 
