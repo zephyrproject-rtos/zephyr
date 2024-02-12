@@ -354,7 +354,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	if (state == PM_STATE_SOFT_OFF) {
 		/* restore clock gating state */
 		DSPCS.bootctl[cpu].bctl |=
-			(core_desc[0].bctl & DSPBR_BCTL_WAITIPCG);
+			(core_desc[cpu].bctl & DSPBR_BCTL_WAITIPCG);
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 		if (cpu == 0) {
