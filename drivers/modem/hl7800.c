@@ -2718,6 +2718,9 @@ static bool on_cmd_atcmdinfo_pdp_authentication_cfg(struct net_buf **buf,
 					MDM_HL7800_APN_USERNAME_MAX_STRLEN)) {
 					iface_ctx.mdm_apn.username[i++] = *p++;
 				}
+			} else {
+				LOG_WRN("Issue parsing APN username");
+				goto done;
 			}
 			LOG_INF("APN Username: %s",
 				iface_ctx.mdm_apn.username);
@@ -2736,6 +2739,7 @@ static bool on_cmd_atcmdinfo_pdp_authentication_cfg(struct net_buf **buf,
 				iface_ctx.mdm_apn.password);
 		}
 	}
+done:
 	net_buf_remove(buf, line_length);
 	net_buf_skipcrlf(buf);
 
