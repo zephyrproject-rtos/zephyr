@@ -7,3 +7,6 @@ family:
       - name: fu500
         socs:
           - name: fu540
+      - name: fu700
+        socs:
+          - name: fu740
