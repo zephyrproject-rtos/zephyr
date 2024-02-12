@@ -17,3 +17,11 @@ properties:
   clock-frequency:
     type: int
     description: Initial clock frequency in Hz
+  sq-size:
+    type: int
+    default: 4
+    description: Size of the submission queue for blocking requests
+  cq-size:
+    type: int
+    default: 4
+    description: Size of the completion queue for blocking requests
