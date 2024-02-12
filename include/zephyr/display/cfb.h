@@ -238,10 +238,55 @@ extern "C" {
 		},                                                                                 \
 	}
 
-#define CFB_OP_INIT_INVERT()                                                                       \
+/**
+ * @brief Initializer macro for set-fgcolor operation
+ * @param r red in 24-bit color notation
+ * @param g green in 24-bit color notation
+ * @param b blue in 24-bit color notation
+ * @param a alpha channel
+ */
+#define CFB_OP_INIT_SET_FG_COLOR(r, g, b, a)                                                       \
 	{                                                                                          \
 		.param = {                                                                         \
-			.op = CFB_OP_INVERT,                                                       \
+			.op = CFB_OP_SET_FG_COLOR,                                                 \
+			.set_color =                                                               \
+				{                                                                  \
+					.red = r,                                                  \
+					.green = g,                                                \
+					.blue = b,                                                 \
+					.alpha = a,                                                \
+				},                                                                 \
+		},                                                                                 \
+	}
+
+/**
+ * @brief Initializer macro for set-bgcolor operation
+ * @param r red in 24-bit color notation
+ * @param g green in 24-bit color notation
+ * @param b blue in 24-bit color notation
+ * @param a alpha channel
+ */
+#define CFB_OP_INIT_SET_BG_COLOR(r, g, b, a)                                                       \
+	{                                                                                          \
+		.param = {                                                                         \
+			.op = CFB_OP_SET_BG_COLOR,                                                 \
+			.set_color =                                                               \
+				{                                                                  \
+					.red = r,                                                  \
+					.green = g,                                                \
+					.blue = b,                                                 \
+					.alpha = a,                                                \
+				},                                                                 \
+		},                                                                                 \
+	}
+
+/**
+ * @brief Initializer macro for swap fg/bg color operation
+ */
+#define CFB_OP_INIT_SWAP_FG_BG_COLOR()                                                             \
+	{                                                                                          \
+		.param = {                                                                         \
+			.op = CFB_OP_SWAP_FG_BG_COLOR,                                             \
 		},                                                                                 \
 	}
 
@@ -279,8 +324,6 @@ enum cfb_font_caps {
  */
 enum cfb_operation {
 	CFB_OP_NOP = 0x0,
-	/** Inverts foreground and backgroud colors */
-	CFB_OP_INVERT,
 	/** Inverts the color of the specified area */
 	CFB_OP_INVERT_AREA,
 	/** Draw a point */
@@ -301,8 +344,12 @@ enum cfb_operation {
 	CFB_OP_SET_FONT,
 	/** Set kerning for text rendering */
 	CFB_OP_SET_KERNING,
-	/** Set inverted state */
-	CFB_OP_SET_INVERTED,
+	/** Set foreground color */
+	CFB_OP_SET_FG_COLOR,
+	/** Set background color */
+	CFB_OP_SET_BG_COLOR,
+	/** Swap foreground and background colors */
+	CFB_OP_SWAP_FG_BG_COLOR,
 	/** Add command buffer */
 	CFB_OP_SET_COMMAND_BUFFER,
 	/**
@@ -316,7 +363,8 @@ enum cfb_operation {
 enum init_commands {
 	CFB_INIT_CMD_SET_FONT,
 	CFB_INIT_CMD_SET_KERNING,
-	CFB_INIT_CMD_SET_INVERTED,
+	CFB_INIT_CMD_SET_FG_COLOR,
+	CFB_INIT_CMD_SET_BG_COLOR,
 	CFB_INIT_CMD_FILL,
 	CFB_INIT_CMD_SET_COMMAND_BUFFER,
 	NUM_OF_INIT_CMDS,
@@ -383,9 +431,20 @@ struct cfb_command_param {
 			int8_t kerning;
 		} set_kerning;
 
-		struct {
-			bool inverted;
-		} set_inverted;
+		/**
+		 * @brief Parameter for CFB_OP_SET_FG_COLOR and
+		 *        CFB_OP_SET_BG_COLOR operation
+		 */
+		union {
+			struct {
+				uint8_t blue;
+				uint8_t green;
+				uint8_t red;
+				uint8_t alpha;
+			};
+			uint32_t color;
+		} set_color;
+
 		/**
 		 * @brief Parameter for CFB_OP_SET_COMMAND_BUFFER
 		 */
@@ -515,8 +574,11 @@ struct cfb_display {
 	/** Current font kerning */
 	int8_t kerning;
 
-	/** Inverted */
-	bool inverted;
+	/** Current foreground color */
+	uint32_t fg_color;
+
+	/** Current background color */
+	uint32_t bg_color;
 
 	/** Linked list for queueing commands */
 	sys_slist_t cmd_list;
@@ -734,7 +796,7 @@ static inline int cfb_clear(const struct cfb_framebuffer *fb, bool clear_display
 }
 
 /**
- * @brief Invert Pixels.
+ * @brief Inverts foreground and background colors
  *
  * @param fb Pointer to framebuffer to rendering
  *
@@ -742,13 +804,27 @@ static inline int cfb_clear(const struct cfb_framebuffer *fb, bool clear_display
  */
 static inline int cfb_invert(const struct cfb_framebuffer *fb)
 {
-	struct cfb_command cmd = CFB_OP_INIT_INVERT();
+	struct cfb_command swap_fg_bg_cmd = CFB_OP_INIT_SWAP_FG_BG_COLOR();
+	struct cfb_command invert_area_cmd = CFB_OP_INIT_INVERT_AREA(0, 0, UINT16_MAX, UINT16_MAX);
+	int err;
 
-	return fb->append_command(fb, &cmd, true);
+	err = fb->append_command(fb, &swap_fg_bg_cmd, true);
+	if (err) {
+		return err;
+	}
+
+	return fb->append_command(fb, &invert_area_cmd, true);
 }
 
 /**
  * @brief Invert Pixels in selected area.
+ *
+ * Invert bits of pixels in selected area.
+ *
+ * This function returns the error -ENOBUFS if the command buffer does not have
+ * enough space.
+ * This function simply stores the drawing command in the buffer,
+ * and the actual drawing will be done when cfb_finalize is executed.
  *
  * @param fb Pointer to framebuffer to rendering
  * @param x Position in X direction of the beginning of area
@@ -841,6 +917,60 @@ static inline int cfb_set_font(const struct cfb_framebuffer *fb, uint8_t idx)
 static inline int cfb_set_kerning(const struct cfb_framebuffer *fb, int8_t kerning)
 {
 	struct cfb_command cmd = CFB_OP_INIT_SET_KERNING(kerning);
+
+	return fb->append_command(fb, &cmd, true);
+}
+
+/**
+ * @brief Set foreground color.
+ *
+ * Set foreground color with RGBA values in 32-bit color representation
+ *
+ * This function simply stores the drawing command in the buffer,
+ * and the actual drawing will be done when cfb_finalize is executed.
+ * The setting keeps even after finalize is executed.
+ *
+ * @param fb Pointer to framebuffer instance
+ * @param r The red component of the foreground color in 32-bit color
+ * @param g The green component of the foreground color in 32-bit color
+ * @param b The blue component of the foreground color in 32-bit color
+ * @param a The alpha channel of the foreground color in 32-bit color
+ *
+ * @retval 0 on success
+ * @retval -ENOBUFS The command buffer does not have enough space
+ * @retval -errno  Negative errno for other failures.
+ */
+static inline int cfb_set_fg_color(const struct cfb_framebuffer *fb, uint8_t r, uint8_t g,
+				   uint8_t b, uint8_t a)
+{
+	struct cfb_command cmd = CFB_OP_INIT_SET_FG_COLOR(r, g, b, a);
+
+	return fb->append_command(fb, &cmd, true);
+}
+
+/**
+ * @brief Set background color.
+ *
+ * Set background color with RGBA values in 32-bit color representation
+ *
+ * This function simply stores the drawing command in the buffer,
+ * and the actual drawing will be done when cfb_finalize is executed.
+ * The setting keeps even after finalize is executed.
+ *
+ * @param fb Pointer to framebuffer instance
+ * @param r The red component of the foreground color in 32-bit color
+ * @param g The green component of the foreground color in 32-bit color
+ * @param b The blue component of the foreground color in 32-bit color
+ * @param a The alpha channel of the foreground color in 32-bit color
+ *
+ * @retval 0 on success
+ * @retval -ENOBUFS The command buffer does not have enough space
+ * @retval -errno  Negative errno for other failures.
+ */
+static inline int cfb_set_bg_color(const struct cfb_framebuffer *fb, uint8_t r, uint8_t g,
+				   uint8_t b, uint8_t a)
+{
+	struct cfb_command cmd = CFB_OP_INIT_SET_BG_COLOR(r, g, b, a);
 
 	return fb->append_command(fb, &cmd, true);
 }

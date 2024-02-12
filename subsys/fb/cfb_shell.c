@@ -23,6 +23,8 @@
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
 #define HELP_INVERT "[<x> <y> <width> <height>]"
+#define HELP_FOREGROUND "<red> <green> <blue> <alpha>"
+#define HELP_BACKGROUND "<red> <green> <blue> <alpha>"
 
 static struct cfb_display *disp;
 static const char * const param_name[] = {
@@ -365,6 +367,67 @@ static int cmd_set_kerning(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static void parse_color_args(size_t argc, char *argv[], uint8_t *r, uint8_t *g, uint8_t *b,
+			     uint8_t *a)
+{
+	struct display_capabilities cfg;
+	bool is_16bit = false;
+
+	display_get_capabilities(disp->dev, &cfg);
+
+	*r = 0;
+	*g = 0;
+	*b = 0;
+	*a = 0;
+
+	if (cfg.current_pixel_format == PIXEL_FORMAT_RGB_565 ||
+	    cfg.current_pixel_format == PIXEL_FORMAT_BGR_565) {
+		is_16bit = true;
+	}
+
+	switch (argc) {
+	case 5:
+		*a = strtol(argv[4], NULL, 0);
+	case 4:
+		*b = strtol(argv[3], NULL, 0);
+	case 3:
+		*g = strtol(argv[2], NULL, 0);
+	case 2:
+		*r = strtol(argv[1], NULL, 0);
+	default:
+	}
+}
+
+static int cmd_foreground(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t r, g, b, a;
+
+	if (!disp) {
+		shell_error(sh, HELP_INIT);
+		return -ENODEV;
+	}
+
+	parse_color_args(argc, argv, &r, &g, &b, &a);
+	cfb_set_fg_color(&disp->fb, r, g, b, a);
+
+	return 0;
+}
+
+static int cmd_background(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t r, g, b, a;
+
+	if (!disp) {
+		shell_error(sh, HELP_INIT);
+		return -ENODEV;
+	}
+
+	parse_color_args(argc, argv, &r, &g, &b, &a);
+	cfb_set_bg_color(&disp->fb, r, g, b, a);
+
+	return 0;
+}
+
 static int cmd_invert(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -700,6 +763,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 		  "horizontal direction", NULL),
 	SHELL_CMD(draw, &sub_cmd_draw, "drawing text", NULL),
 	SHELL_CMD_ARG(clear, NULL, HELP_NONE, cmd_clear, 1, 0),
+	SHELL_CMD_ARG(foreground, NULL, HELP_FOREGROUND, cmd_foreground, 0, 5),
+	SHELL_CMD_ARG(background, NULL, HELP_BACKGROUND, cmd_background, 0, 5),
 	SHELL_SUBCMD_SET_END
 );
 
