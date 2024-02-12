@@ -456,6 +456,13 @@ Drivers and Sensors
   * Added support for optical encoders and power management to :dtcompatible:`gpio-qdec`.
   * New drivers :dtcompatible:`espressif,esp32-touch`, :dtcompatible:`analog-axis`.
 
+* MFD
+
+  * Added support for :dtcompatible:`maxim,max20335`
+  * Added support for :dtcompatible:`adi,ad5592`
+  * Added separate initialisation priorities for :dtcompatible:`nordic,npm1300` and
+    :dtcompatible:`nordic,npm6001`
+
 * PCIE
 
   * Fixed MMIO size calculation by disabling IO/memory decoding beforehand.
@@ -479,6 +486,19 @@ Drivers and Sensors
 * PWM
 
 * Regulators
+
+  * Added new API functions
+    * :c:func:`regulator_set_active_discharge`
+    * :c:func:`regulator_get_active_discharge`
+    * :c:func:`regulator_list_current_limit`
+  * ``startup-delay-us`` and ``off-on-delay-us`` are now supported for all regulators
+  * Added non-multithreading support
+  * Added support for :dtcompatible:`maxim,max20335-regulator`
+  * Added ASYS UVLO configuration for :dtcompatible:`nxp,pca9420`
+  * Added LDO/DCDC support for :dtcompatible:`renesas,smartbond-regulator`
+  * Added LDO soft start configuration for :dtcompatible:`nordic,npm1300-regulator`
+  * Fixed init priority for :dtcompatible:`x-powers,axp192-regulator`
+  * Fixed LDO GPIO control for :dtcompatible:`nordic,npm1300-regulator`
 
 * Reset
 
