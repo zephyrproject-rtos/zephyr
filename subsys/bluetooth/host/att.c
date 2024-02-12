@@ -2965,13 +2965,34 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op, size_t len)
 {
-	if (len + sizeof(op) > bt_att_mtu(chan)) {
-		LOG_WRN("ATT channel %p MTU too small for RSP (%u < %u)",
-			chan, bt_att_mtu(chan), len + sizeof(op));
+	size_t headroom;
+	struct bt_att_hdr *hdr;
+	struct bt_att_tx_meta_data *data;
+	struct net_buf *buf;
+
+	ARG_UNUSED(len);
+
+	buf = net_buf_alloc(&att_pool, BT_ATT_TIMEOUT);
+	if (!buf) {
+		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
 		return NULL;
 	}
 
-	return bt_att_chan_create_pdu(chan, op, len);
+	headroom = BT_L2CAP_BUF_SIZE(0);
+
+	if (bt_att_is_enhanced(chan)) {
+		headroom += BT_L2CAP_SDU_HDR_SIZE;
+	}
+
+	net_buf_reserve(buf, headroom);
+
+	data = bt_att_get_tx_meta_data(buf);
+	data->att_chan = chan;
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = op;
+
+	return buf;
 }
 
 static void att_reset(struct bt_att *att)
