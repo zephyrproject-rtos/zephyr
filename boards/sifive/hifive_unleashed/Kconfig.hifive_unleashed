@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_HIFIVE_UNLEASHED
-	bool "HiFive Unleashed target"
-	depends on SOC_SIFIVE_FREEDOM_U540
+	select SOC_SIFIVE_FREEDOM_FU540
