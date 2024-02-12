@@ -110,6 +110,17 @@ config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
 	  The lease time determines when the IPv4 address lease expires if the
 	  client does not renew it.
 
+config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
+	int "The time IPv4 addresses remains blocked after conflict detection (seconds)"
+	default 86400
+	help
+	  In case IPv4 address becomes blocked (either because of receiving
+	  Decline message or due to ICMP probe detecting conflict), the address
+	  can no longer be assigned. This timeout specifies how long the address
+	  remains in the Declined state.
+	  Note, that the server may try to reuse the oldest declined address in
+	  case it runs out of free addresses to assign.
+
 config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
 	int "Timeout for ICMP probes sent by the server (miliseconds)"
 	default 1000
