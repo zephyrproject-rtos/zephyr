@@ -52,7 +52,7 @@ The ADP-XC7K AE350 platform provides following hardware components:
 Supported Features
 ==================
 
-The ``adp_xc7k_ae350`` board configuration supports the following hardware features:
+The ``adp_xc7k/ae350`` board configuration supports the following hardware features:
 
 +----------------+------------+----------------------+
 | Interface      | Controller | Driver/Component     |
@@ -230,7 +230,7 @@ the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adp_xc7k_ae350
+   :board: adp_xc7k/ae350
    :goals: build
 
 Flashing
@@ -299,7 +299,7 @@ you should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.4.0 *****
-   Hello World! adp_xc7k_ae350
+   Hello World! adp_xc7k
 
 Debugging
 =========
