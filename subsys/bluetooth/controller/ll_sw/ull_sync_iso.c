@@ -472,6 +472,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
 	lll->payload_count |= (uint64_t)(bi->payload_count_framing[4] & 0x7f) << 32;
+	lll->framing = (bi->payload_count_framing[4] & 0x80) >> 7;
 
 	/* Set establishment event countdown */
 	lll->establish_events = CONN_ESTAB_COUNTDOWN;
