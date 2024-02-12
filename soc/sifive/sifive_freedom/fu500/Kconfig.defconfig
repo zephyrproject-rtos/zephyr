@@ -1,10 +1,8 @@
 # Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_SIFIVE_FREEDOM_U500
-
-config SOC_SERIES
-	default "u500"
+if SOC_SERIES_SIFIVE_FREEDOM_FU500
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
@@ -27,6 +25,4 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 64
 
-source "soc/soc_legacy/riscv/sifive_freedom/u500/Kconfig.defconfig.u*"
-
-endif # SOC_SERIES_SIFIVE_FREEDOM_U500
+endif # SOC_SERIES_SIFIVE_FREEDOM_FU500

@@ -4,3 +4,6 @@ family:
       - name: fe300
         socs:
           - name: fe310
+      - name: fu500
+        socs:
+          - name: fu540
