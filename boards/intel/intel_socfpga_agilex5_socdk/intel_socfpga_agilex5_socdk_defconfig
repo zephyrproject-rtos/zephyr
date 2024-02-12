@@ -1,13 +1,9 @@
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 # The Zephyr build from this defconfig is expected to boot from
 # Intel Arm Trusted Firmware (ATF).
 # Boot Flow is: ATF BL21 -> ATF BL31 -> Zephyr
-
-CONFIG_SOC_SERIES_AGILEX5=y
-CONFIG_SOC_AGILEX5=y
-CONFIG_BOARD_INTEL_SOCFPGA_AGILEX5_SOCDK=y
 
 # Compiler Options
 CONFIG_FORTIFY_SOURCE_RUN_TIME=y
