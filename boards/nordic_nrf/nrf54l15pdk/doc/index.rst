@@ -44,7 +44,7 @@ internal or external capacitors.
 Supported Features
 ==================
 
-The nrf54l15pdk_nrf54l15 board configuration supports the following
+The ``nrf54l15pdk/nrf54l15/cpuapp`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -84,7 +84,7 @@ Other hardware features have not been enabled yet for this board.
 Programming and Debugging
 *************************
 
-Applications for the ``nrf54l15pdk_nrf54l15_cpuapp`` board can be
+Applications for the ``nrf54l15pdk/nrf54l15/cpuapp`` board can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
@@ -125,7 +125,7 @@ Next, build the sample by running the following command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf54l15pdk_nrf54l15_cpuapp
+   :board: nrf54l15pdk/nrf54l15/cpuapp
    :goals: build flash
 
 Testing the LEDs and buttons in the nRF54L15 PDK
