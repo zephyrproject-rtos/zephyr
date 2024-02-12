@@ -16,4 +16,4 @@ supported:
   - uart
   - watchdog
   - lora
-vendor: seeed
+vendor: seeed studio
