@@ -49,9 +49,8 @@ Supported Features
 | RADIO     | on-chip    | Bluetooth                           |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/96boards/96b_carbon/96b_carbon_nrf51822_defconfig`
 
 Connections and IOs
 ===================
@@ -135,12 +134,12 @@ on the board and attach a wire to the nRF51822's UART output.
 Providing Bluetooth to 96b_carbon
 *********************************
 
-This 96b_carbon_nrf51 Zephyr configuration can be used to provide
+This ``96b_carbon/nrf51822`` Zephyr board configuration can be used to provide
 Bluetooth functionality from the secondary nRF51822 chip to the
 primary STM32F401RE chip on the :ref:`96b_carbon_board`.
 
 To do this, build the ``samples/bluetooth/hci_spi/`` application
-provided with Zephyr with ``BOARD=96b_carbon_nrf51``, then flash it to
+provided with Zephyr with ``BOARD=96b_carbon/nrf51822``, then flash it to
 the nRF51822 chip using the instructions :ref:`above
 <96b_carbon_nrf51_programming>`. (For instructions on how to build a
 Zephyr application, see :ref:`build_an_application`.)

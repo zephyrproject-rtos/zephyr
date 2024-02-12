@@ -1,4 +1,4 @@
-identifier: 96b_carbon_nrf51
+identifier: 96b_carbon/nrf51822
 name: 96Boards Carbon (nRF51)
 type: mcu
 arch: arm
