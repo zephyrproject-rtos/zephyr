@@ -1,12 +1,7 @@
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
-# Description:
-# Adding support for Cyclone V SoC FPGA
 
 if SOC_CYCLONE5
-
-config SOC
-	default "intel_socfpga_std_cyclonev"
 
 config NUM_IRQS
 	int
