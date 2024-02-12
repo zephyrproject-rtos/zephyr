@@ -400,12 +400,12 @@ enum bt_audio_dir {
  */
 #define BT_AUDIO_CODEC_QOS(_interval, _framing, _phy, _sdu, _rtn, _latency, _pd)                   \
 	((struct bt_audio_codec_qos){                                                              \
-		.interval = _interval,                                                             \
-		.framing = _framing,                                                               \
 		.phy = _phy,                                                                       \
-		.sdu = _sdu,                                                                       \
+		.framing = _framing,                                                               \
 		.rtn = _rtn,                                                                       \
+		.sdu = _sdu,                                                                       \
 		.latency = _latency,                                                               \
+		.interval = _interval,                                                             \
 		.pd = _pd,                                                                         \
 	})
 
