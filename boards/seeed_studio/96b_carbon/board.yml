@@ -1,5 +1,5 @@
 board:
   name: 96b_carbon
-  vendor: seeed
+  vendor: seeed studio
   socs:
     - name: stm32f401xe

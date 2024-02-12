@@ -428,7 +428,7 @@
 /dts/arm64/nxp/                           @JiafeiPan
 /dts/arm64/renesas/                       @lorc @xakep-amatop
 /dts/arm/quicklogic/                      @fkokosinski @kgugala
-/dts/arm/seeed/                           @str4t0m
+/dts/arm/seeed_studio/                    @str4t0m
 /dts/arm/st/                              @erwango
 /dts/arm/st/h7/*stm32h735*                @benediktibk
 /dts/arm/st/l4/*stm32l451*                @benediktibk
