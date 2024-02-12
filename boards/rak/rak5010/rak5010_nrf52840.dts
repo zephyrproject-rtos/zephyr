@@ -114,9 +114,9 @@
 	is25wp064a: is25wp064a@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		writeoc = "pp4io";
+		writeoc = "pp4o";
 		readoc = "read4io";
-		sck-frequency = <16000000>;
+		sck-frequency = <32000000>;
 		jedec-id = [9d 70 17];
 		size = <67108864>;
 		has-dpd;
