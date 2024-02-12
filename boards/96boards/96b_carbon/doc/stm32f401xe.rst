@@ -15,13 +15,13 @@ the Cortex-M4 CPU over SPI for Bluetooth LE connectivity.  Even though
 both chips exist on the same physical board, they must be programmed
 separately:
 
-- The ``96b_carbon`` configuration is used when developing programs for
+- The ``96b_carbon/stm32f401xe`` configuration is used when developing programs for
   the main chip on the board, the STM32F401RET. Users will likely want to
   write applications targeting this chip, using the ``96b_carbon``
   configuration, since it is connected to all of the breakout
   I/O headers.
 
-- The ``96b_carbon_nrf51`` configuration should be used for programming
+- The ``96b_carbon/nrf51822`` configuration should be used for programming
   the secondary nRF51822 chip. Most users will likely not develop
   applications for this chip, since Zephyr already provides a
   sample application that can be flashed onto the nRF51822
@@ -73,8 +73,8 @@ More information about STM32F401RE can be found here:
 Supported Features
 ==================
 
-The Zephyr 96b_carbon board configuration supports the following hardware
-features:
+The Zephyr ``96b_carbon/stm32f401xe`` board configuration supports the following
+hardware features:
 
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
@@ -303,7 +303,7 @@ Then build and flash an application. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_carbon
+   :board: 96b_carbon/stm32f401xe
    :goals: build flash
 
 Connect the micro-USB cable to the USB UART (FTDI) port and to your computer.
@@ -344,7 +344,7 @@ in general, see :ref:`build_an_application`.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/bluetooth/ipsp
-      :board: 96b_carbon
+      :board: 96b_carbon/stm32f401xe
       :goals: build flash
 
 #. Refer to the instructions in :ref:`bluetooth-ipsp-sample` for how
@@ -357,7 +357,7 @@ further Bluetooth application development.
 Debugging
 =========
 
-The 96b_carbon can be debugged by installing a 100 mil (0.1 inch) header
+The ``96b_carbon/stm32f401xe`` board can be debugged by installing a 100 mil (0.1 inch) header
 into the header at the bottom right hand side of the board, and
 attaching an SWD debugger to the 3V3 (3.3V), GND, CLK, DIO, and RST
 pins on that header. Then apply power to the 96Boards Carbon via one
