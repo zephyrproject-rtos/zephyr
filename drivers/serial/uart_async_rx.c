@@ -91,7 +91,7 @@ size_t uart_async_rx_data_claim(struct uart_async_rx *rx_data, uint8_t **data, s
 		/* Even though buffer is released in consume phase it is possible that
 		 * it is required here as well (e.g. was not completed previously).
 		 */
-		if ((buf->rd_idx == buf->wr_idx) && (buf->completed == 1)) {
+		if ((buf->completed == 1) && (rx_data->rd_idx == buf->wr_idx)) {
 			usr_rx_buf_release(rx_data, buf);
 		} else {
 			break;
@@ -110,7 +110,7 @@ bool uart_async_rx_data_consume(struct uart_async_rx *rx_data, size_t length)
 
 	buf->rd_idx += length;
 	/* Attempt to release the buffer if it is completed and all data is consumed. */
-	if ((buf->rd_idx == buf->wr_idx) && (buf->completed == 1)) {
+	if ((buf->completed == 1) && (rx_data->rd_idx == buf->wr_idx)) {
 		usr_rx_buf_release(rx_data, buf);
 	}
 
