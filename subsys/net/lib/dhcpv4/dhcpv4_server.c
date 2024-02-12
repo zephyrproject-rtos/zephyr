@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 
 #define ADDRESS_RESERVED_TIMEOUT K_SECONDS(5)
 #define ADDRESS_PROBE_TIMEOUT K_MSEC(CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT)
+#define ADDRESS_DECLINED_TIMEOUT K_SECONDS(CONFIG_NET_DHCPV4_SERVER_ADDR_DECLINE_TIME)
 
 #if (CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT > 0)
 #define DHCPV4_SERVER_ICMP_PROBE 1
@@ -80,7 +81,8 @@ static void dhcpv4_server_timeout_recalc(struct dhcpv4_server_ctx *ctx)
 		struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
 
 		if (slot->state == DHCPV4_SERVER_ADDR_RESERVED ||
-		    slot->state == DHCPV4_SERVER_ADDR_ALLOCATED) {
+		    slot->state == DHCPV4_SERVER_ADDR_ALLOCATED ||
+		    slot->state == DHCPV4_SERVER_ADDR_DECLINED) {
 			if (sys_timepoint_cmp(slot->expiry, next) < 0) {
 				next = slot->expiry;
 			}
@@ -738,6 +740,7 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 		net_sprint_ipv4_addr(&probe_ctx->slot->addr));
 
 	probe_ctx->slot->state = DHCPV4_SERVER_ADDR_DECLINED;
+	probe_ctx->slot->expiry = sys_timepoint_calc(ADDRESS_DECLINED_TIMEOUT);
 
 	/* Try to find next free address */
 	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
@@ -929,6 +932,27 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 				selected = slot;
 				probe = true;
 				break;
+			}
+		}
+	}
+
+	/* In case no free address slot was found, as a last resort, try to
+	 * reuse the oldest declined entry, if present.
+	 */
+	if (selected == NULL) {
+		for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
+			struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
+
+			if (slot->state != DHCPV4_SERVER_ADDR_DECLINED) {
+				continue;
+			}
+
+			/* Find first to expire (oldest) entry. */
+			if ((selected == NULL) ||
+			    (sys_timepoint_cmp(slot->expiry,
+					       selected->expiry) < 0)) {
+				selected = slot;
+				probe = true;
 			}
 		}
 	}
@@ -1190,7 +1214,8 @@ static void dhcpv4_handle_decline(struct dhcpv4_server_ctx *ctx,
 		    (slot->state == DHCPV4_SERVER_ADDR_RESERVED ||
 		     slot->state == DHCPV4_SERVER_ADDR_ALLOCATED)) {
 			slot->state = DHCPV4_SERVER_ADDR_DECLINED;
-			slot->expiry = sys_timepoint_calc(K_FOREVER);
+			slot->expiry =
+				sys_timepoint_calc(ADDRESS_DECLINED_TIMEOUT);
 			dhcpv4_server_timeout_recalc(ctx);
 			break;
 		}
@@ -1279,6 +1304,11 @@ static void dhcpv4_server_timeout(struct k_work *work)
 					net_sprint_ipv4_addr(&slot->addr));
 				slot->state = DHCPV4_SERVER_ADDR_FREE;
 			}
+		}
+
+		if (slot->state == DHCPV4_SERVER_ADDR_DECLINED &&
+		    sys_timepoint_expired(slot->expiry)) {
+			slot->state = DHCPV4_SERVER_ADDR_FREE;
 		}
 	}
 
