@@ -318,7 +318,7 @@ The following snippet shows how logging can be processed in simple forever loop.
 
 .. code-block:: c
 
-   #include <zephyr/log_ctrl.h>
+   #include <zephyr/logging/log_ctrl.h>
 
    int main(void)
    {
