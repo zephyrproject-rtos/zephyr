@@ -63,7 +63,7 @@ See the following example:
 
 .. code-block:: c
 
-   #include <zephyr/include/ipc_service.h>
+   #include <zephyr/ipc/ipc_service.h>
 
    static void bound_cb(void *priv)
    {
@@ -109,7 +109,7 @@ See the following example:
 
 .. code-block:: c
 
-   #include <zephyr/include/ipc_service.h>
+   #include <zephyr/ipc/ipc_service.h>
    #include <stdint.h>
    #include <string.h>
 
