@@ -346,11 +346,19 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
+
+		/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+		 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+		 */
+		group_sync_delay = (lll_iso->num_bis - 1) * lll_iso->bis_spacing +
+				   (lll_iso->nse - 1) * lll_iso->sub_interval +
+				   BYTES2US(PDU_OVERHEAD_SIZE(lll_iso->phy) +
+				            lll_iso->max_pdu + (lll_iso->enc ? 4 : 0),
+					    lll_iso->phy);
+		stream_sync_delay = group_sync_delay - stream_handle * lll_iso->bis_spacing;
+		framed = lll_iso->framing;
+		max_octets = lll_iso->max_pdu;
 		flush_timeout = 0U; /* Not used for Broadcast ISO */
-		group_sync_delay = 0U; /* FIXME: */
-		stream_sync_delay = 0U; /* FIXME: */
-		framed = 0U; /* FIXME: pick the framing value from context */
-		max_octets = 0U;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	} else {
