@@ -19,4 +19,4 @@ supported:
   - adc
 ram: 256
 flash: 2048
-vendor: gumstix
+vendor: 96boards
