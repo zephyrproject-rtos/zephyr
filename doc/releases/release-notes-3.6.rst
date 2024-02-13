@@ -74,6 +74,11 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Added support for Renesas R-Car Gen4 series
+  * Added support for STM32F303xB SoC variants
+  * Added support for STM32H7B0xx SoC variants
+  * Added support for STM32L010xx SoC variants
+  * Added support for STM32L081xx SoC variants
+  * Added support for STM32U5A9xx SoC variants
 
 * Removed support for these SoC series:
 
@@ -81,15 +86,21 @@ Boards & SoC Support
 
   * Nordic SoCs now imply :kconfig:option:`CONFIG_XIP` instead of selecting it, this allows for
     creating RAM-based applications by disabling it.
+  * BLE is now supported on STM32WBA series.
 
 * Added support for these ARC boards:
 
 * Added support for these ARM boards:
 
-  * Added support for Renesas R-Car Spider board CR52: ``rcar_spider_cr52``
-
   * Added support for Adafruit QTPy RP2040 board: ``adafruit_qt_py_rp2040``
-
+  * Added support for FANKE FK7B0M1-VBT6 board: ``fk7b0m1_vbt6``
+  * Added support for Renesas R-Car Spider board CR52: ``rcar_spider_cr52``
+  * Added support for ST Nucleo F722ZE board: ``nucleo_f722ze``
+  * Added support for ST STM32H750B Discovery Kit: ``stm32h750b_dk``
+  * Added support for ST STM32L4R9I Discovery board: ``stm32l4r9i_disco``
+  * Added support for ST STM32U5A9J-DK discovery kit: ``stm32u5a9j_dk``
+  * Added support for ST Nucleo WBA55CG board: ``nucleo_wba55cg``
+  * Added support for ST STM32WB5MM-DK Discovery board: ``stm32wb5mm_dk``
   * Added support for Wiznet W5500 Evaluation Pico board: ``w5500_evb_pico``
 
   * Added support for ADI boards: ``adi_sdp_k1``, ``adi_eval_adin1110ebz``,
@@ -212,6 +223,15 @@ Drivers and Sensors
 
 * ADC
 
+  * Power Management for ADC is now supported on STM32 devices.
+  * STM32 ADC driver now supports mixing shared and separate IRQs (for instance on STM32G473
+    which has 5 ADCs, ADC1 and ADC2 share one IRQ while ADC3, ADC4 and ADC5 each have unique IRQs).
+    Enabling all instances in same application is not possible on such devices as of now.
+
+* Battery backed up RAM
+
+  * STM32WL devices now support BBRAM.
+
 * CAN
 
   * Added system call :c:func:`can_get_mode()` for getting the current operation mode of a CAN
@@ -249,6 +269,8 @@ Drivers and Sensors
 
   * Renesas R-Car clock control driver now supports Gen4 SoCs
   * Renamed ``CONFIG_CLOCK_CONTROL_RA`` to :kconfig:option:`CONFIG_CLOCK_CONTROL_RENESAS_RA`
+  * On STM32 devices, :dtcompatible:`st,stm32-hse-clock` now allows setting a ``css-enabled``
+    property which enables HSE clock security system (CSS).
 
 * Counter
 
@@ -256,18 +278,27 @@ Drivers and Sensors
 
   * counter_native_posix driver: Added support for top value configuration, and a bugfix.
 
+* Crypto
+
+  * STM32WB devices now support crypto API through AES block
+
 * DAC
 
 * Disk
 
 * Display
 
+  * Introduce frame buffer config to STM32 LTDC driver.
+
 * DMA
+
+  * STM32WBA Devices now support GPDMA
 
 * Entropy
 
   * The "native_posix" entropy driver now accepts a new command line option ``seed-random``.
     When used, the random generator will be seeded from ``/dev/urandom``
+  * On STM32devices, RNG block is now suspended when pool is full to save power.
 
 * Ethernet
 
@@ -295,6 +326,7 @@ Drivers and Sensors
   * ``spi_nor`` driver now sleeps between polls in ``spi_nor_wait_until_ready``. If this is not
     desired (For example due to ROM constraints in a bootloader),
     :kconfig:option:`CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY` can be disabled.
+  * Flash readout protection configuration was added on STM32G4 and STM32L4 series.
 
   * ``nordic_qspi_nor`` driver now supports user-configurable QSPI timeout with
     :kconfig:option:`CONFIG_NORDIC_QSPI_NOR_TIMEOUT_MS`.
@@ -306,7 +338,11 @@ Drivers and Sensors
 
 * I2C
 
+  * :c:func:`i2c_get_config` is now supported on STM32 driver.
+
 * I2S
+
+  * STM32H7 devices now support I2S.
 
 * I3C
 
@@ -380,6 +416,8 @@ Drivers and Sensors
   * Added driver for ZynqMP / Mercury XU
   * Added driver for i.MX8QM/QXP
   * Added driver for Renesas RZ/T2M
+  * On STM32 devices, pins assigned to JTAG/SW port can now be put to analog state when
+    :kconfig:option:`CONFIG_PM` enabled and :kconfig:option:`CONFIG_DEBUG` disabled.
 
 * PWM
 
@@ -396,6 +434,10 @@ Drivers and Sensors
 * RTC
 
   * Atmel SAM: Added RTC driver.
+
+* SMBUS:
+
+  * SMBUS is now supported on STM32 devices
 
 * SDHC
 
@@ -452,35 +494,39 @@ Drivers and Sensors
 * Serial
 
   * Added drivers to support UART on Renesas RA and RZ/T2M.
-
   * Added support for higher baud rate for ITE IT8xxx2.
-
   * Added driver to support Intel Lightweight UART.
-
   * Added UART asynchronous RX helper.
-
   * Added support for async API on NS16550 driver.
-
   * Updated ``uart_esp32`` to use serial port configuration from devicetree.
-
   * Added an adaptation API to provide interrupt driven API for drivers
     which have only implemented async API.
-
   * Emulated UART driver (:file:`drivers/serial/uart_emul.c`):
-
     * Added emulated interrupt based TX.
-
     * Added emulated error for testing.
-
     * Modified to use local work queue for data transfer.
-
     * Modified FIFO size and its handling to be more aligned with real hardware.
+  * On STM32 devices, it is now possible to enable FIFO by setting a ``fifo-enable``
+    property in targeted serial node, with the following benefits:
+    In TX, FIFO allows to work in burst mode, easing scheduling of loaded applications.
+    It also allows more reliable communication with UART devices sensitive to variation of inter-frames delays.
+    In RX, FIFO reduces overrun occurences.
 
 * SPI
+
+  * On STM32H7 devices, ``fifo-enable`` property allows using SPI block FIFO. This
+    feature is still experimental and requires maturation.
+  * On STM32 devices impacted by BSY bit erratum, a workaround is implemented.
 
 * Timer
 
 * USB
+
+  * On STM2G0 devices, property ``crs-usb-sof`` in ``clk_hsi48`` node enables support
+    for Clock Recovery System allowing a more stable HSI48 clock and hence resilient USB
+    connection.
+  * On compatible STM32 devices, isochronous endpoint are now functional thanks to the
+    use of double buffering.
 
 * Wi-Fi
 
@@ -631,6 +677,8 @@ Libraries / Subsystems
 * Power management
 
   * Atmel SAM: introduced SUPC functions to allow wakeup sources and poweroff.
+  * STM32F4 devices now support stop mode thanks to the use of a RTC based idle timer which
+    keeps track of tick evolution while cortex systick is off.
 
 * Random
 
@@ -693,6 +741,16 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* STM32
+
+  * stm32cube: updated STM32F1 to cube version V1.8.5.
+  * stm32cube: updated STM32F7 to cube version V1.17.1
+  * stm32cube: updated STM32H7 to cube version V1.11.1
+  * stm32cube: updated STM32L4 to cube version V1.18.0
+  * stm32cube: updated STM32U5 to cube version V1.4.0
+  * stm32cube: updated STM32WBA to cube version V1.2.0
+  * stm32cube: updated STM32WB to cube version V1.18.0
 
 MCUboot
 *******
