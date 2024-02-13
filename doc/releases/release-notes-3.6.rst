@@ -398,6 +398,54 @@ Drivers and Sensors
 
 * Sensor
 
+  * Fixed arithmetic overflow in the LTRF216A driver.
+  * Fixed negative temperature calculation in MAX31865 driver.
+  * Added TI TMAG5273 3D Hall sensor driver.
+  * Added Vishay VCNL36825T proximity sensor driver.
+  * Added BMA4xx accelerometer sensor emulator.
+  * Added white channel support to the VEML7700 ambient light sensor driver.
+  * Added ST LIS2DE12 accelerometer sensor driver.
+  * Added Bosch BMP581 pressure sensor driver.
+  * Added support for triggering multiple sensor devices in the sensor shell.
+  * Added Aosong AGS10 TVOC air quality gas sensor driver.
+  * Extended MAX31865 temperature sensor driver to support changing three-wire
+    mode at runtime.
+  * Fixed Bosch BMI160 gyro range calculation and added support for getting
+    attributes.
+  * Optimized Bosch BMA4xx accelerometer sample calculation, improving
+    accuracy.
+  * Removed floating point arithmetic from the TI BQ274xx gauge driver.
+  * Fixed ST drivers Kconfig dependency to the HAL_ST module.
+  * Added Bosch BMA4xx accelerometer sensor driver.
+  * Added ST LIS2DU12 accelerometer sensor driver.
+  * Extended NTC thermistor driver to support TDK NTCG103JF103FT1.
+  * Added NXP S32 quadrature decoder driver.
+  * Fixed LSM6DSV16x gyro range table.
+  * Fixed missing return value checks in ADLTC2990, TSL2540, MAX17055 drivers.
+  * Added ST LPS28DFW pressure sensor driver.
+  * Fixed interrupt in BMI323 driver.
+  * Added devicetree properties macros to various ST sensor drivers.
+  * Added Renesas HS300x temperature/humidity sensor driver.
+  * Added Gas Sensing Solutions' ExplorIR-M CO2 sensor driver.
+  * Fixed self test delay in ADXL367 accelerometer sensor driver.
+  * Added ST LPS22DF pressure sensor driver.
+  * Added new streaming APIs and implemented in the ICM42688 driver.
+  * Added trigger support to the ADXL367 accelerometer sensor driver.
+  * Added PM suspend and resume support to the LSM6DSL accelerometer sensor
+    driver.
+  * Added AMS TSL2561 light sensor driver.
+  * Extended BQ274xx driver to support configuring and confirming the chemistry
+    profile.
+  * Extended LIS2DH and LSM6DSV16x drivers to support configuring INT1/INT2 in
+    devicetree.
+  * Added die temperature measurement support to NPM1300 charger driver.
+  * Added ADLTC2990 sensor emulator.
+  * Extended MPU6050 driver to support MPU6886 variant.
+  * Added ADXL367 accelerometer sensor driver.
+  * Added LiteOn LTR-F216A illuminance sensor driver.
+  * Added Memsic MC3419 accelerometer sensor driver.
+  * Added AMD SB temperature sensor driver.
+
 * Serial
 
   * Added drivers to support UART on Renesas RA and RZ/T2M.
