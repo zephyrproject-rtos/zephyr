@@ -27,6 +27,8 @@
 
 LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
+static const uint32_t supported_fmts = PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888;
+
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
@@ -150,6 +152,8 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB565);
 		} else if (config->pixel_format == PIXEL_FORMAT_RGB_888) {
 			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB888);
+		} else if (config->pixel_format == PIXEL_FORMAT_ARGB_8888) {
+			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_ARGB8888);
 		} else {
 			/* Cannot rotate */
 			return -ENOTSUP;
@@ -244,7 +248,7 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
 	capabilities->y_resolution = config->rgb_mode.panelHeight;
-	capabilities->supported_pixel_formats = config->pixel_format;
+	capabilities->supported_pixel_formats = supported_fmts;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
@@ -289,6 +293,8 @@ static int mcux_elcdif_init(const struct device *dev)
 		rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB565;
 	} else if (config->pixel_format == PIXEL_FORMAT_RGB_888) {
 		rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB888;
+	} else if (config->pixel_format == PIXEL_FORMAT_ARGB_8888) {
+		rgb_mode.pixelFormat = kELCDIF_PixelFormatXRGB8888;
 	}
 
 	for (int i = 0; i < CONFIG_MCUX_ELCDIF_FB_NUM; i++) {
