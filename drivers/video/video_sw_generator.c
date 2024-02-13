@@ -7,6 +7,10 @@
 
 #include <zephyr/drivers/video.h>
 
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(video_sw_generator);
+
 #define VIDEO_PATTERN_COLOR_BAR 0
 #define VIDEO_PATTERN_FPS       30
 
@@ -23,13 +27,46 @@ struct video_sw_generator_data {
 	struct k_poll_signal *signal;
 };
 
+static const struct video_format_cap fmts[] = {{
+						       .pixelformat = VIDEO_PIX_FMT_RGB565,
+						       .width_min = 64,
+						       .width_max = 1920,
+						       .height_min = 64,
+						       .height_max = 1080,
+						       .width_step = 1,
+						       .height_step = 1,
+					       }, {
+						       .pixelformat = VIDEO_PIX_FMT_XRGB32,
+						       .width_min = 64,
+						       .width_max = 1920,
+						       .height_min = 64,
+						       .height_max = 1080,
+						       .width_step = 1,
+						       .height_step = 1,
+					       },
+					       {0}};
+
 static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 				      struct video_format *fmt)
 {
 	struct video_sw_generator_data *data = dev->data;
+	int i = 0;
 
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(fmts); ++i) {
+		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
+		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
+		    fmt->height <= fmts[i].height_max) {
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(fmts)) {
+		LOG_ERR("Unsupported pixel format or resolution");
+		return -ENOTSUP;
 	}
 
 	data->fmt = *fmt;
@@ -182,25 +219,6 @@ static int video_sw_generator_flush(const struct device *dev, enum video_endpoin
 
 	return 0;
 }
-
-static const struct video_format_cap fmts[] = {{
-						       .pixelformat = VIDEO_PIX_FMT_RGB565,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       }, {
-						       .pixelformat = VIDEO_PIX_FMT_XRGB32,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       },
-					       {0}};
 
 static int video_sw_generator_get_caps(const struct device *dev, enum video_endpoint_id ep,
 				       struct video_caps *caps)
