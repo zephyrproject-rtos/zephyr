@@ -12,7 +12,7 @@ choice
 
 config SOC_NRF54H20_ENGA_CPUPPR
 	bool "nRF54H20 ENGA CPUPPR"
-	select RISCV
+	depends on RISCV_CORE_NORDIC_VPR
 
 endchoice
 
