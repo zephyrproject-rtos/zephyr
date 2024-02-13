@@ -27,6 +27,14 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	pcie0: pcie0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "pcie-controller";
+		acpi-hid = "PNP0A08";
+		ranges;
+	};
 };
 
 &uart0 {
