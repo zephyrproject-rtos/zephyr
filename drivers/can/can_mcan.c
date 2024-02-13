@@ -426,16 +426,59 @@ unlock:
 
 static void can_mcan_state_change_handler(const struct device *dev)
 {
+	const struct can_mcan_config *config = dev->config;
 	struct can_mcan_data *data = dev->data;
-	const can_state_change_callback_t cb = data->state_change_cb;
-	void *cb_data = data->state_change_cb_data;
+	const can_state_change_callback_t state_cb = data->state_change_cb;
+	void *state_cb_data = data->state_change_cb_data;
+	const struct can_mcan_callbacks *cbs = config->callbacks;
+	can_tx_callback_t tx_cb;
+	uint32_t tx_idx;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
+	uint32_t cccr;
+	int err;
 
 	(void)can_mcan_get_state(dev, &state, &err_cnt);
 
-	if (cb != NULL) {
-		cb(dev, state, err_cnt, cb_data);
+	if (state_cb != NULL) {
+		state_cb(dev, state, err_cnt, state_cb_data);
+	}
+
+	if (state == CAN_STATE_BUS_OFF) {
+		/* Request all TX buffers to be cancelled */
+		err = can_mcan_write_reg(dev, CAN_MCAN_TXBCR, CAN_MCAN_TXBCR_CR);
+		if (err != 0) {
+			return;
+		}
+
+		/* Call all TX queue callbacks with -ENETUNREACH */
+		for (tx_idx = 0U; tx_idx < cbs->num_tx; tx_idx++) {
+			tx_cb = cbs->tx[tx_idx].function;
+
+			if (tx_cb != NULL) {
+				cbs->tx[tx_idx].function = NULL;
+				tx_cb(dev, -ENETUNREACH, cbs->tx[tx_idx].user_data);
+				k_sem_give(&data->tx_sem);
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY)) {
+			/*
+			 * Request leaving init mode, but do not take the lock (as we are in ISR
+			 * context), nor wait for the result.
+			 */
+			err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &cccr);
+			if (err != 0) {
+				return;
+			}
+
+			cccr &= ~CAN_MCAN_CCCR_INIT;
+
+			err = can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
+			if (err != 0) {
+				return;
+			}
+		}
 	}
 }
 
@@ -1532,7 +1575,7 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-	/* Interrupt on every TX fifo element*/
+	/* Interrupt on every TX buffer transmission event */
 	reg = CAN_MCAN_TXBTIE_TIE;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBTIE, reg);
 	if (err != 0) {
