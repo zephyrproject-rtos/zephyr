@@ -102,6 +102,12 @@ family:
     - name: stm32h562xx
     - name: stm32h563xx
     - name: stm32h573xx
+  - name: stm32h7rsx
+    socs:
+    - name: stm32h7r3xx
+    - name: stm32h7r7xx
+    - name: stm32h7s3xx
+    - name: stm32h7s7xx
   - name: stm32h7x
     socs:
     - name: stm32h7a3xx
