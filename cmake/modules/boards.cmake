@@ -139,13 +139,13 @@ set(list_boards_commands
 
 if(NOT BOARD_DIR)
   if(BOARD_ALIAS)
-    execute_process(${list_boards_commands} --board=${BOARD_ALIAS} --format={name}\;{dir}\;{hwm}
+    execute_process(${list_boards_commands} --board=${BOARD_ALIAS} --cmakeformat={DIR}
                     OUTPUT_VARIABLE ret_board
                     ERROR_VARIABLE err_board
                     RESULT_VARIABLE ret_val
     )
-    list(GET ret_board 1 BOARD_HIDDEN_DIR)
-    string(STRIP "${BOARD_HIDDEN_DIR}" BOARD_HIDDEN_DIR)
+    string(STRIP "${ret_board}" ret_board)
+    cmake_parse_arguments(BOARD_HIDDEN "" "DIR" "" ${ret_board})
     set(BOARD_HIDDEN_DIR ${BOARD_HIDDEN_DIR} CACHE PATH "Path to a folder." FORCE)
 
     if(BOARD_HIDDEN_DIR)
