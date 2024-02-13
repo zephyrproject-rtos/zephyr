@@ -300,6 +300,86 @@ ull_conn_iso_lll_stream_get_by_group(struct lll_conn_iso_group *cig_lll,
 	return &cis->lll;
 }
 
+/*
+ * Helper function to iterate and return CIS LLL context sorted based on
+ * ascending order of the CIS offset from associated ACL and the CIG.
+ * This implementation be used by peripheral LLL to schedule subevents
+ * as CISes can be created in any order and ascending/descending order of
+ * CIS offsets used when creating CISes to peripheral.
+ *
+ * NOTE: This implementation assumes CISes created from same ACL. Support
+ *       for CISes created from different peer centrals is not supported yet.
+ */
+struct lll_conn_iso_stream *
+ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
+					    uint16_t *handle_iter)
+{
+	struct ll_conn_iso_stream *cis_next = NULL;
+	struct ll_conn_iso_group *cig;
+	uint32_t cis_offset_curr;
+	uint32_t cis_offset_next;
+	uint16_t handle;
+
+	cig = HDR_LLL2ULL(cig_lll);
+
+	if ((handle_iter == NULL) || ((*handle_iter) == UINT16_MAX)) {
+		/* First in the iteration, start with a minimum offset value and
+		 * find the first CIS offset of the active CIS.
+		 */
+		cis_offset_curr = 0U;
+	} else {
+		/* Subsequent iteration, get reference to current CIS and use
+		 * its CIS offset to find the next active CIS with offset
+		 * greater than the current CIS.
+		 */
+		struct ll_conn_iso_stream *cis_curr;
+
+		cis_curr = ll_conn_iso_stream_get(*handle_iter);
+		cis_offset_curr = cis_curr->offset;
+	}
+
+	cis_offset_next = UINT32_MAX;
+
+	/* Loop through all CIS contexts */
+	for (handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST;
+	     handle++) {
+		struct ll_conn_iso_stream *cis;
+
+		/* Get CIS reference corresponding to loop handle */
+		cis = ll_conn_iso_stream_get(handle);
+
+		/* Match CIS contexts associated with the CIG */
+		if (cis->group == cig) {
+			if (cis->offset <= cis_offset_curr) {
+				/* Skip already returned CISes with offsets less
+				 * than the current CIS.
+				 */
+				continue;
+			}
+
+			/* Remember CIS with offset greater than current but
+			 * lower than previous that we remember as the next CIS
+			 * in ascending order.
+			 */
+			if (cis->offset < cis_offset_next) {
+				cis_next = cis;
+				cis_offset_next = cis_next->offset;
+
+				if (handle_iter) {
+					(*handle_iter) = handle;
+				}
+			}
+		}
+	}
+
+	if (cis_next) {
+		/* Found the next CIS with offset in ascending order. */
+		return &cis_next->lll;
+	}
+
+	return NULL;
+}
+
 struct lll_conn_iso_group *
 ull_conn_iso_lll_group_get_by_stream(struct lll_conn_iso_stream *cis_lll)
 {
