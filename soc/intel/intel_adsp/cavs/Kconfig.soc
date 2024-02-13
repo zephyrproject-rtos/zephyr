@@ -16,7 +16,7 @@ config SOC_INTEL_CAVS_V25
 	  Intel Tiger Lake
 
 config SOC
-	default "intel_tgl_adsp" if SOC_INTEL_CAVS_V25
+	default "cavs25" if SOC_INTEL_CAVS_V25
 
 config SOC_TOOLCHAIN_NAME
 	default "intel_tgl_adsp" if SOC_INTEL_CAVS_V25
