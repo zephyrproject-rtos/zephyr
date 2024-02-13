@@ -90,6 +90,7 @@ class Platform:
           "nios2": ["zephyr", "xtools"],
           "riscv32": ["zephyr", "cross-compile", "xtools"],
           "riscv64": ["zephyr"],
+          "riscv": ["zephyr", "cross-compile"],
           "posix": ["host", "llvm"],
           "sparc": ["zephyr", "xtools"],
           "x86": ["zephyr", "xtools", "llvm"],
