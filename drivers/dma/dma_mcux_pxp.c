@@ -99,6 +99,11 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 		output_buffer_cfg.pixelFormat = kPXP_OutputPixelFormatRGB888;
 		bytes_per_pixel = 3;
 		break;
+	case DMA_MCUX_PXP_FMT_ARGB8888:
+		ps_buffer_cfg.pixelFormat = kPXP_PsPixelFormatARGB8888;
+		output_buffer_cfg.pixelFormat = kPXP_OutputPixelFormatARGB8888;
+		bytes_per_pixel = 4;
+		break;
 	default:
 		return -ENOTSUP;
 	}
