@@ -1,0 +1,6 @@
+# Device tree overlay for STM32WB5MM_DK board.
+# this device tree enable temperature sennsor for the board.
+
+&temp_sensor {
+	status = "okay";
+};

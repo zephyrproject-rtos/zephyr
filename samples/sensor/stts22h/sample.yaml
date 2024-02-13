@@ -1,0 +1,19 @@
+sample:
+  name: STTS22H Temperature Monitor
+common:
+  harness: console
+  integration_platforms:
+    - stm32wb5mm_dk
+  tags: sensors
+  depends_on:
+    - i2c
+    - stts22h
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Temperature:(.*) C"
+tests:
+  sample.sensor.stts22h:
+    extra_configs:
+      - CONFIG_STTS22H_TRIGGER_NONE=y
