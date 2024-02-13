@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 # Description:
 # Download preloader and .elf using GDB commands
@@ -7,7 +7,7 @@ set confirm off
 set pagination off
 
 #Download and Run preloader
-source boards/arm/cyclonev_socdk/support/preloader_dl_cmd.txt
+source boards/intel/cyclonev_socdk/support/preloader_dl_cmd.txt
 
 #Stop watchdog timer
 #permodrst Reg , reset watch dog timer
