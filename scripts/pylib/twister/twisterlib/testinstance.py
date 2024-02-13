@@ -56,12 +56,13 @@ class TestInstance:
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.dut = None
+        clean_platform_name = platform.name.replace("/", "_")
         if testsuite.detailed_test_id:
-            self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
+            self.build_dir = os.path.join(outdir, clean_platform_name, testsuite.name)
         else:
             # if suite is not in zephyr, keep only the part after ".." in reconstructed dir structure
             source_dir_rel = testsuite.source_dir_rel.rsplit(os.pardir+os.path.sep, 1)[-1]
-            self.build_dir = os.path.join(outdir, platform.name, source_dir_rel, testsuite.name)
+            self.build_dir = os.path.join(outdir, clean_platform_name, source_dir_rel, testsuite.name)
 
         self.run_id = self._get_run_id()
         self.domains = None
