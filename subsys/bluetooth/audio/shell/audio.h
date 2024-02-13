@@ -46,6 +46,10 @@ ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
+#if defined(CONFIG_LIBLC3)
+#include "lc3.h"
+#endif /* CONFIG_LIBLC3 */
+
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT
 #define CONTEXT                                                                                    \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
@@ -67,12 +71,16 @@ struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_audio_codec_qos qos;
+
 #if defined(CONFIG_LIBLC3)
 	uint32_t lc3_freq_hz;
 	uint32_t lc3_frame_duration_us;
 	uint16_t lc3_octets_per_frame;
-	uint8_t lc3_frames_per_sdu;
+	uint8_t lc3_frame_blocks_per_sdu;
+	enum bt_audio_location lc3_chan_allocation;
+	uint8_t lc3_chan_cnt;
 #endif /* CONFIG_LIBLC3 */
+
 #if defined(CONFIG_BT_AUDIO_TX)
 	int64_t connected_at_ticks; /* The uptime tick measured when stream was connected */
 	uint16_t seq_num;
@@ -83,6 +91,7 @@ struct shell_stream {
 	size_t lc3_sdu_cnt;
 #endif /* CONFIG_LIBLC3 */
 #endif /* CONFIG_BT_AUDIO_TX */
+
 #if defined(CONFIG_BT_AUDIO_RX)
 	struct bt_iso_recv_info last_info;
 	size_t empty_sdu_pkts;
@@ -91,6 +100,11 @@ struct shell_stream {
 	size_t dup_psn;
 	size_t rx_cnt;
 	size_t dup_ts;
+#if defined(CONFIG_LIBLC3)
+	lc3_decoder_mem_48k_t lc3_decoder_mem;
+	lc3_decoder_t lc3_decoder;
+	size_t decoded_cnt;
+#endif /* CONFIG_LIBLC3 */
 #endif /* CONFIG_BT_AUDIO_RX */
 };
 
@@ -131,8 +145,8 @@ struct broadcast_sink {
 		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
 		    (0))
 
-extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * (UNICAST_SERVER_STREAM_COUNT +
-								 UNICAST_CLIENT_STREAM_COUNT)];
+extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERVER_STREAM_COUNT,
+								    UNICAST_CLIENT_STREAM_COUNT)];
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
