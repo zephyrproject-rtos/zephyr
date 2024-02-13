@@ -14,6 +14,7 @@
 	compatible = "nordic,pca10056-dk";
 
 	chosen {
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart0;
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,shell-uart = &uart0;
