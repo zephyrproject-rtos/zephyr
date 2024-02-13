@@ -36,8 +36,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-/* Sample DHCP offer (382 bytes) */
-static const unsigned char offer[382] = {
+/* Sample DHCP offer (420 bytes) */
+static const unsigned char offer[420] = {
 0x02, 0x01, 0x06, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x0a, 0xed, 0x48, 0x9e, 0x0a, 0xb8,
@@ -84,12 +84,35 @@ static const unsigned char offer[382] = {
 0x6d, 0x00, 0x04, 0x63, 0x6f, 0x72, 0x70, 0x05,
 0x69, 0x6e, 0x74, 0x65, 0x6c, 0x03, 0x63, 0x6f,
 0x6d, 0x00, 0x05, 0x69, 0x6e, 0x74, 0x65, 0x6c,
-0x03, 0x63, 0x6f, 0x6d, 0x00, 0x2c, 0x08, 0xa3,
-0x21, 0x07, 0x56, 0x8f, 0xb6, 0xfa, 0x69, 0xff
+0x03, 0x63, 0x6f, 0x6d, 0x00,
+/* [44] NetBIOS Name Servers: 163.33.7.86, 143.182.250.105 */
+0x2c, 0x08, 0xa3, 0x21, 0x07, 0x56, 0x8f, 0xb6, 0xfa, 0x69,
+/* [43] Encapsulated vendor specific information */
+0x2b, 0x0a,
+	    /* [1]: "string" */
+	    0x01, 0x07, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x00,
+	    /* End marker */
+	    0xff,
+/* [43] Encapsulated vendor specific information */
+0x2b, 0x0f,
+	    /* [2]: single byte of value 1 */
+	    0x02, 0x01, 0x01,
+	    /* [3]: zero-length option */
+	    0x03, 0x00,
+	    /* [254]: invalid option (size longer than remainder of opt 43 size) */
+	    0xfe, 0x10, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe,
+/* [43] Too short encapsulated vendor option (only single byte) */
+0x2b, 0x01,
+	    /* [254]: invalid option (no length in opt 43) */
+	    0xfe,
+/* [70] POP3 Server: 198.51.100.16 */
+0x46, 0x04, 0xc6, 0x33, 0x64, 0x10,
+/* End marker */
+0xff
 };
 
 /* Sample DHCPv4 ACK */
-static const unsigned char ack[382] = {
+static const unsigned char ack[420] = {
 0x02, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x0a, 0xed, 0x48, 0x9e, 0x00, 0x00, 0x00, 0x00,
@@ -136,19 +159,47 @@ static const unsigned char ack[382] = {
 0x04, 0x63, 0x6f, 0x72, 0x70, 0x05, 0x69, 0x6e,
 0x74, 0x65, 0x6c, 0x03, 0x63, 0x6f, 0x6d, 0x00,
 0x05, 0x69, 0x6e, 0x74, 0x65, 0x6c, 0x03, 0x63,
-0x6f, 0x6d, 0x00, 0x2c, 0x08, 0xa3, 0x21, 0x07,
-0x56, 0x8f, 0xb6, 0xfa, 0x69, 0xff
+0x6f, 0x6d, 0x00,
+/* [44] NetBIOS Name Servers: 163.33.7.86, 143.182.250.105 */
+0x2c, 0x08, 0xa3, 0x21, 0x07, 0x56, 0x8f, 0xb6, 0xfa, 0x69,
+/* [43] Encapsulated vendor specific information */
+0x2b, 0x0a,
+	    /* [1]: "string" */
+	    0x01, 0x07, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x00,
+	    /* End marker */
+	    0xff,
+/* [43] Encapsulated vendor specific information */
+0x2b, 0x0f,
+	    /* [2]: single byte of value 1 */
+	    0x02, 0x01, 0x01,
+	    /* [3]: zero-length option */
+	    0x03, 0x00,
+	    /* [254]: invalid option (size longer than remainder of opt 43 size) */
+	    0xfe, 0x10, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe,
+/* [43] Too short encapsulated vendor option (only single byte) */
+0x2b, 0x01,
+	    /* [254]: invalid option (no length in opt 43) */
+	    0xfe,
+/* [70] POP3 Server: 198.51.100.16 */
+0x46, 0x04, 0xc6, 0x33, 0x64, 0x10,
+/* End marker */
+0xff
 };
 
 static const struct in_addr server_addr = { { { 192, 0, 2, 1 } } };
 static const struct in_addr client_addr = { { { 255, 255, 255, 255 } } };
 
-#define SERVER_PORT	67
-#define CLIENT_PORT	68
-#define MSG_TYPE	53
-#define DISCOVER	1
-#define REQUEST		3
-#define OPTION_DOMAIN	15
+#define SERVER_PORT		67
+#define CLIENT_PORT		68
+#define MSG_TYPE		53
+#define DISCOVER		1
+#define REQUEST			3
+#define OPTION_DOMAIN		15
+#define OPTION_POP3		70
+#define OPTION_VENDOR_STRING	1
+#define OPTION_VENDOR_BYTE	2
+#define OPTION_VENDOR_EMPTY	3
+#define OPTION_INVALID		254
 
 struct dhcp_msg {
 	uint32_t xid;
@@ -391,8 +442,16 @@ static struct net_mgmt_event_callback rx_cb;
 static struct net_mgmt_event_callback dns_cb;
 static struct net_mgmt_event_callback dhcp_cb;
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
-static struct net_dhcpv4_option_callback opt_cb;
+static struct net_dhcpv4_option_callback opt_domain_cb;
+static struct net_dhcpv4_option_callback opt_pop3_cb;
+static struct net_dhcpv4_option_callback opt_invalid_cb;
 static uint8_t buffer[15];
+#endif
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+static struct net_dhcpv4_option_callback opt_vs_string_cb;
+static struct net_dhcpv4_option_callback opt_vs_byte_cb;
+static struct net_dhcpv4_option_callback opt_vs_empty_cb;
+static struct net_dhcpv4_option_callback opt_vs_invalid_cb;
 #endif
 static int event_count;
 
@@ -415,10 +474,10 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
 
-static void option_cb(struct net_dhcpv4_option_callback *cb,
-		      size_t length,
-		      enum net_dhcpv4_msg_type msg_type,
-		      struct net_if *iface)
+static void option_domain_cb(struct net_dhcpv4_option_callback *cb,
+			     size_t length,
+			     enum net_dhcpv4_msg_type msg_type,
+			     struct net_if *iface)
 {
 	char expectation[] = "fi.intel.com";
 
@@ -431,6 +490,87 @@ static void option_cb(struct net_dhcpv4_option_callback *cb,
 
 	k_sem_give(&test_lock);
 }
+
+static void option_pop3_cb(struct net_dhcpv4_option_callback *cb,
+			   size_t length,
+			   enum net_dhcpv4_msg_type msg_type,
+			   struct net_if *iface)
+{
+	uint8_t expectation[4];
+
+	expectation[0] = 198;
+	expectation[1] = 51;
+	expectation[2] = 100;
+	expectation[3] = 16;
+
+	zassert_equal(cb->option, OPTION_POP3, "Unexpected option value");
+	zassert_equal(length, sizeof(expectation), "Incorrect data length");
+	zassert_mem_equal(buffer, expectation, sizeof(expectation),
+			  "Incorrect buffer contents");
+
+	event_count++;
+
+	k_sem_give(&test_lock);
+}
+
+static void option_invalid_cb(struct net_dhcpv4_option_callback *cb,
+			      size_t length,
+			      enum net_dhcpv4_msg_type msg_type,
+			      struct net_if *iface)
+{
+	/* This function should never be called. If it is, the parser took a wrong turn. */
+	zassert_true(false, "Unexpected callback - incorrect parsing of vendor sepcific options");
+}
+
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+
+static void vendor_specific_string_cb(struct net_dhcpv4_option_callback *cb,
+				      size_t length,
+				      enum net_dhcpv4_msg_type msg_type,
+				      struct net_if *iface)
+{
+	char expectation[] = "string";
+
+	zassert_equal(cb->option, OPTION_VENDOR_STRING,
+		      "Unexpected vendor specific option value");
+	zassert_equal(length, sizeof(expectation), "Incorrect data length");
+	zassert_mem_equal(buffer, expectation, sizeof(expectation), "Incorrect buffer contents");
+
+	event_count++;
+
+	k_sem_give(&test_lock);
+}
+
+static void vendor_specific_byte_cb(struct net_dhcpv4_option_callback *cb,
+				    size_t length,
+				    enum net_dhcpv4_msg_type msg_type,
+				    struct net_if *iface)
+{
+	zassert_equal(cb->option, OPTION_VENDOR_BYTE,
+		      "Unexpected vendor specific option value");
+	zassert_equal(length, 1, "Incorrect data length");
+	zassert_equal(buffer[0], 1, "Incorrect buffer contents");
+
+	event_count++;
+
+	k_sem_give(&test_lock);
+}
+
+static void vendor_specific_empty_cb(struct net_dhcpv4_option_callback *cb,
+				     size_t length,
+				     enum net_dhcpv4_msg_type msg_type,
+				     struct net_if *iface)
+{
+	zassert_equal(cb->option, OPTION_VENDOR_EMPTY,
+		      "Unexpected vendor specific option value");
+	zassert_equal(length, 0, "Incorrect data length");
+
+	event_count++;
+
+	k_sem_give(&test_lock);
+}
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
 
 #endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
@@ -458,12 +598,52 @@ ZTEST(dhcpv4_tests, test_dhcp)
 	net_mgmt_add_event_callback(&dhcp_cb);
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
-	net_dhcpv4_init_option_callback(&opt_cb, option_cb,
+	net_dhcpv4_init_option_callback(&opt_domain_cb, option_domain_cb,
 					OPTION_DOMAIN, buffer,
 					sizeof(buffer));
 
-	net_dhcpv4_add_option_callback(&opt_cb);
+	net_dhcpv4_add_option_callback(&opt_domain_cb);
+
+	net_dhcpv4_init_option_callback(&opt_pop3_cb, option_pop3_cb,
+					OPTION_POP3, buffer,
+					sizeof(buffer));
+
+	net_dhcpv4_add_option_callback(&opt_pop3_cb);
+
+	net_dhcpv4_init_option_callback(&opt_invalid_cb, option_invalid_cb,
+					OPTION_INVALID, buffer,
+					sizeof(buffer));
+
+	net_dhcpv4_add_option_callback(&opt_invalid_cb);
 #endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
+
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+	net_dhcpv4_init_option_vendor_callback(&opt_vs_string_cb, vendor_specific_string_cb,
+					       OPTION_VENDOR_STRING, buffer,
+					       sizeof(buffer));
+
+	net_dhcpv4_add_option_vendor_callback(&opt_vs_string_cb);
+
+	net_dhcpv4_init_option_vendor_callback(&opt_vs_byte_cb, vendor_specific_byte_cb,
+					       OPTION_VENDOR_BYTE, buffer,
+					       sizeof(buffer));
+
+	net_dhcpv4_add_option_vendor_callback(&opt_vs_byte_cb);
+
+	net_dhcpv4_init_option_vendor_callback(&opt_vs_empty_cb, vendor_specific_empty_cb,
+					       OPTION_VENDOR_EMPTY, buffer,
+					       sizeof(buffer));
+
+	net_dhcpv4_add_option_vendor_callback(&opt_vs_empty_cb);
+
+	net_dhcpv4_init_option_vendor_callback(&opt_vs_invalid_cb, option_invalid_cb,
+					       OPTION_INVALID, buffer,
+					       sizeof(buffer));
+
+	net_dhcpv4_add_option_vendor_callback(&opt_vs_invalid_cb);
+
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	if (!iface) {
@@ -472,8 +652,10 @@ ZTEST(dhcpv4_tests, test_dhcp)
 
 	net_dhcpv4_start(iface);
 
-#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
-	while (event_count < 6) {
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+	while (event_count < 16) {
+#elif defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+	while (event_count < 10) {
 #else
 	while (event_count < 5) {
 #endif
