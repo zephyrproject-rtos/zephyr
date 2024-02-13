@@ -3266,8 +3266,10 @@ static int le_init_iso(void)
 
 		net_buf_unref(rsp);
 	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
-		LOG_WRN("Read Buffer Size V2 command is not supported."
-			"No ISO buffers will be available");
+		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) || IS_ENABLED(CONFIG_BT_ISO_BROADCASTER)) {
+			LOG_WRN("Read Buffer Size V2 command is not supported. "
+				"No ISO TX buffers will be available");
+		}
 
 		/* Read LE Buffer Size */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,
