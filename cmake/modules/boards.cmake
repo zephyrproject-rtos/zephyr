@@ -61,37 +61,35 @@ if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
   list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 endif()
 
-string(FIND "${BOARD}" "@" REVISION_SEPARATOR_INDEX)
-string(FIND "${BOARD}" "/" IDENTIFIER_SEPARATOR_INDEX)
-
-if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1 OR IDENTIFIER_SEPARATOR_INDEX EQUAL -1))
-  if(REVISION_SEPARATOR_INDEX GREATER IDENTIFIER_SEPARATOR_INDEX)
-    message(FATAL_ERROR "Invalid revision / identifier format, format is: "
-                        "<board>@<revision>/<identifier>"
+# Helper function for parsing a board's name, revision, and identifier,
+# from one input variable to three separate output variables.
+function(parse_board_components board_in name_out revision_out identifier_out)
+  if(NOT "${${board_in}}" MATCHES "^([^@/]+)(@[^@/]+)?(/[^@]+)?$")
+    message(FATAL_ERROR
+      "Invalid revision / identifier format for ${board_in} (${${board_in}}). "
+      "Valid format is: <board>@<revision>/<identifier>"
     )
   endif()
-endif()
+  string(REPLACE "@" "" board_revision "${CMAKE_MATCH_2}")
 
-if(NOT (IDENTIFIER_SEPARATOR_INDEX EQUAL -1))
-  if(NOT DEFINED CACHE{BOARD_IDENTIFIER})
-    string(SUBSTRING ${BOARD} ${IDENTIFIER_SEPARATOR_INDEX} -1 BOARD_IDENTIFIER)
-  endif()
-  string(SUBSTRING ${BOARD} 0 ${IDENTIFIER_SEPARATOR_INDEX} BOARD)
-endif()
+  set(${name_out}       ${CMAKE_MATCH_1}  PARENT_SCOPE)
+  set(${revision_out}   ${board_revision} PARENT_SCOPE)
+  set(${identifier_out} ${CMAKE_MATCH_3}  PARENT_SCOPE)
+endfunction()
 
-if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
-  math(EXPR BOARD_REVISION_INDEX "${REVISION_SEPARATOR_INDEX} + 1")
-  string(SUBSTRING ${BOARD} ${BOARD_REVISION_INDEX} -1 BOARD_REVISION)
-  string(SUBSTRING ${BOARD} 0 ${REVISION_SEPARATOR_INDEX} BOARD)
-endif()
+parse_board_components(BOARD BOARD BOARD_REVISION BOARD_IDENTIFIER)
 
 zephyr_get(ZEPHYR_BOARD_ALIASES)
 if(DEFINED ZEPHYR_BOARD_ALIASES)
   include(${ZEPHYR_BOARD_ALIASES})
   if(${BOARD}_BOARD_ALIAS)
     set(BOARD_ALIAS ${BOARD} CACHE STRING "Board alias, provided by user")
-    set(BOARD ${${BOARD}_BOARD_ALIAS})
+    parse_board_components(${BOARD}_BOARD_ALIAS BOARD BOARD_ALIAS_REVISION BOARD_ALIAS_IDENTIFIER)
     message(STATUS "Aliased BOARD=${BOARD_ALIAS} changed to ${BOARD}")
+    if(NOT DEFINED BOARD_REVISION)
+      set(BOARD_REVISION ${BOARD_ALIAS_REVISION})
+    endif()
+    set(BOARD_IDENTIFIER ${BOARD_ALIAS_IDENTIFIER}${BOARD_IDENTIFIER})
   endif()
 endif()
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
