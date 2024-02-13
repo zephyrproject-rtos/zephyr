@@ -8,6 +8,7 @@
 #include "adc_context.h"
 #include <haly/nrfy_saadc.h>
 #include <zephyr/dt-bindings/adc/nrf-adc.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -18,6 +19,18 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc);
 
 #if (NRF_SAADC_HAS_AIN_AS_PIN)
 
+#if defined(CONFIG_SOC_NRF54H20)
+static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
+	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
+	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
+	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
+	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
+	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
+	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
+	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
+	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
+};
+#elif defined(CONFIG_SOC_NRF54L15)
 static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
@@ -28,6 +41,7 @@ static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
 };
+#endif
 
 #else
 BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
@@ -37,7 +51,6 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 	     (NRF_SAADC_AIN4 == NRF_SAADC_INPUT_AIN4) &&
 	     (NRF_SAADC_AIN5 == NRF_SAADC_INPUT_AIN5) &&
 	     (NRF_SAADC_AIN6 == NRF_SAADC_INPUT_AIN6) &&
-	     (NRF_SAADC_AIN7 == NRF_SAADC_INPUT_AIN7) &&
 	     (NRF_SAADC_AIN7 == NRF_SAADC_INPUT_AIN7) &&
 #if defined(SAADC_CH_PSELP_PSELP_VDDHDIV5)
 	     (NRF_SAADC_VDDHDIV5 == NRF_SAADC_INPUT_VDDHDIV5) &&
@@ -49,16 +62,43 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
 #endif
 
+#ifdef CONFIG_SOC_NRF54H20
+
+/* nRF54H20 always uses bounce buffers in RAM */
+
+#define SAADC_MEMORY_SECTION					                     \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(adc), memory_regions), \
+		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	     \
+			DT_PHANDLE(DT_NODELABEL(adc), memory_regions)))))),	     \
+		())
+
+static uint16_t adc_samples_buffer[SAADC_CH_NUM] SAADC_MEMORY_SECTION;
+
+#define ADC_BUFFER_IN_RAM
+
+#endif /* CONFIG_SOC_NRF54H20 */
+
 struct driver_data {
 	struct adc_context ctx;
 
 	uint8_t positive_inputs[SAADC_CH_NUM];
+
+#if defined(ADC_BUFFER_IN_RAM)
+	void *samples_buffer;
+	void *user_buffer;
+	uint8_t active_channels;
+#endif
 };
 
 static struct driver_data m_data = {
 	ADC_CONTEXT_INIT_TIMER(m_data, ctx),
 	ADC_CONTEXT_INIT_LOCK(m_data, ctx),
 	ADC_CONTEXT_INIT_SYNC(m_data, ctx),
+#if defined(ADC_BUFFER_IN_RAM)
+	.samples_buffer = adc_samples_buffer,
+	.user_buffer = NULL,
+	.active_channels = 0,
+#endif
 };
 
 /* Helper function to convert number of samples to the byte representation. */
@@ -279,20 +319,15 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	ARG_UNUSED(ctx);
 
 	if (!repeat) {
-		nrf_saadc_value_t *buffer;
-
-		#if (NRF_SAADC_8BIT_SAMPLE_WIDTH == 8)
-		if (nrfy_saadc_resolution_get(NRF_SAADC) == NRF_SAADC_RESOLUTION_8BIT) {
-			buffer = (uint8_t *)nrfy_saadc_buffer_pointer_get(NRF_SAADC) +
-				 nrfy_saadc_amount_get(NRF_SAADC);
-		} else
-		#endif
-		{
-			buffer = (uint16_t *)nrfy_saadc_buffer_pointer_get(NRF_SAADC) +
-				 nrfy_saadc_amount_get(NRF_SAADC);
-		}
-
+#if defined(ADC_BUFFER_IN_RAM)
+		m_data.user_buffer = (uint8_t *)m_data.user_buffer +
+			samples_to_bytes(&ctx->sequence, nrfy_saadc_amount_get(NRF_SAADC));
+#else
+		nrf_saadc_value_t *buffer =
+			(uint8_t *)nrf_saadc_buffer_pointer_get(NRF_SAADC) +
+			samples_to_bytes(&ctx->sequence, nrfy_saadc_amount_get(NRF_SAADC));
 		nrfy_saadc_buffer_pointer_set(NRF_SAADC, buffer);
+#endif
 	}
 }
 
@@ -466,13 +501,23 @@ static int start_read(const struct device *dev,
 		return error;
 	}
 
+#if defined(ADC_BUFFER_IN_RAM)
+	m_data.user_buffer = sequence->buffer;
+	m_data.active_channels = active_channels;
+
+	nrf_saadc_buffer_init(NRF_SAADC,
+			      (nrf_saadc_value_t *)m_data.samples_buffer,
+			      active_channels);
+#else
 	nrf_saadc_buffer_init(NRF_SAADC,
 			      (nrf_saadc_value_t *)sequence->buffer,
 			      active_channels);
+#endif
 
 	adc_context_start_read(&m_data.ctx, sequence);
 
 	error = adc_context_wait_for_completion(&m_data.ctx);
+
 	return error;
 }
 
@@ -512,6 +557,11 @@ static void saadc_irq_handler(const struct device *dev)
 
 		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_STOP);
 		nrf_saadc_disable(NRF_SAADC);
+
+#if defined(ADC_BUFFER_IN_RAM)
+		memcpy(m_data.user_buffer, m_data.samples_buffer,
+			samples_to_bytes(&m_data.ctx.sequence, m_data.active_channels));
+#endif
 
 		adc_context_on_sampling_done(&m_data.ctx, dev);
 	} else if (nrf_saadc_event_check(NRF_SAADC,
@@ -553,6 +603,8 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #endif
 #if defined(CONFIG_SOC_NRF54L15)
 	.ref_internal  = 900,
+#elif defined(CONFIG_SOC_NRF54H20)
+	.ref_internal  = 1024,
 #else
 	.ref_internal  = 600,
 #endif
