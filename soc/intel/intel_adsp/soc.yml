@@ -7,4 +7,4 @@ family:
           - name: intel_ace20_lnl
       - name: cavs
         socs:
-          - name: intel_tgl_adsp
+          - name: cavs25
