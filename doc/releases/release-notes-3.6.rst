@@ -1078,6 +1078,9 @@ Libraries / Subsystems
 
 * LoRa/LoRaWAN
 
+ * Added LoRaWAN remote multicast support with :kconfig:option:`CONFIG_LORAWAN_REMOTE_MULTICAST`
+   in preparation for OTA firmware upgrade support.
+
 * RTIO
 
 * ZBus
