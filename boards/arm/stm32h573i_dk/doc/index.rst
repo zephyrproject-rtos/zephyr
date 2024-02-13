@@ -293,8 +293,16 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+Waiting for openocd support, debugging could be performed with pyocd which
+requires to enable "pack" support with the following pyocd command:
+
+.. code-block:: console
+
+   $ pyocd pack --update
+   $ pyocd pack --install stm32h5
+
+Once installed, you can debug an application in the usual way. Here is an
+example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
