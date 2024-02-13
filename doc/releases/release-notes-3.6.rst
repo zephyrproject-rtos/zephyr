@@ -168,6 +168,12 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * M5Stack-Core2 base
+  * MikroElektronika ACCEL 13 Click
+  * Waveshare Pico UPS-B
+  * X-NUCLEO-BNRG2A1: BLE expansion board
+  * X-NUCLEO-IKS4A1: MEMS Inertial and Environmental Multi sensor
+
 Build system and infrastructure
 *******************************
 
