@@ -322,6 +322,11 @@ Drivers and Sensors
 
   * Renesas R-Car pinctrl driver now supports Gen4 SoCs
   * Renamed ``CONFIG_PINCTRL_RA`` to :kconfig:option:`CONFIG_PINCTRL_RENESAS_RA`
+  * Renesas R-Car pinctrl driver now supports voltage control for R8A77951 and
+    R8A77961 SoCs
+  * Added driver for ZynqMP / Mercury XU
+  * Added driver for i.MX8QM/QXP
+  * Added driver for Renesas RZ/T2M
 
 * PWM
 
