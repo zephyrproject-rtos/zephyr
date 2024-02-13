@@ -480,6 +480,9 @@ def _check_maintainers(maints_path, yaml):
     def ferr(msg):
         _err("{}: {}".format(maints_path, msg))  # Prepend the filename
 
+    def fwar(msg):
+        print("{}: {}".format(maints_path, msg))
+
     if not isinstance(yaml, dict):
         ferr("empty or malformed YAML (not a dict)")
 
@@ -526,12 +529,12 @@ def _check_maintainers(maints_path, yaml):
                     # needed due to pathlib's glob() returning a generator.
                     paths = tuple(root.glob(glob_pattern))
                     if not paths:
-                        ferr("glob pattern '{}' in '{}' in area '{}' does not "
+                        fwar("glob pattern '{}' in '{}' in area '{}' does not "
                              "match any files".format(glob_pattern, files_key,
                                                       area_name))
                     if not glob_pattern.endswith("/"):
                         if all(path.is_dir() for path in paths):
-                            ferr("glob pattern '{}' in '{}' in area '{}' "
+                            fwar("glob pattern '{}' in '{}' in area '{}' "
                                      "matches only directories, but has no "
                                      "trailing '/'"
                                      .format(glob_pattern, files_key,
