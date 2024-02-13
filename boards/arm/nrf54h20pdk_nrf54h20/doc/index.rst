@@ -6,6 +6,11 @@ nRF54H20 PDK
 Overview
 ********
 
+.. note::
+
+   All software for the nRF54H20 SoC is experimental and hardware availability
+   is restricted to the participants in the limited sampling program.
+
 The nRF54H20 PDK is a single-board preview development kit for evaluation
 and development on the Nordic nRF54H20 System-on-Chip (SoC).
 
