@@ -18,15 +18,27 @@ A sample showcasing upstream LVGL demos.
 * Widgets
       Shows how the widgets look like out of the box using the built-in material theme.
 
+More details can be found in `LVGL demos Readme`_.
+
 Requirements
 ************
 
 * A board with display, ideally with 480x272 resolution or higher.
+* A pointer input device: touchpad, mouse, or touch screen capable display, compatible with :dtcompatible:`zephyr,lvgl-pointer-input`.
+
+Note that other input devices types are not demonstrated in these demos, namely keyboards, keypads (:dtcompatible:`zephyr,lvgl-keypad-input`), rotary encoders (:dtcompatible:`zephyr,lvgl-encoder-input`) and hardware buttons (:dtcompatible:`zephyr,lvgl-button-input`).
 
 Building and Running
 ********************
 
-These demos can be built as follows:
+Example building for :ref:`mimxrt1060_evk`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/lvgl/demos
+   :board: mimxrt1060_evk
+   :goals: build flash
+
+These demos can be built for simulated display environment as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
@@ -59,3 +71,11 @@ These demos can be built as follows:
    :gen-args: -DCONFIG_LV_Z_DEMO_WIDGETS=y
    :goals: run
    :compact:
+
+Alternatively, if building from a 64-bit host machine, the previous target
+board argument may also be replaced by ``native_sim_64``.
+
+References
+**********
+
+.. _LVGL demos Readme: https://github.com/zephyrproject-rtos/lvgl/blob/zephyr/demos/README.md
