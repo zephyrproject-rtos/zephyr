@@ -193,6 +193,7 @@ class Filters:
             if p:
                 if p.group(1) != 'common':
                     if p.group(1) == 'riscv':
+                        archs.add('riscv')
                         archs.add('riscv32')
                         archs.add('riscv64')
                     else:
