@@ -1,5 +1,6 @@
 # Copyright (c) 2019 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
+
 board_runner_args(jlink "--device=FE310")
 board_runner_args(jlink "--iface=JTAG")
 board_runner_args(jlink "--speed=4000")
