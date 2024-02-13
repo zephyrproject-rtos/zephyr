@@ -176,13 +176,20 @@ int intel_adsp_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
 #if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
+	const size_t buf_size = intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size,
+							       channel);
+
+	if (!buf_size) {
+		return -EIO;
+	}
+
 	intel_adsp_force_dmi_l0_state();
 	switch (cfg->direction) {
 	case HOST_TO_MEMORY:
 		; /* Only statements can be labeled in C, a declaration is not valid */
 		const uint32_t rp = *DGBRP(cfg->base, cfg->regblock_size, channel);
 		const uint32_t next_rp = (rp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
-			intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
+			buf_size;
 
 		intel_adsp_hda_set_buffer_segment_ptr(cfg->base, cfg->regblock_size,
 						      channel, next_rp);
@@ -192,7 +199,7 @@ int intel_adsp_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 		;
 		const uint32_t wp = *DGBWP(cfg->base, cfg->regblock_size, channel);
 		const uint32_t next_wp = (wp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
-			intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
+			buf_size;
 
 		intel_adsp_hda_set_buffer_segment_ptr(cfg->base, cfg->regblock_size,
 						      channel, next_wp);
