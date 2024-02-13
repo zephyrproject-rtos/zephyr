@@ -27,14 +27,6 @@
 #include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
-#if defined(CONFIG_LIBLC3)
-#include "lc3.h"
-
-#define LC3_MAX_SAMPLE_RATE       48000
-#define LC3_MAX_FRAME_DURATION_US 10000
-#define LC3_MAX_NUM_SAMPLES       ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE) / USEC_PER_SEC)
-#endif /* CONFIG_LIBLC3 */
-
 #include "shell/bt.h"
 #include "audio.h"
 
@@ -42,10 +34,32 @@
 #define IS_BAP_INITIATOR                                                                           \
 	(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) || IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT))
 
+#if defined(CONFIG_LIBLC3)
+
+#define LC3_MAX_SAMPLE_RATE       48000
+#define LC3_MAX_FRAME_DURATION_US 10000
+#define LC3_MAX_NUM_SAMPLES       ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE) / USEC_PER_SEC)
+
+static void clear_lc3_sine_data(struct bt_bap_stream *bap_stream);
+static void lc3_decoder_stream_clear(struct shell_stream *sh_stream);
+
+static void lc3_clear_stream(struct shell_stream *sh_stream)
+{
+#if defined(CONFIG_BT_AUDIO_TX)
+	clear_lc3_sine_data(&sh_stream->stream.bap_stream);
+#endif /* CONFIG_BT_AUDIO_TX */
+
+#if defined(CONFIG_BT_AUDIO_RX)
+	lc3_decoder_stream_clear(sh_stream);
+#endif /* CONFIG_BT_AUDIO_RX */
+}
+
+#endif /* CONFIG_LIBLC3 */
+
 #if defined(CONFIG_BT_BAP_UNICAST)
 
 struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
-				    (UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT)];
+				    MAX(UNICAST_SERVER_STREAM_COUNT, UNICAST_CLIENT_STREAM_COUNT)];
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 struct bt_bap_unicast_group *default_unicast_group;
@@ -197,8 +211,8 @@ static uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
  * controller ISO buffer to handle jitter.
  */
 #define PRIME_COUNT 2U
-NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+#define SINE_TX_POOL_SIZE BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU)
+NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, SINE_TX_POOL_SIZE,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #include "math.h"
@@ -287,7 +301,8 @@ static void lc3_audio_send_data(struct k_work *work)
 	struct shell_stream *sh_stream = CONTAINER_OF(k_work_delayable_from_work(work),
 						      struct shell_stream, audio_send_work);
 	struct bt_bap_stream *bap_stream = bap_stream_from_shell_stream(sh_stream);
-	const uint16_t tx_sdu_len = sh_stream->lc3_frames_per_sdu * sh_stream->lc3_octets_per_frame;
+	const uint16_t tx_sdu_len = sh_stream->lc3_frame_blocks_per_sdu * sh_stream->lc3_chan_cnt *
+				    sh_stream->lc3_octets_per_frame;
 	struct net_buf *buf;
 	uint8_t *net_buffer;
 	off_t offset = 0;
@@ -308,11 +323,13 @@ static void lc3_audio_send_data(struct k_work *work)
 		return;
 	}
 
-	if (tx_sdu_len == 0U) {
-		shell_error(
-			ctx_shell,
-			"Cannot send 0 length SDU (from frames per sdu %u and %u octets per frame)",
-			sh_stream->lc3_frames_per_sdu, sh_stream->lc3_octets_per_frame);
+	if (tx_sdu_len == 0U || tx_sdu_len > SINE_TX_POOL_SIZE) {
+		shell_error(ctx_shell,
+			    "Cannot send %u length SDU (from frame blocks per sdu %u, channel "
+			    "count %u and %u octets per frame) for pool size %d",
+			    tx_sdu_len, sh_stream->lc3_frame_blocks_per_sdu,
+			    sh_stream->lc3_chan_cnt, sh_stream->lc3_octets_per_frame,
+			    SINE_TX_POOL_SIZE);
 		return;
 	}
 
@@ -331,22 +348,24 @@ static void lc3_audio_send_data(struct k_work *work)
 	net_buffer = net_buf_tail(buf);
 	buf->len += tx_sdu_len;
 
-	for (uint8_t i = 0U; i < sh_stream->lc3_frames_per_sdu; i++) {
-		int lc3_ret;
+	for (uint8_t i = 0U; i < sh_stream->lc3_frame_blocks_per_sdu; i++) {
+		for (uint8_t j = 0U; j < sh_stream->lc3_chan_cnt; j++) {
+			int lc3_ret;
 
-		lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, lc3_tx_buf, 1,
-				     sh_stream->lc3_octets_per_frame, net_buffer + offset);
-		offset += sh_stream->lc3_octets_per_frame;
+			lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, lc3_tx_buf, 1,
+					     sh_stream->lc3_octets_per_frame, net_buffer + offset);
+			offset += sh_stream->lc3_octets_per_frame;
 
-		if (lc3_ret == -1) {
-			shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
-				    lc3_ret);
-			net_buf_unref(buf);
+			if (lc3_ret == -1) {
+				shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
+					    lc3_ret);
+				net_buf_unref(buf);
 
-			/* Reschedule for next interval */
-			k_work_reschedule(k_work_delayable_from_work(work),
-					  K_USEC(bap_stream->qos->interval));
-			return;
+				/* Reschedule for next interval */
+				k_work_reschedule(k_work_delayable_from_work(work),
+						  K_USEC(bap_stream->qos->interval));
+				return;
+			}
 		}
 	}
 
@@ -2336,6 +2355,154 @@ static struct bt_le_scan_cb bap_scan_cb = {
 #if defined(CONFIG_BT_AUDIO_RX)
 static unsigned long recv_stats_interval = 100U;
 
+#if defined(CONFIG_LIBLC3)
+struct lc3_data {
+	void *fifo_reserved; /* 1st word reserved for use by FIFO */
+	struct net_buf *buf;
+	struct shell_stream *sh_stream;
+};
+
+K_MEM_SLAB_DEFINE(lc3_data_slab, sizeof(struct lc3_data), CONFIG_BT_ISO_RX_BUF_COUNT,
+		  __alignof__(struct lc3_data));
+
+static int16_t lc3_rx_buf[LC3_MAX_NUM_SAMPLES];
+static K_FIFO_DEFINE(lc3_in_fifo);
+
+static int init_lc3_decoder(struct shell_stream *sh_stream)
+{
+	if (sh_stream == NULL) {
+		shell_error(ctx_shell, "invalid stream to init LC3");
+		return -EINVAL;
+	}
+
+	if (sh_stream->lc3_decoder != NULL) {
+		shell_error(ctx_shell, "Already initialized");
+		return -EALREADY;
+	}
+
+	if (sh_stream->lc3_freq_hz == 0 || sh_stream->lc3_frame_duration_us == 0) {
+		shell_error(ctx_shell, "Invalid freq (%u) or frame duration (%u)",
+			    sh_stream->lc3_freq_hz, sh_stream->lc3_frame_duration_us);
+
+		return -EINVAL;
+	}
+
+	shell_print(ctx_shell,
+		    "Initializing the LC3 decoder with %u us duration and %u Hz frequency",
+		    sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz);
+	/* Create the decoder instance. This shall complete before stream_started() is called. */
+	sh_stream->lc3_decoder = lc3_setup_decoder(sh_stream->lc3_frame_duration_us,
+						   sh_stream->lc3_freq_hz, 0, /* No resampling */
+						   &sh_stream->lc3_decoder_mem);
+	if (sh_stream->lc3_decoder == NULL) {
+		shell_error(ctx_shell, "Failed to setup LC3 decoder - wrong parameters?\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void lc3_decoder_stream_clear(struct shell_stream *sh_stream)
+{
+	sh_stream->lc3_decoder = NULL;
+}
+
+static bool decode_frame(struct net_buf *buf, struct shell_stream *sh_stream, size_t frame_cnt)
+{
+	const size_t total_frames = sh_stream->lc3_chan_cnt * sh_stream->lc3_frame_blocks_per_sdu;
+	const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
+	void *data;
+	int err;
+
+	if (buf->len == 0U) {
+		data = NULL; /* perform PLC */
+
+		if ((sh_stream->decoded_cnt % recv_stats_interval) == 0) {
+			shell_print(ctx_shell, "[%zu]: Performing PLC", sh_stream->decoded_cnt);
+		}
+	} else {
+		data = net_buf_pull_mem(buf, octets_per_frame);
+
+		if ((sh_stream->decoded_cnt % recv_stats_interval) == 0) {
+			shell_print(ctx_shell, "[%zu]: Decoding frame of size %u (%u/%u)",
+				    sh_stream->decoded_cnt, octets_per_frame, frame_cnt + 1,
+				    total_frames);
+		}
+	}
+
+	err = lc3_decode(sh_stream->lc3_decoder, data, octets_per_frame, LC3_PCM_FORMAT_S16,
+			 lc3_rx_buf, 1);
+	if (err < 0) {
+		shell_error(ctx_shell, "Failed to decode LC3 data (%u/%u - %u/%u)", frame_cnt + 1,
+			    total_frames, octets_per_frame * frame_cnt, buf->len);
+		return false;
+	}
+
+	return true;
+}
+
+static size_t decode_frame_block(struct net_buf *buf, struct shell_stream *sh_stream,
+				 size_t frame_cnt)
+{
+	const uint8_t chan_cnt = sh_stream->lc3_chan_cnt;
+	size_t decoded_frames = 0U;
+
+	for (uint8_t j = 0U; j < chan_cnt; j++) {
+		/* We provide the total number of decoded frames to `decode_frame` for logging
+		 * purposes
+		 */
+		if (!decode_frame(buf, sh_stream, frame_cnt + decoded_frames)) {
+			break;
+		}
+
+		decoded_frames++;
+	}
+
+	return decoded_frames;
+}
+
+static void do_lc3_decode(struct shell_stream *sh_stream, struct net_buf *buf)
+{
+	if (sh_stream->lc3_decoder != NULL) {
+		const uint8_t frame_blocks_per_sdu = sh_stream->lc3_frame_blocks_per_sdu;
+		size_t frame_cnt;
+
+		frame_cnt = 0;
+		for (uint8_t i = 0U; i < frame_blocks_per_sdu; i++) {
+			const size_t decoded_frames = decode_frame_block(buf, sh_stream, frame_cnt);
+
+			if (decoded_frames == 0) {
+				break;
+			}
+
+			frame_cnt += decoded_frames;
+		}
+
+		sh_stream->decoded_cnt++;
+	}
+
+	net_buf_unref(buf);
+}
+
+static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
+{
+	while (true) {
+		struct lc3_data *data = k_fifo_get(&lc3_in_fifo, K_FOREVER);
+
+		/* Lock to avoid `lc3_decoder` becoming NULL in case of a stream stop */
+
+		if (data->sh_stream->lc3_decoder == NULL) {
+			continue; /* Wait for new data */
+		}
+
+		do_lc3_decode(data->sh_stream, data->buf);
+
+		k_mem_slab_free(&lc3_data_slab, (void *)data);
+	}
+}
+
+#endif /* CONFIG_LIBLC3*/
+
 static void audio_recv(struct bt_bap_stream *stream,
 		       const struct bt_iso_recv_info *info,
 		       struct net_buf *buf)
@@ -2379,6 +2546,43 @@ static void audio_recv(struct bt_bap_stream *stream,
 	}
 
 	(void)memcpy(&sh_stream->last_info, info, sizeof(sh_stream->last_info));
+
+#if defined(CONFIG_LIBLC3)
+	if (sh_stream->lc3_decoder != NULL) {
+		const uint8_t frame_blocks_per_sdu = sh_stream->lc3_frame_blocks_per_sdu;
+		const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
+		const uint8_t chan_cnt = sh_stream->lc3_chan_cnt;
+		struct lc3_data *data;
+
+		/* Allocate a context that holds both the buffer and the stream so that we can
+		 * send both of these values to the LC3 decoder thread as a single struct
+		 * in a FIFO
+		 */
+		if (k_mem_slab_alloc(&lc3_data_slab, (void **)&data, K_NO_WAIT)) {
+			shell_warn(ctx_shell, "Could not allocate LC3 data item");
+
+			return;
+		}
+
+		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+			buf->len = 0U; /* Set length to 0 to mark it as invalid for PLC */
+		} else if (buf->len != (octets_per_frame * chan_cnt * frame_blocks_per_sdu)) {
+			if (buf->len != 0U) {
+				shell_error(
+					ctx_shell,
+					"Expected %u frame blocks with %u channels of size %u, but "
+					"length is %u",
+					frame_blocks_per_sdu, chan_cnt, octets_per_frame, buf->len);
+				buf->len = 0U; /* Set length to 0 to mark it as invalid for PLC */
+			}
+		}
+
+		data->buf = net_buf_ref(buf);
+		data->sh_stream = sh_stream;
+
+		k_fifo_put(&lc3_in_fifo, data);
+	}
+#endif /* CONFIG_LIBLC3 */
 }
 #endif /* CONFIG_BT_AUDIO_RX */
 
@@ -2421,69 +2625,47 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 }
 #endif /* CONFIG_BT_BAP_UNICAST */
 
+#if defined(CONFIG_LIBLC3)
+static uint8_t get_chan_cnt(enum bt_audio_location chan_allocation)
+{
+	uint8_t cnt = 0U;
+
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		return 1;
+	}
+
+	while (chan_allocation != 0) {
+		cnt += chan_allocation & 1U;
+		chan_allocation >>= 1;
+	}
+
+	return cnt;
+}
+#endif /* CONFIG_LIBLC3 */
+
 static void stream_started_cb(struct bt_bap_stream *bap_stream)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(bap_stream);
 
-#if defined(CONFIG_BT_AUDIO_TX)
-	sh_stream->connected_at_ticks = k_uptime_ticks();
-#if defined(CONFIG_LIBLC3)
-	atomic_set(&sh_stream->lc3_enqueue_cnt, PRIME_COUNT);
-	sh_stream->lc3_sdu_cnt = 0U;
-#endif /* CONFIG_LIBLC3 */
-#endif /* CONFIG_BT_AUDIO_TX */
-
 	printk("Stream %p started\n", bap_stream);
 
-#if defined(CONFIG_BT_AUDIO_RX)
-	sh_stream->empty_sdu_pkts = 0U;
-	sh_stream->lost_pkts = 0U;
-	sh_stream->err_pkts = 0U;
-	sh_stream->dup_psn = 0U;
-	sh_stream->rx_cnt = 0U;
-	sh_stream->dup_ts = 0U;
-#endif
-}
-
-static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
-{
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
-
-#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
-	clear_lc3_sine_data(stream);
-#endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX*/
-
-#if defined(CONFIG_BT_BAP_BROADCAST_SINK)
-	struct shell_stream *sh_stream = shell_stream_from_bap_stream(stream);
-
-	if (IS_ARRAY_ELEMENT(broadcast_sink_streams, sh_stream)) {
-		if (default_broadcast_sink.stream_cnt != 0) {
-			default_broadcast_sink.stream_cnt--;
-		}
-
-		if (default_broadcast_sink.stream_cnt == 0) {
-			/* All streams in the broadcast sink has been terminated */
-			default_broadcast_sink.syncable = true;
-			memset(&default_broadcast_sink.received_base, 0,
-			       sizeof(default_broadcast_sink.received_base));
-			default_broadcast_sink.broadcast_id = 0;
-			default_broadcast_sink.syncable = false;
-		}
-	}
-#endif /* CONFIG_BT_BAP_BROADCAST_SINK */
-}
-
-#if defined(CONFIG_BT_BAP_UNICAST)
-static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_audio_codec_qos_pref *pref)
-{
 #if defined(CONFIG_LIBLC3)
-	if (stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
-		struct shell_stream *sh_stream = shell_stream_from_bap_stream(stream);
+	const struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
+
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		struct bt_bap_ep_info info = {0};
 		int ret;
 
-		ret = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
-		if (ret > 0) {
+		ret = bt_bap_ep_get_info(bap_stream->ep, &info);
+		if (ret != 0) {
+			shell_error(ctx_shell, "Failed to get EP info: %d", ret);
+		}
+
+		atomic_set(&sh_stream->lc3_enqueue_cnt, PRIME_COUNT);
+		sh_stream->lc3_sdu_cnt = 0U;
+
+		ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+		if (ret >= 0) {
 			ret = bt_audio_codec_cfg_freq_to_freq_hz(ret);
 
 			if (ret > 0) {
@@ -2504,8 +2686,8 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 			sh_stream->lc3_freq_hz = 0U;
 		}
 
-		ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
-		if (ret > 0) {
+		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+		if (ret >= 0) {
 			ret = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
 			if (ret > 0) {
 				sh_stream->lc3_frame_duration_us = (uint32_t)ret;
@@ -2518,24 +2700,96 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 			sh_stream->lc3_frame_duration_us = 0U;
 		}
 
-		ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
-		if (ret > 0) {
-			sh_stream->lc3_frames_per_sdu = (uint8_t)ret;
+		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg,
+							     &sh_stream->lc3_chan_allocation);
+		if (ret == 0) {
+			sh_stream->lc3_chan_cnt = get_chan_cnt(sh_stream->lc3_chan_allocation);
 		} else {
-			shell_error(ctx_shell, "Could not get frame blocks per SDU: %d", ret);
-			sh_stream->lc3_frames_per_sdu = 0U;
+			shell_error(ctx_shell, "Could not get channel allocation: %d", ret);
+			sh_stream->lc3_chan_allocation = BT_AUDIO_LOCATION_MONO_AUDIO;
+			sh_stream->lc3_chan_cnt = 1U;
 		}
 
-		ret = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
-		if (ret > 0) {
+		ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
+		if (ret >= 0) {
+			sh_stream->lc3_frame_blocks_per_sdu = (uint8_t)ret;
+		} else {
+			shell_error(ctx_shell, "Could not get frame blocks per SDU: %d", ret);
+			sh_stream->lc3_frame_blocks_per_sdu = 0U;
+		}
+
+		ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+		if (ret >= 0) {
 			sh_stream->lc3_octets_per_frame = (uint16_t)ret;
 		} else {
 			shell_error(ctx_shell, "Could not get octets per frame: %d", ret);
 			sh_stream->lc3_octets_per_frame = 0U;
 		}
+
+#if defined(CONFIG_BT_AUDIO_RX)
+		if (info.can_recv) {
+			if (sh_stream->lc3_decoder == NULL) {
+				const int err = init_lc3_decoder(sh_stream);
+
+				if (err != 0) {
+					shell_error(ctx_shell, "Failed to init the LC3 decoder: %d",
+						    err);
+
+					return;
+				}
+			}
+
+			sh_stream->decoded_cnt = 0U;
+#endif /* CONFIG_BT_AUDIO_RX */
+		}
 	}
 #endif /* CONFIG_LIBLC3 */
 
+#if defined(CONFIG_BT_AUDIO_TX)
+	sh_stream->connected_at_ticks = k_uptime_ticks();
+#endif /* CONFIG_BT_AUDIO_TX */
+
+#if defined(CONFIG_BT_AUDIO_RX)
+	sh_stream->empty_sdu_pkts = 0U;
+	sh_stream->lost_pkts = 0U;
+	sh_stream->err_pkts = 0U;
+	sh_stream->dup_psn = 0U;
+	sh_stream->rx_cnt = 0U;
+	sh_stream->dup_ts = 0U;
+#endif
+}
+
+static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
+{
+	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+
+#if defined(CONFIG_LIBLC3)
+	lc3_clear_stream(shell_stream_from_bap_stream(stream));
+#endif /* CONFIG_LIBLC3 */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SINK)
+	struct shell_stream *sh_stream = shell_stream_from_bap_stream(stream);
+
+	if (IS_ARRAY_ELEMENT(broadcast_sink_streams, sh_stream)) {
+		if (default_broadcast_sink.stream_cnt != 0) {
+			default_broadcast_sink.stream_cnt--;
+		}
+
+		if (default_broadcast_sink.stream_cnt == 0) {
+			/* All streams in the broadcast sink has been terminated */
+			memset(&default_broadcast_sink.received_base, 0,
+			       sizeof(default_broadcast_sink.received_base));
+			default_broadcast_sink.broadcast_id = 0;
+			default_broadcast_sink.syncable = false;
+		}
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SINK */
+}
+
+#if defined(CONFIG_BT_BAP_UNICAST)
+static void stream_configured_cb(struct bt_bap_stream *stream,
+				 const struct bt_audio_codec_qos_pref *pref)
+{
 	shell_print(ctx_shell, "Stream %p configured\n", stream);
 }
 
@@ -2580,10 +2834,9 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
-	/* stop sending */
-	clear_lc3_sine_data(stream);
-#endif /* CONFIG_LIBLC3 && defined(CONFIG_BT_AUDIO_TX) */
+#if defined(CONFIG_LIBLC3)
+	lc3_clear_stream(shell_stream_from_bap_stream(stream));
+#endif /* CONFIG_LIBLC3 */
 }
 #endif /* CONFIG_BT_BAP_UNICAST */
 
@@ -3159,6 +3412,18 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 			bap_stream_from_shell_stream(&broadcast_source_streams[i]), &stream_ops);
 	}
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_RX)
+	static K_KERNEL_STACK_DEFINE(lc3_decoder_thread_stack, 4096);
+	/* make it slightly lower priority than the RX thread */
+	int lc3_decoder_thread_prio = K_PRIO_COOP(CONFIG_BT_RX_PRIO + 1);
+	static struct k_thread lc3_decoder_thread;
+
+	k_thread_create(&lc3_decoder_thread, lc3_decoder_thread_stack,
+			K_KERNEL_STACK_SIZEOF(lc3_decoder_thread_stack), lc3_decoder_thread_func,
+			NULL, NULL, NULL, lc3_decoder_thread_prio, 0, K_NO_WAIT);
+	k_thread_name_set(&lc3_decoder_thread, "LC3 Decode");
+#endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_RX */
 
 	initialized = true;
 
