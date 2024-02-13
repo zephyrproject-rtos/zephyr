@@ -10,6 +10,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_emul.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
@@ -59,6 +60,8 @@ struct dma_emul_config {
 };
 
 struct dma_emul_data {
+	dma_emul_backend_t backend;
+	void *user_data;
 	struct dma_context dma_ctx;
 	atomic_t *channels_atomic;
 	struct k_spinlock lock;
@@ -90,6 +93,39 @@ static inline const char *const dma_emul_channel_state_to_string(enum dma_emul_c
 		return "(invalid)";
 	};
 }
+
+static int dma_emul_backend_memcpy(const struct device *dev, void *user_data, uint64_t dst,
+				   uint64_t src, size_t size)
+{
+	memcpy((void *)dst, (const void *)src, size);
+
+	return 0;
+}
+
+int z_impl_dma_emul_set_backend(const struct device *dev, dma_emul_backend_t backend,
+				void *user_data)
+{
+	struct dma_emul_data *data;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(backend != NULL);
+
+	data = dev->data;
+	__ASSERT_NO_MSG(data != NULL);
+	data->backend = backend;
+	data->user_data = user_data;
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_dma_emul_set_backend(const struct device *dev, dma_emul_backend_t backend,
+				void *user_data)
+{
+	return z_impl_dma_emul_set_backend(dev, backend, user_data);
+}
+#include <syscalls/dma_emul_set_backend.c>
+#endif
 
 /*
  * Repurpose the "_reserved" field for keeping track of internal
@@ -197,7 +233,9 @@ static void dma_emul_work_handler(struct k_work *work)
 {
 	size_t i;
 	size_t bytes;
+	void *user_data;
 	uint32_t channel;
+	dma_emul_backend_t backend;
 	struct dma_block_config block;
 	struct dma_config xfer_config;
 	enum dma_emul_channel_state state;
@@ -243,6 +281,8 @@ static void dma_emul_work_handler(struct k_work *work)
 
 				K_SPINLOCK(&data->lock) {
 					state = dma_emul_get_channel_state(dev, channel);
+					backend = data->backend;
+					user_data = data->user_data;
 				}
 
 				if (state == DMA_EMUL_CHANNEL_STOPPED) {
@@ -259,12 +299,8 @@ static void dma_emul_work_handler(struct k_work *work)
 
 				__ASSERT_NO_MSG(state == DMA_EMUL_CHANNEL_STARTED);
 
-				/*
-				 * FIXME: create a backend API (memcpy, TCP/UDP socket, etc)
-				 * Simple copy for now
-				 */
-				memcpy((void *)(uintptr_t)block.dest_address,
-				       (void *)(uintptr_t)block.source_address, bytes);
+				backend(dev, user_data, (uint64_t)block.dest_address,
+					(uint64_t)block.source_address, bytes);
 			}
 		}
 
@@ -603,6 +639,7 @@ static int dma_emul_init(const struct device *dev)
 			     DT_INST_PROP_OR(_inst, dma_channels, 0));                             \
                                                                                                    \
 	static struct dma_emul_data dma_emul_data_##_inst = {                                      \
+		.backend = dma_emul_backend_memcpy,                                                \
 		.channels_atomic = dma_emul_channels_atomic_##_inst,                               \
 	};                                                                                         \
                                                                                                    \
