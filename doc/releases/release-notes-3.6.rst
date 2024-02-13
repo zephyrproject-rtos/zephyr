@@ -464,6 +464,21 @@ Libraries / Subsystems
     default command groups at runtime, allowing an application to support multiple implementations
     for the same command group.
 
+  * Fixed an issue in MCUmgr FS management whereby the semaphore lock would not be given if an
+    error was returned, leading to a possible deadlock.
+
+  * Added support for custom payload MCUmgr handlers, this can be enabled with
+    :kconfig:option:`CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD`.
+
+  * Fixed an issue in MCUmgr image management whereby an error would be returned if a command was
+    sent to erase the slot which was already erased.
+
+  * Added support for image slot size checking to ensure an update can be utilised by MCUboot,
+    this can be performed by using sysbuild when building both application and MCUboot by enabling
+    :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD` or by use of bootloader information
+    sharing from MCUboot by enabling
+    :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO`.
+
 * File systems
 
 * Modem modules
