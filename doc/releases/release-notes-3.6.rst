@@ -92,6 +92,9 @@ Boards & SoC Support
 
   * Added support for Wiznet W5500 Evaluation Pico board: ``w5500_evb_pico``
 
+  * Added support for ADI boards: ``adi_sdp_k1``, ``adi_eval_adin1110ebz``,
+    ``adi_eval_adin2111ebz``
+
 * Added support for these ARM64 boards:
 
 * Added support for these RISC-V boards:
