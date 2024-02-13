@@ -8,8 +8,7 @@ Overview
 
 The TLSR9258A Generic Starter Kit is a hardware platform which
 can be used to verify the `Telink TLSR9 series chipset`_ and develop applications
-for several 2.4 GHz air interface standards including Bluetooth 5.2 (Basic data
-rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
+for several 2.4 GHz air interface standards including Bluetooth low energy,
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
 .. figure:: img/tlsr9258a.jpg
@@ -21,11 +20,12 @@ More information about the board can be found at the `Telink B95 Generic Starter
 Hardware
 ********
 
-The TLSR9258A SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 512
-KB SRAM (256 KB of Data Local Memory and 256 KB of Instruction Local Memory first 96 KB of this memory
-supports retention feature), external Flash memory, stereo audio codec, 14 bit AUX ADC,
-analog and digital Microphone input, PWM, flexible IO interfaces, and other peripheral blocks required
-for advanced IoT, hearable, and wearable devices.
+TLSR9258A is a single chip SoC for Bluetooth low energy and 802.15.4. The embedded 2.4GHz transceiver
+supports Bluetooth low energy, 802.15.4 as well as 2.4GHz proprietary operation. The TLSR9258 integrates a
+powerful 32-bit RISC-V MCU, 512KB SRAM including at least 256KB retention SRAM, up to 4MB embedded
+and up to 16MB external flash, 12-bit ADC, PWM, flexible IO interfaces, and other peripheral blocks. The
+TLSR9258 supports standards and industrial alliance specifications including Bluetooth LE, Zigbee, Thread,
+Matter, 2.4GHz proprietary standard.
 
 .. figure:: img/tlsr9258a_block_diagram.jpg
      :align: center
@@ -36,12 +36,13 @@ The TLSR9258A default board configuration provides the following hardware compon
 - RF conducted antenna
 - 1 MB External SPI Flash memory with reset button. (Possible to mount 1/2/4 MB)
 - Chip reset button
-- Mini USB interface
+- USB type-C interface
 - 4-wire JTAG
-- 4 LEDs, Key matrix up to 4 keys
-- 2 line-in function (Dual Analog microphone supported when switching jumper from microphone path)
+- Key matrix up to 4 keys
+- 4 LEDs
+- 1 infra-red LED
+- 1 analogue microphone with line-in function (switching by a jumper in microphone path)
 - Dual Digital microphone
-- Stereo line-out
 
 Supported Features
 ==================
@@ -84,13 +85,9 @@ The Zephyr TLSR9258A board configuration supports the following hardware feature
 | PKE            | on-chip    | mbedtls                      |
 +----------------+------------+------------------------------+
 
-Board supports power-down modes: suspend and deep-sleep. For deep-sleep mode only 96KB of retention memory is available.
-Board supports HW cryptography acceleration (AES and ECC till 256 bits). MbedTLS interface is used as cryptography front-end.
-
-.. note::
-   To support "button" example project PD6-KEY3 (J5-13, J5-14) jumper needs to be removed and KEY3 (J5-13) should be connected to GND (J3-30) externally.
-
-   For the rest example projects use the default jumpers configuration.
+Board includes power management module: Embedded LDO and DCDC, Battery monitor for low battery voltage detection,
+Brownout detection/shutdown and Power-On-Reset, Deep sleep with external wakeup (without SRAM retention),
+Deep sleep with RTC and SRAM retention (32 KB SRAM retention).
 
 Limitations
 -----------
@@ -134,14 +131,13 @@ PINs Configuration
 The TLSR9258A SoC has five GPIO controllers (PORT_A to PORT_F), and the next are
 currently enabled:
 
-- LED0 (blue): PD0, LED1 (green): PD1, LED2 (white): PE6, LED3 (red): PE7
-- Key Matrix SW2: PD2_PD6, SW3: PD2_PF6, SW4: PD7_PD6, SW5: PD7_PF6
+- LED0 (blue): PC0, LED1 (green): PC2, LED2 (white): PC3, LED3 (red): PC1
+- Key Matrix SW3: PD4_PD5, SW4: PD4_PD7, SW5: PD6_PD5, SW6: PD6_PD7
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 ``boards/riscv/tlsr9258a/tlsr9258a-common.dtsi`` file:
 
 - UART0 TX: PB2, RX: PB3
-- UART1 TX: PC6, RX: PC7
 - PWM Channel 0: PD0
 - LSPI CLK: PE1, MISO: PE3, MOSI: PE2
 - GSPI CLK: PA2, MISO: PA3, MOSI: PA4
@@ -150,7 +146,7 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 Serial Port
 -----------
 
-The TLSR9258A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
+The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 Programming and debugging
