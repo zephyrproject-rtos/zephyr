@@ -168,7 +168,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Get the first CIS */
 	cis_handle_curr = UINT16_MAX;
 	do {
-		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle_curr);
+		cis_lll = ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll, &cis_handle_curr);
 	} while (cis_lll && !cis_lll->active);
 
 	LL_ASSERT(cis_lll);
@@ -373,7 +373,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		} while (link);
 
 		do {
-			cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+			cis_lll = ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll, &cis_handle);
 		} while (cis_lll && !cis_lll->active);
 
 		if (!cis_lll) {
@@ -418,7 +418,8 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 		/* Adjust the SN, NESN and payload_count on abort for CISes  */
 		do {
-			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
+			next_cis_lll =
+				ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll,
 									    &cis_handle_curr);
 			if (next_cis_lll && next_cis_lll->active) {
 				payload_count_rx_flush_or_txrx_inc(next_cis_lll);
@@ -765,7 +766,8 @@ static void isr_rx(void *param)
 		cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 		cis_handle = cis_handle_curr;
 		do {
-			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+			next_cis_lll =
+				ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll, &cis_handle);
 		} while (next_cis_lll && !next_cis_lll->active);
 
 		if (!next_cis_lll) {
@@ -966,7 +968,7 @@ static void next_cis_prepare(void *param)
 	next_cis_lll = cis_lll;
 	cis_handle = cis_handle_curr;
 	do {
-		next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+		next_cis_lll = ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll, &cis_handle);
 	} while (next_cis_lll && !next_cis_lll->active);
 
 	if (!next_cis_lll) {
