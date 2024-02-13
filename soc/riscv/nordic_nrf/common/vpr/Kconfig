@@ -5,7 +5,7 @@ config RISCV_CORE_NORDIC_VPR
 	bool "RISC-V Nordic VPR core"
 	default y
 	depends on DT_HAS_NORDIC_VPR_ENABLED
-	depends on RISCV
+	select RISCV
 	select ATOMIC_OPERATIONS_C
 	select RISCV_ISA_RV32E
 	select RISCV_ISA_EXT_M
