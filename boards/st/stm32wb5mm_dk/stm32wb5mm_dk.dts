@@ -9,6 +9,7 @@
 #include <st/wb/stm32wb55vgyx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/sensor/ism330dhcx.h>
 
 / {
 	model = "STMicroelectronics STM32WB5MM Discovery Development Kit";
@@ -56,6 +57,7 @@
 		led-strip = &rgb_led_strip;
 		sw0 = &button0;
 		sw1 = &button1;
+		accel0 = &ism330dhcx;
 	};
 };
 
@@ -184,6 +186,14 @@ zephyr_udc0: &usb {
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
 		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+	};
+
+	ism330dhcx: ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+		accel-odr= <ISM330DHCX_DT_ODR_52Hz>;
+		gyro-odr= <ISM330DHCX_DT_ODR_26H>;
 	};
 };
 
