@@ -1493,6 +1493,28 @@ static inline void iface_ipv6_nd_init(void)
 #define iface_ipv6_nd_init(...)
 #endif /* CONFIG_NET_IPV6_ND */
 
+#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
+
+void net_if_nbr_reachability_hint(struct net_if *iface, const struct in6_addr *ipv6_addr)
+{
+	net_if_lock(iface);
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	net_ipv6_nbr_reachability_hint(iface, ipv6_addr);
+
+out:
+	net_if_unlock(iface);
+}
+
+#endif
+
 struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 					    struct net_if **ret)
 {
