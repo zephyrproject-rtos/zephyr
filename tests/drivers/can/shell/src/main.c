@@ -572,7 +572,7 @@ static void can_shell_test_recover(const char *cmd, k_timeout_t expected)
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int err;
 
-	Z_TEST_SKIP_IFDEF(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY);
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_MANUAL_RECOVERY_MODE);
 
 	err = shell_execute_cmd(sh, cmd);
 	zassert_ok(err, "failed to execute shell command (err %d)", err);

@@ -373,21 +373,6 @@ static int can_native_linux_get_state(const struct device *dev, enum can_state *
 	return 0;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int can_native_linux_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct can_native_linux_data *data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
-
 static void can_native_linux_set_state_change_callback(const struct device *dev,
 						       can_state_change_callback_t cb,
 						       void *user_data)
@@ -422,9 +407,6 @@ static const struct can_driver_api can_native_linux_driver_api = {
 	.add_rx_filter = can_native_linux_add_rx_filter,
 	.remove_rx_filter = can_native_linux_remove_rx_filter,
 	.get_state = can_native_linux_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_native_linux_recover,
-#endif
 	.set_state_change_callback = can_native_linux_set_state_change_callback,
 	.get_core_clock = can_native_linux_get_core_clock,
 	.get_max_filters = can_native_linux_get_max_filters,
