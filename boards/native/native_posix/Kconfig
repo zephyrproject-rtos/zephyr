@@ -5,6 +5,25 @@ config BOARD_NATIVE_POSIX
 	imply NATIVE_POSIX_TIMER
 	select POSIX_ARCH_CONSOLE
 	select NATIVE_APPLICATION
+	help
+	  Native POSIX - 32 bit version
+	  Will produce a console Linux process which can be executed natively
+	  as a 32-bit executable.
+	  It provides some minimal needed models:
+	  An interrupt controller, timer (system tick), and redirects kernel prints to
+	  stdout.
+
+config BOARD_NATIVE_POSIX_64
+	bool
+	select BOARD_NATIVE_POSIX
+	select 64BIT
+	help
+	  Native POSIX - 64 bit version
+	  Will produce a console Linux process which can be executed natively
+	  as a 64-bit executable.
+	  It provides some minimal needed models:
+	  An interrupt controller, timer (system tick), and redirects kernel prints to
+	  stdout.
 
 if BOARD_NATIVE_POSIX
 
@@ -22,6 +41,6 @@ config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	  case the zephyr kernel and application cannot tell the difference unless they
 	  interact with some other driver/device which runs at real time.
 
-source "boards/boards_legacy/$(ARCH)/common/sdl/Kconfig"
+source "boards/native/common/sdl/Kconfig"
 
 endif # BOARD_NATIVE_POSIX
