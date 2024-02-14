@@ -96,8 +96,8 @@ struct modem_cellular_data {
 	/* Modem chat */
 	struct modem_chat chat;
 	uint8_t chat_receive_buf[128];
-	uint8_t chat_delimiter[1];
-	uint8_t chat_filter[1];
+	uint8_t *chat_delimiter;
+	uint8_t *chat_filter;
 	uint8_t *chat_argv[32];
 
 	/* Status */
@@ -424,9 +424,9 @@ MODEM_CHAT_MATCH_DEFINE(imei_match, "", "", modem_cellular_chat_on_imei);
 MODEM_CHAT_MATCH_DEFINE(cgmm_match, "", "", modem_cellular_chat_on_cgmm);
 MODEM_CHAT_MATCH_DEFINE(csq_match, "+CSQ: ", ",", modem_cellular_chat_on_csq);
 MODEM_CHAT_MATCH_DEFINE(cesq_match, "+CESQ: ", ",", modem_cellular_chat_on_cesq);
-MODEM_CHAT_MATCH_DEFINE(cimi_match, "", "", modem_cellular_chat_on_imsi);
-MODEM_CHAT_MATCH_DEFINE(cgmi_match, "", "", modem_cellular_chat_on_cgmi);
-MODEM_CHAT_MATCH_DEFINE(cgmr_match, "", "", modem_cellular_chat_on_cgmr);
+MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused, "", "", modem_cellular_chat_on_imsi);
+MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused, "", "", modem_cellular_chat_on_cgmi);
+MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_on_cgmr);
 
 MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 			  MODEM_CHAT_MATCH("+CREG: ", ",", modem_cellular_chat_on_cxreg),
@@ -1513,9 +1513,9 @@ static int modem_cellular_init(const struct device *dev)
 			.receive_buf = data->chat_receive_buf,
 			.receive_buf_size = ARRAY_SIZE(data->chat_receive_buf),
 			.delimiter = data->chat_delimiter,
-			.delimiter_size = ARRAY_SIZE(data->chat_delimiter),
+			.delimiter_size = strlen(data->chat_delimiter),
 			.filter = data->chat_filter,
-			.filter_size = ARRAY_SIZE(data->chat_filter),
+			.filter_size = strlen(data->chat_filter),
 			.argv = data->chat_argv,
 			.argv_size = ARRAY_SIZE(data->chat_argv),
 			.unsol_matches = unsol_matches,
@@ -1939,8 +1939,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
@@ -1968,8 +1968,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
@@ -1997,8 +1997,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
@@ -2026,8 +2026,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
@@ -2055,8 +2055,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
@@ -2084,8 +2084,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
@@ -2114,8 +2114,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
@@ -2143,8 +2143,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = {'\r'},                                                          \
-		.chat_filter = {'\n'},                                                             \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
