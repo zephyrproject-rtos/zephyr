@@ -1,6 +1,7 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NATIVE_POSIX
+if BOARD_NATIVE_SIM
 
 config BUILD_OUTPUT_BIN
 	default n
@@ -10,10 +11,6 @@ config BUILD_OUTPUT_EXE
 
 config OUTPUT_PRINT_MEMORY_USAGE
 	default n
-
-config BOARD
-	default "native_posix_64" if BOARD_NATIVE_POSIX_64BIT
-	default "native_posix"
 
 if NETWORKING
 
@@ -32,7 +29,7 @@ endchoice
 
 if LOG
 
-# For native_posix we can log synchronously without any problem
+# For native_sim we can log synchronously without any problem
 # Doing so will be nicer for debugging
 choice LOG_MODE
 	default LOG_MODE_IMMEDIATE
@@ -69,4 +66,4 @@ config EMUL
 
 endif # I2C
 
-endif # BOARD_NATIVE_POSIX
+endif # BOARD_NATIVE_SIM
