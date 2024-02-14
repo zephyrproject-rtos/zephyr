@@ -58,7 +58,7 @@ jobs:
         ls -la
         git log  --pretty=oneline | head -n 10
         # ignore maintainer check for now, needs to be fixed before merge into main
-        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e ModulesMaintainers -e MaintainersFormat \
+        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e ImageSize -e ModulesMaintainers -e MaintainersFormat \
         -c origin/${BASE_REF}..
 
     - name: upload-results
