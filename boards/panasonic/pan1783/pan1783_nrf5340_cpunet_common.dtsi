@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "pan1783_cpunet-pinctrl.dtsi"
+#include "pan1783_nrf5340_cpunet-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -204,4 +204,4 @@ arduino_spi: &spi0 {
 };
 
 /* Include shared RAM configuration file */
-#include "pan1783_shared_sram_planning_conf.dtsi"
+#include "pan1783_nrf5340_shared_sram_planning_conf.dtsi"

@@ -1,5 +1,5 @@
-identifier: pan1783_evb_cpunet
-name: PAN1783-EVB-network-MCU
+identifier: pan1783a_evb/nrf5340/cpunet
+name: PAN1783A-EVB-network-MCU
 type: mcu
 arch: arm
 toolchain:
