@@ -27,8 +27,8 @@ flash and RAM as well as a more powerful CPU design. ZERO-RISCY is a
 coprocessor for applications running on RI5CY. The two cores can
 communicate via shared memory and messaging peripherals.
 
-Currently, Zephyr supports RI5CY with the ``rv32m1_vega_ri5cy`` board
-configuration name, and ZERO_RISCY with the ``rv32m1_vega_zero_riscy`` board
+Currently, Zephyr supports RI5CY with the ``rv32m1_vega/openisa_rv32m1/ri5cy`` board
+configuration name, and ZERO_RISCY with the ``rv32m1_vega/openisa_rv32m1/zero_riscy`` board
 configuration name.
 
 Hardware
@@ -68,7 +68,7 @@ Additional features:
 Supported Features
 ==================
 
-Zephyr's RI5CY configuration, ``rv32m1_vega_ri5cy``, currently supports
+Zephyr's RI5CY configuration, ``rv32m1_vega/openisa_rv32m1/ri5cy``, currently supports
 the following hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -96,7 +96,7 @@ the following hardware features:
 |           |            | fxos8700 trigger;                   |
 +-----------+------------+-------------------------------------+
 
-Zephyr's ZERO-RISCY configuration, ``rv32m1_vega_zero_riscy``, currently
+Zephyr's ZERO-RISCY configuration, ``rv32m1_vega/openisa_rv32m1/zero_riscy``, currently
 supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -125,7 +125,7 @@ supports the following hardware features:
 BLE Software Link Layer experimental support
 ==================================================
 This is an experimental feature supported on the Zephyr's RI5CY
-configuration, ``rv32m1_vega_ri5cy``. It  uses the Software Link Layer
+configuration, ``rv32m1_vega/openisa_rv32m1/ri5cy``. It  uses the Software Link Layer
 framework by Nordic Semi to enable the on-SoC radio and transceiver for
 implementing a software defined BLE controller. By using both the controller
 and the host stack available in Zephyr, the following BLE samples can be used
@@ -313,8 +313,8 @@ Additional Pins
 For an up-to-date description of additional pins (such as buttons,
 LEDs, etc.) supported by Zephyr, see the board DTS files in the Zephyr
 source code, i.e.
-:zephyr_file:`boards/riscv/rv32m1_vega/rv32m1_vega_ri5cy.dts` for RI5CY and
-:zephyr_file:`boards/riscv/rv32m1_vega/rv32m1_vega_zero_riscy.dts` for
+:zephyr_file:`boards/openisa/rv32m1_vega/rv32m1_vega_openisa_rv32m1_ri5cy.dts` for RI5CY and
+:zephyr_file:`boards/openisa/rv32m1_vega/rv32m1_vega_openisa_rv32m1_zero_riscy.dts` for
 ZERO-RISCY.
 
 See the schematic in the documentation available from the `OpenISA
@@ -494,13 +494,13 @@ first make sure you're booting the right core.
 
 1. In one terminal, use OpenOCD to connect to the board::
 
-     ~/rv32m1-openocd -f boards/riscv/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
+     ~/rv32m1-openocd -f boards/openisa/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
 
    The output should look like this:
 
    .. code-block:: console
 
-      $ ~/rv32m1-openocd -f boards/riscv/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
+      $ ~/rv32m1-openocd -f boards/openisa/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
       Open On-Chip Debugger 0.10.0+dev-00431-ge1ec3c7d (2018-10-31-07:29)
       [...]
       Info : Listening on port 3333 for gdb connections
@@ -537,7 +537,7 @@ first make sure you're booting the right core.
 
 In one cmd.exe prompt in the Zephyr directory::
 
- C:\rv32m1-openocd\bin\openocd.exe rv32m1-openocd -f boards\riscv32\rv32m1_vega\support\openocd_rv32m1_vega_ri5cy.cfg
+ C:\rv32m1-openocd\bin\openocd.exe rv32m1-openocd -f boards\openisa\rv32m1_vega\support\openocd_rv32m1_vega_ri5cy.cfg
 
 In a telnet program of your choice:
 
@@ -596,7 +596,7 @@ Linux and macOS (run this in a terminal from the Zephyr directory)::
    :zephyr-app: samples/hello_world
    :tool: cmake
    :cd-into:
-   :board: rv32m1_vega_ri5cy
+   :board: rv32m1_vega/openisa_rv32m1/ri5cy
    :gen-args: -DCMAKE_REQUIRED_FLAGS=-Wl,-dT=/dev/null
    :goals: build
 
@@ -609,7 +609,7 @@ Windows (run this in a ``cmd`` prompt, from the Zephyr directory)::
 
   # Use CMake to generate a Ninja-based build system:
   type NUL > empty.ld
-  cmake -GNinja -DBOARD=rv32m1_vega_ri5cy -DCMAKE_REQUIRED_FLAGS=-Wl,-dT=%cd%\empty.ld ..
+  cmake -GNinja -DBOARD=rv32m1_vega/openisa_rv32m1/ri5cy -DCMAKE_REQUIRED_FLAGS=-Wl,-dT=%cd%\empty.ld ..
 
   # Build the sample
   ninja
