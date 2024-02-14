@@ -604,6 +604,11 @@ _Level\LVL\()Vector:
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 
+#ifdef CONFIG_ADSP_IDLE_CLOCK_GATING
+	/* Needed when waking from low-power waiti state */
+	isync
+#endif
+
 	/* Level "1" is the exception handler, which uses a different
 	 * calling convention.  No special register holds the
 	 * interrupted PS, instead we just assume that the CPU has
