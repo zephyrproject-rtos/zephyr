@@ -1206,6 +1206,52 @@ int lwm2m_engine_set_time(const char *pathstr, time_t value);
 int lwm2m_set_time(const struct lwm2m_obj_path *path, time_t value);
 
 /**
+ * @brief LwM2M resource item structure
+ *
+ * Value type must match the target resource as no type conversion are
+ * done and the value is just memcopied.
+ *
+ * Following C types are used for resource types:
+ * * BOOL is uint8_t
+ * * U8 is uint8_t
+ * * S8 is int8_t
+ * * U16 is uint16_t
+ * * S16 is int16_t
+ * * U32 is uint32_t
+ * * S32 is int32_t
+ * * S64 is int64_t
+ * * TIME is time_t
+ * * FLOAT is double
+ * * OBJLNK is struct lwm2m_objlnk
+ * * STRING is char * and the null-terminator should be included in the size.
+ * * OPAQUE is any binary data. When null-terminated string is written in OPAQUE
+ *   resource, the terminator should not be included in size.
+ *
+ */
+struct lwm2m_res_item {
+	/** Pointer to LwM2M path as a struct */
+	struct lwm2m_obj_path *path;
+	/** Pointer to resource value */
+	void *value;
+	/** Size of the value. For string resources, it should contain the null-terminator. */
+	uint16_t size;
+};
+
+/**
+ * @brief Set multiple resource (instance) values
+ *
+ * NOTE: Value type must match the target resource as this function
+ * does not do any type conversion.
+ * See struct @ref lwm2m_res_item for list of resource types.
+ *
+ * @param[in] res_list LwM2M resource item list
+ * @param[in] res_list_size Length of resource list
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_bulk(const struct lwm2m_res_item res_list[], size_t res_list_size);
+
+/**
  * @brief Get resource (instance) value (opaque buffer)
  *
  * @deprecated Use lwm2m_get_opaque() instead.

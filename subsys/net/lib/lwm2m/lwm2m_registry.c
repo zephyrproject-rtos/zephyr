@@ -2332,3 +2332,22 @@ size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry)
 	return 0;
 #endif
 }
+
+int lwm2m_set_bulk(const struct lwm2m_res_item res_list[], size_t res_list_size)
+{
+	int ret;
+
+	k_mutex_lock(&registry_lock, K_FOREVER);
+	for (int i = 0; i < res_list_size; i++) {
+
+		ret = lwm2m_engine_set(res_list[i].path, res_list[i].value, res_list[i].size);
+
+		if (ret) {
+			k_mutex_unlock(&registry_lock);
+			return ret;
+		}
+	}
+	k_mutex_unlock(&registry_lock);
+
+	return 0;
+}
