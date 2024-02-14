@@ -144,7 +144,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 
 	recv_state->num_subgroups = net_buf_simple_pull_u8(&buf);
 	for (int i = 0; i < recv_state->num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup = &recv_state->subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup = &recv_state->subgroups[i];
 		uint8_t *metadata;
 
 		if (buf.len < sizeof(subgroup->bis_sync)) {

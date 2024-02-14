@@ -708,7 +708,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
-			   const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
+			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	const bool bis_synced = k_sem_count_get(&sem_bis_synced) > 0U;
 

@@ -32,8 +32,8 @@ static const uint32_t bis_index_mask = BIT_MASK(CONFIG_BT_BAP_BROADCAST_SNK_STRE
 #define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
 #define PA_SYNC_SKIP              5
-static struct bt_bap_scan_delegator_subgroup
-	delegator_subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+static struct bt_bap_bass_subgroup
+	delegator_subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
 static inline struct btp_bap_broadcast_stream *stream_bap_to_broadcast(struct bt_bap_stream *stream)
 {
@@ -810,8 +810,8 @@ static void btp_send_broadcast_receive_state_ev(struct bt_conn *conn,
 	uint8_t *ptr;
 
 	tester_rsp_buffer_lock();
-	tester_rsp_buffer_allocate(sizeof(*ev) + BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS *
-		sizeof(struct bt_bap_scan_delegator_subgroup), (uint8_t **)&ev);
+	tester_rsp_buffer_allocate(sizeof(*ev) + CONFIG_BT_BAP_BASS_MAX_SUBGROUPS *
+		sizeof(struct bt_bap_bass_subgroup), (uint8_t **)&ev);
 
 	if (conn) {
 		bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
@@ -829,7 +829,7 @@ static void btp_send_broadcast_receive_state_ev(struct bt_conn *conn,
 
 	ptr = ev->subgroups;
 	for (uint8_t i = 0; i < ev->num_subgroups; i++) {
-		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
+		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
 		sys_put_le32(subgroup->bis_sync >> 1, ptr);
 		ptr += sizeof(subgroup->bis_sync);
@@ -954,7 +954,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
-			   const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
+			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	struct btp_bap_broadcast_remote_source *broadcaster;
 	bool bis_synced = false;
@@ -1391,12 +1391,12 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len,
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.broadcast_id = sys_get_le24(cp->broadcast_id);
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
-	param.num_subgroups = MIN(cp->num_subgroups, BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS);
+	param.num_subgroups = MIN(cp->num_subgroups, CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
 	param.subgroups = delegator_subgroups;
 
 	ptr = cp->subgroups;
 	for (uint8_t i = 0; i < param.num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup = &delegator_subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
 		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
@@ -1462,12 +1462,12 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 	param.src_id = cp->src_id;
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
-	param.num_subgroups = MIN(cp->num_subgroups, BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS);
+	param.num_subgroups = MIN(cp->num_subgroups, CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
 	param.subgroups = delegator_subgroups;
 
 	ptr = cp->subgroups;
 	for (uint8_t i = 0; i < param.num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup = &delegator_subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
 		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
