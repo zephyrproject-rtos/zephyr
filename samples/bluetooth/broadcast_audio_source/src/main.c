@@ -171,6 +171,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 
 	if (source_stream->lc3_encoder == NULL) {
 		printk("LC3 encoder not setup, cannot encode data.\n");
+		net_buf_unref(buf);
 		return;
 	}
 
@@ -190,6 +191,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 			 send_pcm_data, 1, octets_per_frame, lc3_encoded_buffer);
 	if (ret == -1) {
 		printk("LC3 encoder failed - wrong parameters?: %d", ret);
+		net_buf_unref(buf);
 		return;
 	}
 
