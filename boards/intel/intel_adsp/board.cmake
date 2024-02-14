@@ -13,7 +13,7 @@ if(CONFIG_BOARD_INTEL_ADSP_CAVS25)
 board_set_rimage_target(tgl)
 endif()
 
-if(CONFIG_BOARD_INTEL_ADSP_CAVS25_CAVS25_TGPH)
+if(CONFIG_BOARD_INTEL_ADSP_CAVS25_TGPH)
 board_set_rimage_target(tgl-h)
 endif()
 
