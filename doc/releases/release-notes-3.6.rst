@@ -95,6 +95,12 @@ Bluetooth
 
   * Added deinit implementation for ESP32 controller.
 
+* HCI Driver
+
+  * Split ST HCI SPI Bluetooth driver from the Zephyr one to provide more features
+    based on ST SPI protocols V1 and V2. As a result, :dtcompatible:`st,hci-spi-v1` and
+    :dtcompatible:`st,hci-spi-v2` were introduced.
+
 Boards & SoC Support
 ********************
 
