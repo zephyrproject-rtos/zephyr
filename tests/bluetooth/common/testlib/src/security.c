@@ -26,6 +26,7 @@ static K_SEM_DEFINE(g_ctx_free, 1, 1);
 static K_MUTEX_DEFINE(g_ctx_lock);
 static struct testlib_security_ctx *g_ctx;
 
+#if defined(CONFIG_BT_SMP)
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
 	LOG_INF("conn %u level %d err %d", bt_conn_index(conn), level, err);
@@ -48,10 +49,13 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	k_mutex_unlock(&g_ctx_lock);
 }
+#endif
 
+#if defined(CONFIG_BT_SMP)
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = security_changed,
 };
+#endif
 
 int bt_testlib_secure(struct bt_conn *conn, bt_security_t new_minimum)
 {
