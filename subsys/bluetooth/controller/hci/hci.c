@@ -7816,7 +7816,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	evt_size = sizeof(*sep) + (lll->num_bis * sizeof(uint16_t));
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED, evt_size);
-	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->big_handle = (uint8_t)node_rx->hdr.handle;
 
 	/* Check for pdu field being aligned before accessing ISO sync
 	 * established event.
