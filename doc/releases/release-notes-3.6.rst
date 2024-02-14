@@ -337,6 +337,32 @@ Drivers and Sensors
   * ``nordic_qspi_nor`` driver now supports user-configurable QSPI timeout with
     :kconfig:option:`CONFIG_NORDIC_QSPI_NOR_TIMEOUT_MS`.
 
+* GNSS
+
+  * Added GNSS device driver API and subsystem for parsing and publishing location,
+    datetime, and satellite information, enabled by
+    :kconfig:option:`CONFIG_GNSS` and :kconfig:option:`CONFIG_GNSS_SATELLITES`.
+    The GNSS subsystem and device drivers are based on the :ref:`modem` subsystem,
+    using the ``modem_pipe`` module, modem backends, and ``modem_chat`` module to
+    communicate with the modems. For systems which already contain a cellular modem,
+    adding a GNSS modem is very efficient due to the reuse of subsystems.
+
+  * Added GNSS specific, safe, string to integer parsing utilities, enabled by
+    :kconfig:option:`CONFIG_GNSS_PARSE`.
+
+  * Added NMEA0183 parsing utilities, enabled by
+    :kconfig:option:`CONFIG_GNSS_NMEA0183`.
+
+  * Added extensive GNSS data logging, enabled by
+    :kconfig:option:`CONFIG_GNSS_DUMP_TO_LOG`.
+
+  * Added generic NMEA0183 over UART based modem device driver, matching the
+    devicetree compatible :dtcompatible:`gnss-nmea-generic`.
+
+  * Added fully featured device driver for the Quectel LCX6G series GNSS modems,
+    matching the devicetree compatibles :dtcompatible:`quectel,lc26g`,
+    :dtcompatible:`quectel,lc76g` and :dtcompatible:`quectel,lc86g`.
+
 * GPIO
 
   * Renesas R-Car GPIO driver now supports Gen4 SoCs
