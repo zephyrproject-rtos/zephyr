@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_POSIX
-	bool "Native port"
-	select ARCH_POSIX
-	select CPU_HAS_FPU
+	bool
 	help
 	  SOC for to the POSIX arch. It emulates a CPU running at an infinitely fast
 	  clock. That means the CPU will always run in zero time until completion after
@@ -13,3 +11,6 @@ config SOC_POSIX
 	  sleep. Therefore do not use busy waits while waiting for something to happen
 	  (if needed use k_busy_wait()).
 	  Note that the interrupt handling is provided by the board.
+
+config SOC
+	default "native" if SOC_POSIX
