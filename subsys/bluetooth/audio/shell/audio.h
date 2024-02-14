@@ -43,8 +43,9 @@ size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
 
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT
 #define CONTEXT                                                                                    \
-	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA |                      \
-	 IS_ENABLED(CONFIG_BT_GMAP) ? BT_AUDIO_CONTEXT_TYPE_GAME : 0U)
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA |                                                             \
+	 COND_CODE_1(IS_ENABLED(CONFIG_BT_GMAP), (BT_AUDIO_CONTEXT_TYPE_GAME), (0)))
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						     const char *preset_arg);
