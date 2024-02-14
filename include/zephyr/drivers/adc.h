@@ -778,11 +778,12 @@ static inline int adc_raw_to_millivolts(int32_t ref_mv,
 					uint8_t resolution,
 					int32_t *valp)
 {
+	int32_t max_value = (1 << resolution) - 1;
 	int32_t adc_mv = *valp * ref_mv;
 	int ret = adc_gain_invert(gain, &adc_mv);
 
 	if (ret == 0) {
-		*valp = (adc_mv >> resolution);
+		*valp = adc_mv / max_value;
 	}
 
 	return ret;
