@@ -65,8 +65,9 @@ find_program(BOSSAC bossac)
 # in the mcuboot repository if that's present in some cases)
 find_program(IMGTOOL imgtool)
 
-# Pick host system's toolchain if we are targeting posix
-if("${ARCH}" STREQUAL "posix" OR "${ARCH}" STREQUAL "unit_testing")
+# Default to the host system's toolchain if we are targeting a host based target
+if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
+   OR ("${BOARD}" STREQUAL "unit_testing"))
   if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
     set(ZEPHYR_TOOLCHAIN_VARIANT "host")
   endif()
