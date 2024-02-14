@@ -9,6 +9,19 @@ We are pleased to announce the release of Zephyr version 3.6.0.
 
 Major enhancements with this release include:
 
+* New :ref:`GNSS subsystem <gnss_api>` added, enabling geo-awareness in Zephyr applications.
+* New API and drivers introduced for interfacing with :ref:`keyboard matrices <gpio-kbd>`.
+* New socket and CoAP service libraries streamlining the implementation of socket and CoAP servers
+  respectively, while also optimizing the use of resources.
+* Integrated Trusted Firmware-M (TF-M) 2.0, including an update to mbedTLS 3.5.2.
+* Improved LLEXT tooling, simplifying module creation in the Zephyr build system.
+* Userspace support extended to Xtensa architecture.
+* Build system now supports Link Time Optimization (LTO), reducing the size of the final image.
+* Bluetooth Mesh Protocol 1.1 now supported by default.
+* Major updates to the documentation of the :ref:`native simulator <native_sim>`, clarifying
+  supported peripherals and how to use them.
+* Over 30 new supported boards, spanning all Zephyr-supported architectures.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.5.0 to Zephyr v3.6.0 can be found in the separate :ref:`migration guide<migration_3.6>`.
 
