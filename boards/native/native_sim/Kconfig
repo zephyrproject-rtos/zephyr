@@ -2,12 +2,24 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NATIVE_SIM
-	bool "Native simulator (Single Core)"
+	bool
 	select POSIX_ARCH_CONSOLE
 	select NATIVE_LIBRARY
 	select NATIVE_POSIX_TIMER
-	depends on SOC_POSIX
 	imply BOARD_NATIVE_POSIX if NATIVE_SIM_NATIVE_POSIX_COMPAT
+	help
+	  Native simulator (Single Core)
+	  Will produce a console Linux process which can be executed natively
+	  as a 32-bit executable.
+
+config BOARD_NATIVE_SIM_64
+	bool
+	select BOARD_NATIVE_SIM
+	select 64BIT
+	help
+	  Native simulator (Single Core) - 64 bit version
+	  Will produce a console Linux process which can be executed natively
+	  as a 64-bit executable.
 
 if BOARD_NATIVE_SIM
 
@@ -45,7 +57,7 @@ config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	  Transitional option which allows applications which targeted native_posix
 	  to set the correct native_sim option (CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
 
-source "boards/boards_legacy/$(ARCH)/common/sdl/Kconfig"
-source "boards/boards_legacy/$(ARCH)/common/extra_args/Kconfig"
+source "boards/native/common/sdl/Kconfig"
+source "boards/native/common/extra_args/Kconfig"
 
 endif # BOARD_NATIVE_SIM

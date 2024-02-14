@@ -1,0 +1,9 @@
+boards:
+- name: native_posix
+  vendor: Zephyr
+  socs:
+  - name: native
+- name: native_posix_64
+  vendor: Zephyr
+  socs:
+  - name: native

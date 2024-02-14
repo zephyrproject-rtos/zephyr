@@ -5,7 +5,7 @@ set(zephyr_build_path ${APPLICATION_BINARY_DIR}/zephyr)
 get_property(CCACHE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
 
 target_link_options(native_simulator INTERFACE
-  "-T ${ZEPHYR_BASE}/boards/boards_legacy/posix/common/natsim_linker_script.ld")
+  "-T ${ZEPHYR_BASE}/boards/native/common/natsim_linker_script.ld")
 
 set(nsi_config_content
   ${nsi_config_content}
