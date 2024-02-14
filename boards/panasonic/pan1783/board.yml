@@ -1,0 +1,13 @@
+boards:
+- name: pan1783_evb
+  vendor: Panasonic Industrial Devices Europe GmbH
+  socs:
+  - name: nrf5340
+- name: pan1783a_evb
+  vendor: Panasonic Industrial Devices Europe GmbH
+  socs:
+  - name: nrf5340
+- name: pan1783a_pa_evb
+  vendor: Panasonic Industrial Devices Europe GmbH
+  socs:
+  - name: nrf5340

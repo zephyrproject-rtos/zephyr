@@ -1,5 +1,5 @@
-identifier: pan1783_evb_cpuapp
-name: PAN1783-EVB-application-MCU
+identifier: pan1783a_evb/nrf5340/cpuapp
+name: PAN1783A-EVB-application-MCU
 type: mcu
 arch: arm
 toolchain:
