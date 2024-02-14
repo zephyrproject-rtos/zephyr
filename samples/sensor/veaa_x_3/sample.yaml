@@ -1,0 +1,8 @@
+sample:
+  name: VEAA-X-3 sensor sample
+tests:
+  sample.sensor.veaa_x_3:
+    harness: sensor
+    tags: sensors
+    filter: dt_compat_enabled("festo,veaa-x-3")
+    depends_on: adc dac
