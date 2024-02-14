@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_TITANIUM_TI60_F225
-	bool "Board with Efinix Sapphire riscv SoC"
-	depends on SOC_EFINIX_SAPPHIRE
+	select SOC_EFINIX_SAPPHIRE
