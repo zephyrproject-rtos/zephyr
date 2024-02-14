@@ -708,7 +708,7 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 	__ASSERT_NO_MSG(config->argv_size > 0);
 	__ASSERT_NO_MSG(config->delimiter != NULL);
 	__ASSERT_NO_MSG(config->delimiter_size > 0);
-	__ASSERT_NO_MSG(!((config->filter == NULL) && (config->filter > 0)));
+	__ASSERT_NO_MSG(!((config->filter == NULL) && (config->filter_size > 0)));
 	__ASSERT_NO_MSG(!((config->unsol_matches == NULL) && (config->unsol_matches_size > 0)));
 
 	memset(chat, 0x00, sizeof(*chat));
