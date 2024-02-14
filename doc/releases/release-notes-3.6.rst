@@ -898,6 +898,9 @@ API
 Bindings
 ========
 
+  * Introduced new SPI properties ``spi-cpol``, ``spi-cpha``, and ``spi-hold-cs`` to be used by
+    the macro :c:macro:`SPI_CONFIG_DT` in order to set SPI mode in a Devicetree file.
+
 Libraries / Subsystems
 **********************
 
