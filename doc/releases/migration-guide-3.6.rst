@@ -358,6 +358,9 @@ Device Drivers and Device Tree
 
   (:github:`66427`)
 
+* The :dtcompatible:`st,hci-spi-v1` should be used instead of :dtcompatible:`zephyr,bt-hci-spi`
+  for the boards which are based on ST BlueNRG-MS.
+
 Power Management
 ================
 
