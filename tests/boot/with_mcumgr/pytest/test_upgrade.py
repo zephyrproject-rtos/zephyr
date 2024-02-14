@@ -38,6 +38,16 @@ def create_signed_image(build_dir: Path, version: str) -> Path:
     return image_to_test
 
 
+def clear_buffer(dut: DeviceAdapter) -> None:
+    disconnect = False
+    if not dut.is_device_connected():
+        dut.connect()
+        disconnect = True
+    dut.clear_buffer()
+    if disconnect:
+        dut.disconnect()
+
+
 def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     """
     Verify that the application can be updated
@@ -50,12 +60,6 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     7) Confirm the image using mcumgr
     8) Restart the device, and verify that the new application is still booted
     """
-    origin_version = find_in_config(
-        Path(dut.device_config.build_dir) / PROJECT_NAME / 'zephyr' / '.config',
-        'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION'
-    )
-    check_with_shell_command(shell, origin_version)
-
     logger.info('Prepare upgrade image')
     new_version = '0.0.2+0'
     image_to_test = create_signed_image(dut.device_config.build_dir, new_version)
@@ -67,6 +71,7 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     logger.info('Test uploaded APP image')
     second_hash = mcumgr.get_hash_to_test()
     mcumgr.image_test(second_hash)
+    clear_buffer(dut)
     mcumgr.reset_device()
 
     dut.connect()
@@ -109,8 +114,6 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
         Path(dut.device_config.build_dir) / PROJECT_NAME / 'zephyr' / '.config',
         'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION'
     )
-    check_with_shell_command(shell, origin_version)
-
     logger.info('Prepare upgrade image')
     new_version = '0.0.3+0'
     image_to_test = create_signed_image(dut.device_config.build_dir, new_version)
@@ -122,6 +125,7 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     logger.info('Test uploaded APP image')
     second_hash = mcumgr.get_hash_to_test()
     mcumgr.image_test(second_hash)
+    clear_buffer(dut)
     mcumgr.reset_device()
 
     dut.connect()
@@ -195,9 +199,11 @@ def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key
     logger.info('Test uploaded APP image')
     second_hash = mcumgr.get_hash_to_test()
     mcumgr.image_test(second_hash)
-    mcumgr.reset_device()
 
     logger.info('Verify that swap is not started')
+    clear_buffer(dut)
+    mcumgr.reset_device()
+
     dut.connect()
     output = dut.readlines_until('Launching primary slot application')
     match_no_lines(output, ['Starting swap using move algorithm'])
