@@ -1,8 +1,0 @@
-# ADI EVAL-ADIN2111EBZ board configuration
-
-# Copyright (c) 2024 BayLibre
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ADI_EVAL_ADIN2111EBZ
-	bool "ADI EVAL-ADIN2111EBZ evaulation board"
-	depends on SOC_STM32L4S5XX
