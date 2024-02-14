@@ -1,0 +1,34 @@
+/ {
+
+	resources {
+		compatible = "test-arduino-gpio";
+		status = "okay";
+		out-gpios = <&arduino_header 6 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+		in-gpios = <&arduino_header 7 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 10 0>,	/* A0 */
+			   <1 0 &gpio0 11 0>,	/* A1 */
+			   <2 0 &gpio0 12 0>,	/* A2 */
+			   <3 0 &gpio0 13 0>,	/* A3 */
+			   <4 0 &gpio0 14 0>,	/* A4 */
+			   <5 0 &gpio0 15 0>,	/* A5 */
+			   <6 0 &gpio0 0 0>,	/* D0 */
+			   <7 0 &gpio0 1 0>,	/* D1 */
+			   <8 0 &gpio0 2 0>,	/* D2 */
+			   <9 0 &gpio0 3 0>,	/* D3 */
+			   <10 0 &gpio0 4 0>,	/* D4 */
+			   <11 0 &gpio0 5 0>,	/* D5 */
+			   <12 0 &gpio0 6 0>,	/* D6 */
+			   <13 0 &gpio0 7 0>;	/* D7 */
+	};
+};
+
+&gpio0 {
+	ngpios = <16>;
+};

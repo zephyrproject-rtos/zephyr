@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/gpio/gpio_arduino test in Zephyr.
+
+compatible: "test-arduino-gpio"
+
+properties:
+  in-gpios:
+    type: phandle-array
+    required: true
+
+  out-gpios:
+    type: phandle-array
+    required: true
