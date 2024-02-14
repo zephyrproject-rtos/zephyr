@@ -1,0 +1,5 @@
+board:
+  name: opentitan_earlgrey
+  vendor: lowRISC
+  socs:
+  - name: opentitan
