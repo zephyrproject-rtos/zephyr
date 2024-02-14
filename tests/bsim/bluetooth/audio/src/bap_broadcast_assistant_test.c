@@ -121,7 +121,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	       bad_code);
 
 	for (int i = 0; i < state->num_subgroups; i++) {
-		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
+		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
 		printk("\t[%d]: BIS sync %u, metadata_len %u\n",
@@ -396,7 +396,7 @@ static void test_bass_add_source(void)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_add_src_param add_src_param = { 0 };
-	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	struct bt_bap_bass_subgroup subgroup = { 0 };
 
 	printk("Adding source\n");
 	UNSET_FLAG(flag_write_complete);
@@ -425,7 +425,7 @@ static void test_bass_mod_source(void)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
-	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	struct bt_bap_bass_subgroup subgroup = { 0 };
 
 	printk("Modify source\n");
 	UNSET_FLAG(flag_cb_called);
@@ -455,7 +455,7 @@ static void test_bass_mod_source_long_meta(void)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
-	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	struct bt_bap_bass_subgroup subgroup = { 0 };
 
 	printk("Long write\n");
 	UNSET_FLAG(flag_cb_called);

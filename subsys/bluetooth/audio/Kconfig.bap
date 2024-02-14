@@ -53,6 +53,16 @@ config BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE
 	help
 	  Number of octets to support for Codec Specific Configuration metadata.
 
+config BT_BAP_BASS_MAX_SUBGROUPS
+	int "Maximum number of subgroups supported for the BASS receive states"
+	default 1
+	range 1 24
+	help
+	  This option sets the maximum number of subgroups supported.
+	  Due to limitations in advertising data, the maximum size of all subgroups are 249.
+	  The minimum size of a subgroup is 10 octets.
+	  So effectively there can be a maximum of 24 subgroups in a BASE.
+
 config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
 	int "Codec Capabilities Data Size"
 	default 19
@@ -220,20 +230,6 @@ config BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT
 	  Sets the number of receive state characteristics present on the
 	  server. Each characteristic may hold information to sync to a
 	  periodic advertise or a broadcast isochronous stream.
-
-config BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN
-	int "Scan Delegator Maximum Metadata Length"
-	default 32
-	range 0 255
-	help
-	  The maximum metadata length support by the BASS server.
-
-config BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS
-	int "Scan Delegator Maximum Number of Subgroups support"
-	default 1
-	range 0 31
-	help
-	  The maximum number of BIS subgroups supported.
 
 config BT_BAP_SCAN_DELEGATOR_BUF_TIMEOUT
 	int "Milliseconds of timeout when handle concurrent access to the long read ASE buffer"

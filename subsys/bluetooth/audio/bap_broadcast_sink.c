@@ -103,7 +103,7 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 
 	mod_src_param.num_subgroups = sink->subgroup_count;
 	for (uint8_t i = 0U; i < sink->subgroup_count; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup_param = &mod_src_param.subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup_param = &mod_src_param.subgroups[i];
 		const struct bt_bap_broadcast_sink_subgroup *sink_subgroup = &sink->subgroups[i];
 
 		/* Set the bis_sync value to the indexes available per subgroup */
@@ -440,7 +440,7 @@ static void broadcast_sink_add_src(struct bt_bap_broadcast_sink *sink)
 static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	struct bt_bap_scan_delegator_mod_src_param *mod_src_param = user_data;
-	struct bt_bap_scan_delegator_subgroup *subgroup_param;
+	struct bt_bap_bass_subgroup *subgroup_param;
 	uint8_t *meta;
 	int ret;
 
@@ -496,7 +496,7 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 	mod_src_param.broadcast_id = recv_state->broadcast_id;
 	mod_src_param.num_subgroups = sink->subgroup_count;
 	for (uint8_t i = 0U; i < sink->subgroup_count; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup_param = &mod_src_param.subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup_param = &mod_src_param.subgroups[i];
 		const struct bt_bap_broadcast_sink_subgroup *sink_subgroup = &sink->subgroups[i];
 
 		/* Set the bis_sync value to the indexes available per subgroup */

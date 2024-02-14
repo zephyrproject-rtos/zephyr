@@ -32,7 +32,7 @@ struct sync_state {
 	struct k_work_delayable pa_timer;
 	struct bt_le_per_adv_sync *pa_sync;
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
-	uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+	uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static struct sync_state *sync_state_get(const struct bt_bap_scan_delegator_recv_state *recv_state)
@@ -317,13 +317,13 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
-			   const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
+			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	struct sync_state *state;
 	bool sync_bis;
 
 	printk("BIS sync request received for %p\n", recv_state);
-	for (int i = 0; i < BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS; i++) {
+	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
 		if (bis_sync_req[i]) {
 			sync_bis = true;
 		}
@@ -482,7 +482,7 @@ static int add_source(struct sync_state *state)
 	param.num_subgroups = 1U;
 
 	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param.subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup_param = &param.subgroups[i];
 
 		subgroup_param->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
 		subgroup_param->metadata_len = 0U;
@@ -541,7 +541,7 @@ static int mod_source(struct sync_state *state)
 	param.num_subgroups = 1U;
 
 	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param.subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup_param = &param.subgroups[i];
 
 		subgroup_param->bis_sync = 0U;
 		subgroup_param->metadata_len = sizeof(pref_context_metadata);
