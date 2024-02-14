@@ -37,6 +37,20 @@ enum hawkbit_response {
 };
 
 /**
+ * @brief hawkBit attributes.
+ *
+ * @details These attributes are used to set the attributes
+ *
+ */
+enum hawkbit_attribute {
+	HAWKBIT_HWREVISION_ATTRIBUTE,
+	HAWKBIT_CUSTOM_ATTRIBUTE_0,
+	HAWKBIT_CUSTOM_ATTRIBUTE_1,
+	HAWKBIT_CUSTOM_ATTRIBUTE_2,
+	HAWKBIT_CUSTOM_ATTRIBUTE_3,
+};
+
+/**
  * @brief Init the flash partition
  *
  * @return 0 on success, negative on error.
@@ -62,6 +76,16 @@ void hawkbit_autohandler(void);
  * @return HAWKBIT_DOWNLOAD_ERROR fail while downloading the update package.
  */
 enum hawkbit_response hawkbit_probe(void);
+
+/**
+ * @brief Set a Hawkbit attribute.
+ *
+ * @param type Attribute type to set.
+ * @param attr Attribute to set.
+ * @return 0 on success.
+ * @return -EINVAL if attribute type is invalid.
+ */
+int hawkbit_set_attribute(enum hawkbit_attribute type, char *attr);
 
 /**
  * @}

@@ -50,6 +50,106 @@ config HAWKBIT_PORT
 	help
 	  Configure the hawkbit port number.
 
+config HAWKBIT_HWREVISION_SIZE
+	int "Size for hardware revision attribute"
+	default 10
+	help
+		Configure the size of the hardware revision attribute.
+
+config HAWKBIT_CUSTOM_ATTRIBUTE_AMOUNT
+	int "Amount of custom attributes"
+	default 0
+	range 0 4
+	help
+		Configure the amount of custom attributes that will be used in the hawkbit server.
+
+config HAWKBIT_CUSTOM_ATTRIBUTE_0
+	bool "Emable first custom attribute"
+	default HAWKBIT_CUSTOM_ATTRIBUTE_AMOUNT >= 1
+	help
+		Enable the first custom attribute.
+
+if HAWKBIT_CUSTOM_ATTRIBUTE_0
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_0_NAME
+		string "Custom name for first custom attribute"
+		default "custom_0"
+		help
+			Configure the name of the first custom attribute.
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_0_SIZE
+		int "Size for first custom attribute"
+		default 10
+		help
+			Configure the size of the first custom attribute.
+endif
+
+config HAWKBIT_CUSTOM_ATTRIBUTE_1
+	bool "Emable second custom attribute"
+	default HAWKBIT_CUSTOM_ATTRIBUTE_AMOUNT >= 2
+	help
+		Enable the second custom attribute.
+
+if HAWKBIT_CUSTOM_ATTRIBUTE_1
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_1_NAME
+		string "Custom name for second custom attribute"
+		default "custom_1"
+		help
+			Configure the name of the second custom attribute.
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_1_SIZE
+		int "Size for second custom attribute"
+		default 10
+		help
+			Configure the size of the second custom attribute.
+
+endif
+
+config HAWKBIT_CUSTOM_ATTRIBUTE_2
+	bool "Emable third custom attribute"
+	default HAWKBIT_CUSTOM_ATTRIBUTE_AMOUNT >= 3
+	help
+		Enable the third custom attribute.
+
+if HAWKBIT_CUSTOM_ATTRIBUTE_2
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_2_NAME
+		string "Custom name for third custom attribute"
+		default "custom_2"
+		help
+			Configure the name of the third custom attribute.
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_2_SIZE
+		int "Size for third custom attribute"
+		default 10
+		help
+			Configure the size of the third custom attribute.
+
+endif
+
+config HAWKBIT_CUSTOM_ATTRIBUTE_3
+	bool "Emable fourth custom attribute"
+	default HAWKBIT_CUSTOM_ATTRIBUTE_AMOUNT >= 4
+	help
+		Enable the fourth custom attribute.
+
+if HAWKBIT_CUSTOM_ATTRIBUTE_3
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_3_NAME
+		string "Custom name for fourth custom attribute"
+		default "custom_3"
+		help
+			Configure the name of the fourth custom attribute.
+
+	config HAWKBIT_CUSTOM_ATTRIBUTE_3_SIZE
+		int "Size for fourth custom attribute"
+		default 10
+		help
+			Configure the size of the fourth custom attribute.
+
+endif
+
 choice HAWKBIT_DDI_SECURITY
 	prompt "Hawkbit DDI API authentication modes"
 	default HAWKBIT_DDI_NO_SECURITY

@@ -67,6 +67,21 @@ static uint32_t poll_sleep = (300 * MSEC_PER_SEC);
 
 static struct nvs_fs fs;
 
+static char hawkbit_hwrevision[CONFIG_HAWKBIT_HWREVISION_SIZE + 1];
+
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0
+static char custom_attribute_0[CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0_SIZE + 1];
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1
+static char custom_attribute_1[CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1_SIZE + 1];
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2
+static char custom_attribute_2[CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2_SIZE + 1];
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3
+static char custom_attribute_3[CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3_SIZE + 1];
+#endif
+
 struct hawkbit_download {
 	int download_status;
 	int download_progress;
@@ -137,6 +152,22 @@ static const struct json_obj_descr json_ctl_res_descr[] = {
 static const struct json_obj_descr json_cfg_data_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, VIN, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, hwRevision, JSON_TOK_STRING),
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0
+	JSON_OBJ_DESCR_PRIM_NAMED(struct hawkbit_cfg_data, CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0_NAME,
+				  custom_attribute_0, JSON_TOK_STRING),
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1
+	JSON_OBJ_DESCR_PRIM_NAMED(struct hawkbit_cfg_data, CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1_NAME,
+				  custom_attribute_1, JSON_TOK_STRING),
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2
+	JSON_OBJ_DESCR_PRIM_NAMED(struct hawkbit_cfg_data, CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2_NAME,
+				  custom_attribute_2, JSON_TOK_STRING),
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3
+	JSON_OBJ_DESCR_PRIM_NAMED(struct hawkbit_cfg_data, CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3_NAME,
+				  custom_attribute_3, JSON_TOK_STRING),
+#endif
 };
 
 static const struct json_obj_descr json_cfg_descr[] = {
@@ -566,6 +597,51 @@ static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 	LOG_DBG("md5sum =%s", l->md5sum_http.href);
 }
 
+
+
+int hawkbit_set_attribute(enum hawkbit_attribute type, char *attr)
+{
+	switch (type) {
+	case HAWKBIT_HWREVISION_ATTRIBUTE:
+		strncpy(hawkbit_hwrevision, attr, sizeof(hawkbit_hwrevision));
+		LOG_DBG("configured hawkbit hardware revision attribute: %s", hawkbit_hwrevision);
+		break;
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0
+	case HAWKBIT_CUSTOM_ATTRIBUTE_0:
+		strncpy(custom_attribute_0, attr, sizeof(custom_attribute_0));
+		LOG_DBG("configured hawkbit custom attribute %s: %s",
+			CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0_NAME, custom_attribute_0);
+		break;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1
+	case HAWKBIT_CUSTOM_ATTRIBUTE_1:
+		strncpy(custom_attribute_1, attr, sizeof(custom_attribute_1));
+		LOG_DBG("configured hawkbit custom attribute %s: %s",
+			CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1_NAME, custom_attribute_1);
+		break;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2
+	case HAWKBIT_CUSTOM_ATTRIBUTE_2:
+		strncpy(custom_attribute_2, attr, sizeof(custom_attribute_2));
+		LOG_DBG("configured hawkbit custom attribute %s: %s",
+			CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2_NAME, custom_attribute_2);
+		break;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3
+	case HAWKBIT_CUSTOM_ATTRIBUTE_3:
+		strncpy(custom_attribute_3, attr, sizeof(custom_attribute_3));
+		LOG_DBG("configured hawkbit custom attribute %s: %s",
+			CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3_NAME, custom_attribute_3);
+		break;
+#endif
+
+	default:
+		LOG_ERR("Invalid attribute type");
+		return -EINVAL;
+	}
+	return 0;
+}
+
 int hawkbit_init(void)
 {
 	bool image_ok;
@@ -843,7 +919,19 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 		memset(&cfg, 0, sizeof(cfg));
 		cfg.mode = "merge";
 		cfg.data.VIN = device_id;
-		cfg.data.hwRevision = "3";
+		cfg.data.hwRevision = hawkbit_hwrevision;
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0
+		cfg.data.custom_attribute_0 = custom_attribute_0;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1
+		cfg.data.custom_attribute_1 = custom_attribute_1;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2
+		cfg.data.custom_attribute_2 = custom_attribute_2;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3
+		cfg.data.custom_attribute_3 = custom_attribute_3;
+#endif
 		cfg.id = "";
 		cfg.time = "";
 		cfg.status.execution = exec;

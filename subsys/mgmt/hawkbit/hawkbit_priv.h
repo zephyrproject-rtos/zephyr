@@ -82,6 +82,18 @@ struct hawkbit_ctl_res {
 struct hawkbit_cfg_data {
 	const char *VIN;
 	const char *hwRevision;
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_0
+	const char *custom_attribute_0;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_1
+	const char *custom_attribute_1;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_2
+	const char *custom_attribute_2;
+#endif
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTE_3
+	const char *custom_attribute_3;
+#endif
 };
 
 struct hawkbit_cfg {
