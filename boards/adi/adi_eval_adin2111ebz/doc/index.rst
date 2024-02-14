@@ -86,7 +86,7 @@ following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/adi_eval_adin2111ebz/adi_eval_adin2111ebz_defconfig``
+	``boards/adi/adi_eval_adin2111ebz/adi_eval_adin2111ebz_defconfig``
 
 
 Connections and IOs
