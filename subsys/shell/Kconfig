@@ -120,6 +120,18 @@ config SHELL_WILDCARD
 	help
 	  Enables using wildcards: * and ? in the shell.
 
+config SHELL_MSG_CMD_NOT_FOUND
+	bool "': command not found' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
+
+config SHELL_MSG_SPECIFY_SUBCOMMAND
+	bool "'Please specify a subcommand.' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
+
 config SHELL_ECHO_STATUS
 	bool "Echo on shell"
 	default y

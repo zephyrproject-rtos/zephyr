@@ -528,8 +528,10 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 			shell_internal_help_print(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		} else {
-			z_shell_fprintf(sh, SHELL_ERROR,
-					SHELL_MSG_SPECIFY_SUBCOMMAND);
+			if (IS_ENABLED(CONFIG_SHELL_MSG_SPECIFY_SUBCOMMAND)) {
+				z_shell_fprintf(sh, SHELL_ERROR,
+						SHELL_MSG_SPECIFY_SUBCOMMAND);
+			}
 			return -ENOEXEC;
 		}
 	}
@@ -692,8 +694,10 @@ static int execute(const struct shell *sh)
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
-			z_shell_fprintf(sh, SHELL_ERROR,
-					SHELL_MSG_SPECIFY_SUBCOMMAND);
+			if (IS_ENABLED(CONFIG_SHELL_MSG_SPECIFY_SUBCOMMAND)) {
+				z_shell_fprintf(sh, SHELL_ERROR,
+						SHELL_MSG_SPECIFY_SUBCOMMAND);
+			}
 			return -ENOEXEC;
 		}
 
@@ -736,7 +740,8 @@ static int execute(const struct shell *sh)
 					  &cmd_with_handler_lvl, &args_left);
 			parent = entry;
 		} else {
-			if (cmd_lvl == 0 &&
+			if (IS_ENABLED(CONFIG_SHELL_MSG_CMD_NOT_FOUND) &&
+				cmd_lvl == 0 &&
 				(!z_shell_in_select_mode(sh) ||
 				 sh->ctx->selected_cmd->handler == NULL)) {
 				z_shell_fprintf(sh, SHELL_ERROR,
