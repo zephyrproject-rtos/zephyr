@@ -115,7 +115,7 @@ Build as usual.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: intel_adsp_cavs25
+   :board: intel_adsp/cavs25
    :goals: build
 
 Signing
@@ -193,7 +193,7 @@ Running tests with Twister is slightly more complicated.
 
 .. code-block:: console
 
-   twister -p intel_adsp_cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname,-l" --west-flash="--remote-host=remotehostname" -T samples/hello_world
+   twister -p intel_adsp/cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname,-l" --west-flash="--remote-host=remotehostname" -T samples/hello_world
 
 If your network is set up such that the TCP connection from
 :file:`cavstool_client.py` to :file:`remote-fw-service.py` is forwarded through
@@ -204,14 +204,14 @@ the port numbers to the intermediate host name.
 .. code-block:: console
 
    west flash --remote-host intermediatehost:reqport --pty remotehostname:logport
-   twister -p intel_adsp_cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname:logport,-l" --west-flash="--remote-host=remotehostname:reqport" -T samples/hello_world
+   twister -p intel_adsp/cavs25 --device-testing --device-serial-pty="$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname:logport,-l" --west-flash="--remote-host=remotehostname:reqport" -T samples/hello_world
 
 You can also save this information to a hardware map file and pass that to
 Twister.
 
 .. code-block:: console
 
-   twister -p intel_adsp_cavs25 --hardware-map cavs.map --device-testing -T samples/hello_world
+   twister -p intel_adsp/cavs25 --hardware-map cavs.map --device-testing -T samples/hello_world
 
 Here's a sample ``cavs.map``:
 
@@ -219,7 +219,7 @@ Here's a sample ``cavs.map``:
 
    - connected: true
      id: None
-     platform: intel_adsp_cavs25
+     platform: intel_adsp/cavs25
      product: None
      runner: intel_adsp
      serial_pty: "/home/zephyrus/zephyrproject/zephyr/soc/intel/intel_adsp/tools/cavstool_client.py,-s,remotehostname:logport,-l"
@@ -247,7 +247,7 @@ You should see the following at the end of the log if you are successful:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! intel_adsp_cavs25
+   Hello World! intel_adsp
 
 Flashing to ACE-based ADSP
 --------------------------

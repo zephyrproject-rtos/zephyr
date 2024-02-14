@@ -386,7 +386,7 @@ a "zephyr.ri" file to be copied to the device.
 
 .. code-block:: console
 
-    dev$ west build -b intel_adsp_cavs25 samples/hello_world
+    dev$ west build -b intel_adsp/cavs25 samples/hello_world
     dev$ west sign --tool-data=~/rimage/config -t ~/rimage/rimage -- \
                 -k $ZEPHYR_BASE/../modules/audio/sof/keys/otc_private_key_3k.pem
 
@@ -401,7 +401,7 @@ the logging script.
 .. code-block:: console
 
     dev$ west flash --remote-host crouton
-    Hello World! intel_adsp_cavs25
+    Hello World! intel_adsp
 
 Misc References
 ***************

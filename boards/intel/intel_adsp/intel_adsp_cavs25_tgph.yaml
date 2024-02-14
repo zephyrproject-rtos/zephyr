@@ -1,4 +1,4 @@
-identifier: intel_adsp_cavs25/cavs25/tgph
+identifier: intel_adsp/cavs25/tgph
 name: cAVS 2.5 Audio DSP for Tiger Lake H PCH (Converged Audio Voice and Speech)
 type: mcu
 arch: xtensa
