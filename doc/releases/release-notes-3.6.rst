@@ -753,9 +753,9 @@ Networking
   * Fixed DTLS handshake processing during :c:func:`poll`.
   * Aligned DTLS socket :c:func:`connect` behavior with regular TLS (handshake
     during connect call).
-  * Added Socket Services library, which allows to register multiple socket based
+  * Added Socket Service library, which allows to register multiple socket based
     network services, and process them within a single thread.
-  * Added a new ``echo_service`` sample for Socket Services.
+  * Added a new ``echo_service`` sample for Socket Service.
   * Added support for :c:macro:`SO_DOMAIN` socket option.
   * Fixed DTLS connection timeout when monitoring socket with :c:func:`poll`.
   * Fixed NULL link layer address pointer dereference on packet socket, in case
@@ -801,7 +801,7 @@ Networking
   * Improved IP address binding. Zperf will bind to any address by default and
     allow to override this with Kconfig/API provided address.
   * Fixed TCP packet counting when transmitting.
-  * Refactored UDP/TCP received to use Socket Services to save memory.
+  * Refactored UDP/TCP received to use Socket Service to save memory.
   * Fixed zperf session leak on interrupted downloads.
   * Fixed the calculation ratio between Mbps, Kbps and bps.
   * Allow network code relocation to RAM in zperf sample for platforms that
