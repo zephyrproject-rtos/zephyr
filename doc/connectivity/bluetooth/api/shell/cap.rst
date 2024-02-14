@@ -60,7 +60,7 @@ the optionally included CSIS instance by calling (:code:`cap_initiator discover`
                       (default 1)] [conns (<cnt> | all) (default 1)]
      unicast_list    :Unicast list streams
      unicast_update  :Unicast Update <all | stream [stream [stream...]]>
-     unicast_stop    :Unicast stop all streams
+     unicast_stop    :Unicast stop streams <all | stream [stream [stream...]]>
      unicast_cancel  :Unicast cancel current procedure
 
 Before being able to perform any stream operation, the device must also perform the
@@ -120,24 +120,24 @@ To use multiple devices, simply connect to more and then use :code:`bt select` t
 the commands on.
 
 Once all devices have been connected and the respective discovery commands have been called, the
-:code:`cap_initiator unicast-start` command can be used to put one or more streams into the
+:code:`cap_initiator unicast_start` command can be used to put one or more streams into the
 streaming state.
 
 .. code-block:: console
 
-   uart:~$ cap_initiator unicast-start sinks 1 sources 0 conns all
+   uart:~$ cap_initiator unicast_start sinks 1 sources 0 conns all
    Setting up 1 sinks and 0 sources on each (2) conn
    Starting 1 streams
    Unicast start completed
 
-To stop all the streams that has been started, the :code:`cap_initiator unicast-stop` command can be
+To stop all the streams that has been started, the :code:`cap_initiator unicast_stop` command can be
 used.
 
 
 .. code-block:: console
 
-   uart:~$ cap_initiator unicast-stop
-   Unicast stopped for group 0x81e41c0 completed
+   uart:~$ cap_initiator unicast_stop all
+   Unicast stop completed
 
 CAP Commander
 *************

@@ -66,7 +66,7 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 	} else if (err != 0) {
 		shell_error(ctx_shell, "Unicast stop failed for conn %p (%d)", conn, err);
 	} else {
-		shell_print(ctx_shell, "Unicast stopped completed");
+		shell_print(ctx_shell, "Unicast stop completed");
 
 		if (default_unicast_group != NULL) {
 			err = bt_bap_unicast_group_delete(default_unicast_group);
@@ -1224,8 +1224,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      0),
 	SHELL_CMD_ARG(unicast_update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
 		      cmd_cap_initiator_unicast_update, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
-	SHELL_CMD_ARG(unicast_stop, NULL, "Unicast stop all streams",
-		      cmd_cap_initiator_unicast_stop, 1, 0),
+	SHELL_CMD_ARG(unicast_stop, NULL,
+		      "Unicast stop streams <all | stream [stream [stream...]]>",
+		      cmd_cap_initiator_unicast_stop, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast_cancel, NULL, "Unicast cancel current procedure",
 		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #if UNICAST_SINK_SUPPORTED
