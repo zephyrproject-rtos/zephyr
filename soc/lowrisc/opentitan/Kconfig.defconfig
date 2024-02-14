@@ -3,9 +3,6 @@
 
 if SOC_OPENTITAN
 
-config SOC
-	default "opentitan"
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000
 
