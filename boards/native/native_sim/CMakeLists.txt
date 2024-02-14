@@ -24,10 +24,10 @@ zephyr_library_include_directories(
 )
 
 if(CONFIG_HAS_SDL)
-  add_subdirectory(${ZEPHYR_BASE}/boards/boards_legacy/${ARCH}/common/sdl/ ${CMAKE_CURRENT_BINARY_DIR}/sdl)
+  add_subdirectory(${ZEPHYR_BASE}/boards/native/common/sdl/ ${CMAKE_CURRENT_BINARY_DIR}/sdl)
 endif()
 
-add_subdirectory(${ZEPHYR_BASE}/boards/boards_legacy/${ARCH}/common/extra_args/
+add_subdirectory(${ZEPHYR_BASE}/boards/native/common/extra_args/
 	${CMAKE_CURRENT_BINARY_DIR}/extra_args
 )
 

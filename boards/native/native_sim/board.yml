@@ -1,0 +1,9 @@
+boards:
+- name: native_sim
+  vendor: Zephyr
+  socs:
+  - name: native
+- name: native_sim_64
+  vendor: Zephyr
+  socs:
+  - name: native
