@@ -80,7 +80,7 @@ struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
 
-#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+#if defined(CONFIG_BT_CONN_TX)
 static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
 {
 	struct bt_iso_chan *chan = iso->iso.chan;
@@ -94,8 +94,7 @@ static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
 		ops->sent(chan);
 	}
 }
-#endif /* CONFIG_BT_ISO_UNICAST || CONFIG_BT_ISO_BROADCASTER */
-
+#endif /* CONFIG_BT_CONN_TX */
 
 void hci_iso(struct net_buf *buf)
 {
@@ -730,7 +729,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 }
 #endif /* CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER */
 
-#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+#if defined(CONFIG_BT_CONN_TX)
 static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan)
 {
 	size_t max_controller_data_len;
@@ -955,7 +954,7 @@ int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_inf
 
 	return 0;
 }
-#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
+#endif /* CONFIG_BT_CONN_TX */
 
 #if defined(CONFIG_BT_ISO_UNICAST)
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
