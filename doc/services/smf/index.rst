@@ -542,3 +542,10 @@ The statechart for this test is below.
       STATE_B -> STATE_C
       STATE_C -> STATE_D
    }
+
+
+
+API Reference
+*************
+
+.. doxygengroup:: smf
