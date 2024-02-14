@@ -1,6 +1,10 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_POSIX
+	select ARCH_POSIX
+	select CPU_HAS_FPU
+
 config NATIVE_SIMULATOR_MCU_N
 	int "CPU Number this image targets"
 	range 0 15
