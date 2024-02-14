@@ -12,7 +12,7 @@ set -e
 #  export CAVS_KEY=$HOME/otc_private_key_3k.pem
 #  export CAVS_RIMAGE=$HOME/rimage
 #
-#  twister -p intel_adsp_cavs25 --device-testing \
+#  twister -p intel_adsp/cavs25 --device-testing \
 #     --device-serial-pty=$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstwist.sh \
 #     --west-flash=$ZEPHYR_BASE/soc/intel/intel_adsp/tools/cavstwist.sh
 #
