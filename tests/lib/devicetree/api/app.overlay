@@ -145,7 +145,6 @@
 			reg = < 0x1 0x1000 >;
 			interrupts = <3 1>;
 			#gpio-cells = < 0x2 >;
-			label = "TEST_GPIO_1";
 			status = "reserved";
 		};
 
@@ -163,7 +162,6 @@
 			#gpio-cells = < 0x2 >;
 			#foo-cells = < 0x1 >;
 			#baz-cells = < 0x1 >;
-			label = "TEST_GPIO_1";
 			interrupts = <4 3>;
 			status = "okay";
                         ngpios = <100>;
@@ -190,7 +188,6 @@
 			#foo-cells = < 0x1 >;
 			#baz-cells = < 0x1 >;
 			interrupts = <5 2>;
-			label = "TEST_GPIO_2";
 			status = "okay";
                         ngpios = <200>;
 
@@ -225,7 +222,6 @@
 			#size-cells = < 0 >;
 			compatible = "vnd,i2c";
 			reg = < 0x11112222 0x1000 >;
-			label = "TEST_I2C_CTLR";
 			status = "okay";
 			clock-frequency = < 100000 >;
 			interrupts = <6 2 7 1>;
@@ -233,7 +229,6 @@
 
 			test-i2c-dev@10 {
 				compatible = "vnd,i2c-device";
-				label = "TEST_I2C_DEV_10";
 				reg = < 0x10 >;
 			};
 
@@ -288,18 +283,15 @@
 			#size-cells = < 0 >;
 			compatible = "vnd,i3c";
 			reg = < 0x88889999 0x1000 >;
-			label = "TEST_I3C_CTLR";
 			status = "okay";
 
 			test-i3c-dev@420000ABCD12345678 {
 				compatible = "vnd,i3c-device";
-				label = "TEST_I3C_DEV_42";
 				reg = < 0x42 0xABCD 0x12345678 >;
 			};
 
 			test-i3c-i2c-dev@380000000000000050 {
 				compatible = "vnd,i3c-i2c-device";
-				label = "TEST_I3C_I2C_DEV_38";
 				reg = < 0x38 0x0 0x50 >;
 			};
 		};
@@ -322,7 +314,6 @@
 			compatible = "vnd,spi";
 			reg = < 0x33334444 0x1000 >;
 			interrupts = <8 3 9 0 10 1>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = < 2000000 >;
 
@@ -334,7 +325,6 @@
 
 			test-spi-dev@0 {
 				compatible = "vnd,spi-device";
-				label = "TEST_SPI_DEV_0";
 				reg = <0>;
 				spi-max-frequency = < 2000000 >;
 			};
