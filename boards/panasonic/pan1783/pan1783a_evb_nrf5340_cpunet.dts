@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
-#include "pan1783_cpunet_common.dtsi"
+#include "pan1783_nrf5340_cpunet_common.dtsi"
 
 / {
 	model = "Panasonic PAN1783A EVB (NRF5340) Network";
@@ -20,4 +20,4 @@
 };
 
 /* Include shared RAM configuration file */
-#include "pan1783_shared_sram_planning_conf.dtsi"
+#include "pan1783_nrf5340_shared_sram_planning_conf.dtsi"
