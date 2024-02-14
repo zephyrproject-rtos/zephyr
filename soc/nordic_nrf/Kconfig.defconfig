@@ -7,8 +7,6 @@ if SOC_FAMILY_NRF
 
 rsource "*/Kconfig.defconfig"
 
-if ARM
-
 # If the kernel has timer support, enable clock control
 if SYS_CLOCK_EXISTS
 
@@ -27,7 +25,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 32768
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
-	default y if !QEMU_TARGET
+	default y if ARM && !QEMU_TARGET
 
 config BUILD_OUTPUT_HEX
 	default y
@@ -43,7 +41,5 @@ config GPIO
 
 config UART_USE_RUNTIME_CONFIGURE
 	default n
-
-endif # ARM
 
 endif # SOC_FAMILY_NRF

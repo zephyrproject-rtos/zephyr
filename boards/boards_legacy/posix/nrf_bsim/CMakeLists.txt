@@ -28,7 +28,7 @@ zephyr_library_sources(
 
 # Include sync_rtc from real SOC code if enabled
 zephyr_library_sources_ifdef(CONFIG_NRF53_SYNC_RTC
-  ${ZEPHYR_BASE}/soc/soc_legacy/arm/nordic_nrf/nrf53/sync_rtc.c
+  ${ZEPHYR_BASE}/soc/nordic_nrf/nrf53/sync_rtc.c
   )
 
 target_sources(native_simulator INTERFACE

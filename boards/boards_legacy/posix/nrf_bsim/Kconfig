@@ -6,7 +6,7 @@ if SOC_SERIES_BSIM_NRFXX
 # used by Nordic SoCs, so to make the symbols defined in this file available for
 # the simulated nrf5x_bsim boards, which use the POSIX architecture, the file
 # must be read also from here.
-source "soc/common/nordic_nrf/Kconfig.peripherals"
+source "soc/nordic_nrf/common/Kconfig.peripherals"
 
 source "boards/boards_legacy/$(ARCH)/common/extra_args/Kconfig"
 
@@ -53,6 +53,6 @@ endif # BOARD_NRF5340BSIM_NRF5340_CPUNET
 if SOC_SERIES_BSIM_NRF53X
 
 # Let's reuse the RTC sync options so applications which use it can be reused as is
-source "soc/soc_legacy/arm/nordic_nrf/nrf53/Kconfig.sync_rtc"
+source "soc/nordic_nrf/nrf53/Kconfig.sync_rtc"
 
 endif # SOC_SERIES_BSIM_NRF53X

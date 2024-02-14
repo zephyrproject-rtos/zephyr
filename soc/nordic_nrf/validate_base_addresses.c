@@ -5,8 +5,9 @@
  */
 
 #include <zephyr/kernel.h>
-#include <soc.h>
 #include <zephyr/devicetree.h>
+
+#include <nrfx.h>
 
 /*
  * Account for MDK inconsistencies

@@ -12,7 +12,7 @@ config SOC_FAMILY_NRF
 
 if SOC_FAMILY_NRF
 
-source "soc/common/nordic_nrf/Kconfig.peripherals"
+rsource "common/Kconfig.peripherals"
 rsource "*/Kconfig"
 
 config NRF_SOC_SECURE_SUPPORTED
