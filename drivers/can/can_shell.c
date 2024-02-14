@@ -35,6 +35,7 @@ static const struct can_shell_mode_mapping can_shell_mode_map[] = {
 	CAN_SHELL_MODE_MAPPING("normal",          CAN_MODE_NORMAL),
 	CAN_SHELL_MODE_MAPPING("one-shot",        CAN_MODE_ONE_SHOT),
 	CAN_SHELL_MODE_MAPPING("triple-sampling", CAN_MODE_3_SAMPLES),
+	CAN_SHELL_MODE_MAPPING("manual-recovery", CAN_MODE_MANUAL_RECOVERY),
 };
 
 K_MSGQ_DEFINE(can_shell_tx_msgq, sizeof(struct can_shell_tx_event),
@@ -1054,9 +1055,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 		"CAN rx filter commands\n"
 		"Usage: can filter <add|remove> <device> ...",
 		NULL),
-	SHELL_EXPR_CMD_ARG(!IS_ENABLED(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY),
+	SHELL_COND_CMD_ARG(CONFIG_CAN_MANUAL_RECOVERY_MODE,
 		recover, &dsub_can_device_name,
-		"Recover CAN controller from bus-off state\n"
+		"Manually recover CAN controller from bus-off state\n"
 		"Usage: can recover <device> [timeout ms]",
 		cmd_can_recover, 2, 1),
 	SHELL_SUBCMD_SET_END

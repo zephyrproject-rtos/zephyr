@@ -514,21 +514,6 @@ static int can_xmc4xxx_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int can_xmc4xxx_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct can_xmc4xxx_data *dev_data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!dev_data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return -ENOTSUP;
-}
-#endif
-
 static void can_xmc4xxx_reset_tx_fifos(const struct device *dev, int status)
 {
 	struct can_xmc4xxx_data *dev_data = dev->data;
@@ -908,9 +893,6 @@ static const struct can_driver_api can_xmc4xxx_api_funcs = {
 	.send = can_xmc4xxx_send,
 	.add_rx_filter = can_xmc4xxx_add_rx_filter,
 	.remove_rx_filter = can_xmc4xxx_remove_rx_filter,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_xmc4xxx_recover,
-#endif
 	.get_state = can_xmc4xxx_get_state,
 	.set_state_change_callback = can_xmc4xxx_set_state_change_callback,
 	.get_core_clock = can_xmc4xxx_get_core_clock,

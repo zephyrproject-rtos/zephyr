@@ -380,6 +380,10 @@ static int can_stm32_get_capabilities(const struct device *dev, can_mode_t *cap)
 
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
 
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		*cap |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
 	return 0;
 }
 
@@ -473,13 +477,18 @@ unlock:
 
 static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 {
+	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = dev->data;
 
 	LOG_DBG("Set mode %d", mode);
 
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT)) != 0) {
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		supported |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
+	if ((mode & ~(supported)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -509,6 +518,15 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		can->MCR |= CAN_MCR_NART;
 	} else {
 		can->MCR &= ~CAN_MCR_NART;
+	}
+
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		if ((mode & CAN_MODE_MANUAL_RECOVERY) != 0) {
+			/* No automatic recovery from bus-off */
+			can->MCR &= ~CAN_MCR_ABOM;
+		} else {
+			can->MCR |= CAN_MCR_ABOM;
+		}
 	}
 
 	data->common.mode = mode;
@@ -637,9 +655,10 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	can->MCR |= CAN_MCR_TTCM;
 #endif
-#ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+
+	/* Enable automatic bus-off recovery */
 	can->MCR |= CAN_MCR_ABOM;
-#endif
+
 	ret = can_calc_timing(dev, &timing, cfg->common.bus_speed,
 			      cfg->common.sample_point);
 	if (ret == -EINVAL) {
@@ -686,7 +705,7 @@ static void can_stm32_set_state_change_callback(const struct device *dev,
 	}
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_stm32_config *cfg = dev->config;
@@ -697,6 +716,10 @@ static int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 
 	if (!data->common.started) {
 		return -ENETDOWN;
+	}
+
+	if ((data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		return -ENOTSUP;
 	}
 
 	if (!(can->ESR & CAN_ESR_BOFF)) {
@@ -729,8 +752,7 @@ done:
 	k_mutex_unlock(&data->inst_mutex);
 	return ret;
 }
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
-
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 static int can_stm32_send(const struct device *dev, const struct can_frame *frame,
 			  k_timeout_t timeout, can_tx_callback_t callback,
@@ -1053,9 +1075,9 @@ static const struct can_driver_api can_api_funcs = {
 	.add_rx_filter = can_stm32_add_rx_filter,
 	.remove_rx_filter = can_stm32_remove_rx_filter,
 	.get_state = can_stm32_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_stm32_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = can_stm32_set_state_change_callback,
 	.get_core_clock = can_stm32_get_core_clock,
 	.get_max_filters = can_stm32_get_max_filters,

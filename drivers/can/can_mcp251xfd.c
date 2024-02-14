@@ -740,21 +740,6 @@ static int mcp251xfd_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int mcp251xfd_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct mcp251xfd_data *dev_data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!dev_data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return -ENOTSUP;
-}
-#endif
-
 static int mcp251xfd_handle_fifo_read(const struct device *dev, const struct mcp251xfd_fifo *fifo,
 				      uint8_t fifo_type)
 {
@@ -1646,9 +1631,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 	.send = mcp251xfd_send,
 	.add_rx_filter = mcp251xfd_add_rx_filter,
 	.remove_rx_filter = mcp251xfd_remove_rx_filter,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = mcp251xfd_recover,
-#endif
 	.get_state = mcp251xfd_get_state,
 	.set_state_change_callback = mcp251xfd_set_state_change_callback,
 	.get_core_clock = mcp251xfd_get_core_clock,

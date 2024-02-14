@@ -853,18 +853,55 @@ ZTEST_USER(can_classic, test_send_fd_format)
 
 /**
  * @brief Test CAN controller bus recovery.
+ *
+ * It is not possible to provoke a bus off state, but verify the API call return codes.
  */
 ZTEST_USER(can_classic, test_recover)
 {
+	can_mode_t cap;
 	int err;
 
-	/* It is not possible to provoke a bus off state, but test the API call */
-	err = can_recover(can_dev, TEST_RECOVER_TIMEOUT);
-	if (err == -ENOTSUP) {
-		ztest_test_skip();
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_MANUAL_RECOVERY_MODE);
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_MANUAL_RECOVERY) != 0U) {
+		/* Check that manual recovery fails when not in manual recovery mode */
+		err = can_recover(can_dev, TEST_RECOVER_TIMEOUT);
+		zassert_equal(err, -ENOTSUP, "wrong error return code (err %d)", err);
+
+		err = can_stop(can_dev);
+		zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+		/* Enter manual recovery mode */
+		err = can_set_mode(can_dev, CAN_MODE_NORMAL | CAN_MODE_MANUAL_RECOVERY);
+		zassert_equal(err, 0, "failed to set manual recovery mode (err %d)", err);
+		zassert_equal(CAN_MODE_NORMAL | CAN_MODE_MANUAL_RECOVERY, can_get_mode(can_dev));
+
+		err = can_start(can_dev);
+		zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 	}
 
-	zassert_equal(err, 0, "failed to recover (err %d)", err);
+	err = can_recover(can_dev, TEST_RECOVER_TIMEOUT);
+
+	if ((cap & CAN_MODE_MANUAL_RECOVERY) != 0U) {
+		zassert_equal(err, 0, "failed to recover (err %d)", err);
+
+		err = can_stop(can_dev);
+		zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+		/* Restore loopback mode */
+		err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+		zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+		zassert_equal(CAN_MODE_LOOPBACK, can_get_mode(can_dev));
+
+		err = can_start(can_dev);
+		zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	} else {
+		/* Check that manual recovery fails when not supported */
+		zassert_equal(err, -ENOSYS, "wrong error return code (err %d)", err);
+	}
 }
 
 /**
@@ -1036,7 +1073,17 @@ ZTEST_USER(can_classic, test_start_while_started)
  */
 ZTEST_USER(can_classic, test_recover_while_stopped)
 {
+	can_mode_t cap;
 	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_MANUAL_RECOVERY_MODE);
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		ztest_test_skip();
+	}
 
 	err = can_stop(can_dev);
 	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);

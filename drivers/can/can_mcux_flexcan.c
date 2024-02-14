@@ -177,6 +177,10 @@ static int mcux_flexcan_get_capabilities(const struct device *dev, can_mode_t *c
 
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES;
 
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		*cap |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
 	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD), config->flexcan_fd)) {
 		*cap |= CAN_MODE_FD;
 	}
@@ -388,6 +392,10 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 		return -EBUSY;
 	}
 
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		supported |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
 	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD), config->flexcan_fd)) {
 		supported |= CAN_MODE_FD;
 	}
@@ -429,6 +437,16 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	} else {
 		/* Disable triple sampling mode */
 		ctrl1 &= ~(CAN_CTRL1_SMP_MASK);
+	}
+
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		if ((mode & CAN_MODE_MANUAL_RECOVERY) != 0) {
+			/* Disable auto-recovery from bus-off */
+			ctrl1 |= CAN_CTRL1_BOFFREC_MASK;
+		} else {
+			/* Enable auto-recovery from bus-off */
+			ctrl1 &= ~(CAN_CTRL1_BOFFREC_MASK);
+		}
 	}
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
@@ -819,7 +837,7 @@ static void mcux_flexcan_set_state_change_callback(const struct device *dev,
 	data->common.state_change_cb_user_data = user_data;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct mcux_flexcan_config *config = dev->config;
@@ -830,6 +848,10 @@ static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 
 	if (!data->common.started) {
 		return -ENETDOWN;
+	}
+
+	if ((data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		return -ENOTSUP;
 	}
 
 	(void)mcux_flexcan_get_state(dev, &state, NULL);
@@ -857,7 +879,7 @@ static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 
 	return ret;
 }
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_id)
 {
@@ -1225,9 +1247,8 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	config->base->CTRL1 |= CAN_CTRL1_BOFFREC_MASK;
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+	/* Enable auto-recovery from bus-off */
+	config->base->CTRL1 &= ~(CAN_CTRL1_BOFFREC_MASK);
 
 	(void)mcux_flexcan_get_state(dev, &data->state, NULL);
 
@@ -1244,9 +1265,9 @@ __maybe_unused static const struct can_driver_api mcux_flexcan_driver_api = {
 	.add_rx_filter = mcux_flexcan_add_rx_filter,
 	.remove_rx_filter = mcux_flexcan_remove_rx_filter,
 	.get_state = mcux_flexcan_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = mcux_flexcan_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
@@ -1287,9 +1308,9 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 	.add_rx_filter = mcux_flexcan_add_rx_filter,
 	.remove_rx_filter = mcux_flexcan_remove_rx_filter,
 	.get_state = mcux_flexcan_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = mcux_flexcan_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
