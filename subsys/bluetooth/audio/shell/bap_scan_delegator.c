@@ -312,11 +312,11 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
-			   const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
+			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	printk("BIS sync request received for %p\n", recv_state);
 
-	for (int i = 0; i < BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS; i++) {
+	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
 		printk("  [%d]: 0x%08x\n", i, bis_sync_req[i]);
 	}
 
@@ -522,7 +522,7 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 {
 	/* TODO: Add support to select which PA sync to BIG sync to */
 	struct bt_le_per_adv_sync *pa_sync = per_adv_syncs[0];
-	struct bt_bap_scan_delegator_subgroup *subgroup_param;
+	struct bt_bap_bass_subgroup *subgroup_param;
 	struct bt_bap_scan_delegator_add_src_param param;
 	unsigned long broadcast_id;
 	struct sync_state *state;
@@ -619,7 +619,7 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc,
 static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 					  char **argv)
 {
-	struct bt_bap_scan_delegator_subgroup *subgroup_param;
+	struct bt_bap_bass_subgroup *subgroup_param;
 	struct bt_bap_scan_delegator_mod_src_param param;
 	unsigned long broadcast_id;
 	unsigned long enc_state;
@@ -753,7 +753,7 @@ static int cmd_bap_scan_delegator_rem_src(const struct shell *sh, size_t argc,
 static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc,
 					 char **argv)
 {
-	uint32_t bis_syncs[CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+	uint32_t bis_syncs[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 	unsigned long pa_sync_state;
 	unsigned long bis_synced;
 	unsigned long src_id;

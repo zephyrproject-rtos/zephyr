@@ -801,7 +801,7 @@ struct bt_cap_commander_broadcast_reception_start_member_param {
 	 *
 	 * At least one bit in one of the subgroups bis_sync parameters shall be set.
 	 */
-	struct bt_bap_scan_delegator_subgroup *subgroups;
+	struct bt_bap_bass_subgroup *subgroups;
 
 	/** Number of subgroups */
 	size_t num_subgroups;

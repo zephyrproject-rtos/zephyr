@@ -25,15 +25,6 @@
 extern "C" {
 #endif
 
-
-#if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
-#define BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN
-#define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS
-#else
-#define BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN 0
-#define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    0
-#endif
-
 /** Periodic advertising state reported by the Scan Delegator */
 enum bt_bap_pa_state {
 	/** The periodic advertising has not been synchronized */
@@ -255,15 +246,17 @@ struct bt_bap_unicast_group;
 struct bt_bap_ep;
 
 /** Struct to hold subgroup specific information for the receive state */
-struct bt_bap_scan_delegator_subgroup {
+struct bt_bap_bass_subgroup {
 	/** BIS synced bitfield */
 	uint32_t bis_sync;
 
 	/** Length of the metadata */
 	uint8_t metadata_len;
 
+#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE)
 	/** The metadata */
-	uint8_t metadata[BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN];
+	uint8_t metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
 };
 
 /** Represents the Broadcast Audio Scan Service receive state */
@@ -296,7 +289,7 @@ struct bt_bap_scan_delegator_recv_state {
 	uint8_t num_subgroups;
 
 	/** Subgroup specific information */
-	struct bt_bap_scan_delegator_subgroup subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 struct bt_bap_scan_delegator_cb {
@@ -367,7 +360,6 @@ struct bt_bap_scan_delegator_cb {
 	void (*broadcast_code)(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state,
 			       const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
-
 	/**
 	 * @brief Broadcast Isochronous Stream synchronize request
 	 *
@@ -391,7 +383,7 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	int (*bis_sync_req)(struct bt_conn *conn,
 			    const struct bt_bap_scan_delegator_recv_state *recv_state,
-			    const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS]);
+			    const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
 };
 
 /** Structure holding information of audio stream endpoint */
@@ -1921,7 +1913,7 @@ int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
  */
 int bt_bap_scan_delegator_set_bis_sync_state(
 	uint8_t src_id,
-	uint32_t bis_synced[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS]);
+	uint32_t bis_synced[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
 
 struct bt_bap_scan_delegator_add_src_param {
 	/** The periodic adverting sync */
@@ -1937,7 +1929,7 @@ struct bt_bap_scan_delegator_add_src_param {
 	uint8_t num_subgroups;
 
 	/** Subgroup specific information */
-	struct bt_bap_scan_delegator_subgroup subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
@@ -1974,7 +1966,7 @@ struct bt_bap_scan_delegator_mod_src_param {
 	 * If a subgroup's metadata_len is set to 0, the existing metadata
 	 * for the subgroup will remain unchanged
 	 */
-	struct bt_bap_scan_delegator_subgroup subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
@@ -2214,7 +2206,7 @@ struct bt_bap_broadcast_assistant_add_src_param {
 	uint8_t num_subgroups;
 
 	/** Pointer to array of subgroups */
-	struct bt_bap_scan_delegator_subgroup *subgroups;
+	struct bt_bap_bass_subgroup *subgroups;
 };
 
 /**
@@ -2247,7 +2239,7 @@ struct bt_bap_broadcast_assistant_mod_src_param {
 	uint8_t num_subgroups;
 
 	/** Pointer to array of subgroups */
-	struct bt_bap_scan_delegator_subgroup *subgroups;
+	struct bt_bap_bass_subgroup *subgroups;
 };
 
 /** @brief Modify a source on the server.
