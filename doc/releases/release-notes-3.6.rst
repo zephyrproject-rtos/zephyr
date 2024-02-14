@@ -921,6 +921,32 @@ Libraries / Subsystems
 
 * Modem modules
 
+  * Added ``TRANSMIT_IDLE`` event to the ``modem_pipe`` module which notifies the user of the pipe
+    that the backend has transmitted all bytes placed in its buffer using
+    :c:func:`modem_pipe_transmit()`.
+    The event greatly increases the efficiency of transmitting large quantities of data if used to
+    dynamically manage the delay between calls to :c:func:`modem_pipe_transmit()`.
+
+  * Implemented ``TRANSMIT_IDLE`` event in all modem backends.
+
+  * Extended all modem modules to utilize the ``TRANSMIT_IDLE`` event to dynamically manage the delay
+    between calls to :c:func:`modem_pipe_transmit()`. This addition reduced the utilization of the
+    system workqueue while transmitting large, continuous quantities of data, by 86%, while only
+    reducing the throughput by 12%. This optimization additionally allows lower priority threads,
+    like the deferred logging thread, to run during the transmission (it was blocked by the
+    relentless, continuous calls to :c:func:`modem_pipe_transmit()`).
+
+  * Improved ``modem_pipe`` event dispatching. The ``modem_pipe`` module now invokes the
+    ``RECEIVE_READY`` event every time the pipe is attached using :c:func:`modem_pipe_attach()`
+    if it has data ready to be read, and always invokes ``TRANSMIT_IDLE`` when the pipe is
+    either opened or attached. This ensures event driven users of the modem pipe module can
+    rely solely on the events to start read/transmit work. A test suite has been added to
+    complement the improvements.
+
+  * Extended ``modem_cmux`` module to support acting both as DTE (user application) and DCE (modem).
+    With this addition, two zephyr applications can communicate with each other through their
+    respective ``modem_cmux`` instances.
+
 * Power management
 
   * Atmel SAM: introduced SUPC functions to allow wakeup sources and poweroff.
