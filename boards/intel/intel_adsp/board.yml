@@ -1,5 +1,5 @@
 board:
-  name: intel_adsp_cavs25
+  name: intel_adsp
   vendor: intel
   socs:
     - name: cavs25
