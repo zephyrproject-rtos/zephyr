@@ -255,7 +255,7 @@ static size_t upload_message_header_size(struct img_gr_upload *upload_state)
 	int map_count;
 	zcbor_state_t zse[CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2];
 	uint8_t temp_buf[MCUMGR_UPLOAD_INIT_HEADER_BUF_SIZE];
-	uint8_t temp_data;
+	uint8_t temp_data = 0U;
 
 	/* Calculation of message header with data length of 1 */
 
