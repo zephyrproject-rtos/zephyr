@@ -37,7 +37,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
 endif()
 
 zephyr_library_sources_ifdef(
-  CONFIG_SOC_OPENISA_RV32M1_RISCV32
+  CONFIG_SOC_OPENISA_RV32M1
   ll_sw/openisa/hal/RV32M1/cntr.c
   ll_sw/openisa/hal/RV32M1/ecb.c
   ll_sw/openisa/hal/RV32M1/radio/radio.c
@@ -45,7 +45,7 @@ zephyr_library_sources_ifdef(
   ll_sw/openisa/hal/RV32M1/ticker.c
   )
 
-if(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+if(CONFIG_SOC_OPENISA_RV32M1)
   zephyr_library_include_directories(
     ll_sw
     ll_sw/openisa
