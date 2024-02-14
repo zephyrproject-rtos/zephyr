@@ -1,11 +1,8 @@
 # Copyright (c) 2018 Foundries.io Ltd
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_OPENISA_RV32M1_RISCV32
-	bool "OpenISA RV32M1 RISC-V cores"
+config SOC_OPENISA_RV32M1
 	select RISCV
-	# The following select is due to limitations in the linker script.
-	# (We can't make it a 'depends on' without causing a dependency loop).
 	select XIP
 	select HAS_RV32M1_LPUART
 	select HAS_RV32M1_LPI2C
@@ -23,7 +20,3 @@ config SOC_OPENISA_RV32M1_RISCV32
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
-	help
-	  Enable support for OpenISA RV32M1 RISC-V processors. Choose
-	  this option to target the RI5CY or ZERO-RISCY core. This
-	  option should not be used to target either Arm core.
