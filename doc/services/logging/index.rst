@@ -660,7 +660,7 @@ not supported.  Occasionally, logging may inform backend about number of dropped
 messages with :c:func:`log_backend_dropped`. Message processing API is version
 specific.
 
-:c:func:`log_backend_msg2_process` is used for processing message. It is common for
+:c:func:`log_backend_msg_process` is used for processing message. It is common for
 standard and hexdump messages because log message hold string with arguments
 and data. It is also common for deferred and immediate logging.
 
@@ -670,7 +670,7 @@ Message formatting
 Logging provides set of function that can be used by the backend to format a
 message. Helper functions are available in :zephyr_file:`include/zephyr/logging/log_output.h`.
 
-Example message formatted using :c:func:`log_output_msg2_process`.
+Example message formatted using :c:func:`log_output_msg_process`.
 
 .. code-block:: console
 
