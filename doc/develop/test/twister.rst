@@ -839,7 +839,7 @@ In this case you can run twister with the following options:
       .. code-block:: bash
 
          scripts/twister --device-testing --device-serial-pty "script.py" \
-         -p intel_adsp_cavs25 -T tests/kernel
+         -p intel_adsp/cavs25 -T tests/kernel
 
    .. group-tab:: Windows
 
@@ -1008,7 +1008,7 @@ hardware map:
 
    - connected: true
      id: None
-     platform: intel_adsp_cavs25
+     platform: intel_adsp/cavs25
      product: None
      runner: intel_adsp
      serial_pty: path/to/script.py
@@ -1029,7 +1029,7 @@ work. It is equivalent to following west and twister commands.
 
          west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
 
-         twister -p intel_adsp_cavs25 --device-testing --device-serial-pty script.py
+         twister -p intel_adsp/cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
    .. group-tab:: Windows
