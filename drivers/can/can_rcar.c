@@ -653,12 +653,17 @@ static int can_rcar_stop(const struct device *dev)
 
 static int can_rcar_set_mode(const struct device *dev, can_mode_t mode)
 {
+	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
 	uint8_t tcr = 0;
 	int ret = 0;
 
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		supported |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
+	if ((mode & ~(supported)) != 0) {
 		LOG_ERR("Unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -686,6 +691,20 @@ static int can_rcar_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	sys_write8(tcr, config->reg_addr + RCAR_CAN_TCR);
+
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		uint16_t ctlr = can_rcar_read16(config, RCAR_CAN_CTLR);
+
+		if ((mode & CAN_MODE_MANUAL_RECOVERY) != 0U) {
+			/* Set entry to halt automatically at bus-off */
+			ctlr |= RCAR_CAN_CTLR_BOM_ENT;
+		} else {
+			/* Clear entry to halt automatically at bus-off */
+			ctlr &= ~RCAR_CAN_CTLR_BOM_ENT;
+		}
+
+		can_rcar_write16(config, RCAR_CAN_CTLR, ctlr);
+	}
 
 	data->common.mode = mode;
 
@@ -805,7 +824,7 @@ static int can_rcar_get_state(const struct device *dev, enum can_state *state,
 	return 0;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_rcar_cfg *config = dev->config;
@@ -815,6 +834,10 @@ static int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 
 	if (!data->common.started) {
 		return -ENETDOWN;
+	}
+
+	if ((data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		return -ENOTSUP;
 	}
 
 	if (data->state != CAN_STATE_BUS_OFF) {
@@ -843,7 +866,7 @@ done:
 	k_mutex_unlock(&data->inst_mutex);
 	return ret;
 }
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 static int can_rcar_send(const struct device *dev, const struct can_frame *frame,
 			 k_timeout_t timeout, can_tx_callback_t callback,
@@ -1078,9 +1101,7 @@ static int can_rcar_init(const struct device *dev)
 
 	ctlr = can_rcar_read16(config, RCAR_CAN_CTLR);
 	ctlr |= RCAR_CAN_CTLR_IDFM_MIXED;       /* Select mixed ID mode */
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	ctlr |= RCAR_CAN_CTLR_BOM_ENT;          /* Entry to halt mode automatically at bus-off */
-#endif
+	ctlr &= ~RCAR_CAN_CTLR_BOM_ENT;         /* Clear entry to halt automatically at bus-off */
 	ctlr |= RCAR_CAN_CTLR_MBM;              /* Select FIFO mailbox mode */
 	ctlr |= RCAR_CAN_CTLR_MLM;              /* Overrun mode */
 	ctlr &= ~RCAR_CAN_CTLR_SLPM;            /* Clear CAN Sleep mode */
@@ -1142,9 +1163,9 @@ static const struct can_driver_api can_rcar_driver_api = {
 	.add_rx_filter = can_rcar_add_rx_filter,
 	.remove_rx_filter = can_rcar_remove_rx_filter,
 	.get_state = can_rcar_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_rcar_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = can_rcar_set_state_change_callback,
 	.get_core_clock = can_rcar_get_core_clock,
 	.get_max_filters = can_rcar_get_max_filters,

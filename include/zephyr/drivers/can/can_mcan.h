@@ -1653,13 +1653,13 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
  */
 int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data);
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 /**
  * @brief Bosch M_CAN driver callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
 int can_mcan_recover(const struct device *dev, k_timeout_t timeout);
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_timeout_t timeout,
 		  can_tx_callback_t callback, void *user_data);
