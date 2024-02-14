@@ -21,5 +21,8 @@ target_sources(testlib PRIVATE
   src/conn_wait.c
   src/connect.c
   src/scan.c
+)
+
+target_sources_ifdef(CONFIG_BT_SMP testlib PRIVATE
   src/security.c
 )
