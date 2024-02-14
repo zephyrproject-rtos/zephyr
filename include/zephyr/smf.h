@@ -4,10 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* State Machine Framework */
+/**
+ * @file
+ *
+ * @brief State Machine Framework header file
+ */
 
 #ifndef ZEPHYR_INCLUDE_SMF_H_
 #define ZEPHYR_INCLUDE_SMF_H_
+
+/**
+ * @brief State Machine Framework API
+ * @defgroup smf State Machine Framework API
+ * @ingroup os_services
+ * @{
+ */
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 /**
@@ -186,5 +197,9 @@ int32_t smf_run_state(struct smf_ctx *ctx);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_SMF_H_ */
