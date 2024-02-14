@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include "modules.h"
+#include "lwm2m_resource_ids.h"
 
 #define APP_BANNER "Run LWM2M client"
 
@@ -30,6 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_SERIAL_NUMBER	"345000123"
 #define CLIENT_FIRMWARE_VER	"1.0"
 #define CLIENT_HW_VER		"1.0.1"
+#define TEMP_SENSOR_UNITS	"Celcius"
 
 /* Macros used to subscribe to specific Zephyr NET management events. */
 #define L4_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
@@ -45,6 +47,8 @@ static uint8_t bat_level = 95;
 static uint8_t bat_status = LWM2M_DEVICE_BATTERY_STATUS_CHARGING;
 static int mem_free = 15;
 static int mem_total = 25;
+static double min_range = 0.0;
+static double max_range = 100;
 
 static struct lwm2m_ctx client_ctx;
 
@@ -88,9 +92,17 @@ static int device_factory_default_cb(uint16_t obj_inst_id,
 	return 0;
 }
 
-
 static int lwm2m_setup(void)
 {
+	struct lwm2m_res_item temp_sensor_items[] = {
+		{&LWM2M_OBJ(IPSO_OBJECT_TEMP_SENSOR_ID, 0, MIN_RANGE_VALUE_RID), &min_range,
+		 sizeof(min_range)},
+		{&LWM2M_OBJ(IPSO_OBJECT_TEMP_SENSOR_ID, 0, MAX_RANGE_VALUE_RID), &max_range,
+		 sizeof(max_range)},
+		{&LWM2M_OBJ(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_UNITS_RID), TEMP_SENSOR_UNITS,
+		 sizeof(TEMP_SENSOR_UNITS)}
+	};
+
 	/* setup SECURITY object */
 
 	/* Server URL */
@@ -172,6 +184,14 @@ static int lwm2m_setup(void)
 
 	/* setup TEMP SENSOR object */
 	init_temp_sensor();
+
+	/* Set multiple TEMP SENSOR resource values in one function call. */
+	int err = lwm2m_set_bulk(temp_sensor_items, ARRAY_SIZE(temp_sensor_items));
+
+	if (err) {
+		LOG_ERR("Failed to set TEMP SENSOR resources");
+		return err;
+	}
 
 	/* IPSO: Light Control object */
 	init_led_device();
