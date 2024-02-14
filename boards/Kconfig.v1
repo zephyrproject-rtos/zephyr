@@ -5,6 +5,6 @@
 choice
 	prompt "Board Selection"
 
-source "$(BOARD_DIR)/Kconfig.board"
+osource "$(BOARD_DIR)/Kconfig.board"
 
 endchoice
