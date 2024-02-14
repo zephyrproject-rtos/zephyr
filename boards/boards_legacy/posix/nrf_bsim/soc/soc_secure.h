@@ -5,7 +5,7 @@
  */
 
 /*
- * Replacement for Nordic's nrf  soc/soc_legacy/arm/nordic_nrf/common/soc_secure.h
+ * Replacement for Nordic's nrf  soc/nordic_nrf/common/soc_secure.h
  */
 #ifndef BOARDS_POSIX_NRF52_BSIM_SOC_SECURE_H
 #define BOARDS_POSIX_NRF52_BSIM_SOC_SECURE_H

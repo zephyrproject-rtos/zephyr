@@ -30,15 +30,12 @@ config SOC_NRF54H20_ENGA_CPURAD
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 config SOC_NRF54H20_ENGA_CPUPPR
-	select RISCV
-	select RISCV_CORE_NORDIC_VPR
+	depends on RISCV_CORE_NORDIC_VPR
 
 if SOC_NRF54H20
 
 config NRF_ENABLE_ICACHE
 	bool "Instruction cache (I-Cache)"
 	default y
-
-rsource "*/Kconfig"
 
 endif # SOC_NRF54H20
