@@ -221,7 +221,7 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 	uint16_t buf_idx;
 
 	space = ring_buf_space_get(&cmux->transmit_rb) - MODEM_CMUX_FRAME_SIZE_MAX;
-	data_len = (space < frame->data_len) ? space : frame->data_len;
+	data_len = MIN(space, frame->data_len);
 
 	/* SOF */
 	buf[0] = 0xF9;
@@ -750,28 +750,27 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 	case MODEM_CMUX_RECEIVE_STATE_DATA:
 		/* Copy byte to data */
-		cmux->receive_buf[cmux->receive_buf_len] = byte;
+		if (cmux->receive_buf_len < cmux->receive_buf_size) {
+			cmux->receive_buf[cmux->receive_buf_len] = byte;
+		}
 		cmux->receive_buf_len++;
 
 		/* Check if datalen reached */
 		if (cmux->frame.data_len == cmux->receive_buf_len) {
 			/* Await FCS */
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_FCS;
-			break;
-		}
-
-		/* Check if receive buffer overrun */
-		if (cmux->receive_buf_len == cmux->receive_buf_size) {
-			LOG_WRN("Receive buf overrun");
-
-			/* Drop frame */
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_EOF;
-			break;
 		}
 
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_FCS:
+		if (cmux->receive_buf_len > cmux->receive_buf_size) {
+			LOG_WRN("Receive buffer overrun (%u > %u)",
+				cmux->receive_buf_len, cmux->receive_buf_size);
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
+			break;
+		}
+
 		/* Compute FCS */
 		if (cmux->frame.type == MODEM_CMUX_FRAME_TYPE_UIH) {
 			fcs = 0xFF - crc8(cmux->frame_header, cmux->frame_header_len,
