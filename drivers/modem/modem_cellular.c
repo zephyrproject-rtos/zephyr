@@ -79,23 +79,24 @@ struct modem_cellular_data {
 	/* UART backend */
 	struct modem_pipe *uart_pipe;
 	struct modem_backend_uart uart_backend;
-	uint8_t uart_backend_receive_buf[512];
-	uint8_t uart_backend_transmit_buf[512];
+	uint8_t uart_backend_receive_buf[CONFIG_MODEM_CELLULAR_UART_BUFFER_SIZES];
+	uint8_t uart_backend_transmit_buf[CONFIG_MODEM_CELLULAR_UART_BUFFER_SIZES];
 
 	/* CMUX */
 	struct modem_cmux cmux;
-	uint8_t cmux_receive_buf[128];
-	uint8_t cmux_transmit_buf[256];
+	uint8_t cmux_receive_buf[CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE];
+	uint8_t cmux_transmit_buf[2 * CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE];
 	struct modem_cmux_dlci dlci1;
 	struct modem_cmux_dlci dlci2;
 	struct modem_pipe *dlci1_pipe;
 	struct modem_pipe *dlci2_pipe;
-	uint8_t dlci1_receive_buf[128];
-	uint8_t dlci2_receive_buf[256];
+	uint8_t dlci1_receive_buf[CONFIG_MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE];
+	/* DLCI 2 is only used for chat scripts. */
+	uint8_t dlci2_receive_buf[CONFIG_MODEM_CELLULAR_CHAT_BUFFER_SIZES];
 
 	/* Modem chat */
 	struct modem_chat chat;
-	uint8_t chat_receive_buf[128];
+	uint8_t chat_receive_buf[CONFIG_MODEM_CELLULAR_CHAT_BUFFER_SIZES];
 	uint8_t *chat_delimiter;
 	uint8_t *chat_filter;
 	uint8_t *chat_argv[32];
