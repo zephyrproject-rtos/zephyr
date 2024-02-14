@@ -129,11 +129,11 @@ calls :c:func:`smf_set_state`.
 State Machine Termination
 =========================
 
-To terminate the state machine, the :c:func:`smf_terminate` function should
-be called. It can be called from the entry, run, or exit action. The
+To terminate the state machine, the :c:func:`smf_set_terminate` function
+should be called. It can be called from the entry, run, or exit action. The
 function takes a non-zero user defined value that's returned by the
 :c:func:`smf_run_state` function. The function has the following prototype:
-``void smf_terminate(smf_ctx *ctx, int32_t val)``
+``void smf_set_terminate(smf_ctx *ctx, int32_t val)``
 
 Flat State Machine Example
 ==========================
