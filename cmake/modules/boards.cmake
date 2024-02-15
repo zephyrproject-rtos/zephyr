@@ -92,11 +92,30 @@ if(DEFINED ZEPHYR_BOARD_ALIASES)
     set(BOARD_IDENTIFIER ${BOARD_ALIAS_IDENTIFIER}${BOARD_IDENTIFIER})
   endif()
 endif()
+
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
 if(${BOARD}_DEPRECATED)
   set(BOARD_DEPRECATED ${BOARD} CACHE STRING "Deprecated board name, provided by user")
-  set(BOARD ${${BOARD}_DEPRECATED})
+  parse_board_components(${BOARD}_DEPRECATED BOARD BOARD_DEPRECATED_REVISION BOARD_DEPRECATED_IDENTIFIER)
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
+  if(DEFINED BOARD_DEPRECATED_REVISION)
+    if(DEFINED BOARD_REVISION)
+      message(FATAL_ERROR
+        "Invalid board revision: ${BOARD_REVISION}\n"
+        "Deprecated board '${BOARD_DEPRECATED}' is now implemented as a revision of another board "
+        "(${BOARD}@${BOARD_DEPRECATED_REVISION}), so the specified revision does not apply. "
+        "Please consult the documentation for '${BOARD}' to see how to build for the new board."
+      )
+    endif()
+    set(BOARD_REVISION ${BOARD_DEPRECATED_REVISION})
+  endif()
+  if(DEFINED BOARD_IDENTIFIER)
+    message(FATAL_ERROR
+      "Deprecated boards cannot have board identifiers: ${BOARD_DEPRECATED}${BOARD_IDENTIFIER}.\n"
+      "Please consult the documentation for '${BOARD}' to see how to build for the new board."
+    )
+  endif()
+  set(BOARD_IDENTIFIER ${BOARD_DEPRECATED_IDENTIFIER})
 endif()
 
 zephyr_boilerplate_watch(BOARD)
