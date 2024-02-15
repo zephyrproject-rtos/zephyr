@@ -74,6 +74,7 @@
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
 			compatible = "st,stm32-hse-clock";
+			clock-frequency = <DT_FREQ_M(16)>;
 			status = "disabled";
 		};
 

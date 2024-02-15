@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"
 #endif
+#define CONFIG_USB_DEVICE_SOF
 
 /*
  * Vbus sensing is determined based on the presence of the hardware detection
@@ -248,11 +249,68 @@ static int usb_dc_stm32_clock_enable(void)
 			LOG_ERR("Failed to get USB domain clock rate");
 			return -EIO;
 		}
+__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+//HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+__HAL_RCC_PWR_CLK_ENABLE();
+HAL_PWREx_EnableVddA();
+HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE2);
+HAL_PWREx_EnableVddIO2();
+  /*   * Switch to SMPS regulator instead of LDO   */
+HAL_PWREx_ConfigSupply(PWR_SMPS_SUPPLY);
+ /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+HAL_ICACHE_Enable();
 
+/* Peripheral clock enable */
+    __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
+    __HAL_RCC_USBPHYC_CLK_ENABLE();
+
+    /* Enable VDDUSB */
+    if(__HAL_RCC_PWR_IS_CLK_DISABLED())
+    {
+      __HAL_RCC_PWR_CLK_ENABLE();
+      HAL_PWREx_EnableVddUSB();
+
+      /*configure VOSR register of USB*/
+      HAL_PWREx_EnableUSBHSTranceiverSupply();
+      __HAL_RCC_PWR_CLK_DISABLE();
+    }
+    else
+    {
+      HAL_PWREx_EnableVddUSB();
+
+      /*configure VOSR register of USB*/
+      HAL_PWREx_EnableUSBHSTranceiverSupply();
+    }
+
+    /*Configuring the SYSCFG registers OTG_HS PHY*/
+    /*OTG_HS PHY enable*/
+      HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
+    /* USB_OTG_HS interrupt Init */
+    //HAL_NVIC_SetPriority(OTG_HS_IRQn, 0, 0);
+    //HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
+  /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
+     //HAL_NVIC_SetPriority(OTG_HS_IRQn, 7, 0);
+     //HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
+
+
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5a5)
+		if (usb_clock_rate != MHZ(16)) {
+			LOG_ERR("USB Clock is not 16MHz (%d)", usb_clock_rate);
+			//return -ENOTSUP;
+		}
+#else
 		if (usb_clock_rate != MHZ(48)) {
 			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
 			return -ENOTSUP;
 		}
+#endif
+
 	}
 
 	/* Previous check won't work in case of F1/F3. Add build time check */
@@ -277,11 +335,18 @@ static int usb_dc_stm32_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #endif
 #else
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5a5)
+	
+	//LL_AHB1_GRP1_DisableClockStopSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+#else
 	/* Disable ULPI interface (for external high-speed PHY) clock in low
 	 * power mode. It is disabled by default in run power mode, no need to
 	 * disable it.
 	 */
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+
+#endif
+
 #endif
 #endif
 
@@ -349,7 +414,7 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
+	usb_dc_stm32_state.pcd.Init.ep0_mps = EP_MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
@@ -366,8 +431,25 @@ static int usb_dc_stm32_init(void)
 #else
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 #endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5a5)
+	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
+	//usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
+	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
+	//usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = ENABLE;
+	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
+	usb_dc_stm32_state.pcd.Init.ep0_mps = EP_MPS_64;
+	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
+	//usb_dc_stm32_state.pcd.Init.speed = USB_OTG_SPEED_HIGH_IN_FULL;
+	usb_dc_stm32_state.pcd.Init.dma_enable = DISABLE;
+
+//#define SYSCFG_OTGHSPHYCR_CLKSEL_0          (0x1UL << SYSCFG_OTGHSPHYCR_CLKSEL_Pos)    /*!< 0x00000004 */
+
+#else
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
+#endif
+	
 
 #ifndef CONFIG_SOC_SERIES_STM32F1X
 	usb_dc_stm32_state.pcd.Init.dma_enable = DISABLE;
