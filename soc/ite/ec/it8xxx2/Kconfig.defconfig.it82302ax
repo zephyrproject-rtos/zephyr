@@ -3,7 +3,4 @@
 
 if SOC_IT82302_AX
 
-config SOC
-	default "it82302ax"
-
 endif
