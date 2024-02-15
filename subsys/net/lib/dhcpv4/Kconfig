@@ -54,6 +54,21 @@ config NET_DHCPV4_ACCEPT_UNICAST
 	  If set, the network stack will accept unicast DHCPv4 responses from
 	  servers, before the assigned address is configured on the interface.
 
+config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
+	bool "Send vendor class identifier in DHCPv4 request"
+	depends on NET_DHCPV4
+	help
+	  If set, the network stack will include the specified string in the
+	  DHCPv4 vendor class identifier option in the DHCPv4 request.
+
+config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING
+	string "Vendor class identifier"
+	depends on NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
+	default ""
+	help
+	  The string to include in the DHCPv4 vendor class identifier option
+	  in the DHCPv4 request.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER
