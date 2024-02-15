@@ -1998,8 +1998,11 @@ static int hl7800_net_addr6_pton(const char *src, struct in6_addr *dst)
 
 		ipv6_section = (uint16_t)strtol(src, NULL, 10);
 		src = strchr(src, '.');
+		if (!src) {
+			return -EINVAL;
+		}
 		src++;
-		if (!src || *src == '\0') {
+		if (*src == '\0') {
 			return -EINVAL;
 		}
 		ipv6_section = (ipv6_section << 8) | (uint16_t)strtol(src, NULL, 10);
