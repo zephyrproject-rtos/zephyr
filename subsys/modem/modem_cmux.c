@@ -899,12 +899,15 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 
 static void modem_cmux_connect_handler(struct k_work *item)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
-	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, connect_work);
+	struct k_work_delayable *dwork;
+	struct modem_cmux *cmux;
 
-	if (cmux == NULL) {
+	if (item == NULL) {
 		return;
 	}
+
+	dwork = k_work_delayable_from_work(item);
+	cmux = CONTAINER_OF(dwork, struct modem_cmux, connect_work);
 
 	cmux->state = MODEM_CMUX_STATE_CONNECTING;
 
