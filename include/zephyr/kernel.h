@@ -123,6 +123,38 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
 
 /**
+ * @brief Iterate over all the threads in running on specified cpu.
+ *
+ * This function is does otherwise the same thing as k_thread_foreach(),
+ * but it only loops through the threads running on specified cpu only.
+ * If CONFIG_SMP is not defined the implementation this is the same as
+ * k_thread_foreach(), with an assert cpu == 0.
+ *
+ * @param cpu The filtered cpu number
+ * @param user_cb Pointer to the user callback function.
+ * @param user_data Pointer to user data.
+ *
+ * @note @kconfig{CONFIG_THREAD_MONITOR} must be set for this function
+ * to be effective.
+ * @note This API uses @ref k_spin_lock to protect the _kernel.threads
+ * list which means creation of new threads and terminations of existing
+ * threads are blocked until this API returns.
+ */
+#ifdef CONFIG_SMP
+void k_thread_foreach_filter_by_cpu(unsigned int cpu,
+				    k_thread_user_cb_t user_cb, void *user_data);
+#else
+static inline
+void k_thread_foreach_filter_by_cpu(unsigned int cpu,
+				    k_thread_user_cb_t user_cb, void *user_data)
+{
+	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ARG_UNUSED(cpu);
+	k_thread_foreach(user_cb, user_data);
+}
+#endif
+
+/**
  * @brief Iterate over all the threads in the system without locking.
  *
  * This routine works exactly the same like @ref k_thread_foreach
@@ -151,6 +183,51 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  */
 void k_thread_foreach_unlocked(
 	k_thread_user_cb_t user_cb, void *user_data);
+
+/**
+ * @brief Iterate over the threads in running on current cpu without locking.
+ *
+ * This function does otherwise the same thing as
+ * k_thread_foreach_unlocked(), but it only loops through the threads
+ * running on specified cpu. If CONFIG_SMP is not defined the
+ * implementation this is the same as k_thread_foreach_unlocked(), with an
+ * assert requiring cpu == 0.
+ *
+ * @param cpu The filtered cpu number
+ * @param user_cb Pointer to the user callback function.
+ * @param user_data Pointer to user data.
+ *
+ * @note @kconfig{CONFIG_THREAD_MONITOR} must be set for this function
+ * to be effective.
+ * @note This API uses @ref k_spin_lock only when accessing the _kernel.threads
+ * queue elements. It unlocks it during user callback function processing.
+ * If a new task is created when this @c foreach function is in progress,
+ * the added new task would not be included in the enumeration.
+ * If a task is aborted during this enumeration, there would be a race here
+ * and there is a possibility that this aborted task would be included in the
+ * enumeration.
+ * @note If the task is aborted and the memory occupied by its @c k_thread
+ * structure is reused when this @c k_thread_foreach_unlocked is in progress
+ * it might even lead to the system behave unstable.
+ * This function may never return, as it would follow some @c next task
+ * pointers treating given pointer as a pointer to the k_thread structure
+ * while it is something different right now.
+ * Do not reuse the memory that was occupied by k_thread structure of aborted
+ * task if it was aborted after this function was called in any context.
+ */
+#ifdef CONFIG_SMP
+void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
+					     k_thread_user_cb_t user_cb, void *user_data);
+#else
+static inline
+void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
+					     k_thread_user_cb_t user_cb, void *user_data)
+{
+	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ARG_UNUSED(cpu);
+	k_thread_foreach_unlocked(user_cb, user_data);
+}
+#endif
 
 /** @} */
 
