@@ -1,6 +1,6 @@
-.. _boards-google:
+.. _boards-circuit-dojo:
 
-Google, Inc.
+Circuit Dojo
 ############
 
 .. toctree::

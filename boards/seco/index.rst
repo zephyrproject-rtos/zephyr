@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-seco:
 
-Google, Inc.
-############
+SECO SpA
+########
 
 .. toctree::
    :maxdepth: 1

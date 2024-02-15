@@ -1,7 +1,7 @@
 .. _boards-gaisler:
 
-Frontgrade Gaisler
-##################
+Gaisler
+#######
 
 .. toctree::
    :maxdepth: 1

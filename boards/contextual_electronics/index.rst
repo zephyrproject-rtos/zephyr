@@ -1,6 +1,6 @@
-.. _boards-seagate:
+.. _boards-contextual-electronics:
 
-Seagate Technology PLC
+Contextual Electronics
 ######################
 
 .. toctree::

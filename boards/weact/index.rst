@@ -1,6 +1,6 @@
-.. _boards-google:
+.. _boards-weact:
 
-Google, Inc.
+WeAct Studio
 ############
 
 .. toctree::

@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-aconno:
 
-Google, Inc.
-############
+Aconno
+######
 
 .. toctree::
    :maxdepth: 1

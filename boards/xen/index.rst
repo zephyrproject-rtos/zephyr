@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-xen:
 
-Google, Inc.
-############
+Xen Hypervisor
+##############
 
 .. toctree::
    :maxdepth: 1

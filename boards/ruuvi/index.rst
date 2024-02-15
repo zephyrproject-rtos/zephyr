@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-ruuvi:
 
-Google, Inc.
-############
+Ruuvi
+#####
 
 .. toctree::
    :maxdepth: 1

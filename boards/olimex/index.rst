@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-olimex:
 
-Google, Inc.
-############
+OLIMEX Ltd.
+###########
 
 .. toctree::
    :maxdepth: 1

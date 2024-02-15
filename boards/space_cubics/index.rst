@@ -1,6 +1,6 @@
-.. _boards-google:
+.. _boards-space-cubics:
 
-Google, Inc.
+Space Cubics
 ############
 
 .. toctree::

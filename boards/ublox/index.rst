@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-u-blox:
 
-Google, Inc.
-############
+u-blox
+######
 
 .. toctree::
    :maxdepth: 1
