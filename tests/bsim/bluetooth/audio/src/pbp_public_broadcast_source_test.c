@@ -101,7 +101,7 @@ static void sent_cb(struct bt_bap_stream *stream)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_data, broadcast_preset_48_2_1.qos.sdu);
-	ret = bt_bap_stream_send(stream, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
+	ret = bt_bap_stream_send(stream, buf, seq_num++);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
 		net_buf_unref(buf);

@@ -37,3 +37,17 @@ snippet names you want to use. For example:
 
    cmake -Sapp -Bbuild -DSNIPPET="snippet1;snippet2" [...]
    cmake --build build
+
+Application required snippets
+*****************************
+
+If an application should always be compiled with a given snippet, it
+can be added to that application's ``CMakeLists.txt`` file. For example:
+
+.. code-block:: cmake
+
+   if(NOT snippet1 IN_LIST SNIPPET)
+     set(SNIPPET snippet1 ${SNIPPET} CACHE STRING "" FORCE)
+   endif()
+
+   find_package(Zephyr ....)

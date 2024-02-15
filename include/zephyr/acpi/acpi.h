@@ -62,11 +62,8 @@ struct acpi_mcfg {
 
 struct acpi_irq_resource {
 	uint32_t flags;
-	union {
-		uint16_t irq;
-		uint16_t irqs[CONFIG_ACPI_IRQ_VECTOR_MAX];
-	};
 	uint8_t irq_vector_max;
+	uint16_t *irqs;
 };
 
 struct acpi_reg_base {
@@ -79,8 +76,8 @@ struct acpi_reg_base {
 };
 
 struct acpi_mmio_resource {
-	struct acpi_reg_base reg_base[CONFIG_ACPI_MMIO_ENTRIES_MAX];
 	uint8_t mmio_max;
+	struct acpi_reg_base *reg_base;
 };
 
 /**

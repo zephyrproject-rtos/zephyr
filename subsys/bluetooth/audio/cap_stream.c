@@ -247,8 +247,7 @@ void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
 }
 
 #if defined(CONFIG_BT_AUDIO_TX)
-int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
-		       uint32_t ts)
+int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num)
 {
 	CHECKIF(stream == NULL) {
 		LOG_DBG("stream is NULL");
@@ -256,7 +255,19 @@ int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16
 		return -EINVAL;
 	}
 
-	return bt_bap_stream_send(&stream->bap_stream, buf, seq_num, ts);
+	return bt_bap_stream_send(&stream->bap_stream, buf, seq_num);
+}
+
+int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
+			  uint32_t ts)
+{
+	CHECKIF(stream == NULL) {
+		LOG_DBG("stream is NULL");
+
+		return -EINVAL;
+	}
+
+	return bt_bap_stream_send_ts(&stream->bap_stream, buf, seq_num, ts);
 }
 
 int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info)

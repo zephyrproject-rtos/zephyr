@@ -55,6 +55,14 @@ footprint, or in a complex application with an existing event model, where the
 callback is just a wrapper to pipe back the event in a more complex application
 specific event system.
 
+HID code mapping
+****************
+
+A common use case for input devices is to use them to generate HID reports. For
+this purpose, the :c:func:`input_to_hid_code` and
+:c:func:`input_to_hid_modifier` functions can be used to map input codes to HID
+codes and modifiers.
+
 Kscan Compatibility
 *******************
 

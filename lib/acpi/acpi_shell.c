@@ -279,6 +279,8 @@ static int get_acpi_dev_resource(const struct shell *sh, size_t argc, char **arg
 	struct acpi_dev *dev;
 	struct acpi_irq_resource irq_res;
 	struct acpi_mmio_resource mmio_res;
+	uint16_t irqs[CONFIG_ACPI_IRQ_VECTOR_MAX];
+	struct acpi_reg_base reg_base[CONFIG_ACPI_MMIO_ENTRIES_MAX];
 
 	if (argc < 3) {
 		return -EINVAL;
@@ -293,6 +295,8 @@ static int get_acpi_dev_resource(const struct shell *sh, size_t argc, char **arg
 	if (dev->path) {
 		shell_print(sh, "Device Path: %s", dev->path);
 
+		mmio_res.mmio_max = ARRAY_SIZE(reg_base);
+		mmio_res.reg_base = reg_base;
 		if (!acpi_device_mmio_get(dev, &mmio_res)) {
 
 			shell_print(sh, "Device MMIO resources");
@@ -304,6 +308,8 @@ static int get_acpi_dev_resource(const struct shell *sh, size_t argc, char **arg
 			}
 		}
 
+		irq_res.irq_vector_max = ARRAY_SIZE(irqs);
+		irq_res.irqs = irqs;
 		if (!acpi_device_irq_get(dev, &irq_res)) {
 
 			shell_print(sh, "Device IRQ resources");

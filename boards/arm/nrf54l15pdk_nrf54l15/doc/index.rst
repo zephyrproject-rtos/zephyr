@@ -6,6 +6,11 @@ nRF54L15 PDK
 Overview
 ********
 
+.. note::
+
+   All software for the nRF54L15 SoC is experimental and hardware availability
+   is restricted to the participants in the limited sampling program.
+
 The nRF54L15 Preview Development Kit hardware provides
 support for the Nordic Semiconductor nRF54L15 Arm Cortex-M33 CPU and
 the following devices:

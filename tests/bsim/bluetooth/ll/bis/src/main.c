@@ -184,8 +184,7 @@ static void iso_send(struct k_work *work)
 	net_buf_add_mem(buf, iso_data, iso_data_len);
 
 	bs_trace_info_time(4, "ISO send: seq_num %u\n", seq_num);
-	ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++,
-			       BT_ISO_TIMESTAMP_NONE);
+	ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++);
 	if (ret < 0) {
 		FAIL("Unable to broadcast data on channel (%d)\n", ret);
 		net_buf_unref(buf);

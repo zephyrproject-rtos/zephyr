@@ -401,7 +401,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 int main(void)
 {
 	int err;
-	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	struct bt_bap_bass_subgroup subgroup = { 0 };
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 
 	err = bt_enable(NULL);

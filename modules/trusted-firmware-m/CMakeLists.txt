@@ -152,16 +152,12 @@ if (CONFIG_BUILD_WITH_TFM)
   foreach(module ${TFM_CRYPTO_MODULES})
     if (CONFIG_TFM_${module}_ENABLED)
       # list(APPEND TFM_ENABLED_CRYPTO_MODULES_ARG ${module})
-      set(val "FALSE")
-    else()
-      set(val "TRUE")
+      list(APPEND TFM_CMAKE_ARGS -D${module}_ENABLED=True)
     endif()
-    list(APPEND TFM_CMAKE_ARGS -D${module}_DISABLED=${val})
   endforeach()
 
   set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
 
-  set(TFM_TEST_REPO_PATH ${ZEPHYR_CURRENT_MODULE_DIR}/../tf-m-tests)
   set(PSA_ARCH_TESTS_PATH ${ZEPHYR_CURRENT_MODULE_DIR}/../psa-arch-tests)
 
   set(TFM_INTERFACE_SOURCE_DIR   ${TFM_BINARY_DIR}/api_ns/interface/src)
@@ -230,14 +226,6 @@ if (CONFIG_BUILD_WITH_TFM)
 
   string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
 
-  if (CONFIG_TFM_QCBOR_PATH STREQUAL "DOWNLOAD")
-    # Change CMake cache type to string to avoid QCBOR_PATH=/absolute/path/DOWNLOAD being set.
-    set(QCBOR_PATH_TYPE ":STRING")
-  endif()
-  # Always set QCBOR_PATH, this will make sure that we don't automatically download this
-  # dependency in the TF-M build system and it will fail when set to an invalid value.
-  list(APPEND TFM_CMAKE_ARGS -DQCBOR_PATH${QCBOR_PATH_TYPE}=${CONFIG_TFM_QCBOR_PATH})
-
   if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
     # Supply path to NXP HAL sources used for TF-M build
     set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
@@ -281,7 +269,6 @@ if (CONFIG_BUILD_WITH_TFM)
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
-      -DTFM_TEST_REPO_PATH=${TFM_TEST_REPO_PATH}
       -DPSA_ARCH_TESTS_PATH=${PSA_ARCH_TESTS_PATH}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}

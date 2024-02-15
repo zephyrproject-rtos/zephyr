@@ -21,6 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,canbus = &can1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {

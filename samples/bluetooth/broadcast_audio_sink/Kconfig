@@ -22,7 +22,7 @@ config SCAN_SELF
 config SCAN_DELAY
 	int "Delay before starting scan (in seconds)"
 	range 0 255
-	default 5
+	default 10
 	depends on SCAN_SELF
 	help
 	  Time to advertise connectable for a Broadcast Assistant to connect

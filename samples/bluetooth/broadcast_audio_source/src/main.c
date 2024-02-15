@@ -171,6 +171,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 
 	if (source_stream->lc3_encoder == NULL) {
 		printk("LC3 encoder not setup, cannot encode data.\n");
+		net_buf_unref(buf);
 		return;
 	}
 
@@ -190,6 +191,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 			 send_pcm_data, 1, octets_per_frame, lc3_encoded_buffer);
 	if (ret == -1) {
 		printk("LC3 encoder failed - wrong parameters?: %d", ret);
+		net_buf_unref(buf);
 		return;
 	}
 
@@ -198,7 +200,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 	net_buf_add_mem(buf, send_pcm_data, preset_active.qos.sdu);
 #endif /* defined(CONFIG_LIBLC3) */
 
-	ret = bt_bap_stream_send(stream, buf, source_stream->seq_num++, BT_ISO_TIMESTAMP_NONE);
+	ret = bt_bap_stream_send(stream, buf, source_stream->seq_num++);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
 		printk("Unable to broadcast data on %p: %d\n", stream, ret);

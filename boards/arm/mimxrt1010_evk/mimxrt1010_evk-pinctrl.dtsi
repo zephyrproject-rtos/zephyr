@@ -22,18 +22,12 @@
 
 	pinmux_lpi2c1: pinmux_lpi2c1 {
 		group0 {
-			pinmux = <&iomuxc_gpio_01_lpi2c1_sda>;
+			pinmux = <&iomuxc_gpio_01_lpi2c1_sda>, <&iomuxc_gpio_02_lpi2c1_scl>;
 			drive-strength = "r0-4";
 			drive-open-drain;
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
 			input-enable;
-		};
-		group1 {
-			pinmux = <&iomuxc_gpio_02_lpi2c1_scl>;
-			drive-strength = "r0-4";
-			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 		};
 	};
 

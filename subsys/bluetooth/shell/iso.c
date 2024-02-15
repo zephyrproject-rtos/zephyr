@@ -582,8 +582,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 		net_buf_add_mem(buf, buf_data, len);
 		shell_info(sh, "send: %d bytes of data with PSN %u", len, cis_sn_last);
-		ret = bt_iso_chan_send(&iso_chan, buf, cis_sn_last,
-				       BT_ISO_TIMESTAMP_NONE);
+		ret = bt_iso_chan_send(&iso_chan, buf, cis_sn_last);
 		if (ret < 0) {
 			shell_print(sh, "Unable to send: %d", -ret);
 			net_buf_unref(buf);
@@ -699,7 +698,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 
 		net_buf_add_mem(buf, buf_data, len);
 		shell_info(sh, "send: %d bytes of data with PSN %u", len, bis_sn_last);
-		ret = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last, BT_ISO_TIMESTAMP_NONE);
+		ret = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last);
 		if (ret < 0) {
 			shell_print(sh, "Unable to broadcast: %d", -ret);
 			net_buf_unref(buf);

@@ -172,7 +172,7 @@ int net_trickle_create(struct net_trickle *trickle,
 
 	NET_ASSERT(trickle->Imax_abs);
 
-	NET_DBG("Imin %d Imax %u k %u Imax_abs %d",
+	NET_DBG("Imin %d Imax %u k %u Imax_abs %u",
 		trickle->Imin, trickle->Imax, trickle->k,
 		trickle->Imax_abs);
 
