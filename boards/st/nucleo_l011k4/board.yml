@@ -1,0 +1,5 @@
+board:
+  name: nucleo_l011k4
+  vendor: st
+  socs:
+    - name: stm32l011xx
