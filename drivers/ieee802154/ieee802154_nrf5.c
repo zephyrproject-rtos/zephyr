@@ -272,7 +272,7 @@ static int nrf5_cca(const struct device *dev)
 
 static int nrf5_set_channel(const struct device *dev, uint16_t channel)
 {
-	ARG_UNUSED(dev);
+	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
 	LOG_DBG("%u", channel);
 
@@ -280,7 +280,12 @@ static int nrf5_set_channel(const struct device *dev, uint16_t channel)
 		return channel < 11 ? -ENOTSUP : -EINVAL;
 	}
 
-	nrf_802154_channel_set(channel);
+	if (nrf5_radio->channel != channel) {
+		nrf_802154_channel_set(channel);
+		nrf5_radio->channel = channel;
+
+		LOG_DBG("Updated channel: %d", nrf_802154_channel_get());
+	}
 
 	return 0;
 }
@@ -514,7 +519,7 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
-		.channel = nrf_802154_channel_get(),
+		.channel = nrf5_radio->channel,
 		.tx_power = {
 			.use_metadata_value = true,
 			.power = nrf5_data.txpwr,
@@ -750,6 +755,7 @@ static int nrf5_init(const struct device *dev)
 	nrf5_get_capabilities_at_boot();
 
 	nrf5_radio->rx_on_when_idle = true;
+	nrf5_radio->channel = nrf_802154_channel_get();
 	nrf5_radio_cfg->irq_config_func(dev);
 
 	k_thread_create(&nrf5_radio->rx_thread, nrf5_radio->rx_stack,
