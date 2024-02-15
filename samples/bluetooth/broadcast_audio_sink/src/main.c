@@ -641,7 +641,7 @@ static int pa_sync_past(struct bt_conn *conn, uint16_t pa_interval)
 	if (err != 0) {
 		printk("Could not do PAST subscribe: %d\n", err);
 	} else {
-		printk("Syncing with PAST: %d\n", err);
+		printk("Syncing with PAST\n");
 		(void)k_work_reschedule(&pa_timer, K_MSEC(param.timeout * 10));
 	}
 
@@ -652,7 +652,6 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
 {
-	int err;
 
 	printk("Received request to sync to PA (PAST %savailble): %u\n", past_avail ? "" : "not ",
 	       recv_state->pa_sync_state);
@@ -667,16 +666,29 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER) && past_avail) {
+		int err;
+
 		err = pa_sync_past(conn, pa_interval);
+		if (err != 0) {
+			printk("Failed to subscribe to PAST: %d\n", err);
+
+			return err;
+		}
+
 		k_sem_give(&sem_past_request);
-	} else {
-		/* start scan */
-		err = 0;
+
+		err = bt_bap_scan_delegator_set_pa_state(recv_state->src_id,
+							 BT_BAP_PA_STATE_INFO_REQ);
+		if (err != 0) {
+			printk("Failed to set PA state to BT_BAP_PA_STATE_INFO_REQ: %d\n", err);
+
+			return err;
+		}
 	}
 
 	k_sem_give(&sem_pa_request);
 
-	return err;
+	return 0;
 }
 
 static int pa_sync_term_req_cb(struct bt_conn *conn,
@@ -918,10 +930,17 @@ static struct bt_le_scan_cb bap_scan_cb = {
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
-	if (sync == pa_sync) {
+	if (sync == pa_sync ||
+	    (req_recv_state != NULL && bt_addr_le_eq(info->addr, &req_recv_state->addr) &&
+	     info->sid == req_recv_state->adv_sid)) {
 		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
 		       broadcaster_broadcast_id);
 
+		if (pa_sync == NULL) {
+			pa_sync = sync;
+		}
+
+		k_work_cancel_delayable(&pa_timer);
 		k_sem_give(&sem_pa_synced);
 	}
 }
