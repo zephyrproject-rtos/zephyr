@@ -73,4 +73,6 @@ if(HWMv1)
             "${SOC_ROOT}\n"
     )
   endif()
+
+  set(SOC_FULL_DIR ${SOC_DIR}/${ARCH}/${SOC_PATH})
 endif()
