@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-96boards:
 
-Google, Inc.
-############
+96Boards
+########
 
 .. toctree::
    :maxdepth: 1

@@ -1,6 +1,6 @@
-.. _boards-raspberrypi:
+.. _boards-mikroe:
 
-Raspberry Pi Foundation
+MikroElektronika d.o.o.
 #######################
 
 .. toctree::

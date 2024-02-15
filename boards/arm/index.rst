@@ -1,4 +1,4 @@
-.. _boards-arm-ltd:
+.. _boards-arm:
 
 ARM Ltd.
 ########

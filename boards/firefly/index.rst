@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-firefly:
 
-Google, Inc.
-############
+Firefly
+#######
 
 .. toctree::
    :maxdepth: 1

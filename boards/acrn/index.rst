@@ -1,6 +1,6 @@
-.. _boards-google:
+.. _boards-acrn:
 
-Google, Inc.
+Project ACRN
 ############
 
 .. toctree::

@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-khadas:
 
-Google, Inc.
-############
+Khadas
+######
 
 .. toctree::
    :maxdepth: 1

@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-vng:
 
-Google, Inc.
-############
+VNG Corporation
+###############
 
 .. toctree::
    :maxdepth: 1
