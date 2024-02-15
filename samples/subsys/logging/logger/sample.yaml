@@ -29,6 +29,15 @@ tests:
       - CONFIG_LOG_BACKEND_RTT=y
       - CONFIG_USE_SEGGER_RTT=y
 
+  sample.logger.swo:
+    integration_platforms:
+      - b_u585i_iot02a
+    tags: logging
+    filter: CONFIG_HAS_SWO
+    harness: keyboard
+    extra_configs:
+      - CONFIG_LOG_BACKEND_SWO=y
+
   sample.logger.usermode:
     integration_platforms:
       - mps2_an385
