@@ -368,6 +368,45 @@ int tle9104_get_diagnostics(const struct device *dev,
 	return result;
 }
 
+static int tle9104_clear_diagnostics_internal(const struct device *dev)
+{
+	enum tle9104_register read_reg;
+	uint8_t temp;
+	int result;
+
+	result = tle9104_transceive_frame(dev, true, TLE9104REGISTER_DIAGOUT12ON, 0x00, &read_reg,
+					  &temp);
+	if (result != 0) {
+		return result;
+	}
+
+	result = tle9104_transceive_frame(dev, true, TLE9104REGISTER_DIAGOUT34ON, 0x00, &read_reg,
+					  &temp);
+	if (result != 0) {
+		return result;
+	}
+
+	result = tle9104_transceive_frame(dev, true, TLE9104REGISTER_DIAGOFF, 0x00, &read_reg,
+					  &temp);
+	if (result != 0) {
+		return result;
+	}
+
+	return 0;
+}
+
+int tle9104_clear_diagnostics(const struct device *dev)
+{
+	struct tle9104_data *data = dev->data;
+	int result;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	result = tle9104_clear_diagnostics_internal(dev);
+	k_mutex_unlock(&data->lock);
+
+	return result;
+}
+
 static int tle9104_init(const struct device *dev)
 {
 	const struct tle9104_config *config = dev->config;
