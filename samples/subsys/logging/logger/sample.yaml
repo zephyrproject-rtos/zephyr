@@ -33,7 +33,9 @@ tests:
     integration_platforms:
       - b_u585i_iot02a
     tags: logging
-    filter: CONFIG_HAS_SWO
+    filter: >
+      CONFIG_HAS_SWO and
+       (CONFIG_LOG_BACKEND_SWO_FREQ_HZ == 0 or CONFIG_LOG_BACKEND_SWO_REF_FREQ_HZ != 0)
     harness: keyboard
     extra_configs:
       - CONFIG_LOG_BACKEND_SWO=y
