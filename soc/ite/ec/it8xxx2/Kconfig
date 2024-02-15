@@ -1,12 +1,11 @@
 # Copyright (c) 2020 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-prompt "ITE IT8XXX2 system implementation"
-depends on SOC_SERIES_ITE_IT8XXX2
+config SOC_SERIES_ITE_IT8XXX2
+	select CPU_HAS_FPU if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr" || RISCV_ISA_EXT_M
+	select HAS_PM
 
 config SOC_IT8XXX2
-	bool "ITE IT8XXX2 system implementation"
 	select RISCV
 	select ATOMIC_OPERATIONS_BUILTIN
 	select RISCV_ISA_RV32I
@@ -17,12 +16,6 @@ config SOC_IT8XXX2
 	select RISCV_ISA_EXT_M if !(SOC_IT81302_BX || SOC_IT81202_BX)
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
-	select FLASH
-	select FLASH_HAS_PAGE_LAYOUT
-	select FLASH_HAS_DRIVER_ENABLED
-	select HAS_FLASH_LOAD_OFFSET
-
-endchoice
 
 config SOC_IT8XXX2_REG_SET_V1
 	bool
@@ -36,48 +29,34 @@ config SOC_IT8XXX2_REG_SET_V2
 	  This option is selected by a variable of which soc, and will
 	  determine the register for the IT82xx2 specification.
 
-if SOC_IT8XXX2
-
-choice IT8XXX2_SERIES
-	prompt "IT8XXX2 Series"
-	default SOC_IT81302_BX
-
 config SOC_IT81302_BX
-	bool "IT81302 BX version"
 	select SOC_IT8XXX2_REG_SET_V1
 
 config SOC_IT81202_BX
-	bool "IT81202 BX version"
 	select SOC_IT8XXX2_REG_SET_V1
 
 config SOC_IT81302_CX
-	bool "IT81302 CX version"
 	select SOC_IT8XXX2_REG_SET_V1
 
 config SOC_IT81202_CX
-	bool "IT81202 CX version"
 	select SOC_IT8XXX2_REG_SET_V1
 
 config SOC_IT82202_AX
-	bool "IT82202 AX version"
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 
 config SOC_IT82302_AX
-	bool "IT82302 AX version"
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 
 config SOC_IT82002_AW
-	bool "IT82002 AW version"
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
-
-endchoice
 
 config SOC_IT8XXX2_PLL_FLASH_48M
 	bool "Flash frequency is 48MHz"
 	default y
+	select FLASH
 	help
 	  Change frequency of PLL, CPU, and flash to 48MHz during initialization.
 
@@ -169,5 +148,3 @@ config ILM_MAX_SIZE
 	int "ILM Size in kB"
 	default 60 if SOC_IT81202_CX || SOC_IT81302_CX
 	default SRAM_SIZE
-
-endif # SOC_IT8XXX2
