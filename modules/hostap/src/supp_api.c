@@ -648,6 +648,7 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		struct status_resp cli_status;
 		bool is_ap;
 		int proto;
+		int key_mgmt;
 
 		if (!ssid) {
 			wpa_printf(MSG_ERROR, "Failed to get current ssid");
@@ -657,9 +658,10 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		is_ap = ssid->mode == WPAS_MODE_AP;
 		/* For AP its always the configured one */
 		proto = is_ap ? ssid->proto : wpa_s->wpa_proto;
+		key_mgmt = is_ap ? ssid->key_mgmt : wpa_s->key_mgmt;
 		os_memcpy(status->bssid, wpa_s->bssid, WIFI_MAC_ADDR_LEN);
 		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
-		status->security = wpas_key_mgmt_to_zephyr(wpa_s->key_mgmt, proto);
+		status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
 		status->mfp = ssid->ieee80211w; /* Same mapping */
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
