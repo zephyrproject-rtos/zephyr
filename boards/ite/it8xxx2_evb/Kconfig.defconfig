@@ -3,16 +3,15 @@
 
 if BOARD_IT8XXX2_EVB
 
-config BOARD
-	default "it8xxx2_evb"
-
 if PM
+
 config PM_DEVICE
 	default y
 
 choice PM_POLICY
 	default PM_POLICY_CUSTOM
 endchoice
+
 endif # PM
 
 config INPUT
