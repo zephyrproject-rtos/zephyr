@@ -6,10 +6,7 @@ if SOC_SERIES_ANDES_AE350
 # Kconfig picks the first default with a satisfied condition.
 # SoC defaults should be parsed before SoC Series defaults, because SoCs usually
 # overrides SoC Series values.
-source "soc/soc_legacy/riscv/andes_v5/ae350/Kconfig.defconfig.ae*"
-
-config SOC_SERIES
-	default "ae350"
+rsource "Kconfig.defconfig.ae*"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 60000000
