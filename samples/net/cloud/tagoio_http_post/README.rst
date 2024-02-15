@@ -51,7 +51,7 @@ tagoio-http-client sample application with minimal configuration:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: [sam4e_xpro | sam_v71_xult | frdm_k64f | nucleo_f767zi]
+   :board: [sam4e_xpro | sam_v71_xult/samv71q21 | frdm_k64f | nucleo_f767zi]
    :goals: build flash
    :compact:
 
@@ -75,7 +75,7 @@ need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: [sam_v71_xult | frdm_k64f | nucleo_f767zi]
+   :board: [sam_v71_xult/samv71q21 | frdm_k64f | nucleo_f767zi]
    :shield: [esp_8266_arduino | inventek_eswifi_arduino_uart]
    :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
    :goals: build flash

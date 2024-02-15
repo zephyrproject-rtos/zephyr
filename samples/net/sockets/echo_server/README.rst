@@ -79,7 +79,7 @@ Example building for the atsamr21_xpro with RF2XX driver support:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
-   :board: [atsamr21_xpro | sam4e_xpro | sam_v71_xult]
+   :board: [atsamr21_xpro | sam4e_xpro | sam_v71_xult/samv71q21]
    :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :goals: build flash
    :compact:

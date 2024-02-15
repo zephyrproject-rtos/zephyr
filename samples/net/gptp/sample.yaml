@@ -10,7 +10,7 @@ tests:
   sample.net.gptp:
     platform_allow:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - native_posix
       - native_posix_64
       - native_sim
