@@ -93,6 +93,8 @@ Bluetooth
 
 * Controller
 
+  * Added deinit implementation for ESP32 controller.
+
 Boards & SoC Support
 ********************
 
@@ -138,6 +140,13 @@ Boards & SoC Support
 * Added support for these X86 boards:
 
 * Added support for these Xtensa boards:
+
+  * Added Heltec Wireless Stick Lite (V3) board: ``heltec_wireless_stick_lite_v3``
+  * Added KINCONY-KC868-A32 board: ``kincony_kc868_a32``
+  * Added Lolin ESP32-S2 Mini board: ``esp32s2_lolin_mini``
+  * Added M5Stack AtomS3 board: ``m5stack_atoms3``
+  * Added M5Stack AtomS3-Lite board: ``m5stack_atoms3_lite``
+  * Added M5Stack StampS3 board: ``m5stack_stamps3``
 
 * Added support for these POSIX boards:
 
@@ -454,7 +463,8 @@ Drivers and Sensors
   * Added a :dtcompatible:`zephyr,native-linux-evdev` device node for getting
     input events from a Linux evdev device node.
   * Added support for optical encoders and power management to :dtcompatible:`gpio-qdec`.
-  * New drivers :dtcompatible:`espressif,esp32-touch`, :dtcompatible:`analog-axis`.
+  * New driver :dtcompatible:`analog-axis`.
+  * Added ESP32 touch sensor driver including a :dtcompatible:`espressif,esp32-touch`.
 
 * PCIE
 
@@ -477,6 +487,8 @@ Drivers and Sensors
     :kconfig:option:`CONFIG_PM` enabled and :kconfig:option:`CONFIG_DEBUG` disabled.
 
 * PWM
+
+  * Fixed ESP32S3 low frequency PWM issue.
 
 * Regulators
 
@@ -547,6 +559,7 @@ Drivers and Sensors
   * Added LiteOn LTR-F216A illuminance sensor driver.
   * Added Memsic MC3419 accelerometer sensor driver.
   * Added AMD SB temperature sensor driver.
+  * Added ESP32S3 internal temperature sensor driver.
 
 * Serial
 
@@ -1155,3 +1168,9 @@ Tests and Samples
 
 * Added a LVGL sample :zephyr:code-sample:`lvgl-accelerometer-chart` showcasing displaying of live
   sensor data in a chart widget.
+
+* Added ESP32-S3 IPM support in :zephyr:code-sample:`ipm-esp32`.
+
+* Added ESP32 memory-mapped flash access sample in :zephyr:code-sample:`esp32-flash-memory-mapped`.
+
+* Added ESP32 PWM loopback test case
