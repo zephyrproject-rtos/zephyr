@@ -98,7 +98,7 @@ do {                                                                           \
 	};                                                                         \
                                                                                \
 	int ipc_err = ipc_based_driver_send(ipc, packed_data, packed_len,          \
-		&ctx, CONFIG_GPIO_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);                 \
+		&ctx, timeout_ms);                                                     \
                                                                                \
 	if (ipc_err) {                                                             \
 		return ipc_err;                                                        \
