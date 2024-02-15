@@ -455,6 +455,8 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 			os_free((char *)data->auth.ies);
 		} else if (msg.event == EVENT_RX_MGMT) {
 			os_free((char *)data->rx_mgmt.frame);
+		} else if (msg.event == EVENT_TX_STATUS) {
+			os_free((char *)data->tx_status.data);
 		}
 
 		os_free(msg.data);
