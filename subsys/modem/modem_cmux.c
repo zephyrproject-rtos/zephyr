@@ -1015,12 +1015,15 @@ struct modem_pipe_api modem_cmux_dlci_pipe_api = {
 
 static void modem_cmux_dlci_open_handler(struct k_work *item)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
-	struct modem_cmux_dlci *dlci = CONTAINER_OF(dwork, struct modem_cmux_dlci, open_work);
+	struct k_work_delayable *dwork;
+	struct modem_cmux_dlci *dlci;
 
-	if (dlci == NULL) {
+	if (item == NULL) {
 		return;
 	}
+
+	dwork = k_work_delayable_from_work(item);
+	dlci = CONTAINER_OF(dwork, struct modem_cmux_dlci, open_work);
 
 	dlci->state = MODEM_CMUX_DLCI_STATE_OPENING;
 
