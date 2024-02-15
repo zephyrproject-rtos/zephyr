@@ -8,3 +8,4 @@ tests:
       - pwm
     depends_on: pwm
     harness: led
+    platform_exclude: rpi_pico/rp2040/w
