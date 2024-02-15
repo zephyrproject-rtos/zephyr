@@ -43,7 +43,7 @@ unsupported board:
 Building
 ********
 
-For example, to build this sample for :ref:`96b_carbon/stm32f401xe`:
+For example, to build this sample for :ref:`96b_carbon_board`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/threads
