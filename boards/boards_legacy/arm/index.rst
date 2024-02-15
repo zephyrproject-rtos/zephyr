@@ -1,4 +1,4 @@
-.. _boards-arm:
+.. _boards-arm-legacy:
 
 ARM Boards
 ##########
