@@ -6,6 +6,8 @@ config SOC_FAMILY_STM32
 	select STM32_ENABLE_DEBUG_SLEEP_STOP if DEBUG || ZTEST
 	select BUILD_OUTPUT_HEX
 
+if SOC_FAMILY_STM32
+
 rsource "*/Kconfig"
 
 # STM32 wide symbols definitions
@@ -36,3 +38,5 @@ config STM32_ENABLE_DEBUG_SLEEP_STOP
 	  debuggers from attaching w/o resetting the target. This
 	  effectivly destroys the use-case of `west attach`. Also
 	  SEGGER RTT and similar technologies need this.
+
+endif # SOC_FAMILY_STM32
