@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-qorvo:
 
-Google, Inc.
-############
+Qorvo, Inc.
+###########
 
 .. toctree::
    :maxdepth: 1

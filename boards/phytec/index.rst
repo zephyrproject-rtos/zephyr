@@ -1,6 +1,6 @@
-.. _boards-raspberrypi:
+.. _boards-phytec:
 
-Raspberry Pi Foundation
+PHYTEC Messtechnik GmbH
 #######################
 
 .. toctree::

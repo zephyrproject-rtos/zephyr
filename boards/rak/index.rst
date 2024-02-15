@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-rak:
 
-Google, Inc.
-############
+RAKwireless
+###########
 
 .. toctree::
    :maxdepth: 1

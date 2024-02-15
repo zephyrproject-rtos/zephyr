@@ -1,6 +1,6 @@
-.. _boards-up:
+.. _boards-raytac:
 
-UP Bridge the Gap.
+Raytac Corporation
 ##################
 
 .. toctree::

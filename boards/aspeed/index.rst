@@ -1,6 +1,6 @@
-.. _boards-seagate:
+.. _boards-aspeed:
 
-Seagate Technology PLC
+ASPEED Technology Inc.
 ######################
 
 .. toctree::
