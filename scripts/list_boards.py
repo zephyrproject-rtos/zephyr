@@ -298,7 +298,7 @@ def dump_v2_boards(args):
             notfound = lambda x: x or 'NOTFOUND'
             info = args.cmakeformat.format(
                 NAME='NAME;' + b.name,
-                DIR='DIR;' + str(b.dir),
+                DIR='DIR;' + str(b.dir.as_posix()),
                 VENDOR='VENDOR;' + notfound(b.vendor),
                 HWM='HWM;' + b.hwm,
                 REVISION_DEFAULT='REVISION_DEFAULT;' + notfound(b.revision_default),
@@ -323,7 +323,7 @@ def dump_boards(args):
             if args.cmakeformat is not None:
                 info = args.cmakeformat.format(
                     NAME='NAME;' + board.name,
-                    DIR='DIR;' + str(board.dir),
+                    DIR='DIR;' + str(board.dir.as_posix()),
                     HWM='HWM;' + board.hwm,
                     VENDOR='VENDOR;NOTFOUND',
                     REVISION_DEFAULT='REVISION_DEFAULT;NOTFOUND',
