@@ -1,0 +1,11 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX -License-Identifier: Apache-2.0
+
+config MFD_TLE9104
+	bool "Infineon TLE9104 SPI powertrain switch"
+	default y
+	depends on DT_HAS_INFINEON_TLE9104_ENABLED
+	# using select SPI at this point introduces a cyclic dependency
+	depends on SPI
+	help
+	  Enable driver for TLE9104 SPI-based powertrain switch.
