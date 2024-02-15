@@ -3,5 +3,6 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/infineon/dps310/Kconfig"
+source "drivers/sensor/infineon/tle9104/Kconfig"
 source "drivers/sensor/infineon/xmc4xxx_temp/Kconfig"
 # zephyr-keep-sorted-stop
