@@ -174,6 +174,7 @@ static ALWAYS_INLINE void dcdc_init(void)
 #endif
 
 #ifdef CONFIG_LOG_BACKEND_SWO
+#ifndef CONFIG_SOC_GECKO_DEV_INIT
 static void swo_init(void)
 {
 	struct soc_gpio_pin pin_swo = PIN_SWO;
@@ -196,6 +197,7 @@ static void swo_init(void)
 
 	GPIO_PinModeSet(pin_swo.port, pin_swo.pin, pin_swo.mode, pin_swo.out);
 }
+#endif /* !CONFIG_SOC_GECKO_DEV_INIT */
 #endif /* CONFIG_LOG_BACKEND_SWO */
 
 /**
