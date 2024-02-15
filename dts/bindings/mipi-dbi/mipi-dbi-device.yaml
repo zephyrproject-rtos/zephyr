@@ -19,6 +19,18 @@ properties:
       the concordance list (see dt-bindings/mipi_dbi/mipi_dbi.h)
         1     MIPI_DBI_MODE_SPI_3WIRE
         2     MIPI_DBI_MODE_SPI_4WIRE
+        3     MIPI_DBI_MODE_6800_BUS_16_BIT
+        4     MIPI_DBI_MODE_6800_BUS_9_BIT
+        5     MIPI_DBI_MODE_6800_BUS_8_BIT
+        6     MIPI_DBI_MODE_8080_BUS_16_BIT
+        7     MIPI_DBI_MODE_8080_BUS_9_BIT
+        8     MIPI_DBI_MODE_8080_BUS_8_BIT
     enum:
       - 1
       - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
