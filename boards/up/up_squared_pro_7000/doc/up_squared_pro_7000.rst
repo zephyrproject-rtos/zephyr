@@ -66,13 +66,13 @@ connection setup.
 Booting the UP Squared Pro 7000 Board using UEFI
 ================================================
 
-.. include:: ../../../../../boards/x86/common/efi_boot.rst
+.. include:: ../../../boards_legacy/x86/common/efi_boot.rst
    :start-after: start_include_here
 
 Booting the UP Squared Pro 7000 Board over network
 ==================================================
 
-.. include:: ../../../../../boards/x86/common/net_boot.rst
+.. include:: ../../../boards_legacy/x86/common/net_boot.rst
    :start-after: start_include_here
 
 References
