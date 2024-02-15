@@ -186,6 +186,10 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
+	/** Open load detected, boolean with one bit per output */
+	SENSOR_CHAN_OPEN_LOAD,
+	/** Over current detected, boolean with one bit per output */
+	SENSOR_CHAN_OVER_CURRENT,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
