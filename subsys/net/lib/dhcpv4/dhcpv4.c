@@ -171,6 +171,15 @@ static bool dhcpv4_add_hostname(struct net_pkt *pkt,
 }
 #endif
 
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+static bool dhcpv4_add_vendor_class_id(struct net_pkt *pkt,
+				 const char *vendor_class_id, const size_t size)
+{
+	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_VENDOR_CLASS_ID,
+					      size, vendor_class_id);
+}
+#endif
+
 /* Add DHCPv4 Options end, rest of the message can be padded wit zeros */
 static inline bool dhcpv4_add_end(struct net_pkt *pkt)
 {
@@ -217,6 +226,10 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 	const char *hostname = net_hostname_get();
 	const size_t hostname_size = strlen(hostname);
 #endif
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+	const char vendor_class_id[] = CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING;
+	const size_t vendor_class_id_size = sizeof(vendor_class_id) - 1;
+#endif
 
 	if (src_addr == NULL) {
 		addr = net_ipv4_unspecified_address();
@@ -242,6 +255,12 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 	if (hostname_size > 0) {
 		size += DHCPV4_OLV_MSG_HOST_NAME + hostname_size;
+	}
+#endif
+
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+	if (vendor_class_id_size > 0) {
+		size += DHCPV4_OLV_MSG_VENDOR_CLASS_ID + vendor_class_id_size;
 	}
 #endif
 
@@ -306,6 +325,13 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 	if (hostname_size > 0 &&
 	     !dhcpv4_add_hostname(pkt, hostname, hostname_size)) {
+		goto fail;
+	}
+#endif
+
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+	if (vendor_class_id_size > 0 &&
+	     !dhcpv4_add_vendor_class_id(pkt, vendor_class_id, vendor_class_id_size)) {
 		goto fail;
 	}
 #endif
