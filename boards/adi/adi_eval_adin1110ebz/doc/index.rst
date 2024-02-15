@@ -82,7 +82,7 @@ following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/adi/adi_eval_adin1110ebz/adi_eval_adin1110ebz_defconfig``
+	:zephyr_file:`boards/adi/adi_eval_adin1110ebz/adi_eval_adin1110ebz_defconfig`
 
 
 Connections and IOs

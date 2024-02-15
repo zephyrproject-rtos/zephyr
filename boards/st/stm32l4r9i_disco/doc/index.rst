@@ -65,7 +65,7 @@ Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in the defconfig file:
 
-	``boards/st/stm32l4r9i_disco/stm32l4r9i_disco_defconfig``
+	:zephyr_file:`boards/st/stm32l4r9i_disco/stm32l4r9i_disco_defconfig`
 
 
 Pin Mapping
