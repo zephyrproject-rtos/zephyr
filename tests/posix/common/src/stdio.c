@@ -5,16 +5,40 @@
  */
 
 #include <zephyr/ztest.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
 
-ZTEST(stdio, test_fgetc)
+ZTEST(stdio, test_fgetc_empty_stream)
 {
-    int fd = -1;
+    char test_char = EOF;
+    int expected_return = 0;
+    int retErr = ferror(stdin);
     int ret = fgetc(stdin);
+    printf("ERRNO: %d\nretError: %d", errno, retErr);
 
-    zassert_equal(ret, -1, "Expected return value -1, got %d", ret);
-    zassert_equal(errno, ENOSYS, "Expected errno ENOSYS, got %d", errno);
+    zassert_equal(ret, test_char, "Expected return value %d, got %d", test_char, ret);
+    zassert_not_equal(feof(stdin), expected_return);
+}
+
+ZTEST(stdio, test_fgetc_one_char)
+{
+
+    char test_char = 'A';
+    int expected_return = 0;
+    clearerr(stdin);
+    fputc(test_char, stdin);
+    printf("ERRNO: %d\n", errno);
+    fflush(stdin);
+    printf("ERRNO: %d\n", errno);
+    int ret = fgetc(stdin);
+    printf("ERRNO: %d\n", errno);
+
+
+    zassert_equal(ret, test_char, "Expected return value %d, got %d", test_char, ret);
+    zassert_not_equal(feof(stdin), expected_return);
+
 
 }
 
