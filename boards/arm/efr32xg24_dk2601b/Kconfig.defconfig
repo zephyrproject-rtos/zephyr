@@ -44,7 +44,7 @@ if SHELL
 
 config SHELL_STACK_SIZE
 	default 4096
-	
+
 endif # SHELL
 
 endif # BT
