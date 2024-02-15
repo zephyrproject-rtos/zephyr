@@ -1,4 +1,4 @@
-identifier: rpi_pico//w
+identifier: rpi_pico/rp2040/w
 name: RaspberryPi-Pico-w
 type: mcu
 arch: arm
