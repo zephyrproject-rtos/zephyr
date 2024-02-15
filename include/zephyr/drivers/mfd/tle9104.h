@@ -52,6 +52,14 @@ struct gpio_tle9104_channel_diagnostics {
  */
 int tle9104_get_diagnostics(const struct device *dev,
 			    struct gpio_tle9104_channel_diagnostics diag[TLE9104_GPIO_COUNT]);
+/**
+ * @brief clear the diagnostics of the outputs
+ *
+ * @param dev instance of TLE9104
+ *
+ * @retval 0 If successful.
+ */
+int tle9104_clear_diagnostics(const struct device *dev);
 /*!
  * @brief write output state
  *
