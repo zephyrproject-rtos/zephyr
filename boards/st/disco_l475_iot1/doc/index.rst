@@ -136,7 +136,7 @@ Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
 
-	``boards/st/disco_l475_iot1/disco_l475_iot1_defconfig``
+	:zephyr_file:`boards/st/disco_l475_iot1/disco_l475_iot1_defconfig`
 
 
 Connections and IOs

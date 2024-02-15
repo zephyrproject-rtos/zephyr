@@ -125,7 +125,7 @@ The Zephyr nucleo_l433rc_p board configuration supports the following hardware f
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-``boards/st/nucleo_l433rc_p/nucleo_l433rc_p_defconfig``
+:zephyr_file:`boards/st/nucleo_l433rc_p/nucleo_l433rc_p_defconfig`
 
 
 Connections and IOs
