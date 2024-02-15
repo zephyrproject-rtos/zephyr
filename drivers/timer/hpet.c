@@ -14,8 +14,6 @@
 
 #include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
 
-#include <soc.h>
-
 /**
  * @file
  * @brief HPET (High Precision Event Timers) driver
