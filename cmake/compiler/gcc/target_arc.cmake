@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(EXISTS ${SOC_DIR}/${ARCH}/${SOC_PATH}/tune_build_ops.cmake)
-  include(${SOC_DIR}/${ARCH}/${SOC_PATH}/tune_build_ops.cmake)
+if(EXISTS ${SOC_FULL_DIR}/tune_build_ops.cmake)
+  include(${SOC_FULL_DIR}/tune_build_ops.cmake)
 endif()
 
 if(NOT DEFINED GCC_ARC_TUNED_CPU)
