@@ -50,6 +50,29 @@ Bluetooth
 
 * Audio
 
+  * Changed ``bt_bap_scan_delegator_subgroup`` to :c:struct:`bt_bap_bass_subgroup` and
+    made it independent of :kconfig:option:`CONFIG_BT_BAP_SCAN_DELEGATOR`.
+  * Modified :c:func:`bt_bap_stream_send` to no longer take a timestamp as parameter,
+    and added :c:func:`bt_bap_stream_send_ts` that does.
+  * Modified :c:func:`bt_cap_stream_send` to no longer take a timestamp as parameter,
+    and added :c:func:`bt_cap_stream_send_ts` that does.
+  * Assigned number values have been moved from :file:`include/zephyr/bluetooth/audio/lc3.h` to
+    :file:`include/zephyr/bluetooth/audio/audio.h` and the ``LC3`` infix have been removed.
+  * The CAP initiator APIs have been streamlined and follow the same parameter pattern.
+  * Added Kconfig options to make MCC functionality optional to reduce memory usage for simple
+    clients.
+  * Added CAP Commander change volume and change volume offset.
+  * Added proper support for doing decoding in the application instead of in the controller by
+    modifying how the ISO data path is configured.
+  * Added :c:func:`bt_csip_set_member_unregister` to unregister a CSIS instance.
+  * Added helper functions to get and set assigned number values in codec configuration and
+    codec capabilities.
+  * Added support for the new mono audio location.
+  * Added ISO state callbacks for streams so the user knows the state of the CIS.
+  * Added :c:func:`bt_pacs_set_available_contexts_for_conn` to set available context per connection
+  * Refactored the :c:struct:`bt_bap_base` to be an abstract struct with new helper functions,
+    so that Zephyr supports all BASEs regardless of the size.
+
 * Direction Finding
 
 * Host
@@ -57,6 +80,8 @@ Bluetooth
   * Added ``recycled()`` callback to :c:struct:`bt_conn_cb`, which notifies listeners when a
     connection object has been freed, so it can be utilized for different purposes. No guarantees
     are made to what listener will be granted the object, as only the first claim is served.
+  * Modified :c:func:`bt_iso_chan_send` to no longer take a timestamp as parameter,
+    and added :c:func:`bt_iso_chan_send_ts` that does.
 
 * Mesh
 
