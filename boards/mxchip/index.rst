@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-mxchip:
 
-Google, Inc.
-############
+MXCHIP
+######
 
 .. toctree::
    :maxdepth: 1

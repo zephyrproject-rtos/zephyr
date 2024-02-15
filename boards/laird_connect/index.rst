@@ -1,6 +1,6 @@
-.. _boards-up:
+.. _boards-lairdconnect:
 
-UP Bridge the Gap.
+Laird Connectivity
 ##################
 
 .. toctree::

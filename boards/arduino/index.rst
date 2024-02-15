@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-arduino:
 
-Google, Inc.
-############
+Arduino
+#######
 
 .. toctree::
    :maxdepth: 1

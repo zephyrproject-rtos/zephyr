@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-legacy:
 
-Google, Inc.
-############
+Legacy boards
+#############
 
 .. toctree::
    :maxdepth: 1
