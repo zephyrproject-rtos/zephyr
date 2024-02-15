@@ -560,6 +560,11 @@ Drivers and Sensors
   * On compatible STM32 devices, isochronous endpoint are now functional thanks to the
     use of double buffering.
 
+* W1
+
+  * Added 1-Wire GPIO master driver. See the :dtcompatible:`zephyr,w1-gpio`
+    devicetree binding for more information.
+
 * Wi-Fi
 
   * Added Infineon airoc driver.
