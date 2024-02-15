@@ -54,6 +54,6 @@ config GEN_SW_ISR_TABLE
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-source "soc/soc_legacy/riscv/ite_ec/it8xxx2/Kconfig.defconfig.it8*"
+rsource "Kconfig.defconfig.it8*"
 
 endif # SOC_SERIES_ITE_IT8XXX2
