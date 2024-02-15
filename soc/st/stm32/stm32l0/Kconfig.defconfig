@@ -7,12 +7,9 @@
 
 if SOC_SERIES_STM32L0X
 
-source "soc/soc_legacy/arm/st_stm32/stm32l0/Kconfig.defconfig.stm32l0*"
+rsource "Kconfig.defconfig.stm32l0*"
 
-config SOC_SERIES
-	default "stm32l0"
-
-# adjust the fallback because of the LSI oscaillator characteristics
+# adjust the fallback because of the LSI oscillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
 	default 200
