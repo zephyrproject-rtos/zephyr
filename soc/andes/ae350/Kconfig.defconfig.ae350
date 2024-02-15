@@ -3,9 +3,6 @@
 
 if SOC_ANDES_AE350
 
-config SOC
-	default "ae350"
-
 config SYS_CLOCK_TICKS_PER_SEC
 	default 100 if (!ICACHE || XIP)
 
