@@ -990,6 +990,29 @@ Libraries / Subsystems
     With this addition, two zephyr applications can communicate with each other through their
     respective ``modem_cmux`` instances.
 
+* Picolibc
+
+  * Update to version 1.8.6. This removes the :c:macro:`_POSIX_C_SOURCE` definition from the build
+    system, so applications will need to add this if they use APIs outside of the Zephyr
+    requirements.
+
+  * Add new :c:func:`printf` modes, :kconfig:option:`CONFIG_PICOLIBC_IO_LONG_LONG` and
+    :kconfig:option:`CONFIG_PICOLIBC_IO_MINIMAL`. These provide applications with finer grained
+    control over the level of support provided by the library to control text space usage. By
+    default, the correct level of support is selected based upon other configuration parameters.
+
+  * Add :kconfig:option:`CONFIG_PICOLIBC_ASSERT_VERBOSE`. This option, which is false by default,
+    controls whether the :c:func:`assert` function displays verbose information, including the file
+    name, line number, function name and failing expression txt, when the assertion fails. Leaving
+    this disabled saves text space.
+
+  * Allow :kconfig:option:`CONFIG_THREAD_LOCAL_STORAGE` to be disabled while using Picolibc. This is
+    very helpful in diagnosing issues when using Picolibc as those are often caused by enabling TLS
+    and not caused by using the library itself.
+
+  * Numerous improvements in the library including code-size reductions in areas like printf and
+    ctype and various fixes in the math library.
+
 * Power management
 
   * Atmel SAM: introduced SUPC functions to allow wakeup sources and poweroff.
