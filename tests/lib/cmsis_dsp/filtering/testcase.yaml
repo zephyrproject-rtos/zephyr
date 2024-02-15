@@ -12,7 +12,7 @@ tests:
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
       - native_sim
     tags: cmsis_dsp
@@ -41,7 +41,7 @@ tests:
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
       - native_sim
     tags: cmsis_dsp
@@ -70,7 +70,7 @@ tests:
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
       - native_sim
     tags: cmsis_dsp
@@ -99,7 +99,7 @@ tests:
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
       - native_sim
     tags: cmsis_dsp
