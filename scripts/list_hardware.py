@@ -217,7 +217,7 @@ def dump_v2_archs(args):
             info = args.cmakeformat.format(
                 TYPE='TYPE;' + arch['type'],
                 NAME='NAME;' + arch['name'],
-                DIR='DIR;' + str(arch['path']),
+                DIR='DIR;' + str(arch['path'].as_posix()),
                 HWM='HWM;' + arch['hwm'],
                 # Below is non exising for arch but is defined here to support
                 # common formatting string.
@@ -248,7 +248,7 @@ def dump_v2_system(args, type, system):
         info = args.cmakeformat.format(
            TYPE='TYPE;' + type,
            NAME='NAME;' + system.name,
-           DIR='DIR;' + system.folder,
+           DIR='DIR;' + Path(system.folder).as_posix(),
            HWM='HWM;' + 'v2'
         )
     else:
