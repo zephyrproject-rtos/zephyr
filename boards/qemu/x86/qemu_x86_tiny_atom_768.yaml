@@ -1,5 +1,5 @@
-identifier: qemu_x86/ia32/nokpti
-name: QEMU Emulation for X86 (KPTI disabled)
+identifier: qemu_x86_tiny/atom/768
+name: QEMU Emulation for X86 (small VM, 768KB DRAM)
 type: qemu
 arch: x86
 simulation: qemu

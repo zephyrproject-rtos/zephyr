@@ -1,3 +1,0 @@
-comment: "Generic IA32 SoC"
-socs:
-- name: ia32

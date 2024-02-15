@@ -5,7 +5,7 @@
 
 choice
 	prompt "Default System Timer"
-	default HPET_TIMER if SOC_FAMILY_INTEL_ISH || SOC_IA32 || SOC_LAKEMONT
+	default HPET_TIMER if SOC_FAMILY_INTEL_ISH || SOC_ATOM || SOC_LAKEMONT
 	default APIC_TSC_DEADLINE_TIMER
 	depends on X86
 	help

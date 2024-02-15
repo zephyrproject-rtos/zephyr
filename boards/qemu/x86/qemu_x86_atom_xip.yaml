@@ -1,5 +1,5 @@
-identifier: qemu_x86/ia32/nommu
-name: QEMU Emulation for X86 (MMU disabled)
+identifier: qemu_x86/atom/xip
+name: QEMU Emulation for X86 (XIP enabled)
 type: qemu
 arch: x86
 simulation: qemu
@@ -9,6 +9,5 @@ toolchain:
 testing:
   default: true
   only_tags:
-    - kernel
-    - userspace
+    - xip
 vendor: qemu
