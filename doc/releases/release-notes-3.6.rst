@@ -896,6 +896,29 @@ Libraries / Subsystems
 
 * File systems
 
+* Logging
+
+  * Added option to remove string literals from the binary when dictionary based logging is used.
+
+  * Optimized the most common logging messages (strings with up to 2 numeric arguments). Optimization
+    is done for code size (significant gain seen on riscv32) and performance.
+
+  * Extended logging frontend API to optionally implement dedicated functions for optimized messages.
+    Optional API is enabled by :kconfig:option:`CONFIG_LOG_FRONTEND_OPT_API`.
+
+  * Added support for runtime message filtering for the logging frontend.
+
+  * Add option to have multiple instances of the UART logging backend.
+
+  * Fixed userspace issue for :c:func:`printk` when :kconfig:option:`CONFIG_LOG_PRINTK` is enabled.
+
+  * Added compile time detection of logging messages which are using character pointers for ``%p``.
+    It must be avoided when dictionary based logging is used and strings are stripped from the
+    binary. When erroneous case is detected then user message is replaced with error message which
+    suggests that pointer casting must be added.
+
+  * Removed remaining references to v2 logging. :c:func:`log2_generic` renamed to :c:func:`log_generic`.
+
 * Modem modules
 
 * Power management
