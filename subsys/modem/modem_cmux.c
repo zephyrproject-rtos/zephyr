@@ -455,6 +455,10 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 
 static void modem_cmux_connect_response_transmit(struct modem_cmux *cmux)
 {
+	if (cmux == NULL) {
+		return;
+	}
+
 	struct modem_cmux_frame frame = {
 		.dlci_address = cmux->frame.dlci_address,
 		.cr = cmux->frame.cr,
