@@ -40,5 +40,6 @@ source "drivers/led/Kconfig.pwm"
 source "drivers/led/Kconfig.tlc59108"
 source "drivers/led/Kconfig.xec"
 source "drivers/led/Kconfig.is31fl3733"
+source "drivers/led/Kconfig.is31fl3194"
 
 endif # LED
