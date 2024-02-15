@@ -2,7 +2,7 @@ boards:
 
   - name: qemu_x86
     socs:
-      - name: ia32
+      - name: atom
         variants:
           - name: 'nokpti'
           - name: 'nommu'
@@ -16,12 +16,12 @@ boards:
 
   - name: qemu_x86_64
     socs:
-      - name: ia32
+      - name: atom
         variants:
           - name: 'nokpti'
 
   - name: qemu_x86_tiny
     socs:
-      - name: ia32
+      - name: atom
         variants:
           - name: '768'
