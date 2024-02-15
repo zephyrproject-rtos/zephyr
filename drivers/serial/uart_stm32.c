@@ -1684,12 +1684,25 @@ static int uart_stm32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 				       size_t len)
 {
 	struct uart_stm32_data *data = dev->data;
+	unsigned int key;
+	int err = 0;
 
 	LOG_DBG("replace buffer (%d)", len);
-	data->rx_next_buffer = buf;
-	data->rx_next_buffer_len = len;
 
-	return 0;
+	key = irq_lock();
+
+	if (data->rx_next_buffer != NULL) {
+		err = -EBUSY;
+	} else if (!data->dma_rx.enabled) {
+		err = -EACCES;
+	} else {
+		data->rx_next_buffer = buf;
+		data->rx_next_buffer_len = len;
+	}
+
+	irq_unlock(key);
+
+	return err;
 }
 
 static int uart_stm32_async_init(const struct device *dev)
