@@ -132,10 +132,10 @@ The Zephyr nucleo_l452re board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-``boards/st/nucleo_l452re/nucleo_l452re_defconfig``
+:zephyr_file:`boards/st/nucleo_l452re/nucleo_l452re_defconfig`
 
 And for Nucleo L452RE-P in this defconfig file:
-``boards/st/nucleo_l452re/nucleo_l452re_stm32l452xx_p_defconfig``
+:zephyr_file:`boards/st/nucleo_l452re/nucleo_l452re_stm32l452xx_p_defconfig`
 
 
 Connections and IOs
