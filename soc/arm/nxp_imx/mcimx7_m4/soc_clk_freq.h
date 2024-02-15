@@ -28,31 +28,22 @@ uint32_t get_pwm_clock_freq(PWM_Type *base);
 }
 #endif
 
-/*! @brief Root control names for root clock setting. */
-enum _ccm_root_control_extra {
-	ccmRootPwm1   = (uint32_t)(&CCM_TARGET_ROOT106),
-	ccmRootPwm2   = (uint32_t)(&CCM_TARGET_ROOT107),
-	ccmRootPwm3   = (uint32_t)(&CCM_TARGET_ROOT108),
-	ccmRootPwm4   = (uint32_t)(&CCM_TARGET_ROOT109),
-};
+#define CCMROOTPWM1 (uint32_t)(&CCM_TARGET_ROOT106)
+#define CCMROOTPWM2 (uint32_t)(&CCM_TARGET_ROOT107)
+#define CCMROOTPWM3 (uint32_t)(&CCM_TARGET_ROOT108)
+#define CCMROOTPWM4 (uint32_t)(&CCM_TARGET_ROOT109)
 
-/*! @brief Clock source enumeration for PWM peripheral. */
-enum _ccm_rootmux_pwm {
-	ccmRootmuxPwmOsc24m	  = 0U,
-	ccmRootmuxPwmEnetPllDiv10 = 1U,
-	ccmRootmuxPwmSysPllDiv4   = 2U,
-	ccmRootmuxPwmEnetPllDiv25 = 3U,
-	ccmRootmuxPwmAudioPll	  = 4U,
-	ccmRootmuxPwmExtClk2	  = 5U,
-	ccmRootmuxPwmRef1m	  = 6U,
-	ccmRootmuxPwmVideoPll	  = 7U,
-};
+#define CCMROOTMUXPWMOSC24M       0U
+#define CCMROOTMUXPWMENETPLLDIV10 1U
+#define CCMROOTMUXPWMSYSPLLDIV4   2U
+#define CCMROOTMUXPWMENETPLLDIV25 3U
+#define CCMROOTMUXPWMAUDIOPLL	  4U
+#define CCMROOTMUXPWMEXTCLK2	  5U
+#define CCMROOTMUXPWMREF1M	  6U
+#define CCMROOTMUXPWMVIDEOPLL	  7U
 
-/*! @brief CCM CCGR gate control. */
-enum _ccm_ccgr_gate_extra {
-	ccmCcgrGatePwm1      = (uint32_t)(&CCM_CCGR132),
-	ccmCcgrGatePwm2      = (uint32_t)(&CCM_CCGR133),
-	ccmCcgrGatePwm3      = (uint32_t)(&CCM_CCGR134),
-	ccmCcgrGatePwm4      = (uint32_t)(&CCM_CCGR135),
-};
+#define CCMCCGRGATEPWM1      (uint32_t)(&CCM_CCGR132)
+#define CCMCCGRGATEPWM2      (uint32_t)(&CCM_CCGR133)
+#define CCMCCGRGATEPWM3      (uint32_t)(&CCM_CCGR134)
+#define CCMCCGRGATEPWM4      (uint32_t)(&CCM_CCGR135)
 #endif /* __SOC_CLOCK_FREQ_H__ */

@@ -172,40 +172,40 @@ static void nxp_mcimx7_pwm_config(void)
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm1, RDC_DT_VAL(pwm1), false, false);
 	/* Select clock derived from OSC clock(24M) */
-	CCM_UpdateRoot(CCM, ccmRootPwm1, ccmRootmuxPwmOsc24m, 0, 0);
+	CCM_UpdateRoot(CCM, CCMROOTPWM1, CCMROOTMUXPWMOSC24M, 0, 0);
 	/* Enable pwm clock */
-	CCM_EnableRoot(CCM, ccmRootPwm1);
-	CCM_ControlGate(CCM, ccmCcgrGatePwm1, ccmClockNeededAll);
+	CCM_EnableRoot(CCM, CCMROOTPWM1);
+	CCM_ControlGate(CCM, CCMCCGRGATEPWM1, ccmClockNeededAll);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm2, RDC_DT_VAL(pwm2), false, false);
 	/* Select clock derived from OSC clock(24M) */
-	CCM_UpdateRoot(CCM, ccmRootPwm2, ccmRootmuxPwmOsc24m, 0, 0);
+	CCM_UpdateRoot(CCM, CCMROOTPWM2, CCMROOTMUXPWMOSC24M, 0, 0);
 	/* Enable pwm clock */
-	CCM_EnableRoot(CCM, ccmRootPwm2);
-	CCM_ControlGate(CCM, ccmCcgrGatePwm2, ccmClockNeededAll);
+	CCM_EnableRoot(CCM, CCMROOTPWM2);
+	CCM_ControlGate(CCM, CCMCCGRGATEPWM2, ccmClockNeededAll);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm3), okay)
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm3, RDC_DT_VAL(pwm3), false, false);
 	/* Select clock derived from OSC clock(24M) */
-	CCM_UpdateRoot(CCM, ccmRootPwm3, ccmRootmuxPwmOsc24m, 0, 0);
+	CCM_UpdateRoot(CCM, CCMROOTPWM3, CCMROOTMUXPWMOSC24M, 0, 0);
 	/* Enable pwm clock */
-	CCM_EnableRoot(CCM, ccmRootPwm3);
-	CCM_ControlGate(CCM, ccmCcgrGatePwm3, ccmClockNeededAll);
+	CCM_EnableRoot(CCM, CCMROOTPWM3);
+	CCM_ControlGate(CCM, CCMCCGRGATEPWM3, ccmClockNeededAll);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm4), okay)
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm4, RDC_DT_VAL(pwm4), false, false);
 	/* Select clock derived from OSC clock(24M) */
-	CCM_UpdateRoot(CCM, ccmRootPwm4, ccmRootmuxPwmOsc24m, 0, 0);
+	CCM_UpdateRoot(CCM, CCMROOTPWM4, CCMROOTMUXPWMOSC24M, 0, 0);
 	/* Enable pwm clock */
-	CCM_EnableRoot(CCM, ccmRootPwm4);
-	CCM_ControlGate(CCM, ccmCcgrGatePwm4, ccmClockNeededAll);
+	CCM_EnableRoot(CCM, CCMROOTPWM4);
+	CCM_ControlGate(CCM, CCMCCGRGATEPWM4, ccmClockNeededAll);
 #endif
 
 }

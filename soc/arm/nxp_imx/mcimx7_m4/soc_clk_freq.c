@@ -17,30 +17,30 @@ uint32_t get_pwm_clock_freq(PWM_Type *base)
 
 	switch ((uint32_t)base) {
 	case PWM1_BASE:
-		root = CCM_GetRootMux(CCM, ccmRootPwm1);
-		CCM_GetRootDivider(CCM, ccmRootPwm1, &pre, &post);
+		root = CCM_GetRootMux(CCM, CCMROOTPWM1);
+		CCM_GetRootDivider(CCM, CCMROOTPWM1, &pre, &post);
 		break;
 	case PWM2_BASE:
-		root = CCM_GetRootMux(CCM, ccmRootPwm2);
-		CCM_GetRootDivider(CCM, ccmRootPwm2, &pre, &post);
+		root = CCM_GetRootMux(CCM, CCMROOTPWM2);
+		CCM_GetRootDivider(CCM, CCMROOTPWM2, &pre, &post);
 		break;
 	case PWM3_BASE:
-		root = CCM_GetRootMux(CCM, ccmRootPwm3);
-		CCM_GetRootDivider(CCM, ccmRootPwm3, &pre, &post);
+		root = CCM_GetRootMux(CCM, CCMROOTPWM3);
+		CCM_GetRootDivider(CCM, CCMROOTPWM3, &pre, &post);
 		break;
 	case PWM4_BASE:
-		root = CCM_GetRootMux(CCM, ccmRootPwm4);
-		CCM_GetRootDivider(CCM, ccmRootPwm4, &pre, &post);
+		root = CCM_GetRootMux(CCM, CCMROOTPWM4);
+		CCM_GetRootDivider(CCM, CCMROOTPWM4, &pre, &post);
 		break;
 	default:
 		return 0;
 	}
 
 	switch (root) {
-	case ccmRootmuxPwmOsc24m:
+	case CCMROOTMUXPWMOSC24M:
 		hz = 24000000U;
 		break;
-	case ccmRootmuxPwmSysPllDiv4:
+	case CCMROOTMUXPWMSYSPLLDIV4:
 		hz = CCM_ANALOG_GetSysPllFreq(CCM_ANALOG) >> 2;
 		break;
 	default:
