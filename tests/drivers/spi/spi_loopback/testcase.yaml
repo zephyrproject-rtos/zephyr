@@ -31,7 +31,7 @@ tests:
     extra_configs:
       - CONFIG_SPI_RTIO=y
     platform_allow:
-      - tdk_robokit1
+      - robokit1
       - mimxrt1170_evk_cm7
       - vmu_rt1170
   drivers.spi.mcux_dspi_dma.loopback:
@@ -44,11 +44,11 @@ tests:
       - OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
     platform_allow:
-      - sam_e70_xplained
-      - sam_v71_xult
-      - tdk_robokit1
+      - sam_e70_xplained/same70q21
+      - sam_v71_xult/samv71q21
+      - robokit1
     integration_platforms:
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
   drivers.spi.stm32_spi_16bits_frames.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-stm32-spi-16bits.conf"

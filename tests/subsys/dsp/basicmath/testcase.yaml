@@ -3,7 +3,7 @@ tests:
     filter: CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
       - native_sim
     tags: zdsp
