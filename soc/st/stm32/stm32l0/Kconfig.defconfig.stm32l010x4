@@ -3,12 +3,9 @@
 # Copyright (c) 2023 OS Systems
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_STM32L010X6
-
-config SOC
-	default "stm32l010x6"
+if SOC_STM32L010X4
 
 config NUM_IRQS
 	default 30
 
-endif # SOC_STM32L010X6
+endif # SOC_STM32L010X4
