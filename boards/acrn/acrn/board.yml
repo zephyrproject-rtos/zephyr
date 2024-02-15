@@ -2,7 +2,7 @@ boards:
 
   - name: acrn
     socs:
-      - name: ia32
+      - name: atom
 
   - name: acrn_ehl_crb
     socs:
