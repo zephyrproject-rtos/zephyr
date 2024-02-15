@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-maker-diary:
 
-Google, Inc.
-############
+Maker Diary
+###########
 
 .. toctree::
    :maxdepth: 1

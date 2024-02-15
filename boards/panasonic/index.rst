@@ -1,6 +1,6 @@
-.. _boards-waveshare:
+.. _boards-panasonic:
 
-Waveshare Electronics
+Panasonic Corporation
 #####################
 
 .. toctree::

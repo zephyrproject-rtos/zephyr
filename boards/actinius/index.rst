@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-actinius:
 
-Google, Inc.
-############
+Actinius
+########
 
 .. toctree::
    :maxdepth: 1

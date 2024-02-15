@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-bbc:
 
-Google, Inc.
-############
+BBC
+###
 
 .. toctree::
    :maxdepth: 1

@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-pine64:
 
-Google, Inc.
-############
+Pine64
+######
 
 .. toctree::
    :maxdepth: 1

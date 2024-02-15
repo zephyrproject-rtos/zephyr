@@ -1,7 +1,7 @@
-.. _boards-google:
+.. _boards-innblue:
 
-Google, Inc.
-############
+innblue
+#######
 
 .. toctree::
    :maxdepth: 1
