@@ -1,10 +1,7 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MR_CANHUBK3
-
-config BOARD
-	default "mr_canhubk3"
 
 if SERIAL
 
