@@ -330,3 +330,16 @@ test_spi_lis2de12: lis2de12@29 {
 	int2-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
+
+test_spi_tle9104: tle9104@2a {
+	compatible = "infineon,tle9104";
+	reg = <0x2a>;
+	spi-max-frequency = <0>;
+	status = "okay";
+
+	tle9104_diagnostics: tle9104_diagnostics {
+		compatible = "infineon,tle9104-diagnostics";
+		status = "okay";
+		#sensor-cells = <0>;
+	};
+};
