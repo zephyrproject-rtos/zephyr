@@ -4,12 +4,7 @@
 config SOC_FAMILY_ANDES_V5
 	bool
 
-if SOC_FAMILY_ANDES_V5
-
 config SOC_FAMILY
-	string
-	default "andes_v5"
+	default "andes_v5" if SOC_FAMILY_ANDES_V5
 
-source "soc/soc_legacy/riscv/andes_v5/*/Kconfig.soc"
-
-endif # SOC_FAMILY_ANDES_V5
+rsource "*/Kconfig.soc"
