@@ -11,7 +11,7 @@ tests:
   benchmark.cmsis_dsp.basicmath:
     integration_platforms:
       - frdm_k64f
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
   benchmark.cmsis_dsp.basicmath.fpu:
     filter: CONFIG_CPU_HAS_FPU
