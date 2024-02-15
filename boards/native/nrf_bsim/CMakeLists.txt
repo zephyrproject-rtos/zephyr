@@ -73,7 +73,7 @@ set_property(TARGET native_simulator APPEND PROPERTY RUNNER_LINK_LIBRARIES
 target_compile_options(native_simulator INTERFACE
                        "-DNSI_PRIMARY_MCU_N=${CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX}")
 
-add_subdirectory(${ZEPHYR_BASE}/boards/boards_legacy/${ARCH}/common/extra_args/
+add_subdirectory(${ZEPHYR_BASE}/boards/native/common/extra_args/
 	${CMAKE_CURRENT_BINARY_DIR}/extra_args
 )
 
