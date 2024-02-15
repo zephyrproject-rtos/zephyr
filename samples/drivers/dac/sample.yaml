@@ -35,10 +35,10 @@ tests:
       - nucleo_l552ze_q
       - nucleo_u575zi_q
       - nucleo_wl55jc
-      - sam_e70_xplained
-      - sam_e70b_xplained
-      - sam_v71_xult
-      - sam_v71b_xult
+      - sam_e70_xplained/same70q21
+      - sam_e70_xplained/same70q21b
+      - sam_v71_xult/samv71q21
+      - sam_v71_xult/samv71q21b
       - stm32f3_disco
       - stm32l562e_dk
       - twr_ke18f
