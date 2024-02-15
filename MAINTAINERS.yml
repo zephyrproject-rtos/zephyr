@@ -2506,10 +2506,10 @@ Native POSIX/Sim and POSIX arch:
     - aescolar
   files:
     - arch/posix/
-    - boards/posix/common/
-    - boards/posix/native_*/
-    - boards/posix/doc/
-    - boards/posix/*.rst
+    - boards/native/common/
+    - boards/native/native_*/
+    - boards/native/doc/
+    - boards/native/*.rst
     - drivers/*/*posix*
     - drivers/*/*native*
     - drivers/*/*/*posix*
@@ -2518,7 +2518,7 @@ Native POSIX/Sim and POSIX arch:
     - include/zephyr/arch/posix/
     - scripts/native_simulator/
     - scripts/valgrind.supp
-    - soc/posix/
+    - soc/native/
     - tests/boards/native_sim/
   labels:
     - "area: native port"
@@ -2778,7 +2778,7 @@ nRF BSIM:
   maintainers:
     - aescolar
   files:
-    - boards/posix/nrf_bsim/
+    - boards/native/nrf_bsim/
     - tests/boards/nrf52_bsim/
     - tests/bsim/
   files-exclude:
