@@ -10,7 +10,6 @@ string
 	default "nrf5340dk_nrf5340_cpunet" if $(BOARD) = "nrf5340dk_nrf5340_cpuapp"
 	default "nrf5340bsim_nrf5340_cpunet" if $(BOARD) = "nrf5340bsim_nrf5340_cpuapp"
 	default "adp_xc7k_ae350" if $(BOARD) = "adp_xc7k_ae350"
-	default "nrf5340dk_nrf5340_cpunet" if $(BOARD) = "mimxrt595_evk_cm33"
 	default "mimxrt1170_evkb_cm4" if $(BOARD) = "mimxrt1170_evkb_cm7"
 	default "mimxrt1170_evk_cm4" if $(BOARD) = "mimxrt1170_evk_cm7"
 	default "mimxrt1160_evk_cm4" if $(BOARD) = "mimxrt1160_evk_cm7"
