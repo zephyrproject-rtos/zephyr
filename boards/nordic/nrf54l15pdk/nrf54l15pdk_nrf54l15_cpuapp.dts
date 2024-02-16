@@ -16,6 +16,7 @@
 	chosen {
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
+		zephyr,uart-mcumgr = &uart20;
 		zephyr,sram = &sram0;
 		zephyr,flash = &rram0;
 		zephyr,code-partition = &slot0_partition;
