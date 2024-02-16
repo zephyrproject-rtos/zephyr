@@ -520,6 +520,10 @@ Drivers and Sensors
 
 * SDHC
 
+  * Added SDHC driver for Cadence SDHC IP
+  * Added SDHC driver for Infineon CAT1 IP
+  * Added support for SDIO commands to iMX USDHC SDHC driver
+
 * Sensor
 
   * Fixed arithmetic overflow in the LTRF216A driver.
@@ -1061,6 +1065,10 @@ Libraries / Subsystems
 
   * Fixed issue whereby :kconfig:option:`CONFIG_RETENTION_BUFFER_SIZE` values over 256 would cause
     an infinite loop due to use of 8-bit variables.
+
+* SD
+
+  * Added support for SDIO devices
 
 * Storage
 
