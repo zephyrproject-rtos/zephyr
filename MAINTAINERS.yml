@@ -3543,7 +3543,7 @@ ITE Platforms:
     - brockus-zephyr
     - sjg20
   files:
-    - boards/riscv/it8*_evb/
+    - boards/ite/
     - drivers/*/*/*it8xxx2*.c
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
