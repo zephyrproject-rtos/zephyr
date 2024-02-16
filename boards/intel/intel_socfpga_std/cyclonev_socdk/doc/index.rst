@@ -169,7 +169,7 @@ application.
 ``Important!!!`` : Before flashing the board a ``preloader`` is required,
 you can download `cv_soc_devkit_ghrd.tar.gz <https://releases.rocketboards.org/release/2018.05/gsrd/hw/cv_soc_devkit_ghrd.tar.gz>`_,
 extract the file and copy ``cv_soc_devkit_ghrd/software/preloader/uboot-socfpga/spl/u-boot-spl``
-to ``boards/intel/cyclonev_socdk/support/``
+to ``boards/intel/intel_socfpga_std/cyclonev_socdk/support/``
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -184,7 +184,7 @@ using the customized OpenOCD runner script :zephyr_file:`scripts/west_commands/r
 After it completes the kernel will immediately boot using the GSRD preloader.
 Notice that there a lot of helper files to ``flash`` the application with
 OpenOCD and GDB Debbuger (Zephyr SDK must be installed in your machine).
-This files should be located in :zephyr_file:`boards/intel/cyclonev_socdk/support/` including:
+This files should be located in :zephyr_file:`boards/intel/intel_socfpga_std/cyclonev_socdk/support/` including:
 
 * blaster_6810.hex : USB-BlasterII firmware
 * tmp_preloader_dl_cmd.txt : GDB helper file to load the preloader
@@ -294,7 +294,7 @@ You will see output similar to the following:
    warning: No executable has been specified and target does not support
    determining executable automatically.  Try using the "file" command.
    0xffff147c in ?? ()
-   warning: /home/demo/zephyrproject/zephyr/boards/intel/cyclonev_socdk/support/tmp_appli_debug_cmd.gdb: No such file or directory
+   warning: /home/demo/zephyrproject/zephyr/boards/intel/intel_socfpga_std/cyclonev_socdk/support/tmp_appli_debug_cmd.gdb: No such file or directory
    [Inferior 1 (Remote target) detached]
    Info : dropped 'gdb' connection
    shutdown command invoked
