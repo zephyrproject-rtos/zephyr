@@ -1,29 +1,28 @@
 # NXP S32K3XX MCU series
 
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "NXP S32K3XX MCU selection"
-	depends on SOC_SERIES_S32K3XX
+config SOC_SERIES_S32K3
+	select ARM
+	select CPU_CORTEX_M7
+	select HAS_NXP_S32_HAL
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select PLATFORM_SPECIFIC_INIT if XIP
+	select USE_DT_CODE_PARTITION if XIP
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
+	select HAS_MCUX_CACHE
 
-config SOC_S32K344
-	bool "s32k344"
-
-endchoice
-
-if SOC_SERIES_S32K3XX
-
-config SOC_PART_NUMBER_PS32K344EHVPBS
-	bool
-
-config SOC_PART_NUMBER
-	string
-	default "PS32K344EHVPBS" if SOC_PART_NUMBER_PS32K344EHVPBS
-	help
-	  This string holds the full part number of the SoC. It is a hidden option
-	  that you should not set directly. The part number selection choice defines
-	  the default value for this string.
+if SOC_SERIES_S32K3
 
 config IVT_HEADER_OFFSET
 	hex
@@ -58,4 +57,4 @@ config NXP_S32_PMC_LMBCTLEN
 	  VRC_CTRL pin and is controlled by the PMC to regulate a voltage of
 	  1.5V on V15 pin.
 
-endif
+endif # SOC_SERIES_S32K3
