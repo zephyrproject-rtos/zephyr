@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Zephyr Kernel Configuration
-# Platform Configuration
 # Enable MPU
 CONFIG_ARM_MPU=y
 
