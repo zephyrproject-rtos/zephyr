@@ -38,8 +38,13 @@ uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate)
 			CLOCK_GetRootClockMux(flexspi_clk));
 	/* Get clock root frequency */
 	root_rate = CLOCK_GetFreq(root);
-	/* Select a divider based on root frequency */
-	divider = MIN((root_rate / rate), CCM_CLOCK_ROOT_CONTROL_DIV_MASK);
+	/* Select a divider based on root clock frequency. We round the
+	 * divider up, so that the resulting clock frequency is lower than
+	 * requested when we can't output the exact requested frequency
+	 */
+	divider = ((root_rate + (rate - 1)) / rate);
+	/* Cap divider to max value */
+	divider = MIN(divider, CCM_CLOCK_ROOT_CONTROL_DIV_MASK);
 
 	while (FLEXSPI_GetBusIdleStatus(flexspi) == false) {
 		/* Spin */
