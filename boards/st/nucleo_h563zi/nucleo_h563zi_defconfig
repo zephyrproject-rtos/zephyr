@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_STM32H5X=y
-CONFIG_SOC_STM32H563XX=y
-
 # enable uart driver
 CONFIG_SERIAL=y
 
