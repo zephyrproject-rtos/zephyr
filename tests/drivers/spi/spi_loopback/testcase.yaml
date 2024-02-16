@@ -113,7 +113,7 @@ tests:
       - gd32vf103c_starter
       - gd32vf103v_eval
       - longan_nano
-      - longan_nano_lite
+      - longan_nano/gd32vf103/lite
   drivers.spi.gd32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
     platform_allow:
@@ -126,7 +126,7 @@ tests:
       - gd32vf103c_starter
       - gd32vf103v_eval
       - longan_nano
-      - longan_nano_lite
+      - longan_nano/gd32vf103/lite
   drivers.spi.pl022_spi_interrupt.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y

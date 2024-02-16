@@ -19,8 +19,8 @@ tests:
       - gd32a503v_eval
       - gd32e103v_eval
       - gd32f450i_eval
-      - longan_nano_lite
       - longan_nano
+      - longan_nano/gd32vf103/lite
       - nucleo_f091rc
       - nucleo_f207zg
       - nucleo_f429zi
