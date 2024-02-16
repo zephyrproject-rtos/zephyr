@@ -85,7 +85,7 @@ The mec172xmodular_assy6930 (Rev. B) board configuration supports the following 
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/arm/mec172xmodular_assy6930/mec172xmodular_assy6930_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec172xmodular_assy6930/mec172xmodular_assy6930_defconfig` Kconfig file.
 
 Connections and IOs
 ===================
@@ -205,7 +205,7 @@ Setup
 
    .. code-block:: console
 
-      west build -p auto -b mec172xmodular_assy6930 samples/hello_world -- -DMEC172X_SPI_GEN=$HOME/CPGZephyrDocs/MEC172x/SPI_image_gen/mec172x_spi_gen_lin_x86_64 -DMEC172X_SPI_CFG=$HOME/zephyrproject/zephyr/boards/arm/mec172xmodular_assy6930/support/spi_cfg_128MBit.txt
+      west build -p auto -b mec172xmodular_assy6930 samples/hello_world -- -DMEC172X_SPI_GEN=$HOME/CPGZephyrDocs/MEC172x/SPI_image_gen/mec172x_spi_gen_lin_x86_64 -DMEC172X_SPI_CFG=$HOME/zephyrproject/zephyr/boards/microchip/mec172xmodular_assy6930/support/spi_cfg_128MBit.txt
 
 
 Wiring
