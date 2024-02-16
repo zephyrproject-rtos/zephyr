@@ -200,8 +200,8 @@ The default configuration can be found in the defconfig and dts files:
 
 - Secure target:
 
-  - :zephyr_file:`boards/arm/stm32h573i_dk/stm32h573i_dk_defconfig`
-  - :zephyr_file:`boards/arm/stm32h573i_dk/stm32h573i_dk.dts`
+  - :zephyr_file:`boards/st/stm32h573i_dk/stm32h573i_dk_defconfig`
+  - :zephyr_file:`boards/st/stm32h573i_dk/stm32h573i_dk.dts`
 
 Zephyr board options
 ====================
