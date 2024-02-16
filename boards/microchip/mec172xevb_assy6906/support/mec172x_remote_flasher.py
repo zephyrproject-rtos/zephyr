@@ -31,7 +31,7 @@ Here is a sample map file:
     product: mec172xevb_assy6906
     runner: misc-flasher
     runner_params:
-      - <ZEPHYR_BASE>/boards/arm/mec172xevb_assy6906/support/mec172x_remote_flasher.py
+      - <ZEPHYR_BASE>/boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py
       - <remote host>
     serial_pty: "nc,<remote host>,<ser2net port>"
 
