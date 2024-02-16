@@ -131,8 +131,8 @@ config TEST_ENABLE_USERSPACE
 	bool
 	depends on TEST_USERSPACE
 	depends on ARCH_HAS_USERSPACE
-	select USERSPACE
-	select DYNAMIC_OBJECTS
+	imply USERSPACE
+	imply DYNAMIC_OBJECTS
 	default y
 	help
 	  This hidden option implements the TEST_USERSPACE logic. It turns on
