@@ -1,15 +1,8 @@
 /*
- * Copyright (c) 2023 S&C Electric Company <www.sandc.com>
  * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-&sdmmc1 {
-        sdmmc {
-		compatible = "zephyr,sdmmc-disk";
-	};
-};
 
 / {
 	fstab {
