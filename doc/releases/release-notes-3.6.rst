@@ -474,6 +474,16 @@ Drivers and Sensors
   * New driver :dtcompatible:`analog-axis`.
   * Added ESP32 touch sensor driver including a :dtcompatible:`espressif,esp32-touch`.
 
+* MDIO
+
+  * Fixed initialization priorities of NXP s32 NETC drivers.
+  * Fixed SAM GMAC transfer timeout errors caused by MDIO clock not being initialized.
+  * Fixed ESP32 MDIO driver being enabled when node was not status okay.
+  * Added support for C22 and C45 APIs on S32 GMAC.
+  * Added MDIO driver for NXP ENET peripheral.
+  * Added xmc4xxx MDIO drivers.
+  * Fixed build errors caused by mdio.h driver header not including errno.h
+
 * PCIE
 
   * Fixed MMIO size calculation by disabling IO/memory decoding beforehand.
