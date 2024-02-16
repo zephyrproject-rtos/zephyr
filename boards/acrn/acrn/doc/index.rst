@@ -1,5 +1,5 @@
-Building and Running Zephyr with ACRN
-#####################################
+ACRN hypervisor
+###############
 
 Zephyr's is capable of running as a guest under the x86 ACRN
 hypervisor (see https://projectacrn.org/).  The process for getting
