@@ -3,7 +3,7 @@
 # Description:
 # Helper file to download the GSRD preloader to the board before the application
 
-restore boards/intel/cyclonev_socdk/support/u-boot-spl
-symbol-file -readnow boards/intel/cyclonev_socdk/support/u-boot-spl
+restore boards/intel/intel_socfpga_std/cyclonev_socdk/support/u-boot-spl
+symbol-file -readnow boards/intel/intel_socfpga_std/cyclonev_socdk/support/u-boot-spl
 thbreak spl_boot_device
 jump _start
