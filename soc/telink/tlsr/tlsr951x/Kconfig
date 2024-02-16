@@ -1,8 +1,8 @@
 # Copyright (c) 2021 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_TELINK_TLSR951X
-	bool "Telink TLSR951X"
+config SOC_SERIES_TLSR951X
+	bool
 	select RISCV
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M
@@ -16,6 +16,16 @@ config SOC_SERIES_TELINK_TLSR951X
 	select ATOMIC_OPERATIONS_BUILTIN
 	select CPU_HAS_FPU
 	select INCLUDE_RESET_VECTOR
-	select SOC_FAMILY_TELINK_TLSR
-	help
-	  Enable support for Telink TLSR951X
+
+if SOC_SERIES_TLSR951X
+
+config TELINK_B91_HWDSP
+	bool "Support Hardware DSP"
+	select RISCV_SOC_CONTEXT_SAVE
+
+config TELINK_B91_PFT_ARCH
+	bool "Support performance throttling"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+
+endif # SOC_SERIES_TLSR951X
