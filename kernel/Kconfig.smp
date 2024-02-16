@@ -73,6 +73,24 @@ config TRACE_SCHED_IPI
 	depends on SCHED_IPI_SUPPORTED
 	depends on MP_MAX_NUM_CPUS>1
 
+config IPI_OPTIMIZE
+	bool "Optimize IPI delivery"
+	default n
+	depends on SCHED_IPI_SUPPORTED && MP_MAX_NUM_CPUS>1
+	help
+	  When selected, the kernel will attempt to determine the minimum
+	  set of CPUs that need an IPI to trigger a reschedule in response to
+	  a thread newly made ready for execution. This increases the
+	  computation required at every scheduler operation by a value that is
+	  O(N) in the number of CPUs, and in exchange reduces the number of
+	  interrupts delivered. Which to choose is going to depend on
+	  application behavior. If the architecture also supports directing
+	  IPIs to specific CPUs then this has the potential to signficantly
+	  reduce the number of IPIs (and consequently ISRs) processed by the
+	  system as the number of CPUs increases. If not, the only benefit
+	  would be to not issue any IPIs if the newly readied thread is of
+	  lower priority than all the threads currently executing on other CPUs.
+
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
 	depends on ARCH_HAS_COHERENCE
