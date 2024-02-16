@@ -39,6 +39,8 @@ struct native_tty_data {
 	int cmd_baudrate;
 	/* Serial port set from the command line. If NULL, it was not set. */
 	char *cmd_serial_port;
+	/* Keep the current uart configuration instead of parsing the low-level driver */
+	struct uart_config *uart_config;
 };
 
 struct native_tty_config {
@@ -72,7 +74,7 @@ static int native_tty_conv_to_bottom_cfg(struct native_tty_bottom_cfg *bottom_cf
 		return -ENOTSUP;
 	}
 
-	switch (cfg->data_bits) {
+	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
 		bottom_cfg->stop_bits = NTB_STOP_BITS_1;
 		break;
@@ -143,6 +145,16 @@ static int native_tty_uart_poll_in(const struct device *dev, unsigned char *p_ch
 	return nsi_host_read(data->fd, p_char, 1) > 0 ? 0 : -1;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static int native_tty_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_config *uart_cfg = ((struct native_tty_data *)dev->data)->uart_config;
+	*cfg = *uart_cfg;
+
+	return 0;
+}
+
 static int native_tty_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	int fd = ((struct native_tty_data *)dev->data)->fd;
@@ -154,8 +166,18 @@ static int native_tty_configure(const struct device *dev, const struct uart_conf
 		return rc;
 	}
 
-	return native_tty_configure_bottom(fd, &bottom_cfg);
+	rc = native_tty_configure_bottom(fd, &bottom_cfg);
+	if (rc) {
+		WARN("Could not apply given config to native tty bottom\n");
+		return rc;
+	}
+
+	struct uart_config *uart_cfg = ((struct native_tty_data *)dev->data)->uart_config;
+	*uart_cfg = *cfg;
+
+	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int native_tty_serial_init(const struct device *dev)
 {
@@ -195,6 +217,9 @@ static int native_tty_serial_init(const struct device *dev)
 		ERROR("%s: could not configure serial port %s\n", dev->name, data->serial_port);
 	}
 
+	struct uart_config *uart_cfg = ((struct native_tty_data *)dev->data)->uart_config;
+	*uart_cfg = uart_config; /* init run-time uart config to */
+ 
 	posix_print_trace("%s connected to the serial port: %s\n", dev->name, data->serial_port);
 
 	return 0;
@@ -205,6 +230,7 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 	.poll_in = native_tty_uart_poll_in,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = native_tty_configure,
+	.config_get = native_tty_config_get,
 #endif
 };
 
@@ -220,8 +246,11 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
+	static struct uart_config uart_config_##inst = {0};                                            \
+                                                                                                   \
 	static struct native_tty_data native_tty_##inst##_data = {                                 \
 		.serial_port = DT_INST_PROP_OR(inst, serial_port, NULL),                           \
+		.uart_config = &uart_config_##inst,                                                \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data,       \

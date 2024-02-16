@@ -75,6 +75,17 @@ int native_tty_open_tty_bottom(const char *pathname);
  */
 int native_tty_configure_bottom(int fd, struct native_tty_bottom_cfg *cfg);
 
+/**
+ * @brief Get current configuration of tty port
+ *
+ * @param fd	File descriptor of the tty port.
+ * @param cfg	Configuration struct.
+ *
+ * @retval 0	if successful,
+ * @retval -1	otherwise.
+ */
+int native_tty_config_get_bottom(int fd, struct native_tty_bottom_cfg *cfg);
+
 #ifdef __cplusplus
 }
 #endif
