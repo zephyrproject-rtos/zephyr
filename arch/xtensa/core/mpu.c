@@ -72,6 +72,7 @@ static struct xtensa_mpu_map xtensa_mpu_map_fg_kernel;
  *   definied in the processor configuration.
  */
 
+#ifndef CONFIG_XTENSA_MPU_ONLY_SOC_RANGES
 /**
  * Static definition of all code and data memory regions of the
  * current Zephyr image. This information must be available and
@@ -129,6 +130,7 @@ static const struct xtensa_mpu_range mpu_zephyr_ranges[] = {
 		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 	},
 };
+#endif /* !CONFIG_XTENSA_MPU_ONLY_SOC_RANGES */
 
 /**
  * Return the pointer to the entry encompassing @a addr out of an array of MPU entries.
@@ -679,6 +681,7 @@ void xtensa_mpu_init(void)
 		xtensa_mpu_map_fg_kernel.entries[entry] = ent;
 	}
 
+#ifndef CONFIG_XTENSA_MPU_ONLY_SOC_RANGES
 	/*
 	 * Add necessary MPU entries for the memory regions of base Zephyr image.
 	 */
@@ -696,6 +699,7 @@ void xtensa_mpu_init(void)
 				   (unsigned int)range->end,
 				   ret);
 	}
+#endif /* !CONFIG_XTENSA_MPU_ONLY_SOC_RANGES */
 
 	/*
 	 * Now for the entries for memory regions needed by SoC.

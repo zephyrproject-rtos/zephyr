@@ -243,6 +243,14 @@ config XTENSA_MPU_DEFAULT_MEM_TYPE
 	  If userspace is enabled, it will be used to restore the memory type of
 	  the region being removed from a memory domain.
 
+config XTENSA_MPU_ONLY_SOC_RANGES
+	bool
+	help
+	  Enable this by the SoC to indicate to the architecture code to use
+	  the MPU ranges specified by SoC only, and skip the common ranges
+	  defined in the core architecture code. This gives total control to
+	  the SoC on the MPU ranges.
+
 endif # XTENSA_MPU
 
 endif # CPU_HAS_MPU
