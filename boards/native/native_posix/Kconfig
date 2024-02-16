@@ -5,10 +5,10 @@ config BOARD_NATIVE_POSIX
 	imply NATIVE_POSIX_TIMER
 	select POSIX_ARCH_CONSOLE
 	select NATIVE_APPLICATION
+	select 64BIT if BOARD_NATIVE_POSIX_NATIVE_64
 	help
-	  Native POSIX - 32 bit version
-	  Will produce a console Linux process which can be executed natively
-	  as a 32-bit executable.
+	  Native POSIX
+	  Will produce a console Linux process which can be executed natively.
 	  It provides some minimal needed models:
 	  An interrupt controller, timer (system tick), and redirects kernel prints to
 	  stdout.
