@@ -241,6 +241,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.14
 
+   * - :ref:`mipi_dbi_api`
+     - Experimental
+     - 3.6
+
    * - :ref:`mipi_dsi_api`
      - Experimental
      - 3.1

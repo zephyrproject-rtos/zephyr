@@ -19,6 +19,9 @@ Boards
 
 * The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
   applications that use this should switch to using the :ref:`boot_mode_api` instead.
+* NXP: Enabled :ref:`linkserver<linkserver-debug-host-tools>` to be the default runner on the
+  following NXP boards: ``mimxrt685_evk_cm33``, ``frdm_k64f``, ``mimxrt1050_evk``, ``frdm_kl25z``,
+  ``mimxrt1020_evk``, ``mimxrt1015_evk``
 
 Build System
 ============

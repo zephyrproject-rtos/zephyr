@@ -112,6 +112,9 @@ Boards & SoC Support
   * Added support for STM32L010xx SoC variants
   * Added support for STM32L081xx SoC variants
   * Added support for STM32U5A9xx SoC variants
+  * Added support for NXP S32K1 devices
+  * Added support for NXP IMX8ULP SoC
+  * Added support for NXP MIMXRT595 DSP core
 
 * Removed support for these SoC series:
 
@@ -120,6 +123,8 @@ Boards & SoC Support
   * Nordic SoCs now imply :kconfig:option:`CONFIG_XIP` instead of selecting it, this allows for
     creating RAM-based applications by disabling it.
   * BLE is now supported on STM32WBA series.
+  * xtensa: imx8: Split the generic i.MX8 SoC into i.MX8QXP and i.MX8QM
+  * LPC55xxx: Fixed the system hardware clock cycle rate
 
 * Added support for these ARC boards:
 
@@ -135,9 +140,9 @@ Boards & SoC Support
   * Added support for ST Nucleo WBA55CG board: ``nucleo_wba55cg``
   * Added support for ST STM32WB5MM-DK Discovery board: ``stm32wb5mm_dk``
   * Added support for Wiznet W5500 Evaluation Pico board: ``w5500_evb_pico``
-
   * Added support for ADI boards: ``adi_sdp_k1``, ``adi_eval_adin1110ebz``,
     ``adi_eval_adin2111ebz``
+  * Added support for NXP UCANS32K1SIC board: ``ucans32k1sic``
 
 * Added support for these ARM64 boards:
 
@@ -147,6 +152,7 @@ Boards & SoC Support
 
 * Added support for these Xtensa boards:
 
+  * Added support for NXP iMX8ULP board: ``nxp_adsp_imx8ulp``
   * Added Heltec Wireless Stick Lite (V3) board: ``heltec_wireless_stick_lite_v3``
   * Added KINCONY-KC868-A32 board: ``kincony_kc868_a32``
   * Added Lolin ESP32-S2 Mini board: ``esp32s2_lolin_mini``
@@ -160,10 +166,17 @@ Boards & SoC Support
 
 * Made these changes for ARM boards:
 
+  * Added support for low power on G1120B0MIPI using RT595
+  * Added support for lpspi, lpi2c on NXP board: ``mimx93_evk_a55``
+  * lpcxpresso55s69: Fix partition naming to use the standard slot naming used by TFM-enabled
+    Zephyr platforms.
+  * Enabled support for linkserver debugger on ``frdm_kl25z``, ``mimxrt1015_evk``,
+    ``mimxrt1020_evk``, ``mimxrt1050_evk``, ``mimxrt685_evk``, ``frdm_k64f``
+  * NXP: Switched MCUBoot FW Update mode from Swap & Scratch to Swap & Move
+
 * Made these changes for ARM64 boards:
 
 * Made these changes for RISC-V boards:
-
   * ``longan_nano``: Enabled ADC support.
 
 * Made these changes for X86 boards:
@@ -278,6 +291,11 @@ Drivers and Sensors
 
   * Added Sparkfun SerLCD driver.
 
+* Audio
+
+  * Added a driver :file:`drivers/audio/dmic_mcux.c` for NXP DMIC peripheral. This peripheral is
+    present on the ``iMX RT5xx`` and ``iMX RT6xx`` parts, as well as some LPC SOCs.
+
 * Battery backed up RAM
 
   * STM32WL devices now support BBRAM.
@@ -325,8 +343,8 @@ Drivers and Sensors
 * Counter
 
   * The nRFx counter driver now works with simulated nrf*_bsim targets.
-
   * counter_native_posix driver: Added support for top value configuration, and a bugfix.
+  * Added support for the MRT counter for NXP RT6xx, RT5xx and LPC55xxx
 
 * Crypto
 
@@ -341,6 +359,7 @@ Drivers and Sensors
 * DMA
 
   * STM32WBA Devices now support GPDMA
+  * Introduced a new DMA driver :file:`drivers/dma/dma_nxp_edma.c` for NXP's eDMA IP
 
 * Entropy
 
@@ -367,6 +386,11 @@ Drivers and Sensors
   * Fixed sam_gmac driver. PTP clock adjustment was wrong for negative values.
   * Fixed adin2111 driver. Initialization was done incorrectly when working with adin2110.
   * Fixed ksz8081 driver. Logging changes, RMII clock fixes, GPIO pin fixes.
+  * Added a driver :file:`drivers/ethernet/eth_nxp_enet.c` for NXP ENET which is a rework of
+    the old driver :file:`drivers/ethernet/eth_mcux.c`. The old driver had become
+    unmaintainable due to fundamental problems with the lack of PHY abstraction. The new driver
+    is still experimental and requires maturation. Eventually the old driver will be deprecated
+    and this new driver will be supported instead.
 
 * Flash
 
@@ -409,6 +433,8 @@ Drivers and Sensors
 
   * Renesas R-Car GPIO driver now supports Gen4 SoCs
   * Renamed ``CONFIG_GPIO_RA`` to :kconfig:option:`CONFIG_GPIO_RENESAS_RA`
+  * Added a new GPIO driver (:file:`drivers/gpio/gpio_mcux_rgpio.c`). This
+    driver is used for i.MX93 and i.MX8ULP.
 
 * I2C
 
@@ -491,6 +517,14 @@ Drivers and Sensors
   * Modified to use PNP ID for PRT retrieval.
 
 * ACPI
+
+* MEMC
+
+  * Added a new driver for NXP FlexRAM
+
+* MIPI-DBI
+
+  * Introduced a new :ref:`MIPI DBI driver class <mipi_dbi_api>`
 
 * Pin control
 
@@ -1252,3 +1286,9 @@ Tests and Samples
 * Added ESP32 memory-mapped flash access sample in :zephyr:code-sample:`esp32-flash-memory-mapped`.
 
 * Added ESP32 PWM loopback test case
+
+* Added support in the mbox sample for NXP boards ``MIMXRT1160-EVK``, ``MIMXRT1170-EVK``,
+  ``MIMXRT1170-EVKB``, ``LPCXpresso55S69``
+
+* Added a sample ``flexram-magic-addr`` for ``mimxrt11xx_cm7`` to show how to use flexram magic
+  address functionality when using memc flexram driver.
