@@ -30,11 +30,11 @@ properties:
   div-s:
     type: int
     description: |
-        PLL division factor for pllx_s_ck
+        PLL division factor for pllx_s_ck : valid for PLL1, 2, 3
         Valid range: 1 - 8
 
   div-t:
     type: int
     description: |
-        PLL division factor for pllx_t_ck
+        PLL division factor for pllx_t_ck : valid for PLL2
         Valid range: 1 - 8
