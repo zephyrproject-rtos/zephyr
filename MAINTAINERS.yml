@@ -3209,8 +3209,8 @@ Intel Platforms (Xtensa):
     - jxstelter
     - marcinszkudlinski
   files:
-    - boards/xtensa/intel_*/
-    - soc/xtensa/intel_*/
+    - boards/intel/intel_adsp/
+    - soc/intel/intel_adsp/
     - dts/xtensa/intel/
     - tests/boards/intel_adsp/
     - samples/boards/intel_adsp/
