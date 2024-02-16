@@ -71,34 +71,6 @@ driver support.
 The accelerometer, temperature sensors, or other peripherals
 accessible through the BoosterPack, are not currently supported.
 
-Connections and IOs
-====================
-
-Peripherals on the CC3235SF LaunchXL are mapped to the following pins in
-the file :zephyr_file:`boards/ti/cc3235sf_launchxl/pinmux.c`.
-
-+------------+-------+-------+
-| Function   | PIN   | GPIO  |
-+============+=======+=======+
-| UART0_TX   | 55    | N/A   |
-+------------+-------+-------+
-| UART0_RX   | 57    | N/A   |
-+------------+-------+-------+
-| LED D7 (R) | 64    | 9     |
-+------------+-------+-------+
-| LED D6 (O) | 01    | 10    |
-+------------+-------+-------+
-| LED D5 (G) | 02    | 11    |
-+------------+-------+-------+
-| Switch SW2 | 15    | 22    |
-+------------+-------+-------+
-| Switch SW3 | 04    | 13    |
-+------------+-------+-------+
-
-The default configuration can be found in the Kconfig file at
-:zephyr_file:`boards/ti/cc3235sf_launchxl/cc3235sf_launchxl_defconfig`.
-
-
 Programming and Debugging
 *************************
 

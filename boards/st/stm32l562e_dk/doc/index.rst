@@ -199,12 +199,12 @@ The default configuration can be found in the defconfig and dts files:
 - Secure target:
 
   - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_defconfig`
-  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk.dts`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk.dts`
 
 - Non-Secure target:
 
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_ns_defconfig`
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_ns.dts`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx_ns_defconfig`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx_ns.dts`
 
 Zephyr board options
 ====================

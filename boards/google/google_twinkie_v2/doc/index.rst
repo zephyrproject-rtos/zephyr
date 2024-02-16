@@ -32,7 +32,7 @@ The following features are supported:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/google_twinkie_v2/google_twinkie_v2_defconfig``
+:zephyr_file:`boards/google/google_twinkie_v2/google_twinkie_v2_defconfig`
 
 Pin Mapping
 ===========
