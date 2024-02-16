@@ -5,9 +5,6 @@
 
 if SOC_MEC172X_NSZ
 
-config SOC
-	default "mec172xnsz"
-
 config GPIO
 	default y
 
