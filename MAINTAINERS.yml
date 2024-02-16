@@ -3227,8 +3227,8 @@ Intel Platforms (ISH):
     - teburd
     - likongintel
   files:
-    - boards/x86/intel_ish/
-    - soc/x86/intel_ish/
+    - boards/intel/intel_ish/
+    - soc/intel/intel_ish/
     - dts/x86/intel/intel_ish*
     - dts/bindings/*/intel,sedi*
     - drivers/*/*sedi*
