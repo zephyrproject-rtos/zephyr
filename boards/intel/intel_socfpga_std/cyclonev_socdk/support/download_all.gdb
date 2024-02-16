@@ -7,7 +7,7 @@ set confirm off
 set pagination off
 
 #Download and Run preloader
-source boards/intel/cyclonev_socdk/support/preloader_dl_cmd.txt
+source boards/intel/intel_socfpga_std/cyclonev_socdk/support/preloader_dl_cmd.txt
 
 #Stop watchdog timer
 #permodrst Reg , reset watch dog timer
