@@ -46,7 +46,14 @@ static struct net_mgmt_event_callback mgmt4_cb;
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 static sys_slist_t option_callbacks;
+static int unique_types_in_callbacks;
 #endif
+
+static const uint8_t min_req_options[] = {
+	DHCPV4_OPTIONS_SUBNET_MASK,
+	DHCPV4_OPTIONS_ROUTER,
+	DHCPV4_OPTIONS_DNS_SERVER
+};
 
 /* RFC 1497 [17] */
 static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
@@ -61,6 +68,47 @@ static inline bool dhcpv4_add_cookie(struct net_pkt *pkt)
 
 	return true;
 }
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+static void dhcpv4_option_callback_get_unique_types(uint8_t *types)
+{
+	struct net_dhcpv4_option_callback *cb, *tmp;
+	int count = ARRAY_SIZE(min_req_options);
+	bool found = false;
+
+	memcpy(types, min_req_options, ARRAY_SIZE(min_req_options));
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&option_callbacks, cb, tmp, node) {
+		for (int j = 0; j < count; j++) {
+			if (types[j] == cb->option) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			if (count >= CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS) {
+				NET_ERR("Too many unique options in callbacks, cannot request "
+					"option %d",
+					cb->option);
+				continue;
+			}
+			types[count] = cb->option;
+			count++;
+		} else {
+			found = false;
+		}
+	}
+	unique_types_in_callbacks = count - ARRAY_SIZE(min_req_options);
+}
+
+static void dhcpv4_option_callback_count(void)
+{
+	uint8_t types[CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS];
+
+	dhcpv4_option_callback_get_unique_types(types);
+}
+#endif	/* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
 /* Add a an option with the form OPTION LENGTH VALUE.  */
 static bool dhcpv4_add_option_length_value(struct net_pkt *pkt, uint8_t option,
@@ -87,12 +135,17 @@ static bool dhcpv4_add_msg_type(struct net_pkt *pkt, uint8_t type)
  */
 static bool dhcpv4_add_req_options(struct net_pkt *pkt)
 {
-	static uint8_t data[3] = { DHCPV4_OPTIONS_SUBNET_MASK,
-				DHCPV4_OPTIONS_ROUTER,
-				DHCPV4_OPTIONS_DNS_SERVER };
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+	uint8_t data[CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS];
+
+	dhcpv4_option_callback_get_unique_types(data);
 
 	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_LIST,
-					      ARRAY_SIZE(data), data);
+		unique_types_in_callbacks + ARRAY_SIZE(min_req_options), data);
+#else
+	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_LIST,
+					      ARRAY_SIZE(min_req_options), min_req_options);
+#endif
 }
 
 static bool dhcpv4_add_server_id(struct net_pkt *pkt,
@@ -180,7 +233,10 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 	}
 
 	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER) {
-		size +=  DHCPV4_OLV_MSG_REQ_LIST;
+		size +=  DHCPV4_OLV_MSG_REQ_LIST + ARRAY_SIZE(min_req_options);
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+		size += unique_types_in_callbacks;
+#endif
 	}
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
@@ -1287,6 +1343,7 @@ int net_dhcpv4_add_option_callback(struct net_dhcpv4_option_callback *cb)
 
 	k_mutex_lock(&lock, K_FOREVER);
 	sys_slist_prepend(&option_callbacks, &cb->node);
+	dhcpv4_option_callback_count();
 	k_mutex_unlock(&lock);
 	return 0;
 }
@@ -1303,6 +1360,7 @@ int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb)
 	if (!sys_slist_find_and_remove(&option_callbacks, &cb->node)) {
 		ret = -EINVAL;
 	}
+	dhcpv4_option_callback_count();
 	k_mutex_unlock(&lock);
 	return ret;
 }
