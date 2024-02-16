@@ -1,14 +1,7 @@
-# Copyright 2022-2023 NXP
+# Copyright 2022-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_NXP_S32
-	bool
-
 if SOC_FAMILY_NXP_S32
-
-config SOC_FAMILY
-	string
-	default "nxp_s32"
 
 config NXP_S32_FUNC_RESET_THRESHOLD
 	int "Functional Reset Escalation threshold"
@@ -33,6 +26,6 @@ config NXP_S32_DEST_RESET_THRESHOLD
 	  written to beforehand.
 	  Default to disabled (hardware reset value).
 
-source "soc/soc_legacy/arm/nxp_s32/*/Kconfig.soc"
+rsource "*/Kconfig"
 
 endif # SOC_FAMILY_NXP_S32

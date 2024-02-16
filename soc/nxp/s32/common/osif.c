@@ -8,7 +8,7 @@
 #include <OsIf.h>
 #include <OsIf_Cfg_TypesDef.h>
 
-#if defined(CONFIG_SOC_SERIES_S32K1XX)
+#if defined(CONFIG_SOC_SERIES_S32K1)
 /* Aliases needed to build with different SoC-specific HAL versions */
 #define CPXNUM                  CPxNUM
 #define MSCM_CPXNUM_CPN_MASK    MSCM_CPxNUM_CPN_MASK
