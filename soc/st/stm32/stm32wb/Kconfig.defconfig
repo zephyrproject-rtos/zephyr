@@ -5,10 +5,7 @@
 
 if SOC_SERIES_STM32WBX
 
-source "soc/soc_legacy/arm/st_stm32/stm32wb/Kconfig.defconfig.stm32wb*"
-
-config SOC_SERIES
-	default "stm32wb"
+rsource "Kconfig.defconfig.stm32wb*"
 
 config BT_USER_PHY_UPDATE
 	default y if BT
