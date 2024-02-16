@@ -1,65 +1,56 @@
-# NXP S32K1XX MCUs line
+# NXP S32K1XX MCUs series
 
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "NXP S32K1XX MCU selection"
-	depends on SOC_SERIES_S32K1XX
+config SOC_SERIES_S32K1
+	bool
+	select SOC_FAMILY_NXP_S32
+
+config SOC_SERIES
+	default "s32k1" if SOC_SERIES_S32K1
 
 config SOC_S32K116
-	bool "S32K116"
-	select CPU_CORTEX_M0PLUS
+	bool
+	select SOC_SERIES_S32K1
 
 config SOC_S32K118
-	bool "S32K118"
-	select CPU_CORTEX_M0PLUS
+	bool
+	select SOC_SERIES_S32K1
 
 config SOC_S32K142
-	bool "S32K142"
-	select CPU_CORTEX_M4
-	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
-	select HAS_MCUX_CACHE
+	bool
+	select SOC_SERIES_S32K1
 
 config SOC_S32K142W
-	bool "S32K142W"
-	select CPU_CORTEX_M4
-	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
-	select HAS_MCUX_CACHE
+	bool
+	select SOC_SERIES_S32K1
 
 config SOC_S32K144
-	bool "S32K144"
-	select CPU_CORTEX_M4
-	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
-	select HAS_MCUX_CACHE
+	bool
+	select SOC_SERIES_S32K1
 
 config SOC_S32K144W
-	bool "S32K144W"
-	select CPU_CORTEX_M4
-	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
-	select HAS_MCUX_CACHE
+	bool
+	select SOC_SERIES_S32K1
 
 config SOC_S32K146
-	bool "S32K146"
-	select CPU_CORTEX_M4
-	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
-	select HAS_MCUX_CACHE
+	bool
+	select SOC_SERIES_S32K1
 
 config SOC_S32K148
-	bool "S32K148"
-	select CPU_CORTEX_M4
-	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
-	select HAS_MCUX_CACHE
+	bool
+	select SOC_SERIES_S32K1
 
-endchoice
-
-if SOC_SERIES_S32K1XX
+config SOC
+	default "s32k116" if SOC_S32K116
+	default "s32k118" if SOC_S32K118
+	default "s32k142" if SOC_S32K142
+	default "s32k142w" if SOC_S32K142W
+	default "s32k144" if SOC_S32K144
+	default "s32k144w" if SOC_S32K144W
+	default "s32k146" if SOC_S32K146
+	default "s32k148" if SOC_S32K148
 
 config SOC_PART_NUMBER_FS32K116LAT0MFMT
 	bool
@@ -298,8 +289,7 @@ config SOC_PART_NUMBER_FS32K148UJT0VMHR
 config SOC_PART_NUMBER_FS32K148UJT0VMHT
 	bool
 
-config SOC_PART_NUMBER_S32K1XX
-	string
+config SOC_PART_NUMBER
 	default "FS32K116LAT0MFMT" if SOC_PART_NUMBER_FS32K116LAT0MFMT
 	default "FS32K116LAT0MLFR" if SOC_PART_NUMBER_FS32K116LAT0MLFR
 	default "FS32K116LAT0MLFT" if SOC_PART_NUMBER_FS32K116LAT0MLFT
@@ -379,67 +369,3 @@ config SOC_PART_NUMBER_S32K1XX
 	default "FS32K148UJT0VLUT" if SOC_PART_NUMBER_FS32K148UJT0VLUT
 	default "FS32K148UJT0VMHR" if SOC_PART_NUMBER_FS32K148UJT0VMHR
 	default "FS32K148UJT0VMHT" if SOC_PART_NUMBER_FS32K148UJT0VMHT
-	help
-	  This string holds the full part number of the SoC. It is a hidden option
-	  that you should not set directly. The part number selection choice defines
-	  the default value for this string.
-
-config WDOG_INIT
-	bool
-	default y
-
-config NXP_S32_FLASH_CONFIG
-	bool "NXP S32 flash configuration field"
-	default y if XIP && !BOOTLOADER_MCUBOOT
-	help
-	  Include the 16-byte flash configuration field that stores default
-	  protection settings (loaded on reset) and security information that
-	  allows the MCU to restrict access to the FTFx module.
-
-if NXP_S32_FLASH_CONFIG
-
-config NXP_S32_FLASH_CONFIG_OFFSET
-	hex "NXP S32 flash configuration field offset"
-	default 0x400
-
-config NXP_S32_FLASH_CONFIG_FSEC
-	hex "Flash security byte (FSEC)"
-	range 0 0xff
-	default 0xfe
-	help
-	  Configures the reset value of the FSEC register, which includes
-	  backdoor key access, mass erase, factory access, and flash security
-	  options.
-
-config NXP_S32_FLASH_CONFIG_FOPT
-	hex "Flash nonvolatile option byte (FOPT)"
-	range 0 0xff
-	default 0xff
-	help
-	  Configures the reset value of the FOPT register, which includes boot,
-	  NMI, and EzPort options.
-
-config NXP_S32_FLASH_CONFIG_FEPROT
-	hex "EEPROM protection byte (FEPROT)"
-	range 0 0xff
-	default 0xff
-	help
-	  Configures the reset value of the FEPROT register for FlexNVM
-	  devices. For program flash only devices, this byte is reserved.
-
-config NXP_S32_FLASH_CONFIG_FDPROT
-	hex "Data flash protection byte (FDPROT)"
-	range 0 0xff
-	default 0xff
-	help
-	  Configures the reset value of the FDPROT register for FlexNVM
-	  devices. For program flash only devices, this byte is reserved.
-
-endif # NXP_S32_FLASH_CONFIG
-
-config NXP_S32_ENABLE_CODE_CACHE
-	bool "Code cache"
-	default y
-	depends on HAS_MCUX_CACHE
-
-endif # SOC_SERIES_S32K1XX
