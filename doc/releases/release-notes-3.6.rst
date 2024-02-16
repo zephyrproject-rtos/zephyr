@@ -1032,6 +1032,24 @@ Libraries / Subsystems
   * STM32F4 devices now support stop mode thanks to the use of a RTC based idle timer which
     keeps track of tick evolution while cortex systick is off.
 
+  * :c:func:`pm_device_runtime_put_async()` got a parameter to specify a minimum delay to
+    the operation. This is useful to avoid multiple states transitions when a device is used.
+
+  * Devices that don't need to block when suspending or resuming can now be defined as ISR
+    safe (``PM_DEVICE_ISR_SAFE``). For those devices, Zephyr is able to reduces RAM consumption
+    and runtime device power management can be safely used from interruptions.
+
+  * Optimizations in device runtime power management. :c:func:`pm_device_runtime_get` and
+    :c:func:`pm_device_runtime_put` no longer wait for a pending operation to be concluded if it is still
+    in the work queue. In this case the pending work is just canceled and the device state updated.
+
+  * The Kconfig options bellow were added to customize the initialization priority of different
+    power domains.
+
+    * :kconfig:option:`CONFIG_POWER_DOMAIN_GPIO_INIT_PRIORITY`
+    * :kconfig:option:`CONFIG_POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY`
+    * :kconfig:option:`CONFIG_POWER_DOMAIN_INTEL_ADSP_INIT_PRIORITY`
+
 * Random
 
 * Crypto
