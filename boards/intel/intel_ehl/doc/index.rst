@@ -55,13 +55,13 @@ Build Zephyr application
 Booting the Elkhart Lake CRB Board using UEFI
 =============================================
 
-.. include:: ../../../boards_legacy/x86/common/efi_boot.rst
+.. include:: ../../../intel/common/efi_boot.rst
    :start-after: start_include_here
 
 Booting the Elkhart Lake CRB Board over network
 ===============================================
 
-.. include:: ../../../boards_legacy/x86/common/net_boot.rst
+.. include:: ../../../intel/common/net_boot.rst
    :start-after: start_include_here
 
 .. note::
