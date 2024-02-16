@@ -206,7 +206,7 @@ also can run for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: longan_nano_lite
+   :board: longan_nano/gd32vf103/lite
    :goals: build flash
    :compact:
 
