@@ -79,7 +79,7 @@ Build Zephyr application
 Booting the UP Squared Board using UEFI
 =======================================
 
-.. include:: ../../../boards_legacy/x86/common/efi_boot.rst
+.. include:: ../../../intel/common/efi_boot.rst
    :start-after: start_include_here
 
 .. note::
@@ -97,7 +97,7 @@ Booting the UP Squared Board using UEFI
 Booting the UP Squared Board over network
 =========================================
 
-.. include:: ../../../boards_legacy/x86/common/net_boot.rst
+.. include:: ../../../intel/common/net_boot.rst
    :start-after: start_include_here
 
 .. note::
