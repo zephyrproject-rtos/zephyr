@@ -160,6 +160,7 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG NRF_SKIP_C
 
 if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_DPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
+  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
 endif()
 
 # Get the SVD file for the current SoC
