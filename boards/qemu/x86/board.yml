@@ -23,5 +23,3 @@ boards:
   - name: qemu_x86_tiny
     socs:
       - name: atom
-        variants:
-          - name: '768'
