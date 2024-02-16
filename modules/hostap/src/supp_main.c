@@ -160,7 +160,6 @@ struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname)
 {
 	struct wpa_supplicant *wpa_s = NULL;
 	struct supplicant_context *ctx = get_default_context();
-	int ret;
 
 	wpa_s = wpa_supplicant_get_iface(ctx->supplicant, ifname);
 	if (!wpa_s) {
