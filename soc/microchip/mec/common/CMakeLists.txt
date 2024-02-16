@@ -12,7 +12,7 @@ endif()
 if (DEFINED CONFIG_MCHP_MEC_UNSIGNED_HEADER)
   set(MCHP_MEC_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.mchp.bin)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/spigen/mec_spi_gen.py
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/soc/microchip/mec/common/spigen/mec_spi_gen.py
     -i ${KERNEL_BIN_NAME}
     -o ${MCHP_MEC_BIN_NAME}
     -c ${CONFIG_MCHP_MEC_HEADER_CHIP}

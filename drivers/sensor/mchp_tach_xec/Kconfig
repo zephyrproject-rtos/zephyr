@@ -7,7 +7,7 @@ config TACH_XEC
 	bool "XEC Tachometer sensor"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_TACH_ENABLED
-	depends on SOC_FAMILY_MEC
+	depends on SOC_FAMILY_MICROCHIP_MEC
 	select PINCTRL
 	help
 	  Enable the Microchip XEC tachometer sensor.

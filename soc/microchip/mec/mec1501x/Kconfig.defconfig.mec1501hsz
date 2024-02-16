@@ -5,9 +5,6 @@
 
 if SOC_MEC1501_HSZ
 
-config SOC
-	default "mec1501hsz"
-
 config GPIO
 	default y
 
