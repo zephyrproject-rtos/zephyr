@@ -65,7 +65,7 @@ The following are some key sysbuild features indicated in this figure:
 
 - Sysbuild itself is also configured using Kconfig. For example, you can
   instruct sysbuild to build the MCUboot bootloader, as well as to build and
-  link your main Zephyr application as an MCUboot child image, using sysbuild's
+  link your main Zephyr application as an MCUboot-bootable image, using sysbuild's
   Kconfig files.
 
 - Sysbuild integrates with west's :ref:`west-build-flash-debug` commands. It
