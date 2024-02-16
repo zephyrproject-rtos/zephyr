@@ -90,6 +90,12 @@ family:
     - name: stm32g484xx
     - name: stm32g491xx
     - name: stm32g4a1xx
+  - name: stm32h5x
+    socs:
+    - name: stm32h503xx
+    - name: stm32h562xx
+    - name: stm32h563xx
+    - name: stm32h573xx
   - name: stm32h7x
     socs:
     - name: stm32h7a3xx
