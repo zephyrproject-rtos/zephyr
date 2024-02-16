@@ -29,37 +29,39 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define SEM_TIMEOUT                 K_SECONDS(60)
 #define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120) /* 2 minutes */
 
+#define LOG_INTERVAL 1000U
+
 #if defined(CONFIG_SCAN_SELF)
 #define ADV_TIMEOUT K_SECONDS(CONFIG_SCAN_DELAY)
 #else /* !CONFIG_SCAN_SELF */
 #define ADV_TIMEOUT K_FOREVER
 #endif /* CONFIG_SCAN_SELF */
 
-#define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
-#define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
-#define PA_SYNC_SKIP              5
-#define NAME_LEN                  sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
+#define INVALID_BROADCAST_ID        (BT_AUDIO_BROADCAST_ID_MAX + 1)
+#define SYNC_RETRY_COUNT            6 /* similar to retries for connections */
+#define PA_SYNC_SKIP                5
+#define NAME_LEN                    sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
+#define BROADCAST_DATA_ELEMENT_SIZE sizeof(int16_t)
 
 #if defined(CONFIG_LIBLC3)
-#define MAX_SAMPLE_RATE         48000U
-#define MAX_FRAME_DURATION_US   10000U
-#define MAX_NUM_SAMPLES_MONO    ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
-#define MAX_NUM_SAMPLES_STEREO  (MAX_NUM_SAMPLES_MONO * 2)
+#define LC3_MAX_SAMPLE_RATE        48000U
+#define LC3_MAX_FRAME_DURATION_US  10000U
+#define LC3_MAX_NUM_SAMPLES_MONO   ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE)              \
+				    / USEC_PER_SEC)
+#define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2)
 
 #define LC3_ENCODER_STACK_SIZE  4096
 #define LC3_ENCODER_PRIORITY    5
 #endif /* defined(CONFIG_LIBLC3) */
 
 #if defined(CONFIG_USB_DEVICE_AUDIO)
+#define USB_ENQUEUE_COUNT            10U
 #define USB_SAMPLE_RATE	             48000U
 #define USB_FRAME_DURATION_US        1000U
-#define USB_TX_BUF_NUM               10U
-#define BROADCAST_DATA_ELEMENT_SIZE  sizeof(int16_t)
-#define BROADCAST_MONO_SAMPLE_SIZE   (MAX_NUM_SAMPLES_MONO * BROADCAST_DATA_ELEMENT_SIZE)
-#define BROADCAST_STEREO_SAMPLE_SIZE (BROADCAST_MONO_SAMPLE_SIZE * BROADCAST_DATA_ELEMENT_SIZE)
-#define USB_STEREO_SAMPLE_SIZE       ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE * \
-				      BROADCAST_DATA_ELEMENT_SIZE * 2) / USEC_PER_SEC)
-#define AUDIO_RING_BUF_SIZE          10000U
+#define USB_MONO_SAMPLE_SIZE                                                                       \
+	((USB_FRAME_DURATION_US * USB_SAMPLE_RATE * BROADCAST_DATA_ELEMENT_SIZE) / USEC_PER_SEC)
+#define USB_STEREO_SAMPLE_SIZE       (USB_MONO_SAMPLE_SIZE * 2)
+#define USB_RING_BUF_SIZE            (5 * LC3_MAX_NUM_SAMPLES_STEREO) /* 5 SDUs*/
 #endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
 
 static K_SEM_DEFINE(sem_connected, 0U, 1U);
@@ -84,7 +86,6 @@ static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
 static struct broadcast_sink_stream {
 	struct bt_bap_stream stream;
-	bool has_data;
 	size_t recv_cnt;
 	size_t loss_cnt;
 	size_t error_cnt;
@@ -97,12 +98,8 @@ static struct broadcast_sink_stream {
 	lc3_decoder_t lc3_decoder;
 	lc3_decoder_mem_48k_t lc3_decoder_mem;
 #endif /* defined(CONFIG_LIBLC3) */
-#if defined(CONFIG_USB_DEVICE_AUDIO)
-	struct ring_buf audio_ring_buf;
-	uint8_t _ring_buffer[AUDIO_RING_BUF_SIZE];
-#endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
-
 } streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+
 static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
@@ -126,22 +123,19 @@ uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
 static int stop_adv(void);
 
 #if defined(CONFIG_USB_DEVICE_AUDIO)
-static int16_t usb_audio_data[MAX_NUM_SAMPLES_STEREO] = {0};
-static int16_t usb_audio_data_stereo[MAX_NUM_SAMPLES_STEREO] = {0};
+RING_BUF_DECLARE(usb_ring_buf, USB_RING_BUF_SIZE);
+NET_BUF_POOL_DEFINE(usb_tx_buf_pool, USB_ENQUEUE_COUNT, USB_STEREO_SAMPLE_SIZE, 0, net_buf_destroy);
 
-RING_BUF_DECLARE(ring_buf_usb, AUDIO_RING_BUF_SIZE);
-NET_BUF_POOL_DEFINE(usb_tx_buf_pool, USB_TX_BUF_NUM, BROADCAST_STEREO_SAMPLE_SIZE, 0,
-		    net_buf_destroy);
-
-static void mix_mono_to_stereo(enum bt_audio_location channels);
+static void mix_mono_to_stereo(int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STEREO]);
+static void add_to_usb_ring_buf(const int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STEREO]);
 #endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
 
 #if defined(CONFIG_LIBLC3)
-static int16_t audio_buf[MAX_NUM_SAMPLES_MONO];
 static int frames_per_sdu;
 static K_SEM_DEFINE(lc3_decoder_sem, 0, 1);
 
-static void do_lc3_decode(struct broadcast_sink_stream *sink_stream);
+static bool do_lc3_decode(struct broadcast_sink_stream *sink_stream,
+			  int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STEREO]);
 static void lc3_decoder_thread(void *arg1, void *arg2, void *arg3);
 K_THREAD_DEFINE(decoder_tid, LC3_ENCODER_STACK_SIZE, lc3_decoder_thread,
 		NULL, NULL, NULL, LC3_ENCODER_PRIORITY, 0, -1);
@@ -150,102 +144,87 @@ K_THREAD_DEFINE(decoder_tid, LC3_ENCODER_STACK_SIZE, lc3_decoder_thread,
 static void lc3_decoder_thread(void *arg1, void *arg2, void *arg3)
 {
 	while (true) {
+		static int16_t lc3_audio_buf[LC3_MAX_NUM_SAMPLES_STEREO];
+
 		k_sem_take(&lc3_decoder_sem, K_FOREVER);
 #if defined(CONFIG_USB_DEVICE_AUDIO)
-		int err = 0;
-		enum bt_audio_location channels;
+
+		/* For now we only handle one BIS, so always only decode the first element
+		 * in streams.
+		 */
 		struct broadcast_sink_stream *stream_for_usb = &streams[0];
 
-		/* For now we only handle one BIS, so always only decode the first element in
-		 * streams.
-		 */
-		do_lc3_decode(&streams[0]);
-
-		err = bt_audio_codec_cfg_get_chan_allocation(stream_for_usb->stream.codec_cfg,
-							     &channels);
-		if (err != 0) {
-			printk("Could not get channel allocation (err=%d)\n", err);
+		/* Not enough space to store data */
+		if (ring_buf_space_get(&usb_ring_buf) < sizeof(lc3_audio_buf)) {
 			continue;
 		}
 
-		/* If the ring buffer usage is larger than zero, then there is data to process */
-		if (ring_buf_space_get(&stream_for_usb->audio_ring_buf)) {
-			mix_mono_to_stereo(channels);
+		/* lc3_audio_buf will be filled with the last decoded value, so e.g. if the stream
+		 * contains both left and right, the lc3_audio_buf will always contain right.
+		 */
+		if (do_lc3_decode(stream_for_usb, lc3_audio_buf)) {
+			mix_mono_to_stereo(lc3_audio_buf);
+			add_to_usb_ring_buf(lc3_audio_buf);
 		}
 #else
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		if (streams[i].has_data) {
-			do_lc3_decode(&streams[i]);
+		for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+			(void)do_lc3_decode(&streams[i], lc3_audio_buf);
 		}
-	}
-
 #endif /* #if defined(CONFIG_USB_DEVICE_AUDIO) */
 	}
 }
 
-static void do_lc3_decode(struct broadcast_sink_stream *sink_stream)
+/** Decode LC3 data on a stream and returns true if successful */
+static bool do_lc3_decode(struct broadcast_sink_stream *sink_stream,
+			  int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STEREO])
 {
-	int err = 0;
-	int offset = 0;
-	uint8_t *buf_data;
-	struct net_buf *ptr_net_buf;
-	int octets_per_frame;
+	uint16_t octets_per_frame;
+	struct net_buf *buf;
 
 	k_mutex_lock(&sink_stream->lc3_decoder_mutex, K_FOREVER);
 
-	sink_stream->has_data = false;
-
 	if (sink_stream->in_buf == NULL) {
 		k_mutex_unlock(&sink_stream->lc3_decoder_mutex);
-		return;
+
+		return false;
 	}
 
-	ptr_net_buf = net_buf_ref(sink_stream->in_buf);
+	buf = net_buf_ref(sink_stream->in_buf);
 	net_buf_unref(sink_stream->in_buf);
 	sink_stream->in_buf = NULL;
 	k_mutex_unlock(&sink_stream->lc3_decoder_mutex);
 
-	buf_data = ptr_net_buf->data;
-	octets_per_frame = ptr_net_buf->len / frames_per_sdu;
+	octets_per_frame = buf->len / frames_per_sdu;
+	if (buf->len != (octets_per_frame * frames_per_sdu)) {
+		printk("Expected %u frames of size %u, but length is %u\n", frames_per_sdu,
+		       octets_per_frame, buf->len);
+
+		net_buf_unref(buf);
+
+		return false;
+	}
 
 	for (int i = 0; i < frames_per_sdu; i++) {
-		err = lc3_decode(sink_stream->lc3_decoder, buf_data + offset, octets_per_frame,
+		const void *data = net_buf_pull_mem(buf, octets_per_frame);
+		int err;
+
+		err = lc3_decode(sink_stream->lc3_decoder, data, octets_per_frame,
 				 LC3_PCM_FORMAT_S16, audio_buf, 1);
 
 		if (err == 1) {
 			printk("  decoder performed PLC\n");
 		} else if (err < 0) {
 			printk("  decoder failed - wrong parameters? (err = %d)\n", err);
+
+			net_buf_unref(buf);
+
+			return false;
 		}
-
-		offset += octets_per_frame;
 	}
 
-	net_buf_unref(ptr_net_buf);
+	net_buf_unref(buf);
 
-#if defined(CONFIG_USB_DEVICE_AUDIO)
-	uint32_t rbret;
-
-	if (ring_buf_space_get(&sink_stream->audio_ring_buf) == 0) {
-		/* Since the data in the buffer is old by now, and we add enough data for many
-		 * request to consume at a time, just erase what is already in the buffer.
-		 */
-		ring_buf_reset(&sink_stream->audio_ring_buf);
-	}
-
-	/* Put in ring-buffer to be consumed */
-	rbret = ring_buf_put(&sink_stream->audio_ring_buf, (uint8_t *)audio_buf,
-			     BROADCAST_MONO_SAMPLE_SIZE);
-	if (rbret != BROADCAST_MONO_SAMPLE_SIZE) {
-		static int rb_add_failures;
-
-		rb_add_failures++;
-		if (rb_add_failures % 1000 == 0) {
-			printk("Failure to add to ring buffer %d, %u\n", rb_add_failures, rbret);
-		}
-		return;
-	}
-#endif /*#if defined(CONFIG_USB_DEVICE_AUDIO)*/
+	return true;
 }
 
 static int lc3_enable(struct broadcast_sink_stream *sink_stream)
@@ -295,94 +274,81 @@ static int lc3_enable(struct broadcast_sink_stream *sink_stream)
 #endif /* defined(CONFIG_LIBLC3) */
 
 #if defined(CONFIG_USB_DEVICE_AUDIO)
-static uint8_t get_channel_index(const enum bt_audio_location allocated_channels,
-				 const enum bt_audio_location channel)
+/* Duplicate the audio from one channel and put it in both channels */
+static void mix_mono_to_stereo(int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STEREO])
 {
-	/* If we are looking for the right channel, and left channel is present, then the index is
-	 * 1. For all other combinations the index has to be 0, since it would mean that it is the
-	 * lowest possible bit enumeration
+	/* Interleave the channel sample inline
+	 * Take the first LC3_MAX_NUM_SAMPLES_MONO samples from audio_buf and mix it to
+	 * interleaved stereo, so that 012345 becomes 001122334455
 	 */
-	if (channel == BT_AUDIO_LOCATION_FRONT_RIGHT &&
-	    allocated_channels & BT_AUDIO_LOCATION_FRONT_LEFT) {
-		return 1;
-	}
+	for (int i = LC3_MAX_NUM_SAMPLES_MONO - 1; i >= 0; i--) {
+		const int16_t sample = audio_buf[i];
 
-	return 0;
+		audio_buf[i * 2] = sample;
+		audio_buf[i * 2 + 1] = sample;
+	}
 }
 
-/* Duplicate the audio from one channel and put it in both channels */
-static void mix_mono_to_stereo(enum bt_audio_location channels)
+/* Move the LC3 data to the USB ring buffer */
+static void add_to_usb_ring_buf(const int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STEREO])
 {
 	uint32_t size;
-	uint8_t cidx;
 
-	size = ring_buf_get(&streams[0].audio_ring_buf, (uint8_t *)usb_audio_data,
-			    MAX_NUM_SAMPLES_STEREO);
-	if (size != MAX_NUM_SAMPLES_STEREO) {
-		memset(&((uint8_t *)usb_audio_data)[size], 0, sizeof(usb_audio_data) - size);
-	}
-
-	cidx = get_channel_index(channels, CONFIG_TARGET_BROADCAST_CHANNEL);
-
-	/* Interleave the channel sample */
-	for (size_t i = 0U; i < MAX_NUM_SAMPLES_MONO; i++) {
-		usb_audio_data_stereo[i * 2] = usb_audio_data[MAX_NUM_SAMPLES_MONO * cidx + i];
-		usb_audio_data_stereo[i * 2 + 1] = usb_audio_data[MAX_NUM_SAMPLES_MONO * cidx + i];
-	}
-
-	size = ring_buf_put(&ring_buf_usb, (uint8_t *)usb_audio_data_stereo,
-			    BROADCAST_STEREO_SAMPLE_SIZE);
-	if (size != BROADCAST_STEREO_SAMPLE_SIZE) {
+	size = ring_buf_put(&usb_ring_buf, (uint8_t *)audio_buf,
+			    LC3_MAX_NUM_SAMPLES_STEREO * sizeof(int16_t));
+	if (size != LC3_MAX_NUM_SAMPLES_STEREO) {
 		static int rb_put_failures;
 
 		rb_put_failures++;
-		if (rb_put_failures == 1000) {
-			printk("%s: Failure to add to ring buffer %d, %u\n", __func__,
+		if (rb_put_failures == LOG_INTERVAL) {
+			printk("%s: Failure to add to usb_ring_buf %d, %u\n", __func__,
 			       rb_put_failures, size);
-			rb_put_failures = 0;
 		}
 	}
 }
 
 /* USB consumer callback, called every 1ms, consumes data from ring-buffer */
-static void data_request(const struct device *dev)
+static void usb_data_request_cb(const struct device *dev)
 {
+	uint8_t usb_audio_data[USB_STEREO_SAMPLE_SIZE] = {0};
 	static struct net_buf *pcm_buf;
-	int err;
+	static size_t cnt;
 	uint32_t size;
-	void *out;
-	int16_t usb_audio_data[USB_STEREO_SAMPLE_SIZE] = {0};
+	int err;
 
-	size = ring_buf_get(&ring_buf_usb, (uint8_t *)usb_audio_data, USB_STEREO_SAMPLE_SIZE);
-	if (size != USB_STEREO_SAMPLE_SIZE) {
-		memset(&((uint8_t *)usb_audio_data)[size], 0, USB_STEREO_SAMPLE_SIZE);
+	size = ring_buf_get(&usb_ring_buf, (uint8_t *)usb_audio_data, sizeof(usb_audio_data));
+	if (size == 0) {
+		/* size is 0, noop */
+		return;
 	}
+	/* Size lower than USB_STEREO_SAMPLE_SIZE is OK as usb_audio_data is 0-initialized */
 
 	pcm_buf = net_buf_alloc(&usb_tx_buf_pool, K_NO_WAIT);
 	if (pcm_buf == NULL) {
-		printk("Couldnt allocate pcm_buf\n");
+		printk("Could not allocate pcm_buf\n");
 		return;
 	}
 
-	out = net_buf_add(pcm_buf, USB_STEREO_SAMPLE_SIZE);
-	memcpy(out, usb_audio_data, USB_STEREO_SAMPLE_SIZE);
+	net_buf_add_mem(pcm_buf, usb_audio_data, sizeof(usb_audio_data));
+
+	if (cnt % LOG_INTERVAL == 0) {
+		printk("Sending USB audio (count = %zu)\n", cnt);
+	}
 
 	err = usb_audio_send(dev, pcm_buf, USB_STEREO_SAMPLE_SIZE);
 	if (err) {
+		printk("Failed to send USB audio: %d\n", err);
 		net_buf_unref(pcm_buf);
 	}
+
+	cnt++;
 }
 
-static void data_written(const struct device *dev, struct net_buf *buf, size_t size)
+static void usb_data_written_cb(const struct device *dev, struct net_buf *buf, size_t size)
 {
 	/* Unreference the buffer now that the USB is done with it */
 	net_buf_unref(buf);
 }
-
-static const struct usb_audio_ops ops = {
-	.data_request_cb = data_request,
-	.data_written_cb = data_written,
-};
 #endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
 
 static void stream_started_cb(struct bt_bap_stream *stream)
@@ -455,14 +421,13 @@ static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 
 		sink_stream->in_buf = net_buf_ref(buf);
 		k_mutex_unlock(&sink_stream->lc3_decoder_mutex);
-		sink_stream->has_data = true;
 		k_sem_give(&lc3_decoder_sem);
 #endif /* defined(CONFIG_LIBLC3) */
 	}
 
 	total_rx_iso_packet_count++;
 	sink_stream->recv_cnt++;
-	if ((sink_stream->recv_cnt % 1000U) == 0U) {
+	if ((sink_stream->recv_cnt % LOG_INTERVAL) == 0U) {
 		printk("Stream %p: received %u total ISO packets: Valid %u | Error %u | Loss %u\n",
 		       &sink_stream->stream, sink_stream->recv_cnt, sink_stream->valid_cnt,
 		       sink_stream->error_cnt, sink_stream->loss_cnt);
@@ -496,8 +461,8 @@ static bool find_valid_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 		return true;
 	}
 
-	if (((CONFIG_TARGET_BROADCAST_CHANNEL) == BT_AUDIO_LOCATION_MONO_AUDIO &&
-	    chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) ||
+	if ((CONFIG_TARGET_BROADCAST_CHANNEL == BT_AUDIO_LOCATION_MONO_AUDIO &&
+	     chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) ||
 	    chan_allocation & CONFIG_TARGET_BROADCAST_CHANNEL) {
 		*bis_index = bis->index;
 
@@ -990,22 +955,20 @@ static int init(void)
 
 	/* Initialize ring buffers and USB */
 #if defined(CONFIG_USB_DEVICE_AUDIO)
-	int ret;
 	const struct device *hs_dev = DEVICE_DT_GET(DT_NODELABEL(hs_0));
-
-	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT; i++) {
-		ring_buf_init(&streams[i].audio_ring_buf, AUDIO_RING_BUF_SIZE,
-			      streams[i]._ring_buffer);
-	}
+	static const struct usb_audio_ops usb_ops = {
+		.data_request_cb = usb_data_request_cb,
+		.data_written_cb = usb_data_written_cb,
+	};
 
 	if (!device_is_ready(hs_dev)) {
 		printk("Cannot get USB Headset Device\n");
 		return -EIO;
 	}
 
-	usb_audio_register(hs_dev, &ops);
-	ret = usb_enable(NULL);
-	if (ret != 0) {
+	usb_audio_register(hs_dev, &usb_ops);
+	err = usb_enable(NULL);
+	if (err != 0) {
 		printk("Failed to enable USB\n");
 		return err;
 	}
