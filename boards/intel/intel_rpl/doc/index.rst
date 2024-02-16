@@ -69,7 +69,7 @@ Build Zephyr application
 Booting the Raptor Lake S CRB Board using UEFI
 ==============================================
 
-.. include:: ../../../boards_legacy/x86/common/efi_boot.rst
+.. include:: ../../../intel/common/efi_boot.rst
    :start-after: start_include_here
 
 .. _RPL: https://edc.intel.com/content/www/us/en/design/products/platforms/details/raptor-lake-s/13th-generation-core-processors-datasheet-volume-1-of-2/

@@ -7,4 +7,4 @@ Intel Corporation
    :maxdepth: 1
    :glob:
 
-   **/*
+   */**/index
