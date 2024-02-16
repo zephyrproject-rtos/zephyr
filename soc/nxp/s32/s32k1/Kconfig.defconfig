@@ -1,12 +1,9 @@
 # NXP S32K1XX MCU series
 
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_S32K1XX
-
-config SOC_SERIES
-	default "s32k1"
+if SOC_SERIES_S32K1
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 80000000
@@ -14,6 +11,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NUM_IRQS
 	default 239 if CPU_CORTEX_M4
 	default 47 if CPU_CORTEX_M0PLUS
+
+config FPU
+	default y if CPU_HAS_FPU
 
 if !XIP
 config FLASH_SIZE
@@ -27,6 +27,4 @@ endif
 config HW_STACK_PROTECTION
 	default y if !USERSPACE
 
-source "soc/soc_legacy/arm/nxp_s32/s32k1/Kconfig.defconfig.s32k1*"
-
-endif # SOC_SERIES_S32K1XX
+endif # SOC_SERIES_S32K1

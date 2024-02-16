@@ -1,7 +1,9 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
+
+zephyr_include_directories(.)
 
 zephyr_library_sources(soc.c)
 zephyr_library_sources_ifdef(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS mpu_regions.c)
