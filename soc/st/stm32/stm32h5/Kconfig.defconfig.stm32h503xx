@@ -5,9 +5,6 @@
 
 if SOC_STM32H503XX
 
-config SOC
-	default "stm32h503xx"
-
 config NUM_IRQS
 	default 134
 
