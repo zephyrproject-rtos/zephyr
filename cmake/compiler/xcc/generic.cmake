@@ -6,12 +6,13 @@ find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC}   PATHS ${TOOLCHAIN_HOME} NO
 find_program(CMAKE_GCOV ${CROSS_COMPILE}gcov   PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 if(CMAKE_C_COMPILER STREQUAL CMAKE_C_COMPILER-NOTFOUND)
-  message(FATAL_ERROR "Zephyr was unable to find the toolchain. Is the environment misconfigured?
+  message(FATAL_ERROR "Zephyr was unable to find ${CROSS_COMPILE}${CC}. Is the environment misconfigured?
 User-configuration:
 ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}
 Internal variables:
 CROSS_COMPILE: ${CROSS_COMPILE}
 TOOLCHAIN_HOME: ${TOOLCHAIN_HOME}
+TOOLCHAIN_VER: ${TOOLCHAIN_VER}
 ")
 endif()
 
