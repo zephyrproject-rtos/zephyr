@@ -79,7 +79,7 @@ extern "C" {
 
 static inline int32_t _ts_to_ms(const struct timespec *to)
 {
-	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
+  return (int32_t)((to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC));
 }
 
 #if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)

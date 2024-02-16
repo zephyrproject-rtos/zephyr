@@ -74,6 +74,8 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 static inline int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 					   int postfix_len)
 {
+	(void) hostname_postfix;
+	(void) postfix_len;
 	return -EMSGSIZE;
 }
 #endif /* CONFIG_NET_HOSTNAME_UNIQUE */
