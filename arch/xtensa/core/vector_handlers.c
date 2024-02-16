@@ -234,9 +234,8 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	 */
 	case EXCCAUSE_SYSCALL:
 		/* Just report it to the console for now */
-		LOG_ERR(" ** SYSCALL PS %p PC %p",
+		LOG_DBG(" ** SYSCALL PS %p PC %p",
 			(void *)bsa->ps, (void *)bsa->pc);
-		xtensa_dump_stack(interrupted_stack);
 
 		/* Xtensa exceptions don't automatically advance PC,
 		 * have to skip the SYSCALL instruction manually or
