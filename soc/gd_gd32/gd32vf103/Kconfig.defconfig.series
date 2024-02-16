@@ -3,9 +3,6 @@
 
 if SOC_SERIES_GD32VF103
 
-source "soc/soc_legacy/riscv/gd_gd32/gd32vf103/Kconfig.defconfig.gd32vf103*"
-
-config SOC_SERIES
-	default "gd32vf103"
+rsource "Kconfig.defconfig.gd32*"
 
 endif # SOC_SERIES_GD32VF103

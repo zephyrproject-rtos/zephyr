@@ -3,9 +3,6 @@
 
 if SOC_GD32VF103
 
-config SOC
-	default "gd32vf103"
-
 config KERNEL_ENTRY
 	default "__nuclei_start"
 
@@ -28,15 +25,6 @@ config NUM_IRQS
 	default 16 if !NUCLEI_ECLIC
 
 config 2ND_LEVEL_INTERRUPTS
-	default y
-
-config PINCTRL
-	default y
-
-config RESET
-	default y
-
-config CLOCK_CONTROL
 	default y
 
 config ARCH_IRQ_VECTOR_TABLE_ALIGN
