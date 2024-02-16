@@ -2858,10 +2858,14 @@ RISCV arch:
     - npitre
   files:
     - arch/riscv/
-    - boards/riscv/
+    - boards/qemu/qemu_riscv*/
+    - boards/sifive/
+    - boards/sparkfun/sparkfun_red_v_things_plus/
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
+    - soc/common/riscv-privileged/
+    - soc/sifive/
     - soc/riscv/
     - tests/arch/riscv/
     - doc/hardware/arch/risc-v.rst
