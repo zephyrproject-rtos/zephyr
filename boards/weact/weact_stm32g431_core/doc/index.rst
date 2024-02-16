@@ -52,7 +52,7 @@ features:
 
 The default configuration can be found in the defconfig file:
 
-        ``boards/arm/weact_stm32g431_core/weact_stm32g431_core_defconfig``
+:zephyr_file:`boards/weact/weact_stm32g431_core/weact_stm32g431_core_defconfig`
 
 Pin Mapping
 ===========

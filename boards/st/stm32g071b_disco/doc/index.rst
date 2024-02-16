@@ -80,7 +80,7 @@ The Zephyr stm32g071b_disco board configuration supports the following hardware 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/stm32g071b_disco/stm32g071b_disco_defconfig``
+:zephyr_file:`boards/st/stm32g071b_disco/stm32g071b_disco_defconfig`
 
 Connections and IOs
 ===================
