@@ -3363,9 +3363,9 @@ Microchip MEC Platforms:
     - VenkatKotakonda
     - albertofloyd
   files:
-    - boards/arm/mec*/
+    - boards/microchip/mec*/
     - dts/arm/microchip/
-    - soc/arm/microchip_mec/
+    - soc/microchip/mec/
     - drivers/*/*mchp*.c
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
