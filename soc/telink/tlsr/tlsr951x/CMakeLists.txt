@@ -7,6 +7,8 @@ zephyr_sources(
 	soc.c
 )
 
+zephyr_include_directories(.)
+
 # Force using BFD-LD
 zephyr_ld_options(-fuse-ld=bfd)
 
