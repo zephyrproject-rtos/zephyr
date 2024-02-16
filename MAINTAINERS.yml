@@ -3412,11 +3412,11 @@ Renesas SmartBond Platforms:
     - andrzej-kaczmarek
     - blauret
   files:
-    - boards/arm/da14*/
+    - boards/renesas/da14*/
     - drivers/*/*smartbond*
     - dts/arm/renesas/smartbond/
     - dts/bindings/*/renesas,smartbond*
-    - soc/arm/renesas_smartbond/
+    - soc/renesas/smartbond/
   labels:
     - "platform: Renesas SmartBond"
   description: >-
@@ -3428,11 +3428,11 @@ Renesas RA Platforms:
   maintainers:
     - soburi
   files:
-    - boards/arm/arduino_uno_r4/
+    - boards/arduino/arduino_uno_r4_minima/
     - drivers/*/*renesas_ra*
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
-    - soc/arm/renesas_ra/
+    - soc/renesas/ra/
   labels:
     - "platforms: Renesas RA"
   description: >-
@@ -3448,7 +3448,7 @@ Renesas RZ Platforms:
     - drivers/*/*rzt2m*
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
-    - soc/renesas_rzt2m/
+    - soc/renesas/rzt2m/
   labels:
     - "platforms: Renesas RZ"
   description: >-
@@ -3464,15 +3464,13 @@ Renesas R-Car Platforms:
     - xakep-amatop
   files:
     - dts/arm/renesas/rcar/
-    - boards/arm/rcar_*/
-    - boards/arm64/rcar_*/
+    - boards/renesas/rcar_*/
     - drivers/*/*rcar*
     - drivers/clock_control/*cpg_mssr*
     - dts/arm/renesas/rcar/
     - dts/arm64/renesas/
     - dts/bindings/*/*rcar*
-    - soc/arm/renesas_rcar/
-    - soc/arm64/renesas_rcar/
+    - soc/renesas/rcar/
   labels:
     - "platform: Renesas R-Car"
   description: >-
