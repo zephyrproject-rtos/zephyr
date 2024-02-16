@@ -341,6 +341,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		struct z_stack_data *stack_data = (struct z_stack_data *)
 			((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
 		stack_data->priv = (uint8_t *)dyn->data;
+		stack_data->size = adjusted_size;
 		dyn->kobj.data.stack_data = stack_data;
 #if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
 		dyn->kobj.name = (void *)ROUND_UP(
@@ -351,6 +352,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 #endif
 #else
 		dyn->kobj.name = dyn->data;
+		dyn->kobj.data.stack_size = adjusted_size;
 #endif
 	} else {
 		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);

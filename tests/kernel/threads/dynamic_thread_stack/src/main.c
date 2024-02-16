@@ -35,6 +35,42 @@ static void func(void *arg1, void *arg2, void *arg3)
 	*flag = true;
 }
 
+/** @brief Check we can create a thread from userspace, using dynamic objects */
+ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
+{
+	k_tid_t tid;
+	struct k_thread *th;
+	k_thread_stack_t *stack;
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	stack = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	zassert_not_null(stack);
+
+	th = k_object_alloc(K_OBJ_THREAD);
+	zassert_not_null(th);
+
+	tid = k_thread_create(th, stack, CONFIG_DYNAMIC_THREAD_STACK_SIZE, func,
+			      &tflag[0], NULL, NULL, 0,
+			      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	zassert_not_null(tid);
+
+	zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
+	zassert_true(tflag[0]);
+	zassert_ok(k_thread_stack_free(stack));
+}
+
 /** @brief Exercise the pool-based thread stack allocator */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
 {
