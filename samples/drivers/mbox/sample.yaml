@@ -8,7 +8,6 @@ tests:
     platform_allow:
       - nrf5340dk_nrf5340_cpuapp
       - adp_xc7k_ae350
-      - mimxrt595_evk_cm33
       - mimxrt1170_evkb_cm7
       - mimxrt1170_evk_cm7
       - mimxrt1160_evk_cm7
