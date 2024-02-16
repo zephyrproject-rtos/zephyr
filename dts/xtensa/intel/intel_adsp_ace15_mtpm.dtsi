@@ -461,7 +461,7 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
-			power-domain = <&hst_domain>;
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -473,7 +473,7 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
-			power-domain = <&hst_domain>;
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
