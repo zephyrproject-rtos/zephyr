@@ -1021,6 +1021,11 @@ Libraries / Subsystems
 
 * Random
 
+* Crypto
+
+  * mbedTLS updated to 3.5.2. Full release notes can be found in:
+    https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.5.2
+
 * Retention
 
   * Fixed issue whereby :kconfig:option:`CONFIG_RETENTION_BUFFER_SIZE` values over 256 would cause
