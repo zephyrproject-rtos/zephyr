@@ -1,12 +1,9 @@
-# NXP S32Z/E MCUs family default configuration
+# NXP S32ZE MCUs series
 
-# Copyright 2022 NXP
+# Copyright 2022,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_S32ZE_R52
-
-config SOC_SERIES
-	default "s32ze"
+if SOC_SERIES_S32ZE
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
@@ -40,6 +37,4 @@ config NET_UDP_CHECKSUM
 
 endif # NET_L2_ETHERNET
 
-source "soc/soc_legacy/arm/nxp_s32/s32ze/Kconfig.defconfig.s32*"
-
-endif # SOC_SERIES_S32ZE_R52
+endif # SOC_SERIES_S32ZE
