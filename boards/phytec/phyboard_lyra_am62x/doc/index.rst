@@ -87,7 +87,7 @@ cores of the SoM. These cores will then load the zephyr binary on the M4 core
 using remoteproc.
 
 The default configuration can be found in
-:zephyr_file:`boards/phytec/phyboard_lyra_am63x/phyboard_lyra_am62x_am6234_m4_defconfig`
+:zephyr_file:`boards/phytec/phyboard_lyra_am62x/phyboard_lyra_am62x_am6234_m4_defconfig`
 
 Flashing
 ********
