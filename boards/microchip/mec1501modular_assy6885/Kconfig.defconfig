@@ -1,14 +1,12 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MEC15XXEVB_ASSY6853
+if BOARD_MEC1501MODULAR_ASSY6885
 
-config BOARD
-	default "mec15xxevb_assy6853"
-
-config ESPI_XEC
+#PS/2 driver is compiled in terms of this flag.
+config ESPI_PERIPHERAL_8042_KBC
 	default y
-	depends on ESPI
+	depends on ESPI_XEC
 
 if RTOS_TIMER
 
@@ -29,7 +27,6 @@ if !RTOS_TIMER
 # If RTOS timer is not enabled we use ARM Cortex-M
 # SYSTICK. SYSTICK frequency is 48MHz divided by
 # SOC_MEC1501_PROC_CLK_DIV.
-#
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 48000000
@@ -37,6 +34,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
+if ESPI
+
+config ESPI_PERIPHERAL_UART_SOC_MAPPING
+	default 1
+
+endif # ESPI
+
 endif # RTOS_TIMER
 
-endif # BOARD_MEC15XXEVB_ASSY6853
+endif # BOARD_MEC1501MODULAR_ASSY6885
