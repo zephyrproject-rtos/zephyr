@@ -116,7 +116,7 @@ family:
       - name: m4
     - name: stm32h750xx
     - name: stm32h753xx
-  - name: stm32l1x
+  - name: stm32l0x
     socs:
     - name: stm32l010x4
     - name: stm32l010x6
