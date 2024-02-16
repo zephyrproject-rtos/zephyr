@@ -168,6 +168,8 @@ The Zephyr nucleo_h563zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi bus                             |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c bus                             |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
