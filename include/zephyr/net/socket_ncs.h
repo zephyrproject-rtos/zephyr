@@ -71,31 +71,85 @@ extern "C" {
 
 /** sockopt: enable sending data as part of exceptional events */
 #define SO_EXCEPTIONAL_DATA 33
+/** sockopt: Keep socket open when its PDN connection is lost
+ *           or the device is put into flight mode.
+ */
+#define SO_KEEPOPEN 34
 /** sockopt: bind to PDN */
 #define SO_BINDTOPDN 40
 /** sockopt: Release Assistance Indication feature: This will indicate that the
  *  application will not send any more data.
+ *
+ *  @note This socket option requires the socket to be connected.
+ *
+ *  @deprecated use @ref SO_RAI with value @ref RAI_NO_DATA instead.
  */
 #define SO_RAI_NO_DATA 50
 /** sockopt: Release Assistance Indication feature: This will indicate that the
  *  next call to send/sendto will be the last one for some time.
+ *
+ *  @deprecated use @ref SO_RAI with value @ref RAI_LAST instead.
  */
 #define SO_RAI_LAST 51
 /** sockopt: Release Assistance Indication feature: This will indicate that
  *  after the next call to send/sendto, the application is expecting to receive
  *  one more data packet before this socket will not be used again for some time.
+ *
+ *  @deprecated use @ref SO_RAI with value @ref RAI_ONE_RESP instead.
  */
 #define SO_RAI_ONE_RESP 52
 /** sockopt: Release Assistance Indication feature: If a client application
  *  expects to use the socket more it can indicate that by setting this socket
  *  option before the next send call which will keep the network up longer.
+ *
+ *  @deprecated use @ref SO_RAI with value @ref RAI_ONGOING instead.
  */
 #define SO_RAI_ONGOING 53
 /** sockopt: Release Assistance Indication feature: If a server application
  *  expects to use the socket more it can indicate that by setting this socket
  *  option before the next send call.
+ *
+ *  @deprecated use @ref SO_RAI with value @ref RAI_WAIT_MORE instead.
  */
 #define SO_RAI_WAIT_MORE 54
+
+/** sockopt: Release assistance indication (RAI).
+ *  The option accepts an integer, indicating the type of RAI.
+ *  Accepted values for the option are: @ref RAI_NO_DATA, @ref RAI_LAST, @ref RAI_ONE_RESP,
+ *  @ref RAI_ONGOING, @ref RAI_WAIT_MORE.
+ */
+#define SO_RAI 61
+
+/** Release assistance indication (RAI).
+ *  Indicate that the application does not intend to send more data.
+ *  This applies immediately and lets the modem exit connected mode more
+ *  quickly.
+ *
+ *  @note This requires the socket to be connected.
+ */
+#define RAI_NO_DATA 1
+/** Release assistance indication (RAI).
+ *  Indicate that the application does not intend to send more data
+ *  after the next call to send() or sendto().
+ *  This lets the modem exit connected mode more quickly after sending the data.
+ */
+#define RAI_LAST 2
+/** Release assistance indication (RAI).
+ *  Indicate that the application is expecting to receive just one data packet
+ *  after the next call to send() or sendto().
+ *  This lets the modem exit connected mode more quickly after having received the data.
+ */
+#define RAI_ONE_RESP 3
+/** Release assistance indication (RAI).
+ *  Indicate that the socket is in active use by a client application.
+ *  This lets the modem stay in connected mode longer.
+ */
+#define RAI_ONGOING 4
+/** Release assistance indication (RAI).
+ *  Indicate that the socket is in active use by a server application.
+ *  This lets the modem stay in connected mode longer.
+ */
+#define RAI_WAIT_MORE 5
 
 /* NCS specific IPPROTO_ALL level socket options */
 
