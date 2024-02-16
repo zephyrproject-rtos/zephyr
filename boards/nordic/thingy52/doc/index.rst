@@ -3,6 +3,11 @@
 Thingy:52
 #########
 
+.. warning::
+
+   Nordic Semiconductor no longer offers support for this board, so it is not
+   recommended for new prototypes.
+
 Overview
 ********
 
