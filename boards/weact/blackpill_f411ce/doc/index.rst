@@ -72,7 +72,7 @@ hardware features:
 +------------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/weact/stm32_blackpill_v2/stm32_blackpill_v2_defconfig`
+:zephyr_file:`boards/weact/blackpill_f411ce/blackpill_f411ce_defconfig`
 
 Pin Mapping
 ===========

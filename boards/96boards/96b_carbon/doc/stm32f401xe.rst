@@ -101,7 +101,7 @@ hardware features:
 More details about the board can be found at `96Boards website`_.
 
 The default configuration can be found in
-:zephyr_file:`boards/96boards/96b_carbon/96b_carbon_defconfig`
+:zephyr_file:`boards/96boards/96b_carbon/96b_carbon_stm32f401xe_defconfig`
 
 Connections and IOs
 ===================

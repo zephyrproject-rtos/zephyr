@@ -34,8 +34,8 @@ The kernel currently does not support other hardware features on this platform.
 
 The default configuration for this board can be found in these files:
 
-- ``boards/arm64/xenvm/Kconfig.defconfig``
-- ``boards/arm64/xenvm/xenvm_defconfig``
+- :zephyr_file:`boards/xen/xenvm/Kconfig.defconfig`
+- :zephyr_file:`boards/xen/xenvm/xenvm_defconfig`
 
 Devices
 ========
