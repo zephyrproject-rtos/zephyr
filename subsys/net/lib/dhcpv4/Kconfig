@@ -36,6 +36,16 @@ config NET_DHCPV4_OPTION_CALLBACKS
 	  can be added. These can be used to support otherwise
 	  DHCP options not used by the rest of the system.
 
+config NET_DHCPV4_MAX_REQUESTED_OPTIONS
+	int "Maximum number of requested options"
+	depends on NET_DHCPV4 && NET_DHCPV4_OPTION_CALLBACKS
+	default 10
+	range 3 255
+	help
+	  Maximum number of requested options that can be added to the
+	  DHCPv4 request message. The options are added using the
+	  net_dhcpv4_add_option_callback() API.
+
 config NET_DHCPV4_ACCEPT_UNICAST
 	bool "Accept unicast DHCPv4 traffic"
 	depends on NET_DHCPV4
