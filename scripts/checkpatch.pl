@@ -600,10 +600,8 @@ our $api_defines = qr{(?x:
 	_GNU_SOURCE|
 	_ISOC11_SOURCE|
 	_ISOC99_SOURCE|
-	_POSIX_C_SOURCE|
 	_POSIX_SOURCE|
 	_SVID_SOURCE|
-	_XOPEN_SOURCE|
 	_XOPEN_SOURCE_EXTENDED
 )};
 
@@ -6550,7 +6548,7 @@ sub process {
 
 		if ($line =~ /#\s*define\s+$api_defines/) {
 			ERROR("API_DEFINE",
-			      "do not specify a non-Zephyr API for libc\n" . "$here$rawline\n");
+			      "do not specify non-standard feature test macros for embedded code\n" . "$here$rawline\n");
 		}
 
 # check for IS_ENABLED() without CONFIG_<FOO> ($rawline for comments too)
