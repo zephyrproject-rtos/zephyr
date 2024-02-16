@@ -334,8 +334,6 @@ Drivers and Sensors
 
 * DAC
 
-* Disk
-
 * Display
 
   * Introduce frame buffer config to STM32 LTDC driver.
