@@ -3,9 +3,6 @@
 
 if BOARD_MEC172XMODULAR_ASSY6930
 
-config BOARD
-	default "mec172xmodular_assy6930"
-
 if RTOS_TIMER
 
 # XEC RTOS timer HW frequency is fixed at 32768 Hz.
