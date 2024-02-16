@@ -152,6 +152,9 @@ family:
     - name: stm32u585xx
     - name: stm32u595xx
     - name: stm32u599xx
+  - name: stm32wbx
+    socs:
+    - name: stm32wb55xx
   - name: stm32wlx
     socs:
     - name: stm32wle4xx
