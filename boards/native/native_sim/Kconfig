@@ -6,11 +6,11 @@ config BOARD_NATIVE_SIM
 	select POSIX_ARCH_CONSOLE
 	select NATIVE_LIBRARY
 	select NATIVE_POSIX_TIMER
+	select 64BIT if BOARD_NATIVE_SIM_NATIVE_64
 	imply BOARD_NATIVE_POSIX if NATIVE_SIM_NATIVE_POSIX_COMPAT
 	help
 	  Native simulator (Single Core)
-	  Will produce a console Linux process which can be executed natively
-	  as a 32-bit executable.
+	  Will produce a console Linux process which can be executed natively.
 
 config BOARD_NATIVE_SIM_64
 	bool
