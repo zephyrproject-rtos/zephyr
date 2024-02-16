@@ -1564,7 +1564,7 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 	struct net_buf_simple buf;
 	struct bt_bap_unicast_client_ep *client_ep;
 	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
-	const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
+	uint16_t max_ntf_size;
 	struct bt_bap_ep *ep;
 
 	client_ep = CONTAINER_OF(params, struct bt_bap_unicast_client_ep, subscribe);
@@ -1580,6 +1580,8 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 		params->value_handle = 0x0000;
 		return BT_GATT_ITER_STOP;
 	}
+
+	max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
 
 	if (length == max_ntf_size) {
 		struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
