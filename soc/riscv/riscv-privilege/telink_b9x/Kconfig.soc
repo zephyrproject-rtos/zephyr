@@ -119,7 +119,7 @@ config TELINK_B9X_MALLOC_FAILED_HOOK
 
 config TELINK_B9x_MATTER_RETENTION_LAYOUT
 	bool "Support Matter retention layout"
-	depends on SOC_SERIES_RISCV_TELINK_B9X && (BOARD_TLSR9518ADK80D_RETENTION || BOARD_TLSR9528A_RETENTION || BOARD_TLSR9258A_RETENTION)
+	depends on SOC_SERIES_RISCV_TELINK_B9X_RETENTION
 	default n
 	help
 		This option enables support Matter retention layout

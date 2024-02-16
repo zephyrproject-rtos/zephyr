@@ -13,9 +13,6 @@ if BOARD_TLSR9528A_RETENTION
 config BOARD
 	default "tlsr9528a_retention"
 
-config BOARD_TLSR9X_NON_RETENTION_RAM_CODE
-	default n
-
 endif
 
 config HEAP_MEM_POOL_SIZE

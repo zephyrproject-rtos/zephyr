@@ -15,3 +15,16 @@ config SOC_SERIES_RISCV_TELINK_B9X
 	select FLASH if BT
 	help
 	  Enable support for Telink B9x SoC
+
+config SOC_SERIES_RISCV_TELINK_B9X_RETENTION
+	bool "Telink B9x SoCs retention memory layout"
+	depends on SOC_SERIES_RISCV_TELINK_B9X
+	help
+	  Telink B9x SoCs retention memory layout
+
+config SOC_SERIES_RISCV_TELINK_B9X_NON_RETENTION_RAM_CODE
+	bool "Telink B9x SoCs non retention ram code"
+	depends on SOC_SERIES_RISCV_TELINK_B9X_RETENTION
+	help
+	  Place Telink B9x SoCs ram code in non-retention area
+	  and restore this are after each retention.
