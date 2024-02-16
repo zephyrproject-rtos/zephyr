@@ -18,3 +18,14 @@ available under :zephyr_file:`doc/templates/board.tmpl`.
    :glob:
 
    */index
+
+.. _boards-shields:
+
+Shields
+#######
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   shields/**/*
