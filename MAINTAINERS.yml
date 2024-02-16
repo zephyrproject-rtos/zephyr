@@ -3243,8 +3243,8 @@ Intel Platforms (Agilex):
     - nbalabak
     - teikheng
   files:
-    - boards/arm64/intel_*/
-    - soc/arm64/intel_*/
+    - boards/intel/intel_socfpga/
+    - soc/intel/intel_socfpga/
     - dts/arm64/intel/
     - dts/bindings/*/intel,agilex*
     - dts/arm/intel_socfpga_std/
