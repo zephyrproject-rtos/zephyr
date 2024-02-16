@@ -7,9 +7,6 @@
 
 if BOARD_STM32H573I_DK
 
-config BOARD
-	default "stm32h573i_dk"
-
 if NETWORKING
 
 config NET_L2_ETHERNET
