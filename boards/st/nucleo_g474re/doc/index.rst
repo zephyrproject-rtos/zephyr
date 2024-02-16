@@ -133,7 +133,7 @@ The Zephyr nucleo_g474re board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_g474re/nucleo_g474re_defconfig``
+:zephyr_file:`boards/st/nucleo_g474re/nucleo_g474re_defconfig`
 
 
 Connections and IOs
