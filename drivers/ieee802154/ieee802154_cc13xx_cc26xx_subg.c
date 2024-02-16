@@ -45,7 +45,7 @@ static int drv_stop_rx(const struct device *dev);
 /* User-defined CMD_PROP_RADIO_DIV_SETUP structures */
 #if defined(CONFIG_SOC_CC1352R)
 extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup;
-#elif defined(CONFIG_SOC_CC1352P)
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
 extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup;
 #endif /* CONFIG_SOC_CC1352x, extern RADIO_DIV_SETUP */
 #else
@@ -170,10 +170,10 @@ static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_d
 	.intFreq = 0x8000, /* Use default intermediate frequency. */
 	.loDivider = 5,
 	.pRegOverride = ieee802154_cc13xx_overrides_sub_ghz,
-#if defined(CONFIG_SOC_CC1352P)
+#if defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
 	.pRegOverrideTxStd = rf_prop_overrides_tx_std,
 	.pRegOverrideTx20 = rf_prop_overrides_tx_20,
-#endif /* CONFIG_SOC_CC1352P */
+#endif /* CONFIG_SOC_CC1352P, CONFIG_SOC_CC1352P7 */
 };
 
 #endif /* CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP */
