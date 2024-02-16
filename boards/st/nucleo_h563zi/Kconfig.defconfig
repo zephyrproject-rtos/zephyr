@@ -5,9 +5,6 @@
 
 if BOARD_NUCLEO_H563ZI
 
-config BOARD
-	default "nucleo_h563zi"
-
 if NETWORKING
 
 config NET_L2_ETHERNET

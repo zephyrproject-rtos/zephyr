@@ -183,8 +183,8 @@ The default configuration can be found in the defconfig and dts files:
 
 - Secure target:
 
-  - :zephyr_file:`boards/arm/nucleo_h563zi/nucleo_h563zi_defconfig`
-  - :zephyr_file:`boards/arm/nucleo_h563zi/nucleo_h563zi.dts`
+  - :zephyr_file:`boards/st/nucleo_h563zi/nucleo_h563zi_defconfig`
+  - :zephyr_file:`boards/st/nucleo_h563zi/nucleo_h563zi.dts`
 
 Zephyr board options
 ====================
