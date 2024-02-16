@@ -268,6 +268,10 @@ Drivers and Sensors
     which has 5 ADCs, ADC1 and ADC2 share one IRQ while ADC3, ADC4 and ADC5 each have unique IRQs).
     Enabling all instances in same application is not possible on such devices as of now.
 
+* Auxiliary Display
+
+  * Added Sparkfun SerLCD driver.
+
 * Battery backed up RAM
 
   * STM32WL devices now support BBRAM.
