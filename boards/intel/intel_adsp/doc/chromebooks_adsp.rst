@@ -1,5 +1,3 @@
-:orphan:
-
 .. _zephyr-audio-dsp-development-on-chromebooks:
 
 Zephyr Audio DSP Development on Chromebooks
