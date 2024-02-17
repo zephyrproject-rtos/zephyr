@@ -1,5 +1,3 @@
-:orphan:
-
 .. _intel_adsp_ace15:
 
 Intel ADSP ACE 1.5
