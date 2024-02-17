@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Trackunit Corporation
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config GNSS_QUECTEL_LCX6G
+	bool "Quectel LCX6G GNSS modem driver"
+	default y
+	depends on GNSS
+	depends on DT_HAS_QUECTEL_LC26G_ENABLED || DT_HAS_QUECTEL_LC76G_ENABLED || DT_HAS_QUECTEL_LC86G_ENABLED
+	select MODEM_MODULES
+	select MODEM_BACKEND_UART
+	select MODEM_CHAT
+	select GNSS_PARSE
+	select GNSS_NMEA0183
+	select GNSS_NMEA0183_MATCH
+	help
+	  Enable quectel LCX6G series GNSS modem driver.
+
+if GNSS_QUECTEL_LCX6G
+
+config GNSS_QUECTEL_LCX6G_UART_RX_BUF_SIZE
+	int "Size of UART backend receive buffer"
+	default 256
+
+config GNSS_QUECTEL_LCX6G_UART_TX_BUF_SIZE
+	int "Size of UART backend transmit buffer"
+	default 64
+
+if GNSS_SATELLITES
+
+config GNSS_QUECTEL_LCX6G_SAT_ARRAY_SIZE
+	int "Size of GNSS satellites array"
+	default 24
+
+endif # GNSS_SATELLITES
+
+endif # GNSS_QUECTEL_LCX6G

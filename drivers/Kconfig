@@ -33,6 +33,8 @@ source "drivers/entropy/Kconfig"
 
 source "drivers/pcie/Kconfig"
 
+source "drivers/gnss/Kconfig"
+
 source "drivers/gpio/Kconfig"
 
 source "drivers/interrupt_controller/Kconfig.shared_irq"

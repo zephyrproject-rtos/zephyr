@@ -16,6 +16,14 @@
 	ITERABLE_SECTION_ROM(mcumgr_handler, 4)
 #endif
 
+#if defined(CONFIG_GNSS)
+	ITERABLE_SECTION_ROM(gnss_data_callback, 4)
+#endif
+
+#if defined(CONFIG_GNSS_SATELLITES)
+	ITERABLE_SECTION_ROM(gnss_satellites_callback, 4)
+#endif
+
 #if defined(CONFIG_EMUL)
 	SECTION_DATA_PROLOGUE(emulators_section,,)
 	{
