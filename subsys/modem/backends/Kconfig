@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_BACKEND_TTY
+	bool "Modem TTY backend module"
+	select MODEM_PIPE
+	depends on ARCH_POSIX
+
+config MODEM_BACKEND_UART
+	bool "Modem UART backend module"
+	select MODEM_PIPE
+	select RING_BUFFER
+	depends on UART_INTERRUPT_DRIVEN || UART_ASYNC_API
+
+if MODEM_BACKEND_UART
+
+config MODEM_BACKEND_UART_ISR
+	bool "Modem UART backend module interrupt driven implementation"
+	default y if UART_INTERRUPT_DRIVEN
+
+config MODEM_BACKEND_UART_ASYNC
+	bool "Modem UART backend module async implementation"
+	default y if UART_ASYNC_API
+
+if MODEM_BACKEND_UART_ASYNC
+
+config MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS
+	int "Modem UART async transmit timeout in milliseconds"
+	default 100
+
+config MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS
+	int "Modem UART async receive idle timeout in milliseconds"
+	default 30
+
+endif
+
+endif # MODEM_BACKEND_UART

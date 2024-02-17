@@ -36,6 +36,8 @@ source "subsys/mgmt/Kconfig"
 
 source "subsys/modbus/Kconfig"
 
+source "subsys/modem/Kconfig"
+
 source "subsys/net/Kconfig"
 
 source "subsys/portability/Kconfig"
