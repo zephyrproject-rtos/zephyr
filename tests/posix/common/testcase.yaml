@@ -103,16 +103,3 @@ tests:
     extra_configs:
       - CONFIG_DYNAMIC_THREAD=n
       - CONFIG_THREAD_STACK_INFO=n
-  portability.posix.common.fs:
-    platform_exclude:
-      - nsim_sem_mpu_stack_guard
-      - intel_ehl_crb
-    extra_configs:
-      - CONFIG_NEWLIB_LIBC=n
-      - CONFIG_FILE_SYSTEM=y
-      - CONFIG_POSIX_FS=y
-      - CONFIG_CONSOLE=y
-      - CONFIG_SERIAL=y
-      - CONFIG_UART_CONSOLE=y
-    integration_platforms:
-      - qemu_x86
