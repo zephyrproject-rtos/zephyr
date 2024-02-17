@@ -1,3 +1,5 @@
+:orphan:
+
 .. _intel_adsp_cavs25:
 
 Intel ADSP CAVS 2.5
