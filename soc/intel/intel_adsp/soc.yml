@@ -3,8 +3,8 @@ family:
     series:
       - name: ace
         socs:
-          - name: intel_ace15_mtpm
-          - name: intel_ace20_lnl
+          - name: ace15_mtpm
+          - name: ace20_lnl
       - name: cavs
         socs:
           - name: cavs25
