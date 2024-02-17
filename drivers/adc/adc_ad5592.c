@@ -218,7 +218,7 @@ static int adc_ad5592_init(const struct device *dev)
 	adc_context_init(&data->ctx);
 
 	tid = k_thread_create(&data->thread, data->stack,
-			CONFIG_ADC_AD5592_ACQUISITION_THREAD_STACK_SIZE,
+			K_KERNEL_STACK_SIZEOF(data->stack),
 			(k_thread_entry_t)adc_ad5592_acquisition_thread, data, NULL, NULL,
 			CONFIG_ADC_AD5592_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
