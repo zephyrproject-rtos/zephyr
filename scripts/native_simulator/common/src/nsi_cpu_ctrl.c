@@ -15,7 +15,7 @@ static bool cpu_booted[NSI_N_CPUS];
 #define CPU_N_RANGE_CHECK(cpu_n) \
 	if (cpu_n >= NSI_N_CPUS) { \
 		nsi_print_error_and_exit("%s called with cpu_n(%i) >= NSI_N_CPUS (%i)\n", \
-					 cpu_n, NSI_N_CPUS); \
+					 __func__, cpu_n, NSI_N_CPUS); \
 	}
 
 void nsi_cpu_set_auto_start(int cpu_n, bool auto_start)
@@ -45,7 +45,7 @@ void nsi_cpu_boot(int cpu_n)
 	CPU_N_RANGE_CHECK(cpu_n);
 	if (cpu_booted[cpu_n]) {
 		nsi_print_warning("%s called with cpu_n(%i) which was already booted\n",
-				  cpu_n);
+				  __func__, cpu_n);
 	}
 	cpu_booted[cpu_n] = true;
 	nsif_cpun_boot(cpu_n);
