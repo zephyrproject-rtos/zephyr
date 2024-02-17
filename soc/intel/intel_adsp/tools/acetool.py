@@ -35,6 +35,8 @@ OUTBOX_OFFSET    = (512 + (0 * 128)) * 1024 + 4096
 INBOX_OFFSET     = (512 + (1 * 128)) * 1024
 WINSTREAM_OFFSET = WINDOW_BASE + WINDOW_STRIDE*3
 
+# pylint: disable=duplicate-code
+
 # ADSPCS bits
 CRST   = 0
 CSTALL = 8

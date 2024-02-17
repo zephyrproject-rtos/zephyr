@@ -17,6 +17,8 @@ from urllib.parse import urlparse
 # Global variable use to sync between log and request services.
 runner = None
 
+# pylint: disable=duplicate-code
+
 # INADDR_ANY as default
 HOST = ''
 PORT_LOG = 9999
