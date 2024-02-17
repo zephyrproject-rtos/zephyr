@@ -1,5 +1,3 @@
-:orphan:
-
 .. _intel_adsp_generic:
 
 Intel ADSP cAVS and ACE
