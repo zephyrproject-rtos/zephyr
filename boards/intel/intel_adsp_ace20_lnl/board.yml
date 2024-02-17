@@ -2,4 +2,4 @@ board:
   name: intel_adsp_ace20_lnl
   vendor: intel
   socs:
-    - name: intel_ace20_lnl
+    - name: ace20_lnl
