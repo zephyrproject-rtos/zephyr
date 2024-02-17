@@ -38,7 +38,7 @@ tests:
     platform_allow: nrf52840dk/nrf52840
     extra_args: SHIELD=adafruit_pca9685
   drivers.pwm.sam0.tcc.build:
-    platform_allow: atsame54_xpro
+    platform_allow: same54_xpro
   drivers.pwm.build.sam:
     platform_allow:
       - sam_e70_xplained/same70q21
