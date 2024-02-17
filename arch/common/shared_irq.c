@@ -50,7 +50,7 @@ void z_isr_install(unsigned int irq, void (*routine)(const void *),
 	table_idx = z_get_sw_isr_table_idx(irq);
 
 	/* check for out of bounds table index */
-	if (table_idx >= CONFIG_NUM_IRQS) {
+	if (table_idx >= IRQ_TABLE_SIZE) {
 		return;
 	}
 
@@ -170,7 +170,7 @@ int z_isr_uninstall(unsigned int irq,
 	table_idx = z_get_sw_isr_table_idx(irq);
 
 	/* check for out of bounds table index */
-	if (table_idx >= CONFIG_NUM_IRQS) {
+	if (table_idx >= IRQ_TABLE_SIZE) {
 		return -EINVAL;
 	}
 
