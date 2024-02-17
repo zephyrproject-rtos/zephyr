@@ -12,7 +12,7 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
       - nrf9160dk/nrf9160
-      - atsamd20_xpro
+      - samd20_xpro
       - bl5340_dvk/nrf5340/cpuapp
       - gd32e103v_eval
       - gd32e507z_eval
