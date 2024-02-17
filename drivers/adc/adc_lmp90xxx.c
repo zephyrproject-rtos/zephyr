@@ -1017,7 +1017,7 @@ static int lmp90xxx_init(const struct device *dev)
 	}
 
 	tid = k_thread_create(&data->thread, data->stack,
-			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE,
+			      K_KERNEL_STACK_SIZEOF(data->stack),
 			      lmp90xxx_acquisition_thread,
 			      data, NULL, NULL,
 			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_PRIO,
