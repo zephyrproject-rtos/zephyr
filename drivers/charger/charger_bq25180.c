@@ -263,7 +263,7 @@ static int bq25180_init(const struct device *dev)
 	}
 
 	if (cfg->initial_current_microamp > 0) {
-		bq25180_set_charge_current(dev, cfg->initial_current_microamp);
+		ret = bq25180_set_charge_current(dev, cfg->initial_current_microamp);
 		if (ret < 0) {
 			return ret;
 		}
