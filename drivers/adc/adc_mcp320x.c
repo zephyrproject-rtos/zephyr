@@ -284,7 +284,7 @@ static int mcp320x_init(const struct device *dev)
 	}
 
 	k_thread_create(&data->thread, data->stack,
-			CONFIG_ADC_MCP320X_ACQUISITION_THREAD_STACK_SIZE,
+			K_KERNEL_STACK_SIZEOF(data->stack),
 			mcp320x_acquisition_thread,
 			data, NULL, NULL,
 			CONFIG_ADC_MCP320X_ACQUISITION_THREAD_PRIO,
