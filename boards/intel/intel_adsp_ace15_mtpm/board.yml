@@ -1,5 +1,0 @@
-board:
-  name: intel_adsp_ace15_mtpm
-  vendor: intel
-  socs:
-    - name: ace15_mtpm
