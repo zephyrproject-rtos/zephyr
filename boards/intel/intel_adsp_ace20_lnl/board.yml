@@ -1,5 +1,0 @@
-board:
-  name: intel_adsp_ace20_lnl
-  vendor: intel
-  socs:
-    - name: ace20_lnl
