@@ -30,7 +30,7 @@ tests:
   drivers.adc.nrf.saadc.build:
     platform_allow: nrf21540dk/nrf52840
   drivers.adc.sam0.build:
-    platform_allow: atsame54_xpro
+    platform_allow: same54_xpro
   drivers.adc.sam.afec.build:
     platform_allow: sam_e70_xplained/same70q21
   drivers.adc.stm32.build:

@@ -19,11 +19,11 @@
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
 #define UART_NODE DT_NODELABEL(dut)
-#elif defined(CONFIG_BOARD_ATSAMD21_XPRO)
+#elif defined(CONFIG_BOARD_SAMD21_XPRO)
 #define UART_NODE DT_NODELABEL(sercom1)
-#elif defined(CONFIG_BOARD_ATSAMR21_XPRO)
+#elif defined(CONFIG_BOARD_SAMR21_XPRO)
 #define UART_NODE DT_NODELABEL(sercom3)
-#elif defined(CONFIG_BOARD_ATSAME54_XPRO)
+#elif defined(CONFIG_BOARD_SAME54_XPRO)
 #define UART_NODE DT_NODELABEL(sercom1)
 #else
 #define UART_NODE DT_CHOSEN(zephyr_console)

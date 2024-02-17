@@ -65,12 +65,12 @@ tests:
   drivers.uart.async_api.sam0:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_SAM0
     platform_allow:
-      - atsamc21n_xpro
-      - atsamd21_xpro
-      - atsaml21_xpro
-      - atsamr21_xpro
-      - atsamr34_xpro
-      - atsame54_xpro
+      - samc21n_xpro
+      - samd21_xpro
+      - saml21_xpro
+      - samr21_xpro
+      - samr34_xpro
+      - same54_xpro
     extra_configs:
       - CONFIG_UART_SAM0_ASYNC=y
       - CONFIG_DMA=y

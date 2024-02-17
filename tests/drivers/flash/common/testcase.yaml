@@ -90,9 +90,9 @@ tests:
       fixture: external_flash_mx25v1635f
   drivers.flash.common.sam0:
     platform_allow:
-      - atsamd20_xpro
-      - atsamr21_xpro
-      - atsame54_xpro
+      - samd20_xpro
+      - samr21_xpro
+      - same54_xpro
   drivers.flash.common.gd32:
     platform_allow:
       - gd32vf103v_eval
