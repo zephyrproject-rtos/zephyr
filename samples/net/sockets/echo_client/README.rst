@@ -75,7 +75,7 @@ Example building for the IEEE 802.15.4 RF2XX transceiver:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
-   :board: [atsamr21_xpro | sam4s_xplained | sam_v71_xult/samv71q21]
+   :board: [samr21_xpro | sam4s_xplained | sam_v71_xult/samv71q21]
    :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :goals: build flash
    :compact:
