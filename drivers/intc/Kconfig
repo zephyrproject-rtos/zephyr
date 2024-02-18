@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INTC
+	bool "INTC (INTerrupt Controller) drivers"
