@@ -411,7 +411,6 @@ static void *mq_notify_thread(void *arg)
 
 	remove_notification(mqueue);
 
-	pthread_exit(NULL);
 	return NULL;
 }
 
