@@ -1611,4 +1611,15 @@ Under embargo until 2024-02-18
 CVE-2023-6749
 -------------
 
-Under embargo until 2024-02-18
+Potential buffer overflow due unchecked data coming from user input in settings shell.
+
+- `Zephyr project bug tracker GHSA-757h-rw37-66hw
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-757h-rw37-66hw>`_
+
+This has been fixed in main for v3.6.0
+
+- `PR 66451 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/66451>`_
+
+- `PR 66584 fix for 3.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/66584>`_
