@@ -84,6 +84,7 @@ set(ZEPHYR_FINAL_EXECUTABLE zephyr_final)
 
 # Set some phony targets to collect dependencies
 set(OFFSETS_H_TARGET           offsets_h)
+set(SYS_IRQ_TARGET             sys_irq_target)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
@@ -910,6 +911,10 @@ add_dependencies(zephyr_interface
   ${KOBJ_TYPES_H_TARGET}
   )
 
+if (CONFIG_SYS_IRQ)
+  add_dependencies(zephyr_interface ${SYS_IRQ_TARGET})
+endif()
+
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
   COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
@@ -920,6 +925,48 @@ add_custom_command(
   $<TARGET_OBJECTS:${OFFSETS_LIB}>
 )
 add_custom_target(${OFFSETS_H_TARGET} DEPENDS ${OFFSETS_H_PATH})
+
+set(SYS_IRQ_H_PATH          ${PROJECT_BINARY_DIR}/include/generated/zephyr/sys_irq_generated.h)
+set(SYS_IRQ_INTERNAL_H_PATH ${PROJECT_BINARY_DIR}/include/generated/zephyr/sys_irq_internal_generated.h)
+set(SYS_IRQ_HANDLER_H_PATH  ${PROJECT_BINARY_DIR}/include/generated/zephyr/sys_irq_handler_generated.h)
+set(SYS_IRQ_HANDLER_C_PATH  ${PROJECT_BINARY_DIR}/misc/generated/sys_irq_handler_generated.c)
+
+if(CONFIG_SYS_IRQ_LOG_SPURIOUS)
+  set(SYS_IRQ_LOG_SPURIOUS_ARG --log-spurious-irq)
+endif()
+
+if(CONFIG_SYS_IRQ_DYNAMIC)
+  set(SYS_IRQ_DYNAMIC_ARG --dynamic-irq)
+endif()
+
+add_custom_command(
+  OUTPUT
+    ${SYS_IRQ_H_PATH}
+    ${SYS_IRQ_INTERNAL_H_PATH}
+    ${SYS_IRQ_HANDLER_H_PATH}
+    ${SYS_IRQ_HANDLER_C_PATH}
+  COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_sys_irq.py
+      --edt-pickle     ${EDT_PICKLE}
+      --irq-h          ${SYS_IRQ_H_PATH}
+      --irq-internal-h ${SYS_IRQ_INTERNAL_H_PATH}
+      --irq-handler-h  ${SYS_IRQ_HANDLER_H_PATH}
+      --irq-handler-c  ${SYS_IRQ_HANDLER_C_PATH}
+      ${SYS_IRQ_LOG_SPURIOUS_ARG}
+      ${SYS_IRQ_DYNAMIC_ARG}
+  DEPENDS
+    ${EDT_PICKLE}
+  )
+
+add_custom_target(
+  ${SYS_IRQ_TARGET}
+  DEPENDS
+    ${SYS_IRQ_H_PATH}
+    ${SYS_IRQ_INTERNAL_H_PATH}
+    ${SYS_IRQ_HANDLER_H_PATH}
+    ${SYS_IRQ_HANDLER_C_PATH}
+  )
 
 zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
