@@ -1601,7 +1601,27 @@ This has been fixed in main for v3.5.0
 CVE-2023-5779
 -------------
 
-Under embargo until 2024-01-23
+Out of bounds issue in remove_rx_filter in multiple can drivers.
+
+- `Zephyr project bug tracker GHSA-7cmj-963q-jj47
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7cmj-963q-jj47>`_
+
+This has been fixed in main for v3.6.0
+
+- `PR 64399 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/64399>`_
+
+- `PR 64416 fix for 3.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/64416>`_
+
+- `PR 64415 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/64415>`_
+
+- `PR 64427 fix for 3.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/64427>`_
+
+- `PR 64431 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/64431>`_
 
 CVE-2023-6249
 -------------
