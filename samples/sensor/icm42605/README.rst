@@ -1,6 +1,6 @@
 .. _icm42605:
 
-MPU6050: Invensense Motion Tracking Device
+ICM42605: Invensense Motion Tracking Device
 ##########################################
 
 Description
