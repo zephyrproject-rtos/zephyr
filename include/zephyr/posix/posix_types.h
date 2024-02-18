@@ -60,7 +60,8 @@ typedef struct k_sem sem_t;
 typedef uint32_t pthread_mutex_t;
 
 struct pthread_mutexattr {
-	int type;
+	unsigned char type: 2;
+	bool initialized: 1;
 };
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
 	|| defined(CONFIG_ARCMWDT_LIBC)
