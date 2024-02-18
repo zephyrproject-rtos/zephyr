@@ -1300,3 +1300,4 @@ config DEVICE_MUTABLE
 endmenu
 
 rsource "Kconfig.vm"
+rsource "Kconfig.irq"
