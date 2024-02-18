@@ -49,11 +49,12 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 	pthread_t th;
 	int protocol;
 	int actual_type;
+	pthread_mutexattr_t mut_attr;
 	struct sched_param schedparam;
-	pthread_mutexattr_t mut_attr = {0};
 
 	schedparam.sched_priority = 2;
 
+	zassert_ok(pthread_mutexattr_init(&mut_attr));
 	zassert_ok(pthread_mutexattr_settype(&mut_attr, type), "setting mutex type is failed");
 	zassert_ok(pthread_mutex_init(&mutex, &mut_attr), "mutex initialization is failed");
 
@@ -61,6 +62,7 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 		   "reading mutex type is failed");
 	zassert_ok(pthread_mutexattr_getprotocol(&mut_attr, &protocol),
 		   "reading mutex protocol is failed");
+	zassert_ok(pthread_mutexattr_destroy(&mut_attr));
 
 	zassert_ok(pthread_mutex_lock(&mutex));
 
