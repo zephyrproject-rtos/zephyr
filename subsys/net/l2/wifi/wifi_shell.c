@@ -1411,7 +1411,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		PR("Wi-Fi Regulatory domain is: %c%c\n",
 		   regd.country_code[0], regd.country_code[1]);
 		PR("<channel>\t<center frequency>\t<supported(y/n)>\t"
-		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<dfs supported(y/n)>\n");
+		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
 			PR("  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
 			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
