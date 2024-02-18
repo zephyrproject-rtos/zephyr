@@ -1606,7 +1606,15 @@ Under embargo until 2024-01-23
 CVE-2023-6249
 -------------
 
-Under embargo until 2024-02-18
+Signed to unsigned conversion problem in esp32_ipm_send may lead to buffer overflow
+
+- `Zephyr project bug tracker GHSA-32f5-3p9h-2rqc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-32f5-3p9h-2rqc>`_
+
+This has been fixed in main for v3.6.0
+
+- `PR 65546 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/65546>`_
 
 CVE-2023-6749
 -------------
