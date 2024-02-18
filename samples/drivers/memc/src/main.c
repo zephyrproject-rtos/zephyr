@@ -70,8 +70,11 @@ int main(void)
 		if (memcmp(memc_read_buffer, memc_write_buffer, BUF_SIZE)) {
 			printk("Error: read data differs in range [0x%x- 0x%x]\n",
 				i, i + (BUF_SIZE - 1));
+			dump_memory(memc_write_buffer, BUF_SIZE);
+			dump_memory(memc_read_buffer, BUF_SIZE);
 			return 0;
 		}
+		printk("Check (%i/%i) passed!\n", j, (MEMC_SIZE / BUF_SIZE) - 1);
 	}
 	/* Copy any remaining space bytewise */
 	for (; i < MEMC_SIZE; i++) {
