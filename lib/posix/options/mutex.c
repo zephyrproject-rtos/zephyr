@@ -311,16 +311,48 @@ int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
 	return 0;
 }
 
+int pthread_mutexattr_init(pthread_mutexattr_t *attr)
+{
+	struct pthread_mutexattr *const a = (struct pthread_mutexattr *)attr;
+
+	if (a == NULL) {
+		return EINVAL;
+	}
+
+	a->type = PTHREAD_MUTEX_DEFAULT;
+	a->initialized = true;
+
+	return 0;
+}
+
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+{
+	struct pthread_mutexattr *const a = (struct pthread_mutexattr *)attr;
+
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	*a = (struct pthread_mutexattr){0};
+
+	return 0;
+}
+
 /**
  * @brief Read type attribute for mutex.
  *
  * See IEEE 1003.1
  */
-int pthread_mutexattr_gettype(const pthread_mutexattr_t *_attr, int *type)
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
 {
-	const struct pthread_mutexattr *attr = (const struct pthread_mutexattr *)_attr;
+	const struct pthread_mutexattr *a = (const struct pthread_mutexattr *)attr;
 
-	*type = attr->type;
+	if (a == NULL || type == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	*type = a->type;
+
 	return 0;
 }
 
@@ -329,19 +361,23 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *_attr, int *type)
  *
  * See IEEE 1003.1
  */
-int pthread_mutexattr_settype(pthread_mutexattr_t *_attr, int type)
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
-	struct pthread_mutexattr *attr = (struct pthread_mutexattr *)_attr;
-	int retc = EINVAL;
+	struct pthread_mutexattr *const a = (struct pthread_mutexattr *)attr;
 
-	if ((type == PTHREAD_MUTEX_NORMAL) ||
-	    (type == PTHREAD_MUTEX_RECURSIVE) ||
-	    (type == PTHREAD_MUTEX_ERRORCHECK)) {
-		attr->type = type;
-		retc = 0;
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
 	}
 
-	return retc;
+	switch (type) {
+	case PTHREAD_MUTEX_NORMAL:
+	case PTHREAD_MUTEX_RECURSIVE:
+	case PTHREAD_MUTEX_ERRORCHECK:
+		a->type = type;
+		return 0;
+	default:
+		return EINVAL;
+	}
 }
 
 static int pthread_mutex_pool_init(void)
