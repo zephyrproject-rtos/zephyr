@@ -349,7 +349,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
 			       SHELL_CMD_ARG(dump, NULL,
 					     "Usage:\n"
 					     "devmem dump -a <address> -s <size> [-w <width>]\n",
-					     cmd_dump, 4, 6),
+					     cmd_dump, 5, 2),
 			       SHELL_CMD_ARG(load, NULL,
 					     "Usage:\n"
 					     "devmem load [options] [address]\n"
