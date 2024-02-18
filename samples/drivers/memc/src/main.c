@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <string.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
 /* Use memc API to get AHB base address for the device */
