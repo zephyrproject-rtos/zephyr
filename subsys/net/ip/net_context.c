@@ -1198,18 +1198,18 @@ int net_context_connect(struct net_context *context,
 		goto unlock;
 	}
 
-    if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
-        net_if_is_ip_offloaded(net_context_get_iface(context))) {
-        ret = net_offload_connect(
-                net_context_get_iface(context),
-                context,
-                addr,
-                addrlen,
-                cb,
-                timeout,
-                user_data);
-        goto unlock;
-    }
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		ret = net_offload_connect(
+				net_context_get_iface(context),
+				context,
+				addr,
+				addrlen,
+				cb,
+				timeout,
+				user_data);
+		goto unlock;
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6) {
