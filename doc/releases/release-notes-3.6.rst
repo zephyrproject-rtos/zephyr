@@ -21,6 +21,23 @@ The following CVEs are addressed by this release:
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
+* CVE-2023-5779 `Zephyr project bug tracker GHSA-7cmj-963q-jj47
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7cmj-963q-jj47>`_
+
+* CVE-2023-6249 `Zephyr project bug tracker GHSA-32f5-3p9h-2rqc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-32f5-3p9h-2rqc>`_
+
+* CVE-2023-6749 `Zephyr project bug tracker GHSA-757h-rw37-66hw
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-757h-rw37-66hw>`_
+
+* CVE-2023-6881 `Zephyr project bug tracker GHSA-mh67-4h3q-p437
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-mh67-4h3q-p437>`_
+
+* CVE-2023-7060: Under embargo until 2024-03-14
+
+* CVE-2024-1638 `Zephyr project bug tracker GHSA-p6f3-f63q-5mc2
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p6f3-f63q-5mc2>`_
+
 Kernel
 ******
 
