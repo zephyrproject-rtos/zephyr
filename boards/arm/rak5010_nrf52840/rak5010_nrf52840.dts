@@ -100,8 +100,8 @@
 	};
 
 	/* ST Microelectronics LPS22HB pressure sensor */
-	lps22hb-press@5c {
-		compatible = "st,lps22hb-press";
+	lps22hb@5c {
+		compatible = "st,lps22hb";
 		reg = <0x5c>;
 	};
 };

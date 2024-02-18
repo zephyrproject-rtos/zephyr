@@ -81,7 +81,7 @@ Supported Features
 +-----------+------------+----------------------+
 | NVIC      | on-chip    | arch/arm             |
 +-----------+------------+----------------------+
-| Pressure  | on-board   | lps22hb_press        |
+| Pressure  | on-board   | lps22hb              |
 | and Temp  |            |                      |
 +-----------+------------+----------------------+
 | PWM       | on-chip    | pwm                  |

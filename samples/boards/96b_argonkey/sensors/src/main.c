@@ -155,7 +155,7 @@ int main(void)
 	printk("ArgonKey test!!\n");
 
 #ifdef CONFIG_LPS22HB
-	const struct device *const baro_dev = DEVICE_DT_GET_ONE(st_lps22hb_press);
+	const struct device *const baro_dev = DEVICE_DT_GET_ONE(st_lps22hb);
 
 	if (!device_is_ready(baro_dev)) {
 		printk("%s: device not ready.\n", baro_dev->name);

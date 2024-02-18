@@ -28,7 +28,7 @@ int main(void)
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
 	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
-	const struct device *const lps22hb = DEVICE_DT_GET_ONE(st_lps22hb_press);
+	const struct device *const lps22hb = DEVICE_DT_GET_ONE(st_lps22hb);
 	const struct device *const lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
 	const struct device *const lsm303agr_a = DEVICE_DT_GET_ONE(st_lis2dh);
 	const struct device *const lsm303agr_m = DEVICE_DT_GET_ONE(st_lis2mdl);
