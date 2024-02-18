@@ -3,3 +3,9 @@
 
 menuconfig INTC
 	bool "INTC (INTerrupt Controller) drivers"
+
+if INTC
+
+rsource "intc_arm_v8m_nvic/Kconfig"
+
+endif # INTC
