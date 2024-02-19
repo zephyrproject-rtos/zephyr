@@ -144,8 +144,9 @@ RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | WATCHDOG  | on-chip    | watchdog                            | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| ENET      | on-chip    | ethernet - 10/100M (ENET_QOS or     | Supported (M7)  | No support      |
-| ENET1G    |            | GigE not supported yet)             |                 |                 |
+| ENET      | on-chip    | ethernet - 10/100M                  | Supported (M7)  | No support      |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| ENET1G    | on-chip    | ethernet - 10/100/1000M             | Supported (M7)  | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | SAI       | on-chip    | i2s                                 | Supported       | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
@@ -444,3 +445,10 @@ should see the following message in the terminal:
 
 .. _NXP MCUXpresso for Visual Studio Code:
 	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
+
+ENET1G Driver
+=============
+
+Current default of ethernet driver is to use 100M Ethernet instance ENET.
+To use the 1G Ethernet instance ENET1G, include the overlay to west build with
+the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay` instead.

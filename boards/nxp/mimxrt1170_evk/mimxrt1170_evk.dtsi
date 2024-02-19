@@ -126,6 +126,34 @@
 	pinctrl-names = "default";
 };
 
+&enet1g_mac {
+	status = "disabled";
+	pinctrl-0 = <&pinmux_enet1g>;
+	pinctrl-names = "default";
+	phy-handle = <&enet1g_phy>;
+	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+};
+
+&enet1g_mdio {
+	status = "disabled";
+	pinctrl-0 = <&pinmux_enet1g_mdio>;
+	pinctrl-names = "default";
+	enet1g_phy: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <1>;
+		status = "disabled";
+		reset-gpios = <&gpio11 14 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&enet1g_ptp_clock {
+	status = "disabled";
+	pinctrl-0 = <&pinmux_enet1g_ptp>;
+	pinctrl-names = "default";
+};
+
 &csi {
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
