@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "esp32c3_devkitm";
+	model = "Espressif ESP32-DevkitM";
 	compatible = "espressif,esp32c3";
 
 	chosen {
