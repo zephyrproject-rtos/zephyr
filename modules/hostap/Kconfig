@@ -249,6 +249,8 @@ config TESTING_OPTIONS
 
 config AP
 	bool
+	depends on WIFI_NM_WPA_SUPPLICANT_AP
+	default y if WIFI_NM_WPA_SUPPLICANT_AP
 
 config NO_RADIUS
 	bool
