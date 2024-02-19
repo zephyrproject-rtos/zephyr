@@ -3,9 +3,6 @@
 
 if SOC_NEORV32
 
-config SOC
-	default "neorv32"
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if RISCV_MACHINE_TIMER
 
