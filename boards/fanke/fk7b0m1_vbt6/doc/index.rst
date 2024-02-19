@@ -79,7 +79,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration per core can be found in the defconfig files:
-``boards/arm/fk7b0m1-vbt6/fk7b0m1_vbt6_defconfig``
+:zephyr_file:`boards/fanke/fk7b0m1-vbt6/fk7b0m1_vbt6_defconfig`
 
 Connections and IOs
 ===================

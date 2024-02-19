@@ -181,7 +181,7 @@ The Zephyr nucleo_wba55cg board configuration supports the following hardware fe
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_wba55cg/nucleo_wba55cg_defconfig``
+:zephyr_file:`boards/st/nucleo_wba55cg/nucleo_wba55cg_defconfig`
 
 Bluetooh support
 ----------------
@@ -244,7 +244,7 @@ For now, openocd support is available only on upstream OpenOCD. You can check
 In order to use it, you should clone and compile it following usual README
 guidelines.
 Once it is done, you can set the OPENOCD and OPENOCD_DEFAULT_PATH variables in
-:zephyr_file:`boards/arm/nucleo_wba55cg/board.cmake` to point the build
+:zephyr_file:`boards/st/nucleo_wba55cg/board.cmake` to point the build
 to the paths of the OpenOCD binary and its scripts,  before
 including the common openocd.board.cmake file:
 
