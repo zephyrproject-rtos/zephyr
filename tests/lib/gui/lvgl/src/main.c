@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,30 @@
 
 #include <lvgl.h>
 
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
+
+#ifdef CONFIG_DISK_DRIVER_SDMMC
+#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#elif IS_ENABLED(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#else
+#error "No disk device defined, is your board supported?"
+#endif /* CONFIG_DISK_DRIVER_SDMMC */
+
+#define IMG_FILE_PATH "/"DISK_NAME":/img.bin"
+
+struct fs_littlefs lfsfs;
+
+static struct fs_mount_t mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &lfsfs,
+	.storage_dev = (void *)DISK_NAME,
+	.mnt_point = "/"DISK_NAME":",
+	.flags = FS_MOUNT_FLAG_USE_DISK_ACCESS,
+};
+
+#else /* CONFIG_FS_LITTLEFS_BLK_DEV */
+
 #define IMG_FILE_PATH "/mnt/img.bin"
 
 #define LVGL_PARTITION		storage_partition
@@ -27,6 +52,7 @@ static struct fs_mount_t mnt = {
 	.storage_dev = (void *)LVGL_PARTITION_ID,
 	.mnt_point = "/mnt"
 };
+#endif /* CONFIG_FS_LITTLEFS_BLK_DEV */
 
 ZTEST(lvgl_screen, test_get_default_screen)
 {
