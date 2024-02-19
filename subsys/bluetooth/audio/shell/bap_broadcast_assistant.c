@@ -474,7 +474,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 	}
 
 	param.num_subgroups = 1;
-	param.subgroups = &subgroup;
+	param.subgroups[0] = subgroup;
 
 	result = bt_bap_broadcast_assistant_add_src(default_conn, &param);
 	if (result) {
@@ -533,7 +533,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	param.broadcast_id = broadcast_id;
 	param.pa_sync = auto_scan.pa_sync;
 	param.num_subgroups = 1;
-	param.subgroups = &auto_scan.subgroup;
+	param.subgroups[0] = auto_scan.subgroup;
 
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
 	if (err) {
@@ -753,7 +753,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 	}
 
 	param.num_subgroups = 1;
-	param.subgroups = &subgroup;
+	param.subgroups[0] = subgroup;
 
 	result = bt_bap_broadcast_assistant_mod_src(default_conn, &param);
 	if (result) {

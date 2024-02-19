@@ -17,7 +17,7 @@
 #include <zephyr/sys/byteorder.h>
 
 #define NAME_LEN 30
-
+#define PA_SYNC_SKIP         5
 /* Broadcast IDs are 24bit, so this is out of valid range */
 #define INVALID_BROADCAST_ID 0xFFFFFFFFU
 
@@ -39,6 +39,9 @@ static uint32_t selected_broadcast_id;
 static uint8_t selected_sid;
 static uint16_t selected_pa_interval;
 static bt_addr_le_t selected_addr;
+static struct bt_le_per_adv_sync *pa_sync;
+static uint8_t received_base[UINT8_MAX];
+static uint8_t received_base_size;
 
 static bool scanning_for_broadcast_source;
 
@@ -48,6 +51,8 @@ static K_SEM_DEFINE(sem_sink_connected, 0, 1);
 static K_SEM_DEFINE(sem_sink_disconnected, 0, 1);
 static K_SEM_DEFINE(sem_security_updated, 0, 1);
 static K_SEM_DEFINE(sem_bass_discovered, 0, 1);
+static K_SEM_DEFINE(sem_pa_synced, 0, 1);
+static K_SEM_DEFINE(sem_received_base_subgroups, 0, 1);
 
 static bool device_found(struct bt_data *data, void *user_data)
 {
@@ -121,6 +126,84 @@ static bool device_found(struct bt_data *data, void *user_data)
 	}
 }
 
+static bool pa_decode_base(struct bt_data *data, void *user_data)
+{
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
+	uint8_t base_size;
+
+	/* Base is NULL if the data does not contain a valid BASE */
+	if (base == NULL) {
+		return true;
+	}
+
+	base_size = data->data_len - BT_UUID_SIZE_16; /* the BASE comes after the UUID */
+
+	/* Compare BASE and copy if different */
+	if (base_size != received_base_size || memcmp(base, received_base, base_size) != 0) {
+		(void)memcpy(received_base, base, base_size);
+		received_base_size = base_size;
+	}
+
+	/* Stop parsing */
+	k_sem_give(&sem_received_base_subgroups);
+	return false;
+}
+
+static inline bool add_pa_sync_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
+						    void *user_data)
+{
+	struct bt_bap_bass_subgroup *subgroup_param = user_data;
+
+	subgroup_param->bis_sync |= BIT(bis->index);
+
+	return true;
+}
+
+static void pa_recv(struct bt_le_per_adv_sync *sync,
+			 const struct bt_le_per_adv_sync_recv_info *info,
+			 struct net_buf_simple *buf)
+{
+	bt_data_parse(buf, pa_decode_base, NULL);
+}
+
+static inline bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
+						void *user_data)
+{
+	struct bt_bap_broadcast_assistant_add_src_param *param = user_data;
+	struct bt_bap_bass_subgroup *subgroup_param;
+	uint8_t *data;
+	int ret;
+
+	if (param->num_subgroups == CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		printk("Cannot fit all subgroups param with size %d",
+			CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+		return true; /* return true to avoid returning -ECANCELED as this is OK */
+	}
+
+	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
+	if (ret < 0) {
+		return false;
+	}
+
+	subgroup_param = &param->subgroups[param->num_subgroups];
+
+	if (ret > ARRAY_SIZE(subgroup_param->metadata)) {
+		printk("Cannot fit %d octets into subgroup param with size %zu", ret,
+			   ARRAY_SIZE(subgroup_param->metadata));
+		return false;
+	}
+
+	ret = bt_bap_base_subgroup_foreach_bis(subgroup, add_pa_sync_base_subgroup_bis_cb,
+					       subgroup_param);
+	if (ret < 0) {
+		return false;
+	}
+
+	param->num_subgroups++;
+
+	return true;
+}
+
 static bool is_substring(const char *substr, const char *str)
 {
 	const size_t str_len = strlen(str);
@@ -141,6 +224,19 @@ static bool is_substring(const char *substr, const char *str)
 	}
 
 	return false;
+}
+
+static int pa_sync_create(void)
+{
+	struct bt_le_per_adv_sync_param create_params = {0};
+
+	bt_addr_le_copy(&create_params.addr, &selected_addr);
+	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	create_params.sid = selected_sid;
+	create_params.skip = PA_SYNC_SKIP;
+	create_params.timeout = selected_pa_interval;
+
+	return bt_le_per_adv_sync_create(&create_params, &pa_sync);
 }
 
 static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
@@ -199,6 +295,9 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			bt_addr_le_copy(&selected_addr, info->addr);
 
 			k_sem_give(&sem_source_discovered);
+
+			printk("Attempting to PA sync to the broadcaster with id 0x%06X\n",
+				selected_broadcast_id);
 		}
 	} else {
 		/* Scan for and connect to Broadcast Sink */
@@ -369,9 +468,31 @@ static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 	}
 }
 
+static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
+			      struct bt_le_per_adv_sync_synced_info *info)
+{
+	if (sync == pa_sync ||
+	    (info != NULL && bt_addr_le_eq(info->addr, &selected_addr) &&
+	     info->sid == selected_sid)) {
+		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
+		selected_broadcast_id);
+
+		if (pa_sync == NULL) {
+			pa_sync = sync;
+		}
+
+		k_sem_give(&sem_pa_synced);
+	}
+}
+
 static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 	.discover = bap_broadcast_assistant_discover_cb,
 	.add_src = bap_broadcast_assistant_add_src_cb,
+};
+
+static struct bt_le_per_adv_sync_cb pa_synced_cb = {
+	.synced = pa_sync_synced_cb,
+	.recv = pa_recv,
 };
 
 static void reset(void)
@@ -390,6 +511,8 @@ static void reset(void)
 	k_sem_reset(&sem_sink_disconnected);
 	k_sem_reset(&sem_security_updated);
 	k_sem_reset(&sem_bass_discovered);
+	k_sem_reset(&sem_pa_synced);
+	k_sem_reset(&sem_received_base_subgroups);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -401,7 +524,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 int main(void)
 {
 	int err;
-	struct bt_bap_bass_subgroup subgroup = { 0 };
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 
 	err = bt_enable(NULL);
@@ -412,8 +534,9 @@ int main(void)
 
 	printk("Bluetooth initialized\n");
 
-	bt_le_scan_cb_register(&scan_callbacks);
 	bt_bap_broadcast_assistant_register_cb(&ba_cbs);
+	bt_le_per_adv_sync_cb_register(&pa_synced_cb);
+	bt_le_scan_cb_register(&scan_callbacks);
 
 	while (true) {
 		scan_for_broadcast_sink();
@@ -467,18 +590,20 @@ int main(void)
 
 		scan_for_broadcast_source();
 
-		/* FIX NEEDED: It should be valid to assign BT_BAP_BIS_SYNC_NO_PREF
-		 * to bis_sync, but currently (2024-01-30), the broadcast_audio_sink
-		 * sample seems to reject it (err=19) while other sinks don't.
-		 *
-		 * Also, if the source contains more than one stream (e.g. stereo),
-		 * some sinks have been observed to have issues. In this case,
-		 * set only one bit in bis_sync, e.g. subgroup.bis_sync = BIT(1).
-		 *
-		 * When PA sync and BASE is parsed (see note in the scan_recv_cb function),
-		 * the available bits can be used for proper selection.
-		 */
-		subgroup.bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+		printk("Scan stopped, attempting to PA sync to the broadcaster with id 0x%06X\n",
+			selected_broadcast_id);
+		err = pa_sync_create();
+		if (err != 0) {
+			printk("Could not create Broadcast PA sync: %d, resetting\n", err);
+			return -ETIMEDOUT;
+		}
+
+		printk("Waiting for PA synced\n");
+		err = k_sem_take(&sem_pa_synced, K_FOREVER);
+		if (err != 0) {
+			printk("sem_pa_synced timed out, resetting\n");
+			return -ETIMEDOUT;
+		}
 
 		bt_addr_le_copy(&param.addr, &selected_addr);
 		param.adv_sid = selected_sid;
@@ -486,12 +611,17 @@ int main(void)
 		param.broadcast_id = selected_broadcast_id;
 		param.pa_sync = true;
 
-		/* TODO: Obtain the and set the correct subgroup information.
-		 * See above in the broadcast audio source discovery part
-		 * of the scan_recv_cb function.
-		 */
-		param.num_subgroups = 1;
-		param.subgroups = &subgroup;
+		/* Wait to receive subgroups */
+		err = k_sem_take(&sem_received_base_subgroups, K_FOREVER);
+		if (err != 0) {
+			printk("Failed to take sem_received_base_subgroups (err %d)\n", err);
+		}
+
+		err = bt_bap_base_foreach_subgroup((const struct bt_bap_base *)received_base,
+						   add_pa_sync_base_subgroup_cb, &param);
+		if (err < 0) {
+			printk("Could not add BASE to params %d\n", err);
+		}
 
 		err = bt_bap_broadcast_assistant_add_src(broadcast_sink_conn, &param);
 		if (err) {

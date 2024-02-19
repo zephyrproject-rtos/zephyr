@@ -396,7 +396,6 @@ static void test_bass_add_source(void)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_add_src_param add_src_param = { 0 };
-	struct bt_bap_bass_subgroup subgroup = { 0 };
 
 	printk("Adding source\n");
 	UNSET_FLAG(flag_write_complete);
@@ -407,9 +406,8 @@ static void test_bass_add_source(void)
 	add_src_param.pa_interval = g_broadcaster_info.interval;
 	add_src_param.pa_sync = false;
 	add_src_param.broadcast_id = g_broadcast_id;
-	add_src_param.subgroups = &subgroup;
-	subgroup.bis_sync = 0;
-	subgroup.metadata_len = 0;
+	add_src_param.subgroups[0].bis_sync = 0;
+	add_src_param.subgroups[0].metadata_len = 0;
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &add_src_param);
 	if (err != 0) {
 		FAIL("Could not add source (err %d)\n", err);
@@ -425,7 +423,6 @@ static void test_bass_mod_source(void)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
-	struct bt_bap_bass_subgroup subgroup = { 0 };
 
 	printk("Modify source\n");
 	UNSET_FLAG(flag_cb_called);
@@ -433,10 +430,9 @@ static void test_bass_mod_source(void)
 	mod_src_param.src_id = g_src_id;
 	mod_src_param.num_subgroups = 1;
 	mod_src_param.pa_sync = true;
-	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
-	subgroup.bis_sync = BIT(1) | BIT(2); /* Indexes 1 and 2 */
-	subgroup.metadata_len = 0;
+	mod_src_param.subgroups[0].bis_sync = BIT(1) | BIT(2); /* Indexes 1 and 2 */
+	mod_src_param.subgroups[0].metadata_len = 0;
 
 	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
 	if (err != 0) {
@@ -455,7 +451,6 @@ static void test_bass_mod_source_long_meta(void)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
-	struct bt_bap_bass_subgroup subgroup = { 0 };
 
 	printk("Long write\n");
 	UNSET_FLAG(flag_cb_called);
@@ -463,12 +458,11 @@ static void test_bass_mod_source_long_meta(void)
 	mod_src_param.src_id = g_src_id;
 	mod_src_param.num_subgroups = 1;
 	mod_src_param.pa_sync = true;
-	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
-	subgroup.bis_sync = BIT(1) | BIT(2);
+	mod_src_param.subgroups[0].bis_sync = BIT(1) | BIT(2);
 
-	subgroup.metadata_len = sizeof(metadata);
-	memcpy(subgroup.metadata, metadata, sizeof(metadata));
+	mod_src_param.subgroups[0].metadata_len = sizeof(metadata);
+	memcpy(mod_src_param.subgroups[0].metadata, metadata, sizeof(metadata));
 	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
 	if (err != 0) {
 		FAIL("Could not modify source (err %d)\n", err);
