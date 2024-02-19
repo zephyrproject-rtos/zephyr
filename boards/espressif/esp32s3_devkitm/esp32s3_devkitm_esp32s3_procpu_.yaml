@@ -1,5 +1,5 @@
-identifier: esp32s3_devkitm
-name: ESP32-S3 DevKitM
+identifier: esp32s3_devkitm/esp32s3/procpu
+name: ESP32-S3 DevKitM PROCPU
 type: mcu
 arch: xtensa
 toolchain:

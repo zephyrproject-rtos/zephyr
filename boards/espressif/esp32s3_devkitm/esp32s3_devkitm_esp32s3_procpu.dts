@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
 
 / {
-	model = "esp32s3_devkitm";
+	model = "Espressif ESP32S3-DevkitM PROCPU";
 	compatible = "espressif,esp32s3";
 
 	aliases {
