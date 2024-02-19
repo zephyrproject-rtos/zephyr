@@ -9,7 +9,7 @@
 #include "esp32_ethernet_kit-pinctrl.dtsi"
 
 / {
-	model = "esp32";
+	model = "Espressif ESP32-Ethernet-Kit PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {
