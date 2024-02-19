@@ -12,7 +12,7 @@
 #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
 
 / {
-	model = "esp32s2_saola";
+	model = "Espressif ESP32S2-Saola";
 	compatible = "espressif,esp32s2";
 
 	aliases {
