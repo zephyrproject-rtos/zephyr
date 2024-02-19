@@ -94,8 +94,8 @@ The host OS's Bluetooth controller is connected in the following manner:
   with the help of the QEMU option :literal:`-serial unix:/tmp/bt-server-bredr`.
   This option gets passed to QEMU through :makevar:`QEMU_EXTRA_FLAGS`
   automatically whenever an application has enabled Bluetooth support.
-* To a serial port in :ref:`native_sim <native_sim>` through the use of a command-line option
-  passed to the native_sim executable: ``--bt-dev=hci0``
+* To :ref:`native_sim's BT User Channel driver <nsim_bt_host_cont>` through the use of a
+  command-line option passed to the native_sim executable: ``--bt-dev=hci0``
 
 On the host side, BlueZ allows you to export its Bluetooth controller
 through a so-called user channel for QEMU and :ref:`native_sim <native_sim>` to use.
