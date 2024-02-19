@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HIFIVE1
+	select RISCV_CORE_E31 if "$(BOARD_REVISION)" = "B"
