@@ -1651,3 +1651,16 @@ This has been fixed in main for v3.6.0
 
 - `PR 66584 fix for 3.5
   <https://github.com/zephyrproject-rtos/zephyr/pull/66584>`_
+
+CVE-2024-1638
+-------------
+
+Bluetooth characteristic LESC security requirement not enforced without additional flags
+
+- `Zephyr project bug tracker GHSA-p6f3-f63q-5mc2
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p6f3-f63q-5mc2>`_
+
+This has been fixed in main for v3.6.0
+
+- `PR 69170 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/69170>`_
