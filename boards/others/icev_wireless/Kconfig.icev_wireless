@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ICEV_WIRELESS
-	bool "ICE-V Wireless Board"
-	depends on SOC_ESP32C3
+	select SOC_ESP32C3_MINI_N4
