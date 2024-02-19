@@ -4,6 +4,6 @@
 #
 
 zephyr_sources(soc.c)
-zephyr_include_directories(${ZEPHYR_BASE}/soc/soc_legacy/arm/common/cortex_m)
+zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
