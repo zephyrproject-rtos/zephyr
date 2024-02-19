@@ -254,7 +254,6 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
-				current-speed = <115200>;
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
@@ -262,7 +261,6 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
-				current-speed = <115200>;
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 		};
