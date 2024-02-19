@@ -10,19 +10,6 @@ on:
     tags:
     - v*
   pull_request:
-    paths:
-    - 'doc/**'
-    - '**.rst'
-    - 'include/**'
-    - 'kernel/include/kernel_arch_interface.h'
-    - 'lib/libc/**'
-    - 'subsys/testsuite/ztest/include/**'
-    - 'tests/**'
-    - '**/Kconfig*'
-    - 'west.yml'
-    - '.github/workflows/doc-build.yml'
-    - 'scripts/dts/**'
-    - 'doc/requirements.txt'
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
@@ -33,9 +20,41 @@ env:
   DOXYGEN_VERSION: 1.9.6
 
 jobs:
+  doc-file-check:
+    name: Check for doc changes
+    runs-on: ubuntu-22.04
+    if: >
+      github.repository_owner == 'zephyrproject-rtos'
+    outputs:
+      file_check: ${{ steps.check-doc-files.outputs.any_changed }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: Check if Documentation related files changed
+      uses: tj-actions/changed-files@v42
+      id: check-doc-files
+      with:
+        files: |
+          doc/**
+          **.rst
+          include/**
+          kernel/include/kernel_arch_interface.h
+          lib/libc/**
+          subsys/testsuite/ztest/include/**
+          tests/**
+          **/Kconfig*
+          west.yml
+          scripts/dts/**
+          doc/requirements.txt
+          .github/workflows/doc-build.yml
+
   doc-build-html:
     name: "Documentation Build (HTML)"
-    if: github.repository_owner == 'zephyrproject-rtos'
+    needs: [doc-file-check]
+    if: github.repository_owner == 'zephyrproject-rtos' && needs.doc-file-check.outputs.file_check == 'true'
     runs-on: zephyr-runner-linux-x64-4xlarge
     timeout-minutes: 45
     concurrency:
@@ -217,3 +236,14 @@ jobs:
         path: |
           doc/_build/latex/zephyr.pdf
           doc/_build/latex/zephyr.log
+
+  doc-build-status-check:
+    if: always()
+    name: "Documentation Build Status"
+    needs:
+    - doc-build-pdf
+    - doc-file-check
+    - doc-build-html
+    uses: ./.github/workflows/ready-to-merge.yml
+    with:
+      needs_context: ${{ toJson(needs) }}
