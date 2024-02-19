@@ -147,6 +147,13 @@
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
+			egu020: egu@25000 {
+				compatible = "nordic,nrf-egu";
+				reg = <0x25000 0x1000>;
+				status = "disabled";
+				interrupts = <37 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			timer020: timer@28000 {
 				compatible = "nordic,nrf-timer";
 				reg = <0x28000 0x1000>;
