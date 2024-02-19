@@ -352,6 +352,14 @@
 				port = <9>;
 			};
 
+			comp: comparator@983000 {
+				compatible = "nordic,nrf-comp";
+				reg = <0x983000 0x1000>;
+				status = "disabled";
+				interrupts = <387 NRF_DEFAULT_IRQ_PRIORITY>;
+				#io-channel-cells = <1>;
+			};
+
 			temp: temperature-sensor@984000 {
 				compatible = "nordic,nrf-temp";
 				reg = <0x984000 0x1000>;
