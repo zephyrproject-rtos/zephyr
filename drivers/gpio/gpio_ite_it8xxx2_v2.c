@@ -380,7 +380,7 @@ static void gpio_ite_isr(const void *arg)
 	uint8_t num_pins = gpio_config->num_pins;
 	uint8_t pin;
 
-	for (pin = 0; pin <= num_pins; pin++) {
+	for (pin = 0; pin < num_pins; pin++) {
 		if (irq == gpio_config->gpio_irq[pin]) {
 			volatile uint8_t *reg_base =
 				(uint8_t *)gpio_config->wuc_base[pin];
