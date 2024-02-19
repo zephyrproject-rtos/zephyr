@@ -1,0 +1,9 @@
+boards:
+  - name: esp32c3_luatos_core
+    vendor: luatos
+    socs:
+      - name: esp32c3
+  - name: esp32c3_luatos_core_usb
+    vendor: luatos
+    socs:
+      - name: esp32c3

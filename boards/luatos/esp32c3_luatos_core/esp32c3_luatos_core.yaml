@@ -1,5 +1,5 @@
-identifier: esp32c3_luatos_core_usb
-name: ESP32C3 LuatOS Core USB
+identifier: esp32c3_luatos_core
+name: ESP32C3 LuatOS Core
 type: mcu
 arch: riscv
 toolchain:
@@ -19,4 +19,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-vendor: espressif
+vendor: luatos
