@@ -1,5 +1,5 @@
-identifier: esp32s3_devkitm_appcpu
-name: ESP32S3 DEVKITM APPCPU
+identifier: esp32s3_devkitm/esp32s3/appcpu
+name: ESP32-S3 DevKitM APPCPU
 type: mcu
 arch: xtensa
 toolchain:
@@ -24,3 +24,4 @@ testing:
     - cmsis_rtos
     - jwt
     - zdsp
+vendor: espressif
