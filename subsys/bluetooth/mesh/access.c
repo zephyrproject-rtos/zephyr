@@ -1066,13 +1066,13 @@ int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
 
 	err = 0;
 
-	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+	if (MOD_REL_LIST_SIZE > 0) {
 		memset(mod_rel_list, 0, sizeof(mod_rel_list));
 	}
 
 	bt_mesh_model_foreach(mod_init, &err);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+	if (MOD_REL_LIST_SIZE > 0) {
 		int i;
 
 		MOD_REL_LIST_FOR_EACH(i) {
@@ -1744,7 +1744,8 @@ static int mod_rel_register(const struct bt_mesh_model *base,
 			return 0;
 		}
 	}
-	LOG_ERR("Failed to extend");
+
+	LOG_ERR("CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE is too small");
 	return -ENOMEM;
 }
 
@@ -1784,8 +1785,11 @@ int bt_mesh_model_extend(const struct bt_mesh_model *extending_mod,
 	}
 
 register_extension:
-	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+	if (MOD_REL_LIST_SIZE > 0) {
 		return mod_rel_register(base_mod, extending_mod, RELATION_TYPE_EXT);
+	} else if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		LOG_ERR("CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE is too small");
+		return -ENOMEM;
 	}
 
 	return 0;
@@ -1797,7 +1801,7 @@ int bt_mesh_model_correspond(const struct bt_mesh_model *corresponding_mod,
 	int i, err;
 	uint8_t cor_id = 0;
 
-	if (!IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+	if (MOD_REL_LIST_SIZE == 0) {
 		return -ENOTSUP;
 	}
 
