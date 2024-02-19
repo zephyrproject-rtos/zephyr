@@ -3,12 +3,12 @@
 # Copyright (c) 2020-2021 Microchip Technology Inc
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "Microchip Polarfire SOC implementation"
-	depends on SOC_SERIES_POLARFIRE
+config SOC_SERIES_POLARFIRE
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
 
 config SOC_POLARFIRE
-	bool "Microchip MPFS system implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select RISCV_GP
 	select USE_SWITCH_SUPPORTED
@@ -21,8 +21,6 @@ config SOC_POLARFIRE
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
-
-endchoice
 
 config MPFS_HAL
 	depends on SOC_POLARFIRE
