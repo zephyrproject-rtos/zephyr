@@ -6,7 +6,7 @@ M5Stack STAMP-C3
 Overview
 ********
 
-STAMP-C3 featuring ESPRESSIF ESP32-C3 RISC-V MCU with Wi-Fi connectivity
+STAMP-C3 featuring ESPRESSIF ESP32-C3 RISC-V MCU with Wi-Fi connectivity
 for IoT edge devices such as home appliances and Industrial Automation.
 
 For more details see the `M5Stack STAMP-C3`_ page.
@@ -108,9 +108,9 @@ Zephyr build. Output is structured by the domain subdirectories:
 
   build/
   ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
+  │  └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
   ├── mcuboot
   │    └── zephyr
   │       ├── zephyr.elf
