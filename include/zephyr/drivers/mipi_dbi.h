@@ -92,7 +92,7 @@ extern "C" {
 	{								\
 		.frequency = DT_PROP(node_id, mipi_max_frequency),	\
 		.operation = (operation_) |				\
-			DT_PROP(node_id, duplex),			\
+			DT_PROP(node_id, duplex) |			\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpha), SPI_MODE_CPHA, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
