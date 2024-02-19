@@ -84,6 +84,7 @@ config BT_HCI_RESERVE
 	default 1 if BT_ESP32
 	default 0 if BT_B91
 	default 1 if BT_AMBIQ_HCI
+	default 1 if BT_SILABS_HCI
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
