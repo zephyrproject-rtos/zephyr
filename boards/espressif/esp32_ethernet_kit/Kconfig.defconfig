@@ -3,9 +3,7 @@
 # Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "esp32_ethernet_kit"
-	depends on BOARD_ESP32_ETHERNET_KIT
+if BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
 
 config ESP_SPIRAM
 	default y
@@ -13,9 +11,6 @@ config ESP_SPIRAM
 choice SPIRAM_TYPE
 	default SPIRAM_TYPE_ESPPSRAM64
 endchoice
-
-config ENTROPY_GENERATOR
-	default y
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -27,3 +22,12 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 choice BT_HCI_BUS_TYPE
 	default BT_ESP32 if BT
 endchoice
+
+endif # BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
+
+if BOARD_ESP32_ETHERNET_KIT_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 4096
+
+endif # BOARD_ESP32_ETHERNET_KIT_ESP32_APPCPU
