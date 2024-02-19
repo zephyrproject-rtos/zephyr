@@ -3113,7 +3113,8 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	 * the error code “Insufficient Encryption”.
 	 */
 
-	if (mask & (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK)) {
+	if (mask &
+	    (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK | BT_GATT_PERM_LESC_MASK)) {
 #if defined(CONFIG_BT_SMP)
 		if (!conn->encrypt) {
 			if (bt_conn_ltk_present(conn)) {
