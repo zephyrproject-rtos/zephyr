@@ -150,9 +150,9 @@ Zephyr build. Output is structured by the domain subdirectories:
 
   build/
   ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
+  │   └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
   ├── mcuboot
   │    └── zephyr
   │       ├── zephyr.elf
