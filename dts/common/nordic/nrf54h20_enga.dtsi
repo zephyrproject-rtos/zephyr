@@ -352,6 +352,13 @@
 				port = <9>;
 			};
 
+			nfct: nfct@985000 {
+				compatible = "nordic,nrf-nfct";
+				reg = <0x985000 0x1000>;
+				status = "disabled";
+				interrupts = <389 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			qdec130: qdec@994000 {
 				compatible = "nordic,nrf-qdec";
 				reg = <0x994000 0x1000>;
