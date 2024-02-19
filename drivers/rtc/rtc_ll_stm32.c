@@ -71,6 +71,9 @@ struct rtc_stm32_config {
 	uint32_t async_prescaler;
 	uint32_t sync_prescaler;
 	const struct stm32_pclken *pclken;
+#if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
+	uint32_t cal_out_freq;
+#endif
 };
 
 struct rtc_stm32_data {
@@ -107,6 +110,12 @@ static int rtc_stm32_configure(const struct device *dev)
 
 		LL_RTC_DisableInitMode(RTC);
 	}
+
+#if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
+	LL_RTC_CAL_SetOutputFreq(RTC, cfg->cal_out_freq);
+#else
+	LL_RTC_CAL_SetOutputFreq(RTC, LL_RTC_CALIB_OUTPUT_NONE);
+#endif
 
 #ifdef RTC_CR_BYPSHAD
 	LL_RTC_EnableShadowRegBypass(RTC);
@@ -422,6 +431,9 @@ static const struct rtc_stm32_config rtc_config = {
 	.sync_prescaler = 0x00FF,
 #endif
 	.pclken = rtc_clk,
+#if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
+	.cal_out_freq = _CONCAT(_CONCAT(LL_RTC_CALIB_OUTPUT_, DT_INST_PROP(0, calib_out_freq)), HZ),
+#endif
 };
 
 static struct rtc_stm32_data rtc_data;
