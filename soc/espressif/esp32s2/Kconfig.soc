@@ -1,0 +1,126 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S2
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  ESP32-S2 Series
+
+config SOC_ESP32S2_R2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_R2
+
+config SOC_ESP32S2_FH2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_FH2
+
+config SOC_ESP32S2_FH4
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_FH4
+
+config SOC_ESP32S2_FN4R2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_FN4R2
+
+# SiP with external flash / psram
+config SOC_ESP32S2_SOLO_N4
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_SOLO_N4
+
+config SOC_ESP32S2_SOLO_N8
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_SOLO_N8
+
+config SOC_ESP32S2_SOLO_N16
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_SOLO_N16
+
+config SOC_ESP32S2_SOLO_N4R2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_SOLO_N4R2
+
+config SOC_ESP32S2_MINI_N4
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_MINI_N4
+
+config SOC_ESP32S2_MINI_N4R2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_MINI_N4R2
+
+config SOC_ESP32S2_WROOM
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_WROOM
+
+config SOC_ESP32S2_WROVER_N4R2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_WROVER_N4R2
+
+config SOC_ESP32S2_WROVER_N8R2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_WROVER_N8R2
+
+config SOC_ESP32S2_WROVER_N16R2
+	bool
+	select SOC_ESP32S2
+	help
+	  ESP32S2_WROVER_N16R2
+
+config SOC_ESP32S2
+	bool
+	select SOC_SERIES_ESP32S2
+	help
+	  ESP32S2
+
+config SOC_SERIES
+	default "esp32s2" if SOC_SERIES_ESP32S2
+
+config SOC
+	default "esp32s2" if SOC_SERIES_ESP32S2
+
+config SOC_PART_NUMBER
+	default "ESP32S2" if SOC_ESP32S2
+	default "ESP32S2_R2" if SOC_ESP32S2_R2
+	default "ESP32S2_FH2" if SOC_ESP32S2_FH2
+	default "ESP32S2_FH4" if SOC_ESP32S2_FH4
+	default "ESP32S2_FN4R2" if SOC_ESP32S2_FN4R2
+	default "ESP32S2_SOLO_N4" if SOC_ESP32S2_SOLO_N4
+	default "ESP32S2_SOLO_N8" if SOC_ESP32S2_SOLO_N8
+	default "ESP32S2_SOLO_N16" if SOC_ESP32S2_SOLO_N16
+	default "ESP32S2_SOLO_N4R2" if SOC_ESP32S2_SOLO_N4R2
+	default "ESP32S2_MINI_N4" if SOC_ESP32S2_MINI_N4
+	default "ESP32S2_MINI_N4R2" if SOC_ESP32S2_MINI_N4R2
+	default "ESP32S2_WROOM" if SOC_ESP32S2_WROOM
+	default "ESP32S2_WROVER_N4R2" if SOC_ESP32S2_WROVER_N4R2
+	default "ESP32S2_WROVER_N8R2" if SOC_ESP32S2_WROVER_N8R2
+	default "ESP32S2_WROVER_N16R2" if SOC_ESP32S2_WROVER_N16R2
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32s2" if SOC_SERIES_ESP32S2

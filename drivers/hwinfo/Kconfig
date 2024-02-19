@@ -159,7 +159,7 @@ config HWINFO_SMARTBOND
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
-	depends on SOC_FAMILY_ESP32
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
 	help
 	  Enable ESP32 hwinfo driver.
 
