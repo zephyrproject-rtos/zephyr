@@ -17,4 +17,4 @@ config SOC_CYCLONEV
 	  Intel SoC FPGA Cyclone V
 
 config SOC
-	default "intel_socfpga_std_cyclonev" if SOC_CYCLONEV
+	default "cyclonev" if SOC_CYCLONEV
