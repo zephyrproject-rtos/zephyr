@@ -209,6 +209,13 @@
 					status = "disabled";
 				};
 			};
+
+			ecb030: ecb@3b000 {
+				compatible = "nordic,nrf-ecb";
+				reg = <0x3b000 0x1000>;
+				interrupts = <59 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+			};
 		};
 
 		global_peripherals: peripheral@5f000000 {
