@@ -5,9 +5,6 @@
 
 if SOC_TI_LM3S6965
 
-config SOC
-	default "ti_lm3s6965"
-
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts and ethernet interrupts
