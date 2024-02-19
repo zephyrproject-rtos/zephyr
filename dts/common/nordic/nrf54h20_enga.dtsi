@@ -193,6 +193,22 @@
 				interrupts = <43 NRF_DEFAULT_IRQ_PRIORITY>;
 				prescaler = <1>;
 			};
+
+			radio: radio@2c000 {
+				compatible = "nordic,nrf-radio";
+				reg = <0x2c000 0x1000>;
+				status = "disabled";
+				ble-2mbps-supported;
+				ble-coded-phy-supported;
+				dfe-supported;
+				ieee802154-supported;
+				interrupts = <44 NRF_DEFAULT_IRQ_PRIORITY>;
+
+				cpurad_ieee802154: ieee802154 {
+					compatible = "nordic,nrf-ieee802154";
+					status = "disabled";
+				};
+			};
 		};
 
 		global_peripherals: peripheral@5f000000 {
