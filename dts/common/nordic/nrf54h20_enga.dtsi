@@ -146,12 +146,62 @@
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
+
+			timer020: timer@28000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x28000 0x1000>;
+				status = "disabled";
+				cc-num = <8>;
+				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
+			timer021: timer@29000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x29000 0x1000>;
+				status = "disabled";
+				cc-num = <8>;
+				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
+			timer022: timer@2a000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x2a000 0x1000>;
+				status = "disabled";
+				cc-num = <8>;
+				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
 		};
 
 		global_peripherals: peripheral@5f000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x5f000000 0x1000000>;
+
+			timer120: timer@8e2000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x8e2000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
+			timer121: timer@8e3000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x8e3000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
 
 			uart120: uart@8e5000 {
 				compatible = "nordic,nrf-uarte";
@@ -257,6 +307,26 @@
 				cc-num = <16>;
 			};
 
+			timer130: timer@9a2000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9a2000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <418 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
+			timer131: timer@9a3000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9a3000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <419 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
 			uart130: uart@9a5000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9a5000 0x1000>;
@@ -269,6 +339,26 @@
 				reg = <0x9a6000 0x1000>;
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			timer132: timer@9b2000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9b2000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <434 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
+			timer133: timer@9b3000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9b3000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <435 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
 			};
 
 			uart132: uart@9b5000 {
@@ -285,6 +375,26 @@
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			timer134: timer@9c2000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9c2000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <450 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
+			timer135: timer@9c3000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9c3000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <451 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
 			uart134: uart@9c5000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9c5000 0x1000>;
@@ -297,6 +407,26 @@
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			timer136: timer@9d2000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9d2000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <466 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
+			};
+
+			timer137: timer@9d3000 {
+				compatible = "nordic,nrf-timer";
+				reg = <0x9d3000 0x1000>;
+				status = "disabled";
+				cc-num = <6>;
+				interrupts = <467 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-bit-width = <32>;
+				prescaler = <0>;
 			};
 
 			uart136: uart@9d5000 {
