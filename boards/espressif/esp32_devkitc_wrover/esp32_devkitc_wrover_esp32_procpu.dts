@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
 
 / {
-	model = "Espressif ESP32-DEVKITC-WROVER-E";
+	model = "Espressif ESP32-DevkitC WROVER-E PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {
