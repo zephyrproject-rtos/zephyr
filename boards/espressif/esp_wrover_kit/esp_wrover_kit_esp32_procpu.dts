@@ -9,7 +9,7 @@
 #include "esp_wrover_kit-pinctrl.dtsi"
 
 / {
-	model = "esp32";
+	model = "Espressif ESP32-Wrover-Kit PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {
