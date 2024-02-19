@@ -10,7 +10,7 @@
 #include "esp32s2_franzininho-pinctrl.dtsi"
 
 / {
-	model = "esp32s2_franzininho";
+	model = "ESP32S2 Franzininho";
 	compatible = "espressif,esp32s2";
 
 	aliases {
