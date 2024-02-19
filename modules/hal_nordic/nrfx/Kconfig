@@ -457,6 +457,71 @@ config NRFX_TIMER24
 	depends on $(dt_nodelabel_has_compat,timer24,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
+config NRFX_TIMER020
+	bool "TIMER020 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer020,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER021
+	bool "TIMER021 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer021,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER022
+	bool "TIMER022 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer022,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER120
+	bool "TIMER120 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer120,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER121
+	bool "TIMER121 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer121,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER130
+	bool "TIMER130 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer130,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER131
+	bool "TIMER131 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer131,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER132
+	bool "TIMER132 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer132,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER133
+	bool "TIMER133 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer133,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER134
+	bool "TIMER134 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer134,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER135
+	bool "TIMER135 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer135,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER136
+	bool "TIMER136 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer136,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER137
+	bool "TIMER137 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer137,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
 config NRFX_TWI
 	bool
 
