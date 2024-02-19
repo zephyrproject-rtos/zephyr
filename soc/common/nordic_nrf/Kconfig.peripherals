@@ -536,3 +536,9 @@ config HAS_HW_NRF_WDT31
 
 config HAS_HW_NRF_WDT130
 	def_bool $(dt_nodelabel_enabled_with_compat,wdt130,$(DT_COMPAT_NORDIC_NRF_WDT))
+
+config HAS_HW_NRF_WDT131
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt131,$(DT_COMPAT_NORDIC_NRF_WDT))
+
+config HAS_HW_NRF_WDT132
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt132,$(DT_COMPAT_NORDIC_NRF_WDT))
