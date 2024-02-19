@@ -2,6 +2,5 @@
 #
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 
-config BOARD
-	default "apollo4p_evb"
-	depends on BOARD_APOLLO4P_EVB
+config BOARD_APOLLO4P_EVB
+	select SOC_APOLLO4P

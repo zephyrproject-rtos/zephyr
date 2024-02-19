@@ -2,7 +2,6 @@
 #
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 
-CONFIG_SOC_SERIES_APOLLO4X=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_SERIAL=y
