@@ -1,6 +1,6 @@
 /* NXP ENET MAC Driver
  *
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * Inspiration from eth_mcux.c, which is:
  *  Copyright (c) 2016-2017 ARM Ltd
@@ -53,6 +53,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  */
 
 #define RING_ID 0
+
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+#define ENET_HAS_AVB
+#endif /* defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB */
 
 /*
  *********************
@@ -268,9 +272,14 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 
 static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev)
 {
+#ifdef ENET_HAS_AVB
+	const struct nxp_enet_mac_config *config = dev->config;
+#else
 	ARG_UNUSED(dev);
+#endif /* ENET_HAS_AVB */
+	enum ethernet_hw_caps caps;
 
-	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+	caps = ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
 		ETHERNET_HW_FILTERING |
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
@@ -283,6 +292,14 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
 #endif
 		ETHERNET_LINK_100BASE_T;
+
+#ifdef ENET_HAS_AVB
+	if (config->phy_mode == NXP_ENET_RGMII_MODE) {
+		caps |= ETHERNET_LINK_1000BASE_T;
+	}
+#endif /* ENET_HAS_AVB */
+
+	return caps;
 }
 
 static int eth_nxp_enet_set_config(const struct device *dev,
@@ -470,22 +487,19 @@ static void eth_nxp_enet_rx_thread(void *arg1, void *unused1, void *unused2)
  ****************************
  */
 
-static int nxp_enet_phy_reset_and_configure(const struct device *phy)
+static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 {
-	int ret;
+	enum phy_link_speed speeds = LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
+				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
 
-	/* Reset the PHY */
-	ret = phy_write(phy, MII_BMCR, MII_BMCR_RESET);
-	if (ret) {
-		return ret;
+#ifdef ENET_HAS_AVB
+	if (phy_mode == NXP_ENET_RGMII_MODE) {
+		speeds |= (LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
 	}
-
-	/* 802.3u standard says reset takes up to 0.5s */
-	k_busy_wait(500000);
+#endif /* ENET_HAS_AVB */
 
 	/* Configure the PHY */
-	return phy_configure_link(phy, LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T);
+	return phy_configure_link(phy, speeds);
 }
 
 static void nxp_enet_phy_cb(const struct device *phy,
@@ -494,19 +508,44 @@ static void nxp_enet_phy_cb(const struct device *phy,
 {
 	const struct device *dev = eth_dev;
 	struct nxp_enet_mac_data *data = dev->data;
+	const struct nxp_enet_mac_config *config = dev->config;
+	enet_mii_speed_t speed;
+	enet_mii_duplex_t duplex;
+
+	if (state->is_up) {
+#ifdef ENET_HAS_AVB
+		if (PHY_LINK_IS_SPEED_1000M(state->speed)) {
+			speed = kENET_MiiSpeed1000M;
+		} else if (PHY_LINK_IS_SPEED_100M(state->speed)) {
+#else
+		if (PHY_LINK_IS_SPEED_100M(state->speed)) {
+#endif /* ENET_HAS_AVB */
+			speed = kENET_MiiSpeed100M;
+		} else {
+			speed = kENET_MiiSpeed10M;
+		}
+
+		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
+			duplex = kENET_MiiFullDuplex;
+		} else {
+			duplex = kENET_MiiHalfDuplex;
+		}
+
+		ENET_SetMII(config->base, speed, duplex);
+	}
 
 	if (!data->iface) {
 		return;
 	}
 
+	LOG_INF("Link is %s", state->is_up ? "up" : "down");
+
 	if (!state->is_up) {
 		net_eth_carrier_off(data->iface);
-		nxp_enet_phy_reset_and_configure(phy);
+		nxp_enet_phy_configure(phy, config->phy_mode);
 	} else {
 		net_eth_carrier_on(data->iface);
 	}
-
-	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 }
 
 
@@ -515,7 +554,7 @@ static int nxp_enet_phy_init(const struct device *dev)
 	const struct nxp_enet_mac_config *config = dev->config;
 	int ret = 0;
 
-	ret = nxp_enet_phy_reset_and_configure(config->phy_dev);
+	ret = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
 	if (ret) {
 		return ret;
 	}
@@ -689,6 +728,10 @@ static int eth_nxp_enet_init(const struct device *dev)
 		enet_config.miiMode = kENET_MiiMode;
 	} else if (config->phy_mode == NXP_ENET_RMII_MODE) {
 		enet_config.miiMode = kENET_RmiiMode;
+#ifdef ENET_HAS_AVB
+	} else if (config->phy_mode == NXP_ENET_RGMII_MODE) {
+		enet_config.miiMode = kENET_RgmiiMode;
+#endif /* ENET_HAS_AVB */
 	} else {
 		return -EINVAL;
 	}
@@ -853,7 +896,8 @@ static const struct ethernet_api api_funcs = {
 #define NXP_ENET_PHY_MODE(node_id)							\
 	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? NXP_ENET_MII_MODE :	\
 	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii) ? NXP_ENET_RMII_MODE :	\
-	NXP_ENET_INVALID_MII_MODE)
+	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii) ? NXP_ENET_RGMII_MODE :	\
+	NXP_ENET_INVALID_MII_MODE))
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_ptp_clock)),
