@@ -9,7 +9,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "esp32c3_luatos_core";
+	model = "ESP32C3 Luatos Core";
 	compatible = "espressif,esp32c3";
 
 	aliases {
