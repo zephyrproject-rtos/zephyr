@@ -1,7 +1,7 @@
-.. _boards-arc:
+.. _boards-synopsys:
 
-ARC Boards
-##########
+Synopsys
+########
 
 .. toctree::
    :maxdepth: 1
