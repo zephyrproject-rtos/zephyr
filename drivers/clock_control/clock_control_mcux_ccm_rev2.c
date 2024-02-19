@@ -9,6 +9,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <fsl_clock.h>
+#include <fsl_device_registers.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -20,6 +21,10 @@ static int mcux_ccm_on(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 	if ((uint32_t)sub_system == IMX_CCM_ENET_CLK) {
 		CLOCK_EnableClock(kCLOCK_Enet);
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+	} else if ((uint32_t)sub_system == IMX_CCM_ENET1G_CLK) {
+		CLOCK_EnableClock(kCLOCK_Enet_1g);
+#endif
 	}
 #endif
 	return 0;
@@ -111,6 +116,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_ETH_NXP_ENET
 	case IMX_CCM_ENET_CLK:
+	case IMX_CCM_ENET1G_CLK:
 		clock_root = kCLOCK_Root_Bus;
 		break;
 #endif
