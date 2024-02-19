@@ -610,9 +610,7 @@ development by integrating more seamlessly with the host operating system:
   :kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE`.
 
   This backend can be selected with :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`
-  and is enabled by default unless the PTTY UART is compiled in.
-  In this later case, by default, the logger is set to output to the
-  `PTTY UART`_.
+  and is enabled by default.
 
 .. _nsim_back_trace:
 
