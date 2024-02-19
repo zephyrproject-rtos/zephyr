@@ -249,8 +249,8 @@ Ambiq Platforms:
     - aaronyegx
     - RichardSWheatley
   files:
-    - soc/arm/ambiq/
-    - boards/arm/apollo*/
+    - soc/ambiq/
+    - boards/ambiq/apollo*/
     - dts/arm/ambiq/
     - dts/bindings/*/ambiq,*
     - drivers/*/*ambiq*
