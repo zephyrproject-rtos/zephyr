@@ -105,12 +105,12 @@ static bool device_found(struct bt_data *data, void *user_data)
 			memcpy(&u16, &data->data[i], sizeof(u16));
 			uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
 
-			if (bt_uuid_cmp(uuid, BT_UUID_BASS)) {
+			if (bt_uuid_cmp(uuid, BT_UUID_BASS) == 0) {
 				sr_info->has_bass = true;
 				continue;
 			}
 
-			if (bt_uuid_cmp(uuid, BT_UUID_PACS)) {
+			if (bt_uuid_cmp(uuid, BT_UUID_PACS) == 0) {
 				sr_info->has_pacs = true;
 				continue;
 			}
