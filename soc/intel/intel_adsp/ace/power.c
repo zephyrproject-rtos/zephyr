@@ -266,6 +266,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 	uint32_t cpu = arch_proc_id();
+	uint32_t battr;
 	int ret;
 
 	ARG_UNUSED(ret);
@@ -340,19 +341,20 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			power_gate_entry(cpu);
 		}
 		break;
+
+	/* Only core 0 handles this state */
 	case PM_STATE_RUNTIME_IDLE:
+		battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
+
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpu_power_down(cpu);
-		if (cpu == 0) {
-			uint32_t battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
-
-			battr |= (DSPBR_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
-			DSPCS.bootctl[cpu].battr = battr;
-		}
+		battr |= (DSPBR_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
+		DSPCS.bootctl[cpu].battr = battr;
 
 		ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
 		__ASSERT_NO_MSG(ret == 0);
+
 		power_gate_entry(cpu);
 		break;
 	default:
@@ -395,17 +397,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		soc_cpus_active[cpu] = true;
 		sys_cache_data_flush_and_invd_all();
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
-		if (cpu != 0) {
-			/* NOTE: HW should support dynamic power gating on secondary cores.
-			 * But since there is no real profit from it, functionality is not
-			 * fully implemented.
-			 * SOF PM policy will not allowed primary core to enter d0i3 state
-			 * when secondary cores are active.
-			 */
-			__ASSERT(false, "state not supported on secondary core");
-			return;
-		}
-
 		soc_cpu_power_up(cpu);
 
 		if (!WAIT_FOR(soc_cpu_is_powered(cpu),
@@ -418,9 +409,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #else
 		DSPCS.bootctl[cpu].bctl |= DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 #endif /* CONFIG_ADSP_IDLE_CLOCK_GATING */
-		if (cpu == 0) {
-			DSPCS.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
-		}
+		DSPCS.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
 
 		soc_cpus_active[cpu] = true;
 		sys_cache_data_flush_and_invd_all();
