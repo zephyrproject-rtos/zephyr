@@ -38,6 +38,13 @@ endchoice
 
 if ETH_NXP_ENET
 
+config ETH_NXP_ENET_1G
+	bool "1G mode for ENET1G instance"
+	default y
+	depends on DT_HAS_NXP_ENET1G_ENABLED
+	help
+	  Enable the use of the ENET1G ethernet instance in 1G mode.
+
 config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for hardware DMA buffers"
 	default y
