@@ -220,6 +220,28 @@
 				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			spi120: spi@8e6000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x8e6000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(32)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			spi121: spi@8e7000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x8e7000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <231 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(32)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			cpuppr_vpr: vpr@908000 {
 				compatible = "nordic,nrf-vpr-coprocessor";
 				reg = <0x908000 0x1000>;
@@ -357,11 +379,33 @@
 				prescaler = <0>;
 			};
 
+			spi130: spi@9a5000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9a5000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			uart130: uart@9a5000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			spi131: spi@9a6000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9a6000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			uart131: uart@9a6000 {
@@ -391,11 +435,33 @@
 				prescaler = <0>;
 			};
 
+			spi132: spi@9b5000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9b5000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			uart132: uart@9b5000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9b5000 0x1000>;
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			spi133: spi@9b6000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9b6000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			uart133: uart@9b6000 {
@@ -425,11 +491,33 @@
 				prescaler = <0>;
 			};
 
+			spi134: spi@9c5000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9c5000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			uart134: uart@9c5000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9c5000 0x1000>;
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			spi135: spi@9c6000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9c6000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			uart135: uart@9c6000 {
@@ -459,11 +547,33 @@
 				prescaler = <0>;
 			};
 
+			spi136: spi@9d5000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9d5000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			uart136: uart@9d5000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			spi137: spi@9d6000 {
+				compatible = "nordic,nrf-spim";
+				reg = <0x9d6000 0x1000>;
+				status = "disabled";
+				easydma-maxcnt-bits = <15>;
+				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			uart137: uart@9d6000 {
