@@ -1,3 +1,4 @@
+# Copyright (c) 2016 Zephyr Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
