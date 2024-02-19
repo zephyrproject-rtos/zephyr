@@ -5,12 +5,7 @@
 config SOC_FAMILY_AMBIQ
 	bool
 
-if SOC_FAMILY_AMBIQ
-
 config SOC_FAMILY
-	string
-	default "ambiq"
+	default "ambiq" if SOC_FAMILY_AMBIQ
 
-source "soc/soc_legacy/arm/ambiq/*/Kconfig.soc"
-
-endif # SOC_FAMILY_AMBIQ
+rsource "*/Kconfig.soc"
