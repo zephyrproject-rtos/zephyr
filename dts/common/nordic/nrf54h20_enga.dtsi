@@ -352,6 +352,20 @@
 				port = <9>;
 			};
 
+			qdec130: qdec@994000 {
+				compatible = "nordic,nrf-qdec";
+				reg = <0x994000 0x1000>;
+				status = "disabled";
+				interrupts = <404 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			qdec131: qdec@995000 {
+				compatible = "nordic,nrf-qdec";
+				reg = <0x995000 0x1000>;
+				status = "disabled";
+				interrupts = <405 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			grtc: grtc@99c000 {
 				compatible = "nordic,nrf-grtc";
 				reg = <0x99c000 0x1000>;
