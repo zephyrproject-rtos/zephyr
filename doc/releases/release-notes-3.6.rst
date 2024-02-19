@@ -31,6 +31,19 @@ Architectures
 
 * ARM
 
+  * MPU regions are now always cleared before initialization.
+  * Standardized on :c:func:`arch_secondary_cpu_init` to provide consistency
+    across all architectures.
+  * Renamed :c:func:`z_arm_prep_c` as :c:func:`z_prep_c` to provide
+    consistency across all architectures.
+  * Renamed the exception header to be consistent across all architectures.
+  * GDB stubs added (currently only supports Zynq-7000).
+  * Added support for custom interrupt controllers using
+    :kconfig:option:`CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER``.
+  * MMU and MPU initialization moved to :c:func:`z_prep_c` for Cortex-A and
+    Cortex-R to enable initialization by individual cores.
+  * Common Cortex-M MPU code moved to ``arch/arm/core/mpu``.
+
 * ARM64
 
 * RISC-V
