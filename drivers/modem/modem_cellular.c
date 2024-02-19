@@ -366,10 +366,26 @@ static void modem_cellular_chat_on_cesq(struct modem_chat *chat, char **argv, ui
 	data->rsrp = (uint8_t)atoi(argv[6]);
 }
 
+static void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+
+	if (argc != 2) {
+		return;
+	}
+
+	strncpy(data->iccid, argv[1], sizeof(data->iccid) - 1);
+}
+
 static void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+
+	if (argc != 2) {
+		return;
+	}
 
 	strncpy(data->imsi, argv[1], sizeof(data->imsi) - 1);
 }
@@ -422,6 +438,7 @@ MODEM_CHAT_MATCH_DEFINE(imei_match, "", "", modem_cellular_chat_on_imei);
 MODEM_CHAT_MATCH_DEFINE(cgmm_match, "", "", modem_cellular_chat_on_cgmm);
 MODEM_CHAT_MATCH_DEFINE(csq_match, "+CSQ: ", ",", modem_cellular_chat_on_csq);
 MODEM_CHAT_MATCH_DEFINE(cesq_match, "+CESQ: ", ",", modem_cellular_chat_on_cesq);
+MODEM_CHAT_MATCH_DEFINE(iccid_match __maybe_unused, "+ICCID: ", "", modem_cellular_chat_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused, "", "", modem_cellular_chat_on_imsi);
 MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused, "", "", modem_cellular_chat_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_on_cgmr);
@@ -1399,6 +1416,9 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 		break;
 	case CELLULAR_MODEM_INFO_MODEL_ID:
 		strncpy(info, &data->model_id[0], MIN(size, sizeof(data->model_id)));
+		break;
+	case CELLULAR_MODEM_INFO_SIM_ICCID:
+		strncpy(info, &data->iccid[0], MIN(size, sizeof(data->iccid)));
 		break;
 	default:
 		ret = -ENODATA;
