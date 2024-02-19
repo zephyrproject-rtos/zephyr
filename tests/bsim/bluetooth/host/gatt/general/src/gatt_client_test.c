@@ -22,6 +22,8 @@ static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 #define ARRAY_ITEM(i, _) i
 static uint8_t chrc_data[] = { LISTIFY(CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
 static uint8_t long_chrc_data[] = { LISTIFY(LONG_CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
+static uint8_t data_received[LONG_CHRC_SIZE];
+static uint16_t data_received_size;
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -85,14 +87,14 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("Stopping scan\n");
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		FAIL("Could not stop scan: %d");
+		FAIL("Could not stop scan: %d\n");
 		return;
 	}
 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
 				BT_LE_CONN_PARAM_DEFAULT, &g_conn);
 	if (err != 0) {
-		FAIL("Could not connect to peer: %d", err);
+		FAIL("Could not connect to peer: %d\n", err);
 	}
 }
 
@@ -104,8 +106,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 
 	if (attr == NULL) {
 		if (chrc_handle == 0 || long_chrc_handle == 0) {
-			FAIL("Did not discover chrc (%x) or long_chrc (%x)",
-			     chrc_handle, long_chrc_handle);
+			FAIL("Did not discover chrc (%x) or long_chrc (%x)\n", chrc_handle,
+			     long_chrc_handle);
 		}
 
 		(void)memset(params, 0, sizeof(*params));
@@ -188,7 +190,7 @@ static void gatt_write(uint16_t handle)
 		printk("Writing to chrc\n");
 		write_params.data = chrc_data;
 		write_params.length = sizeof(chrc_data);
-	} else if (handle) {
+	} else if (handle == long_chrc_handle) {
 		printk("Writing to long_chrc\n");
 		write_params.data = long_chrc_data;
 		write_params.length = sizeof(long_chrc_data);
@@ -214,17 +216,31 @@ static uint8_t gatt_read_cb(struct bt_conn *conn, uint8_t err,
 {
 	if (err != BT_ATT_ERR_SUCCESS) {
 		FAIL("Read failed: 0x%02X\n", err);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (data != NULL) {
+		if (data_received_size + length > sizeof(data_received)) {
+			FAIL("Invalid amount of data received: %u\n", data_received_size + length);
+		} else {
+			memcpy(&data_received[data_received_size], data, length);
+			data_received_size += length;
+		}
+
+		return BT_GATT_ITER_CONTINUE;
 	}
 
 	if (params->single.handle == chrc_handle) {
-		if (length != CHRC_SIZE ||
-		    memcmp(data, chrc_data, length) != 0) {
-			FAIL("chrc data different than expected", err);
+		if (data_received_size != CHRC_SIZE ||
+		    memcmp(data_received, chrc_data, data_received_size) != 0) {
+			FAIL("chrc data different than expected (%u %u)\n", length, CHRC_SIZE);
 		}
-	} else if (params->single.handle == chrc_handle) {
-		if (length != LONG_CHRC_SIZE ||
-		    memcmp(data, long_chrc_data, length) != 0) {
-			FAIL("long_chrc data different than expected", err);
+	} else if (params->single.handle == long_chrc_handle) {
+		if (data_received_size != LONG_CHRC_SIZE ||
+		    memcmp(data_received, long_chrc_data, data_received_size) != 0) {
+			FAIL("long_chrc data different than expected (%u %u)\n", length,
+			     LONG_CHRC_SIZE);
 		}
 	}
 
@@ -232,7 +248,7 @@ static uint8_t gatt_read_cb(struct bt_conn *conn, uint8_t err,
 
 	SET_FLAG(flag_read_complete);
 
-	return 0;
+	return BT_GATT_ITER_STOP;
 }
 
 static void gatt_read(uint16_t handle)
@@ -240,11 +256,18 @@ static void gatt_read(uint16_t handle)
 	static struct bt_gatt_read_params read_params;
 	int err;
 
-	printk("Reading chrc\n");
+	data_received_size = 0;
+	memset(data_received, 0, sizeof(data_received));
+
+	if (handle == chrc_handle) {
+		printk("Reading chrc\n");
+	} else if (handle == long_chrc_handle) {
+		printk("Reading long_chrc\n");
+	}
 
 	read_params.func = gatt_read_cb;
 	read_params.handle_count = 1;
-	read_params.single.handle = chrc_handle;
+	read_params.single.handle = handle;
 	read_params.single.offset = 0;
 
 	UNSET_FLAG(flag_read_complete);
