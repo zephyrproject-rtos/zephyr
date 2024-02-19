@@ -3591,7 +3591,7 @@ TI K3 Platforms:
 TI Platforms:
   status: odd fixes
   files:
-    - soc/arm/ti_lm3s6965/
+    - soc/ti/lm3s6965/
     - dts/arm/ti/lm3s6965.dtsi
   labels:
     - "platform: TI"
