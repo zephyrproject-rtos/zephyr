@@ -63,6 +63,9 @@ config HAS_HW_NRF_EGU4
 config HAS_HW_NRF_EGU5
 	def_bool $(dt_nodelabel_enabled_with_compat,egu5,$(DT_COMPAT_NORDIC_NRF_EGU))
 
+config HAS_HW_NRF_EGU020
+	def_bool $(dt_nodelabel_enabled_with_compat,egu020,$(DT_COMPAT_NORDIC_NRF_EGU))
+
 config HAS_HW_NRF_GPIO0
 	def_bool $(dt_nodelabel_enabled_with_compat,gpio0,$(DT_COMPAT_NORDIC_NRF_GPIO))
 
