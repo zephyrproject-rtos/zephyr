@@ -3,4 +3,4 @@ family:
     series:
       - name: cyclonev
         socs:
-          - name: intel_socfpga_std_cyclonev
+          - name: cyclonev
