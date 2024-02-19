@@ -176,6 +176,16 @@
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
+
+			rtc: rtc@2b000 {
+				compatible = "nordic,nrf-rtc";
+				reg = <0x2b000 0x1000>;
+				status = "disabled";
+				cc-num = <4>;
+				clock-frequency = <32768>;
+				interrupts = <43 NRF_DEFAULT_IRQ_PRIORITY>;
+				prescaler = <1>;
+			};
 		};
 
 		global_peripherals: peripheral@5f000000 {
@@ -227,6 +237,26 @@
 					interrupt-controller;
 					#address-cells = <1>;
 				};
+			};
+
+			rtc130: rtc@928000 {
+				compatible = "nordic,nrf-rtc";
+				reg = <0x928000 0x1000>;
+				status = "disabled";
+				cc-num = <4>;
+				clock-frequency = <32768>;
+				interrupts = <296 NRF_DEFAULT_IRQ_PRIORITY>;
+				prescaler = <1>;
+			};
+
+			rtc131: rtc@929000 {
+				compatible = "nordic,nrf-rtc";
+				reg = <0x929000 0x1000>;
+				status = "disabled";
+				cc-num = <4>;
+				clock-frequency = <32768>;
+				interrupts = <297 NRF_DEFAULT_IRQ_PRIORITY>;
+				prescaler = <1>;
 			};
 
 			gpiote130: gpiote@934000 {
