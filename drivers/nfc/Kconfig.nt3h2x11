@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NFC_NT3H2X11
+	bool "NT3H2X11 NFC driver"
+	default n
+	depends on I2C
+	help
+	  Enable I2C-based driver for NT3H2X11 led driver.
+
+if NFC_NT3H2X11
+
+config NFC_NT3H2X11_2K
+	bool "Use 2k memory map instead of 1k"
+	default n
+	help
+	  Use 2k memory map instead of 1k
+
+config NFC_NT3H2X11_MAX_WRITE_DELAY
+	int "delay in ms"
+	default 10
+	help
+	  Max I2C write delay in ms for when writing EEPROM
+
+config NFC_NT3H2X11_INIT_PRIORITY
+	int "NT3H2X11 NFC driver init priority"
+	default 75
+
+module = NT3H2X11
+module-str = nt3h2x11
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif # NFC_NT3H2X11

@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP NT3H2X11 IC
+
+compatible: "nxp,nt3h2X11"
+
+include: i2c-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      The INT signal configuration is active-low.

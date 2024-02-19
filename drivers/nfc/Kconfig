@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NFC
+	bool "NFC drivers"
+
+if NFC
+
+rsource "Kconfig.nt3h2x11"
+rsource "Kconfig.nrfxnfc"
+
+endif # NFC
