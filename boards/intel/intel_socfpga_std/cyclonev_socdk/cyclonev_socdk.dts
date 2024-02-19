@@ -6,12 +6,12 @@
  * this file is based on the GSRD DTS for Linux
  */
 
-#include "intel_socfpga_std/socfpga_cyclone5.dtsi"
+#include "intel_socfpga_std/socfpga_cyclonev.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Altera SOCFPGA Cyclone V SoC Development Kit";
-	compatible = "altr,socfpga-cyclone5-socdk", "altr,socfpga-cyclone5", "altr,socfpga";
+	compatible = "altr,socfpga-cyclonev-socdk", "altr,socfpga-cyclonev", "altr,socfpga";
 
 	ddr0: memory@0 {
 		name = "memory";
