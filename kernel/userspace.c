@@ -551,7 +551,7 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 
 	/* This object has no more references. Some objects may have
 	 * dynamically allocated resources, require cleanup, or need to be
-	 * marked as uninitailized when all references are gone. What
+	 * marked as uninitialized when all references are gone. What
 	 * specifically needs to happen depends on the object type.
 	 */
 	switch (ko->type) {
