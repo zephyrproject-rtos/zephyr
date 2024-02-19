@@ -379,6 +379,16 @@
 				prescaler = <0>;
 			};
 
+			i2c130: i2c@9a5000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9a5000 0x1000>;
+				status = "disabled";
+				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			spi130: spi@9a5000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x9a5000 0x1000>;
@@ -395,6 +405,16 @@
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			i2c131: i2c@9a6000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9a6000 0x1000>;
+				status = "disabled";
+				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			spi131: spi@9a6000 {
@@ -435,6 +455,16 @@
 				prescaler = <0>;
 			};
 
+			i2c132: i2c@9b5000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9b5000 0x1000>;
+				status = "disabled";
+				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			spi132: spi@9b5000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x9b5000 0x1000>;
@@ -451,6 +481,16 @@
 				reg = <0x9b5000 0x1000>;
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			i2c133: i2c@9b6000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9b6000 0x1000>;
+				status = "disabled";
+				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			spi133: spi@9b6000 {
@@ -491,6 +531,16 @@
 				prescaler = <0>;
 			};
 
+			i2c134: i2c@9c5000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9c5000 0x1000>;
+				status = "disabled";
+				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			spi134: spi@9c5000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x9c5000 0x1000>;
@@ -507,6 +557,16 @@
 				reg = <0x9c5000 0x1000>;
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			i2c135: i2c@9c6000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9c6000 0x1000>;
+				status = "disabled";
+				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			spi135: spi@9c6000 {
@@ -547,6 +607,16 @@
 				prescaler = <0>;
 			};
 
+			i2c136: i2c@9d5000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9d5000 0x1000>;
+				status = "disabled";
+				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
 			spi136: spi@9d5000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x9d5000 0x1000>;
@@ -563,6 +633,16 @@
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			i2c137: i2c@9d6000 {
+				compatible = "nordic,nrf-twim";
+				reg = <0x9d6000 0x1000>;
+				status = "disabled";
+				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			spi137: spi@9d6000 {
