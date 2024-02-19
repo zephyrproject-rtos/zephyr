@@ -3616,9 +3616,9 @@ Infineon Platforms:
     - npal-cy
     - talih0
   files:
-    - boards/arm/cy8ckit_*/
-    - boards/arm/cy8cproto_*/
-    - boards/arm/xmc*_relax*/
+    - boards/cypress/cy8ckit_*/
+    - boards/cypress/cy8cproto_*/
+    - boards/cypress/xmc*_relax*/
     - drivers/*/*ifx_cat1*
     - drivers/*/*xmc*/
     - drivers/*/*xmc*.c
@@ -3627,7 +3627,7 @@ Infineon Platforms:
     - dts/arm/cypress/
     - soc/arm/cypress/
     - dts/bindings/*/*infineon*
-    - soc/arm/infineon_*/
+    - soc/infineon/
   labels:
     - "platform: Infineon"
   description: >-
