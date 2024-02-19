@@ -1652,6 +1652,19 @@ This has been fixed in main for v3.6.0
 - `PR 66584 fix for 3.5
   <https://github.com/zephyrproject-rtos/zephyr/pull/66584>`_
 
+CVE-2023-6881
+-------------
+
+Potential buffer overflow vulnerability in Zephyr fuse file system.
+
+- `Zephyr project bug tracker GHSA-mh67-4h3q-p437
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-mh67-4h3q-p437>`_
+
+This has been fixed in main for v3.6.0
+
+- `PR 66592 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/66592>`_
+
 CVE-2024-1638
 -------------
 
