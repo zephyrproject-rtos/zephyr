@@ -339,6 +339,45 @@ config HAS_HW_NRF_TIMER23
 config HAS_HW_NRF_TIMER24
 	def_bool $(dt_nodelabel_enabled_with_compat,timer24,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
+config HAS_HW_NRF_TIMER020
+	def_bool $(dt_nodelabel_enabled_with_compat,timer020,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER021
+	def_bool $(dt_nodelabel_enabled_with_compat,timer021,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER022
+	def_bool $(dt_nodelabel_enabled_with_compat,timer022,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER120
+	def_bool $(dt_nodelabel_enabled_with_compat,timer120,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER121
+	def_bool $(dt_nodelabel_enabled_with_compat,timer121,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER130
+	def_bool $(dt_nodelabel_enabled_with_compat,timer130,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER131
+	def_bool $(dt_nodelabel_enabled_with_compat,timer131,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER132
+	def_bool $(dt_nodelabel_enabled_with_compat,timer132,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER133
+	def_bool $(dt_nodelabel_enabled_with_compat,timer133,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER134
+	def_bool $(dt_nodelabel_enabled_with_compat,timer134,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER135
+	def_bool $(dt_nodelabel_enabled_with_compat,timer135,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER136
+	def_bool $(dt_nodelabel_enabled_with_compat,timer136,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
+config HAS_HW_NRF_TIMER137
+	def_bool $(dt_nodelabel_enabled_with_compat,timer137,$(DT_COMPAT_NORDIC_NRF_TIMER))
+
 config HAS_HW_NRF_TWI0
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWI))
 
