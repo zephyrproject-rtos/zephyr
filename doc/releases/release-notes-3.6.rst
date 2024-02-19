@@ -1249,6 +1249,14 @@ MCUboot
 
   * Made ``align`` parameter of imgtool optional.
 
+  * Added MCUBoot support for ``mimxrt1010_evk``, ``mimxrt1015_evk``,
+    ``mimxrt1040_evk``, ``lpcxpresso55s06``, ``lpcxpresso55s16``,
+    ``lpcxpresso55s28``, ``lpcxpresso55s36``, ``lpcxpresso55s69_cpu0``.
+
+  * Added :kconfig:option:`CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY` which passes the --overwrite-only option
+    to imgtool to avoid adding the swap status area size when calculating overflow.
+    It is used by non-swap update modes.
+
   * The MCUboot version in this release is version ``2.1.0+0-dev``.
 
 Nanopb
