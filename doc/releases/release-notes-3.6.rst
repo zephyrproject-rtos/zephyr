@@ -290,6 +290,9 @@ Build system and infrastructure
 
 * Deprecated ``CONF_FILE`` ``prj_<build>.conf`` build type.
 
+* Added `-Wdouble-promotion` as a default warning when compiling to warn developers with
+  single-precision floats easily being promoted to double-precision.
+
 Drivers and Sensors
 *******************
 
