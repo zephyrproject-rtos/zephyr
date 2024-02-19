@@ -3094,8 +3094,8 @@ Synopsys Platforms:
     - evgeniy-paltsev
     - IRISZZW
   files:
-    - soc/arc/
-    - boards/arc/
+    - soc/synopsys/
+    - boards/synopsys/
     - samples/boards/arc_secure_services/
   labels:
     - "platform: Synopsys"
