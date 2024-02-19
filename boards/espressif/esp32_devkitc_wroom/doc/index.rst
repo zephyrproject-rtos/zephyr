@@ -122,7 +122,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wroom
+   :board: esp32_devkitc_wroom/esp32/procpu
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32_devkitc_wroom`` board
@@ -131,7 +131,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wroom
+   :board: esp32_devkitc_wroom/esp32/procpu
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -183,14 +183,14 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wroom
+   :board: esp32_devkitc_wroom/esp32/procpu
    :goals: build flash
 
 You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32_devkitc_wroom
+   :board: esp32_devkitc_wroom/esp32/procpu
    :goals: debug
 
 Note on Debugging with GDB Stub
