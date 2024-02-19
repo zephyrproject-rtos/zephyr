@@ -1,4 +1,4 @@
 board:
   name: cyclonev_socdk
   socs:
-    - name: intel_socfpga_std_cyclonev
+    - name: cyclonev
