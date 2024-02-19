@@ -1,12 +1,12 @@
+# Copyright (c) 2020-2021 Microchip Technology Inc
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_MIV
+if SOC_SERIES_POLARFIRE
 
-config SOC_SERIES
-	default "miv"
+# MPFS should be configured so that the mtimer clock is 1MHz independent of the CPU clock...
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 4000000
+	default 1000000
 
 config RISCV_SOC_INTERRUPT_INIT
 	default y
@@ -15,15 +15,15 @@ config RISCV_GP
 	default y
 
 config 2ND_LVL_ISR_TBL_OFFSET
-	default 12
+	default 13
 
 config 2ND_LVL_INTR_00_OFFSET
 	default 11
 
 config MAX_IRQ_PER_AGGREGATOR
-	default 30
+	default 186
 
 config NUM_IRQS
-	default 42
+	default 186
 
-endif # SOC_SERIES_MIV
+endif # SOC_SERIES_POLARFIRE
