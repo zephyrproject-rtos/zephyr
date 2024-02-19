@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_CYCLONEV_SOCDK
-	select SOC_CYCLONE5
+	select SOC_CYCLONEV
 	help
 	  Intel Cyclone V Development Kit
