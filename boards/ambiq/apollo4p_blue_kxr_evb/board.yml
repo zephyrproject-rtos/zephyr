@@ -1,0 +1,5 @@
+board:
+  name: apollo4p_blue_kxr_evb
+  vendor: Ambiq
+  socs:
+  - name: apollo4p_blue
