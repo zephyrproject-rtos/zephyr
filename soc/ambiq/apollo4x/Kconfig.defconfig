@@ -4,9 +4,6 @@
 
 if SOC_SERIES_APOLLO4X
 
-source "soc/soc_legacy/arm/ambiq/apollo4x/Kconfig.defconfig.apollo4*"
-
-config SOC_SERIES
-	default "apollo4x"
+rsource "Kconfig.defconfig.apollo4*"
 
 endif # SOC_SERIES_APOLLO4X
