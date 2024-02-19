@@ -11,7 +11,7 @@
 #include "esp32s2_lolin_mini-pinctrl.dtsi"
 
 / {
-	model = "esp32s2_lolin_mini";
+	model = "Wemos ESP32S2-Lolin Mini";
 	compatible = "espressif,esp32s2";
 
 	aliases {

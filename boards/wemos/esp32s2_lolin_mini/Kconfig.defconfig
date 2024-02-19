@@ -3,10 +3,6 @@
 # Copyright (c) 2023 Google, LLC
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "esp32s2_lolin_mini"
-	depends on BOARD_ESP32S2_LOLIN_MINI
-
 config ENTROPY_GENERATOR
 	default y
 
