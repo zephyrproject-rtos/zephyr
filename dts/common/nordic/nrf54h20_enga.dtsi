@@ -153,6 +153,13 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x5f000000 0x1000000>;
 
+			uart120: uart@8e5000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x8e5000 0x1000>;
+				status = "disabled";
+				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			cpuppr_vpr: vpr@908000 {
 				compatible = "nordic,nrf-vpr-coprocessor";
 				reg = <0x908000 0x1000>;
@@ -250,6 +257,41 @@
 				cc-num = <16>;
 			};
 
+			uart130: uart@9a5000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9a5000 0x1000>;
+				status = "disabled";
+				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			uart131: uart@9a6000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9a6000 0x1000>;
+				status = "disabled";
+				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			uart132: uart@9b5000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9b5000 0x1000>;
+				status = "disabled";
+				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			uart133: uart@9b6000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9b6000 0x1000>;
+				status = "disabled";
+				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			uart134: uart@9c5000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9c5000 0x1000>;
+				status = "disabled";
+				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			uart135: uart@9c6000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x9c6000 0x1000>;
@@ -262,6 +304,13 @@
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			uart137: uart@9d6000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0x9d6000 0x1000>;
+				status = "disabled";
+				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 		};
 	};
