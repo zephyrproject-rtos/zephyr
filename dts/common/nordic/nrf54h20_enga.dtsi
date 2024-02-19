@@ -352,6 +352,13 @@
 				port = <9>;
 			};
 
+			temp: temperature-sensor@984000 {
+				compatible = "nordic,nrf-temp";
+				reg = <0x984000 0x1000>;
+				interrupts = <388 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+			};
+
 			nfct: nfct@985000 {
 				compatible = "nordic,nrf-nfct";
 				reg = <0x985000 0x1000>;
