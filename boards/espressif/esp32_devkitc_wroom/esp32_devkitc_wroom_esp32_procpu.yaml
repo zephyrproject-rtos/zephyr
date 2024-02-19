@@ -1,4 +1,4 @@
-identifier: esp32_devkitc_wroom
+identifier: esp32_devkitc_wroom/esp32/procpu
 name: ESP32-DevkitC-WROOM-32D
 type: mcu
 arch: xtensa
