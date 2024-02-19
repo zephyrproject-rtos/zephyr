@@ -238,6 +238,16 @@ config NRFX_RTC2
 	depends on $(dt_nodelabel_has_compat,rtc2,$(DT_COMPAT_NORDIC_NRF_RTC))
 	select NRFX_RTC
 
+config NRFX_RTC130
+	bool "RTC130 driver instance"
+	depends on $(dt_nodelabel_has_compat,rtc130,$(DT_COMPAT_NORDIC_NRF_RTC))
+	select NRFX_RTC
+
+config NRFX_RTC131
+	bool "RTC131 driver instance"
+	depends on $(dt_nodelabel_has_compat,rtc131,$(DT_COMPAT_NORDIC_NRF_RTC))
+	select NRFX_RTC
+
 config NRFX_SAADC
 	bool "SAADC driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SAADC))
