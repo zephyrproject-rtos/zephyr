@@ -776,22 +776,30 @@
 			};
 		};
 
-		/*
-		 * enet1g peripheral to use with kinetis-ethernet (eth_mcux) driver
-		 * just like the enet peripheral (i.e. only 10/100Mbit for now)
-		 */
 		enet1g: ethernet@40420000 {
-			compatible = "nxp,kinetis-ethernet";
+			compatible = "nxp,enet1g";
 			reg = <0x40420000 0x628>;
-			interrupts = <141 0>;
-			interrupt-names = "COMMON";
+			clocks = <&ccm IMX_CCM_ENET1G_CLK 0 0>;
 			status = "disabled";
-			phy-addr = <1>;
-			ptp1g: ptp {
-				compatible = "nxp,kinetis-ptp";
+			enet1g_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <141 0>;
+				interrupt-names = "COMMON";
+				nxp,mdio = <&enet1g_mdio>;
+				nxp,ptp-clock = <&enet1g_ptp_clock>;
 				status = "disabled";
+			};
+			enet1g_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			enet1g_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
 				interrupts = <142 0>;
-				interrupt-names = "IEEE1588_TMR";
+				status = "disabled";
+				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
 			};
 		};
 

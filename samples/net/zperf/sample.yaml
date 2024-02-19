@@ -98,3 +98,10 @@ tests:
     depends_on:
       - arduino_spi
       - arduino_gpio
+  sample.net.zperf.nxp_enet1g:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="nxp,enet1g.overlay"
+    tags:
+      - net
+      - zperf
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
