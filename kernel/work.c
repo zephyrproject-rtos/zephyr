@@ -92,7 +92,7 @@ static inline void init_work_cancel(struct z_work_canceller *canceler,
 	sys_slist_append(&pending_cancels, &canceler->node);
 }
 
-/* Comeplete flushing of a work item.
+/* Complete flushing of a work item.
  *
  * Invoked with work lock held.
  *

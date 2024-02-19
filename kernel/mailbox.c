@@ -452,7 +452,7 @@ static int init_mailbox_obj_core_list(void)
 	z_obj_type_init(&obj_type_mailbox, K_OBJ_TYPE_MBOX_ID,
 			offsetof(struct k_mbox, obj_core));
 
-	/* Initialize and link satically defined mailboxes */
+	/* Initialize and link statically defined mailboxes */
 
 	STRUCT_SECTION_FOREACH(k_mbox, mbox) {
 		k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
