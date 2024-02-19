@@ -335,7 +335,9 @@ static int coap_server_poll_timeout(void)
 
 static void coap_server_update_services(void)
 {
-	zsock_send(control_socks[1], &(char){0}, 1, 0);
+	if (zsock_send(control_socks[1], &(char){0}, 1, 0) < 0) {
+		LOG_ERR("Failed to notify server thread (%d)", errno);
+	}
 }
 
 static inline bool coap_service_in_section(const struct coap_service *service)
