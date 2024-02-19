@@ -815,6 +815,16 @@ config NRFX_WDT130
 	depends on $(dt_nodelabel_has_compat,wdt130,$(DT_COMPAT_NORDIC_NRF_WDT))
 	select NRFX_WDT
 
+config NRFX_WDT131
+	bool "WDT131 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt131,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT132
+	bool "WDT132 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt132,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
 menu "Peripheral Resource Sharing module"
 
 config NRFX_PRS
