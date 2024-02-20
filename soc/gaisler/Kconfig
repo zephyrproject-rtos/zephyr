@@ -1,10 +1,6 @@
 # Copyright (c) 2019-2020 Cobham Gaisler AB
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_GR716A
+config SPARC_CASA
 	bool
-
-config SOC
-	default "gr716a" if SOC_GR716A
-
-rsource "../Kconfig.soc"
+	default y if SPARC
