@@ -277,18 +277,14 @@
 				reg = <0x908000 0x1000>;
 				status = "disabled";
 				cpu = <13>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges = <0x0 0x908000 0x4000>;
+			};
 
-				cpuppr_clic: interrupt-controller@1000 {
-					compatible = "nordic,nrf-clic";
-					reg = <0x1000 0x3000>;
-					status = "disabled";
-					#interrupt-cells = <2>;
-					interrupt-controller;
-					#address-cells = <1>;
-				};
+			cpuppr_clic: interrupt-controller@909000 {
+				compatible = "nordic,nrf-clic";
+				reg = <0x909000 0x2000>;
+				status = "disabled";
+				interrupt-controller;
+				#interrupt-cells = <2>;
 			};
 
 			rtc130: rtc@928000 {
