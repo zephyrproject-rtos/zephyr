@@ -634,6 +634,9 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 config ARCH_HAS_GDBSTUB
 	bool
 
+config ARCH_HAS_HW_BREAKPOINT
+	bool
+
 config ARCH_HAS_COHERENCE
 	bool
 	help
