@@ -5,9 +5,6 @@
 
 if BOARD_EFM32PG_STK3401A
 
-config BOARD
-	default "efm32pg_stk3401a" if BOARD_EFM32PG_STK3401A
-
 config CMU_HFXO_FREQ
 	default 40000000
 
