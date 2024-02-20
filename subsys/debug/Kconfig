@@ -73,6 +73,15 @@ config THREAD_ANALYZER_AUTO
 
 if THREAD_ANALYZER_AUTO
 
+config THREAD_ANALYZER_AUTO_SEPARATE_CORES
+	bool "Run thread analyzer separately on each core"
+	default y if KERNEL_COHERENCE
+	depends on SCHED_CPU_MASK
+	help
+	  Run the thread analyzer auto thread on each core and report
+	  cores separately. This feature is needed for platforms running
+	  on cache-incoherent architectures.
+
 config THREAD_ANALYZER_AUTO_INTERVAL
 	int "Thread analysis interval"
 	default 60
