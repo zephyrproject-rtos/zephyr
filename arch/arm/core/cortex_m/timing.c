@@ -29,7 +29,7 @@
 static inline uint64_t z_arm_dwt_freq_get(void)
 {
 #if defined(CONFIG_SOC_FAMILY_NRF) || \
-	defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+	defined(CONFIG_SOC_SERIES_IMXRT6XX)
 	/*
 	 * DWT frequency is taken directly from the
 	 * System Core clock (CPU) frequency, if the

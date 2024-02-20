@@ -396,7 +396,7 @@ static void eth_mcux_phy_start(struct eth_context *context)
 		k_work_submit(&context->phy_work);
 		break;
 #endif
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 		context->phy_state = eth_mcux_phy_state_initial;
 #else
 		context->phy_state = eth_mcux_phy_state_reset;
@@ -453,7 +453,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	uint32_t status;
 #endif
 	bool link_up;
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	status_t res;
 	uint16_t ctrl2;
 #endif
@@ -466,7 +466,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 #endif
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 		ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
 		res = PHY_Read(context->phy_handle, PHY_CONTROL2_REG, &ctrl2);
 		ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
@@ -481,7 +481,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 					   ctrl2);
 		}
 		context->phy_state = eth_mcux_phy_state_reset;
-#endif /* CONFIG_SOC_SERIES_IMX_RT */
+#endif
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 		/*
 		 * When the iface is available proceed with the eth link setup,
@@ -633,7 +633,7 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 
 static void eth_mcux_phy_setup(struct eth_context *context)
 {
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	status_t res;
 	uint16_t oms_override;
 
@@ -1024,14 +1024,14 @@ static void eth_mcux_init(const struct device *dev)
 	context->phy_state = eth_mcux_phy_state_initial;
 	context->phy_handle->ops = &phyksz8081_ops;
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
 	sys_clock = CLOCK_GetFreq(kCLOCK_EnetPll1Clk);
 #endif
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	sys_clock = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
 #else
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
@@ -1391,9 +1391,9 @@ static void eth_mcux_err_isr(const struct device *dev)
 }
 #endif
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define ETH_MCUX_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
