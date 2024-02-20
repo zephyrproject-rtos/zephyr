@@ -198,7 +198,7 @@ config BT_HCI_VS_FATAL_ERROR
 	bool "Allow vendor specific HCI event Zephyr Fatal Error"
 	depends on BT_HCI_VS
 	help
-	  Enable emiting HCI Vendor-Specific events for system and Controller
+	  Enable emitting HCI Vendor-Specific events for system and Controller
 	  errors that are unrecoverable.
 
 config BT_HCI_VS_EXT_DETECT
