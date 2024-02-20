@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
@@ -17,10 +19,19 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 /* AT45 commands used by this driver: */
 /* - Continuous Array Read (Low Power Mode) */
 #define CMD_READ		0x01
+#define CMD_READ_HF		0x0B
 /* - Main Memory Byte/Page Program through Buffer 1 without Built-In Erase */
 #define CMD_WRITE		0x02
+/* - Buffer 1 write */
+#define CMD_WRITE_BUF1		0x84
+/* - Buffer 1 to Main Memory Page Program without Built-In Erase */
+#define CMD_BUF1_TO_MAIN	0x88
 /* - Read-Modify-Write */
 #define CMD_MODIFY		0x58
+/* - Main Memory Page Program Through Buffer 1 */
+#define CMD_MAIN_THRU_BUF1	0x82
+/* - Main Memory Page to Buffer 1 Transfer */
+#define CMD_MAIN_TO_BUF1	0x53
 /* - Manufacturer and Device ID Read */
 #define CMD_READ_ID		0x9F
 /* - Status Register Read */
@@ -50,6 +61,7 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 
 #define INST_HAS_RESET_OR(inst) DT_INST_NODE_HAS_PROP(inst, reset_gpios) ||
 #define ANY_INST_HAS_RESET_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_RESET_OR) 0
+#define ANY_INST_USE_ALTERNATE_RW (DT_ANY_INST_HAS_PROP_STATUS_OKAY(use_alternate_rw))
 
 #define DEF_BUF_SET(_name, _buf_array) \
 	const struct spi_buf_set _name = { \
@@ -82,6 +94,7 @@ struct spi_flash_at45_config {
 	uint16_t t_enter_dpd; /* in microseconds */
 	uint16_t t_exit_dpd;  /* in microseconds */
 	bool use_udpd;
+	bool use_alternate_rw;
 	uint8_t jedec_id[3];
 };
 
@@ -241,8 +254,56 @@ static bool is_valid_request(off_t addr, size_t size, size_t chip_size)
 	return (addr >= 0 && (addr + size) <= chip_size);
 }
 
-static int spi_flash_at45_read(const struct device *dev, off_t offset,
-			       void *data, size_t len)
+#if ANY_INST_USE_ALTERNATE_RW
+static int perform_alternate_read(const struct device *dev, off_t offset, void *data, size_t len)
+{
+	const struct spi_flash_at45_config *cfg = dev->config;
+	int err;
+
+	if (!is_valid_request(offset, len, cfg->chip_size)) {
+		return -ENODEV;
+	}
+
+	uint8_t const op_and_addr[] = {
+		CMD_READ_HF,
+		(offset >> 16) & 0xFF,
+		(offset >> 8)  & 0xFF,
+		(offset >> 0)  & 0xFF,
+		0xFF, /* 1 dummy byte as per datasheet */
+	};
+	const struct spi_buf tx_buf[] = {
+		{
+			.buf = (void *)op_and_addr,
+			.len = sizeof(op_and_addr),
+		}
+	};
+	const struct spi_buf rx_buf[] = {
+		{
+			.len = sizeof(op_and_addr),
+		},
+		{
+			.buf = data,
+			.len = len,
+		}
+	};
+
+	DEF_BUF_SET(tx_buf_set, tx_buf);
+	DEF_BUF_SET(rx_buf_set, rx_buf);
+
+	acquire(dev);
+	err = spi_transceive_dt(&cfg->bus, &tx_buf_set, &rx_buf_set);
+	release(dev);
+
+	if (err != 0) {
+		LOG_ERR("SPI transaction failed with code: %d/%u",
+			err, __LINE__);
+	}
+
+	return (err != 0) ? -EIO : 0;
+}
+#endif /* ANY_INST_USE_ALTERNATE_RW */
+
+static int perform_normal_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
@@ -287,8 +348,96 @@ static int spi_flash_at45_read(const struct device *dev, off_t offset,
 	return (err != 0) ? -EIO : 0;
 }
 
-static int perform_write(const struct device *dev, off_t offset,
-			 const void *data, size_t len)
+#if ANY_INST_USE_ALTERNATE_RW
+static int spi_flash_at45_read(const struct device *dev, off_t offset,
+			       void *data, size_t len)
+{
+	const struct spi_flash_at45_config *cfg = dev->config;
+
+	if (cfg->use_alternate_rw) {
+		return perform_alternate_read(dev, offset, data, len);
+	}
+
+	return perform_normal_read(dev, offset, data, len);
+}
+#else
+#define spi_flash_at45_read(...) perform_normal_read(__VA_ARGS__)
+#endif
+
+#if ANY_INST_USE_ALTERNATE_RW
+static int perform_alternate_write(const struct device *dev, off_t offset, const void *data, size_t len)
+{
+	const struct spi_flash_at45_config *cfg = dev->config;
+	int err;
+	uint8_t const op_and_addr0[] = {
+		IS_ENABLED(CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE) ? CMD_MAIN_TO_BUF1
+									: CMD_WRITE_BUF1,
+		(offset >> 16) & 0xFF,
+		(offset >> 8) & 0xFF,
+		(offset >> 0) & 0xFF,
+	};
+	const struct spi_buf tx_buf0[] = {
+		{
+			.buf = (void *)&op_and_addr0,
+			.len = sizeof(op_and_addr0),
+		},
+#ifndef CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
+		{
+			.buf = (void *)data,
+			.len = len,
+		},
+#endif
+	};
+	uint8_t const op_and_addr1[] = {
+		IS_ENABLED(CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE) ? CMD_MAIN_THRU_BUF1
+									: CMD_BUF1_TO_MAIN,
+		(offset >> 16) & 0xFF,
+		(offset >> 8) & 0xFF,
+		(offset >> 0) & 0xFF,
+	};
+	const struct spi_buf tx_buf1[] = {
+		{
+			.buf = (void *)&op_and_addr1,
+			.len = sizeof(op_and_addr1),
+		},
+#ifdef CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
+		{
+			.buf = (void *)data,
+			.len = len,
+		},
+#endif
+	};
+
+	DEF_BUF_SET(tx_buf_set0, tx_buf0);
+	err = spi_write_dt(&cfg->bus, &tx_buf_set0);
+	if (err != 0) {
+		LOG_ERR("SPI transaction failed with code: %d/%u",
+			err, __LINE__);
+		return -EIO;
+	} else {
+		err = wait_until_ready(dev);
+	}
+
+	if (err != 0) {
+		return -EIO;
+	}
+
+	DEF_BUF_SET(tx_buf_set1, tx_buf1);
+
+	err = spi_write_dt(&cfg->bus, &tx_buf_set1);
+	if (err != 0) {
+		LOG_ERR("SPI transaction failed with code: %d/%u",
+			err, __LINE__);
+	} else {
+		err = wait_until_ready(dev);
+	}
+
+	return (err != 0) ? -EIO : 0;
+}
+#endif /* ANY_INST_USE_ALTERNATE_RW */
+
+static int perform_normal_write(const struct device *dev, off_t offset, const void *data,
+				size_t len)
 {
 	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
@@ -322,6 +471,21 @@ static int perform_write(const struct device *dev, off_t offset,
 
 	return (err != 0) ? -EIO : 0;
 }
+
+#if ANY_INST_USE_ALTERNATE_RW
+static inline int perform_write(const struct device *dev, off_t offset, const void *data,
+				size_t len)
+{
+	const struct spi_flash_at45_config *cfg = dev->config;
+
+	if (cfg->use_alternate_rw) {
+		return perform_alternate_write(dev, offset, data, len);
+	}
+	return perform_normal_write(dev, offset, data, len);
+}
+#else
+#define perform_write(...) perform_normal_write(__VA_ARGS__)
+#endif
 
 static int spi_flash_at45_write(const struct device *dev, off_t offset,
 				const void *data, size_t len)
@@ -711,6 +875,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 					DT_INST_PROP(idx, exit_dpd_delay),   \
 					NSEC_PER_USEC),			     \
 		.use_udpd    = DT_INST_PROP(idx, use_udpd),		     \
+		.use_alternate_rw = DT_INST_PROP(idx, use_alternate_rw),     \
 		.jedec_id    = DT_INST_PROP(idx, jedec_id),		     \
 	};								     \
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (				     \

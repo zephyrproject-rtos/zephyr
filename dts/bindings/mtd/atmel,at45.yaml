@@ -45,6 +45,12 @@ properties:
     required: true
     description: Flash page size in bytes.
 
+  use-alternate-rw:
+    type: boolean
+    description: |
+      Some AT45 flash chips do not support the regular read/write commands. If set,
+      the driver will perform read/write with an alternative set of commands.
+
   no-chip-erase:
     type: boolean
     description: |
