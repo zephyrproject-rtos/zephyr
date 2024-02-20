@@ -1,12 +1,13 @@
-identifier: efr32_radio_brd4161a
-name: BRD4161A
+identifier: efr32_radio/efr32fg1p133f256gm48
+name: BRD4250B
 type: mcu
 arch: arm
-ram: 256
-flash: 1024
+ram: 32
+flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
 supported:
   - counter
   - gpio
