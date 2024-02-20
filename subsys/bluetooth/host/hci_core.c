@@ -1617,7 +1617,7 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 	update_conn(conn, &id_addr, (const struct bt_hci_evt_le_enh_conn_complete *)evt);
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-	/* The connection is always initated on the same phy as the PAwR advertiser */
+	/* The connection is always initiated on the same phy as the PAwR advertiser */
 	conn->le.phy.tx_phy = sync->phy;
 	conn->le.phy.rx_phy = sync->phy;
 #endif

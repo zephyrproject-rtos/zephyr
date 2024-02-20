@@ -1302,7 +1302,7 @@ static uint16_t le_err_to_result(int err)
 		return BT_L2CAP_LE_ERR_KEY_SIZE;
 	case -ENOTSUP:
 		/* This handle the cases where a fixed channel is registered but
-		 * for some reason (e.g. controller not suporting a feature)
+		 * for some reason (e.g. controller not supporting a feature)
 		 * cannot be used.
 		 */
 		return BT_L2CAP_LE_ERR_PSM_NOT_SUPP;

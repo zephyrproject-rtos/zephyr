@@ -2524,7 +2524,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 	 */
 	err = iso_chan_connect_security(param, count);
 	if (err != 0) {
-		LOG_DBG("Failed to initate security for all CIS: %d", err);
+		LOG_DBG("Failed to initiate security for all CIS: %d", err);
 		return err;
 	}
 #endif /* CONFIG_BT_SMP */
