@@ -118,7 +118,7 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/mimxrt595_evk/mimxrt595_evk_cm33_defconfig``
+   :zephyr_file:`boards/nxp/mimxrt595_evk/mimxrt595_evk_mimxrt595s_cm33_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -179,13 +179,13 @@ configured as USART for the console and the remaining are not used.
 Fusion F1 DSP Core
 ==================
 
-You can build a Zephyr application for the RT500 DSP core using nxp_adsp_rt595
-board. Xtensa toolchain supporting RT500 DSP core is included in Zephyr SDK.
+You can build a Zephyr application for the RT500 DSP core by targeting the F1
+SOC. Xtensa toolchain supporting RT500 DSP core is included in Zephyr SDK.
 To build the hello_world sample for the RT500 DSP core:
 
 .. code-block:: shell
 
-   $ west build -b nxp_adsp_rt595 samples/hello_world
+   $ west build -b mimxrt595_evk/mimxrt595s/f1 samples/hello_world
 
 For detailed instructions on how to debug DSP firmware, please refer to
 this document: `Getting Started with Xplorer for EVK-MIMXRT595`_
@@ -249,7 +249,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt595_evk_cm33
+   :board: mimxrt595_evk/mimxrt595s/cm33
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -258,7 +258,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS v2.7 ***
-   Hello World! mimxrt595_evk_cm33
+   Hello World! mimxrt595_evk
 
 Debugging
 =========
@@ -268,7 +268,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt595_evk_cm33
+   :board: mimxrt595_evk/mimxrt595s/cm33
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -277,7 +277,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS v2.7 ***
-   Hello World! mimxrt595_evk_cm33
+   Hello World! mimxrt595_evk
 
 Troubleshooting
 ===============

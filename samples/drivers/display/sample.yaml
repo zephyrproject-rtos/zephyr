@@ -95,7 +95,7 @@ tests:
     harness_config:
       fixture: fixture_display
   sample.display.mcux_dcnano_lcdif:
-    platform_allow: mimxrt595_evk_cm33
+    platform_allow: mimxrt595_evk/mimxrt595s/cm33
     tags: display
     harness: console
     extra_args: SHIELD=rk055hdmipi4m
@@ -136,7 +136,7 @@ tests:
     harness_config:
       fixture: fixture_display
   sample.display.g1120b0mipi:
-    platform_allow: mimxrt595_evk_cm33
+    platform_allow: mimxrt595_evk/mimxrt595s/cm33
     tags: display
     harness: console
     extra_args: SHIELD=g1120b0mipi

@@ -31,7 +31,7 @@ tests:
       - mimxrt1064_evk
       - mimxrt1160_evk/mimxrt1166/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
-      - mimxrt595_evk_cm33
+      - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt685_evk
       - nrf52840dk/nrf52840
     integration_platforms:
