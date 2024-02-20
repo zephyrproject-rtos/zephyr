@@ -8,9 +8,9 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
       - adp_xc7k/ae350
-      - mimxrt1170_evkb_cm7
-      - mimxrt1170_evk_cm7
-      - mimxrt1160_evk_cm7
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1160_evk/mimxrt1166/cm7
       - lpcxpresso55s69_cpu0
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp

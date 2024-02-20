@@ -91,5 +91,5 @@ tests:
       - mimxrt1064_evk
       - mimxrt1024_evk
       - frdm_k64f
-      - mimxrt1170_evk_cm7
-      - mimxrt1160_evk_cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1160_evk/mimxrt1166/cm7
