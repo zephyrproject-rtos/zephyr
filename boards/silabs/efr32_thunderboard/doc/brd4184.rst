@@ -79,9 +79,8 @@ The efr32bg22_brd4184a/b board configuration supports the following hardware fea
 | RADIO     | on-chip    | bluetooth                           |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig files:
-- ``boards/arm/efr32_thunderboard/efr32bg22_brd4184a_defconfig``
-- ``boards/arm/efr32_thunderboard/efr32bg22_brd4184b_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184_defconfig`
 
 Connections and IOs
 ===================
@@ -168,17 +167,9 @@ Open a serial terminal (minicom, putty, etc.) with the following settings:
 Reset the board and you should be able to see on the corresponding Serial Port
 the following message:
 
-BRD4184A:
-
 .. code-block:: console
 
-   Hello World! efr32bg22_brd4184a
-
-BRD4184B:
-
-.. code-block:: console
-
-   Hello World! efr32bg22_brd4184b
+   Hello World! efr32bg22_brd4184
 
 Bluetooth
 =========
