@@ -3,7 +3,7 @@ family:
     series:
       - name: agilex
         socs:
-          - name: intel_socfpga_agilex
+          - name: agilex
       - name: agilex5
         socs:
-          - name: intel_socfpga_agilex5
+          - name: agilex5
