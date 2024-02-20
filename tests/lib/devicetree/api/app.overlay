@@ -514,7 +514,15 @@
 			compatible = "vnd,can-transceiver";
 			status = "okay";
 			#phy-cells = <0>;
+			min-bitrate = <10000>;
 			max-bitrate = <5000000>;
+		};
+
+		test_transceiver1: can-phy1 {
+			compatible = "vnd,can-transceiver";
+			status = "okay";
+			#phy-cells = <0>;
+			max-bitrate = <1000000>;
 		};
 
 		test_can0: can@55553333 {
@@ -534,8 +542,30 @@
 			status = "okay";
 
 			can-transceiver {
+				min-bitrate = <50000>;
 				max-bitrate = <2000000>;
 			};
+		};
+
+		test_can2: can@55555555 {
+			compatible = "vnd,can-controller";
+			reg = < 0x55555555 0x1000 >;
+			sample-point = <875>;
+			bus-speed = <125000>;
+			status = "okay";
+
+			can-transceiver {
+				max-bitrate = <1000000>;
+			};
+		};
+
+		test_can3: can@55557777 {
+			compatible = "vnd,can-controller";
+			reg = < 0x55556666 0x1000 >;
+			sample-point = <875>;
+			bus-speed = <125000>;
+			status = "okay";
+			phys = <&test_transceiver1>;
 		};
 
 		/* there should only be one of these */
