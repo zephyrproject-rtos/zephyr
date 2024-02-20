@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <stdlib.h>
-#include <zephyr/fs/nvs.h>
 #include <zephyr/data/json.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
@@ -27,6 +26,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/settings/settings.h>
 
 #include "hawkbit_priv.h"
 #include "hawkbit_device.h"
@@ -37,8 +37,6 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define CA_CERTIFICATE_TAG 1
 #include <zephyr/net/tls_credentials.h>
 #endif
-
-#define ADDRESS_ID 1
 
 #define CANCEL_BASE_SIZE 50
 #define RECV_BUFFER_SIZE 640
@@ -55,17 +53,15 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define SLOT1_LABEL slot1_partition
 #define SLOT1_SIZE FIXED_PARTITION_SIZE(SLOT1_LABEL)
 
-#define STORAGE_LABEL storage_partition
-#define STORAGE_DEV FIXED_PARTITION_DEVICE(STORAGE_LABEL)
-#define STORAGE_OFFSET FIXED_PARTITION_OFFSET(STORAGE_LABEL)
-
 #if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1) && (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * 60 * MSEC_PER_SEC);
 #else
 static uint32_t poll_sleep = (300 * MSEC_PER_SEC);
 #endif
 
-static struct nvs_fs fs;
+static struct hawkbit_config {
+	int32_t action_id;
+} hb_cfg;
 
 struct hawkbit_download {
 	int download_status;
@@ -199,6 +195,40 @@ static const struct json_obj_descr json_dep_fbk_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_fbk, id, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_fbk, status, json_status_descr),
 };
+
+static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb read_cb,
+				void *cb_arg)
+{
+	const char *next;
+	int rc;
+
+	if (settings_name_steq(name, "action_id", &next) && !next) {
+		if (len != sizeof(hb_cfg.action_id)) {
+			return -EINVAL;
+		}
+
+		rc = read_cb(cb_arg, &hb_cfg.action_id, sizeof(hb_cfg.action_id));
+		LOG_DBG("<%s> = %d", "hawkbit/action_id", hb_cfg.action_id);
+		if (rc >= 0) {
+			return 0;
+		}
+
+		return rc;
+	}
+
+
+	return -ENOENT;
+}
+
+static int hawkbit_settings_export(int (*cb)(const char *name, const void *value, size_t val_len))
+{
+	LOG_DBG("export hawkbit settings");
+	(void)cb("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
+	return 0;
+}
+
+SETTINGS_STATIC_HANDLER_DEFINE(hawkbit, "hawkbit", NULL, hawkbit_settings_set, NULL,
+			       hawkbit_settings_export);
 
 static bool start_http_client(void)
 {
@@ -339,8 +369,9 @@ static const char *hawkbit_status_execution(enum hawkbit_status_exec e)
 static int hawkbit_device_acid_update(int32_t new_value)
 {
 	int ret;
+	hb_cfg.action_id = new_value;
 
-	ret = nvs_write(&fs, ADDRESS_ID, &new_value, sizeof(new_value));
+	ret = settings_save_one("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
 	if (ret < 0) {
 		LOG_ERR("Failed to write device id: %d", ret);
 		return -EIO;
@@ -569,34 +600,12 @@ static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 int hawkbit_init(void)
 {
 	bool image_ok;
-	int ret = 0, rc = 0;
-	struct flash_pages_info info;
-	int32_t action_id;
+	int ret = 0;
 
-	fs.flash_device = STORAGE_DEV;
-	if (!device_is_ready(fs.flash_device)) {
-		LOG_ERR("Flash device not ready");
-		return -ENODEV;
-	}
+	settings_subsys_init();
+	settings_load_subtree("hawkbit");
 
-	fs.offset = STORAGE_OFFSET;
-	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
-	if (rc) {
-		LOG_ERR("Failed to get storage page info: %d", rc);
-		return -EIO;
-	}
-
-	fs.sector_size = info.size;
-	fs.sector_count = 3U;
-
-	rc = nvs_mount(&fs);
-	if (rc) {
-		LOG_ERR("Failed to mount storage flash: %d", rc);
-		return rc;
-	}
-
-	rc = nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
-	LOG_DBG("Current action_id: %d", action_id);
+	LOG_DBG("Current action_id: %d", hb_cfg.action_id);
 
 	image_ok = boot_is_img_confirmed();
 	LOG_INF("Current image is%s confirmed", image_ok ? "" : " not");
@@ -1114,9 +1123,7 @@ enum hawkbit_response hawkbit_probe(void)
 		goto cleanup;
 	}
 
-	nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
-
-	if (action_id == (int32_t)hb_context.json_action_id) {
+	if (hb_cfg.action_id == (int32_t)hb_context.json_action_id) {
 		LOG_INF("Preventing repeated attempt to install %d", hb_context.json_action_id);
 		hb_context.dl.http_content_size = 0;
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
