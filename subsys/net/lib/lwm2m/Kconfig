@@ -378,7 +378,7 @@ config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 	default 3
 	help
 	  Maximum number of CoAP block contexts needed to split messages into blocks for
-	  sending. This limits the numer of messages that need block transfer that can be
+	  sending. This limits the number of messages that need block transfer that can be
 	  handled at the same time.
 
 config LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS

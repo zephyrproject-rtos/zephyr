@@ -97,7 +97,7 @@ struct lwm2m_init_func {
  *
  * @param[in] msg lwm2m message to signal for which resource the write access should checked
  * @param[in] obj_inst Engine object instance to signal which object the resource belongs to
- * @param[out] obj_field Engine obejct field buffer pointer to store the field being checked
+ * @param[out] obj_field Engine object field buffer pointer to store the field being checked
  * @return 0 for successful validation and negative in all other cases
  */
 int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,

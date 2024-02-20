@@ -62,7 +62,7 @@ void access_control_remove(uint16_t obj_id, uint16_t obj_inst_id);
  * @brief Removes the access control instance that contains the access rights concerning
  * the object with object id @p obj_id.
  *
- * @param obj_id object id of the object gettting removed.
+ * @param obj_id object id of the object getting removed.
  */
 void access_control_remove_obj(uint16_t obj_id);
 
