@@ -7,9 +7,9 @@ cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-if(("${BOARD}" STREQUAL "mimxrt1170_evkb_cm4") OR
-  ("${BOARD}" STREQUAL "mimxrt1170_evk_cm4") OR
-  ("${BOARD}" STREQUAL "mimxrt1160_evk_cm4") OR
+if(("${BOARD}" STREQUAL "mimxrt1170_evkb") OR
+  ("${BOARD}" STREQUAL "mimxrt1170_evk") OR
+  ("${BOARD}" STREQUAL "mimxrt1160_evk") OR
   ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu1"))
   message(STATUS "${BOARD} compile as remote in this sample")
 else()

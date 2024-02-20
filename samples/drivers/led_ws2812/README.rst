@@ -108,7 +108,6 @@ I2S driver:
 SPI driver:
 
 - mimxrt1050_evk
-- mimxrt1050_evk_qspi
 - nrf52dk/nrf52832
 - nucleo_f070rb
 - nucleo_g071rb

@@ -117,7 +117,7 @@ Sample can be built and executed for the MIMXRT685-EVK as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: mimxrt685_evk_cm33
+   :board: mimxrt685_evk
    :goals: build flash
    :compact:
 

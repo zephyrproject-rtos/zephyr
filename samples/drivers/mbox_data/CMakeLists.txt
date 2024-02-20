@@ -9,9 +9,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../remote/zephyr)
 
-if(("${BOARD}" STREQUAL "mimxrt1170_evkb_cm7") OR
-   ("${BOARD}" STREQUAL "mimxrt1170_evk_cm7") OR
-   ("${BOARD}" STREQUAL "mimxrt1160_evk_cm7") OR
+if(("${BOARD}" STREQUAL "mimxrt1170_evkb") OR
+   ("${BOARD}" STREQUAL "mimxrt1170_evk") OR
+   ("${BOARD}" STREQUAL "mimxrt1160_evk") OR
    ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu0"))
   message(STATUS "${BOARD} compile as Main in this sample")
 else()
