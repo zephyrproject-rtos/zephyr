@@ -14,7 +14,7 @@ if(("${BOARD}" STREQUAL "nrf5340dk") OR
   ("${BOARD}" STREQUAL "mimxrt1170_evkb") OR
   ("${BOARD}" STREQUAL "mimxrt1170_evk") OR
   ("${BOARD}" STREQUAL "mimxrt1160_evk") OR
-  ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu1") OR
+  ("${BOARD}" STREQUAL "lpcxpresso55s69") OR
   ("${BOARD}" STREQUAL "adp_xc7k"))
   message(STATUS "${BOARD} compile as remote in this sample")
 else()
