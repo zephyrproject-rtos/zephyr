@@ -1,0 +1,17 @@
+# Silicon Labs EFR32BG27 (Blue Gecko) MCU configuration options
+
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32BG27
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 66
+
+config PM
+	select COUNTER
+
+rsource "Kconfig.defconfig.efr32bg27"
+
+endif # SOC_SERIES_EFR32BG27
