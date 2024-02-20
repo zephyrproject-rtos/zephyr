@@ -5,9 +5,6 @@
 
 if BOARD_EFR32XG24_DK2601B
 
-config BOARD
-	default "efr32xg24_dk2601b"
-
 config CMU_HFXO_FREQ
 	default 40000000
 
