@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dfu/mcuboot.h>
@@ -78,14 +79,84 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv)
 	shell_fprintf(sh, SHELL_NORMAL, "Unique device id: %s\n", device_id);
 	shell_fprintf(sh, SHELL_NORMAL, "Firmware Version: %s\n",
 		      firmware_version);
+	shell_fprintf(sh, SHELL_NORMAL, "Server Address: %s\n",
+		      hawkbit_get_server_addr());
+	shell_fprintf(sh, SHELL_NORMAL, "Server Port: %d\n",
+		      hawkbit_get_server_port());
 
 	return 0;
 }
 
+static int cmd_init(const struct shell *sh, size_t argc, char *argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_fprintf(sh, SHELL_INFO, "Init Hawkbit ...\n");
+
+	hawkbit_init();
+
+	return 0;
+}
+
+#ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
+
+static int cmd_set_addr(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc < 2) {
+		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
+		return -EINVAL;
+	}
+
+	hawkbit_set_server_addr(argv[1]);
+
+	return 0;
+}
+
+static int cmd_set_port(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc < 2) {
+		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
+		return -EINVAL;
+	}
+
+	hawkbit_set_server_port(atoi(argv[1]));
+
+	return 0;
+}
+
+#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
+static int cmd_set_token(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc < 2) {
+		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
+		return -EINVAL;
+	}
+
+	hawkbit_set_ddi_security_token(argv[1]);
+
+	return 0;
+}
+#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_hawkbit_set,
+	SHELL_CMD(addr, NULL, "Set Hawkbit server address", cmd_set_addr),
+	SHELL_CMD(port, NULL, "Set Hawkbit server port", cmd_set_port),
+#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
+	SHELL_CMD(ddi_token, NULL, "Set DDI Security token", cmd_set_token),
+#endif
+	SHELL_SUBCMD_SET_END);
+#endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_hawkbit,
 	SHELL_CMD(info, NULL, "Dump Hawkbit information", cmd_info),
+	SHELL_CMD(init, NULL, "Initialize Hawkbit", cmd_init),
 	SHELL_CMD(run, NULL, "Trigger an Hawkbit update run", cmd_run),
+#ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
+	SHELL_CMD(set, &sub_hawkbit_set, "set settings", NULL),
+#endif
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(hawkbit, &sub_hawkbit, "Hawkbit commands", NULL);
