@@ -638,9 +638,9 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
  * Radio peripheral. The EVENTS_CTEPRESENT event is wired to cancel EVENTS_COMPARE setup for
  * handling delayed EVENTS_PHYEND.
  *
- * Disable of the group of PPIs responsbile for handling of software based switch is done by
+ * Disable of the group of PPIs responsible for handling of software based switch is done by
  * timeout of regular EVENTS_PHYEND event. The EVENTS_PHYEND delay is short enough (16 us) that
- * the same EVENT COMPARE may be used to trigger disable task for the sotfware switch group.
+ * the same EVENT COMPARE may be used to trigger disable task for the software switch group.
  * In case the EVENTS_COMPARE for delayed EVENTS_PHYEND event timeouts, the group will be disabled
  * within the Radio TX rampup period.
  *

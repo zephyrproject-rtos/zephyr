@@ -858,7 +858,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 				 * report with valid packet_status if there were free nodes for
 				 * that. Or report insufficient resources for IQ data report.
 				 *
-				 * Retunred value is not checked because it does not matter if there
+				 * Returned value is not checked because it does not matter if there
 				 * is a IQ report to be send towards ULL. There is always periodic
 				 * sync report to be send.
 				 */
@@ -1146,8 +1146,8 @@ isr_rx_aux_chain_done:
 #endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 		} else {
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-			/* Report insufficient resurces for IQ data report and relese additional
-			 * noder_rx_iq_data stored in lll_sync object, to vaoid buffers leakage.
+			/* Report insufficient resources for IQ data report and release additional
+			 * noder_rx_iq_data stored in lll_sync object, to avoid buffers leakage.
 			 */
 			iq_report_incomplete_create_put(lll);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
@@ -1281,7 +1281,7 @@ static void iq_report_incomplete_create(struct lll_sync *lll, struct node_rx_iq_
 	 * may be invalid in case of insufficient resources.
 	 */
 	iq_report->rssi_ant_id = radio_df_pdu_antenna_switch_pattern_get();
-	/* Accodring to BT 5.3, Vol 4, Part E, section 7.7.65.21 below
+	/* According to BT 5.3, Vol 4, Part E, section 7.7.65.21 below
 	 * fields have invalid values in case of insufficient resources.
 	 */
 	iq_report->cte_info =

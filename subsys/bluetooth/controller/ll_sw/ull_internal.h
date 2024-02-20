@@ -16,7 +16,7 @@
 #endif /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
 
 /**
- *  User deferance of CPR Anchor Point Move
+ *  User deference of CPR Anchor Point Move
  */
 #if !defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 #define DEFER_APM_CHECK(x, y, z) (false)

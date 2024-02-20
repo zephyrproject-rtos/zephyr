@@ -3131,7 +3131,7 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
-	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing
+	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */
 	if (ull_df_conn_cfg_is_not_enabled(&lll->df_rx_cfg)) {
@@ -5257,7 +5257,7 @@ static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct ne
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
-	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing
+	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporting
 	 * IQ samples after the functionality was disabled.
 	 */
 	if (ull_df_conn_cfg_is_not_enabled(&lll->df_rx_cfg)) {
@@ -5768,7 +5768,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		sdu_frag_tx.iso_sdu_length = 0;
 	}
 
-	/* Packet boudary flags should be bitwise identical to the SDU state
+	/* Packet boundary flags should be bitwise identical to the SDU state
 	 * 0b00 BT_ISO_START
 	 * 0b01 BT_ISO_CONT
 	 * 0b10 BT_ISO_SINGLE
@@ -7354,7 +7354,7 @@ no_ext_hdr:
 	/* Clear the data status bits */
 	evt_type &= ~(BIT_MASK(2) << 5);
 
-	/* Allocate, append as buf fragement and construct the scan response
+	/* Allocate, append as buf fragment and construct the scan response
 	 * event.
 	 */
 	evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);

@@ -583,7 +583,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		slot_us = (pdu_spacing * lll->nse * num_bis) + ctrl_spacing;
 
 	} else if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
-		/* Time reservation omitting PTC subevents in sequetial
+		/* Time reservation omitting PTC subevents in sequential
 		 * packing.
 		 */
 		slot_us = pdu_spacing * ((lll->nse * num_bis) - lll->ptc);
