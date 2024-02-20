@@ -90,7 +90,7 @@ extern uint32_t SystemCoreClock;
 /* Main stack pointer */
 extern char z_main_stack[];
 
-#ifdef CONFIG_NXP_IMX_RT5XX_BOOT_HEADER
+#ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
 extern char _flash_used[];
 
 extern void z_arm_reset(void);
@@ -133,7 +133,7 @@ __imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
 	z_arm_exc_spurious,
 #endif
 };
-#endif /* CONFIG_NXP_IMX_RT5XX_BOOT_HEADER */
+#endif /* CONFIG_NXP_IMXRT_BOOT_HEADER */
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 
@@ -197,7 +197,7 @@ static void usb_device_clock_init(void)
 
 void z_arm_platform_init(void)
 {
-#ifndef CONFIG_NXP_IMX_RT5XX_BOOT_HEADER
+#ifndef CONFIG_NXP_IMXRT_BOOT_HEADER
 	/*
 	 * If boot did not proceed using a boot header, we should not assume
 	 * the core is in reset state. Disable the MPU and correctly
@@ -211,7 +211,7 @@ void z_arm_platform_init(void)
 	 MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
 	 /* Set stack pointer */
 	 __set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
-#endif /* !CONFIG_NXP_IMX_RT5XX_BOOT_HEADER */
+#endif /* !CONFIG_NXP_IMXRT_BOOT_HEADER */
 	/* This is provided by the SDK */
 	SystemInit();
 }
