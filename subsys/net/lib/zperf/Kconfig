@@ -6,6 +6,7 @@ menuconfig NET_ZPERF
 	bool "zperf shell utility"
 	select NET_CONTEXT_RCVTIMEO if NET_NATIVE_UDP
 	select NET_SOCKETS_SERVICE
+	select NET_SOCKETS
 	help
 	  This option enables zperf shell utility, which allows to generate
 	  network traffic and evaluate network bandwidth.
