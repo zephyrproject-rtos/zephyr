@@ -73,6 +73,8 @@ source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"
 
+source "drivers/spi/Kconfig.mcux_ecspi"
+
 source "drivers/spi/Kconfig.mcux_flexcomm"
 
 source "drivers/spi/Kconfig.mcux_flexio"
