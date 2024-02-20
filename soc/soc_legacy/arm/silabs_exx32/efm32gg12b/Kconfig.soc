@@ -1,7 +1,0 @@
-# EFM32GG12B (Giant Gecko) MCU line
-# Copyright (c) 2023 Antmicro <www.antmicro.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_PART_NUMBER_EFM32GG12B810F1024GM64
-	bool
-	depends on SOC_SERIES_EFM32GG12B

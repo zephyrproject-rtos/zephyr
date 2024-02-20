@@ -1,0 +1,22 @@
+# Silicon Labs EFR32MG24 (Mighty Gecko) MCU configuration options
+
+# Copyright (c) 2021 Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32MG24
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 75
+
+config PM
+	default n
+	select COUNTER
+	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
+
+choice PM_POLICY
+	default PM_POLICY_DEFAULT
+	depends on PM
+endchoice
+
+endif # SOC_SERIES_EFR32MG24
