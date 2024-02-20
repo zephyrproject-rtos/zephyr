@@ -16,7 +16,7 @@ tests:
       - rv32m1_vega/openisa_rv32m1/ri5cy
       - twr_ke18f
       - lpcxpresso55s16
-      - mimxrt685_evk_cm33
+      - mimxrt685_evk
       - frdm_k22f
       - mimxrt1024_evk
       - mimxrt595_evk_cm33
@@ -34,7 +34,7 @@ tests:
       - bbc_microbit
       - lpcxpresso55s69_cpu0
       - reel_board
-      - mimxrt685_evk_cm33
+      - mimxrt685_evk
       - mimxrt595_evk_cm33
     integration_platforms:
       - bbc_microbit

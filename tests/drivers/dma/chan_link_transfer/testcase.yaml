@@ -11,8 +11,8 @@ tests:
       - mimxrt1050_evk
       - mimxrt1060_evk
       - mimxrt1064_evk
-      - mimxrt1160_evk_cm7
-      - mimxrt1170_evk_cm7
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1024_evk
       - lpcxpresso55s69_cpu0
       - lpcxpresso55s36
