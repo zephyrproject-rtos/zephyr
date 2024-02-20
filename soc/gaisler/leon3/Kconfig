@@ -4,3 +4,5 @@
 config SOC_LEON3
 	select SPARC
 	select SOC_SPARC_LEON
+
+rsource "../Kconfig"

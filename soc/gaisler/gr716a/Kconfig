@@ -5,3 +5,5 @@ config SOC_GR716A
 	select SPARC
 	select SOC_SPARC_LEON
 	select CPU_HAS_FPU
+
+rsource "../Kconfig"
