@@ -74,8 +74,8 @@ features:
 
 The default configuration for each core can be found in the defconfig files:
 
-	``boards/arm/lpcxpresso54114/lpcxpresso54114_m4_defconfig``
-	``boards/arm/lpcxpresso54114/lpcxpresso54114_m0_defconfig``
+	`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m4_defconfig`
+	`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m0_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -170,7 +170,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso54114_m4
+   :board: lpcxpresso54114/lpc54114/m4
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW4 button), and you should
@@ -188,7 +188,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso54114_m4
+   :board: lpcxpresso54114/lpc54114/m4
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
