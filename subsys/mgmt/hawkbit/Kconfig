@@ -50,6 +50,11 @@ config HAWKBIT_PORT
 	help
 	  Configure the hawkbit port number.
 
+config HAWKBIT_SET_SETTINGS_RUNTIME
+	bool "Set hawkbit settings at runtime"
+	help
+	  Enable to set hawkbit settings at runtime.
+
 choice HAWKBIT_DDI_SECURITY
 	prompt "hawkBit DDI API authentication modes"
 	default HAWKBIT_DDI_NO_SECURITY
