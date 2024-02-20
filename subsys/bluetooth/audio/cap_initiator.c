@@ -98,7 +98,7 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 			const uint8_t ccid = data->data[i];
 
 			if (bt_ccid_find_attr(ccid) == NULL) {
-				LOG_DBG("Unknown characterstic for CCID 0x%02X", ccid);
+				LOG_DBG("Unknown characteristic for CCID 0x%02X", ccid);
 				metadata_param->valid = false;
 
 				return false;
