@@ -26,5 +26,14 @@
 			regulator-initial-mode = <1>;
 			regulator-active-discharge = <1>;
 		};
+
+		reg4: REG4 {
+			regulator-boot-off;
+		};
+
+		reg5: REG5 {
+			regulator-boot-off;
+			fake-is-enabled-in-hardware;
+		};
 	};
 };
