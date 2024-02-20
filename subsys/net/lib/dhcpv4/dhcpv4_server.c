@@ -953,7 +953,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 
 		memcpy(&giaddr, msg->giaddr, sizeof(giaddr));
 		if (!net_ipv4_is_addr_unspecified(&giaddr)) {
-			/* Only addresses in local subnet supproted for now. */
+			/* Only addresses in local subnet supported for now. */
 			return;
 		}
 
@@ -1525,7 +1525,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 	}
 
 	if (slot < 0) {
-		LOG_ERR("No free DHCPv4 server intance.");
+		LOG_ERR("No free DHCPv4 server instance.");
 		ret = -ENOMEM;
 		goto error;
 	}

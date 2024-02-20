@@ -1090,7 +1090,7 @@ enum ptp_port_event ptp_port_event_gen(struct ptp_port *port, int idx)
 	case PTP_MSG_PDELAY_RESP:
 		__fallthrough;
 	case PTP_MSG_PDELAY_RESP_FOLLOW_UP:
-		/* P2P delay machanism not supported */
+		/* P2P delay mechanism not supported */
 		break;
 	case PTP_MSG_FOLLOW_UP:
 		port_follow_up_msg_process(port, msg);

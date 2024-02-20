@@ -32,7 +32,7 @@ extern "C" {
 int ptp_btca_ds_cmp(const struct ptp_dataset *a, const struct ptp_dataset *b);
 
 /**
- * @brief Function performing Best TimeTransmitter Clock state decission algorithm.
+ * @brief Function performing Best TimeTransmitter Clock state decision algorithm.
  *
  * @param[in] port Pointer to a PTP Port.
  *

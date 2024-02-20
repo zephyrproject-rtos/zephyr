@@ -42,7 +42,7 @@ struct ptp_default_ds {
 	uint8_t		       priority2;
 	/** ID number of the instance in a domain. */
 	uint8_t		       domain;
-	/** sdoId attrubute. */
+	/** sdoId attribute. */
 	uint16_t	       sdo_id: 12;
 	/** Flag indicating timeReceiver mode. */
 	bool		       time_receiver_only;
@@ -89,7 +89,7 @@ struct ptp_parent_ds {
 	 * of obsreved_parent_offset_scaled_log_variance or obsreved_parent_clk_phase_change_rate.
 	 */
 	bool		       stats;
-	/** Estimate of the variance of the phase offest. */
+	/** Estimate of the variance of the phase offset. */
 	uint16_t	       obsreved_parent_offset_scaled_log_variance;
 	/** Estimate of the phase change rate. */
 	int32_t		       obsreved_parent_clk_phase_change_rate;
@@ -127,7 +127,7 @@ struct ptp_time_prop_ds {
 struct ptp_nvs_ds {
 	/** Reset non-volatile storage. */
 	bool reset;
-	/** Save current values of applicable dynamic or cofigurable data set members
+	/** Save current values of applicable dynamic or configurable data set members
 	 * to non-volatile storage.
 	 */
 	bool save;

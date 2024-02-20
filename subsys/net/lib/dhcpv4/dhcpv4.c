@@ -200,7 +200,7 @@ static bool dhcpv4_add_vendor_class_id(struct net_pkt *pkt,
 }
 #endif
 
-/* Add DHCPv4 Options end, rest of the message can be padded wit zeros */
+/* Add DHCPv4 Options end, rest of the message can be padded with zeros */
 static inline bool dhcpv4_add_end(struct net_pkt *pkt)
 {
 	if (net_pkt_write_u8(pkt, DHCPV4_OPTIONS_END)) {

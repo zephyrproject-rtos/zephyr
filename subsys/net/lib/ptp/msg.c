@@ -272,13 +272,13 @@ struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 		/* Packet contain Ethernet header at the beginning. */
 		struct net_buf *buf;
 
-		/* remove packet temporarly. */
+		/* remove packet temporarily. */
 		buf = pkt->buffer;
 		pkt->buffer = buf->frags;
 
 		hdr = net_udp_get_hdr(pkt, NULL);
 
-		/* insert back temporarly femoved frag. */
+		/* insert back temporarily femoved frag. */
 		net_pkt_frag_insert(pkt, buf);
 	} else {
 		hdr = net_udp_get_hdr(pkt, NULL);

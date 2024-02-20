@@ -74,7 +74,7 @@ struct ptp_port_addr {
 } __packed;
 
 /**
- * @brief Structure for PTP Clock quality metrices.
+ * @brief Structure for PTP Clock quality metrics.
  * @note 5.3.7 - quality of a clock
  */
 struct ptp_clk_quality {
