@@ -22,8 +22,8 @@ Building, Flashing and Running
 ******************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/mimxrt595_evk_cm33/system_off
-   :board: mimxrt595_evk_cm33
+   :zephyr-app: samples/boards/mimxrt595_evk/system_off
+   :board: mimxrt595_evk/mimxrt595s/cm33
    :goals: build flash
    :compact:
 

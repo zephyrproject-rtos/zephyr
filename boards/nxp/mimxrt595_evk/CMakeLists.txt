@@ -4,12 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_library()
-zephyr_library_sources(board.c)
-zephyr_library_include_directories(.)
+if(CONFIG_BOARD_MIMXRT595_EVK_MIMXRT595S_CM33)
+  zephyr_library()
+  zephyr_library_sources(board.c)
+  zephyr_library_include_directories(.)
+endif()
 
-if(CONFIG_NXP_IMX_RT5XX_BOOT_HEADER)
-  if(NOT DEFINED CONFIG_BOARD_MIMXRT595_EVK)
+if(CONFIG_NXP_IMXRT_BOOT_HEADER)
+  if(NOT DEFINED CONFIG_BOARD_MIMXRT595_EVK_MIMXRT595S_CM33)
     message(WARNING "It appears you are using the board definition for "
      "the MIMXRT595-EVK, but targeting a custom board. You may need to "
      "update your flash configuration block data")

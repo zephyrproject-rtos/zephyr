@@ -8,6 +8,6 @@ sample:
 common:
   tags: power
 tests:
-  sample.boards.mimxrt595_evk_cm33.system_off:
+  sample.boards.mimxrt595_evk.system_off:
     build_only: true
-    platform_allow: mimxrt595_evk_cm33
+    platform_allow: mimxrt595_evk/mimxrt595s/cm33

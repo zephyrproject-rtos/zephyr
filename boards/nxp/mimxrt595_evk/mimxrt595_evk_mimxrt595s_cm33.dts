@@ -9,7 +9,7 @@
 #include <nxp/nxp_rt5xx.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
-#include "mimxrt595_evk_cm33-pinctrl.dtsi"
+#include "mimxrt595_evk_mimxrt595s_cm33-pinctrl.dtsi"
 
 
 / {

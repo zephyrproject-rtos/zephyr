@@ -1,11 +1,18 @@
+# Copyright 2022, NXP
 # Copyright (c) 2023 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INIT_PRIORITY
+	int "Board initialization priority"
+	default 45
+	help
+	  Board initialization priority.
 
 DT_ADSP_RESET_MEM := $(dt_nodelabel_path,adsp_reset)
 DT_ADSP_DATA_MEM := $(dt_nodelabel_path,adsp_data)
 DT_ADSP_TEXT_MEM := $(dt_nodelabel_path,adsp_text)
 
-if BOARD_NXP_ADSP_RT595
+if BOARD_MIMXRT595_EVK_MIMXRT595S_F1
 
 config RT595_ADSP_STACK_SIZE
 	hex "Boot time stack size"
@@ -38,4 +45,4 @@ config RT595_ADSP_TEXT_MEM_SIZE
 	hex
 	default $(dt_node_reg_size_hex,$(DT_ADSP_TEXT_MEM))
 
-endif # BOARD_NXP_ADSP_RT595
+endif # BOARD_MIMXRT595_EVK_RT595_F1

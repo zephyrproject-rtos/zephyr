@@ -1,5 +1,5 @@
-identifier: nxp_adsp_rt595
-name: i.MXRT595 DSP
+identifier: mimxrt595_evk/mimxrt595s/f1
+name: i.MXRT595 Fusion F1 DSP
 type: mcu
 arch: xtensa
 toolchain:
