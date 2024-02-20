@@ -73,7 +73,7 @@ struct ptp_foreign_tt_clock {
 	struct ptp_port_id port_id;
 	/** List of messages received from Foreign timeTransmitter. */
 	struct k_fifo	   messages;
-	/** Number of messeges received within a FOREIGN_TIME_TRANSMITTER_TIME_WINDOW. */
+	/** Number of messages received within a FOREIGN_TIME_TRANSMITTER_TIME_WINDOW. */
 	uint16_t	   messages_count;
 	/** Generic dataset of the Foreign timeTransmitter for BTCA. */
 	struct ptp_dataset dataset;
@@ -200,7 +200,7 @@ void ptp_clock_pollfd_invalidate(void);
 /**
  * @brief Function signalling timoeout of one of PTP Ports timer
  * to the PTP Clock's file descriptor. The function should be called only from
- * the contex of timer expiration function.
+ * the context of timer expiration function.
  */
 void ptp_clock_signal_timeout(void);
 

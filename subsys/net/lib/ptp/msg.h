@@ -235,7 +235,7 @@ struct ptp_management_msg {
 	 * of the requesting message.
 	 */
 	uint8_t		   starting_boundary_hops;
-	/** Number of succesive retransmissions of the message
+	/** Number of successive retransmissions of the message
 	 * by Boundary Clocks receiving message.
 	 */
 	uint8_t		   boundary_hops;
@@ -292,7 +292,7 @@ struct ptp_msg {
 		struct net_ptp_time host;
 
 	} timestamp;
-	/** Refference counter. */
+	/** Reference counter. */
 	atomic_t ref;
 	/** List object. */
 	sys_snode_t node;
