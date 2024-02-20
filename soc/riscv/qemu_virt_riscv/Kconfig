@@ -1,8 +1,7 @@
-# Copyright (c) 2020 Cobham Gaisler AB
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_RISCV_VIRT
-	bool "QEMU RISC-V VirtIO Board"
+config SOC_FAMILY_QEMU_VIRT_RISCV
 	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
 	select RISCV_ISA_EXT_M
@@ -11,3 +10,9 @@ config SOC_RISCV_VIRT
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
+
+if SOC_FAMILY_QEMU_VIRT_RISCV
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_QEMU_VIRT_RISCV
