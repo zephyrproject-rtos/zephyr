@@ -377,6 +377,24 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 					/ (CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
 	} break;
 #endif
+
+#ifdef CONFIG_SPI_MCUX_ECSPI
+	case IMX_CCM_ECSPI1_CLK:
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+			(CLOCK_GetRootPreDivider(kCLOCK_RootEcspi1)) /
+			(CLOCK_GetRootPostDivider(kCLOCK_RootEcspi1));
+		break;
+	case IMX_CCM_ECSPI2_CLK:
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+			(CLOCK_GetRootPreDivider(kCLOCK_RootEcspi2)) /
+			(CLOCK_GetRootPostDivider(kCLOCK_RootEcspi2));
+		break;
+	case IMX_CCM_ECSPI3_CLK:
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+			(CLOCK_GetRootPreDivider(kCLOCK_RootEcspi3)) /
+			(CLOCK_GetRootPostDivider(kCLOCK_RootEcspi3));
+		break;
+#endif /* CONFIG_SPI_MCUX_ECSPI */
 	}
 
 	return 0;
