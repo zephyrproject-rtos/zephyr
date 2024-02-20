@@ -1,9 +1,8 @@
-# LPCXpresso55S16 board
-
 # Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright 2024 NXP
+#
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_LPCXPRESSO55S16
-	bool "NXP LPCXPRESSO-55S16"
-	depends on SOC_SERIES_LPC55XXX
+	select SOC_LPC55S16
 	select SOC_PART_NUMBER_LPC55S16JBD100
