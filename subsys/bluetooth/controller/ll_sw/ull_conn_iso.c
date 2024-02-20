@@ -1612,7 +1612,7 @@ void ull_conn_iso_transmit_test_cig_interval(uint16_t handle, uint32_t ticks_at_
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		LL_ASSERT(cis);
 
-		if (!cis->hdr.test_mode.tx_enabled || cis->lll.handle == LLL_HANDLE_INVALID) {
+		if (!cis->hdr.test_mode.tx.enabled || cis->lll.handle == LLL_HANDLE_INVALID) {
 			continue;
 		}
 
@@ -1623,13 +1623,13 @@ void ull_conn_iso_transmit_test_cig_interval(uint16_t handle, uint32_t ticks_at_
 		sdu_counter = DIV_ROUND_UP((cis->lll.event_count + 1U) * iso_interval,
 					       sdu_interval);
 
-		if (cis->hdr.test_mode.tx_sdu_counter == 0U) {
+		if (cis->hdr.test_mode.tx.sdu_counter == 0U) {
 			/* First ISO event. Align SDU counter for next event */
-			cis->hdr.test_mode.tx_sdu_counter = sdu_counter;
+			cis->hdr.test_mode.tx.sdu_counter = sdu_counter;
 			tx_sdu_count = 0U;
 		} else {
 			/* Calculate number of SDUs to produce for next ISO event */
-			tx_sdu_count = sdu_counter - cis->hdr.test_mode.tx_sdu_counter;
+			tx_sdu_count = sdu_counter - cis->hdr.test_mode.tx.sdu_counter;
 		}
 
 		/* Now process all SDUs due for next ISO event */
