@@ -55,6 +55,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          filter: tree:0
 
       - name: Environment Setup
         run: |

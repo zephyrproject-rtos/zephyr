@@ -33,6 +33,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
+        filter: tree:0
     - name: Check if Documentation related files changed
       uses: tj-actions/changed-files@v42
       id: check-doc-files
@@ -67,6 +68,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
+        filter: tree:0
 
     - name: Rebase
       if: github.event_name == 'pull_request'

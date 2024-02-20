@@ -34,6 +34,7 @@ jobs:
         with:
           path: zephyr
           fetch-depth: 0
+          filter: tree:0
 
       - name: Rebase
         if: github.event_name == 'pull_request'
