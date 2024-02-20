@@ -240,6 +240,14 @@ struct scfg_reg {
 #define NPCX_LV_GPIO_CTL(base, n) \
 	(*(volatile uint8_t *)(base + NPCX_LV_GPIO_CTL_OFFSET(n)))
 
+#define NPCX_JEN_CTL1_OFFSET 0x120
+#define NPCX_JEN_CTL1(base) (*(volatile uint8_t *)(base + (NPCX_JEN_CTL1_OFFSET)))
+
+#define NPCX_JEN_CTL1_JEN_EN       FIELD(0, 4)
+#define NPCX_JEN_CTL1_JEN_HEN      FIELD(4, 4)
+#define NPCX_JEN_CTL1_JEN_ENABLE   0x9
+#define NPCX_JEN_CTL1_JEN_DISABLE  0x6
+
 /* SCFG register fields */
 #define NPCX_DEVCNT_F_SPI_TRIS                6
 #define NPCX_DEVCNT_HIF_TYP_SEL_FIELD         FIELD(2, 2)
