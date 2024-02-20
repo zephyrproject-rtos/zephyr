@@ -5,9 +5,6 @@
 
 if BOARD_EFR32MG_SLTB004A
 
-config BOARD
-	default "efr32mg_sltb004a"
-
 config CMU_HFXO_FREQ
 	default 40000000
 
