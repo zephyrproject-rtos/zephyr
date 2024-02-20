@@ -71,6 +71,8 @@ static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
 static struct ll_sync_iso_set ll_sync_iso[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 static struct lll_sync_iso_stream
 			stream_pool[CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT];
+static struct ll_iso_rx_test_mode
+			test_mode[CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT];
 static void *stream_free;
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
@@ -182,6 +184,8 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		stream->big_handle = big_handle;
 		stream->bis_index = bis[i];
 		stream->dp = NULL;
+		stream->test_mode = &test_mode[i];
+		memset(stream->test_mode, 0, sizeof(struct ll_iso_rx_test_mode));
 		lll->stream_handle[i] = sync_iso_stream_handle_get(stream);
 	}
 
@@ -774,6 +778,18 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 			  ticker_stop_op_cb, (void *)sync_iso);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
+}
+
+uint32_t ull_big_sync_delay(const struct lll_sync_iso *lll_iso)
+{
+	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+	 */
+	return (lll_iso->num_bis - 1) * lll_iso->bis_spacing +
+		(lll_iso->nse - 1) * lll_iso->sub_interval +
+		BYTES2US(PDU_OVERHEAD_SIZE(lll_iso->phy) +
+			lll_iso->max_pdu + (lll_iso->enc ? 4 : 0),
+			lll_iso->phy);
 }
 
 static int init_reset(void)
