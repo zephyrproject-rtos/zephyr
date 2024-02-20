@@ -614,7 +614,7 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 	}
 
 
-	/* NSEC_PER_SEC is between 2^30 and 2^31, seconds is less thant 2^16,
+	/* NSEC_PER_SEC is between 2^30 and 2^31, seconds is less than 2^16,
 	 * thus the computation will be less than 2^63.
 	 */
 	interval->low =	(seconds * (uint64_t)NSEC_PER_SEC) << 16;
