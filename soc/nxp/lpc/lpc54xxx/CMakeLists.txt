@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, NXP
+# Copyright (c) 2017, 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -19,5 +19,7 @@ zephyr_library_include_directories(
 if(NOT DEFINED CONFIG_LPC54XXX_SRAM2_CLOCK)
 zephyr_compile_definitions(DONT_ENABLE_DISABLED_RAMBANKS=1)
 endif()
+
+zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
