@@ -1,0 +1,5 @@
+# Copyright 2020, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMXRT685_EVK
+	select SOC_PART_NUMBER_MIMXRT685SFVKB
