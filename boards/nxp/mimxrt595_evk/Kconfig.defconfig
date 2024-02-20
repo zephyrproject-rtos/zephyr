@@ -3,10 +3,7 @@
 # Copyright 2022-2023, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MIMXRT595_EVK
-
-config BOARD
-	default "mimxrt595_evk_cm33"
+if BOARD_MIMXRT595_EVK_MIMXRT595S_CM33
 
 config FLASH_MCUX_FLEXSPI_MX25UM51345G
 	default y if FLASH
@@ -39,4 +36,4 @@ config PM_DEVICE
 config REGULATOR
 	default y if PM || POWEROFF
 
-endif # BOARD_MIMXRT595_EVK
+endif # BOARD_MIMXRT595_EVK_MIMXRT595S_CM33
