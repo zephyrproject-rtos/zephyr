@@ -5,9 +5,6 @@
 
 if BOARD_EFM32HG_SLSTK3400A
 
-config BOARD
-	default "efm32hg_slstk3400a"
-
 config CMU_HFXO_FREQ
 	default 24000000
 
