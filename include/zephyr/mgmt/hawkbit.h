@@ -37,6 +37,18 @@ enum hawkbit_response {
 };
 
 /**
+ * @brief hawkBit configuration structure.
+ *
+ * @details This structure is used to store the hawkBit configuration
+ * settings.
+ */
+struct hawkbit_set_config {
+	char *server_addr;
+	uint16_t server_port;
+	char *auth_token;
+};
+
+/**
  * @brief Init the flash partition
  *
  * @return 0 on success, negative on error.
@@ -62,6 +74,81 @@ void hawkbit_autohandler(void);
  * @return HAWKBIT_DOWNLOAD_ERROR fail while downloading the update package.
  */
 enum hawkbit_response hawkbit_probe(void);
+
+#ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
+
+/**
+ * @brief Set the hawkBit server configuration settings.
+ *
+ * @param set_config Configuration settings to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+int hawkbit_config_server(struct hawkbit_set_config *set_config);
+
+/**
+ * @brief Set the hawkBit server address.
+ *
+ * @param addr_str Server address to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_server_addr(char *addr_str)
+{
+	struct hawkbit_set_config set_config = {
+		.server_addr = addr_str, .server_port = 0, .auth_token = NULL};
+
+	return hawkbit_config_server(&set_config);
+}
+
+/**
+ * @brief Set the hawkBit server port.
+ *
+ * @param port Server port to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_server_port(uint16_t port)
+{
+	struct hawkbit_set_config set_config = {
+		.server_addr = NULL, .server_port = port, .auth_token = NULL};
+
+	return hawkbit_config_server(&set_config);
+}
+
+#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
+
+/**
+ * @brief Set the hawkBit security token.
+ *
+ * @param token Security token to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_ddi_security_token(char *token)
+{
+	struct hawkbit_set_config set_config = {
+		.server_addr = NULL, .server_port = 0, .auth_token = token};
+
+	return hawkbit_config_server(&set_config);
+}
+
+#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
+#endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
+
+/**
+ * @brief Get the hawkBit server address.
+ *
+ * @return Server address.
+ */
+char *hawkbit_get_server_addr(void);
+
+/**
+ * @brief Get the hawkBit server port.
+ *
+ * @return Server port.
+ */
+uint16_t hawkbit_get_server_port(void);
 
 /**
  * @}
