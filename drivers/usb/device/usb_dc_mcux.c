@@ -76,7 +76,7 @@ static void usb_isr_handler(void);
 BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 
 /* Controller ID is for HAL usage */
-#if defined(CONFIG_SOC_SERIES_IMX_RT5XX) || \
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || \
 	defined(CONFIG_SOC_SERIES_IMXRT6XX) || \
 	defined(CONFIG_SOC_LPC55S28) || \
 	defined(CONFIG_SOC_LPC55S16)
