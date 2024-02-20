@@ -1,0 +1,8 @@
+board:
+  name: lpcxpresso55s69
+  vendor: nxp
+  socs:
+  - name: lpc55s69
+    variants:
+    - name: "ns"
+      cpucluster: 'cpu0'
