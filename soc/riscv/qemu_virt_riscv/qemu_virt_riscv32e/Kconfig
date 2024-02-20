@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Cobham Gaisler AB
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_VIRT_RISCV32E
+	select RISCV_ISA_RV32E
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
