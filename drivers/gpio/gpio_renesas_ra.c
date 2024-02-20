@@ -79,7 +79,7 @@ static inline uint32_t gpio_ra_irq_info_event(const struct gpio_ra_irq_info *inf
 	return ((info->flags & RA_ICU_FLAG_EVENT_MASK) >> RA_ICU_FLAG_EVENT_OFFSET);
 }
 
-static void gpio_ra_isr(const struct device *dev, uint32_t port_irq)
+__unused static void gpio_ra_isr(const struct device *dev, uint32_t port_irq)
 {
 	struct gpio_ra_data *data = dev->data;
 	const struct gpio_ra_pin_irq_info *pin_irq = &data->port_irq_info[port_irq];
@@ -414,10 +414,13 @@ static const struct gpio_driver_api gpio_ra_driver_api = {
 
 #define GPIO_RA_INIT(idx)                                                                          \
 	static struct gpio_ra_data gpio_ra_data_##idx = {};                                        \
-	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_DECL_PINS);                        \
-	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_ISR_DECL);                         \
+        COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, interrupt_names),                                   \
+		(DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_DECL_PINS)), ());         \
+        COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, interrupt_names),                                   \
+		(DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_ISR_DECL)), ());          \
 	struct gpio_ra_irq_info gpio_ra_irq_info_##idx[] = {                                       \
-		DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_IRQ_INFO)};                \
+        COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, interrupt_names),                                   \
+		(DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_IRQ_INFO)), ())};    \
 	static struct gpio_ra_config gpio_ra_config_##idx = {                                      \
 		.common = {                                                                        \
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
