@@ -108,13 +108,13 @@ Targets available
 ==================
 
 The default configuration file
-``boards/arm/lpcxpresso55s69/lpcxpresso55s69_cpu0_defconfig``
+``boards/arm/lpcxpresso55s69/lpcxpresso55s69_lpc55s69_cpu0_defconfig``
 only enables the first core.
 CPU0 is the only target that can run standalone.
 
-- *lpcxpresso55s69_cpu0* secure (S) address space for CPU0
-- *lpcxpresso55s69_ns* non-secure (NS) address space for CPU0
-- *lpcxpresso55s69_cpu1* CPU1 target, no security extensions
+- *lpcxpresso55s69/lpc55s69/cpu0* secure (S) address space for CPU0
+- *lpcxpresso55s69/lpc55s69/cpu0/ns* non-secure (NS) address space for CPU0
+- *lpcxpresso55s69/lpc55s69/cpu1* CPU1 target, no security extensions
 
 NS target for CPU0 does not work correctly without a secure image to configure
 the system, then hand execution over to the NS environment. To enable a secure
@@ -326,7 +326,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso55s69_cpu0
+   :board: lpcxpresso55s69/lpc55s69/cpu0
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
