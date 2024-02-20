@@ -168,7 +168,7 @@ uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_
 /* notify adv_set that an aux instance has been created for it */
 void ull_adv_aux_created(struct ll_adv_set *adv);
 
-/* helper to get information whether ADI field is avaialbe in extended advertising PDU */
+/* helper to get information whether ADI field is available in extended advertising PDU */
 static inline bool ull_adv_sync_pdu_had_adi(const struct pdu_adv *pdu)
 {
 	return pdu->adv_ext_ind.ext_hdr.adi;

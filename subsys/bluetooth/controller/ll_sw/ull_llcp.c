@@ -1635,7 +1635,7 @@ static bool pdu_is_valid(struct pdu_data *pdu)
 		}
 	}
 
-	/* consider unsupported and unknows PDUs as valid */
+	/* consider unsupported and unknown PDUs as valid */
 	return true;
 }
 
