@@ -4,6 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EFM32HG_SLSTK3400A
-	bool "SiLabs EFM32HG-SLSTK3400A (Happy Gecko)"
-	depends on SOC_SERIES_EFM32HG
 	select SOC_PART_NUMBER_EFM32HG322F64
