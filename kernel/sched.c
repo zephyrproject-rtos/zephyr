@@ -1653,13 +1653,18 @@ void z_impl_k_wakeup(k_tid_t thread)
 		}
 	}
 
+	k_spinlock_key_t  key = k_spin_lock(&sched_spinlock);
+
 	z_mark_thread_as_not_suspended(thread);
-	z_ready_thread(thread);
 
-	flag_ipi();
+	if (!thread_active_elsewhere(thread)) {
+		ready_thread(thread);
+	}
 
-	if (!arch_is_in_isr()) {
-		z_reschedule_unlocked();
+	if (arch_is_in_isr()) {
+		k_spin_unlock(&sched_spinlock, key);
+	} else {
+		z_reschedule(&sched_spinlock, key);
 	}
 }
 
