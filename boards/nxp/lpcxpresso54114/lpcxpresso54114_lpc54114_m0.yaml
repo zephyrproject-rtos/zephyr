@@ -1,10 +1,10 @@
 #
-# Copyright (c) 2017, NXP
+# Copyright (c) 2017, 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: lpcxpresso54114_m0
+identifier: lpcxpresso54114/lpc54114/m0
 name: NXP LPCXpresso54114 M0
 type: mcu
 arch: arm
