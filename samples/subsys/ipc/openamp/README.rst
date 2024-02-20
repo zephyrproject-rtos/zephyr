@@ -17,16 +17,16 @@ Building the application for lpcxpresso54114_m4
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/openamp
-   :board: lpcxpresso54114_m4
+   :board: lpcxpresso54114/lpc54114/m4
    :goals: debug
    :west-args: --sysbuild
 
-Building the application for lpcxpresso55s69_cpu0
-*************************************************
+Building the application for lpcxpresso55s69/lpc55s69/cpu0
+**********************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/openamp
-   :board: lpcxpresso55s69_cpu0
+   :board: lpcxpresso55s69/lpc55s69/cpu0
    :goals: debug
    :west-args: --sysbuild
 

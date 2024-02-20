@@ -20,7 +20,7 @@ tests:
       - lpcxpresso55s16
       - lpcxpresso55s28
       - lpcxpresso55s36
-      - lpcxpresso55s69_cpu0
+      - lpcxpresso55s69/lpc55s69/cpu0
       - mimxrt1010_evk
       - mimxrt1015_evk
       - mimxrt1020_evk
