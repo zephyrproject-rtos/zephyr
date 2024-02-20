@@ -38,6 +38,18 @@ enum hawkbit_response {
 };
 
 /**
+ * @brief hawkBit configuration structure.
+ *
+ * @details This structure is used to store the hawkBit configuration
+ * settings.
+ */
+struct hawkbit_runtime_config {
+	char *server_addr;
+	uint16_t server_port;
+	char *auth_token;
+};
+
+/**
  * @brief Callback to provide the custom data to the hawkBit server.
  *
  * @details This callback is used to provide the custom data to the hawkBit server.
@@ -115,6 +127,97 @@ typedef bool (*hawkbit_get_device_identity_cb_handler_t)(char *id, int id_max_le
  * @return -EINVAL if the callback is NULL.
  */
 int hawkbit_set_device_identity_cb(hawkbit_get_device_identity_cb_handler_t cb);
+
+/**
+ * @brief Set the hawkBit server configuration settings.
+ *
+ * @param config Configuration settings to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+int hawkbit_set_config(struct hawkbit_runtime_config *config);
+
+/**
+ * @brief Get the hawkBit server configuration settings.
+ *
+ * @return Configuration settings.
+ */
+struct hawkbit_runtime_config hawkbit_get_config(void);
+
+/**
+ * @brief Set the hawkBit server address.
+ *
+ * @param addr_str Server address to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_server_addr(char *addr_str)
+{
+	struct hawkbit_runtime_config set_config = {
+		.server_addr = addr_str, .server_port = 0, .auth_token = NULL};
+
+	return hawkbit_set_config(&set_config);
+}
+
+/**
+ * @brief Set the hawkBit server port.
+ *
+ * @param port Server port to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_server_port(uint16_t port)
+{
+	struct hawkbit_runtime_config set_config = {
+		.server_addr = NULL, .server_port = port, .auth_token = NULL};
+
+	return hawkbit_set_config(&set_config);
+}
+
+/**
+ * @brief Set the hawkBit security token.
+ *
+ * @param token Security token to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_ddi_security_token(char *token)
+{
+	struct hawkbit_runtime_config set_config = {
+		.server_addr = NULL, .server_port = 0, .auth_token = token};
+
+	return hawkbit_set_config(&set_config);
+}
+
+/**
+ * @brief Get the hawkBit server address.
+ *
+ * @return Server address.
+ */
+static inline char *hawkbit_get_server_addr(void)
+{
+	return hawkbit_get_config().server_addr;
+}
+
+/**
+ * @brief Get the hawkBit server port.
+ *
+ * @return Server port.
+ */
+static inline uint16_t hawkbit_get_server_port(void)
+{
+	return hawkbit_get_config().server_port;
+}
+
+/**
+ * @brief Get the hawkBit security token.
+ *
+ * @return Security token.
+ */
+static inline char *hawkbit_get_ddi_security_token(void)
+{
+	return hawkbit_get_config().auth_token;
+}
 
 /**
  * @}
