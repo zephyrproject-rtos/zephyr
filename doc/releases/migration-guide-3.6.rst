@@ -14,15 +14,6 @@ the :ref:`release notes<zephyr_3.6>`.
 Required changes
 ****************
 
-Boards
-======
-
-* The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
-  applications that use this should switch to using the :ref:`boot_mode_api` instead.
-* NXP: Enabled :ref:`linkserver<linkserver-debug-host-tools>` to be the default runner on the
-  following NXP boards: ``mimxrt685_evk_cm33``, ``frdm_k64f``, ``mimxrt1050_evk``, ``frdm_kl25z``,
-  ``mimxrt1020_evk``, ``mimxrt1015_evk``
-
 Build System
 ============
 
@@ -54,8 +45,14 @@ Kernel
   :kconfig:option:`CONFIG_HEAP_MEM_POOL_IGNORE_MIN` option has been introduced (which defaults
   being disabled).
 
-C Library
-=========
+Boards
+======
+
+* The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
+  applications that use this should switch to using the :ref:`boot_mode_api` instead.
+* NXP: Enabled :ref:`linkserver<linkserver-debug-host-tools>` to be the default runner on the
+  following NXP boards: ``mimxrt685_evk_cm33``, ``frdm_k64f``, ``mimxrt1050_evk``, ``frdm_kl25z``,
+  ``mimxrt1020_evk``, ``mimxrt1015_evk``
 
 Optional Modules
 ================
@@ -71,6 +68,52 @@ enable all optional modules, and then run ``west update`` again.
 
 Device Drivers and Device Tree
 ==============================
+
+* Various deprecated macros related to the deprecated devicetree label property
+  were removed. These are listed in the following table. The table also
+  provides replacements.
+
+  However, if you are still using code like
+  ``device_get_binding(DT_LABEL(node_id))``, consider replacing it with
+  something like ``DEVICE_DT_GET(node_id)`` instead. The ``DEVICE_DT_GET()``
+  macro avoids run-time string comparisons, and is also safer because it will
+  fail the build if the device does not exist.
+
+  .. list-table::
+     :header-rows: 1
+
+     * - Removed macro
+       - Replacement
+
+     * - ``DT_GPIO_LABEL(node_id, gpio_pha)``
+       - ``DT_PROP(DT_GPIO_CTLR(node_id, gpio_pha), label)``
+
+     * - ``DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, idx)``
+       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, idx), label)``
+
+     * - ``DT_INST_GPIO_LABEL(inst, gpio_pha)``
+       - ``DT_PROP(DT_GPIO_CTLR(DT_DRV_INST(inst), gpio_pha), label)``
+
+     * - ``DT_INST_GPIO_LABEL_BY_IDX(inst, gpio_pha, idx)``
+       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(DT_DRV_INST(inst), gpio_pha, idx), label)``
+
+     * - ``DT_SPI_DEV_CS_GPIOS_LABEL(spi_dev)``
+       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(spi_dev), label)``
+
+     * - ``DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)``
+       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(DT_DRV_INST(inst)), label)``
+
+     * - ``DT_LABEL(node_id)``
+       - ``DT_PROP(node_id, label)``
+
+     * - ``DT_BUS_LABEL(node_id)``
+       - ``DT_PROP(DT_BUS(node_id), label)``
+
+     * - ``DT_INST_LABEL(inst)``
+       - ``DT_INST_PROP(inst, label)``
+
+     * - ``DT_INST_BUS_LABEL(inst)``
+       - ``DT_PROP(DT_BUS(DT_DRV_INST(inst)), label)``
 
 * The :dtcompatible:`nxp,pcf8574` driver has been renamed to
   :dtcompatible:`nxp,pcf857x`. (:github:`67054`) to support pcf8574 and pcf8575.
@@ -127,52 +170,6 @@ Device Drivers and Device Tree
 
   (:github:`62994`)
 
-* Various deprecated macros related to the deprecated devicetree label property
-  were removed. These are listed in the following table. The table also
-  provides replacements.
-
-  However, if you are still using code like
-  ``device_get_binding(DT_LABEL(node_id))``, consider replacing it with
-  something like ``DEVICE_DT_GET(node_id)`` instead. The ``DEVICE_DT_GET()``
-  macro avoids run-time string comparisons, and is also safer because it will
-  fail the build if the device does not exist.
-
-  .. list-table::
-     :header-rows: 1
-
-     * - Removed macro
-       - Replacement
-
-     * - ``DT_GPIO_LABEL(node_id, gpio_pha)``
-       - ``DT_PROP(DT_GPIO_CTLR(node_id, gpio_pha), label)``
-
-     * - ``DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, idx)``
-       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, idx), label)``
-
-     * - ``DT_INST_GPIO_LABEL(inst, gpio_pha)``
-       - ``DT_PROP(DT_GPIO_CTLR(DT_DRV_INST(inst), gpio_pha), label)``
-
-     * - ``DT_INST_GPIO_LABEL_BY_IDX(inst, gpio_pha, idx)``
-       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(DT_DRV_INST(inst), gpio_pha, idx), label)``
-
-     * - ``DT_SPI_DEV_CS_GPIOS_LABEL(spi_dev)``
-       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(spi_dev), label)``
-
-     * - ``DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)``
-       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(DT_DRV_INST(inst)), label)``
-
-     * - ``DT_LABEL(node_id)``
-       - ``DT_PROP(node_id, label)``
-
-     * - ``DT_BUS_LABEL(node_id)``
-       - ``DT_PROP(DT_BUS(node_id), label)``
-
-     * - ``DT_INST_LABEL(inst)``
-       - ``DT_INST_PROP(inst, label)``
-
-     * - ``DT_INST_BUS_LABEL(inst)``
-       - ``DT_PROP(DT_BUS(DT_DRV_INST(inst)), label)``
-
 * The :dtcompatible:`st,stm32-lptim` lptim which is selected for counting ticks during
   low power modes is identified by **stm32_lp_tick_source** in the device tree as follows.
   The stm32_lptim_timer driver has been changed to support this.
@@ -182,7 +179,6 @@ Device Drivers and Device Tree
     stm32_lp_tick_source: &lptim1 {
             status = "okay";
     };
-
 
 * The :dtcompatible:`st,stm32-ospi-nor` and :dtcompatible:`st,stm32-qspi-nor` give the nor flash
   base address and size (in Bytes) with the **reg** property as follows.
@@ -229,6 +225,18 @@ Device Drivers and Device Tree
   or reject all incoming CAN RTR frames (the default). When :kconfig:option:`CONFIG_CAN_ACCEPT_RTR`
   is enabled, applications can still filter between Data and RTR frames in their receive callback
   functions as needed.
+
+* The :dtcompatible:`st,stm32h7-fdcan` CAN controller driver now supports configuring the
+  domain/kernel clock via devicetree. Previously, the driver only supported using the PLL1_Q clock
+  for kernel clock, but now it defaults to the HSE clock, which is the chip default. Boards that
+  use the PLL1_Q clock for FDCAN will need to override the ``clocks`` property as follows:
+
+  .. code-block:: devicetree
+
+    &fdcan1 {
+            clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+                     <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+    };
 
 * The io-channel cells of the following devicetree bindings were reduced from 2 (``positive`` and
   ``negative``) to the common ``input``, making it possible to use the various ADC DT macros with TI
@@ -287,18 +295,6 @@ Device Drivers and Device Tree
             width = <320>;
             height = <240>;
         };
-    };
-
-* The :dtcompatible:`st,stm32h7-fdcan` CAN controller driver now supports configuring the
-  domain/kernel clock via devicetree. Previously, the driver only supported using the PLL1_Q clock
-  for kernel clock, but now it defaults to the HSE clock, which is the chip default. Boards that
-  use the PLL1_Q clock for FDCAN will need to override the ``clocks`` property as follows:
-
-  .. code-block:: devicetree
-
-    &fdcan1 {
-            clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
-                     <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
     };
 
 * Runtime configuration is now disabled by default for Nordic UART drivers. The motivation for the
@@ -363,9 +359,6 @@ Device Drivers and Device Tree
 
 * The :dtcompatible:`st,hci-spi-v1` should be used instead of :dtcompatible:`zephyr,bt-hci-spi`
   for the boards which are based on ST BlueNRG-MS.
-
-Power Management
-================
 
 Shell
 =====
