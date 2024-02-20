@@ -26,4 +26,8 @@ config SPI_GRLIB_SPIMCTRL
 
 endif
 
+config GPIO_GRGPIO2
+	default y
+	depends on GPIO
+
 endif
