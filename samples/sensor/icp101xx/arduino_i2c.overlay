@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a icp101xx device on an Arduino I2C bus.
+ *
+ * Device address 0x63 is assumed. Your device may have a different
+ * address; check your device documentation if unsure.
+ */
+&arduino_i2c {
+	status = "okay";
+	icp101xx@63 {
+		compatible = "invensense,icp101xx";
+		reg = <0x63>;
+		mode="low-noise";
+	};
+};
+
+/*
+ * Increase native UART speed to report sensor data.
+ */
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <1000000>;
+};
