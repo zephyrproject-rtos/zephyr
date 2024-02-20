@@ -689,6 +689,8 @@ Drivers and Sensors
     connection.
   * On compatible STM32 devices, isochronous endpoint are now functional thanks to the
     use of double buffering.
+  * Added new UDC driver for DWC2 controller.
+  * Added support for Nuvoton NuMaker series USBD controllers.
 
 * W1
 
@@ -970,6 +972,15 @@ Networking
 
 USB
 ***
+
+* Device support:
+
+  * Introduces new USB Audio 2 implementation. Implementation uses devicetree for
+    instantiation, hiding descriptor complexity from the application. Initial
+    implementation is limited to full speed only and provides the absolute
+    minimum set of features required for basic implicit and explicit feedback.
+    Interrupt notification is not supported.
+  * Added support for SetFeature(TEST_MODE).
 
 Devicetree
 **********
