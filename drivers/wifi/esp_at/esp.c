@@ -253,63 +253,163 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 	return 0;
 }
 
+static int esp_pull_quoted(char **str, char *str_end, char **unquoted)
+{
+	if (**str != '"') {
+		return -EBADMSG;
+	}
+
+	(*str)++;
+
+	*unquoted = *str;
+
+	while (*str < str_end) {
+		if (**str == '"') {
+			**str = '\0';
+			(*str)++;
+
+			if (**str == ',') {
+				(*str)++;
+			}
+
+			return 0;
+		}
+
+		(*str)++;
+	}
+
+	return -EAGAIN;
+}
+
+static int esp_pull(char **str, char *str_end)
+{
+	while (*str < str_end) {
+		if (**str == ',' || **str == '\r' || **str == '\n') {
+			char last_c = **str;
+
+			**str = '\0';
+
+			if (last_c == ',') {
+				(*str)++;
+			}
+
+			return 0;
+		}
+
+		(*str)++;
+	}
+
+	return -EAGAIN;
+}
+
+static int esp_pull_raw(char **str, char *str_end, char **raw)
+{
+	*raw = *str;
+
+	return esp_pull(str, str_end);
+}
+
 /* +CWLAP:(sec,ssid,rssi,channel) */
 /* with: CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS: +CWLAP:<ecn>,<ssid>,<rssi>,<mac>,<ch>*/
-MODEM_CMD_DEFINE(on_cmd_cwlap)
+MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	struct wifi_scan_result res = { 0 };
-	int i;
+	char cwlap_buf[sizeof("\"0\",\"\",-100,\"xx:xx:xx:xx:xx:xx\",12") +
+		       WIFI_SSID_MAX_LEN * 2 + 1];
+	char *ecn;
+	char *ssid;
+	char *mac;
+	char *channel;
+	char *rssi;
+	long ecn_id;
+	int err;
 
-	i = strtol(&argv[0][1], NULL, 10);
-	if (i == 0) {
+	len = net_buf_linearize(cwlap_buf, sizeof(cwlap_buf) - 1,
+				data->rx_buf, 0, sizeof(cwlap_buf) - 1);
+	cwlap_buf[len] = '\0';
+
+	char *str = &cwlap_buf[sizeof("+CWJAP:(") - 1];
+	char *str_end = cwlap_buf + len;
+
+	err = esp_pull_raw(&str, str_end, &ecn);
+	if (err) {
+		return err;
+	}
+
+	ecn_id = strtol(ecn, NULL, 10);
+	if (ecn_id == 0) {
 		res.security = WIFI_SECURITY_TYPE_NONE;
 	} else {
 		res.security = WIFI_SECURITY_TYPE_PSK;
 	}
 
-	argv[1] = str_unquote(argv[1]);
-	i = strlen(argv[1]);
-	if (i > sizeof(res.ssid)) {
-		i = sizeof(res.ssid);
+	err = esp_pull_quoted(&str, str_end, &ssid);
+	if (err) {
+		return err;
 	}
 
-	memcpy(res.ssid, argv[1], i);
-	res.ssid_length = i;
-	res.rssi = strtol(argv[2], NULL, 10);
+	err = esp_pull_raw(&str, str_end, &rssi);
+	if (err) {
+		return err;
+	}
+
+	if (strlen(ssid) > WIFI_SSID_MAX_LEN) {
+		return -EBADMSG;
+	}
+
+	strncpy(res.ssid, ssid, sizeof(res.ssid));
+	res.ssid_length = MIN(sizeof(res.ssid), strlen(ssid));
+
+	res.rssi = strtol(rssi, NULL, 10);
 
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)) {
-		argv[3] = str_unquote(argv[3]);
+		err = esp_pull_quoted(&str, str_end, &mac);
+		if (err) {
+			return err;
+		}
+
 		res.mac_length = WIFI_MAC_ADDR_LEN;
-		if (net_bytes_from_str(res.mac, sizeof(res.mac), argv[3]) < 0) {
+		if (net_bytes_from_str(res.mac, sizeof(res.mac), mac) < 0) {
 			LOG_ERR("Invalid MAC address");
 			res.mac_length = 0;
 		}
-		res.channel = (argc > 4) ? strtol(argv[4], NULL, 10) : -1;
-	} else {
-		res.channel = strtol(argv[3], NULL, 10);
+	}
+
+	err = esp_pull_raw(&str, str_end, &channel);
+	if (err) {
+		return err;
 	}
 
 	if (dev->scan_cb) {
 		dev->scan_cb(dev->net_iface, 0, &res);
 	}
 
-	return 0;
+	return str - cwlap_buf;
 }
 
 /* +CWJAP:(ssid,bssid,channel,rssi) */
-MODEM_CMD_DEFINE(on_cmd_cwjap)
+MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	struct wifi_iface_status *status = dev->wifi_status;
-	const char *ssid = str_unquote(argv[0]);
-	const char *bssid = str_unquote(argv[1]);
-	const char *channel = argv[2];
-	const char *rssi = argv[3];
+	char cwjap_buf[sizeof("\"\",\"xx:xx:xx:xx:xx:xx\",12,-100") +
+		       WIFI_SSID_MAX_LEN * 2 + 1];
 	uint8_t flags = dev->flags;
+	char *ssid;
+	char *bssid;
+	char *channel;
+	char *rssi;
 	int err;
+
+	len = net_buf_linearize(cwjap_buf, sizeof(cwjap_buf) - 1,
+				data->rx_buf, 0, sizeof(cwjap_buf) - 1);
+	cwjap_buf[len] = '\0';
+
+	char *str = &cwjap_buf[sizeof("+CWJAP:") - 1];
+	char *str_end = cwjap_buf + len;
 
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->iface_mode = WIFI_MODE_INFRA;
@@ -320,6 +420,26 @@ MODEM_CMD_DEFINE(on_cmd_cwjap)
 		status->state = WIFI_STATE_SCANNING;
 	} else {
 		status->state = WIFI_STATE_DISCONNECTED;
+	}
+
+	err = esp_pull_quoted(&str, str_end, &ssid);
+	if (err) {
+		return err;
+	}
+
+	err = esp_pull_quoted(&str, str_end, &bssid);
+	if (err) {
+		return err;
+	}
+
+	err = esp_pull_raw(&str, str_end, &channel);
+	if (err) {
+		return err;
+	}
+
+	err = esp_pull_raw(&str, str_end, &rssi);
+	if (err) {
+		return err;
 	}
 
 	strncpy(status->ssid, ssid, sizeof(status->ssid));
@@ -334,7 +454,7 @@ MODEM_CMD_DEFINE(on_cmd_cwjap)
 	status->channel = strtol(channel, NULL, 10);
 	status->rssi = strtol(rssi, NULL, 10);
 
-	return 0;
+	return str - cwjap_buf;
 }
 
 static void esp_dns_work(struct k_work *work)
@@ -844,7 +964,7 @@ static void esp_mgmt_iface_status_work(struct k_work *work)
 	struct wifi_iface_status *status = data->wifi_status;
 	int ret;
 	static const struct modem_cmd cmds[] = {
-		MODEM_CMD("+CWJAP:", on_cmd_cwjap, 4U, ","),
+		MODEM_CMD_DIRECT("+CWJAP:", on_cmd_cwjap),
 	};
 
 	ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), "AT+CWJAP?",
@@ -891,11 +1011,7 @@ static void esp_mgmt_scan_work(struct k_work *work)
 	struct esp_data *dev;
 	int ret;
 	static const struct modem_cmd cmds[] = {
-#if defined(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)
-		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 5U, ","),
-#else
-		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 4U, ","),
-#endif
+		MODEM_CMD_DIRECT("+CWLAP:", on_cmd_cwlap),
 	};
 
 	dev = CONTAINER_OF(work, struct esp_data, scan_work);
