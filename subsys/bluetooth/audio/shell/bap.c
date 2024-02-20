@@ -1260,7 +1260,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	uni_stream = shell_stream_from_bap_stream(bap_stream);
 	copy_unicast_stream_preset(uni_stream, named_preset);
 
-	/* If location has been modifed, we update the location in the codec configuration */
+	/* If location has been modified, we update the location in the codec configuration */
 	struct bt_audio_codec_cfg *codec_cfg = &uni_stream->codec_cfg;
 
 	for (size_t i = 0U; i < codec_cfg->data_len;) {

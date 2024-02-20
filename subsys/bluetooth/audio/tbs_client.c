@@ -1554,14 +1554,14 @@ static uint8_t discover_func(struct bt_conn *conn,
 				err = bt_gatt_subscribe(conn, sub_params);
 				if (err != 0 && err != -EALREADY) {
 					LOG_DBG("Could not subscribe to "
-					       "characterstic at handle 0x%04X"
+					       "characteristic at handle 0x%04X"
 					       "(%d)",
 					       sub_params->value_handle, err);
 					tbs_client_discover_complete(conn, err);
 
 					return BT_GATT_ITER_STOP;
 				} else {
-					LOG_DBG("Subscribed to characterstic at "
+					LOG_DBG("Subscribed to characteristic at "
 					       "handle 0x%04X",
 					       sub_params->value_handle);
 				}
