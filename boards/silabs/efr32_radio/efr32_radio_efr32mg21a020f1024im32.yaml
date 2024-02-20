@@ -1,4 +1,4 @@
-identifier: efr32_radio_brd4180a
+identifier: efr32_radio/efr32mg21a020f1024im32
 name: BRD4180A
 type: mcu
 arch: arm
