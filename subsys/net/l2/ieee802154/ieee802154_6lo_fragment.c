@@ -527,7 +527,7 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 			fcache->pkt->buffer = NULL;
 		} else {
 			/* in case pkt == fcache->pkt, we don't want
-			 * to unref it while clearing the cach.
+			 * to unref it while clearing the cache.
 			 */
 			fcache->pkt = NULL;
 		}
