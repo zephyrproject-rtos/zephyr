@@ -8,7 +8,7 @@
 #if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT10XX)
 KEEP(*(.boot_hdr.conf))
 #endif
-#if defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMX_RT5XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX)
 KEEP(*(.flash_conf))
 #endif
 . = CONFIG_IMAGE_VECTOR_TABLE_OFFSET;

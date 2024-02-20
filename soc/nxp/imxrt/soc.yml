@@ -23,6 +23,12 @@ family:
       cpuclusters:
       - name: cm7
       - name: cm4
+  - name: imxrt5xx
+    socs:
+    - name: mimxrt595s
+      cpuclusters:
+      - name: cm33
+      - name: f1
   - name: imxrt6xx
     socs:
     - name: mimxrt685s
