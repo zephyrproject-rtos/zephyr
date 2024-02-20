@@ -679,6 +679,7 @@ Drivers and Sensors
   * On STM32H7 devices, ``fifo-enable`` property allows using SPI block FIFO. This
     feature is still experimental and requires maturation.
   * On STM32 devices impacted by BSY bit erratum, a workaround is implemented.
+  * Added driver for GRLIB SPIMCTRL
 
 * Timer
 
