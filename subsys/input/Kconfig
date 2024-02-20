@@ -60,7 +60,7 @@ config INPUT_QUEUE_MAX_MSGS
 
 config INPUT_THREAD_STACK_SIZE
 	int "Input thread stack size"
-	default 512
+	default 1024
 	help
 	  Stack size for the thread processing the input events, must have
 	  enough space for executing the registered callbacks.

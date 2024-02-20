@@ -9,7 +9,6 @@ tests:
   input.api.thread:
     extra_configs:
       - CONFIG_INPUT_MODE_THREAD=y
-      - CONFIG_INPUT_THREAD_STACK_SIZE=1024
   input.api.synchronous:
     extra_configs:
       - CONFIG_INPUT_MODE_SYNCHRONOUS=y
