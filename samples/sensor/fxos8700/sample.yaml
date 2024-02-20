@@ -32,7 +32,7 @@ tests:
     platform_allow:
       - frdm_kl25z
       - bbc_microbit
-      - lpcxpresso55s69_cpu0
+      - lpcxpresso55s69/lpc55s69/cpu0
       - reel_board@1
       - mimxrt685_evk
       - mimxrt595_evk/mimxrt595s/cm33

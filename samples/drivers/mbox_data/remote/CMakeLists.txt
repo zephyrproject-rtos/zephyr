@@ -10,7 +10,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 if(("${BOARD}" STREQUAL "mimxrt1170_evkb") OR
   ("${BOARD}" STREQUAL "mimxrt1170_evk") OR
   ("${BOARD}" STREQUAL "mimxrt1160_evk") OR
-  ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu1"))
+  ("${BOARD}" STREQUAL "lpcxpresso55s69"))
   message(STATUS "${BOARD} compile as remote in this sample")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")

@@ -14,7 +14,7 @@ tests:
       - mimxrt1160_evk/mimxrt1166/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1024_evk
-      - lpcxpresso55s69_cpu0
+      - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
       - native_posix
       - native_posix_64
