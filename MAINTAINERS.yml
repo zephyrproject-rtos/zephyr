@@ -3303,18 +3303,17 @@ NXP Platforms (MCUX):
     - EmilioCBen
     - decsny
   files:
-    - boards/arm/mimx*/
-    - boards/arm/frdm*/
-    - boards/arm/lpcxpress*/
-    - boards/arm/twr_*/
-    - boards/arm/vmu*/
-    - soc/arm/nxp_imx/
-    - soc/arm/nxp_kinetis/
-    - soc/arm/nxp_lpc/
+    - boards/nxp/mimx*/
+    - boards/nxp/frdm*/
+    - boards/nxp/lpcxpress*/
+    - boards/nxp/twr_*/
+    - boards/nxp/vmu*/
+    - soc/nxp/imx/
+    - soc/nxp/kinetis/
+    - soc/nxp/lpc/
     - dts/arm/nxp/
     - samples/boards/nxp*/
   files-exclude:
-    - boards/arm/*s32*/
     - dts/arm/nxp/*s32*
     - samples/boards/nxp_s32/
   labels:
@@ -3334,7 +3333,7 @@ NXP Platforms (S32):
     - boards/arm/mr_canhubk3/
     - boards/arm/ucans32k1sic/
     - boards/common/*nxp_s32*
-    - soc/arm/nxp_s32/
+    - soc/nxp/s32/
     - drivers/*/*nxp_s32*
     - drivers/misc/*nxp_s32*/
     - dts/bindings/*/nxp,s32*
