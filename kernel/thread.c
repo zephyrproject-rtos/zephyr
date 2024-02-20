@@ -998,6 +998,27 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 	return 0;
 }
 
+int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats)
+{
+	if (stats == NULL) {
+		return -EINVAL;
+	}
+
+	*stats = (k_thread_runtime_stats_t) {};
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+#ifdef CONFIG_SMP
+	z_sched_cpu_usage(cpu, stats);
+#else
+	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ARG_UNUSED(cpu);
+	z_sched_cpu_usage(0, stats);
+#endif
+#endif
+
+	return 0;
+}
+
 #ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
 /** Pointer to thread which needs to be cleaned up. */
 static struct k_thread *thread_to_cleanup;
