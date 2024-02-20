@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt595_evk_cm33
+identifier: mimxrt595_evk/mimxrt595s/cm33
 name: NXP MIMXRT595-EVK
 type: mcu
 arch: arm
