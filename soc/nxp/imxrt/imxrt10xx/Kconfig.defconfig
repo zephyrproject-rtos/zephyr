@@ -1,0 +1,28 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+if SOC_SERIES_IMXRT10XX
+
+config NUM_IRQS
+	default 80 if SOC_MIMXRT1011
+	default 142 if SOC_MIMXRT1015 ||	\
+			SOC_MIMXRT1021 ||	\
+			SOC_MIMXRT1024
+	default 157 if SOC_MIMXRT1042
+	default 160 if SOC_MIMXRT1052 ||	\
+			SOC_MIMXRT1062 ||	\
+			SOC_MIMXRT1064
+
+config DCDC_VALUE
+	default 0x12 if SOC_MIMXRT1011 ||	\
+			SOC_MIMXRT1015 ||	\
+			SOC_MIMXRT1021 ||	\
+			SOC_MIMXRT1024
+	default 0x13
+
+config GPIO
+	default y
+
+
+endif # SOC_SERIES_IMXRT10XX
