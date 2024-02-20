@@ -6,10 +6,6 @@
 
 if BOARD_EFM32GG_SLWSTK6121A
 
-config BOARD
-	string
-	default "efm32gg_slwstk6121a"
-
 config CMU_HFXO_FREQ
 	default 50000000
 
