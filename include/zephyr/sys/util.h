@@ -532,7 +532,7 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
  */
 static inline uint8_t bcd2bin(uint8_t bcd)
 {
-	return ((10 * (bcd >> 4)) + (bcd & 0x0F));
+  return (uint8_t)((uint8_t)((uint8_t)10 * (uint8_t)(bcd >> 4)) + (uint8_t)(bcd & 0x0F));
 }
 
 /**
