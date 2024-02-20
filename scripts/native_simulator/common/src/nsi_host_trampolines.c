@@ -71,7 +71,7 @@ char *nsi_host_strdup(const char *s)
 	return strdup(s);
 }
 
-long nsi_host_write(int fd, void *buffer, unsigned long size)
+long nsi_host_write(int fd, const void *buffer, unsigned long size)
 {
 	return write(fd, buffer, size);
 }
