@@ -17,4 +17,4 @@ config SOC_AGILEX5
 	  Intel SoC FPGA Agilex5
 
 config SOC
-	default "intel_socfpga_agilex5" if SOC_AGILEX5
+	default "agilex5" if SOC_AGILEX5
