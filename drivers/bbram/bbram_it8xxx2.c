@@ -81,6 +81,7 @@ static int bbram_it8xxx2_init(const struct device *dev)
 	uint8_t *bram_valid_flag1 = base_addr + BRAM_IDX_VALID_FLAGS1;
 	uint8_t *bram_valid_flag2 = base_addr + BRAM_IDX_VALID_FLAGS2;
 	uint8_t *bram_valid_flag3 = base_addr + BRAM_IDX_VALID_FLAGS3;
+	int size = config->size;
 
 	if ((*bram_valid_flag0 != BRAM_VALID_MAGIC_FIELD0) ||
 	    (*bram_valid_flag1 != BRAM_VALID_MAGIC_FIELD1) ||
@@ -88,9 +89,9 @@ static int bbram_it8xxx2_init(const struct device *dev)
 	    (*bram_valid_flag3 != BRAM_VALID_MAGIC_FIELD3)) {
 		/*
 		 * Magic does not match, so BRAM must be uninitialized. Clear
-		 * entire Bank0 BRAM, and set magic value.
+		 * entire Bank0 and Bank1 BRAM, and set magic value.
 		 */
-		for (int i = 0; i < BRAM_IDX_VALID_FLAGS0; i++) {
+		for (int i = 0; i < size; i++) {
 			*(base_addr + i) = 0;
 		}
 
