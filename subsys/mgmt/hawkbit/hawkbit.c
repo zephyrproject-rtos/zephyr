@@ -241,7 +241,8 @@ static bool start_http_client(void)
 	}
 
 	while (resolve_attempts--) {
-		ret = zsock_getaddrinfo(CONFIG_HAWKBIT_SERVER, CONFIG_HAWKBIT_PORT, &hints, &addr);
+		ret = zsock_getaddrinfo(CONFIG_HAWKBIT_SERVER, STRINGIFY(CONFIG_HAWKBIT_PORT),
+									 &hints, &addr);
 		if (ret == 0) {
 			break;
 		}
@@ -842,7 +843,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 	hb_context.http_req.url = hb_context.url_buffer;
 	hb_context.http_req.method = method;
 	hb_context.http_req.host = CONFIG_HAWKBIT_SERVER;
-	hb_context.http_req.port = CONFIG_HAWKBIT_PORT;
+	hb_context.http_req.port = STRINGIFY(CONFIG_HAWKBIT_PORT);
 	hb_context.http_req.protocol = "HTTP/1.1";
 	hb_context.http_req.response = response_cb;
 	hb_context.http_req.recv_buf = hb_context.recv_buf_tcp;
