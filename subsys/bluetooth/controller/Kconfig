@@ -852,10 +852,13 @@ config BT_CTLR_SYNC_ISO_PDU_LEN_MAX
 endif # BT_CTLR_ADV_EXT
 
 config BT_CTLR_SET_HOST_FEATURE
-	bool "LE Set Host Feature Command [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "LE Set Host Feature Command" if !BT_LL_SW_SPLIT
 	help
 	  Enables optional LE Set Host Feature Command
+
+config BT_CTLR_SET_HOST_FEATURE
+	bool "LE Set Host Feature Command (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
