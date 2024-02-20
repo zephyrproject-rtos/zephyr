@@ -6,3 +6,5 @@ config SOC_LEON3
 
 config SOC
 	default "leon3" if SOC_LEON3
+
+rsource "../Kconfig.soc"
