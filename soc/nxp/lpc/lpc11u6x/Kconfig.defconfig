@@ -1,14 +1,12 @@
-# LPC11U6X series configuration options
-
+# LPC LPC11U6X MCU line
+#
 # Copyright (c) 2020, Seagate
+# Copyright 2024 NXP
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
 if SOC_SERIES_LPC11U6X
-
-source "soc/soc_legacy/arm/nxp_lpc/lpc11u6x/Kconfig.defconfig.lp*"
-
-config SOC_SERIES
-	default "lpc11u6x"
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used

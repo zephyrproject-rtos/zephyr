@@ -286,7 +286,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: pull/1900/head
+      revision: pull/1907/head
       path: bootloader/mcuboot
       remote: mcutools
     - name: mipi-sys-t
