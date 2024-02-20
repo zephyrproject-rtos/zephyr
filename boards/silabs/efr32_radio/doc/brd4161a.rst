@@ -1,6 +1,6 @@
-.. _efr32_radio_brd4170a:
+.. _efr32_radio_brd4161a:
 
-EFR32 BRD4170A (SLWRB4170A)
+EFR32 BRD4161A (SLWRB4161A)
 ###########################
 
 Overview
@@ -10,19 +10,19 @@ The EFR32MG12 Mighty Gecko Radio Board contains a Wireless System-On-Chip
 from the EFR32MG12 family built on an ARM Cortex®-M4F processor with excellent
 low power capabilities.
 
-.. figure:: efr32mg12-slwrb4170a.jpg
+.. figure:: efr32mg12-slwrb4161a.jpeg
    :align: center
-   :alt: SLWRB4170A Mighty Gecko Radio Board
+   :alt: SLWRB4161A Mighty Gecko Radio Board
 
-   SLWRB4170A (image courtesy of Silicon Labs)
+   SLWRB4161A (image courtesy of Silicon Labs)
 
-The BRD4170A a.k.a. SLWRB4170A radio board plugs into the Wireless Starter Kit
+The BRD4161A a.k.a. SLWRB4161A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`efr32_radio`.
 
 Hardware
 ********
 
-- EFR32MG12P433F1024GM68 Mighty Gecko SoC
+- EFR32MG12P432F1024GL125 Mighty Gecko SoC
 - CPU core: ARM Cortex®-M4 with FPU
 - Flash memory: 1024 kB
 - RAM: 256 kB
@@ -36,7 +36,7 @@ documents:
 - `EFR32MG12 Website`_
 - `EFR32MG12 Datasheet`_
 - `EFR32xG12 Reference Manual`_
-- `BRD4170A User Guide`_
+- `BRD4161A User Guide`_
 
 Supported Features
 ==================
@@ -44,11 +44,10 @@ Supported Features
 Please refer to
 :ref:`EFR32 Radio Board Supported Features <efr32_radio_supported_features>`
 for details of the configuration and common features supported by the
-efr32_radio_brd4170a board.
+``efr32_radio/efr32mg12p432f1024gl125`` board.
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efr32_radio/efr32_radio_brd4170a_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efr32_radio/efr32_radio_efr32mg12p432f1024gl125_defconfig`
 
 System Clock
 ============
@@ -79,7 +78,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32_radio_brd4170a
+   :board: efr32_radio/efr32mg12p432f1024gl125
    :goals: flash
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -93,7 +92,7 @@ Reset the board and you should see the following message in the terminal:
 
 .. code-block:: console
 
-   Hello World! efr32_radio_brd4170a
+   Hello World! efr32_radio
 
 
 .. _EFR32MG12 Website:
@@ -105,5 +104,5 @@ Reset the board and you should see the following message in the terminal:
 .. _EFR32xG12 Reference Manual:
    https://www.silabs.com/documents/public/reference-manuals/efr32xg12-rm.pdf
 
-.. _BRD4170A User Guide:
-   https://www.silabs.com/documents/public/user-guides/ug342-brd4170a-user-guide.pdf
+.. _BRD4161A User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug260-brd4161a-user-guide.pdf

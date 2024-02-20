@@ -1,22 +1,21 @@
-identifier: efr32_radio_brd4250b
-name: BRD4250B
+identifier: efr32_radio/efr32mg24b220f1536im48
+name: BRD4187C
 type: mcu
 arch: arm
-ram: 32
-flash: 256
+ram: 256
+flash: 1536
 toolchain:
   - zephyr
   - gnuarmemb
   - xtools
 supported:
-  - counter
   - gpio
-  - nvs
-  - spi
   - uart
   - watchdog
 testing:
   ignore_tags:
     - net
     - bluetooth
+    - pm
+    - hwinfo
 vendor: silabs

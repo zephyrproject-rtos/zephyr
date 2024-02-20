@@ -1,4 +1,4 @@
-identifier: efr32_radio_brd4255a
+identifier: efr32_radio/efr32fg13p233f512gm48
 name: BRD4255A
 type: mcu
 arch: arm

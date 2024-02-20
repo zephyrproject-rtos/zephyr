@@ -44,11 +44,10 @@ Supported Features
 Please refer to
 :ref:`EFR32 Radio Board Supported Features <efr32_radio_supported_features>`
 for details of the configuration and common features supported by the
-efr32_radio_brd4255a board.
+``efr32_radio/efr32fg13p233f512gm48`` board.
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efr32_radio/efr32_radio_brd4255a_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efr32_radio/efr32_radio_efr32fg13p233f512gm48_defconfig`
 
 System Clock
 ============
@@ -79,7 +78,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32_radio_brd4255a
+   :board: efr32_radio/efr32fg13p233f512gm48
    :goals: flash
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -93,7 +92,7 @@ Reset the board and you should see the following message in the terminal:
 
 .. code-block:: console
 
-   Hello World! efr32_radio_brd4255a
+   Hello World! efr32_radio
 
 
 .. _EFR32FG13 Website:

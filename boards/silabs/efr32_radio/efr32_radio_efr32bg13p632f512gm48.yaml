@@ -1,12 +1,13 @@
-identifier: efr32_radio_brd4170a
-name: BRD4170A
+identifier: efr32_radio/efr32bg13p632f512gm48
+name: BRD4104A
 type: mcu
 arch: arm
-ram: 256
-flash: 1024
+ram: 64
+flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
 supported:
   - counter
   - gpio
