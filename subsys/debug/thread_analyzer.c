@@ -71,6 +71,11 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 #endif
 }
 
+struct ta_cb_user_data {
+	thread_analyzer_cb cb;
+	unsigned int cpu;
+};
+
 static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 {
 	struct k_thread *thread = (struct k_thread *)cthread;
@@ -79,7 +84,9 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	int ret;
 #endif
 	size_t size = thread->stack_info.size;
-	thread_analyzer_cb cb = user_data;
+	struct ta_cb_user_data *ud = user_data;
+	thread_analyzer_cb cb = ud->cb;
+	unsigned int cpu = ud->cpu;
 	struct thread_analyzer_info info;
 	char hexname[PTR_STR_MAXLEN + 1];
 	const char *name;
@@ -115,9 +122,16 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 		ret++;
 	}
 
-	if (k_thread_runtime_stats_all_get(&rt_stats_all) != 0) {
-		ret++;
+	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
+		if (k_thread_runtime_stats_cpu_get(cpu, &rt_stats_all) != 0) {
+			ret++;
+		}
+	} else {
+		if (k_thread_runtime_stats_all_get(&rt_stats_all) != 0) {
+			ret++;
+		}
 	}
+
 	if (ret == 0) {
 		info.utilization = (info.usage.execution_cycles * 100U) /
 			rt_stats_all.execution_cycles;
@@ -129,55 +143,124 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
+static void isr_stack(int core)
+{
+	const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[core]);
+	size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[core]);
+	size_t unused;
+	int err;
+
+	err = z_stack_space_get(buf, size, &unused);
+	if (err == 0) {
+		THREAD_ANALYZER_PRINT(
+			THREAD_ANALYZER_FMT(
+				" %s%-17d: STACK: unused %zu usage %zu / %zu (%zu %%)"),
+			THREAD_ANALYZER_VSTR("ISR"), core, unused,
+			size - unused, size, (100 * (size - unused)) / size);
+	}
+}
+
 static void isr_stacks(void)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (int i = 0; i < num_cpus; i++) {
-		const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
-		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
-		size_t unused;
-		int err;
-
-		err = z_stack_space_get(buf, size, &unused);
-		if (err == 0) {
-			THREAD_ANALYZER_PRINT(
-				THREAD_ANALYZER_FMT(
-					" %s%-17d: STACK: unused %zu usage %zu / %zu (%zu %%)"),
-					THREAD_ANALYZER_VSTR("ISR"), i, unused,
-					size - unused, size, (100 * (size - unused)) / size);
-		}
-	}
+	for (int i = 0; i < num_cpus; i++)
+		isr_stack(i);
 }
 
-void thread_analyzer_run(thread_analyzer_cb cb)
+void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
 {
+	struct ta_cb_user_data ud = { .cb = cb, .cpu = cpu };
+
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_RUN_UNLOCKED)) {
-		k_thread_foreach_unlocked(thread_analyze_cb, cb);
+		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
+			k_thread_foreach_unlocked_filter_by_cpu(cpu, thread_analyze_cb, &ud);
+		else
+			k_thread_foreach_unlocked(thread_analyze_cb, cb);
 	} else {
-		k_thread_foreach(thread_analyze_cb, cb);
+		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
+			k_thread_foreach_filter_by_cpu(cpu, thread_analyze_cb, &ud);
+		else
+			k_thread_foreach(thread_analyze_cb, cb);
 	}
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
-		isr_stacks();
+		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
+			isr_stack(cpu);
+		else
+			isr_stacks();
 	}
 }
 
-void thread_analyzer_print(void)
+void thread_analyzer_print(unsigned int cpu)
 {
+#if IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)
+	THREAD_ANALYZER_PRINT(THREAD_ANALYZER_FMT("Thread analyze core %u:"),
+						  cpu);
+#else
 	THREAD_ANALYZER_PRINT(THREAD_ANALYZER_FMT("Thread analyze:"));
-	thread_analyzer_run(thread_print_cb);
+#endif
+	thread_analyzer_run(thread_print_cb, cpu);
 }
 
 #if defined(CONFIG_THREAD_ANALYZER_AUTO)
 
-void thread_analyzer_auto(void)
+void thread_analyzer_auto(void *a, void *b, void *c)
 {
+	unsigned int cpu = IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES) ?
+		(unsigned int) a : 0;
+
 	for (;;) {
-		thread_analyzer_print();
+		thread_analyzer_print(cpu);
 		k_sleep(K_SECONDS(CONFIG_THREAD_ANALYZER_AUTO_INTERVAL));
 	}
 }
+
+#if IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)
+
+static K_THREAD_STACK_ARRAY_DEFINE(analyzer_thread_stacks, CONFIG_MP_MAX_NUM_CPUS,
+				   CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE);
+static struct k_thread analyzer_thread[CONFIG_MP_MAX_NUM_CPUS];
+
+static int thread_analyzer_init(void)
+{
+	uint16_t i;
+
+	for (i = 0; i < ARRAY_SIZE(analyzer_thread); i++) {
+		char name[24];
+		k_tid_t tid = NULL;
+		int ret;
+
+		tid = k_thread_create(&analyzer_thread[i], analyzer_thread_stacks[i],
+				      CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE,
+				      thread_analyzer_auto,
+				      (void *) (uint32_t) i, NULL, NULL,
+				      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_FOREVER);
+		if (!tid) {
+			LOG_ERR("k_thread_create() failed for core %u", i);
+			continue;
+		}
+		ret = k_thread_cpu_pin(tid, i);
+		if (ret < 0) {
+			LOG_ERR("Pinning thread to code core %u", i);
+			k_thread_abort(tid);
+			continue;
+		}
+		snprintf(name, sizeof(name), "core %u thread analyzer", i);
+		ret = k_thread_name_set(tid, name);
+		if (ret < 0)
+			LOG_INF("k_thread_name_set failed: %d for %u", ret, i);
+
+		k_thread_start(tid);
+		LOG_DBG("Thread %p for core %u started", tid, i);
+	}
+
+	return 0;
+}
+
+SYS_INIT(thread_analyzer_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#else
 
 K_THREAD_DEFINE(thread_analyzer,
 		CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE,
@@ -186,4 +269,6 @@ K_THREAD_DEFINE(thread_analyzer,
 		K_LOWEST_APPLICATION_THREAD_PRIO,
 		0, 0);
 
-#endif
+#endif /* CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES */
+
+#endif /* CONFIG_THREAD_ANALYZER_AUTO */
