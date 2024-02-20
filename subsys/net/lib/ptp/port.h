@@ -55,7 +55,7 @@ struct ptp_port {
 		struct k_timer	       sync;
 		struct k_timer	       qualification;
 	} timers;
-	/** Bitmask of tiemouts. */
+	/** Bitmask of timeouts. */
 	atomic_t		       timeouts;
 	/** Structure of unique sequence IDs used for messages. */
 	struct {
@@ -110,7 +110,7 @@ enum ptp_port_state ptp_port_state(struct ptp_port *port);
 enum ptp_port_event ptp_port_timer_event_gen(struct ptp_port *port, struct k_timer *timer);
 /**
  * @brief Function generating PTP Port events based on messages
- * that has been recived on a PTP Port's socket.
+ * that has been received on a PTP Port's socket.
  *
  * @param[in] port  Pointer to the PTP Port structure.
  * @param[in] idx   Index of the PTP Port's socket to be checked.
@@ -161,7 +161,7 @@ struct ptp_foreign_tt_clock *ptp_port_best_foreign(struct ptp_port *port);
  * @brief Function adding foreign TimeTransmitter Clock for the PTP Port based on specified message.
  *
  * @param[in] port Pointer to the PTP Port.
- * @param[in] msg  Pointer to the announce message containg PTP TimeTransmitter data.
+ * @param[in] msg  Pointer to the announce message containing PTP TimeTransmitter data.
  *
  * @return Non-zero if the announce message is different than the last.
  */
@@ -179,7 +179,7 @@ void ptp_port_free_foreign_tts(struct ptp_port *port);
  * based on specified message.
  *
  * @param[in] port Pointer to the PTP Port.
- * @param[in] msg  Pointer to the announce message containg PTP TimeTransmitter data.
+ * @param[in] msg  Pointer to the announce message containing PTP TimeTransmitter data.
  *
  * @return Non-zero if the announce message is different than the last.
  */
