@@ -5,10 +5,6 @@
 
 if BOARD_EFM32GG_STK3701A
 
-config BOARD
-	string
-	default "efm32gg_stk3701a"
-
 config CMU_HFXO_FREQ
 	default 50000000
 
