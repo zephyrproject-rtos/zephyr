@@ -46,6 +46,11 @@ child-binding:
       };
 
   properties:
+    min-bitrate:
+      type: int
+      description: |
+        The minimum bitrate supported by the CAN transceiver in bits/s.
+
     max-bitrate:
       type: int
       required: true
