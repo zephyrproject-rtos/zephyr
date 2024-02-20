@@ -45,8 +45,8 @@ config HAWKBIT_SERVER
 	  Configure the hawkbit server address.
 
 config HAWKBIT_PORT
-	string "Port address for the hawkbit server"
-	default "8080"
+	int "Port number for the hawkbit server"
+	default 8080
 	help
 	  Configure the hawkbit port number.
 
