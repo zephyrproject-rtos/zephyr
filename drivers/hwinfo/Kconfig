@@ -109,7 +109,7 @@ config HWINFO_MCUX_SYSCON
 config HWINFO_IMXRT
 	bool "NXP i.mx RT device ID"
 	default y
-	depends on SOC_SERIES_IMX_RT
+	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 	help
 	  Enable NXP i.mx RT hwinfo driver.
 
