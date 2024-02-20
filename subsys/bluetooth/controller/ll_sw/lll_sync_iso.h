@@ -7,6 +7,7 @@
 struct lll_sync_iso_stream {
 	uint8_t big_handle;
 	uint8_t bis_index;
+	struct ll_iso_rx_test_mode *test_mode;
 	struct ll_iso_datapath *dp;
 };
 
