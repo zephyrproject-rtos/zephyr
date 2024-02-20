@@ -12,6 +12,18 @@
 
 GTEXT(__sparc_trap_reset)
 SECTION_FUNC(TEXT, __sparc_trap_reset)
+#ifdef CONFIG_SPARC_SVT
+#ifdef CONFIG_SOC_SPARC_LEON
+	/* On LEON, enable single vector trapping by setting ASR17.SV. */
+	rd	%asr17, %g1
+	set	(1<<13), %g2
+	or	%g1, %g2, %g1
+	wr	%g1, %asr17
+#else
+#error "Don't know how to enable SVT on this SOC"
+#endif
+#endif
+
 	set	__sparc_trap_table, %g1
 	wr	%g1, %tbr
 	wr	2, %wim
