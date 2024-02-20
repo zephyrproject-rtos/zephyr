@@ -141,7 +141,7 @@ config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
 	  case it runs out of free addresses to assign.
 
 config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
-	int "Timeout for ICMP probes sent by the server (miliseconds)"
+	int "Timeout for ICMP probes sent by the server (milliseconds)"
 	range 0 60000
 	default 1000
 	help
