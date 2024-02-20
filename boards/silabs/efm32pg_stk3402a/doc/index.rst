@@ -65,14 +65,11 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 | TRNG      | on-chip    | true random number generator        |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efm32pg_stk3402a/efm32pg_stk3402a_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efm32pg_stk3402a/efm32pg_stk3402a_efm32pg12b500f1024gl125_defconfig`
 
 The default configuration when building for this EFM32JG12B SoC can be found in
-another defconfig file:
-
-	``boards/arm/efm32pg_stk3402a/efm32pg_stk3402a_defconfig_jg``
+:zephyr_file:`boards/arm/efm32pg_stk3402a/efm32pg_stk3402a_efm32jg12b500f1024gl125_defconfig`
 
 Other hardware features are currently not supported by the port.
 
@@ -88,7 +85,7 @@ such as memory and peripherals are the same.
 Code that is built for the Jade Gecko also runs on an equivalent Pearl Gecko.
 
 To build firmware for the Jade Gecko and run it on the EFM32 Pearl Gecko Starter
-Kit, use the board ``efm32pg_stk3402a_jg`` instead of ``efm32pg_stk3402a``.
+Kit, use the board ``efm32pg_stk3402a/efm32pg12b500f1024gl125`` instead of ``efm32pg_stk3402a/efm32jg12b500f1024gl125``.
 
 Connections and IOs
 ===================
@@ -165,7 +162,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efm32pg_stk3402a
+   :board: efm32pg_stk3402a/efm32pg12b500f1024gl125
    :goals: build
 
 Connect the EFM32PG-STK3402A to your host computer using the USB port and you
