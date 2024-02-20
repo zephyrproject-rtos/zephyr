@@ -1,0 +1,30 @@
+# LPC LPC54XXX MCU line
+
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC54XXX
+	select ARM
+	select HAS_MCUX
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_SYSCON
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select PLATFORM_SPECIFIC_INIT
+
+config SOC_LPC54114_M4
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select PLATFORM_SPECIFIC_INIT
+	select CLOCK_CONTROL
+	select HAS_MCUX_IAP_LEGACY
+
+config SOC_LPC54114_M0
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL
+
+config MCUX_CORE_SUFFIX
+	default "_cm4" if SOC_LPC54114_M4
+	default "_cm0plus" if SOC_LPC54114_M0

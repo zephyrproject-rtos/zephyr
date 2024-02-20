@@ -1,24 +1,34 @@
-# LPC LPC11U6x MCU line
+# NXP LPC11U6x series
 
-# Copyright (c) 2020, Seagate
+# Copyright 2024 NXP
+
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
-choice
-	prompt "LPC LPC11U6X MCU Selection"
-	depends on SOC_SERIES_LPC11U6X
+config SOC_SERIES_LPC11U6X
+	bool
+	select SOC_FAMILY_LPC
+
+config SOC_SERIES
+	default "lpc11u6x" if SOC_SERIES_LPC11U6X
 
 config SOC_LPC11U68
-	bool "SOC_LPC11U68"
+	bool
+	select SOC_SERIES_LPC11U6X
 
 config SOC_LPC11U67
-	bool "SOC_LPC11U67"
+	bool
+	select SOC_SERIES_LPC11U6X
 
 config SOC_LPC11U66
-	bool "SOC_LPC11U66"
+	bool
+	select SOC_SERIES_LPC11U6X
 
-endchoice
-
-if SOC_SERIES_LPC11U6X
+config SOC
+	default "lpc11u66" if SOC_LPC11U66
+	default "lpc11u67" if SOC_LPC11U67
+	default "lpc11u68" if SOC_LPC11U68
 
 config SOC_PART_NUMBER_LPC11U66JBD48
 	bool
@@ -35,8 +45,7 @@ config SOC_PART_NUMBER_LPC11U68JBD64
 config SOC_PART_NUMBER_LPC11U68JBD100
 	bool
 
-config SOC_PART_NUMBER_LPC11U6X
-	string
+config SOC_PART_NUMBER
 	default "LPC11U66JBD48" if SOC_PART_NUMBER_LPC11U66JBD48
 	default "LPC11U67JBD48" if SOC_PART_NUMBER_LPC11U67JBD48
 	default "LPC11U67JBD64" if SOC_PART_NUMBER_LPC11U67JBD64
@@ -44,9 +53,3 @@ config SOC_PART_NUMBER_LPC11U6X
 	default "LPC11U68JBD48" if SOC_PART_NUMBER_LPC11U68JBD48
 	default "LPC11U68JBD64" if SOC_PART_NUMBER_LPC11U68JBD64
 	default "LPC11U68JBD100" if SOC_PART_NUMBER_LPC11U68JBD100
-
-	help
-	  This string holds the full part number of the SoC. It is a hidden
-	  option that you should not set directly. The part number selection
-	  choice defines the default value for this string.
-endif # SOC_SERIES_LPC11U6X
