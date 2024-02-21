@@ -96,7 +96,7 @@ zephyr_library_sources(
   )
 
 zephyr_library_sources_ifdef(
-  CONFIG_SOC_FAMILY_NRF
+  CONFIG_SOC_FAMILY_NORDIC_NRF
   hci/nordic/hci_vendor.c
   )
 

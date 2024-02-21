@@ -6,11 +6,11 @@
 # This file is contains Zephyr build system Kconfig references and is not
 # re-usable outside the Zephyr tree.
 
-config SOC_FAMILY_NRF
+config SOC_FAMILY_NORDIC_NRF
 	select SOC_COMPATIBLE_NRF
 	select PLATFORM_SPECIFIC_INIT if ARM
 
-if SOC_FAMILY_NRF
+if SOC_FAMILY_NORDIC_NRF
 
 rsource "common/Kconfig.peripherals"
 rsource "*/Kconfig"
@@ -171,4 +171,4 @@ config NRF_TRACE_PORT
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
 
-endif # SOC_FAMILY_NRF
+endif # SOC_FAMILY_NORDIC_NRF

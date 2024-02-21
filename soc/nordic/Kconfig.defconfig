@@ -3,7 +3,7 @@
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_NRF
+if SOC_FAMILY_NORDIC_NRF
 
 rsource "*/Kconfig.defconfig"
 
@@ -42,4 +42,4 @@ config GPIO
 config UART_USE_RUNTIME_CONFIGURE
 	default n
 
-endif # SOC_FAMILY_NRF
+endif # SOC_FAMILY_NORDIC_NRF

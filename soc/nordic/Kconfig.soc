@@ -15,11 +15,11 @@ config SOC_SERIES
 	default "nrf54l" if SOC_SERIES_NRF54LX
 	default "nrf91" if SOC_SERIES_NRF91X
 
-config SOC_FAMILY_NRF
+config SOC_FAMILY_NORDIC_NRF
 	bool
 
 config SOC_FAMILY
-	default "nordic_nrf" if SOC_FAMILY_NRF
+	default "nordic_nrf" if SOC_FAMILY_NORDIC_NRF
 
 config SOC_SERIES_NRF51X
 	bool
@@ -28,31 +28,31 @@ config SOC_SERIES_NRF51X
 
 config SOC_SERIES_NRF52X
 	bool
-	select SOC_FAMILY_NRF
+	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Enable support for NRF52 MCU series
 
 config SOC_SERIES_NRF53X
 	bool
-	select SOC_FAMILY_NRF
+	select SOC_FAMILY_NORDIC_NRF
 	help
 	 Enable support for NRF53 MCU series
 
 config SOC_SERIES_NRF54HX
 	bool
-	select SOC_FAMILY_NRF
+	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Nordic Semiconductor nRF54H series MCU
 
 config SOC_SERIES_NRF54LX
 	bool
-	select SOC_FAMILY_NRF
+	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Nordic Semiconductor nRF54L series MCU
 
 config SOC_SERIES_NRF91X
 	bool
-	select SOC_FAMILY_NRF
+	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Enable support for NRF91 MCU series
 
