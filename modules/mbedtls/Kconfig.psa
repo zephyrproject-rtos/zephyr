@@ -217,6 +217,83 @@ config PSA_WANT_KEY_TYPE_DH_PUBLIC_KEY
 	help
 	  Finite-field Diffie-Hellman public key.
 
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_IMPORT
+	bool "SPAKE2P key pair import support"
+	default y if PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: import key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_EXPORT
+	bool "SPAKE2P key pair export support"
+	default y if PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: export key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_DERIVE
+	bool "SPAKE2P key pair derive support"
+	default y if PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: derive key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_EXPORT    || \
+		PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_DERIVE
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	bool "SPAKE2P key pair support"
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	bool "SPAKE2P public key support"
+	help
+	  SPAKE2P public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_IMPORT
+	bool "SRP key pair import support"
+	default y if PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	help
+	  SRP key pair: import key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_EXPORT
+	bool "SRP key pair export support"
+	default y if PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	help
+	  SRP key pair: export key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_DERIVE
+	bool "SRP key pair derive support"
+	default y if PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	help
+	  SRP key pair: derive key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_EXPORT || \
+		PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_DERIVE
+
+config PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	bool "SRP public key support"
+	help
+	  SRP public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	bool "SRP public key support"
+	help
+	  SRP public key.
+
 endmenu # PSA Key type support
 
 menu "PSA AEAD support"
@@ -735,15 +812,28 @@ config PSA_WANT_ALG_JPAKE
 	prompt "PSA EC J-PAKE support" if !PSA_PROMPTLESS
 	select EXPERIMENTAL if !NET_L2_OPENTHREAD
 
-config PSA_WANT_ALG_SPAKE2P
+config PSA_WANT_ALG_SPAKE2P_HMAC
 	bool
-	prompt "PSA SPAKE2+ support" if !PSA_PROMPTLESS
-	select EXPERIMENTAL if !CHIP
+	prompt "PSA SPAKE2+ HMAC support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SPAKE2P_CMAC
+	bool
+	prompt "PSA SPAKE2+ CMAC support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SPAKE2P_MATTER
+	bool
+	prompt "PSA SPAKE2+ MATTER support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ALG_SRP_6
 	bool
 	prompt "PSA SRP-6 support" if !PSA_PROMPTLESS
 	select EXPERIMENTAL
+
+config PSA_WANT_ALG_SRP_PASSWORD_HASH
+	bool
+	prompt "PSA SRP password hash support" if !PSA_PROMPTLESS
+	select EXPERIMENTAL
+
 
 config PSA_WANT_ALG_PURE_EDDSA
 	bool
