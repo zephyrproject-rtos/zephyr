@@ -75,9 +75,8 @@ Other hardware features have not been enabled yet for this board.
 See `Nordic Semiconductor Infocenter`_ for a complete list of nRF52-based
 board hardware features.
 
-The default configuration can be found in the defconfig file:
-
-        ``boards/96boards/96b_nitrogen/96b_nitrogen_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/96boards/96b_nitrogen/96b_nitrogen_defconfig`
 
 Pin Mapping
 ===========

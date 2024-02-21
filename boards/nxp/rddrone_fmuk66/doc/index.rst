@@ -84,9 +84,8 @@ The rddrone-fmuk66 board configuration supports the following hardware features:
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/nxp/rddrone_fmuk66/rddrone_fmuk66_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/nxp/rddrone_fmuk66/rddrone_fmuk66_defconfig`
 
 Other hardware features are not currently supported by the port.
 
