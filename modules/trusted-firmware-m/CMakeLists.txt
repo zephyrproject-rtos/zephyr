@@ -201,7 +201,7 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c
 
-    # Specific to nordic_nrf platform
+    # Specific to nordic platform
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c
     )
 
