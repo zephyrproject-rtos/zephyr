@@ -13,7 +13,7 @@ tests:
       - nsim/nsim_em
       - nsim/nsim_em7d_v22
       - nsim/nsim_hs
-      - nsim/nsim_hs_mpuv6
+      - nsim/nsim_hs/mpuv6
       - nsim/nsim_hs5x
       - nsim/nsim_hs6x
       - qemu_arc/qemu_arc_em
