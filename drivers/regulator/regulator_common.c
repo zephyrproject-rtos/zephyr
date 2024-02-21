@@ -90,6 +90,9 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 
 	if (is_enabled) {
 		data->refcnt++;
+		if ((config->flags & REGULATOR_BOOT_OFF) != 0U) {
+			return regulator_disable(dev);
+		}
 	} else if ((config->flags & REGULATOR_INIT_ENABLED) != 0U) {
 		ret = api->enable(dev);
 		if (ret < 0) {
