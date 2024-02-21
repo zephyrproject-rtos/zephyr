@@ -55,12 +55,26 @@ static inline int clk_enable_ambiq_uart(const struct device *dev, uint32_t clk)
  * Note: busy wait is not allowed to use here due to UART is initiated before timer starts.
  */
 
+#if CONFIG_SOC_SERIES_APOLLO3X
 #define QUIRK_AMBIQ_UART_DEFINE(n)                                                                 \
 	static int pwr_on_ambiq_uart_##n(void)                                                     \
 	{                                                                                          \
 		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
 				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
-		uint32_t pwr_status_addr = addr + 4;                                               \
+		uint32_t pwr_status_addr = addr + 0x10;					                         \
+		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
+		while ((sys_read32(pwr_status_addr) & 0x4) != 0x4) {     \
+			arch_nop();                                                                \
+		};                                                                                 \
+		return 0;                                                                          \
+	}
+#else
+#define QUIRK_AMBIQ_UART_DEFINE(n)                                                                 \
+	static int pwr_on_ambiq_uart_##n(void)                                                     \
+	{                                                                                          \
+		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
+				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
+		uint32_t pwr_status_addr = addr + 4;					                         \
 		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
 		while ((sys_read32(pwr_status_addr) & DT_INST_PHA(n, ambiq_pwrcfg, mask)) !=       \
 		       DT_INST_PHA(n, ambiq_pwrcfg, mask)) {                                       \
@@ -68,6 +82,7 @@ static inline int clk_enable_ambiq_uart(const struct device *dev, uint32_t clk)
 		};                                                                                 \
 		return 0;                                                                          \
 	}
+#endif
 
 #define PL011_QUIRK_AMBIQ_UART_DEFINE(n)                                                           \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart), (QUIRK_AMBIQ_UART_DEFINE(n)),  \

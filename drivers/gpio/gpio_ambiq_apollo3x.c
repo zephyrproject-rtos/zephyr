@@ -1,5 +1,6 @@
 #define DT_DRV_COMPAT ambiq_gpio_bank
 
+#include <string.h>
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
@@ -23,26 +24,15 @@ static bool irq_init = true;
 #define GPIOCFG_FLD_OUTCFG_S    1
 #define GPIOCFG_FLD_INCFG_S     0
 
+static am_hal_gpio_pincfg_t ambiq_pin_configs[AM_HAL_GPIO_MAX_PADS];
+
 static int ambiq_apollo3x_read_pinconfig(int pin, am_hal_gpio_pincfg_t *pincfg)
 {
-	uint32_t cfg_addr = AM_REGADDR(GPIO, CFGA) + ((pin >> 1) & ~0x3);
-	uint32_t cfg_shift = ((pin & 0x7) >> 2);
-	uint32_t gpio_cfg = (AM_REGVAL(cfg_addr) >> cfg_shift) & 0xF;
-	uint32_t pad_addr = AM_REGADDR(GPIO, PADREGA) + (pin & ~0x3);
-	uint32_t pad_shift = ((pin & 0x3) >> 3);
-	uint32_t pad_cfg = (AM_REGVAL(pad_addr) >> pad_shift) & 0xFF;
-
-	if ((pad_cfg >> PADREG_FLD_PULLUP_S) & 0x1) {
-		pincfg->ePullup = ((pad_cfg >> PADREG_FLD_76_S) & 0x7) +
-							AM_HAL_GPIO_PIN_PULLUP_1_5K;
-	} else {
-		pincfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
+	if (pincfg == NULL) {
+		return -1;
 	}
-	pincfg->eGPOutcfg = (gpio_cfg >> GPIOCFG_FLD_OUTCFG_S) & 0x3;
-	pincfg->eCEpol = (gpio_cfg >> GPIOCFG_FLD_INTD_S) & 0x1;
-	pincfg->eIntDir = (gpio_cfg >> GPIOCFG_FLD_INCFG_S) & 0x1;
-	pincfg->eGPInput = (pad_cfg >> PADREG_FLD_INPEN_S) & 0x1;
-	pincfg->uFuncSel = (pad_cfg >> PADREG_FLD_FNSEL_S) & 0x3;
+
+	memcpy(pincfg, &ambiq_pin_configs[pin], sizeof(*pincfg));
 
 	return 0;
 }
@@ -96,6 +86,8 @@ static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 	}
 
 	am_hal_gpio_pinconfig(pin, pincfg);
+
+	memcpy(&ambiq_pin_configs[pin], &pincfg, sizeof(pincfg));
 
 	return 0;
 }
@@ -189,7 +181,6 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 
 	am_hal_gpio_pincfg_t pincfg;
 	int gpio_pin = pin + (dev_cfg->offset >> 2);
-	uint32_t int_status;
 	int ret;
 
 	AM_HAL_GPIO_MASKCREATE(int_msk);
@@ -199,25 +190,13 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 	ret = ambiq_apollo3x_read_pinconfig(gpio_pin, &pincfg);
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		uint32_t en_masks[3] = { 0 };
-
 		pincfg.eIntDir = AM_HAL_GPIO_PIN_INTDIR_NONE;
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
 
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-		int_status = am_hal_gpio_interrupt_status_get(false, pint_msk);
 		ret = am_hal_gpio_interrupt_clear(pint_msk);
 		ret = am_hal_gpio_interrupt_disable(pint_msk);
-
-		/* Unforunately there is no API in the Ambiq SDK for reading interrupt mask */
-		en_masks[0] = GPIO->INT0EN;
-		en_masks[1] = GPIO->INT1EN;
-		en_masks[2] = GPIO->INT2EN;
-
-		if (!en_masks[0] && !en_masks[1] && !en_masks[2]) {
-			irq_disable(dev_cfg->irq_num);
-		}
 
 		k_spin_unlock(&data->lock, key);
 
@@ -237,14 +216,13 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		}
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
 
-		irq_enable(dev_cfg->irq_num);
-
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-		int_status = am_hal_gpio_interrupt_status_get(false, pint_msk);
 		ret = am_hal_gpio_interrupt_clear(pint_msk);
 		ret = am_hal_gpio_interrupt_enable(pint_msk);
 		k_spin_unlock(&data->lock, key);
+
+		irq_enable(dev_cfg->irq_num);
 	}
 	return ret;
 }
@@ -252,15 +230,14 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 static void ambiq_gpio_isr(const struct device *dev)
 {
 	struct ambiq_gpio_data *const data = dev->data;
+	const struct ambiq_gpio_config *cfg = dev->config;
 
-	AM_HAL_GPIO_MASKCREATE(int_msk);
+	AM_HAL_GPIO_MASKCREATE(int_status);
 
-	am_hal_gpio_interrupt_status_get(false, pint_msk);
-	am_hal_gpio_interrupt_clear(pint_msk);
+	am_hal_gpio_interrupt_status_get(false, pint_status);
+	am_hal_gpio_interrupt_clear(pint_status);
 
-	gpio_fire_callbacks(&data->cb, dev, pint_msk->U.Msk[0]);
-	gpio_fire_callbacks(&data->cb, dev, pint_msk->U.Msk[1]);
-	gpio_fire_callbacks(&data->cb, dev, pint_msk->U.Msk[2]);
+	gpio_fire_callbacks(&data->cb, dev, int_status.U.Msk[cfg->offset >> 5]);
 }
 
 static int ambiq_gpio_init(const struct device *port)
