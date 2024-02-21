@@ -169,7 +169,7 @@ application.
 ``Important!!!`` : Before flashing the board a ``preloader`` is required,
 you can download `cv_soc_devkit_ghrd.tar.gz <https://releases.rocketboards.org/release/2018.05/gsrd/hw/cv_soc_devkit_ghrd.tar.gz>`_,
 extract the file and copy ``cv_soc_devkit_ghrd/software/preloader/uboot-socfpga/spl/u-boot-spl``
-to ``boards/intel/intel_socfpga_std/cyclonev_socdk/support/``
+to :zephyr_file:`boards/intel/intel_socfpga_std/cyclonev_socdk/support/`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

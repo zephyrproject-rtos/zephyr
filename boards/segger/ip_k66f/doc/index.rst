@@ -59,9 +59,8 @@ The ip_k66f board configuration supports the following hardware features:
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/segger/ip_k66f/ip_k66f_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/segger/ip_k66f/ip_k66f_defconfig`
 
 Micrel/Microchip KSZ8794CNX Ethernet Switch is not currently
 supported.

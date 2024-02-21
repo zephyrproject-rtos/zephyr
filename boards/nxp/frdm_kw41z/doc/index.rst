@@ -88,9 +88,8 @@ The frdm_kw41z board configuration supports the following hardware features:
 | FTFA      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/nxp/frdm_kw41z/frdm_kw41z_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/nxp/frdm_kw41z/frdm_kw41z_defconfig`
 
 Other hardware features are not currently supported by the port.
 

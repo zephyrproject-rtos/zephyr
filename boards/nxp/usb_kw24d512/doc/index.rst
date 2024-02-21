@@ -68,9 +68,8 @@ The USB-KW24D512 board configuration supports the following hardware features:
 | FTFL      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/nxp/usb_kw24d512/usb_kw24d512_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/nxp/usb_kw24d512/usb_kw24d512_defconfig`
 
 Other hardware features are not currently supported by the port.
 
