@@ -18,7 +18,7 @@ tests:
       - nucleo_f767zi
       - nucleo_h743zi
       - nucleo_h745zi_q/stm32h745xx/m7
-    depends_on: netif
+    depends_on: eth
     integration_platforms:
       - frdm_k64f
   sample.net.gpt.nxp_enet_experimental:

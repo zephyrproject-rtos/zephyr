@@ -10,4 +10,4 @@ tests:
   sample.net.dsa:
     build_only: true
     platform_allow: ip_k66f
-    depends_on: netif
+    depends_on: eth

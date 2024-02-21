@@ -3,7 +3,7 @@ common:
   tags:
     - net
     - openthread
-  depends_on: netif
+  depends_on: openthread
   min_flash: 140
 sample:
   description: Runs the OpenThread stack as NCP BR
