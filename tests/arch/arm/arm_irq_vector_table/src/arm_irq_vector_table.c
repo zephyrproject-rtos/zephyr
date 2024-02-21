@@ -16,7 +16,7 @@
  */
 #define _ISR_OFFSET 0
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #undef _ISR_OFFSET
 #if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 /* For the nRF51-based QEMU Cortex-M0 platform, the first set of consecutive
@@ -34,7 +34,7 @@
 /* For other nRF targets, use TIMER0-2 interrupt lines. */
 #define _ISR_OFFSET TIMER0_IRQn
 #endif
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 struct k_sem sem[3];
 
@@ -130,7 +130,7 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 
 typedef void (*vth)(void); /* Vector Table Handler */
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 /* nRF5X- and nRF91X-based platforms employ a Hardware RTC peripheral
  * to implement the Kernel system timer, instead of the ARM Cortex-M
  * SysTick. Therefore, a pointer to the timer ISR needs to be added in
@@ -237,7 +237,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2
 };
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 /**
  * @}
