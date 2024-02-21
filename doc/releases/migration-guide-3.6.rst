@@ -5,17 +5,14 @@
 Migration guide to Zephyr v3.6.0 (Working Draft)
 ################################################
 
-This document describes the changes required or recommended when migrating your
-application from Zephyr v3.5.0 to Zephyr v3.6.0.
+This document describes the changes required when migrating your application from Zephyr v3.5.0 to
+Zephyr v3.6.0.
 
 Any other changes (not directly related to migrating applications) can be found in
 the :ref:`release notes<zephyr_3.6>`.
 
-Required changes
-****************
-
 Build System
-============
+************
 
 * The deprecated ``prj_<board>.conf`` Kconfig file support has been removed, projects that use
   this should switch to using board Kconfig fragments instead (``boards/<board>.conf``).
@@ -34,7 +31,7 @@ Build System
   instead use the new ``-DFILE_SUFFIX`` feature :ref:`application-file-suffixes`.
 
 Kernel
-======
+******
 
 * The system heap size and its availability is now determined by a ``K_HEAP_MEM_POOL_SIZE``
   define instead of the :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` Kconfig option. Subsystems
@@ -46,7 +43,7 @@ Kernel
   being disabled).
 
 Boards
-======
+******
 
 * The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
   applications that use this should switch to using the :ref:`boot_mode_api` instead.
@@ -55,7 +52,7 @@ Boards
   ``mimxrt1020_evk``, ``mimxrt1015_evk``
 
 Optional Modules
-================
+****************
 
 The following modules have been made optional and are not downloaded with `west update` by default
 anymore:
@@ -67,7 +64,7 @@ name>`` command, or ``west config manifest.group-filter -- +optional`` to
 enable all optional modules, and then run ``west update`` again.
 
 Device Drivers and Device Tree
-==============================
+******************************
 
 * Various deprecated macros related to the deprecated devicetree label property
   were removed. These are listed in the following table. The table also
@@ -361,7 +358,7 @@ Device Drivers and Device Tree
   for the boards which are based on ST BlueNRG-MS.
 
 Shell
-=====
+*****
 
 * The following subsystem and driver shell modules are now disabled by default. Each required shell
   module must now be explicitly enabled via Kconfig (:github:`65307`):
@@ -405,14 +402,14 @@ Shell
   also has to be enabled in order to use the asynchronous serial shell (:github: `68475`).
 
 Bootloader
-==========
+**********
 
 * MCUboot's deprecated ``CONFIG_ZEPHYR_TRY_MASS_ERASE`` Kconfig option has been removed. If an
   erase is needed when flashing MCUboot, this should now be provided directly to the ``west``
   command e.g. ``west flash --erase``. (:github:`64703`)
 
 Bluetooth
-=========
+*********
 
 * ATT now has its own TX buffer pool.
   If extra ATT buffers were configured using :kconfig:option:`CONFIG_BT_L2CAP_TX_BUF_COUNT`,
@@ -495,7 +492,7 @@ Bluetooth
 
 
 LoRaWAN
-=======
+*******
 
 * The API to register a callback to provide battery level information to the LoRaWAN stack has been
   renamed from ``lorawan_set_battery_level_callback`` to
@@ -504,7 +501,7 @@ LoRaWAN
   (:github:`65103`)
 
 Networking
-==========
+**********
 
 * The CoAP public API has some minor changes to take into account. The
   :c:func:`coap_remove_observer` now returns a result if the observer was removed. This
@@ -552,7 +549,7 @@ Networking
   removed.
 
 zcbor
-=====
+*****
 
 * If you have zcbor-generated code that relies on the zcbor libraries through Zephyr, you must
   regenerate the files using zcbor 0.8.1. Note that the names of generated types and members has
@@ -579,7 +576,7 @@ zcbor
   :c:func:`zcbor_trace_file` and :c:func:`zcbor_trace`, both of which take a ``state`` parameter.
 
 Other Subsystems
-================
+****************
 
 * MCUmgr applications that make use of serial transports (shell or UART) must now select
   :kconfig:option:`CONFIG_CRC`, this was previously erroneously selected if MCUmgr was enabled,
@@ -596,7 +593,7 @@ Other Subsystems
   and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` options should be used.
 
 Userspace
-=========
+*********
 
 * A number of userspace related functions have been moved out of the ``z_`` namespace
   and into the kernel namespace.
@@ -633,7 +630,7 @@ Userspace
   * ``z_dynamic_object_aligned_create`` to :c:func:`k_object_create_dynamic_aligned`
 
 Xtensa
-======
+******
 
 * :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer has a default in
   the architecture layer. Instead, SoCs or boards will need to define it.
@@ -656,14 +653,3 @@ Xtensa
   * ``z_xtensa_irq_disable`` to :c:func:`xtensa_irq_disable`
 
   * ``z_xtensa_irq_is_enabled`` to :c:func:`xtensa_irq_is_enabled`
-
-Recommended Changes
-*******************
-
-* New macros available for ST sensor DT properties setting. These macros have a self-explanatory
-  name that helps in recognizing what the property setting means (e.g. LSM6DSV16X_DT_ODR_AT_60Hz).
-  (:github:`65410`)
-
-* Users of :ref:`native_posix<native_posix>` are recommended to migrate to
-  :ref:`native_sim<native_sim>`. :ref:`native_sim<native_sim>` supports all its use cases,
-  and should be a drop-in replacement for most.
