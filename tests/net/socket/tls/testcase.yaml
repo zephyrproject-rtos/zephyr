@@ -18,3 +18,6 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
     platform_exclude: mps2/an385
+  net.socket.tls.sendmsg_no_buf:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE=0
