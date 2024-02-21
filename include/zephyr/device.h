@@ -906,7 +906,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		.state = (state_),                                             \
 		.data = (data_),                                               \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
-		IF_ENABLED(CONFIG_PM_DEVICE, (.pm_base = (pm_),)) /**/         \
+		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),)}) /**/         \
 	}
 
 /**
