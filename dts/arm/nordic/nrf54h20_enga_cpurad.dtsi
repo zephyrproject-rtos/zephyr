@@ -9,6 +9,7 @@
 cpu: &cpurad {};
 systick: &cpurad_systick {};
 nvic: &cpurad_nvic {};
+cpuppr_vevif: &cpuppr_vevif_remote {};
 
 /delete-node/ &cpuapp;
 /delete-node/ &cpuapp_peripherals;
