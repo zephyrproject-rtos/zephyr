@@ -10,15 +10,28 @@ config INCLUDE_REMOTE_DIR
 	  Include remote build header files. Can be used if primary image
 	  needs to be aware of size or base address of secondary image
 
+config TX_ENABLED
+	bool "TX enabled"
+	default y
+	help
+	  Enable TX
+
 config TX_CHANNEL_ID
 	int "Channel ID for TX"
 	default 1
+	depends on TX_ENABLED
 	help
 	  Channel ID for TX
 
+config RX_ENABLED
+	bool "RX enabled"
+	default y
+	help
+	  Enable RX
 
 config RX_CHANNEL_ID
 	int "Channel ID for RX"
+	depends on RX_ENABLED
 	default 0
 	help
 	  Channel ID for RX
