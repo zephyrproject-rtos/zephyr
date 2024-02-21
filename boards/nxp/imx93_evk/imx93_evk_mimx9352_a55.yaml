@@ -1,4 +1,10 @@
-identifier: mimx93_evk_a55
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx93_evk/mimx9352/a55
 name: NXP i.MX93 Plus EVK A55
 type: mcu
 arch: arm64
@@ -15,4 +21,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-vendor: fsl
+vendor: nxp
