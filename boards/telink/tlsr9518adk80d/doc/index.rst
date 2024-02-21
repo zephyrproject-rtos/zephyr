@@ -102,7 +102,7 @@ System Clock
 The TLSR9518ADK80D board is configured to use the 24 MHz external crystal oscillator
 with the on-chip PLL/DIV generating the 48 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-`zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d.dts`:
+:zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d.dts`:
 
 - 16000000
 - 24000000
