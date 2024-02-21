@@ -95,7 +95,7 @@ See the `V2M Musca-S1 Website`_ for a complete list of V2M Musca-S1 board
 hardware features.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/v2m_musca_s1/v2m_musca_s1_defconfig``.
+:zephyr_file:`boards/arm/v2m_musca_s1/v2m_musca_s1_defconfig`.
 
 Interrupt Controller
 ====================
