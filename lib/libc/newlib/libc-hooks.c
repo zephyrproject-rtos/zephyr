@@ -304,6 +304,7 @@ void *_sbrk(intptr_t count)
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
 
 #ifdef CONFIG_MULTITHREADING
+#define _LOCK_T void *
 
 /* Make sure _RETARGETABLE_LOCKING is enabled in toolchain */
 BUILD_ASSERT(IS_ENABLED(_RETARGETABLE_LOCKING), "Retargetable locking must be enabled");
