@@ -1,0 +1,17 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TX_CHANNEL_ID
+	int "Channel ID for TX"
+	default 0
+	help
+	  Channel ID for TX
+
+
+config RX_CHANNEL_ID
+	int "Channel ID for RX"
+	default 1
+	help
+	  Channel ID for RX
