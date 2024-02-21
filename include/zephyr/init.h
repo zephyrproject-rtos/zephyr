@@ -151,6 +151,39 @@ struct init_entry {
 	__attribute__((__section__(                                           \
 		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
 
+
+/* Designated initializers where added to C in C99. There were added to
+ * C++ 20 years later in a much more restricted form. C99 allows many
+ * variations: out of order, mix of designated and not, overlap,
+ * override,... but C++ allows none of these. See differences detailed
+ * in the P0329R0.pdf C++ proposal. So use '#ifdef __cplusplus' to provide
+ * some separation between these two different languages and to give us
+ * more latitude to support more toolchains without reverting to plain
+ * initializers.
+ */
+#ifdef __cplusplus
+
+/* When using -std=c++2a or higher, g++ (v12.2.0) reject braces for
+ * initializing anonymous unions because it is technically a mix of
+ * designated and not designated initializers which is not allowed in
+ * C++20. Interestingly, the _same_ g++ version does accept braces when
+ * using -std=c++17 or lower!
+ * This Zephyr test compares different -std=... values:
+ *
+ *    ./scripts/twister -v -b -p qemu_cortex_a53 -T tests/lib/cpp/
+ */
+#  define Z_INIT_SYS_INIT_DEV_NULL    .dev = NULL
+
+#else
+
+/* While braces should be optional for anonymous unions, gcc version 4.5
+ * (2010) and lower fail when they're missing. See example in #68118 or
+ * in your favorite compiler explorer.
+ */
+#  define Z_INIT_SYS_INIT_DEV_NULL  { .dev = NULL }
+
+#endif
+
 /** @endcond */
 
 /**
@@ -205,7 +238,8 @@ struct init_entry {
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
-		Z_INIT_ENTRY_NAME(name) = {{ (init_fn_) }, { NULL } }
+		Z_INIT_ENTRY_NAME(name) = {.init_fn = {.sys = (init_fn_)},                \
+			Z_INIT_SYS_INIT_DEV_NULL}
 
 /** @} */
 
