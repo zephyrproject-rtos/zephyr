@@ -112,6 +112,8 @@ typedef void *sensing_sensor_handle_t;
  * @param handle The sensor instance handle.
  *
  * @param buf The data buffer with sensor data.
+ *
+ * @param context User provided context pointer.
  */
 typedef void (*sensing_data_event_t)(
 		sensing_sensor_handle_t handle,
