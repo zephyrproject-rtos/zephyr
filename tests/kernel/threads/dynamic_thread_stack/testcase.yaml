@@ -11,7 +11,7 @@ common:
     - qemu_riscv32
     - qemu_riscv32e
     - qemu_riscv64
-    - qemu_riscv64_smp
+    - qemu_riscv64/qemu_virt_riscv64/smp
 
 # Permutations of (pool | alloc | user)
 tests:
