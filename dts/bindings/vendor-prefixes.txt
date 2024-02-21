@@ -188,6 +188,7 @@ emlid	Emlid, Ltd.
 emmicro	EM Microelectronic
 empire-electronix	Empire Electronix
 emtrion	emtrion GmbH
+enclustra	Enclustra GmbH
 endless	Endless Mobile, Inc.
 ene	ENE Technology, Inc.
 energymicro	Silicon Laboratories (formerly Energy Micro AS)
