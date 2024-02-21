@@ -93,7 +93,13 @@ static struct broadcast_sink_stream {
 #if defined(CONFIG_LIBLC3)
 	struct net_buf *in_buf;
 	struct k_work_delayable lc3_decode_work;
-/* Internal lock for protecting net_buf from multiple access */
+
+	/* LC3 config values */
+	enum bt_audio_location chan_allocation;
+	uint16_t lc3_octets_per_frame;
+	uint8_t lc3_frames_blocks_per_sdu;
+
+	/* Internal lock for protecting net_buf from multiple access */
 	struct k_mutex lc3_decoder_mutex;
 	lc3_decoder_t lc3_decoder;
 	lc3_decoder_mem_48k_t lc3_decoder_mem;
@@ -131,7 +137,6 @@ static void add_to_usb_ring_buf(const int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STER
 #endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
 
 #if defined(CONFIG_LIBLC3)
-static int frames_per_sdu;
 static K_SEM_DEFINE(lc3_decoder_sem, 0, 1);
 
 static bool do_lc3_decode(struct broadcast_sink_stream *sink_stream,
@@ -174,11 +179,29 @@ static void lc3_decoder_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
+static size_t get_chan_cnt(enum bt_audio_location chan_allocation)
+{
+	size_t cnt = 0U;
+
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		return 1;
+	}
+
+	while (chan_allocation != 0) {
+		cnt += chan_allocation & 1U;
+		chan_allocation >>= 1;
+	}
+
+	return cnt;
+}
+
 /** Decode LC3 data on a stream and returns true if successful */
 static bool do_lc3_decode(struct broadcast_sink_stream *sink_stream,
 			  int16_t audio_buf[LC3_MAX_NUM_SAMPLES_STEREO])
 {
-	uint16_t octets_per_frame;
+	const uint8_t frames_blocks_per_sdu = sink_stream->lc3_frames_blocks_per_sdu;
+	const uint16_t octets_per_frame = sink_stream->lc3_octets_per_frame;
+	uint16_t frames_per_block;
 	struct net_buf *buf;
 
 	k_mutex_lock(&sink_stream->lc3_decoder_mutex, K_FOREVER);
@@ -194,31 +217,33 @@ static bool do_lc3_decode(struct broadcast_sink_stream *sink_stream,
 	sink_stream->in_buf = NULL;
 	k_mutex_unlock(&sink_stream->lc3_decoder_mutex);
 
-	octets_per_frame = buf->len / frames_per_sdu;
-	if (buf->len != (octets_per_frame * frames_per_sdu)) {
-		printk("Expected %u frames of size %u, but length is %u\n", frames_per_sdu,
-		       octets_per_frame, buf->len);
+	frames_per_block = get_chan_cnt(sink_stream->chan_allocation);
+	if (buf->len != (frames_per_block * octets_per_frame * frames_blocks_per_sdu)) {
+		printk("Expected %u frame blocks with %u frames of size %u, but length is %u\n",
+		       frames_blocks_per_sdu, frames_per_block, octets_per_frame, buf->len);
 
 		net_buf_unref(buf);
 
 		return false;
 	}
 
-	for (int i = 0; i < frames_per_sdu; i++) {
-		const void *data = net_buf_pull_mem(buf, octets_per_frame);
-		int err;
+	for (uint8_t i = 0U; i < frames_blocks_per_sdu; i++) {
+		for (uint16_t j = 0U; j < frames_per_block; j++) {
+			const void *data = net_buf_pull_mem(buf, octets_per_frame);
+			int err;
 
-		err = lc3_decode(sink_stream->lc3_decoder, data, octets_per_frame,
-				 LC3_PCM_FORMAT_S16, audio_buf, 1);
+			err = lc3_decode(sink_stream->lc3_decoder, data, octets_per_frame,
+					 LC3_PCM_FORMAT_S16, audio_buf, 1);
 
-		if (err == 1) {
-			printk("  decoder performed PLC\n");
-		} else if (err < 0) {
-			printk("  decoder failed - wrong parameters? (err = %d)\n", err);
+			if (err == 1) {
+				printk("  decoder performed PLC\n");
+			} else if (err < 0) {
+				printk("  decoder failed - wrong parameters? (err = %d)\n", err);
 
-			net_buf_unref(buf);
+				net_buf_unref(buf);
 
-			return false;
+				return false;
+			}
 		}
 	}
 
@@ -229,9 +254,11 @@ static bool do_lc3_decode(struct broadcast_sink_stream *sink_stream,
 
 static int lc3_enable(struct broadcast_sink_stream *sink_stream)
 {
-	int ret;
-	int freq_hz;
+	size_t chan_alloc_bit_cnt;
+	size_t sdu_size_required;
 	int frame_duration_us;
+	int freq_hz;
+	int ret;
 
 	printk("Enable: stream with codec %p\n", sink_stream->stream.codec_cfg);
 
@@ -251,8 +278,49 @@ static int lc3_enable(struct broadcast_sink_stream *sink_stream)
 		return ret;
 	}
 
-	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(sink_stream->stream.codec_cfg,
-								     true);
+	ret = bt_audio_codec_cfg_get_chan_allocation(sink_stream->stream.codec_cfg,
+						     &sink_stream->chan_allocation);
+	if (ret != 0) {
+		printk("Error: Channel allocation not set, invalid configuration for LC3");
+		return ret;
+	}
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(sink_stream->stream.codec_cfg);
+	if (ret > 0) {
+		sink_stream->lc3_octets_per_frame = (uint16_t)ret;
+	} else {
+		printk("Error: Octets per frame not set, invalid configuration for LC3");
+		return ret;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(sink_stream->stream.codec_cfg, true);
+	if (ret > 0) {
+		sink_stream->lc3_frames_blocks_per_sdu = (uint8_t)ret;
+	} else {
+		printk("Error: Frame blocks per SDU not set, invalid configuration for LC3");
+		return ret;
+	}
+
+	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
+	 * them. The minimum SDU size required for this is X * Y * Z.
+	 */
+	chan_alloc_bit_cnt = get_chan_cnt(sink_stream->chan_allocation);
+	sdu_size_required = chan_alloc_bit_cnt * sink_stream->lc3_octets_per_frame *
+			    sink_stream->lc3_frames_blocks_per_sdu;
+	if (sdu_size_required < sink_stream->stream.qos->sdu) {
+		printk("With %zu channels and %u octets per frame and %u frames per block, SDUs "
+		       "shall be at minimum %zu, but the stream has been configured for %u",
+		       chan_alloc_bit_cnt, sink_stream->lc3_octets_per_frame,
+		       sink_stream->lc3_frames_blocks_per_sdu, sdu_size_required,
+		       sink_stream->stream.qos->sdu);
+
+		return -EINVAL;
+	}
+
+	printk("Enabling LC3 decoder with frame duration %uus, frequency %uHz and with channel "
+	       "allocation 0x%08X, %u octets per frame and %u frame blocks per SDU\n",
+	       frame_duration_us, freq_hz, sink_stream->chan_allocation,
+	       sink_stream->lc3_octets_per_frame, sink_stream->lc3_frames_blocks_per_sdu);
 
 #if defined(CONFIG_USB_DEVICE_AUDIO)
 	sink_stream->lc3_decoder = lc3_setup_decoder(frame_duration_us, freq_hz, USB_SAMPLE_RATE,
