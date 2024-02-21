@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/display/ssd16xx.h>
@@ -974,6 +975,44 @@ static int ssd16xx_init(const struct device *dev)
 	return ssd16xx_controller_init(dev);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ssd16xx_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	int err = 0;
+	const struct ssd16xx_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = ssd16xx_controller_init(dev);
+		if (err < 0) {
+			return err;
+		}
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		ssd16xx_busy_wait(dev);
+		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_SLEEP_MODE, 1);
+		if (err < 0) {
+			return err;
+		}
+
+		k_msleep(SSD16XX_BUSY_DELAY);
+
+		err = gpio_pin_set_dt(&config->reset_gpio, 1);
+		if (err < 0) {
+			return err;
+		}
+		break;
+
+	default:
+		err = -ENOTSUP;
+	}
+
+	return err;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static struct display_driver_api ssd16xx_driver_api = {
 	.blanking_on = ssd16xx_blanking_on,
 	.blanking_off = ssd16xx_blanking_off,
@@ -1114,8 +1153,10 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 									\
 	static struct ssd16xx_data ssd16xx_data_ ## n;			\
 									\
+	PM_DEVICE_DT_DEFINE(n, ssd16xx_pm_action);			\
 	DEVICE_DT_DEFINE(n,						\
-			 ssd16xx_init, NULL,				\
+			 ssd16xx_init,					\
+			 PM_DEVICE_DT_GET(n),				\
 			 &ssd16xx_data_ ## n,				\
 			 &ssd16xx_cfg_ ## n,				\
 			 POST_KERNEL,					\
