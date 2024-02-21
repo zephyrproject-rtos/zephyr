@@ -9,9 +9,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 
-#define TX_ID (0)
-#define RX_ID (1)
-
 static void callback(const struct device *dev, uint32_t channel,
 		     void *user_data, struct mbox_msg *data)
 {
@@ -28,8 +25,8 @@ int main(void)
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(mbox));
 
-	mbox_init_channel(&tx_channel, dev, TX_ID);
-	mbox_init_channel(&rx_channel, dev, RX_ID);
+	mbox_init_channel(&tx_channel, dev, CONFIG_TX_CHANNEL_ID);
+	mbox_init_channel(&rx_channel, dev, CONFIG_RX_CHANNEL_ID);
 
 	if (mbox_register_callback(&rx_channel, callback, NULL)) {
 		printk("mbox_register_callback() error\n");
