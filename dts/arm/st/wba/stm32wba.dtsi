@@ -33,7 +33,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
-			cpu-power-states = <&stop0 &stop1 &standby>;
+			/* Do not add &standby here since CONFIG_PM_S2RAM is disabled by default */
+			cpu-power-states = <&stop0 &stop1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
