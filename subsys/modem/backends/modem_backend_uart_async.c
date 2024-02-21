@@ -114,7 +114,8 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 		if (received < evt->data.rx.len) {
 			ring_buf_reset(&backend->async.receive_rb);
 			k_spin_unlock(&backend->async.receive_rb_lock, key);
-			LOG_WRN("Receive buffer overrun");
+			LOG_WRN("Receive buffer overrun (%u/%u dropped)",
+				evt->data.rx.len - received, evt->data.rx.len);
 			break;
 		}
 
