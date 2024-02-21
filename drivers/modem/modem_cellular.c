@@ -2219,7 +2219,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.power_pulse_duration_ms = 100,                                                    \
 		.reset_pulse_duration_ms = 100,                                                    \
 		.startup_time_ms = 2000,                                                           \
-		.shutdown_time_ms = 3000,                                                          \
+		.shutdown_time_ms = 10000,                                                         \
 		.init_chat_script = &nordic_nrf91_slm_init_chat_script,                            \
 		.dial_chat_script = &nordic_nrf91_slm_dial_chat_script,                            \
 		.periodic_chat_script = &nordic_nrf91_slm_periodic_chat_script,                    \
