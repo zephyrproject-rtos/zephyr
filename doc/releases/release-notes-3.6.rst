@@ -669,6 +669,9 @@ Drivers and Sensors
   * Added Memsic MC3419 accelerometer sensor driver.
   * Added AMD SB temperature sensor driver.
   * Added ESP32S3 internal temperature sensor driver.
+  * New macros available for ST sensor DT properties setting. These macros have a self-explanatory
+    name that helps in recognizing what the property setting means (e.g. LSM6DSV16X_DT_ODR_AT_60Hz).
+    (:github:`65410`)
 
 * Serial
 
