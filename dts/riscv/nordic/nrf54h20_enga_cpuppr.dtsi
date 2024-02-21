@@ -8,6 +8,7 @@
 
 cpu: &cpuppr {};
 clic: &cpuppr_clic {};
+cpuppr_vevif: &cpuppr_vevif_local {};
 
 /delete-node/ &cpuapp;
 /delete-node/ &cpuapp_peripherals;
