@@ -1,4 +1,4 @@
-identifier: qemu_riscv32_smp
+identifier: qemu_riscv32/qemu_virt_riscv32/smp
 name: QEMU Emulation for RISC-V 32-bit SMP
 type: qemu
 simulation: qemu
