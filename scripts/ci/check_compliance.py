@@ -712,6 +712,9 @@ flagged.
         "RIMAGE_SIGNING_SCHEMA",  # Optional module
         "SAMPLE_MODULE_LOG_LEVEL",  # Used as an example in samples/subsys/logging
         "SAMPLE_MODULE_LOG_LEVEL_DBG",  # Used in tests/subsys/logging/log_api
+        "SOME_RESOURCE_CAPACITY",          # Used in doc for zephyr_compile_definition_kconfig_based
+        "SOME_RESOURCE_CAPACITY_ADD_",     # Used in doc for zephyr_compile_definition_kconfig_based
+        "SOME_RESOURCE_CAPACITY_MIN_",     # Used in doc for zephyr_compile_definition_kconfig_based
         "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
         "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
         "SEL",
