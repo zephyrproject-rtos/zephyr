@@ -58,8 +58,8 @@ The Apollo4 Blue Plus KXR EVB board configuration supports the following hardwar
 | RADIO     | on-chip    | bluetooth                           |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/apollo4p_blue_kxr_evb/apollo4p_blue_kxr_evb_defconfig``.
+The default configuration can be found in
+:zephyr_file:`boards/ambiq/apollo4p_blue_kxr_evb/apollo4p_blue_kxr_evb_defconfig`
 
 Programming and Debugging
 =========================

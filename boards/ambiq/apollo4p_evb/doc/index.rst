@@ -53,8 +53,8 @@ The Apollo4P EVB board configuration supports the following hardware features:
 | I2C(M)    | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/apollo4p_evb/apollo4p_evb_defconfig``.
+The default configuration can be found in
+:zephyr_file:`boards/ambiq/apollo4p_evb/apollo4p_evb_defconfig`
 
 Programming and Debugging
 =========================
