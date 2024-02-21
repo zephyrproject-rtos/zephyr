@@ -1,9 +1,0 @@
-# Copyright 2022 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_MIMX93_EVK_A55
-
-config BOARD
-	default "mimx93_evk_a55"
-
-endif # BOARD_MIMX8MP_EVK_A55
