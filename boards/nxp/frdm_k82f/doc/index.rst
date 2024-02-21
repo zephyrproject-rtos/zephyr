@@ -105,9 +105,8 @@ already supported, which can also be re-used on this frdm_k82f board:
 | FTFA      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/nxp/frdm_k82f/frdm_k82f_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/nxp/frdm_k82f/frdm_k82f_defconfig`
 
 Other hardware features are not currently supported by the port.
 
