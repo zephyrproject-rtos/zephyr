@@ -754,7 +754,7 @@ static inline void tmag5273_channel_b_field_convert(int64_t raw_value, const uin
 	/* calc remaining part (first mT digit + fractal part) and scale according to Zephyr.
 	 * Ensure that always positive.
 	 */
-	const int64_t raw_dec_part = b_field->val1 * (1 << 16);
+	const int64_t raw_dec_part = (int64_t)b_field->val1 * (1 << 16);
 
 	b_field->val2 = ((raw_value - raw_dec_part) * 1000000) / (1 << 16);
 }
