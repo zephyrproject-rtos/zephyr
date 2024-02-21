@@ -285,6 +285,7 @@ class KconfigCheck(ComplianceTest):
         self.check_no_undef_within_kconfig(kconf)
         self.check_no_redefined_in_defconfig(kconf)
         self.check_no_enable_in_boolean_prompt(kconf)
+        self.check_soc_name_sync(kconf)
         if full:
             self.check_no_undef_outside_kconfig(kconf)
 
@@ -657,6 +658,34 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
 
         if undef_ref_warnings:
             self.failure(f"Undefined Kconfig symbols:\n\n {undef_ref_warnings}")
+
+    def check_soc_name_sync(self, kconf):
+        root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
+        v2_systems = list_hardware.find_v2_systems(root_args)
+
+        soc_names = {soc.name for soc in v2_systems.get_socs()}
+
+        soc_kconfig_names = set()
+        for node in kconf.node_iter():
+            # 'kconfiglib' is global
+            # pylint: disable=undefined-variable
+            if isinstance(node.item, kconfiglib.Symbol) and node.item.name == "SOC":
+                n = node.item
+                for d in n.defaults:
+                    soc_kconfig_names.add(d[0].name)
+
+        soc_name_warnings = []
+        for name in soc_names:
+            if name not in soc_kconfig_names:
+                soc_name_warnings.append(f"soc name: {name} not found in CONFIG_SOC defaults.")
+
+        if soc_name_warnings:
+            soc_name_warning_str = '\n'.join(soc_name_warnings)
+            self.failure(f'''
+Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
+
+{soc_name_warning_str}
+''')
 
     def check_no_undef_outside_kconfig(self, kconf):
         """
