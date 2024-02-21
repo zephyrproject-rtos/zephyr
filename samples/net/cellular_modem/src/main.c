@@ -160,7 +160,7 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 			continue;
 		}
 
-		printk("Receiving echoed packet");
+		printk("Receiving echoed packet\n");
 		ret = zsock_recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
 		if (ret != sizeof(sample_test_packet)) {
 			printk("Echoed sample test packet has incorrect size\n");
@@ -181,10 +181,10 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 		printk("Echo transmit time %ums\n", echo_received_ms - send_start_ms);
 	}
 
-	printk("Successfully sent %u packets of %u packets\n", packets_sent,
+	printk("Successfully sent and received %u of %u packets\n", packets_sent,
 	       SAMPLE_TEST_ECHO_PACKETS);
 
-	printk("Average time per echo: %u ms\n",
+	printk("Average time per successful echo: %u ms\n",
 	       accumulated_ms / packets_sent);
 
 	printk("Close UDP socket\n");
@@ -265,10 +265,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 int main(void)
 {
 	struct net_if *const iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
-	uint32_t raised_event;
 	uint16_t *port;
-	const void *info;
-	size_t info_len;
 	int ret;
 
 	init_sample_test_packet();
@@ -284,9 +281,8 @@ int main(void)
 	}
 
 	printk("Waiting for L4 connected\n");
-	ret = net_mgmt_event_wait_on_iface(iface,
-					   NET_EVENT_L4_CONNECTED, &raised_event, &info,
-					   &info_len, K_SECONDS(120));
+	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_L4_CONNECTED, NULL, NULL, NULL,
+					   K_SECONDS(120));
 
 	if (ret != 0) {
 		printk("L4 was not connected in time\n");
@@ -294,9 +290,12 @@ int main(void)
 	}
 
 	printk("Waiting for DNS server added\n");
-	ret = net_mgmt_event_wait_on_iface(iface,
-					   NET_EVENT_DNS_SERVER_ADD, &raised_event, &info,
-					   &info_len, K_SECONDS(10));
+	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_DNS_SERVER_ADD, NULL, NULL, NULL,
+					   K_SECONDS(10));
+	if (ret) {
+		printk("DNS server was not added in time\n");
+		return -1;
+	}
 
 	printk("Retrieving cellular info\n");
 	print_cellular_info();
@@ -333,7 +332,7 @@ int main(void)
 				 sample_test_dns_addrinfo.ai_addrlen, port);
 
 	if (ret < 0) {
-		printk("Failed to send echo\n");
+		printk("Failed to send echos\n");
 		return -1;
 	}
 
@@ -355,24 +354,26 @@ int main(void)
 	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
 
 	printk("Waiting for L4 connected\n");
-	ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
-					   NET_EVENT_L4_CONNECTED, &raised_event, &info,
-					   &info_len, K_SECONDS(60));
-
+	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_L4_CONNECTED, NULL, NULL, NULL,
+					   K_SECONDS(60));
 	if (ret != 0) {
 		printk("L4 was not connected in time\n");
 		return -1;
 	}
+	printk("L4 connected\n");
+
+	/* Wait a bit to avoid (unsuccessfully) trying to send the first echo packet too quickly. */
+	k_sleep(K_SECONDS(1));
 
 	ret = sample_echo_packet(&sample_test_dns_addrinfo.ai_addr,
 				 sample_test_dns_addrinfo.ai_addrlen, port);
 
 	if (ret < 0) {
-		printk("Failed to send echo after restart\n");
+		printk("Failed to send echos after restart\n");
 		return -1;
 	}
 
-	ret = net_if_down(net_if_get_default());
+	ret = net_if_down(iface);
 	if (ret < 0) {
 		printk("Failed to bring down network interface\n");
 		return -1;
