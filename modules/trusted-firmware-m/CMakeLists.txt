@@ -358,7 +358,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
 
-  if(CONFIG_SOC_FAMILY_NRF)
+  if(CONFIG_SOC_FAMILY_NORDIC_NRF)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
   endif()
 
