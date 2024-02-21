@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NRF91X
-	select SOC_FAMILY_NRF
+	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Enable support for NRF91 MCU series
 
