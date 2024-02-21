@@ -40,6 +40,31 @@
 			clock-frequency = <DT_FREQ_M(16)>;
 			riscv,isa = "rv32emc";
 			nordic,bus-width = <32>;
+
+			cpuppr_vevif_local: mailbox {
+				compatible = "nordic,nrf-vevif-local";
+				status = "disabled";
+				interrupt-parent = <&cpuppr_clic>;
+				interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <1 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <2 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <3 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <4 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <5 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <6 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <7 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <8 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <9 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <10 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <11 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <12 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <13 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <14 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <15 NRF_DEFAULT_IRQ_PRIORITY>;
+				#mbox-cells = <1>;
+				nordic,tasks = <16>;
+				nordic,tasks-mask = <0xfffffff0>;
+			};
 		};
 	};
 
@@ -280,6 +305,15 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges = <0x0 0x908000 0x4000>;
+
+				cpuppr_vevif_remote: mailbox@0 {
+					compatible = "nordic,nrf-vevif-remote";
+					reg = <0x0 0x1000>;
+					status = "disabled";
+					#mbox-cells = <1>;
+					nordic,tasks = <16>;
+					nordic,tasks-mask = <0xfffffff0>;
+				};
 
 				cpuppr_clic: interrupt-controller@1000 {
 					compatible = "nordic,nrf-clic";
