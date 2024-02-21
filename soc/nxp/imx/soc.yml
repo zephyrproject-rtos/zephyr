@@ -1,0 +1,23 @@
+family:
+- name: imx
+  series:
+  - name: imx8m
+    socs:
+    - name: mimx8ml8
+      cpuclusters:
+      - name: a53
+      - name: m7
+    - name: mimx8mm6
+      cpuclusters:
+      - name: a53
+      - name: m4
+    - name: mimx8mn6
+      cpuclusters:
+      - name: a53
+      - name: m7
+  - name: imx9
+    socs:
+    - name: mimx9352
+      cpuclusters:
+      - name: a55
+      - name: m33
