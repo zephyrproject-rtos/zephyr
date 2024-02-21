@@ -90,6 +90,7 @@ baikal	BAIKAL ELECTRONICS, JSC
 bananapi	BIPAI KEJI LIMITED
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+beo	Bang & Olufsen A/S
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blues	Blues Wireless
