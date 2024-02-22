@@ -63,6 +63,12 @@ list(APPEND kernel_files
   sched.c
   )
 
+if(CONFIG_SCHED_CPU_MASK)
+list(APPEND kernel_files
+  cpu_mask.c
+  )
+endif()
+
 if(CONFIG_MULTITHREADING)
 list(APPEND kernel_files
   idle.c
