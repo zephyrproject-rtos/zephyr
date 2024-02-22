@@ -78,3 +78,10 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+sdp_spi: &spi5 {
+	pinctrl-0 = <&spi5_sck_ph6 &spi5_miso_pf8 &spi5_mosi_pf9>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};

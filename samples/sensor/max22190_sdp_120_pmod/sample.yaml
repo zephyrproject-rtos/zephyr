@@ -1,0 +1,17 @@
+sample:
+  name: MAX22190 8 channel industrial input sensor
+tests:
+  sample.sensor.max22190:
+    tags: sensors
+    harness: console
+    depends_on:
+      - spi
+      - gpio
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "IN_1=[LH]+ WB_1=[LH]+ IN_2=[LH]+ WB_2=[LH]+ IN_3=[LH]+ WB_3=[LH]+ IN_4=[LH]+ WB_4=[LH]+ \
+           IN_5=[LH]+ WB_5=[LH]+ IN_6=[LH]+ WB_6=[LH]+ IN_7=[LH]+ WB_7=[LH]+ IN_8=[LH]+ WB_8=[LH]+"
+      fixture: fixture_spi_max22190
+    filter: dt_compat_enabled("adi,max22190")
