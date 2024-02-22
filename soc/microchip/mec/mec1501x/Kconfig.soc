@@ -17,4 +17,4 @@ config SOC_MEC1501_HSZ
 	select SOC_SERIES_MEC1501X
 
 config SOC
-	default "mec1501hsz" if SOC_MEC1501_HSZ
+	default "mec1501_hsz" if SOC_MEC1501_HSZ
