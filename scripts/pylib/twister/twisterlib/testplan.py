@@ -459,6 +459,7 @@ class TestPlan:
                                         platform_revision = copy.deepcopy(platform)
                                         revision = revision.replace("_", ".")
                                         platform_revision.name = f"{platform.name}@{revision}"
+                                        platform_revision.normalized_name = platform_revision.name.replace("/", "_")
                                         platform_revision.default = False
                                         self.platforms.append(platform_revision)
 
