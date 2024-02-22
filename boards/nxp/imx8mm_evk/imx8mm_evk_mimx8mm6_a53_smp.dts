@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 NXP
+ * Copyright 2021-2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_mimx8mm_a53.dtsi>
-#include "mimx8mm_evk-pinctrl.dtsi"
+#include "imx8mm_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8MM A53";
@@ -26,9 +26,11 @@
 		cpu@1 {
 			status = "disabled";
 		};
-		cpu@2 {
-			status = "disabled";
-		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
 	};
 
 	sram0: memory@93c00000 {
