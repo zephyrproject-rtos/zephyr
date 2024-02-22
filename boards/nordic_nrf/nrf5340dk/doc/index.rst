@@ -17,8 +17,8 @@ The nRF5340 is a dual-core SoC based on the Arm® Cortex®-M33 architecture, wit
 * a secondary Arm Cortex-M33 core, with a reduced feature set, running at
   a fixed 64 MHz, referred to as the **network core**.
 
-The nrf5340dk_nrf5340_cpuapp build target provides support for the application
-core on the nRF5340 SoC. The nrf5340dk_nrf5340_cpunet build target provides
+The ``nrf5340dk/nrf5340/cpuapp`` build target provides support for the application
+core on the nRF5340 SoC. The ``nrf5340dk/nrf5340/cpunet`` build target provides
 support for the network core on the nRF5340 SoC.
 
 nRF5340 SoC provides support for the following devices:
@@ -62,7 +62,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf5340dk_nrf5340_cpuapp board configuration supports the following
+The ``nrf5340dk/nrf5340/cpuapp`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -99,7 +99,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-The nrf5340dk_nrf5340_cpunet board configuration supports the following
+The ``nrf5340dk/nrf5340/cpunet`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -169,7 +169,7 @@ Programming and Debugging
 *************************
 
 nRF5340 application core supports the Armv8-M Security Extension.
-Applications built for the nrf5340dk_nrf5340_cpuapp board by default
+Applications built for the ``nrf5340dk/nrf5340/cpuapp`` board by default
 boot in the Secure state.
 
 nRF5340 network core does not support the Armv8-M Security Extension.
@@ -198,7 +198,7 @@ The process to build the Secure firmware image using TF-M and the Non-Secure
 firmware image using Zephyr requires the following steps:
 
 1. Build the Non-Secure Zephyr application
-   for the application core using ``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns``.
+   for the application core using ``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns``.
    To invoke the building of TF-M the Zephyr build system requires the
    Kconfig option ``BUILD_WITH_TFM`` to be enabled, which is done by
    default when building Zephyr as a Non-Secure application.
@@ -216,7 +216,7 @@ firmware image using Zephyr requires the following steps:
    and sizes.
 
 2. Build the application firmware for the network core using
-   ``-DBOARD=nrf5340dk_nrf5340_cpunet``.
+   ``-DBOARD=nrf5340dk/nrf5340/cpunet``.
 
 
 Building the Secure firmware using Zephyr
@@ -226,14 +226,14 @@ The process to build the Secure and the Non-Secure firmware images
 using Zephyr requires the following steps:
 
 1. Build the Secure Zephyr application for the application core
-   using ``-DBOARD=nrf5340dk_nrf5340_cpuapp`` and
+   using ``-DBOARD=nrf5340dk/nrf5340/cpuapp`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` and ``CONFIG_BUILD_WITH_TFM=n``
    in the application project configuration file.
 2. Build the Non-Secure Zephyr application for the application core
-   using ``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns``.
+   using ``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns``.
 3. Merge the two binaries together.
 4. Build the application firmware for the network core using
-   ``-DBOARD=nrf5340dk_nrf5340_cpunet``.
+   ``-DBOARD=nrf5340dk/nrf5340/cpunet``.
 
 
 When building a Secure/Non-Secure application for the nRF5340 application core,
@@ -246,9 +246,9 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf5340dk_nrf5340_cpuapp`` for
+and :ref:`application_run`), using ``-DBOARD=nrf5340dk/nrf5340/cpuapp`` for
 the firmware running on the nRF5340 application core, and using
-``-DBOARD=nrf5340dk_nrf5340_cpunet`` for the firmware running
+``-DBOARD=nrf5340dk/nrf5340/cpunet`` for the firmware running
 on the nRF5340 network core.
 
 Flashing
@@ -294,7 +294,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: build flash
 
 Debugging
