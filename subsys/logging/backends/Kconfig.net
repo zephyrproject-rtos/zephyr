@@ -49,6 +49,13 @@ config LOG_BACKEND_NET_AUTOSTART
 	  started by the application later on. Otherwise the logging
 	  thread might block.
 
+config LOG_BACKEND_NET_USE_DHCPV4_OPTION
+	bool "Use DHCPv4 Log Server Option to configure syslog server"
+	depends on NET_DHCPV4
+	help
+	  When enabled the syslog server IP address is read from the DHCPv4
+	  Log Server Option (7).
+
 backend = NET
 backend-str = net
 source "subsys/logging/Kconfig.template.log_format_config"
