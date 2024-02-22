@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NRF_BELLBOARD_LOCAL
+	bool "nRF BELLBOARD local driver"
+	depends on DT_HAS_NORDIC_NRF_BELLBOARD_LOCAL_ENABLED
+	default y
+	help
+	  Mailbox driver for local Nordic nRF BELLBOARD
+
+config MBOX_NRF_BELLBOARD_REMOTE
+	bool "nRF BELLBOARD remote driver"
+	depends on DT_HAS_NORDIC_NRF_BELLBOARD_REMOTE_ENABLED
+	default y
+	help
+	  Mailbox driver for remote Nordic nRF BELLBOARD
