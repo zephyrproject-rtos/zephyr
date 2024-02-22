@@ -321,7 +321,9 @@ static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 	big_create_param.encryption = false;
 	big_create_param.interval = 10000; /* us */
 	big_create_param.latency = 10; /* milliseconds */
-	big_create_param.packing = 0; /* 0 - sequential; 1 - interleaved */
+	big_create_param.packing = (IS_ENABLED(CONFIG_BT_ISO_TEST_INTERLEAVED) ?
+				    BT_ISO_PACKING_INTERLEAVED :
+				    BT_ISO_PACKING_SEQUENTIAL);
 	big_create_param.framing = 0; /* 0 - unframed; 1 - framed */
 	iso_tx_qos.sdu = CONFIG_BT_ISO_TX_MTU; /* bytes */
 	iso_tx_qos.rtn = 2;
@@ -907,7 +909,7 @@ static void test_iso_recv_main(void)
 	bis_iso_qos.rx = &iso_rx_qos;
 	big_param.bis_channels = bis_channels;
 	big_param.num_bis = BIS_ISO_CHAN_COUNT;
-	big_param.bis_bitfield = BIT(1); /* BIS 1 selected */
+	big_param.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1);
 	big_param.mse = 1;
 	big_param.sync_timeout = 100; /* 1000 ms */
 	big_param.encryption = false;
@@ -1124,7 +1126,7 @@ static void test_iso_recv_vs_dp_main(void)
 	bis_iso_qos.rx = &iso_rx_qos;
 	big_param.bis_channels = bis_channels;
 	big_param.num_bis = BIS_ISO_CHAN_COUNT;
-	big_param.bis_bitfield = BIT(1); /* BIS 1 selected */
+	big_param.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1);
 	big_param.mse = 1;
 	big_param.sync_timeout = 100; /* 1000 ms */
 	big_param.encryption = false;
