@@ -17,9 +17,20 @@ static int tle9104_diagnostics_sample_fetch(const struct device *dev, enum senso
 {
 	const struct tle9104_diagnostics_config *config = dev->config;
 	struct tle9104_diagnostics_data *data = dev->data;
+	int result;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-	return tle9104_get_diagnostics(config->parent, data->values);
+	result = tle9104_get_diagnostics(config->parent, data->values);
+	if (result != 0) {
+		return result;
+	}
+
+	result = tle9104_clear_diagnostics(config->parent);
+	if (result != 0) {
+		return result;
+	}
+
+	return 0;
 }
 
 static int tle9104_diagnostics_channel_get(const struct device *dev, enum sensor_channel chan,
