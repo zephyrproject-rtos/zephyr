@@ -26,6 +26,31 @@ SECTION_FUNC(vectors, __start)
 
 	.option norvc;
 
+#ifdef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+	/* Enable JTAG debug interface */
+	la t0, IT8XXX2_GCTRL_PMER3
+	lb t1, 0(t0)
+	ori t1, t1, IT8XXX2_GCTRL_JTAG
+	sb t1, 0(t0)
+
+	la t0, IT8XXX2_JTAG_PINS_BASE
+	li t1, 0
+	/* Configure GPIOA0 as TCK function */
+	sb t1, 0(t0)
+	/* Configure GPIOA1 as TDI function */
+	sb t1, 1(t0)
+	/* Configure GPIOA4 as TDO function */
+	sb t1, 4(t0)
+	/* Configure GPIOA5 as TMS function */
+	sb t1, 5(t0)
+	/* Configure GPIOA6 as TRST function */
+	sb t1, 6(t0)
+
+	/* I/O voltage is 3.3V */
+	la t0, IT8XXX2_JTAG_VOLT_SET
+	sb t1, 0(t0)
+#endif
+
 	/*
 	 * Set mtvec (Machine Trap-Vector Base-Address Register)
 	 * to _isr_wrapper.
