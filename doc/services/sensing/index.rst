@@ -136,7 +136,7 @@ there're two methods for Applications to identify and open an unique sensor inst
 
 .. code-block:: c
 
-   sensing_open_sensor_by_dt(DEVICE_DT_GET(DT_NODELABLE(base_accel)), cb_list, handle);
+   sensing_open_sensor_by_dt(DEVICE_DT_GET(DT_NODELABEL(base_accel)), cb_list, handle);
    sensing_open_sensor_by_dt(DEVICE_DT_GET(DT_CHOSEN(zephyr_sensing_base_accel)), cb_list, handle);
 
 This method is useful and easy use for some simple Application which just want to access specific
