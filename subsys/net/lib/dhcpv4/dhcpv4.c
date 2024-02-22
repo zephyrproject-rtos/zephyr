@@ -45,7 +45,7 @@ static struct k_work_delayable timeout_work;
 static struct net_mgmt_event_callback mgmt4_cb;
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
-static sys_slist_t option_callbacks;
+static sys_slist_t option_callbacks = SYS_SLIST_STATIC_INIT(&option_callbacks);
 static int unique_types_in_callbacks;
 #endif
 
@@ -1479,11 +1479,6 @@ int net_dhcpv4_init(void)
 	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
 					 NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 
-#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
-	k_mutex_lock(&lock, K_FOREVER);
-	sys_slist_init(&option_callbacks);
-	k_mutex_unlock(&lock);
-#endif
 	return 0;
 }
 
