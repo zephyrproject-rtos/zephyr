@@ -44,7 +44,7 @@
 #define MANIFEST_SEGMENT_COUNT	3
 
 /* FIXME: Use Kconfig or some other means */
-#if !defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#if !defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
 #define RESET_MEMORY_HOLE
 #endif
 

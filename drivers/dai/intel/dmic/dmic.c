@@ -570,7 +570,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	dai_dmic_start_fifo_packers(dmic, dmic->dai_config_params.dai_index);
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 				     CIC_CONTROL_SOFT_RESET, 0);
 
@@ -621,7 +621,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 				     FIELD_PREP(FIR_CONTROL_START, start_fir));
 	}
 
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
+#ifndef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	/* Clear soft reset for all/used PDM controllers. This should
 	 * start capture in sync.
 	 */

@@ -2,16 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_INTEL_ACE
+config SOC_SERIES_INTEL_ADSP_ACE
 	bool
 	help
 	  Intel ADSP ACE
 
 config SOC_SERIES
-	default "ace" if SOC_SERIES_INTEL_ACE
+	default "intel_adsp_ace" if SOC_SERIES_INTEL_ADSP_ACE
 
 config SOC_TOOLCHAIN_NAME
-	default "intel_ace15_mtpm" if SOC_SERIES_INTEL_ACE
+	default "intel_ace15_mtpm" if SOC_SERIES_INTEL_ADSP_ACE
 
 config SOC_INTEL_ACE15_MTPM
 	bool
