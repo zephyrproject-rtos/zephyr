@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	key_matrix{
+		compatible = "gpio-keys";
+
+		col {
+			gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>,
+					<&gpiof 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		row {
+			gpios = <&gpiod 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+					<&gpiod 7 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		};
+	};
+};
