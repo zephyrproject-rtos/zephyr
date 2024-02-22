@@ -77,14 +77,20 @@ function(parse_board_components board_in name_out revision_out identifier_out)
   set(${identifier_out} ${CMAKE_MATCH_3}  PARENT_SCOPE)
 endfunction()
 
-parse_board_components(BOARD BOARD BOARD_REVISION BOARD_IDENTIFIER)
+parse_board_components(
+  BOARD
+  BOARD BOARD_REVISION BOARD_IDENTIFIER
+)
 
 zephyr_get(ZEPHYR_BOARD_ALIASES)
 if(DEFINED ZEPHYR_BOARD_ALIASES)
   include(${ZEPHYR_BOARD_ALIASES})
   if(${BOARD}_BOARD_ALIAS)
     set(BOARD_ALIAS ${BOARD} CACHE STRING "Board alias, provided by user")
-    parse_board_components(${BOARD}_BOARD_ALIAS BOARD BOARD_ALIAS_REVISION BOARD_ALIAS_IDENTIFIER)
+    parse_board_components(
+      ${BOARD}_BOARD_ALIAS
+      BOARD BOARD_ALIAS_REVISION BOARD_ALIAS_IDENTIFIER
+    )
     message(STATUS "Aliased BOARD=${BOARD_ALIAS} changed to ${BOARD}")
     if(NOT DEFINED BOARD_REVISION)
       set(BOARD_REVISION ${BOARD_ALIAS_REVISION})
@@ -94,10 +100,16 @@ if(DEFINED ZEPHYR_BOARD_ALIASES)
 endif()
 
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
-if(${BOARD}_DEPRECATED)
-  set(BOARD_DEPRECATED ${BOARD} CACHE STRING "Deprecated board name, provided by user")
-  parse_board_components(${BOARD}_DEPRECATED BOARD BOARD_DEPRECATED_REVISION BOARD_DEPRECATED_IDENTIFIER)
-  message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
+if(${BOARD}${BOARD_IDENTIFIER}_DEPRECATED)
+  set(BOARD_DEPRECATED ${BOARD}${BOARD_IDENTIFIER} CACHE STRING "Deprecated BOARD, provided by user")
+  message(WARNING
+    "Deprecated BOARD=${BOARD_DEPRECATED} specified, "
+    "board automatically changed to: ${${BOARD}${BOARD_IDENTIFIER}_DEPRECATED}."
+  )
+  parse_board_components(
+    ${BOARD}${BOARD_IDENTIFIER}_DEPRECATED
+    BOARD BOARD_DEPRECATED_REVISION BOARD_IDENTIFIER
+  )
   if(DEFINED BOARD_DEPRECATED_REVISION)
     if(DEFINED BOARD_REVISION)
       message(FATAL_ERROR
@@ -109,13 +121,6 @@ if(${BOARD}_DEPRECATED)
     endif()
     set(BOARD_REVISION ${BOARD_DEPRECATED_REVISION})
   endif()
-  if(DEFINED BOARD_IDENTIFIER)
-    message(FATAL_ERROR
-      "Deprecated boards cannot have board identifiers: ${BOARD_DEPRECATED}${BOARD_IDENTIFIER}.\n"
-      "Please consult the documentation for '${BOARD}' to see how to build for the new board."
-    )
-  endif()
-  set(BOARD_IDENTIFIER ${BOARD_DEPRECATED_IDENTIFIER})
 endif()
 
 zephyr_boilerplate_watch(BOARD)
