@@ -44,6 +44,26 @@ tests:
         - "Ping \\(on channel 4\\)"
         - "Pong \\(on channel 4\\)"
 
+  sample.drivers.mbox.nrf54h20_bellboard:
+    platform_allow:
+      - nrf54h20pdk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20pdk/nrf54h20/cpuapp
+    extra_args:
+      mbox_SNIPPET=nordic-ppr
+      mbox_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_bellboard.conf
+      mbox_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_bellboard.overlay
+      remote_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_bellboard.conf
+      remote_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_bellboard.overlay
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 0\\)"
+        - "Pong \\(on channel 0\\)"
+
   sample.drivers.mbox.simu:
     platform_allow:
       - nrf5340bsim_nrf5340_cpuapp
