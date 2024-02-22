@@ -4,10 +4,10 @@
 tests:
   drivers.watchdog.reset_none:
     platform_allow:
-      - s32z270dc2_rtu0_r52
-      - s32z270dc2_rtu1_r52
-      - s32z270dc2_rtu0_r52@D
-      - s32z270dc2_rtu1_r52@D
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     tags:
       - drivers
       - watchdog
