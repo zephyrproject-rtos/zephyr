@@ -99,6 +99,17 @@ config SOC_IT8XXX2_EC_BUS_24MHZ
 	  The clock_frequency of ite,it8xxx2-i2c node (i2c0, i2c1, and i2c2) will
 	  be fixed at 400KHz.
 
+config SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+	bool "JTAG debug interface"
+	help
+	  If enabled, the below five pins are configured as JTAG debug interface:
+	  - GPIOA0 -> TCK
+	  - GPIOA1 -> TDI
+	  - GPIOA4 -> TDO
+	  - GPIOA5 -> TMS
+	  - GPIOA6 -> TRST
+	  Supported I/O voltage is 3.3V.
+
 choice
 	prompt "Clock source for PLL reference clock"
 
