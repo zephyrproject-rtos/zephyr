@@ -6,12 +6,12 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
-#include "nrf51dk_nrf51422-pinctrl.dtsi"
+#include "nrf51dk_nrf51822-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nordic nRF51 DK NRF51422";
-	compatible = "nordic,nrf51-dk-nrf51422";
+	model = "Nordic nRF51 DK NRF51822";
+	compatible = "nordic,nrf51-dk-nrf51822";
 
 	chosen {
 		zephyr,console = &uart0;

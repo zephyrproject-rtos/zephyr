@@ -22,7 +22,7 @@ Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf51dongle_nrf51422.jpg
+.. figure:: img/nrf51dongle_nrf51822.jpg
      :align: center
      :alt: nRF51 Dongle
 
@@ -43,7 +43,7 @@ is 16 MHz.
 Supported Features
 ==================
 
-The nrf51dongle_nrf51422 board configuration supports the following nRF51
+The nrf51dongle/nrf51822 board configuration supports the following nRF51
 hardware features:
 
 +-----------+------------+----------------------+
@@ -120,7 +120,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf51dongle/nrf51422
+   :board: nrf51dongle/nrf51822
    :goals: build flash
 
 Debugging

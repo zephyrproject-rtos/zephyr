@@ -14,12 +14,12 @@ tests:
     tags: mcuboot
     build_only: true
     platform_allow:
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nrf52dk/nrf52832
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
     integration_platforms:
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nrf52dk/nrf52832
   buildsystem.kconfig.utf8_in_values:
     build_only: true
