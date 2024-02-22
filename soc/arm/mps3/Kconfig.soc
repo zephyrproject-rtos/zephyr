@@ -15,4 +15,4 @@ config SOC_MPS3_AN547
 	select SOC_SERIES_MPS3
 
 config SOC
-	default "mps3_an547" if SOC_MPS3_AN547
+	default "an547" if SOC_MPS3_AN547
