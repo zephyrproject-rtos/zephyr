@@ -192,6 +192,11 @@ config THREAD_STACK_INFO
 	  This option allows each thread to store the thread stack info into
 	  the k_thread data structure.
 
+config THREAD_ABORT_HOOK
+	bool
+	help
+	  Used by portability layers to modify locally managed status mask.
+
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help
