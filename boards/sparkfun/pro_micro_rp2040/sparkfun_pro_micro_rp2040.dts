@@ -10,6 +10,7 @@
 #include "sparkfun_pro_micro_rp2040-pinctrl.dtsi"
 #include "sparkfun_pro_micro_connector.dtsi"
 #include <freq.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	chosen {
@@ -22,6 +23,7 @@
 
 	aliases {
 		watchdog0 = &wdt0;
+		led-strip = &ws2812;
 	};
 };
 
@@ -96,6 +98,28 @@
 	pinctrl-names = "default";
 };
 
+&pio0 {
+	status = "okay";
+
+	pio-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+		pinctrl-0 = <&ws2812_pio0_default>;
+		pinctrl-names = "default";
+		bit-waveform = <3>, <3>, <4>;
+
+		ws2812: ws2812 {
+			status = "okay";
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
+			reset-delay = <280>;
+			frequency = <800000>;
+		};
+	};
+};
 
 zephyr_udc0: &usbd {
 	status = "okay";
