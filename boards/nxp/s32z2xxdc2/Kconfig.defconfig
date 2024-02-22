@@ -1,0 +1,26 @@
+# Copyright 2022,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_S32Z2XXDC2_S32Z270_RTU0 || BOARD_S32Z2XXDC2_S32Z270_RTU1
+
+config BUILD_OUTPUT_BIN
+	default n
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_CONSOLE
+	default y
+
+endif # SERIAL
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+endif # BOARD_S32Z2XXDC2_S32Z270_RTU0 || BOARD_S32Z2XXDC2_S32Z270_RTU1
