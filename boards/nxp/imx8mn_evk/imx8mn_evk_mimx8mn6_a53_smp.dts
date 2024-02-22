@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_mimx8mn_a53.dtsi>
-#include "mimx8mn_evk-pinctrl.dtsi"
+#include "imx8mn_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8MN A53";
@@ -26,9 +26,11 @@
 		cpu@1 {
 			status = "disabled";
 		};
-		cpu@2 {
-			status = "disabled";
-		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
 	};
 
 	sram0: memory@93c00000 {
