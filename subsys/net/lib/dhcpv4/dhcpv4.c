@@ -1363,7 +1363,7 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 
 int net_dhcpv4_add_option_callback(struct net_dhcpv4_option_callback *cb)
 {
-	if (!cb || !cb->handler) {
+	if (cb == NULL || cb->handler == NULL) {
 		return -EINVAL;
 	}
 
@@ -1378,7 +1378,7 @@ int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb)
 {
 	int ret = 0;
 
-	if (!cb || !cb->handler) {
+	if (cb == NULL || cb->handler == NULL) {
 		return -EINVAL;
 	}
 
