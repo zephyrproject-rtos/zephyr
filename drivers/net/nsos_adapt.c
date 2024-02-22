@@ -46,6 +46,9 @@ static int socket_family_from_nsos_mid(int family_mid, int *family)
 	case NSOS_MID_AF_INET:
 		*family = AF_INET;
 		break;
+	case NSOS_MID_AF_INET6:
+		*family = AF_INET6;
+		break;
 	default:
 		nsi_print_warning("%s: socket family %d not supported\n", __func__, family_mid);
 		return -NSOS_MID_EAFNOSUPPORT;
@@ -62,6 +65,9 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 		break;
 	case AF_INET:
 		*family_mid = NSOS_MID_AF_INET;
+		break;
+	case AF_INET6:
+		*family_mid = NSOS_MID_AF_INET6;
 		break;
 	default:
 		nsi_print_warning("%s: socket family %d not supported\n", __func__, family);
@@ -255,6 +261,22 @@ static int sockaddr_from_nsos_mid(struct sockaddr **addr, socklen_t *addrlen,
 
 		return 0;
 	}
+	case NSOS_MID_AF_INET6: {
+		const struct nsos_mid_sockaddr_in6 *addr_in_mid =
+			(const struct nsos_mid_sockaddr_in6 *)addr_mid;
+		struct sockaddr_in6 *addr_in = (struct sockaddr_in6 *)*addr;
+
+		addr_in->sin6_family = AF_INET6;
+		addr_in->sin6_port = addr_in_mid->sin6_port;
+		addr_in->sin6_flowinfo = 0;
+		memcpy(addr_in->sin6_addr.s6_addr, addr_in_mid->sin6_addr,
+		       sizeof(addr_in->sin6_addr.s6_addr));
+		addr_in->sin6_scope_id = addr_in_mid->sin6_scope_id;
+
+		*addrlen = sizeof(*addr_in);
+
+		return 0;
+	}
 	}
 
 	return -NSOS_MID_EINVAL;
@@ -279,6 +301,25 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 			addr_in_mid->sin_family = NSOS_MID_AF_INET;
 			addr_in_mid->sin_port = addr_in->sin_port;
 			addr_in_mid->sin_addr = addr_in->sin_addr.s_addr;
+		}
+
+		if (addrlen_mid) {
+			*addrlen_mid = sizeof(*addr_in);
+		}
+
+		return 0;
+	}
+	case AF_INET6: {
+		struct nsos_mid_sockaddr_in6 *addr_in_mid =
+			(struct nsos_mid_sockaddr_in6 *)addr_mid;
+		const struct sockaddr_in6 *addr_in = (const struct sockaddr_in6 *)addr;
+
+		if (addr_in_mid) {
+			addr_in_mid->sin6_family = NSOS_MID_AF_INET6;
+			addr_in_mid->sin6_port = addr_in->sin6_port;
+			memcpy(addr_in_mid->sin6_addr, addr_in->sin6_addr.s6_addr,
+			       sizeof(addr_in_mid->sin6_addr));
+			addr_in_mid->sin6_scope_id = addr_in->sin6_scope_id;
 		}
 
 		if (addrlen_mid) {

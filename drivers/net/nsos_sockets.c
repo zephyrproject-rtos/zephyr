@@ -42,6 +42,9 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 	case AF_INET:
 		*family_mid = NSOS_MID_AF_INET;
 		break;
+	case AF_INET6:
+		*family_mid = NSOS_MID_AF_INET6;
+		break;
 	default:
 		return -NSOS_MID_EAFNOSUPPORT;
 	}
@@ -258,6 +261,26 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 
 		return 0;
 	}
+	case AF_INET6: {
+		const struct sockaddr_in6 *addr_in =
+			(const struct sockaddr_in6 *)addr;
+		struct nsos_mid_sockaddr_in6 *addr_in_mid =
+			(struct nsos_mid_sockaddr_in6 *)*addr_mid;
+
+		if (*addrlen < sizeof(*addr_in)) {
+			return -NSOS_MID_EINVAL;
+		}
+
+		addr_in_mid->sin6_family = NSOS_MID_AF_INET6;
+		addr_in_mid->sin6_port = addr_in->sin6_port;
+		memcpy(addr_in_mid->sin6_addr, addr_in->sin6_addr.s6_addr,
+		       sizeof(addr_in_mid->sin6_addr));
+		addr_in_mid->sin6_scope_id = addr_in->sin6_scope_id;
+
+		*addrlen_mid = sizeof(*addr_in_mid);
+
+		return 0;
+	}
 	}
 
 	return -NSOS_MID_EINVAL;
@@ -279,6 +302,22 @@ static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
 		addr_in.sin_family = AF_INET;
 		addr_in.sin_port = addr_in_mid->sin_port;
 		addr_in.sin_addr.s_addr = addr_in_mid->sin_addr;
+
+		memcpy(addr, &addr_in, MIN(*addrlen, sizeof(addr_in)));
+		*addrlen = sizeof(addr_in);
+
+		return 0;
+	}
+	case NSOS_MID_AF_INET6: {
+		const struct nsos_mid_sockaddr_in6 *addr_in_mid =
+			(const struct nsos_mid_sockaddr_in6 *)addr_mid;
+		struct sockaddr_in6 addr_in;
+
+		addr_in.sin6_family = AF_INET6;
+		addr_in.sin6_port = addr_in_mid->sin6_port;
+		memcpy(addr_in.sin6_addr.s6_addr, addr_in_mid->sin6_addr,
+		       sizeof(addr_in.sin6_addr.s6_addr));
+		addr_in.sin6_scope_id = addr_in_mid->sin6_scope_id;
 
 		memcpy(addr, &addr_in, MIN(*addrlen, sizeof(addr_in)));
 		*addrlen = sizeof(addr_in);
