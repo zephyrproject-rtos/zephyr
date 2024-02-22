@@ -61,6 +61,15 @@ static inline void log_backend_net_hostname_set(const char *hostname, size_t len
 }
 #endif
 
+/**
+ * @brief Get the net logger backend
+ *
+ * @details This function returns the net logger backend.
+ *
+ * @return Pointer to the net logger backend.
+ */
+const struct log_backend *log_backend_net_get(void);
+
 #ifdef __cplusplus
 }
 #endif

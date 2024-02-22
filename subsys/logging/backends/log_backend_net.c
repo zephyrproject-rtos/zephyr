@@ -42,8 +42,6 @@ static struct log_backend_net_ctx {
 	.sock = -1,
 };
 
-const struct log_backend *log_backend_net_get(void);
-
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct log_backend_net_ctx *ctx = (struct log_backend_net_ctx *)output_ctx;
