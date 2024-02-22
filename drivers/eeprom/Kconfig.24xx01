@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_24XX01
+	bool "Microchip 24XX01 I2C EEPROM support"
+	default y
+	depends on DT_HAS_MICROCHIP_24XX01_EEPROM_ENABLED
+	select I2C
+	help
+	  Enable support for the Microchip 24XX01 I2C EEPROMs.
