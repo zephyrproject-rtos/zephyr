@@ -8,13 +8,14 @@
 #define ZEPHYR_LOG_BACKEND_NET_H_
 
 #include <stdbool.h>
+#include <zephyr/net/net_ip.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Allows user to set a server IP address at runtime
+ * @brief Allows user to set a server IP address, provided as string, at runtime
  *
  * @details This function allows the user to set an IPv4 or IPv6 address at runtime. It can be
  *          called either before or after the backend has been initialized. If it gets called when
@@ -26,6 +27,20 @@ extern "C" {
  * @return True if parsing could be done, false otherwise.
  */
 bool log_backend_net_set_addr(const char *addr);
+
+/**
+ * @brief Allows user to set a server IP address, provided as sockaddr structure, at runtime
+ *
+ * @details This function allows the user to set an IPv4 or IPv6 address at runtime. It can be
+ *          called either before or after the backend has been initialized. If it gets called when
+ *          the net logger backend context is running, it'll release it and create another one with
+ *          the new address next time process() gets called.
+ *
+ * @param addr     Pointer to the sockaddr structure that contains the IP address.
+ *
+ * @return True if address could be set, false otherwise.
+ */
+bool log_backend_net_set_ip(const struct sockaddr *addr);
 
 /**
  * @brief update the hostname

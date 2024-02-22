@@ -192,7 +192,7 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
-bool log_backend_net_set_addr(const char *addr)
+static bool check_net_init_done(void)
 {
 	bool ret = false;
 
@@ -217,9 +217,18 @@ bool log_backend_net_set_addr(const char *addr)
 
 		ctx->sock = -1;
 
-		if (!ret) {
-			return ret;
-		}
+		return ret;
+	}
+
+	return true;
+}
+
+bool log_backend_net_set_addr(const char *addr)
+{
+	bool ret = check_net_init_done();
+
+	if (!ret) {
+		return ret;
 	}
 
 	net_sin(&server_addr)->sin_port = htons(514);
@@ -228,6 +237,27 @@ bool log_backend_net_set_addr(const char *addr)
 	if (!ret) {
 		LOG_ERR("Cannot parse syslog server address");
 		return ret;
+	}
+
+	return ret;
+}
+
+bool log_backend_net_set_ip(const struct sockaddr *addr)
+{
+	bool ret = check_net_init_done();
+
+	if (!ret) {
+		return ret;
+	}
+
+	if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6)) {
+		memcpy(&server_addr, addr, sizeof(server_addr));
+
+		net_port_set_default(&server_addr, 514);
+	} else {
+		LOG_ERR("Unknown address family");
+		return false;
 	}
 
 	return ret;
