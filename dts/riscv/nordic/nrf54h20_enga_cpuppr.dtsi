@@ -27,6 +27,18 @@ cpuppr_vevif: &cpuppr_vevif_local {};
 	};
 };
 
+&cpusec_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&cpuapp_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&cpurad_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
 &gpiote130 {
 	interrupts = <104 NRF_DEFAULT_IRQ_PRIORITY>;
 };
