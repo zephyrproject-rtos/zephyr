@@ -1,0 +1,54 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/spi/spi.h>
+
+/ {
+	chosen {
+		zephyr,display = &ili9340;
+	};
+
+	/*
+	 * RW612 uses LCDIC controller, which implements the MIPI DBI API
+	 * directly and does not require the MIPI DBI SPI node
+	 */
+	/delete-node/ mipi_dbi;
+};
+
+&lcdic {
+	/* Byte swapping not supported for this display */
+	/delete-property/ nxp,swap-bytes;
+
+	/*
+	 * Settings to connect this display:
+	 * Populate the following resistors:
+	 * - R125, R123, R12, R124, R15, R243, R239, R236, R233, R286, R246
+	 * Remove the following resistors:
+	 * - R9, R11, R20, R19, R242, R241, R237, R235, R245
+	 * Short the following pins:
+	 * - J5 1-2
+	 * Remove JP30 to disconnect Flexcomm SPI CS
+	 * Display can be connected to Arduino header
+	 */
+
+	ili9340: ili9340@0 {
+		compatible = "ilitek,ili9340";
+		mipi-max-frequency = <15151515>;
+		duplex = <SPI_HALF_DUPLEX>;
+		reg = <0>;
+		width = <320>;
+		height = <240>;
+		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+		rotation = <90>;
+		frmctr1 = [00 18];
+		pwctrl1 = [23 00];
+		vmctrl1 = [3e 28];
+		vmctrl2 = [86];
+		pgamctrl = [0f 31 2b 0c 0e 08 4e f1 37 07 10 03 0e 09 00];
+		ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
+	};
+
+};
