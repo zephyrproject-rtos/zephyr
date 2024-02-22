@@ -93,4 +93,4 @@ class Boards(WestCommand):
             if name_re is not None and not name_re.search(board.name):
                 continue
             log.inf(args.format.format(name=board.name, dir=board.dir, hwm=board.hwm,
-                                       identifiers=list_boards.board_v2_identifiers(board)))
+                                       identifiers=list_boards.board_v2_identifiers_csv(board)))
