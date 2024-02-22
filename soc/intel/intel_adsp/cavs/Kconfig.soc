@@ -8,7 +8,7 @@ config SOC_SERIES_INTEL_ADSP_CAVS
 	  Intel ADSP CAVS
 
 config SOC_SERIES
-	default "cavs" if SOC_SERIES_INTEL_ADSP_CAVS
+	default "intel_adsp_cavs" if SOC_SERIES_INTEL_ADSP_CAVS
 
 config SOC_INTEL_CAVS_V25
 	bool
