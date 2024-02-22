@@ -1,0 +1,17 @@
+description: Nordic UICR (User Information Configuration Registers) for configuration purposes only
+
+compatible: "nordic,nrf-uicr-config-only"
+
+include: base.yaml
+
+properties:
+  nfct-pins-as-gpios:
+    type: boolean
+    description: |
+      When enabled this property will configure pins dedicated to NFCT
+      peripheral as regular GPIOs.
+
+      NFC pins in nRF5340: P0.02 and P0.03
+
+      This setting, once applied, can only be unset by erasing the UICR
+      registers. Refer to the reference manual for more details.
