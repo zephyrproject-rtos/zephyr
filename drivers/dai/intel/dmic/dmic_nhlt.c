@@ -175,7 +175,7 @@ static int dai_nhlt_update_rate(struct dai_intel_dmic *dmic, const int clock_sou
 	return 0;
 }
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 				    int *count, int pdm_count, int stereo,
 				    int source_pdm)
@@ -426,7 +426,7 @@ static inline int dai_dmic_set_clock(const struct dai_intel_dmic *dmic, const ui
 static int print_outcontrol(uint32_t val)
 {
 	int bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	int bf9, bf10, bf11, bf12, bf13;
 #endif
 	uint32_t ref;
@@ -447,7 +447,7 @@ static int print_outcontrol(uint32_t val)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	bf9 = FIELD_GET(OUTCONTROL_IPM_SOURCE_1, val);
 	bf10 = FIELD_GET(OUTCONTROL_IPM_SOURCE_2, val);
 	bf11 = FIELD_GET(OUTCONTROL_IPM_SOURCE_3, val);
@@ -487,7 +487,7 @@ static void print_cic_control(uint32_t val)
 	bf4 = FIELD_GET(CIC_CONTROL_MIC_B_POLARITY, val);
 	bf5 = FIELD_GET(CIC_CONTROL_MIC_A_POLARITY, val);
 	bf6 = FIELD_GET(CIC_CONTROL_MIC_MUTE, val);
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
+#ifndef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	bf7 = FIELD_GET(CIC_CONTROL_STEREO_MODE, val);
 #else
 	bf7 = -1;
@@ -503,7 +503,7 @@ static void print_cic_control(uint32_t val)
 		FIELD_PREP(CIC_CONTROL_MIC_B_POLARITY, bf4) |
 		FIELD_PREP(CIC_CONTROL_MIC_A_POLARITY, bf5) |
 		FIELD_PREP(CIC_CONTROL_MIC_MUTE, bf6)
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
+#ifndef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 		| FIELD_PREP(CIC_CONTROL_STEREO_MODE, bf7)
 #endif
 		;
@@ -520,7 +520,7 @@ static void print_fir_control(uint32_t val)
 
 	bf1 = FIELD_GET(FIR_CONTROL_START, val);
 	bf2 = FIELD_GET(FIR_CONTROL_ARRAY_START_EN, val);
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	bf3 = FIELD_GET(FIR_CONTROL_PERIODIC_START_EN, val);
 #else
 	bf3 = -1;
@@ -534,7 +534,7 @@ static void print_fir_control(uint32_t val)
 	LOG_DBG("  dccomp=%d, mute=%d, stereo=%d", bf4, bf5, bf6);
 	ref = FIELD_PREP(FIR_CONTROL_START, bf1) |
 		FIELD_PREP(FIR_CONTROL_ARRAY_START_EN, bf2) |
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 		FIELD_PREP(FIR_CONTROL_PERIODIC_START_EN, bf3) |
 #endif
 		FIELD_PREP(FIR_CONTROL_DCCOMP, bf4) |
@@ -561,7 +561,7 @@ static void print_pdm_ctrl(const struct nhlt_pdm_ctrl_cfg *pdm_cfg)
 
 	val = pdm_cfg->mic_control;
 
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
+#ifndef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	bf1 = FIELD_GET(MIC_CONTROL_PDM_SKEW, val);
 #else
 	bf1 = -1;
@@ -797,7 +797,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		}
 	}
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	ret = dai_nhlt_dmic_dai_params_get(dmic, dmic_cfg->clock_source);
 #else
 	ret = dai_nhlt_dmic_dai_params_get(dmic);

@@ -15,7 +15,7 @@ config DAI_INTEL_SSP
 
 config DAI_SSP_HAS_POWER_CONTROL
 	bool "DAI ssp pm_runtime en/dis ssp power"
-	default y if SOC_SERIES_INTEL_ACE
+	default y if SOC_SERIES_INTEL_ADSP_ACE
 	depends on DAI_INTEL_SSP
 
 if DAI_INTEL_SSP

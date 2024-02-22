@@ -6,7 +6,7 @@
 zephyr_include_directories(common)
 
 add_subdirectory(common)
-if(CONFIG_SOC_SERIES_INTEL_ACE)
+if(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
 	zephyr_include_directories(ace)
 	add_subdirectory(ace)
 endif()
