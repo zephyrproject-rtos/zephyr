@@ -177,6 +177,39 @@ enum espi_virtual_peripheral {
 #endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
 };
 
+
+/**
+ * @brief eSPI interrupt flags.
+ *
+ * eSPI interrupt flags.
+ */
+enum espi_interrupt_flags {
+	/** Enables/disables eSPI bus reset and channel negotiation changes */
+	ESPI_BUS_EVENTS = BIT(0),
+	/** Enables disable VW controller to target events */
+	ESPI_VIRTUAL_WIRE_CHANNEL_EVENTS = BIT(1),
+	/** Enables disable OOB received interrupt */
+	ESPI_OOB_CHANNEL_EVENTS = BIT(2),
+	/** Enables disable Flash related events */
+	ESPI_FLASH_CHANNEL_EVENTS = BIT(3),
+	/** Enables UART interrupt if HW supports it */
+	ESPI_PERIPHERAL_UART_EVENTS = BIT(4),
+	/** Enables 8042 interrupt if HW supports it */
+	ESPI_PERIPHERAL_8042_KBC_EVENTS = BIT(5),
+	/** Enables ACPI eSPI interface host interrupt if HW supports it */
+	ESPI_PERIPHERAL_HOST_IO_EVENTS = BIT(6),
+	/** Enables Port80 eSPI interrupt if HW supports it */
+	ESPI_PERIPHERAL_DEBUG_PORT80_EVENTS = BIT(7),
+	/** Enables ACPI Private interface eSPI host interrupt if HW supports it */
+	ESPI_PERIPHERAL_HOST_IO_PVT_EVENTS = BIT(8),
+#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
+	ESPI_PERIPHERAL_EC_HOST_CMD_EVENTS = BIT(9),
+#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
+
+	/* Reserved for Vendor-specific */
+};
+
+
 /**
  * @brief eSPI cycle types supported over eSPI peripheral channel
  */
@@ -287,6 +320,7 @@ enum lpc_peripheral_opcode {
 #endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
 #if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)
 	/* Other customized transactions */
+	/* Deprecated */
 	ECUSTOM_HOST_SUBS_INTERRUPT_EN = ECUSTOM_START_OPCODE,
 	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY,
 	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE,
@@ -450,10 +484,16 @@ typedef int (*espi_api_flash_write)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
 typedef int (*espi_api_flash_erase)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
+
 /* Callbacks and traffic intercept */
 typedef int (*espi_api_manage_callback)(const struct device *dev,
 					struct espi_callback *callback,
 					bool set);
+
+/* eSPI interrupt control */
+typedef int (*espi_api_interrupt_conf)(const struct device *dev,
+				    uint32_t espi_interrupt_flags,
+				    uint32_t espi_interrupt_vendor);
 
 __subsystem struct espi_driver_api {
 	espi_api_config config;
@@ -470,6 +510,7 @@ __subsystem struct espi_driver_api {
 	espi_api_flash_write flash_write;
 	espi_api_flash_erase flash_erase;
 	espi_api_manage_callback manage_callback;
+	espi_api_interrupt_conf interrupt_config;
 };
 
 /**
@@ -1014,6 +1055,75 @@ static inline int espi_remove_callback(const struct device *dev,
 
 	return api->manage_callback(dev, callback, false);
 }
+
+/**
+ * @brief Control eSPI interrupts.
+ *
+ * This routine provides a method for eSPI driver clients to enable/disable
+ * eSPI driver blocks interrupts.
+ *
+ * If the eSPI driver does not enable interrupts during driver initialization,
+ * eSPI driver clients need to enable interrupts explicitly after eSPI configuration and
+ * and after eSPI bus reset event.
+ *
+ * @param espi_flags eSPI interrupt flags. See interrupt flags.
+ * Different SoC vendors can extend the remain reserved ones.
+ *
+ * @code
+ * +---------+        +---------+     +------+          +---------+   +---------+
+ * |  eSPI   |        |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
+ * |  target |        | driver  |     |  bus |          |  driver |   |  host   |
+ * +--------+        +---------+     +------+          +---------+   +---------+
+ *     |                   |            |                   |             |
+ *     |                   +- eSPI---|  |                   |             |
+ *     +                   +<- init--|  |                   |             |
+ *     |                   |            |                   |             |
+ *     |                   |            |                   |             |
+ *     | espi_config       | Set eSPI   |                   |             |
+ *     +-------------------+ ctrl regs  |                   |             |
+ *     |                   +-------+    |                   |             |
+ *     |                   |<------+    |                   |             |
+ *     |                   |            |                   |             |
+ *     | interrupt_config  |            |                   |             |
+ *     +-------------------+            |                   |             |
+ *     |                   |            |                   |             |  eSPI host
+ *     |                   |            |    VW  packet     +<------------+  sends VW
+ *     |                   |    ISR     | <-----------------+             |
+ *     |  VWIRE_RECEIVED   |<-----------|                   |             |
+ *     +<------------------+            +                   +             +
+ *     |                   |            |                   |             |
+ *     |                   |            |                   |             |  eSPI host
+ *     |                   |            |    eSPI reset     +<------------+  resets the
+ *     |                   |    ISR     | <-----------------+             |  bus
+ *     |      callback     |<-----------|                   |             |
+ *     +<------------------+            +                   +             +
+ *     |                   |            |                   |             |
+ *     | interrupt_config  |            |                   |             |
+ *     +-------------------+            |                   |             |
+ * @endcode
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cfg the device runtime configuration for the eSPI controller.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error, failed to configure device.
+ * @retval -EINVAL invalid capabilities, failed to configure device.
+ * @retval -ENOTSUP capability not supported by eSPI target.
+ */
+static inline int espi_api_interrupt_conf(const struct device *dev,
+				    uint32_t espi_flags,
+{
+	const struct espi_driver_api *api =
+		(const struct espi_driver_api *)dev->api;
+
+	if (!api->interrupt_config) {
+		return -ENOTSUP;
+	}
+
+	return api->interrupt_config(dev, espi_flags, espi_vendor_flags);
+}
+
+
 
 #ifdef __cplusplus
 }
