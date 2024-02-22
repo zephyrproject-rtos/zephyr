@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml, "mailbox-controller.yaml"]
+
+properties:
+  reg:
+    required: true
+
+mbox-cells:
+  - channel
