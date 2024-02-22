@@ -7,7 +7,7 @@ Overview
 ********
 
 The nRF51 Development Kit (PCA10028) hardware provides support for the Nordic
-Semiconductor nRF51422 ARM Cortex-M0 CPU and the following devices:
+Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK
@@ -22,7 +22,7 @@ Semiconductor nRF51422 ARM Cortex-M0 CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf51dk_nrf51422.jpg
+.. figure:: img/nrf51dk_nrf51822.jpg
      :align: center
      :alt: nRF51 DK
 
@@ -43,7 +43,7 @@ is 16 MHz.
 Supported Features
 ==================
 
-The nrf51dk_nrf51422 board configuration supports the following nRF51
+The nrf51dk/nrf51822 board configuration supports the following nRF51
 hardware features:
 
 +-----------+------------+----------------------+
@@ -125,7 +125,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf51dk_nrf51422
+   :board: nrf51dk/nrf51822
    :goals: build flash
 
 Debugging
@@ -148,7 +148,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/nordic_nrf/nrf51dk/nrf51dk_nrf51422.dts`.
+:zephyr_file:`boards/nordic_nrf/nrf51dk/nrf51dk_nrf51822.dts`.
 
 References
 **********

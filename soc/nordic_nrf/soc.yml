@@ -3,7 +3,6 @@ family:
   series:
   - name: nrf51
     socs:
-    - name: nrf51422
     - name: nrf51822
   - name: nrf52
     socs:
