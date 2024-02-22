@@ -196,10 +196,20 @@ function __zephyr_west_complete_help
 end
 
 function __zephyr_west_complete_board
+    # HWMv1
     set -l boards (west 2>/dev/null boards --format="{name} {arch}")
     for board in $boards
         set -l b (string split " " $board)
         printf "%s\n" $b[1]\t"$b[2]"
+    end
+
+    # HWMv2
+    set -l boards (west 2>/dev/null boards --format="{identifiers}")
+    for board in $boards
+        set -l b (string split "," $board)
+        for variant in $b
+            printf "%s\n" $variant[1]
+        end
     end
 end
 
