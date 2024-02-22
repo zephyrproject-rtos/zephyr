@@ -1,0 +1,20 @@
+#include <mem.h>
+
+/ {
+
+        soc {
+		fcu: flash-controller@4001c100 {
+			compatible = "renesas,ra-flash-controller";
+                        reg = <0x4001c100 0x42>;
+                        reg-names = "fcache";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+                        flash0: flash0@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_SIZE_K(2048)>;
+                        };
+                };
+	};
+};
