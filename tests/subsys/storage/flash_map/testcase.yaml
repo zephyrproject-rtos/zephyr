@@ -1,7 +1,7 @@
 tests:
   storage.flash_map:
     platform_allow:
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - qemu_x86
       - native_posix
       - native_posix_64
@@ -25,7 +25,7 @@ tests:
   storage.flash_map.mbedtls:
     extra_args: OVERLAY_CONFIG=overlay-mbedtls.conf
     platform_allow:
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - qemu_x86
       - native_posix
       - native_posix_64

@@ -16,7 +16,7 @@ tests:
       - reel_board
       - frdm_k64f
       - mps2/an385
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
     integration_platforms:
@@ -28,7 +28,7 @@ tests:
       - reel_board
       - frdm_k64f
       - mps2/an385
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.mt-no-preempt-no-timers.arm:
@@ -38,7 +38,7 @@ tests:
       - reel_board
       - frdm_k64f
       - mps2/an385
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.no-mt.arm:
@@ -48,7 +48,7 @@ tests:
       - reel_board
       - frdm_k64f
       - mps2/an385
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.no-mt-no-timers.arm:
@@ -58,7 +58,7 @@ tests:
       - reel_board
       - frdm_k64f
       - mps2/an385
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nucleo_f429zi
       - disco_l475_iot1
   sample.minimal.mt.x86:

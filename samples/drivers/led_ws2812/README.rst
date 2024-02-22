@@ -118,7 +118,7 @@ SPI driver:
 GPIO driver (cortex-M0 only):
 
 - bbc_microbit
-- nrf51dk/nrf51422
+- nrf51dk/nrf51822
 
 References
 **********
