@@ -315,8 +315,6 @@ def main():
         intlist_data = read_intList_sect(kernel, config.get_intlist_snames())
 
         if config.check_sym("CONFIG_ISR_TABLES_LOCAL_DECLARATION"):
-            sys.stdout.write(
-                "Warning: The EXPERIMENTAL ISR_TABLES_LOCAL_DECLARATION feature selected\n")
             parser_module = importlib.import_module('gen_isr_tables_parser_local')
             parser = parser_module.gen_isr_parser(intlist_data, config, log)
         else:
