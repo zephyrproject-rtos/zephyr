@@ -844,7 +844,8 @@ ZTEST_F(nvs, test_nvs_cache_gc)
 
 	/* Fill the first sector with writes of ID 1 */
 
-	while (fixture->fs.data_wra + sizeof(data) <= fixture->fs.ate_wra) {
+	while (fixture->fs.data_wra + sizeof(data) + sizeof(struct nvs_ate)
+	       <= fixture->fs.ate_wra) {
 		++data;
 		err = nvs_write(&fixture->fs, 1, &data, sizeof(data));
 		zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
