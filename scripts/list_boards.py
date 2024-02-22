@@ -300,6 +300,11 @@ def board_v2_identifiers(board):
     return identifiers
 
 
+def board_v2_identifiers_csv(board):
+    # Return in csv (comma separated value) format
+    return ",".join(board_v2_identifiers(board))
+
+
 def dump_v2_boards(args):
     if args.board_dir:
         root_args = argparse.Namespace(**{'soc_roots': args.soc_roots})
