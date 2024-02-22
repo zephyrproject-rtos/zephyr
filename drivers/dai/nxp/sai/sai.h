@@ -101,13 +101,13 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 	DT_INST_PROP_OR(inst, rx_fifo_watermark,\
 			FSL_FEATURE_SAI_FIFO_COUNTn(UINT_TO_I2S(DT_INST_REG_ADDR(inst))) / 2)
 
-/* used to retrieve TFR0's address based on SAI's physical address */
+/* used to retrieve TDR0's address based on SAI's physical address */
 #define SAI_TX_FIFO_BASE(inst)\
-	FSL_FEATURE_SAI_TX_FIFO_BASEn(UINT_TO_I2S(DT_INST_REG_ADDR(inst)), 0)
+	POINTER_TO_UINT(&(UINT_TO_I2S(DT_INST_REG_ADDR(inst))->TDR[0]))
 
-/* used to retrieve RFR0's address based on SAI's physical address */
+/* used to retrieve RDR0's address based on SAI's physical address */
 #define SAI_RX_FIFO_BASE(inst)\
-	FSL_FEATURE_SAI_RX_FIFO_BASEn(UINT_TO_I2S(DT_INST_REG_ADDR(inst)), 0)
+	POINTER_TO_UINT(&(UINT_TO_I2S(DT_INST_REG_ADDR(inst))->RDR[0]))
 
 /* internal macro used to retrieve the default TX/RX FIFO's size (in FIFO words) */
 #define _SAI_FIFO_DEPTH(inst)\
