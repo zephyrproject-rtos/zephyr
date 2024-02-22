@@ -10,7 +10,7 @@ config SOC_SERIES_STM32H7X
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32h7" if SOC_SERIES_STM32H7X
+	default "stm32h7x" if SOC_SERIES_STM32H7X
 
 config SOC_STM32H723XX
 	bool

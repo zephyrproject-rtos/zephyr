@@ -8,7 +8,7 @@ config SOC_SERIES_STM32WLX
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32wl" if SOC_SERIES_STM32WLX
+	default "stm32wlx" if SOC_SERIES_STM32WLX
 
 config SOC_STM32WLE4XX
 	bool
