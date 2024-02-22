@@ -159,11 +159,11 @@ zephyr_create_scope(snippets)
             board_re = board[1:-1]
             self.print(f'''\
 # Appends for board regular expression '{board_re}'
-if("${{BOARD}}" MATCHES "^{board_re}$")''')
+if("${{BOARD}}${{BOARD_IDENTIFIER}}" MATCHES "^{board_re}$")''')
         else:
             self.print(f'''\
 # Appends for board '{board}'
-if("${{BOARD}}" STREQUAL "{board}")''')
+if("${{BOARD}}${{BOARD_IDENTIFIER}}" STREQUAL "{board}")''')
         self.print_appends(appends, 1)
         self.print('endif()')
 
