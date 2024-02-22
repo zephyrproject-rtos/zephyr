@@ -1,0 +1,98 @@
+# Copyright (c) 2024 Piotr Rak
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding describes the Rensas RA-series RV40F Phase-2 flash area layout.
+
+  Renesas RA-series MCUs use two kinds of flash memory:
+
+  |---------------|-------------------------------|-------------------------|
+  | Varian        | Board                         |                         |
+  |---------------|-------------------------------|-------------------------|
+  | RV40F Phase 2 | eg. RA6M1, RA6M2, RA6M3 RA6T1 | <= Describing this here |
+  |---------------|-------------------------------|-------------------------|
+  | MF3           | eg. RA2A1 RA4M1 RA4W1         | _NOT_ applicable        |
+  |---------------|-------------------------------|-------------------------|
+
+  Documentation:
+    - Application Note "Renesas RA Family - Flash Memory Programming Rev 1.20"
+      (https://www.renesas.com/us/en/document/apn/flash-memory-programming)
+    - Additionally:
+       * RA6Mx RA6Tx Groups "User's Manual: Hardware"
+       * RA8D1 RA8M1 RA8T1 Groups "User's Manual: Hardware"
+
+  The Renesas RA MCUs RV40F kind flash area varies in:
+    - the write-block-size(s) (referred to as programming-size in above mentioned documentation),
+    - the read size
+    - the layout of erase-blocks
+
+  for different regions and kinds of flash.
+
+  E.g. the code flash layout of R7FA6M5BH3CFC:
+
+  |-------------------|
+  | Block 0 (8 KiB)   |  erase = 8 KiB (1 block); write = 128 B
+  |-------------------|
+  | Block 1 (8 KiB)   |  erase = 8 KiB (1 block); write = 128 B
+  |-------------------|
+  | ...               |  erase = 8 KiB (1 block); write = 128 B
+  |-------------------|
+  | Block 7 (8 KiB)   |  erase = 8 KiB (1 block); write = 128 B
+  |-------------------|
+  | Block 8 (32 KiB)  |  erase = 32 KiB (1 block); write = 128 B
+  |-------------------|
+  | Block 9 (32 KiB)  |  erase = 32 KiB (1 block); write = 128 B
+  |-------------------|
+  | ...               |  erase = 32 KiB (1 block); write = 128 B
+  |-------------------|
+  | Block 68 (32 KiB) |  erase = 32 KiB (1 block); write = 128 B
+  |-------------------|
+
+
+  E.g. the data flash layout of R7FA6M5BH3CFC:
+
+  |-------------------|
+  | Block 0 (64 B)    |  erase1 = 64 B (1 block); erase2 = 64/128/256 B; write = 4/8/16 B
+  |-------------------|
+  | Block 1 (64 B)    |  erase1 = 64 B (1 block); erase2 = 64/128/256 B; write = 4/8/16 B
+  |-------------------|
+  | ...               |  erase1 = 64 B (1 block); erase2 = 64/128/256 B; write = 4/8/16 B
+  |-------------------|
+  | Block 127 (64 B)  |  erase1 = 64 B (1 block); erase2 = 64/128/256 B; write = 4/8/16 B
+  |-------------------|
+
+
+  This flash area layout would be described as:
+
+  TODO
+
+  Notes:
+    The flash area layout node flash0 should have both this
+    compatible, "renesas,ra-rv40f", and the "soc-nv-flash"
+    compatible. The latter is used from mcuboot and other
+    modules to identify the flash area.
+
+compatible: "renesas,ra-rv40f-flash"
+
+include: base.yaml
+
+properties:
+  write-block-size:
+    type: int
+    description: |
+      TODO
+
+  erase-block-size:
+    type: int
+    description: |
+      TODO
+
+  fixme-erase2-block-sizes:
+    type: int
+    description: |
+      TODO
+
+  fixme-erase-blocks:
+    type: phandle-array
+    description: |
+      TODO
