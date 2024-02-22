@@ -391,7 +391,7 @@ message reading depends on the subscriber's implementation. It is possible to in
 rate by following design tips:
 
 * Keep the listeners quick-as-possible (deal with them as ISRs). If some processing is needed,
-  consider submitting a work to a work-queue;
+  consider submitting a work item to a work-queue;
 * Try to give producers a high priority to avoid losses;
 * Leave spare CPU for observers to consume data produced;
 * Consider using message queues or pipes for intensive byte transfers.
