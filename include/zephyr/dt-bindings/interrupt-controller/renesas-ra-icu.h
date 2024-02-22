@@ -22,6 +22,7 @@
 #define RA_ICU_PORT_IRQ10      (11 << 8)
 #define RA_ICU_PORT_IRQ11      (12 << 8)
 #define RA_ICU_PORT_IRQ12      (13 << 8)
+#define RA_ICU_PORT_IRQ13      (14 << 8)
 #define RA_ICU_PORT_IRQ14      (15 << 8)
 #define RA_ICU_PORT_IRQ15      (16 << 8)
 #define RA_ICU_DMAC0_INT       (17 << 8)
