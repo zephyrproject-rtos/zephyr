@@ -110,6 +110,9 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 			struct nsos_mid_sockaddr *addr, size_t *addrlen);
 
 
+int nsos_adapt_fcntl_getfl(int fd);
+int nsos_adapt_fcntl_setfl(int fd, int flags);
+
 int nsos_adapt_getaddrinfo(const char *node, const char *service,
 			   const struct nsos_mid_addrinfo *hints,
 			   struct nsos_mid_addrinfo **res,
