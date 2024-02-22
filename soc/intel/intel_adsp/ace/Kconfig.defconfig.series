@@ -1,7 +1,7 @@
 # Copyright (c) 2022-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_INTEL_ACE
+if SOC_SERIES_INTEL_ADSP_ACE
 
 config SMP
 	default y
@@ -62,4 +62,4 @@ endif # LOG
 
 rsource "Kconfig.defconfig.ace*"
 
-endif # SOC_SERIES_INTEL_ACE
+endif # SOC_SERIES_INTEL_ADSP_ACE

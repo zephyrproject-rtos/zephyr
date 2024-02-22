@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_INTEL_ACE
+config SOC_SERIES_INTEL_ADSP_ACE
 	select SOC_FAMILY_INTEL_ADSP
 	select XTENSA
 	select XTENSA_HAL if (("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc") && ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang"))
@@ -14,10 +14,10 @@ config SOC_SERIES_INTEL_ACE
 	select HAS_PM
 
 config SOC_INTEL_ACE15_MTPM
-	select SOC_SERIES_INTEL_ACE
+	select SOC_SERIES_INTEL_ADSP_ACE
 
 config SOC_INTEL_ACE20_LNL
-	select SOC_SERIES_INTEL_ACE
+	select SOC_SERIES_INTEL_ADSP_ACE
 
 config SOC_INTEL_COMM_WIDGET
 	bool "Intel Communication Widget driver"
