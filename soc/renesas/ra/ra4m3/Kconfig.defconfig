@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Piotr Rak
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA4M3
+
+# Ref: Renesas RA4M3 Group: UM: Hardware (R01UH0893EJ0140 Rev.1.40)
+#  - 13.1 Interrupt Controller Unit (ICU) - Overview
+#    - Table 13.1 ICU - Interrupt sources for NVIC (96)
+config NUM_IRQS
+	default 96
+
+endif # SOC_SERIES_RA4M3
