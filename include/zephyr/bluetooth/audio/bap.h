@@ -1506,6 +1506,18 @@ int bt_bap_base_subgroup_codec_to_codec_cfg(const struct bt_bap_base_subgroup *s
 int bt_bap_base_get_subgroup_bis_count(const struct bt_bap_base_subgroup *subgroup);
 
 /**
+ * @brief Get all BIS indexes of a subgroup
+ *
+ * @param[in]  subgroup    The subgroup pointer
+ * @param[out] bis_indexes 32-bit BIS index bitfield that will be populated
+ *
+ * @retval -EINVAL if arguments are invalid
+ * @retval 0 on success
+ */
+int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subgroup,
+					 uint32_t *bis_indexes);
+
+/**
  * @brief Iterate on all BIS in the subgroup
  *
  * @param subgroup  The subgroup pointer
