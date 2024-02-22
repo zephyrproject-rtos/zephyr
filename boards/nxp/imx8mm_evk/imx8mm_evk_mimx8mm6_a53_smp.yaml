@@ -1,4 +1,10 @@
-identifier: mimx8mm_evk_a53_smp
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx8mm_evk/mimx8mm6/a53/smp
 name: NXP i.MX8M Mini EVK A53 with SMP kernel
 type: mcu
 arch: arm64
@@ -12,4 +18,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-vendor: fsl
+vendor: nxp

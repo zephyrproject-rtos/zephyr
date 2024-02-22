@@ -45,7 +45,7 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr mimx8mm_evk_a53 board configuration supports the following hardware
+The Zephyr imx8mm_evk board for Cortex-A53 configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -97,7 +97,7 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: mimx8mm_evk_a53
+   :board: imx8mm_evk/mimx8mm6/a53
    :goals: run
 
 This will build an image with the synchronization sample app, boot it and
