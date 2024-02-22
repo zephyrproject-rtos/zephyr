@@ -8,7 +8,7 @@ config SOC_SERIES_STM32L1X
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32l1" if SOC_SERIES_STM32L1X
+	default "stm32l1x" if SOC_SERIES_STM32L1X
 
 config SOC_STM32L151XB
 	bool
