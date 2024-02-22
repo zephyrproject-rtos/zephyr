@@ -147,6 +147,8 @@
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
 /boards/arm64/intel_socfpga_agilex5_socdk/ @teikheng @gdengi
 /boards/arm64/rcar_*/                     @lorc @xakep-amatop
+/boards/riscv/visionfive2_jh7110/         @pfarwsi
+/soc/riscv/starfive_jh71xx/jh71xx/         @pfarwsi
 # All cmake related files
 /doc/develop/tools/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/services/device_mgmt/smp_protocol.rst  @de-nordic @nordicjm
@@ -453,7 +455,7 @@
 /dts/riscv/microchip/microchip-miv.dtsi   @galak
 /dts/riscv/openisa/rv32m1*                @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
-/dts/riscv/starfive/                      @rajnesh-kanwal
+/dts/riscv/starfive/                      @rajnesh-kanwal @pfarwsi
 /dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
 /dts/riscv/niosv/                         @sweeaun
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
@@ -510,3 +512,4 @@
 /dts/bindings/gpio/*ads114s0x*            @benediktibk
 /dts/bindings/pwm/*max31790*              @benediktibk
 /dts/bindings/dac/*ad56*                  @benediktibk
+/dts
