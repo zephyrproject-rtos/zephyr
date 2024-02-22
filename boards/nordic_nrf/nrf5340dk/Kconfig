@@ -38,7 +38,7 @@ config BOARD_ENABLE_CPUNET
 
 config DOMAIN_CPUNET_BOARD
 	string
-	default "nrf5340dk_nrf5340_cpunet"
+	default "nrf5340dk/nrf5340/cpunet"
 	depends on BOARD_ENABLE_CPUNET
 	help
 	  The board which will be used for CPUNET domain when creating a multi
@@ -50,7 +50,7 @@ endif #  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 config DOMAIN_CPUAPP_BOARD
 	string
-	default "nrf5340dk_nrf5340_cpuapp"
+	default "nrf5340dk/nrf5340/cpuapp"
 	depends on BOARD_NRF5340DK_NRF5340_CPUNET
 	help
 	  The board which will be used for CPUAPP domain when creating a multi
