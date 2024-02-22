@@ -6,11 +6,11 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
-#include "nrf51dongle_nrf51422-pinctrl.dtsi"
+#include "nrf51dongle_nrf51822-pinctrl.dtsi"
 
 / {
-	model = "Nordic nRF51 Dongle NRF51422";
-	compatible = "nordic,nrf51-dongle-nrf51422";
+	model = "Nordic nRF51 Dongle NRF51822";
+	compatible = "nordic,nrf51-dongle-nrf51822";
 
 	chosen {
 		zephyr,console = &uart0;

@@ -13,7 +13,7 @@ tests:
       - cy8cproto_063_ble
       - stm32l496g_disco
       - stm32h735g_disco
-      - nrf51dk/nrf51422
+      - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
       - mec172xevb_assy6906
       - gd32f350r_eval

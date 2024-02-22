@@ -2,4 +2,4 @@ board:
   name: nrf51dongle
   vendor: Nordic Semiconductor
   socs:
-  - name: nrf51422
+  - name: nrf51822
