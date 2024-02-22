@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Stepper Controller
+
+include: base.yaml
+
+properties:
+  micro-step-res:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+      micro-step resolution to be set while initializing the device driver.
