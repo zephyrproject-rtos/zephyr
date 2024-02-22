@@ -11,6 +11,10 @@ Zephyr v3.6.0.
 Any other changes (not directly related to migrating applications) can be found in
 the :ref:`release notes<zephyr_3.6>`.
 
+.. contents::
+    :local:
+    :depth: 2
+
 Build System
 ************
 
@@ -51,8 +55,11 @@ Boards
   following NXP boards: ``mimxrt685_evk_cm33``, ``frdm_k64f``, ``mimxrt1050_evk``, ``frdm_kl25z``,
   ``mimxrt1020_evk``, ``mimxrt1015_evk``
 
+Modules
+*******
+
 Optional Modules
-****************
+================
 
 The following modules have been made optional and are not downloaded with `west update` by default
 anymore:
@@ -63,8 +70,42 @@ To enable them again use the ``west config manifest.project-filter -- +<module
 name>`` command, or ``west config manifest.group-filter -- +optional`` to
 enable all optional modules, and then run ``west update`` again.
 
-Device Drivers and Device Tree
-******************************
+MCUboot
+=======
+
+* MCUboot's deprecated ``CONFIG_ZEPHYR_TRY_MASS_ERASE`` Kconfig option has been removed. If an
+  erase is needed when flashing MCUboot, this should now be provided directly to the ``west``
+  command e.g. ``west flash --erase``. (:github:`64703`)
+
+zcbor
+=====
+
+* If you have zcbor-generated code that relies on the zcbor libraries through Zephyr, you must
+  regenerate the files using zcbor 0.8.1. Note that the names of generated types and members has
+  been overhauled, so the code using the generated code must likely be changed.
+  For example:
+
+  * Leading single underscores and all double underscores are largely gone,
+  * Names sometimes gain suffixes like ``_m`` or ``_l`` for disambiguation.
+  * All enum (choice) names have now gained a ``_c`` suffix, so the enum name no longer matches
+    the corresponding member name exactly (because this broke C++ namespace rules).
+
+* The function :c:func:`zcbor_new_state`, :c:func:`zcbor_new_decode_state` and the macro
+  :c:macro:`ZCBOR_STATE_D` have gained new parameters related to decoding of unordered maps.
+  Unless you are using that new functionality, these can all be set to NULL or 0.
+
+* The functions :c:func:`zcbor_bstr_put_term` and :c:func:`zcbor_tstr_put_term` have gained a new
+  parameter ``maxlen``, referring to the maximum length of the parameter ``str``.
+  This parameter is passed directly to :c:func:`strnlen` under the hood.
+
+* The function :c:func:`zcbor_tag_encode` has been renamed to :c:func:`zcbor_tag_put`.
+
+* Printing has been changed significantly, e.g. :c:func:`zcbor_print` is now called
+  :c:func:`zcbor_log`, and :c:func:`zcbor_trace` with no parameters is gone, and in its place are
+  :c:func:`zcbor_trace_file` and :c:func:`zcbor_trace`, both of which take a ``state`` parameter.
+
+Device Drivers and Devicetree
+*****************************
 
 * Various deprecated macros related to the deprecated devicetree label property
   were removed. These are listed in the following table. The table also
@@ -294,6 +335,11 @@ Device Drivers and Device Tree
         };
     };
 
+* Touchscreen drivers :dtcompatible:`focaltech,ft5336` and
+  :dtcompatible:`goodix,gt911` were using the incorrect polarity for the
+  respective ``reset-gpios``. This has been fixed so those signals now have to
+  be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree. (:github:`64800`)
+
 * Runtime configuration is now disabled by default for Nordic UART drivers. The motivation for the
   change is that this feature is rarely used and disabling it significantly reduces the memory
   footprint.
@@ -357,57 +403,6 @@ Device Drivers and Device Tree
 * The :dtcompatible:`st,hci-spi-v1` should be used instead of :dtcompatible:`zephyr,bt-hci-spi`
   for the boards which are based on ST BlueNRG-MS.
 
-Shell
-*****
-
-* The following subsystem and driver shell modules are now disabled by default. Each required shell
-  module must now be explicitly enabled via Kconfig (:github:`65307`):
-
-  * :kconfig:option:`CONFIG_ACPI_SHELL`
-  * :kconfig:option:`CONFIG_ADC_SHELL`
-  * :kconfig:option:`CONFIG_AUDIO_CODEC_SHELL`
-  * :kconfig:option:`CONFIG_CAN_SHELL`
-  * :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_SHELL`
-  * :kconfig:option:`CONFIG_DAC_SHELL`
-  * :kconfig:option:`CONFIG_DEBUG_COREDUMP_SHELL`
-  * :kconfig:option:`CONFIG_EDAC_SHELL`
-  * :kconfig:option:`CONFIG_EEPROM_SHELL`
-  * :kconfig:option:`CONFIG_FLASH_SHELL`
-  * :kconfig:option:`CONFIG_HWINFO_SHELL`
-  * :kconfig:option:`CONFIG_I2C_SHELL`
-  * :kconfig:option:`CONFIG_LOG_CMDS`
-  * :kconfig:option:`CONFIG_LORA_SHELL`
-  * :kconfig:option:`CONFIG_MCUBOOT_SHELL`
-  * :kconfig:option:`CONFIG_MDIO_SHELL`
-  * :kconfig:option:`CONFIG_OPENTHREAD_SHELL`
-  * :kconfig:option:`CONFIG_PCIE_SHELL`
-  * :kconfig:option:`CONFIG_PSCI_SHELL`
-  * :kconfig:option:`CONFIG_PWM_SHELL`
-  * :kconfig:option:`CONFIG_REGULATOR_SHELL`
-  * :kconfig:option:`CONFIG_SENSOR_SHELL`
-  * :kconfig:option:`CONFIG_SMBUS_SHELL`
-  * :kconfig:option:`CONFIG_STATS_SHELL`
-  * :kconfig:option:`CONFIG_USBD_SHELL`
-  * :kconfig:option:`CONFIG_USBH_SHELL`
-  * :kconfig:option:`CONFIG_W1_SHELL`
-  * :kconfig:option:`CONFIG_WDT_SHELL`
-
-* The ``SHELL_UART_DEFINE`` macro now only requires a ``_name`` argument. In the meantime, the
-  macro accepts additional arguments (ring buffer TX & RX size arguments) for compatibility with
-  previous Zephyr version, but they are ignored, and will be removed in future release.
-
-* :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL_API` now does not automatically default to
-  :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL_API_ASYNC` when
-  :kconfig:option:`CONFIG_UART_ASYNC_API` is enabled, :kconfig:option:`CONFIG_SHELL_ASYNC_API`
-  also has to be enabled in order to use the asynchronous serial shell (:github: `68475`).
-
-Bootloader
-**********
-
-* MCUboot's deprecated ``CONFIG_ZEPHYR_TRY_MASS_ERASE`` Kconfig option has been removed. If an
-  erase is needed when flashing MCUboot, this should now be provided directly to the ``west``
-  command e.g. ``west flash --erase``. (:github:`64703`)
-
 Bluetooth
 *********
 
@@ -440,7 +435,8 @@ Bluetooth
   as well. :c:func:`bt_iso_chan_send` now always sends without timestamp. To send with a timestamp,
   :c:func:`bt_iso_chan_send_ts` can be used.
 
-* Mesh
+Bluetooth Mesh
+==============
 
   * The Bluetooth Mesh ``model`` declaration has been changed to add prefix ``const``.
     The ``model->user_data``, ``model->elem_idx`` and ``model->mod_idx`` field has been changed to
@@ -471,7 +467,8 @@ Bluetooth
     :kconfig:option:`CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT`,
     :kconfig:option:`CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT` Kconfig options.
 
-* Audio
+Bluetooth Audio
+===============
 
   * The ``BT_AUDIO_CODEC_LC3_*`` values from ``<zephyr/bluetooth/audio/lc3.h>`` have moved to
     ``<zephyr/bluetooth/audio/audio.h>`` and have the ``LC3`` part of their names replaced by a
@@ -489,16 +486,6 @@ Bluetooth
   * The `ts` parameter of :c:func:`bt_cap_stream_send` has been removed.
     :c:func:`bt_cap_stream_send` now always sends without timestamp.
     To send with a timestamp, :c:func:`bt_cap_stream_send_ts` can be used.
-
-
-LoRaWAN
-*******
-
-* The API to register a callback to provide battery level information to the LoRaWAN stack has been
-  renamed from ``lorawan_set_battery_level_callback`` to
-  :c:func:`lorawan_register_battery_level_callback` and the return type is now ``void``. This
-  is more consistent with similar functions for downlink and data rate changed callbacks.
-  (:github:`65103`)
 
 Networking
 **********
@@ -548,44 +535,71 @@ Networking
   ``struct net_buf_pool_fixed`` that was specific only for buffer pools with a fixed size was
   removed.
 
-zcbor
-*****
-
-* If you have zcbor-generated code that relies on the zcbor libraries through Zephyr, you must
-  regenerate the files using zcbor 0.8.1. Note that the names of generated types and members has
-  been overhauled, so the code using the generated code must likely be changed.
-  For example:
-
-  * Leading single underscores and all double underscores are largely gone,
-  * Names sometimes gain suffixes like ``_m`` or ``_l`` for disambiguation.
-  * All enum (choice) names have now gained a ``_c`` suffix, so the enum name no longer matches
-    the corresponding member name exactly (because this broke C++ namespace rules).
-
-* The function :c:func:`zcbor_new_state`, :c:func:`zcbor_new_decode_state` and the macro
-  :c:macro:`ZCBOR_STATE_D` have gained new parameters related to decoding of unordered maps.
-  Unless you are using that new functionality, these can all be set to NULL or 0.
-
-* The functions :c:func:`zcbor_bstr_put_term` and :c:func:`zcbor_tstr_put_term` have gained a new
-  parameter ``maxlen``, referring to the maximum length of the parameter ``str``.
-  This parameter is passed directly to :c:func:`strnlen` under the hood.
-
-* The function :c:func:`zcbor_tag_encode` has been renamed to :c:func:`zcbor_tag_put`.
-
-* Printing has been changed significantly, e.g. :c:func:`zcbor_print` is now called
-  :c:func:`zcbor_log`, and :c:func:`zcbor_trace` with no parameters is gone, and in its place are
-  :c:func:`zcbor_trace_file` and :c:func:`zcbor_trace`, both of which take a ``state`` parameter.
-
 Other Subsystems
 ****************
+
+LoRaWAN
+=======
+
+* The API to register a callback to provide battery level information to the LoRaWAN stack has been
+  renamed from ``lorawan_set_battery_level_callback`` to
+  :c:func:`lorawan_register_battery_level_callback` and the return type is now ``void``. This
+  is more consistent with similar functions for downlink and data rate changed callbacks.
+  (:github:`65103`)
+
+MCUmgr
+======
 
 * MCUmgr applications that make use of serial transports (shell or UART) must now select
   :kconfig:option:`CONFIG_CRC`, this was previously erroneously selected if MCUmgr was enabled,
   when for non-serial transports it was not needed. (:github:`64078`)
 
-* Touchscreen drivers :dtcompatible:`focaltech,ft5336` and
-  :dtcompatible:`goodix,gt911` were using the incorrect polarity for the
-  respective ``reset-gpios``. This has been fixed so those signals now have to
-  be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree. (:github:`64800`)
+Shell
+=====
+
+* The following subsystem and driver shell modules are now disabled by default. Each required shell
+  module must now be explicitly enabled via Kconfig (:github:`65307`):
+
+  * :kconfig:option:`CONFIG_ACPI_SHELL`
+  * :kconfig:option:`CONFIG_ADC_SHELL`
+  * :kconfig:option:`CONFIG_AUDIO_CODEC_SHELL`
+  * :kconfig:option:`CONFIG_CAN_SHELL`
+  * :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_SHELL`
+  * :kconfig:option:`CONFIG_DAC_SHELL`
+  * :kconfig:option:`CONFIG_DEBUG_COREDUMP_SHELL`
+  * :kconfig:option:`CONFIG_EDAC_SHELL`
+  * :kconfig:option:`CONFIG_EEPROM_SHELL`
+  * :kconfig:option:`CONFIG_FLASH_SHELL`
+  * :kconfig:option:`CONFIG_HWINFO_SHELL`
+  * :kconfig:option:`CONFIG_I2C_SHELL`
+  * :kconfig:option:`CONFIG_LOG_CMDS`
+  * :kconfig:option:`CONFIG_LORA_SHELL`
+  * :kconfig:option:`CONFIG_MCUBOOT_SHELL`
+  * :kconfig:option:`CONFIG_MDIO_SHELL`
+  * :kconfig:option:`CONFIG_OPENTHREAD_SHELL`
+  * :kconfig:option:`CONFIG_PCIE_SHELL`
+  * :kconfig:option:`CONFIG_PSCI_SHELL`
+  * :kconfig:option:`CONFIG_PWM_SHELL`
+  * :kconfig:option:`CONFIG_REGULATOR_SHELL`
+  * :kconfig:option:`CONFIG_SENSOR_SHELL`
+  * :kconfig:option:`CONFIG_SMBUS_SHELL`
+  * :kconfig:option:`CONFIG_STATS_SHELL`
+  * :kconfig:option:`CONFIG_USBD_SHELL`
+  * :kconfig:option:`CONFIG_USBH_SHELL`
+  * :kconfig:option:`CONFIG_W1_SHELL`
+  * :kconfig:option:`CONFIG_WDT_SHELL`
+
+* The ``SHELL_UART_DEFINE`` macro now only requires a ``_name`` argument. In the meantime, the
+  macro accepts additional arguments (ring buffer TX & RX size arguments) for compatibility with
+  previous Zephyr version, but they are ignored, and will be removed in future release.
+
+* :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL_API` now does not automatically default to
+  :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL_API_ASYNC` when
+  :kconfig:option:`CONFIG_UART_ASYNC_API` is enabled, :kconfig:option:`CONFIG_SHELL_ASYNC_API`
+  also has to be enabled in order to use the asynchronous serial shell (:github: `68475`).
+
+ZBus
+====
 
 * The ``CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC`` and
   ``CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC`` zbus options are renamed. Instead, the new
@@ -634,8 +648,11 @@ Userspace
   * ``z_object_init`` to :c:func:`k_object_init`
   * ``z_dynamic_object_aligned_create`` to :c:func:`k_object_create_dynamic_aligned`
 
+Architectures
+*************
+
 Xtensa
-******
+======
 
 * :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer has a default in
   the architecture layer. Instead, SoCs or boards will need to define it.
