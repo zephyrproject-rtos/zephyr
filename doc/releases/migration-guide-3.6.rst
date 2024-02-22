@@ -107,6 +107,9 @@ zcbor
 Device Drivers and Devicetree
 *****************************
 
+Devicetree Labels
+=================
+
 * Various deprecated macros related to the deprecated devicetree label property
   were removed. These are listed in the following table. The table also
   provides replacements.
@@ -153,52 +156,73 @@ Device Drivers and Devicetree
      * - ``DT_INST_BUS_LABEL(inst)``
        - ``DT_PROP(DT_BUS(DT_DRV_INST(inst)), label)``
 
-* The :dtcompatible:`nxp,pcf8574` driver has been renamed to
-  :dtcompatible:`nxp,pcf857x`. (:github:`67054`) to support pcf8574 and pcf8575.
-  The Kconfig option has been renamed from :kconfig:option:`CONFIG_GPIO_PCF8574` to
-  :kconfig:option:`CONFIG_GPIO_PCF857X`.
-  The Device Tree can be configured as follows:
+Multi-level Interrupts
+======================
+
+* For platforms that enabled :kconfig:option:`CONFIG_MULTI_LEVEL_INTERRUPTS`, the ``IRQ`` variant
+  of the Devicetree macros now return the as-seen value in the devicetree instead of the Zephyr
+  multilevel-encoded IRQ number. To get the IRQ number in Zephyr multilevel-encoded format, use
+  ``IRQN`` variant instead. For example, consider the following devicetree:
 
   .. code-block:: devicetree
 
-    &i2c {
-      status = "okay";
-      pcf8574: pcf857x@20 {
-          compatible = "nxp,pcf857x";
-          status = "okay";
-          reg = <0x20>;
-          gpio-controller;
-          #gpio-cells = <2>;
-          ngpios = <8>;
-      };
-
-      pcf8575: pcf857x@21 {
-          compatible = "nxp,pcf857x";
-          status = "okay";
-          reg = <0x21>;
-          gpio-controller;
-          #gpio-cells = <2>;
-          ngpios = <16>;
-      };
+    plic: interrupt-controller@c000000 {
+            riscv,max-priority = <7>;
+            riscv,ndev = <1024>;
+            reg = <0x0c000000 0x04000000>;
+            interrupts-extended = <&hlic0 11>;
+            interrupt-controller;
+            compatible = "sifive,plic-1.0.0";
+            #address-cells = <0x0>;
+            #interrupt-cells = <0x2>;
     };
 
-* The :dtcompatible:`st,lsm6dsv16x` sensor driver has been changed to support
-  configuration of both int1 and int2 pins. The DT attribute ``irq-gpios`` has been
-  removed and substituted by two new attributes, ``int1-gpios`` and ``int2-gpios``.
-  These attributes must be configured in the Device Tree similarly to the following
-  example:
-
-  .. code-block:: devicetree
-
-    / {
-        lsm6dsv16x@0 {
-            compatible = "st,lsm6dsv16x";
-
-            int1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
-            int2-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
-            drdy-pin = <2>;
-        };
+    uart0: uart@10000000 {
+            interrupts = <10 1>;
+            interrupt-parent = <&plic>;
+            clock-frequency = <0x384000>;
+            reg = <0x10000000 0x100>;
+            compatible = "ns16550";
+            reg-shift = <0>;
     };
+
+  ``plic`` is a second level interrupt aggregator and ``uart0`` is a child of ``plic``.
+  ``DT_IRQ_BY_IDX(DT_NODELABEL(uart0), 0, irq)`` will return ``10``
+  (as-seen value in the devicetree), while ``DT_IRQN_BY_IDX(DT_NODELABEL(uart0), 0)`` will return
+  ``(((10 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11)``.
+
+  Drivers and applications that are supposed to work in multilevel-interrupt configurations should
+  be updated to use the ``IRQN`` variant, i.e.:
+
+  * ``DT_IRQ(node_id, irq)`` -> ``DT_IRQN(node_id)``
+  * ``DT_IRQ_BY_IDX(node_id, idx, irq)`` -> ``DT_IRQN_BY_IDX(node_id, idx)``
+  * ``DT_IRQ_BY_NAME(node_id, name, irq)`` -> ``DT_IRQN_BY_NAME(node_id, name)``
+  * ``DT_INST_IRQ(inst, irq)`` -> ``DT_INST_IRQN(inst)``
+  * ``DT_INST_IRQ_BY_IDX(inst, idx, irq)`` -> ``DT_INST_IRQN_BY_IDX(inst, idx)``
+  * ``DT_INST_IRQ_BY_NAME(inst, name, irq)`` -> ``DT_INST_IRQN_BY_NAME(inst, name)``
+
+Analog-to-Digital Converter (ADC)
+=================================
+
+* The io-channel cells of the following devicetree bindings were reduced from 2 (``positive`` and
+  ``negative``) to the common ``input``, making it possible to use the various ADC DT macros with TI
+  LMP90xxx ADC devices:
+
+  * :dtcompatible:`ti,lmp90077`
+  * :dtcompatible:`ti,lmp90078`
+  * :dtcompatible:`ti,lmp90079`
+  * :dtcompatible:`ti,lmp90080`
+  * :dtcompatible:`ti,lmp90097`
+  * :dtcompatible:`ti,lmp90098`
+  * :dtcompatible:`ti,lmp90099`
+  * :dtcompatible:`ti,lmp90100`
+
+* The io-channel cells of the :dtcompatible:`microchip,mcp3204` and
+  :dtcompatible:`microchip,mcp3208` devicetree bindings were renamed from ``channel`` to the common
+  ``input``, making it possible to use the various ADC DT macros with Microchip MCP320x ADC devices.
+
+Bluetooth HCI
+=============
 
 * The optional :c:func:`setup()` function in the Bluetooth HCI driver API (enabled through
   :kconfig:option:`CONFIG_BT_HCI_SETUP`) has gained a function parameter of type
@@ -208,26 +232,11 @@ Device Drivers and Devicetree
 
   (:github:`62994`)
 
-* The :dtcompatible:`st,stm32-lptim` lptim which is selected for counting ticks during
-  low power modes is identified by **stm32_lp_tick_source** in the device tree as follows.
-  The stm32_lptim_timer driver has been changed to support this.
+* The :dtcompatible:`st,hci-spi-v1` should be used instead of :dtcompatible:`zephyr,bt-hci-spi`
+  for the boards which are based on ST BlueNRG-MS.
 
-  .. code-block:: devicetree
-
-    stm32_lp_tick_source: &lptim1 {
-            status = "okay";
-    };
-
-* The :dtcompatible:`st,stm32-ospi-nor` and :dtcompatible:`st,stm32-qspi-nor` give the nor flash
-  base address and size (in Bytes) with the **reg** property as follows.
-  The <size> property is not used anymore.
-
-  .. code-block:: devicetree
-
-    mx25lm51245: ospi-nor-flash@70000000 {
-            compatible = "st,stm32-ospi-nor";
-            reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits*/
-    };
+Controller Area Network (CAN)
+=============================
 
 * The native Linux SocketCAN driver, which can now be used in both :ref:`native_posix<native_posix>`
   and :ref:`native_sim<native_sim>` with or without an embedded C-library, has been renamed to
@@ -276,22 +285,8 @@ Device Drivers and Devicetree
                      <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
     };
 
-* The io-channel cells of the following devicetree bindings were reduced from 2 (``positive`` and
-  ``negative``) to the common ``input``, making it possible to use the various ADC DT macros with TI
-  LMP90xxx ADC devices:
-
-  * :dtcompatible:`ti,lmp90077`
-  * :dtcompatible:`ti,lmp90078`
-  * :dtcompatible:`ti,lmp90079`
-  * :dtcompatible:`ti,lmp90080`
-  * :dtcompatible:`ti,lmp90097`
-  * :dtcompatible:`ti,lmp90098`
-  * :dtcompatible:`ti,lmp90099`
-  * :dtcompatible:`ti,lmp90100`
-
-* The io-channel cells of the :dtcompatible:`microchip,mcp3204` and
-  :dtcompatible:`microchip,mcp3208` devicetree bindings were renamed from ``channel`` to the common
-  ``input``, making it possible to use the various ADC DT macros with Microchip MCP320x ADC devices.
+Display
+=======
 
 * ILI9XXX based displays now use the MIPI DBI driver class. These displays
   must now be declared within a MIPI DBI driver wrapper device, which will
@@ -335,63 +330,62 @@ Device Drivers and Devicetree
         };
     };
 
+Flash
+=====
+
+* The :dtcompatible:`st,stm32-ospi-nor` and :dtcompatible:`st,stm32-qspi-nor` give the nor flash
+  base address and size (in Bytes) with the **reg** property as follows.
+  The <size> property is not used anymore.
+
+  .. code-block:: devicetree
+
+    mx25lm51245: ospi-nor-flash@70000000 {
+            compatible = "st,stm32-ospi-nor";
+            reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits*/
+    };
+
+General Purpose I/O (GPIO)
+==========================
+
+* The :dtcompatible:`nxp,pcf8574` driver has been renamed to
+  :dtcompatible:`nxp,pcf857x`. (:github:`67054`) to support pcf8574 and pcf8575.
+  The Kconfig option has been renamed from :kconfig:option:`CONFIG_GPIO_PCF8574` to
+  :kconfig:option:`CONFIG_GPIO_PCF857X`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c {
+      status = "okay";
+      pcf8574: pcf857x@20 {
+          compatible = "nxp,pcf857x";
+          status = "okay";
+          reg = <0x20>;
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <8>;
+      };
+
+      pcf8575: pcf857x@21 {
+          compatible = "nxp,pcf857x";
+          status = "okay";
+          reg = <0x21>;
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <16>;
+      };
+    };
+
+Input
+=====
+
 * Touchscreen drivers :dtcompatible:`focaltech,ft5336` and
   :dtcompatible:`goodix,gt911` were using the incorrect polarity for the
   respective ``reset-gpios``. This has been fixed so those signals now have to
   be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree. (:github:`64800`)
 
-* Runtime configuration is now disabled by default for Nordic UART drivers. The motivation for the
-  change is that this feature is rarely used and disabling it significantly reduces the memory
-  footprint.
-
-* For platforms that enabled :kconfig:option:`CONFIG_MULTI_LEVEL_INTERRUPTS`, the ``IRQ`` variant
-  of the Devicetree macros now return the as-seen value in the devicetree instead of the Zephyr
-  multilevel-encoded IRQ number. To get the IRQ number in Zephyr multilevel-encoded format, use
-  ``IRQN`` variant instead. For example, consider the following devicetree:
-
-  .. code-block:: devicetree
-
-    plic: interrupt-controller@c000000 {
-            riscv,max-priority = <7>;
-            riscv,ndev = <1024>;
-            reg = <0x0c000000 0x04000000>;
-            interrupts-extended = <&hlic0 11>;
-            interrupt-controller;
-            compatible = "sifive,plic-1.0.0";
-            #address-cells = <0x0>;
-            #interrupt-cells = <0x2>;
-    };
-
-    uart0: uart@10000000 {
-            interrupts = <10 1>;
-            interrupt-parent = <&plic>;
-            clock-frequency = <0x384000>;
-            reg = <0x10000000 0x100>;
-            compatible = "ns16550";
-            reg-shift = <0>;
-    };
-
-  ``plic`` is a second level interrupt aggregator and ``uart0`` is a child of ``plic``.
-  ``DT_IRQ_BY_IDX(DT_NODELABEL(uart0), 0, irq)`` will return ``10``
-  (as-seen value in the devicetree), while ``DT_IRQN_BY_IDX(DT_NODELABEL(uart0), 0)`` will return
-  ``(((10 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11)``.
-
-  Drivers and applications that are supposed to work in multilevel-interrupt configurations should
-  be updated to use the ``IRQN`` variant, i.e.:
-
-  * ``DT_IRQ(node_id, irq)`` -> ``DT_IRQN(node_id)``
-  * ``DT_IRQ_BY_IDX(node_id, idx, irq)`` -> ``DT_IRQN_BY_IDX(node_id, idx)``
-  * ``DT_IRQ_BY_NAME(node_id, name, irq)`` -> ``DT_IRQN_BY_NAME(node_id, name)``
-  * ``DT_INST_IRQ(inst, irq)`` -> ``DT_INST_IRQN(inst)``
-  * ``DT_INST_IRQ_BY_IDX(inst, idx, irq)`` -> ``DT_INST_IRQN_BY_IDX(inst, idx)``
-  * ``DT_INST_IRQ_BY_NAME(inst, name, irq)`` -> ``DT_INST_IRQN_BY_NAME(inst, name)``
-
-* Several Renesas RA series drivers Kconfig options have been renamed:
-
-  * ``CONFIG_CLOCK_CONTROL_RA`` -> :kconfig:option:`CONFIG_CLOCK_CONTROL_RENESAS_RA`
-  * ``CONFIG_GPIO_RA`` -> :kconfig:option:`CONFIG_GPIO_RENESAS_RA`
-  * ``CONFIG_PINCTRL_RA`` -> :kconfig:option:`CONFIG_PINCTRL_RENESAS_RA`
-  * ``CONFIG_UART_RA`` -> :kconfig:option:`CONFIG_UART_RENESAS_RA`
+Interrupt Controller
+====================
 
 * The function signature of the ``isr_t`` callback function passed to the ``shared_irq``
   interrupt controller driver API via :c:func:`shared_irq_isr_register()` has changed.
@@ -400,8 +394,56 @@ Device Drivers and Devicetree
 
   (:github:`66427`)
 
-* The :dtcompatible:`st,hci-spi-v1` should be used instead of :dtcompatible:`zephyr,bt-hci-spi`
-  for the boards which are based on ST BlueNRG-MS.
+Renesas RA Series Drivers
+=========================
+
+* Several Renesas RA series drivers Kconfig options have been renamed:
+
+  * ``CONFIG_CLOCK_CONTROL_RA`` -> :kconfig:option:`CONFIG_CLOCK_CONTROL_RENESAS_RA`
+  * ``CONFIG_GPIO_RA`` -> :kconfig:option:`CONFIG_GPIO_RENESAS_RA`
+  * ``CONFIG_PINCTRL_RA`` -> :kconfig:option:`CONFIG_PINCTRL_RENESAS_RA`
+  * ``CONFIG_UART_RA`` -> :kconfig:option:`CONFIG_UART_RENESAS_RA`
+
+Sensors
+=======
+
+* The :dtcompatible:`st,lsm6dsv16x` sensor driver has been changed to support
+  configuration of both int1 and int2 pins. The DT attribute ``irq-gpios`` has been
+  removed and substituted by two new attributes, ``int1-gpios`` and ``int2-gpios``.
+  These attributes must be configured in the Device Tree similarly to the following
+  example:
+
+  .. code-block:: devicetree
+
+    / {
+        lsm6dsv16x@0 {
+            compatible = "st,lsm6dsv16x";
+
+            int1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+            int2-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+            drdy-pin = <2>;
+        };
+    };
+
+Serial
+======
+
+* Runtime configuration is now disabled by default for Nordic UART drivers. The motivation for the
+  change is that this feature is rarely used and disabling it significantly reduces the memory
+  footprint.
+
+Timer
+=====
+
+* The :dtcompatible:`st,stm32-lptim` lptim which is selected for counting ticks during
+  low power modes is identified by **stm32_lp_tick_source** in the device tree as follows.
+  The stm32_lptim_timer driver has been changed to support this.
+
+  .. code-block:: devicetree
+
+    stm32_lp_tick_source: &lptim1 {
+            status = "okay";
+    };
 
 Bluetooth
 *********
