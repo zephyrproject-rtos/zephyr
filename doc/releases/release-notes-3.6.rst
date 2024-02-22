@@ -59,6 +59,12 @@ Architectures
 
 * ARC
 
+  * Improvements for ARCv3 processors (HS5x & HS6x): enable hardware prefetcher
+    and shared cluster cache (SCM - Shared Cluster Memory).
+  * Disabled Thread-local Storage support for platforms with two or more register banks.
+  * Fixed unstable work of application built with MetaWare toolchain for hardware
+    platforms (garbage in .device_states section).
+
 * ARM
 
   * MPU regions are now always cleared before initialization.
