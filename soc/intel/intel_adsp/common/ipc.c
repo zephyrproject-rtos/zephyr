@@ -55,7 +55,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 
 		regs->tdr = INTEL_ADSP_IPC_BUSY;
 		if (done) {
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 			regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
 			regs->tda = INTEL_ADSP_IPC_DONE;
@@ -100,7 +100,7 @@ int intel_adsp_ipc_init(const struct device *dev)
 	 */
 	config->regs->tdr = INTEL_ADSP_IPC_BUSY;
 	config->regs->ida = INTEL_ADSP_IPC_DONE;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
 	config->regs->tda = INTEL_ADSP_IPC_DONE;
@@ -115,7 +115,7 @@ void intel_adsp_ipc_complete(const struct device *dev)
 {
 	const struct intel_adsp_ipc_config *config = dev->config;
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
 #else
 	config->regs->tda = INTEL_ADSP_IPC_DONE;
@@ -208,7 +208,7 @@ void intel_adsp_ipc_send_message_emergency(const struct device *dev, uint32_t da
 
 #if DT_NODE_EXISTS(INTEL_ADSP_IPC_HOST_DTNODE)
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
 static inline void ace_ipc_intc_unmask(void)
 {
 	ACE_DINT[0].ie[ACE_INTL_HIPC] = BIT(0);

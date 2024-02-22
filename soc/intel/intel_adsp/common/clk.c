@@ -26,7 +26,7 @@ static void select_cpu_clock_hw(uint32_t freq_idx)
 {
 	uint32_t enc = adsp_clock_freq_enc[freq_idx];
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	uint32_t clk_ctl = ADSP_CLKCTL;
 
 	clk_ctl &= ~ADSP_CLKCTL_OSC_SOURCE_MASK;
@@ -89,7 +89,7 @@ void adsp_clock_init(void)
 	int i;
 
 #ifdef ADSP_CLOCK_HAS_WOVCRO
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	ACE_DfPMCCU.dfclkctl |= ACE_CLKCTL_WOVCRO;
 	if (ACE_DfPMCCU.dfclkctl & ACE_CLKCTL_WOVCRO) {
 		ACE_DfPMCCU.dfclkctl = ACE_DfPMCCU.dfclkctl & ~ACE_CLKCTL_WOVCRO;
@@ -103,7 +103,7 @@ void adsp_clock_init(void)
 	} else {
 		platform_lowest_freq_idx = ADSP_CPU_CLOCK_FREQ_LPRO;
 	}
-#endif /* CONFIG_SOC_SERIES_INTEL_ACE */
+#endif /* CONFIG_SOC_SERIES_INTEL_ADSP_ACE */
 #endif /* ADSP_CLOCK_HAS_WOVCRO */
 
 	unsigned int num_cpus = arch_num_cpus();
