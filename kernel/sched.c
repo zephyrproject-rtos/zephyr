@@ -1592,8 +1592,8 @@ static inline void unpend_all(_wait_q_t *wait_q)
 	}
 }
 
-#ifdef CONFIG_CMSIS_RTOS_V1
-extern void z_thread_cmsis_status_mask_clear(struct k_thread *thread);
+#ifdef CONFIG_THREAD_ABORT_HOOK
+extern void thread_abort_hook(struct k_thread *thread);
 #endif
 
 /**
@@ -1639,9 +1639,8 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
 		z_thread_monitor_exit(thread);
-
-#ifdef CONFIG_CMSIS_RTOS_V1
-		z_thread_cmsis_status_mask_clear(thread);
+#ifdef CONFIG_THREAD_ABORT_HOOK
+		thread_abort_hook(thread);
 #endif
 
 #ifdef CONFIG_OBJ_CORE_THREAD
