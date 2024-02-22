@@ -96,7 +96,7 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: mimx8mp_evk_a53
+   :board: imx8mp_evk/mimx8ml8/a53
    :goals: run
 
 This will build an image with the synchronization sample app, boot it and
