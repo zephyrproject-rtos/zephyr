@@ -18,11 +18,13 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/sys/fdtable.h>
 
 #include "sockets_internal.h"
 #include "nsos.h"
 #include "nsos_errno.h"
+#include "nsos_fcntl.h"
 #include "nsos_netdb.h"
 
 #include "nsi_host_trampolines.h"
@@ -227,6 +229,28 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 
 	case ZFD_IOCTL_POLL_OFFLOAD:
 		return -EOPNOTSUPP;
+
+	case F_GETFL: {
+		int flags;
+
+		flags = nsos_adapt_fcntl_getfl(OBJ_TO_FD(obj));
+
+		return fl_from_nsos_mid(flags);
+	}
+
+	case F_SETFL: {
+		int flags = va_arg(args, int);
+		int ret;
+
+		ret = fl_to_nsos_mid_strict(flags);
+		if (ret < 0) {
+			return -errno_from_nsos_mid(-ret);
+		}
+
+		ret = nsos_adapt_fcntl_setfl(OBJ_TO_FD(obj), flags);
+
+		return -errno_from_nsos_mid(-ret);
+	}
 	}
 
 	return -EINVAL;

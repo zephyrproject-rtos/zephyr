@@ -11,6 +11,7 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -21,6 +22,7 @@
 
 #include "nsos.h"
 #include "nsos_errno.h"
+#include "nsos_fcntl.h"
 #include "nsos_netdb.h"
 
 #include "nsi_tracing.h"
@@ -595,4 +597,25 @@ void nsos_adapt_freeaddrinfo(struct nsos_mid_addrinfo *res_mid)
 
 	freeaddrinfo(wrap->addrinfo);
 	free(wrap);
+}
+
+int nsos_adapt_fcntl_getfl(int fd)
+{
+	int flags;
+
+	flags = fcntl(fd, F_GETFL);
+
+	return fl_to_nsos_mid(flags);
+}
+
+int nsos_adapt_fcntl_setfl(int fd, int flags)
+{
+	int ret;
+
+	ret = fcntl(fd, F_SETFL, fl_from_nsos_mid(flags));
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	return 0;
 }
