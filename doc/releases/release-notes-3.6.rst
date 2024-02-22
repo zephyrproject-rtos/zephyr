@@ -1242,10 +1242,25 @@ Libraries / Subsystems
 
 * ZBus
 
+  * Replace mutexes with semaphores to lock channels and implement the Highest Locker Protocol (HLP)
+    priority boost for the zbus operations. This feature avoids priority inversions and preemptions,
+    making the VDED delivery process faster and more consistent. (:github:`63183`)
+
+  * Fixed documentation for :c:func:`zbus_chan_add` and :c:func:`zbus_chan_rm` adding the timeout
+    argument. (:github:`65544`)
+
+  * Fixed warning when mixing C and C++ files using zbus. (:github:`65222`)
+
+  * :c:macro:`ZBUS_CHANNEL_DEFINE` macro is now compatible with C++. (:github:`65196`)
+
+  * Fixed parameter order of net buf pool fixed definition. (:github:`65039`)
+
+  * Complete refactoring of benchmark sample, adding message subscribers. (:github:`64524`)
+
   * Renamed ``CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC`` and
-    ``CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC``
-    to :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC` and
-    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC`
+    ``CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC`` to
+    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC` and
+    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC`. (:github:`65632`)
 
 HALs
 ****
