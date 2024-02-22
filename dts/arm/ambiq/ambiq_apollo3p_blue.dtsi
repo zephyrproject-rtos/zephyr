@@ -98,7 +98,7 @@
 			#size-cells = <0>;
 			interrupts = <6 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
 		};
 
 		iom1: iom@50005000 {
@@ -107,7 +107,7 @@
 			#size-cells = <0>;
 			interrupts = <7 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
 		};
 
 		iom2: iom@50006000 {
@@ -116,7 +116,7 @@
 			#size-cells = <0>;
 			interrupts = <8 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
 		};
 
 		iom3: iom@50007000 {
@@ -125,7 +125,7 @@
 			#size-cells = <0>;
 			interrupts = <9 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
 		};
 
 		iom4: iom@50008000 {
@@ -134,7 +134,7 @@
 			#size-cells = <0>;
 			interrupts = <10 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
 		};
 
 		iom5: iom@50009000 {
@@ -143,7 +143,7 @@
 			#size-cells = <0>;
 			interrupts = <11 0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
 		};
 
 		mspi0: spi@40060000 {
@@ -153,7 +153,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4000>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x800>;
 		};
 
 		mspi1: spi@40061000 {
@@ -163,7 +163,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8000>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x1000>;
 		};
 
 		mspi2: spi@40062000 {
@@ -173,7 +173,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x2000>;
 		};
 
 		pinctrl: pin-controller@40010000 {
