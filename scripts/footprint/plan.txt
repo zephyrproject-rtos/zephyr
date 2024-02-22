@@ -3,7 +3,7 @@ footprints,userspace,frdm_k64f,tests/benchmarks/footprints,-DCONF_FILE=prj_users
 footprints,default,disco_l475_iot1,tests/benchmarks/footprints,
 footprints,userspace,disco_l475_iot1,tests/benchmarks/footprints,-DCONF_FILE=prj_userspace.conf
 footprints,default,nrf5340dk/nrf5340/cpuapp,tests/benchmarks/footprints,
-footprints,default,nrf51dk/nrf51422,tests/benchmarks/footprints,
+footprints,default,nrf51dk/nrf51822,tests/benchmarks/footprints,
 footprints,default,altera_max10,tests/benchmarks/footprints,
 footprints,default,hifive1_revb,tests/benchmarks/footprints,
 footprints,default,intel_ehl_crb,tests/benchmarks/footprints,
