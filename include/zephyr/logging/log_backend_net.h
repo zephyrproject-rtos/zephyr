@@ -70,6 +70,13 @@ static inline void log_backend_net_hostname_set(const char *hostname, size_t len
  */
 const struct log_backend *log_backend_net_get(void);
 
+/**
+ * @brief Start the net logger backend
+ *
+ * @details This function starts the net logger backend.
+ */
+void log_backend_net_start(void);
+
 #ifdef __cplusplus
 }
 #endif

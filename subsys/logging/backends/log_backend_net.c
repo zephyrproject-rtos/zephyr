@@ -269,6 +269,15 @@ void log_backend_net_hostname_set(char *hostname, size_t len)
 }
 #endif
 
+void log_backend_net_start(void)
+{
+	const struct log_backend *backend = log_backend_net_get();
+
+	if (!log_backend_is_active(backend)) {
+		log_backend_activate(backend, backend->cb->ctx);
+	}
+}
+
 static void init_net(struct log_backend const *const backend)
 {
 	ARG_UNUSED(backend);
