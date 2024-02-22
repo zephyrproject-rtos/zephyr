@@ -23,5 +23,4 @@ config SOC_SERIES
 	default "viper" if SOC_SERIES_VIPER
 
 config SOC
-	default "bcm58402_m7" if SOC_BCM58402_M7
-	default "bcm58402_a72" if SOC_BCM58402_A72
+	default "bcm58402" if SOC_BCM58402_M7 || SOC_BCM58402_A72
