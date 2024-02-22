@@ -1,0 +1,10 @@
+identifier: ek_ra4m3
+name: Renesas EK-RA4M3
+type: mcu
+arch: arm
+toolchain:
+  - zypher
+ram: 128
+flash: 1024
+supported:
+  - gpio

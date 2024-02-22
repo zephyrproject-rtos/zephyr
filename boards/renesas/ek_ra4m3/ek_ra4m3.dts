@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2024 Piotr Rak
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "ek_ra4m3_common.dtsi"
+
+/ {
+	model = "Renesas ek-ra4m3 board";
+
+	chosen {
+		zephyr,sram = &sram0;
+                zephyr,flash = &flash0;
+                zephyr,code-partition = &code_partition;
+        };
+
+	leds {
+		compatible = "gpio-leds";
+		led_0: led_0 {
+			gpios = <&ioport4 15 GPIO_ACTIVE_HIGH>;
+			label = "LED1 (Blue)";
+		};
+		led_1: led_1 {
+			gpios = <&ioport4 4 GPIO_ACTIVE_HIGH>;
+			label = "LED2 (Green)";
+		};
+		led_2: led_2 {
+			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
+			label = "LED3 (Red)";
+		};
+        };
+
+	aliases {
+		led0 = &led_0;
+		led-blue = &led_0;
+		led-green = &led_1;
+		led-red = &led_2;
+        };
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "code";
+			reg = <0x00000000 0x4C000>;
+			read-only;
+                };
+        };
+};
+
+&fcu {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&pinctrl {
+	status = "okay";
+};
