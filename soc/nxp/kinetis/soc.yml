@@ -20,8 +20,8 @@ family:
     - name: mke18f16
   - name: k8x
     socs:
+    - name: mk80f25615
     - name: mk82f25615
-    - name: mk82f215
   - name: kl2x
     socs:
     - name: mkl25z4
