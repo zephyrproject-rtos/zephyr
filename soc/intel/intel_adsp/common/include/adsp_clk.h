@@ -36,7 +36,7 @@ int adsp_clock_set_cpu_freq(uint32_t freq_idx);
 struct adsp_cpu_clock_info *adsp_cpu_clocks_get(void);
 
 /* Device tree defined constants */
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 #define ADSP_CLKCTL		ACE_DfPMCCU.dfclkctl
 #else
 #define ADSP_CLKCTL		CAVS_SHIM.clkctl
