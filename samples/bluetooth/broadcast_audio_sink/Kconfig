@@ -35,6 +35,14 @@ config TARGET_BROADCAST_NAME
 	  Name of target broadcast device. If not empty string, sink device
 	  will only listen to the specified broadcast source. Not case sensitive.
 
+config MAX_CODEC_FRAMES_PER_SDU
+	int "The maximum number of codec frame per SDU supported"
+	default 1
+	range 1 255
+	help
+	  Maximum number of codec frames per SDU supported by this device. Increasing this value
+	  allows support for a greater variaty of broadcasts, but also increases memory usage.
+
 config ENABLE_LC3
 	bool "Enable the LC3 codec"
 	# By default let's enable it in the platforms we know are capable of supporting it
@@ -64,7 +72,7 @@ config USE_SPECIFIC_BROADCAST_CHANNEL
 
 config TARGET_BROADCAST_CHANNEL
 	int "Broadcast Channel Audio Location to sync to"
-	range 0 2
+	range 0 3
 	default 1
 	depends on USE_SPECIFIC_BROADCAST_CHANNEL
 	help
