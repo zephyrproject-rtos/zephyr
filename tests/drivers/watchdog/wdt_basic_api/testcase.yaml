@@ -12,10 +12,10 @@ tests:
        CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)
     platform_exclude:
       - mec15xxevb_assy6853
-      - s32z270dc2_rtu0_r52
-      - s32z270dc2_rtu1_r52
-      - s32z270dc2_rtu0_r52@D
-      - s32z270dc2_rtu1_r52@D
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -117,10 +117,10 @@ tests:
   drivers.watchdog.nxp_s32:
     build_only: true
     platform_allow:
-      - s32z270dc2_rtu0_r52
-      - s32z270dc2_rtu1_r52
-      - s32z270dc2_rtu0_r52@D
-      - s32z270dc2_rtu1_r52@D
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
       - mr_canhubk3
   drivers.watchdog.mimxrt1050_evk_ti_tps382x:
     filter: dt_compat_enabled("ti,tps382x")

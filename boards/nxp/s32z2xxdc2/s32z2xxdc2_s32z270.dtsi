@@ -1,10 +1,10 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "s32z270dc2_r52-pinctrl-common.dtsi"
+#include "s32z2xxdc2_s32z270_pinctrl.dtsi"
 
 &swt0 {
 	status = "okay";
