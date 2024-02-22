@@ -9,7 +9,4 @@ if SOC_SERIES_STM32F3X
 
 rsource "Kconfig.defconfig.stm32f3*"
 
-config SOC_SERIES
-	default "stm32f3"
-
 endif # SOC_SERIES_STM32F3X
