@@ -545,13 +545,13 @@ class Reporting:
 
 
     def target_report(self, json_file, outdir, suffix):
-        platforms = {inst.platform.name for _, inst in self.instances.items()}
+        platforms = {inst.platform for _, inst in self.instances.items()}
         for platform in platforms:
             if suffix:
-                filename = os.path.join(outdir,"{}_{}.xml".format(platform, suffix))
-                json_platform_file = os.path.join(outdir,"{}_{}.json".format(platform, suffix))
+                filename = os.path.join(outdir,"{}_{}.xml".format(platform.normalized_name, suffix))
+                json_platform_file = os.path.join(outdir,"{}_{}.json".format(platform.normalized_name, suffix))
             else:
-                filename = os.path.join(outdir,"{}.xml".format(platform))
-                json_platform_file = os.path.join(outdir,"{}.json".format(platform))
-            self.xunit_report(json_file, filename, platform, full_report=True)
-            self.json_report(json_platform_file, version=self.env.version, platform=platform)
+                filename = os.path.join(outdir,"{}.xml".format(platform.normalized_name))
+                json_platform_file = os.path.join(outdir,"{}.json".format(platform.normalized_name))
+            self.xunit_report(json_file, filename, platform.name, full_report=True)
+            self.json_report(json_platform_file, version=self.env.version, platform=platform.name)
