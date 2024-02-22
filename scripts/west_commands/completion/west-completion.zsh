@@ -102,7 +102,11 @@ _get_west_projs() {
 }
 
 _get_west_boards() {
-  _west_boards=($(__west_x boards --format={name}))
+  _west_boards="$(__west_x boards --format={identifiers})\n$(__west_x boards --format={name})"
+  _west_boards=${_west_boards//$'\n'/\ }
+  _west_boards=${_west_boards//,/\ }
+  _west_boards=(${(@s/ /)_west_boards})
+
   _describe 'boards' _west_boards
 }
 
