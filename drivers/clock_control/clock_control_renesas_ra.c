@@ -236,7 +236,7 @@ static const struct clock_control_driver_api ra_clock_control_driver_api = {
 
 static void crude_busy_loop_impl(uint32_t cycles)
 {
-	__asm__ volatile(".align 8\n"
+	__asm__ volatile(".p2align 5\n"
 			 "busy_loop:\n"
 			 "	sub	r0, r0, #1\n"
 			 "	cmp	r0, #0\n"
