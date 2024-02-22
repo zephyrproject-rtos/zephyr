@@ -587,10 +587,15 @@ Other Subsystems
   respective ``reset-gpios``. This has been fixed so those signals now have to
   be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree. (:github:`64800`)
 
-* The :kconfig:option:`ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC`
-  and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC`
-  zbus options are renamed. Instead, the new :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC`
-  and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` options should be used.
+* The ``CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC`` and
+  ``CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC`` zbus options are renamed. Instead, the new
+  :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC` and
+  :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` options should be used.
+  (:github:`65632`)
+
+* To enable the zbus HLP priority boost, the developer must call the
+  :c:func:`zbus_obs_attach_to_thread` inside the attaching thread. The observer will then assume the
+  attached thread priority which will be used by zbus to calculate HLP priority. (:github:`63183`)
 
 Userspace
 *********
