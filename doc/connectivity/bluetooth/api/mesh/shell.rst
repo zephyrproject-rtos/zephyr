@@ -1524,11 +1524,11 @@ firmware before accepting it. The commands are enabled through the
 	* ``Rev``: Revision number of the firmware.
 	* ``BuildNum``: Build number.
 	* ``Size``: Size of the signed bin file.
-	* ``CoreType``: New firmware core type in bit field format:
+	* ``CoreType``: New firmware core type:
 
-		* ``0``: Application core.
-		* ``1``: Network core.
-		* ``2``: Applications specific BLOB.
+		* ``1``: Application core.
+		* ``2``: Network core.
+		* ``4``: Applications specific BLOB.
 	* ``Hash``: Hash of the composition data generated using ``mesh models dfu metadata comp-hash-get`` command.
 	* ``Elems``: Number of elements on the new firmware.
 	* ``UserData``: User data supplied with the metadata.
