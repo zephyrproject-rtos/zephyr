@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_MOTOR_CONTROLLER
+	bool "Stepper Motor Controller"
+	help
+		Enable stepper motor controller
+
+if STEPPER_MOTOR_CONTROLLER
+
+module = STEPPER_MOTOR_CONTROLLER
+module-str = stepper_motor_controller
+source "subsys/logging/Kconfig.template.log_config"
+
+config STEPPER_MOTOR_CONTROLLER_INIT_PRIORITY
+	int "Stepper Motor Controller init priority"
+	default 90
+	help
+	  Stepper motor controller initialization priority.
+
+config STEPPER_MOTOR_CONTROLLER_HAS_CONSTANT_VELOCITY_MODE
+	bool "Controller has constant speed mode"
+	help
+	  A constant speed command produces a motion in order to reach and maintain a user defined target speed
+
+config STEPPER_MOTOR_CONTROLLER_HAS_STALL_DETECTION
+	bool "Controller has stall detection"
+	help
+	  Stepper Motor Controller has stall detection and can stop the motor upon detecting stall guard
+
+config STEPPER_MOTOR_CONTROLLER_HAS_ABSOLUTE_POSITIONING
+	bool "Controller allows absolute positioning"
+	help
+	  Prior to normal operation of the drive an absolute reference position must be set. The reference
+	  position can be found using a mechanical stop which can be detected by stall detection, or by a
+	  reference switch.
+
+comment "Stepper Motor Controller Drivers"
+
+endif

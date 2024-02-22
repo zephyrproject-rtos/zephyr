@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TRINAMIC TMC5041
+
+compatible: "trinamic,tmc5041"
+
+include: [spi-device.yaml]
+
+properties:
+  "#address-cells":
+    default: 1
+    const: 1
+
+  "#size-cells":
+    default: 0
+    const: 0
+
+child-binding:
+  include:
+    - name: stepper-motor-controller.yaml
+      property-allowlist:
+        - micro-step-res
+        - reg
+  properties:
+    stall-guard-setting:
+      type: int
+      default: 0
+      description: |
+        The signed value controls StallGuard2 level for stall output
+        and sets the optimum measurement range for readout.
+        A lower value gives a higher sensitivity.
+        Zero is the starting value working with most motors.
+        For instance, in case of tmc5041, range is -64 to +63
+        A higher value makes StallGuard2 less sensitive
+        and requires more torque to indicate a stall.
