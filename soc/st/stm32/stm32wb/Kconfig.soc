@@ -8,7 +8,7 @@ config SOC_SERIES_STM32WBX
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32wb" if SOC_SERIES_STM32WBX
+	default "stm32wbx" if SOC_SERIES_STM32WBX
 
 config SOC_STM32WB55XX
 	bool

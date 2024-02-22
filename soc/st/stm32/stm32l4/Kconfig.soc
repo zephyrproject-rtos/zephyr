@@ -11,7 +11,7 @@ config SOC_SERIES_STM32L4X
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32l4" if SOC_SERIES_STM32L4X
+	default "stm32l4x" if SOC_SERIES_STM32L4X
 
 config SOC_STM32L412XX
 	bool
