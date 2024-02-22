@@ -8,7 +8,7 @@ config SOC_SERIES_STM32L5X
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32l5" if SOC_SERIES_STM32L5X
+	default "stm32l5x" if SOC_SERIES_STM32L5X
 
 config SOC_STM32L552XX
 	bool

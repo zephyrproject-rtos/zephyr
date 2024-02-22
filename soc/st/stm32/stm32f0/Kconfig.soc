@@ -8,7 +8,7 @@ config SOC_SERIES_STM32F0X
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32f0" if SOC_SERIES_STM32F0X
+	default "stm32f0x" if SOC_SERIES_STM32F0X
 
 config SOC_STM32F030X4
 	bool

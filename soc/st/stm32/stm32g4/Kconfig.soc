@@ -8,7 +8,7 @@ config SOC_SERIES_STM32G4X
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32g4" if SOC_SERIES_STM32G4X
+	default "stm32g4x" if SOC_SERIES_STM32G4X
 
 config SOC_STM32G431XX
 	bool

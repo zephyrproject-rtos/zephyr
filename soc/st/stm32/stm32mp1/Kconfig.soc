@@ -8,7 +8,7 @@ config SOC_SERIES_STM32MP1X
 	select SOC_FAMILY_STM32
 
 config SOC_SERIES
-	default "stm32mp1" if SOC_SERIES_STM32MP1X
+	default "stm32mp1x" if SOC_SERIES_STM32MP1X
 
 config SOC_STM32MP15_M4
 	bool
