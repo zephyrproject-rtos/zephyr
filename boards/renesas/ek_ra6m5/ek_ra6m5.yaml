@@ -1,0 +1,11 @@
+identifier: renesas_ek_ra6m5
+name: Renesas EK-RA6M5
+type: mcu
+arch: arm
+toolchain:
+  - zypher
+ram: 512
+flash: 2048
+supported:
+  - gpio
+
