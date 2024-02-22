@@ -1,4 +1,4 @@
-.. _s32z270dc2_r52:
+.. _s32z2xxdc2:
 
 NXP X-S32Z27X-DC (DC2)
 ######################
@@ -6,14 +6,14 @@ NXP X-S32Z27X-DC (DC2)
 Overview
 ********
 
-The X-S32Z27X-DC (DC2) board is based on the NXP S32Z270 Real-Time Processor,
+The X-S32Z27X-DC (DC2) board is based on the NXP S32Z2 Real-Time Processor,
 which includes two Real-Time Units (RTU) composed of four ARM Cortex-R52 cores
 each, with flexible split/lock configurations.
 
-There is one Zephyr board per RTU:
+There is one Zephyr board per SoC/RTU:
 
-- ``s32z270dc2_rtu0_r52``, for RTU0
-- ``s32z270dc2_rtu1_r52``, for RTU1.
+- ``s32z2xxdc2/s32z270/rtu0``, for S32Z270/RTU0
+- ``s32z2xxdc2/s32z270/rtu1``, for S32Z270/RTU1.
 
 Hardware
 ********
@@ -142,8 +142,8 @@ not supported as this feature is not available on NXP S32 CANXL HAL.
 Programming and Debugging
 *************************
 
-Applications for the ``s32z270dc2_rtu0_r52`` and ``s32z270dc2_rtu1_r52`` boards
-can be built in the usual way as documented in :ref:`build_an_application`.
+Applications for the ``s32z2xxdc2`` boards can be built in the usual way as
+documented in :ref:`build_an_application`.
 
 Currently is only possible to load and execute a Zephyr application binary on
 this board from the core internal SRAM.
@@ -177,11 +177,11 @@ Debugging
 =========
 
 You can build and debug the :ref:`hello_world` sample for the board
-``s32z270dc2_rtu0_r52`` with:
+``s32z2xxdc2/s32z270/rtu0`` with:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: s32z270dc2_rtu0_r52
+   :board: s32z2xxdc2/s32z270/rtu0
    :goals: build debug
 
 In case you are using a newer PCB revision, you have to use an adapted board
@@ -189,7 +189,7 @@ definition as the default PCB revision is B. For example, if using revision D:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: s32z270dc2_rtu0_r52@D
+   :board: s32z2xxdc2@D/s32z270/rtu0
    :goals: build debug
    :compact:
 
@@ -199,13 +199,13 @@ the terminal:
 
 .. code-block:: console
 
-   Hello World! s32z270dc2_rtu0_r52
+   Hello World! s32z2xxdc2
 
 To debug with Lauterbach TRACE32 softare run instead:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: s32z270dc2_rtu0_r52
+   :board: s32z2xxdc2/s32z270/rtu0
    :goals: build debug -r trace32
    :compact:
 
@@ -219,7 +219,7 @@ SRAM and run.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: s32z270dc2_rtu0_r52
+   :board: s32z2xxdc2/s32z270/rtu0
    :goals: build flash -r trace32
    :compact:
 
@@ -234,7 +234,7 @@ To imitate a similar behavior using NXP S32 Debug Probe runner, you can run the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: s32z270dc2_rtu0_r52
+   :board: s32z2xxdc2/s32z270/rtu0
    :goals: build debug --tool-opt='--batch'
    :compact:
 
@@ -268,17 +268,16 @@ the build configuration. To debug for a core different than the default use:
 
 Where:
 
-- ``<rtu_id>`` is the zero-based RTU index (0 for ``s32z270dc2_rtu0_r52``
-  and 1 for ``s32z270dc2_rtu1_r52``)
+- ``<rtu_id>`` is the zero-based RTU index
 - ``<core_id>`` is the zero-based core index relative to the RTU on which to
   run the Zephyr application (0, 1, 2 or 3)
 
 For example, to build the :ref:`hello_world` sample for the board
-``s32z270dc2_rtu0_r52`` with split-lock core configuration:
+``s32z2xxdc2/s32z270/rtu0`` with split-lock core configuration:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: s32z270dc2_rtu0_r52
+   :board: s32z2xxdc2/s32z270/rtu0
    :goals: build
    :gen-args: -DCONFIG_DCLS=n
    :compact:
