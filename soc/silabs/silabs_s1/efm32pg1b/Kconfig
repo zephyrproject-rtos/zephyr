@@ -17,3 +17,6 @@ config SOC_SERIES_EFM32PG1B
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
 	select HAS_PM
+
+config SOC_GECKO_SDID
+	default 80 if SOC_SERIES_EFM32PG1B
