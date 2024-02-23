@@ -54,6 +54,7 @@ LOG_MODULE_REGISTER(online_checker, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #endif
 
 struct online_check_data {
+	enum net_conn_mgr_online_check_type strategy;
 	net_conn_mgr_online_checker_t cb;
 	void *user_data;
 	char *host; /* This points to hostname_port */
@@ -72,6 +73,7 @@ struct online_check_data {
 	bool hostaddr_valid : 1;
 	bool is_tls : 1;
 	bool pkts_received : 1;
+	bool running : 1;
 };
 
 static struct online_check_data online_check_data_storage;
@@ -400,21 +402,27 @@ static int resolve_hostname(const char *hostname, const char *service,
 	return 0;
 }
 
-static void do_online_ping_check(struct net_if *iface, const char *host)
+static int do_online_ping_check(struct net_if *iface, const char *host)
 {
 	int ret;
 
 	ret = resolve_hostname(host, NULL, 0);
 	if (ret < 0) {
-		return;
+		return ret;
 	}
 
-	if (online_check->hostaddr_valid) {
-		ret = ping_check(iface, &online_check->hostaddr);
-		if (ret < 0) {
-			NET_DBG("ping check failed (%d)", ret);
-		}
+	if (!online_check->hostaddr_valid) {
+		NET_DBG("Invalid host address (%s)", host);
+		return -EINVAL;
 	}
+
+	ret = ping_check(iface, &online_check->hostaddr);
+	if (ret < 0) {
+		NET_DBG("ping check failed (%d)", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int get_hostname(const char *url, char *hostname, int maxlen,
@@ -712,10 +720,35 @@ out:
 
 static void do_online_check(struct net_if *iface)
 {
-	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_PING)) {
-		do_online_ping_check(iface, PING_HOST);
-	} else if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP)) {
-		do_online_http_check(iface, ONLINE_CHECK_URL);
+	int ret;
+
+	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_PING) &&
+	    online_check->strategy == NET_CONN_MGR_ONLINE_CHECK_PING) {
+		ret = do_online_ping_check(iface, PING_HOST);
+		if (ret == 0) {
+			online_check->running = true;
+		} else {
+			online_check->running = false;
+		}
+
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP) &&
+	    online_check->strategy == NET_CONN_MGR_ONLINE_CHECK_HTTP) {
+		ret = do_online_http_check(iface, ONLINE_CHECK_URL);
+		if (ret == 0) {
+			online_check->running = true;
+		} else {
+			online_check->running = false;
+		}
+
+		return;
+	}
+
+	if (online_check->strategy != NET_CONN_MGR_ONLINE_CHECK_HTTP &&
+	    online_check->strategy != NET_CONN_MGR_ONLINE_CHECK_PING) {
+		NET_ERR("Invalid online check strategy (%d)", online_check->strategy);
 	}
 }
 
@@ -789,4 +822,24 @@ int conn_mgr_register_online_checker_cb(net_conn_mgr_online_checker_t cb,
 	online_check->user_data = user_data;
 
 	return 0;
+}
+
+void conn_mgr_set_online_check_strategy(enum net_conn_mgr_online_check_type type)
+{
+	if (type == NET_CONN_MGR_ONLINE_CHECK_PING ||
+	    type == NET_CONN_MGR_ONLINE_CHECK_HTTP) {
+		if (online_check->strategy == type) {
+			return;
+		}
+
+		online_check->strategy = type;
+
+		NET_DBG("Setting online connectivity check strategy to %s",
+			type == NET_CONN_MGR_ONLINE_CHECK_PING ? "ping" : "http");
+
+		stop_online_check();
+		conn_mgr_trigger_online_connectivity_check();
+	} else {
+		NET_ERR("Invalid value %d for online connectivity check strategy.", type);
+	}
 }

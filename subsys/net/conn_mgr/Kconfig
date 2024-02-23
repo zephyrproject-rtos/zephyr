@@ -69,14 +69,6 @@ config NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
 	  connectivity. This is disabled by default as it requires that user configures
 	  the host to connect to.
 
-choice NET_CONNECTION_MANAGER_ONLINE_CHECK_STRATEGY
-	prompt "How to check online connectivity"
-	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
-	help
-	  Currently two strategies are defined:
-	  1. Do a ping (ICMP Echo-Request) to verify that we have connectivity to Internet
-	  2. Do a HTTP(S) request to external server
-
 config NET_CONNECTION_MANAGER_ONLINE_CHECK_PING
 	bool "Use Ping (ICMPv4/6 Echo-Request) for connectivity check"
 	default y
@@ -85,15 +77,6 @@ config NET_CONNECTION_MANAGER_ONLINE_CHECK_PING
 	  Do a connectivity check using an ICMPv4/6 Echo-Request (both IPv4 and
 	  IPv6 are supported).
 
-config NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP
-	bool "HTTP(S) GET request"
-	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
-	select HTTP_CLIENT
-	help
-	  Do a connectivity check by a HTTP or HTTPS GET request to a server.
-
-endchoice
-
 config NET_CONNECTION_MANAGER_ONLINE_CHECK_PING_HOST
 	string "Ping request to host"
 	depends on NET_CONNECTION_MANAGER_ONLINE_CHECK_PING
@@ -101,6 +84,13 @@ config NET_CONNECTION_MANAGER_ONLINE_CHECK_PING_HOST
 	  Do a connectivity check by a ping request to a host.
 	  The host can be either a IP address or a hostname.
 	  If hostname is set here, you need to enable DNS resolving by setting DNS_RESOLVER option.
+
+config NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP
+	bool "Use HTTP(S) GET request for connectivity check"
+	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	select HTTP_CLIENT
+	help
+	  Do a connectivity check by a HTTP or HTTPS GET request to a server.
 
 config NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP_URL
 	string "HTTP(S) GET request URL"

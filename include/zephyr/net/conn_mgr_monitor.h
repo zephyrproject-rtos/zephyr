@@ -186,6 +186,30 @@ static inline bool conn_mgr_trigger_online_connectivity_check(void)
 #endif
 /** @endcond */
 
+/** Possible choices for the online connectivity check. */
+enum net_conn_mgr_online_check_type {
+	/** Use ICMP Echo-Request (ping). This is the default */
+	NET_CONN_MGR_ONLINE_CHECK_PING = 0,
+	/** Use HTTP(S) GET request. */
+	NET_CONN_MGR_ONLINE_CHECK_HTTP,
+};
+
+/**
+ * @brief Set how the online connectivity check should be done.
+ * Default is ICMP Echo-Request i.e., ping.
+ *
+ * @param type Online connectivity check strategy (ping or http(s))
+ *
+ */
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+void conn_mgr_set_online_check_strategy(enum net_conn_mgr_online_check_type type);
+#else
+static inline void conn_mgr_set_online_check_strategy(enum net_conn_mgr_online_check_type type)
+{
+	ARG_UNUSED(type);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
