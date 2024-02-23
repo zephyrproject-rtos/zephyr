@@ -226,6 +226,7 @@ Boards & SoC Support
 * Made these changes for ARM64 boards:
 
 * Made these changes for RISC-V boards:
+
   * Enabled ADC support on ``longan_nano``.
 
 * Made these changes for X86 boards:
@@ -605,9 +606,11 @@ Drivers and Sensors
 * Regulators
 
   * Added new API functions
+
     * :c:func:`regulator_set_active_discharge`
     * :c:func:`regulator_get_active_discharge`
     * :c:func:`regulator_list_current_limit`
+
   * ``startup-delay-us`` and ``off-on-delay-us`` are now supported for all regulators.
   * Added non-multithreading support.
   * Added support for :dtcompatible:`maxim,max20335-regulator`.
@@ -702,11 +705,14 @@ Drivers and Sensors
   * Updated ``uart_esp32`` to use serial port configuration from devicetree.
   * Added an adaptation API to provide interrupt driven API for drivers
     which have only implemented async API.
+
   * Emulated UART driver (:file:`drivers/serial/uart_emul.c`):
+
     * Added emulated interrupt based TX.
     * Added emulated error for testing.
     * Modified to use local work queue for data transfer.
     * Modified FIFO size and its handling to be more aligned with real hardware.
+
   * On STM32 devices, it is now possible to enable FIFO by setting a ``fifo-enable``
     property in targeted serial node, with the following benefits:
     In TX, FIFO allows to work in burst mode, easing scheduling of loaded applications.
