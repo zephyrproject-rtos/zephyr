@@ -63,7 +63,7 @@ tests:
     harness: ztest
     depends_on: dma
   drivers.uart.async_api.sam0:
-    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_SAM0
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_ATMEL_SAM0
     platform_allow:
       - samc21n_xpro
       - samd21_xpro
