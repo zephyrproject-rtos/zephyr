@@ -120,6 +120,17 @@ struct mbox_channel {
 		.id = DT_MBOX_CHANNEL_BY_NAME(node_id, name),                  \
 	}
 
+/**
+ * @brief Instance version of MBOX_DT_CHANNEL_GET()
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of the mboxes element
+ *
+ * @return static initializer for a struct mbox_channel
+ */
+#define MBOX_DT_INST_CHANNEL_GET(inst, name)                                   \
+	MBOX_DT_CHANNEL_GET(DT_DRV_INST(inst), name)
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
