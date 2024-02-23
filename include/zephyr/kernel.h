@@ -5938,21 +5938,6 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 /**
  * @internal
  */
-#ifdef CONFIG_MULTITHREADING
-/**
- * @internal
- */
-void z_init_static_threads(void);
-#else
-/**
- * @internal
- */
-#define z_init_static_threads() do { } while (false)
-#endif
-
-/**
- * @internal
- */
 void z_timer_expiration_handler(struct _timeout *t);
 /**
  * INTERNAL_HIDDEN @endcond

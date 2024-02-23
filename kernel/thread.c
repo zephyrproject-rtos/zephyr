@@ -16,6 +16,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys_clock.h>
 #include <ksched.h>
+#include <kthread.h>
 #include <wait_q.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
@@ -432,21 +433,6 @@ static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 #endif
 #endif
 
-#ifdef CONFIG_MULTITHREADING
-static void schedule_new_thread(struct k_thread *thread, k_timeout_t delay)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	if (K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
-		k_thread_start(thread);
-	} else {
-		z_add_thread_timeout(thread, delay);
-	}
-#else
-	ARG_UNUSED(delay);
-	k_thread_start(thread);
-#endif
-}
-#endif
 
 #if CONFIG_STACK_POINTER_RANDOM
 int z_stack_adjust_initialized;
@@ -717,7 +703,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			  prio, options, NULL);
 
 	if (!K_TIMEOUT_EQ(delay, K_FOREVER)) {
-		schedule_new_thread(new_thread, delay);
+		thread_schedule_new(new_thread, delay);
 	}
 
 	return new_thread;
@@ -789,7 +775,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			   entry, p1, p2, p3, prio, options, NULL);
 
 	if (!K_TIMEOUT_EQ(delay, K_FOREVER)) {
-		schedule_new_thread(new_thread, delay);
+		thread_schedule_new(new_thread, delay);
 	}
 
 	return new_thread;
@@ -798,64 +784,6 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
 
-#ifdef CONFIG_MULTITHREADING
-#ifdef CONFIG_USERSPACE
-
-static void grant_static_access(void)
-{
-	STRUCT_SECTION_FOREACH(k_object_assignment, pos) {
-		for (int i = 0; pos->objects[i] != NULL; i++) {
-			k_object_access_grant(pos->objects[i],
-					      pos->thread);
-		}
-	}
-}
-#endif /* CONFIG_USERSPACE */
-
-void z_init_static_threads(void)
-{
-	_FOREACH_STATIC_THREAD(thread_data) {
-		z_setup_new_thread(
-			thread_data->init_thread,
-			thread_data->init_stack,
-			thread_data->init_stack_size,
-			thread_data->init_entry,
-			thread_data->init_p1,
-			thread_data->init_p2,
-			thread_data->init_p3,
-			thread_data->init_prio,
-			thread_data->init_options,
-			thread_data->init_name);
-
-		thread_data->init_thread->init_data = thread_data;
-	}
-
-#ifdef CONFIG_USERSPACE
-	grant_static_access();
-#endif
-
-	/*
-	 * Non-legacy static threads may be started immediately or
-	 * after a previously specified delay. Even though the
-	 * scheduler is locked, ticks can still be delivered and
-	 * processed. Take a sched lock to prevent them from running
-	 * until they are all started.
-	 *
-	 * Note that static threads defined using the legacy API have a
-	 * delay of K_FOREVER.
-	 */
-	k_sched_lock();
-	_FOREACH_STATIC_THREAD(thread_data) {
-		k_timeout_t init_delay = Z_THREAD_INIT_DELAY(thread_data);
-
-		if (!K_TIMEOUT_EQ(init_delay, K_FOREVER)) {
-			schedule_new_thread(thread_data->init_thread,
-					    init_delay);
-		}
-	}
-	k_sched_unlock();
-}
-#endif
 
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
 		       uint32_t initial_state, unsigned int options)
