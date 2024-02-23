@@ -10,6 +10,12 @@ config HAS_MCUX
 
 if HAS_MCUX
 
+config MCUX_CORE_SUFFIX
+	string
+	help
+	  String describing the core identifer used by MCUX SDK when using
+	  dual core parts
+
 config HAS_MCUX_12B1MSPS_SAR
 	bool
 	help
