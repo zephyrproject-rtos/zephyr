@@ -84,6 +84,11 @@ endif()
 
 endif()
 
+if(CONFIG_SPIN_VALIDATE)
+list(APPEND kernel_files
+     spinlock_validate.c)
+endif()
+
 if(CONFIG_XIP)
 list(APPEND kernel_files
      xip.c)
