@@ -114,10 +114,7 @@ int bt_mesh_sol_pdu_rpl_clear(struct bt_mesh_msg_ctx *ctx, uint16_t range_start,
 		return -EINVAL;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SOL_PDU_RPL_ITEM_CLEAR,
-				 range_len >= 2 ? 3 : 2);
-
-	bt_mesh_model_msg_init(&msg, OP_SOL_PDU_RPL_ITEM_CLEAR);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SOL_PDU_RPL_ITEM_CLEAR_RAW, 3);
 
 	sol_pdu_rpl_clear_pdu_create(range_start, range_len, &msg);
 
@@ -138,10 +135,7 @@ int bt_mesh_sol_pdu_rpl_clear_unack(struct bt_mesh_msg_ctx *ctx, uint16_t range_
 		return -EINVAL;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SOL_PDU_RPL_ITEM_CLEAR,
-				 range_len >= 2 ? 3 : 2);
-
-	bt_mesh_model_msg_init(&msg, OP_SOL_PDU_RPL_ITEM_CLEAR_UNACKED);
+	BT_MESH_MODEL_BUF_INIT(msg, OP_SOL_PDU_RPL_ITEM_CLEAR_UNACKED_RAW, 3);
 
 	sol_pdu_rpl_clear_pdu_create(range_start, range_len, &msg);
 

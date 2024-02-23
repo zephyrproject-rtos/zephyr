@@ -483,8 +483,7 @@ int bt_mesh_rpr_scan_caps_get(struct bt_mesh_rpr_cli *cli,
 			      const struct bt_mesh_rpr_node *srv,
 			      struct bt_mesh_rpr_caps *caps)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_CAPS_GET, 0);
-	bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_CAPS_GET);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_SCAN_CAPS_GET_RAW, 0);
 
 	return tx_wait(cli, &cli->scan_ack_ctx, srv, &buf, RPR_OP_SCAN_CAPS_STATUS, caps);
 }
@@ -493,8 +492,7 @@ int bt_mesh_rpr_scan_get(struct bt_mesh_rpr_cli *cli,
 			 const struct bt_mesh_rpr_node *srv,
 			 struct bt_mesh_rpr_scan_status *status)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_GET, 0);
-	bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_GET);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_SCAN_GET_RAW, 0);
 
 	return tx_wait(cli, &cli->scan_ack_ctx, srv, &buf, RPR_OP_SCAN_STATUS, status);
 }
@@ -509,11 +507,8 @@ int bt_mesh_rpr_scan_start(struct bt_mesh_rpr_cli *cli,
 		return -EINVAL;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_START, 18);
-	bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_START);
-
-	net_buf_simple_add_u8(&buf, max_devs);
-	net_buf_simple_add_u8(&buf, timeout);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_SCAN_START_RAW, 18,
+			       max_devs, timeout);
 
 	if (uuid) {
 		net_buf_simple_add_mem(&buf, uuid, 16);
@@ -535,11 +530,10 @@ int bt_mesh_rpr_scan_start_ext(struct bt_mesh_rpr_cli *cli,
 		return -EINVAL;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_EXTENDED_SCAN_START,
-				 18 + CONFIG_BT_MESH_RPR_AD_TYPES_MAX);
-	bt_mesh_model_msg_init(&buf, RPR_OP_EXTENDED_SCAN_START);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_EXTENDED_SCAN_START_RAW,
+			       18 + CONFIG_BT_MESH_RPR_AD_TYPES_MAX,
+			       ad_count);
 
-	net_buf_simple_add_u8(&buf, ad_count);
 	net_buf_simple_add_mem(&buf, ad_types, ad_count);
 	if (uuid) {
 		net_buf_simple_add_mem(&buf, uuid, 16);
@@ -553,8 +547,7 @@ int bt_mesh_rpr_scan_stop(struct bt_mesh_rpr_cli *cli,
 			  const struct bt_mesh_rpr_node *srv,
 			  struct bt_mesh_rpr_scan_status *status)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_STOP, 0);
-	bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_STOP);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_SCAN_STOP_RAW, 0);
 
 	return tx_wait(cli, &cli->scan_ack_ctx, srv, &buf, RPR_OP_SCAN_STATUS, status);
 }
@@ -563,8 +556,7 @@ int bt_mesh_rpr_link_get(struct bt_mesh_rpr_cli *cli,
 			 const struct bt_mesh_rpr_node *srv,
 			 struct bt_mesh_rpr_link *rsp)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_GET, 0);
-	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_GET);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_LINK_GET_RAW, 0);
 
 	return tx_wait(cli, &cli->prov_ack_ctx, srv, &buf, RPR_OP_LINK_STATUS, rsp);
 }
@@ -573,9 +565,8 @@ int bt_mesh_rpr_link_close(struct bt_mesh_rpr_cli *cli,
 			   const struct bt_mesh_rpr_node *srv,
 			   struct bt_mesh_rpr_link *rsp)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_CLOSE, 1);
-	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_CLOSE);
-	net_buf_simple_add_u8(&buf, PROV_BEARER_LINK_STATUS_FAIL);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_LINK_CLOSE_RAW, 1,
+			       PROV_BEARER_LINK_STATUS_FAIL);
 
 	return tx_wait(cli, &cli->prov_ack_ctx, srv, &buf, RPR_OP_LINK_STATUS, rsp);
 }
@@ -586,8 +577,7 @@ static int link_open_prov(struct bt_mesh_rpr_cli *cli,
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(srv, false);
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_OPEN, 17);
-	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_OPEN);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_LINK_OPEN_RAW, 17);
 
 	net_buf_simple_add_mem(&buf, uuid, 16);
 
@@ -604,10 +594,8 @@ static int link_open_node(struct bt_mesh_rpr_cli *cli,
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(srv, false);
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_OPEN, 1);
-	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_OPEN);
-
-	net_buf_simple_add_u8(&buf, type);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_LINK_OPEN_RAW, 1,
+			       type);
 
 	return bt_mesh_model_send(cli->mod, &ctx, &buf, NULL, NULL);
 }
@@ -622,10 +610,8 @@ static int link_close(struct bt_mesh_rpr_cli *cli,
 		return -EALREADY;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_CLOSE, 1);
-	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_CLOSE);
-
-	net_buf_simple_add_u8(&buf, status);
+	BT_MESH_MODEL_BUF_INIT(buf, RPR_OP_LINK_CLOSE_RAW, 1,
+			       status);
 
 	err = bt_mesh_model_send(cli->mod, &ctx, &buf, NULL, NULL);
 	if (err) {

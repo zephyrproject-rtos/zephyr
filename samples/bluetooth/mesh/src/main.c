@@ -20,10 +20,14 @@
 
 #include "board.h"
 
-#define OP_ONOFF_GET       BT_MESH_MODEL_OP_2(0x82, 0x01)
-#define OP_ONOFF_SET       BT_MESH_MODEL_OP_2(0x82, 0x02)
-#define OP_ONOFF_SET_UNACK BT_MESH_MODEL_OP_2(0x82, 0x03)
-#define OP_ONOFF_STATUS    BT_MESH_MODEL_OP_2(0x82, 0x04)
+#define OP_ONOFF_GET_RAW       BT_MESH_MODEL_OP_SIG(0x82, 0x01)
+#define OP_ONOFF_GET           BT_MESH_MODEL_OPCODE(OP_ONOFF_GET_RAW)
+#define OP_ONOFF_SET_RAW       BT_MESH_MODEL_OP_SIG(0x82, 0x02)
+#define OP_ONOFF_SET           BT_MESH_MODEL_OPCODE(OP_ONOFF_SET_RAW)
+#define OP_ONOFF_SET_UNACK_RAW BT_MESH_MODEL_OP_SIG(0x82, 0x03)
+#define OP_ONOFF_SET_UNACK     BT_MESH_MODEL_OPCODE(OP_ONOFF_SET_UNACK_RAW)
+#define OP_ONOFF_STATUS_RAW    BT_MESH_MODEL_OP_SIG(0x82, 0x04)
+#define OP_ONOFF_STATUS        BT_MESH_MODEL_OPCODE(OP_ONOFF_STATUS_RAW)
 
 static void attention_on(const struct bt_mesh_model *mod)
 {
@@ -107,8 +111,7 @@ static int onoff_status_send(const struct bt_mesh_model *model,
 {
 	uint32_t remaining;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_STATUS, 3);
-	bt_mesh_model_msg_init(&buf, OP_ONOFF_STATUS);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_ONOFF_STATUS_RAW, 3);
 
 	remaining = k_ticks_to_ms_floor32(
 			    k_work_delayable_remaining_get(&onoff.work)) +
@@ -315,10 +318,8 @@ static int gen_onoff_send(bool val)
 		return -ENOENT;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_SET_UNACK, 2);
-	bt_mesh_model_msg_init(&buf, OP_ONOFF_SET_UNACK);
-	net_buf_simple_add_u8(&buf, val);
-	net_buf_simple_add_u8(&buf, tid++);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_ONOFF_SET_UNACK_RAW, 2,
+			       val, tid++);
 
 	printk("Sending OnOff Set: %s\n", onoff_str[val]);
 

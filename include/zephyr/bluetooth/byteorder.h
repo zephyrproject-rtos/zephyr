@@ -37,6 +37,20 @@ extern "C" {
 	(((_v) >>  0) & 0xFFU),     \
 	(((_v) >>  8) & 0xFFU)      \
 
+/** @brief Encode 16-bit value into array values in big-endian format.
+ *
+ *  Helper macro to encode 16-bit values into comma separated values.
+ *
+ *  @note @p _v is evaluated 2 times.
+ *
+ *  @param _v 16-bit integer in host endianness.
+ *
+ *  @return The comma separated values for the 16-bit value.
+ */
+#define BT_BYTES_LIST_BE16(_v)         \
+	(((_v) >>  8) & 0xFFU),     \
+	(((_v) >>  0) & 0xFFU)      \
+
 /** @brief Encode 24-bit value into array values in little-endian format.
  *
  *  Helper macro to encode 24-bit values into comma separated values.

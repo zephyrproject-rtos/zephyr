@@ -18,8 +18,10 @@ LOG_MODULE_REGISTER(test_sar, LOG_LEVEL_INF);
 #define SEM_TIMEOUT K_SECONDS(25)
 #define RAND_SEED 1
 
-#define DUMMY_VND_MOD_GET_OP	BT_MESH_MODEL_OP_3(0xDC, TEST_VND_COMPANY_ID)
-#define DUMMY_VND_MOD_STATUS_OP BT_MESH_MODEL_OP_3(0xCD, TEST_VND_COMPANY_ID)
+#define DUMMY_VND_MOD_GET_OP_RAW    BT_MESH_MODEL_OP_VND(0xDC, TEST_VND_COMPANY_ID)
+#define DUMMY_VND_MOD_GET_OP        BT_MESH_MODEL_OPCODE(DUMMY_VND_MOD_GET_OP_RAW)
+#define DUMMY_VND_MOD_STATUS_OP_RAW BT_MESH_MODEL_OP_VND(0xCD, TEST_VND_COMPANY_ID)
+#define DUMMY_VND_MOD_STATUS_OP     BT_MESH_MODEL_OPCODE(DUMMY_VND_MOD_STATUS_OP_RAW)
 
 #define MAX_SDU_MSG_LEN                                                                            \
 	BT_MESH_TX_SDU_MAX - BT_MESH_MIC_SHORT - BT_MESH_MODEL_OP_LEN(DUMMY_VND_MOD_GET_OP)
@@ -95,8 +97,8 @@ static int get_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 		       struct net_buf_simple *buf)
 {
 	data_integrity_check(buf);
-	BT_MESH_MODEL_BUF_DEFINE(msg, DUMMY_VND_MOD_STATUS_OP, MAX_SDU_MSG_LEN);
-	bt_mesh_model_msg_init(&msg, DUMMY_VND_MOD_STATUS_OP);
+	BT_MESH_MODEL_BUF_INIT(msg, DUMMY_VND_MOD_STATUS_OP_RAW, MAX_SDU_MSG_LEN);
+
 	net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
 	k_sem_give(&inst_suspend_sem);
@@ -115,9 +117,8 @@ static int status_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_
 static int dummy_vnd_mod_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			     uint8_t msg[])
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, DUMMY_VND_MOD_GET_OP, MAX_SDU_MSG_LEN);
+	BT_MESH_MODEL_BUF_INIT(buf, DUMMY_VND_MOD_GET_OP_RAW, MAX_SDU_MSG_LEN);
 
-	bt_mesh_model_msg_init(&buf, DUMMY_VND_MOD_GET_OP);
 	net_buf_simple_add_mem(&buf, msg, MAX_SDU_MSG_LEN);
 
 	return bt_mesh_model_send(model, ctx, &buf, NULL, NULL);

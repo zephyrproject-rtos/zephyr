@@ -19,11 +19,8 @@ static void sol_rpl_status_rsp(const struct bt_mesh_model *mod,
 			       uint16_t range,
 			       uint8_t len)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, OP_SOL_PDU_RPL_ITEM_STATUS, 2 + (len < 2 ? 0 : 1));
-
-	bt_mesh_model_msg_init(&buf, OP_SOL_PDU_RPL_ITEM_STATUS);
-
-	net_buf_simple_add_le16(&buf, range);
+	BT_MESH_MODEL_BUF_INIT(buf, OP_SOL_PDU_RPL_ITEM_STATUS_RAW, 3,
+			       BT_BYTES_LIST_LE16(range));
 
 	if (len >= 2) {
 		net_buf_simple_add_u8(&buf, len);
