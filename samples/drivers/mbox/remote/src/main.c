@@ -28,7 +28,7 @@ int main(void)
 	printk("Hello from REMOTE\n");
 
 #ifdef CONFIG_RX_ENABLED
-	struct mbox_channel rx_channel;
+	const struct mbox_channel rx_channel = MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx);
 
 	mbox_init_channel(&rx_channel, dev, CONFIG_RX_CHANNEL_ID);
 
@@ -46,7 +46,7 @@ int main(void)
 #endif /* CONFIG_RX_ENABLED */
 
 #ifdef CONFIG_TX_ENABLED
-	struct mbox_channel tx_channel;
+	const struct mbox_channel tx_channel = MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx);
 
 	mbox_init_channel(&tx_channel, dev, CONFIG_TX_CHANNEL_ID);
 
