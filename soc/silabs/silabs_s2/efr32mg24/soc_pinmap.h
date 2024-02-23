@@ -10,8 +10,8 @@
  * modules to correctly configure GPIO controller.
  */
 
-#ifndef ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG24_SOC_PINMAP_H_
-#define ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG24_SOC_PINMAP_H_
+#ifndef _SILABS_EFR32MG24_SOC_PINMAP_H_
+#define _SILABS_EFR32MG24_SOC_PINMAP_H_
 
 #include <em_gpio.h>
 
@@ -19,4 +19,4 @@
 #define PIN_SWO { gpioPortA, 3, gpioModePushPull, 1 }
 #endif  /* CONFIG_LOG_BACKEND_SWO */
 
-#endif  /* ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG24_SOC_PINMAP_H_ */
+#endif  /* _SILABS_EFR32MG24_SOC_PINMAP_H_ */

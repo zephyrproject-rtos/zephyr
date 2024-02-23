@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Common SoC initialization for the EXX32
+ * @brief Common SoC initialization for the Silabs products
  */
 
 #include <zephyr/init.h>
@@ -206,7 +206,7 @@ static void swo_init(void)
  *
  * @return 0
  */
-static int silabs_exx32_init(void)
+static int silabs_init(void)
 {
 	/* handle chip errata */
 	CHIP_Init();
@@ -244,4 +244,4 @@ static int silabs_exx32_init(void)
 	return 0;
 }
 
-SYS_INIT(silabs_exx32_init, PRE_KERNEL_1, 0);
+SYS_INIT(silabs_init, PRE_KERNEL_1, 0);
