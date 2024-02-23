@@ -10,6 +10,11 @@ properties:
   reg:
     required: true
 
+  dma-base-reg:
+    type: int
+    required: true
+    description: Address of register, which is used to configure the dma base address of the can controller
+
   interrupts:
     required: true
 
