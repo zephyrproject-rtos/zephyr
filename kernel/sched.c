@@ -1732,7 +1732,7 @@ void z_thread_abort(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
-	if ((thread->base.user_options & K_ESSENTIAL) != 0) {
+	if (z_is_thread_essential(thread)) {
 		k_spin_unlock(&sched_spinlock, key);
 		__ASSERT(false, "aborting essential thread %p", thread);
 		k_panic();
@@ -1836,7 +1836,7 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 		return;
 	}
 
-	K_OOPS(K_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
+	K_OOPS(K_SYSCALL_VERIFY_MSG(!z_is_thread_essential(thread),
 				    "aborting essential thread %p", thread));
 
 	z_impl_k_thread_abort((struct k_thread *)thread);

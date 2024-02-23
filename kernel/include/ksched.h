@@ -13,8 +13,6 @@
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
-bool z_is_thread_essential(void);
-
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
 
@@ -168,6 +166,36 @@ static inline void z_mark_thread_as_not_pending(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_PENDING;
 }
+
+/*
+ * This function tags the current thread as essential to system operation.
+ * Exceptions raised by this thread will be treated as a fatal system error.
+ */
+static inline void z_thread_essential_set(struct k_thread *thread)
+{
+	thread->base.user_options |= K_ESSENTIAL;
+}
+
+/*
+ * This function tags the current thread as not essential to system operation.
+ * Exceptions raised by this thread may be recoverable.
+ * (This is the default tag for a thread.)
+ */
+static inline void z_thread_essential_clear(struct k_thread *thread)
+{
+	thread->base.user_options &= ~K_ESSENTIAL;
+}
+
+/*
+ * This routine indicates if the current thread is an essential system thread.
+ *
+ * Returns true if current thread is essential, false if it is not.
+ */
+static inline bool z_is_thread_essential(struct k_thread *thread)
+{
+	return (thread->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
+}
+
 
 static inline void z_set_thread_states(struct k_thread *thread, uint32_t states)
 {

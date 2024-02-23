@@ -143,35 +143,6 @@ bool k_is_in_isr(void)
 }
 EXPORT_SYMBOL(k_is_in_isr);
 
-/*
- * This function tags the current thread as essential to system operation.
- * Exceptions raised by this thread will be treated as a fatal system error.
- */
-void z_thread_essential_set(void)
-{
-	_current->base.user_options |= K_ESSENTIAL;
-}
-
-/*
- * This function tags the current thread as not essential to system operation.
- * Exceptions raised by this thread may be recoverable.
- * (This is the default tag for a thread.)
- */
-void z_thread_essential_clear(void)
-{
-	_current->base.user_options &= ~K_ESSENTIAL;
-}
-
-/*
- * This routine indicates if the current thread is an essential system thread.
- *
- * Returns true if current thread is essential, false if it is not.
- */
-bool z_is_thread_essential(void)
-{
-	return (_current->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
-}
-
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 void z_impl_k_thread_custom_data_set(void *value)
 {
@@ -918,7 +889,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	SYS_PORT_TRACING_FUNC(k_thread, user_mode_enter);
 
 	_current->base.user_options |= K_USER;
-	z_thread_essential_clear();
+	z_thread_essential_clear(_current);
 #ifdef CONFIG_THREAD_MONITOR
 	_current->entry.pEntry = entry;
 	_current->entry.parameter1 = p1;
