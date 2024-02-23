@@ -51,9 +51,6 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * CVE-2024-1638 `Zephyr project bug tracker GHSA-p6f3-f63q-5mc2
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p6f3-f63q-5mc2>`_
 
-Kernel
-******
-
 Architectures
 *************
 
@@ -80,19 +77,11 @@ Architectures
     Cortex-R to enable initialization by individual cores.
   * Common Cortex-M MPU code moved to ``arch/arm/core/mpu``.
 
-* ARM64
-
-* RISC-V
-
 * Xtensa
 
   * Removed the unused Kconfig option ``CONFIG_XTENSA_NO_IPC``.
 
   * Added userspace support via MMU.
-
-* x86
-
-* POSIX
 
 Bluetooth
 *********
@@ -121,8 +110,6 @@ Bluetooth
   * Added :c:func:`bt_pacs_set_available_contexts_for_conn` to set available context per connection.
   * Refactored the :c:struct:`bt_bap_base` to be an abstract struct with new helper functions,
     so that Zephyr supports all BASEs regardless of the size.
-
-* Direction Finding
 
 * Host
 
@@ -165,8 +152,6 @@ Boards & SoC Support
   * Added support for NXP IMX8ULP SoC.
   * Added support for NXP MIMXRT595 DSP core.
 
-* Removed support for these SoC series:
-
 * Made these changes in other SoC series:
 
   * Nordic SoCs now imply :kconfig:option:`CONFIG_XIP` instead of selecting it. This allows for
@@ -174,8 +159,6 @@ Boards & SoC Support
   * BLE is now supported on STM32WBA series.
   * xtensa: imx8: Split the generic i.MX8 SoC into i.MX8QXP and i.MX8QM.
   * LPC55xxx: Fixed the system hardware clock cycle rate.
-
-* Added support for these ARC boards:
 
 * Added support for these ARM boards:
 
@@ -193,12 +176,6 @@ Boards & SoC Support
     ``adi_eval_adin2111ebz``.
   * Added support for NXP UCANS32K1SIC board: ``ucans32k1sic``.
 
-* Added support for these ARM64 boards:
-
-* Added support for these RISC-V boards:
-
-* Added support for these X86 boards:
-
 * Added support for these Xtensa boards:
 
   * Added support for NXP iMX8ULP board: ``nxp_adsp_imx8ulp``.
@@ -208,10 +185,6 @@ Boards & SoC Support
   * Added M5Stack AtomS3 board: ``m5stack_atoms3``.
   * Added M5Stack AtomS3-Lite board: ``m5stack_atoms3_lite``.
   * Added M5Stack StampS3 board: ``m5stack_stamps3``.
-
-* Added support for these POSIX boards:
-
-* Made these changes for ARC boards:
 
 * Made these changes for ARM boards:
 
@@ -223,15 +196,9 @@ Boards & SoC Support
     ``mimxrt1020_evk``, ``mimxrt1050_evk``, ``mimxrt685_evk``, ``frdm_k64f``.
   * Switched MCUBoot FW Update mode on NXP boards from Swap & Scratch to Swap & Move.
 
-* Made these changes for ARM64 boards:
-
 * Made these changes for RISC-V boards:
 
   * Enabled ADC support on ``longan_nano``.
-
-* Made these changes for X86 boards:
-
-* Made these changes for Xtensa boards:
 
 * Made these changes for native/POSIX boards:
 
@@ -254,20 +221,6 @@ Boards & SoC Support
   * Several bugfixes and other minor additions to the nRF5x HW models.
 
   * Multiple documentation updates and fixes for all native boards.
-
-* Removed support for these ARC boards:
-
-* Removed support for these ARM boards:
-
-* Removed support for these ARM64 boards:
-
-* Removed support for these RISC-V boards:
-
-* Removed support for these X86 boards:
-
-* Removed support for these Xtensa boards:
-
-* Made these changes in other boards:
 
 * Added support for these following shields:
 
@@ -404,8 +357,6 @@ Drivers and Sensors
 
   * STM32WB devices now support crypto API through AES block.
 
-* DAC
-
 * Display
 
   * Introduced frame buffer config to STM32 LTDC driver.
@@ -535,8 +486,6 @@ Drivers and Sensors
 
   * Removed :kconfig:option:`CONFIG_IEEE802154_SELECTIVE_TXPOWER` Kconfig option.
 
-* Interrupt Controller
-
 * Input
 
   * The ``short-codes`` property of :dtcompatible:`zephyr,input-longpress` is
@@ -576,8 +525,6 @@ Drivers and Sensors
   * Fixed MMIO size calculation by disabling IO/memory decoding beforehand.
 
   * Modified to use PNP ID for PRT retrieval.
-
-* ACPI
 
 * MEMC
 
@@ -619,8 +566,6 @@ Drivers and Sensors
   * Added LDO soft start configuration for :dtcompatible:`nordic,npm1300-regulator`.
   * Fixed init priority for :dtcompatible:`x-powers,axp192-regulator`.
   * Fixed LDO GPIO control for :dtcompatible:`nordic,npm1300-regulator`.
-
-* Reset
 
 * Retained memory
 
@@ -724,8 +669,6 @@ Drivers and Sensors
   * On STM32H7 devices, ``fifo-enable`` property allows using SPI block FIFO. This
     feature is still experimental and requires maturation.
   * On STM32 devices impacted by BSY bit erratum, a workaround was implemented.
-
-* Timer
 
 * USB
 
@@ -1029,9 +972,6 @@ USB
 Devicetree
 **********
 
-API
-===
-
 Bindings
 ========
 
@@ -1086,8 +1026,6 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD` or by use of bootloader information
     sharing from MCUboot by enabling
     :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO`.
-
-* File systems
 
 * Logging
 
@@ -1187,8 +1125,6 @@ Libraries / Subsystems
     * :kconfig:option:`CONFIG_POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY`
     * :kconfig:option:`CONFIG_POWER_DOMAIN_INTEL_ADSP_INIT_PRIORITY`
 
-* Random
-
 * Crypto
 
   * Mbed TLS updated to 3.5.2. Full release notes can be found in:
@@ -1210,8 +1146,6 @@ Libraries / Subsystems
   * Following Flash Map API macros, marked in 3.2 as deprecated, have been removed:
     ``FLASH_AREA_ID``, ``FLASH_AREA_OFFSET``, ``FLASH_AREA_SIZE``,
     ``FLASH_AREA_LABEL_EXISTS`` and ``FLASH_AREA_DEVICE``.
-
-* Binary descriptors
 
 * POSIX API
 
@@ -1246,8 +1180,6 @@ Libraries / Subsystems
 
  * Added LoRaWAN remote multicast support with :kconfig:option:`CONFIG_LORAWAN_REMOTE_MULTICAST`
    in preparation for OTA firmware upgrade support.
-
-* RTIO
 
 * ZBus
 
@@ -1330,9 +1262,6 @@ MCUboot
 
   * The MCUboot version in this release is version ``2.1.0+0-dev``.
 
-Nanopb
-******
-
 zcbor
 *****
 
@@ -1363,12 +1292,6 @@ Additionally, the following changes in Zephyr were done:
 
   * Fixed issue where setting :kconfig:option:`CONFIG_LV_Z_FULL_REFRESH` did not
     set :kconfig:option:`CONFIG_LV_Z_VDB_SIZE` to 100 percent.
-
-Trusted Firmware-A
-******************
-
-Documentation
-*************
 
 Tests and Samples
 *****************
