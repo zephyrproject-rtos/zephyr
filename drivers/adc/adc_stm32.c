@@ -1570,7 +1570,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 #define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
 	.dma = {									\
 		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),		\
-		.channel = STM32_DMA_SLOT_BY_IDX(index, 0, channel),			\
+		.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),			\
 		.dma_cfg = {								\
 			.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),		\
 			.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
@@ -1695,6 +1695,8 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 #define ADC_STM32_IRQ_FUNC(index)                                                                  \
 	.irq_cfg_func = COND_CODE_1(IS_EQ(index, FIRST_WITH_IRQN(index)),                          \
 				    (UTIL_CAT(ISR_FUNC(index), _init)), (NULL)),
+
+#define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)
 
 #endif /* CONFIG_ADC_STM32_DMA */
 
