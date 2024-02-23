@@ -27,22 +27,22 @@ static int g_max_transfer_size_bytes;
 #define TX_CHANNEL_INDEX 0
 #define RX_CHANNEL_INDEX 1
 
-static const struct mbox_channel channels[CHANNELS_TO_TEST][2] = {
+static const struct mbox_dt_spec channels[CHANNELS_TO_TEST][2] = {
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx0),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx0),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx0),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx0),
 	},
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx1),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx1),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx1),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx1),
 	},
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx2),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx2),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx2),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx2),
 	},
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx3),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx3),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx3),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx3),
 	},
 };
 
@@ -68,11 +68,11 @@ static void mbox_data_tests_before(void *f)
 {
 	zassert_false(current_channel_index >= CHANNELS_TO_TEST, "Channel to test is out of range");
 
-	const struct mbox_channel *tx_channel = &channels[current_channel_index][TX_CHANNEL_INDEX];
-	const struct mbox_channel *rx_channel = &channels[current_channel_index][RX_CHANNEL_INDEX];
+	const struct mbox_dt_spec *tx_channel = &channels[current_channel_index][TX_CHANNEL_INDEX];
+	const struct mbox_dt_spec *rx_channel = &channels[current_channel_index][RX_CHANNEL_INDEX];
 	int ret_val = 0;
 
-	g_max_transfer_size_bytes = mbox_mtu_get(tx_channel->dev);
+	g_max_transfer_size_bytes = mbox_mtu_get_dt(tx_channel);
 	/* Test currently supports only transfer size up to 4 bytes */
 	if ((g_max_transfer_size_bytes < 0) || (g_max_transfer_size_bytes > 4)) {
 		printk("mbox_mtu_get() error\n");
@@ -80,10 +80,10 @@ static void mbox_data_tests_before(void *f)
 			      g_max_transfer_size_bytes);
 	}
 
-	ret_val = mbox_register_callback(rx_channel, callback, NULL);
+	ret_val = mbox_register_callback_dt(rx_channel, callback, NULL);
 	zassert_false(ret_val != 0, "mbox failed to register callback. ret_val", ret_val);
 
-	ret_val = mbox_set_enabled(rx_channel, 1);
+	ret_val = mbox_set_enabled_dt(rx_channel, 1);
 	zassert_false(ret_val != 0, "mbox failed to enable mbox. ret_val: %d", ret_val);
 }
 
@@ -91,10 +91,10 @@ static void mbox_data_tests_after(void *f)
 {
 	zassert_false(current_channel_index >= CHANNELS_TO_TEST, "Channel to test is out of range");
 
-	const struct mbox_channel *rx_channel = &channels[current_channel_index][RX_CHANNEL_INDEX];
+	const struct mbox_dt_spec *rx_channel = &channels[current_channel_index][RX_CHANNEL_INDEX];
 
 	/* Disable channel after test end */
-	int ret_val = mbox_set_enabled(rx_channel, 0);
+	int ret_val = mbox_set_enabled_dt(rx_channel, 0);
 
 	zassert_false(ret_val != 0, "mbox failed to disable mbox. ret_val: %d", ret_val);
 
@@ -110,14 +110,15 @@ static void mbox_test(const uint32_t data)
 	int ret_val = 0;
 
 	while (test_count < 100) {
-		const struct mbox_channel *tx_channel = &channels[current_channel_index][TX_CHANNEL_INDEX];
+		const struct mbox_dt_spec *tx_channel =
+			&channels[current_channel_index][TX_CHANNEL_INDEX];
 
 		/* Main core prepare test data */
 		msg.data = &test_data;
 		msg.size = g_max_transfer_size_bytes;
 
 		/* Main core send test data */
-		ret_val = mbox_send(tx_channel, &msg);
+		ret_val = mbox_send_dt(tx_channel, &msg);
 		zassert_false(ret_val < 0, "mbox failed to send. ret_val: %d", ret_val);
 
 		/* Expect next received data will be incremented by one.
@@ -142,7 +143,8 @@ static void mbox_test(const uint32_t data)
 			      g_mbox_expected_data, test_data);
 
 		/* Expect reception of data on current RX channel */
-		g_mbox_expected_channel = channels[current_channel_index][RX_CHANNEL_INDEX].id;
+		g_mbox_expected_channel =
+			channels[current_channel_index][RX_CHANNEL_INDEX].channel_id;
 		zassert_equal(g_mbox_expected_channel, g_mbox_received_channel,
 			      "Received channel does not match!: Expected: %d, Got: %d",
 			      g_mbox_expected_channel, g_mbox_received_channel);
