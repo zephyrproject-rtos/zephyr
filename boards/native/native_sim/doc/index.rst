@@ -379,6 +379,19 @@ The following peripherals are currently provided with this board:
 .. _net-tools:
    https://github.com/zephyrproject-rtos/net-tools
 
+.. _nsim_per_offloaded_sockets:
+
+**Offloaded sockets driver**
+  This driver is an alternative to the :ref:`TAP based ethernet driver
+  <nsim_per_ethe>`. Instead of using a virtual network in the Linux side, this
+  driver utilizes Linux's standard BSD socket API. With this, multiple Zephyr
+  applications can communicate over the Linux loopback interface.
+  The benefit of this approach is that root privileges are not required and
+  that the process is connected to the same interface as other Linux processes
+  instead of a virtual network, facilitating testing without the need for extra
+  setup in the host. The drawback is that the L2 layer of Zephyr's networking
+  stack is not exercised.
+
 .. _nsim_bt_host_cont:
 
 **Bluetooth controller**
@@ -697,6 +710,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      Input, Input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, All
      Input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, All
      Logger backend, :ref:`Native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, All
+     Offloaded sockets, :ref:`nsim_per_offloaded_sockets`, :kconfig:option:`CONFIG_NET_NATIVE_OFFLOADED_SOCKETS`, All
      RTC, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, All
      Serial, :ref:`UART native posix/PTTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, All
      Serial, :ref:`UART native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, All
