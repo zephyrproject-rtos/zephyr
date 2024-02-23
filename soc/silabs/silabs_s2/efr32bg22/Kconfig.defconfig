@@ -13,6 +13,7 @@ config PM
 	select COUNTER
 	select UART_INTERRUPT_DRIVEN
 
-rsource "Kconfig.defconfig.efr32bg22"
+config GPIO_GECKO
+	default y
 
 endif # SOC_SERIES_EFR32BG22
