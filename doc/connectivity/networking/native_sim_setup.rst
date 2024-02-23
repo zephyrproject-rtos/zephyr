@@ -7,7 +7,10 @@ Networking with native_sim board
     :local:
     :depth: 2
 
-This page describes how to set up a virtual network between a (Linux) host
+Using virtual/TAP Ethernet driver
+*********************************
+
+This paragraph describes how to set up a virtual network between a (Linux) host
 and a Zephyr application running in a :ref:`native_sim <native_sim>` board.
 
 In this example, the :zephyr:code-sample:`sockets-echo-server` sample application from
@@ -16,7 +19,7 @@ native_sim board instance is connected to a Linux host using a tuntap device
 which is modeled in Linux as an Ethernet network interface.
 
 Prerequisites
-*************
+=============
 
 On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
 in a separate Git repository:
@@ -27,7 +30,7 @@ in a separate Git repository:
 
 
 Basic Setup
-***********
+===========
 
 For the steps below, you will need three terminal windows:
 
@@ -39,7 +42,7 @@ For the steps below, you will need three terminal windows:
   instance (optional).
 
 Step 1 - Create Ethernet interface
-==================================
+----------------------------------
 
 Before starting native_sim with network emulation, a network interface
 should be created.
@@ -59,7 +62,7 @@ by running ``net-setup.sh`` like this:
 
 
 Step 2 - Start app in native_sim board
-======================================
+--------------------------------------
 
 Build and start the ``echo_server`` sample application.
 
@@ -74,7 +77,7 @@ In terminal #2, type:
 
 
 Step 3 - Connect to console (optional)
-======================================
+--------------------------------------
 
 The console window should be launched automatically when the Zephyr instance is
 started but if it does not show up, you can manually connect to the console.
@@ -89,3 +92,53 @@ You can manually connect to it like this:
 .. code-block:: console
 
    screen /dev/pts/5
+
+Using offloaded sockets
+***********************
+
+The main advantage over `Using virtual/TAP Ethernet driver`_ is not needing to
+setup a virtual network interface on the host machine. This means that no
+leveraged (root) privileges are needed.
+
+Step 1 - Start app in native_sim board
+======================================
+
+Build and start the ``echo_server`` sample application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_server
+   :host-os: unix
+   :board: native_sim
+   :gen-args: -DEXTRA_CONF_FILE=overlay-nsos.conf
+   :goals: run
+   :compact:
+
+Step 2 - run echo-client from net-tools
+=======================================
+
+On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
+in a separate Git repository:
+
+.. code-block:: console
+
+   git clone https://github.com/zephyrproject-rtos/net-tools
+
+.. note::
+
+   Native Simulator with the offloaded sockets network driver is using the same
+   network interface/namespace as any other (Linux) application that uses BSD
+   sockets API. This means that :zephyr:code-sample:`sockets-echo-server` and
+   ``echo-client`` applications will communicate over localhost/loopback
+   interface (address ``127.0.0.1``).
+
+To run UDP test, type:
+
+.. code-block:: console
+
+   ./echo-client 127.0.0.1
+
+For TCP test, type:
+
+.. code-block:: console
+
+   ./echo-client -t 127.0.0.1
