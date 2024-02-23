@@ -45,7 +45,7 @@ is 32.768 kHz. The frequency of the main clock is 32 MHz.
 Supported Features
 ==================
 
-The nrf52840dk_nrf52840 board configuration supports the following
+The ``nrf52840dk/nrf52840`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -221,7 +221,7 @@ nRF52811 emulation on nRF52840 DK
 Overview
 ********
 
-The nrf52840dk/nrf52811 board variant is a modified version of the
+The ``nrf52840dk/nrf52811`` board variant is a modified version of the
 :ref:`nrf52840dk_nrf52840` that enforces the limitations imposed by the nRF52811
 IC, which is a variant of the original nRF52840. Since Nordic does not offer a
 development kit for the nRF52811 you can use this board to develop for this IC
