@@ -893,9 +893,6 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		 * params
 		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			struct bt_iso_chan_io_qos *iso_qos;
-
-			iso_qos = stream->ep->iso->chan.qos->tx;
 			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
 			bt_bap_iso_configure_data_path(stream->ep, codec_cfg);
 		}
