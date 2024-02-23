@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG24_SOC_H
-#define ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG24_SOC_H
+#ifndef _SILABS_EFR32MG24_SOC_H
+#define _SILABS_EFR32MG24_SOC_H
 
 #include <zephyr/sys/util.h>
 
@@ -27,4 +27,4 @@
 
 #endif  /* !_ASMLANGUAGE */
 
-#endif  /* ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG24_SOC_H */
+#endif  /* _SILABS_EFR32MG24_SOC_H */
