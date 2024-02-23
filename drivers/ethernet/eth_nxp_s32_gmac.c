@@ -296,46 +296,11 @@ static int eth_nxp_s32_stop(const struct device *dev)
 	return err;
 }
 
-#if defined(ETH_NXP_S32_MULTICAST_FILTER)
-static void eth_nxp_s32_mcast_cb(struct net_if *iface, const struct net_addr *addr, bool is_joined)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct eth_nxp_s32_config *cfg = dev->config;
-	struct net_eth_addr mac_addr;
-
-	switch (addr->family) {
-#if defined(CONFIG_NET_IPV4)
-	case AF_INET:
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
-		break;
-#endif /* CONFIG_NET_IPV4 */
-#if defined(CONFIG_NET_IPV6)
-	case AF_INET6:
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-		break;
-#endif /* CONFIG_NET_IPV6 */
-	default:
-		return -EINVAL;
-	}
-
-	if (is_joined) {
-		Gmac_Ip_AddDstAddrToHashFilter(cfg->instance, mac_addr.addr);
-	} else {
-		Gmac_Ip_RemoveDstAddrFromHashFilter(cfg->instance, mac_addr.addr);
-	}
-}
-#endif /* ETH_NXP_S32_MULTICAST_FILTER */
-
 static void eth_nxp_s32_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	struct eth_nxp_s32_data *ctx = dev->data;
-#if defined(ETH_NXP_S32_MULTICAST_FILTER)
-	static struct net_if_mcast_monitor mon;
-
-	net_if_mcast_mon_register(&mon, iface, eth_nxp_s32_mcast_cb);
-#endif /* ETH_NXP_S32_MULTICAST_FILTER */
 
 	/* For VLAN, this value is only used to get the correct L2 driver.
 	 * The iface pointer in context should contain the main interface
@@ -604,6 +569,17 @@ static int eth_nxp_s32_set_config(const struct device *dev,
 		}
 		break;
 #endif
+#if defined(CONFIG_ETH_NXP_S32_MULTICAST_FILTER)
+	case ETHERNET_HW_FILTERING:
+		if (config->filter.set) {
+			Gmac_Ip_AddDstAddrToHashFilter(cfg->instance,
+						       config->filter.mac_address.addr);
+		} else {
+			Gmac_Ip_RemoveDstAddrFromHashFilter(cfg->instance,
+							    config->filter.mac_address.addr);
+		}
+		break;
+#endif
 	default:
 		res = -ENOTSUP;
 		break;
@@ -629,6 +605,9 @@ static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *d
 #endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
+#endif
+#if defined(CONFIG_ETH_NXP_S32_MULTICAST_FILTER)
+		| ETHERNET_HW_FILTERING
 #endif
 	);
 }
