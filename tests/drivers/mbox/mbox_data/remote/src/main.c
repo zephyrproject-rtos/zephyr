@@ -19,22 +19,22 @@ static uint32_t g_mbox_received_channel;
 #define TX_CHANNEL_INDEX 0
 #define RX_CHANNEL_INDEX 1
 
-static const struct mbox_channel channels[CHANNELS_TO_TEST][2] = {
+static const struct mbox_dt_spec channels[CHANNELS_TO_TEST][2] = {
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx0),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx0),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx0),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx0),
 	},
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx1),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx1),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx1),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx1),
 	},
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx2),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx2),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx2),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx2),
 	},
 	{
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx3),
-		MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx3),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx3),
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx3),
 	},
 };
 
@@ -55,22 +55,22 @@ int main(void)
 	uint32_t message = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(channels); i++) {
-		const struct mbox_channel *tx_channel = &channels[i][TX_CHANNEL_INDEX];
-		const struct mbox_channel *rx_channel = &channels[i][RX_CHANNEL_INDEX];
+		const struct mbox_dt_spec *tx_channel = &channels[i][TX_CHANNEL_INDEX];
+		const struct mbox_dt_spec *rx_channel = &channels[i][RX_CHANNEL_INDEX];
 
-		const int max_transfer_size_bytes = mbox_mtu_get(tx_channel->dev);
+		const int max_transfer_size_bytes = mbox_mtu_get_dt(tx_channel);
 		/* Sample currently supports only transfer size up to 4 bytes */
 		if ((max_transfer_size_bytes <= 0) || (max_transfer_size_bytes > 4)) {
 			printk("mbox_mtu_get() error\n");
 			return 0;
 		}
 
-		if (mbox_register_callback(rx_channel, callback, NULL)) {
+		if (mbox_register_callback_dt(rx_channel, callback, NULL)) {
 			printk("mbox_register_callback() error\n");
 			return 0;
 		}
 
-		if (mbox_set_enabled(rx_channel, 1)) {
+		if (mbox_set_enabled_dt(rx_channel, 1)) {
 			printk("mbox_set_enable() error\n");
 			return 0;
 		}
@@ -88,13 +88,13 @@ int main(void)
 			msg.data = &message;
 			msg.size = max_transfer_size_bytes;
 
-			if (mbox_send(tx_channel, &msg) < 0) {
+			if (mbox_send_dt(tx_channel, &msg) < 0) {
 				printk("mbox_send() error\n");
 				return 0;
 			}
 		}
 
 		/* Disable current rx channel after channel loop */
-		mbox_set_enabled(rx_channel, 0);
+		mbox_set_enabled_dt(rx_channel, 0);
 	}
 }
