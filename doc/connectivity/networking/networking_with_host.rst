@@ -59,7 +59,8 @@ possible:
     system. This is the most convenient way to debug the Zephyr system as one
     can attach host debugger directly to the running Zephyr instance. This
     requires that there is an adaptation driver in Zephyr for interfacing
-    with the host system. An Ethernet driver exists in Zephyr for this purpose.
+    with the host system. Two possible network drivers can be used for this
+    purpose, a TAP virtual Ethernet driver and an offloaded sockets driver.
     See :ref:`networking_with_native_sim` for details.
 
 * USB device networking.
