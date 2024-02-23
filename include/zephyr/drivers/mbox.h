@@ -66,9 +66,12 @@
  *
  */
 
-#include <zephyr/kernel.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdlib.h>
+
 #include <zephyr/device.h>
-#include <zephyr/devicetree/mbox.h>
+#include <zephyr/devicetree.h>
 
 #ifdef __cplusplus
 extern "C" {
