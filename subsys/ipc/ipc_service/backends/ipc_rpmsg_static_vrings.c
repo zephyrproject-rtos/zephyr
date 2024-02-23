@@ -55,8 +55,8 @@ struct backend_config_t {
 	unsigned int role;
 	uintptr_t shm_addr;
 	size_t shm_size;
-	struct mbox_channel mbox_tx;
-	struct mbox_channel mbox_rx;
+	struct mbox_dt_spec mbox_tx;
+	struct mbox_dt_spec mbox_rx;
 	unsigned int wq_prio_type;
 	unsigned int wq_prio;
 	unsigned int id;
@@ -292,7 +292,7 @@ static void virtio_notify_cb(struct virtqueue *vq, void *priv)
 	struct backend_config_t *conf = priv;
 
 	if (conf->mbox_tx.dev) {
-		mbox_send(&conf->mbox_tx, NULL);
+		mbox_send_dt(&conf->mbox_tx, NULL);
 	}
 }
 
@@ -329,12 +329,12 @@ static int mbox_init(const struct device *instance)
 
 	k_work_init(&data->mbox_work, mbox_callback_process);
 
-	err = mbox_register_callback(&conf->mbox_rx, mbox_callback, data);
+	err = mbox_register_callback_dt(&conf->mbox_rx, mbox_callback, data);
 	if (err != 0) {
 		return err;
 	}
 
-	return mbox_set_enabled(&conf->mbox_rx, 1);
+	return mbox_set_enabled_dt(&conf->mbox_rx, 1);
 }
 
 static int mbox_deinit(const struct device *instance)
@@ -344,7 +344,7 @@ static int mbox_deinit(const struct device *instance)
 	k_tid_t wq_thread;
 	int err;
 
-	err = mbox_set_enabled(&conf->mbox_rx, 0);
+	err = mbox_set_enabled_dt(&conf->mbox_rx, 0);
 	if (err != 0) {
 		return err;
 	}
@@ -798,8 +798,8 @@ static int backend_init(const struct device *instance)
 		.role = DT_ENUM_IDX_OR(DT_DRV_INST(i), role, ROLE_HOST),		\
 		.shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, memory_region)),		\
 		.shm_addr = BACKEND_SHM_ADDR(i),					\
-		.mbox_tx = MBOX_DT_INST_CHANNEL_GET(i, tx),				\
-		.mbox_rx = MBOX_DT_INST_CHANNEL_GET(i, rx),				\
+		.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),				\
+		.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),				\
 		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
 			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 0)),		\
 			   (0)),							\

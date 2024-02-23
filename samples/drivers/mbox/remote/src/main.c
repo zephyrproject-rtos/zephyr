@@ -13,47 +13,42 @@
 #endif
 
 #ifdef CONFIG_RX_ENABLED
-static void callback(const struct device *dev, uint32_t channel,
+static void callback(const struct device *dev, mbox_channel_id_t channel_id,
 		     void *user_data, struct mbox_msg *data)
 {
-	printk("Pong (on channel %d)\n", channel);
+	printk("Pong (on channel %d)\n", channel_id);
 }
 #endif /* CONFIG_RX_ENABLED */
 
 int main(void)
 {
 	int ret;
-	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(mbox));
 
 	printk("Hello from REMOTE\n");
 
 #ifdef CONFIG_RX_ENABLED
-	const struct mbox_channel rx_channel = MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx);
+	const struct mbox_dt_spec rx_channel = MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx);
 
-	mbox_init_channel(&rx_channel, dev, CONFIG_RX_CHANNEL_ID);
-
-	ret = mbox_register_callback(&rx_channel, callback, NULL);
+	ret = mbox_register_callback_dt(&rx_channel, callback, NULL);
 	if (ret < 0) {
 		printk("Could not register callback (%d)\n", ret);
 		return 0;
 	}
 
-	ret = mbox_set_enabled(&rx_channel, true);
+	ret = mbox_set_enabled_dt(&rx_channel, true);
 	if (ret < 0) {
-		printk("Could not enable RX channel %d (%d)\n", rx_channel.id, ret);
+		printk("Could not enable RX channel %d (%d)\n", rx_channel.channel_id, ret);
 		return 0;
 	}
 #endif /* CONFIG_RX_ENABLED */
 
 #ifdef CONFIG_TX_ENABLED
-	const struct mbox_channel tx_channel = MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx);
-
-	mbox_init_channel(&tx_channel, dev, CONFIG_TX_CHANNEL_ID);
+	const struct mbox_dt_spec tx_channel = MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx);
 
 	while (1) {
-		printk("Ping (on channel %d)\n", tx_channel.id);
+		printk("Ping (on channel %d)\n", tx_channel.channel_id);
 
-		ret = mbox_send(&tx_channel, NULL);
+		ret = mbox_send_dt(&tx_channel, NULL);
 		if (ret < 0) {
 			printk("Could not send (%d)\n", ret);
 			return 0;
