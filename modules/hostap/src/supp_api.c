@@ -377,6 +377,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	}
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
+		/* SAP - only open and WPA2-PSK are supported for now */
+		if (mode_ap && params->security != WIFI_SECURITY_TYPE_PSK) {
+			ret = -1;
+			wpa_printf(MSG_ERROR, "Unsupported security type: %d",
+				params->security);
+			goto rem_net;
+		}
+
 		/* Except for WPA-PSK, rest all are under WPA2 */
 		if (params->security != WIFI_SECURITY_TYPE_WPA_PSK) {
 			if (!wpa_cli_cmd_v("set_network %d proto RSN",
