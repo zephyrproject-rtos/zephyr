@@ -4,6 +4,7 @@
 
 config SOC_SERIES_INTEL_ADSP_CAVS
 	bool
+	select SOC_FAMILY_INTEL_ADSP
 	help
 	  Intel ADSP CAVS
 
@@ -12,6 +13,7 @@ config SOC_SERIES
 
 config SOC_INTEL_CAVS_V25
 	bool
+	select SOC_SERIES_INTEL_ADSP_CAVS
 	help
 	  Intel Tiger Lake
 
