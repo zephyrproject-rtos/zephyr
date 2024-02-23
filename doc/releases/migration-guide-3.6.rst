@@ -461,10 +461,10 @@ Bluetooth
   cleared on :c:func:`bt_enable`. Callbacks can now be registered before the initial
   call to :c:func:`bt_enable`, and should no longer be re-registered after a :c:func:`bt_disable`
   :c:func:`bt_enable` cycle. (:github:`63693`)
-* The Bluetooth UUID has been modified to rodata in ``BT_UUID_DECLARE_16``, ``BT_UUID_DECLARE_32`
-  and ``BT_UUID_DECLARE_128`` as the return value has been changed to `const`.
-  Any pointer to a UUID must be prefixed with `const`, otherwise there will be a compilation warning.
-  For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
+* The Bluetooth UUID has been modified to rodata in ``BT_UUID_DECLARE_16``, ``BT_UUID_DECLARE_32``
+  and ``BT_UUID_DECLARE_128`` as the return value has been changed to ``const``.
+  Any pointer to a UUID must be prefixed with ``const``, otherwise there will be a compilation
+  warning. For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
   ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
 * The :c:func:`bt_l2cap_chan_send` API no longer allocates buffers from the same pool as its `buf`
   parameter when segmenting SDUs into PDUs. In order to reproduce the previous behavior, the
@@ -518,7 +518,7 @@ Bluetooth Audio
     ``BT_AUDIO_CODEC_LC3_CHAN_COUNT`` is now ``BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT``,
     ``BT_AUDIO_CODEC_LC3_FREQ`` is now ``BT_AUDIO_CODEC_CAP_TYPE_FREQ``, and
     ``BT_AUDIO_CODEC_CONFIG_LC3_FREQ`` is now ``BT_AUDIO_CODEC_CFG_FREQ``, etc.
-    Similarly the ``enum``s have also been renamed.
+    Similarly the enumerations have also been renamed.
     E.g. ``bt_audio_codec_config_freq`` is now ``bt_audio_codec_cfg_freq``,
     ``bt_audio_codec_capability_type`` is now ``bt_audio_codec_cap_type``,
     ``bt_audio_codec_config_type`` is now ``bt_audio_codec_cfg_type``, etc. (:github:`67024`)
@@ -672,7 +672,7 @@ Userspace
   * ``z_user_to_copy`` to :c:func:`k_usermode_to_copy`
   * ``z_user_string_copy`` to :c:func:`k_usermode_string_copy`
   * ``z_user_string_alloc_copy`` to :c:func:`k_usermode_string_alloc_copy`
-  * ``z_user_alloc_from_copy```` to :c:func:`k_usermode_alloc_from_copy`
+  * ``z_user_alloc_from_copy`` to :c:func:`k_usermode_alloc_from_copy`
   * ``z_user_string_nlen`` to :c:func:`k_usermode_string_nlen`
   * ``z_dump_object_error`` to :c:func:`k_object_dump_error`
   * ``z_object_validate`` to :c:func:`k_object_validate`
