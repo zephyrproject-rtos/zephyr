@@ -83,7 +83,7 @@ config BT_ISO_MAX_CHAN
 config BT_ISO_TX_BUF_COUNT
 	int "Number of Isochronous TX buffers"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Number of buffers available for outgoing Isochronous channel SDUs.
 
@@ -114,7 +114,7 @@ config BT_ISO_TX_MTU
 config BT_ISO_RX_BUF_COUNT
 	int "Number of Isochronous RX buffers"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Number of buffers available for incoming Isochronous channel SDUs.
 
