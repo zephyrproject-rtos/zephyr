@@ -503,6 +503,9 @@ struct event_done_extra {
 				struct {
 					uint16_t trx_cnt;
 					uint8_t  crc_valid:1;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+					uint8_t  estab_failed:1;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 					/* Used to inform ULL that periodic
