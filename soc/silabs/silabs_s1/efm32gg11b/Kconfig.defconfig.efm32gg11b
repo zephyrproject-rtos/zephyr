@@ -1,8 +1,0 @@
-# Silicon Labs EFM32GG-STK3701A platform configuration options
-# Copyright (c) 2019 Interay Solutions B.V.
-# Copyright (c) 2019 Oane Kingma
-# SPDX-License-Identifier: Apache-2.0
-
-config GPIO_GECKO
-	default y
-	depends on GPIO || LOG_BACKEND_SWO
