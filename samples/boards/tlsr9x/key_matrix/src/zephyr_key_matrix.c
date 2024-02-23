@@ -36,19 +36,8 @@ static void key_matrix_scan_work(struct k_work *item)
 	struct key_matrix_data *key_matrix =
 		CONTAINER_OF(item, struct key_matrix_data, work);
 
+	(void) k_work_schedule(&key_matrix->work, K_MSEC(KEY_MATRIX_SCAN_PERIOD_MS));
 	key_matrix_poll(key_matrix);
-}
-
-/* Periodic scan timer function */
-static void key_matrix_on_timer(struct k_timer *timer)
-{
-	/*
-	 * We are in isr here. That's bad idea to execute users callback from this context.
-	 * So delegate it to sysworkq
-	 */
-	struct k_work *work = (struct k_work *)k_timer_user_data_get(timer);
-
-	k_work_submit(work);
 }
 
 /* Public APIs */
@@ -108,12 +97,10 @@ bool key_matrix_init(struct key_matrix_data *key_matrix)
 		key_matrix->on_button_change = NULL;
 		key_matrix->context = NULL;
 		/* work init */
-		k_work_init(&key_matrix->work, key_matrix_scan_work);
-		/* start scan timer */
-		k_timer_init(&key_matrix->timer, key_matrix_on_timer, NULL);
-		k_timer_user_data_set(&key_matrix->timer, &key_matrix->work);
-		k_timer_start(&key_matrix->timer,
-			K_MSEC(KEY_MATRIX_SCAN_PERIOD_MS), K_MSEC(KEY_MATRIX_SCAN_PERIOD_MS));
+		k_work_init_delayable(&key_matrix->work, key_matrix_scan_work);
+		while (k_work_schedule(&key_matrix->work, K_NO_WAIT) == -EBUSY) {
+			k_usleep(10); /* Let other stuffs run */
+		}
 		/* all done */
 	} while (0);
 

@@ -26,8 +26,7 @@ struct key_matrix_data {
 	uint8_t                      *buttons;
 	on_button_change_t            on_button_change;
 	void                         *context;
-	struct k_work                 work;
-	struct k_timer                timer;
+	struct k_work_delayable       work;
 };
 
 /*
