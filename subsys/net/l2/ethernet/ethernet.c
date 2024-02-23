@@ -37,6 +37,10 @@ static const struct net_eth_addr multicast_eth_addr __unused = {
 static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
+#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
+static struct net_if_mcast_monitor mcast_monitor;
+#endif
+
 const struct net_eth_addr *net_eth_broadcast_addr(void)
 {
 	return &broadcast_eth_addr;
@@ -182,6 +186,50 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 
 	return NET_OK;
 }
+
+#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
+static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
+				      bool is_joined)
+{
+	struct ethernet_config cfg = {
+		.filter = {
+			.set = is_joined,
+			.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
+		},
+	};
+	const struct device *dev;
+	const struct ethernet_api *api;
+
+	/* Make sure we're an ethernet device */
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return;
+	}
+
+	dev = net_if_get_device(iface);
+	api = dev->api;
+
+	if (!(api->get_capabilities(dev) & ETHERNET_HW_FILTERING) || api->set_config == NULL) {
+		return;
+	}
+
+	switch (addr->family) {
+#if defined(CONFIG_NET_IPV4)
+	case AF_INET:
+		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &cfg.filter.mac_address);
+		break;
+#endif /* CONFIG_NET_IPV4 */
+#if defined(CONFIG_NET_IPV6)
+	case AF_INET6:
+		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &cfg.filter.mac_address);
+		break;
+#endif /* CONFIG_NET_IPV6 */
+	default:
+		return;
+	}
+
+	api->set_config(dev, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
+}
+#endif
 
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
@@ -1258,6 +1306,12 @@ void ethernet_init(struct net_if *iface)
 	if (net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) {
 		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
 	}
+
+#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
+	if (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING) {
+		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
+	}
+#endif
 
 #if defined(CONFIG_NET_VLAN)
 	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
