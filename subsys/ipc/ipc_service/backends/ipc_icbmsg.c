@@ -1263,8 +1263,8 @@ const static struct ipc_service_backend backend_ops = {
 	static const struct icbmsg_config backend_config_##i =				\
 	{										\
 		.control_config = {							\
-			.mbox_tx = MBOX_DT_INST_CHANNEL_GET(i, tx),			\
-			.mbox_rx = MBOX_DT_INST_CHANNEL_GET(i, rx),			\
+			.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\
+			.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),			\
 		},									\
 		.tx = {									\
 			.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, tx, rx),	\

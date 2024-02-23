@@ -44,7 +44,7 @@
 #define NETC_MSIX(node, name, cb)					\
 	{								\
 		.handler = cb,						\
-		.mbox_channel = MBOX_DT_CHANNEL_GET(node, name),	\
+		.mbox_spec = MBOX_DT_SPEC_GET(node, name),		\
 	}
 
 /* Tx/Rx ENETC ring definitions */
@@ -100,7 +100,7 @@
 
 struct nxp_s32_eth_msix {
 	void (*handler)(uint8_t chan, const uint32_t *buf, uint8_t buf_size);
-	struct mbox_channel mbox_channel;
+	struct mbox_dt_spec mbox_spec;
 };
 
 struct nxp_s32_eth_config {

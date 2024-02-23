@@ -190,14 +190,12 @@ static void remote_callback(void *user_data)
 	}
 }
 
-static void mbox_callback(const struct device *dev, uint32_t channel,
+static void mbox_callback(const struct device *dev, mbox_channel_id_t channel_id,
 			  void *user_data, struct mbox_msg *data)
 {
-	struct mbox_channel ch;
 	int err;
 
-	mbox_init_channel(&ch, dev, channel);
-	err = mbox_set_enabled(&ch, false);
+	err = mbox_set_enabled(dev, channel_id, false);
 
 	(void)err;
 	__ASSERT_NO_MSG(err == 0);
@@ -208,7 +206,6 @@ static void mbox_callback(const struct device *dev, uint32_t channel,
 static int mbox_rx_init(void *user_data)
 {
 	const struct device *dev;
-	struct mbox_channel channel;
 	int err;
 
 	dev = COND_CODE_1(CONFIG_MBOX, (DEVICE_DT_GET(DT_NODELABEL(mbox))), (NULL));
@@ -216,14 +213,12 @@ static int mbox_rx_init(void *user_data)
 		return -ENODEV;
 	}
 
-	mbox_init_channel(&channel, dev, CONFIG_NRF53_SYNC_RTC_IPM_IN);
-
-	err = mbox_register_callback(&channel, mbox_callback, user_data);
+	err = mbox_register_callback(dev, CONFIG_NRF53_SYNC_RTC_IPM_IN, mbox_callback, user_data);
 	if (err < 0) {
 		return err;
 	}
 
-	return mbox_set_enabled(&channel, true);
+	return mbox_set_enabled(dev, CONFIG_NRF53_SYNC_RTC_IPM_IN, true);
 }
 
 /* Setup RTC synchronization. */
