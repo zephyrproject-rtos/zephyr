@@ -89,6 +89,12 @@ list(APPEND kernel_files
      spinlock_validate.c)
 endif()
 
+if(CONFIG_IRQ_OFFLOAD)
+list(APPEND kernel_files
+  irq_offload.c
+  )
+endif()
+
 if(CONFIG_XIP)
 list(APPEND kernel_files
      xip.c)
