@@ -798,8 +798,8 @@ static int backend_init(const struct device *instance)
 		.role = DT_ENUM_IDX_OR(DT_DRV_INST(i), role, ROLE_HOST),		\
 		.shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, memory_region)),		\
 		.shm_addr = BACKEND_SHM_ADDR(i),					\
-		.mbox_tx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), tx),			\
-		.mbox_rx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), rx),			\
+		.mbox_tx = MBOX_DT_INST_CHANNEL_GET(i, tx),				\
+		.mbox_rx = MBOX_DT_INST_CHANNEL_GET(i, rx),				\
 		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
 			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 0)),		\
 			   (0)),							\
