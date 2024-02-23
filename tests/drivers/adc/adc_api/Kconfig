@@ -1,0 +1,12 @@
+# ADC API test configuration options
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "ADC API Test"
+
+source "Kconfig.zephyr"
+
+config ADC_API_SAMPLE_INTERVAL_US
+	int "Interval between repeatead samples in us"
+	default 0
