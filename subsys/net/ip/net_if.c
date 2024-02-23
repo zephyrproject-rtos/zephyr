@@ -994,7 +994,7 @@ void net_if_mcast_monitor(struct net_if *iface,
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
 					  mon, tmp, node) {
-		if (iface == mon->iface) {
+		if (iface == mon->iface || mon->iface == NULL) {
 			mon->cb(iface, addr, is_joined);
 		}
 	}
