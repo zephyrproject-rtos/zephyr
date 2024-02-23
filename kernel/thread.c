@@ -24,7 +24,6 @@
 #include <zephyr/tracing/tracing.h>
 #include <string.h>
 #include <stdbool.h>
-#include <zephyr/irq_offload.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/atomic.h>
@@ -974,24 +973,6 @@ static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 }
 #include <syscalls/k_float_disable_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_IRQ_OFFLOAD
-/* Make offload_sem visible outside under testing, in order to release
- * it outside when error happened.
- */
-K_SEM_DEFINE(offload_sem, 1, 1);
-
-void irq_offload(irq_offload_routine_t routine, const void *parameter)
-{
-#ifdef CONFIG_IRQ_OFFLOAD_NESTED
-	arch_irq_offload(routine, parameter);
-#else
-	k_sem_take(&offload_sem, K_FOREVER);
-	arch_irq_offload(routine, parameter);
-	k_sem_give(&offload_sem);
-#endif
-}
-#endif
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 #ifdef CONFIG_STACK_GROWS_UP
