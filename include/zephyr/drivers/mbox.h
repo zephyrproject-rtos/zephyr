@@ -1,17 +1,21 @@
-/**
- * @file
- *
- * @brief Generic low-level multi-channel inter-processor mailbox communication API.
- */
-
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MBOX_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MBOX_H_
+
+#include <errno.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief MBOX Interface
@@ -66,37 +70,18 @@
  *
  */
 
-#include <errno.h>
-#include <stdint.h>
-#include <stdlib.h>
-
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Message struct (to hold data and its size).
- */
+/** @brief Message struct (to hold data and its size). */
 struct mbox_msg {
 	/** Pointer to the data sent in the message. */
 	const void *data;
-
 	/** Size of the data. */
 	size_t size;
 };
 
-/**
- * @brief Provides a type to hold an MBOX channel
- *
- * Struct type to hold an MBOX device pointer and the channel ID.
- */
+/** @brief Provides a type to hold an MBOX channel */
 struct mbox_channel {
 	/** MBOX device pointer. */
 	const struct device *dev;
-
 	/** Channel ID. */
 	uint32_t id;
 };
@@ -104,92 +89,90 @@ struct mbox_channel {
 /**
  * @brief Structure initializer for mbox_channel from devicetree
  *
- * This helper macro expands to a static initializer for a @p mbox_channel by
- * reading the relevant device controller and channel number from the
+ * This helper macro expands to a static initializer for a struct mbox_channel
+ * by reading the relevant device controller and channel number from the
  * devicetree.
  *
  * Example devicetree fragment:
  *
- *     mbox1: mbox-controller@... { ... };
- *
+ * @code{.devicetree}
  *     n: node {
  *             mboxes = <&mbox1 8>,
  *                      <&mbox1 9>;
  *             mbox-names = "tx", "rx";
  *     };
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     const struct mbox_channel channel = MBOX_DT_CHANNEL_GET(DT_NODELABEL(n), tx);
+ * @endcode
  *
  * @param node_id Devicetree node identifier for the MBOX device
  * @param name lowercase-and-underscores name of the mboxes element
+ *
+ * @return static initializer for a struct mbox_channel
  */
-#define MBOX_DT_CHANNEL_GET(node_id, name)					\
-	{									\
-		.dev = DEVICE_DT_GET(DT_MBOX_CTLR_BY_NAME(node_id, name)),	\
-		.id = DT_MBOX_CHANNEL_BY_NAME(node_id, name),			\
+#define MBOX_DT_CHANNEL_GET(node_id, name)                                     \
+	{                                                                      \
+		.dev = DEVICE_DT_GET(DT_MBOX_CTLR_BY_NAME(node_id, name)),     \
+		.id = DT_MBOX_CHANNEL_BY_NAME(node_id, name),                  \
 	}
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
- * @typedef mbox_callback_t
- *
  * @brief Callback API for incoming MBOX messages
  *
  * These callbacks execute in interrupt context. Therefore, use only
- * interrupt-safe APIS. Registration of callbacks is done via @a
+ * interrupt-safe APIs. Registration of callbacks is done via
  * mbox_register_callback()
  *
  * The data parameter must be NULL in signalling mode.
  *
- * @param dev Driver instance
+ * @param dev MBOX device instance
  * @param channel Channel ID
- * @param user_data Pointer to some private data provided at registration
- *        time
+ * @param user_data Pointer to some private data provided at registration time
  * @param data Message struct
  */
 typedef void (*mbox_callback_t)(const struct device *dev, uint32_t channel,
 				void *user_data, struct mbox_msg *data);
 
 /**
- * @typedef mbox_send_t
- *
  * @brief Callback API to send MBOX messages
  *
- * See @a mbox_send() for function description
- *
- * @param dev Driver instance
+ * @param dev MBOX device instance
  * @param channel Channel ID
  * @param msg Message struct
  *
- * @return See return values for @a mbox_send()
+ * @return See the return values for mbox_send()
+ * @see mbox_send()
  */
 typedef int (*mbox_send_t)(const struct device *dev, uint32_t channel,
 			   const struct mbox_msg *msg);
 
 /**
- * @typedef mbox_mtu_get_t
- *
  * @brief Callback API to get maximum data size
  *
- * See @a mbox_mtu_get() for argument definitions.
+ * @param dev MBOX device instance
+ *
+ * @return See the return values for mbox_mtu_get()
+ * @see mbox_mtu_get()
  */
 typedef int (*mbox_mtu_get_t)(const struct device *dev);
 
 /**
- * @typedef mbox_register_callback_t
- *
  * @brief Callback API upon registration
  *
- * See @a mbox_register_callback() for function description
- *
- * @param dev Driver instance
+ * @param dev MBOX device instance
  * @param channel Channel ID
  * @param cb Callback function to execute on incoming message interrupts.
- * @param user_data Application-specific data pointer which will be passed
- *        to the callback function when executed.
+ * @param user_data Application-specific data pointer which will be passed to
+ *                  the callback function when executed.
  *
- * @return See return values for @a mbox_register_callback()
+ * @return See return values for mbox_register_callback()
+ * @see mbox_register_callback()
  */
 typedef int (*mbox_register_callback_t)(const struct device *dev,
 					uint32_t channel,
@@ -197,26 +180,24 @@ typedef int (*mbox_register_callback_t)(const struct device *dev,
 					void *user_data);
 
 /**
- * @typedef mbox_set_enabled_t
- *
  * @brief Callback API upon enablement of interrupts
  *
- * See @a mbox_set_enabled() for function description
- *
- * @param dev Driver instance
+ * @param dev MBOX device instance
  * @param channel Channel ID
  * @param enable Set to 0 to disable and to nonzero to enable.
  *
- * @return See return values for @a mbox_set_enabled()
+ * @return See return values for mbox_set_enabled()
+ * @see mbox_set_enabled()
  */
 typedef int (*mbox_set_enabled_t)(const struct device *dev, uint32_t channel, bool enable);
 
 /**
- * @typedef mbox_max_channels_get_t
- *
  * @brief Callback API to get maximum number of channels
  *
- * See @a mbox_max_channels_get() for argument definitions.
+ * @param dev MBOX device instance
+ *
+ * @return See return values for mbox_max_channels_get()
+ * @see mbox_max_channels_get()
  */
 typedef uint32_t (*mbox_max_channels_get_t)(const struct device *dev);
 
@@ -228,20 +209,22 @@ __subsystem struct mbox_driver_api {
 	mbox_set_enabled_t set_enabled;
 };
 
+/** @endcond */
+
 /**
  * @brief Initialize a channel struct
  *
- * Initialize an @p mbox_channel passed by the user with a provided MBOX device
- * and channel ID. This function is needed when the information about the
+ * Initialize an struct mbox_channel passed by the user with a provided MBOX
+ * device and channel ID. This function is needed when the information about the
  * device and the channel ID is not in the DT. In the DT case
  * MBOX_DT_CHANNEL_GET() must be used instead.
  *
- * @param channel Pointer to the channel struct
- * @param dev Driver instance
+ * @param[out] channel MBOX channel instance
+ * @param dev MBOX device instance
  * @param ch_id Channel ID
  */
-static inline void mbox_init_channel(struct mbox_channel *channel, const struct device *dev,
-				     uint32_t ch_id)
+static inline void mbox_init_channel(struct mbox_channel *channel,
+				     const struct device *dev, uint32_t ch_id)
 {
 	channel->dev = dev;
 	channel->id = ch_id;
@@ -250,25 +233,26 @@ static inline void mbox_init_channel(struct mbox_channel *channel, const struct 
 /**
  * @brief Try to send a message over the MBOX device.
  *
- * Send a message over an @p mbox_channel. The msg parameter must be NULL when
- * the driver is used for signalling.
+ * Send a message over an struct mbox_channel. The msg parameter must be NULL
+ * when the driver is used for signalling.
  *
  * If the msg parameter is not NULL, this data is expected to be delivered on
  * the receiving side using the data parameter of the receiving callback.
  *
- * @param channel Channel instance pointer
- * @param msg Pointer to the message struct
+ * @param channel MBOX channel instance
+ * @param msg Message
  *
+ * @retval 0         On success.
  * @retval -EBUSY    If the remote hasn't yet read the last data sent.
  * @retval -EMSGSIZE If the supplied data size is unsupported by the driver.
  * @retval -EINVAL   If there was a bad parameter, such as: too-large channel
  *		     descriptor or the device isn't an outbound MBOX channel.
- *
- * @retval 0         On success, negative value on error.
  */
-__syscall int mbox_send(const struct mbox_channel *channel, const struct mbox_msg *msg);
+__syscall int mbox_send(const struct mbox_channel *channel,
+			const struct mbox_msg *msg);
 
-static inline int z_impl_mbox_send(const struct mbox_channel *channel, const struct mbox_msg *msg)
+static inline int z_impl_mbox_send(const struct mbox_channel *channel,
+				   const struct mbox_msg *msg)
 {
 	const struct mbox_driver_api *api =
 		(const struct mbox_driver_api *)channel->dev->api;
@@ -284,15 +268,16 @@ static inline int z_impl_mbox_send(const struct mbox_channel *channel, const str
  * @brief Register a callback function on a channel for incoming messages.
  *
  * This function doesn't assume anything concerning the status of the
- * interrupts. Use @a mbox_set_enabled() to enable or to disable the interrupts
+ * interrupts. Use mbox_set_enabled() to enable or to disable the interrupts
  * if needed.
  *
- * @param channel Channel instance pointer.
+ * @param channel MBOX channel instance
  * @param cb Callback function to execute on incoming message interrupts.
  * @param user_data Application-specific data pointer which will be passed
- *        to the callback function when executed.
+ *                  to the callback function when executed.
  *
- * @retval 0 On success, negative value on error.
+ * @retval 0      On success.
+ * @retval -errno Negative errno on error.
  */
 static inline int mbox_register_callback(const struct mbox_channel *channel,
 					 mbox_callback_t cb,
@@ -319,13 +304,14 @@ static inline int mbox_register_callback(const struct mbox_channel *channel,
  * indirect way (i.e. probing some other peripheral, reading memory regions,
  * etc...).
  *
- * If this function returns 0, the msg parameter in @a mbox_send() is expected
+ * If this function returns 0, the msg parameter in mbox_send() is expected
  * to be NULL.
  *
- * @param dev Driver instance pointer.
+ * @param dev MBOX device instance.
  *
- * @return Maximum possible size of a message in bytes, 0 for signalling,
- *	   negative value on error.
+ * @retval >0     Maximum possible size of a message in bytes
+ * @retval 0      Indicates signalling
+ * @retval -errno Negative errno on error.
  */
 __syscall int mbox_mtu_get(const struct device *dev);
 
@@ -350,7 +336,7 @@ static inline int z_impl_mbox_mtu_get(const struct device *dev)
  * Immediately after calling this function with 'enable' set to true, the
  * channel is considered enabled and ready to receive signal and messages (even
  * already pending), so the user must take care of installing a proper callback
- * (if needed) using @a mbox_register_callback() on the channel before enabling
+ * (if needed) using mbox_register_callback() on the channel before enabling
  * it. For this reason it is recommended that all the channels are disabled at
  * probe time.
  *
@@ -358,15 +344,17 @@ static inline int z_impl_mbox_mtu_get(const struct device *dev)
  * undefined behavior (in general the driver must take care of gracefully
  * handling spurious interrupts with no installed callback).
  *
- * @param channel Channel instance pointer.
- * @param enable Set to 0 to disable and to nonzero to enable.
+ * @param channel MBOX channel instance
+ * @param enable Enable (true) or disable (false) the channel.
  *
- * @retval 0       On success.
- * @retval -EINVAL If it isn't an inbound channel.
+ * @retval 0         On success.
+ * @retval -EINVAL   If it isn't an inbound channel.
+ * @retval -EALREADY If channel is already @p enable.
  */
 __syscall int mbox_set_enabled(const struct mbox_channel *channel, bool enable);
 
-static inline int z_impl_mbox_set_enabled(const struct mbox_channel *channel, bool enable)
+static inline int z_impl_mbox_set_enabled(const struct mbox_channel *channel,
+					  bool enable)
 {
 	const struct mbox_driver_api *api =
 		(const struct mbox_driver_api *)channel->dev->api;
@@ -383,10 +371,10 @@ static inline int z_impl_mbox_set_enabled(const struct mbox_channel *channel, bo
  *
  * Return the maximum number of channels supported by the hardware.
  *
- * @param dev Driver instance pointer.
+ * @param dev MBOX device instance.
  *
- * @return Maximum possible number of supported channels on success, negative
- *	   value on error.
+ * @return >0     Maximum possible number of supported channels on success
+ * @return -errno Negative errno on error.
  */
 __syscall uint32_t mbox_max_channels_get(const struct device *dev);
 
@@ -402,13 +390,11 @@ static inline uint32_t z_impl_mbox_max_channels_get(const struct device *dev)
 	return api->max_channels_get(dev);
 }
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
-
-/**
- * @}
- */
 
 #include <syscalls/mbox.h>
 
