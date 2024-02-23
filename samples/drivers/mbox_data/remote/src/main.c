@@ -15,9 +15,6 @@ static K_SEM_DEFINE(g_mbox_data_rx_sem, 0, 1);
 static uint32_t g_mbox_received_data;
 static uint32_t g_mbox_received_channel;
 
-#define TX_ID (2)
-#define RX_ID (3)
-
 static void callback(const struct device *dev, uint32_t channel, void *user_data,
 		     struct mbox_msg *data)
 {
@@ -29,20 +26,14 @@ static void callback(const struct device *dev, uint32_t channel, void *user_data
 
 int main(void)
 {
-	struct mbox_channel tx_channel;
-	struct mbox_channel rx_channel;
-	const struct device *dev;
+	const struct mbox_channel tx_channel = MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), tx);
+	const struct mbox_channel rx_channel = MBOX_DT_CHANNEL_GET(DT_PATH(mbox_consumer), rx);
 	struct mbox_msg msg = {0};
 	uint32_t message = 0;
 
 	printk("mbox_data Server demo started\n");
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(mbox));
-
-	mbox_init_channel(&tx_channel, dev, TX_ID);
-	mbox_init_channel(&rx_channel, dev, RX_ID);
-
-	const int max_transfer_size_bytes = mbox_mtu_get(dev);
+	const int max_transfer_size_bytes = mbox_mtu_get(tx_channel.dev);
 	/* Sample currently supports only transfer size up to 4 bytes */
 	if ((max_transfer_size_bytes <= 0) || (max_transfer_size_bytes > 4)) {
 		printk("mbox_mtu_get() error\n");
