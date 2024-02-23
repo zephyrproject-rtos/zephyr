@@ -10,6 +10,12 @@ if SOC_VENDOR_SILABS
 
 rsource "*/*/Kconfig"
 
+config SOC_GECKO_SDID
+	int
+	help
+	  Gecko SDK sometime refere to the chipset using the internal ID. This
+	  entry reflects this ID.
+
 config SOC_GECKO_BURTC
 	bool
 	help
