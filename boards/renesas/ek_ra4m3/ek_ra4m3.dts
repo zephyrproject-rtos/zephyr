@@ -7,16 +7,18 @@
 /dts-v1/;
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 #include "ek_ra4m3_common.dtsi"
 
 / {
-	model = "Renesas ek-ra4m3 board";
+	model = "Renesas EK-RA4M3 board";
 
 	chosen {
 		zephyr,sram = &sram0;
-                zephyr,flash = &flash0;
-                zephyr,code-partition = &code_partition;
-        };
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
 
 	leds {
 		compatible = "gpio-leds";
@@ -32,14 +34,32 @@
 			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
 			label = "LED3 (Red)";
 		};
-        };
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&ioport0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&ioport0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
 
 	aliases {
 		led0 = &led_0;
+		led1 = &led_1;
 		led-blue = &led_0;
 		led-green = &led_1;
 		led-red = &led_2;
-        };
+		sw0 = &button0;
+		sw1 = &button1;
+	};
 };
 
 &flash0 {
@@ -52,11 +72,15 @@
 			label = "code";
 			reg = <0x00000000 0x4C000>;
 			read-only;
-                };
-        };
+		};
+	};
 };
 
 &fcu {
+	status = "okay";
+};
+
+&ioport0 {
 	status = "okay";
 };
 
