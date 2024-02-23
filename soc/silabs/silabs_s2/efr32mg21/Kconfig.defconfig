@@ -10,6 +10,8 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 61
 
-rsource "Kconfig.defconfig.efr32mg21"
+config GPIO_GECKO
+	default y
+	depends on GPIO || LOG_BACKEND_SWO
 
 endif # SOC_SERIES_EFR32MG21
