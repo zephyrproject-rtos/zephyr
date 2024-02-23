@@ -9,6 +9,30 @@ tests:
     min_flash: 40
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
-      DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
+      - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
     platform_allow:
       - b_u585i_iot02a
+  drivers.adc.dma_st_stm32:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-dma-stm32.conf"
+    depends_on:
+      - adc
+      - dma
+    min_flash: 40
+    platform_allow:
+      - nucleo_f401re
+      - nucleo_h743zi
+      - nucleo_l476rg
+      - nucleo_u575zi_q
+  drivers.adc.dma_nxp_kinetis:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-dma-kinetis.conf"
+    depends_on:
+      - adc
+      - dma
+    min_flash: 40
+    platform_allow:
+      - frdm_k64f
+      - frdm_k82f
+    integration_platforms:
+      - frdm_k82f
