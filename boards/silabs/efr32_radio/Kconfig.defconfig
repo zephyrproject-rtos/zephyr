@@ -25,7 +25,7 @@ config LOG_BACKEND_SWO_FREQ_HZ
 if SOC_GECKO_USE_RAIL
 
 config FPU
-	default n if SOC_GECKO_SERIES1
+	default n if SOC_FAMILY_SILABS_S1
 	default y
 
 endif # SOC_GECKO_USE_RAIL
