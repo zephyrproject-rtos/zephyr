@@ -622,7 +622,6 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 
 /**
  * @brief Expect that @a a equals @a b, otherwise mark test as failed but continue its execution.
- * expectation fails, the test will be marked as "skipped".
  *
  * @param a Value to compare
  * @param b Value to compare
