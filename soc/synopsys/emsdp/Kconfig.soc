@@ -50,7 +50,7 @@ config SOC_SERIES
 	default "emsdp" if SOC_ARC_EMSDP
 
 config SOC
-	default "emsdp_em4d" if SOC_EMSDP_EM4
+	default "emsdp_em4" if SOC_EMSDP_EM4
 	default "emsdp_em5d" if SOC_EMSDP_EM5D
 	default "emsdp_em6" if SOC_EMSDP_EM6
 	default "emsdp_em7d" if SOC_EMSDP_EM7D
