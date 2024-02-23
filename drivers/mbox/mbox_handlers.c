@@ -7,11 +7,11 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/mbox.h>
 
-static inline int z_vrfy_mbox_send(const struct mbox_channel *channel,
+static inline int z_vrfy_mbox_send(const struct device *dev,
+				   mbox_channel_id_t channel_id,
 				   const struct mbox_msg *msg)
 {
-	K_OOPS(K_SYSCALL_MEMORY_READ(channel, sizeof(struct mbox_channel)));
-	K_OOPS(K_SYSCALL_DRIVER_MBOX(channel->dev, send));
+	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, send));
 	K_OOPS(K_SYSCALL_MEMORY_READ(msg, sizeof(struct mbox_msg)));
 	K_OOPS(K_SYSCALL_MEMORY_READ(msg->data, msg->size));
 
@@ -35,11 +35,12 @@ static inline uint32_t z_vrfy_mbox_max_channels_get(const struct device *dev)
 }
 #include <syscalls/mbox_max_channels_get_mrsh.c>
 
-static inline int z_vrfy_mbox_set_enabled(const struct mbox_channel *channel, bool enable)
+static inline int z_vrfy_mbox_set_enabled(const struct device *dev,
+					  mbox_channel_id_t channel_id,
+					  bool enabled)
 {
-	K_OOPS(K_SYSCALL_MEMORY_READ(channel, sizeof(struct mbox_channel)));
-	K_OOPS(K_SYSCALL_DRIVER_MBOX(channel->dev, set_enabled));
+	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, set_enabled));
 
-	return z_impl_mbox_set_enabled(channel, enable);
+	return z_impl_mbox_set_enabled(channel_id, enabled);
 }
 #include <syscalls/mbox_set_enabled_mrsh.c>
