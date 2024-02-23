@@ -1498,7 +1498,7 @@ struct net_if_mcast_monitor {
  *
  * @param mon Monitor handle. This is a pointer to a monitor storage structure
  * which should be allocated by caller, but does not need to be initialized.
- * @param iface Network interface
+ * @param iface Network interface or NULL for all interfaces
  * @param cb Monitor callback
  */
 void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
