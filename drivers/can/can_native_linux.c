@@ -240,7 +240,7 @@ static void can_native_linux_remove_rx_filter(const struct device *dev, int filt
 	struct can_native_linux_data *data = dev->data;
 
 	if (filter_id < 0 || filter_id >= ARRAY_SIZE(data->filters)) {
-		LOG_ERR("filter ID %d out of bounds");
+		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
