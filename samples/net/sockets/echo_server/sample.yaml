@@ -133,3 +133,8 @@ tests:
       - qemu_x86_64
     integration_platforms:
       - qemu_x86
+  sample.net.sockets.echo_server.nsos:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - OVERLAY_CONFIG="overlay-nsos.conf"
