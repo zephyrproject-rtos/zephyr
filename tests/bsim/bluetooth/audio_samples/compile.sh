@@ -13,7 +13,10 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
   app=samples/bluetooth/unicast_audio_server sysbuild=1 compile
-  app=samples/bluetooth/broadcast_audio_source sysbuild=1 compile
+  app=samples/bluetooth/broadcast_audio_source conf_overlay=overlay-sequential.conf \
+    sysbuild=1 compile
+  app=samples/bluetooth/broadcast_audio_source conf_overlay=overlay-interleaved.conf \
+    sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/unicast_audio_client sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/broadcast_audio_sink sysbuild=1 \
     conf_file=${ZEPHYR_BASE}/samples/bluetooth/broadcast_audio_sink/prj.conf \
@@ -21,8 +24,12 @@ if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
 else
   app=samples/bluetooth/unicast_audio_server conf_overlay=overlay-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
-  app=samples/bluetooth/broadcast_audio_source conf_overlay=overlay-bt_ll_sw_split.conf \
-    exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
+  app=samples/bluetooth/broadcast_audio_source \
+    conf_overlay='overlay-bt_ll_sw_split.conf;overlay-sequential.conf' \
+    exe_name=bs_${BOARD_TS}_${app}_prj_conf_overlay-sequential_conf sysbuild=1 compile
+  app=samples/bluetooth/broadcast_audio_source \
+    conf_overlay='overlay-bt_ll_sw_split.conf;overlay-interleaved.conf' \
+    exe_name=bs_${BOARD_TS}_${app}_prj_conf_overlay-interleaved_conf sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/unicast_audio_client \
     conf_overlay=${ZEPHYR_BASE}/samples/bluetooth/unicast_audio_client/overlay-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
