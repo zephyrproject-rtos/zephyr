@@ -6,11 +6,7 @@
 / {
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&cpuapp_bellboard 0>;
-		mbox-names = "rx";
+		mboxes = <&mbox 0>, <&mbox 1>;
+		mbox-names = "tx", "rx";
 	};
-};
-
-&cpuapp_bellboard {
-	status = "okay";
 };
