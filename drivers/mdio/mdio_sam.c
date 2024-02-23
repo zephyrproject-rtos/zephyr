@@ -21,7 +21,7 @@
 LOG_MODULE_REGISTER(mdio_sam, CONFIG_MDIO_LOG_LEVEL);
 
 /* GMAC */
-#ifdef CONFIG_SOC_FAMILY_SAM0
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #define GMAC_MAN        MAN.reg
 #define GMAC_NSR        NSR.reg
 #define GMAC_NCR        NCR.reg
@@ -34,7 +34,7 @@ struct mdio_sam_dev_data {
 struct mdio_sam_dev_config {
 	Gmac * const regs;
 	const struct pinctrl_dev_config *pcfg;
-#ifdef CONFIG_SOC_FAMILY_SAM
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	const struct atmel_sam_pmc_config clock_cfg;
 #endif
 };
@@ -144,7 +144,7 @@ static int mdio_sam_initialize(const struct device *dev)
 
 	k_sem_init(&data->sem, 1, 1);
 
-#ifdef CONFIG_SOC_FAMILY_SAM
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	/* Enable GMAC module's clock */
 	(void) clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t) &cfg->clock_cfg);
 #else
@@ -168,7 +168,7 @@ static const struct mdio_driver_api mdio_sam_driver_api = {
 };
 
 #define MDIO_SAM_CLOCK(n)						\
-	COND_CODE_1(CONFIG_SOC_FAMILY_SAM,				\
+	COND_CODE_1(CONFIG_SOC_FAMILY_ATMEL_SAM,			\
 		(.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),), ()	\
 	)
 
