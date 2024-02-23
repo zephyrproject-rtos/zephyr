@@ -1046,6 +1046,18 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable);
 int net_eth_txinjection_mode(struct net_if *iface, bool enable);
 
 /**
+ * @brief Set or unset HW filtering for MAC address @p mac.
+ *
+ * @param iface Network interface
+ * @param mac Pointer to an ethernet MAC address
+ * @param type Filter type, either source or destination
+ * @param enable Set (true) or unset (false)
+ *
+ * @return 0 if filter set or unset was successful, <0 otherwise.
+ */
+int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
+		       enum ethernet_filter_type type, bool enable);
+/**
  * @brief Return PTP clock that is tied to this ethernet network interface.
  *
  * @param iface Network interface

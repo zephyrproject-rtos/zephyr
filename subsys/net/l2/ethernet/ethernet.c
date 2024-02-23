@@ -1215,6 +1215,32 @@ int net_eth_txinjection_mode(struct net_if *iface, bool enable)
 			&params, sizeof(struct ethernet_req_params));
 }
 
+int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
+		       enum ethernet_filter_type type, bool enable)
+{
+#ifdef CONFIG_NET_L2_ETHERNET_MGMT
+	struct ethernet_req_params params;
+
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
+		return -ENOTSUP;
+	}
+
+	memcpy(&params.filter.mac_address, mac, sizeof(struct net_eth_addr));
+	params.filter.type = type;
+	params.filter.set = enable;
+
+	return net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_FILTER, iface, &params,
+			sizeof(struct ethernet_req_params));
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(mac);
+	ARG_UNUSED(type);
+	ARG_UNUSED(enable);
+
+	return -ENOTSUP;
+#endif
+}
+
 void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);

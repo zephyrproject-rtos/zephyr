@@ -54,6 +54,7 @@ enum net_request_ethernet_cmd {
 	NET_REQUEST_ETHERNET_CMD_SET_T1S_PARAM,
 	NET_REQUEST_ETHERNET_CMD_SET_TXINJECTION_MODE,
 	NET_REQUEST_ETHERNET_CMD_GET_TXINJECTION_MODE,
+	NET_REQUEST_ETHERNET_CMD_SET_MAC_FILTER,
 };
 
 #define NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION			\
@@ -146,6 +147,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_TXINJECTION_MODE);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_TXINJECTION_MODE);
 
+#define NET_REQUEST_ETHERNET_SET_MAC_FILTER				\
+	(_NET_ETHERNET_BASE | NET_REQUEST_ETHERNET_CMD_SET_MAC_FILTER)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_FILTER);
+
 struct net_eth_addr;
 struct ethernet_qav_param;
 struct ethernet_qbv_param;
@@ -172,6 +178,8 @@ struct ethernet_req_params {
 		struct ethernet_qbu_param qbu_param;
 		struct ethernet_txtime_param txtime_param;
 		struct ethernet_t1s_param t1s_param;
+
+		struct ethernet_filter filter;
 
 		int priority_queues_num;
 		int ports_num;
