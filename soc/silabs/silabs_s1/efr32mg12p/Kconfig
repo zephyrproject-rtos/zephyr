@@ -19,4 +19,3 @@ config SOC_SERIES_EFR32MG12P
 	select SOC_GECKO_GPIO
 	select SOC_GECKO_TRNG
 	select HAS_PM
-	select SOC_GECKO_SERIES1
