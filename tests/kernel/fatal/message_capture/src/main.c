@@ -6,10 +6,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <ksched.h>
 
 static volatile int expected_reason = -1;
 
-void z_thread_essential_clear(void);
+void z_thread_essential_clear(struct k_thread *thread);
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
@@ -85,7 +86,7 @@ int main(void)
 	 * panic and not an oops).  Set the thread non-essential as a
 	 * workaround.
 	 */
-	z_thread_essential_clear();
+	z_thread_essential_clear(_current);
 
 	test_message_capture();
 	return 0;
