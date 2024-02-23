@@ -12,6 +12,7 @@ config NUM_IRQS
 config PM
 	select COUNTER
 
-rsource "Kconfig.defconfig.efr32bg27"
+config GPIO_GECKO
+	default y
 
 endif # SOC_SERIES_EFR32BG27
