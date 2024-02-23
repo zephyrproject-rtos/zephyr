@@ -46,7 +46,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52dk_nrf52832 board configuration supports the following
+The ``nrf52dk/nrf52832`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -413,7 +413,7 @@ nRF52805 emulation on nRF52 DK
 Overview
 ********
 
-The nrf52dk_nrf52805 board is a modified version of the :ref:`nrf52dk_nrf52832`
+The ``nrf52dk/nrf52805`` board is a modified version of the :ref:`nrf52dk_nrf52832`
 that enforces the limitations imposed by the nRF52805 IC, which is a
 cost-reduced variant of the original nRF52832. Since Nordic does not offer a
 development kit for the nRF52805, you can use this board to develop for this
@@ -437,7 +437,7 @@ nRF52810 emulation on nRF52 DK
 Overview
 ********
 
-The nrf52dk_nrf52810 board is a modified version of the :ref:`nrf52dk_nrf52832`
+The ``nrf52dk/nrf52810`` board is a modified version of the :ref:`nrf52dk_nrf52832`
 that enforces the limitations imposed by the nRF52810 IC, which is a
 cost-reduced variant of the original nRF52832. Since Nordic does not offer a
 development kit for the nRF52810 you can use this board to develop for this

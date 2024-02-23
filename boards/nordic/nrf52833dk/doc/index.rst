@@ -41,7 +41,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52833dk_nrf52833 board configuration supports the following
+The ``nrf52833dk/nrf52833`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -106,7 +106,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52833dk_nrf52833`` board configuration can be built,
+Applications for the ``nrf52833dk/nrf52833`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
 
@@ -134,7 +134,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52833dk_nrf52833
+   :board: nrf52833dk/nrf52833
    :goals: build flash
 
 Debugging
@@ -224,7 +224,7 @@ nRF52820 emulation on nRF52833 DK
 Overview
 ********
 
-The nrf52833dk_nrf52820 board is a modified version of the
+The ``nrf52833dk/nrf52820`` board is a modified version of the
 :ref:`nrf52833dk_nrf52833` that enforces the limitations imposed by the nRF52820
 IC, which is a variant of the original nRF52833. Since Nordic does not offer a
 development kit for the nRF52820 you can use this board to develop for this IC
