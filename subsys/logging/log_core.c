@@ -23,6 +23,10 @@
 #include <zephyr/logging/log_output_custom.h>
 #include <zephyr/linker/utils.h>
 
+#ifdef CONFIG_LOG_TIMESTAMP_USE_REALTIME
+#include <zephyr/posix/time.h>
+#endif
+
 LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_PROCESS_THREAD_SLEEP_MS
@@ -221,6 +225,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 				   fmt, ap);
 }
 
+#ifndef CONFIG_LOG_TIMESTAMP_USE_REALTIME
 static log_timestamp_t default_get_timestamp(void)
 {
 	return IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
@@ -232,6 +237,16 @@ static log_timestamp_t default_lf_get_timestamp(void)
 	return IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
 		k_uptime_get() : k_uptime_get_32();
 }
+#else
+static log_timestamp_t default_rt_get_timestamp(void)
+{
+	struct timespec tspec;
+
+	clock_gettime(CLOCK_REALTIME, &tspec);
+
+	return ((uint64_t)tspec.tv_sec * MSEC_PER_SEC) + (tspec.tv_nsec / NSEC_PER_MSEC);
+}
+#endif /* CONFIG_LOG_TIMESTAMP_USE_REALTIME */
 
 void log_core_init(void)
 {
@@ -252,6 +267,9 @@ void log_core_init(void)
 	}
 
 	/* Set default timestamp. */
+#ifdef CONFIG_LOG_TIMESTAMP_USE_REALTIME
+	log_set_timestamp_func(default_rt_get_timestamp, 1000U);
+#else
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
 		log_set_timestamp_func(default_lf_get_timestamp, 1000U);
 	} else {
@@ -259,6 +277,7 @@ void log_core_init(void)
 			CONFIG_SYS_CLOCK_TICKS_PER_SEC : sys_clock_hw_cycles_per_sec();
 		log_set_timestamp_func(default_get_timestamp, freq);
 	}
+#endif /* CONFIG_LOG_TIMESTAMP_USE_REALTIME */
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
 		z_log_msg_init();
