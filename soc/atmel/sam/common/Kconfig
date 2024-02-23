@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
+if SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
 
 menu "Clocks"
 
@@ -93,4 +93,4 @@ config SOC_ATMEL_SAM_DISABLE_ERASE_PIN
 	  option will switch the pin to general IO mode giving control of the
 	  pin to the GPIO module.
 
-endif # SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
+endif # SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L

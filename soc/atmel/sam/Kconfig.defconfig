@@ -4,7 +4,7 @@
 # Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_SAM
+if SOC_FAMILY_ATMEL_SAM
 
 rsource "*/Kconfig.defconfig"
 
@@ -23,4 +23,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config WATCHDOG
 	default y
 
-endif # SOC_FAMILY_SAM
+endif # SOC_FAMILY_ATMEL_SAM
