@@ -578,6 +578,7 @@ static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_pa
 				return false;
 			}
 
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 			CHECKIF(stream_param->data == NULL && stream_param->data_len != 0) {
 				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data is "
 					"NULL with len %zu",
@@ -585,12 +586,19 @@ static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_pa
 				return false;
 			}
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 			CHECKIF(stream_param->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
 				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data_len too "
 					"large: %zu > %d",
 					i, j, stream_param->data_len,
 					CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
+				return false;
+			}
+
+			CHECKIF(subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+				!bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
+				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data not valid "
+					"LTV",
+					i, j);
 				return false;
 			}
 		}
