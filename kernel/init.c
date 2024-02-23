@@ -23,6 +23,7 @@
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <ksched.h>
+#include <kthread.h>
 #include <string.h>
 #include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
@@ -58,6 +59,57 @@ struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
 					  CONFIG_MP_MAX_NUM_CPUS,
 					  CONFIG_IDLE_STACK_SIZE);
+
+static void z_init_static_threads(void)
+{
+	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {
+		z_setup_new_thread(
+			thread_data->init_thread,
+			thread_data->init_stack,
+			thread_data->init_stack_size,
+			thread_data->init_entry,
+			thread_data->init_p1,
+			thread_data->init_p2,
+			thread_data->init_p3,
+			thread_data->init_prio,
+			thread_data->init_options,
+			thread_data->init_name);
+
+		thread_data->init_thread->init_data = thread_data;
+	}
+
+#ifdef CONFIG_USERSPACE
+	STRUCT_SECTION_FOREACH(k_object_assignment, pos) {
+		for (int i = 0; pos->objects[i] != NULL; i++) {
+			k_object_access_grant(pos->objects[i],
+					      pos->thread);
+		}
+	}
+#endif
+
+	/*
+	 * Non-legacy static threads may be started immediately or
+	 * after a previously specified delay. Even though the
+	 * scheduler is locked, ticks can still be delivered and
+	 * processed. Take a sched lock to prevent them from running
+	 * until they are all started.
+	 *
+	 * Note that static threads defined using the legacy API have a
+	 * delay of K_FOREVER.
+	 */
+	k_sched_lock();
+	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {
+		k_timeout_t init_delay = Z_THREAD_INIT_DELAY(thread_data);
+
+		if (!K_TIMEOUT_EQ(init_delay, K_FOREVER)) {
+			thread_schedule_new(thread_data->init_thread,
+					    init_delay);
+		}
+	}
+	k_sched_unlock();
+}
+#else
+#define z_init_static_threads() do { } while (false)
 #endif /* CONFIG_MULTITHREADING */
 
 extern const struct init_entry __init_start[];
@@ -311,6 +363,7 @@ static void z_sys_init_run_level(enum init_level level)
 }
 
 extern void boot_banner(void);
+
 
 /**
  * @brief Mainline for kernel's background thread
