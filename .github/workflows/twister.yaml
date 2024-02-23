@@ -137,6 +137,7 @@ jobs:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
+      CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
