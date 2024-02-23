@@ -1,0 +1,14 @@
+# Private config options for connectivity check sample app
+
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking connectivity check sample application"
+
+config NET_SAMPLE_ONLINE_COUNT
+	int "How many online -> offline checks to have"
+	default 1
+	help
+	  The sample will quit after this many online->offline checks.
+
+source "Kconfig.zephyr"

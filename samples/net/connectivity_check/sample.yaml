@@ -1,0 +1,14 @@
+common:
+  tags:
+    - net
+    - http
+    - conn_mgr
+    - online_check
+  min_ram: 32
+  depends_on: netif
+sample:
+  description: Online connectivity check sample
+  name: connectivity_check
+tests:
+  sample.net.connectivity_check:
+    harness: net
