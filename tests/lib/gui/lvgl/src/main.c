@@ -71,8 +71,6 @@ ZTEST(lvgl_screen, test_add_delete_screen)
 
 	lv_scr_load(new_screen);
 
-	lv_task_handler();
-
 	lv_obj_t *act_screen = lv_scr_act();
 
 	zassert_equal_ptr(act_screen, new_screen, "New screen not active");
@@ -80,8 +78,6 @@ ZTEST(lvgl_screen, test_add_delete_screen)
 	lv_scr_load(default_screen);
 
 	lv_obj_del(new_screen);
-
-	lv_task_handler();
 
 	act_screen = lv_scr_act();
 	zassert_equal_ptr(act_screen, default_screen,
@@ -96,8 +92,6 @@ ZTEST_USER(lvgl_fs, test_add_img)
 
 	lv_img_set_src(img, IMG_FILE_PATH);
 	lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
-
-	lv_task_handler();
 }
 
 

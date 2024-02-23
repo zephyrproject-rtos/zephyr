@@ -2,35 +2,88 @@ common:
   tags:
     - display
     - gui
-  platform_allow:
-    - native_posix/native/64
-    - native_sim/native/64
-    - native_sim
-  integration_platforms:
-    - native_sim
 tests:
-  libraries.gui.lvgl: {}
+  libraries.gui.lvgl:
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.dynamic.heap.libc:
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y
       - CONFIG_LV_Z_BUFFER_ALLOC_DYNAMIC=y
       - CONFIG_LV_Z_MEM_POOL_HEAP_LIB_C=y
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.dynamic.pool.sys_heap:
     extra_configs:
       - CONFIG_LV_Z_BUFFER_ALLOC_DYNAMIC=y
       - CONFIG_LV_Z_MEM_POOL_SYS_HEAP=y
       - CONFIG_LV_Z_MEM_POOL_SIZE=98304
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.16bit:
     extra_configs:
       - CONFIG_LV_COLOR_DEPTH_16=y
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.8bit:
     extra_configs:
       - CONFIG_LV_COLOR_DEPTH_8=y
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.mono:
     extra_configs:
       - CONFIG_LV_COLOR_DEPTH_1=y
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.16bit.swap:
     extra_configs:
       - CONFIG_LV_COLOR_DEPTH_16=y
       - CONFIG_LV_COLOR_16_SWAP=y
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
+  libraries.gui.lvgl.stm32h747i_disco_m7:
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_args:
+      - SHIELD=st_b_lcd40_dsi1_mb1166
+    tags:
+      - shield
+  libraries.gui.lvgl.stm32h747i_disco_m7_blk:
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_configs:
+      - CONFIG_SDMMC_STM32_HWFC=y
+      - CONFIG_NOCACHE_MEMORY=y
+      - CONFIG_DUMMY_DISPLAY=n
+    extra_args:
+      - SHIELD=st_b_lcd40_dsi1_mb1166
+      - OVERLAY_CONFIG=prj_blk.conf
+    tags:
+      - shield
