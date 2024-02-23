@@ -4,12 +4,12 @@
  */
 
 /** @file
- * @brief Silabs EXX32 MCU family General Purpose Input Output (GPIO)
+ * @brief Silabs MCU family General Purpose Input Output (GPIO)
  * module HAL driver.
  */
 
-#ifndef _SILABS_EXX32_SOC_GPIO_H_
-#define _SILABS_EXX32_SOC_GPIO_H_
+#ifndef _SILABS_COMMON_SOC_GPIO_H_
+#define _SILABS_COMMON_SOC_GPIO_H_
 
 #include <soc.h>
 #include <em_gpio.h>
@@ -29,4 +29,4 @@ struct soc_gpio_pin {
 }
 #endif
 
-#endif /* _SILABS_EXX32_SOC_GPIO_H_ */
+#endif /* _SILABS_COMMON_SOC_GPIO_H_ */
