@@ -114,6 +114,28 @@ static void dma_mcux_lpc_irq_handler(const struct device *dev)
 #endif
 }
 
+#ifdef CONFIG_SOC_SERIES_RW6XX
+static inline void rw6xx_dma_addr_fixup(struct dma_block_config *block)
+{
+	/* RW6xx AHB design does not route DMA engine through FlexSPI CACHE.
+	 * Therefore, to use DMA from the FlexSPI space we must adjust the
+	 * source address to use the non cached FlexSPI region.
+	 * FlexSPI cached region is at 0x800_0000 (nonsecure) or 0x1800_0000
+	 * (secure). We move the address into non cached region, which is at
+	 * 0x4800_0000 or 0x5800_000.
+	 */
+	if (((block->source_address & 0xF8000000) == 0x18000000) ||
+	  ((block->source_address & 0xF8000000) == 0x8000000)) {
+		block->source_address = block->source_address + 0x40000000;
+	}
+	if (((block->dest_address & 0xF8000000) == 0x18000000) ||
+	  ((block->dest_address & 0xF8000000) == 0x8000000)) {
+		block->dest_address = block->dest_address + 0x40000000;
+	}
+
+}
+#endif
+
 static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 					   struct dma_block_config *block,
 					   uint8_t src_inc,
@@ -228,6 +250,9 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 					dest_inc,
 					MIN(local_block.block_size, max_xfer_bytes));
 
+#ifdef CONFIG_SOC_SERIES_RW6XX
+		rw6xx_dma_addr_fixup(&local_block);
+#endif
 		DMA_SetupDescriptor(data->curr_descriptor,
 				xfer_config,
 				(void *)local_block.source_address,
@@ -271,6 +296,9 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 					MIN(local_block.block_size, max_xfer_bytes));
 		/* Mark this as invalid */
 		xfer_config &= ~DMA_CHANNEL_XFERCFG_CFGVALID_MASK;
+#ifdef CONFIG_SOC_SERIES_RW6XX
+		rw6xx_dma_addr_fixup(&local_block);
+#endif
 		DMA_SetupDescriptor(data->curr_descriptor,
 				xfer_config,
 				(void *)local_block.source_address,
@@ -585,6 +613,10 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	/* DMA controller requires that the address be aligned to transfer size */
 	assert(block_config->source_address == ROUND_UP(block_config->source_address, width));
 	assert(block_config->dest_address == ROUND_UP(block_config->dest_address, width));
+
+#ifdef CONFIG_SOC_SERIES_RW6XX
+	rw6xx_dma_addr_fixup(block_config);
+#endif
 
 	DMA_SubmitChannelTransferParameter(p_handle,
 					xfer_config,
