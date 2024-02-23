@@ -190,7 +190,7 @@ config SOC_GECKO_DEV_INIT
 	  configures DPLLs and manages the Energy Management Unit.
 
 	  Disabling these services may negatively impact counter and timer
-	  routines in EXX32 series SoCs.
+	  routines in Silabs SoCs.
 
 config COUNTER_GECKO_STIMER
 	bool
