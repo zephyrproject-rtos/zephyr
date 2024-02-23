@@ -278,8 +278,8 @@ static int backend_init(const struct device *instance)
 
 #define DEFINE_BACKEND_DEVICE(i)						\
 	static const struct icmsg_config_t backend_config_##i = {		\
-		.mbox_tx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), tx),		\
-		.mbox_rx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), rx),		\
+		.mbox_tx = MBOX_DT_INST_CHANNEL_GET(i, tx),			\
+		.mbox_rx = MBOX_DT_INST_CHANNEL_GET(i, rx),			\
 	};									\
 										\
 	PBUF_DEFINE(tx_pb_##i,							\
