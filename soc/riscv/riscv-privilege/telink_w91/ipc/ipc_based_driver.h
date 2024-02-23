@@ -9,12 +9,14 @@
 
 #include "ipc_dispatcher.h"
 #include <zephyr/kernel.h>
+#include <string.h>
 
 enum ipc_dispatcher_id {
 	IPC_DISPATCHER_SYS                      = 0x0,
 	IPC_DISPATCHER_UART                     = 0x100,
 	IPC_DISPATCHER_GPIO                     = 0x200,
 	IPC_DISPATCHER_PWM                      = 0x300,
+	IPC_DISPATCHER_ENTROPY_TRNG             = 0x400,
 } __attribute__((__packed__));
 
 typedef void (*ipc_based_driver_unpack_t)(void *result, const uint8_t *data, size_t len);
@@ -42,10 +44,22 @@ do {                                                                           \
 	buff += sizeof(field);                                                     \
 } while (0)
 
+#define IPC_DISPATCHER_PACK_ARRAY(buff, array, len)                            \
+do {                                                                           \
+	memcpy(buff, array, len);                                                  \
+	buff += len;                                                               \
+} while (0)
+
 #define IPC_DISPATCHER_UNPACK_FIELD(buff, field)                               \
 do {                                                                           \
 	memcpy(&field, buff, sizeof(field));                                       \
 	buff += sizeof(field);                                                     \
+} while (0)
+
+#define IPC_DISPATCHER_UNPACK_ARRAY(buff, array, len)                          \
+do {                                                                           \
+	memcpy(array, buff, len);                                                  \
+	buff += len;                                                               \
 } while (0)
 
 /* Macros for making ipc dispatcher id */

@@ -101,9 +101,8 @@
 			riscv,ndev = <46>;
 		};
 
-		trng0: trng@80101800 {
+		trng0: trng0 {
 			compatible = "telink,w91-trng";
-			reg = <0x80101800 0x20>;
 			status = "disabled";
 		};
 
