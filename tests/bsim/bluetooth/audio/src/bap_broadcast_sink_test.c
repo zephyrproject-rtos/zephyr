@@ -37,10 +37,24 @@ static uint32_t requested_bis_sync;
 static struct bt_le_ext_adv *ext_adv;
 static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
 
+#define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
+#define SUPPORTED_MIN_OCTETS_PER_FRAME 30
+#define SUPPORTED_MAX_OCTETS_PER_FRAME 155
+#define SUPPORTED_MAX_FRAMES_PER_SDU   1
+
+/* We support 1 or 2 channels, so the maximum SDU size we support will be 2 times the maximum frame
+ * size per frame we support
+ */
+#define SUPPORTED_MAX_SDU_SIZE (2 * SUPPORTED_MAX_FRAMES_PER_SDU * SUPPORTED_MAX_OCTETS_PER_FRAME)
+
+BUILD_ASSERT(CONFIG_BT_ISO_RX_MTU >= SUPPORTED_MAX_SDU_SIZE);
+
+#define SUPPORTED_CONTEXTS (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA)
+
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-	BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
-	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
-	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY, SUPPORTED_CHAN_COUNTS,
+	SUPPORTED_MIN_OCTETS_PER_FRAME, SUPPORTED_MAX_OCTETS_PER_FRAME,
+	SUPPORTED_MAX_FRAMES_PER_SDU, SUPPORTED_CONTEXTS);
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
@@ -51,6 +65,122 @@ static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
  */
 static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
 static uint32_t bis_index_bitfield;
+
+static uint8_t count_bits(enum bt_audio_location chan_allocation)
+{
+	uint8_t cnt = 0U;
+
+	while (chan_allocation != 0) {
+		cnt += chan_allocation & 1U;
+		chan_allocation >>= 1;
+	}
+
+	return cnt;
+}
+
+static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	enum bt_audio_location chan_allocation;
+	uint8_t frames_blocks_per_sdu;
+	size_t min_sdu_size_required;
+	uint16_t octets_per_frame;
+	uint8_t chan_cnt;
+	int ret;
+
+	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
+	if (ret < 0) {
+		printk("Could not get subgroup codec_cfg: %d\n", ret);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_freq(&codec_cfg);
+	if (ret >= 0) {
+		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+
+		if (freq < 0) {
+			printk("Invalid subgroup frequency value: %d (%d)\n", ret, freq);
+
+			return false;
+		}
+	} else {
+		printk("Could not get subgroup frequency: %d\n", ret);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(&codec_cfg);
+	if (ret >= 0) {
+		const int frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+
+		if (frame_duration_us < 0) {
+			printk("Invalid subgroup frame duration value: %d (%d)\n", ret,
+			       frame_duration_us);
+
+			return false;
+		}
+	} else {
+		printk("Could not get subgroup frame duration: %d\n", ret);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation);
+	if (ret == 0) {
+		chan_cnt = count_bits(chan_allocation);
+	} else {
+		printk("Could not get subgroup channel allocation: %d\n", ret);
+		/* Channel allocation is an optional field, and omitting it implicitly means mono */
+		chan_cnt = 1U;
+	}
+
+	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+		printk("Unsupported channel count: %u\n", chan_cnt);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(&codec_cfg);
+	if (ret > 0) {
+		octets_per_frame = (uint16_t)ret;
+	} else {
+		printk("Could not get subgroup octets per frame: %d\n", ret);
+
+		return false;
+	}
+
+	if (!IN_RANGE(octets_per_frame, SUPPORTED_MIN_OCTETS_PER_FRAME,
+		      SUPPORTED_MAX_OCTETS_PER_FRAME)) {
+		printk("Unsupported octets per frame: %u\n", octets_per_frame);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, false);
+	if (ret > 0) {
+		frames_blocks_per_sdu = (uint8_t)ret;
+	} else {
+		printk("Could not get subgroup octets per frame: %d\n", ret);
+		/* Frame blocks per SDU is optional and is implicitly 1 */
+		frames_blocks_per_sdu = 1U;
+	}
+
+	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
+	 * them. The minimum SDU size required for this is X * Y * Z.
+	 */
+	min_sdu_size_required = chan_cnt * octets_per_frame * frames_blocks_per_sdu;
+	if (min_sdu_size_required > SUPPORTED_MAX_SDU_SIZE) {
+		printk("With %zu channels and %u octets per frame and %u frames per block, SDUs "
+		       "shall be at minimum %zu, we only support %d\n",
+		       chan_cnt, octets_per_frame, frames_blocks_per_sdu, min_sdu_size_required,
+		       SUPPORTED_MAX_SDU_SIZE);
+
+		return false;
+	}
+
+	return true;
+}
 
 static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
@@ -73,6 +203,11 @@ static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *
 
 	metadata_size = (size_t)ret;
 	(void)memcpy(metadata, meta, metadata_size);
+
+	if (!valid_base_subgroup(subgroup)) {
+		printk("Invalid or unsupported subgroup\n");
+		return false;
+	}
 
 	return true;
 }
@@ -258,10 +393,115 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 	.bis_sync_req = bis_sync_req_cb,
 };
 
+static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
+{
+	struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	enum bt_audio_location chan_allocation;
+	uint8_t frames_blocks_per_sdu;
+	size_t min_sdu_size_required;
+	uint16_t octets_per_frame;
+	uint8_t chan_cnt;
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret >= 0) {
+		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+
+		if (freq < 0) {
+			FAIL("Invalid frequency value: %d (%d)\n", ret, freq);
+
+			return;
+		}
+	} else {
+		FAIL("Could not get frequency: %d\n", ret);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret >= 0) {
+		const int frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+
+		if (frame_duration_us < 0) {
+			FAIL("Invalid frame duration value: %d (%d)\n", ret, frame_duration_us);
+
+			return;
+		}
+	} else {
+		FAIL("Could not get frame duration: %d\n", ret);
+
+		return;
+	}
+
+	/* The broadcast source sets the channel allocation in the BIS to
+	 * BT_AUDIO_LOCATION_FRONT_LEFT
+	 */
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
+	if (ret == 0) {
+		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_LEFT) {
+			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);
+
+			return;
+		}
+
+		chan_cnt = count_bits(chan_allocation);
+	} else {
+		FAIL("Could not get subgroup channel allocation: %d\n", ret);
+
+		return;
+	}
+
+	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+		FAIL("Unsupported channel count: %u\n", chan_cnt);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	if (ret > 0) {
+		octets_per_frame = (uint16_t)ret;
+	} else {
+		FAIL("Could not get subgroup octets per frame: %d\n", ret);
+
+		return;
+	}
+
+	if (!IN_RANGE(octets_per_frame, SUPPORTED_MIN_OCTETS_PER_FRAME,
+		      SUPPORTED_MAX_OCTETS_PER_FRAME)) {
+		FAIL("Unsupported octets per frame: %u\n", octets_per_frame);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, false);
+	if (ret > 0) {
+		frames_blocks_per_sdu = (uint8_t)ret;
+	} else {
+		printk("Could not get octets per frame: %d\n", ret);
+		/* Frame blocks per SDU is optional and is implicitly 1 */
+		frames_blocks_per_sdu = 1U;
+	}
+
+	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
+	 * them. The minimum SDU size required for this is X * Y * Z.
+	 */
+	min_sdu_size_required = chan_cnt * octets_per_frame * frames_blocks_per_sdu;
+	if (min_sdu_size_required > stream->qos->sdu) {
+		FAIL("With %zu channels and %u octets per frame and %u frames per block, SDUs "
+		     "shall be at minimum %zu, but the stream has been configured for %u\n",
+		     chan_cnt, octets_per_frame, frames_blocks_per_sdu, min_sdu_size_required,
+		     stream->qos->sdu);
+
+		return;
+	}
+}
+
 static void started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_started);
+
+	validate_stream_codec_cfg(stream);
 }
 
 static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
