@@ -9,22 +9,8 @@ config TX_ENABLED
 	help
 	  Enable TX
 
-config TX_CHANNEL_ID
-	int "Channel ID for TX"
-	default 0
-	depends on TX_ENABLED
-	help
-	  Channel ID for TX
-
 config RX_ENABLED
 	bool "RX enabled"
 	default y
 	help
 	  Enable RX
-
-config RX_CHANNEL_ID
-	int "Channel ID for RX"
-	depends on RX_ENABLED
-	default 1
-	help
-	  Channel ID for RX

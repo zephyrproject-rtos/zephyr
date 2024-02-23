@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-mbox: &cpuppr_vevif {
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&cpuppr_vevif 4>;
+		mbox-names = "rx";
+	};
+};
+
+&cpuppr_vevif {
 	status = "okay";
 };
