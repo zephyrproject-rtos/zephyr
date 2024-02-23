@@ -398,6 +398,17 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	struct net_pkt *ack_pkt;
 	int err = 0;
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	if (nrf5_radio->ack_frame.time == NRF_802154_NO_TIMESTAMP) {
+		/* Ack timestamp is invalid and cannot be used by the upper layer.
+		 * Report the transmission as failed as if the Ack was not received at all.
+		 */
+		LOG_WRN("Invalid ACK timestamp.");
+		err = -ENOMSG;
+		goto free_nrf_ack;
+	}
+#endif
+
 	if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
 		ack_len = nrf5_radio->ack_frame.psdu[0];
 	} else {
@@ -1140,8 +1151,14 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.ack_frame.time = nrf_802154_timestamp_end_to_phr_convert(
-			metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
+		if (metadata->data.transmitted.time == NRF_802154_NO_TIMESTAMP) {
+			/* Ack timestamp is invalid. Keep this value to detect it when handling Ack
+			 */
+			nrf5_data.ack_frame.time = NRF_802154_NO_TIMESTAMP;
+		} else {
+			nrf5_data.ack_frame.time = nrf_802154_timestamp_end_to_phr_convert(
+				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
+		}
 #endif
 	}
 
