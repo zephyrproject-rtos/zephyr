@@ -115,7 +115,7 @@ void pipe_test(void)
 			PRINT_STRING("|                      "
 				 "non-matching sizes (1_TO_N) to lower priority"
 						 "          |\n");
-			test_thread_priority_set(k_current_get(), TaskPrio - 2);
+			k_thread_priority_set(k_current_get(), TaskPrio - 2);
 		}
 		PRINT_STRING(dashline);
 		PRINT_1_TO_N_HEADER();
@@ -136,7 +136,7 @@ void pipe_test(void)
 		PRINT_1_TO_N();
 	}
 		PRINT_STRING(dashline);
-		test_thread_priority_set(k_current_get(), TaskPrio);
+		k_thread_priority_set(k_current_get(), TaskPrio);
 	}
 }
 

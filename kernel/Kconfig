@@ -208,6 +208,13 @@ config THREAD_USERSPACE_LOCAL_DATA
 	depends on USERSPACE
 	default y if ERRNO && !ERRNO_IN_TLS && !LIBC_ERRNO
 
+config USERSPACE_THREAD_MAY_RAISE_PRIORITY
+	bool "Thread can raise own priority"
+	depends on USERSPACE
+	depends on TEST # This should only be enabled by tests.
+	help
+	  Thread can raise its own priority in userspace mode.
+
 config DYNAMIC_THREAD
 	bool "Support for dynamic threads [EXPERIMENTAL]"
 	select EXPERIMENTAL
