@@ -987,7 +987,7 @@ void z_unpend_thread(struct k_thread *thread)
 /* Priority set utility that does no rescheduling, it just changes the
  * run queue state, returning true if a reschedule is needed later.
  */
-bool z_set_prio(struct k_thread *thread, int prio)
+bool z_thread_prio_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
 
@@ -1276,7 +1276,7 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 	Z_ASSERT_VALID_PRIO(prio, NULL);
 	__ASSERT(!arch_is_in_isr(), "");
 
-	bool need_sched = z_set_prio((struct k_thread *)thread, prio);
+	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
 
 	flag_ipi();
 	if (need_sched && _current->base.sched_locked == 0U) {
