@@ -1013,17 +1013,6 @@ bool z_set_prio(struct k_thread *thread, int prio)
 	return need_sched;
 }
 
-void z_thread_priority_set(struct k_thread *thread, int prio)
-{
-	bool need_sched = z_set_prio(thread, prio);
-
-	flag_ipi();
-
-	if (need_sched && _current->base.sched_locked == 0U) {
-		z_reschedule_unlocked();
-	}
-}
-
 static inline bool resched(uint32_t key)
 {
 #ifdef CONFIG_SMP
@@ -1286,9 +1275,12 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 	Z_ASSERT_VALID_PRIO(prio, NULL);
 	__ASSERT(!arch_is_in_isr(), "");
 
-	struct k_thread *th = (struct k_thread *)thread;
+	bool need_sched = z_set_prio((struct k_thread *)thread, prio);
 
-	z_thread_priority_set(th, prio);
+	flag_ipi();
+	if (need_sched && _current->base.sched_locked == 0U) {
+		z_reschedule_unlocked();
+	}
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1297,10 +1289,11 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 				    "invalid thread priority %d", prio));
+#ifndef CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY
 	K_OOPS(K_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
 				    "thread priority may only be downgraded (%d < %d)",
 				    prio, thread->base.prio));
-
+#endif
 	z_impl_k_thread_priority_set(thread, prio);
 }
 #include <syscalls/k_thread_priority_set_mrsh.c>
