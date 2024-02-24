@@ -1,4 +1,4 @@
-identifier: nxp_ls1046ardb_smp_4cores
+identifier: ls1046ardb/ls1046a/smp/4cores
 name: NXP LS1046ARDB SMP on four CPU Cores
 type: mcu
 arch: arm64
