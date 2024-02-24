@@ -145,19 +145,6 @@
 /* end of clock feasability check */
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
-
-#if defined(CONFIG_CPU_CORTEX_M7)
-#if STM32_D1CPRE > 1
-/*
- * D1CPRE prescaler allows to set a HCLK frequency lower than SYSCLK frequency.
- * Though, zephyr doesn't make a difference today between these two clocks.
- * So, changing this prescaler is not allowed until it is made possible to
- * use them independently in zephyr clock subsystem.
- */
-#error "D1CPRE presacler can't be higher than 1"
-#endif
-#endif /* CONFIG_CPU_CORTEX_M7 */
-
 #if defined(CONFIG_CPU_CORTEX_M7)
 /* Offset to access bus clock registers from M7 (or only) core */
 #define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc))
