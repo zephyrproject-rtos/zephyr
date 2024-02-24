@@ -115,7 +115,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#if defined(CONFIG_SOC_MIMX93_A55) && defined(CONFIG_DAI_NXP_SAI)
+#if defined(CONFIG_SOC_MIMX9352_A55) && defined(CONFIG_DAI_NXP_SAI)
 	case IMX_CCM_SAI1_CLK:
 	case IMX_CCM_SAI2_CLK:
 	case IMX_CCM_SAI3_CLK:
@@ -144,7 +144,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	default:
 		return -EINVAL;
 	}
-#ifdef CONFIG_SOC_MIMX93_A55
+#ifdef CONFIG_SOC_MIMX9352_A55
 	*rate = CLOCK_GetIpFreq(clock_root);
 #else
 	*rate = CLOCK_GetRootClockFreq(clock_root);
