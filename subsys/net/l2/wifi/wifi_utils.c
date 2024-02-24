@@ -5,7 +5,7 @@
  */
 
 /** @file
- * @brief Utility functions to be used by the Wi-Fi subsytem.
+ * @brief Utility functions to be used by the Wi-Fi subsystem.
  */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
@@ -70,7 +70,7 @@ bool wifi_utils_validate_chan_5g(uint16_t chan)
 
 bool wifi_utils_validate_chan_6g(uint16_t chan)
 {
-	if (((chan >= 1) && (chan <= 233) && (!((chan - 1)%4))) ||
+	if (((chan >= 1) && (chan <= 233) && (!((chan - 1) % 4))) ||
 	    (chan == 2)) {
 		return true;
 	}
@@ -80,7 +80,7 @@ bool wifi_utils_validate_chan_6g(uint16_t chan)
 
 
 bool wifi_utils_validate_chan(uint8_t band,
-				     uint16_t chan)
+			      uint16_t chan)
 {
 	bool result = false;
 
