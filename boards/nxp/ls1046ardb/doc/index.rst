@@ -67,15 +67,15 @@ Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in the defconfig file for NON-SMP:
 
-        ``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_defconfig``
+    :zephyr_file:`boards/nxp/ls1046ardb/ls1046ardb_ls1046a_defconfig`
 
 Or for SMP running on all four CPU Cores:
 
-	``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_smp_4cores_defconfig``
+	:zephyr_file:`boards/nxp/ls1046ardb/ls1046ardb_ls1046a_smp_4cores_defconfig`
 
 Or for SMP running on 2 CPU Cores (Core2 and Core3):
 
-	``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_smp_2cores_defconfig``
+	:zephyr_file:`boards/nxp/ls1046ardb/ls1046ardb_ls1046a_smp_defconfig`
 
 There are two serial port on the board: uart1 and uart2, Zephyr is using
 uart2 as serial console.
@@ -91,7 +91,7 @@ kernel tests on LS1046A RDB board. For example, with the :zephyr:code-sample:`sy
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: nxp_ls1046ardb
+   :board: ls1046ardb
    :goals: build
 
 This will build an image with the synchronization sample app.
@@ -123,7 +123,7 @@ It will display the following console output:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: nxp_ls1046ardb_smp_4cores
+   :board: ls1046ardb/ls1046a/smp/4cores
    :goals: build
 
 This will build an image with the synchronization sample app.
@@ -151,7 +151,7 @@ It will display the following console output:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: nxp_ls1046ardb_smp_2cores
+   :board: ls1046ardb/ls1046a/smp
    :goals: build
 
 This will build an image with the synchronization sample app.
