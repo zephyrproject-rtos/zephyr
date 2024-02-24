@@ -404,10 +404,6 @@ static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
-	if (context.sh == NULL) {
-		return;
-	}
-
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_SCAN_RESULT:
 		handle_wifi_scan_result(cb);
