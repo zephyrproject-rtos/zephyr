@@ -139,9 +139,9 @@ Zephyr build. Output is structured by the domain subdirectories:
 
   build/
   ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
+  │  └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
   ├── mcuboot
   │    └── zephyr
   │       ├── zephyr.elf
@@ -173,7 +173,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: m5stickc_plus
+   :board: m5stickc_plus/esp32/procpu
    :goals: build
 
 The usual ``flash`` target will work with the ``m5stickc_plus`` board
@@ -182,7 +182,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: m5stickc_plus
+   :board: m5stickc_plus/esp32/procpu
    :goals: flash
 
 The default baud rate for the M5StickC PLUS is set to 1500000bps. If experiencing issues when flashing,
