@@ -35,3 +35,4 @@ tests:
     filter: dt_compat_enabled("adi,max32-w1")
     platform_allow:
       - max32655evkit/max32655/m4
+      - max32680evkit/max32680/m4
