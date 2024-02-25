@@ -1,4 +1,4 @@
-identifier: yd_esp32
+identifier: yd_esp32/esp32/procpu
 name: YD-ESP32
 type: mcu
 arch: xtensa
@@ -21,4 +21,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-vendor: espressif
+vendor: vcc-gnd
