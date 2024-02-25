@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "M5Stack AtomS3";
+	model = "M5Stack AtomS3 PROCPU";
 	compatible = "m5stack,atoms3";
 
 	chosen {
