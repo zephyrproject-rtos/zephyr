@@ -11,7 +11,7 @@
 #include "seeed_xiao_connector.dtsi"
 
 / {
-	model = "Seeed XIAO ESP32S3";
+	model = "Seeed Xiao ESP32S3 PROCPU";
 	compatible = "seeed,xiao-esp32s3";
 
 	chosen {
