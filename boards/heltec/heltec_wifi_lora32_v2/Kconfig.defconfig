@@ -3,12 +3,7 @@
 # Copyright (c) 2021 Instituto de Pesquisas Eldorado (eldorado.org.br)
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "heltec_wifi_lora32"
-	depends on BOARD_HELTEC_WIFI_LORA32
-
-config ENTROPY_GENERATOR
-	default y
+if BOARD_HELTEC_WIFI_LORA32_V2_ESP32_PROCPU
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -20,3 +15,12 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 choice BT_HCI_BUS_TYPE
 	default BT_ESP32 if BT
 endchoice
+
+endif # BOARD_HELTEC_WIFI_LORA32_V2_ESP32_PROCPU
+
+if BOARD_HELTEC_WIFI_LORA32_V2_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_HELTEC_WIFI_LORA_V2_ESP32_APPCPU
