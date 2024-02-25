@@ -9,7 +9,7 @@
 #include "kincony_kc868_a32-pinctrl.dtsi"
 
 / {
-	model = "Kincony KC868-A32";
+	model = "Kincony KC868_A32 PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {

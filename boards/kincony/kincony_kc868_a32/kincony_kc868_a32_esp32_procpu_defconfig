@@ -1,9 +1,6 @@
 # Copyright (c) Bartosz Bilas
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_BOARD_KINCONY_KC868_A32=y
-CONFIG_SOC_SERIES_ESP32=y
-
 CONFIG_MAIN_STACK_SIZE=2048
 
 CONFIG_CONSOLE=y
