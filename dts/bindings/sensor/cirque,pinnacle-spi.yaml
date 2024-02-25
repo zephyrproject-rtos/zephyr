@@ -1,0 +1,74 @@
+# Copyright (c) 2024 Ilia Kharin
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirque Pinnacle 1CA027 based device with SPI connection
+
+compatible: "cirque,pinnacle"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  data-ready-gpios:
+    type: phandle-array
+    description: |
+      Data Ready (DR) GPIO pin. The DR pin is connected to Pinncale HW_DR
+      which is active high when SW_DR or SW_CC are asserted. If connected
+      directly, the MCU pin should be configured as active low.
+
+  idle-packets-count:
+    type: int
+    default: 0
+    description: |
+      The number of empty packets where both X and Y are set to 0. They are
+      started to be sent when a finger presence is detected missing (no touch
+      detected) every 10 ms. They are stopped to be sent when a finger presence
+      it detected. An application can count these packets in order to detect
+      taps. When set to 0, no empty packets are sent. Supported values from 0
+      to 255.
+
+  clipping-enable:
+    type: boolean
+    description: |
+      Enable clipping of reported coordinates which are outside of the active
+      range.
+
+  active-range-x-min:
+    type: int
+    default: 128
+    description: |
+      The minimum X value which can be reported.
+
+  active-range-x-max:
+    type: int
+    default: 1920
+    description: |
+      The maximum X value which can be reported.
+
+  active-range-y-min:
+    type: int
+    default: 64
+    description: |
+      The minimum Y value which can be reported.
+
+  active-range-y-max:
+    type: int
+    default: 1472
+    description: |
+      The maximum Y value which can be reported.
+
+  scaling-enable:
+    type: boolean
+    description: |
+      Enable scaling of reported coordinates according to arbitrary resolutions
+      for X and Y axises. The scaling is assumed to be enabled when
+      the clipping is enabled.
+
+  scaling-x-resolution:
+    type: int
+    default: 1024
+    description: Resolution for the X axis.
+
+  scaling-y-resolution:
+    type: int
+    default: 1024
+    description: Resolution for the Y axis.

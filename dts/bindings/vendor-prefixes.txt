@@ -125,6 +125,7 @@ chunghwa	Chunghwa Picture Tubes Ltd.
 chuwi	Chuwi Innovation Ltd.
 ciaa	Computadora Industrial Abierta Argentina
 cirrus	Cirrus Logic, Inc.
+cirque	Cirque Corporation
 cisco	Cisco Systems, Inc.
 cloudengines	Cloud Engines, Inc.
 cnm	Chips&Media, Inc.

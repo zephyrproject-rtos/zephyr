@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Ilia Kharin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+	tm035035: spi-device@0 {
+		status = "okay";
+		compatible = "cirque,pinnacle";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		data-ready-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		idle-packets-count = <20>;
+		clipping-enable;
+		scaling-enable;
+	};
+};

@@ -140,12 +140,23 @@ enum sensor_channel {
 	/** Angular rotation, in degrees */
 	SENSOR_CHAN_ROTATION,
 
+	/** Absolute position on the X axis, in points. */
+	SENSOR_CHAN_POS_X,
+	/** Absolute position on the Y axis, in points. */
+	SENSOR_CHAN_POS_Y,
+	/** Absolute position on the Z axis, in points. */
+	SENSOR_CHAN_POS_Z,
+	/** Absolute position on the X, Y and Z axes, in points. */
+	SENSOR_CHAN_POS_XYZ,
+
 	/** Position change on the X axis, in points. */
 	SENSOR_CHAN_POS_DX,
 	/** Position change on the Y axis, in points. */
 	SENSOR_CHAN_POS_DY,
 	/** Position change on the Z axis, in points. */
 	SENSOR_CHAN_POS_DZ,
+	/** Position change on the X, Y and Z axes, in points. */
+	SENSOR_CHAN_POS_DXYZ,
 
 	/** Revolutions per minute, in RPM. */
 	SENSOR_CHAN_RPM,
@@ -896,9 +907,12 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
  *         @ref SENSOR_CHAN_MAGN_XYZ
  * @retval false otherwise
  */
-#define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
-	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
-	 (chan) == SENSOR_CHAN_MAGN_XYZ)
+#define SENSOR_CHANNEL_3_AXIS(chan)		\
+	((chan) == SENSOR_CHAN_ACCEL_XYZ	\
+	 || (chan) == SENSOR_CHAN_GYRO_XYZ	\
+	 || (chan) == SENSOR_CHAN_MAGN_XYZ	\
+	 || (chan) == SENSOR_CHAN_POS_XYZ	\
+	 || (chan) == SENSOR_CHAN_POS_DXYZ)	\
 
 /**
  * @brief Get the sensor's decoder API

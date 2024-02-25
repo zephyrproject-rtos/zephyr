@@ -1,0 +1,53 @@
+# Cirque Pinnacle 1CA027 touch controller based device configuration options
+#
+# Copyright (c) 2024 Ilia Kharin
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PINNACLE
+	bool "Cirque Pinnacle 1CA027 Touch Controller Based Device"
+	default y
+	select SPI
+	help
+	  Enable driver for 1CA027 SPI-based trackpad device.
+
+if PINNACLE
+
+choice PINNACLE_TRIGGER_MODE
+	prompt "Trigger mode"
+	default PINNACLE_TRIGGER_OWN_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config PINNACLE_TRIGGER_NONE
+	bool "No trigger"
+
+config PINNACLE_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select PINNACLE_TRIGGER
+
+config PINNACLE_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select PINNACLE_TRIGGER
+
+endchoice
+
+config PINNACLE_TRIGGER
+	bool
+
+config PINNACLE_THREAD_PRIORITY
+	int "Thread priority"
+	depends on PINNACLE_TRIGGER_OWN_THREAD && PINNACLE_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config PINNACLE_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on PINNACLE_TRIGGER_OWN_THREAD && PINNACLE_TRIGGER
+	default 512
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # PINNACLE
