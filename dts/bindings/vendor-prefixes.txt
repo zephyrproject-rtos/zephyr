@@ -474,6 +474,7 @@ phytec	PHYTEC Messtechnik GmbH
 picochip	Picochip Ltd
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
+pixart	PixArt Imaging Inc.
 pixcir	PIXCIR MICROELECTRONICS Co., Ltd
 plantower	Plantower Co., Ltd
 plathome	Plat'Home Co., Ltd.
