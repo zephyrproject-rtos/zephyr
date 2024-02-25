@@ -14,7 +14,7 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 
 / {
-	model = "heltec_wireless_stick_lite_v3";
+	model = "Heltec Wireless Stick Lite V3 PROCPU";
 	compatible = "espressif,esp32s3";
 
 	aliases {
