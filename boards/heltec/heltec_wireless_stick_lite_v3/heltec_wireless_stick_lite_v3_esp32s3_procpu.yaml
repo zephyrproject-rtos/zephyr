@@ -1,4 +1,4 @@
-identifier: heltec_wireless_stick_lite_v3
+identifier: heltec_wireless_stick_lite_v3/esp32s3/procpu
 name: Heltec Wireless Stick Lite (V3)
 type: mcu
 arch: xtensa
@@ -20,3 +20,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: heltec

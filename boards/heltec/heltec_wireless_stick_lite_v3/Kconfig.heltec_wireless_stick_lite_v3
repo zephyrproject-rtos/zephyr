@@ -4,10 +4,5 @@
 # Copyright (c) 2023 The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_HELTEC_WIRELESS_STICK_LITE
-	bool "Heltec Wireless Stick Lite (V3) Board"
-	depends on SOC_SERIES_ESP32S3
-
-choice SOC_PART_NUMBER
-	default SOC_ESP32S3_FN8
-endchoice
+config BOARD_HELTEC_WIRELESS_STICK_LITE_V3
+	select SOC_ESP32S3_FN8
