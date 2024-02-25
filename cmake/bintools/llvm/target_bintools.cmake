@@ -12,9 +12,6 @@
 #   elfconvert_flag_section_remove: --remove-section=
 #   elfconvert_flag_section_only  : --only-section=
 #   elfconvert_flag_section_rename: --rename-section;
-#   elfconvert_flag_gapfill       : --gap-fill;
-#                                   Note: The ';' will be transformed into an
-#                                   empty space when executed
 #   elfconvert_flag_srec_len      : --srec-len=
 #   elfconvert_flag_infile        : empty, objcopy doesn't take arguments for filenames
 #   elfconvert_flag_outfile       : empty, objcopy doesn't take arguments for filenames
@@ -41,11 +38,6 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_section_remove "--remove-s
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_only "--only-section=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_rename "--rename-section;")
 
-# Note, placing a ';' at the end results in the following param  to be a list,
-# and hence space separated.
-# Thus the command line argument becomes:
-# `--gap-file <value>` instead of `--gap-fill<value>` (The latter would result in an error)
-set_property(TARGET bintools PROPERTY elfconvert_flag_gapfill "--gap-fill;")
 set_property(TARGET bintools PROPERTY elfconvert_flag_srec_len "--srec-len=")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_infile "")

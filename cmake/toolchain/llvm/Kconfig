@@ -1,6 +1,11 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config TOOLCHAIN_LLVM
+	def_bool y
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	select BUILD_NO_GAP_FILL
+
 choice LLVM_LINKER
 	prompt "LLVM Linker"
 	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
