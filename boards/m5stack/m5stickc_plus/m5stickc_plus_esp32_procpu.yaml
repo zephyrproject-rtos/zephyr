@@ -1,4 +1,4 @@
-identifier: m5stickc_plus
+identifier: m5stickc_plus/esp32/procpu
 name: M5StickC PLUS
 type: mcu
 arch: xtensa
