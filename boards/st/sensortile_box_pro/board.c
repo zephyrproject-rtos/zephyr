@@ -11,7 +11,8 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/uart.h>
 
-#ifdef CONFIG_USB_DEVICE_STACK
+#if defined(CONFIG_CONSOLE) && defined(CONFIG_UART_CONSOLE)
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
 /*
  * Enable console on USB CDC_ACM
  */
@@ -29,4 +30,5 @@ static int sensortile_box_pro_usb_console_init(void)
 /* needs to be done at Application */
 SYS_INIT(sensortile_box_pro_usb_console_init, APPLICATION,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-#endif
+#endif /* DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart) */
+#endif /* defined(CONFIG_CONSOLE) && defined (CONFIG_UART_CONSOLE) */
