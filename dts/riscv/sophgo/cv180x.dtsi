@@ -13,6 +13,17 @@
 	soc {
 		compatible = "sophgo,cv180x", "simple-bus";
 
+		mbox: mailbox@1900000 {
+			compatible = "sophgo,cvi-mailbox";
+			reg = <0x1900000 DT_SIZE_K(4)>;
+			interrupts = <61 1>;
+			channel-max = <8>;
+			tx-cpu = <1>;
+			rx-cpu = <2>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@3001000 {
 			compatible = "sophgo,cvi-pinctrl";
 			reg = <0x3001000 DT_SIZE_K(4)>;
