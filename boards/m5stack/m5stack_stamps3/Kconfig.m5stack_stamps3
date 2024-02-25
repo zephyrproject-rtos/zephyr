@@ -4,9 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_M5STACK_STAMPS3
-	bool "M5Stack StampS3 Development Board"
-	depends on SOC_SERIES_ESP32S3
-
-choice SOC_PART_NUMBER
-	default SOC_ESP32S3_FN8
-endchoice
+	select SOC_ESP32S3_FN8
