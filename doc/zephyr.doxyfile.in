@@ -282,7 +282,7 @@ TAB_SIZE               = 8
 ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          endrst=\endverbatim \
                          "kconfig{1}=\htmlonly <code>\1</code> \endhtmlonly \xmlonly <verbatim>embed:rst:inline :kconfig:option:`\1`</verbatim> \endxmlonly" \
-                         "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
+                         "req{1}=\ref ZEP-\1 \"ZEP-\1\"" \
                          "satisfy{1}=\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1" \
                          "verify{1}=\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1" \
                          "kconfig_dep{1}=\attention Available only when the following Kconfig option is enabled: \kconfig{\1}." \
@@ -980,7 +980,14 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/include/ \
-                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/
+                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
+			 @ZEPHYR_BASE@/tests/kernel/semaphore/ \
+              @ZEPHYR_BASE@/tests/kernel/threads/ \
+			 @ZEPHYR_BASE@/tests/kernel/mutex/ \
+                         @ZEPHYR_BASE@/kernel/sem.c \
+			 @ZEPHYR_BASE@/kernel/thread.c \
+			 @ZEPHYR_BASE@/kernel/sched.c \
+			 @ZEPHYR_BASE@/doc/requirements/requirements.dox
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1064,9 +1071,7 @@ EXCLUDE_PATTERNS       =
 # ANamespace::AClass, ANamespace::*Test
 
 EXCLUDE_SYMBOLS        = _* \
-                         *.__unnamed__ \
-                         z_* \
-                         Z_*
+                         *.__unnamed__
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include
@@ -1182,7 +1187,7 @@ SOURCE_BROWSER         = NO
 # documentation.
 # The default value is: NO.
 
-INLINE_SOURCES         = NO
+INLINE_SOURCES         = YES
 
 # Setting the STRIP_CODE_COMMENTS tag to YES will instruct Doxygen to hide any
 # special comment blocks from generated source code fragments. Normal C, C++ and
@@ -2507,7 +2512,9 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_UART_INTERRUPT_DRIVEN \
                          CONFIG_UART_ASYNC_API \
                          CONFIG_USERSPACE \
+			 CONFIG_ZTEST \
                          CONFIG_USE_SWITCH \
+			 CONFIG_MULTITHREADING \
                          NET_MGMT_DEFINE_REQUEST_HANDLER(x)= \
                          DEVICE_DEFINE()= \
                          BUILD_ASSERT()= \
