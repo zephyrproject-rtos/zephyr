@@ -3418,6 +3418,7 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	evt_prop = sys_le16_to_cpu(cmd->props);
 	min_interval = sys_get_le24(cmd->prim_min_interval);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
@@ -3428,9 +3429,11 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		 * supported advertising interval maximum value defined in the
 		 * Kconfig CONFIG_BT_CTLR_ADV_INTERVAL_MAX.
 		 */
-		if ((min_interval > max_interval) ||
-		    (min_interval < BT_HCI_LE_PRIM_ADV_INTERVAL_MIN) ||
-		    (max_interval > CONFIG_BT_CTLR_ADV_INTERVAL_MAX)) {
+		if ((!(evt_prop & BT_HCI_LE_ADV_PROP_LEGACY) ||
+		     !(evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN)) &&
+		    ((min_interval > max_interval) ||
+		     (min_interval < BT_HCI_LE_PRIM_ADV_INTERVAL_MIN) ||
+		     (max_interval > CONFIG_BT_CTLR_ADV_INTERVAL_MAX))) {
 			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 			return;
 		}
@@ -3442,7 +3445,6 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	evt_prop = sys_le16_to_cpu(cmd->props);
 	tx_pwr = cmd->tx_power;
 	phy_p = BIT(cmd->prim_adv_phy - 1);
 	phy_s = BIT(cmd->sec_adv_phy - 1);
