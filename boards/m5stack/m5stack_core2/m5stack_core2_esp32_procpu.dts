@@ -13,7 +13,7 @@
 #include <zephyr/dt-bindings/regulator/axp192.h>
 
 / {
-	model = "M5Stack Core2";
+	model = "M5Stack Core2 PROCPU";
 	compatible = "m5stack,core2";
 
 	aliases {
