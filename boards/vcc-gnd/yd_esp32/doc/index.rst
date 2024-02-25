@@ -169,9 +169,9 @@ Zephyr build. Output is structured by the domain subdirectories:
 
   build/
   ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
+  │   └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
   ├── mcuboot
   │    └── zephyr
   │       ├── zephyr.elf
@@ -203,7 +203,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: yd_esp32
+   :board: yd_esp32/esp32/procpu
    :goals: build
 
 The usual ``flash`` target will work with the ``yd_esp32`` board
@@ -212,7 +212,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: yd_esp32
+   :board: yd_esp32/esp32/procpu
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -237,7 +237,7 @@ Here is an example of how to test it using the :zephyr:code-sample:`led-ws2812` 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_ws2812
-   :board: yd_esp32
+   :board: yd_esp32/esp32/procpu
    :goals: flash
 
 
@@ -278,14 +278,14 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: yd_esp32
+   :board: yd_esp32/esp32/procpu
    :goals: build flash
 
 You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: yd_esp32
+   :board: yd_esp32/esp32/procpu
    :goals: debug
 
 Note on Debugging with GDB Stub

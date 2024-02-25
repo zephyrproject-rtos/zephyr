@@ -3,12 +3,7 @@
 # Copyright (c) 2023 Julio Cesar <hi@jcsx.dev>
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "yd_esp32"
-	depends on BOARD_YD_ESP32
-
-config ENTROPY_GENERATOR
-	default y
+if BOARD_YD_ESP32_ESP32_PROCPU
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -20,3 +15,12 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 choice BT_HCI_BUS_TYPE
 	default BT_ESP32 if BT
 endchoice
+
+endif # BOARD_YD_ESP32_ESP32_PROCPU
+
+if BOARD_YD_ESP32_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_YD_ESP32_ESP32_PROCPU
