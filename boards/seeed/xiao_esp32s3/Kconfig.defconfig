@@ -1,12 +1,7 @@
 # Copyright (c) 2023 Seeed Studio inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "xiao_esp32s3"
-	depends on BOARD_XIAO_ESP32S3
-
-config ENTROPY_GENERATOR
-	default y
+if BOARD_XIAO_ESP32S3_ESP32S3_PROCPU
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -18,3 +13,12 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 choice BT_HCI_BUS_TYPE
 	default BT_ESP32 if BT
 endchoice
+
+endif # BOARD_XIAO_ESP32S3_ESP32S3_PROCPU
+
+if BOARD_XIAO_ESP32S3_ESP32S3_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_XIAO_ESP32S3_ESP32S3_APPCPU
