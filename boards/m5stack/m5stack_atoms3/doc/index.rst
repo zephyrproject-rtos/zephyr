@@ -94,7 +94,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: m5stack_atoms3
+   :board: m5stack_atoms3/esp32s3/procpu
    :goals: build
 
 The usual ``flash`` target will work with the ``m5stack_atoms3`` board
@@ -103,7 +103,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: m5stack_atoms3
+   :board: m5stack_atoms3/esp32s3/procpu
    :goals: flash
 
 The baud rate of 921600bps is set by default. If experiencing issues when flashing,
