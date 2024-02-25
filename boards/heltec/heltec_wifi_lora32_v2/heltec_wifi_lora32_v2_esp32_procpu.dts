@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "heltec_wifi_lora32";
+	model = "Heltec Wi-Fi Lora32 V2 PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {
