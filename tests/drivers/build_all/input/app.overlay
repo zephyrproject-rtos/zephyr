@@ -218,6 +218,14 @@
 				int-gpios = <&test_gpio 0 0>;
 			};
 
+			pinnacle@2a {
+				compatible = "cirque,pinnacle";
+				reg = <0x2a>;
+				data-ready-gpios = <&test_gpio 0 0>;
+				data-mode = "relative";
+				primary-tap-enable;
+				swap-xy;
+			};
 		};
 
 		spi@2 {
@@ -230,7 +238,8 @@
 
 			/* one entry for every devices */
 			cs-gpios = <&test_gpio 0 0>,
-				   <&test_gpio 0 0>;
+				   <&test_gpio 1 0>,
+				   <&test_gpio 2 0>;
 
 			xpt2046@0 {
 				compatible = "xptek,xpt2046";
@@ -257,6 +266,19 @@
 				invert-y;
 				force-awake;
 				smart-mode;
+			};
+
+			pinnacle@2 {
+				compatible = "cirque,pinnacle";
+				reg = <0x2>;
+				spi-max-frequency = <0>;
+				data-ready-gpios = <&test_gpio 0 0>;
+				data-mode = "absolute";
+				idle-packets-count = <20>;
+				clipping-enable;
+				scaling-enable;
+				invert-x;
+				invert-y;
 			};
 		};
 	};
