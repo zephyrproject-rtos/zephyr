@@ -4,12 +4,7 @@
 # Copyright (c) 2023 The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "heltec_wireless_stick_lite_v3"
-	depends on BOARD_HELTEC_WIRELESS_STICK_LITE
-
-config ENTROPY_GENERATOR
-	default y
+if BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_PROCPU
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -21,3 +16,12 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 choice BT_HCI_BUS_TYPE
 	default BT_ESP32 if BT
 endchoice
+
+endif # BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_PROCPU
+
+if BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_APPCPU
