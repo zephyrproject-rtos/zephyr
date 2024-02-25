@@ -1,4 +1,4 @@
-identifier: m5stack_atoms3
+identifier: m5stack_atoms3/esp32s3/procpu
 name: M5Stack AtomS3
 type: mcu
 arch: xtensa
