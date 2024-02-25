@@ -9,7 +9,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "VCC-GND Studio YD-ESP32";
+	model = "VCC-GND Studio YD-ESP32 PROCPU";
 	compatible = "espressif,esp32";
 
 	aliases {
