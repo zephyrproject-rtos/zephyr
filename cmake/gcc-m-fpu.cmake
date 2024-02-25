@@ -35,12 +35,15 @@ if("${ARCH}" STREQUAL "arm")
     set(FPU_FOR_cortex-m7           fpv5-${PRECISION_TOKEN}d16)
     set(FPU_FOR_cortex-m33          fpv5-${PRECISION_TOKEN}d16)
     set(FPU_FOR_cortex-m33+nodsp    fpv5-${PRECISION_TOKEN}d16)
-    set(FPU_FOR_cortex-m55          auto)
-    set(FPU_FOR_cortex-m55+nomve.fp auto)
-    set(FPU_FOR_cortex-m55+nomve    auto)
-    set(FPU_FOR_cortex-m55+nodsp    auto)
 
-    set(GCC_M_FPU ${FPU_FOR_${GCC_M_CPU}})
+    # Match <cortex-m> core and (0:many) +<feature>
+    if(GCC_M_CPU MATCHES "cortex-m55(\\+[a-z0-9.]+)*")
+    # The target thumbv8.1m-main (eg. cortex-m85, cortex-m55) may have many mutually non-exclusive
+    # target features like (ie. +lob +mve +ras)
+      set(GCC_M_FPU auto)
+    else()
+      set(GCC_M_FPU ${FPU_FOR_${GCC_M_CPU}})
+    endif()
   endif()
 endif()
 
