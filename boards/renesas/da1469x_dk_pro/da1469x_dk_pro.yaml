@@ -20,4 +20,5 @@ supported:
   - crypto
   - dma
   - mipi_dbi
+  - display
 vendor: renesas
