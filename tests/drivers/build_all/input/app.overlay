@@ -197,6 +197,14 @@
 				touch-average-control = <1>;
 				tracking-index = <0>;
 			};
+
+			pat@5 {
+				compatible = "pixart,pat912x";
+				reg = <0x5>;
+				motion-gpios = <&test_gpio 0 0>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
+			};
 		};
 
 		spi@2 {
