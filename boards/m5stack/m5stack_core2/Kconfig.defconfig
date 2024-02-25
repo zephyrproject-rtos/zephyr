@@ -3,14 +3,7 @@
 # Copyright (c) 2023 Martin Kiepfer <m.kiepfer@teleschirm.org>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_M5STACK_CORE2
-
-config BOARD
-	default "m5stack_core2"
-	depends on BOARD_M5STACK_CORE2
-
-config ENTROPY_GENERATOR
-	default y
+if BOARD_M5STACK_CORE2_ESP32_PROCPU
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -50,4 +43,11 @@ config MIPI_DBI_INIT_PRIORITY
 
 endif # MIPI_DBI
 
-endif # BOARD_M5STACK_CORE2
+endif # BOARD_M5STACK_CORE2_ESP32_PROCPU
+
+if BOARD_M5STACK_CORE2_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_M5STACK_CORE2_ESP32_APPCPU

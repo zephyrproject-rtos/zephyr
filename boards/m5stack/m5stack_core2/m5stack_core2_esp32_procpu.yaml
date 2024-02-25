@@ -1,4 +1,4 @@
-identifier: m5stack_core2
+identifier: m5stack_core2/esp32/procpu
 name: M5Stack Core2
 type: mcu
 arch: xtensa
