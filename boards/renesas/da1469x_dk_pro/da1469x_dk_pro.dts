@@ -21,6 +21,10 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
