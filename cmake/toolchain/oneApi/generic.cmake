@@ -18,11 +18,9 @@ set(ONEAPI_TOOLCHAIN_PATH ${ONEAPI_TOOLCHAIN_PATH} CACHE PATH "oneApi install di
 set(LINKER lld)
 set(BINTOOLS oneApi)
 
-if(CONFIG_64BIT)
-  set(triple x86_64-pc-none-elf)
-else()
-  set(triple i686-pc-none-elf)
-endif()
+include(${ZEPHYR_BASE}/cmake/compiler/clang/flag-target.cmake)
+
+clang_target_flag("x86" triple)
 
 if(system STREQUAL "linux")
   set(COMPILER icx)
