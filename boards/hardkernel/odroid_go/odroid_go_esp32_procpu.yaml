@@ -1,4 +1,4 @@
-identifier: odroid_go
+identifier: odroid_go/esp32/procpu
 name: ODROID-GO
 type: mcu
 arch: xtensa
