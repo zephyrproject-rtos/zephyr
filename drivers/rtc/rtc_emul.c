@@ -10,6 +10,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
 
+#include "rtc_utils.h"
+
 struct rtc_emul_data;
 
 struct rtc_emul_work_delayable {
@@ -66,43 +68,6 @@ static bool rtc_emul_is_leap_year(struct rtc_time *datetime)
 
 	return false;
 }
-
-#ifdef CONFIG_RTC_ALARM
-static bool rtc_emul_validate_alarm_time(const struct rtc_time *timeptr, uint32_t mask)
-{
-	if ((mask & RTC_ALARM_TIME_MASK_SECOND) &&
-	    (timeptr->tm_sec < 0 || timeptr->tm_sec > 59)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_MINUTE) &&
-	    (timeptr->tm_min < 0 || timeptr->tm_min > 59)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_HOUR) &&
-	    (timeptr->tm_hour < 0 || timeptr->tm_hour > 23)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_MONTH) &&
-	    (timeptr->tm_mon < 0 || timeptr->tm_mon > 11)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) &&
-	    (timeptr->tm_mday < 1 || timeptr->tm_mday > 31)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_YEAR) &&
-	    (timeptr->tm_year < 0 || timeptr->tm_year > 199)) {
-		return false;
-	}
-
-	return true;
-}
-#endif /* CONFIG_RTC_ALARM */
 
 static int rtc_emul_get_days_in_month(struct rtc_time *datetime)
 {
@@ -346,7 +311,7 @@ static int rtc_emul_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	}
 
 	if (mask > 0) {
-		if (rtc_emul_validate_alarm_time(timeptr, mask) == false) {
+		if (rtc_utils_validate_rtc_time(timeptr, mask) == false) {
 			return -EINVAL;
 		}
 	}
