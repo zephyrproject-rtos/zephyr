@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "M5StickC Plus";
+	model = "M5StickC Plus PROCPU";
 	compatible = "m5stack,m5stickc-plus";
 
 	aliases {
