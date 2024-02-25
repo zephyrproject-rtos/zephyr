@@ -3,9 +3,7 @@
 # Copyright (c) 2019 Yannis Damigos
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD
-	default "odroid_go"
-	depends on BOARD_ODROID_GO
+if BOARD_ODROID_GO_ESP32_PROCPU
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_ACCESS
@@ -13,8 +11,12 @@ config DISK_DRIVER_SDMMC
 config SPI
 	default y if DISK_DRIVER_SDMMC
 
-config ENTROPY_GENERATOR
+config ESP_SPIRAM
 	default y
+
+choice SPIRAM_TYPE
+	default SPIRAM_TYPE_ESPPSRAM64
+endchoice
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
@@ -26,3 +28,12 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 choice BT_HCI_BUS_TYPE
 	default BT_ESP32 if BT
 endchoice
+
+endif # BOARD_ODROID_GO_ESP32_PROCPU
+
+if BOARD_ODROID_GO_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 4096
+
+endif # BOARD_ODROID_GO_ESP32_APPCPU

@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "ODROID-GO Game Kit";
+	model = "ODROID-GO Game Kit PROCPU";
 	compatible = "hardkernel,odroid_go", "espressif,esp32";
 
 	chosen {

@@ -150,9 +150,9 @@ Zephyr build. Output is structured by the domain subdirectories:
 
   build/
   ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
+  │   └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
   ├── mcuboot
   │    └── zephyr
   │       ├── zephyr.elf
@@ -184,7 +184,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: odroid_go
+   :board: odroid_go/esp32/procpu
    :goals: build
 
 The usual ``flash`` target will work with the ``odroid_go`` board
@@ -193,7 +193,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: odroid_go
+   :board: odroid_go/esp32/procpu
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -225,7 +225,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: odroid_go
+   :board: odroid_go/esp32/procpu
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -233,7 +233,7 @@ You can debug an application in the usual way. Here is an example for the :ref:`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: odroid_go
+   :board: odroid_go/esp32/procpu
    :goals: debug
 
 References
