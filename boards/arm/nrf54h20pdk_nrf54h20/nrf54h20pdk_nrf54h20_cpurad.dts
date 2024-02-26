@@ -58,3 +58,8 @@
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
 };
+
+&cpurad_bellboard {
+	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
+	interrupt-names = "irq0";
+};
