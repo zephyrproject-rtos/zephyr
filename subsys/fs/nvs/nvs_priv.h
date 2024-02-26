@@ -30,6 +30,15 @@ extern "C" {
 
 #define NVS_LOOKUP_CACHE_NO_ADDR 0xFFFFFFFF
 
+/*
+ * MACRO to optimize code instruction size
+ */
+#if defined(CONFIG_NVS_OVERWRITE) && defined(CONFIG_NVS_ERASE)
+#define NVS_DEVICE_HAS_NO_ERASE(fs) ((fs)->flash_parameters->no_erase)
+#else
+#define NVS_DEVICE_HAS_NO_ERASE(fs) IS_ENABLED(CONFIG_NVS_OVERWRITE)
+#endif
+
 /* Allocation Table Entry */
 struct nvs_ate {
 	uint16_t id;	/* data id */
