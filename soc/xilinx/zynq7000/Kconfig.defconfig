@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-rsource "*/Kconfig.defconfig"
-
 if SOC_FAMILY_XILINX_ZYNQ7000
+
+rsource "*/Kconfig.defconfig"
 
 config NUM_IRQS
 	int

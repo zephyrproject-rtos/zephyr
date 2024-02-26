@@ -5,6 +5,8 @@ config SOC_POSIX
 	select ARCH_POSIX
 	select CPU_HAS_FPU
 
+if SOC_POSIX
+
 config NATIVE_SIMULATOR_MCU_N
 	int "CPU Number this image targets"
 	range 0 15
@@ -51,3 +53,5 @@ config NATIVE_SIMULATOR_AUTOSTART_MCU
 	  another core is meant to release its reset).
 	  If that MCU was, by HW design, going to start at HW boot anyhow, this option does nothing.
 	  This option is meant to facilitate development.
+
+endif # SOC_POSIX
