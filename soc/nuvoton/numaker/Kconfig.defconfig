@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-rsource "*/Kconfig.defconfig"
-
 if SOC_FAMILY_NUMAKER
+
+rsource "*/Kconfig.defconfig"
 
 config RESET
 	default y

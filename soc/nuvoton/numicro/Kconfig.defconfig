@@ -3,4 +3,8 @@
 # Copyright (c) 2020 Linumiz
 # Author: Saravanan Sekar <saravanan@linumiz.com>
 
+if SOC_FAMILY_NUMICRO
+
 rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_NUMICRO
