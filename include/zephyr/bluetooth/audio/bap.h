@@ -400,6 +400,9 @@ struct bt_bap_ep_info {
 	/** @brief True if the stream associated with the endpoint is able to send data */
 	bool can_send;
 
+	/** @brief True if the stream associated with the endpoint is able to receive data */
+	bool can_recv;
+
 	/** Pointer to paired endpoint if the endpoint is part of a bidirectional CIS,
 	 *  otherwise NULL
 	 */
