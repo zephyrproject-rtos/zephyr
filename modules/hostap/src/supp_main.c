@@ -288,7 +288,15 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	msg.event = EVENT_INTERFACE_STATUS;
 	msg.data = event;
 
-	send_event(&msg);
+	ret = send_event(&msg);
+	if (ret) {
+		/* We failed notify WPA supplicant about interface removal.
+		 * There is not much we can do, interface is still registered
+		 * with WPA supplicant so we cannot unregister NM etc.
+		 */
+		wpa_printf(MSG_ERROR, "Failed to send event: %d", ret);
+		goto out;
+	}
 
 	while (retry++ < count && wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
 		k_sleep(K_MSEC(IFACE_NOTIFY_RETRY_MS));
