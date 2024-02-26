@@ -1,0 +1,49 @@
+# MCP9808 temperature sensor configuration options
+
+# Copyright (c) 2024 Robert Kowalewski
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCP9800
+	bool "MCP9800 temperature sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP9800_ENABLED
+	select I2C
+	help
+	  Enable driver for MCP9800 temperature sensor.
+
+if MCP9800
+
+choice
+	prompt "MCP9800 trigger mode"
+	default MCP9800_TRIGGER_NONE
+
+config MCP9800_TRIGGER_NONE
+	bool "No trigger"
+
+config MCP9800_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select MCP9800_TRIGGER
+	bool "Use global thread"
+
+config MCP9800_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select MCP9800_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config MCP9800_TRIGGER
+	bool
+
+config MCP9800_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on MCP9800_TRIGGER_OWN_THREAD
+	default 1024
+
+config MCP9800_THREAD_PRIORITY
+	int "MCP9800 thread priority"
+	depends on MCP9800_TRIGGER_OWN_THREAD
+	default 10
+
+endif # MCP9800
