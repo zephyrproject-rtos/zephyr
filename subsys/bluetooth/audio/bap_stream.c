@@ -112,25 +112,25 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	}
 
 	info->can_send = false;
+	info->can_recv = false;
 	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && ep->stream != NULL) {
 		if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) && bt_bap_ep_is_broadcast_src(ep)) {
 			info->can_send = true;
-		} else if (IS_ENABLED(CONFIG_BT_CONN) && ep->stream->conn != NULL) {
-			struct bt_conn_info conn_info;
-			uint8_t role;
-			int err;
-
-			err = bt_conn_get_info(ep->stream->conn, &conn_info);
-			if (err != 0) {
-				LOG_DBG("Could not get conn info: %d", err);
-
-				return err;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
+			   bt_bap_ep_is_broadcast_snk(ep)) {
+			info->can_recv = true;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+			   bt_bap_ep_is_unicast_client(ep)) {
+			/* dir is not initialized before the connection is set */
+			if (ep->stream->conn != NULL) {
+				info->can_send = dir == BT_AUDIO_DIR_SINK;
+				info->can_recv = dir == BT_AUDIO_DIR_SOURCE;
 			}
-
-			role = conn_info.role;
-			if ((role == BT_CONN_ROLE_CENTRAL && dir == BT_AUDIO_DIR_SINK) ||
-			    (role == BT_CONN_ROLE_PERIPHERAL && dir == BT_AUDIO_DIR_SOURCE)) {
-				info->can_send = true;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+			/* dir is not initialized before the connection is set */
+			if (ep->stream->conn != NULL) {
+				info->can_send = dir == BT_AUDIO_DIR_SOURCE;
+				info->can_recv = dir == BT_AUDIO_DIR_SINK;
 			}
 		}
 	}
