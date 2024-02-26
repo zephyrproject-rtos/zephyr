@@ -86,6 +86,7 @@ extensions = [
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
+    "sphinx_sitemap",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
     "zephyr.gh_utils",
@@ -350,6 +351,10 @@ graphviz_dot_args = [
 
 copybutton_prompt_text = r"\$ |uart:~\$ "
 copybutton_prompt_is_regexp = True
+
+# -- Options for sphinx-sitemap ----------------------------------------
+
+sitemap_url_scheme = "{link}"
 
 # -- Linkcheck options ----------------------------------------------------
 
