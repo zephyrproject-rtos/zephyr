@@ -1391,7 +1391,7 @@ void bt_conn_unref(struct bt_conn *conn)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
-	    conn_role == BT_CONN_ROLE_PERIPHERAL && deallocated) {
+	    deallocated) {
 		bt_le_adv_resume();
 	}
 }
