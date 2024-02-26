@@ -4,10 +4,6 @@
 #
 # Copyright (c) 2023 Nuvoton Technology Corporation.
 
-config BOARD_NUMAKER_PFM_M467
-	bool
-	select SOC_M467
-
-config BOARD_NUMAKER_PFM_M487
-	bool
-	select SOC_M487
+config BOARD_NUMAKER_PFM
+	select SOC_M467 if BOARD_NUMAKER_PFM_M467
+	select SOC_M487 if BOARD_NUMAKER_PFM_M487
