@@ -6,8 +6,8 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/kernel/internal/sched_priq.h>
 #include <wait_q.h>
+#include <priority_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -22,43 +22,12 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-#if defined(CONFIG_SCHED_DUMB)
-#define _priq_run_add		z_priq_dumb_add
-#define _priq_run_remove	z_priq_dumb_remove
-# if defined(CONFIG_SCHED_CPU_MASK)
-#  define _priq_run_best	_priq_dumb_mask_best
-# else
-#  define _priq_run_best	z_priq_dumb_best
-# endif
-#elif defined(CONFIG_SCHED_SCALABLE)
-#define _priq_run_add		z_priq_rb_add
-#define _priq_run_remove	z_priq_rb_remove
-#define _priq_run_best		z_priq_rb_best
-#elif defined(CONFIG_SCHED_MULTIQ)
-#define _priq_run_add		z_priq_mq_add
-#define _priq_run_remove	z_priq_mq_remove
-#define _priq_run_best		z_priq_mq_best
-static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
-					struct k_thread *thread);
-static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
-					   struct k_thread *thread);
-#endif
-
-#if defined(CONFIG_WAITQ_SCALABLE)
-#define z_priq_wait_add		z_priq_rb_add
-#define _priq_wait_remove	z_priq_rb_remove
-#define _priq_wait_best		z_priq_rb_best
-#elif defined(CONFIG_WAITQ_DUMB)
-#define z_priq_wait_add		z_priq_dumb_add
-#define _priq_wait_remove	z_priq_dumb_remove
-#define _priq_wait_best		z_priq_dumb_best
-#endif
-
 struct k_spinlock sched_spinlock;
 
 static void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
+
 
 
 static inline int is_preempt(struct k_thread *thread)
@@ -1251,133 +1220,6 @@ void *z_get_next_switch_handle(void *interrupted)
 #endif
 }
 #endif
-
-void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
-{
-	ARG_UNUSED(pq);
-
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-
-	sys_dlist_remove(&thread->base.qnode_dlist);
-}
-
-struct k_thread *z_priq_dumb_best(sys_dlist_t *pq)
-{
-	struct k_thread *thread = NULL;
-	sys_dnode_t *n = sys_dlist_peek_head(pq);
-
-	if (n != NULL) {
-		thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
-	}
-	return thread;
-}
-
-bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b)
-{
-	struct k_thread *thread_a, *thread_b;
-	int32_t cmp;
-
-	thread_a = CONTAINER_OF(a, struct k_thread, base.qnode_rb);
-	thread_b = CONTAINER_OF(b, struct k_thread, base.qnode_rb);
-
-	cmp = z_sched_prio_cmp(thread_a, thread_b);
-
-	if (cmp > 0) {
-		return true;
-	} else if (cmp < 0) {
-		return false;
-	} else {
-		return thread_a->base.order_key < thread_b->base.order_key
-			? 1 : 0;
-	}
-}
-
-void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread)
-{
-	struct k_thread *t;
-
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-
-	thread->base.order_key = pq->next_order_key++;
-
-	/* Renumber at wraparound.  This is tiny code, and in practice
-	 * will almost never be hit on real systems.  BUT on very
-	 * long-running systems where a priq never completely empties
-	 * AND that contains very large numbers of threads, it can be
-	 * a latency glitch to loop over all the threads like this.
-	 */
-	if (!pq->next_order_key) {
-		RB_FOR_EACH_CONTAINER(&pq->tree, t, base.qnode_rb) {
-			t->base.order_key = pq->next_order_key++;
-		}
-	}
-
-	rb_insert(&pq->tree, &thread->base.qnode_rb);
-}
-
-void z_priq_rb_remove(struct _priq_rb *pq, struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-
-	rb_remove(&pq->tree, &thread->base.qnode_rb);
-
-	if (!pq->tree.root) {
-		pq->next_order_key = 0;
-	}
-}
-
-struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
-{
-	struct k_thread *thread = NULL;
-	struct rbnode *n = rb_get_min(&pq->tree);
-
-	if (n != NULL) {
-		thread = CONTAINER_OF(n, struct k_thread, base.qnode_rb);
-	}
-	return thread;
-}
-
-#ifdef CONFIG_SCHED_MULTIQ
-# if (K_LOWEST_THREAD_PRIO - K_HIGHEST_THREAD_PRIO) > 31
-# error Too many priorities for multiqueue scheduler (max 32)
-# endif
-
-static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
-					struct k_thread *thread)
-{
-	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
-
-	sys_dlist_append(&pq->queues[priority_bit], &thread->base.qnode_dlist);
-	pq->bitmask |= BIT(priority_bit);
-}
-
-static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
-					   struct k_thread *thread)
-{
-	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
-
-	sys_dlist_remove(&thread->base.qnode_dlist);
-	if (sys_dlist_is_empty(&pq->queues[priority_bit])) {
-		pq->bitmask &= ~BIT(priority_bit);
-	}
-}
-#endif
-
-struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
-{
-	if (!pq->bitmask) {
-		return NULL;
-	}
-
-	struct k_thread *thread = NULL;
-	sys_dlist_t *l = &pq->queues[__builtin_ctz(pq->bitmask)];
-	sys_dnode_t *n = sys_dlist_peek_head(l);
-
-	if (n != NULL) {
-		thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
-	}
-	return thread;
-}
 
 int z_unpend_all(_wait_q_t *wait_q)
 {

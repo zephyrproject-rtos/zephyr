@@ -59,6 +59,7 @@ list(APPEND kernel_files
   mem_slab.c
   thread.c
   version.c
+  priority_queues.c
   sched.c
   )
 
