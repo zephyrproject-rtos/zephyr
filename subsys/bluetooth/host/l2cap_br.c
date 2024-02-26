@@ -715,6 +715,62 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 	return 0;
 }
 
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
+void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
+				   bt_l2cap_chan_state_t state,
+				   const char *func, int line)
+{
+	struct bt_l2cap_br_chan *br_chan;
+
+	br_chan = BR_CHAN(chan);
+
+	LOG_DBG("chan %p psm 0x%04x %s -> %s", chan, br_chan->psm,
+		bt_l2cap_chan_state_str(br_chan->state), bt_l2cap_chan_state_str(state));
+
+	/* check transitions validness */
+	switch (state) {
+	case BT_L2CAP_DISCONNECTED:
+		/* regardless of old state always allows this state */
+		break;
+	case BT_L2CAP_CONNECTING:
+		if (br_chan->state != BT_L2CAP_DISCONNECTED) {
+			LOG_WRN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_CONFIG:
+		if (br_chan->state != BT_L2CAP_CONNECTING) {
+			LOG_WRN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_CONNECTED:
+		if (br_chan->state != BT_L2CAP_CONFIG &&
+		    br_chan->state != BT_L2CAP_CONNECTING) {
+			LOG_WRN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	case BT_L2CAP_DISCONNECTING:
+		if (br_chan->state != BT_L2CAP_CONFIG &&
+		    br_chan->state != BT_L2CAP_CONNECTED) {
+			LOG_WRN("%s()%d: invalid transition", func, line);
+		}
+		break;
+	default:
+		LOG_ERR("%s()%d: unknown (%u) state was set", func, line, state);
+		return;
+	}
+
+	br_chan->state = state;
+}
+#else
+void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan,
+			     bt_l2cap_chan_state_t state)
+{
+	BR_CHAN(chan)->state = state;
+}
+#endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+
 void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 {
 	const struct bt_l2cap_chan_ops *ops = chan->ops;
@@ -734,7 +790,7 @@ void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 destroy:
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/* Reset internal members of common channel */
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
+	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
 	BR_CHAN(chan)->psm = 0U;
 #endif
 	if (chan->destroy) {
@@ -815,7 +871,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
 	br_chan->ident = ident;
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTING);
+	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTING);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
 
 	/* Disable fragmentation of l2cap rx pdu */
@@ -846,7 +902,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		return;
 	}
 
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
+	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONFIG);
 	l2cap_br_conf(chan);
 	return;
 
@@ -900,7 +956,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", br_chan->rx.cid,
 				br_chan->rx.mtu, br_chan->tx.cid, br_chan->tx.mtu);
 
-			bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTED);
+			bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
 			if (chan->ops && chan->ops->connected) {
 				chan->ops->connected(chan);
 			}
@@ -1112,7 +1168,7 @@ send_rsp:
 		LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", BR_CHAN(chan)->rx.cid,
 			BR_CHAN(chan)->rx.mtu, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
 
-		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTED);
+		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
 		if (chan->ops && chan->ops->connected) {
 			chan->ops->connected(chan);
 		}
@@ -1242,7 +1298,7 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->scid = sys_cpu_to_le16(br_chan->rx.cid);
 
 	l2cap_br_chan_send_req(br_chan, buf, L2CAP_BR_DISCONN_TIMEOUT);
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
+	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
 
 	return 0;
 }
@@ -1321,7 +1377,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	br_chan->psm = psm;
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTING);
+	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTING);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 
 	switch (l2cap_br_conn_security(chan, psm)) {
@@ -1398,7 +1454,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		br_chan->ident = 0U;
 		BR_CHAN(chan)->tx.cid = dcid;
 		l2cap_br_conf(chan);
-		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
+		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONFIG);
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
@@ -1525,7 +1581,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 	 * response and initiate configuration request.
 	 */
 	if (l2cap_br_conn_req_reply(chan, BT_L2CAP_BR_SUCCESS) == 0) {
-		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
+		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONFIG);
 		/*
 		 * Initialize config request since remote needs to know
 		 * local MTU segmentation.
