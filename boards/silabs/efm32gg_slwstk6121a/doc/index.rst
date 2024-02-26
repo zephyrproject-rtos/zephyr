@@ -68,9 +68,8 @@ features:
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efm32gg_slwstk6121a/efm32gg_slwstk6121a_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efm32gg_slwstk6121a/efm32gg_slwstk6121a_defconfig`
 
 Other hardware features, including the WF200 WiFi transceiver, are
 currently not supported by the port.

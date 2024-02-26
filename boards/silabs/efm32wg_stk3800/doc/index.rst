@@ -59,9 +59,8 @@ The efm32wg_stk3800 board configuration supports the following hardware features
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efm32wg_stk3800/efm32wg_stk3800_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efm32wg_stk3800/efm32wg_stk3800_defconfig`
 
 Other hardware features are currently not supported by the port.
 

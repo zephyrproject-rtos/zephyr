@@ -62,9 +62,8 @@ The efm32pg_stk3401a board configuration supports the following hardware feature
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efm32pg_stk3401a/efm32pg_stk3401a_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efm32pg_stk3401a/efm32pg_stk3401a_defconfig`
 
 Other hardware features are currently not supported by the port.
 
