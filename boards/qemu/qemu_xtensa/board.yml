@@ -1,6 +1,6 @@
 board:
   name: qemu_xtensa
-  vendor: Cadence Design Systems
+  vendor: cdns
   socs:
   - name: dc233c
     variants:

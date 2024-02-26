@@ -1,6 +1,6 @@
 board:
   name: nrf9161dk
-  vendor: Nordic Semiconductor
+  vendor: nordic
   socs:
   - name: nrf9161
     variants:

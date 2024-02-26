@@ -1,5 +1,5 @@
 board:
   name: kv260_r5
-  vendor: AMD
+  vendor: amd
   socs:
   - name: zynqmp_rpu

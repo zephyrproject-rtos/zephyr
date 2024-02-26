@@ -1,5 +1,5 @@
 board:
   name: pan1770_evb
-  vendor: Panasonic Industrial Devices Europe GmbH
+  vendor: panasonic
   socs:
   - name: nrf52840

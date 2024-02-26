@@ -1,5 +1,5 @@
 board:
   name: qomu
-  vendor: QuickLogic
+  vendor: quicklogic
   socs:
   - name: quicklogic_eos_s3

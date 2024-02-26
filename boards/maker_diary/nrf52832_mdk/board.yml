@@ -1,5 +1,5 @@
 board:
   name: nrf52832_mdk
-  vendor: Maker Diary
+  vendor: makerdiary
   socs:
   - name: nrf52832

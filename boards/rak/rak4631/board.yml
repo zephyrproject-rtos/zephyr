@@ -1,5 +1,5 @@
 board:
   name: rak4631
-  vendor: RAKwireless
+  vendor: rakwireless
   socs:
   - name: nrf52840

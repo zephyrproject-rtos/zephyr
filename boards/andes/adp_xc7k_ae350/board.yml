@@ -1,5 +1,5 @@
 board:
   name: adp_xc7k
-  vendor: Andes Technology
+  vendor: andestech
   socs:
   - name: ae350

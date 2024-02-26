@@ -1,5 +1,5 @@
 board:
   name: nrf51_vbluno51
-  vendor: VNG Corporation
+  vendor: vngiotlab
   socs:
   - name: nrf51822

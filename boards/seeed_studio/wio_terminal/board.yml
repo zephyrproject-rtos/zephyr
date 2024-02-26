@@ -1,5 +1,5 @@
 board:
   name: wio_terminal
-  vendor: Seeed Studio
+  vendor: seeed
   socs:
     - name: samd51p19a

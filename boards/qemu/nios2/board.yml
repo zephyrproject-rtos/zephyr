@@ -1,5 +1,5 @@
 board:
   name: qemu_nios2
-  vendor: Altera Corporation
+  vendor: altr
   socs:
   - name: qemu_nios2
