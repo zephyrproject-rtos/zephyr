@@ -187,8 +187,8 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.6.0", "/3.6.0/"),
         ("3.5.0", "/3.5.0/"),
-        ("3.4.0", "/3.4.0/"),
         ("2.7.5 (LTS)", "/2.7.5/"),
     ),
     "display_gh_links": True,

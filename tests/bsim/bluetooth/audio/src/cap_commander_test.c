@@ -24,6 +24,7 @@ CREATE_FLAG(flag_cas_discovered);
 CREATE_FLAG(flag_vcs_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_volume_changed);
+CREATE_FLAG(flag_volume_mute_changed);
 CREATE_FLAG(flag_volume_offset_changed);
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
@@ -60,6 +61,16 @@ static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 	SET_FLAG(flag_volume_changed);
 }
 
+static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		FAIL("Failed to change volume for conn %p: %d\n", conn, err);
+		return;
+	}
+
+	SET_FLAG(flag_volume_mute_changed);
+}
+
 static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
@@ -73,6 +84,7 @@ static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 static struct bt_cap_commander_cb cap_cb = {
 	.discovery_complete = cap_discovery_complete_cb,
 	.volume_changed = cap_volume_changed_cb,
+	.volume_mute_changed = cap_volume_mute_changed_cb,
 	.volume_offset_changed = cap_volume_offset_changed_cb,
 };
 
@@ -270,6 +282,34 @@ static void test_change_volume(void)
 	printk("Volume changed to %u\n", param.volume);
 }
 
+static void test_change_volume_mute(bool mute)
+{
+	union bt_cap_set_member members[CONFIG_BT_MAX_CONN];
+	const struct bt_cap_commander_change_volume_mute_state_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.members = members,
+		.count = connected_conn_cnt,
+		.mute = mute,
+	};
+	int err;
+
+	printk("Changing volume mute state to %d\n", param.mute);
+	UNSET_FLAG(flag_volume_mute_changed);
+
+	for (size_t i = 0U; i < param.count; i++) {
+		param.members[i].member = connected_conns[i];
+	}
+
+	err = bt_cap_commander_change_volume_mute_state(&param);
+	if (err != 0) {
+		FAIL("Failed to change volume: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_volume_mute_changed);
+	printk("Volume mute state changed to %d\n", param.mute);
+}
+
 static void test_change_volume_offset(void)
 {
 	struct bt_cap_commander_change_volume_offset_member_param member_params[CONFIG_BT_MAX_CONN];
@@ -320,6 +360,9 @@ static void test_main_cap_commander_capture_and_render(void)
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_COORDINATOR)) {
 		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
 			test_change_volume();
+
+			test_change_volume_mute(true);
+			test_change_volume_mute(false);
 
 			if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR_VOCS)) {
 				test_change_volume_offset();

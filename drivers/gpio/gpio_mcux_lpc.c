@@ -260,7 +260,7 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 	}
 
 	/* PINT treats GPIO pins as continuous. Each port has 32 pins */
-	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode);
+	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode, (trig & GPIO_INT_WAKEUP));
 	if (ret < 0) {
 		return ret;
 	}

@@ -75,7 +75,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 *
 		 * This function is entered with interrupts disabled.
 		 * If a low power state was entered, then the hook
-		 * function should enable inerrupts before exiting.
+		 * function should enable interrupts before exiting.
 		 * This is because the kernel does not do its own idle
 		 * processing in those cases i.e. skips k_cpu_idle().
 		 * The kernel's idle processing re-enables interrupts

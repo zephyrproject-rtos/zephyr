@@ -358,3 +358,12 @@ jobs:
           check_name: Unit Test Results
           files: "**/twister.xml"
           comment_mode: off
+  twister-status-check:
+    if: always()
+    name: "Check Twister Status"
+    needs:
+      - twister-build-prep
+      - twister-build
+    uses: ./.github/workflows/ready-to-merge.yml
+    with:
+      needs_context: ${{ toJson(needs) }}

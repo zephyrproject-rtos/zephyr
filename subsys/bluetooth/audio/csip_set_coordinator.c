@@ -300,6 +300,17 @@ static void lock_changed(struct bt_csip_set_coordinator_csis_inst *inst, bool lo
 	}
 }
 
+static void sirk_changed(struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	struct bt_csip_set_coordinator_cb *listener;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csip_set_coordinator_cbs, listener, _node) {
+		if (listener->sirk_changed) {
+			listener->sirk_changed(inst);
+		}
+	}
+}
+
 static void release_set_complete(int err)
 {
 	struct bt_csip_set_coordinator_cb *listener;
@@ -389,10 +400,12 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 			struct bt_csip_set_sirk *sirk =
 				(struct bt_csip_set_sirk *)data;
 			struct bt_csip_set_coordinator_inst *client;
+			struct bt_csip_set_coordinator_csis_inst *inst;
 			uint8_t *dst_sirk;
 
 			client = &client_insts[bt_conn_index(conn)];
-			dst_sirk = client->set_member.insts[svc_inst->idx].info.set_sirk;
+			inst = &client->set_member.insts[svc_inst->idx];
+			dst_sirk = inst->info.set_sirk;
 
 			LOG_DBG("Set SIRK %sencrypted",
 				sirk->type == BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
@@ -422,7 +435,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 			LOG_HEXDUMP_DBG(dst_sirk, BT_CSIP_SET_SIRK_SIZE,
 					"Set SIRK");
 
-			/* TODO: Notify app */
+			sirk_changed(inst);
 		} else {
 			LOG_DBG("Invalid length %u", length);
 		}

@@ -38,6 +38,7 @@ enum bt_cap_common_proc_type {
 	BT_CAP_COMMON_PROC_TYPE_STOP,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE,
+	BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE,
 };
 
 enum bt_cap_common_subproc_type {
@@ -74,6 +75,9 @@ struct bt_cap_commander_proc_param {
 		struct {
 			uint8_t volume;
 		} change_volume;
+		struct {
+			bool mute;
+		} change_mute;
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 		struct {
