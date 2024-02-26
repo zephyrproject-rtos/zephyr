@@ -3,9 +3,6 @@
 
 if SOC_SERIES_ITE_IT8XXX2
 
-config SOC_SERIES
-	default "it8xxx2"
-
 config RISCV_GP
 	default y
 

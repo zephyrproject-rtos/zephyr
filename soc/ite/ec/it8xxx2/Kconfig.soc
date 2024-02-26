@@ -39,6 +39,9 @@ config SOC_IT82002_AW
 	bool
 	select SOC_IT8XXX2
 
+config SOC_SERIES
+	default "it8xxx2" if SOC_SERIES_ITE_IT8XXX2
+
 config SOC
 	default "it81202bx" if SOC_IT81202_BX
 	default "it81202cx" if SOC_IT81202_CX
