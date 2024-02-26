@@ -130,6 +130,9 @@ struct modem_chat_script_chat {
 #define MODEM_CHAT_SCRIPT_CMDS_DEFINE(_sym, ...)                                                   \
 	const struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
 
+#define MODEM_CHAT_SCRIPT_CMDS_DEFINE_DYNAMIC(_sym, ...)                                                   \
+	struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
+
 enum modem_chat_script_result {
 	MODEM_CHAT_SCRIPT_RESULT_SUCCESS,
 	MODEM_CHAT_SCRIPT_RESULT_ABORT,
