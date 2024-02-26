@@ -280,7 +280,13 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
 
-	os_memcpy(event->interface_status.ifname, ifname, IFNAMSIZ);
+	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
+		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %d)",
+			ifname, sizeof(event->interface_status.ifname));
+		goto out;
+	}
+
+	os_memcpy(event->interface_status.ifname, ifname, strlen(ifname));
 	event->interface_status.ievent = EVENT_INTERFACE_REMOVED;
 
 	msg.global = true;
