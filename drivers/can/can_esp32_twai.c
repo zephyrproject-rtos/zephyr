@@ -280,7 +280,7 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 					can_esp32_twai_read_reg, can_esp32_twai_write_reg,         \
 					CAN_SJA1000_OCR_OCMODE_BIPHASE,                            \
 					COND_CODE_0(IS_ENABLED(CONFIG_SOC_SERIES_ESP32), (0),      \
-					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))));                  \
+					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))), 25000);           \
                                                                                                    \
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
 		CAN_SJA1000_DATA_INITIALIZER(NULL);                                                \
