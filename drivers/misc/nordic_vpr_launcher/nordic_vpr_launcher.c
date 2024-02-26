@@ -45,8 +45,8 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 	return 0;
 }
 
-/* obtain VPR source address either from memory or partition */
-#define VPR_SRC_ADDR(node_id)                                                                      \
+/* obtain VPR address either from memory or partition */
+#define VPR_ADDR(node_id)                                                                          \
 	(DT_REG_ADDR(node_id) +                                                                    \
 	 COND_CODE_0(DT_FIXED_PARTITION_EXISTS(node_id), (0), (DT_REG_ADDR(DT_GPARENT(node_id)))))
 
@@ -59,9 +59,9 @@ static int nordic_vpr_launcher_init(const struct device *dev)
                                                                                                    \
 	static const struct nordic_vpr_launcher_config config##inst = {                            \
 		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                                     \
-		.exec_addr = DT_REG_ADDR(DT_INST_PHANDLE(inst, execution_memory)),                 \
+		.exec_addr = VPR_ADDR(DT_INST_PHANDLE(inst, execution_memory)),                    \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, source_memory),                            \
-			    (.src_addr = VPR_SRC_ADDR(DT_INST_PHANDLE(inst, source_memory)),       \
+			    (.src_addr = VPR_ADDR(DT_INST_PHANDLE(inst, source_memory)),           \
 			     .src_size = DT_REG_SIZE(DT_INST_PHANDLE(inst, source_memory)),),      \
 			    ())};                                                                  \
                                                                                                    \
