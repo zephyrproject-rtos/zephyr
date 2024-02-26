@@ -33,6 +33,11 @@ config NET_NATIVE
 # Hidden options for enabling native IPv6/IPv4. Using these options
 # avoids having "defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_NATIVE)"
 # in the code as we can have "defined(CONFIG_NET_NATIVE_IPV6)" instead.
+config NET_NATIVE_IP
+	bool
+	depends on NET_NATIVE
+	default y if NET_IP
+
 config NET_NATIVE_IPV6
 	bool
 	depends on NET_NATIVE
