@@ -31,6 +31,7 @@ static void key_matrix_poll(struct key_matrix_data *key_matrix)
 	}
 }
 
+/* Key matrix scan worker */
 static void key_matrix_scan_work(struct k_work *item)
 {
 	struct key_matrix_data *key_matrix =
@@ -108,7 +109,7 @@ bool key_matrix_init(struct key_matrix_data *key_matrix)
 }
 
 void key_matrix_set_callback(struct key_matrix_data *key_matrix,
-	on_button_change_t on_button_change, void *context)
+	key_matrix_on_button_change_t on_button_change, void *context)
 {
 	key_matrix->on_button_change = on_button_change;
 	key_matrix->context = context;

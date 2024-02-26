@@ -16,7 +16,7 @@ extern "C" {
 
 /* Data types */
 
-typedef void (*on_button_change_t)(size_t button, bool pressed, void *context);
+typedef void (*key_matrix_on_button_change_t)(size_t button, bool pressed, void *context);
 
 struct key_matrix_data {
 	const struct gpio_dt_spec    *col;
@@ -24,7 +24,7 @@ struct key_matrix_data {
 	const struct gpio_dt_spec    *row;
 	const size_t                  row_len;
 	uint8_t                      *buttons;
-	on_button_change_t            on_button_change;
+	key_matrix_on_button_change_t on_button_change;
 	void                         *context;
 	struct k_work_delayable       work;
 };
@@ -81,7 +81,7 @@ struct key_matrix_data {
 
 bool key_matrix_init(struct key_matrix_data *key_matrix);
 void key_matrix_set_callback(struct key_matrix_data *key_matrix,
-	on_button_change_t on_button_change, void *context);
+	key_matrix_on_button_change_t on_button_change, void *context);
 
 #ifdef __cplusplus
 }
