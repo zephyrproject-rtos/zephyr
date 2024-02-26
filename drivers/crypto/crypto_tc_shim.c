@@ -25,6 +25,46 @@ LOG_MODULE_REGISTER(tinycrypt);
 
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
 
+static int do_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op)
+{
+	struct tc_shim_drv_state *data = ctx->drv_sessn_state;
+
+	if (TC_AES_BLOCK_SIZE != op->in_len) {
+		LOG_ERR("Expecting 16 bytes of input data");
+		return -EINVAL;
+	}
+
+	if (tc_aes_encrypt(op->out_buf, op->in_buf, &data->session_key) == TC_CRYPTO_FAIL) {
+		LOG_ERR("TC internal error during ECB encryption");
+		return -EIO;
+	}
+
+	/* We operate only on 16 byte long blocks */
+	op->out_len = TC_AES_BLOCK_SIZE;
+
+	return 0;
+}
+
+static int do_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op)
+{
+	struct tc_shim_drv_state *data = ctx->drv_sessn_state;
+
+	if (TC_AES_BLOCK_SIZE != op->in_len) {
+		LOG_ERR("Expecting 16 bytes of input data");
+		return -EINVAL;
+	}
+
+	if (tc_aes_decrypt(op->out_buf, op->in_buf, &data->session_key) == TC_CRYPTO_FAIL) {
+		LOG_ERR("Func TC internal error during ECB decryption");
+		return -EIO;
+	}
+
+	/* We operate only on 16 byte long blocks */
+	op->out_len = TC_AES_BLOCK_SIZE;
+
+	return 0;
+}
+
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 			  uint8_t *iv)
 {
@@ -221,6 +261,9 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
 		switch (mode) {
+		case CRYPTO_CIPHER_MODE_ECB:
+			ctx->ops.block_crypt_hndlr = do_ecb_encrypt;
+			break;
 		case CRYPTO_CIPHER_MODE_CBC:
 			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
 			break;
@@ -241,6 +284,9 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 		}
 	} else {
 		switch (mode) {
+		case CRYPTO_CIPHER_MODE_ECB:
+			ctx->ops.block_crypt_hndlr = do_ecb_decrypt;
+			break;
 		case CRYPTO_CIPHER_MODE_CBC:
 			ctx->ops.cbc_crypt_hndlr = do_cbc_decrypt;
 			break;
@@ -273,6 +319,7 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 
 	data = &tc_driver_state[idx];
 
+	/* tc_aes128_set_encrypt_key() also sets the decryption key */
 	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream)
 			 == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error in setting key");
