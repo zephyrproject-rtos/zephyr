@@ -124,29 +124,6 @@ static inline struct net_if *get_iface(struct nxp_enet_mac_data *data, uint16_t 
 	return iface ? iface : data->iface;
 }
 
-static void net_if_mcast_cb(struct net_if *iface,
-			    const struct net_addr *addr,
-			    bool is_joined)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct nxp_enet_mac_config *config = dev->config;
-	struct net_eth_addr mac_addr;
-
-	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->family == AF_INET) {
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) && addr->family == AF_INET6) {
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-	} else {
-		return;
-	}
-
-	if (is_joined) {
-		ENET_AddMulticastGroup(config->base, mac_addr.addr);
-	} else {
-		ENET_LeaveMulticastGroup(config->base, mac_addr.addr);
-	}
-}
-
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -266,9 +243,6 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
-	static struct net_if_mcast_monitor mon;
-
-	net_if_mcast_mon_register(&mon, iface, net_if_mcast_cb);
 
 	net_if_set_link_addr(iface, data->mac_addr,
 			     sizeof(data->mac_addr),
@@ -297,6 +271,7 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 	ARG_UNUSED(dev);
 
 	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+		ETHERNET_HW_FILTERING |
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
 #endif
@@ -331,6 +306,16 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 			data->mac_addr[0], data->mac_addr[1],
 			data->mac_addr[2], data->mac_addr[3],
 			data->mac_addr[4], data->mac_addr[5]);
+		return 0;
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		/* The ENET driver does not modify the address buffer but the API is not const */
+		if (cfg->filter.set) {
+			ENET_AddMulticastGroup(config->base,
+					       (uint8_t *)cfg->filter.mac_address.addr);
+		} else {
+			ENET_LeaveMulticastGroup(config->base,
+						 (uint8_t *)cfg->filter.mac_address.addr);
+		}
 		return 0;
 	default:
 		break;
