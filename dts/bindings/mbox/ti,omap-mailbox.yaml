@@ -1,0 +1,23 @@
+# Copyright (c) 2024 TI
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI OMAP MAILBOX
+
+compatible: "ti,omap-mailbox"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  user_id:
+    type: int
+    required: true
+    description: User ID for processor
+
+mbox-cells:
+  - channel

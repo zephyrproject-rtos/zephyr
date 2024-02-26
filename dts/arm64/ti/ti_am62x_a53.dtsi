@@ -57,6 +57,15 @@
 		status = "okay";
 	};
 
+	mbox: mailbox0@29000000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29000000 0x200>;
+		interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		user_id = <0>;
+		status = "okay";
+	};
+
 	uart0: serial@2800000 {
 		compatible = "ns16550";
 		reg = <0x02800000 0x100>;
