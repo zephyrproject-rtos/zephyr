@@ -98,8 +98,7 @@
 };
 
 &cpuppr_vpr {
-	source-memory = <&cpuppr_code_partition>;
-	execution-memory = <&cpuppr_ram3x_region>;
+	execution-memory = <&cpuppr_code_partition>;
 };
 
 &gpiote130 {

@@ -73,7 +73,7 @@
 		};
 
 		cpuppr_code_partition: partition@126000 {
-			reg = <0x126000 DT_SIZE_K(28)>;
+			reg = <0x126000 DT_SIZE_K(64)>;
 		};
 	};
 };
