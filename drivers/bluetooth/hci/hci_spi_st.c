@@ -334,13 +334,29 @@ static int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
 }
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
+static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t size)
 {
 	bool discardable = false;
 	k_timeout_t timeout = K_FOREVER;
 	struct bt_hci_acl_hdr acl_hdr;
-	struct net_buf *buf;
-	int len;
+	/* persistent variable to keep packet length in case the HCI packet is split in
+	 * multiple SPI transactions
+	 */
+	static uint16_t len;
+	struct net_buf *buf = *bufp;
+	int ret = 0;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1)
+	if (buf) {
+		/* Buffer already allocated, waiting to complete event reception */
+		net_buf_add_mem(buf, msg, MIN(size, len - buf->len));
+		if (buf->len >= len) {
+			return 0;
+		} else {
+			return -EINPROGRESS;
+		}
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
 
 	switch (msg[PACKET_TYPE]) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
@@ -348,8 +364,8 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 		struct bt_hci_ext_evt_hdr *evt = (struct bt_hci_ext_evt_hdr *) (msg + 1);
 		struct bt_hci_evt_hdr *evt2 = (struct bt_hci_evt_hdr *) (msg + 1);
 
-		if (evt->len > 0xff) {
-			return NULL;
+		if (sys_le16_to_cpu(evt->len) > 0xff) {
+			return -ENOMEM;
 		}
 		/* Use memmove instead of memcpy due to buffer overlapping */
 		memmove(msg + (1 + sizeof(*evt2)), msg + (1 + sizeof(*evt)), evt2->len);
@@ -361,7 +377,7 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 		case BT_HCI_EVT_VENDOR:
 			/* Run event through interface handler */
 			if (bt_spi_handle_vendor_evt(msg)) {
-				return NULL;
+				return -ECANCELED;
 			}
 			/* Event has not yet been handled */
 			__fallthrough;
@@ -375,7 +391,7 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 					     discardable, timeout);
 			if (!buf) {
 				LOG_DBG("Discard adv report due to insufficient buf");
-				return NULL;
+				return -ENOMEM;
 			}
 		}
 
@@ -383,9 +399,16 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 		if (len > net_buf_tailroom(buf)) {
 			LOG_ERR("Event too long: %d", len);
 			net_buf_unref(buf);
-			return NULL;
+			return -ENOMEM;
 		}
-		net_buf_add_mem(buf, &msg[1], len);
+		/* Skip the first byte (HCI packet indicator) */
+		size = size - 1;
+		net_buf_add_mem(buf, &msg[1], size);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1)
+		if (size < len) {
+			ret = -EINPROGRESS;
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
 		break;
 	case HCI_ACL:
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
@@ -394,16 +417,17 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 		if (len > net_buf_tailroom(buf)) {
 			LOG_ERR("ACL too long: %d", len);
 			net_buf_unref(buf);
-			return NULL;
+			return -ENOMEM;
 		}
 		net_buf_add_mem(buf, &msg[1], len);
 		break;
 	default:
 		LOG_ERR("Unknown BT buf type %d", msg[0]);
-		return NULL;
+		return -ENOTSUP;
 	}
 
-	return buf;
+	*bufp = buf;
+	return ret;
 }
 
 static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
@@ -412,7 +436,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	uint16_t size = 0U;
 	int ret;
 
@@ -448,10 +472,11 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 			LOG_HEXDUMP_DBG(rxmsg, size, "SPI RX");
 
 			/* Construct net_buf from SPI data */
-			buf = bt_spi_rx_buf_construct(rxmsg);
-			if (buf) {
+			ret = bt_spi_rx_buf_construct(rxmsg, &buf, size);
+			if (!ret) {
 				/* Handle the received HCI data */
 				bt_recv(buf);
+				buf = NULL;
 			}
 		} while (READ_CONDITION);
 	}
