@@ -476,6 +476,28 @@ ZTEST(can_classic, test_set_state_change_callback)
 }
 
 /**
+ * @brief Test bitrate limits.
+ */
+ZTEST_USER(can_classic, test_bitrate_limits)
+{
+	uint32_t min = 0U;
+	uint32_t max = 0U;
+	int err;
+
+	err = can_get_min_bitrate(can_dev, &min);
+	zassert_equal(err, 0, "failed to get min bitrate (err %d)", err);
+
+	err = can_get_max_bitrate(can_dev, &max);
+	if (err == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
+
+	zassert_true(min <= max, "min bitrate must be lower or equal to max bitrate");
+}
+
+/**
  * @brief Test setting a too high bitrate.
  */
 ZTEST_USER(can_classic, test_set_bitrate_too_high)
