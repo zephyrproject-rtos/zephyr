@@ -2266,7 +2266,8 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 	}
 
 	if (ctx->session_closed) {
-		return 0;
+		errno = ECONNABORTED;
+		return -1;
 	}
 
 	if (!is_block) {
