@@ -69,9 +69,8 @@ features:
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efm32gg_stk3701a/efm32gg_stk3701a_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efm32gg_stk3701a/efm32gg_stk3701a_defconfig`
 
 Other hardware features are currently not supported by the port.
 

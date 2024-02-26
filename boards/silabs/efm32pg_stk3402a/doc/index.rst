@@ -69,7 +69,7 @@ The default configuration can be found in
 :zephyr_file:`boards/silabs/efm32pg_stk3402a/efm32pg_stk3402a_efm32pg12b500f1024gl125_defconfig`
 
 The default configuration when building for this EFM32JG12B SoC can be found in
-:zephyr_file:`boards/arm/efm32pg_stk3402a/efm32pg_stk3402a_efm32jg12b500f1024gl125_defconfig`
+:zephyr_file:`boards/silabs/efm32pg_stk3402a/efm32pg_stk3402a_efm32jg12b500f1024gl125_defconfig`
 
 Other hardware features are currently not supported by the port.
 

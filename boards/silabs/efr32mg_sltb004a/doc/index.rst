@@ -82,8 +82,8 @@ The efr32mg_sltb004a board configuration supports the following hardware feature
 | TRNG      | on-chip    | true random number generator        |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/efr32mg_sltb004a/efr32mg_sltb004a_defconfig``.
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efr32mg_sltb004a/efr32mg_sltb004a_defconfig``
 
 Other hardware features are currently not supported by the port.
 
