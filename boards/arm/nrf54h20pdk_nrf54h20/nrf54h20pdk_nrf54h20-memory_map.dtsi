@@ -6,6 +6,25 @@
 
 / {
 	reserved-memory {
+		cpuapp_cpurad_ram0x_region: memory@2f0bf000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2f0bf000 DT_SIZE_K(4)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f0bf000 0x1000>;
+
+			cpuapp_cpurad_ipc_shm: memory@0 {
+				reg = <0x0 DT_SIZE_K(2)>;
+			};
+
+			cpurad_cpuapp_ipc_shm: memory@800 {
+				reg = <0x800 DT_SIZE_K(2)>;
+			};
+		};
+
 		cpuppr_ram3x_region: memory@2fc00000 {
 			compatible = "nordic,owned-memory";
 			reg = <0x2fc00000 DT_SIZE_K(28)>;
