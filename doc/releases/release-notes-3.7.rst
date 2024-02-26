@@ -137,6 +137,12 @@ Drivers and Sensors
 Networking
 **********
 
+* LwM2M:
+
+  * Added new API function:
+
+    * :c:func:`lwm2m_set_bulk`
+
 USB
 ***
 
