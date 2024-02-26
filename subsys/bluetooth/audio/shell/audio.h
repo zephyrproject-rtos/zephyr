@@ -88,7 +88,9 @@ struct shell_stream {
 	uint32_t lc3_freq_hz;
 	uint32_t lc3_frame_duration_us;
 	uint16_t lc3_octets_per_frame;
-	uint8_t lc3_frames_per_sdu;
+	uint8_t lc3_frame_blocks_per_sdu;
+	enum bt_audio_location lc3_chan_allocation;
+	uint8_t lc3_chan_cnt;
 #endif /* CONFIG_LIBLC3 */
 
 #if defined(CONFIG_BT_AUDIO_TX)

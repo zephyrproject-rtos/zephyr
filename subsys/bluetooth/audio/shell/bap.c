@@ -204,8 +204,8 @@ static uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
  * controller ISO buffer to handle jitter.
  */
 #define PRIME_COUNT 2U
-NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+#define SINE_TX_POOL_SIZE BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU)
+NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, SINE_TX_POOL_SIZE,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #include "math.h"
@@ -294,7 +294,8 @@ static void lc3_audio_send_data(struct k_work *work)
 	struct shell_stream *sh_stream = CONTAINER_OF(k_work_delayable_from_work(work),
 						      struct shell_stream, audio_send_work);
 	struct bt_bap_stream *bap_stream = bap_stream_from_shell_stream(sh_stream);
-	const uint16_t tx_sdu_len = sh_stream->lc3_frames_per_sdu * sh_stream->lc3_octets_per_frame;
+	const uint16_t tx_sdu_len = sh_stream->lc3_frame_blocks_per_sdu * sh_stream->lc3_chan_cnt *
+				    sh_stream->lc3_octets_per_frame;
 	struct net_buf *buf;
 	uint8_t *net_buffer;
 	off_t offset = 0;
@@ -315,11 +316,13 @@ static void lc3_audio_send_data(struct k_work *work)
 		return;
 	}
 
-	if (tx_sdu_len == 0U) {
-		shell_error(
-			ctx_shell,
-			"Cannot send 0 length SDU (from frames per sdu %u and %u octets per frame)",
-			sh_stream->lc3_frames_per_sdu, sh_stream->lc3_octets_per_frame);
+	if (tx_sdu_len == 0U || tx_sdu_len > SINE_TX_POOL_SIZE) {
+		shell_error(ctx_shell,
+			    "Cannot send %u length SDU (from frame blocks per sdu %u, channel "
+			    "count %u and %u octets per frame) for pool size %d",
+			    tx_sdu_len, sh_stream->lc3_frame_blocks_per_sdu,
+			    sh_stream->lc3_chan_cnt, sh_stream->lc3_octets_per_frame,
+			    SINE_TX_POOL_SIZE);
 		return;
 	}
 
@@ -338,22 +341,24 @@ static void lc3_audio_send_data(struct k_work *work)
 	net_buffer = net_buf_tail(buf);
 	buf->len += tx_sdu_len;
 
-	for (uint8_t i = 0U; i < sh_stream->lc3_frames_per_sdu; i++) {
-		int lc3_ret;
+	for (uint8_t i = 0U; i < sh_stream->lc3_frame_blocks_per_sdu; i++) {
+		for (uint8_t j = 0U; j < sh_stream->lc3_chan_cnt; j++) {
+			int lc3_ret;
 
-		lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, lc3_tx_buf, 1,
-				     sh_stream->lc3_octets_per_frame, net_buffer + offset);
-		offset += sh_stream->lc3_octets_per_frame;
+			lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, lc3_tx_buf, 1,
+					     sh_stream->lc3_octets_per_frame, net_buffer + offset);
+			offset += sh_stream->lc3_octets_per_frame;
 
-		if (lc3_ret == -1) {
-			shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
-				    lc3_ret);
-			net_buf_unref(buf);
+			if (lc3_ret == -1) {
+				shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
+					    lc3_ret);
+				net_buf_unref(buf);
 
-			/* Reschedule for next interval */
-			k_work_reschedule(k_work_delayable_from_work(work),
-					  K_USEC(bap_stream->qos->interval));
-			return;
+				/* Reschedule for next interval */
+				k_work_reschedule(k_work_delayable_from_work(work),
+						  K_USEC(bap_stream->qos->interval));
+				return;
+			}
 		}
 	}
 
@@ -2418,7 +2423,9 @@ static void lc3_decoder_stream_clear(struct shell_stream *sh_stream)
 static void do_lc3_decode(struct shell_stream *sh_stream)
 {
 	const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
-	const uint8_t frames_per_sdu = sh_stream->lc3_frames_per_sdu;
+	const uint8_t frame_blocks_per_sdu = sh_stream->lc3_frame_blocks_per_sdu;
+	const uint8_t chan_cnt = sh_stream->lc3_chan_cnt;
+	uint8_t frame_cnt;
 	struct net_buf *buf;
 
 	k_mutex_lock(&sh_stream->lc3_decoder_mutex, K_FOREVER);
@@ -2434,31 +2441,37 @@ static void do_lc3_decode(struct shell_stream *sh_stream)
 	sh_stream->in_buf = NULL;
 	k_mutex_unlock(&sh_stream->lc3_decoder_mutex);
 
-	for (uint8_t i = 0U; i < frames_per_sdu; i++) {
-		const uint8_t cnt = i + 1;
-		void *data;
-		int err;
+	frame_cnt = 0U;
+	for (uint8_t i = 0U; i < frame_blocks_per_sdu; i++) {
+		for (uint8_t j = 0U; j < chan_cnt; j++) {
+			void *data;
+			int err;
 
-		if (buf->len == 0U) {
-			data = NULL; /* perform PLC */
-		} else {
-			data = net_buf_pull_mem(buf, octets_per_frame);
-		}
+			if (buf->len == 0U) {
+				data = NULL; /* perform PLC */
+			} else {
+				data = net_buf_pull_mem(buf, octets_per_frame);
+			}
 
-		if ((sh_stream->decoded_cnt % recv_stats_interval) == 0) {
-			shell_print(ctx_shell, "[%zu]: Decoding frame of size %u (%u/%u)",
-				    sh_stream->decoded_cnt, octets_per_frame, cnt, frames_per_sdu);
-		}
+			frame_cnt++;
 
-		err = lc3_decode(lc3_decoder, data, octets_per_frame, LC3_PCM_FORMAT_S16,
-				 lc3_rx_buf, 1);
-		if (err != 0) {
-			shell_error(ctx_shell, "Failed to decode LC3 data (%u/%u - %u/%u)", cnt,
-				    frames_per_sdu, octets_per_frame * cnt, buf->len);
+			if ((sh_stream->decoded_cnt % recv_stats_interval) == 0) {
+				shell_print(ctx_shell, "[%zu]: Decoding frame of size %u (%u/%u)",
+					    sh_stream->decoded_cnt, octets_per_frame, frame_cnt,
+					    frame_blocks_per_sdu);
+			}
 
-			net_buf_unref(buf);
+			err = lc3_decode(lc3_decoder, data, octets_per_frame, LC3_PCM_FORMAT_S16,
+					 lc3_rx_buf, 1);
+			if (err != 0) {
+				shell_error(ctx_shell, "Failed to decode LC3 data (%u/%u - %u/%u)",
+					    frame_cnt, frame_blocks_per_sdu,
+					    octets_per_frame * frame_cnt, buf->len);
 
-			return;
+				net_buf_unref(buf);
+
+				return;
+			}
 		}
 	}
 
@@ -2535,15 +2548,18 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 #if defined(CONFIG_LIBLC3)
 	if (sh_stream->lc3_decoder != NULL) {
+		const uint8_t frame_blocks_per_sdu = sh_stream->lc3_frame_blocks_per_sdu;
 		const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
-		const uint8_t frames_per_sdu = sh_stream->lc3_frames_per_sdu;
+		const uint8_t chan_cnt = sh_stream->lc3_chan_cnt;
 		static size_t stream_rx_cnt;
 
 		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
 			buf->len = 0U; /* Set length to 0 to mark it as invalid for PLC */
-		} else if (buf->len != (octets_per_frame * frames_per_sdu)) {
-			shell_error(ctx_shell, "Expected %u frames of size %u, but length is %u",
-				    frames_per_sdu, octets_per_frame, buf->len);
+		} else if (buf->len != (octets_per_frame * chan_cnt * frame_blocks_per_sdu)) {
+			shell_error(ctx_shell,
+				    "Expected %u frame blocks with %u channels of size %u, but "
+				    "length is %u",
+				    frame_blocks_per_sdu, chan_cnt, octets_per_frame, buf->len);
 			buf->len = 0U; /* Set length to 0 to mark it as invalid for PLC */
 		}
 
@@ -2609,6 +2625,24 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 	}
 }
 
+#if defined(CONFIG_LIBLC3)
+static uint8_t get_chan_cnt(enum bt_audio_location chan_allocation)
+{
+	uint8_t cnt = 0U;
+
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		return 1;
+	}
+
+	while (chan_allocation != 0) {
+		cnt += chan_allocation & 1U;
+		chan_allocation >>= 1;
+	}
+
+	return cnt;
+}
+#endif /* CONFIG_LIBLC3 */
+
 static void stream_started_cb(struct bt_bap_stream *bap_stream)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(bap_stream);
@@ -2666,12 +2700,22 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 			sh_stream->lc3_frame_duration_us = 0U;
 		}
 
+		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg,
+							     &sh_stream->lc3_chan_allocation);
+		if (ret == 0) {
+			sh_stream->lc3_chan_cnt = get_chan_cnt(sh_stream->lc3_chan_allocation);
+		} else {
+			shell_error(ctx_shell, "Could not get channel allocation: %d", ret);
+			sh_stream->lc3_chan_allocation = BT_AUDIO_LOCATION_MONO_AUDIO;
+			sh_stream->lc3_chan_cnt = 0U;
+		}
+
 		ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 		if (ret > 0) {
-			sh_stream->lc3_frames_per_sdu = (uint8_t)ret;
+			sh_stream->lc3_frame_blocks_per_sdu = (uint8_t)ret;
 		} else {
 			shell_error(ctx_shell, "Could not get frame blocks per SDU: %d", ret);
-			sh_stream->lc3_frames_per_sdu = 0U;
+			sh_stream->lc3_frame_blocks_per_sdu = 0U;
 		}
 
 		ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
