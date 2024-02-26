@@ -2123,6 +2123,33 @@ out:
 	return ret;
 }
 
+void net_if_ipv6_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
+			       void *user_data)
+{
+	struct net_if_ipv6 *ipv6;
+
+	NET_ASSERT(iface);
+	NET_ASSERT(cb);
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (!ipv6) {
+		goto out;
+	}
+
+	for (int i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!ipv6->mcast[i].is_used) {
+			continue;
+		}
+
+		cb(iface, &ipv6->mcast[i], user_data);
+	}
+
+out:
+	net_if_unlock(iface);
+}
+
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 						   struct net_if **ret)
 {
@@ -4134,6 +4161,33 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 	net_if_unlock(iface);
 
 	return ret;
+}
+
+void net_if_ipv4_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
+			       void *user_data)
+{
+	struct net_if_ipv4 *ipv4;
+
+	NET_ASSERT(iface);
+	NET_ASSERT(cb);
+
+	net_if_lock(iface);
+
+	ipv4 = iface->config.ip.ipv4;
+	if (!ipv4) {
+		goto out;
+	}
+
+	for (int i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+		if (!ipv4->mcast[i].is_used) {
+			continue;
+		}
+
+		cb(iface, &ipv4->mcast[i], user_data);
+	}
+
+out:
+	net_if_unlock(iface);
 }
 
 struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
