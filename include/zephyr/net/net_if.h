@@ -1413,6 +1413,29 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr);
 
 /**
+ * @typedef net_if_ip_maddr_cb_t
+ * @brief Callback used while iterating over network interface multicast IP addresses
+ *
+ * @param iface Pointer to the network interface the address belongs to
+ * @param maddr Pointer to current multicast IP address
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*net_if_ip_maddr_cb_t)(struct net_if *iface,
+				     struct net_if_mcast_addr *maddr,
+				     void *user_data);
+
+/**
+ * @brief Go through all IPv6 multicast addresses on a network interface and call
+ * callback for each used address.
+ *
+ * @param iface Pointer to the network interface
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void net_if_ipv6_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
+			       void *user_data);
+
+/**
  * @brief Check if this IPv6 multicast address belongs to a specific interface
  * or one of the interfaces.
  *
@@ -2098,6 +2121,17 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
  * @return True if successfully removed, false otherwise
  */
 bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr);
+
+/**
+ * @brief Go through all IPv4 multicast addresses on a network interface and call
+ * callback for each used address.
+ *
+ * @param iface Pointer to the network interface
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void net_if_ipv4_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
+			       void *user_data);
 
 /**
  * @brief Check if this IPv4 multicast address belongs to a specific interface
