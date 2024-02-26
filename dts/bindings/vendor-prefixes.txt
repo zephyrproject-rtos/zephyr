@@ -232,7 +232,7 @@ gd	GigaDevice Semiconductor
 ge	General Electric Company
 geekbuying	GeekBuying
 gef	GE Fanuc Intelligent Platforms Embedded Systems, Inc.
-GEFanuc	GE Fanuc Intelligent Platforms Embedded Systems, Inc.
+gefanuc	GE Fanuc Intelligent Platforms Embedded Systems, Inc.
 gemei	Gemei Digital Technology Co., Ltd.
 geniatech	Geniatech, Inc.
 giantec	Giantec Semiconductor, Inc.
@@ -453,7 +453,7 @@ openrisc	OpenRISC.io
 openthread	OpenThread.io
 option	Option NV
 oranth	Shenzhen Oranth Technology Co., Ltd.
-ORCL	Oracle Corporation
+orcl	Oracle Corporation
 orisetech	Orise Technology
 ortustech	Ortus Technology Co., Ltd.
 osddisplays	OSD Displays
@@ -598,7 +598,7 @@ stericsson	ST-Ericsson
 st-ericsson	ST-Ericsson
 summit	Summit microelectronics
 sunchip	Shenzhen Sunchip Technology Co., Ltd
-SUNW	Sun Microsystems, Inc
+sunw	Sun Microsystems, Inc
 supermicro	Super Micro Computer, Inc.
 silvaco	Silvaco, Inc.
 swir	Sierra Wireless
