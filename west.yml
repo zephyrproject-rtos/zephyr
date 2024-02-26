@@ -20,7 +20,7 @@ manifest:
 
   remotes:
     - name: upstream
-      url-base: https://github.com/zephyrproject-rtos
+      url-base: git@github.com:zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
 
