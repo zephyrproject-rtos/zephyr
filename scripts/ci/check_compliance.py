@@ -582,9 +582,11 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
         # Warning: Needs to work with both --perl-regexp and the 're' module
         regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{*])"
 
-        # Skip doc/releases, which often references removed symbols
+        # Skip doc/releases and doc/security/vulnerabilities.rst, which often
+        # reference removed symbols
         grep_stdout = git("grep", "--line-number", "-I", "--null",
                           "--perl-regexp", regex, "--", ":!/doc/releases",
+                          ":!/doc/security/vulnerabilities.rst",
                           cwd=Path(GIT_TOP))
 
         # splitlines() supports various line terminators
