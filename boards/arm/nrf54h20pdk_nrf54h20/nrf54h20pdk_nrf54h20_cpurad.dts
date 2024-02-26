@@ -22,7 +22,7 @@
 	};
 };
 
-&ram3x_dma_region {
+&shared_ram3x_region {
 	status = "okay";
 };
 
