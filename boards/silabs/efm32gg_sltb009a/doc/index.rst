@@ -56,10 +56,8 @@ features:
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efm32gg_sltb009a/efm32gg_sltb009a_defconfig``
-
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efm32gg_sltb009a/efm32gg_sltb009a_defconfig`
 
 Connections and IOs
 ===================

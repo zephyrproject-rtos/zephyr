@@ -90,7 +90,7 @@ Most board sub-configurations support building with both GNU and ARC MWDT toolch
 there might be exceptions from that, especially for newly added targets. You can check supported
 toolchains for the sub-configurations in the corresponding ``.yaml`` file.
 
-I.e. for the ``nsim/nsim_hs5x`` board we can check :zephyr_file:`boards/synopsys/nsim/nsim_hs5x.yaml`
+I.e. for the ``nsim/nsim_hs5x`` board we can check :zephyr_file:`boards/synopsys/nsim/nsim_nsim_hs5x.yaml`
 
 The supported toolchains are listed in ``toolchain:`` array in ``.yaml`` file, where we can find:
 
