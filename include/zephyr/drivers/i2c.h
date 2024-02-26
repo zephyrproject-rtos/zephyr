@@ -759,6 +759,10 @@ static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_
  * the same behavior.  See the documentation of `struct i2c_msg` for
  * limitations on support for multi-message bus transactions.
  *
+ * @note The last message in the scatter/gather transaction implies a STOP
+ * whether or not it is explicitly set. This ensures the bus is in a good
+ * state for the next transaction which may be from a different call context.
+ *
  * @param dev Pointer to the device structure for an I2C controller
  * driver configured in controller mode.
  * @param msgs Array of messages to transfer.
