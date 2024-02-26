@@ -89,6 +89,18 @@ enum charger_property {
 	 * is issued to the system, measured in µV
 	 */
 	CHARGER_PROP_SYSTEM_VOLTAGE_NOTIFICATION_UV,
+	/**
+	 * Configuration to issue a notification to the system based on the charger status change
+	 *
+	 * Value should be of type charger_status_notifier_t
+	 */
+	CHARGER_PROP_STATUS_NOTIFICATION,
+	/**
+	 * Configuration to issue a notification to the system based on the charger online change
+	 *
+	 * Value should be of type charger_online_notifier_t
+	 */
+	CHARGER_PROP_ONLINE_NOTIFICATION,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -231,6 +243,20 @@ struct charger_current_notifier {
 };
 
 /**
+ * @brief The charger status change callback to notify the system
+ *
+ * @param status Current charging state
+ */
+typedef void (*charger_status_notifier_t)(enum charger_status status);
+
+/**
+ * @brief The charger online change callback to notify the system
+ *
+ * @param online Current external supply state
+ */
+typedef void (*charger_online_notifier_t)(enum charger_online online);
+
+/**
  * @brief container for a charger_property value
  *
  */
@@ -267,6 +293,10 @@ union charger_propval {
 	struct charger_current_notifier discharge_current_notification;
 	/** CHARGER_PROP_SYSTEM_VOLTAGE_NOTIFICATION_UV */
 	uint32_t system_voltage_notification;
+	/** CHARGER_PROP_STATUS_NOTIFICATION */
+	charger_status_notifier_t status_notification;
+	/** CHARGER_PROP_ONLINE_NOTIFICATION */
+	charger_online_notifier_t online_notification;
 };
 
 /**
