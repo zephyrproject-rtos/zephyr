@@ -157,8 +157,7 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 
 config UART_BUILTIN_HALFDUPLEX
     bool "Built-in half-duplex API"
-    depends on SERIAL_SUPPORT_BUILTIN_HALFDUPLEX
-    default n 
+    depends on SERIAL_SUPPORT_BUILTIN_HALFDUPLEX 
     help
       This enables the API to control an half-duplex with built-in hardware uart
       communication. This can be useful for interacting with devices using 
