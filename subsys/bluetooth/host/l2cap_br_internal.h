@@ -158,13 +158,13 @@ void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan);
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
 
 #if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
-void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
+void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
 				   bt_l2cap_chan_state_t state,
 				   const char *func, int line);
-#define bt_l2cap_chan_set_state(_chan, _state) \
-	bt_l2cap_chan_set_state_debug(_chan, _state, __func__, __LINE__)
+#define bt_l2cap_br_chan_set_state(_chan, _state) \
+	bt_l2cap_br_chan_set_state_debug(_chan, _state, __func__, __LINE__)
 #else
-void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
+void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan,
 			     bt_l2cap_chan_state_t state);
 #endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
 
