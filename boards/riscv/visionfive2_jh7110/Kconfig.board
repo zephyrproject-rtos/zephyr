@@ -4,5 +4,3 @@
 config BOARD_VISIONFIVE2_JH7110
         bool "VISIONFIVE2 JH7110 RISCV64 target"
         depends on SOC_JH7110
-        select 64BIT
-

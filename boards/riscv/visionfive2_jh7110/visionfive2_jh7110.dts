@@ -9,9 +9,6 @@
 #include "starfive/jh7110-visionfive-v2.dtsi"
 
 / {
-        model = "StarFive VisionFive V2";
-        compatible = "starfive,visionfive-v2", "starfive,jh7110";
-
         chosen {
                 zephyr,console = &uart0;
                 zephyr,shell-uart = &uart0;
