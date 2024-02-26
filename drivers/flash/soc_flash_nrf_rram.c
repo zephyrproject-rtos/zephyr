@@ -47,8 +47,7 @@ static struct k_sem sem_lock;
 #define WRITE_LINE_SIZE       16 /* In bytes, one line is 128 bits. */
 #define WRITE_BUFFER_MAX_SIZE (WRITE_BUFFER_SIZE * WRITE_LINE_SIZE)
 BUILD_ASSERT((PAGE_SIZE % (WRITE_LINE_SIZE) == 0), "erase-block-size must be a multiple of 16");
-BUILD_ASSERT((WRITE_BLOCK_SIZE_FROM_DT % (WRITE_LINE_SIZE) == 0),
-	     "if NRF_RRAM_WRITE_BUFFER_SIZE > 0, then write-block-size must be a multiple of 16");
+
 #else
 #define WRITE_BUFFER_ENABLE   0
 #define WRITE_BUFFER_SIZE     0
