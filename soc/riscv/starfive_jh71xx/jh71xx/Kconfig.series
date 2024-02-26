@@ -1,4 +1,8 @@
+# Copyright (c) 2024 Pratik Farkase <pratik.farkase@wsisweden.com>
+# Copyright (c) 2024 Sigma Connectivity WSI AB
+
 # Copyright (c) 2021 Rajnesh Kanwal <rajnesh.kanwal49@gmail.com>
+
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STARFIVE_JH71XX
@@ -6,5 +10,7 @@ config SOC_SERIES_STARFIVE_JH71XX
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
+	select RISCV_PRIVILEGED_STANDALONE
+	select SOC_FAMILY_STARFIVE_JH71XX
 	help
 	  Enable support for Starfive JH71XX SoC Series.

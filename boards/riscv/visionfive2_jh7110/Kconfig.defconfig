@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Pratik Farkase <pratik.farkase@wsisweden.com> 
+# Copyright (c) 2024 Sigma Connectivity WSI AB
+
+# SPDX-License-Identifier: Apache-2.0
+
+
+config BOARD
+        default "visionfive2_jh7110"
+        depends on BOARD_VISIONFIVE2_JH7110
+
