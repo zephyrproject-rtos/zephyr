@@ -48,6 +48,52 @@ void worker(void *p1, void *p2, void *p3)
 	}
 }
 
+void deadline_worker(void *p1, void *p2, void *p3)
+{
+	zassert_true(n_exec == 0, "");
+	n_exec++;
+}
+
+void normal_worker(void *p1, void *p2, void *p3)
+{
+	zassert_true(n_exec == 1, "");
+	n_exec++;
+}
+
+ZTEST(suite_deadline, test_deadline_and_normal)
+{
+	n_exec = 0;
+
+	worker_tids[0] = k_thread_create(&worker_threads[0],
+				worker_stacks[0], STACK_SIZE,
+				deadline_worker, NULL, NULL, NULL,
+				K_LOWEST_APPLICATION_THREAD_PRIO,
+				0, K_NO_WAIT);
+
+
+	worker_tids[1] = k_thread_create(&worker_threads[1],
+				worker_stacks[1], STACK_SIZE,
+				normal_worker, NULL, NULL, NULL,
+				K_LOWEST_APPLICATION_THREAD_PRIO,
+				0, K_NO_WAIT);
+
+	zassert_true(n_exec == 0, "threads ran too soon");
+
+	/* Similarly do the deadline setting in one quick pass to
+	 * minimize aliasing with "now"
+	 */
+	k_thread_deadline_set(&worker_threads[0], sys_rand32_get() & 0x3fffff00);
+
+	zassert_true(n_exec == 0, "threads ran too soon");
+
+	k_sleep(K_MSEC(100));
+
+	zassert_true(n_exec == 2, "not enough threads ran");
+
+	k_thread_abort(worker_tids[0]);
+	k_thread_abort(worker_tids[1]);
+}
+
 ZTEST(suite_deadline, test_deadline)
 {
 	int i;
