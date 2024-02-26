@@ -7,6 +7,7 @@
 #include <ksched.h>
 #include <zephyr/spinlock.h>
 #include <wait_q.h>
+#include <kthread.h>
 #include <priority_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>

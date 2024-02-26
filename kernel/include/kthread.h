@@ -11,6 +11,25 @@
 #include <zephyr/kernel.h>
 #include <timeout_q.h>
 
+#ifdef CONFIG_THREAD_MONITOR
+/* This lock protects the linked list of active threads; i.e. the
+ * initial _kernel.threads pointer and the linked list made up of
+ * thread->next_thread (until NULL)
+ */
+extern struct k_spinlock z_thread_monitor_lock;
+#endif
+
+/* clean up when a thread is aborted */
+
+#if defined(CONFIG_THREAD_MONITOR)
+void z_thread_monitor_exit(struct k_thread *thread);
+#else
+#define z_thread_monitor_exit(thread) \
+	do {/* nothing */    \
+	} while (false)
+#endif /* CONFIG_THREAD_MONITOR */
+
+
 #ifdef CONFIG_MULTITHREADING
 static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t delay)
 {

@@ -220,6 +220,7 @@ config DYNAMIC_THREAD
 	select EXPERIMENTAL
 	depends on THREAD_STACK_INFO
 	select DYNAMIC_OBJECTS if USERSPACE
+	select THREAD_MONITOR
 	help
 	  Enable support for dynamic threads and stacks.
 

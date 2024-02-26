@@ -101,6 +101,13 @@ list(APPEND kernel_files
   )
 endif()
 
+
+if(CONFIG_THREAD_MONITOR)
+list(APPEND kernel_files
+     thread_monitor.c)
+endif()
+
+
 if(CONFIG_XIP)
 list(APPEND kernel_files
      xip.c)
