@@ -51,6 +51,8 @@
 #define B9X_TX_PWR_NOT_SET                 INT16_MAX
 #define B9X_TX_CH_NOT_SET                  UINT16_MAX
 
+#define IEEE802154_B9X_FLASH_MAC_OFFSET 0x1000
+
 #ifdef CONFIG_OPENTHREAD_FTD
 /* radio source match table type */
 struct b9x_src_match_table {

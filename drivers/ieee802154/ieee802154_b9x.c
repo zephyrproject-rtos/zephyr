@@ -34,6 +34,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "ieee802154_b9x_frame.c"
 
+#if defined(CONFIG_IEEE802154_B9X_MAC_FLASH)
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+
+static const struct device *flash_device =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+#endif /* CONFIG_IEEE802154_B9X_MAC_FLASH */
 
 #ifdef CONFIG_OPENTHREAD_FTD
 /* B9X radio source match table structure */
@@ -431,7 +438,7 @@ static ALWAYS_INLINE uint8_t *b9x_get_mac(const struct device *dev)
 {
 	struct b9x_data *b9x = dev->data;
 
-#if defined(CONFIG_IEEE802154_B9X_RANDOM_MAC)
+#if defined(CONFIG_IEEE802154_B9X_MAC_RANDOM)
 	uint32_t *ptr = (uint32_t *)(b9x->mac_addr);
 
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
@@ -444,7 +451,11 @@ static ALWAYS_INLINE uint8_t *b9x_get_mac(const struct device *dev)
 	 * not be globally unique.
 	 */
 	b9x->mac_addr[0] = (b9x->mac_addr[0] & ~0x01) | 0x02;
-#else
+#elif defined(CONFIG_IEEE802154_B9X_MAC_FLASH)
+	(void) flash_read(flash_device, FIXED_PARTITION_OFFSET(vendor_partition)
+			+ IEEE802154_B9X_FLASH_MAC_OFFSET, b9x->mac_addr,
+			IEEE802154_FRAME_LENGTH_ADDR_EXT);
+#else /* CONFIG_IEEE802154_B9X_MAC_STATIC */
 	/* Vendor Unique Identifier */
 	b9x->mac_addr[0] = 0xC4;
 	b9x->mac_addr[1] = 0x19;
@@ -456,7 +467,7 @@ static ALWAYS_INLINE uint8_t *b9x_get_mac(const struct device *dev)
 	b9x->mac_addr[5] = CONFIG_IEEE802154_B9X_MAC5;
 	b9x->mac_addr[6] = CONFIG_IEEE802154_B9X_MAC6;
 	b9x->mac_addr[7] = CONFIG_IEEE802154_B9X_MAC7;
-#endif
+#endif /* IEEE802154_B9X_MAC_TYPE */
 
 	return b9x->mac_addr;
 }

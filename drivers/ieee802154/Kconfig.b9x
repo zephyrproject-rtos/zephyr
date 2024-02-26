@@ -30,11 +30,16 @@ config IEEE802154_B9X_CCA_RSSI_THRESHOLD
 	  CCA procedure returns true if the current RSSI value is less than
 	  this parameter.
 
-config IEEE802154_B9X_RANDOM_MAC
+choice IEEE802154_B9X_MAC_TYPE
+	prompt "IEEE802154 MAC address type"
+	default IEEE802154_B9X_MAC_RANDOM
+config IEEE802154_B9X_MAC_RANDOM
 	bool "Random MAC address"
-	default y
-	help
-	  Generate a random MAC address dynamically.
+config IEEE802154_B9X_MAC_FLASH
+	bool "MAC address from flash"
+config IEEE802154_B9X_MAC_STATIC
+	bool "MAC address precompiled"
+endchoice
 
 config IEEE802154_B9X_DELAY_TRX_ACC
 	int "Clock accuracy for delayed operations"
@@ -43,7 +48,7 @@ config IEEE802154_B9X_DELAY_TRX_ACC
 	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
 	  or delayed reception), in ppm.
 
-if ! IEEE802154_B9X_RANDOM_MAC
+if IEEE802154_B9X_MAC_STATIC
 
 config IEEE802154_B9X_MAC4
 	hex "MAC Address Byte 4"
@@ -73,5 +78,5 @@ config IEEE802154_B9X_MAC7
 	help
 	  This is the byte 7 of the MAC address.
 
-endif # ! IEEE802154_B9X_RANDOM_MAC
+endif # IEEE802154_B9X_MAC_STATIC
 endif # IEEE802154_TELINK_B9X
