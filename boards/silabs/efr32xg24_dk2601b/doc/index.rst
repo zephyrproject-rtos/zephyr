@@ -99,9 +99,8 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 | PA6   | USART0_RX   | UART Console EFM_BC_RX US0_RX       |
 +-------+-------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	``boards/arm/efr32xg24_dk2601b/efr32xg24_dk2601b_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/silabs/efr32xg24_dk2601b/efr32xg24_dk2601b_defconfig`
 
 System Clock
 ============
