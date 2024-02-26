@@ -17,6 +17,8 @@ tests:
       type: multi_line
       regex:
         - ".*: Cipher Sample"
+        - ".*: ECB mode ENCRYPT - Match"
+        - ".*: ECB mode DECRYPT - Match"
         - ".*: CBC mode ENCRYPT - Match"
         - ".*: CBC mode DECRYPT - Match"
         - ".*: CTR mode ENCRYPT - Match"
