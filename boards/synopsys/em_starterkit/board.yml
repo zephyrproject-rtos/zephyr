@@ -1,6 +1,6 @@
 board:
   name: em_starterkit
-  vendor: Synopsys
+  vendor: snps
   socs:
   - name: emsk_em7d
   - name: emsk_em9d

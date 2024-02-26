@@ -1,6 +1,6 @@
 board:
   name: emsdp
-  vendor: Synopsys
+  vendor: snps
   socs:
   - name: emsdp_em4
   - name: emsdp_em5d

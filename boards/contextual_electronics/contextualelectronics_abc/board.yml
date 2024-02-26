@@ -1,5 +1,5 @@
 board:
   name: contextualelectronics_abc
-  vendor: Contextual Electronics
+  vendor: contextualelectronics
   socs:
   - name: nrf52840

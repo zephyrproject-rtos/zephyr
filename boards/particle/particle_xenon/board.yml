@@ -1,5 +1,5 @@
 board:
   name: particle_xenon
-  vendor: Particle Industries
+  vendor: particle
   socs:
   - name: nrf52840

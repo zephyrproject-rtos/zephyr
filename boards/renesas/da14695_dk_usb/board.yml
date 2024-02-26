@@ -1,5 +1,5 @@
 board:
   name: da14695_dk_usb
-  vendor: Renesas
+  vendor: renesas
   socs:
   - name: da14695

@@ -1,6 +1,6 @@
 board:
   name: mps2
-  vendor: ARM
+  vendor: arm
   socs:
   - name: an385
   - name: an521

@@ -1,5 +1,5 @@
 board:
   name: acn52832
-  vendor: Aconno
+  vendor: aconno
   socs:
   - name: nrf52832

@@ -1,6 +1,6 @@
 board:
   name: qemu_malta
-  vendor: QEMU
+  vendor: qemu
   socs:
   - name: qemu_malta
     variants:

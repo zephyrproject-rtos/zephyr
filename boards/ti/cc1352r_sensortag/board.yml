@@ -1,5 +1,5 @@
 board:
   name: cc1352r_sensortag
-  vendor: Texas Instruments
+  vendor: ti
   socs:
   - name: cc1352r
