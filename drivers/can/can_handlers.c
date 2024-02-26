@@ -45,6 +45,16 @@ static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 }
 #include <syscalls/can_get_core_clock_mrsh.c>
 
+static inline int z_vrfy_can_get_min_bitrate(const struct device *dev,
+					     uint32_t *min_bitrate)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(min_bitrate, sizeof(*min_bitrate)));
+
+	return z_impl_can_get_min_bitrate(dev, min_bitrate);
+}
+#include <syscalls/can_get_min_bitrate_mrsh.c>
+
 static inline int z_vrfy_can_get_max_bitrate(const struct device *dev,
 					     uint32_t *max_bitrate)
 {
