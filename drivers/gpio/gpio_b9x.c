@@ -570,29 +570,27 @@ static int gpio_b9x_pin_interrupt_configure(const struct device *dev,
 			BM_SET(cfg->pin_irq_state->irq_en_rising, BIT(pin));
 			BM_CLR(cfg->pin_irq_state->irq_en_falling, BIT(pin));
 			BM_CLR(cfg->pin_irq_state->irq_en_both, BIT(pin));
-			gpio_b9x_irq_set(dev, pin, INTR_RISING_EDGE);
 		} else if (trig == GPIO_INT_TRIG_LOW) { /* GPIO interrupt Falling edge */
 			BM_SET(cfg->pin_irq_state->irq_en_falling, BIT(pin));
 			BM_CLR(cfg->pin_irq_state->irq_en_rising, BIT(pin));
 			BM_CLR(cfg->pin_irq_state->irq_en_both, BIT(pin));
-			gpio_b9x_irq_set(dev, pin, INTR_FALLING_EDGE);
 		} else if (trig == GPIO_INT_TRIG_BOTH) { /* GPIO interrupt Both edge */
 			BM_SET(cfg->pin_irq_state->irq_en_both, BIT(pin));
 			BM_CLR(cfg->pin_irq_state->irq_en_rising, BIT(pin));
 			BM_CLR(cfg->pin_irq_state->irq_en_falling, BIT(pin));
-
-			/*
-			 * Select the falling edge/low level IRQ as
-			 * a wakeup source if the initial pin state is high.
-			 * The opposite solution is used when initial state is low.
-			 */
-			if (current_pin_value) {
-				gpio_b9x_irq_set(dev, pin, INTR_FALLING_EDGE);
-			} else {
-				gpio_b9x_irq_set(dev, pin, INTR_RISING_EDGE);
-			}
 		} else {
 			ret_status = -ENOTSUP;
+		}
+
+		/*
+		 * Select the falling edge/low level IRQ as
+		 * a wakeup source if the initial pin state is high.
+		 * The opposite solution is used when initial state is low.
+		 */
+		if (current_pin_value) {
+			gpio_b9x_irq_set(dev, pin, INTR_FALLING_EDGE);
+		} else {
+			gpio_b9x_irq_set(dev, pin, INTR_RISING_EDGE);
 		}
 
 		if (ret_status == 0) {
