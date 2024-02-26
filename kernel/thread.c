@@ -69,74 +69,9 @@ SYS_INIT(init_thread_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif
 
-#ifdef CONFIG_THREAD_MONITOR
-/* This lock protects the linked list of active threads; i.e. the
- * initial _kernel.threads pointer and the linked list made up of
- * thread->next_thread (until NULL)
- */
-static struct k_spinlock z_thread_monitor_lock;
-#endif /* CONFIG_THREAD_MONITOR */
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
-
-void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
-{
-#if defined(CONFIG_THREAD_MONITOR)
-	struct k_thread *thread;
-	k_spinlock_key_t key;
-
-	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
-
-	/*
-	 * Lock is needed to make sure that the _kernel.threads is not being
-	 * modified by the user_cb either directly or indirectly.
-	 * The indirect ways are through calling k_thread_create and
-	 * k_thread_abort from user_cb.
-	 */
-	key = k_spin_lock(&z_thread_monitor_lock);
-
-	SYS_PORT_TRACING_FUNC_ENTER(k_thread, foreach);
-
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		user_cb(thread, user_data);
-	}
-
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, foreach);
-
-	k_spin_unlock(&z_thread_monitor_lock, key);
-#else
-	ARG_UNUSED(user_cb);
-	ARG_UNUSED(user_data);
-#endif
-}
-
-void k_thread_foreach_unlocked(k_thread_user_cb_t user_cb, void *user_data)
-{
-#if defined(CONFIG_THREAD_MONITOR)
-	struct k_thread *thread;
-	k_spinlock_key_t key;
-
-	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
-
-	key = k_spin_lock(&z_thread_monitor_lock);
-
-	SYS_PORT_TRACING_FUNC_ENTER(k_thread, foreach_unlocked);
-
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		k_spin_unlock(&z_thread_monitor_lock, key);
-		user_cb(thread, user_data);
-		key = k_spin_lock(&z_thread_monitor_lock);
-	}
-
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, foreach_unlocked);
-
-	k_spin_unlock(&z_thread_monitor_lock, key);
-#else
-	ARG_UNUSED(user_cb);
-	ARG_UNUSED(user_data);
-#endif
-}
 
 bool k_is_in_isr(void)
 {
@@ -172,33 +107,6 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
 
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
-
-#if defined(CONFIG_THREAD_MONITOR)
-/*
- * Remove a thread from the kernel's list of active threads.
- */
-void z_thread_monitor_exit(struct k_thread *thread)
-{
-	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
-
-	if (thread == _kernel.threads) {
-		_kernel.threads = _kernel.threads->next_thread;
-	} else {
-		struct k_thread *prev_thread;
-
-		prev_thread = _kernel.threads;
-		while ((prev_thread != NULL) &&
-			(thread != prev_thread->next_thread)) {
-			prev_thread = prev_thread->next_thread;
-		}
-		if (prev_thread != NULL) {
-			prev_thread->next_thread = thread->next_thread;
-		}
-	}
-
-	k_spin_unlock(&z_thread_monitor_lock, key);
-}
-#endif
 
 int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 {
