@@ -18,7 +18,7 @@
 		zephyr,console = &uart136;
 		zephyr,code-partition = &cpuapp_slot0_partition;
 		zephyr,flash = &mram1x;
-		zephyr,sram = &cpuapp_ram0;
+		zephyr,sram = &cpuapp_data;
 	};
 
 	aliases {
@@ -85,7 +85,11 @@
 	};
 };
 
-&ram3x_dma_region {
+&cpuapp_ram0x_region {
+	status = "okay";
+};
+
+&shared_ram3x_region {
 	status = "okay";
 };
 
