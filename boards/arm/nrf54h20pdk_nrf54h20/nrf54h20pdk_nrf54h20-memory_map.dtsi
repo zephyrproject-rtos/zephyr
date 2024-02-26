@@ -25,6 +25,14 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x2fc07000 0x1000>;
 
+			cpuapp_cpuppr_ipc_shm: memory@0 {
+				reg = <0x0 0x340>;
+			};
+
+			cpuppr_cpuapp_ipc_shm: memory@340 {
+				reg = <0x340 0x340>;
+			};
+
 			cpuapp_dma_region: memory@680 {
 				compatible = "zephyr,memory-region";
 				reg = <0x680 DT_SIZE_K(2)>;
