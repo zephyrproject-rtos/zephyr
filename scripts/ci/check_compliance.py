@@ -228,6 +228,40 @@ class CheckPatch(ComplianceTest):
                 self.failure(output)
 
 
+class BoardYmlCheck(ComplianceTest):
+    """
+    Check the board.yml files
+    """
+    name = "BoardYml"
+    doc = "Check the board.yml file format"
+    path_hint = "<zephyr-base>"
+
+    def check_board_file(self, file, vendor_prefixes):
+        """Validate a single board file."""
+        with open(file) as fp:
+            for line_num, line in enumerate(fp.readlines(), start=1):
+                if "vendor:" in line:
+                    _, vnd = line.strip().split(":", 2)
+                    vnd = vnd.strip()
+                    if vnd not in vendor_prefixes:
+                        desc = f"invalid vendor: {vnd}"
+                        self.fmtd_failure("error", "BoardYml", file, line_num,
+                                          desc=desc)
+
+    def run(self):
+        vendor_prefixes = ["others"]
+        with open(os.path.join(ZEPHYR_BASE, "dts", "bindings", "vendor-prefixes.txt")) as fp:
+            for line in fp.readlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                vendor, _ = line.split("\t", 2)
+                vendor_prefixes.append(vendor)
+
+        path = Path(ZEPHYR_BASE)
+        for file in path.glob("**/board.yml"):
+            self.check_board_file(file, vendor_prefixes)
+
 class DevicetreeBindingsCheck(ComplianceTest):
     """
     Checks if we are introducing any unwanted properties in Devicetree Bindings.
