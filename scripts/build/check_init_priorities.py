@@ -51,6 +51,7 @@ _IGNORE_COMPATIBLES = frozenset([
         # device controller, the logical connection is established after USB
         # device support is enabled.
         "zephyr,cdc-acm-uart",
+        "st,stm32-ltdc",
         ])
 
 class Priority:

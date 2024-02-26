@@ -66,8 +66,8 @@ properties:
     type: int
     description: Last pixel in y direction on layer 0. Defaults to height.
 
-  display-controller:
+  panel-controller:
     type: phandle
     description: |
-      Phandle of the display's controller. When provided, it's used to forward some of the
+      Phandle of the panel's controller. When provided, it's used to forward some of the
       configuration calls (e.g. blanking on/off) sent to LTDC device.
