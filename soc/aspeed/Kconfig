@@ -5,4 +5,8 @@
 config SOC_FAMILY_ASPEED
 	select PLATFORM_SPECIFIC_INIT
 
+if SOC_FAMILY_ASPEED
+
 rsource "*/Kconfig"
+
+endif # SOC_FAMILY_ASPEED

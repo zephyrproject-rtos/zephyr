@@ -3,9 +3,9 @@
 # Copyright (c) 2020 Linumiz
 # Author: Parthiban Nallathambi <parthiban@linumiz.com>
 
-rsource "*/Kconfig.defconfig"
-
 if SOC_FAMILY_INFINEON_XMC
+
+rsource "*/Kconfig.defconfig"
 
 config PINCTRL
 	default y

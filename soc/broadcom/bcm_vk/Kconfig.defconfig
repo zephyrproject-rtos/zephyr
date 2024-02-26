@@ -3,4 +3,8 @@
 # Copyright 2020 Broadcom.
 #
 
+if SOC_FAMILY_BCMVK
+
 rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_BCMVK

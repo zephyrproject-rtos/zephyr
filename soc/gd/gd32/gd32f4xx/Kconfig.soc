@@ -4,6 +4,7 @@
 
 config SOC_SERIES_GD32F4XX
 	bool
+	select SOC_FAMILY_GD_GD32
 	help
 	  Enable support for GigaDevice GD32F4XX MCU series
 
