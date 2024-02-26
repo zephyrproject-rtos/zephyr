@@ -122,7 +122,7 @@ struct can_sja1000_config {
  */
 #define CAN_SJA1000_DT_CONFIG_GET(node_id, _custom, _read_reg, _write_reg, _ocr, _cdr)             \
 	{                                                                                          \
-		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 1000000),                              \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 0, 1000000),                           \
 		.read_reg = _read_reg,                                                             \
 		.write_reg = _write_reg,                                                           \
 		.ocr = _ocr,                                                                       \

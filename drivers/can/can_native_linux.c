@@ -471,7 +471,7 @@ static int can_native_linux_init(const struct device *dev)
 #define CAN_NATIVE_LINUX_INIT(inst)						\
 										\
 static const struct can_native_linux_config can_native_linux_cfg_##inst = {	\
-	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0),			\
+	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),			\
 	.if_name = DT_INST_PROP(inst, host_interface),				\
 };										\
 										\

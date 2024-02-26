@@ -440,7 +440,7 @@ static int can_loopback_init(const struct device *dev)
 
 #define CAN_LOOPBACK_INIT(inst)							\
 	static const struct can_loopback_config can_loopback_config_##inst = {	\
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0U),		\
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),		\
 	};									\
 										\
 	static struct can_loopback_data can_loopback_data_##inst;		\
