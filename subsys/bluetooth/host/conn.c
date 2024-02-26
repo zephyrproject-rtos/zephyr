@@ -1389,11 +1389,6 @@ void bt_conn_unref(struct bt_conn *conn)
 	if (deallocated) {
 		notify_recycled_conn_slot();
 	}
-
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
-	    deallocated) {
-		bt_le_adv_resume();
-	}
 }
 
 uint8_t bt_conn_index(const struct bt_conn *conn)

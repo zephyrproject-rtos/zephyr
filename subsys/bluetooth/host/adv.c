@@ -1529,6 +1529,10 @@ void bt_le_adv_resume(void)
 		atomic_set_bit(adv->flags, BT_ADV_PERSIST);
 	}
 }
+
+BT_CONN_CB_DEFINE(conn_cb) = {
+	.recycled = bt_le_adv_resume,
+};
 #endif /* defined(CONFIG_BT_PERIPHERAL) */
 
 #if defined(CONFIG_BT_EXT_ADV)
