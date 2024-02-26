@@ -15,6 +15,7 @@
     #address-cells = <2>;
     #size-cells = <2>;
     compatible = "starfive,jh7110";
+    model = "StarFive VisionFive V2";
 
     cpus {
         #address-cells = <1>;
@@ -149,7 +150,7 @@
         #address-cells = <2>;
         #size-cells = <2>;
         #clock-cells = <1>;
-        compatible = "simple-bus";
+        compatible = "starfive,jh7110", "simple-bus";
         ranges;
 
         clint: timer@2000000 {
