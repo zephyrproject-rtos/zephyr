@@ -9,6 +9,7 @@ pygments>=2.9
 sphinx-notfound-page
 sphinx-copybutton
 sphinx-togglebutton
+sphinx-sitemap
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=6.0
