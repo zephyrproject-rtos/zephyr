@@ -55,6 +55,15 @@ include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 add_dependencies(test_interface ${KOBJ_TYPES_H_TARGET})
 gen_kobj(KOBJ_GEN_DIR)
 
+FILE(TOUCH ${APPLICATION_BINARY_DIR}/zephyr/include/generated/offsets.h)
+FILE(TOUCH ${APPLICATION_BINARY_DIR}/zephyr/include/generated/syscall_list.h)
+FILE(TOUCH ${APPLICATION_BINARY_DIR}/zephyr/include/generated/devicetree_generated.h)
+file(MAKE_DIRECTORY ${APPLICATION_BINARY_DIR}/zephyr/include/generated/syscalls)
+FILE(TOUCH ${APPLICATION_BINARY_DIR}/zephyr/include/generated/syscalls/kobject.h)
+FILE(TOUCH ${APPLICATION_BINARY_DIR}/zephyr/include/generated/syscalls/kernel.h)
+FILE(TOUCH ${APPLICATION_BINARY_DIR}/zephyr/include/generated/syscalls/log_msg.h)
+FILE(TOUCH ${APPLICATION_BINARY_DIR}/zephyr/include/generated/syscalls/log_ctrl.h)
+
 list(APPEND INCLUDE
   subsys/testsuite/ztest/include/zephyr
   subsys/testsuite/include/zephyr
