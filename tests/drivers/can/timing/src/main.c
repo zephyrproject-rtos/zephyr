@@ -38,10 +38,7 @@ struct can_timing_test {
  */
 static const struct can_timing_test can_timing_tests[] = {
 	/** Standard bitrates. */
-#ifndef CONFIG_CAN_ESP32_TWAI
-	/* ESP32 TWAI does not support bitrates below 25kbit/s */
 	{   20000, 875, false },
-#endif /* CONFIG_CAN_ESP32_TWAI */
 	{   50000, 875, false },
 	{  125000, 875, false },
 	{  250000, 875, false },
@@ -186,6 +183,8 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 	if (test->invalid) {
 		zassert_equal(sp_err, -EINVAL, "err %d, expected -EINVAL", sp_err);
 		printk("OK\n");
+	} else if (sp_err == -ENOTSUP) {
+		printk("bitrate not supported\n");
 	} else {
 		zassert_true(sp_err >= 0, "unknown error %d", sp_err);
 		zassert_true(sp_err <= SAMPLE_POINT_MARGIN, "sample point error %d too large",
