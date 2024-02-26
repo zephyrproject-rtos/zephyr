@@ -3,7 +3,7 @@
 
 config SOC_SERIES_IMX9
 	bool
-	select SOC_FAMILY_IMX
+	select SOC_FAMILY_NXP_IMX
 
 config SOC_MIMX9352
 	bool
