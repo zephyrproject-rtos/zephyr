@@ -444,6 +444,19 @@ static inline void intel_adsp_hda_disable_buffer_interrupt(uint32_t base, uint32
 	*DGCS(base, regblock_size, sid) &= ~DGCS_BSCIE;
 }
 
+/**
+ * @brief Check if BSC interrupt enabled
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ */
+static inline bool intel_adsp_hda_is_buffer_interrupt_enabled(uint32_t base,
+							      uint32_t regblock_size, uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BSCIE) == DGCS_BSCIE;
+}
+
 static inline void intel_adsp_force_dmi_l0_state(void)
 {
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
