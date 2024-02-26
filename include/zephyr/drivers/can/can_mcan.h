@@ -1294,7 +1294,7 @@ struct can_mcan_config {
 #ifdef CONFIG_CAN_FD_MODE
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
-		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 8000000),                              \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 0, 8000000),                           \
 		.ops = _ops,                                                                       \
 		.callbacks = _cbs,                                                                 \
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
@@ -1306,7 +1306,7 @@ struct can_mcan_config {
 #else /* CONFIG_CAN_FD_MODE */
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
-		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 8000000),                              \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 0, 1000000),                           \
 		.ops = _ops,                                                                       \
 		.callbacks = _cbs,                                                                 \
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \

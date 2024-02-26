@@ -1400,7 +1400,7 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 	static void mcux_flexcan_irq_disable_##id(void); \
 									\
 	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, FLEXCAN_MAX_BITRATE(id)), \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, 0, FLEXCAN_MAX_BITRATE(id)), \
 		.base = (CAN_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
 		.clock_subsys = (clock_control_subsys_t)		\

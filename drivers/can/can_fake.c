@@ -144,7 +144,7 @@ static const struct can_driver_api fake_can_driver_api = {
 
 #define FAKE_CAN_INIT(inst)						     \
 	static const struct fake_can_config fake_can_config_##inst = {	     \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0U),	     \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),	     \
 	};								     \
 									     \
 	static struct fake_can_data fake_can_data_##inst;		     \
