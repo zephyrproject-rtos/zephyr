@@ -10,6 +10,7 @@
 #
 # <vendor-prefix><TAB><Full name of vendor>
 
+# zephyr-keep-sorted-start
 aaeon	AAEON Technology Inc.
 abb	ABB
 abilis	Abilis Systems
@@ -724,3 +725,4 @@ zinitix	Zinitix Co., Ltd
 zkmagic	Shenzhen Zkmagic Technology Co., Ltd.
 zte	ZTE Corp.
 zyxel	ZyXEL Communications Corp.
+# zephyr-keep-sorted-stop
