@@ -1,6 +1,6 @@
 board:
   name: cy8ckit_062_ble
-  vendor: Cypress
+  vendor: cypress
   revision:
     format: "major.minor.patch"
     default: "0.0.0"

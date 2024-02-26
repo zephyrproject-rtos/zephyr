@@ -1,6 +1,6 @@
 board:
   name: thingy53
-  vendor: Nordic Semiconductor
+  vendor: nordic
   socs:
   - name: 'nrf5340'
     variants:

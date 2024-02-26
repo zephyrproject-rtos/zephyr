@@ -1,6 +1,6 @@
 board:
   name: arduino_nano_33_ble
-  vendor: Arduino
+  vendor: arduino
   socs:
   - name: nrf52840
     variants:

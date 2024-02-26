@@ -1,6 +1,6 @@
 board:
   name: reel_board
-  vendor: PHYTEC Messtechnik GmbH
+  vendor: phytec
   socs:
   - name: nrf52840
   revision:

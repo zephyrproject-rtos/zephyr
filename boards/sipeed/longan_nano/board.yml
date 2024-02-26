@@ -1,6 +1,6 @@
 board:
   name: longan_nano
-  vendor: Sipeed
+  vendor: sipeed
   socs:
     - name: gd32vf103
       variants:

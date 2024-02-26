@@ -1,6 +1,6 @@
 board:
   name: xenvm
-  vendor: Xen
+  vendor: xen
   socs:
   - name: xenvm
     variants:
