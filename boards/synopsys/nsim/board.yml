@@ -1,6 +1,6 @@
 board:
   name: nsim
-  vendor: Synopsys
+  vendor: snps
   socs:
   - name: nsim_em
   - name: nsim_em7d_v22

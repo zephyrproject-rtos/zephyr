@@ -1,5 +1,5 @@
 board:
   name: arduino_nicla_sense_me
-  vendor: Arduino
+  vendor: arduino
   socs:
   - name: nrf52832

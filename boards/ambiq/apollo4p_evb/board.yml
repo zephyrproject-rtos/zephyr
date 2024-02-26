@@ -1,5 +1,5 @@
 board:
   name: apollo4p_evb
-  vendor: Ambiq
+  vendor: ambiq
   socs:
   - name: apollo4p

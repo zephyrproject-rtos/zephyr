@@ -1,6 +1,6 @@
 board:
   name: hsdk
-  vendor: Synopsys
+  vendor: snps
   socs:
   - name: arc_hsdk
     variants:

@@ -1,6 +1,6 @@
 board:
   name: roc_rk3568_pc
-  vendor: Firefly
+  vendor: firefly
   socs:
   - name: rk3568
     variants:

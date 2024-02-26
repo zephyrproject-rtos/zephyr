@@ -1,6 +1,6 @@
 board:
   name: nrf5340_audio_dk
-  vendor: Nordic Semiconductor
+  vendor: nordic
   socs:
   - name: 'nrf5340'
     variants:

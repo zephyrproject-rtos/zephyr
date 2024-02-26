@@ -1,6 +1,6 @@
 board:
   name: nrf9131ek
-  vendor: Nordic Semiconductor
+  vendor: nordic
   socs:
   - name: nrf9131
     variants:

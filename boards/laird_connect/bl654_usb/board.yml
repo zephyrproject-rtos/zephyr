@@ -1,5 +1,5 @@
 board:
   name: bl654_usb
-  vendor: Laird Connectivity
+  vendor: lairdconnect
   socs:
   - name: nrf52840

@@ -1,6 +1,6 @@
 boards:
 - name: native_sim
-  vendor: Zephyr
+  vendor: zephyr
   socs:
   - name: native
     variants:
@@ -10,6 +10,6 @@ boards:
 # Kconfig.native_sim_64 exist for backwards compatibility with the hwmv1 board name
 # Once all its usage in tree is removed, or an alias has been introduced they can be removed.
 - name: native_sim_64
-  vendor: Zephyr
+  vendor: zephyr
   socs:
   - name: native

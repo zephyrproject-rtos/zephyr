@@ -1,5 +1,5 @@
 board:
   name: gd32vf103v_eval
-  vendor: GigaDevice Semiconductor
+  vendor: gd
   socs:
     - name: gd32vf103
