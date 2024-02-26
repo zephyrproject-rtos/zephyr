@@ -25,14 +25,7 @@
 #include <zephyr/sys/util.h>
 #include <offsets.h>
 
-/* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
- * Including devicetree.h would require generating dummy header files
- * to match what gen_defines creates, so it's easier to just dummy out
- * DT_NODE_HAS_STATUS.
- */
-#ifdef ZTEST_UNITTEST
-#define DT_NODE_HAS_STATUS(node, status) 0
-#else
+#ifndef ZTEST_UNITTEST
 #include <zephyr/devicetree.h>
 #endif
 

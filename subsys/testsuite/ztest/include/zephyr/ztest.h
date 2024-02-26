@@ -22,19 +22,6 @@
 #error "You need to add CONFIG_ZTEST to your config file."
 #endif
 
-#ifndef KERNEL
-#define ARCH_STACK_PTR_ALIGN 8
-/* FIXME: Properly integrate with Zephyr's arch specific code */
-#ifdef __cplusplus
-extern "C" {
-#endif
-struct esf;
-typedef struct esf z_arch_esf_t;
-#ifdef __cplusplus
-}
-#endif
-#endif /* KERNEL */
-
 #include <zephyr/sys/printk.h>
 #define PRINT printk
 
