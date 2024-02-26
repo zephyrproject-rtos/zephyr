@@ -715,7 +715,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	}
 #endif
 #ifdef CONFIG_SCHED_DEADLINE
-	new_thread->base.prio_deadline = 0;
+	new_thread->base.prio_deadline = INT_MIN;
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 
