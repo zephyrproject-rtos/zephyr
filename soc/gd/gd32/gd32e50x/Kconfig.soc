@@ -3,6 +3,7 @@
 
 config SOC_SERIES_GD32E50X
 	bool
+	select SOC_FAMILY_GD_GD32
 	help
 	  Enable support for GigaDevice GD32E50X MCU series
 

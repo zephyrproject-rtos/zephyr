@@ -6,4 +6,8 @@
 config SOC_FAMILY_NUMICRO
 	select PLATFORM_SPECIFIC_INIT
 
+if SOC_FAMILY_NUMICRO
+
 rsource "*/Kconfig"
+
+endif # SOC_FAMILY_NUMICRO

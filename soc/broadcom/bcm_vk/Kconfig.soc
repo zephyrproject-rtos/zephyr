@@ -7,7 +7,6 @@ config SOC_FAMILY_BCMVK
 	bool
 
 config SOC_FAMILY
-	string
 	default "bcm_vk" if SOC_FAMILY_BCMVK
 
 rsource "*/Kconfig.soc"
