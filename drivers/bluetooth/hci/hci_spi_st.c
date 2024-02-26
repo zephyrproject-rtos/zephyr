@@ -151,12 +151,6 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 	switch (bt_spi_get_evt(msg)) {
 	case EVT_BLUE_INITIALIZED: {
 		k_sem_give(&sem_initialised);
-#if defined(CONFIG_BT_BLUENRG_ACI)
-		/* force BlueNRG to be on controller mode */
-		uint8_t data = 1;
-
-		bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
-#endif
 		handled = true;
 	}
 	default:
@@ -318,6 +312,11 @@ static int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
 {
 	int ret;
 	const bt_addr_t *addr = &params->public_addr;
+
+	/* force BlueNRG to be on controller mode */
+	uint8_t data = 1;
+
+	bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
 
 	if (!bt_addr_eq(addr, BT_ADDR_NONE) && !bt_addr_eq(addr, BT_ADDR_ANY)) {
 		ret = bt_spi_send_aci_config(
