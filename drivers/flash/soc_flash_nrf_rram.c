@@ -28,7 +28,6 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 #define PAGE_COUNT ((RRAM_SIZE) / (PAGE_SIZE))
 
 #define WRITE_BLOCK_SIZE_FROM_DT DT_PROP(RRAM, write_block_size)
-#define ERASE_VALUE              0xFF
 
 #ifdef CONFIG_MULTITHREADING
 static struct k_sem sem_lock;
@@ -54,8 +53,6 @@ BUILD_ASSERT((WRITE_BLOCK_SIZE_FROM_DT % (WRITE_LINE_SIZE) == 0),
 #define WRITE_BUFFER_SIZE     0
 #define WRITE_LINE_SIZE       WRITE_BLOCK_SIZE_FROM_DT
 #define WRITE_BUFFER_MAX_SIZE 16 /* In bytes, one line is 128 bits. */
-BUILD_ASSERT((PAGE_SIZE % (WRITE_LINE_SIZE) == 0),
-	     "erase-block-size must be a multiple of write-block-size");
 #endif
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -109,11 +106,7 @@ static void rram_write(off_t addr, const void *data, size_t len)
 
 	nrf_rramc_config_set(NRF_RRAMC, &config);
 
-	if (data) {
-		memcpy((void *)addr, data, len);
-	} else {
-		memset((void *)addr, ERASE_VALUE, len);
-	}
+	memcpy((void *)addr, data, len);
 
 	barrier_dmem_fence_full(); /* Barrier following our last write. */
 
@@ -243,49 +236,24 @@ static int nrf_rram_write(const struct device *dev, off_t addr, const void *data
 	return nrf_write(addr, data, len);
 }
 
-static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
-{
-	ARG_UNUSED(dev);
-
-	return nrf_write(addr, NULL, len);
-}
-
 static const struct flash_parameters *nrf_rram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	static const struct flash_parameters parameters = {
 		.write_block_size = WRITE_LINE_SIZE,
-		.erase_value = ERASE_VALUE,
+		.caps = {
+			.explicit_erase = false,
+		},
 	};
 
 	return &parameters;
 }
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void nrf_rram_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
-				 size_t *layout_size)
-{
-	ARG_UNUSED(dev);
-
-	static const struct flash_pages_layout pages_layout = {
-		.pages_count = PAGE_COUNT,
-		.pages_size = PAGE_SIZE,
-	};
-
-	*layout = &pages_layout;
-	*layout_size = 1;
-}
-#endif
-
 static const struct flash_driver_api nrf_rram_api = {
 	.read = nrf_rram_read,
 	.write = nrf_rram_write,
-	.erase = nrf_rram_erase,
 	.get_parameters = nrf_rram_get_parameters,
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = nrf_rram_page_layout,
-#endif
 };
 
 static int nrf_rram_init(const struct device *dev)
