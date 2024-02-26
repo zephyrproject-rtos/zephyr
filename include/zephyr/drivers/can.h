@@ -812,6 +812,28 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
 }
 
 /**
+ * @brief Get minimum supported bitrate
+ *
+ * Get the minimum supported bitrate for the CAN controller/transceiver combination.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param[out] min_bitrate Minimum supported bitrate in bits/s
+ *
+ * @retval -EIO General input/output error.
+ * @retval -ENOSYS If this function is not implemented by the driver.
+ */
+__syscall int can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate);
+
+static inline int z_impl_can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate)
+{
+	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
+
+	*min_bitrate = common->min_bitrate;
+
+	return 0;
+}
+
+/**
  * @brief Get maximum supported bitrate
  *
  * Get the maximum supported bitrate for the CAN controller/transceiver combination.
