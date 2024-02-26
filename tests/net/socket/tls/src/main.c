@@ -1174,6 +1174,55 @@ ZTEST(net_socket_tls, test_send_block)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+ZTEST(net_socket_tls, test_send_on_close)
+{
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+	int ret;
+
+	test_prepare_tls_connection(AF_INET6);
+
+	test_close(new_sock);
+	new_sock = -1;
+
+	/* Small delay for packets to propagate. */
+	k_msleep(10);
+
+	/* Verify send() reports an error after connection is closed. */
+	ret = send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	zassert_equal(ret, -1, "send() should've failed");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	/* send() on closed connection marked error on a socket. */
+	ret = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "send() should've failed");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+
+	/* And in reverse order */
+
+	test_prepare_tls_connection(AF_INET6);
+
+	test_close(new_sock);
+	new_sock = -1;
+
+	/* Small delay for packets to propagate. */
+	k_msleep(10);
+
+	/* Graceful connection close should be reported first. */
+	ret = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, 0, "recv() should've reported connection close");
+
+	/* And consecutive send() should fail. */
+	ret = send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	zassert_equal(ret, -1, "send() should've failed");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 ZTEST(net_socket_tls, test_so_rcvtimeo)
 {
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
