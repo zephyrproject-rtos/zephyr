@@ -190,6 +190,10 @@ static void socket_service_thread(void)
 
 	/* Create contiguous poll event array to enable socket polling */
 	STRUCT_SECTION_FOREACH(net_socket_service_desc, svc) {
+		NET_DBG("Service %s has %d pollable sockets",
+			COND_CODE_1(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG,
+				    (svc->owner), ("")),
+			svc->pev_len);
 		get_idx(svc) = count + 1;
 		count += svc->pev_len;
 	}
