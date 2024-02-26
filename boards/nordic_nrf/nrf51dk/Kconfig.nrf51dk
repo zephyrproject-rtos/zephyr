@@ -3,6 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF51DK
-	bool
-	default y
 	select SOC_NRF51822_QFAC

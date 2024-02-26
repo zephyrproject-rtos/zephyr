@@ -4,5 +4,5 @@
 #
 # Copyright (c) 2023 Nuvoton Technology Corporation.
 
-config BOARD_NUMAKER_PFM_M467
-	select SOC_FLASH_NUMAKER
+config BOARD_NUMAKER_PFM
+	select SOC_FLASH_NUMAKER if BOARD_NUMAKER_PFM_M467
