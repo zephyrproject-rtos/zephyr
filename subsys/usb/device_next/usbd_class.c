@@ -124,18 +124,12 @@ int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
 
 		if (usbd_state_is_configured(uds_ctx)) {
 			cfg_nd = usbd_config_get_current(uds_ctx);
-			if (xfer_owner_exist(uds_ctx, cfg_nd, buf)) {
-				return usbd_class_request(bi->owner, buf, err);
+			if (!xfer_owner_exist(uds_ctx, cfg_nd, buf)) {
+				LOG_DBG("Class request without owner");
 			}
+		} else {
+			LOG_DBG("Class request on not configured device");
 		}
-
-		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
-			if (xfer_owner_exist(uds_ctx, cfg_nd, buf)) {
-				return usbd_class_request(bi->owner, buf, err);
-			}
-		}
-
-		return -ENODATA;
 	}
 
 	return usbd_class_request(bi->owner, buf, err);
