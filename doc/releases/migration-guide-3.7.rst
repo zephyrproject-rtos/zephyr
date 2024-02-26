@@ -45,6 +45,19 @@ Bluetooth HCI
 Controller Area Network (CAN)
 =============================
 
+* Removed the following deprecated CAN controller devicetree properties. Out-of-tree boards using
+  these properties need to switch to using the ``bus-speed``, ``sample-point``, ``bus-speed-data``,
+  and ``sample-point-data`` devicetree properties for specifying the initial CAN bitrate:
+
+  * ``sjw``
+  * ``prop-seg``
+  * ``phase-seg1``
+  * ``phase-seg1``
+  * ``sjw-data``
+  * ``prop-seg-data``
+  * ``phase-seg1-data``
+  * ``phase-seg1-data``
+
 Display
 =======
 
