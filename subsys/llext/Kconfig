@@ -83,4 +83,12 @@ config LLEXT_EDK_NAME
 	  stating EDK location, used on generated Makefile.cflags. For
 	  instance, the default name, "llext-edk", becomes LLEXT_EDK_INSTALL_DIR.
 
+config LLEXT_EDK_USERSPACE_ONLY
+	bool "Only generate the Userpace codepath on syscall stubs for the EDK"
+	help
+	  Syscall stubs can contain code that verifies if running code is at user
+	  or kernel space and route the call accordingly. If the EDK is expected
+	  to be used by userspace only extensions, this option will make EDK stubs
+	  not contain the routing code, and only generate the userspace one.
+
 endmenu
