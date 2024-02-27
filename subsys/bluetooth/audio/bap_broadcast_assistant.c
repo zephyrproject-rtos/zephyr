@@ -430,6 +430,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			return parse_and_send_recv_state(conn, handle, data, length, &recv_state);
 		}
 	} else {
+		broadcast_assistant.past_avail[index] = false;
 		bap_broadcast_assistant_recv_state_removed(conn, 0,
 							   broadcast_assistant.src_ids[index]);
 	}
