@@ -120,7 +120,7 @@ endfunction()
 #                     invocation if the sysbuild cache has changed. It is
 #                     advised to always use this flag. Not using this flag can
 #                     reduce build time, but only do so if application is
-#                     guranteed to be up-to-date.
+#                     guaranteed to be up-to-date.
 #
 function(sysbuild_cache)
   cmake_parse_arguments(SB_CACHE "CREATE;CMAKE_RERUN" "APPLICATION" "" ${ARGN})
