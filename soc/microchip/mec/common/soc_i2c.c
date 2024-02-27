@@ -32,7 +32,7 @@ struct mec_i2c_port {
  * TODO: MEC15xx and MEC172x handle ports with alternate pins.
  */
 static const struct mec_i2c_port mec_i2c_ports[] = {
-#if defined(CONFIG_SOC_SERIES_MEC172X) || defined(CONFIG_SOC_SERIES_MEC1501X)
+#if defined(CONFIG_SOC_SERIES_MEC172X) || defined(CONFIG_SOC_SERIES_MEC15XX)
 	{ 0004, 1, 0003, 1 },
 	{ 0131, 1, 0130, 1 }, /* VTR2. ALT on eSPI VTR3 {0073, 2, 0072, 2} */
 	{ 0155, 1, 0154, 1 },

@@ -39,7 +39,7 @@ config ESPI_PERIPHERAL_UART
 
 config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	int "SoC port exposed as logical eSPI UART"
-	default 2 if SOC_SERIES_MEC1501X
+	default 2 if SOC_SERIES_MEC15XX
 	default 1 if SOC_SERIES_MEC172X
 	depends on ESPI_PERIPHERAL_UART
 	help
@@ -66,7 +66,7 @@ config ESPI_FLASH_BUFFER_SIZE
 config ESPI_SAF_XEC
 	bool "XEC Microchip ESPI SAF driver"
 	default y
-	depends on SOC_SERIES_MEC1501X
+	depends on SOC_SERIES_MEC15XX
 	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_ENABLED
 	help
 	  Enable the Microchip XEC SAF ESPI driver for MEC15xx family.
