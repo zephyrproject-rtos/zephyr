@@ -639,12 +639,12 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
  * executes, in units of system ticks.  If the thread is not waiting,
  * it returns current system time.
  */
-__syscall k_ticks_t k_thread_timeout_expires_ticks(const struct k_thread *t);
+__syscall k_ticks_t k_thread_timeout_expires_ticks(const struct k_thread *thread);
 
 static inline k_ticks_t z_impl_k_thread_timeout_expires_ticks(
-						const struct k_thread *t)
+						const struct k_thread *thread)
 {
-	return z_timeout_expires(&t->base.timeout);
+	return z_timeout_expires(&thread->base.timeout);
 }
 
 /**
@@ -654,12 +654,12 @@ static inline k_ticks_t z_impl_k_thread_timeout_expires_ticks(
  * next executes, in units of system ticks.  If the thread is not
  * waiting, it returns zero.
  */
-__syscall k_ticks_t k_thread_timeout_remaining_ticks(const struct k_thread *t);
+__syscall k_ticks_t k_thread_timeout_remaining_ticks(const struct k_thread *thread);
 
 static inline k_ticks_t z_impl_k_thread_timeout_remaining_ticks(
-						const struct k_thread *t)
+						const struct k_thread *thread)
 {
-	return z_timeout_remaining(&t->base.timeout);
+	return z_timeout_remaining(&thread->base.timeout);
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
@@ -5938,7 +5938,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 /**
  * @internal
  */
-void z_timer_expiration_handler(struct _timeout *t);
+void z_timer_expiration_handler(struct _timeout *timeout);
 /**
  * INTERNAL_HIDDEN @endcond
  */
