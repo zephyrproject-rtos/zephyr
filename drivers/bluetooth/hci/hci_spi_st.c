@@ -23,6 +23,7 @@
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/hci_raw.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -86,7 +87,6 @@ static K_SEM_DEFINE(sem_busy, 1, 1);
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
-#if defined(CONFIG_BT_BLUENRG_ACI)
 #define BLUENRG_ACI_WRITE_CONFIG_DATA       BT_OP(BT_OGF_VS, 0x000C)
 #define BLUENRG_CONFIG_PUBADDR_OFFSET       0x00
 #define BLUENRG_CONFIG_PUBADDR_LEN          0x06
@@ -94,7 +94,6 @@ static struct k_thread spi_rx_thread_data;
 #define BLUENRG_CONFIG_LL_ONLY_LEN          0x01
 
 static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t value_len);
-#endif /* CONFIG_BT_BLUENRG_ACI */
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
 	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
@@ -151,7 +150,9 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 	switch (bt_spi_get_evt(msg)) {
 	case EVT_BLUE_INITIALIZED: {
 		k_sem_give(&sem_initialised);
+#if defined(CONFIG_BT_BLUENRG_ACI)
 		handled = true;
+#endif
 	}
 	default:
 		break;
@@ -294,8 +295,16 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 	struct net_buf *buf;
 	uint8_t *cmd_data;
 	size_t data_len = 2 + value_len;
+#if defined(CONFIG_BT_HCI_RAW)
+	struct bt_hci_cmd_hdr hdr;
 
+	hdr.opcode = sys_cpu_to_le16(BLUENRG_ACI_WRITE_CONFIG_DATA);
+	hdr.param_len = data_len;
+	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &hdr, sizeof(hdr));
+#else
 	buf = bt_hci_cmd_create(BLUENRG_ACI_WRITE_CONFIG_DATA, data_len);
+#endif /* CONFIG_BT_HCI_RAW */
+
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -305,9 +314,14 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 	cmd_data[1] = value_len;
 	memcpy(&cmd_data[2], value, value_len);
 
+#if defined(CONFIG_BT_HCI_RAW)
+	return bt_send(buf);
+#else
 	return bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
+#endif /* CONFIG_BT_HCI_RAW */
 }
 
+#if !defined(CONFIG_BT_HCI_RAW)
 static int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
 {
 	int ret;
@@ -331,6 +345,8 @@ static int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
 
 	return 0;
 }
+#endif /* !CONFIG_BT_HCI_RAW */
+
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
 static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
@@ -579,16 +595,22 @@ static int bt_spi_open(void)
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);
 
+#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_BLUENRG_ACI)
+	/* force BlueNRG to be on controller mode */
+	uint8_t data = 1;
+
+	bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
+#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_BLUENRG_ACI */
 	return 0;
 }
 
 static const struct bt_hci_driver drv = {
 	.name		= DEVICE_DT_NAME(DT_DRV_INST(0)),
 	.bus		= BT_HCI_DRIVER_BUS_SPI,
-#if defined(CONFIG_BT_BLUENRG_ACI)
 	.quirks		= BT_QUIRK_NO_RESET,
+#if defined(CONFIG_BT_BLUENRG_ACI) && !defined(CONFIG_BT_HCI_RAW)
 	.setup          = bt_spi_bluenrg_setup,
-#endif /* CONFIG_BT_BLUENRG_ACI */
+#endif /* CONFIG_BT_BLUENRG_ACI && !CONFIG_BT_HCI_RAW */
 	.open		= bt_spi_open,
 	.send		= bt_spi_send,
 };
