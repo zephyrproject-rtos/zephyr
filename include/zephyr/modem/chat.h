@@ -45,9 +45,9 @@ struct modem_chat_match {
 	/** Size of separators array */
 	uint8_t separators_size;
 	/** Set if modem chat instance shall use wildcards when matching */
-	uint8_t wildcards : 1;
+	bool wildcards;
 	/** Set if script shall not continue to next step in case of match */
-	uint8_t partial : 1;
+	bool partial;
 	/** Type of modem chat instance */
 	modem_chat_match_callback callback;
 };
@@ -375,6 +375,56 @@ void modem_chat_script_abort(struct modem_chat *chat);
  * @param chat Chat instance
  */
 void modem_chat_release(struct modem_chat *chat);
+
+/**
+ * @brief Initialize modem chat match
+ * @param chat_match Modem chat match instance
+ */
+void modem_chat_match_init(struct modem_chat_match *chat_match);
+
+/**
+ * @brief Set match of modem chat match instance
+ * @param chat_match Modem chat match instance
+ * @param match Match to set
+ * @note The lifetime of match must match or exceed the lifetime of chat_match
+ * @warning Always call this API after match is modified
+ *
+ * @retval 0 if successful, negative errno code otherwise
+ */
+int modem_chat_match_set_match(struct modem_chat_match *chat_match, const char *match);
+
+/**
+ * @brief Set separators of modem chat match instance
+ * @param chat_match Modem chat match instance
+ * @param separators Separators to set
+ * @note The lifetime of separators must match or exceed the lifetime of chat_match
+ * @warning Always call this API after separators are modified
+ *
+ * @retval 0 if successful, negative errno code otherwise
+ */
+int modem_chat_match_set_separators(struct modem_chat_match *chat_match, const char *separators);
+
+/**
+ * @brief Set modem chat match callback
+ * @param chat_match Modem chat match instance
+ * @param callback Callback to set
+ */
+void modem_chat_match_set_callback(struct modem_chat_match *chat_match,
+				   modem_chat_match_callback callback);
+
+/**
+ * @brief Set modem chat match partial flag
+ * @param chat_match Modem chat match instance
+ * @param partial Partial flag to set
+ */
+void modem_chat_match_set_partial(struct modem_chat_match *chat_match, bool partial);
+
+/**
+ * @brief Set modem chat match wildcards flag
+ * @param chat_match Modem chat match instance
+ * @param enable Enable/disable Wildcards
+ */
+void modem_chat_match_enable_wildcards(struct modem_chat_match *chat_match, bool enable);
 
 #ifdef __cplusplus
 }
