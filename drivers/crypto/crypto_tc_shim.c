@@ -21,6 +21,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tinycrypt);
 
+#include <stdbool.h>
+
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
 
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
@@ -221,8 +223,8 @@ static int get_unused_session(void)
 	int i;
 
 	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		if (tc_driver_state[i].in_use == 0) {
-			tc_driver_state[i].in_use = 1;
+		if (tc_driver_state[i].in_use == false) {
+			tc_driver_state[i].in_use = true;
 			break;
 		}
 	}
@@ -323,7 +325,7 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream)
 			 == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error in setting key");
-		tc_driver_state[idx].in_use = 0;
+		tc_driver_state[idx].in_use = false;
 
 		return -EIO;
 	}
@@ -344,7 +346,7 @@ static int tc_session_free(const struct device *dev, struct cipher_ctx *sessn)
 
 	ARG_UNUSED(dev);
 	(void)memset(data, 0, sizeof(struct tc_shim_drv_state));
-	data->in_use = 0;
+	data->in_use = false;
 
 	return 0;
 }
@@ -355,7 +357,7 @@ static int tc_shim_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		tc_driver_state[i].in_use = 0;
+		tc_driver_state[i].in_use = false;
 	}
 
 	return 0;

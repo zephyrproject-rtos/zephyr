@@ -17,10 +17,12 @@
 #ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_TC_SHIM_PRIV_H_
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_TC_SHIM_PRIV_H_
 
+#include <stdbool.h>
+
 #include <tinycrypt/aes.h>
 
 struct tc_shim_drv_state {
-	int in_use;
+	bool in_use;
 	struct tc_aes_key_sched_struct session_key;
 };
 
