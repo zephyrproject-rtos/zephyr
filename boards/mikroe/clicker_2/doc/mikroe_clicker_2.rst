@@ -55,7 +55,7 @@ The Zephyr MikroE Clicker 2 configuration supports the following hardware featur
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/mikroe/mikroe_clicker_2/mikroe_clicker_2_defconfig`
+:zephyr_file:`boards/mikroe/clicker_2/mikroe_clicker_2_defconfig`
 
 Connections and IOs
 ===================

@@ -164,7 +164,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/96boards/96b_avenger96/96b_avenger96_defconfig`
+:zephyr_file:`boards/96boards/avenger96/96b_avenger96_defconfig`
 
 
 Connections and IOs
