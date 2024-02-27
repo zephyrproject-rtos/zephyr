@@ -498,6 +498,40 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 
 static void started_cb(struct bt_bap_stream *stream)
 {
+	struct bt_bap_ep_info info;
+	int err;
+
+	err = bt_bap_ep_get_info(stream->ep, &info);
+	if (err != 0) {
+		FAIL("Failed to get EP info: %d\n", err);
+		return;
+	}
+
+	if (info.state != BT_BAP_EP_STATE_STREAMING) {
+		FAIL("Unexpected EP state: %d\n", info.state);
+		return;
+	}
+
+	if (info.dir != BT_AUDIO_DIR_SINK) {
+		FAIL("Unexpected info.dir: %d\n", info.dir);
+		return;
+	}
+
+	if (info.can_send) {
+		FAIL("info.can_send is true\n");
+		return;
+	}
+
+	if (!info.can_recv) {
+		FAIL("info.can_recv is false\n");
+		return;
+	}
+
+	if (info.paired_ep != NULL) {
+		FAIL("Unexpected info.paired_ep: %p\n", info.paired_ep);
+		return;
+	}
+
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_started);
 
