@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth A2dp Source
+tests:
+  sample.bluetooth.a2dp_source:
+    harness: bluetooth
+    platform_allow: mimxrt1060_evk
+    tags: bluetooth
