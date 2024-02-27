@@ -23,6 +23,14 @@
 
 struct tc_shim_drv_state {
 	bool in_use;
+
+	/**
+	 * True if counter argument got initialized using the initialization vector.
+	 *
+	 * Warning: Counters can not be preserved across crypto session!
+	 */
+	bool ctr_initialized;
+
 	struct tc_aes_key_sched_struct session_key;
 };
 

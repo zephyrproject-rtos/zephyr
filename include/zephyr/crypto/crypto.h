@@ -283,26 +283,20 @@ static inline int cipher_cbc_op(struct cipher_ctx *ctx,
  *
  * @param  ctx       Pointer to the crypto context of this op.
  * @param  pkt   Structure holding the input/output buffer pointers.
- * @param  iv        Initialization Vector (IV) for the operation. We use a
- *			 split counter formed by appending IV and ctr.
- *			 Consequently  ivlen = keylen - ctrlen. 'ctrlen' is
- *			 specified during session setup through the
- *			 'ctx.mode_params.ctr_params.ctr_len' parameter. IV
- *			 should not be reused across multiple operations
- *			 (within a session context) for security. The non-IV
- *			 part of the split counter is transparent to the caller
- *			 and is fully managed by the crypto provider.
+ * @param  ctr   Counter for the operation. Initialized based on the configured, this argument gets
+ *               initialized on the first run, and updated after every invocation. User needs to
+ *               provide the same buffer during the whole session
  *
  * @return 0 on success, negative errno code on fail.
  */
 static inline int cipher_ctr_op(struct cipher_ctx *ctx,
-				struct cipher_pkt *pkt, uint8_t *iv)
+				struct cipher_pkt *pkt, uint8_t *ctr)
 {
 	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CTR, "CTR mode "
 		 "session invoking a different mode handler");
 
 	pkt->ctx = ctx;
-	return ctx->ops.ctr_crypt_hndlr(ctx, pkt, iv);
+	return ctx->ops.ctr_crypt_hndlr(ctx, pkt, ctr);
 }
 
 /**
