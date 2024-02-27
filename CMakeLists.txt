@@ -601,6 +601,7 @@ get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBR
 zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
 
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
+set(edk_syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/edk/include/generated/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
 set(struct_tags_json ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/struct_tags.json)
 
@@ -2011,6 +2012,19 @@ if(CONFIG_LLEXT_EDK)
     set(LLEXT_EDK_FILE ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
     add_custom_command(
         OUTPUT ${LLEXT_EDK_FILE}
+        # Regenerate syscalls in case CONFIG_LLEXT_EDK_USERSPACE_ONLY
+        COMMAND ${CMAKE_COMMAND}
+            -E make_directory edk/include/generated
+        COMMAND
+            ${PYTHON_EXECUTABLE}
+            ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
+            --json-file        ${syscalls_json}                     # Read this file
+            --base-output      edk/include/generated/syscalls           # Write to this dir
+            --syscall-dispatch edk/include/generated/syscall_dispatch.c # Write this file
+            --syscall-list     ${edk_syscall_list_h}
+            $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
+            ${SYSCALL_LONG_REGISTERS_ARG}
+            ${SYSCALL_SPLIT_TIMEOUT_ARG}
         COMMAND ${CMAKE_COMMAND}
             -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
             -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
@@ -2021,6 +2035,7 @@ if(CONFIG_LLEXT_EDK)
             -DLLEXT_EDK_NAME=${CONFIG_LLEXT_EDK_NAME}
             -DWEST_TOPDIR=${WEST_TOPDIR}
             -DZEPHYR_BASE=${ZEPHYR_BASE}
+            -DCONFIG_LLEXT_EDK_USERSPACE_ONLY=${CONFIG_LLEXT_EDK_USERSPACE_ONLY}
             -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
         DEPENDS ${logical_target_for_zephyr_elf}
         COMMAND_EXPAND_LISTS

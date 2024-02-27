@@ -64,6 +64,11 @@ foreach(dir ${INCLUDE_DIRS})
     list(APPEND all_flags_cmake "-I\${${install_dir_var}}/${dest_rel}")
 endforeach()
 
+if(CONFIG_LLEXT_EDK_USERSPACE_ONLY)
+    # Copy syscall headers from edk directory, as they were regenerated there.
+    file(COPY ${PROJECT_BINARY_DIR}/edk/include/generated/ DESTINATION ${LLEXT_EDK_INC}/zephyr/include/generated)
+endif()
+
 list(JOIN all_flags_make " " all_flags_str)
 file(WRITE ${LLEXT_EDK}/Makefile.cflags "LLEXT_CFLAGS = ${all_flags_str}")
 
