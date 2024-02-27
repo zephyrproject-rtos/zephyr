@@ -14,7 +14,6 @@ if NET_IPV6
 
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
-	default BT_MAX_CONN if NET_L2_BT
 	default NET_VLAN_COUNT if NET_VLAN
 	default 2 if NET_LOOPBACK
 	default 1

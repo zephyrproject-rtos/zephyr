@@ -50,9 +50,6 @@ setup the system:
    this option tells that the network application needs IPv6 router to exists
    before continuing. This means in practice that the application wants to wait
    until it receives IPv6 router advertisement message before continuing."
-   ":kconfig:option:`CONFIG_NET_CONFIG_BT_NODE`", "Enables application to operate in
-   Bluetooth node mode which requires GATT service to be registered and start
-   advertising as peripheral."
 
 Sample usage
 ************

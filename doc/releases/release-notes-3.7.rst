@@ -201,6 +201,10 @@ Networking
 
     * :c:func:`lwm2m_set_bulk`
 
+* IPSP:
+
+  * Removed IPSP support. ``CONFIG_NET_L2_BT`` does not exist anymore.
+
 USB
 ***
 
