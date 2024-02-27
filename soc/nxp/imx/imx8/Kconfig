@@ -1,9 +1,7 @@
-# Copyright (c) 2021 NXP
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NXP_IMX8M
-	bool "NXP i.MX8M Audio DSP Series"
-	select SOC_FAMILY_NXP_ADSP
+config SOC_MIMX8QM_ADSP
 	select XTENSA
 	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
 	select XTENSA_RESET_VECTOR
@@ -11,5 +9,7 @@ config SOC_SERIES_NXP_IMX8M
 	select ATOMIC_OPERATIONS_BUILTIN
 	select GEN_ISR_TABLES
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
-	help
-	  Enable support for NXP i.MX8M Audio DSP
+	select HAS_MCUX
+
+config MCUX_CORE_SUFFIX
+	default "_dsp" if SOC_MIMX8QM_ADSP
