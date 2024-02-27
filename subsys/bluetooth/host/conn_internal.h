@@ -104,7 +104,13 @@ struct bt_conn_br {
 struct bt_conn_sco {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Reference to the struct bt_sco_chan */
+	struct bt_sco_chan      *chan;
+
 	uint16_t                pkt_type;
+	uint8_t                 dev_class[3];
+	uint8_t                 link_type;
 };
 #endif
 
@@ -292,6 +298,9 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 
 /* Add a new SCO connection */
 struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type);
+
+/* Cleanup SCO ACL reference */
+void bt_sco_cleanup_acl(struct bt_conn *sco_conn);
 
 /* Cleanup SCO references */
 void bt_sco_cleanup(struct bt_conn *sco_conn);
