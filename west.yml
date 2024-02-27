@@ -138,11 +138,11 @@ manifest:
       path: modules/fs/fatfs
       groups:
         - fs
-    - name: hal_altera
-      revision: 0d225ddd314379b32355a00fb669eacf911e750d
-      path: modules/hal/altera
-      groups:
-        - hal
+    #- name: hal_altera
+    #  revision: 0d225ddd314379b32355a00fb669eacf911e750d
+    #  path: modules/hal/altera
+    #  groups:
+    #    - hal
     - name: hal_ambiq
       revision: d176b56849bbe2e23487af01833152ac234cb848
       remote: semios
