@@ -42,6 +42,7 @@
 #include "att_internal.h"
 #include "iso_internal.h"
 #include "direction_internal.h"
+#include "classic/sco_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -1104,7 +1105,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
 		if (conn->type == BT_CONN_TYPE_SCO) {
-			/* TODO: Notify sco connected */
+			if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+				bt_sco_connected(conn);
+			}
 			break;
 		}
 		k_fifo_init(&conn->tx_queue);
@@ -1138,7 +1141,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_DISCONNECTED:
 #if defined(CONFIG_BT_CONN)
 		if (conn->type == BT_CONN_TYPE_SCO) {
-			/* TODO: Notify sco disconnected */
+			if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+				bt_sco_disconnected(conn);
+			}
 			bt_conn_unref(conn);
 			break;
 		}
@@ -1831,6 +1836,29 @@ static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_ISO */
 
+#if defined(CONFIG_BT_CLASSIC)
+static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+		struct bt_conn *sco = bt_conn_ref(&sco_conns[i]);
+
+		if (sco == NULL) {
+			continue;
+		}
+
+		if (sco->sco.acl == conn) {
+			return sco;
+		}
+
+		bt_conn_unref(sco);
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static void deferred_work(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -1871,7 +1899,28 @@ static void deferred_work(struct k_work *work)
 			iso = conn_lookup_iso(conn);
 		}
 #endif
+#if defined(CONFIG_BT_CLASSIC)
+		struct bt_conn *sco;
 
+		/* Mark all SCO channels associated
+		 * with ACL conn as not connected, and
+		 * remove ACL reference
+		 */
+		sco = conn_lookup_sco(conn);
+		while (sco != NULL) {
+			struct bt_sco_chan *chan = sco->sco.chan;
+
+			if (chan != NULL) {
+				bt_sco_chan_set_state(chan,
+						      BT_SCO_STATE_DISCONNECTING);
+			}
+
+			bt_sco_cleanup_acl(sco);
+
+			bt_conn_unref(sco);
+			sco = conn_lookup_sco(conn);
+		}
+#endif /* CONFIG_BT_CLASSIC */
 		bt_l2cap_disconnected(conn);
 		notify_disconnected(conn);
 
@@ -1945,8 +1994,7 @@ static struct bt_conn *acl_conn_new(void)
 #if defined(CONFIG_BT_CLASSIC)
 void bt_sco_cleanup(struct bt_conn *sco_conn)
 {
-	bt_conn_unref(sco_conn->sco.acl);
-	sco_conn->sco.acl = NULL;
+	bt_sco_cleanup_acl(sco_conn);
 	bt_conn_unref(sco_conn);
 }
 
@@ -2004,67 +2052,6 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	conn->role = BT_CONN_ROLE_CENTRAL;
 
 	return conn;
-}
-
-struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
-{
-	struct bt_hci_cp_setup_sync_conn *cp;
-	struct bt_conn *sco_conn;
-	struct net_buf *buf;
-	int link_type;
-
-	sco_conn = bt_conn_lookup_addr_sco(peer);
-	if (sco_conn) {
-		switch (sco_conn->state) {
-		case BT_CONN_CONNECTING:
-		case BT_CONN_CONNECTED:
-			return sco_conn;
-		default:
-			bt_conn_unref(sco_conn);
-			return NULL;
-		}
-	}
-
-	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
-		link_type = BT_HCI_ESCO;
-	} else {
-		link_type = BT_HCI_SCO;
-	}
-
-	sco_conn = bt_conn_add_sco(peer, link_type);
-	if (!sco_conn) {
-		return NULL;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_SETUP_SYNC_CONN, sizeof(*cp));
-	if (!buf) {
-		bt_sco_cleanup(sco_conn);
-		return NULL;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	(void)memset(cp, 0, sizeof(*cp));
-
-	LOG_ERR("handle : %x", sco_conn->sco.acl->handle);
-
-	cp->handle = sco_conn->sco.acl->handle;
-	cp->pkt_type = sco_conn->sco.pkt_type;
-	cp->tx_bandwidth = 0x00001f40;
-	cp->rx_bandwidth = 0x00001f40;
-	cp->max_latency = 0x0007;
-	cp->retrans_effort = 0x01;
-	cp->content_format = BT_VOICE_CVSD_16BIT;
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf,
-				 NULL) < 0) {
-		bt_sco_cleanup(sco_conn);
-		return NULL;
-	}
-
-	bt_conn_set_state(sco_conn, BT_CONN_CONNECTING);
-
-	return sco_conn;
 }
 
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
@@ -2336,6 +2323,10 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 	bt_l2cap_security_changed(conn, hci_err);
 	if (IS_ENABLED(CONFIG_BT_ISO_CENTRAL)) {
 		bt_iso_security_changed(conn, hci_err);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		bt_sco_security_changed(conn, hci_err);
 	}
 
 	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
