@@ -72,11 +72,6 @@
 		compatible = "zephyr,psa-crypto-rng";
 		status = "okay";
 	};
-
-	uicr: uicr {
-		compatible = "nordic,nrf-uicr-config-only";
-		status = "okay";
-	};
 };
 
 &nvic {
