@@ -676,6 +676,34 @@ ZTEST(modem_chat, test_script_chat_timeout_cmd)
 		      "Script sent too many requests");
 }
 
+ZTEST(modem_chat, test_runtime_match)
+{
+	int ret;
+	struct modem_chat_match test_match;
+
+	modem_chat_match_init(&test_match);
+
+	ret = modem_chat_match_set_match(&test_match, "AT345");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.match, "AT345"), "Failed to set match");
+	zassert_equal(test_match.match_size, 5, "Failed to set size of match");
+
+	ret = modem_chat_match_set_separators(&test_match, ",*");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.separators, ",*"), "Failed to set separators");
+	zassert_equal(test_match.separators_size, 2, "Failed to set size of separators");
+
+	modem_chat_match_set_partial(&test_match, true);
+	zassert_equal(test_match.partial, true);
+	modem_chat_match_set_partial(&test_match, false);
+	zassert_equal(test_match.partial, false);
+
+	modem_chat_match_enable_wildcards(&test_match, true);
+	zassert_equal(test_match.wildcards, true);
+	modem_chat_match_enable_wildcards(&test_match, false);
+	zassert_equal(test_match.wildcards, false);
+}
+
 /*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/

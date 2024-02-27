@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
@@ -928,4 +931,55 @@ void modem_chat_release(struct modem_chat *chat)
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_ABORT] = 0;
 	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = NULL;
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = 0;
+}
+
+void modem_chat_match_init(struct modem_chat_match *chat_match)
+{
+	memset(chat_match, 0, sizeof(struct modem_chat_match));
+}
+
+int modem_chat_match_set_match(struct modem_chat_match *chat_match, const char *match)
+{
+	size_t size;
+
+	size = strnlen(match, UINT8_MAX + 1);
+
+	if (size == (UINT8_MAX + 1)) {
+		return -ENOMEM;
+	}
+
+	chat_match->match = match;
+	chat_match->match_size = (uint8_t)size;
+	return 0;
+}
+
+int modem_chat_match_set_separators(struct modem_chat_match *chat_match, const char *separators)
+{
+	size_t size;
+
+	size = strnlen(separators, UINT8_MAX + 1);
+
+	if (size == (UINT8_MAX + 1)) {
+		return -ENOMEM;
+	}
+
+	chat_match->separators = separators;
+	chat_match->separators_size = (uint8_t)size;
+	return 0;
+}
+
+void modem_chat_match_set_callback(struct modem_chat_match *match,
+				   modem_chat_match_callback callback)
+{
+	match->callback = callback;
+}
+
+void modem_chat_match_set_partial(struct modem_chat_match *match, bool partial)
+{
+	match->partial = partial;
+}
+
+void modem_chat_match_enable_wildcards(struct modem_chat_match *match, bool enable)
+{
+	match->wildcards = enable;
 }
