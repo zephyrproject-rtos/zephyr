@@ -296,13 +296,21 @@ static const uint8_t ctr_ciphertext[64] = {
 void ctr_mode(const struct device *dev)
 {
 	uint8_t encrypted[64] = {0};
+	uint8_t encrypted_2nd_time[64] = {0};
 	uint8_t decrypted[64] = {0};
+	const uint8_t iv[12] = {
+		0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+		0xf8, 0xf9, 0xfa, 0xfb
+	};
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
 		.key.bit_stream = key,
 		.flags = cap_flags,
 		/*  ivlen + ctrlen = keylen , so ctrlen is 128 - 96 = 32 bits */
-		.mode_params.ctr_info.ctr_len = 32,
+		.mode_params.ctr_info = {
+			.ctr_len = 32,
+			.iv = iv,
+		},
 	};
 	struct cipher_pkt encrypt = {
 		.in_buf = plaintext,
@@ -310,16 +318,19 @@ void ctr_mode(const struct device *dev)
 		.out_buf_max = sizeof(encrypted),
 		.out_buf = encrypted,
 	};
+	struct cipher_pkt encrypt_2nd_time = {
+		.in_buf = plaintext,
+		.in_len = sizeof(plaintext),
+		.out_buf_max = sizeof(encrypted_2nd_time),
+		.out_buf = encrypted_2nd_time,
+	};
 	struct cipher_pkt decrypt = {
 		.in_buf = encrypted,
 		.in_len = sizeof(encrypted),
 		.out_buf = decrypted,
 		.out_buf_max = sizeof(decrypted),
 	};
-	uint8_t iv[12] = {
-		0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
-		0xf8, 0xf9, 0xfa, 0xfb
-	};
+	uint8_t ctr[16];
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CTR,
@@ -327,7 +338,7 @@ void ctr_mode(const struct device *dev)
 		return;
 	}
 
-	if (cipher_ctr_op(&ini, &encrypt, iv)) {
+	if (cipher_ctr_op(&ini, &encrypt, ctr)) {
 		LOG_ERR("CTR mode ENCRYPT - Failed");
 		goto out;
 	}
@@ -343,6 +354,22 @@ void ctr_mode(const struct device *dev)
 	}
 
 	LOG_INF("CTR mode ENCRYPT - Match");
+
+	if (cipher_ctr_op(&ini, &encrypt_2nd_time, ctr)) {
+		LOG_ERR("CTR mode ENCRYPT #2 - Failed");
+		goto out;
+	}
+
+	LOG_INF("Output length (encryption #2): %d", encrypt.out_len);
+
+	if (!memcmp(encrypt.out_buf, encrypt_2nd_time.out_buf, sizeof(ctr_ciphertext))) {
+		LOG_ERR("CTR mode ENCRYPT - Successive encryptions yielded same result.");
+		print_buffer_comparison(encrypt.out_buf, encrypt_2nd_time.out_buf,
+					sizeof(ctr_ciphertext));
+		goto out;
+	}
+	LOG_INF("CTR mode ENCRYPT - Multi block support working");
+
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -351,7 +378,7 @@ void ctr_mode(const struct device *dev)
 		return;
 	}
 
-	if (cipher_ctr_op(&ini, &decrypt, iv)) {
+	if (cipher_ctr_op(&ini, &decrypt, ctr)) {
 		LOG_ERR("CTR mode DECRYPT - Failed");
 		goto out;
 	}

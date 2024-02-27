@@ -22,6 +22,7 @@ tests:
         - ".*: CBC mode ENCRYPT - Match"
         - ".*: CBC mode DECRYPT - Match"
         - ".*: CTR mode ENCRYPT - Match"
+        - ".*: CTR mode ENCRYPT - Multi block support working"
         - ".*: CTR mode DECRYPT - Match"
         - ".*: CCM mode ENCRYPT - Match"
         - ".*: CCM mode DECRYPT - Match"
