@@ -52,6 +52,9 @@ static int unique_types_in_callbacks;
 static const uint8_t min_req_options[] = {
 	DHCPV4_OPTIONS_SUBNET_MASK,
 	DHCPV4_OPTIONS_ROUTER,
+#ifdef CONFIG_NET_DHCPV4_OPTION_NTP_SERVER
+	DHCPV4_OPTIONS_NTP_SERVER,
+#endif
 	DHCPV4_OPTIONS_DNS_SERVER
 };
 
@@ -892,6 +895,32 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			break;
 		}
 #endif
+#if defined(CONFIG_NET_DHCPV4_OPTION_NTP_SERVER)
+		case DHCPV4_OPTIONS_NTP_SERVER: {
+
+			/* NTP server option may present 1 or more
+			 * addresses. Each 4 bytes in length. NTP
+			 * servers should be listed in order
+			 * of preference.  Hence we choose the first
+			 * and skip the rest.
+			 */
+			if (length % 4 != 0U) {
+				NET_ERR("options_log_server, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, iface->config.dhcpv4.ntp_addr.s4_addr, 4) < 0 ||
+			    net_pkt_skip(pkt, length - 4U) < 0) {
+				NET_ERR("options_ntp_server, short packet");
+				return false;
+			}
+
+			NET_DBG("options_ntp_server: %s",
+				net_sprint_ipv4_addr(&iface->config.dhcpv4.ntp_addr));
+
+			break;
+		}
+#endif /* CONFIG_NET_DHCPV4_OPTION_NTP_SERVER */
 		case DHCPV4_OPTIONS_LEASE_TIME:
 			if (length != 4U) {
 				NET_ERR("options_lease_time, bad length");
