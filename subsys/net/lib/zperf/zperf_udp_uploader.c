@@ -38,7 +38,8 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 	results->nb_packets_lost = ntohl(UNALIGNED_GET(&stat->error_cnt));
 	results->nb_packets_outorder =
 		ntohl(UNALIGNED_GET(&stat->outorder_cnt));
-	results->total_len = ntohl(UNALIGNED_GET(&stat->total_len2));
+	results->total_len = (((uint64_t)ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
+		ntohl(UNALIGNED_GET(&stat->total_len2));
 	results->time_in_us = ntohl(UNALIGNED_GET(&stat->stop_usec)) +
 		ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
 	results->jitter_in_us = ntohl(UNALIGNED_GET(&stat->jitter2)) +
@@ -256,7 +257,7 @@ static int udp_upload(int sock, int port,
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;
 	results->client_time_in_us =
-				k_ticks_to_us_ceil32(end_time - start_time);
+				k_ticks_to_us_ceil64(end_time - start_time);
 	results->packet_size = packet_size;
 
 	return 0;

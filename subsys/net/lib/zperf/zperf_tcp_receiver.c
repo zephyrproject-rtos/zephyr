@@ -80,7 +80,7 @@ static void tcp_received(const struct sockaddr *addr, size_t datalen)
 			session->state = STATE_COMPLETED;
 
 			results.total_len = session->length;
-			results.time_in_us = k_ticks_to_us_ceil32(
+			results.time_in_us = k_ticks_to_us_ceil64(
 						time - session->start_time);
 
 			if (tcp_session_cb != NULL) {
