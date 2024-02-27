@@ -16,6 +16,7 @@
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
 #include "host/keys.h"
+#include "sco_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -49,34 +50,6 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	return 0;
 }
 
-static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
-{
-	struct bt_hci_cp_accept_sync_conn_req *cp;
-	struct net_buf *buf;
-	int err;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->pkt_type = sco_conn->sco.pkt_type;
-	cp->tx_bandwidth = 0x00001f40;
-	cp->rx_bandwidth = 0x00001f40;
-	cp->max_latency = 0x0007;
-	cp->retrans_effort = 0x01;
-	cp->content_format = BT_VOICE_CVSD_16BIT;
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, buf, NULL);
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
 static int accept_conn(const bt_addr_t *bdaddr)
 {
 	struct bt_hci_cp_accept_conn_req *cp;
@@ -100,28 +73,6 @@ static int accept_conn(const bt_addr_t *bdaddr)
 	return 0;
 }
 
-static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
-{
-	struct bt_conn *sco_conn;
-
-	sco_conn = bt_conn_add_sco(&evt->bdaddr, evt->link_type);
-	if (!sco_conn) {
-		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
-		return;
-	}
-
-	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
-		LOG_ERR("Error accepting connection from %s", bt_addr_str(&evt->bdaddr));
-		reject_conn(&evt->bdaddr, BT_HCI_ERR_UNSPECIFIED);
-		bt_sco_cleanup(sco_conn);
-		return;
-	}
-
-	sco_conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(sco_conn, BT_CONN_CONNECTING);
-	bt_conn_unref(sco_conn);
-}
-
 void bt_hci_conn_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
@@ -130,7 +81,12 @@ void bt_hci_conn_req(struct net_buf *buf)
 	LOG_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr), evt->link_type);
 
 	if (evt->link_type != BT_HCI_ACL) {
-		bt_esco_conn_req(evt);
+		uint8_t err;
+
+		err = bt_esco_conn_req(evt);
+		if (err != BT_HCI_ERR_SUCCESS) {
+			reject_conn(&evt->bdaddr, err);
+		}
 		return;
 	}
 
