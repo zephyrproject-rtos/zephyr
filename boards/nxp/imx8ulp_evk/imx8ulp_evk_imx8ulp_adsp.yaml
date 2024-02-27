@@ -1,5 +1,5 @@
-identifier: nxp_adsp_imx8x
-name: i.MX8X DSP
+identifier: imx8ulp_evk/imx8ulp/adsp
+name: NXP i.MX 8ULP Audio DSP
 type: mcu
 arch: xtensa
 toolchain:
@@ -8,4 +8,3 @@ testing:
   only_tags:
     - kernel
     - sof
-vendor: nxp

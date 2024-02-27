@@ -3,10 +3,6 @@
 CONFIG_MAIN_STACK_SIZE=3072
 
 # board/soc-related configurations
-CONFIG_SOC_SERIES_NXP_IMX8=y
-CONFIG_SOC_MIMX8QM_ADSP=y
-CONFIG_BOARD_NXP_ADSP_IMX8=y
-
 CONFIG_LOG=y
 
 # TODO: maybe move this to SOF?
