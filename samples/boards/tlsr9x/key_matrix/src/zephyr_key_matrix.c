@@ -10,10 +10,10 @@
 #define KEY_MATRIX_SCAN_PERIOD_MS      100
 
 /* Poll key matrix and rise event on key change */
-static void key_matrix_poll(struct key_matrix_data *key_matrix)
+static void key_matrix_poll(struct key_matrix_data *key_matrix, bool init)
 {
 	for (size_t i = 0; i < key_matrix->col_len; i++) {
-		gpio_pin_set_dt(&key_matrix->col[i], 1);
+		gpio_pin_configure_dt(&key_matrix->col[i], GPIO_OUTPUT_ACTIVE);
 		for (size_t j = 0; j < key_matrix->row_len; j++) {
 			size_t button_num = i * key_matrix->col_len + j;
 			bool pin = gpio_pin_get_dt(&key_matrix->row[j]);
@@ -21,13 +21,13 @@ static void key_matrix_poll(struct key_matrix_data *key_matrix)
 			if (pin !=
 				(bool)(key_matrix->buttons[button_num / 8] & BIT(button_num % 8))) {
 				WRITE_BIT(key_matrix->buttons[button_num / 8], button_num % 8, pin);
-				if (key_matrix->on_button_change) {
+				if (!init && key_matrix->on_button_change) {
 					key_matrix->on_button_change(
 						button_num, pin, key_matrix->context);
 				}
 			}
 		}
-		gpio_pin_set_dt(&key_matrix->col[i], 0);
+		gpio_pin_configure_dt(&key_matrix->col[i], GPIO_INPUT);
 	}
 }
 
@@ -38,7 +38,7 @@ static void key_matrix_scan_work(struct k_work *item)
 		CONTAINER_OF(item, struct key_matrix_data, work);
 
 	(void) k_work_schedule(&key_matrix->work, K_MSEC(KEY_MATRIX_SCAN_PERIOD_MS));
-	key_matrix_poll(key_matrix);
+	key_matrix_poll(key_matrix, false);
 }
 
 /* Public APIs */
@@ -73,7 +73,7 @@ bool key_matrix_init(struct key_matrix_data *key_matrix)
 		}
 		/* init all GPIOs are ready */
 		for (size_t i = 0; i < key_matrix->col_len; i++) {
-			if (gpio_pin_configure_dt(&key_matrix->col[i], GPIO_OUTPUT_INACTIVE)) {
+			if (gpio_pin_configure_dt(&key_matrix->col[i], GPIO_INPUT)) {
 				result = false;
 				break;
 			}
@@ -90,11 +90,8 @@ bool key_matrix_init(struct key_matrix_data *key_matrix)
 		if (!result) {
 			break;
 		}
-		/* set all keys as released */
-		for (size_t i = 0;
-			i < DIV_ROUND_UP(key_matrix->col_len * key_matrix->row_len, 8); i++) {
-			key_matrix->buttons[i] = 0;
-		}
+		/* set all keys to current state */
+		key_matrix_poll(key_matrix, true);
 		key_matrix->on_button_change = NULL;
 		key_matrix->context = NULL;
 		/* work init */

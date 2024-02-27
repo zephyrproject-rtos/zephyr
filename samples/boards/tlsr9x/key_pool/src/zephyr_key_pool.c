@@ -39,7 +39,7 @@ static size_t key_pool_port_number(const struct key_pool_data *key_pool)
 }
 
 /* Poll key pool and rise event on key change */
-static void key_pool_poll(struct key_pool_data *key_pool)
+static void key_pool_poll(struct key_pool_data *key_pool, bool init)
 {
 	for (size_t i = 0; i < key_pool->inp_len; i++) {
 		bool pin = gpio_pin_get_dt(&key_pool->inp[i]);
@@ -47,7 +47,7 @@ static void key_pool_poll(struct key_pool_data *key_pool)
 		if (pin !=
 			(bool)(key_pool->buttons[i / 8] & BIT(i % 8))) {
 			WRITE_BIT(key_pool->buttons[i / 8], i % 8, pin);
-			if (key_pool->on_button_change) {
+			if (!init && key_pool->on_button_change) {
 				key_pool->on_button_change(
 					i, pin, key_pool->context);
 			}
@@ -61,7 +61,7 @@ static void key_pool_event_work(struct k_work *item)
 	struct key_pool_data *key_pool =
 		CONTAINER_OF(item, struct key_pool_data, work);
 
-	key_pool_poll(key_pool);
+	key_pool_poll(key_pool, false);
 }
 
 /* Key pool pin isr */
@@ -116,6 +116,7 @@ bool key_pool_init(struct key_pool_data *key_pool)
 			malloc(sizeof(struct key_pool_aux_data) * key_pool_port_number(key_pool));
 
 		if (!key_pool_aux) {
+			result = false;
 			break;
 		}
 
@@ -149,11 +150,8 @@ bool key_pool_init(struct key_pool_data *key_pool)
 		if (!result) {
 			break;
 		}
-		/* set all keys as released */
-		for (size_t i = 0;
-			i < DIV_ROUND_UP(key_pool->inp_len, 8); i++) {
-			key_pool->buttons[i] = 0;
-		}
+		/* set all keys to current state */
+		key_pool_poll(key_pool, true);
 		/* init work */
 		k_work_init_delayable(&key_pool->work, key_pool_event_work);
 		/* all done */
