@@ -13,7 +13,7 @@ config SOC_SERIES_RP2XXX
 	select SOC_FAMILY_RPI_PICO
 
 config SOC_SERIES
-	default "rp2" if SOC_SERIES_RP2XXX
+	default "rp2xxx" if SOC_SERIES_RP2XXX
 
 config SOC
-	default "rp2040" if SOC_SERIES_RP2XXX
+	default "rp2040" if SOC_RP2040
