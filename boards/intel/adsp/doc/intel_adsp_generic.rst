@@ -139,7 +139,7 @@ undocumented rimage precedence rules it's best to use only one way at a time.
 
 - For board-specific needs you can define WEST_SIGN_OPTS in
   ``boards/my/board/board.cmake``, see example in
-  ``soc/intel/intel_adsp/common/CMakeLists.txt``
+  ``soc/intel/adsp/common/CMakeLists.txt``
 
 Starting with Zephyr 3.6.0, ``west flash`` does not invoke ``west sign``
 anymore and you cannot pass rimage parameters to ``west flash`` anymore. To
