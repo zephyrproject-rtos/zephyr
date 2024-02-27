@@ -1002,7 +1002,7 @@ static int init_reset(void)
 
 static struct ll_adv_iso_set *adv_iso_get(uint8_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_ADV_SET) {
+	if (handle >= CONFIG_BT_CTLR_ADV_ISO_SET) {
 		return NULL;
 	}
 
