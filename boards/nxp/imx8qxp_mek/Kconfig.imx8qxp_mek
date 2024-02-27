@@ -1,0 +1,8 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_IMX8QXP_MEK
+	select SOC_MIMX8QXP_ADSP if BOARD_IMX8QXP_MEK_MIMX8QX6_ADSP
+	select SOC_PART_NUMBER_MIMX8QX6AVLFZ

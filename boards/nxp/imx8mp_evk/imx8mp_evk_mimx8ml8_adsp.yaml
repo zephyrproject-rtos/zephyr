@@ -1,5 +1,5 @@
-identifier: nxp_adsp_imx8m
-name: NXP i.MX8M Plus EVK Audio DSP
+identifier: imx8mp_evk/mimx8ml8/adsp
+name: NXP i.MX 8MPLUS Audio DSP
 type: mcu
 arch: xtensa
 toolchain:
