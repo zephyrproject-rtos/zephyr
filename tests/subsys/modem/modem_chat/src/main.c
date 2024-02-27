@@ -610,6 +610,24 @@ ZTEST(modem_chat, test_script_run_dynamic_script_sync)
 	zassert_ok(modem_chat_run_script(&cmd, &stack_script), "Failed to run script");
 }
 
+ZTEST(modem_chat, test_runtime_match)
+{
+	int ret;
+	struct modem_chat_match test_match;
+
+	modem_chat_match_init(&test_match);
+
+	ret = modem_chat_match_set_match(&test_match, "AT345");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.match, "AT345"), "Failed to set match");
+	zassert_equal(test_match.match_size, 5, "Failed to set size of match");
+
+	ret = modem_chat_match_set_separators(&test_match, ",*");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.separators, ",*"), "Failed to set separators");
+	zassert_equal(test_match.separators_size, 2, "Failed to set size of separators");
+}
+
 /*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/
