@@ -1605,6 +1605,17 @@ bool net_ipaddr_parse(const char *str, size_t str_len,
 		      struct sockaddr *addr);
 
 /**
+ * @brief Set the default port in the sockaddr structure.
+ * If the port is already set, then do nothing.
+ *
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param default_port Default port number to set.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_port_set_default(struct sockaddr *addr, uint16_t default_port);
+
+/**
  * @brief Compare TCP sequence numbers.
  *
  * @details This function compares TCP sequence numbers,
