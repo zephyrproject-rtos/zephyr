@@ -405,9 +405,6 @@ skip_ipv6:
 #if defined(CONFIG_NET_L2_IEEE802154)
 		(net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154)) ||
 #endif
-#if defined(CONFIG_NET_L2_BT)
-		 (net_if_l2(iface) == &NET_L2_GET_NAME(BLUETOOTH)) ||
-#endif
 		 0) {
 		PR_WARNING("%s not %s for this interface.\n", "IPv4",
 			   "supported");

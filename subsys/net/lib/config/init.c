@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_config.h>
 
 #include "ieee802154_settings.h"
-#include "bt_settings.h"
 
 extern int net_init_clock_via_sntp(void);
 
@@ -500,14 +499,6 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 	if (ret < 0) {
 		NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
 	}
-
-#if defined(CONFIG_NET_IPV6)
-	/* Bluetooth is only usable if IPv6 is enabled */
-	ret = z_net_config_bt_setup();
-	if (ret < 0) {
-		NET_ERR("Cannot setup Bluetooth interface (%d)", ret);
-	}
-#endif
 
 	/* Only try to use a network interface that is auto started */
 	if (iface == NULL) {
