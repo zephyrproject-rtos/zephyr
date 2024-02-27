@@ -57,6 +57,7 @@ list(APPEND kernel_files
   init.c
   kheap.c
   mem_slab.c
+  float.c
   thread.c
   version.c
   priority_queues.c
