@@ -50,7 +50,7 @@ Supported Features
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/96boards/96b_carbon/96b_carbon_nrf51822_defconfig`
+:zephyr_file:`boards/96boards/carbon/96b_carbon_nrf51822_defconfig`
 
 Connections and IOs
 ===================

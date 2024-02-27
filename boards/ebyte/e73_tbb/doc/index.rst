@@ -211,7 +211,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/ebyte/ebyte_e73_tbb/ebyte_e73_tbb_nrf52832.dts`.
+:zephyr_file:`boards/ebyte/e73_tbb/ebyte_e73_tbb_nrf52832.dts`.
 
 References
 **********

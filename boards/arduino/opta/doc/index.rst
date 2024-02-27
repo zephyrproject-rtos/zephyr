@@ -63,7 +63,7 @@ The current Zephyr arduino_opta_m4 board configuration supports the following ha
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration per core can be found in the defconfig file:
-:zephyr_file:`boards/arduino/arduino_opta/arduino_opta_stm32h747xx_m4_defconfig`
+:zephyr_file:`boards/arduino/opta/arduino_opta_stm32h747xx_m4_defconfig`
 
 Pin Mapping
 ===========
