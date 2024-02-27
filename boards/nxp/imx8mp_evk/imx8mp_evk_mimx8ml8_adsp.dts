@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2023 NXP
+ * Copyright 2021, 2023, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include <nxp/nxp_imx/mimx8ml8dvnlz-pinctrl.dtsi>
 
 / {
-	model = "nxp_adsp_imx8m";
+	model = "NXP i.MX 8MPLUS Audio DSP";
 	compatible = "nxp";
 
 	chosen {
