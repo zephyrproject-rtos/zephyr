@@ -769,7 +769,73 @@ int ull_adv_iso_init(void)
 
 int ull_adv_iso_reset(void)
 {
+	uint8_t handle;
 	int err;
+
+	handle = CONFIG_BT_CTLR_ADV_ISO_SET;
+	while (handle--) {
+		struct lll_adv_sync *adv_sync_lll;
+		struct lll_adv_iso *adv_iso_lll;
+		struct ll_adv_iso_set *adv_iso;
+		volatile uint32_t ret_cb;
+		struct lll_adv *adv_lll;
+		uint32_t ret;
+		void *mark;
+
+		adv_iso = &ll_adv_iso[handle];
+		adv_iso_lll = &adv_iso->lll;
+		adv_lll = adv_iso_lll->adv;
+		if (!adv_lll) {
+			continue;
+		}
+
+		mark = ull_disable_mark(adv_iso);
+		LL_ASSERT(mark == adv_iso);
+
+		/* Stop event scheduling */
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+				  TICKER_ID_ADV_ISO_BASE + adv_iso_lll->handle,
+				  ull_ticker_status_give, (void *)&ret_cb);
+		ret = ull_ticker_status_take(ret, &ret_cb);
+		if (ret) {
+			mark = ull_disable_unmark(adv_iso);
+			LL_ASSERT(mark == adv_iso);
+
+			/* Assert as there shall be a ticker instance active */
+			LL_ASSERT(false);
+
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		/* Abort any events in LLL pipeline */
+		err = ull_disable(adv_iso_lll);
+		LL_ASSERT(!err || (err == -EALREADY));
+
+		mark = ull_disable_unmark(adv_iso);
+		LL_ASSERT(mark == adv_iso);
+
+		/* Reset associated streams */
+		while (adv_iso_lll->num_bis--) {
+			struct lll_adv_iso_stream *stream;
+			uint16_t stream_handle;
+
+			stream_handle = adv_iso_lll->stream_handle[adv_iso_lll->num_bis];
+			stream = ull_adv_iso_stream_get(stream_handle);
+			if (stream) {
+				stream->link_tx_free = NULL;
+			}
+		}
+
+		/* Remove Periodic Advertising association */
+		adv_sync_lll = adv_lll->sync;
+		if (adv_sync_lll) {
+			adv_sync_lll->iso = NULL;
+		}
+
+		/* Remove Extended Advertising association */
+		adv_iso_lll->adv = NULL;
+	}
 
 	err = init_reset();
 	if (err) {
