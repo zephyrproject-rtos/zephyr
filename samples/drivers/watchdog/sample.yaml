@@ -27,6 +27,7 @@ tests:
     filter: dt_compat_enabled("st,stm32-window-watchdog")
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_c031c6
       - nucleo_f091rc
       - nucleo_f103rb
       - nucleo_f207zg
@@ -53,6 +54,7 @@ tests:
     filter: dt_compat_enabled("st,stm32-watchdog")
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_c031c6
       - nucleo_f091rc
       - nucleo_f103rb
       - nucleo_f207zg
