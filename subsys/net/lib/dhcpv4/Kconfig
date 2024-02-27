@@ -36,6 +36,16 @@ config NET_DHCPV4_OPTION_CALLBACKS
 	  can be added. These can be used to support otherwise
 	  DHCP options not used by the rest of the system.
 
+config NET_DHCPV4_MAX_REQUESTED_OPTIONS
+	int "Maximum number of requested options"
+	depends on NET_DHCPV4 && NET_DHCPV4_OPTION_CALLBACKS
+	default 10
+	range 3 255
+	help
+	  Maximum number of requested options that can be added to the
+	  DHCPv4 request message. The options are added using the
+	  net_dhcpv4_add_option_callback() API.
+
 config NET_DHCPV4_ACCEPT_UNICAST
 	bool "Accept unicast DHCPv4 traffic"
 	depends on NET_DHCPV4
@@ -43,6 +53,21 @@ config NET_DHCPV4_ACCEPT_UNICAST
 	help
 	  If set, the network stack will accept unicast DHCPv4 responses from
 	  servers, before the assigned address is configured on the interface.
+
+config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
+	bool "Send vendor class identifier in DHCPv4 request"
+	depends on NET_DHCPV4
+	help
+	  If set, the network stack will include the specified string in the
+	  DHCPv4 vendor class identifier option in the DHCPv4 request.
+
+config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING
+	string "Vendor class identifier"
+	depends on NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
+	default ""
+	help
+	  The string to include in the DHCPv4 vendor class identifier option
+	  in the DHCPv4 request.
 
 endif # NET_DHCPV4
 
@@ -79,14 +104,28 @@ config NET_DHCPV4_SERVER_ADDR_COUNT
 
 config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
 	int "Lease time for IPv4 addresses assigned by the server (seconds)"
+	range 0 4294967295
 	default 86400
 	help
 	  Lease time in seconds for IPv4 addresses assigned by the server.
 	  The lease time determines when the IPv4 address lease expires if the
 	  client does not renew it.
 
+config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
+	int "The time IPv4 addresses remains blocked after conflict detection (seconds)"
+	range 0 4294967295
+	default 86400
+	help
+	  In case IPv4 address becomes blocked (either because of receiving
+	  Decline message or due to ICMP probe detecting conflict), the address
+	  can no longer be assigned. This timeout specifies how long the address
+	  remains in the Declined state.
+	  Note, that the server may try to reuse the oldest declined address in
+	  case it runs out of free addresses to assign.
+
 config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
 	int "Timeout for ICMP probes sent by the server (miliseconds)"
+	range 0 60000
 	default 1000
 	help
 	  DHCPv4 server will probe the offered IP address (send ICMP echo

@@ -61,7 +61,7 @@ static struct bt_csip_set_member_cb csip_set_member_cbs = {
 	.sirk_read_req = sirk_read_req_cb,
 };
 
-static int cm_csip_set_member_register(const struct shell *sh, size_t argc, char **argv)
+static int cmd_csip_set_member_register(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
 	struct bt_csip_set_member_register_param param = {
@@ -157,14 +157,60 @@ static int cm_csip_set_member_register(const struct shell *sh, size_t argc, char
 	return 0;
 }
 
-static int cm_csip_set_member_print_sirk(const struct shell *sh, size_t argc,
-			       char *argv[])
+static int cmd_csip_set_member_set_sirk(const struct shell *sh, size_t argc, char *argv[])
 {
-	bt_csip_set_member_print_sirk(svc_inst);
+	uint8_t sirk[BT_CSIP_SET_SIRK_SIZE];
+	size_t len;
+	int err;
+
+	if (svc_inst == NULL) {
+		shell_error(sh, "CSIS not registered yet");
+
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(argv[1], strlen(argv[1]), sirk, sizeof(sirk));
+	if (len != sizeof(sirk)) {
+		shell_error(sh, "Invalid SIRK Length: %zu", len);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_csip_set_member_set_sirk(svc_inst, sirk);
+	if (err != 0) {
+		shell_error(sh, "Failed to set SIRK: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "SIRK updated");
+
 	return 0;
 }
 
-static int cm_csip_set_member_lock(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_csip_set_member_get_sirk(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t sirk[BT_CSIP_SET_SIRK_SIZE];
+	int err;
+
+	if (svc_inst == NULL) {
+		shell_error(sh, "CSIS not registered yet");
+
+		return -ENOEXEC;
+	}
+
+	err = bt_csip_set_member_get_sirk(svc_inst, sirk);
+	if (err != 0) {
+		shell_error(sh, "Failed to get SIRK: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Set SIRK");
+	shell_hexdump(sh, sirk, sizeof(sirk));
+
+	return 0;
+}
+
+static int cmd_csip_set_member_lock(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
@@ -179,7 +225,7 @@ static int cm_csip_set_member_lock(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
-static int cm_csip_set_member_release(const struct shell *sh, size_t argc,
+static int cmd_csip_set_member_release(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	bool force = false;
@@ -206,7 +252,7 @@ static int cm_csip_set_member_release(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cm_csip_set_member_set_sirk_rsp(const struct shell *sh, size_t argc,
+static int cmd_csip_set_member_set_sirk_rsp(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
 	if (strcmp(argv[1], "accept") == 0) {
@@ -225,37 +271,35 @@ static int cm_csip_set_member_set_sirk_rsp(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cm_csip_set_member(const struct shell *sh, size_t argc, char **argv)
+static int cmd_csip_set_member(const struct shell *sh, size_t argc, char **argv)
 {
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(csip_set_member_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	csip_set_member_cmds,
 	SHELL_CMD_ARG(register, NULL,
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
-		      cm_csip_set_member_register, 1, 4),
-	SHELL_CMD_ARG(lock, NULL,
-		      "Lock the set",
-		      cm_csip_set_member_lock, 1, 0),
-	SHELL_CMD_ARG(release, NULL,
-		      "Release the set [force]",
-		      cm_csip_set_member_release, 1, 1),
-	SHELL_CMD_ARG(print_sirk, NULL,
-		      "Print the currently used SIRK",
-		      cm_csip_set_member_print_sirk, 1, 0),
+		      cmd_csip_set_member_register, 1, 4),
+	SHELL_CMD_ARG(lock, NULL, "Lock the set", cmd_csip_set_member_lock, 1, 0),
+	SHELL_CMD_ARG(release, NULL, "Release the set [force]", cmd_csip_set_member_release, 1, 1),
+	SHELL_CMD_ARG(set_sirk, NULL, "Set the currently used SIRK <sirk>",
+		      cmd_csip_set_member_set_sirk, 2, 0),
+	SHELL_CMD_ARG(get_sirk, NULL, "Get the currently used SIRK", cmd_csip_set_member_get_sirk,
+		      1, 0),
 	SHELL_CMD_ARG(set_sirk_rsp, NULL,
 		      "Set the response used in SIRK requests "
 		      "<accept, accept_enc, reject, oob>",
-		      cm_csip_set_member_set_sirk_rsp, 2, 0),
-		      SHELL_SUBCMD_SET_END
+		      cmd_csip_set_member_set_sirk_rsp, 2, 0),
+	SHELL_SUBCMD_SET_END
 );
 
 SHELL_CMD_ARG_REGISTER(csip_set_member, &csip_set_member_cmds,
 		       "Bluetooth CSIP set member shell commands",
-		       cm_csip_set_member, 1, 1);
+		       cmd_csip_set_member, 1, 1);
 
 ssize_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
 			 const bool discoverable)

@@ -854,6 +854,8 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 		return;
 	}
 
+	conn->err = evt->reason;
+
 	bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	bt_conn_unref(conn);
 }
@@ -875,8 +877,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 		LOG_ERR("Unable to look up conn with handle %u", handle);
 		return;
 	}
-
-	conn->err = evt->reason;
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
@@ -3265,11 +3265,9 @@ static int le_init_iso(void)
 		read_buffer_size_v2_complete(rsp);
 
 		net_buf_unref(rsp);
-	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
-		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) || IS_ENABLED(CONFIG_BT_ISO_BROADCASTER)) {
-			LOG_WRN("Read Buffer Size V2 command is not supported. "
-				"No ISO TX buffers will be available");
-		}
+	} else if (IS_ENABLED(CONFIG_BT_CONN_TX)) {
+		LOG_WRN("Read Buffer Size V2 command is not supported. "
+			"No ISO TX buffers will be available");
 
 		/* Read LE Buffer Size */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,
@@ -3586,7 +3584,7 @@ static const char *vs_hw_platform(uint16_t platform)
 static const char *vs_hw_variant(uint16_t platform, uint16_t variant)
 {
 	static const char * const nordic_str[] = {
-		"reserved", "nRF51x", "nRF52x", "nRF53x"
+		"reserved", "nRF51x", "nRF52x", "nRF53x", "nRF54Hx", "nRF54Lx"
 	};
 
 	if (platform != BT_HCI_VS_HW_PLAT_NORDIC) {
@@ -3899,6 +3897,7 @@ int bt_recv(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_RECV_BLOCKING)
 int bt_recv_prio(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
@@ -3909,6 +3908,7 @@ int bt_recv_prio(struct net_buf *buf)
 
 	return 0;
 }
+#endif /* CONFIG_BT_RECV_BLOCKING */
 
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {

@@ -30,8 +30,8 @@ tests:
     timeout: 600
   kernel.fpu_sharing.generic.riscv32:
     extra_args: PI_NUM_ITERATIONS=500
-    filter: CONFIG_CPU_HAS_FPU
-    arch_allow: riscv32
+    filter: CONFIG_CPU_HAS_FPU and not CONFIG_64BIT
+    arch_allow: riscv
     tags:
       - fpu
       - kernel
@@ -41,8 +41,8 @@ tests:
     extra_args: PI_NUM_ITERATIONS=500
     extra_configs:
       - CONFIG_MAIN_STACK_SIZE=2048
-    filter: CONFIG_CPU_HAS_FPU
-    arch_allow: riscv64
+    filter: CONFIG_CPU_HAS_FPU and CONFIG_64BIT
+    arch_allow: riscv
     tags:
       - fpu
       - kernel

@@ -24,3 +24,7 @@ tests:
     extra_configs:
       - CONFIG_ADC=y
       - CONFIG_SETTINGS=y
+
+  drivers.input.adc_keys:
+    extra_configs:
+      - CONFIG_ADC=y

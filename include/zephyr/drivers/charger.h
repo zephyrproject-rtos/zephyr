@@ -74,9 +74,21 @@ enum charger_property {
 	 * Configuration to issue a notification to the system based on the input current
 	 * level and timing
 	 *
-	 * Value should be of type struct charger_input_current_notifier
+	 * Value should be of type struct charger_current_notifier
 	 */
 	CHARGER_PROP_INPUT_CURRENT_NOTIFICATION,
+	/**
+	 * Configuration to issue a notification to the system based on the battery discharge
+	 * current level and timing
+	 *
+	 * Value should be of type struct charger_current_notifier
+	 */
+	CHARGER_PROP_DISCHARGE_CURRENT_NOTIFICATION,
+	/**
+	 * Configuration of the falling system voltage threshold where a notification
+	 * is issued to the system, measured in µV
+	 */
+	CHARGER_PROP_SYSTEM_VOLTAGE_NOTIFICATION_UV,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -251,6 +263,10 @@ union charger_propval {
 	uint32_t input_voltage_regulation_voltage_uv;
 	/** CHARGER_PROP_INPUT_CURRENT_NOTIFICATION */
 	struct charger_current_notifier input_current_notification;
+	/** CHARGER_PROP_DISCHARGE_CURRENT_NOTIFICATION */
+	struct charger_current_notifier discharge_current_notification;
+	/** CHARGER_PROP_SYSTEM_VOLTAGE_NOTIFICATION_UV */
+	uint32_t system_voltage_notification;
 };
 
 /**

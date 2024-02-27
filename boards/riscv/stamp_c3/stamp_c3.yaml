@@ -1,7 +1,7 @@
 identifier: stamp_c3
 name: M5Stack STAMP-C3
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 supported:

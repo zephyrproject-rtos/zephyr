@@ -554,8 +554,9 @@ static void unicast_group_create(struct bt_bap_unicast_group **out_unicast_group
 
 static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group)
 {
-	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
-		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG(
+		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
+		BT_AUDIO_LOCATION_FRONT_LEFT, 40U, 1, BT_AUDIO_CONTEXT_TYPE_MEDIA);
 	struct bt_cap_unicast_audio_start_stream_param invalid_stream_param;
 	struct bt_cap_unicast_audio_start_stream_param valid_stream_param;
 	struct bt_cap_unicast_audio_start_param invalid_start_param;
@@ -690,8 +691,9 @@ static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group, bool
 
 static void unicast_audio_update_inval(void)
 {
-	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
-		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG(
+		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
+		BT_AUDIO_LOCATION_FRONT_LEFT, 40U, 1, BT_AUDIO_CONTEXT_TYPE_MEDIA);
 	struct bt_cap_unicast_audio_update_stream_param stream_params[1] = {0};
 	struct bt_cap_unicast_audio_update_param param = {0};
 	int err;

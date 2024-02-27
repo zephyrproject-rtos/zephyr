@@ -81,7 +81,7 @@ needs to be changed are to be detailed in the release's migration guide.
 
    eol_releases
    release-notes-2.7
-   release-notes-3.[5-6]
+   release-notes-3.[5-7]
 
 Migration Guides
 ****************

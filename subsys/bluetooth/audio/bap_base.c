@@ -545,6 +545,26 @@ static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *
 	return true;
 }
 
+int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subgroup,
+					 uint32_t *bis_indexes)
+{
+	CHECKIF(subgroup == NULL) {
+		LOG_DBG("subgroup is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(bis_indexes == NULL) {
+		LOG_DBG("bis_indexes is NULL");
+
+		return -EINVAL;
+	}
+
+	*bis_indexes = 0U;
+
+	return bt_bap_base_subgroup_foreach_bis(subgroup, base_subgroup_bis_cb, bis_indexes);
+}
+
 int bt_bap_base_get_bis_indexes(const struct bt_bap_base *base, uint32_t *bis_indexes)
 {
 	CHECKIF(base == NULL) {

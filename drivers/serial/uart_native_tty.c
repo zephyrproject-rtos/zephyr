@@ -39,11 +39,29 @@ struct native_tty_data {
 	int cmd_baudrate;
 	/* Serial port set from the command line. If NULL, it was not set. */
 	char *cmd_serial_port;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* Emulated tx irq is enabled. */
+	bool tx_irq_enabled;
+	/* Emulated rx irq is enabled. */
+	bool rx_irq_enabled;
+	/* IRQ callback */
+	uart_irq_callback_user_data_t callback;
+	/* IRQ callback data */
+	void *cb_data;
+#endif
 };
 
 struct native_tty_config {
 	struct uart_config uart_config;
 };
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static struct k_thread rx_thread;
+static K_KERNEL_STACK_DEFINE(rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
+#define NATIVE_TTY_INIT_LEVEL POST_KERNEL
+#else
+#define NATIVE_TTY_INIT_LEVEL PRE_KERNEL_1
+#endif
 
 /**
  * @brief Convert from uart_config to native_tty_bottom_cfg eqvivalent struct
@@ -157,6 +175,148 @@ static int native_tty_configure(const struct device *dev, const struct uart_conf
 	return native_tty_configure_bottom(fd, &bottom_cfg);
 }
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static int native_tty_uart_fifo_fill(const struct device *dev,
+				     const uint8_t *tx_data,
+				     int size)
+{
+	struct native_tty_data *data = dev->data;
+
+	return nsi_host_write(data->fd, (void *)tx_data, size);
+}
+
+static int native_tty_uart_fifo_read(const struct device *dev,
+				     uint8_t *rx_data,
+				     const int size)
+{
+	struct native_tty_data *data = dev->data;
+
+	return nsi_host_read(data->fd, rx_data, size);
+}
+
+static int native_tty_uart_irq_tx_ready(const struct device *dev)
+{
+	struct native_tty_data *data = dev->data;
+
+	return data->tx_irq_enabled ? 1 : 0;
+}
+
+static int native_tty_uart_irq_tx_complete(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 1;
+}
+
+static void native_tty_uart_irq_tx_enable(const struct device *dev)
+{
+	struct native_tty_data *data = dev->data;
+
+	data->tx_irq_enabled = true;
+}
+
+static void native_tty_uart_irq_tx_disable(const struct device *dev)
+{
+	struct native_tty_data *data = dev->data;
+
+	data->tx_irq_enabled = false;
+}
+
+static void native_tty_uart_irq_rx_enable(const struct device *dev)
+{
+	struct native_tty_data *data = dev->data;
+
+	data->rx_irq_enabled = true;
+}
+
+static void native_tty_uart_irq_rx_disable(const struct device *dev)
+{
+	struct native_tty_data *data = dev->data;
+
+	data->rx_irq_enabled = false;
+}
+
+static int native_tty_uart_irq_rx_ready(const struct device *dev)
+{
+	struct native_tty_data *data = dev->data;
+
+	if (data->rx_irq_enabled && native_tty_poll_bottom(data->fd) == 1) {
+		return 1;
+	}
+	return 0;
+}
+
+static int native_tty_uart_irq_is_pending(const struct device *dev)
+{
+	return native_tty_uart_irq_rx_ready(dev) ||
+		native_tty_uart_irq_tx_ready(dev);
+}
+
+static int native_tty_uart_irq_update(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 1;
+}
+
+static void native_tty_uart_irq_handler(const struct device *dev)
+{
+	struct native_tty_data *data = dev->data;
+
+	if (data->callback) {
+		data->callback(dev, data->cb_data);
+	} else {
+		WARN("No callback!\n");
+	}
+}
+
+/*
+ * Emulate uart interrupts using a polling thread
+ */
+void native_tty_uart_irq_function(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	struct device *dev = (struct device *)arg1;
+	struct native_tty_data *data = dev->data;
+
+	while (1) {
+		if (data->rx_irq_enabled) {
+			int ret = native_tty_poll_bottom(data->fd);
+
+			if (ret == 1) {
+				native_tty_uart_irq_handler(dev);
+			} else if (ret < 0) {
+				WARN("Poll returned error %d\n", ret);
+			} else {
+				k_sleep(K_MSEC(1));
+			}
+		} else if (data->tx_irq_enabled) {
+			native_tty_uart_irq_handler(dev);
+		} else {
+			k_sleep(K_MSEC(10));
+		}
+	}
+}
+
+static void native_tty_uart_irq_callback_set(const struct device *dev,
+					     uart_irq_callback_user_data_t cb,
+					     void *cb_data)
+{
+	struct native_tty_data *data = dev->data;
+
+	data->callback = cb;
+	data->cb_data = cb_data;
+}
+
+static void native_tty_irq_init(const struct device *dev)
+{
+	/* Create a thread which will wait for data - replacement for IRQ */
+	k_thread_create(&rx_thread, rx_stack, K_KERNEL_STACK_SIZEOF(rx_stack),
+			native_tty_uart_irq_function,
+			(void *)dev, NULL, NULL,
+			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static int native_tty_serial_init(const struct device *dev)
 {
 	struct native_tty_data *data = dev->data;
@@ -197,6 +357,10 @@ static int native_tty_serial_init(const struct device *dev)
 
 	posix_print_trace("%s connected to the serial port: %s\n", dev->name, data->serial_port);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* Start irq emulation thread */
+	native_tty_irq_init(dev);
+#endif
 	return 0;
 }
 
@@ -205,6 +369,20 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 	.poll_in = native_tty_uart_poll_in,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = native_tty_configure,
+#endif
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill        = native_tty_uart_fifo_fill,
+	.fifo_read        = native_tty_uart_fifo_read,
+	.irq_tx_enable    = native_tty_uart_irq_tx_enable,
+	.irq_tx_disable	  = native_tty_uart_irq_tx_disable,
+	.irq_tx_ready     = native_tty_uart_irq_tx_ready,
+	.irq_tx_complete  = native_tty_uart_irq_tx_complete,
+	.irq_rx_enable    = native_tty_uart_irq_rx_enable,
+	.irq_rx_disable   = native_tty_uart_irq_rx_disable,
+	.irq_rx_ready     = native_tty_uart_irq_rx_ready,
+	.irq_is_pending   = native_tty_uart_irq_is_pending,
+	.irq_update       = native_tty_uart_irq_update,
+	.irq_callback_set = native_tty_uart_irq_callback_set,
 #endif
 };
 
@@ -225,7 +403,7 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data,       \
-			      &native_tty_##inst##_cfg, PRE_KERNEL_1, 55,                          \
+			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL, 55,                 \
 			      &native_tty_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);

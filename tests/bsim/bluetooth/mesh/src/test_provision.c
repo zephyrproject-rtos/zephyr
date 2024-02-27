@@ -147,20 +147,15 @@ static const struct bt_mesh_comp rpr_cli_srv_comp = {
 	.elem_count = 1,
 };
 
-/* Delayed work to suspend device to allow publication to finish. */
-static struct k_work_delayable suspend_work;
-static void delayed_suspend(struct k_work *work)
-{
-	/* Device becomes unresponsive and doesn't communicate with other nodes anymore */
-	bt_mesh_suspend();
-
-	k_sem_give(&pdu_send_sem);
-}
-
 static int mock_pdu_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	k_work_schedule(&suspend_work, K_MSEC(100));
+	/* Device becomes unresponsive and doesn't communicate with other nodes anymore */
+	k_sleep(K_MSEC(10));
+	bt_mesh_suspend();
+
+	k_sem_give(&pdu_send_sem);
+
 	return 0;
 }
 
@@ -1272,7 +1267,6 @@ static void test_device_pb_remote_server_unproved(void)
  */
 static void test_device_pb_remote_server_unproved_unresponsive(void)
 {
-	k_work_init_delayable(&suspend_work, delayed_suspend);
 	device_pb_remote_server_setup_unproved(&rpr_srv_comp_unresponsive, NULL);
 
 	k_sem_init(&pdu_send_sem, 0, 1);

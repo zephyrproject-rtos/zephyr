@@ -129,8 +129,17 @@ static void ipc_virtio_notify(struct virtqueue *vq)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
 	status = ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
+#elif defined(CONFIG_IPM_STM32_HSEM)
+	/* No data transfer, only doorbell. */
+	status = ipm_send(ipm_handle, 0, 0, NULL, 0);
 #else
-	uint32_t dummy_data = 0x55005500; /* Some data must be provided */
+	/* The IPM interface is unclear on whether or not ipm_send
+	 * can be called with NULL as data, thus, drivers might cause
+	 * problems if you do. To avoid problems, we always send some
+	 * dummy data, unless the IPM driver cannot transfer data.
+	 * Ref: #68741
+	 */
+	uint32_t dummy_data = 0x55005500;
 
 	status = ipm_send(ipm_handle, 0, 0, &dummy_data, sizeof(dummy_data));
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */

@@ -8,9 +8,9 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # notification, using the split controller (ULL LLL)
 # Both central and peripheral hosts have their controllers in a separate device
 # connected over UART. The controller is the HCI UART async sample.
-simulation_id="basic_conn_split_uart_async"
+simulation_id="basic_conn_split_hci_uart_async"
 verbosity_level=2
-EXECUTE_TIMEOUT=10
+EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 
@@ -21,7 +21,7 @@ UART_CEN=${UART_DIR}/central
 # Note the host+app devices are NOT connected to the phy, only the controllers are.
 
 # Peripheral app + host :
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_conn_prj_split_uart_conf \
+Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_conn_prj_split_hci_uart_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=10 -nosim -RealEncryption=0 \
   -testid=peripheral -rs=23 -uart1_fifob_rxfile=${UART_PER}.rx -uart1_fifob_txfile=${UART_PER}.tx
 
@@ -31,7 +31,7 @@ Execute ./bs_${BOARD}_samples_bluetooth_hci_uart_async_prj_conf \
   -rs=23 -uart1_fifob_rxfile=${UART_PER}.tx -uart1_fifob_txfile=${UART_PER}.rx
 
 # Central app + host
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_conn_prj_split_uart_conf\
+Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_conn_prj_split_hci_uart_conf\
   -v=${verbosity_level} -s=${simulation_id} -d=11 -nosim -RealEncryption=0 \
   -testid=central -rs=6 -uart1_fifob_rxfile=${UART_CEN}.rx -uart1_fifob_txfile=${UART_CEN}.tx
 

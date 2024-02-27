@@ -375,8 +375,8 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
  * waiting thread while holding sched_spinlock. This can be useful for routines
  * that need to operate on multiple waiting threads.
  *
- * CAUTION! As a wait queue is of indeterminant length, the scheduler will be
- * locked for an indeterminant amount of time. This may impact system
+ * CAUTION! As a wait queue is of indeterminate length, the scheduler will be
+ * locked for an indeterminate amount of time. This may impact system
  * performance. As such, care must be taken when using both this function and
  * the specified callback.
  *

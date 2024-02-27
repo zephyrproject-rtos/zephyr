@@ -1052,7 +1052,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			}
 		} else {
 			/* Sector or Block erase depending on the size */
-			LOG_INF("Sector/Block Erase");
+			LOG_DBG("Sector/Block Erase");
 
 			cmd_erase.AddressMode =
 				(dev_cfg->data_mode == OSPI_OPI_MODE)
@@ -1098,7 +1098,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 					bet = NULL;
 				}
 			}
-			LOG_INF("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
+			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
 				cmd_erase.Address, cmd_erase.AddressSize,
 				cmd_erase.AddressMode, cmd_erase.Instruction);
 
@@ -2225,6 +2225,39 @@ static int flash_stm32_ospi_init(const struct device *dev)
 			if (ret != 0) {
 				LOG_ERR("SFDP BFP failed: %d", ret);
 				break;
+			}
+		}
+		if (id == JESD216_SFDP_PARAM_ID_4B_ADDR_INSTR) {
+
+			if (dev_data->address_width == 4U) {
+				/*
+				 * Check table 4 byte address instruction table to get supported
+				 * erase opcodes when running in 4 byte address mode
+				 */
+				union {
+					uint32_t dw[2];
+					struct {
+						uint32_t dummy;
+						uint8_t type[4];
+					} types;
+				} u2;
+				ret = ospi_read_sfdp(dev, jesd216_param_addr(php),
+					     (uint8_t *)u2.dw,
+					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
+				if (ret != 0) {
+					break;
+				}
+				for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
+					struct jesd216_erase_type *etp = &dev_data->erase_types[ei];
+					const uint8_t cmd = u2.types.type[ei];
+					/* 0xff means not supported */
+					if (cmd == 0xff) {
+						etp->exp = 0;
+						etp->cmd = 0;
+					} else {
+						etp->cmd = cmd;
+					};
+				}
 			}
 		}
 		++php;

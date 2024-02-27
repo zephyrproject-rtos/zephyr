@@ -33,6 +33,20 @@
 			status = "okay";
 		};
 
+		adc-keys {
+			compatible = "adc-keys";
+			io-channels = <&test_adc 0>;
+			keyup-threshold-mv = <0>;
+			button_0 {
+				press-thresholds-mv = <1500>, <1750>;
+				zephyr,code = <0>;
+			};
+			button_1 {
+				press-thresholds-mv = <2500>, <1750>;
+				zephyr,code = <1>;
+			};
+		};
+
 		gpio-keys {
 			compatible = "gpio-keys";
 			debounce-interval-ms = <30>;

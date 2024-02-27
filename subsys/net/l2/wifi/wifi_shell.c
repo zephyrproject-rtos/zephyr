@@ -404,10 +404,6 @@ static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
-	if (context.sh == NULL) {
-		return;
-	}
-
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_SCAN_RESULT:
 		handle_wifi_scan_result(cb);
@@ -1411,7 +1407,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		PR("Wi-Fi Regulatory domain is: %c%c\n",
 		   regd.country_code[0], regd.country_code[1]);
 		PR("<channel>\t<center frequency>\t<supported(y/n)>\t"
-		   "<max power(dBm)>\t<passive scan supported(y/n)>\t<dfs supported(y/n)>\n");
+		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
 			PR("  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
 			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),

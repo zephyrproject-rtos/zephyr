@@ -5,7 +5,7 @@
  */
 
 /** @file
- * @brief Utility functions to be used by the Wi-Fi subsytem.
+ * @brief Utility functions to be used by the Wi-Fi subsystem.
  */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 /* Ensure 'strtok_r' is available even with -std=c99. */
 char *strtok_r(char *str, const char *delim, char **saveptr);
 
-static const uint16_t valid_5g_chans_20mhz[] = {32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 96, 100,
+static const uint8_t valid_5g_chans_20mhz[] = {32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 96, 100,
 	104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 159, 161,
 	163, 165, 167, 169, 171, 173, 175, 177};
 
@@ -70,7 +70,7 @@ bool wifi_utils_validate_chan_5g(uint16_t chan)
 
 bool wifi_utils_validate_chan_6g(uint16_t chan)
 {
-	if (((chan >= 1) && (chan <= 233) && (!((chan - 1)%4))) ||
+	if (((chan >= 1) && (chan <= 233) && (!((chan - 1) % 4))) ||
 	    (chan == 2)) {
 		return true;
 	}
@@ -80,7 +80,7 @@ bool wifi_utils_validate_chan_6g(uint16_t chan)
 
 
 bool wifi_utils_validate_chan(uint8_t band,
-				     uint16_t chan)
+			      uint16_t chan)
 {
 	bool result = false;
 

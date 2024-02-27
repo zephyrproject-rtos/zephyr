@@ -1,7 +1,7 @@
 identifier: riscv32_virtual
 name: Renode RISC-V 32-bit Virtual Board
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 ram: 4096

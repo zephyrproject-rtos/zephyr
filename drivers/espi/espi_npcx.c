@@ -40,7 +40,7 @@ struct espi_npcx_data {
 	uint8_t plt_rst_asserted;
 	uint8_t espi_rst_level;
 	uint8_t sx_state;
-#if defined(CONFIG_ESPI_OOB_CHANNEL)
+#if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
 	struct k_sem oob_rx_lock;
 #endif
 #if defined(CONFIG_ESPI_FLASH_CHANNEL)
@@ -295,9 +295,22 @@ static void espi_bus_cfg_update_isr(const struct device *dev)
 static void espi_bus_oob_rx_isr(const struct device *dev)
 {
 	struct espi_npcx_data *const data = dev->data;
+#if defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
+	struct espi_reg *const inst = HAL_INSTANCE(dev);
+	struct espi_event evt = {
+			.evt_type = ESPI_BUS_EVENT_OOB_RECEIVED,
+			.evt_details = 0,
+			.evt_data = 0,
+		};
+
+	/* Get received package length and set to additional detail of event */
+	evt.evt_details = NPCX_OOB_RX_PACKAGE_LEN(inst->OOBRXBUF[0]);
+	espi_send_callbacks(&data->callbacks, dev, evt);
+#else
 
 	LOG_DBG("%s", __func__);
 	k_sem_give(&data->oob_rx_lock);
+#endif
 }
 #endif
 
@@ -915,15 +928,14 @@ static int espi_npcx_receive_oob(const struct device *dev,
 		return -EIO;
 	}
 
-	/* Notify host that OOB received buffer is free now. */
-	inst->OOBCTL |= BIT(NPCX_OOBCTL_OOB_FREE);
-
+#if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
 	/* Wait until get oob package or timeout */
 	ret = k_sem_take(&data->oob_rx_lock, K_MSEC(ESPI_OOB_MAX_TIMEOUT));
 	if (ret == -EAGAIN) {
 		LOG_ERR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
+#endif
 
 	/*
 	 * PUT_OOB header (first 4 bytes) in npcx 32-bits rx buffer
@@ -965,6 +977,9 @@ static int espi_npcx_receive_oob(const struct device *dev,
 		for (i = 0; i < sz_oob_rx % 4; i++)
 			*(oob_buf++) = (oob_data >> (8 * i)) & 0xFF;
 	}
+
+	/* Notify host that OOB received buffer is free now. */
+	inst->OOBCTL |= BIT(NPCX_OOBCTL_OOB_FREE);
 	return 0;
 }
 #endif
@@ -1316,7 +1331,7 @@ static int espi_npcx_init(const struct device *dev)
 		inst->ESPIWE |= BIT(espi_bus_isr_tbl[i].wake_en_bit);
 	}
 
-#if defined(CONFIG_ESPI_OOB_CHANNEL)
+#if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
 	k_sem_init(&data->oob_rx_lock, 0, 1);
 #endif
 

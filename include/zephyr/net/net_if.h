@@ -1046,6 +1046,29 @@ static inline void net_if_stop_rs(struct net_if *iface)
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
+/**
+ * @brief Provide a reachability hint for IPv6 Neighbor Discovery.
+ *
+ * This function is intended for upper-layer protocols to inform the IPv6
+ * Neighbor Discovery process about an active link to a specific neighbor.
+ * By signaling a recent "forward progress" event, such as the reception of
+ * an ACK, this function can help reduce unnecessary ND traffic as per the
+ * guidelines in RFC 4861 (section 7.3).
+ *
+ * @param iface A pointer to the network interface.
+ * @param ipv6_addr Pointer to the IPv6 address of the neighbor node.
+ */
+#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
+void net_if_nbr_reachability_hint(struct net_if *iface, const struct in6_addr *ipv6_addr);
+#else
+static inline void net_if_nbr_reachability_hint(struct net_if *iface,
+						const struct in6_addr *ipv6_addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ipv6_addr);
+}
+#endif
+
 /** @cond INTERNAL_HIDDEN */
 
 static inline int net_if_set_link_addr_unlocked(struct net_if *iface,

@@ -49,28 +49,6 @@ static struct bt_gatt_discover_params discover_params;
 static struct bt_csip_set_coordinator_svc_inst *cur_inst;
 static bool busy;
 
-struct bt_csip_set_coordinator_svc_inst {
-	uint8_t set_lock;
-
-	uint16_t start_handle;
-	uint16_t end_handle;
-	uint16_t set_sirk_handle;
-	uint16_t set_size_handle;
-	uint16_t set_lock_handle;
-	uint16_t rank_handle;
-
-	uint8_t idx;
-	struct bt_gatt_subscribe_params sirk_sub_params;
-	struct bt_gatt_discover_params sirk_sub_disc_params;
-	struct bt_gatt_subscribe_params size_sub_params;
-	struct bt_gatt_discover_params size_sub_disc_params;
-	struct bt_gatt_subscribe_params lock_sub_params;
-	struct bt_gatt_discover_params lock_sub_disc_params;
-
-	struct bt_conn *conn;
-	struct bt_csip_set_coordinator_set_info *set_info;
-};
-
 static struct active_members {
 	struct bt_csip_set_coordinator_set_member *members[CONFIG_BT_MAX_CONN];
 	const struct bt_csip_set_coordinator_set_info *info;
@@ -133,8 +111,8 @@ static struct bt_csip_set_coordinator_svc_inst *lookup_instance_by_handle(struct
 	return NULL;
 }
 
-static struct bt_csip_set_coordinator_svc_inst *lookup_instance_by_index(const struct bt_conn *conn,
-						uint8_t idx)
+struct bt_csip_set_coordinator_svc_inst *bt_csip_set_coordinator_lookup_instance_by_index
+	(const struct bt_conn *conn, uint8_t idx)
 {
 	uint8_t conn_index;
 	struct bt_csip_set_coordinator_inst *client;
@@ -164,7 +142,7 @@ static struct bt_csip_set_coordinator_svc_inst *lookup_instance_by_set_info(
 		    memcmp(&member_set_info->set_sirk,
 			   &set_info->set_sirk,
 			   sizeof(set_info->set_sirk)) == 0) {
-			return lookup_instance_by_index(inst->conn, i);
+			return bt_csip_set_coordinator_lookup_instance_by_index(inst->conn, i);
 		}
 	}
 
@@ -300,6 +278,17 @@ static void lock_changed(struct bt_csip_set_coordinator_csis_inst *inst, bool lo
 	}
 }
 
+static void sirk_changed(struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	struct bt_csip_set_coordinator_cb *listener;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csip_set_coordinator_cbs, listener, _node) {
+		if (listener->sirk_changed) {
+			listener->sirk_changed(inst);
+		}
+	}
+}
+
 static void release_set_complete(int err)
 {
 	struct bt_csip_set_coordinator_cb *listener;
@@ -389,10 +378,12 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 			struct bt_csip_set_sirk *sirk =
 				(struct bt_csip_set_sirk *)data;
 			struct bt_csip_set_coordinator_inst *client;
+			struct bt_csip_set_coordinator_csis_inst *inst;
 			uint8_t *dst_sirk;
 
 			client = &client_insts[bt_conn_index(conn)];
-			dst_sirk = client->set_member.insts[svc_inst->idx].info.set_sirk;
+			inst = &client->set_member.insts[svc_inst->idx];
+			dst_sirk = inst->info.set_sirk;
 
 			LOG_DBG("Set SIRK %sencrypted",
 				sirk->type == BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
@@ -422,7 +413,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 			LOG_HEXDUMP_DBG(dst_sirk, BT_CSIP_SET_SIRK_SIZE,
 					"Set SIRK");
 
-			/* TODO: Notify app */
+			sirk_changed(inst);
 		} else {
 			LOG_DBG("Invalid length %u", length);
 		}
@@ -584,11 +575,11 @@ static int csip_set_coordinator_read_set_size(struct bt_conn *conn,
 	if (inst_idx >= CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES) {
 		return -EINVAL;
 	} else if (cur_inst != NULL) {
-		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
+		if (cur_inst != bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx)) {
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = lookup_instance_by_index(conn, inst_idx);
+		cur_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx);
 		if (cur_inst == NULL) {
 			LOG_DBG("Inst not found");
 			return -EINVAL;
@@ -616,11 +607,11 @@ static int csip_set_coordinator_read_rank(struct bt_conn *conn,
 	if (inst_idx >= CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES) {
 		return -EINVAL;
 	} else if (cur_inst != NULL) {
-		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
+		if (cur_inst != bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx)) {
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = lookup_instance_by_index(conn, inst_idx);
+		cur_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn, inst_idx);
 		if (cur_inst == NULL) {
 			LOG_DBG("Inst not found");
 			return -EINVAL;
@@ -1029,7 +1020,8 @@ static void discover_insts_resume(struct bt_conn *conn, uint16_t sirk_handle,
 
 		cur_inst = NULL;
 		if (next_idx < client->inst_count) {
-			cur_inst = lookup_instance_by_index(conn, next_idx);
+			cur_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn,
+										    next_idx);
 
 			/* Read next */
 			cb_err = read_set_sirk(cur_inst);

@@ -926,3 +926,9 @@ test_i2c_tmag5273: tmag5273@82 {
 	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
 	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
 };
+
+test_i2c_ens160: ens160@83 {
+	compatible = "sciosense,ens160";
+	reg = <0x83>;
+	int-gpios = <&test_gpio 0 0>;
+};

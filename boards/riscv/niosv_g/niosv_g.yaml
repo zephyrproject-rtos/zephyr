@@ -1,7 +1,7 @@
 identifier: niosv_g
 name: INTEL FPGA Nios V/g general purpose processor
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 ram: 256

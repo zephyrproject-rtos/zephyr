@@ -1493,6 +1493,28 @@ static inline void iface_ipv6_nd_init(void)
 #define iface_ipv6_nd_init(...)
 #endif /* CONFIG_NET_IPV6_ND */
 
+#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
+
+void net_if_nbr_reachability_hint(struct net_if *iface, const struct in6_addr *ipv6_addr)
+{
+	net_if_lock(iface);
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	net_ipv6_nbr_reachability_hint(iface, ipv6_addr);
+
+out:
+	net_if_unlock(iface);
+}
+
+#endif
+
 struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 					    struct net_if **ret)
 {
@@ -2649,6 +2671,10 @@ uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface)
 
 	net_if_lock(iface);
 
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv6) {
 		goto out;
 	}
@@ -2670,6 +2696,10 @@ void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit)
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
 
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv6) {
 		goto out;
 	}
@@ -2689,6 +2719,10 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 	int ret = 0;
 
 	net_if_lock(iface);
+
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv6) {
 		goto out;
@@ -2710,6 +2744,10 @@ void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
+
+	if (net_if_config_ipv6_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv6) {
 		goto out;
@@ -3165,6 +3203,10 @@ uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
 
 	net_if_lock(iface);
 
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv4) {
 		goto out;
 	}
@@ -3186,6 +3228,10 @@ void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_lock(iface);
 
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
 	if (!iface->config.ip.ipv4) {
 		goto out;
 	}
@@ -3205,6 +3251,10 @@ uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface)
 	int ret = 0;
 
 	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv4) {
 		goto out;
@@ -3226,6 +3276,10 @@ void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
 {
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv4) {
 		goto out;
@@ -4998,6 +5052,8 @@ void net_if_init(void)
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 
+		init_iface(iface);
+
 #if defined(CONFIG_NET_INTERFACE_NAME)
 		memset(net_if_get_config(iface)->name, 0,
 		       sizeof(iface->config.name));
@@ -5005,7 +5061,6 @@ void net_if_init(void)
 		set_default_name(iface);
 #endif
 
-		init_iface(iface);
 		if_count++;
 	}
 
