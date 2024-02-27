@@ -106,6 +106,32 @@ static void print_number(const struct shell *sh, uint32_t value,
 	}
 }
 
+static void print_number_64(const struct shell *sh, uint64_t value,
+			 const uint32_t *divisor_arr, const char **units)
+{
+	const char **unit;
+	const uint32_t *divisor;
+	uint32_t dec;
+	uint64_t radix;
+
+	unit = units;
+	divisor = divisor_arr;
+
+	while (value < *divisor) {
+		divisor++;
+		unit++;
+	}
+
+	if (*divisor != 0U) {
+		radix = value / *divisor;
+		dec = (value % *divisor) * 100U / *divisor;
+		shell_fprintf(sh, SHELL_NORMAL, "%llu.%s%u %s", radix,
+			      (dec < 10) ? "0" : "", dec, *unit);
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "%llu %s", value, *unit);
+	}
+}
+
 static long parse_number(const char *string, const uint32_t *divisor_arr,
 			 const char **units)
 {
@@ -306,9 +332,8 @@ static void udp_session_cb(enum zperf_status status,
 		/* Compute baud rate */
 		if (result->time_in_us != 0U) {
 			rate_in_kbps = (uint32_t)
-				(((uint64_t)result->total_len * 8ULL *
-				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)result->time_in_us * 1000ULL));
+				((result->total_len * 8ULL * USEC_PER_SEC) /
+				 (result->time_in_us * 1000ULL));
 		} else {
 			rate_in_kbps = 0U;
 		}
@@ -316,7 +341,7 @@ static void udp_session_cb(enum zperf_status status,
 		shell_fprintf(sh, SHELL_NORMAL, "End of session!\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " duration:\t\t");
-		print_number(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
+		print_number_64(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " received packets:\t%u\n",
@@ -406,9 +431,8 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 
 		if (results->time_in_us != 0U) {
 			rate_in_kbps = (uint32_t)
-				(((uint64_t)results->total_len *
-				  (uint64_t)8 * (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)results->time_in_us * 1000U));
+				((results->total_len * 8 * USEC_PER_SEC) /
+				 (results->time_in_us * 1000U));
 		} else {
 			rate_in_kbps = 0U;
 		}
@@ -418,7 +442,7 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 				(((uint64_t)results->nb_packets_sent *
 				  (uint64_t)results->packet_size * (uint64_t)8 *
 				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)results->client_time_in_us * 1000U));
+				 (results->client_time_in_us * 1000U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
@@ -431,10 +455,10 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Statistics:\t\tserver\t(client)\n");
 		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
-		print_number(sh, results->time_in_us, TIME_US,
+		print_number_64(sh, results->time_in_us, TIME_US,
 			     TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\t(");
-		print_number(sh, results->client_time_in_us, TIME_US,
+		print_number_64(sh, results->client_time_in_us, TIME_US,
 			     TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, ")\n");
 
@@ -474,13 +498,13 @@ static void shell_tcp_upload_print_stats(const struct shell *sh,
 				(((uint64_t)results->nb_packets_sent *
 				  (uint64_t)results->packet_size * (uint64_t)8 *
 				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)results->client_time_in_us * 1000U));
+				 (results->client_time_in_us * 1000U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t");
-		print_number(sh, results->client_time_in_us,
+		print_number_64(sh, results->client_time_in_us,
 			     TIME_US, TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 		shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t%u\n",
@@ -595,7 +619,7 @@ static int execute_upload(const struct shell *sh,
 	int ret;
 
 	shell_fprintf(sh, SHELL_NORMAL, "Duration:\t");
-	print_number(sh, param->duration_ms * USEC_PER_MSEC, TIME_US,
+	print_number_64(sh, (uint64_t)param->duration_ms * USEC_PER_MSEC, TIME_US,
 		     TIME_US_UNIT);
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
 	shell_fprintf(sh, SHELL_NORMAL, "Packet size:\t%u bytes\n",
@@ -1106,9 +1130,8 @@ static void tcp_session_cb(enum zperf_status status,
 		/* Compute baud rate */
 		if (result->time_in_us != 0U) {
 			rate_in_kbps = (uint32_t)
-				(((uint64_t)result->total_len * 8ULL *
-				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)result->time_in_us * 1000ULL));
+				((result->total_len * 8ULL * USEC_PER_SEC) /
+				 (result->time_in_us * 1000ULL));
 		} else {
 			rate_in_kbps = 0U;
 		}
@@ -1116,7 +1139,7 @@ static void tcp_session_cb(enum zperf_status status,
 		shell_fprintf(sh, SHELL_NORMAL, "TCP session ended\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " Duration:\t\t");
-		print_number(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
+		print_number_64(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " rate:\t\t\t");

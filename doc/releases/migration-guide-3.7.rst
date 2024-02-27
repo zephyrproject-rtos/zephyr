@@ -81,6 +81,11 @@ Bluetooth Audio
 Networking
 **********
 
+* The zperf zperf_results struct is changed to support 64 bits transferred bytes (total_len)
+  and test duration (time_in_us and client_time_in_us), instead of 32 bits. This will make
+  the long-duration zperf test show with correct throughput result.
+  (:github:`69500`)
+
 Other Subsystems
 ****************
 
