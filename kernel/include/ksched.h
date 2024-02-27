@@ -64,11 +64,6 @@ void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
 void z_thread_abort(struct k_thread *thread);
 
-static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, k_timeout_t timeout)
-{
-	(void) z_pend_curr_irqlock(arch_irq_lock(), wait_q, timeout);
-}
-
 static inline void z_reschedule_unlocked(void)
 {
 	(void) z_reschedule_irqlock(arch_irq_lock());
@@ -195,18 +190,6 @@ static inline bool z_is_thread_essential(struct k_thread *thread)
 	return (thread->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
 }
 
-
-static inline void z_set_thread_states(struct k_thread *thread, uint32_t states)
-{
-	thread->base.thread_state |= states;
-}
-
-static inline void z_reset_thread_states(struct k_thread *thread,
-					uint32_t states)
-{
-	thread->base.thread_state &= ~states;
-}
-
 static inline bool z_is_under_prio_ceiling(int prio)
 {
 	return prio >= CONFIG_PRIORITY_CEILING;
@@ -268,15 +251,6 @@ static inline bool _is_valid_prio(int prio, void *entry_point)
 	return true;
 }
 
-static inline void _ready_one_thread(_wait_q_t *wq)
-{
-	struct k_thread *thread = z_unpend_first_thread(wq);
-
-	if (thread != NULL) {
-		z_ready_thread(thread);
-	}
-}
-
 static inline void z_sched_lock(void)
 {
 	__ASSERT(!arch_is_in_isr(), "");
@@ -285,16 +259,6 @@ static inline void z_sched_lock(void)
 	--_current->base.sched_locked;
 
 	compiler_barrier();
-}
-
-static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
-{
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 0U, "");
-
-	compiler_barrier();
-
-	++_current->base.sched_locked;
 }
 
 /*
