@@ -1678,16 +1678,16 @@ __syscall int uart_hd_talk(const struct device *dev);
 static inline int z_impl_uart_hd_talk(const struct device *dev)
 {
 #ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
-    const struct uart_driver_api *api = 
-        (const struct uart_driver_api *)dev->api;
+   const struct uart_driver_api *api = 
+      (const struct uart_driver_api *)dev->api;
 
-    if(api->hd_talk == NULL) {
-        return -ENOSYS;
-    }
-    return api->hd_talk(dev);
+   if(api->hd_talk == NULL) {
+      return -ENOSYS;
+   }
+   return api->hd_talk(dev);
 #else 
-    ARG_UNUSED(dev);
-    return -ENOTSUP;
+   ARG_UNUSED(dev);
+   return -ENOTSUP;
 #endif 
 }
 
@@ -1707,16 +1707,16 @@ __syscall int uart_hd_listen(const struct device *dev);
 static inline int z_impl_uart_hd_listen(const struct device *dev)
 {
 #ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
-    const struct uart_driver_api *api = 
-        (const struct uart_driver_api *)dev->api;
+   const struct uart_driver_api *api = 
+      (const struct uart_driver_api *)dev->api;
 
-    if(api->hd_listen == NULL) {
-        return -ENOSYS;
-    }
-    return api->hd_listen(dev);
+   if(api->hd_listen == NULL) {
+      return -ENOSYS;
+   } 
+   return api->hd_listen(dev);
 #else 
-    ARG_UNUSED(dev);
-    return -ENOTSUP;
+   ARG_UNUSED(dev);
+   return -ENOTSUP;
 #endif 
 }
 
