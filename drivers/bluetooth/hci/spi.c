@@ -166,9 +166,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 			break;
 		}
 		if (reading) {
-			/* When reading, keep looping if read buffer is not valid */
-			loop_cond = ((header_slave[STATUS_HEADER_TOREAD] == 0U) ||
-					(header_slave[STATUS_HEADER_TOREAD] == 0xFF));
+			/* When reading, keep looping if there is not yet any data */
+			loop_cond = header_slave[STATUS_HEADER_TOREAD] == 0U;
 		} else {
 			/* When writing, keep looping if all bytes are zero */
 			loop_cond = ((header_slave[1] | header_slave[2] | header_slave[3] |
