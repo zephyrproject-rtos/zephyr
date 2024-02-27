@@ -430,6 +430,11 @@ struct net_if_dhcpv4 {
 
 	/** The source address of a received DHCP message */
 	struct in_addr response_src_addr;
+
+#ifdef CONFIG_NET_DHCPV4_OPTION_NTP_SERVER
+	/** NTP server address */
+	struct in_addr ntp_addr;
+#endif
 };
 #endif /* CONFIG_NET_DHCPV4 */
 
