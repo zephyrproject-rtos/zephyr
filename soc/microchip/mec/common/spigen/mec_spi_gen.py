@@ -68,7 +68,7 @@ CRC_TABLE = [0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15,
              0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d]
 
 CHIP_DICT = {
-    'mec152x': { 'sram_base': 0xe0000, 'sram_size': 0x40000, 'header_ver': 2 },
+    'mec15xx': { 'sram_base': 0xe0000, 'sram_size': 0x40000, 'header_ver': 2 },
     'mec172x': { 'sram_base': 0xc0000, 'sram_size': 0x68000, 'header_ver': 3 },
 }
 
@@ -123,7 +123,7 @@ def build_header(chip, spi_config, hdr_spi_loc, pld_spi_loc, pld_entry_addr, pld
     """Build MEC152x/MEC172x Boot-ROM SPI image header
 
     Args:
-        chip: mec152x or mec172x
+        chip: mec15xx or mec172x
         spi_config: spi configuration
         hdr_spi_loc: Header location in SPI Image
         pld_spi_loc: Payload(FW binary) location in SPI Image
@@ -242,9 +242,9 @@ def parse_args():
     parser.add_argument("-c",
                         type=str,
                         dest="chip",
-                        choices = ["mec152x", "mec172x"],
+                        choices = ["mec15xx", "mec172x"],
                         default="mec172x",
-                        help="Chip name: mec172x(default) or mec152x")
+                        help="Chip name: mec172x(default) or mec15xx")
     parser.add_argument("-i",
                         type=str,
                         dest="infilename",
