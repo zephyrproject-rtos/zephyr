@@ -26,9 +26,7 @@ Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-More information about the board can be found at the
-`nRF9151 DK website`_. The `Nordic Semiconductor Infocenter`_
-contains the processor's information and the datasheet.
+More information about the board can be found at the `nRF9151 website`_.
 
 
 Hardware
@@ -84,8 +82,7 @@ hardware features:
 .. _nrf9151dk_additional_hardware:
 
 Other hardware features have not been enabled yet for this board.
-See `nRF9151 DK website`_ and `Nordic Semiconductor Infocenter`_
-for a complete list of nRF9151 DK board hardware features.
+See the `nRF9151 website`_ for more information.
 
 Connections and IOs
 ===================
@@ -198,6 +195,6 @@ References
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
-.. _nRF9151 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF9151-DK
+.. _nRF9151 website: https://www.nordicsemi.com/Products/nRF9151
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/
