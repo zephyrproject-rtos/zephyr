@@ -187,7 +187,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/raytac/raytac_mdbt50q_db_33/raytac_mdbt50q_db_33_nrf52833.dts`.
+:zephyr_file:`boards/raytac/mdbt50q_db_33/raytac_mdbt50q_db_33_nrf52833.dts`.
 
 Selecting the pins
 ==================
