@@ -844,18 +844,18 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 
 #ifdef CONFIG_USERSPACE
 static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
-						    const struct k_thread *t)
+						    const struct k_thread *thread)
 {
-	K_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
-	return z_impl_k_thread_timeout_remaining_ticks(t);
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_timeout_remaining_ticks(thread);
 }
 #include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
 
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
-						  const struct k_thread *t)
+						  const struct k_thread *thread)
 {
-	K_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
-	return z_impl_k_thread_timeout_expires_ticks(t);
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_timeout_expires_ticks(thread);
 }
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
 #endif

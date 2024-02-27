@@ -223,9 +223,9 @@ static ALWAYS_INLINE struct k_thread *runq_best(void)
 /* _current is never in the run queue until context switch on
  * SMP configurations, see z_requeue_current()
  */
-static inline bool should_queue_thread(struct k_thread *th)
+static inline bool should_queue_thread(struct k_thread *thread)
 {
-	return !IS_ENABLED(CONFIG_SMP) || th != _current;
+	return !IS_ENABLED(CONFIG_SMP) || thread != _current;
 }
 
 static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
@@ -276,10 +276,10 @@ static void signal_pending_ipi(void)
  * set of CPUs pick a cycle of threads to run and wait for them all to
  * context switch forever.
  */
-void z_requeue_current(struct k_thread *curr)
+void z_requeue_current(struct k_thread *thread)
 {
-	if (z_is_thread_queued(curr)) {
-		runq_add(curr);
+	if (z_is_thread_queued(thread)) {
+		runq_add(thread);
 	}
 	signal_pending_ipi();
 }
@@ -467,15 +467,15 @@ static void slice_timeout(struct _timeout *t)
 	}
 }
 
-void z_reset_time_slice(struct k_thread *curr)
+void z_reset_time_slice(struct k_thread *thread)
 {
 	int cpu = _current_cpu->id;
 
 	z_abort_timeout(&slice_timeouts[cpu]);
 	slice_expired[cpu] = false;
-	if (sliceable(curr)) {
+	if (sliceable(thread)) {
 		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
-			      K_TICKS(slice_time(curr) - 1));
+			      K_TICKS(slice_time(thread) - 1));
 	}
 }
 
@@ -489,13 +489,13 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 }
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
-void k_thread_time_slice_set(struct k_thread *th, int32_t thread_slice_ticks,
+void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks,
 			     k_thread_timeslice_fn_t expired, void *data)
 {
 	K_SPINLOCK(&sched_spinlock) {
-		th->base.slice_ticks = thread_slice_ticks;
-		th->base.slice_expired = expired;
-		th->base.slice_data = data;
+		thread->base.slice_ticks = thread_slice_ticks;
+		thread->base.slice_expired = expired;
+		thread->base.slice_data = data;
 	}
 }
 #endif
