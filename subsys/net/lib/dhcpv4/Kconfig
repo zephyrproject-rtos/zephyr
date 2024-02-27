@@ -69,6 +69,14 @@ config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING
 	  The string to include in the DHCPv4 vendor class identifier option
 	  in the DHCPv4 request.
 
+config NET_DHCPV4_OPTION_NTP_SERVER
+	bool "Use NTP server from DHCPv4 option and save it in the net_if"
+	default y
+	depends on SNTP
+	help
+	  If this option is set, then the NTP server can be set from the
+	  DHCPv4 option.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER
