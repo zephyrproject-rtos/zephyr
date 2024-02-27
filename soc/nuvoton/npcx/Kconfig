@@ -35,7 +35,7 @@ config NPCX_HEADER_CHIP
 	default "npcx7m7" if SOC_NPCX7M7FC
 	default "npcx9m3" if SOC_NPCX9M3F
 	default "npcx9m6" if SOC_NPCX9M6F
-	default "npcx9m7" if SOC_NPCX9M7F
+	default "npcx9m7" if SOC_NPCX9M7F || SOC_NPCX9M7FB
 	default "npcx9mfp" if SOC_NPCX9MFP
 	default "npcx4m3" if SOC_NPCX4M3F
 	default "npcx4m8" if SOC_NPCX4M8F
