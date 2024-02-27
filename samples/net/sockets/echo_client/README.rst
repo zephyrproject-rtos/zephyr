@@ -41,9 +41,6 @@ echo-client directory:
   improve connection reliability, acknowledgments can be enabled with shell
   command: ``ieee802154 ack set``.
 
-- :file:`overlay-bt.conf`
-  This overlay config enables support for Bluetooth IPSP connectivity.
-
 - :file:`overlay-qemu_802154.conf`
   This overlay config enables support for two QEMU's when simulating
   IEEE 802.15.4 network that are connected together.

@@ -34,7 +34,7 @@ Caveats
   application should build and run for other platforms with same connectivity.
 
 * The sample provides overlay files to enable other technologies like WIFI,
-  modem, BLE IPSP, 802.15.4 or OpenThread.  These technologies depends on
+  modem, 802.15.4 or OpenThread.  These technologies depends on
   hardware resources and the correspondent overlay was designed to be generic
   instead full optimized.
 
@@ -239,25 +239,6 @@ tested with both native linux driver and ``atusb`` and with ``wpanusb`` sample.
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-802154.conf;overlay-prj.conf"
     :shield: atmel_rf2xx_arduino
-    :goals: build
-    :compact:
-
-Step 4.5: Build for BLE IPSP [experimental]
--------------------------------------------
-
-The BLE IPSP needs ``overlay-ipsp.conf``.  This may requires two nodes:
-one will be the host and the second one will be the device under test.  The
-validation needs a Linux kernel >= 4.9 with all 6loWPAN support.  In this
-particular case the Bluetooth 6LoWPAN module is needed. The start point is try
-reproduce the Zephyr :ref:`bluetooth-ipsp-sample`. It is out of scope
-at this moment provide support since it is experimental.  The gateway was
-tested with native linux driver and an USB dongle.
-
-.. zephyr-app-commands::
-    :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: nrf52840dk/nrf52840
-    :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-ipsp.conf;overlay-prj.conf"
     :goals: build
     :compact:
 
@@ -482,7 +463,6 @@ The below list of hardware have been used by UpdateHub team.
    3, "MODEM (PPP)", "SIMCOM 808"
    4, "IEEE 802.15.4 (6loWPAN)", "Native,
    :ref:`RF2XX <atmel_at86rf2xx_transceivers>`"
-   5, "BLE IPSP (6loWPAN)", Native
    6, "OpenThread Network", Native
 
 .. csv-table::
