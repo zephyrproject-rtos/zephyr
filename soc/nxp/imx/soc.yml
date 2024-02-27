@@ -1,10 +1,33 @@
 family:
-- name: imx
+- name: nxp_imx
   series:
+  - name: imx8
+    socs:
+    - name: mimx8qm6
+      cpuclusters:
+      - name: adsp
+      - name: a72
+      - name: a53
+      - name: m4
+  - name: imx8x
+    socs:
+    - name: mimx8qx6
+      cpuclusters:
+      - name: adsp
+      - name: a35
+      - name: m4
+  - name: imx8ulp
+    socs:
+    - name: imx8ulp
+      cpuclusters:
+      - name: adsp
+      - name: f1_dsp
+      - name: a35
   - name: imx8m
     socs:
     - name: mimx8ml8
       cpuclusters:
+      - name: adsp
       - name: a53
       - name: m7
     - name: mimx8mm6
