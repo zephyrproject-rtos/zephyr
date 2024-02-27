@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_MEC1501X
+config SOC_SERIES_MEC15XX
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
@@ -13,7 +13,7 @@ config SOC_SERIES_MEC1501X
 config SOC_MEC1501_HSZ
 	select HAS_MEC_HAL
 
-if SOC_SERIES_MEC1501X
+if SOC_SERIES_MEC15XX
 
 config RTOS_TIMER
 	bool "MEC1501 RTOS timer"
@@ -44,7 +44,7 @@ config SOC_MEC1501_VCI_PINS_AS_GPIOS
 choice
 	prompt "MEC1501 debug interface general configuration"
 	default SOC_MEC1501_DEBUG_WITHOUT_TRACING
-	depends on SOC_SERIES_MEC1501X
+	depends on SOC_SERIES_MEC15XX
 	help
 	  Select Debug SoC interface support for MEC15xx SoC family
 
@@ -98,4 +98,4 @@ config GPIO_INIT_PRIORITY
 
 endif # GPIO
 
-endif # SOC_SERIES_MEC1501X
+endif # SOC_SERIES_MEC15XX

@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_MEC1501X
+if SOC_SERIES_MEC15XX
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
@@ -26,4 +26,4 @@ endif # RTOS_TIMER
 config CORTEX_M_SYSTICK
 	depends on !RTOS_TIMER
 
-endif # SOC_SERIES_MEC1501X
+endif # SOC_SERIES_MEC15XX
