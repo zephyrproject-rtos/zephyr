@@ -22,7 +22,7 @@ if !RTOS_TIMER
 # If RTOS timer is not enabled we use ARM Cortex-M
 # SYSTICK. SYSTICK frequency is 96 MHz divided down by the MEC172x PCR
 # processor clock divider register. We assume PCR processor clock divider
-# is set to 1. Refer to SOC_MEC172X_PROC_CLK_DIV
+# is set to 1. Refer to SOC_MEC_PROC_CLK_DIV
 #
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
