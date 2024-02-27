@@ -219,7 +219,7 @@ static int bt_sdp_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 
 	hdr = net_buf_push(buf, sizeof(struct bt_sdp_hdr));
 	hdr->op_code = op;
-	hdr->tid = tid;
+	hdr->tid = sys_cpu_to_be16(tid);
 	hdr->param_len = sys_cpu_to_be16(param_len);
 
 	err = bt_l2cap_chan_send(chan, buf);
@@ -1366,14 +1366,14 @@ static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 				continue;
 			}
 
-			err = handlers[i].func(sdp, buf, hdr->tid);
+			err = handlers[i].func(sdp, buf, sys_be16_to_cpu(hdr->tid));
 			break;
 		}
 	}
 
 	if (err) {
 		LOG_WRN("SDP error 0x%02x", err);
-		send_err_rsp(chan, err, hdr->tid);
+		send_err_rsp(chan, err, sys_be16_to_cpu(hdr->tid));
 	}
 
 	return 0;
