@@ -27,6 +27,12 @@ config SOC_NPCX9M7F
 	help
 	  NPCX9M7F
 
+config SOC_NPCX9M7FB
+	bool
+	select SOC_SERIES_NPCX9
+	help
+	  NPCX9M7FB
+
 config SOC_NPCX9MFP
 	bool
 	select SOC_SERIES_NPCX9
@@ -40,4 +46,5 @@ config SOC
 	default "npcx9m3f" if SOC_NPCX9M3F
 	default "npcx9m6f" if SOC_NPCX9M6F
 	default "npcx9m7f" if SOC_NPCX9M7F
+	default "npcx9m7fb" if SOC_NPCX9M7FB
 	default "npcx9mfp" if SOC_NPCX9MFP
