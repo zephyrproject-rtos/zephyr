@@ -69,7 +69,7 @@ To make sure the sample is set up properly for building, you must:
 For example devicetree configurations for each compatible, see
 :zephyr_file:`samples/drivers/led_ws2812/boards/thingy52_nrf52832.overlay`,
 :zephyr_file:`samples/drivers/led_ws2812/boards/nrf52dk_nrf52832.overlay` and
-:zephyr_file:`samples/drivers/led_ws2812/boards/nrf51dk_nrf51422.overlay`.
+:zephyr_file:`samples/drivers/led_ws2812/boards/nrf51dk_nrf51822.overlay`.
 
 Some boards are already supported out of the box; see the :file:`boards`
 directory for this sample for details.
