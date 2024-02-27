@@ -210,7 +210,6 @@ static void irq_init(void)
 
 void smp_timer_init(void)
 {
-	irq_init();
 }
 
 /* Runs on core 0 only */
