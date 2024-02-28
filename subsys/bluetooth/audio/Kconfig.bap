@@ -170,8 +170,8 @@ config BT_BAP_BROADCAST_SINK
 	select EXPERIMENTAL
 	select BT_ISO_SYNC_RECEIVER
 	select BT_AUDIO_RX
+	select BT_PAC_SNK
 	depends on BT_PERIPHERAL
-	depends on BT_PAC_SNK
 	depends on BT_BAP_SCAN_DELEGATOR
 	help
 	  This option enables support for Bluetooth Broadcast Sink Audio using

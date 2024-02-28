@@ -38,13 +38,14 @@
 #include "shell/bt.h"
 #include "audio.h"
 
+/* Determines if we can initiate streaming */
+#define IS_BAP_INITIATOR                                                                           \
+	(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) || IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT))
+
 #if defined(CONFIG_BT_BAP_UNICAST)
 
 struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
 				    (UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT)];
-
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 10000u, 60000u, 10000u, 60000u);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 struct bt_bap_unicast_group *default_unicast_group;
@@ -66,7 +67,20 @@ struct broadcast_source default_source;
 static struct bt_bap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct broadcast_sink default_broadcast_sink;
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
+
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 static struct bt_bap_stream *default_stream;
+#endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+#if IS_BAP_INITIATOR
+/* Default to 16_2_1 */
+struct named_lc3_preset default_sink_preset = {"16_2_1",
+					       BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
+struct named_lc3_preset default_source_preset = {
+	"16_2_1", BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
+static struct named_lc3_preset default_broadcast_source_preset = {
+	"16_2_1", BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT)};
+#endif /* IS_BAP_INITIATOR */
 
 static const struct named_lc3_preset lc3_unicast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_UNICAST_PRESET_8_1_1(LOCATION, CONTEXT)},
@@ -140,13 +154,6 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 	{"48_6_2", BT_BAP_LC3_BROADCAST_PRESET_48_6_2(LOCATION, CONTEXT)},
 };
 
-/* Default to 16_2_1 */
-struct named_lc3_preset default_sink_preset = {
-	"16_2_1", BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
-struct named_lc3_preset default_source_preset = {
-	"16_2_1", BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
-static struct named_lc3_preset default_broadcast_source_preset = {
-	"16_2_1", BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT)};
 static bool initialized;
 
 static struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
@@ -159,7 +166,6 @@ static struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *b
 }
 
 #if defined(CONFIG_BT_AUDIO_TX)
-
 static uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(bap_stream);
@@ -410,6 +416,25 @@ const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_aud
 	return NULL;
 }
 
+#if defined(CONFIG_BT_PACS)
+static const struct bt_audio_codec_cap lc3_codec_cap =
+	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
+			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2, CONTEXT);
+
+#if defined(CONFIG_BT_PAC_SNK)
+static struct bt_pacs_cap cap_sink = {
+	.codec_cap = &lc3_codec_cap,
+};
+#endif /* CONFIG_BT_PAC_SNK */
+
+#if defined(CONFIG_BT_PAC_SRC)
+static struct bt_pacs_cap cap_source = {
+	.codec_cap = &lc3_codec_cap,
+};
+#endif /* CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_PACS */
+
+#if defined(CONFIG_BT_BAP_UNICAST)
 static void set_unicast_stream(struct bt_bap_stream *stream)
 {
 	default_stream = stream;
@@ -446,6 +471,10 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
+static const struct bt_audio_codec_qos_pref qos_pref =
+	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 10000u, 60000u, 10000u, 60000u);
 
 static struct bt_bap_stream *stream_alloc(void)
 {
@@ -577,10 +606,6 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
-static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-	BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
-	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2, CONTEXT);
-
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
@@ -592,15 +617,7 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.stop = lc3_stop,
 	.release = lc3_release,
 };
-
-static struct bt_pacs_cap cap_sink = {
-	.codec_cap = &lc3_codec_cap,
-};
-
-static struct bt_pacs_cap cap_source = {
-	.codec_cap = &lc3_codec_cap,
-};
-#if defined(CONFIG_BT_BAP_UNICAST)
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 static uint16_t strmeta(const char *name)
 {
@@ -1409,6 +1426,145 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
+static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_audio_codec_cfg *codec_cfg;
+	int err;
+
+	if (default_stream == NULL) {
+		shell_error(sh, "No stream selected");
+		return -ENOEXEC;
+	}
+
+	codec_cfg = default_stream->codec_cfg;
+
+	if (argc > 1) {
+		err = set_metadata(codec_cfg, argv[1]);
+		if (err != 0) {
+			shell_error(sh, "Unable to handle metadata update: %d", err);
+			return err;
+		}
+	}
+
+	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_len);
+	if (err) {
+		shell_error(sh, "Unable to set Channel metadata");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_stream == NULL) {
+		shell_error(sh, "No stream selected");
+		return -ENOEXEC;
+	}
+
+	err = bt_bap_stream_start(default_stream);
+	if (err) {
+		shell_error(sh, "Unable to start Channel");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_stream == NULL) {
+		shell_error(sh, "No stream selected");
+		return -ENOEXEC;
+	}
+
+	err = bt_bap_stream_disable(default_stream);
+	if (err) {
+		shell_error(sh, "Unable to disable Channel");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+static void conn_list_eps(struct bt_conn *conn, void *data)
+{
+	const struct shell *sh = (const struct shell *)data;
+	uint8_t conn_index = bt_conn_index(conn);
+
+	shell_print(sh, "Conn: %p", conn);
+	shell_print(sh, "  Sinks:");
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
+		const struct bt_bap_ep *ep = snks[conn_index][i];
+
+		if (ep != NULL) {
+			shell_print(sh, "    #%u: ep %p", i, ep);
+		}
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	shell_print(sh, "  Sources:");
+
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
+		const struct bt_bap_ep *ep = srcs[conn_index][i];
+
+		if (ep != NULL) {
+			shell_print(sh, "    #%u: ep %p", i, ep);
+		}
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
+{
+	shell_print(sh, "Configured Channels:");
+
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
+		struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
+
+		if (stream != NULL && stream->conn != NULL) {
+			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
+				    stream == default_stream ? "*" : " ", i, stream,
+				    stream_dir(stream), stream->group);
+		}
+	}
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, conn_list_eps, (void *)sh);
+
+	return 0;
+}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+
+static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_stream == NULL) {
+		shell_print(sh, "No stream selected");
+		return -ENOEXEC;
+	}
+
+	err = bt_bap_stream_release(default_stream);
+	if (err) {
+		shell_error(sh, "Unable to release Channel");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_BAP_UNICAST */
+
+#if IS_BAP_INITIATOR
 static ssize_t parse_config_data_args(const struct shell *sh, size_t argn, size_t argc,
 				      char *argv[], struct bt_audio_codec_cfg *codec_cfg)
 {
@@ -1977,144 +2133,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-
-static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct bt_audio_codec_cfg *codec_cfg;
-	int err;
-
-	if (default_stream == NULL) {
-		shell_error(sh, "No stream selected");
-		return -ENOEXEC;
-	}
-
-	codec_cfg = default_stream->codec_cfg;
-
-	if (argc > 1) {
-		err = set_metadata(codec_cfg, argv[1]);
-		if (err != 0) {
-			shell_error(sh, "Unable to handle metadata update: %d", err);
-			return err;
-		}
-	}
-
-	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_len);
-	if (err) {
-		shell_error(sh, "Unable to set Channel metadata");
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
-static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	if (default_stream == NULL) {
-		shell_error(sh, "No stream selected");
-		return -ENOEXEC;
-	}
-
-	err = bt_bap_stream_start(default_stream);
-	if (err) {
-		shell_error(sh, "Unable to start Channel");
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
-static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	if (default_stream == NULL) {
-		shell_error(sh, "No stream selected");
-		return -ENOEXEC;
-	}
-
-	err = bt_bap_stream_disable(default_stream);
-	if (err) {
-		shell_error(sh, "Unable to disable Channel");
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-static void conn_list_eps(struct bt_conn *conn, void *data)
-{
-	const struct shell *sh = (const struct shell *)data;
-	uint8_t conn_index = bt_conn_index(conn);
-
-	shell_print(sh, "Conn: %p", conn);
-	shell_print(sh, "  Sinks:");
-
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
-		const struct bt_bap_ep *ep = snks[conn_index][i];
-
-		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
-		}
-	}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
-
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	shell_print(sh, "  Sources:");
-
-	for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
-		const struct bt_bap_ep *ep = srcs[conn_index][i];
-
-		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
-		}
-	}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
-}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
-
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
-{
-	shell_print(sh, "Configured Channels:");
-
-	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-		struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
-
-		if (stream != NULL && stream->conn != NULL) {
-			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
-				    stream == default_stream ? "*" : " ", i, stream,
-				    stream_dir(stream), stream->group);
-		}
-	}
-
-	bt_conn_foreach(BT_CONN_TYPE_LE, conn_list_eps, (void *)sh);
-
-	return 0;
-}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
-
-static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
-{
-	int err;
-
-	if (default_stream == NULL) {
-		shell_print(sh, "No stream selected");
-		return -ENOEXEC;
-	}
-
-	err = bt_bap_stream_release(default_stream);
-	if (err) {
-		shell_error(sh, "Unable to release Channel");
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_BT_BAP_UNICAST */
+#endif /* IS_BAP_INITIATOR */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 #define INVALID_BROADCAST_ID (BT_AUDIO_BROADCAST_ID_MAX + 1)
@@ -2344,6 +2363,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 }
 #endif /* CONFIG_BT_AUDIO_RX */
 
+#if defined(CONFIG_BT_BAP_UNICAST)
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	shell_print(ctx_shell, "Stream %p enabled", stream);
@@ -2380,6 +2400,7 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 		}
 	}
 }
+#endif /* CONFIG_BT_BAP_UNICAST */
 
 static void stream_started_cb(struct bt_bap_stream *bap_stream)
 {
@@ -2408,9 +2429,9 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 
-#if defined(CONFIG_LIBLC3)
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
 	clear_lc3_sine_data(stream);
-#endif /* CONFIG_LIBLC3 */
+#endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX*/
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	if (IS_ARRAY_ELEMENT(broadcast_sink_streams, stream)) {
@@ -2538,10 +2559,10 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-#if defined(CONFIG_LIBLC3)
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
 	/* stop sending */
 	clear_lc3_sine_data(stream);
-#endif /* CONFIG_LIBLC3 */
+#endif /* CONFIG_LIBLC3 && defined(CONFIG_BT_AUDIO_TX) */
 }
 #endif /* CONFIG_BT_BAP_UNICAST */
 
@@ -3040,18 +3061,16 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
-		bt_bap_unicast_server_register_cb(&unicast_server_cb);
-	}
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
+	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) ||
-	    IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
-		bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
-		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
-	}
+#if defined(CONFIG_BT_PAC_SNK)
+	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SRC)
+	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+#endif /* CONFIG_BT_PAC_SNK */
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, LOCATION);
@@ -3486,9 +3505,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(select_unicast, NULL, "<stream>", cmd_select_unicast, 2, 0),
 #endif /* CONFIG_BT_BAP_UNICAST */
+#if IS_BAP_INITIATOR
 	SHELL_CMD_ARG(preset, NULL,
 		      "<sink, source, broadcast> [preset] " HELP_CFG_DATA " " HELP_CFG_META,
 		      cmd_preset, 2, 34),
+#endif /* IS_BAP_INITIATOR */
 #if defined(CONFIG_BT_AUDIO_TX)
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]", cmd_send, 1, 1),
 #if defined(CONFIG_LIBLC3)
