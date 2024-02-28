@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <zephyr/fs/nvs.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/crc.h>
 #include "nvs_priv.h"
 
@@ -716,6 +717,11 @@ static int nvs_startup(struct nvs_fs *fs)
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_get(fs->flash_device);
+	}
+
 	/* step through the sectors to find a open sector following
 	 * a closed sector, this is where NVS can write.
 	 */
@@ -917,13 +923,18 @@ end:
 
 		rc = nvs_add_gc_done_ate(fs);
 	}
+
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_put(fs->flash_device);
+	}
+
 	k_mutex_unlock(&fs->nvs_lock);
 	return rc;
 }
 
 int nvs_clear(struct nvs_fs *fs)
 {
-	int rc;
+	int rc = 0;
 	uint32_t addr;
 
 	if (!fs->ready) {
@@ -931,18 +942,26 @@ int nvs_clear(struct nvs_fs *fs)
 		return -EACCES;
 	}
 
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_get(fs->flash_device);
+	}
+
 	for (uint16_t i = 0; i < fs->sector_count; i++) {
 		addr = i << ADDR_SECT_SHIFT;
 		rc = nvs_flash_erase_sector(fs, addr);
 		if (rc) {
-			return rc;
+			goto end;
 		}
 	}
 
 	/* nvs needs to be reinitialized after clearing */
 	fs->ready = false;
+end:
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_put(fs->flash_device);
+	}
 
-	return 0;
+	return rc;
 }
 
 int nvs_mount(struct nvs_fs *fs)
@@ -1097,6 +1116,10 @@ no_cached_entry:
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_get(fs->flash_device);
+	}
+
 	gc_count = 0;
 	while (1) {
 		if (gc_count == fs->sector_count) {
@@ -1130,6 +1153,10 @@ no_cached_entry:
 	}
 	rc = len;
 end:
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_put(fs->flash_device);
+	}
+
 	k_mutex_unlock(&fs->nvs_lock);
 	return rc;
 }
@@ -1166,18 +1193,22 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 
 	if (wlk_addr == NVS_LOOKUP_CACHE_NO_ADDR) {
 		rc = -ENOENT;
-		goto err;
+		goto end;
 	}
 #else
 	wlk_addr = fs->ate_wra;
 #endif
 	rd_addr = wlk_addr;
 
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_get(fs->flash_device);
+	}
+
 	while (cnt_his <= cnt) {
 		rd_addr = wlk_addr;
 		rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
 		if (rc) {
-			goto err;
+			goto end;
 		}
 		if ((wlk_ate.id == id) &&  (nvs_ate_valid(fs, &wlk_ate))) {
 			cnt_his++;
@@ -1189,19 +1220,24 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 
 	if (((wlk_addr == fs->ate_wra) && (wlk_ate.id != id)) ||
 	    (wlk_ate.len == 0U) || (cnt_his < cnt)) {
-		return -ENOENT;
+		rc = -ENOENT;
+		goto end;
 	}
 
 	rd_addr &= ADDR_SECT_MASK;
 	rd_addr += wlk_ate.offset;
 	rc = nvs_flash_rd(fs, rd_addr, data, MIN(len, wlk_ate.len));
 	if (rc) {
-		goto err;
+		goto end;
 	}
 
-	return wlk_ate.len;
+	rc = wlk_ate.len;
 
-err:
+end:
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_put(fs->flash_device);
+	}
+
 	return rc;
 }
 
@@ -1235,10 +1271,14 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 
 	step_addr = fs->ate_wra;
 
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_get(fs->flash_device);
+	}
+
 	while (1) {
 		rc = nvs_prev_ate(fs, &step_addr, &step_ate);
 		if (rc) {
-			return rc;
+			break;
 		}
 
 		wlk_addr = fs->ate_wra;
@@ -1246,7 +1286,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 		while (1) {
 			rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
 			if (rc) {
-				return rc;
+				goto end;
 			}
 			if ((wlk_ate.id == step_ate.id) ||
 			    (wlk_addr == fs->ate_wra)) {
@@ -1264,6 +1304,14 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 		if (step_addr == fs->ate_wra) {
 			break;
 		}
+	}
+end:
+	if (pm_device_runtime_is_enabled(fs->flash_device)) {
+		(void)pm_device_runtime_put(fs->flash_device);
+	}
+
+	if (rc) {
+		return rc;
 	}
 	return free_space;
 }
