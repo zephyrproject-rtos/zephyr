@@ -33,7 +33,7 @@
 
 			test_i2c_sx1509b: sx1509b@0 {
 				compatible = "semtech,sx1509b";
-				reg = <0x0>;
+				reg = <0x00>;
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				gpio-controller;
@@ -41,7 +41,7 @@
 
 			test_i2c_pcal6408a: pcal6408a@1 {
 				compatible = "nxp,pcal6408a";
-				reg = <0x1>;
+				reg = <0x01>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
@@ -51,7 +51,7 @@
 
 			test_i2c_pcal6416a: pcal6416a@2 {
 				compatible = "nxp,pcal6416a";
-				reg = <0x2>;
+				reg = <0x02>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
@@ -59,62 +59,62 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_pca95xx: pca95xx@20 {
+			test_i2c_pca95xx: pca95xx@3 {
 				compatible = "nxp,pca95xx";
-				reg = <0x20>;
+				reg = <0x03>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				interrupt-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_pcf8575: pcf8575@21 {
+			test_i2c_pcf8575: pcf8575@4 {
 				compatible = "nxp,pcf857x";
-				reg = <0x21>;
+				reg = <0x04>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				int-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_pcf8574: pcf8574@27 {
+			test_i2c_pcf8574: pcf8574@5 {
 				compatible = "nxp,pcf857x";
-				reg = <0x27>;
+				reg = <0x05>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				int-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_pca953x: pca953x@70 {
+			test_i2c_pca953x: pca953x@6 {
 				compatible = "ti,tca9538";
-				reg = <0x70>;
+				reg = <0x06>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				nint-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_mcp230xx: mcp230xx@0 {
+			test_i2c_mcp230xx: mcp230xx@7 {
 				compatible = "microchip,mcp230xx";
-				reg = <0x0>;
+				reg = <0x07>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
 			};
 
-			test_i2c_fxl6408: fxl6408@43 {
+			test_i2c_fxl6408: fxl6408@8 {
 				status = "okay";
 				compatible = "fcs,fxl6408";
-				reg = <0x43>;
+				reg = <0x08>;
 				ngpios = <8>;
 				#gpio-cells = <2>;
 				gpio-controller;
 			};
 
-			mfd-nct38xx@72 {
+			mfd-nct38xx@9 {
 				compatible = "nuvoton,nct38xx";
-				reg = <0x72>;
+				reg = <0x09>;
 				test_i2c_nct3807: nct3807 {
 					#address-cells = <1>;
 					#size-cells = <0>;
@@ -141,9 +141,9 @@
 				};
 			};
 
-			test_i2c_nct3808_p1: mfd-nct38xx@71 {
+			test_i2c_nct3808_p1: mfd-nct38xx@a {
 				compatible = "nuvoton,nct38xx";
-				reg = <0x71>;
+				reg = <0x0a>;
 				nct3808_0_P1 {
 					#address-cells = <1>;
 					#size-cells = <0>;
@@ -161,9 +161,9 @@
 				};
 			};
 
-			test_i2c_nct3808_p2: mfd-nct38xx@75 {
+			test_i2c_nct3808_p2: mfd-nct38xx@b {
 				compatible = "nuvoton,nct38xx";
-				reg = <0x75>;
+				reg = <0x0b>;
 				nct3808_0_P2 {
 					#address-cells = <1>;
 					#size-cells = <0>;
@@ -181,9 +181,9 @@
 				};
 			};
 
-			test_i2c_tca6424a: tca6424a@23 {
+			test_i2c_tca6424a: tca6424a@c {
 				compatible = "ti,tca6424a";
-				reg = <0x23>;
+				reg = <0x0c>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <24>;
@@ -191,9 +191,9 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_axp192: axp192@24 {
+			test_i2c_axp192: axp192@d {
 				compatible = "x-powers,axp192";
-				reg = <0x24>;
+				reg = <0x0d>;
 
 				axp192_gpio {
 					compatible = "x-powers,axp192-gpio";
