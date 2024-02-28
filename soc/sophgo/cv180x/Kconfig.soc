@@ -1,0 +1,16 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CV180X
+	bool
+	select SOC_FAMILY_SOPHGO
+
+config SOC_SERIES
+	default "cv180x" if SOC_SERIES_CV180X
+
+config SOC_CV1800B
+	bool
+	select SOC_SERIES_CV180X
+
+config SOC
+	default "cv1800b" if SOC_CV1800B
