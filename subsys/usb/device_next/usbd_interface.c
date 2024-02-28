@@ -51,7 +51,7 @@ static int handle_ep_op(struct usbd_contex *const uds_ctx,
 }
 
 static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
-				 struct usbd_class_node *const node,
+				 struct usbd_class_iter *const iter,
 				 const enum ep_op op,
 				 const uint8_t iface,
 				 const uint8_t alt)
@@ -60,7 +60,7 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 	bool found_iface = false;
 	int ret;
 
-	dhp = usbd_class_get_desc(node, usbd_bus_speed(uds_ctx));
+	dhp = usbd_class_get_desc(iter->c_nd, usbd_bus_speed(uds_ctx));
 	if (dhp == NULL) {
 		return -EINVAL;
 	}
@@ -79,7 +79,7 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 			if (ifd->bInterfaceNumber == iface &&
 			    ifd->bAlternateSetting == alt) {
 				found_iface = true;
-				LOG_DBG("Found interface %u %p", iface, node);
+				LOG_DBG("Found interface %u %p", iface, iter);
 				if (ifd->bNumEndpoints == 0) {
 					LOG_INF("No endpoints, skip interface");
 					break;
@@ -89,14 +89,14 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 
 		if ((*dhp)->bDescriptorType == USB_DESC_ENDPOINT && found_iface) {
 			ed = (struct usb_ep_descriptor *)(*dhp);
-			ret = handle_ep_op(uds_ctx, op, ed, &node->data->ep_active);
+			ret = handle_ep_op(uds_ctx, op, ed, &iter->ep_active);
 			if (ret) {
 				return ret;
 			}
 
 			LOG_INF("Modify interface %u ep 0x%02x by op %u ep_bm %x",
 				iface, ed->bEndpointAddress,
-				op, node->data->ep_active);
+				op, iter->ep_active);
 		}
 
 		dhp++;
@@ -110,10 +110,10 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 int usbd_interface_shutdown(struct usbd_contex *const uds_ctx,
 			    struct usbd_config_node *const cfg_nd)
 {
-	struct usbd_class_node *c_nd;
+	struct usbd_class_iter *iter;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
-		uint32_t *ep_bm = &c_nd->data->ep_active;
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
+		uint32_t *ep_bm = &iter->ep_active;
 
 		for (int idx = 1; idx < 16 && *ep_bm; idx++) {
 			uint8_t ep_in = USB_EP_DIR_IN | idx;
@@ -147,7 +147,7 @@ int usbd_interface_default(struct usbd_contex *const uds_ctx,
 
 	/* Set default alternate for all interfaces */
 	for (int i = 0; i < desc->bNumInterfaces; i++) {
-		struct usbd_class_node *class;
+		struct usbd_class_iter *class;
 		int ret;
 
 		class = usbd_class_get_by_config(uds_ctx, new_cfg, i);
@@ -168,7 +168,7 @@ int usbd_interface_set(struct usbd_contex *const uds_ctx,
 		       const uint8_t iface,
 		       const uint8_t alt)
 {
-	struct usbd_class_node *class;
+	struct usbd_class_iter *class;
 	uint8_t cur_alt;
 	int ret;
 
@@ -206,7 +206,7 @@ int usbd_interface_set(struct usbd_contex *const uds_ctx,
 		return ret;
 	}
 
-	usbd_class_update(class, iface, alt);
+	usbd_class_update(class->c_nd, iface, alt);
 	usbd_set_alt_value(uds_ctx, iface, alt);
 
 	return 0;

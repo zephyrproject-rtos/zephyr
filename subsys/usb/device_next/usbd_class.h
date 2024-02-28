@@ -45,9 +45,9 @@ size_t usbd_class_desc_len(struct usbd_class_node *const c_nd,
  * @param[in] uds_ctx Pointer to device context
  * @param[in] inum    Interface number
  *
- * @return Class node pointer or NULL
+ * @return Class iter pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_iface(struct usbd_contex *uds_ctx,
+struct usbd_class_iter *usbd_class_get_by_iface(struct usbd_contex *uds_ctx,
 						uint8_t i_n);
 
 /**
@@ -57,9 +57,9 @@ struct usbd_class_node *usbd_class_get_by_iface(struct usbd_contex *uds_ctx,
  * @param[in] cnum    Configuration number
  * @param[in] inum    Interface number
  *
- * @return Class node pointer or NULL
+ * @return Class iter pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
+struct usbd_class_iter *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
 						 uint8_t cnum,
 						 uint8_t inum);
 
@@ -71,9 +71,9 @@ struct usbd_class_node *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
  * @param[in] uds_ctx Pointer to device context
  * @param[in] ep      Endpoint address
  *
- * @return Class node pointer or NULL
+ * @return Class iter pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
+struct usbd_class_iter *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
 					     uint8_t ep);
 
 /**
@@ -88,9 +88,9 @@ struct usbd_class_node *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
  * @param[in] uds_ctx Pointer to device context
  * @param[in] request bRequest value
  *
- * @return Class node pointer or NULL
+ * @return Class iter pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_req(struct usbd_contex *uds_ctx,
+struct usbd_class_iter *usbd_class_get_by_req(struct usbd_contex *uds_ctx,
 					      uint8_t request);
 
 /**

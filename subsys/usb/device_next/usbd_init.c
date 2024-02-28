@@ -109,11 +109,10 @@ static int unassign_eps(struct usbd_contex *const uds_ctx,
  * USB device configuration.
  */
 static int init_configuration_inst(struct usbd_contex *const uds_ctx,
-				   struct usbd_class_node *const c_nd,
+				   struct usbd_class_iter *const iter,
 				   uint32_t *const config_ep_bm,
 				   uint8_t *const nif)
 {
-	struct usbd_class_data *const data = c_nd->data;
 	struct usb_desc_header **dhp;
 	struct usb_if_descriptor *ifd = NULL;
 	struct usb_ep_descriptor *ed;
@@ -138,25 +137,25 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
 
 	speed = usbd_caps_speed(uds_ctx);
 	LOG_DBG("Highest speed supported by the controller is %u", speed);
-	dhp = usbd_class_get_desc(c_nd, speed);
+	dhp = usbd_class_get_desc(iter->c_nd, speed);
 	if (dhp == NULL) {
 		return -EINVAL;
 	}
 
 	tmp_nif = *nif;
-	data->iface_bm = 0U;
-	data->ep_active = 0U;
+	iter->iface_bm = 0U;
+	iter->ep_active = 0U;
 
 	while (*dhp != NULL && (*dhp)->bLength != 0) {
 
 		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
 			ifd = (struct usb_if_descriptor *)(*dhp);
 
-			data->ep_active |= class_ep_bm;
+			iter->ep_active |= class_ep_bm;
 
 			if (ifd->bAlternateSetting == 0) {
 				ifd->bInterfaceNumber = tmp_nif;
-				data->iface_bm |= BIT(tmp_nif);
+				iter->iface_bm |= BIT(tmp_nif);
 				tmp_nif++;
 			} else {
 				ifd->bInterfaceNumber = tmp_nif - 1;
@@ -194,10 +193,10 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
 	}
 
 	*nif = tmp_nif;
-	data->ep_active |= class_ep_bm;
+	iter->ep_active |= class_ep_bm;
 
 	LOG_INF("Instance iface-bm 0x%08x ep-bm 0x%08x",
-		data->iface_bm, data->ep_active);
+		iter->iface_bm, iter->ep_active);
 
 	return 0;
 }
@@ -211,30 +210,30 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 			      struct usbd_config_node *const cfg_nd)
 {
 	struct usb_cfg_descriptor *cfg_desc = cfg_nd->desc;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_iter *iter;
 	uint32_t config_ep_bm = 0;
 	size_t cfg_len = 0;
 	uint8_t nif = 0;
 	int ret;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
 
-		ret = init_configuration_inst(uds_ctx, c_nd,
+		ret = init_configuration_inst(uds_ctx, iter,
 					      &config_ep_bm, &nif);
 		if (ret != 0) {
 			LOG_ERR("Failed to assign endpoint addresses");
 			return ret;
 		}
 
-		ret = usbd_class_init(c_nd);
+		ret = usbd_class_init(iter->c_nd);
 		if (ret != 0) {
 			LOG_ERR("Failed to initialize class instance");
 			return ret;
 		}
 
-		LOG_INF("Init class node %p, descriptor length %zu",
-			c_nd, usbd_class_desc_len(c_nd, usbd_caps_speed(uds_ctx)));
-		cfg_len += usbd_class_desc_len(c_nd, usbd_caps_speed(uds_ctx));
+		LOG_INF("Init class node %p, descriptor length %zu", iter->c_nd,
+			usbd_class_desc_len(iter->c_nd, usbd_caps_speed(uds_ctx)));
+		cfg_len += usbd_class_desc_len(iter->c_nd, usbd_caps_speed(uds_ctx));
 	}
 
 	/* Update wTotalLength and bNumInterfaces of configuration descriptor */
@@ -247,9 +246,9 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 		cfg_desc->wTotalLength);
 
 	/* Finally reset configuration's endpoint assignment */
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
-		c_nd->data->ep_assigned = c_nd->data->ep_active;
-		ret = unassign_eps(uds_ctx, &config_ep_bm, &c_nd->data->ep_active);
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
+		iter->ep_assigned = iter->ep_active;
+		ret = unassign_eps(uds_ctx, &config_ep_bm, &iter->ep_active);
 		if (ret != 0) {
 			return ret;
 		}

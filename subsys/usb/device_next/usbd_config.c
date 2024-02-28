@@ -44,13 +44,13 @@ usbd_config_get_current(struct usbd_contex *const uds_ctx)
 static void usbd_config_classes_enable(struct usbd_config_node *const cfg_nd,
 				       const bool enable)
 {
-	struct usbd_class_node *c_nd;
+	struct usbd_class_iter *iter;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
 		if (enable) {
-			usbd_class_enable(c_nd);
+			usbd_class_enable(iter->c_nd);
 		} else {
-			usbd_class_disable(c_nd);
+			usbd_class_disable(iter->c_nd);
 		}
 	}
 }
