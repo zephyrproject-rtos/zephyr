@@ -43,9 +43,9 @@ cmake_path(CONVERT "${INTERFACE_INCLUDE_DIRECTORIES}" TO_CMAKE_PATH_LIST include
 set(autoconf_h_edk ${llext_edk_inc}/${AUTOCONF_H})
 cmake_path(RELATIVE_PATH AUTOCONF_H BASE_DIRECTORY ${PROJECT_BINARY_DIR} OUTPUT_VARIABLE autoconf_h_rel)
 
-list(APPEND all_flags_make
+list(APPEND base_flags_make
     "${LLEXT_CFLAGS} -imacros\$(${install_dir_var})/include/zephyr/${autoconf_h_rel}")
-list(APPEND all_flags_cmake
+list(APPEND base_flags_cmake
     "${LLEXT_CFLAGS} -imacros\${CMAKE_CURRENT_LIST_DIR}/include/zephyr/${autoconf_h_rel}")
 
 file(MAKE_DIRECTORY ${llext_edk_inc})
@@ -94,8 +94,15 @@ foreach(dir ${include_dirs})
     file(COPY ${dir} DESTINATION ${dest_p} FILES_MATCHING PATTERN "*.h")
 
     cmake_path(RELATIVE_PATH dest BASE_DIRECTORY ${llext_edk} OUTPUT_VARIABLE dest_rel)
-    list(APPEND all_flags_make "-I\$(${install_dir_var})/${dest_rel}")
-    list(APPEND all_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
+    if(to_prj_bindir)
+        list(APPEND inc_gen_flags_make "-I\$(${install_dir_var})/${dest_rel}")
+        list(APPEND inc_gen_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
+    else(to_zephyr_base)
+        list(APPEND inc_flags_make "-I\$(${install_dir_var})/${dest_rel}")
+        list(APPEND inc_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
+    endif()
+    list(APPEND all_inc_flags_make "-I\$(${install_dir_var})/${dest_rel}")
+    list(APPEND all_inc_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
 endforeach()
 
 if(CONFIG_LLEXT_EDK_USERSPACE_ONLY)
@@ -103,11 +110,36 @@ if(CONFIG_LLEXT_EDK_USERSPACE_ONLY)
     file(COPY ${PROJECT_BINARY_DIR}/edk/include/generated/ DESTINATION ${LLEXT_EDK_INC}/zephyr/include/generated)
 endif()
 
+# Generate flags for Makefile
+list(APPEND all_flags_make ${base_flags_make} ${all_inc_flags_make})
 list(JOIN all_flags_make " " all_flags_str)
 file(WRITE ${llext_edk}/Makefile.cflags "LLEXT_CFLAGS = ${all_flags_str}")
 
+list(JOIN all_inc_flags_make " " all_inc_flags_str)
+file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_ALL_INCLUDE_CFLAGS = ${all_inc_flags_str}")
+
+list(JOIN inc_flags_make " " inc_flags_str)
+file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_INCLUDE_CFLAGS = ${inc_flags_str}")
+
+list(JOIN inc_gen_flags_make " " inc_gen_flags_str)
+file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_GENERATED_INCLUDE_CFLAGS = ${inc_gen_flags_str}")
+
+list(JOIN base_flags_make " " base_flags_str)
+file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_BASE_CFLAGS = ${base_flags_str}")
+
+# Generate flags for CMake
+list(APPEND all_flags_cmake ${base_flags_cmake} ${all_inc_flags_cmake})
 file(WRITE ${llext_edk}/cmake.cflags "set(LLEXT_CFLAGS ${all_flags_cmake})")
 
+file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_ALL_INCLUDE_CFLAGS ${all_inc_flags_cmake})")
+
+file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_INCLUDE_CFLAGS ${inc_flags_cmake})")
+
+file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_GENERATED_INCLUDE_CFLAGS ${inc_gen_flags_cmake})")
+
+file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_BASE_CFLAGS ${base_flags_cmake})")
+
+# Generate the tarball
 file(ARCHIVE_CREATE
     OUTPUT ${llext_edk_file}
     PATHS ${llext_edk}
