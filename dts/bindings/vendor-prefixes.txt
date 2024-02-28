@@ -264,6 +264,7 @@ hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
+heltec	Chengdu Heltec Automation Technology Co., Ltd.
 hideep	HiDeep Inc.
 himax	Himax Technologies, Inc.
 hirschmann	Hirschmann Automation and Control GmbH
@@ -328,6 +329,7 @@ keithkoep	Keith & Koep GmbH
 keymile	Keymile GmbH
 khadas	Khadas
 kiebackpeter	Kieback & Peter GmbH
+kincony	KinCony Electronics Co., Ltd.
 kinetic	Kinetic Technologies
 kingdisplay	King & Display Technology Co., Ltd.
 kingnovel	Kingnovel Technology Co., Ltd.
@@ -371,6 +373,7 @@ loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
 ltr	LiteOn OptoElectronics
+luatos	LuatOS Team
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
 m5stack	M5Stack
@@ -683,6 +686,7 @@ v3	V3 Semiconductor
 vaisala	Vaisala
 vamrs	Vamrs Ltd.
 variscite	Variscite Ltd.
+vcc-gnd	VCC-GND Studio
 vdl	Van der Laan b.v.
 via	VIA Technologies, Inc.
 videostrong	Videostrong Technology Co., Ltd.
@@ -703,6 +707,7 @@ waveshare	Waveshare Electronics
 wd	Western Digital Corp.
 we	Würth Elektronik GmbH.
 weact	WeAct Studio
+wemos	WEMOS Electronics
 wetek	WeTek Electronics, limited.
 wexler	Wexler
 whwave	Shenzhen whwave Electronics, Inc.
