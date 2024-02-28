@@ -397,10 +397,11 @@ static void class_node_name_lookup(size_t idx, struct shell_static_entry *entry)
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
-	STRUCT_SECTION_FOREACH(usbd_class_node, node) {
-		if ((node->name != NULL) && (strlen(node->name) != 0)) {
+	STRUCT_SECTION_FOREACH(usbd_class_iter, iter) {
+		if ((iter->c_nd->name != NULL) &&
+		    (strlen(iter->c_nd->name) != 0)) {
 			if (match_idx == idx) {
-				entry->syntax = node->name;
+				entry->syntax = iter->c_nd->name;
 				break;
 			}
 
