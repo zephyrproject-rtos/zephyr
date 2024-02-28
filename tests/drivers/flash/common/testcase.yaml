@@ -40,7 +40,7 @@ tests:
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
     integration_platforms:
-      - nrf9161dk/nrf9161/ns
+      - nrf9161dk@0.9.0/nrf9161/ns
   drivers.flash.common.stm32:
     platform_allow:
       - nucleo_f103rb
