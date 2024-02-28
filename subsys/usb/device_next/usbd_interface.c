@@ -28,7 +28,7 @@ static int handle_ep_op(struct usbd_contex *const uds_ctx,
 			uint32_t *const ep_bm)
 {
 	const uint8_t ep = ed->bEndpointAddress;
-	int ret;
+	int ret = -ENOTSUP;
 
 	switch (op) {
 	case EP_OP_TEST:
