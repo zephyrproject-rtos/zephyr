@@ -347,7 +347,7 @@ class KconfigCheck(ComplianceTest):
             lines = content.strip().split('\n')
             for line in lines:
                 if line.startswith('"DTS_ROOT":'):
-                    _, dts_root_path = line.split(":")
+                    _, dts_root_path = line.split(":", 1)
                     binding_paths.append(os.path.join(dts_root_path.strip('"'), "dts", "bindings"))
 
         cmd = [sys.executable, zephyr_drv_kconfig_path,
