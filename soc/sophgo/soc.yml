@@ -1,0 +1,8 @@
+family:
+- name: sophgo
+  series:
+  - name: cv180x
+    socs:
+    - name: cv1800b
+      cpuclusters:
+      - name: c906_1
