@@ -42,3 +42,7 @@ foreach(inc_file
     ${gen_dir}/${inc_file}.inc
     )
 endforeach()
+
+if(CONFIG_NET_CONFIG_USE_YAML)
+  network_generate_config_file_for_target(app ${CONFIG_NET_CONFIG_YAML_FILE})
+endif()

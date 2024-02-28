@@ -11,12 +11,13 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/sntp.h>
 #include <zephyr/posix/time.h>
 
-int net_init_clock_via_sntp(void)
+int net_init_clock_via_sntp(struct net_if *iface,
+			    const char *server,
+			    int timeout)
 {
 	struct sntp_time ts;
 	struct timespec tspec;
-	int res = sntp_simple(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-			      CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, &ts);
+	int res = sntp_simple(server, timeout, &ts);
 
 	if (res < 0) {
 		LOG_ERR("Cannot set time using SNTP");
