@@ -45,6 +45,7 @@ Core region, thing, and device advisor configuration:
 
 - :kconfig:option:`CONFIG_AWS_ENDPOINT`: The AWS IoT Core broker endpoint, found in the AWS IoT Core
   console. This will be specific if running a test suite using device advisor.
+- :kconfig:option:`CONFIG_AWS_MQTT_PORT`: Port number for AWS IoT Core MQTT broker.
 - :kconfig:option:`CONFIG_AWS_THING_NAME`: The name of the thing created in AWS IoT Core. Associated
   with the certificate it will be used as the client id. We will use
   ``zephyr_sample`` in this example.
