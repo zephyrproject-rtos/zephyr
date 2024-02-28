@@ -101,6 +101,8 @@ source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.sifive"
 
+source "drivers/gpio/Kconfig.shakti"
+
 source "drivers/gpio/Kconfig.esp32"
 
 source "drivers/gpio/Kconfig.gecko"

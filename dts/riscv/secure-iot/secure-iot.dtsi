@@ -19,6 +19,7 @@ chosen {
 	clock-frequency = <40000000>;
 };
 
-&GPIO {
-	status = "ok";
+gpio0: gpio@40200 {
+          compatible = "shakti,gpio0";
+          reg = < 0x0 0x40200 0x0 0x08>;
 };

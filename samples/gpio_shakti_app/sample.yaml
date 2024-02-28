@@ -1,0 +1,16 @@
+sample:
+  description: GPIO application sample, the simplest Zephyr
+    application
+  name: gpio_shakti_app
+common:
+  tags: introduction
+  integration_platforms:
+    - native_posix
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "gpio_shakti_app! (.*)"
+tests:
+  sample.basic.gpioshaktiapp:
+    tags: introduction
