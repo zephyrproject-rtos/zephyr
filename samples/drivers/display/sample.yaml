@@ -8,8 +8,8 @@ tests:
       - arduino_i2c
       - arduino_spi
     platform_exclude:
-      - reel_board
-      - reel_board_v2
+      - reel_board@1
+      - reel_board@2
       - ubx_evkannab1/nrf52832
       - stm32f769i_disco
       - pan1781_evb

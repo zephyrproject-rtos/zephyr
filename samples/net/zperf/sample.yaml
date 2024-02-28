@@ -71,7 +71,7 @@ tests:
     depends_on: usb_device
   sample.net.zperf.shield:
     harness: net
-    platform_allow: reel_board
+    platform_allow: reel_board@1
     extra_args: SHIELD=link_board_eth
     tags:
       - shield
