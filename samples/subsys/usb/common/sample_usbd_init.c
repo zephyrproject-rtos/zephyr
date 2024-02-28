@@ -67,15 +67,16 @@ struct usbd_contex *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 		return NULL;
 	}
 
-	STRUCT_SECTION_FOREACH(usbd_class_node, node) {
+	STRUCT_SECTION_FOREACH(usbd_class_iter, iter) {
 		/* Pull everything that is enabled in our configuration. */
-		err = usbd_register_class(&sample_usbd, node->name, 1);
+		err = usbd_register_class(&sample_usbd, iter->c_nd->name, 1);
 		if (err) {
-			LOG_ERR("Failed to register %s (%d)", node->name, err);
+			LOG_ERR("Failed to register %s (%d)",
+				iter->c_nd->name, err);
 			return NULL;
 		}
 
-		LOG_DBG("Register %s", node->name);
+		LOG_DBG("Register %s", iter->c_nd->name);
 	}
 
 	/* Always use class code information from Interface Descriptors */

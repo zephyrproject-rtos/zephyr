@@ -63,7 +63,7 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 				   struct udc_event *const event)
 {
 	struct usbd_config_node *cfg_nd;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_iter *iter;
 
 	if (!usbd_state_is_configured(uds_ctx)) {
 		return;
@@ -75,16 +75,16 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
 		switch (event->type) {
 		case UDC_EVT_SUSPEND:
-			usbd_class_suspended(c_nd);
+			usbd_class_suspended(iter->c_nd);
 			break;
 		case UDC_EVT_RESUME:
-			usbd_class_resumed(c_nd);
+			usbd_class_resumed(iter->c_nd);
 			break;
 		case UDC_EVT_SOF:
-			usbd_class_sof(c_nd);
+			usbd_class_sof(iter->c_nd);
 			break;
 		default:
 			break;
@@ -253,10 +253,10 @@ static int usbd_pre_init(void)
 
 	k_thread_name_set(&usbd_thread_data, "usbd");
 
-	LOG_DBG("Available USB class nodes:");
-	STRUCT_SECTION_FOREACH(usbd_class_node, node) {
-		atomic_set(&node->data->state, 0);
-		LOG_DBG("\t%p, name %s", node, node->name);
+	LOG_DBG("Available USB class iterators:");
+	STRUCT_SECTION_FOREACH(usbd_class_iter, iter) {
+		atomic_set(&iter->state, 0);
+		LOG_DBG("\t%p->%p, name %s", iter, iter->c_nd, iter->c_nd->name);
 	}
 
 	return 0;

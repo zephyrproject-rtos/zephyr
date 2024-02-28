@@ -271,6 +271,32 @@ struct usbd_class_data {
 	struct usbd_contex *uds_ctx;
 	/** Supported vendor request table, can be NULL */
 	const struct usbd_cctx_vendor_req *v_reqs;
+	/** Pointer to private data */
+	void *priv;
+};
+
+struct usbd_class_node {
+	/** Name of the USB device class instance */
+	const char *name;
+	/** Pointer to device support class API */
+	const struct usbd_class_api *api;
+	/** Pointer to USB device support class data */
+	struct usbd_class_data *data;
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Variables necessary for per speed class management. For each speed (Full,
+ * High) there is separate `struct usbd_class_iter` pointing to the same
+ * `struct usbd_class_node` (because the class can only operate at one speed
+ * at a time).
+ */
+struct usbd_class_iter {
+	/** Node information for the slist. */
+	sys_snode_t node;
+	/** Pointer to public class node instance. */
+	struct usbd_class_node *const c_nd;
 	/** Bitmap of all endpoints assigned to the instance.
 	 *  The IN endpoints are mapped in the upper halfword.
 	 */
@@ -283,20 +309,9 @@ struct usbd_class_data {
 	uint32_t iface_bm;
 	/** Variable to store the state of the class instance */
 	atomic_t state;
-	/** Pointer to private data */
-	void *priv;
 };
 
-struct usbd_class_node {
-	/** Node information for the slist. */
-	sys_snode_t node;
-	/** Name of the USB device class instance */
-	const char *name;
-	/** Pointer to device support class API */
-	const struct usbd_class_api *api;
-	/** Pointer to USB device support class data */
-	struct usbd_class_data *data;
-};
+/** @endcond */
 
 /**
  * @brief Get the USB device runtime context under which the class is registered
@@ -459,11 +474,14 @@ static inline void *usbd_class_get_private(const struct usbd_class_node *const c
 #define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name, d_string)		\
 	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_SERIAL_NUMBER)
 
-#define USBD_DEFINE_CLASS(class_name, class_api, class_data)		\
-	static STRUCT_SECTION_ITERABLE(usbd_class_node, class_name) = {	\
-		.name = STRINGIFY(class_name),				\
-		.api = class_api,					\
-		.data = class_data,					\
+#define USBD_DEFINE_CLASS(class_name, class_api, class_data)			\
+	static struct usbd_class_node class_name = {				\
+		.name = STRINGIFY(class_name),					\
+		.api = class_api,						\
+		.data = class_data,						\
+	};									\
+	static STRUCT_SECTION_ITERABLE(usbd_class_iter, class_name##_iter) = {	\
+		.c_nd = &class_name,						\
 	}
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req
