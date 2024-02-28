@@ -30,10 +30,6 @@ static void coredump_logging_backend_start(void)
 	/* Reset error */
 	error = 0;
 
-	while (LOG_PROCESS()) {
-		;
-	}
-
 	LOG_PANIC();
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
 }
