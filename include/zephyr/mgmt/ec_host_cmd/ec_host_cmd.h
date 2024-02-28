@@ -78,6 +78,13 @@ enum ec_host_cmd_log_level {
 	EC_HOST_CMD_DEBUG_MODES /* Number of host command debug modes */
 };
 
+enum ec_host_cmd_state {
+	EC_HOST_CMD_STATE_DISABLED = 0,
+	EC_HOST_CMD_STATE_RECEIVING,
+	EC_HOST_CMD_STATE_PROCESSING,
+	EC_HOST_CMD_STATE_SENDING,
+};
+
 typedef void (*ec_host_cmd_user_cb_t)(const struct ec_host_cmd_rx_ctx *rx_ctx, void *user_data);
 typedef enum ec_host_cmd_status (*ec_host_cmd_in_progress_cb_t)(void *user_data);
 
@@ -98,6 +105,7 @@ struct ec_host_cmd {
 	 */
 	ec_host_cmd_user_cb_t user_cb;
 	void *user_data;
+	enum ec_host_cmd_state state;
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 	struct k_thread thread;
 #endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
