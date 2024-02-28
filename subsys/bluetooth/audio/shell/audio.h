@@ -58,23 +58,6 @@ struct named_lc3_preset {
 const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						    const char *preset_arg);
 
-#if defined(CONFIG_BT_BAP_UNICAST)
-
-#define UNICAST_SERVER_STREAM_COUNT                                                                \
-	COND_CODE_1(CONFIG_BT_ASCS, (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT), \
-		    (0))
-#define UNICAST_CLIENT_STREAM_COUNT                                                                \
-	COND_CODE_1(CONFIG_BT_BAP_UNICAST_CLIENT,                                                  \
-		    (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +                                  \
-		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
-		    (0))
-
-#define BAP_UNICAST_AC_MAX_CONN   2U
-#define BAP_UNICAST_AC_MAX_SNK    (2U * BAP_UNICAST_AC_MAX_CONN)
-#define BAP_UNICAST_AC_MAX_SRC    (2U * BAP_UNICAST_AC_MAX_CONN)
-#define BAP_UNICAST_AC_MAX_PAIR   MAX(BAP_UNICAST_AC_MAX_SNK, BAP_UNICAST_AC_MAX_SRC)
-#define BAP_UNICAST_AC_MAX_STREAM (BAP_UNICAST_AC_MAX_SNK + BAP_UNICAST_AC_MAX_SRC)
-
 struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
@@ -123,6 +106,23 @@ struct broadcast_sink {
 	size_t stream_cnt;
 	bool syncable;
 };
+
+#define BAP_UNICAST_AC_MAX_CONN   2U
+#define BAP_UNICAST_AC_MAX_SNK    (2U * BAP_UNICAST_AC_MAX_CONN)
+#define BAP_UNICAST_AC_MAX_SRC    (2U * BAP_UNICAST_AC_MAX_CONN)
+#define BAP_UNICAST_AC_MAX_PAIR   MAX(BAP_UNICAST_AC_MAX_SNK, BAP_UNICAST_AC_MAX_SRC)
+#define BAP_UNICAST_AC_MAX_STREAM (BAP_UNICAST_AC_MAX_SNK + BAP_UNICAST_AC_MAX_SRC)
+
+#if defined(CONFIG_BT_BAP_UNICAST)
+
+#define UNICAST_SERVER_STREAM_COUNT                                                                \
+	COND_CODE_1(CONFIG_BT_ASCS, (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT), \
+		    (0))
+#define UNICAST_CLIENT_STREAM_COUNT                                                                \
+	COND_CODE_1(CONFIG_BT_BAP_UNICAST_CLIENT,                                                  \
+		    (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +                                  \
+		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
+		    (0))
 
 extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * (UNICAST_SERVER_STREAM_COUNT +
 								 UNICAST_CLIENT_STREAM_COUNT)];
