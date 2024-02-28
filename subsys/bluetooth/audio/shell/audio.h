@@ -23,6 +23,7 @@
 #include "shell/bt.h"
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
+#define MAX_CODEC_FRAMES_PER_SDU      5U
 
 extern struct bt_csip_set_member_svc_inst *svc_inst;
 
@@ -46,8 +47,17 @@ ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
+unsigned long bap_get_recv_stats_interval(void);
+
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
+
+#define USB_SAMPLE_RATE            48000U
+#define LC3_MAX_SAMPLE_RATE        48000U
+#define LC3_MAX_FRAME_DURATION_US  10000U
+#define LC3_MAX_NUM_SAMPLES_MONO   ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE) /            \
+				    USEC_PER_SEC)
+#define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2U)
 #endif /* CONFIG_LIBLC3 */
 
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT
@@ -66,6 +76,11 @@ struct named_lc3_preset {
 
 const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						    const char *preset_arg);
+
+int bap_usb_init(void);
+int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
+			     size_t frame_size, uint32_t ts);
+void bap_usb_clear_frames_to_usb(void);
 
 struct shell_stream {
 	struct bt_cap_stream stream;
@@ -172,6 +187,22 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 		   const struct bap_unicast_ac_param *param);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
+
+static inline uint8_t get_chan_cnt(enum bt_audio_location chan_allocation)
+{
+	uint8_t cnt = 0U;
+
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		return 1;
+	}
+
+	while (chan_allocation != 0) {
+		cnt += chan_allocation & 1U;
+		chan_allocation >>= 1;
+	}
+
+	return cnt;
+}
 
 static inline void print_qos(const struct shell *sh, const struct bt_audio_codec_qos *qos)
 {
