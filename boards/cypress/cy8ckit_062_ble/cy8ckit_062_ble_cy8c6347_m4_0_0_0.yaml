@@ -5,8 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: cy8ckit_062_ble/cy8c6347/m0
-name: Cypress PSoC6 BLE Pioneer Kit (M0)
+identifier: cy8ckit_062_ble@0.0.0/cy8c6347/m4
+name: Cypress PSoC6 BLE Pioneer Kit (M4)
 type: mcu
 arch: arm
 ram: 288
@@ -17,7 +17,5 @@ toolchain:
   - xtools
 supported:
   - arduino_gpio
-  - arduino_spi
   - gpio
-  - spi
 vendor: cypress

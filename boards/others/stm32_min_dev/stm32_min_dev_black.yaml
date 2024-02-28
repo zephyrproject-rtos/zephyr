@@ -1,4 +1,4 @@
-identifier: stm32_min_dev
+identifier: stm32_min_dev@black
 name: STM32 Minimum Development Board
 type: mcu
 arch: arm
