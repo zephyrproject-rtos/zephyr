@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+#include <sophgo/cv18xx-c906-common.dtsi>
+
+/ {
+	soc {
+		compatible = "sophgo,cv180x", "simple-bus";
+
+		gpioa: gpio@3020000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3020000 DT_SIZE_K(4)>;
+			interrupts = <41 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@3021000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3021000 DT_SIZE_K(4)>;
+			interrupts = <42 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpioc: gpio@3022000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3022000 DT_SIZE_K(4)>;
+			interrupts = <43 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpiod: gpio@3023000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3023000 DT_SIZE_K(4)>;
+			interrupts = <44 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		uart0: uart@4140000 {
+			compatible = "ns16550";
+			reg = <0x4140000 DT_SIZE_K(64)>;
+			interrupts = <30 1>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart1: uart@4150000 {
+			compatible = "ns16550";
+			reg = <0x4150000 DT_SIZE_K(64)>;
+			interrupts = <31 1>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart2: uart@4160000 {
+			compatible = "ns16550";
+			reg = <0x4160000 DT_SIZE_K(64)>;
+			/* interrupt is not supported */
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart3: uart@4170000 {
+			compatible = "ns16550";
+			reg = <0x4170000 DT_SIZE_K(64)>;
+			/* interrupt is not supported */
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart4: uart@41c0000 {
+			compatible = "ns16550";
+			reg = <0x41c0000 DT_SIZE_K(64)>;
+			/* interrupt is not supported */
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+	};
+};
