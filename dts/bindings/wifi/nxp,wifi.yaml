@@ -1,0 +1,10 @@
+# Copyright 2023-2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    NXP Wifi Module
+
+compatible: "nxp,wifi"
+
+include: [sd-device.yaml, pinctrl-device.yaml]
