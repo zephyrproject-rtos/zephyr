@@ -24,6 +24,7 @@
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "at.h"
+#include "sco_internal.h"
 #include "hfp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_HFP_HF_LOG_LEVEL
@@ -691,6 +692,54 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 	return -ENOMEM;
 }
 
+static void hfp_hf_sco_connected(struct bt_sco_chan *chan)
+{
+	if ((bt_hf != NULL) && (bt_hf->sco_connected)) {
+		bt_hf->sco_connected(chan->sco->sco.acl, chan->sco);
+	}
+}
+
+static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
+{
+	if ((bt_hf != NULL) && (bt_hf->sco_disconnected)) {
+		bt_hf->sco_disconnected(chan->sco, reason);
+	}
+}
+
+static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
+		      struct bt_sco_chan **chan)
+{
+	int i;
+	static struct bt_sco_chan_ops ops = {
+		.connected = hfp_hf_sco_connected,
+		.disconnected = hfp_hf_sco_disconnected,
+	};
+
+	LOG_DBG("conn %p", info->acl);
+
+	for (i = 0; i < ARRAY_SIZE(bt_hfp_hf_pool); i++) {
+		struct bt_hfp_hf *hf = &bt_hfp_hf_pool[i];
+
+		if (NULL == hf->rfcomm_dlc.session) {
+			continue;
+		}
+
+		if (info->acl != hf->rfcomm_dlc.session->br_chan.chan.conn) {
+			continue;
+		}
+
+		hf->chan.ops = &ops;
+
+		*chan = &hf->chan;
+
+		return 0;
+	}
+
+	LOG_ERR("Unable to establish HF connection (%p)", info->acl);
+
+	return -ENOMEM;
+}
+
 static void hfp_hf_init(void)
 {
 	static struct bt_rfcomm_server chan = {
@@ -699,6 +748,13 @@ static void hfp_hf_init(void)
 	};
 
 	bt_rfcomm_server_register(&chan);
+
+	static struct bt_sco_server sco_server = {
+		.sec_level = BT_SECURITY_L0,
+		.accept = bt_hfp_hf_sco_accept,
+	};
+
+	bt_sco_server_register(&sco_server);
 }
 
 int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb)
