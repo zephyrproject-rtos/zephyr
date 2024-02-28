@@ -109,11 +109,6 @@ bool nrf_802154_clock_lfclk_is_running(void)
 	return lfclk_is_running;
 }
 
-__WEAK void nrf_802154_clock_hfclk_ready(void)
-{
-	/* Intentionally empty. */
-}
-
 __WEAK void nrf_802154_clock_lfclk_ready(void)
 {
 	/* Intentionally empty. */
