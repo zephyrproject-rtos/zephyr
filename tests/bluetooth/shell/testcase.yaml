@@ -349,3 +349,18 @@ tests:
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_CAP_COMMANDER=n
+  bluetooth.audio_shell.no_lc3:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_FPU=n
+      - CONFIG_LIBLC3=n
+  bluetooth.audio_shell.no_usb:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_RING_BUFFER=n
+      - CONFIG_USB_DEVICE_STACK=n
+      - CONFIG_USB_DEVICE_AUDIO=n
