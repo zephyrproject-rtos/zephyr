@@ -717,7 +717,7 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 			entropy_stm32_resume();
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
-			LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
+			LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_magic));
 #endif /* health_test_magic */
 			if (LL_RNG_GetHealthConfig(dev_data->rng) !=
 				DT_INST_PROP_OR(0, health_test_config, 0U)) {
