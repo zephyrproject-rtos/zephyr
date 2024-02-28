@@ -129,7 +129,7 @@ add_custom_target(zephyr.ri ALL
 
 # Parameters after the double dash -- are passed through to rimage.  For
 # other ways to override default rimage parameters check
-# boards/intel/intel_adsp_cavs25/doc/intel_adsp_generic.rst
+# boards/intel/adsp/doc/intel_adsp_generic.rst
 
 # Warning: because `west sign` can also be used interactively, using
 # ${WEST_SIGN_OPTS} like this has _higher_ precedence than `west config
