@@ -426,6 +426,45 @@ void modem_chat_match_set_partial(struct modem_chat_match *chat_match, bool part
  */
 void modem_chat_match_enable_wildcards(struct modem_chat_match *chat_match, bool enable);
 
+/**
+ * @brief Initialize modem chat script chat
+ * @param script_chat Modem chat script chat instance
+ */
+void modem_chat_script_chat_init(struct modem_chat_script_chat *script_chat);
+
+/**
+ * @brief Set request of modem chat script chat instance
+ * @param script_chat Modem chat script chat instance
+ * @param request Request to set
+ * @note The lifetime of request must match or exceed the lifetime of script_chat
+ * @warning Always call this API after request is modified
+ *
+ * @retval 0 if successful, negative errno code otherwise
+ */
+int modem_chat_script_chat_set_request(struct modem_chat_script_chat *script_chat,
+				       const char *request);
+
+/**
+ * @brief Set modem chat script chat matches
+ * @param script_chat Modem chat script chat instance
+ * @param response_matches Response match array to set
+ * @param response_matches_size Size of response match array
+ * @note The lifetime of response_matches must match or exceed the lifetime of script_chat
+ *
+ * @retval 0 if successful, negative errno code otherwise
+ */
+int modem_chat_script_chat_set_response_matches(struct modem_chat_script_chat *script_chat,
+						const struct modem_chat_match *response_matches,
+						uint16_t response_matches_size);
+
+/**
+ * @brief Set modem chat script chat timeout
+ * @param script_chat Modem chat script chat instance
+ * @param timeout_ms Timeout in milliseconds
+ */
+void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_chat,
+					uint16_t timeout_ms);
+
 #ifdef __cplusplus
 }
 #endif

@@ -704,6 +704,36 @@ ZTEST(modem_chat, test_runtime_match)
 	zassert_equal(test_match.wildcards, false);
 }
 
+ZTEST(modem_chat, test_runtime_script_chat)
+{
+	int ret;
+	struct modem_chat_script_chat test_script_chat;
+	struct modem_chat_match test_response_matches[2];
+
+	modem_chat_script_chat_init(&test_script_chat);
+
+	ret = modem_chat_script_chat_set_request(&test_script_chat, "AT345");
+	zassert_ok(ret, "Failed to set request");
+	zassert_ok(strcmp(test_script_chat.request, "AT345"), "Failed to set script_chat");
+	zassert_equal(test_script_chat.request_size, 5, "Failed to set size of script_chat");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat,
+							  test_response_matches,
+							  ARRAY_SIZE(test_response_matches));
+	zassert_ok(ret, "Failed to set response matches");
+	zassert_equal(test_script_chat.response_matches, test_response_matches,
+		      "Failed to set response_matches");
+	zassert_equal(test_script_chat.response_matches_size, ARRAY_SIZE(test_response_matches),
+		      "Failed to set response_matches");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat,
+							  test_response_matches, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set response matches");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set response matches");
+}
+
 /*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/
