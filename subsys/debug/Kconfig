@@ -414,6 +414,11 @@ config GDBSTUB_SERIAL_BACKEND
 	help
 	  Use serial as backend for GDB
 
+config GDBSTUB_CUSTOM_BACKEND
+	bool "Use a custom backend"
+	help
+	  Use a custom backend for GDB
+
 endchoice
 
 config GDBSTUB_BUF_SZ
