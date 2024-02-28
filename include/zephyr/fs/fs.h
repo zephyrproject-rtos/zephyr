@@ -231,7 +231,9 @@ struct fs_statvfs {
  */
 static inline void fs_file_t_init(struct fs_file_t *zfp)
 {
-	*zfp = (struct fs_file_t){ 0 };
+	zfp->filep = NULL;
+	zfp->mp = NULL;
+	zfp->flags = 0;
 }
 
 /**
@@ -245,7 +247,8 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
  */
 static inline void fs_dir_t_init(struct fs_dir_t *zdp)
 {
-	*zdp = (struct fs_dir_t){ 0 };
+	zdp->dirp = NULL;
+	zdp->mp = NULL;
 }
 
 /**
