@@ -764,6 +764,12 @@ static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_ev
 	}
 }
 
+static bool modem_chat_validate_array(const void *array, size_t size)
+{
+	return ((array == NULL) && (size == 0)) ||
+	       ((array != NULL) && (size > 0));
+}
+
 #if CONFIG_MODEM_STATS
 static uint32_t get_receive_buf_size(struct modem_chat *chat)
 {
@@ -982,4 +988,44 @@ void modem_chat_match_set_partial(struct modem_chat_match *match, bool partial)
 void modem_chat_match_enable_wildcards(struct modem_chat_match *match, bool enable)
 {
 	match->wildcards = enable;
+}
+
+void modem_chat_script_chat_init(struct modem_chat_script_chat *script_chat)
+{
+	memset(script_chat, 0, sizeof(struct modem_chat_script_chat));
+}
+
+int modem_chat_script_chat_set_request(struct modem_chat_script_chat *script_chat,
+				       const char *request)
+{
+	size_t size;
+
+	size = strnlen(request, UINT16_MAX + 1);
+
+	if (size == (UINT16_MAX + 1)) {
+		return -ENOMEM;
+	}
+
+	script_chat->request = request;
+	script_chat->request_size = (uint16_t)size;
+	return 0;
+}
+
+int modem_chat_script_chat_set_response_matches(struct modem_chat_script_chat *script_chat,
+						const struct modem_chat_match *response_matches,
+						uint16_t response_matches_size)
+{
+	if (!modem_chat_validate_array(response_matches, response_matches_size)) {
+		return -EINVAL;
+	}
+
+	script_chat->response_matches = response_matches;
+	script_chat->response_matches_size = response_matches_size;
+	return 0;
+}
+
+void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_chat,
+					uint16_t timeout)
+{
+	script_chat->timeout = timeout;
 }
