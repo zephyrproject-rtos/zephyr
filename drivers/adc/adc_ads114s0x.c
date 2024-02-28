@@ -1006,6 +1006,7 @@ static int ads114s0x_adc_perform_read(const struct device *dev)
 	struct ads114s0x_data *data = dev->data;
 
 	k_sem_take(&data->acquire_signal, K_FOREVER);
+	k_sem_reset(&data->data_ready_signal);
 
 	result = ads114s0x_send_start_read(dev);
 	if (result != 0) {
