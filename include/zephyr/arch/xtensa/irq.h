@@ -70,17 +70,29 @@ static inline void z_xt_set_intset(unsigned int arg)
 
 #ifdef CONFIG_2ND_LEVEL_INTERRUPTS
 #ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+
+#ifndef CONFIG_NUM_IRQS
 #define CONFIG_NUM_IRQS (XCHAL_NUM_INTERRUPTS +\
 			(CONFIG_NUM_2ND_LEVEL_AGGREGATORS +\
 			CONFIG_NUM_3RD_LEVEL_AGGREGATORS) *\
 			CONFIG_MAX_IRQ_PER_AGGREGATOR)
+#endif /* CONFIG_NUM_IRQS */
+
 #else
+
+#ifndef CONFIG_NUM_IRQS
 #define CONFIG_NUM_IRQS (XCHAL_NUM_INTERRUPTS +\
 			CONFIG_NUM_2ND_LEVEL_AGGREGATORS *\
 			CONFIG_MAX_IRQ_PER_AGGREGATOR)
+#endif /* CONFIG_NUM_IRQS */
+
 #endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 #else
+
+#ifndef CONFIG_NUM_IRQS
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
+#endif /* CONFIG_NUM_IRQS */
+
 #endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
 
 void z_soc_irq_init(void);
@@ -101,7 +113,9 @@ extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 #else
 
+#ifndef CONFIG_NUM_IRQS
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
+#endif /* CONFIG_NUM_IRQS */
 
 #define arch_irq_enable(irq)	xtensa_irq_enable(irq)
 #define arch_irq_disable(irq)	xtensa_irq_disable(irq)
