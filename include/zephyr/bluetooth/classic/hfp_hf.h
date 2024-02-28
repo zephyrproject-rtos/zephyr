@@ -64,6 +64,24 @@ struct bt_hfp_hf_cb {
 	 *  @param conn Connection object.
 	 */
 	void (*disconnected)(struct bt_conn *conn);
+	/** HF SCO/eSCO connected Callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  SCO/eSCO connection completes.
+	 *
+	 *  @param conn Connection object.
+	 *  @param sco_conn SCO/eSCO Connection object.
+	 */
+	void (*sco_connected)(struct bt_conn *conn, struct bt_conn *sco_conn);
+	/** HF SCO/eSCO disconnected Callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  SCO/eSCO connection gets disconnected.
+	 *
+	 *  @param conn Connection object.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
+	 */
+	void (*sco_disconnected)(struct bt_conn *sco_conn, uint8_t reason);
 	/** HF indicator Callback
 	 *
 	 *  This callback provides service indicator value to the application
