@@ -81,6 +81,9 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_BAP_STREAM
   bap.c
   )
+if (CONFIG_BT_AUDIO_RX AND CONFIG_LIBLC3 AND CONFIG_USB_DEVICE_AUDIO)
+	zephyr_library_sources(bap_usb.c)
+endif()
 zephyr_library_sources_ifdef(
   CONFIG_BT_BAP_SCAN_DELEGATOR
   bap_scan_delegator.c
