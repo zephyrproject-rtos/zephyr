@@ -1,5 +1,5 @@
-identifier: nrf9160dk/nrf9160/ns
-name: nRF9160-DK-NRF9160-Non-Secure
+identifier: nrf9161dk@0.9.0/nrf9161/ns
+name: nRF9161-DK-NRF9161-Non-Secure
 type: mcu
 arch: arm
 toolchain:
@@ -17,5 +17,4 @@ supported:
   - pwm
   - watchdog
   - netif:modem
-  - gpio
 vendor: nordic
