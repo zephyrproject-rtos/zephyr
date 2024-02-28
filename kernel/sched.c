@@ -452,9 +452,9 @@ static inline bool sliceable(struct k_thread *thread)
 	return ret;
 }
 
-static void slice_timeout(struct _timeout *t)
+static void slice_timeout(struct _timeout *timeout)
 {
-	int cpu = ARRAY_INDEX(slice_timeouts, t);
+	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
 
 	slice_expired[cpu] = true;
 
@@ -1225,20 +1225,20 @@ int z_unpend_all(_wait_q_t *wait_q)
 	return need_sched;
 }
 
-void init_ready_q(struct _ready_q *rq)
+void init_ready_q(struct _ready_q *ready_q)
 {
 #if defined(CONFIG_SCHED_SCALABLE)
-	rq->runq = (struct _priq_rb) {
+	ready_q->runq = (struct _priq_rb) {
 		.tree = {
 			.lessthan_fn = z_priq_rb_lessthan,
 		}
 	};
 #elif defined(CONFIG_SCHED_MULTIQ)
 	for (int i = 0; i < ARRAY_SIZE(_kernel.ready_q.runq.queues); i++) {
-		sys_dlist_init(&rq->runq.queues[i]);
+		sys_dlist_init(&ready_q->runq.queues[i]);
 	}
 #else
-	sys_dlist_init(&rq->runq);
+	sys_dlist_init(&ready_q->runq);
 #endif
 }
 
