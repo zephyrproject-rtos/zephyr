@@ -14,6 +14,12 @@ config AWS_ENDPOINT
 	  Endpoint (hostname) of the AWS MQTT broker.
 	  Note that the endpoint is different when using AWS Device Advisor.
 
+config AWS_MQTT_PORT
+	int "MQTT Port"
+	default 8883
+	help
+	  Set port of AWS MQTT broker.
+
 config AWS_THING_NAME
 	string "AWS Thing name"
 	default "myThingName"
