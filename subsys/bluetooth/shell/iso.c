@@ -24,8 +24,15 @@
 
 #include "bt.h"
 
+#if defined(CONFIG_BT_ISO_TX)
+#define DEFAULT_IO_QOS                                                                             \
+	{                                                                                          \
+		.sdu = 40u, .phy = BT_GAP_LE_PHY_2M, .rtn = 2u,                                    \
+	}
+
 #define TX_BUF_TIMEOUT K_SECONDS(1)
 
+static struct bt_iso_chan_io_qos iso_tx_qos = DEFAULT_IO_QOS;
 static uint32_t cis_sn_last;
 static uint32_t bis_sn_last;
 static int64_t cis_sn_last_updated_ticks;
@@ -61,7 +68,9 @@ static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks,
 
 	return (uint32_t)next_sn;
 }
+#endif /* CONFIG_BT_ISO_TX */
 
+#if defined(CONFIG_BT_ISO_RX)
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
@@ -70,6 +79,7 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 			    chan, buf->len, info->seq_num, info->ts);
 	}
 }
+#endif /* CONFIG_BT_ISO_RX */
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
@@ -85,6 +95,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
+#if defined(CONFIG_BT_ISO_TX)
 	if (iso_info.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 		cis_sn_last = 0U;
 		cis_sn_last_updated_ticks = k_uptime_ticks();
@@ -92,6 +103,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 		bis_sn_last = 0U;
 		bis_sn_last_updated_ticks = k_uptime_ticks();
 	}
+#endif /* CONFIG_BT_ISO_TX */
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -101,19 +113,12 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 }
 
 static struct bt_iso_chan_ops iso_ops = {
-	.recv		= iso_recv,
-	.connected	= iso_connected,
-	.disconnected	= iso_disconnected,
+#if defined(CONFIG_BT_ISO_RX)
+	.recv = iso_recv,
+#endif /* CONFIG_BT_ISO_RX */
+	.connected = iso_connected,
+	.disconnected = iso_disconnected,
 };
-
-#define DEFAULT_IO_QOS \
-{ \
-	.sdu		= 40u, \
-	.phy		= BT_GAP_LE_PHY_2M, \
-	.rtn		= 2u, \
-}
-
-static struct bt_iso_chan_io_qos iso_tx_qos = DEFAULT_IO_QOS;
 
 #if defined(CONFIG_BT_ISO_UNICAST)
 static uint32_t cis_sdu_interval_us;
@@ -934,7 +939,8 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 #if defined(CONFIG_BT_ISO_UNICAST)
 #if defined(CONFIG_BT_ISO_CENTRAL)
-	SHELL_CMD_ARG(cig_create, NULL, "[dir=tx,rx,txrx] [C to P interval] [P to C interval] "
+	SHELL_CMD_ARG(cig_create, NULL,
+		      "[dir=tx,rx,txrx] [C to P interval] [P to C interval] "
 		      "[packing] [framing] [C to P latency] [P to C latency] [sdu] [phy] [rtn]",
 		      cmd_cig_create, 1, 10),
 	SHELL_CMD_ARG(cig_term, NULL, "Terminate the CIG", cmd_cig_term, 1, 0),
@@ -951,10 +957,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 	SHELL_CMD_ARG(listen, NULL, "<dir=tx,rx,txrx>", cmd_listen, 2, 0),
 #endif /* CONFIG_BT_SMP */
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
-	SHELL_CMD_ARG(send, NULL, "Send to ISO Channel [count]",
-		      cmd_send, 1, 1),
-	SHELL_CMD_ARG(disconnect, NULL, "Disconnect ISO Channel",
-		      cmd_disconnect, 1, 0),
+#if defined(CONFIG_BT_ISO_TX)
+	SHELL_CMD_ARG(send, NULL, "Send to ISO Channel [count]", cmd_send, 1, 1),
+#endif /* CONFIG_BT_ISO_TX */
+	SHELL_CMD_ARG(disconnect, NULL, "Disconnect ISO Channel", cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(tx_sync_read_cis, NULL, "Read CIS TX sync info", cmd_tx_sync_read_cis, 1, 0),
 #endif /* CONFIG_BT_ISO_UNICAST */
 #if defined(CONFIG_BT_ISO_BROADCASTER)
@@ -964,8 +970,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 	SHELL_CMD_ARG(tx_sync_read_bis, NULL, "Read BIS TX sync info", cmd_tx_sync_read_bis, 1, 0),
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
-	SHELL_CMD_ARG(sync-big, NULL, "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
-		      "[timeout] [enc <broadcast code>]", cmd_big_sync, 2, 4),
+	SHELL_CMD_ARG(sync-big, NULL,
+		      "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
+		      "[timeout] [enc <broadcast code>]",
+		      cmd_big_sync, 2, 4),
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #if defined(CONFIG_BT_ISO_BROADCAST)
 	SHELL_CMD_ARG(term-big, NULL, "Terminate a BIG", cmd_big_term, 1, 0),

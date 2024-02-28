@@ -403,9 +403,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	LOG_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
-	if ((IS_ENABLED(CONFIG_BT_ISO_UNICAST) ||
-	     IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) &&
-	    conn->type == BT_CONN_TYPE_ISO) {
+	if (IS_ENABLED(CONFIG_BT_ISO_RX) && conn->type == BT_CONN_TYPE_ISO) {
 		bt_iso_recv(conn, buf, flags);
 		return;
 	} else if (IS_ENABLED(CONFIG_BT_CONN)) {

@@ -7,11 +7,19 @@
 config BT_ISO
 	bool
 
+config BT_ISO_TX
+	bool
+
+config BT_ISO_RX
+	bool
+
 # TODO: Split between client (central) and server (peripheral)
 config BT_ISO_UNICAST
 	bool
 	depends on BT_CONN
 	select BT_ISO
+	select BT_ISO_TX
+	select BT_ISO_RX
 	help
 	  This option enables support for Bluetooth Unicast
 	  Isochronous channels.
@@ -45,6 +53,7 @@ config BT_ISO_BROADCASTER
 	bool "Bluetooth Isochronous Broadcaster Support [EXPERIMENTAL]"
 	depends on !BT_CTLR || BT_CTLR_ADV_ISO_SUPPORT
 	select BT_ISO_BROADCAST
+	select BT_ISO_TX
 	select BT_BROADCASTER
 	select BT_PER_ADV
 	select EXPERIMENTAL
@@ -55,6 +64,7 @@ config BT_ISO_SYNC_RECEIVER
 	bool "Bluetooth Isochronous Synchronized Receiver Support [EXPERIMENTAL]"
 	depends on !BT_CTLR || BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_ISO_BROADCAST
+	select BT_ISO_RX
 	select BT_OBSERVER
 	select BT_PER_ADV_SYNC
 	select EXPERIMENTAL
