@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig WIFI_NM_WPA_SUPPLICANT
+config WIFI_NM_WPA_SUPPLICANT
 	bool "WPA Suplicant from hostap project [EXPERIMENTAL]"
 	select POSIX_CLOCK
 	select POSIX_SIGNAL
@@ -18,6 +18,8 @@ menuconfig WIFI_NM_WPA_SUPPLICANT
 	select EXPERIMENTAL
 	help
 	  WPA supplicant as a network management backend for WIFI_NM.
+
+if WIFI_NM_WPA_SUPPLICANT
 
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
@@ -58,8 +60,6 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	  available levels and functions for emitting the messages. Note that
 	  runtime filtering can also be configured in addition to the compile-time
 	  filtering.
-
-if WIFI_NM_WPA_SUPPLICANT
 
 # Memory optimizations
 config WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
