@@ -84,6 +84,8 @@ enum coap_method {
 
 #define COAP_VERSION_1 1U
 
+#define COAP_OBSERVE_MAX_AGE 0xFFFFFF
+
 /**
  * @brief CoAP packets may be of one of these types.
  */

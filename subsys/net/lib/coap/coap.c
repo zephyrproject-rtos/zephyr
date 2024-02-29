@@ -51,6 +51,8 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #define BASIC_HEADER_SIZE	4
 
+#define COAP_OBSERVE_FIRST_OFFSET 2
+
 /* The CoAP message ID that is incremented each time coap_next_id() is called. */
 static uint16_t message_id;
 
@@ -1749,10 +1751,19 @@ size_t coap_pendings_count(struct coap_pending *pendings, size_t len)
 }
 
 /* Reordering according to RFC7641 section 3.4 but without timestamp comparison */
-static inline bool is_newer(int v1, int v2)
+IF_DISABLED(CONFIG_ZTEST, (static inline))
+bool coap_age_is_newer(int v1, int v2)
 {
 	return (v1 < v2 && v2 - v1 < (1 << 23))
 	    || (v1 > v2 && v1 - v2 > (1 << 23));
+}
+
+static inline void coap_observer_increment_age(struct coap_resource *resource)
+{
+	resource->age++;
+	if (resource->age > COAP_OBSERVE_MAX_AGE) {
+		resource->age = COAP_OBSERVE_FIRST_OFFSET;
+	}
 }
 
 struct coap_reply *coap_response_received(
@@ -1792,7 +1803,7 @@ struct coap_reply *coap_response_received(
 
 		age = coap_get_option_int(response, COAP_OPTION_OBSERVE);
 		/* handle observed requests only if received in order */
-		if (age == -ENOENT || is_newer(r->age, age)) {
+		if (age == -ENOENT || coap_age_is_newer(r->age, age)) {
 			r->age = age;
 			if (coap_header_get_code(response) != COAP_RESPONSE_CODE_CONTINUE) {
 				r->reply(response, r, from);
@@ -1847,7 +1858,11 @@ int coap_resource_notify(struct coap_resource *resource)
 		return -ENOENT;
 	}
 
-	resource->age++;
+	if (sys_slist_is_empty(&resource->observers)) {
+		return 0;
+	}
+
+	coap_observer_increment_age(resource);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&resource->observers, o, list) {
 		resource->notify(resource, o);
@@ -1898,7 +1913,7 @@ bool coap_register_observer(struct coap_resource *resource,
 
 	first = resource->age == 0;
 	if (first) {
-		resource->age = 2;
+		resource->age = COAP_OBSERVE_FIRST_OFFSET;
 	}
 
 	coap_observer_raise_event(resource, observer, NET_EVENT_COAP_OBSERVER_ADDED);
