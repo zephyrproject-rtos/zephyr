@@ -22,12 +22,4 @@
         zephyr,mutable;
         status = "okay";
     };
-
-    devmux1: dev_mux_1 {
-        compatible = "zephyr,devmux";
-        devices = <&uart0 &euart0 &euart1>;
-        zephyr,mutable;
-        selected = <2>;
-        status = "okay";
-    };
 };
