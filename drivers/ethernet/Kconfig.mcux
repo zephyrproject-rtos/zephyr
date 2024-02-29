@@ -26,6 +26,8 @@ config ETH_MCUX_USE_DTCM_FOR_DMA_BUFFER
 
 config ETH_MCUX_PROMISCUOUS_MODE
 	bool "Promiscuous mode"
+	default y if NET_IPV6
+	default n
 	help
 	  Place the Ethernet receiver in promiscuous mode. This may be useful
 	  for debugging and not needed for normal work.
@@ -35,6 +37,14 @@ config ETH_MCUX_RMII_EXT_CLK
 	help
 	  Setting this option will configure MCUX clock block to feed RMII
 	  reference clock from external source (ENET_1588_CLKIN)
+
+config ETH_MCUX_REFCLK_50MHZ
+	bool "Configure PHY Refclk Crystal is 50MHz (else 25MHz)"
+	default n if ETH_MCUX_RMII_EXT_CLK
+	default y
+	help
+	  Setting this option will configure the PHY for a 50MHz refclk.
+
 
 config ETH_MCUX_NO_PHY_SMI
 	bool "Do not use SMI for PHY communication"
