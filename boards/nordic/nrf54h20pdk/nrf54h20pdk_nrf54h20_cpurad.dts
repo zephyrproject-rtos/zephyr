@@ -8,7 +8,11 @@
 
 #include <nordic/nrf54h20_enga_cpurad.dtsi>
 #include "nrf54h20pdk_nrf54h20-memory_map.dtsi"
+#include "nrf54h20pdk_nrf54h20-ipc_conf.dtsi"
 #include "nrf54h20pdk_nrf54h20-pinctrl.dtsi"
+
+/delete-node/ &cpuapp_cpuppr_ipc;
+/delete-node/ &cpusec_cpuapp_ipc;
 
 / {
 	compatible = "nordic,nrf54h20pdk_nrf54h20-cpurad";
@@ -24,6 +28,26 @@
 
 &shared_ram3x_region {
 	status = "okay";
+};
+
+&cpurad_bellboard {
+	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
+	interrupt-names = "irq0";
+	/* irq0: 0: cpurad-cpusec, 12: cpurad-cpuapp */
+	nordic,interrupt-mapping = <0x00001001 0>;
+};
+
+&cpusec_cpurad_ipc {
+	mbox-names = "tx", "rx";
+	tx-region = <&cpurad_cpusec_ipc_shm>;
+	rx-region = <&cpusec_cpurad_ipc_shm>;
+};
+
+&cpuapp_cpurad_ipc {
+	compatible = "zephyr,ipc-icmsg-me-follower";
+	mbox-names = "tx", "rx";
+	tx-region = <&cpurad_cpuapp_ipc_shm>;
+	rx-region = <&cpuapp_cpurad_ipc_shm>;
 };
 
 &cpurad_dma_region {
