@@ -1029,3 +1029,51 @@ void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_ch
 {
 	script_chat->timeout = timeout;
 }
+
+void modem_chat_script_init(struct modem_chat_script *script)
+{
+	memset(script, 0, sizeof(struct modem_chat_script));
+	script->name = "";
+}
+
+void modem_chat_script_set_name(struct modem_chat_script *script, const char *name)
+{
+	script->name = name;
+}
+
+int modem_chat_script_set_script_chats(struct modem_chat_script *script,
+				       const struct modem_chat_script_chat *script_chats,
+				       uint16_t script_chats_size)
+{
+	if (!modem_chat_validate_array(script_chats, script_chats_size)) {
+		return -EINVAL;
+	}
+
+	script->script_chats = script_chats;
+	script->script_chats_size = script_chats_size;
+	return 0;
+}
+
+int modem_chat_script_set_abort_matches(struct modem_chat_script *script,
+					const struct modem_chat_match *abort_matches,
+					uint16_t abort_matches_size)
+{
+	if (!modem_chat_validate_array(abort_matches, abort_matches_size)) {
+		return -EINVAL;
+	}
+
+	script->abort_matches = abort_matches;
+	script->abort_matches_size = abort_matches_size;
+	return 0;
+}
+
+void modem_chat_script_set_callback(struct modem_chat_script *script,
+				    modem_chat_script_callback callback)
+{
+	script->callback = callback;
+}
+
+void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t timeout_s)
+{
+	script->timeout = timeout_s;
+}
