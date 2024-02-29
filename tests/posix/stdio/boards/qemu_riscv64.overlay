@@ -16,12 +16,6 @@
         status = "okay";
     };
 
-    euart1: uart_emul1 {
-        compatible = "zephyr,uart-emul";
-        current-speed = <0>;
-        status = "okay";
-    };
-
     devmux0: dev_mux_0 {
         compatible = "zephyr,devmux";
         devices = <&uart0 &euart0 &euart1>;
