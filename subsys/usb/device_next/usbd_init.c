@@ -139,7 +139,7 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
 	LOG_DBG("Highest speed supported by the controller is %u", speed);
 	dhp = usbd_class_get_desc(iter->c_nd, speed);
 	if (dhp == NULL) {
-		return -EINVAL;
+		return 0;
 	}
 
 	tmp_nif = *nif;
