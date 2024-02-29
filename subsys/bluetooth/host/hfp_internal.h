@@ -46,6 +46,8 @@
 
 struct bt_hfp_hf {
 	struct bt_rfcomm_dlc rfcomm_dlc;
+	/* ACL connection handle */
+	struct bt_conn *acl;
 	char hf_buffer[HF_MAX_BUF_LEN];
 	struct at_client at;
 	uint32_t hf_features;
