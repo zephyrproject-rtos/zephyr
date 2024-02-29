@@ -3652,16 +3652,24 @@ static void le_set_per_adv_param(struct net_buf *buf, struct net_buf **evt)
 		const uint32_t min_interval =
 					sys_le16_to_cpu(cmd->min_interval);
 
-		/* Compare periodic advertising interval maximum with
+		if ((min_interval > max_interval) ||
+		    (min_interval < BT_HCI_LE_PER_ADV_INTERVAL_MIN)) {
+			*evt = cmd_complete_status(BT_HCI_ERR_INVALID_PARAM);
+			return;
+		}
+
+		/* Compare periodic advertising interval with
 		 * implementation supported periodic advertising interval
 		 * maximum value defined in the Kconfig
 		 * CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX.
 		 */
-		if ((min_interval > max_interval) ||
-		    (min_interval < BT_HCI_LE_PER_ADV_INTERVAL_MIN) ||
-		    (max_interval > CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX)) {
+		if (min_interval > CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX) {
 			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 			return;
+		}
+
+		if (max_interval > CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX) {
+			max_interval = CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX;
 		}
 	}
 
