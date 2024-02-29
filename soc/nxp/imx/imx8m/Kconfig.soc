@@ -44,6 +44,12 @@ config SOC_MIMX8MP_ADSP
 	help
 	  Enable support for NXP i.MX 8MPLUS Audio DSP
 
+config SOC_MIMX8MP_M7
+	bool
+	select SOC_MIMX8MP
+	help
+	  Enable support for NXP i.MX 8MPLUS M7 MCU
+
 config SOC_TOOLCHAIN_NAME
 	string
 	default "nxp_imx8m_adsp" if SOC_MIMX8MP_ADSP
