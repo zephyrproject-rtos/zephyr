@@ -3701,6 +3701,25 @@ Gardena Platforms:
   description: >-
     Gardena board(s).
 
+SOPHGO Platforms:
+  status: maintained
+  maintainers:
+    - xingrz
+  collaborators:
+    - lenghonglin
+  files:
+    - boards/common/cvi-fiptool.board.cmake
+    - boards/milkv/duo/
+    - boards/milkv/duos/
+    - dts/riscv/sophgo/
+    - dts/bindings/*/sophgo,*
+    - drivers/*/*.sophgo
+    - drivers/*/*_sophgo_*.c
+    - scripts/west_commands/runners/cvi-fiptool.py
+    - soc/sophgo/
+  labels:
+    - "platform: SOPHGO"
+
 Intel Platforms (X86):
   status: maintained
   maintainers:
