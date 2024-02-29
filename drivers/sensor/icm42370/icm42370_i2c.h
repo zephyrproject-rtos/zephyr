@@ -13,8 +13,8 @@
 /**
  * @brief perform a single I2C write to a ICM42370 mreg register
  *
- * this functions wraps all logic necessary to write to any of the ICM42370 mreg registers, regardless
- * of which memory bank the register belongs to.
+ * this functions wraps all logic necessary to write to any of the ICM42370 mreg registers,
+ * regardless of which memory bank the register belongs to.
  *
  * @param bus I2C bus pointer
  * @param reg address of ICM42370 register to write to
@@ -41,8 +41,8 @@ int icm42370_update_mreg(const struct i2c_dt_spec *bus, uint16_t reg, uint8_t ma
 /**
  * @brief read from one or more ICM42370 mreg registers
  *
- * this functions wraps all logic necessary to read from any of the ICM42370 mreg registers, regardless
- * of which memory bank the register belongs to.
+ * this functions wraps all logic necessary to read from any of the ICM42370 mreg registers,
+ * regardless of which memory bank the register belongs to.
  *
  * @param bus I2C bus pointer
  * @param reg start address of ICM42370 register(s) to read from

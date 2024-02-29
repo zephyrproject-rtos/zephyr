@@ -12,4 +12,3 @@
                 int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
         };
 };
-

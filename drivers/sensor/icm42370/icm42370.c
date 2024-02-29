@@ -183,7 +183,8 @@ static int icm42370_sensor_init(const struct device *dev)
 	}
 
 	if (value != WHO_AM_I_ICM42370) {
-		printk("invalid WHO_AM_I value, was %X but expected %X\n", value, WHO_AM_I_ICM42370);
+		printk("invalid WHO_AM_I value, was %X but expected %X\n", value,
+		       WHO_AM_I_ICM42370);
 		return -EINVAL;
 	}
 
@@ -253,7 +254,7 @@ int icm42370_turn_on_sensor(const struct device *dev)
 		}
 
 		res = icm42370_single_write(&cfg->bus, REG_WOM_CONFIG,
-					    BIT_WOM_INT_MODE_AND | BIT_WOM_MODE_PREV | BIT_WOM_EN_ON);
+					BIT_WOM_INT_MODE_AND | BIT_WOM_MODE_PREV | BIT_WOM_EN_ON);
 		if (res) {
 			return res;
 		}

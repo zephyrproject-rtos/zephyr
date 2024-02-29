@@ -13,8 +13,8 @@
 /**
  * @brief perform a single SPI write to a ICM42370 mreg register
  *
- * this functions wraps all logic necessary to write to any of the ICM42370 mreg registers, regardless
- * of which memory bank the register belongs to.
+ * this functions wraps all logic necessary to write to any of the ICM42370 mreg registers,
+ * regardless of which memory bank the register belongs to.
  *
  * @param bus SPI bus pointer
  * @param reg address of ICM42370 register to write to
