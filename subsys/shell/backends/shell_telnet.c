@@ -236,13 +236,19 @@ static void telnet_send_prematurely(struct k_work *work)
 	}
 }
 
-static inline int telnet_handle_command(uint8_t *buf)
+static int telnet_command_length(uint8_t op)
+{
+	if (op == NVT_CMD_SB || op == NVT_CMD_WILL || op == NVT_CMD_WONT ||
+	    op == NVT_CMD_DO || op == NVT_CMD_DONT) {
+		return TELNET_WILL_DO_COMMAND_LEN;
+	}
+
+	return TELNET_MIN_COMMAND_LEN;
+}
+
+static inline int telnet_handle_command(struct telnet_simple_command *cmd)
 {
 	/* Commands are two or three bytes. */
-	struct telnet_simple_command *cmd;
-
-	cmd = (struct telnet_simple_command *)buf;
-
 	if (cmd->iac != NVT_CMD_IAC) {
 		return 0;
 	}
@@ -257,17 +263,14 @@ static inline int telnet_handle_command(uint8_t *buf)
 		return -EOPNOTSUPP;
 	}
 
-	if (cmd->op == NVT_CMD_WILL || cmd->op == NVT_CMD_WONT ||
-	    cmd->op == NVT_CMD_DO || cmd->op == NVT_CMD_DONT) {
-		return TELNET_WILL_DO_COMMAND_LEN;
-	}
-
-	return TELNET_MIN_COMMAND_LEN;
+	return 0;
 }
 
 static void telnet_recv(struct zsock_pollfd *pollfd)
 {
-	size_t len, off, buf_left;
+	struct telnet_simple_command *cmd =
+			(struct telnet_simple_command *)sh_telnet->cmd_buf;
+	size_t len, off, buf_left, cmd_total_len;
 	uint8_t *buf;
 	int ret;
 
@@ -294,18 +297,70 @@ static void telnet_recv(struct zsock_pollfd *pollfd)
 
 	off = 0;
 	len = ret;
-	while (len >= TELNET_MIN_COMMAND_LEN) {
-		ret = telnet_handle_command(buf + off);
-		if (ret > 0) {
-			LOG_DBG("Handled command");
-			off += ret;
-		} else if (ret < 0) {
-			goto error;
-		} else {
-			break;
+	cmd_total_len = 0;
+	/* Filter out and process commands from the data buffer. */
+	while (off < len) {
+		if (sh_telnet->cmd_len > 0) {
+			/* Command mode */
+			if (sh_telnet->cmd_len == 1) {
+				/* Operation */
+				cmd->op = *(buf + off);
+				sh_telnet->cmd_len++;
+				cmd_total_len++;
+				off++;
+
+				if (telnet_command_length(cmd->op) >
+							TELNET_MIN_COMMAND_LEN) {
+					continue;
+				}
+			} else if (sh_telnet->cmd_len == 2) {
+				/* Option */
+				cmd->opt = *(buf + off);
+				sh_telnet->cmd_len++;
+				cmd_total_len++;
+				off++;
+			}
+
+			ret = telnet_handle_command(cmd);
+			if (ret < 0) {
+				goto error;
+			} else {
+				LOG_DBG("Handled command");
+			}
+
+			memset(cmd, 0, sizeof(*cmd));
+			sh_telnet->cmd_len = 0;
+
+			continue;
 		}
 
-		len -= ret;
+		if (*(buf + off) == NVT_CMD_IAC) {
+			cmd->iac = *(buf + off);
+			sh_telnet->cmd_len++;
+			cmd_total_len++;
+			off++;
+			continue;
+		}
+
+		/* Data byte, remove command bytes from the buffer, if any. */
+		if (cmd_total_len > 0) {
+			size_t data_off = off;
+
+			off -= cmd_total_len;
+			len -= cmd_total_len;
+			cmd_total_len = 0;
+
+			memmove(buf + off, buf + data_off, len);
+		}
+
+		off++;
+	}
+
+	if (cmd_total_len > 0) {
+		/* In case the buffer ended with command, trim the buffer size
+		 * here.
+		 */
+		len -=	cmd_total_len;
 	}
 
 	if (len == 0) {
@@ -313,7 +368,6 @@ static void telnet_recv(struct zsock_pollfd *pollfd)
 		return;
 	}
 
-	memmove(buf, buf + off, len);
 	sh_telnet->rx_len += len;
 
 	k_mutex_unlock(&sh_telnet->rx_lock);
@@ -376,6 +430,9 @@ static void telnet_accept(struct zsock_pollfd *pollfd)
 
 	sh_telnet->fds[SOCK_ID_CLIENT].fd = sock;
 	sh_telnet->fds[SOCK_ID_CLIENT].events = ZSOCK_POLLIN;
+	sh_telnet->rx_len = 0;
+	sh_telnet->cmd_len = 0;
+	sh_telnet->line_out.len = 0;
 
 	ret = net_socket_service_register(&telnet_server, sh_telnet->fds,
 					  ARRAY_SIZE(sh_telnet->fds), NULL);
