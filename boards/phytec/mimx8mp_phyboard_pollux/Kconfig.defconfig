@@ -5,9 +5,6 @@
 
 if BOARD_MIMX8MP_PHYBOARD_POLLUX
 
-config BOARD
-	default "mimx8mp_phyboard_pollux"
-
 if !XIP
 config FLASH_SIZE
 	default 0
