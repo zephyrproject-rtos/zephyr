@@ -2451,6 +2451,8 @@ Modem:
   status: maintained
   maintainers:
     - bjarki-trackunit
+  collaborators:
+    - tomi-font
   files:
     - subsys/modem/
     - include/zephyr/modem/
