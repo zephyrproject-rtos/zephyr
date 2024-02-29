@@ -109,7 +109,7 @@ features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/96b_meerkat96/96b_meerkat96_defconfig``
+	:zephyr_file:`boards/96boards/meerkat96/96b_meerkat96_mcimx7d_m4_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -178,7 +178,7 @@ For more information about memory mapping see the
 `Toradex Wiki`_.
 
 At compilation time you have to choose which RAM will be used. This
-configuration is done in the file ``boards/arm/96b_meerkat96/96b_meerkat96.dts``
+configuration is done in the file :zephyr_file:`boards/96boards/meerkat96/96b_meerkat96_mcimx7d_m4.dts`
 with "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram" properties.
 The available configurations are:
 
