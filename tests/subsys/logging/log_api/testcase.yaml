@@ -32,6 +32,7 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_TEST_LOG_MSG_APPEND_RO_STRING_LOC=y
 
   logging.deferred.api.printk:
     extra_configs:
@@ -105,6 +106,7 @@ tests:
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_TEST_LOG_MSG_APPEND_RO_STRING_LOC=y
 
   logging.frontend.rt_filtering:
     extra_configs:
