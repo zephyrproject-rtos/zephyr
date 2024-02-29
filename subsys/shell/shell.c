@@ -1465,7 +1465,9 @@ int shell_stop(const struct shell *sh)
 
 	state_set(sh, SHELL_STATE_INITIALIZED);
 
-	z_shell_log_backend_disable(sh->log_backend);
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+		z_shell_log_backend_disable(sh->log_backend);
+	}
 
 	return 0;
 }
