@@ -16,12 +16,26 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_cfg, CONFIG_USBD_LOG_LEVEL);
 
+static sys_slist_t *usbd_configs(struct usbd_contex *uds_ctx,
+				 const enum usbd_speed speed)
+{
+	switch (speed) {
+	case USBD_SPEED_FS:
+		return &uds_ctx->fs_configs;
+	case USBD_SPEED_HS:
+		return &uds_ctx->hs_configs;
+	default:
+		return NULL;
+	}
+}
+
 struct usbd_config_node *usbd_config_get(struct usbd_contex *const uds_ctx,
+					 const enum usbd_speed speed,
 					 const uint8_t cfg)
 {
 	struct usbd_config_node *cfg_nd;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(usbd_configs(uds_ctx, speed), cfg_nd, node) {
 		if (usbd_config_get_value(cfg_nd) == cfg) {
 			return cfg_nd;
 		}
@@ -38,7 +52,8 @@ usbd_config_get_current(struct usbd_contex *const uds_ctx)
 		return NULL;
 	}
 
-	return usbd_config_get(uds_ctx, usbd_get_config_value(uds_ctx));
+	return usbd_config_get(uds_ctx, usbd_bus_speed(uds_ctx),
+			       usbd_get_config_value(uds_ctx));
 }
 
 static void usbd_config_classes_enable(struct usbd_config_node *const cfg_nd,
@@ -78,11 +93,12 @@ static int usbd_config_reset(struct usbd_contex *const uds_ctx)
 }
 
 bool usbd_config_exist(struct usbd_contex *const uds_ctx,
+		       const enum usbd_speed speed,
 		       const uint8_t cfg)
 {
 	struct usbd_config_node *config;
 
-	config = usbd_config_get(uds_ctx, cfg);
+	config = usbd_config_get(uds_ctx, speed, cfg);
 
 	return (config != NULL) ? true : false;
 }
@@ -91,6 +107,7 @@ int usbd_config_set(struct usbd_contex *const uds_ctx,
 		    const uint8_t new_cfg)
 {
 	struct usbd_config_node *cfg_nd;
+	const enum usbd_speed speed = usbd_bus_speed(uds_ctx);
 	int ret;
 
 	if (usbd_get_config_value(uds_ctx) != 0) {
@@ -106,12 +123,12 @@ int usbd_config_set(struct usbd_contex *const uds_ctx,
 		return 0;
 	}
 
-	cfg_nd = usbd_config_get(uds_ctx, new_cfg);
+	cfg_nd = usbd_config_get(uds_ctx, speed, new_cfg);
 	if (cfg_nd == NULL) {
 		return -ENODATA;
 	}
 
-	ret = usbd_interface_default(uds_ctx, cfg_nd);
+	ret = usbd_interface_default(uds_ctx, speed, cfg_nd);
 	if (ret) {
 		return ret;
 	}
@@ -127,6 +144,7 @@ int usbd_config_set(struct usbd_contex *const uds_ctx,
  */
 
 int usbd_config_attrib_rwup(struct usbd_contex *const uds_ctx,
+			    const enum usbd_speed speed,
 			    const uint8_t cfg, const bool enable)
 {
 	struct usbd_config_node *cfg_nd;
@@ -148,7 +166,7 @@ int usbd_config_attrib_rwup(struct usbd_contex *const uds_ctx,
 		goto attrib_rwup_exit;
 	}
 
-	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
 	if (cfg_nd == NULL) {
 		LOG_INF("Configuration %u not found", cfg);
 		ret = -ENODATA;
@@ -168,6 +186,7 @@ attrib_rwup_exit:
 }
 
 int usbd_config_attrib_self(struct usbd_contex *const uds_ctx,
+			    const enum usbd_speed speed,
 			    const uint8_t cfg, const bool enable)
 {
 	struct usbd_config_node *cfg_nd;
@@ -181,7 +200,7 @@ int usbd_config_attrib_self(struct usbd_contex *const uds_ctx,
 		goto attrib_self_exit;
 	}
 
-	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
 	if (cfg_nd == NULL) {
 		LOG_INF("Configuration %u not found", cfg);
 		ret = -ENODATA;
@@ -201,6 +220,7 @@ attrib_self_exit:
 }
 
 int usbd_config_maxpower(struct usbd_contex *const uds_ctx,
+			 const enum usbd_speed speed,
 			 const uint8_t cfg, const uint8_t power)
 {
 	struct usbd_config_node *cfg_nd;
@@ -214,7 +234,7 @@ int usbd_config_maxpower(struct usbd_contex *const uds_ctx,
 		goto maxpower_exit;
 	}
 
-	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
 	if (cfg_nd == NULL) {
 		LOG_INF("Configuration %u not found", cfg);
 		ret = -ENODATA;
@@ -230,9 +250,12 @@ maxpower_exit:
 }
 
 int usbd_add_configuration(struct usbd_contex *const uds_ctx,
+			   const enum usbd_speed speed,
 			   struct usbd_config_node *const cfg_nd)
 {
 	struct usb_cfg_descriptor *desc = cfg_nd->desc;
+	sys_slist_t *configs;
+	sys_snode_t *node;
 	int ret = 0;
 
 	usbd_device_lock(uds_ctx);
@@ -240,6 +263,13 @@ int usbd_add_configuration(struct usbd_contex *const uds_ctx,
 	if (usbd_is_initialized(uds_ctx)) {
 		LOG_ERR("USB device support is initialized");
 		ret = -EBUSY;
+		goto add_configuration_exit;
+	}
+
+	if (speed == USBD_SPEED_HS &&
+	    usbd_caps_speed(uds_ctx) == USBD_SPEED_FS) {
+		LOG_ERR("Controller doesn't support HS");
+		ret = -ENOTSUP;
 		goto add_configuration_exit;
 	}
 
@@ -253,15 +283,43 @@ int usbd_add_configuration(struct usbd_contex *const uds_ctx,
 		}
 	}
 
-	if (sys_slist_find_and_remove(&uds_ctx->configs, &cfg_nd->node)) {
+	configs = usbd_configs(uds_ctx, speed);
+	switch (speed) {
+	case USBD_SPEED_HS:
+		SYS_SLIST_FOR_EACH_NODE(&uds_ctx->fs_configs, node) {
+			if (node == &cfg_nd->node) {
+				LOG_ERR("HS config already on FS list");
+				ret = -EINVAL;
+				goto add_configuration_exit;
+			}
+		}
+		break;
+	case USBD_SPEED_FS:
+		SYS_SLIST_FOR_EACH_NODE(&uds_ctx->hs_configs, node) {
+			if (node == &cfg_nd->node) {
+				LOG_ERR("FS config already on HS list");
+				ret = -EINVAL;
+				goto add_configuration_exit;
+			}
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported configuration speed");
+		ret = -ENOTSUP;
+		goto add_configuration_exit;
+	}
+
+	if (sys_slist_find_and_remove(configs, &cfg_nd->node)) {
 		LOG_WRN("Configuration %u re-inserted",
 			usbd_config_get_value(cfg_nd));
 	} else {
-		usbd_config_set_value(cfg_nd, usbd_get_num_configs(uds_ctx) + 1);
-		usbd_set_num_configs(uds_ctx, usbd_get_num_configs(uds_ctx) + 1);
+		uint8_t num = usbd_get_num_configs(uds_ctx, speed) + 1;
+
+		usbd_config_set_value(cfg_nd, num);
+		usbd_set_num_configs(uds_ctx, speed, num);
 	}
 
-	sys_slist_append(&uds_ctx->configs, &cfg_nd->node);
+	sys_slist_append(configs, &cfg_nd->node);
 
 	usbd_device_unlock(uds_ctx);
 

@@ -26,11 +26,13 @@ int usbd_interface_shutdown(struct usbd_contex *const uds_ctx,
  * @note Used only for configuration change.
  *
  * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Configuration speed
  * @param[in] cfg_nd  Pointer to configuration node
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_interface_default(struct usbd_contex *const uds_ctx,
+			   const enum usbd_speed speed,
 			   struct usbd_config_node *const cfg_nd);
 
 /**
