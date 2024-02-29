@@ -379,9 +379,9 @@ _POSIX_PRIORITY_SCHEDULING
     sched_get_priority_min(),yes
     sched_getparam(),yes
     sched_getscheduler(),yes
-    sched_rr_get_interval(),yes
-    sched_setparam(),yes
-    sched_setscheduler(),yes
+    sched_rr_get_interval(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sched_setparam(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sched_setscheduler(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     sched_yield(),yes
 
 .. _posix_option_reader_writer_locks:
