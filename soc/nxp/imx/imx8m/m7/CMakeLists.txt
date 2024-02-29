@@ -1,10 +1,12 @@
 #
 # Copyright (c) 2021, Laird Connectivity
+# Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 zephyr_include_directories(${ZEPHYR_BASE}/drivers)
+zephyr_include_directories(.)
 
 zephyr_sources(
   soc.c
