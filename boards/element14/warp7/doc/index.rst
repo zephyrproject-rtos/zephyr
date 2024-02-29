@@ -1,4 +1,4 @@
-.. _warp7_m4:
+.. _warp7:
 
 WaRP7 - Next Generation IoT and Wearable Development Platform
 #############################################################
@@ -12,7 +12,7 @@ Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
 
 
-.. image:: warp7_m4.jpg
+.. image:: warp7.jpg
    :align: center
    :alt: WaRP7-iMX7S
 
@@ -100,7 +100,7 @@ Cortex M4 Core:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/warp7_m4/warp7_m4_defconfig``
+:zephyr_file:`boards/element14/warp7/warp7_mcimx7d_m4_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -179,7 +179,7 @@ References
 
 
 At compilation time you have to choose which RAM will be used. This
-configuration is done in the file ``boards/arm/warp7_m4/warp7_m4.dts`` with
+configuration is done in the file :zephyr_file:`boards/element14/warp7/warp7_mcimx7d_m4.dts` with
 "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram" properties. The available
 configurations are:
 
@@ -298,7 +298,7 @@ Issue the following commands inside J-Link commander:
    w4 0x00180004 00905020
    w4 0x3039000C 0xAA
 
-With these mechanisms, applications for the ``warp7_m4`` board
+With these mechanisms, applications for the ``warp7`` board
 configuration can be built and debugged in the usual way (see
 :ref:`build_an_application` and :ref:`application_run` for more details).
 
