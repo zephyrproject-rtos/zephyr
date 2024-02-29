@@ -1,23 +1,28 @@
-# i.MX 6SoloX M4 core series
+# i.MX 6SoloX core series
 
-# Copyright (c) 2018, NXP
+# Copyright 2018,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "i.MX 6SoloX Selection"
-	depends on SOC_SERIES_IMX_6X_M4
+
+config SOC_SERIES_IMX6SX
+	bool
+	select SOC_FAMILY_NXP_IMX
+
+config SOC_MCIMX6X
+	bool
+	select SOC_SERIES_IMX6SX
 
 config SOC_MCIMX6X_M4
-	bool "SOC_MCIMX6X_M4"
-	select HAS_IMX_HAL
-	select HAS_IMX_GPIO
-	select HAS_IMX_EPIT
-	select HAS_IMX_I2C
-	select HAS_IMX_IOMUXC
+	select SOC_MCIMX6X
+	bool
+	help
+	  NXP iMX6 SoloX M4 core
 
-endchoice
+config SOC_SERIES
+	default "imx6sx" if SOC_SERIES_IMX6SX
 
-if SOC_SERIES_IMX_6X_M4
+config SOC
+	default "mcimx6x" if SOC_MCIMX6X
 
 config SOC_PART_NUMBER_MCIMX6X1EVK10AB
 	bool
@@ -61,8 +66,7 @@ config SOC_PART_NUMBER_MCIMX6X4EVM10AB
 config SOC_PART_NUMBER_MCIMX6X4EVM10AC
 	bool
 
-config SOC_PART_NUMBER_IMX_6X_M4
-	string
+config SOC_PART_NUMBER
 	default "MCIMX6X1EVK10AB" if SOC_PART_NUMBER_MCIMX6X1EVK10AB
 	default "MCIMX6X1EVK10AC" if SOC_PART_NUMBER_MCIMX6X1EVK10AC
 	default "MCIMX6X3EVK10AB" if SOC_PART_NUMBER_MCIMX6X3EVK10AB
@@ -77,9 +81,3 @@ config SOC_PART_NUMBER_IMX_6X_M4
 	default "MCIMX6X3EVN10AC" if SOC_PART_NUMBER_MCIMX6X3EVN10AC
 	default "MCIMX6X4EVM10AB" if SOC_PART_NUMBER_MCIMX6X4EVM10AB
 	default "MCIMX6X4EVM10AC" if SOC_PART_NUMBER_MCIMX6X4EVM10AC
-	help
-	  This string holds the full part number of the SoC. It is a hidden option
-	  that you should not set directly. The part number selection choice defines
-	  the default value for this string.
-
-endif # SOC_SERIES_IMX_6X_M4
