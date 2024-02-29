@@ -465,6 +465,61 @@ int modem_chat_script_chat_set_response_matches(struct modem_chat_script_chat *s
 void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_chat,
 					uint16_t timeout_ms);
 
+/**
+ * @brief Initialize modem chat script
+ * @param script Modem chat script instance
+ */
+void modem_chat_script_init(struct modem_chat_script *script);
+
+/**
+ * @brief Set modem chat script name
+ * @param script Modem chat script instance
+ * @param name Name to set
+ * @note The lifetime of name must match or exceed the lifetime of script
+ */
+void modem_chat_script_set_name(struct modem_chat_script *script, const char *name);
+
+/**
+ * @brief Set modem chat script chats
+ * @param script Modem chat script instance
+ * @param script_chats Chat script array to set
+ * @param script_chats_size Size of chat script array
+ * @note The lifetime of script_chats must match or exceed the lifetime of script
+ *
+ * @retval 0 if successful, negative errno code otherwise
+ */
+int modem_chat_script_set_script_chats(struct modem_chat_script *script,
+				       const struct modem_chat_script_chat *script_chats,
+				       uint16_t script_chats_size);
+
+/**
+ * @brief Set modem chat script abort matches
+ * @param script Modem chat script instance
+ * @param abort_matches Abort match array to set
+ * @param abort_matches_size Size of abort match array
+ * @note The lifetime of abort_matches must match or exceed the lifetime of script
+ *
+ * @retval 0 if successful, negative errno code otherwise
+ */
+int modem_chat_script_set_abort_matches(struct modem_chat_script *script,
+					const struct modem_chat_match *abort_matches,
+					uint16_t abort_matches_size);
+
+/**
+ * @brief Set modem chat script callback
+ * @param script Modem chat script instance
+ * @param callback Callback to set
+ */
+void modem_chat_script_set_callback(struct modem_chat_script *script,
+				    modem_chat_script_callback callback);
+
+/**
+ * @brief Set modem chat script timeout
+ * @param script Modem chat script instance
+ * @param timeout_s Timeout in seconds
+ */
+void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t timeout_s);
+
 #ifdef __cplusplus
 }
 #endif

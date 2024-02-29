@@ -734,6 +734,45 @@ ZTEST(modem_chat, test_runtime_script_chat)
 	zassert_equal(ret, -EINVAL, "Should have failed to set response matches");
 }
 
+ZTEST(modem_chat, test_runtime_script)
+{
+	int ret;
+	struct modem_chat_script test_script;
+	struct modem_chat_script_chat test_script_chats[2];
+	struct modem_chat_match test_abort_matches[2];
+
+	modem_chat_script_init(&test_script);
+	zassert_equal(strlen(test_script.name), 0, "Failed to set default name");
+
+	ret = modem_chat_script_set_script_chats(&test_script, test_script_chats,
+						 ARRAY_SIZE(test_script_chats));
+	zassert_ok(ret, "Failed to set script chats");
+	zassert_equal(test_script.script_chats, test_script_chats,
+		      "Failed to set script_chats");
+	zassert_equal(test_script.script_chats_size, ARRAY_SIZE(test_script_chats),
+		      "Failed to set script_chats_size");
+
+	ret = modem_chat_script_set_script_chats(&test_script, test_script_chats, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set script chats");
+
+	ret = modem_chat_script_set_script_chats(&test_script, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set script chats");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, test_abort_matches,
+						  ARRAY_SIZE(test_abort_matches));
+	zassert_ok(ret, "Failed to set abort matches");
+	zassert_equal(test_script.abort_matches, test_abort_matches,
+		      "Failed to set script_chats");
+	zassert_equal(test_script.abort_matches_size, ARRAY_SIZE(test_abort_matches),
+		      "Failed to set script_chats_size");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, test_abort_matches, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set abort matches");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set abort matches");
+}
+
 /*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/
