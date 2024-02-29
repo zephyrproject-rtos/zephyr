@@ -21,8 +21,7 @@ STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
 
 static struct service {
-	/* The +1 is for triggering events from register function */
-	struct zsock_pollfd events[1 + CONFIG_NET_SOCKETS_POLL_MAX];
+	struct zsock_pollfd events[CONFIG_NET_SOCKETS_POLL_MAX];
 	int count;
 } ctx;
 
