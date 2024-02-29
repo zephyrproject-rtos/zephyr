@@ -226,10 +226,19 @@ int usbd_device_shutdown_core(struct usbd_contex *const uds_ctx)
 	struct usbd_config_node *cfg_nd;
 	int ret;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
 		uint8_t cfg_value = usbd_config_get_value(cfg_nd);
 
-		ret = usbd_class_remove_all(uds_ctx, cfg_value);
+		ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_HS, cfg_value);
+		if (ret) {
+			LOG_ERR("Failed to cleanup registered classes, %d", ret);
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->fs_configs, cfg_nd, node) {
+		uint8_t cfg_value = usbd_config_get_value(cfg_nd);
+
+		ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_FS, cfg_value);
 		if (ret) {
 			LOG_ERR("Failed to cleanup registered classes, %d", ret);
 		}
@@ -254,7 +263,11 @@ static int usbd_pre_init(void)
 	k_thread_name_set(&usbd_thread_data, "usbd");
 
 	LOG_DBG("Available USB class iterators:");
-	STRUCT_SECTION_FOREACH(usbd_class_iter, iter) {
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_iter, iter) {
+		atomic_set(&iter->state, 0);
+		LOG_DBG("\t%p->%p, name %s", iter, iter->c_nd, iter->c_nd->name);
+	}
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_iter, iter) {
 		atomic_set(&iter->state, 0);
 		LOG_DBG("\t%p->%p, name %s", iter, iter->c_nd, iter->c_nd->name);
 	}

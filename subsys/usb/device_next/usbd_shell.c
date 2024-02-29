@@ -28,6 +28,8 @@ USBD_DEVICE_DEFINE(sh_uds_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
 		   0x2fe3, 0xffff);
 
 static struct usbd_contex *my_uds_ctx = &sh_uds_ctx;
+/* TODO: Rework commands to allow specifying speed */
+static enum usbd_speed speed = USBD_SPEED_FS;
 
 int cmd_wakeup_request(const struct shell *sh,
 		       size_t argc, char **argv)
@@ -51,7 +53,7 @@ static int cmd_register(const struct shell *sh,
 	int ret;
 
 	cfg = strtol(argv[2], NULL, 10);
-	ret = usbd_register_class(my_uds_ctx, argv[1], cfg);
+	ret = usbd_register_class(my_uds_ctx, argv[1], speed, cfg);
 
 	if (ret) {
 		shell_error(sh,
@@ -73,7 +75,7 @@ static int cmd_unregister(const struct shell *sh,
 	int ret;
 
 	cfg = strtol(argv[2], NULL, 10);
-	ret = usbd_unregister_class(my_uds_ctx, argv[1], cfg);
+	ret = usbd_unregister_class(my_uds_ctx, argv[1], speed, cfg);
 	if (ret) {
 		shell_error(sh,
 			    "dev: failed to remove USB class %s from configuration %u",
@@ -101,13 +103,13 @@ static int cmd_usbd_magic(const struct shell *sh,
 		shell_error(sh, "dev: Failed to initialize descriptors, %d", err);
 	}
 
-	err = usbd_add_configuration(my_uds_ctx, &config_foo);
+	err = usbd_add_configuration(my_uds_ctx, speed, &config_foo);
 	if (err) {
 		shell_error(sh, "dev: Failed to add configuration");
 	}
 
 	if (IS_ENABLED(CONFIG_USBD_LOOPBACK_CLASS)) {
-		err = usbd_register_class(my_uds_ctx, "loopback_0", 1);
+		err = usbd_register_class(my_uds_ctx, "loopback_0", speed, 1);
 		if (err) {
 			shell_error(sh, "dev: Failed to add loopback_0 class");
 		}
@@ -242,7 +244,7 @@ static int cmd_device_bcd(const struct shell *sh, size_t argc,
 	int ret;
 
 	bcd = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_bcd(my_uds_ctx, bcd);
+	ret = usbd_device_set_bcd(my_uds_ctx, speed, bcd);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device bcdUSB to %x", bcd);
 	}
@@ -289,7 +291,8 @@ static int cmd_device_code_triple(const struct shell *sh, size_t argc,
 	class = strtol(argv[1], NULL, 16);
 	subclass = strtol(argv[2], NULL, 16);
 	protocol = strtol(argv[3], NULL, 16);
-	ret = usbd_device_set_code_triple(my_uds_ctx, class, subclass, protocol);
+	ret = usbd_device_set_code_triple(my_uds_ctx, speed,
+					  class, subclass, protocol);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device code triple to %x %x %x",
 			    class, subclass, protocol);
@@ -307,9 +310,9 @@ static int cmd_config_add(const struct shell *sh, size_t argc,
 	cfg = strtol(argv[1], NULL, 10);
 
 	if (cfg == 1) {
-		ret = usbd_add_configuration(my_uds_ctx, &config_foo);
+		ret = usbd_add_configuration(my_uds_ctx, speed, &config_foo);
 	} else if (cfg == 2) {
-		ret = usbd_add_configuration(my_uds_ctx, &config_baz);
+		ret = usbd_add_configuration(my_uds_ctx, speed, &config_baz);
 	} else {
 		shell_error(sh, "dev: Configuration %u not available", cfg);
 		return -EINVAL;
@@ -336,7 +339,7 @@ static int cmd_config_self(const struct shell *sh, size_t argc,
 		self = false;
 	}
 
-	ret = usbd_config_attrib_self(my_uds_ctx, cfg, self);
+	ret = usbd_config_attrib_self(my_uds_ctx, speed, cfg, self);
 	if (ret) {
 		shell_error(sh,
 			    "dev: failed to set attribute self powered to %u",
@@ -360,7 +363,7 @@ static int cmd_config_rwup(const struct shell *sh, size_t argc,
 		rwup = false;
 	}
 
-	ret = usbd_config_attrib_rwup(my_uds_ctx, cfg, rwup);
+	ret = usbd_config_attrib_rwup(my_uds_ctx, speed, cfg, rwup);
 	if (ret) {
 		shell_error(sh,
 			    "dev: failed to set attribute remote wakeup to %x",
@@ -380,7 +383,7 @@ static int cmd_config_power(const struct shell *sh, size_t argc,
 	cfg = strtol(argv[1], NULL, 10);
 	power = strtol(argv[1], NULL, 10);
 
-	ret = usbd_config_maxpower(my_uds_ctx, cfg, power);
+	ret = usbd_config_maxpower(my_uds_ctx, speed, cfg, power);
 	if (ret) {
 		shell_error(sh, "dev: failed to set bMaxPower value to %u", cfg);
 	}
@@ -397,7 +400,7 @@ static void class_node_name_lookup(size_t idx, struct shell_static_entry *entry)
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
-	STRUCT_SECTION_FOREACH(usbd_class_iter, iter) {
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_iter, iter) {
 		if ((iter->c_nd->name != NULL) &&
 		    (strlen(iter->c_nd->name) != 0)) {
 			if (match_idx == idx) {

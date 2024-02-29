@@ -140,6 +140,7 @@ int usbd_interface_shutdown(struct usbd_contex *const uds_ctx,
 }
 
 int usbd_interface_default(struct usbd_contex *const uds_ctx,
+			   const enum usbd_speed speed,
 			   struct usbd_config_node *const cfg_nd)
 {
 	struct usb_cfg_descriptor *desc = cfg_nd->desc;
@@ -150,7 +151,7 @@ int usbd_interface_default(struct usbd_contex *const uds_ctx,
 		struct usbd_class_iter *class;
 		int ret;
 
-		class = usbd_class_get_by_config(uds_ctx, new_cfg, i);
+		class = usbd_class_get_by_config(uds_ctx, speed, new_cfg, i);
 		if (class == NULL) {
 			return -ENODATA;
 		}
