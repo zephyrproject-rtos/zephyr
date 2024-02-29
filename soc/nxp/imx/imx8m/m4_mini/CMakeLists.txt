@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -7,6 +8,8 @@
 zephyr_sources(
   soc.c
   )
+
+zephyr_include_directories(.)
 
 if(CONFIG_OPENAMP_RSC_TABLE)
   zephyr_linker_section(NAME .resource_table GROUP ROM_REGION NOINPUT)
