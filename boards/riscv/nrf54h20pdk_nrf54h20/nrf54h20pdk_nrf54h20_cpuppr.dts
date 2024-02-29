@@ -8,7 +8,12 @@
 
 #include <nordic/nrf54h20_enga_cpuppr.dtsi>
 #include "nrf54h20pdk_nrf54h20-memory_map.dtsi"
+#include "nrf54h20pdk_nrf54h20-ipc_conf.dtsi"
 #include "nrf54h20pdk_nrf54h20-pinctrl.dtsi"
+
+/delete-node/ &cpuapp_cpurad_ipc;
+/delete-node/ &cpusec_cpuapp_ipc;
+/delete-node/ &cpusec_cpurad_ipc;
 
 / {
 	compatible = "nordic,nrf54h20pdk_nrf54h20-cpuppr";
@@ -22,6 +27,12 @@
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuppr_ram3x_region;
 	};
+};
+
+&cpuapp_cpuppr_ipc {
+	mbox-names = "tx", "rx";
+	tx-region = <&cpuppr_cpuapp_ipc_shm>;
+	rx-region = <&cpuapp_cpuppr_ipc_shm>;
 };
 
 &grtc {
