@@ -1,5 +1,5 @@
 family:
-- name: st_stm32
+- name: stm32
   series:
   - name: stm32c0x
     socs:
