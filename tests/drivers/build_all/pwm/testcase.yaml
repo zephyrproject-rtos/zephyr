@@ -9,7 +9,7 @@ tests:
   drivers.pwm.gecko.build:
     platform_allow: efr32_radio/efr32fg1p133f256gm48
   drivers.pwm.imx.build:
-    platform_allow: colibri_imx7d_m4
+    platform_allow: colibri_imx7d/mcimx7d/m4
   drivers.pwm.litex.build:
     platform_allow: litex_vexriscv
   drivers.pwm.mcux.ftm.build:
