@@ -2,6 +2,70 @@
 
 .. _zephyr_2.7:
 
+.. _zephyr_2.7.6:
+
+Zephyr 2.7.6
+####################
+
+This is an LTS maintenance release with fixes.
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 2.7.5 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+* :github:`32145` - use ``k_thread_foreach_unlocked()`` with shell callbacks
+* :github:`56604` - drivers: nrf: rtc: make uptime consistent for app booted from v3.x mcuboot
+* :github:`25917` - bluetooth: fix deadlock with tx of acl data and hci commands
+* :github:`47649` - bluetooth: release att notification buffer after reconnection
+* :github:`43718` - bluetooth: bt_conn: ensure tx buffers can be allocated within timeout
+* :github:`60707` - canbus: isotp: seal context buffer memory leaks
+* :github:`60904` - drivers: spi_nor: make erase operation more opportunistic
+* :github:`61451` - drivers: can: stm32: correct timing_max parameters
+* :github:`61501` - canbus: isotp: convert SF length check from ``ASSERT`` to runtime check
+* :github:`61544` - drivers: ieee802154_nrf5: add payload length check on TX
+* :github:`61784` - bluetooth: controller: check minmum sizes of adv PDUs
+* :github:`62003` - drivers: dma: sam: implement xdmac ``get_status()`` API
+* :github:`62701` - can: rework the table lookup code in ``can_dlc_to_bytes()``
+* :github:`63544` - drivers: can: mcan: move RF0L and RF1L to line 1
+* :github:`63835` - net_mgmt: return ``EMSGSIZE`` if buffer passed to ``recvfrom()`` is too small
+* :github:`63965` - logging: fix handling of ``CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS``
+* :github:`64398` - drivers: can: be consistent in ``filter_id`` checks when removing rx filters
+* :github:`65548` - cmake: modules: dts: fix board revision 0 overlay
+* :github:`66500` - toolchain: support ``CONFIG_COMPILER_WARNINGS_AS_ERRORS``
+* :github:`66888` - net: ipv6: drop received packets sent by the same interface
+* :github:`67692` - i2c: dw: fix integer overflow in ``i2c_dw_data_ask()``
+* :github:`69167` - fs: fuse: avoid possible buffer overflow
+* :github:`69637` - userspace: additional checks in ``K_SYSCALL_MEMORY``
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+* CVE-2023-4263 `Zephyr project bug tracker GHSA-rf6q-rhhp-pqhf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rf6q-rhhp-pqhf>`_
+
+* CVE-2023-4424: `Zephyr project bug tracker GHSA-j4qm-xgpf-qjw3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j4qm-xgpf-qjw3>`_
+
+* CVE-2023-5779 `Zephyr project bug tracker GHSA-7cmj-963q-jj47
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7cmj-963q-jj47>`_
+
+* CVE-2023-6249 `Zephyr project bug tracker GHSA-32f5-3p9h-2rqc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-32f5-3p9h-2rqc>`_
+
+* CVE-2023-6881 `Zephyr project bug tracker GHSA-mh67-4h3q-p437
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-mh67-4h3q-p437>`_
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
 .. _zephyr_2.7.5:
 
 Zephyr 2.7.5
