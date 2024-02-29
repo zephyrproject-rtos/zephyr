@@ -946,7 +946,7 @@ config BT_CTLR_CONN_ISO_PDU_LEN_MAX
 config BT_CTLR_CONN_ISO_SDU_LEN_MAX
 	int "Maximum Connected Isochronous Channel SDU Length"
 	depends on BT_CTLR_CONN_ISO
-	range BT_CTLR_CONN_ISO_PDU_LEN_MAX 4095
+	range 1 4095
 	default 251
 	help
 	  Maximum Connected Isochronous Channel SDU Length.
