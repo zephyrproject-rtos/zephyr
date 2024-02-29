@@ -507,7 +507,7 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 
 		dhp = usbd_class_get_desc(iter->c_nd, get_desc_speed);
 		if (dhp == NULL) {
-			return -EINVAL;
+			continue;
 		}
 
 		while (*dhp != NULL && (*dhp)->bLength != 0) {
