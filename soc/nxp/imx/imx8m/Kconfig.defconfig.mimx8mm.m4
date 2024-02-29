@@ -1,12 +1,18 @@
-# i.MX8MM M4 SoC series defconfig
+# MIMX8MM6 M4 SoC defconfig
 
 # Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_IMX8MM_M4
+if SOC_MIMX8MM6_M4
 
-config SOC_SERIES
-	default "mimx8mm6_m4"
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 400000000
+
+config IPM_IMX
+	default y
+	depends on IPM
 
 config NUM_IRQS
 	int
@@ -17,6 +23,4 @@ config PINCTRL_IMX
 	default y if HAS_MCUX_IOMUXC
 	depends on PINCTRL
 
-source "soc/soc_legacy/arm/nxp_imx/mimx8mm6_m4/Kconfig.defconfig.mimx8mm6_m4"
-
-endif # SOC_SERIES_IMX8MM_M4
+endif # SOC_MIMX8MM6_M4
