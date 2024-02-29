@@ -78,7 +78,7 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.logger.info('Starting Intel ADSP runner')
 
-        if re.search("intel_adsp", self.platform):
+        if re.search("adsp", self.platform):
             self.require(self.cavstool)
             self.flash(**kwargs)
         else:
