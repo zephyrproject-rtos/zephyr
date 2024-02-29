@@ -56,7 +56,7 @@ Supported Releases
 +-----------------+----------------+---------------+
 | Release         | Release date   | EOL           |
 +=================+================+===============+
-| `Zephyr 2.7.5`_ | 2023-06-01     | 2024-08-31    |
+| `Zephyr 2.7.6`_ | 2024-03-01     | 2025-01-26    |
 +-----------------+----------------+---------------+
 | `Zephyr 3.6.0`_ | 2024-02-23     | 2024-11-29    |
 +-----------------+----------------+---------------+
@@ -112,6 +112,6 @@ in the migration guide. This includes:
 
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
-.. _`Zephyr 2.7.5`: https://docs.zephyrproject.org/2.7.5/
+.. _`Zephyr 2.7.6`: https://docs.zephyrproject.org/2.7.6/
 .. _`Zephyr 3.5.0`: https://docs.zephyrproject.org/3.5.0/
 .. _`Zephyr 3.6.0`: https://docs.zephyrproject.org/3.6.0/
