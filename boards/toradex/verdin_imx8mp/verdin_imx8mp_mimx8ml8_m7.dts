@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8ml_m7.dtsi>
-#include "verdin_imx8mp_m7-pinctrl.dtsi"
+#include "verdin_imx8mp-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -15,9 +15,9 @@
 	compatible = "nxp,mimx8mp_evk";
 
 	chosen {
-		/* DDR */
-		zephyr,flash = &ddr_code;
-		zephyr,sram = &ddr_sys;
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
 
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;

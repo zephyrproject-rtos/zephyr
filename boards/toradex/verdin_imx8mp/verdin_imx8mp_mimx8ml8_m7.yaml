@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: verdin_imx8mp_m7_ddr
-name: Toradex Verdin iMX8M Plus (DDR)
+identifier: verdin_imx8mp/mimx8ml8/m7
+name: Toradex Verdin iMX8M Plus (ITCM)
 type: mcu
 arch: arm
-ram: 2048
-flash: 2048
+ram: 128
+flash: 128
 toolchain:
   - zephyr
   - gnuarmemb
