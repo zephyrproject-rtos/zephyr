@@ -8,9 +8,8 @@
 #include <zephyr/init.h>
 
 #include <zephyr/logging/log.h>
-#include <zephyr/net/net_context.h>
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socket_service.h>
 #include <zephyr/shell/shell_telnet.h>
 
 #include "shell_telnet_protocol.h"
@@ -33,54 +32,49 @@ struct shell_telnet *sh_telnet;
 #define TELNET_MIN_COMMAND_LEN 2
 #define TELNET_WILL_DO_COMMAND_LEN 3
 
-#define TELNET_RETRY_SEND_SLEEP_MS 50
+#define SOCK_ID_IPV4_LISTEN 0
+#define SOCK_ID_IPV6_LISTEN 1
+#define SOCK_ID_CLIENT      2
+#define SOCK_ID_MAX         3
 
 /* Basic TELNET implementation. */
 
+static void telnet_server_cb(struct k_work *work);
+static int telnet_init(struct shell_telnet *ctx);
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, NULL, telnet_server_cb,
+				      SHELL_TELNET_POLLFD_COUNT);
+
+
 static void telnet_end_client_connection(void)
 {
-	struct net_pkt *pkt;
+	int ret;
 
-	(void)net_context_put(sh_telnet->client_ctx);
+	(void)zsock_close(sh_telnet->fds[SOCK_ID_CLIENT].fd);
 
-	sh_telnet->client_ctx = NULL;
+	sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
 	sh_telnet->output_lock = false;
 
 	k_work_cancel_delayable_sync(&sh_telnet->send_work,
 				     &sh_telnet->work_sync);
 
-	/* Flush the RX FIFO */
-	while ((pkt = k_fifo_get(&sh_telnet->rx_fifo, K_NO_WAIT)) != NULL) {
-		net_pkt_unref(pkt);
-	}
-}
-
-static void telnet_sent_cb(struct net_context *client,
-			   int status, void *user_data)
-{
-	if (status < 0) {
-		telnet_end_client_connection();
-		LOG_ERR("Could not send packet %d", status);
+	ret = net_socket_service_register(&telnet_server, sh_telnet->fds,
+					  ARRAY_SIZE(sh_telnet->fds), NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to register socket service, %d", ret);
 	}
 }
 
 static void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 {
-	if (sh_telnet->client_ctx == NULL) {
+	if (sh_telnet->fds[SOCK_ID_CLIENT].fd < 0) {
 		return;
 	}
 
 	while (len > 0) {
 		int ret;
 
-		ret = net_context_send(sh_telnet->client_ctx, msg, len, telnet_sent_cb,
-				       K_FOREVER, NULL);
-
-		if (ret == -EAGAIN || ret == -ENOBUFS) {
-			k_sleep(K_MSEC(TELNET_RETRY_SEND_SLEEP_MS));
-			continue;
-		}
-
+		ret = zsock_send(sh_telnet->fds[SOCK_ID_CLIENT].fd, msg, len, 0);
 		if (ret < 0) {
 			LOG_ERR("Failed to send command %d, shutting down", ret);
 			telnet_end_client_connection();
@@ -187,7 +181,7 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 	}
 }
 
-static int telnet_send(void)
+static int telnet_send(bool block)
 {
 	int ret;
 	uint8_t *msg = sh_telnet->line_out.buf;
@@ -197,22 +191,25 @@ static int telnet_send(void)
 		return 0;
 	}
 
-	if (sh_telnet->client_ctx == NULL) {
+	if (sh_telnet->fds[SOCK_ID_CLIENT].fd < 0) {
 		return -ENOTCONN;
 	}
 
 	while (len > 0) {
-		ret = net_context_send(sh_telnet->client_ctx, msg,
-				       len, telnet_sent_cb,
-				       K_FOREVER, NULL);
-
-		if (ret == -EAGAIN || ret == -ENOBUFS) {
-			k_sleep(K_MSEC(TELNET_RETRY_SEND_SLEEP_MS));
-			continue;
+		ret = zsock_send(sh_telnet->fds[SOCK_ID_CLIENT].fd, msg, len,
+				 block ? 0 : ZSOCK_MSG_DONTWAIT);
+		if (!block && (ret < 0) && (errno == EAGAIN)) {
+			/* Not all data was sent - move the remaining data and
+			 * update length.
+			 */
+			memmove(sh_telnet->line_out.buf, msg, len);
+			sh_telnet->line_out.len = len;
+			return -EAGAIN;
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Failed to send %d, shutting down", ret);
+			ret = -errno;
+			LOG_ERR("Failed to send %d, shutting down", -ret);
 			telnet_end_client_connection();
 			return ret;
 		}
@@ -229,18 +226,24 @@ static int telnet_send(void)
 
 static void telnet_send_prematurely(struct k_work *work)
 {
-	(void)telnet_send();
+	int ret;
+
+	/* Use non-blocking send to prevent system workqueue blocking. */
+	ret = telnet_send(false);
+	if (ret == -EAGAIN) {
+		/* Not all data was sent, reschedule the work. */
+		k_work_reschedule(&sh_telnet->send_work, K_MSEC(TELNET_TIMEOUT));
+	}
 }
 
-static inline int telnet_handle_command(struct net_pkt *pkt)
+static inline int telnet_handle_command(uint8_t *buf)
 {
 	/* Commands are two or three bytes. */
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(cmd_access, uint16_t);
 	struct telnet_simple_command *cmd;
 
-	cmd = (struct telnet_simple_command *)net_pkt_get_data(pkt,
-							       &cmd_access);
-	if (!cmd || cmd->iac != NVT_CMD_IAC) {
+	cmd = (struct telnet_simple_command *)buf;
+
+	if (cmd->iac != NVT_CMD_IAC) {
 		return 0;
 	}
 
@@ -262,90 +265,128 @@ static inline int telnet_handle_command(struct net_pkt *pkt)
 	return TELNET_MIN_COMMAND_LEN;
 }
 
-static void telnet_recv(struct net_context *client,
-			struct net_pkt *pkt,
-			union net_ip_header *ip_hdr,
-			union net_proto_header *proto_hdr,
-			int status,
-			void *user_data)
+static void telnet_recv(struct zsock_pollfd *pollfd)
 {
-	size_t len;
+	size_t len, off, buf_left;
+	uint8_t *buf;
 	int ret;
 
-	if (!pkt || status) {
-		telnet_end_client_connection();
+	k_mutex_lock(&sh_telnet->rx_lock, K_FOREVER);
 
-		LOG_DBG("Telnet client dropped (AF_INET%s) status %d",
-			net_context_get_family(client) == AF_INET ?
-			"" : "6", status);
+	buf_left = sizeof(sh_telnet->rx_buf) - sh_telnet->rx_len;
+	if (buf_left == 0) {
+		/* No space left to read TCP stream, try again later. */
+		k_mutex_unlock(&sh_telnet->rx_lock);
+		k_msleep(10);
 		return;
 	}
 
-	len = net_pkt_remaining_data(pkt);
+	buf = sh_telnet->rx_buf + sh_telnet->rx_len;
 
-	(void)net_context_update_recv_wnd(client, len);
+	ret = zsock_recv(pollfd->fd, buf, buf_left, 0);
+	if (ret < 0) {
+		LOG_DBG("Telnet client error %d", ret);
+		goto error;
+	} else if (ret == 0) {
+		LOG_DBG("Telnet client closed connection");
+		goto error;
+	}
 
+	off = 0;
+	len = ret;
 	while (len >= TELNET_MIN_COMMAND_LEN) {
-		ret = telnet_handle_command(pkt);
+		ret = telnet_handle_command(buf + off);
 		if (ret > 0) {
 			LOG_DBG("Handled command");
-			ret = net_pkt_skip(pkt, ret);
-			if (ret < 0) {
-				goto unref;
-			}
+			off += ret;
 		} else if (ret < 0) {
-			goto unref;
+			goto error;
 		} else {
 			break;
 		}
 
-		len = net_pkt_remaining_data(pkt);
+		len -= ret;
 	}
 
 	if (len == 0) {
-		goto unref;
+		k_mutex_unlock(&sh_telnet->rx_lock);
+		return;
 	}
 
-	/* Fifo add */
-	k_fifo_put(&sh_telnet->rx_fifo, pkt);
+	memmove(buf, buf + off, len);
+	sh_telnet->rx_len += len;
+
+	k_mutex_unlock(&sh_telnet->rx_lock);
 
 	sh_telnet->shell_handler(SHELL_TRANSPORT_EVT_RX_RDY,
 				 sh_telnet->shell_context);
 
 	return;
 
-unref:
-	net_pkt_unref(pkt);
+error:
+	k_mutex_unlock(&sh_telnet->rx_lock);
+	telnet_end_client_connection();
 }
 
-static void telnet_accept(struct net_context *client,
-			  struct sockaddr *addr,
-			  socklen_t addrlen,
-			  int error,
-			  void *user_data)
+static void telnet_restart_server(void)
 {
-	if (error) {
-		LOG_ERR("Error %d", error);
+	int ret;
+
+	if (sh_telnet->fds[SOCK_ID_IPV4_LISTEN].fd >= 0) {
+		(void)zsock_close(sh_telnet->fds[SOCK_ID_IPV4_LISTEN].fd);
+		sh_telnet->fds[SOCK_ID_IPV4_LISTEN].fd = -1;
+	}
+
+	if (sh_telnet->fds[SOCK_ID_IPV6_LISTEN].fd >= 0) {
+		(void)zsock_close(sh_telnet->fds[SOCK_ID_IPV6_LISTEN].fd);
+		sh_telnet->fds[SOCK_ID_IPV6_LISTEN].fd = -1;
+	}
+
+	if (sh_telnet->fds[SOCK_ID_CLIENT].fd >= 0) {
+		(void)zsock_close(sh_telnet->fds[SOCK_ID_CLIENT].fd);
+		sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
+	}
+
+	ret = telnet_init(sh_telnet);
+	if (ret < 0) {
+		LOG_ERR("Telnet fatal error, failed to restart server (%d)", ret);
+		(void)net_socket_service_unregister(&telnet_server);
+	}
+}
+
+static void telnet_accept(struct zsock_pollfd *pollfd)
+{
+	int sock, ret = 0;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(struct sockaddr);
+
+	sock = zsock_accept(pollfd->fd, &addr, &addrlen);
+	if (sock < 0) {
+		ret = -errno;
+		NET_ERR("Telnet accept error (%d)", ret);
+		return;
+	}
+
+	if (sh_telnet->fds[SOCK_ID_CLIENT].fd > 0) {
+		/* Too many connections. */
+		ret = 0;
+		NET_ERR("Telnet client already connected.");
 		goto error;
 	}
 
-	if (sh_telnet->client_ctx) {
-		LOG_INF("A telnet client is already in.");
+	sh_telnet->fds[SOCK_ID_CLIENT].fd = sock;
+	sh_telnet->fds[SOCK_ID_CLIENT].events = ZSOCK_POLLIN;
+
+	ret = net_socket_service_register(&telnet_server, sh_telnet->fds,
+					  ARRAY_SIZE(sh_telnet->fds), NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to register socket service, (%d)", ret);
+		sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
 		goto error;
 	}
-
-	if (net_context_recv(client, telnet_recv, K_NO_WAIT, NULL)) {
-		LOG_ERR("Unable to setup reception (family %u)",
-			net_context_get_family(client));
-		goto error;
-	}
-
-	net_context_set_accepting(client, false);
 
 	LOG_DBG("Telnet client connected (family AF_INET%s)",
-		net_context_get_family(client) == AF_INET ? "" : "6");
-
-	sh_telnet->client_ctx = client;
+		addr.sa_family == AF_INET ? "" : "6");
 
 	/* Disable echo - if command handling is enabled we reply that we
 	 * support echo.
@@ -353,61 +394,122 @@ static void telnet_accept(struct net_context *client,
 	(void)telnet_echo_set(sh_telnet->shell_context, false);
 
 	return;
+
 error:
-	net_context_put(client);
+	if (sock > 0) {
+		(void)zsock_close(sock);
+	}
+
+	if (ret < 0) {
+		telnet_restart_server();
+	}
 }
 
-static void telnet_setup_server(struct net_context **ctx, sa_family_t family,
-				struct sockaddr *addr, socklen_t addrlen)
+static void telnet_server_cb(struct k_work *work)
 {
-	if (net_context_get(family, SOCK_STREAM, IPPROTO_TCP, ctx)) {
-		LOG_ERR("No context available");
+	struct net_socket_service_event *evt =
+		CONTAINER_OF(work, struct net_socket_service_event, work);
+	int sock_error;
+	socklen_t optlen = sizeof(int);
+
+	if (sh_telnet == NULL) {
+		return;
+	}
+
+	if ((evt->event.revents & ZSOCK_POLLERR) ||
+	    (evt->event.revents & ZSOCK_POLLNVAL)) {
+		(void)zsock_getsockopt(evt->event.fd, SOL_SOCKET,
+				       SO_ERROR, &sock_error, &optlen);
+		NET_ERR("Telnet socket %d error (%d)", evt->event.fd, sock_error);
+
+		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
+			return telnet_end_client_connection();
+		}
+
 		goto error;
 	}
 
-	if (net_context_bind(*ctx, addr, addrlen)) {
-		LOG_ERR("Cannot bind on family AF_INET%s",
+	if (!(evt->event.revents & ZSOCK_POLLIN)) {
+		return;
+	}
+
+	if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV4_LISTEN].fd) {
+		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV4_LISTEN]);
+	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV6_LISTEN].fd) {
+		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV6_LISTEN]);
+	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
+		return telnet_recv(&sh_telnet->fds[SOCK_ID_CLIENT]);
+	}
+
+	NET_ERR("Unexpected FD received for telnet, restarting service.");
+
+error:
+	telnet_restart_server();
+}
+
+static int telnet_setup_server(struct zsock_pollfd *pollfd, sa_family_t family,
+			       struct sockaddr *addr, socklen_t addrlen)
+{
+	int ret = 0;
+
+	pollfd->fd = zsock_socket(family, SOCK_STREAM, IPPROTO_TCP);
+	if (pollfd->fd < 0) {
+		ret = -errno;
+		LOG_ERR("Failed to create telnet AF_INET%s socket",
 			family == AF_INET ? "" : "6");
 		goto error;
 	}
 
-	if (net_context_listen(*ctx, 0)) {
-		LOG_ERR("Cannot listen on");
+	if (zsock_bind(pollfd->fd, addr, addrlen) < 0) {
+		ret = -errno;
+		LOG_ERR("Cannot bind on family AF_INET%s (%d)",
+			family == AF_INET ? "" : "6", ret);
 		goto error;
 	}
 
-	if (net_context_accept(*ctx, telnet_accept, K_NO_WAIT, NULL)) {
-		LOG_ERR("Cannot accept");
+	if (zsock_listen(pollfd->fd, 1)) {
+		ret = -errno;
+		LOG_ERR("Cannot listen on family AF_INET%s (%d)",
+			family == AF_INET ? "" : "6", ret);
 		goto error;
 	}
+
+	pollfd->events = ZSOCK_POLLIN;
 
 	LOG_DBG("Telnet console enabled on AF_INET%s",
 		family == AF_INET ? "" : "6");
 
-	return;
-error:
-	LOG_ERR("Unable to start telnet on AF_INET%s",
-		family == AF_INET ? "" : "6");
+	return 0;
 
-	if (*ctx) {
-		(void)net_context_put(*ctx);
-		*ctx = NULL;
+error:
+	LOG_ERR("Unable to start telnet on AF_INET%s (%d)",
+		family == AF_INET ? "" : "6", ret);
+
+	if (pollfd->fd >= 0) {
+		(void)zsock_close(pollfd->fd);
+		pollfd->fd = -1;
 	}
+
+	return ret;
 }
 
-static int telnet_init(void)
+static int telnet_init(struct shell_telnet *ctx)
 {
+	int ret;
+
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct sockaddr_in any_addr4 = {
 			.sin_family = AF_INET,
 			.sin_port = htons(TELNET_PORT),
 			.sin_addr = INADDR_ANY_INIT
 		};
-		static struct net_context *ctx4;
 
-		telnet_setup_server(&ctx4, AF_INET,
-				    (struct sockaddr *)&any_addr4,
-				    sizeof(any_addr4));
+		ret = telnet_setup_server(&ctx->fds[SOCK_ID_IPV4_LISTEN],
+					  AF_INET, (struct sockaddr *)&any_addr4,
+					  sizeof(any_addr4));
+		if (ret < 0) {
+			goto error;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -416,16 +518,38 @@ static int telnet_init(void)
 			.sin6_port = htons(TELNET_PORT),
 			.sin6_addr = IN6ADDR_ANY_INIT
 		};
-		static struct net_context *ctx6;
 
-		telnet_setup_server(&ctx6, AF_INET6,
-				    (struct sockaddr *)&any_addr6,
-				    sizeof(any_addr6));
+		ret = telnet_setup_server(&ctx->fds[SOCK_ID_IPV6_LISTEN],
+					  AF_INET6, (struct sockaddr *)&any_addr6,
+					  sizeof(any_addr6));
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+	ret = net_socket_service_register(&telnet_server, ctx->fds,
+					  ARRAY_SIZE(ctx->fds), NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to register socket service, %d", ret);
+		goto error;
 	}
 
 	LOG_INF("Telnet shell backend initialized");
 
 	return 0;
+
+error:
+	if (ctx->fds[SOCK_ID_IPV4_LISTEN].fd >= 0) {
+		(void)zsock_close(ctx->fds[SOCK_ID_IPV4_LISTEN].fd);
+		ctx->fds[SOCK_ID_IPV4_LISTEN].fd = -1;
+	}
+
+	if (ctx->fds[SOCK_ID_IPV6_LISTEN].fd >= 0) {
+		(void)zsock_close(ctx->fds[SOCK_ID_IPV6_LISTEN].fd);
+		ctx->fds[SOCK_ID_IPV6_LISTEN].fd = -1;
+	}
+
+	return ret;
 }
 
 /* Shell API */
@@ -440,17 +564,20 @@ static int init(const struct shell_transport *transport,
 	sh_telnet = (struct shell_telnet *)transport->ctx;
 
 	memset(sh_telnet, 0, sizeof(struct shell_telnet));
+	for (int i = 0; i < ARRAY_SIZE(sh_telnet->fds); i++) {
+		sh_telnet->fds[i].fd = -1;
+	}
 
 	sh_telnet->shell_handler = evt_handler;
 	sh_telnet->shell_context = context;
 
-	err = telnet_init();
+	err = telnet_init(sh_telnet);
 	if (err != 0) {
 		return err;
 	}
 
-	k_fifo_init(&sh_telnet->rx_fifo);
 	k_work_init_delayable(&sh_telnet->send_work, telnet_send_prematurely);
+	k_mutex_init(&sh_telnet->rx_lock);
 
 	return 0;
 }
@@ -487,7 +614,7 @@ static int write(const struct shell_transport *transport,
 		return -ENODEV;
 	}
 
-	if (sh_telnet->client_ctx == NULL || sh_telnet->output_lock) {
+	if (sh_telnet->fds[SOCK_ID_CLIENT].fd < 0 || sh_telnet->output_lock) {
 		*cnt = length;
 		return 0;
 	}
@@ -517,7 +644,7 @@ static int write(const struct shell_transport *transport,
 		 */
 		if (lb->buf[lb->len - 1] == '\n' ||
 		    lb->len == TELNET_LINE_SIZE) {
-			err = telnet_send();
+			err = telnet_send(true);
 			if (err != 0) {
 				*cnt = length;
 				return err;
@@ -544,41 +671,38 @@ static int write(const struct shell_transport *transport,
 static int read(const struct shell_transport *transport,
 		void *data, size_t length, size_t *cnt)
 {
-	struct net_pkt *pkt;
 	size_t read_len;
-	bool flush = true;
 
 	if (sh_telnet == NULL) {
 		return -ENODEV;
 	}
 
-	if (sh_telnet->client_ctx == NULL) {
+	if (sh_telnet->fds[SOCK_ID_CLIENT].fd < 0) {
 		goto no_data;
 	}
 
-	pkt = k_fifo_peek_head(&sh_telnet->rx_fifo);
-	if (pkt == NULL) {
+	k_mutex_lock(&sh_telnet->rx_lock, K_FOREVER);
+
+	if (sh_telnet->rx_len == 0) {
+		k_mutex_unlock(&sh_telnet->rx_lock);
 		goto no_data;
 	}
 
-	read_len = net_pkt_remaining_data(pkt);
+	read_len = sh_telnet->rx_len;
 	if (read_len > length) {
 		read_len = length;
-		flush = false;
 	}
 
+	memcpy(data, sh_telnet->rx_buf, read_len);
 	*cnt = read_len;
-	if (net_pkt_read(pkt, data, read_len) < 0) {
-		/* Failed to read, get rid of the faulty packet. */
-		LOG_ERR("Failed to read net packet.");
-		*cnt = 0;
-		flush = true;
+
+	sh_telnet->rx_len -= read_len;
+	if (sh_telnet->rx_len > 0) {
+		memmove(sh_telnet->rx_buf, sh_telnet->rx_buf + read_len,
+			sh_telnet->rx_len);
 	}
 
-	if (flush) {
-		(void)k_fifo_get(&sh_telnet->rx_fifo, K_NO_WAIT);
-		net_pkt_unref(pkt);
-	}
+	k_mutex_unlock(&sh_telnet->rx_lock);
 
 	return 0;
 
@@ -597,7 +721,6 @@ const struct shell_transport_api shell_telnet_transport_api = {
 
 static int enable_shell_telnet(void)
 {
-
 	bool log_backend = CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_TELNET_INIT_LOG_LEVEL;
@@ -607,7 +730,11 @@ static int enable_shell_telnet(void)
 	return shell_init(&shell_telnet, NULL, cfg_flags, log_backend, level);
 }
 
-SYS_INIT(enable_shell_telnet, APPLICATION, 0);
+BUILD_ASSERT(CONFIG_SHELL_TELNET_INIT_PRIORITY > CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO,
+	     "CONFIG_SHELL_TELNET_INIT_PRIORITY must be higher than "
+	     "CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO");
+
+SYS_INIT(enable_shell_telnet, APPLICATION, CONFIG_SHELL_TELNET_INIT_PRIORITY);
 
 const struct shell *shell_backend_telnet_get_ptr(void)
 {

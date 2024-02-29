@@ -443,10 +443,21 @@ config SHELL_BACKEND_TELNET
 	bool "TELNET backend."
 	depends on NET_TCP
 	depends on NET_IPV4 || NET_IPV6
+	select NET_SOCKETS_SERVICE
+	select NET_SOCKETS
 	help
 	  Enable TELNET backend.
 
 if SHELL_BACKEND_TELNET
+
+config SHELL_TELNET_INIT_PRIORITY
+	int "Initialization priority"
+	default 95
+	range NET_SOCKETS_SERVICE_INIT_PRIO 99
+	help
+	  Initialization priority for telnet shell backend. This must be higher
+	  than socket service initialization priority, as socket service has to
+	  be initialized earlier.
 
 config SHELL_PROMPT_TELNET
 	string "Displayed prompt name"
