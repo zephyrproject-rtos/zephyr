@@ -228,7 +228,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 				uint32_t value)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+	struct bt_conn *conn = hf->acl;
 
 	LOG_DBG("Index :%u, Value :%u", index, value);
 
@@ -351,7 +351,7 @@ int ciev_handle(struct at_client *hf_at)
 int ring_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+	struct bt_conn *conn = hf->acl;
 
 	if (bt_hf->ring_indication) {
 		bt_hf->ring_indication(conn);
@@ -405,7 +405,7 @@ int cmd_complete(struct at_client *hf_at, enum at_result result,
 	       enum at_cme cme_err)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+	struct bt_conn *conn = hf->acl;
 	struct bt_hfp_hf_cmd_complete cmd = { 0 };
 
 	LOG_DBG("");
@@ -448,7 +448,7 @@ int cmee_finish(struct at_client *hf_at, enum at_result result,
 static void slc_completed(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
+	struct bt_conn *conn = hf->acl;
 
 	if (bt_hf->connected) {
 		bt_hf->connected(conn);
@@ -561,7 +561,7 @@ static struct bt_hfp_hf *bt_hfp_hf_lookup_bt_conn(struct bt_conn *conn)
 	for (i = 0; i < ARRAY_SIZE(bt_hfp_hf_pool); i++) {
 		struct bt_hfp_hf *hf = &bt_hfp_hf_pool[i];
 
-		if (hf->rfcomm_dlc.session->br_chan.chan.conn == conn) {
+		if (hf->acl == conn) {
 			return hf;
 		}
 	}
@@ -622,7 +622,8 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 
 static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
-	struct bt_conn *conn = dlc->session->br_chan.chan.conn;
+	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
+	struct bt_conn *conn = hf->acl;
 
 	LOG_DBG("hf disconnected!");
 	if (bt_hf->disconnected) {
@@ -658,6 +659,7 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 			continue;
 		}
 
+		hf->acl = conn;
 		hf->at.buf = hf->hf_buffer;
 		hf->at.buf_max_len = HF_MAX_BUF_LEN;
 
