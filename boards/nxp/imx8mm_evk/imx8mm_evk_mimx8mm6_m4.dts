@@ -8,7 +8,7 @@
 
 #include <nxp/nxp_imx8mm_m4.dtsi>
 
-#include "mimx8mm_evk-pinctrl.dtsi"
+#include "imx8mm_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8M Mini EVK board";

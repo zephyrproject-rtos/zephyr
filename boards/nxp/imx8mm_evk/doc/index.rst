@@ -1,7 +1,7 @@
 .. _imx8mm_evk:
 
-NXP i.MX8MM EVK (Cortex-A53)
-############################
+NXP i.MX8MM EVK
+###############
 
 Overview
 ********
@@ -58,6 +58,34 @@ features:
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
 
+The Zephyr imx8mm_evk board for Cortex-M4 supports the following hardware
+features:
+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| NVIC      | on-chip    | nested vector interrupt controller  |
++-----------+------------+-------------------------------------+
+| SYSTICK   | on-chip    | systick                             |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | GPIO output                         |
+|           |            | GPIO input                          |
++-----------+------------+-------------------------------------+
+
+The default configuration can be found in the defconfig file:
+:zephyr_file:`boards/nxp/imx8mm_evk/imx8mm_evk_mimx8mm6_m4_defconfig`
+
+It is recommended to disable peripherals used by the M4 core on the Linux host.
+
+Other hardware features are not currently supported by the port.
+
 Devices
 ========
 System Clock
@@ -65,14 +93,16 @@ System Clock
 
 This board configuration uses a system clock frequency of 8 MHz.
 
+The M4 Core is configured to run at a 400 MHz clock speed.
+
 Serial Port
 -----------
 
 This board configuration uses a single serial communication channel with the
-CPU's UART4.
+CPU's UART4. This is used for the M4 and A53 core targets.
 
-Programming and Debugging
-*************************
+Programming and Debugging (A53)
+*******************************
 
 Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
 plug the SD card into the board. Power it up and stop the u-boot execution at
@@ -120,6 +150,82 @@ Use Jailhouse hypervisor, after root cell linux is up:
     #jailhouse cell create imx8mm-zephyr.cell
     #jailhouse cell load 1 zephyr.bin -a 0x93c00000
     #jailhouse cell start 1
+
+Programming and Debugging (M4)
+******************************
+
+The MIMX8MM EVK board doesn't have QSPI flash for the M4 and it needs
+to be started by the A53 core. The A53 core is responsible to load the M4 binary
+application into the RAM, put the M4 in reset, set the M4 Program Counter and
+Stack Pointer, and get the M4 out of reset. The A53 can perform these steps at
+bootloader level or after the Linux system has booted.
+
+The M4 can use up to 3 different RAMs. These are the memory mapping for A53 and M4:
+
++------------+-------------------------+------------------------+-----------------------+----------------------+
+| Region     | Cortex-A53              | Cortex-M4 (System Bus) | Cortex-M4 (Code Bus)  | Size                 |
++============+=========================+========================+=======================+======================+
+| OCRAM      | 0x00900000-0x0093FFFF   | 0x20200000-0x2023FFFF  | 0x00900000-0x0093FFFF | 256KB                |
++------------+-------------------------+------------------------+-----------------------+----------------------+
+| TCMU       | 0x00800000-0x0081FFFF   | 0x20000000-0x2001FFFF  |                       | 128KB                |
++------------+-------------------------+------------------------+-----------------------+----------------------+
+| TCML       | 0x007E0000-0x007FFFFF   |                        | 0x1FFE0000-0x1FFFFFFF | 128KB                |
++------------+-------------------------+------------------------+-----------------------+----------------------+
+| OCRAM_S    | 0x00180000-0x00187FFF   | 0x20180000-0x20187FFF  | 0x00180000-0x00187FFF | 32KB                 |
++------------+-------------------------+------------------------+-----------------------+----------------------+
+
+For more information about memory mapping see the
+`i.MX 8M Applications Processor Reference Manual`_  (section 2.1.2 and 2.1.3)
+
+At compilation time you have to choose which RAM will be used. This
+configuration is done in the file
+:zephyr_file:`boards/nxp/imx8mm_evk/imx8mm_evk_mimx8mm6_m4.dts`
+with "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram" properties.
+The available configurations are:
+
+.. code-block:: none
+
+   "zephyr,flash"
+   - &tcml_code
+   - &ocram_code
+   - &ocram_s_code
+
+   "zephyr,sram"
+   - &tcmu_sys
+   - &ocram_sys
+   - &ocram_s_sys
+
+Load and run Zephyr on M4 from A53 using u-boot by copying the compiled
+``zephyr.bin`` to the first FAT partition of the SD card and plug the SD
+card into the board. Power it up and stop the u-boot execution at prompt.
+
+Load the M4 binary onto the desired memory and start its execution using:
+
+.. code-block:: console
+
+   fatload mmc 0:1 0x7e0000 zephyr.bin;bootaux 0x7e0000
+
+Debugging
+=========
+
+MIMX8MM EVK board can be debugged by connecting an external JLink
+JTAG debugger to the J902 debug connector and to the PC. Then
+the application can be debugged using the usual way.
+
+Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx8mm_evk/mimx8mm6/m4
+   :goals: debug
+
+Open a serial terminal, step through the application in your debugger, and you
+should see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS build zephyr-v2.0.0-1859-g292afe8533c0 *****
+   Hello World! imx8mm_evk
 
 References
 ==========
