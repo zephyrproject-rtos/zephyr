@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimx8mp_evk_itcm
-name: NXP i.MX8M Plus EVK (ITCM)
+identifier: imx8mp_evk/mimx8ml8/m7
+name: NXP i.MX8M Plus EVK
 type: mcu
 arch: arm
 ram: 128

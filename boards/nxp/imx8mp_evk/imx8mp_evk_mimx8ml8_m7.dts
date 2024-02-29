@@ -7,16 +7,16 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8ml_m7.dtsi>
-#include "mimx8mp_evk-pinctrl.dtsi"
+#include "imx8mp_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8M Plus EVK board";
 	compatible = "nxp,mimx8mp_evk";
 
 	chosen {
-		/* DDR */
-		zephyr,flash = &ddr_code;
-		zephyr,sram = &ddr_sys;
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
 
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
