@@ -88,6 +88,7 @@ void log_frontend_msg(const void *source,
 		      uint8_t *package, const void *data)
 {
 	struct mock_log_backend_msg *exp_msg = &mock.exp_msgs[mock.msg_proc_idx];
+	struct cbprintf_package_desc *package_desc = (struct cbprintf_package_desc *)package;
 
 	if (mock.do_check == false) {
 		return;
@@ -97,6 +98,13 @@ void log_frontend_msg(const void *source,
 
 	if (!exp_msg->check) {
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)) {
+		/* If RO string locations are appended there is always at least 1: format string. */
+		zassert_true(package_desc->ro_str_cnt > 0);
+	} else {
+		zassert_equal(package_desc->ro_str_cnt, 0);
 	}
 
 	zassert_equal(desc.level, exp_msg->level);
