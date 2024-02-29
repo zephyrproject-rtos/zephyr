@@ -24,5 +24,12 @@ properties:
     description: |
       Input pin for Master In Slave Out.
 
+  sio-gpios:
+    type: phandle-array
+    description: |
+      Single I/O gpio info
+
+      GPIO input/output pin for 3-wire mode.
+
   clocks:
     required: true
