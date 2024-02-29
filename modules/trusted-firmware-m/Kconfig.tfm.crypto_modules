@@ -88,6 +88,17 @@ config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
 	  is not used.
 	  Note that key agreement is under key derivation in the current implementation.
 
+config TFM_CRYPTO_PAKE_MODULE_ENABLED
+	bool "PAKE crypto module"
+	default y
+	depends on PSA_HAS_PAKE_SUPPORT
+	depends on NRF_SECURITY
+	depends on PSA_CRYPTO_DRIVER_OBERON || PSA_CRYPTO_DRIVER_CRACEN
+	help
+	  Enables the PAKE crypto module within the crypto partition.
+	  Unset this option if the functionality provided by 'crypto_pake.c'
+	  is not used.
+
 endif # TFM_PARTITION_CRYPTO
 
 endif # BUILD_WITH_TFM
