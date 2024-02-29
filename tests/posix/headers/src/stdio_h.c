@@ -13,7 +13,6 @@
 */
 ZTEST(posix_headers, test_stdio_h)
 {
-    #ifdef CONFIG_POSIX_API
     zassert_not_null((void *)getchar, "getchar is null");
     zassert_not_null((void *)getc, "getc is null");
     zassert_not_null((void *)fgetc, "fgetc is null");
