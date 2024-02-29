@@ -937,9 +937,7 @@ static int enable_logger(void)
 				K_KERNEL_STACK_SIZEOF(logging_stack),
 				log_process_thread_func, NULL, NULL, NULL,
 				LOG_PROCESS_THREAD_PRIORITY, 0,
-				COND_CODE_1(CONFIG_LOG_PROCESS_THREAD,
-					K_MSEC(CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS),
-					K_NO_WAIT));
+				K_MSEC(CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS));
 		k_thread_name_set(&logging_thread, "logging");
 	} else {
 		(void)z_log_init(false, false);
