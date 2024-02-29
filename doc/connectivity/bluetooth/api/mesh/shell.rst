@@ -1763,6 +1763,31 @@ Provisioning Servers on devices in a mesh network.
 	Get a list of all Remote Provisioning Client model instances on the node.
 
 
+Large Composition Data Client
+-----------------------------
+
+The Large Composition Data Client is an optional Bluetooth Mesh model enabled through the
+:kconfig:option:`CONFIG_BT_MESH_LARGE_COMP_DATA_CLI` configuration option. The Large Composition Data Client
+model is used to support the functionality of reading pages of Composition Data that do not fit in
+a Config Composition Data Status message, and reading the metadata of the model instances.
+
+``mesh models lcd large-comp-data-get <Page> <Offset>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Send the Large Composition Data Get message to query a portion of the Composition Data state of a node.
+
+	* ``Page``: Page number of the Composition Data.
+	* ``Offset``: Offset within the page.
+
+``mesh models lcd models-metadata-get <Page> <Offset>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Send the Models Metadata Get message to query a portion of a page of the Models Metadata state.
+
+	* ``Page``: Page number of the Models Metadata.
+	* ``Offset``: Offset within the page.
+
+
 Configuration database
 ======================
 
