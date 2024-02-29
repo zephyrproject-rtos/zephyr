@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: warp7_m4
+identifier: warp7/mcimx7d/m4
 name: WaRP7 IMX7S
 type: mcu
 arch: arm

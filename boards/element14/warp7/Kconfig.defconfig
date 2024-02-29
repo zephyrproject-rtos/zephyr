@@ -3,10 +3,7 @@
 # Copyright (c) 2018, Diego Sueiro
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_WARP7_M4
-
-config BOARD
-	default "warp7_m4"
+if BOARD_WARP7
 
 config FXOS8700_DRDY_INT1
 	default y
@@ -23,4 +20,4 @@ config FLASH_BASE_ADDRESS
 	default 0
 endif
 
-endif # BOARD_WARP7_M4
+endif # BOARD_WARP7
