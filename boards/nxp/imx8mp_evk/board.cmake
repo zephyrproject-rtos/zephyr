@@ -10,3 +10,11 @@ if(CONFIG_SOC_MIMX8MP_ADSP)
 
   board_set_rimage_target(imx8m)
 endif()
+
+if(CONFIG_SOC_MIMX8MP_M7)
+  board_set_debugger_ifnset(jlink)
+  board_set_flasher_ifnset(jlink)
+
+  board_runner_args(jlink "--device=MIMX8ML8_M7")
+  include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+endif()
