@@ -111,14 +111,14 @@ static void telnet_reply_dont_command(struct telnet_simple_command *cmd)
 		int ret = telnet_echo_set(sh_telnet->shell_context, false);
 
 		if (ret >= 0) {
-			cmd->op = NVT_CMD_WONT;
+			cmd->op = NVT_CMD_WILL_NOT;
 		} else {
 			cmd->op = NVT_CMD_WILL;
 		}
 		break;
 	}
 	default:
-		cmd->op = NVT_CMD_WONT;
+		cmd->op = NVT_CMD_WILL_NOT;
 		break;
 	}
 
@@ -139,12 +139,12 @@ static void telnet_reply_do_command(struct telnet_simple_command *cmd)
 		if (ret >= 0) {
 			cmd->op = NVT_CMD_WILL;
 		} else {
-			cmd->op = NVT_CMD_WONT;
+			cmd->op = NVT_CMD_WILL_NOT;
 		}
 		break;
 	}
 	default:
-		cmd->op = NVT_CMD_WONT;
+		cmd->op = NVT_CMD_WILL_NOT;
 		break;
 	}
 
@@ -172,7 +172,7 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 	case NVT_CMD_DO:
 		telnet_reply_do_command(cmd);
 		break;
-	case NVT_CMD_DONT:
+	case NVT_CMD_DO_NOT:
 		telnet_reply_dont_command(cmd);
 		break;
 	default:
@@ -238,8 +238,8 @@ static void telnet_send_prematurely(struct k_work *work)
 
 static int telnet_command_length(uint8_t op)
 {
-	if (op == NVT_CMD_SB || op == NVT_CMD_WILL || op == NVT_CMD_WONT ||
-	    op == NVT_CMD_DO || op == NVT_CMD_DONT) {
+	if (op == NVT_CMD_SB || op == NVT_CMD_WILL || op == NVT_CMD_WILL_NOT ||
+	    op == NVT_CMD_DO || op == NVT_CMD_DO_NOT) {
 		return TELNET_WILL_DO_COMMAND_LEN;
 	}
 
