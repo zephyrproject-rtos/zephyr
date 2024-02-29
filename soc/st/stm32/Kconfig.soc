@@ -7,6 +7,6 @@ config SOC_FAMILY_STM32
 	bool
 
 config SOC_FAMILY
-	default "st_stm32" if SOC_FAMILY_STM32
+	default "stm32" if SOC_FAMILY_STM32
 
 rsource "*/Kconfig.soc"
