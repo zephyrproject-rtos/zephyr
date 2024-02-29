@@ -1,4 +1,4 @@
-.. _udoo_neo_full_m4:
+.. _udoo_neo_full:
 
 UDOO Neo Full
 #############
@@ -13,7 +13,7 @@ core running up to 227 MHz for high CPU performance and real-time response.
 Zephyr was ported to run on the Cortex-M4 core only. In a future release, it
 will also communicate with the Cortex-A9 core (running Linux) via OpenAMP.
 
-.. figure:: udoo_neo_full_m4.jpg
+.. figure:: udoo_neo_full_mcimx6x_m4.jpg
    :align: center
    :alt: UDOO-Neo-Full
 
@@ -135,7 +135,7 @@ features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/udoo_neo_full_m4/udoo_neo_full_m4_defconfig``
+	:zephyr_file:`boards/udoo/udoo_neo_full/udoo_neo_full_mcimx6x_m4_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -200,7 +200,7 @@ References
 - `NXP i.MX 6SoloX Reference Manual`_ Chapter 2 - Memory Maps
 
 You have to choose which RAM will be used at compilation time. This configuration
-is done in the file ``boards/arm/udoo_neo_full_m4/udoo_neo_full_m4.dts``.
+is done in the file :zephyr_file:`boards/udoo/udoo_neo_full/udoo_neo_full_mcimx6x_m4.dts`.
 
 If you want to have the code placed in the subregion of a memory, which will
 likely be the case when using DDR, select "zephyr,flash=&flash" and set the
