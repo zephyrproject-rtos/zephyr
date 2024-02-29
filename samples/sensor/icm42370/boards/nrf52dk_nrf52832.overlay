@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+        icm42370@68 {
+                compatible = "invensense,icm42370";
+                status = "okay";
+                reg = <0x68>;
+                int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+        };
+};
