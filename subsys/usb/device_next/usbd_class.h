@@ -54,12 +54,14 @@ struct usbd_class_iter *usbd_class_get_by_iface(struct usbd_contex *uds_ctx,
  * @brief Get class context by configuration and interface number
  *
  * @param[in] uds_ctx Pointer to device context
+ * @param[in] speed   Speed the configuration number refers to
  * @param[in] cnum    Configuration number
  * @param[in] inum    Interface number
  *
  * @return Class iter pointer or NULL
  */
 struct usbd_class_iter *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
+						 const enum usbd_speed speed,
 						 uint8_t cnum,
 						 uint8_t inum);
 
@@ -97,11 +99,13 @@ struct usbd_class_iter *usbd_class_get_by_req(struct usbd_contex *uds_ctx,
  * @brief Remove all registered class instances from a configuration
  *
  * @param[in] uds_ctx Pointer to device context
+ * @param[in] speed   Speed the configuration number applies to
  * @param[in] cfg     Configuration number (bConfigurationValue)
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
+			  const enum usbd_speed speed,
 			  const uint8_t cfg);
 
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_H */
