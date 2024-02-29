@@ -4,11 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "_common.h"
-#ifdef CONFIG_POSIX_API
 #include <stdio.h>
-#else
-#include <zephyr/posix/stdio.h>
-#endif
 
 /**
  * @brief Test existence and basic functionality of stdio.h
