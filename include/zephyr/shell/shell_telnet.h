@@ -17,6 +17,7 @@ extern "C" {
 extern const struct shell_transport_api shell_telnet_transport_api;
 
 #define SHELL_TELNET_POLLFD_COUNT 3
+#define SHELL_TELNET_MAX_CMD_SIZE 3
 
 /** Line buffer structure. */
 struct shell_telnet_line_buf {
@@ -49,6 +50,8 @@ struct shell_telnet {
 
 	/** Mutex protecting the input buffer access. */
 	struct k_mutex rx_lock;
+	uint8_t cmd_buf[SHELL_TELNET_MAX_CMD_SIZE];
+	uint8_t cmd_len;
 
 	/** The delayed work is used to send non-lf terminated output that has
 	 *  been around for "too long". This will prove to be useful
