@@ -1,4 +1,4 @@
-.. _colibri_imx7d_m4:
+.. _colibri_imx7d:
 
 NXP i.MX 7 Computer on Module - Colibri iMX7
 ############################################
@@ -12,7 +12,7 @@ Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
 
 
-.. image:: colibri_imx7d_m4.jpg
+.. image:: colibri_imx7d.jpg
    :align: center
    :alt: Colibri-iMX7
 
@@ -91,7 +91,7 @@ supports the following hardware features on the Cortex M4 Core:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/colibri_imx7d_m4/colibri_imx7d_m4_defconfig``
+	:zephyr_file:`boards/toradex/colibri_imx7d/colibri_imx7d_mcimx7d_m4_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -167,7 +167,8 @@ References
 
 
 At compilation time you have to choose which RAM will be used. This configuration is
-done in the file ``boards/arm/colibri_imx7d_m4/colibri_imx7d_m4.dts`` with "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram"
+done in the file :zephyr_file:`boards/toradex/colibri_imx7d/colibri_imx7d_mcimx7d_m4.dts`
+with "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram"
 properties. The available configurations are:
 
 .. code-block:: none
@@ -274,7 +275,7 @@ Issue the following commands inside J-Link commander:
    w4 0x00180004 00905020
    w4 0x3039000C 0xAA
 
-With these mechanisms, applications for the ``colibri_imx7d_m4`` board
+With these mechanisms, applications for the ``colibri_imx7d/imx7d/m4`` board
 configuration can be built and debugged in the usual way (see
 :ref:`build_an_application` and :ref:`application_run` for more details).
 
