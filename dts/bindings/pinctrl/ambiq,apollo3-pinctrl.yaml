@@ -99,3 +99,13 @@ child-binding:
         default: 0
         description: |
           IOM nCE module select. The default value is reset value.
+      ambiq,iom-chip-enable:
+        type: int
+        default: 1
+        description:
+          IOM pin used as chip enable or as MSPI. Ignored if not configured as CE.
+      ambiq,iom-module:
+        type: int
+        default: 0
+        description:
+          IOM module number. Ignored if pin is not configured as CE.
