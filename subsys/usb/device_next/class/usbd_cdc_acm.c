@@ -444,7 +444,6 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 
 static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
 	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
@@ -452,13 +451,6 @@ static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
 	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
-
-	if (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS) {
-		LOG_INF("FS endpoint descriptor needs to be updated");
-		desc->if0_int_ep.bEndpointAddress = desc->if0_hs_int_ep.bEndpointAddress;
-		desc->if1_in_ep.bEndpointAddress = desc->if1_hs_in_ep.bEndpointAddress;
-		desc->if1_out_ep.bEndpointAddress = desc->if1_hs_out_ep.bEndpointAddress;
-	}
 
 	return 0;
 }

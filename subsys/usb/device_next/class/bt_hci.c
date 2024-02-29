@@ -460,16 +460,10 @@ static void *bt_hci_get_desc(struct usbd_class_node *const c_nd,
 static int bt_hci_init(struct usbd_class_node *const c_nd)
 {
 
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
 	struct bt_hci_data *data = usbd_class_get_private(c_nd);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
 	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
-	if (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS) {
-		LOG_INF("FS endpoint descriptor needs to be updated");
-		desc->if0_in_ep.bEndpointAddress = desc->if0_hs_in_ep.bEndpointAddress;
-		desc->if0_out_ep.bEndpointAddress = desc->if0_hs_out_ep.bEndpointAddress;
-	}
 
 	return 0;
 }

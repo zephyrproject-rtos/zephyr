@@ -14,12 +14,22 @@
  * @brief Get device descriptor bNumConfigurations value
  *
  * @param[in] uds_ctx Pointer to a device context
+ * @param[in] speed   Speed for which the bNumConfigurations should be returned
  *
  * @return bNumConfigurations value
  */
-static inline uint8_t usbd_get_num_configs(const struct usbd_contex *const uds_ctx)
+static inline uint8_t usbd_get_num_configs(const struct usbd_contex *const uds_ctx,
+					   const enum usbd_speed speed)
 {
-	struct usb_device_descriptor *desc = uds_ctx->desc;
+	struct usb_device_descriptor *desc;
+
+	if (speed == USBD_SPEED_FS) {
+		desc = uds_ctx->fs_desc;
+	} else if (speed == USBD_SPEED_HS) {
+		desc = uds_ctx->hs_desc;
+	} else {
+		return 0;
+	}
 
 	return desc->bNumConfigurations;
 }
@@ -29,12 +39,22 @@ static inline uint8_t usbd_get_num_configs(const struct usbd_contex *const uds_c
  * @brief Set device descriptor bNumConfigurations value
  *
  * @param[in] uds_ctx Pointer to a device context
+ * @param[in] speed   Speed for which the bNumConfigurations should be set
  * @param[in] value   new bNumConfigurations value
  */
 static inline void usbd_set_num_configs(struct usbd_contex *const uds_ctx,
+					const enum usbd_speed speed,
 					const uint8_t value)
 {
-	struct usb_device_descriptor *desc = uds_ctx->desc;
+	struct usb_device_descriptor *desc;
+
+	if (speed == USBD_SPEED_FS) {
+		desc = uds_ctx->fs_desc;
+	} else if (speed == USBD_SPEED_HS) {
+		desc = uds_ctx->hs_desc;
+	} else {
+		return;
+	}
 
 	desc->bNumConfigurations = value;
 }

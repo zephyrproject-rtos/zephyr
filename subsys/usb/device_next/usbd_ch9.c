@@ -122,6 +122,7 @@ static int sreq_set_address(struct usbd_contex *const uds_ctx)
 static int sreq_set_configuration(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	const enum usbd_speed speed = usbd_bus_speed(uds_ctx);
 	int ret;
 
 	LOG_INF("Set Configuration Request value %u", setup->wValue);
@@ -142,7 +143,7 @@ static int sreq_set_configuration(struct usbd_contex *const uds_ctx)
 		return 0;
 	}
 
-	if (setup->wValue && !usbd_config_exist(uds_ctx, setup->wValue)) {
+	if (setup->wValue && !usbd_config_exist(uds_ctx, speed, setup->wValue)) {
 		errno = -EPERM;
 		return 0;
 	}
@@ -467,7 +468,17 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 		return 0;
 	}
 
-	cfg_nd = usbd_config_get(uds_ctx, idx + 1);
+	if (other_cfg) {
+		if (speed == USBD_SPEED_FS) {
+			get_desc_speed = USBD_SPEED_HS;
+		} else {
+			get_desc_speed = USBD_SPEED_FS;
+		}
+	} else {
+		get_desc_speed = speed;
+	}
+
+	cfg_nd = usbd_config_get(uds_ctx, get_desc_speed, idx + 1);
 	if (cfg_nd == NULL) {
 		LOG_ERR("Configuration descriptor %u not found", idx + 1);
 		errno = -ENOTSUP;
@@ -475,29 +486,12 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 	}
 
 	if (other_cfg) {
-		/*
-		 * Because the structure of the other-speed-configuration is
-		 * the same as a configuration descriptor, and the other speed
-		 * function collection has the same length and the number of
-		 * interfaces and endpoints, we simply copy the configuration
-		 * descriptor and update the type.
-		 * If at some point the number of interfaces or endpoints for
-		 * full and high speed descritpors in a class implementation
-		 * becomes different, we need to revisit this and compute the
-		 * configuration descriptor properties on the fly.
-		 */
+		/* Copy the configuration descriptor and update the type */
 		memcpy(&other_desc, cfg_nd->desc, sizeof(other_desc));
 		other_desc.bDescriptorType = USB_DESC_OTHER_SPEED;
-
 		cfg_desc = &other_desc;
-		if (speed != USBD_SPEED_HS) {
-			get_desc_speed = USBD_SPEED_HS;
-		} else {
-			get_desc_speed = USBD_SPEED_FS;
-		}
 	} else {
 		cfg_desc = cfg_nd->desc;
-		get_desc_speed = speed;
 	}
 
 	net_buf_add_mem(buf, cfg_desc, MIN(net_buf_tailroom(buf), cfg_desc->bLength));
@@ -535,7 +529,17 @@ static int sreq_get_desc(struct usbd_contex *const uds_ctx,
 	size_t len;
 
 	if (type == USB_DESC_DEVICE) {
-		head = uds_ctx->desc;
+		switch (usbd_bus_speed(uds_ctx)) {
+		case USBD_SPEED_FS:
+			head = uds_ctx->fs_desc;
+			break;
+		case USBD_SPEED_HS:
+			head = uds_ctx->hs_desc;
+			break;
+		default:
+			errno = -ENOTSUP;
+			return 0;
+		}
 	} else {
 		head = usbd_get_descriptor(uds_ctx, type, idx);
 	}
@@ -555,7 +559,10 @@ static int sreq_get_dev_qualifier(struct usbd_contex *const uds_ctx,
 				  struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	struct usb_device_descriptor *d_desc = uds_ctx->desc;
+	/* At Full-Speed we want High-Speed descriptor and vice versa */
+	struct usb_device_descriptor *d_desc =
+		usbd_bus_speed(uds_ctx) == USBD_SPEED_FS ?
+		uds_ctx->hs_desc : uds_ctx->fs_desc;
 	struct usb_device_qualifier_descriptor q_desc = {
 		.bLength = sizeof(struct usb_device_qualifier_descriptor),
 		.bDescriptorType = USB_DESC_DEVICE_QUALIFIER,

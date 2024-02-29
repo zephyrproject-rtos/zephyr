@@ -454,18 +454,6 @@ static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
 	desc->if0_union.bSubordinateInterface0 = if_num + 1;
 	LOG_DBG("CDC ECM class initialized");
 
-	/* Core device support configures the instance's endpoint addresses,
-	 * but only for the highest supported speed descriptor set. Fix this
-	 * for the case where a high-speed capable controller is connected to
-	 * the full-speed bus.
-	 */
-	if (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS) {
-		LOG_INF("FS endpoint descriptor needs to be updated");
-		desc->if0_int_ep.bEndpointAddress = desc->if0_hs_int_ep.bEndpointAddress;
-		desc->if1_1_in_ep.bEndpointAddress = desc->if1_1_hs_in_ep.bEndpointAddress;
-		desc->if1_1_out_ep.bEndpointAddress = desc->if1_1_hs_out_ep.bEndpointAddress;
-	}
-
 	if (usbd_add_descriptor(c_nd->data->uds_ctx, data->mac_desc_nd)) {
 		LOG_ERR("Failed to add iMACAddress string descriptor");
 	} else {

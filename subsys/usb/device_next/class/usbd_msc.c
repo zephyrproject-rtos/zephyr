@@ -766,7 +766,6 @@ static void *msc_bot_get_desc(struct usbd_class_node *const node,
 /* Initialization of the class implementation */
 static int msc_bot_init(struct usbd_class_node *const node)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
 	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 	struct msc_bot_desc *desc = ctx->desc;
 
@@ -782,12 +781,6 @@ static int msc_bot_init(struct usbd_class_node *const node)
 
 		scsi_init(&ctx->luns[ctx->registered_luns++], lun->disk,
 			  lun->vendor, lun->product, lun->revision);
-	}
-
-	if (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS) {
-		LOG_INF("FS endpoint descriptor needs to be updated");
-		desc->if0_in_ep.bEndpointAddress = desc->if0_hs_in_ep.bEndpointAddress;
-		desc->if0_out_ep.bEndpointAddress = desc->if0_hs_out_ep.bEndpointAddress;
 	}
 
 	return 0;

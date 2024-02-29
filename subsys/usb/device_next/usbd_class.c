@@ -45,13 +45,14 @@ size_t usbd_class_desc_len(struct usbd_class_node *const c_nd,
 
 struct usbd_class_iter *
 usbd_class_get_by_config(struct usbd_contex *const uds_ctx,
+			 const enum usbd_speed speed,
 			 const uint8_t cnum,
 			 const uint8_t inum)
 {
 	struct usbd_class_iter *iter;
 	struct usbd_config_node *cfg_nd;
 
-	cfg_nd = usbd_config_get(uds_ctx, cnum);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cnum);
 	if (cfg_nd == NULL) {
 		return NULL;
 	}
@@ -141,6 +142,7 @@ usbd_class_get_by_ep(struct usbd_contex *const uds_ctx,
 {
 	struct usbd_class_iter *iter;
 	struct usbd_config_node *cfg_nd;
+	enum usbd_speed speed;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t cfg;
 	uint32_t ep_bm;
@@ -157,7 +159,8 @@ usbd_class_get_by_ep(struct usbd_contex *const uds_ctx,
 	}
 
 	cfg = usbd_get_config_value(uds_ctx);
-	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	speed = usbd_bus_speed(uds_ctx);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
 	if (cfg_nd == NULL) {
 		return NULL;
 	}
@@ -202,11 +205,22 @@ usbd_class_get_by_req(struct usbd_contex *const uds_ctx,
 	return NULL;
 }
 
-static struct usbd_class_iter *usbd_class_iter_get(const char *name)
+static struct usbd_class_iter *
+usbd_class_iter_get(const char *name, const enum usbd_speed speed)
 {
-	STRUCT_SECTION_FOREACH(usbd_class_iter, iter) {
-		if (strcmp(name, iter->c_nd->name) == 0) {
-			return iter;
+	if (speed == USBD_SPEED_FS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs,
+						 usbd_class_iter, iter) {
+			if (strcmp(name, iter->c_nd->name) == 0) {
+				return iter;
+			}
+		}
+	} else if (speed == USBD_SPEED_HS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
+						 usbd_class_iter, iter) {
+			if (strcmp(name, iter->c_nd->name) == 0) {
+				return iter;
+			}
 		}
 	}
 
@@ -217,11 +231,12 @@ static struct usbd_class_iter *usbd_class_iter_get(const char *name)
 
 static int usbd_class_append(struct usbd_contex *const uds_ctx,
 			     struct usbd_class_iter *const iter,
+			     const enum usbd_speed speed,
 			     const uint8_t cfg)
 {
 	struct usbd_config_node *cfg_nd;
 
-	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
 	if (cfg_nd == NULL) {
 		return -ENODATA;
 	}
@@ -233,11 +248,12 @@ static int usbd_class_append(struct usbd_contex *const uds_ctx,
 
 static int usbd_class_remove(struct usbd_contex *const uds_ctx,
 			     struct usbd_class_iter *const iter,
+			     const enum usbd_speed speed,
 			     const uint8_t cfg)
 {
 	struct usbd_config_node *cfg_nd;
 
-	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
 	if (cfg_nd == NULL) {
 		return -ENODATA;
 	}
@@ -250,13 +266,14 @@ static int usbd_class_remove(struct usbd_contex *const uds_ctx,
 }
 
 int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
+			  const enum usbd_speed speed,
 			  const uint8_t cfg)
 {
 	struct usbd_config_node *cfg_nd;
 	struct usbd_class_iter *iter;
 	sys_snode_t *node;
 
-	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
 	if (cfg_nd == NULL) {
 		return -ENODATA;
 	}
@@ -277,13 +294,13 @@ int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
 
 int usbd_register_class(struct usbd_contex *const uds_ctx,
 			const char *name,
-			const uint8_t cfg)
+			const enum usbd_speed speed, const uint8_t cfg)
 {
 	struct usbd_class_iter *iter;
 	struct usbd_class_data *data;
 	int ret;
 
-	iter = usbd_class_iter_get(name);
+	iter = usbd_class_iter_get(name, speed);
 	if (iter == NULL) {
 		return -ENODEV;
 	}
@@ -305,7 +322,13 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 		goto register_class_error;
 	}
 
-	ret = usbd_class_append(uds_ctx, iter, cfg);
+	if ((data->uds_ctx != NULL) && (data->uds_ctx != uds_ctx)) {
+		LOG_ERR("Class registered to other context at different speed");
+		ret = -EBUSY;
+		goto register_class_error;
+	}
+
+	ret = usbd_class_append(uds_ctx, iter, speed, cfg);
 	if (ret == 0) {
 		/* Initialize pointer back to the device struct */
 		atomic_set_bit(&iter->state, USBD_CCTX_REGISTERED);
@@ -319,13 +342,14 @@ register_class_error:
 
 int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 			  const char *name,
-			  const uint8_t cfg)
+			  const enum usbd_speed speed, const uint8_t cfg)
 {
 	struct usbd_class_iter *iter;
 	struct usbd_class_data *data;
+	bool can_release_data = true;
 	int ret;
 
-	iter = usbd_class_iter_get(name);
+	iter = usbd_class_iter_get(name, speed);
 	if (iter == NULL) {
 		return -ENODEV;
 	}
@@ -346,11 +370,37 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 		goto unregister_class_error;
 	}
 
-	ret = usbd_class_remove(uds_ctx, iter, cfg);
+	/* TODO: The use of atomic here does not make this code thread safe.
+	 * The atomic should be changed to something else.
+	 */
+	if (speed == USBD_SPEED_HS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs,
+						 usbd_class_iter, i) {
+			if ((i->c_nd == iter->c_nd) &&
+			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
+				can_release_data = false;
+				break;
+			}
+		}
+	} else {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
+						 usbd_class_iter, i) {
+			if ((i->c_nd == iter->c_nd) &&
+			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
+				can_release_data = false;
+				break;
+			}
+		}
+	}
+
+	ret = usbd_class_remove(uds_ctx, iter, speed, cfg);
 	if (ret == 0) {
 		atomic_clear_bit(&iter->state, USBD_CCTX_REGISTERED);
 		usbd_class_shutdown(iter->c_nd);
-		data->uds_ctx = NULL;
+
+		if (can_release_data) {
+			data->uds_ctx = NULL;
+		}
 	}
 
 unregister_class_error:

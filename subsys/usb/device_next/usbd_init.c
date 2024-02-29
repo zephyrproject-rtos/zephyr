@@ -109,6 +109,7 @@ static int unassign_eps(struct usbd_contex *const uds_ctx,
  * USB device configuration.
  */
 static int init_configuration_inst(struct usbd_contex *const uds_ctx,
+				   const enum usbd_speed speed,
 				   struct usbd_class_iter *const iter,
 				   uint32_t *const config_ep_bm,
 				   uint8_t *const nif)
@@ -116,27 +117,11 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
 	struct usb_desc_header **dhp;
 	struct usb_if_descriptor *ifd = NULL;
 	struct usb_ep_descriptor *ed;
-	enum usbd_speed speed;
 	uint32_t class_ep_bm = 0;
 	uint8_t tmp_nif;
 	int ret;
 
-	/*
-	 * Read the highest speed supported by the controller and use it to get
-	 * the appropriate function descriptor from the instance. If the
-	 * controller only supports full speed, the code below will configure
-	 * the function descriptor for full speed only, and high speed will
-	 * never be used after the device instance is initialized. If the
-	 * controller supports high speed, the code will only configure the
-	 * function's high speed descriptor, and the function implementation
-	 * must update the full speed descriptor during the init callback
-	 * processing, which is required to properly respond to
-	 * other-speed-configuration descriptor requests and for the unlikely
-	 * case where the high speed controller is connected to a full speed bus.
-	 */
-
-	speed = usbd_caps_speed(uds_ctx);
-	LOG_DBG("Highest speed supported by the controller is %u", speed);
+	LOG_DBG("Initializing configuration for %u speed", speed);
 	dhp = usbd_class_get_desc(iter->c_nd, speed);
 	if (dhp == NULL) {
 		return 0;
@@ -207,6 +192,7 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
  * Iterate on a list of all classes in a configuration
  */
 static int init_configuration(struct usbd_contex *const uds_ctx,
+			      const enum usbd_speed speed,
 			      struct usbd_config_node *const cfg_nd)
 {
 	struct usb_cfg_descriptor *cfg_desc = cfg_nd->desc;
@@ -218,7 +204,7 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
 
-		ret = init_configuration_inst(uds_ctx, iter,
+		ret = init_configuration_inst(uds_ctx, speed, iter,
 					      &config_ep_bm, &nif);
 		if (ret != 0) {
 			LOG_ERR("Failed to assign endpoint addresses");
@@ -231,9 +217,9 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 			return ret;
 		}
 
-		LOG_INF("Init class node %p, descriptor length %zu", iter->c_nd,
-			usbd_class_desc_len(iter->c_nd, usbd_caps_speed(uds_ctx)));
-		cfg_len += usbd_class_desc_len(iter->c_nd, usbd_caps_speed(uds_ctx));
+		LOG_INF("Init class node %p, descriptor length %zu",
+			iter->c_nd, usbd_class_desc_len(iter->c_nd, speed));
+		cfg_len += usbd_class_desc_len(iter->c_nd, speed);
 	}
 
 	/* Update wTotalLength and bNumInterfaces of configuration descriptor */
@@ -257,10 +243,10 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static void usbd_init_update_mps0(struct usbd_contex *const uds_ctx)
+static void usbd_init_update_fs_mps0(struct usbd_contex *const uds_ctx)
 {
 	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
-	struct usb_device_descriptor *desc = uds_ctx->desc;
+	struct usb_device_descriptor *desc = uds_ctx->fs_desc;
 
 	switch (caps.mps0) {
 	case UDC_MPS0_8:
@@ -282,20 +268,34 @@ int usbd_init_configurations(struct usbd_contex *const uds_ctx)
 {
 	struct usbd_config_node *cfg_nd;
 
-	usbd_init_update_mps0(uds_ctx);
+	usbd_init_update_fs_mps0(uds_ctx);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
 		int ret;
 
-		ret = init_configuration(uds_ctx, cfg_nd);
+		ret = init_configuration(uds_ctx, USBD_SPEED_HS, cfg_nd);
 		if (ret) {
-			LOG_ERR("Failed to init configuration %u",
+			LOG_ERR("Failed to init HS configuration %u",
 				usbd_config_get_value(cfg_nd));
 			return ret;
 		}
 
-		LOG_INF("bNumConfigurations %u",
-			usbd_get_num_configs(uds_ctx));
+		LOG_INF("HS bNumConfigurations %u",
+			usbd_get_num_configs(uds_ctx, USBD_SPEED_HS));
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->fs_configs, cfg_nd, node) {
+		int ret;
+
+		ret = init_configuration(uds_ctx, USBD_SPEED_FS, cfg_nd);
+		if (ret) {
+			LOG_ERR("Failed to init FS configuration %u",
+				usbd_config_get_value(cfg_nd));
+			return ret;
+		}
+
+		LOG_INF("FS bNumConfigurations %u",
+			usbd_get_num_configs(uds_ctx, USBD_SPEED_FS));
 	}
 
 	return 0;
