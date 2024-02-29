@@ -50,3 +50,9 @@ family:
       cpuclusters:
       - name: a9
       - name: m4
+  - name: imx7d
+    socs:
+    - name: mcimx7d
+      cpuclusters:
+      - name: a7
+      - name: m4
