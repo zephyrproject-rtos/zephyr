@@ -8,7 +8,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx7d_m4.dtsi>
-#include "pico_pi_m4-pinctrl.dtsi"
+#include "pico_pi-pinctrl.dtsi"
 
 / {
 	model = "Pico-Pi IMX7D board";

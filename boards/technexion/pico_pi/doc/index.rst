@@ -1,4 +1,4 @@
-.. _pico_pi_m4:
+.. _pico_pi:
 
 Pico-Pi i.MX7D - Android Things IoT Development Platform
 #############################################################
@@ -12,7 +12,7 @@ Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
 
 
-.. image:: pico_pi_m4.jpg
+.. image:: pico_pi.jpg
    :align: center
    :alt: Pico-Pi i.MX7D
 
@@ -71,7 +71,7 @@ Cortex M4 Core:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/pico_pi_m4/pico_pi_m4_defconfig``
+:zephyr_file:`boards/technexion/pico_pi/pico_pi_mcimx7d_m4_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -143,7 +143,7 @@ References
 
 
 At compilation time you have to choose which RAM will be used. This
-configuration is done in the file ``boards/arm/pico_pi_m4/pico_pi_m4.dts`` with
+configuration is done in the file :zephyr_file:`boards/technexion/pico_pi/pico_pi_mcimx7d_m4.dts` with
 "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram" properties. The available
 configurations are:
 
