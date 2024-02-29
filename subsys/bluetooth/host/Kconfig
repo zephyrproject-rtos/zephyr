@@ -1061,6 +1061,15 @@ config BT_RFCOMM_L2CAP_MTU
 	help
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 
+config BT_RFCOMM_TX_MAX
+	int "Maximum number of pending TX buffers for RFCOMM"
+	default BT_MAX_CONN
+	range BT_MAX_CONN 255
+	help
+	  Maximum number of pending TX buffers that have an associated
+	  sending buf. Normally this can be left to the default value, which
+	  is equal to the number of session in the stack-internal pool.
+
 config BT_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
 	depends on PRINTK
