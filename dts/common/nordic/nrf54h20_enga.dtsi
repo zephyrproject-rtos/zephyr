@@ -9,6 +9,12 @@
 
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20-enga.h>
 
+/* Domain IDs. Can be used to specify channel links in IPCT nodes. */
+#define NRF_DOMAIN_ID_APPLICATION 2
+#define NRF_DOMAIN_ID_RADIOCORE   3
+#define NRF_DOMAIN_ID_GLOBALFAST  12
+#define NRF_DOMAIN_ID_GLOBALSLOW  13
+
 /delete-node/ &sw_pwm;
 
 / {
@@ -153,6 +159,15 @@
 					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
+
+			cpuapp_ipct: ipct@13000 {
+				compatible = "nordic,nrf-ipct-local";
+				reg = <0x13000 0x1000>;
+				status = "disabled";
+				channels = <4>;
+				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <65 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
 		};
 
 		cpurad_peripherals: peripheral@53000000 {
@@ -171,6 +186,21 @@
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
+			};
+
+			dppic020: dppic@22000 {
+				compatible = "nordic,nrf-dppic-local";
+				reg = <0x22000 0x1000>;
+				status = "disabled";
+			};
+
+			cpurad_ipct: ipct@24000 {
+				compatible = "nordic,nrf-ipct-local";
+				reg = <0x24000 0x1000>;
+				status = "disabled";
+				channels = <8>;
+				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <65 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 			egu020: egu@25000 {
@@ -267,6 +297,20 @@
 				#mbox-cells = <1>;
 			};
 
+			ipct120: ipct@8d1000 {
+				compatible = "nordic,nrf-ipct-global";
+				reg = <0x8d1000 0x1000>;
+				status = "disabled";
+				channels = <8>;
+				global-domain-id = <12>;
+			};
+
+			dppic120: dppic@8e1000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x8e1000 0x1000>;
+				status = "disabled";
+			};
+
 			timer120: timer@8e2000 {
 				compatible = "nordic,nrf-timer";
 				reg = <0x8e2000 0x1000>;
@@ -342,6 +386,20 @@
 					interrupt-controller;
 					#address-cells = <1>;
 				};
+			};
+
+			ipct130: ipct@921000 {
+				compatible = "nordic,nrf-ipct-global";
+				reg = <0x921000 0x1000>;
+				status = "disabled";
+				channels = <8>;
+				global-domain-id = <13>;
+			};
+
+			dppic130: dppic@922000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x922000 0x1000>;
+				status = "disabled";
 			};
 
 			rtc130: rtc@928000 {
@@ -449,6 +507,12 @@
 				port = <9>;
 			};
 
+			dppic131: dppic@981000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x981000 0x1000>;
+				status = "disabled";
+			};
+
 			comp: comparator@983000 {
 				compatible = "nordic,nrf-comp";
 				reg = <0x983000 0x1000>;
@@ -471,6 +535,12 @@
 				interrupts = <389 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			dppic132: dppic@991000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x991000 0x1000>;
+				status = "disabled";
+			};
+
 			qdec130: qdec@994000 {
 				compatible = "nordic,nrf-qdec";
 				reg = <0x994000 0x1000>;
@@ -490,6 +560,12 @@
 				reg = <0x99c000 0x1000>;
 				status = "disabled";
 				cc-num = <16>;
+			};
+
+			dppic133: dppic@9a1000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x9a1000 0x1000>;
+				status = "disabled";
 			};
 
 			timer130: timer@9a2000 {
@@ -568,6 +644,12 @@
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			dppic134: dppic@9b1000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x9b1000 0x1000>;
+				status = "disabled";
+			};
+
 			timer132: timer@9b2000 {
 				compatible = "nordic,nrf-timer";
 				reg = <0x9b2000 0x1000>;
@@ -644,6 +726,12 @@
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			dppic135: dppic@9c1000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x9c1000 0x1000>;
+				status = "disabled";
+			};
+
 			timer134: timer@9c2000 {
 				compatible = "nordic,nrf-timer";
 				reg = <0x9c2000 0x1000>;
@@ -718,6 +806,12 @@
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			dppic136: dppic@9d1000 {
+				compatible = "nordic,nrf-dppic-global";
+				reg = <0x9d1000 0x1000>;
+				status = "disabled";
 			};
 
 			timer136: timer@9d2000 {
