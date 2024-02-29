@@ -70,7 +70,7 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr mimx8mm_phyboard_polis board configuration supports the following
+The Zephyr ``mimx8mm_phyboard_polis/mimx8mm6/m4`` board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -92,7 +92,7 @@ hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/arm/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_defconfig`.
+:zephyr_file:`boards/phytec/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_mimx8mm6_m4_defconfig`.
 
 It is recommended to disable peripherals used by the M4 core on the Linux host.
 
@@ -194,12 +194,12 @@ The available configurations are:
 If you don't want to use the TCM memory area, you can either overwrite the
 boards devicetree in your program or edit the board devicetree located here:
 
-:zephyr_file:`boards/arm/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis.dts`
+:zephyr_file:`boards/phytec/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_mimx8mm6_m4.dts`.
 
 You also have to set XIP=n or edit the boards defconfig file, if you don't want
 the TCM memory area to be used. You can find the defconf file here:
 
-:zephyr_file:`boards/arm/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_defconfig`.
+:zephyr_file:`boards/phytec/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_mimx8mm6_m4_defconfig`.
 
 The following configurations are possible for the flash and sram chosen nodes
 to change the used memory area:

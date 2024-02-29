@@ -5,9 +5,6 @@
 
 if BOARD_MIMX8MM_PHYBOARD_POLIS
 
-config BOARD
-	default "mimx8mm_phyboard_polis"
-
 if !XIP
 config FLASH_SIZE
 	default 0
