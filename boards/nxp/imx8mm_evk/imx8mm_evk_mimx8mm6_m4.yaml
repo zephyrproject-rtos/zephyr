@@ -1,10 +1,11 @@
 #
 # Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# Copyright 2024
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimx8mm_evk
+identifier: imx8mm_evk/mimx8mm6/m4
 name: NXP i.MX8M Mini EVK
 type: mcu
 arch: arm
