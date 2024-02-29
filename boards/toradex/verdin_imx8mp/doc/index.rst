@@ -1,4 +1,4 @@
-.. _verdin_imx8mp_m7:
+.. _verdin_imx8mp:
 
 Toradex Verdin iMX8M Plus SoM
 #############################
@@ -127,10 +127,10 @@ The Zephyr verdin_imx8mp_m7 board configuration supports the following hardware 
 
 The default configuration can be found in the defconfig file:
 
-- :zephyr_file:`boards/arm/verdin_imx8mp_m7/verdin_imx8mp_m7_itcm_defconfig`, if you choose to use
+- :zephyr_file:`boards/toradex/verdin_imx8mp/verdin_imx8mp_mimx8ml8_m7_defconfig`, if you choose to use
   the ITCM memory.
 
-- :zephyr_file:`boards/arm/verdin_imx8mp_m7/verdin_imx8mp_m7_ddr_defconfig`, if you choose to use
+- :zephyr_file:`boards/toradex/verdin_imx8mp/verdin_imx8mp_mimx8ml8_m7_ddr_defconfig`, if you choose to use
   the DDR memory.
 
 It is recommended to disable peripherals used by the M7 core on the Linux host.
@@ -151,8 +151,8 @@ UART4 is used, WiFI/BT will not work properly.
 
 If the WiFi/BT is needed, then another UART should be used for Zephyr (UART1 for example). You can
 change the UART by changing the ``zephyr,console`` and ``zephyr,shell-uart`` in the
-:zephyr_file:`boards/arm/verdin_imx8mp_m7_itcm.dts` or
-:zephyr_file:`boards/arm/verdin_imx8mp_m7_ddr.dts` file.
+:zephyr_file:`boards/toradex/verdin_imx8mp/verdin_imx8mp_mimx8ml8_m7.dts` or
+:zephyr_file:`boards/toradex/verdin_imx8mp/verdin_imx8mp_mimx8ml8_m7_ddr.dts` file.
 
 +---------------+-----------------+---------------------------+
 | Board Name    | SoC Name        | Usage                     |
@@ -209,8 +209,8 @@ Manual`_  (section 2.1 to 2.3)
 At compilation time you have to choose which RAM will be used. To facilitate this process, there are
 two targets available:
 
-- ``verdin_imx8mp_m7_itcm``, which uses the ITCM configuration.
-- ``verdin_imx8mp_m7_ddr``, which uses the DDR configuration.
+- ``verdin_imx8mp/mimx8ml8/m7``, which uses the ITCM configuration.
+- ``verdin_imx8mp/mimx8ml8/m7/ddr``, which uses the DDR configuration.
 
 
 Starting the Cortex-M7 via U-Boot
@@ -255,7 +255,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: verdin_imx8mp_m7_ddr
+   :board: verdin_imx8mp/mimx8ml8/m7/ddr
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -264,7 +264,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v3.4.0-2300-g03905f7e55d2  ***
-   Hello World! verdin_imx8mp_m7_ddr
+   Hello World! verdin_imx8mp
 
 References
 ==========
