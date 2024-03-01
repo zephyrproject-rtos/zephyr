@@ -219,7 +219,7 @@ void k_object_recycle(const void *obj);
  *
  * Given a C string pointer and a maximum size, obtain the true
  * size of the string (not including the trailing NULL byte) just as
- * if calling strnlen() on it, with the same semantics of strnlen() with
+ * if calling k_strnlen() on it, with the same semantics of k_strnlen() with
  * respect to the return value and the maxlen parameter.
  *
  * Any memory protection faults triggered by the examination of the string

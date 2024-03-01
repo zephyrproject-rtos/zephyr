@@ -24,7 +24,9 @@ extern char  *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s,
 extern char  *strchr(const char *s, int c);
 extern char  *strrchr(const char *s, int c);
 extern size_t strlen(const char *s);
+#if _POSIX_C_SOURCE >= 200809L
 extern size_t strnlen(const char *s, size_t maxlen);
+#endif
 extern int    strcmp(const char *s1, const char *s2);
 extern int    strncmp(const char *s1, const char *s2, size_t n);
 extern char  *strtok_r(char *str, const char *sep, char **state);

@@ -843,7 +843,7 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf);
  * @brief Safely take the length of a potentially bad string
  *
  * This must not fault, instead the @p err parameter must have -1 written to it.
- * This function otherwise should work exactly like libc strnlen(). On success
+ * This function otherwise should work exactly like libc k_strnlen(). On success
  * @p err should be set to 0.
  *
  * @param s String to measure

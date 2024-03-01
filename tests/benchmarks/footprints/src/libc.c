@@ -20,7 +20,7 @@ void run_libc(void)
 	int len;
 
 	len = strlen(const_string);
-	len = strnlen(const_string, len);
+	len = k_strnlen(const_string, len);
 
 	memset(new_string, 0, sizeof(new_string));
 	if (memcmp(const_string, new_string, 0) != 0) {

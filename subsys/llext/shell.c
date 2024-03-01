@@ -121,7 +121,7 @@ static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE];
 static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 {
 	char name[16];
-	size_t hex_len = strnlen(argv[2], CONFIG_LLEXT_SHELL_MAX_SIZE*2+1);
+	size_t hex_len = k_strnlen(argv[2], CONFIG_LLEXT_SHELL_MAX_SIZE*2+1);
 	size_t bin_len = hex_len/2;
 
 	if (bin_len > CONFIG_LLEXT_SHELL_MAX_SIZE) {

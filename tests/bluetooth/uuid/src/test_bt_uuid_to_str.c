@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/bluetooth/uuid.h>
@@ -16,7 +17,7 @@ ZTEST_SUITE(bt_uuid_to_str, NULL, NULL, NULL, NULL, NULL);
 
 static bool is_null_terminated(char *str, size_t size)
 {
-	return strnlen(str, size) < size;
+	return k_strnlen(str, size) < size;
 }
 
 static void result_is_null_terminated(const struct bt_uuid *uuid)

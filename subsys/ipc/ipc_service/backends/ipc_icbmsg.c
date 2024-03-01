@@ -572,7 +572,7 @@ static int find_ept_by_name(struct backend_data *dev_data, const char *name)
 	 * can be corrupted. Extra care must be taken to avoid out of
 	 * bounds reads.
 	 */
-	name_size = strnlen(name, buffer_end - name - 1) + 1;
+	name_size = k_strnlen(name, buffer_end - name - 1) + 1;
 
 	for (i = 0; i < NUM_EPT; i++) {
 		ept = &dev_data->ept[i];

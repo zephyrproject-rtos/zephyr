@@ -1,31 +1,15 @@
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Meta
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <string.h>
-#include <stdint.h>
-#include <sys/types.h>
 
-/**
- *
- * @brief Get fixed-size string length
- *
- *        This function is not available in ARM C Standard library.
- *
- * @return number of bytes in fixed-size string <s>
- */
+extern size_t k_strnlen(const char *s, size_t maxlen);
 
 size_t strnlen(const char *s, size_t maxlen)
 {
-	size_t n = 0;
-
-	while (*s != '\0' && n < maxlen) {
-		s++;
-		n++;
-	}
-
-	return n;
+	return k_strnlen(s, maxlen);
 }

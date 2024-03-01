@@ -20,14 +20,11 @@ extern "C" {
 #endif
 
 /*
- * Define these two Zephyr APIs when _POSIX_C_SOURCE is not set to expose
- * them from newlib
+ * Define this Zephyr API when _POSIX_C_SOURCE is not set to expose
+ * it from newlib
  */
 #if !__MISC_VISIBLE && !__POSIX_VISIBLE
 char *strtok_r(char *__restrict, const char *__restrict, char **__restrict);
-#endif
-#if __POSIX_VISIBLE < 200809L
-size_t strnlen(const char *, size_t);
 #endif
 
 #ifdef __cplusplus

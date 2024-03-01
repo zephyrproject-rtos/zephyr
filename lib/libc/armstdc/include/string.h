@@ -16,7 +16,9 @@
 extern "C" {
 #endif
 
+#if _POSIX_C_SOURCE >= 200809L
 extern size_t strnlen(const char *s, size_t maxlen);
+#endif
 
 #ifdef __cplusplus
 }
