@@ -116,32 +116,22 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6)
-void nxp_s32_eth_mcast_cb(struct net_if *iface, const struct net_addr *addr, bool is_joined)
+void nxp_s32_eth_mcast_filter(const struct device *dev, const struct ethernet_filter *filter)
 {
-	const struct device *dev = net_if_get_device(iface);
 	const struct nxp_s32_eth_config *cfg = dev->config;
-	struct net_eth_addr mac_addr;
 	Netc_Eth_Ip_StatusType status;
 
-	if (addr->family != AF_INET6) {
-		return;
-	}
-
-	net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-
-	if (is_joined) {
+	if (filter->set) {
 		status = Netc_Eth_Ip_AddMulticastDstAddrToHashFilter(cfg->si_idx,
-								     mac_addr.addr);
+								     filter->mac_address.addr);
 	} else {
 		status = Netc_Eth_Ip_RemoveMulticastDstAddrFromHashFilter(cfg->si_idx,
-									  mac_addr.addr);
+									  filter->mac_address.addr);
 	}
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
 		LOG_ERR("Failed to update multicast hash table: %d", status);
 	}
 }
-#endif /* CONFIG_NET_IPV6 */
 
 int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
@@ -317,6 +307,7 @@ enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
 		| ETHERNET_LINK_100BASE_T
 		| ETHERNET_LINK_1000BASE_T
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
+		| ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
@@ -343,6 +334,9 @@ int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type t
 		LOG_INF("SI%d MAC set to: %02x:%02x:%02x:%02x:%02x:%02x", cfg->si_idx,
 			ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
 			ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
+		break;
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		nxp_s32_eth_mcast_filter(dev, &config->filter);
 		break;
 	default:
 		res = -ENOTSUP;
