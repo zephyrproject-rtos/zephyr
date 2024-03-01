@@ -107,4 +107,8 @@ config SOC_FLASH_MCUX
 
 endif # SOC_LPC55S69
 
+config MCUX_CORE_SUFFIX
+	default "_cm33_core0" if SOC_LPC55S69_CPU0
+	default "_cm33_core1" if SOC_LPC55S69_CPU1
+
 endif # SOC_SERIES_LPC55XXX
