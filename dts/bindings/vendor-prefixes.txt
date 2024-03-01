@@ -562,8 +562,8 @@ sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
 sc	Space Cubics, LLC
-sciosense	Sciosense B.V.
 schindler	Schindler
+sciosense	Sciosense B.V.
 seagate	Seagate Technology PLC
 seco	SECO S.p.A.
 seeed	Seeed Technology Co., Ltd
