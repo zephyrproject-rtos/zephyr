@@ -1,0 +1,60 @@
+# Copyright 2024
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_NXP_ENET_QOS
+	bool "NXP ENET QOS Ethernet Module Driver"
+	default y
+	depends on DT_HAS_NXP_ENET_QOS_ENABLED
+	select MDIO if DT_HAS_NXP_ENET_QOS_MDIO_ENABLED
+	help
+	  Enable NXP ENET Ethernet Module Driver. This driver
+	  handles IP module level tasks.
+
+if ETH_NXP_ENET_QOS
+
+config ETH_NXP_ENET_QOS_MAC
+	bool "NXP ENET QOS Ethernet MAC Driver"
+	default y
+	depends on DT_HAS_NXP_ENET_QOS_MAC_ENABLED
+	depends on NET_BUF_FIXED_DATA_SIZE
+	help
+	  Enable NXP ENET QOS Ethernet MAC Driver.
+
+if ETH_NXP_ENET_QOS_MAC
+
+config ETH_NXP_ENET_QOS_TX_BUFFER_DESCRIPTORS
+	int "Number of tx buffer descriptors"
+	default 4
+	range 4 1024
+	help
+	  Number of TX buffer descriptors.
+
+config ETH_NXP_ENET_QOS_RX_BUFFER_DESCRIPTORS
+	int "Number of rx buffer descriptors"
+	default 4
+	range 4 1024
+	help
+	  Number of RX buffer descriptors.
+
+config ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME
+	int "Time in microseconds to wait for software reset"
+	default 10
+	range 0 1000
+	help
+	  Time in us microseconds allow for software reset.
+	  Value of 0 will allow the driver to wait unlimited time.
+
+config ETH_NXP_ENET_QOS_RX_THREAD_STACK_SIZE
+	int "Size of ENET QOS RX thread stack"
+	default 1024
+	help
+	  Size in bytes of the ENET QOS RX thread stack.
+
+config ETH_NXP_ENET_QOS_RX_THREAD_PRIORITY
+	int "Cooperative priority of the ENET QOS RX thread"
+	default 3
+	help
+	  Cooperative priority of the ENET QOS RX thread
+
+endif # ETH_NXP_ENET_QOS_MAC
+endif # ETH_NXP_ENET_QOS
