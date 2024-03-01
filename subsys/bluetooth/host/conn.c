@@ -38,7 +38,7 @@
 #include "l2cap_internal.h"
 #include "keys.h"
 #include "smp.h"
-#include "ssp.h"
+#include "classic/ssp.h"
 #include "att_internal.h"
 #include "iso_internal.h"
 #include "direction_internal.h"

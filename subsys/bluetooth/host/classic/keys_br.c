@@ -18,9 +18,9 @@
 
 #include "common/bt_str.h"
 
-#include "hci_core.h"
-#include "settings.h"
-#include "keys.h"
+#include "host/hci_core.h"
+#include "host/settings.h"
+#include "host/keys.h"
 
 #define LOG_LEVEL CONFIG_BT_KEYS_LOG_LEVEL
 #include <zephyr/logging/log.h>
