@@ -671,6 +671,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	struct lll_sync *lll;
 	uint16_t sync_handle;
 	uint32_t interval_us;
+	uint32_t overhead_us;
 	struct pdu_adv *pdu;
 	uint16_t interval;
 	uint32_t slot_us;
@@ -818,6 +819,22 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
+
+	/* Minimum prepare tick offset + minimum preempt tick offset are the
+	 * overheads before ULL scheduling can setup radio for reception
+	 */
+	overhead_us = HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN << 1);
+
+	/* CPU execution overhead to setup the radio for reception */
+	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
+
+	/* If not sufficient CPU processing time, skip to receiving next
+	 * event.
+	 */
+	if ((sync_offset_us - ftr->radio_end_us) < overhead_us) {
+		sync_offset_us += interval_us;
+		lll->event_counter++;
+	}
 
 	interval_us -= lll->window_widening_periodic_us;
 
