@@ -493,6 +493,11 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	dw_write(dev_cfg->base, DW_LLP(channel), llp);
 	LOG_DBG("%s: ctrl_lo %x, masked ctrl_lo %x, LLP %x", dev->name,
 		lli->ctrl_lo, masked_ctrl_lo, dw_read(dev_cfg->base, DW_LLP(channel)));
+
+	/* clear DONE bit for all LLI descriptors */
+	for (int i = 0; i < chan_data->lli_count; i++) {
+		chan_data->lli[i].ctrl_hi &= ~DW_CTLH_DONE(1);
+	}
 #endif /* CONFIG_DMA_DW_HW_LLI */
 
 	/* channel needs to start from scratch, so write SAR and DAR */
@@ -574,8 +579,11 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	}
 
 #ifdef CONFIG_DMA_DW_HW_LLI
-	struct dw_lli *lli = chan_data->lli;
-	int i;
+	/* set DONE for all LLI - make sure any LL reload during STOP
+	 * will be DONE and stop further DMA state machine actions */
+	for (int i = 0; i < chan_data->lli_count; i++) {
+		chan_data->lli[i].ctrl_hi |= DW_CTLH_DONE(1);
+	}
 #endif
 
 	LOG_INF("%s: channel %d stop", dev->name, channel);
@@ -618,12 +626,21 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 		return -ETIMEDOUT;
 	}
 
-#if CONFIG_DMA_DW_HW_LLI
-	for (i = 0; i < chan_data->lli_count; i++) {
-		lli->ctrl_hi &= ~DW_CTLH_DONE(1);
-		lli++;
-	}
-#endif
+	/* mask any unmasked IRQs after channel is stopped */
+	dw_write(dev_cfg->base, DW_MASK_ERR, DW_CHAN_MASK(channel));
+	dw_write(dev_cfg->base, DW_MASK_TFR, DW_CHAN_MASK(channel));
+	dw_write(dev_cfg->base, DW_MASK_BLOCK, DW_CHAN_MASK(channel));
+
+	/* clear any pending IRQs - some configuration may not
+	 * assign any handlers or care, but new transfers need to start
+	 * with a clean slate.
+	 */
+	dw_write(dev_cfg->base, DW_CLEAR_TFR, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_BLOCK, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_SRC_TRAN, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_DST_TRAN, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_ERR, 0x1 << channel);
+
 	chan_data->state = DW_DMA_IDLE;
 	ret = pm_device_runtime_put(dev);
 out:

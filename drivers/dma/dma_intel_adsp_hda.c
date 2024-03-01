@@ -454,15 +454,26 @@ void intel_adsp_hda_dma_isr(void)
 		cfg = host_dev[i]->config;
 
 		for (j = 0; j < dma_ctx->dma_channels; j++) {
-			if (atomic_test_bit(dma_ctx->atomic, j)) {
-				clear_l1_exit |=
-					intel_adsp_hda_check_buffer_interrupt(cfg->base,
-									      cfg->regblock_size,
-									      j);
+			if (!atomic_test_bit(dma_ctx->atomic, j))
+				continue;
+
+			if (!intel_adsp_hda_is_buffer_interrupt_enabled(cfg->base,
+									cfg->regblock_size, j))
+				continue;
+
+			if (intel_adsp_hda_check_buffer_interrupt(cfg->base,
+								  cfg->regblock_size, j)) {
+				clear_l1_exit = true;
 				intel_adsp_hda_disable_buffer_interrupt(cfg->base,
 									cfg->regblock_size, j);
 				intel_adsp_hda_clear_buffer_interrupt(cfg->base,
 								      cfg->regblock_size, j);
+			} else {
+				/*
+				 * Postpone entering L1 state until all enabled interrupts
+				 * arrived, i.e. transfer started on all channels.
+				 */
+				return;
 			}
 		}
 	}
