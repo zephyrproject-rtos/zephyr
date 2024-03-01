@@ -1,4 +1,4 @@
-identifier: reel_board@1
+identifier: reel_board
 name: reel-board
 type: mcu
 arch: arm
