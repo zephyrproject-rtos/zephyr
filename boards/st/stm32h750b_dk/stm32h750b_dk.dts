@@ -18,7 +18,6 @@
 		zephyr,shell-uart = &usart3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,flash-controller = &mt25ql512ab1;
 	};
 
 	sdram2: sdram@d0000000 {
@@ -27,6 +26,14 @@
 		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	quad_nor: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_K(800)>; /* size of the slot partition */
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 
 	leds {
@@ -90,6 +97,33 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(60)>;
+		};
+
+		scratch_partition: partition@1f000 {
+			label = "image-scratch";
+			reg = <0x0001f000 DT_SIZE_K(2)>;
+		};
+		storage_partition: partition@1f800 {
+			label = "storage";
+			reg = <0x0001f800 DT_SIZE_K(2)>;
+		};
+
+	};
 };
 
 &quadspi {

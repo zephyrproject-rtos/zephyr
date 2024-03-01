@@ -31,6 +31,14 @@
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
+	quad_nor: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_K(800)>; /* size of the slot partition */
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
 	leds {
 		green_led_1:led_1 {
 			status = "okay";
