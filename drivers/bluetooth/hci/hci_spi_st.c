@@ -96,7 +96,7 @@ static struct k_thread spi_rx_thread_data;
 static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t value_len);
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON, 0);
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -171,16 +171,10 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 /* as long as IRQ pin is high */
 #define READ_CONDITION IS_IRQ_HIGH
 
-static void assert_cs(void)
-{
-	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
-	gpio_pin_set_dt(&bus.config.cs.gpio, 1);
-}
-
 static void release_cs(bool data_transaction)
 {
 	ARG_UNUSED(data_transaction);
-	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
+	spi_release_dt(&bus);
 }
 
 static int bt_spi_get_header(uint8_t op, uint16_t *size)
@@ -210,7 +204,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 				return 0;
 			}
 		}
-		assert_cs();
+		/* Make sure CS is raised before a new attempt */
+		gpio_pin_set_dt(&bus.config.cs.gpio, 0);
 		ret = bt_spi_transceive(header_master, 5, header_slave, 5);
 		if (ret) {
 			/* SPI transaction failed */
@@ -229,16 +224,6 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 
 #define READ_CONDITION false
 
-static void assert_cs(uint16_t delay)
-{
-	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
-	if (delay) {
-		k_sleep(K_USEC(delay));
-	}
-	gpio_pin_set_dt(&bus.config.cs.gpio, 1);
-	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
-}
-
 static void release_cs(bool data_transaction)
 {
 	/* Consume possible event signals */
@@ -250,7 +235,7 @@ static void release_cs(bool data_transaction)
 		}
 	}
 	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
+	spi_release_dt(&bus);
 }
 
 static int bt_spi_get_header(uint8_t op, uint16_t *size)
@@ -276,7 +261,15 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 		return -EINVAL;
 	}
 
-	assert_cs(cs_delay);
+	if (cs_delay) {
+		k_sleep(K_USEC(cs_delay));
+	}
+	/* Perform a zero byte SPI transaction to acquire the SPI lock and lower CS
+	 * while waiting for IRQ to be raised
+	 */
+	bt_spi_transceive(header_master, 0, header_slave, 0);
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
+
 	/* Wait up to a maximum time of 100 ms */
 	if (!WAIT_FOR(IS_IRQ_HIGH, 100000, k_usleep(100))) {
 		LOG_ERR("IRQ pin did not raise");
