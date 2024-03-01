@@ -67,3 +67,4 @@ if(CONFIG_ETH_NATIVE_POSIX)
 endif()
 
 add_subdirectory(phy)
+add_subdirectory(eth_nxp_enet_qos)
