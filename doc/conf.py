@@ -189,7 +189,7 @@ html_context = {
         ("latest", "/"),
         ("3.6.0", "/3.6.0/"),
         ("3.5.0", "/3.5.0/"),
-        ("2.7.5 (LTS)", "/2.7.5/"),
+        ("2.7.6 (LTS)", "/2.7.6/"),
     ),
     "display_gh_links": True,
     "reference_links": {
