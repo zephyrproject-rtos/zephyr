@@ -3095,6 +3095,49 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	return 0;
 }
 
+int bt_l2cap_chan_give_credits_cb(struct bt_l2cap_chan *chan, uint16_t additional_credits)
+{
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+	l2cap_chan_tx_give_credits(le_chan, additional_credits);
+
+	return 0;
+}
+
+int bt_l2cap_chan_send_traffic_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	uint16_t sdu_len = net_buf_frags_len(buf);
+
+	if (!buf || !chan) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("chan %p buf %p len %zu", chan, buf, net_buf_frags_len(buf));
+
+	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		return -ESHUTDOWN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+		chan->conn->type == BT_CONN_TYPE_BR) {
+		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
+	}
+
+	/* Sending over static channels is not supported by this fn. Use
+	 * `bt_l2cap_send()` if external to this file, or `l2cap_send` if
+	 * internal.
+	 */
+	net_buf_push_le16(buf, sdu_len);
+	net_buf_put(&le_chan->tx_queue, buf);
+	k_work_reschedule(&le_chan->tx_work, K_NO_WAIT);
+	return 0;
+}
+
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	if (!buf || !chan) {
