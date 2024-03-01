@@ -27,7 +27,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	if ((uint32_t)sub_system == MCUX_MRT_CLK) {
 #if defined(CONFIG_SOC_FAMILY_LPC)
 		CLOCK_EnableClock(kCLOCK_Mrt);
-#elif defined(CONFIG_SOC_FAMILY_IMX)
+#elif defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
 		CLOCK_EnableClock(kCLOCK_Mrt0);
 #endif
 	}
