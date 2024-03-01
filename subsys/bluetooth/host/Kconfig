@@ -1026,10 +1026,9 @@ config BT_CONN_DISABLE_SECURITY
 	  WARNING: This option enables anyone to snoop on-air traffic.
 	  Use of this feature in production is strongly discouraged.
 
-config BT_BREDR
+config BT_CLASSIC
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	depends on BT_HCI_HOST
-	select BT_CLASSIC
 	select BT_PERIPHERAL
 	select BT_CENTRAL
 	select BT_SMP
@@ -1038,14 +1037,7 @@ config BT_BREDR
 	help
 	  This option enables Bluetooth BR/EDR support
 
-config BT_CLASSIC
-	bool "Bluetooth classic(BR/EDR) support [EXPERIMENTAL]"
-	depends on BT_BREDR
-	select EXPERIMENTAL
-	help
-	  This option enables Bluetooth classic(BR/EDR) support
-
-if BT_BREDR
+if BT_CLASSIC
 config BT_MAX_SCO_CONN
 	int "Maximum number of simultaneous SCO connections"
 	default 1
@@ -1106,7 +1098,7 @@ config BT_COD
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
-endif # BT_BREDR
+endif # BT_CLASSIC
 
 config BT_HCI_VS_EVT_USER
 	bool "User Vendor-Specific event handling"

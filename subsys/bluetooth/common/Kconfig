@@ -49,7 +49,7 @@ config BT_BUF_ACL_TX_COUNT
 
 config BT_BUF_ACL_RX_SIZE
 	int "Maximum supported ACL size for incoming data"
-	default 200 if BT_BREDR
+	default 200 if BT_CLASSIC
 	default 70 if BT_EATT
 	default 69 if BT_SMP
 	default 37 if BT_MESH_GATT
@@ -139,7 +139,7 @@ config BT_BUF_EVT_DISCARDABLE_SIZE
 	range 43 255 if !BT_EXT_ADV
 	range 58 255 if BT_EXT_ADV
 	# LE Extended Advertising Report event
-	default 255 if BT_BREDR
+	default 255 if BT_CLASSIC
 	# Le Advertising Report event
 	default 43 if !BT_EXT_ADV
 	default 58 if BT_EXT_ADV
@@ -166,10 +166,10 @@ config BT_BUF_EVT_DISCARDABLE_COUNT
 
 config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"
-	default 255 if (BT_EXT_ADV || BT_BREDR || BT_ISO_CENTRAL)
+	default 255 if (BT_EXT_ADV || BT_CLASSIC || BT_ISO_CENTRAL)
 	# LE Set Connection CTE Receive Parameters. Value required to store max allowed number
 	# of antenna ids for platforms other than Nordic.
-	default 83 if (!BT_EXT_ADV && !BT_BREDR && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
+	default 83 if (!BT_EXT_ADV && !BT_CLASSIC && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
 	# LE Generate DHKey v2 command
 	default 65
 	range 65 255

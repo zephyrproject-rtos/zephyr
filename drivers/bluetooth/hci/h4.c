@@ -155,7 +155,7 @@ static inline void get_evt_hdr(void)
 			rx.remaining++;
 			rx.hdr_len++;
 			break;
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 		case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 			rx.discardable = true;
