@@ -2863,6 +2863,7 @@ RISCV arch:
     - edersondisouza
     - carlocaione
     - npitre
+    - ycsin
   files:
     - arch/riscv/
     - boards/riscv/
