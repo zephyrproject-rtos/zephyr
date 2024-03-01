@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define HCI_ACL			0x02
 #define HCI_SCO			0x03
 #define HCI_EVT			0x04
+#define HCI_ISO			0x05
 /* ST Proprietary extended event */
 #define HCI_EXT_EVT		0x82
 
@@ -406,6 +407,26 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 		}
 		net_buf_add_mem(buf, &msg[1], len);
 		break;
+#if defined(CONFIG_BT_ISO)
+	case HCI_ISO:
+		struct bt_hci_iso_hdr iso_hdr;
+
+		buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
+		if (buf) {
+			memcpy(&iso_hdr, &msg[1], sizeof(iso_hdr));
+			len = sizeof(iso_hdr) + bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr.len));
+		} else {
+			LOG_ERR("No available ISO buffers!");
+			return NULL;
+		}
+		if (len > net_buf_tailroom(buf)) {
+			LOG_ERR("ISO too long: %d", len);
+			net_buf_unref(buf);
+			return NULL;
+		}
+		net_buf_add_mem(buf, &msg[1], len);
+		break;
+#endif /* CONFIG_BT_ISO */
 	default:
 		LOG_ERR("Unknown BT buf type %d", msg[0]);
 		return NULL;
@@ -488,6 +509,11 @@ static int bt_spi_send(struct net_buf *buf)
 	case BT_BUF_CMD:
 		net_buf_push_u8(buf, HCI_CMD);
 		break;
+#if defined(CONFIG_BT_ISO)
+	case BT_BUF_ISO_OUT:
+		net_buf_push_u8(buf, HCI_ISO);
+		break;
+#endif /* CONFIG_BT_ISO */
 	default:
 		LOG_ERR("Unsupported type");
 		return -EINVAL;
