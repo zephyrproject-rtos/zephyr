@@ -152,7 +152,7 @@ static int mcux_igpio_configure(const struct device *dev,
 
 
 	}
-#elif defined(CONFIG_SOC_SERIES_IMX8MQ_M4)
+#elif defined(CONFIG_SOC_MIMX8MQ6_M4)
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		/* Set ODE bit */
 		reg |= (0x1 << MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
