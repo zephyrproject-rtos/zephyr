@@ -1029,6 +1029,7 @@ config BT_CONN_DISABLE_SECURITY
 config BT_BREDR
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	depends on BT_HCI_HOST
+	select BT_CLASSIC
 	select BT_PERIPHERAL
 	select BT_CENTRAL
 	select BT_SMP
@@ -1036,6 +1037,13 @@ config BT_BREDR
 	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth BR/EDR support
+
+config BT_CLASSIC
+	bool "Bluetooth classic(BR/EDR) support [EXPERIMENTAL]"
+	depends on BT_BREDR
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth classic(BR/EDR) support
 
 if BT_BREDR
 config BT_MAX_SCO_CONN

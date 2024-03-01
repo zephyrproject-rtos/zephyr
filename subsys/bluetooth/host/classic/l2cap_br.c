@@ -19,8 +19,8 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#include "hci_core.h"
-#include "conn_internal.h"
+#include "host/hci_core.h"
+#include "host/conn_internal.h"
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
