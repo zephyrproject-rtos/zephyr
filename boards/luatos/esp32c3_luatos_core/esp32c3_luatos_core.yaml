@@ -1,4 +1,4 @@
-identifier: esp32c3_luatos_core
+identifier: esp32c3_luatos_core/esp32c3
 name: ESP32C3 LuatOS Core
 type: mcu
 arch: riscv
