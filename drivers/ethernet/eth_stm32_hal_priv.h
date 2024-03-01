@@ -49,6 +49,9 @@ struct eth_stm32_hal_dev_data {
 		CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
 	bool link_up;
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+	uint8_t hash_index_cnt[64];
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	const struct device *ptp_clock;
 	float clk_ratio;
