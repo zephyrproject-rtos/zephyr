@@ -1002,6 +1002,8 @@ bool z_set_prio(struct k_thread *thread, int prio)
 			} else {
 				thread->base.prio = prio;
 			}
+
+			flag_ipi();
 			update_cache(1);
 		} else {
 			thread->base.prio = prio;
@@ -1016,8 +1018,6 @@ bool z_set_prio(struct k_thread *thread, int prio)
 void z_thread_priority_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = z_set_prio(thread, prio);
-
-	flag_ipi();
 
 	if (need_sched && _current->base.sched_locked == 0U) {
 		z_reschedule_unlocked();
