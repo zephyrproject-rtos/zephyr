@@ -60,6 +60,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif /* defined(CONFIG_PINCTRL_NXP_KINETIS) */
 
+#ifdef CONFIG_ETH_NXP_ENET_QOS
+	if ((uint32_t)sub_system == MCUX_ENET_QOS_CLK) {
+		CLOCK_EnableClock(kCLOCK_Enet);
+	}
+#endif
+
 	return 0;
 }
 
@@ -274,6 +280,13 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 #endif /* CONFIG_MEMC_MCUX_FLEXSPI */
+
+#ifdef CONFIG_ETH_NXP_ENET_QOS
+	case MCUX_ENET_QOS_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
+		break;
+#endif
+
 	}
 
 	return 0;
