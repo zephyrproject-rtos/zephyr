@@ -64,7 +64,7 @@ static void set_compare(uint64_t time)
 {
 	/* Disarm the comparator to prevent spurious triggers */
 	sys_write32(sys_read32(DSPWCTCS_ADDR) & (~DSP_WCT_CS_TA(COMPARATOR_IDX)),
-			SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET);
+			DSPWCTCS_ADDR);
 
 	sys_write32((uint32_t)time, DSPWCT0C_LO_ADDR);
 	sys_write32((uint32_t)(time >> 32), DSPWCT0C_HI_ADDR);

@@ -124,7 +124,7 @@ void soc_start_core(int cpu_num)
 
 	if (cpu_num > 0) {
 		/* Initialize the ROM jump address */
-		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
+		uint32_t *rom_jump_vector;
 #if CONFIG_PM
 		extern void dsp_restore_vector(void);
 
