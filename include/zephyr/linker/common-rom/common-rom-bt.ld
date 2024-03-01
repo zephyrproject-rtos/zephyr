@@ -4,7 +4,7 @@
 
 	ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	ITERABLE_SECTION_ROM(bt_l2cap_br_fixed_chan, 4)
 #endif
 
