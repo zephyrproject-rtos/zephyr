@@ -6099,6 +6099,26 @@ void k_sys_runtime_stats_enable(void);
  */
 void k_sys_runtime_stats_disable(void);
 
+/**
+ * @brief Compute the length of a string
+ *
+ * Compute the length of string @p s not including the terminating '\0'
+ * character. If the '\0' character is not present in the first @p maxlen
+ * characters of @p s, then return @p maxlen.
+ *
+ * @param s String to compute the length for.
+ * @param maxlen Maximum string length.
+ * @return the length of @p s
+ */
+size_t k_strnlen(const char *s, size_t maxlen);
+
+#ifdef CONFIG_DEFINE_STRNLEN_VIA_K_STRNLEN
+#if !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L
+#undef strnlen
+#define strnlen(_s, _maxlen) k_strnlen(_s, _maxlen)
+#endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif

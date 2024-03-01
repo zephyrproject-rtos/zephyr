@@ -6,6 +6,7 @@ zephyr_syscall_header(
 
 zephyr_sources(
   cbprintf_packaged.c
+  k_strnlen.c
   printk.c
   sem.c
   thread_entry.c

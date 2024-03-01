@@ -113,6 +113,13 @@ config POWEROFF
 	help
 	  Enable support for system power off.
 
+config DEFINE_STRNLEN_VIA_K_STRNLEN
+	bool "Define strnlen in terms of k_strnlen"
+	default y
+	help
+	  This option is here to assist in transitioning from strnlen() to
+	  k_strnlen().
+
 rsource "Kconfig.cbprintf"
 
 endmenu
