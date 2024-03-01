@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2021 SILA Embedded Solutions GmbH
 
 # Enable the internal SMPS regulator
 CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
@@ -11,15 +12,15 @@ CONFIG_HW_STACK_PROTECTION=y
 
 CONFIG_SERIAL=y
 
-# console
+# Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# enable GPIO
+# Enable GPIO
 CONFIG_GPIO=y
 
 # Enable Clocks
 CONFIG_CLOCK_CONTROL=y
 
-# enable pin controller
+# Enable pin controller
 CONFIG_PINCTRL=y

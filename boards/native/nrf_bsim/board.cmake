@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Nordic Semiconductor ASA
 
 set(SUPPORTED_EMU_PLATFORMS native)
 

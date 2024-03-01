@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2021 Thomas Stranger
 
 board_runner_args(pyocd "--target=stm32wle5jcix")
 board_runner_args(pyocd "--flash-opt=-O reset_type=hw")

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2019 Intel Corp.
 
 if(CONFIG_BOARD_QEMU_X86_64 AND CONFIG_BUILD_OUTPUT_EFI)
 set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
