@@ -76,9 +76,18 @@ static int settings_direct_loader(const char *key, size_t len,
 
 int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 {
+#if IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
 	struct flash_pages_info page;
+#if IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+	/* There are both types of devices */
+	const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
 
+	/* Stream flash does not rely on erase, it does it when device needs it */
+	if (!fparams->caps.explicit_erase) {
+		return 0;
+	}
+#endif
 	rc = flash_get_page_info_by_offs(ctx->fdev, off, &page);
 	if (rc != 0) {
 		LOG_ERR("Error %d while getting page info", rc);
@@ -100,6 +109,9 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 	}
 
 	return rc;
+#else
+	return 0
+#endif
 }
 
 #endif /* CONFIG_STREAM_FLASH_ERASE */
