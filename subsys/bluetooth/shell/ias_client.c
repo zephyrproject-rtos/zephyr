@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <zephyr/types.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -17,14 +18,14 @@
 
 #include "bt.h"
 
-extern const struct shell *ctx_shell;
+LOG_MODULE_REGISTER(ias_client_shell, LOG_LEVEL_DBG);
 
 static void ias_discover_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to discover IAS err: %d\n", err);
+		LOG_ERR("Failed to discover IAS err: %d\n", err);
 	} else {
-		shell_print(ctx_shell, "IAS discover success\n");
+		LOG_DBG("IAS discover success\n");
 	}
 }
 
@@ -35,10 +36,6 @@ static struct bt_ias_client_cb ias_client_callbacks = {
 static int cmd_ias_client_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
 
 	err = bt_ias_client_cb_register(&ias_client_callbacks);
 	if (err != 0) {

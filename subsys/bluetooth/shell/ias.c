@@ -13,26 +13,27 @@
 #include <zephyr/bluetooth/conn.h>
 
 #include <zephyr/types.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/services/ias.h>
 
-extern const struct shell *ctx_shell;
+LOG_MODULE_REGISTER(ias_shell, LOG_LEVEL_DBG);
 
 static void alert_stop(void)
 {
-	shell_print(ctx_shell, "Alert stopped\n");
+	LOG_DBG("Alert stopped\n");
 }
 
 static void alert_start(void)
 {
-	shell_print(ctx_shell, "Mild alert started\n");
+	LOG_DBG("Mild alert started\n");
 }
 
 static void alert_high_start(void)
 {
-	shell_print(ctx_shell, "High alert started\n");
+	LOG_DBG("High alert started\n");
 }
 
 BT_IAS_CB_DEFINE(ias_callbacks) = {
