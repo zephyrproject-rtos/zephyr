@@ -159,7 +159,7 @@ struct bt_mesh_health_srv {
 
 #ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
 	/** Pointer to the array with Health Test Info Metadata */
-	struct bt_mesh_models_metadata_entry *metadata;
+	const struct bt_mesh_models_metadata_entry *metadata;
 #endif
 };
 
