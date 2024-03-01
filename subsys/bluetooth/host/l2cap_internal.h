@@ -10,7 +10,7 @@
 
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/sys/iterable_sections.h>
-#include "classic/l2cap_br_interface.h"
+#include "host/classic/l2cap_br_interface.h"
 
 enum l2cap_conn_list_action {
 	BT_L2CAP_CHAN_LOOKUP,
