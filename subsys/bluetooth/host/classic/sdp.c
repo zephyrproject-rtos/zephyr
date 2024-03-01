@@ -14,7 +14,7 @@
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/bluetooth/buf.h>
-#include <zephyr/bluetooth/sdp.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 
 #include "common/bt_str.h"
 #include "common/assert.h"
