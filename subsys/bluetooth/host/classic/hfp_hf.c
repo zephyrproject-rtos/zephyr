@@ -94,6 +94,8 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	net_buf_add(buf, ret);
 	net_buf_add_u8(buf, '\r');
 
+	LOG_DBG("HF %p, DLC %p sending buf %p", hf, &hf->rfcomm_dlc, buf);
+
 	ret = bt_rfcomm_dlc_send(&hf->rfcomm_dlc, buf);
 	if (ret < 0) {
 		LOG_ERR("Rfcomm send error :(%d)", ret);
@@ -640,6 +642,11 @@ static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	}
 }
 
+static void hfp_hf_sent(struct bt_rfcomm_dlc *dlc, struct net_buf *buf, int err)
+{
+	LOG_DBG("DLC %p sent cb buf %p (err %d)", dlc, buf, err);
+}
+
 static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 {
 	int i;
@@ -647,6 +654,7 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 		.connected = hfp_hf_connected,
 		.disconnected = hfp_hf_disconnected,
 		.recv = hfp_hf_recv,
+		.sent = hfp_hf_sent,
 	};
 
 	LOG_DBG("conn %p", conn);
