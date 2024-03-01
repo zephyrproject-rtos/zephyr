@@ -691,9 +691,9 @@ static uint8_t health_tests[] = {
 	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_NORDIC_SEMI, 3, 0x01, 0x02, 0x03),
 };
 
-static uint8_t zero_metadata[100];
+static const uint8_t zero_metadata[100];
 
-static struct bt_mesh_models_metadata_entry health_srv_meta[] = {
+static const struct bt_mesh_models_metadata_entry health_srv_meta[] = {
 	BT_MESH_HEALTH_TEST_INFO_METADATA(health_tests),
 	{
 		.len = ARRAY_SIZE(zero_metadata),
@@ -703,13 +703,13 @@ static struct bt_mesh_models_metadata_entry health_srv_meta[] = {
 	BT_MESH_MODELS_METADATA_END,
 };
 
-static uint8_t health_tests_alt[] = {
+static const uint8_t health_tests_alt[] = {
 	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_LF, 6, 0x11, 0x22, 0x33, 0x44, 0x55,
 				 0x66),
 	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_NORDIC_SEMI, 3, 0x11, 0x22, 0x33),
 };
 
-static struct bt_mesh_models_metadata_entry health_srv_meta_alt[] = {
+static const struct bt_mesh_models_metadata_entry health_srv_meta_alt[] = {
 	BT_MESH_HEALTH_TEST_INFO_METADATA(health_tests_alt),
 	{
 		.len = ARRAY_SIZE(zero_metadata),

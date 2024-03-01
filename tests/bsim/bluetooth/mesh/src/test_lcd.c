@@ -86,7 +86,7 @@ static void test_args_parse(int argc, char *argv[])
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
 }
 
-static struct bt_mesh_models_metadata_entry *dummy_meta_entry[] = {};
+static const struct bt_mesh_models_metadata_entry *dummy_meta_entry[] = {};
 
 /* Empty elements to create large composition/meta data */
 #define DUMMY_ELEM(i, _) BT_MESH_ELEM((i) + 2,	\

@@ -144,6 +144,11 @@ Bluetooth
 Bluetooth Mesh
 ==============
 
+* The model metadata pointer declaration of :c:struct:`bt_mesh_model` has been changed
+  to add ``const`` qualifiers. The data pointer of :c:struct:`bt_mesh_models_metadata_entry`
+  got ``const`` qualifier too. The model's metadata structure and metadata raw value
+  can be declared as permanent constants in the non-volatile memory. (:github:`69679`)
+
 Bluetooth Audio
 ===============
 
