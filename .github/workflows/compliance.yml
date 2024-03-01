@@ -58,6 +58,7 @@ jobs:
         ls -la
         git log  --pretty=oneline | head -n 10
         # ignore image size check for now, needs to be removed before merge into main
+        git config diff.renameLimit 999999
         ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e ImageSize
         -c origin/${BASE_REF}..
 
