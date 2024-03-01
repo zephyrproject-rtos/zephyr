@@ -54,7 +54,7 @@ int main(void)
 		memc_write_buffer[i] = (uint8_t)i;
 	}
 	printk("Writing to memory region with base %p, size 0x%0x\n\n",
-		MEMC_BASE, MEMC_SIZE);
+		memc, MEMC_SIZE);
 	/* Copy write buffer into memc region */
 	for (i = 0, j = 0; j < (MEMC_SIZE / BUF_SIZE); i += BUF_SIZE, j++) {
 		memcpy(memc + i, memc_write_buffer, BUF_SIZE);
