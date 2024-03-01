@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -265,9 +265,8 @@ struct flash_pages_info {
  *
  *  @return  0 on success, -EINVAL if page of the offset doesn't exist.
  */
-__syscall int flash_get_page_info_by_offs(const struct device *dev,
-					  off_t offset,
-					  struct flash_pages_info *info);
+int flash_get_page_info_by_offs(const struct device *dev, off_t offset,
+				struct flash_pages_info *info);
 
 /**
  *  @brief  Get the size and start offset of flash page of certain index.
@@ -278,9 +277,8 @@ __syscall int flash_get_page_info_by_offs(const struct device *dev,
  *
  *  @return  0 on success, -EINVAL  if page of the index doesn't exist.
  */
-__syscall int flash_get_page_info_by_idx(const struct device *dev,
-					 uint32_t page_index,
-					 struct flash_pages_info *info);
+int flash_get_page_info_by_idx(const struct device *dev, uint32_t page_index,
+			       struct flash_pages_info *info);
 
 /**
  *  @brief  Get the total number of flash pages.
@@ -289,7 +287,7 @@ __syscall int flash_get_page_info_by_idx(const struct device *dev,
  *
  *  @return  Number of flash pages.
  */
-__syscall size_t flash_get_page_count(const struct device *dev);
+size_t flash_get_page_count(const struct device *dev);
 
 /**
  * @brief Callback type for iterating over flash pages present on a device.
@@ -395,9 +393,7 @@ static inline int z_impl_flash_read_jedec_id(const struct device *dev,
  *
  *  @return  write block size in bytes.
  */
-__syscall size_t flash_get_write_block_size(const struct device *dev);
-
-static inline size_t z_impl_flash_get_write_block_size(const struct device *dev)
+static inline size_t flash_get_write_block_size(const struct device *dev)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
@@ -417,9 +413,7 @@ static inline size_t z_impl_flash_get_write_block_size(const struct device *dev)
  *  @return pointer to flash_parameters structure characteristic for
  *          the device.
  */
-__syscall const struct flash_parameters *flash_get_parameters(const struct device *dev);
-
-static inline const struct flash_parameters *z_impl_flash_get_parameters(const struct device *dev)
+static inline const struct flash_parameters *flash_get_parameters(const struct device *dev)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;

@@ -29,6 +29,14 @@ tests:
     extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
     integration_platforms:
       - nrf52840dk_nrf52840
+  # Use duplicate of above to test with CONFIG_USERSPACE=y
+  drivers.flash.common.soc_flash_nrf.userspace:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      - OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
+      - CONFIG_USERSPACE=y
+    integration_platforms:
+      - nrf52840dk_nrf52840
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
