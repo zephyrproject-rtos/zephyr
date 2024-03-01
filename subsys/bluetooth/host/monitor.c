@@ -57,7 +57,7 @@ static struct {
 	atomic_t evt;
 	atomic_t acl_tx;
 	atomic_t acl_rx;
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	atomic_t sco_tx;
 	atomic_t sco_rx;
 #endif
@@ -79,7 +79,7 @@ static void drop_add(uint16_t opcode)
 	case BT_MONITOR_ACL_RX_PKT:
 		atomic_inc(&drops.acl_rx);
 		break;
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_MONITOR_SCO_TX_PKT:
 		atomic_inc(&drops.sco_tx);
 		break;
@@ -194,7 +194,7 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint32_t timestamp,
 	encode_drops(hdr, BT_MONITOR_EVENT_DROPS, &drops.evt);
 	encode_drops(hdr, BT_MONITOR_ACL_TX_DROPS, &drops.acl_tx);
 	encode_drops(hdr, BT_MONITOR_ACL_RX_DROPS, &drops.acl_rx);
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	encode_drops(hdr, BT_MONITOR_SCO_TX_DROPS, &drops.sco_tx);
 	encode_drops(hdr, BT_MONITOR_SCO_RX_DROPS, &drops.sco_rx);
 #endif

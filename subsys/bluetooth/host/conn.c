@@ -113,20 +113,20 @@ NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT,
 
 #endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 const struct bt_conn_auth_cb *bt_auth;
 sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 static struct bt_conn_cb *callback_list;
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static int bt_hci_connect_br_cancel(struct bt_conn *conn);
 
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
@@ -147,11 +147,11 @@ int bt_conn_iso_init(void)
 
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.acl_mtu) {
 		return &bt_dev.br.pkts;
 	}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_ISO)
 	/* Use ISO pkts semaphore if LE Read Buffer Size command returned
@@ -581,12 +581,12 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 static inline uint16_t conn_mtu(struct bt_conn *conn)
 {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (conn->type == BT_CONN_TYPE_BR ||
 	    (conn->type != BT_CONN_TYPE_ISO && !bt_dev.le.acl_mtu)) {
 		return bt_dev.br.mtu;
 	}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 #if defined(CONFIG_BT_ISO)
 	if (conn->type == BT_CONN_TYPE_ISO) {
 		return bt_dev.le.iso_mtu;
@@ -1259,7 +1259,7 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type)
 	}
 #endif
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	conn = conn_lookup_handle(sco_conns, ARRAY_SIZE(sco_conns), handle);
 	if (conn) {
 		goto found;
@@ -1299,7 +1299,7 @@ void bt_conn_foreach(enum bt_conn_type type,
 		func(conn, data);
 		bt_conn_unref(conn);
 	}
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (type & BT_CONN_TYPE_SCO) {
 		for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
 			struct bt_conn *conn = bt_conn_ref(&sco_conns[i]);
@@ -1312,7 +1312,7 @@ void bt_conn_foreach(enum bt_conn_type type,
 			bt_conn_unref(conn);
 		}
 	}
-#endif /* defined(CONFIG_BT_BREDR) */
+#endif /* defined(CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
@@ -1406,7 +1406,7 @@ uint8_t bt_conn_index(const struct bt_conn *conn)
 			"Invalid bt_conn pointer");
 		break;
 #endif
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_SCO:
 		index = conn - sco_conns;
 		__ASSERT(index >= 0 && index < ARRAY_SIZE(sco_conns),
@@ -1577,11 +1577,11 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 			return conn_disconnect(conn, reason);
 		}
 #endif /* CONFIG_BT_ISO */
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		else if (conn->type == BT_CONN_TYPE_BR) {
 			return bt_hci_connect_br_cancel(conn);
 		}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 		else {
 			__ASSERT(false, "Invalid conn type %u", conn->type);
 		}
@@ -1934,7 +1934,7 @@ static struct bt_conn *acl_conn_new(void)
 	return bt_conn_new(acl_conns, ARRAY_SIZE(acl_conns));
 }
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 void bt_sco_cleanup(struct bt_conn *sco_conn)
 {
 	bt_conn_unref(sco_conn->sco.acl);
@@ -2188,7 +2188,7 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 	return err;
 }
 
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_SMP)
 bool bt_conn_ltk_present(const struct bt_conn *conn)
@@ -2262,14 +2262,14 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 }
 #endif /* CONFIG_BT_SMP */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		struct bt_hci_cp_read_encryption_key_size *cp;
 		struct bt_hci_rp_read_encryption_key_size *rp;
@@ -2309,13 +2309,13 @@ uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 
 static void reset_pairing(struct bt_conn *conn)
 {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
 		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
 		atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
 	}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 	/* Reset required security level to current operational */
 	conn->required_sec_level = conn->sec_level;
@@ -2348,11 +2348,11 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			bt_keys_update_usage(conn->id, bt_conn_get_dst(conn));
 		}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		if (conn->type == BT_CONN_TYPE_BR) {
 			bt_keys_link_key_update_usage(&conn->br.dst);
 		}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 	}
 #endif
@@ -2360,7 +2360,7 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 
 static int start_security(struct bt_conn *conn)
 {
-	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && conn->type == BT_CONN_TYPE_BR) {
 		return bt_ssp_start_security(conn);
 	}
 
@@ -2610,11 +2610,11 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	info->state = conn_internal_to_public_state(conn->state);
 	info->security.flags = 0;
 	info->security.level = bt_conn_get_security(conn);
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	info->security.enc_key_size = bt_conn_enc_key_size(conn);
 #else
 	info->security.enc_key_size = 0;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:
@@ -2643,7 +2643,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 			info->security.flags |= BT_SECURITY_FLAG_OOB;
 		}
 		return 0;
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		info->br.dst = &conn->br.dst;
 		return 0;
@@ -2692,7 +2692,7 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
 	case BT_CONN_TYPE_LE:
 		remote_info->le.features = conn->le.features;
 		return 0;
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		/* TODO: Make sure the HCI commands to read br features and
 		*  extended features has finished. */
@@ -3342,7 +3342,7 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 #endif /* CONFIG_NET_BUF_LOG */
 }
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
 	if (!cb) {
@@ -3359,7 +3359,7 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 	 */
 	if (!cb->cancel &&
 	    (cb->passkey_display || cb->passkey_entry || cb->passkey_confirm ||
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	     cb->pincode_entry ||
 #endif
 	     cb->pairing_confirm)) {
@@ -3424,7 +3424,7 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return bt_smp_auth_passkey_entry(conn, passkey);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && conn->type == BT_CONN_TYPE_BR) {
 		if (!bt_auth) {
 			return -EINVAL;
 		}
@@ -3454,7 +3454,7 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 		return bt_smp_auth_passkey_confirm(conn);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && conn->type == BT_CONN_TYPE_BR) {
 		if (!bt_auth) {
 			return -EINVAL;
 		}
@@ -3471,7 +3471,7 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 		return bt_smp_auth_cancel(conn);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && conn->type == BT_CONN_TYPE_BR) {
 		if (!bt_auth) {
 			return -EINVAL;
 		}
@@ -3488,7 +3488,7 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 		return bt_smp_auth_pairing_confirm(conn);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && conn->type == BT_CONN_TYPE_BR) {
 		if (!bt_auth) {
 			return -EINVAL;
 		}
@@ -3498,7 +3498,7 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 
 	return -EINVAL;
 }
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 struct bt_conn *bt_conn_lookup_index(uint8_t index)
 {

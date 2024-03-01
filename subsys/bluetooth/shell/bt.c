@@ -52,9 +52,9 @@ struct bt_conn *default_conn;
 static struct bt_conn *pairing_conn;
 
 static struct bt_le_oob oob_local;
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static struct bt_le_oob oob_remote;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_SMP)
@@ -631,7 +631,7 @@ void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	}
 
 	switch (info.type) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, len);
 		break;
@@ -773,7 +773,7 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 }
 #endif
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static const char *security_err_str(enum bt_security_err err)
 {
 	switch (err) {
@@ -902,7 +902,7 @@ static struct bt_conn_cb conn_callbacks = {
 #if defined(CONFIG_BT_SMP)
 	.identity_resolved = identity_resolved,
 #endif
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	.security_changed = security_changed,
 #endif
 #if defined(CONFIG_BT_REMOTE_INFO)
@@ -1636,7 +1636,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	size_t ad_len = 0;
 
 	/* Set BR/EDR Not Supported if LE-only device */
-	ad_flags = IS_ENABLED(CONFIG_BT_BREDR) ? 0 : BT_LE_AD_NO_BREDR;
+	ad_flags = IS_ENABLED(CONFIG_BT_CLASSIC) ? 0 : BT_LE_AD_NO_BREDR;
 
 	if (discoverable) {
 		/* A privacy-enabled Set Member should advertise RSI values only when in
@@ -3096,14 +3096,14 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 #endif
 	}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (info.type == BT_CONN_TYPE_BR) {
 		char addr_str[BT_ADDR_STR_LEN];
 
 		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
 		shell_print(ctx_shell, "Peer address %s", addr_str);
 	}
-#endif /* defined(CONFIG_BT_BREDR) */
+#endif /* defined(CONFIG_BT_CLASSIC) */
 
 done:
 	bt_conn_unref(conn);
@@ -3284,7 +3284,7 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static int cmd_oob_remote(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
@@ -3320,7 +3320,7 @@ static int cmd_oob_clear(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 
 static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -3341,7 +3341,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc < 3) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		addr.type = BT_ADDR_LE_PUBLIC;
 		err = bt_addr_from_str(argv[1], &addr.a);
 #else
@@ -3368,7 +3368,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static int cmd_security(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, sec;
@@ -3478,7 +3478,7 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	}
 
 	switch (info.type) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 		shell_print(ctx_shell, " #%u [BR][%s] %s", info.id, role_str(info.role), addr);
@@ -3677,7 +3677,7 @@ static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err err)
 		    security_err_str(err), err);
 }
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -3740,7 +3740,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #endif
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3755,7 +3755,7 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3770,7 +3770,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3782,7 +3782,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 };
 
 static struct bt_conn_auth_cb auth_cb_confirm = {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3797,7 +3797,7 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = auth_pairing_oob_data_request,
@@ -3812,7 +3812,7 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 	.passkey_display = NULL,
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = NULL,
 #endif
 	.oob_data_request = auth_pairing_oob_data_request,
@@ -4125,7 +4125,7 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
-#endif /* CONFIG_BT_SMP) || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP) || CONFIG_BT_CLASSIC */
 
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
@@ -4308,7 +4308,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
 				      "LE: 1 - 4> [force-pair]",
 		      cmd_security, 1, 2),
@@ -4351,7 +4351,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
 		      1, 1),
 #endif
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	SHELL_CMD(mesh_adv, NULL, HELP_ONOFF, cmd_mesh_adv),

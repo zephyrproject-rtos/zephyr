@@ -1902,7 +1902,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 	return 0;
 }
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 int bt_br_oob_get_local(struct bt_br_oob *oob)
 {
 	CHECKIF(oob == NULL) {
@@ -1913,7 +1913,7 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 
 	return 0;
 }
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 {
