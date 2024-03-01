@@ -82,8 +82,7 @@ fcb_erase_sector(const struct fcb *fcb, const struct flash_sector *sector)
 		return -EIO;
 	}
 
-	rc = flash_area_erase(fcb->fap, sector->fs_off, sector->fs_size);
-
+	rc = flash_area_flatten(fcb->fap, sector->fs_off, sector->fs_size);
 	if (rc != 0) {
 		return -EIO;
 	}
