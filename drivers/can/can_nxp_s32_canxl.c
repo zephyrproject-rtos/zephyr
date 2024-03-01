@@ -59,8 +59,6 @@ LOG_MODULE_REGISTER(nxp_s32_canxl, CONFIG_CAN_LOG_LEVEL);
 struct can_nxp_s32_config {
 	const struct can_driver_config common;
 	CANXL_SIC_Type *base_sic;
-	CANXL_GRP_CONTROL_Type *base_grp_ctrl;
-	CANXL_DSC_CONTROL_Type *base_dsc_ctrl;
 #ifdef CONFIG_CAN_NXP_S32_RX_FIFO
 	CANXL_RXFIFO_Type * base_rx_fifo;
 	CANXL_RXFIFO_CONTROL_Type *base_rx_fifo_ctrl;
@@ -201,35 +199,6 @@ static int can_nxp_s32_start(const struct device *dev)
 	return 0;
 }
 
-static int can_nxp_s32_abort_msg(const struct can_nxp_s32_config *config, int mb_idx)
-{
-	uint32_t time_start = 0;
-	int ret = 0;
-
-	Canexcel_Ip_EnterFreezeMode(config->instance);
-
-	CanXL_ClearMsgBuffIntCmd(config->base_grp_ctrl, mb_idx);
-	CanXL_ClearMsgDescIntStatusFlag(config->base_grp_ctrl, mb_idx);
-
-	time_start = k_uptime_get();
-	/* Set system lock Status */
-	(void)config->base_dsc_ctrl->DSCMBCTRLAR[mb_idx].SYSLOCK.DCSYSLOCK;
-	while (CanXL_GetDescControlStatus(config->base_dsc_ctrl, mb_idx)
-			== CANEXCEL_DESCNTSTATUS_LOCKED_HW) {
-		if (k_uptime_get() - time_start >= CAN_NXP_S32_TIMEOUT_MS) {
-			ret = CANEXCEL_STATUS_TIMEOUT;
-			break;
-		}
-	}
-
-	/* Inactive descriptor */
-	config->base_dsc_ctrl->DSCMBCTRLAR[mb_idx].ACT.DCACT = 0;
-
-	Canexcel_Ip_ExitFreezeMode(config->instance);
-
-	return ret;
-}
-
 static int can_nxp_s32_stop(const struct device *dev)
 {
 	const struct can_nxp_s32_config *config = dev->config;
@@ -251,7 +220,7 @@ static int can_nxp_s32_stop(const struct device *dev)
 		arg = data->tx_cbs[alloc].arg;
 
 		if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
-			if (can_nxp_s32_abort_msg(config,
+			if (Canexcel_Ip_DeactivateMD(config->instance,
 					ALLOC_IDX_TO_TXMB_IDX(alloc))) {
 				LOG_ERR("Can't abort message !");
 			};
@@ -469,7 +438,7 @@ static void can_nxp_s32_remove_rx_filter(const struct device *dev, int filter_id
 
 		Canexcel_Ip_ExitFreezeMode(config->instance);
 #else
-		if (can_nxp_s32_abort_msg(config, mb_indx)) {
+		if (Canexcel_Ip_DeactivateMD(config->instance, mb_indx)) {
 			LOG_ERR("Can't abort message !");
 		};
 #endif
@@ -798,7 +767,7 @@ static void can_nxp_s32_err_callback(const struct device *dev,
 			arg = data->tx_cbs[alloc].arg;
 
 			if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
-				if (can_nxp_s32_abort_msg(config,
+				if (Canexcel_Ip_DeactivateMD(config->instance,
 						ALLOC_IDX_TO_TXMB_IDX(alloc))) {
 					LOG_ERR("Can't abort message !");
 				};
@@ -1184,10 +1153,6 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	static struct can_nxp_s32_config can_nxp_s32_config_##n = {			\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, CAN_NXP_S32_MAX_BITRATE),	\
 		.base_sic = (CANXL_SIC_Type *)DT_INST_REG_ADDR_BY_NAME(n, sic),		\
-		.base_grp_ctrl = (CANXL_GRP_CONTROL_Type *)				\
-				DT_INST_REG_ADDR_BY_NAME(n, grp_ctrl),			\
-		.base_dsc_ctrl = (CANXL_DSC_CONTROL_Type *)				\
-				DT_INST_REG_ADDR_BY_NAME(n, dsc_ctrl),			\
 		IF_ENABLED(CONFIG_CAN_NXP_S32_RX_FIFO,					\
 			(.base_rx_fifo = (CANXL_RXFIFO_Type *)				\
 				DT_INST_REG_ADDR_BY_NAME(n, rx_fifo),			\
