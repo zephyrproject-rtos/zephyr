@@ -32,6 +32,7 @@ source "drivers/mdio/Kconfig.adin2111"
 source "drivers/mdio/Kconfig.gpio"
 source "drivers/mdio/Kconfig.nxp_enet"
 source "drivers/mdio/Kconfig.xmc4xxx"
+source "drivers/mdio/Kconfig.nxp_enet_qos"
 
 config MDIO_INIT_PRIORITY
 	int "Init priority"
