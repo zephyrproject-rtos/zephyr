@@ -142,9 +142,20 @@
 	status = "okay";
 };
 
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <GECKO_PSEL(I2C_SDA, D, 2)>,
+				<GECKO_PSEL(I2C_SCL, D, 3)>,
+				<GECKO_LOC(I2C_SDA, 3)>,
+				<GECKO_LOC(I2C_SCL, 3)>;
+		};
+	};
+};
+
 &i2c0 {
-	location-sda = <GECKO_LOCATION(3) GECKO_PORT_D GECKO_PIN(2)>;
-	location-scl = <GECKO_LOCATION(3) GECKO_PORT_D GECKO_PIN(3)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	si7210@30 {
