@@ -348,11 +348,11 @@ static void update_cache(int preempt_ok)
 #endif /* CONFIG_SMP */
 }
 
-static bool thread_active_elsewhere(struct k_thread *thread)
+static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 {
-	/* True if the thread is currently running on another CPU.
-	 * There are more scalable designs to answer this question in
-	 * constant time, but this is fine for now.
+	/* Returns pointer to _cpu if the thread is currently running on
+	 * another CPU. There are more scalable designs to answer this
+	 * question in constant time, but this is fine for now.
 	 */
 #ifdef CONFIG_SMP
 	int currcpu = _current_cpu->id;
@@ -362,12 +362,12 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 	for (int i = 0; i < num_cpus; i++) {
 		if ((i != currcpu) &&
 		    (_kernel.cpus[i].current == thread)) {
-			return true;
+			return &_kernel.cpus[i];
 		}
 	}
 #endif /* CONFIG_SMP */
 	ARG_UNUSED(thread);
-	return false;
+	return NULL;
 }
 
 static void ready_thread(struct k_thread *thread)
@@ -390,7 +390,7 @@ static void ready_thread(struct k_thread *thread)
 
 void z_ready_thread_locked(struct k_thread *thread)
 {
-	if (!thread_active_elsewhere(thread)) {
+	if (thread_active_elsewhere(thread) == NULL) {
 		ready_thread(thread);
 	}
 }
@@ -398,7 +398,7 @@ void z_ready_thread_locked(struct k_thread *thread)
 void z_ready_thread(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
-		if (!thread_active_elsewhere(thread)) {
+		if (thread_active_elsewhere(thread) == NULL) {
 			ready_thread(thread);
 		}
 	}
@@ -466,7 +466,10 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 	 * halt itself in the IPI.  Otherwise it's unscheduled, so we
 	 * can clean it up directly.
 	 */
-	if (thread_active_elsewhere(thread)) {
+
+	struct _cpu *cpu = thread_active_elsewhere(thread);
+
+	if (cpu != NULL) {
 		thread->base.thread_state |= (terminate ? _THREAD_ABORTING
 					      : _THREAD_SUSPENDING);
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
@@ -731,19 +734,38 @@ void z_unpend_thread(struct k_thread *thread)
 bool z_thread_prio_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
+	int old_prio = thread->base.prio;
 
 	K_SPINLOCK(&_sched_spinlock) {
 		need_sched = z_is_thread_ready(thread);
 
 		if (need_sched) {
-			/* Don't requeue on SMP if it's the running thread */
 			if (!IS_ENABLED(CONFIG_SMP) || z_is_thread_queued(thread)) {
 				dequeue_thread(thread);
 				thread->base.prio = prio;
 				queue_thread(thread);
+
+				if (old_prio > prio) {
+					flag_ipi();
+				}
 			} else {
+				/*
+				 * This is a running thread on SMP. Update its
+				 * priority, but do not requeue it. An IPI is
+				 * needed if the priority is both being lowered
+				 * and it is running on another CPU.
+				 */
+
 				thread->base.prio = prio;
+
+				struct _cpu *cpu;
+
+				cpu = thread_active_elsewhere(thread);
+				if ((cpu != NULL) && (old_prio < prio)) {
+					flag_ipi();
+				}
 			}
+
 			update_cache(1);
 		} else {
 			thread->base.prio = prio;
@@ -1006,8 +1028,8 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 
 	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
 
-	flag_ipi();
-	if (need_sched && (_current->base.sched_locked == 0U)) {
+	if ((need_sched) && (IS_ENABLED(CONFIG_SMP) ||
+			     (_current->base.sched_locked == 0U))) {
 		z_reschedule_unlocked();
 	}
 }
@@ -1219,7 +1241,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 
 	z_mark_thread_as_not_suspended(thread);
 
-	if (!thread_active_elsewhere(thread)) {
+	if (thread_active_elsewhere(thread) == NULL) {
 		ready_thread(thread);
 	}
 
