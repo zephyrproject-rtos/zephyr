@@ -12,6 +12,12 @@ tests:
     tags: flash_circural_buffer
     integration_platforms:
       - nrf52840dk/nrf52840
+  filesystem.fcb.no_erase:
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+  filesystem.fcb.native_sim.no_erase:
+    extra_args: CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
+    platform_allow: native_sim
   filesystem.fcb.native_sim.fcb_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/native_sim_ev_0x00.overlay
     platform_allow: native_sim
