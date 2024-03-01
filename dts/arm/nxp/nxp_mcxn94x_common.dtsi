@@ -585,6 +585,24 @@
 		voltage-reference = <0>;
 		#io-channel-cells = <1>;
 	};
+
+	enet: ethernet@40100000 {
+		compatible = "nxp,enet-qos";
+		reg = <0x40100000 0x1200>;
+		clocks = <&syscon MCUX_ENET_QOS_CLK>;
+		enet_mac: ethernet {
+			compatible = "nxp,enet-qos-mac";
+			status = "disabled";
+			interrupts = <139 0>, <140 0>, <141 0>;
+			interrupt-names = "mac", "power", "lpi";
+		};
+		enet_mdio: mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "nxp,enet-qos-mdio";
+			status = "disabled";
+		};
+	};
 };
 
 &systick {
