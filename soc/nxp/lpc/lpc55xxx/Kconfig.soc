@@ -36,10 +36,6 @@ config SOC_LPC55S69_CPU1
 	bool
 	select SOC_LPC55S69
 
-config MCUX_CORE_SUFFIX
-	default "_cm33_core0" if SOC_LPC55S69_CPU0
-	default "_cm33_core1" if SOC_LPC55S69_CPU1
-
 config SOC
 	default "lpc55s69" if SOC_LPC55S69_CPU0 || SOC_LPC55S69_CPU1
 	default "lpc55s06" if SOC_LPC55S06
