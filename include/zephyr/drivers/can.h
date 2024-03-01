@@ -1016,6 +1016,10 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
  * The returned bitrate error is remainder of the division of the clock rate by
  * the bitrate times the timing segments.
  *
+ * @deprecated This function allows for bitrate errors, but bitrate errors between nodes on the same
+ *             network leads to them drifting apart after the start-of-frame (SOF) synchronization
+ *             has taken place.
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param timing  Result is written into the can_timing struct provided.
  * @param bitrate Target bitrate.
@@ -1023,8 +1027,8 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
  * @retval 0 or positive bitrate error.
  * @retval Negative error code on error.
  */
-int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
-		       uint32_t bitrate);
+__deprecated int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
+				    uint32_t bitrate);
 
 /**
  * @brief Configure the bus timing of a CAN controller.
