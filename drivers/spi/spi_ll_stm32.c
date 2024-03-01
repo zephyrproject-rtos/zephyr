@@ -448,9 +448,9 @@ static void spi_stm32_complete(const struct device *dev, int status)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	SPI_TypeDef *spi = cfg->spi;
-#ifdef CONFIG_SPI_STM32_INTERRUPT
 	struct spi_stm32_data *data = dev->data;
 
+#ifdef CONFIG_SPI_STM32_INTERRUPT
 	ll_func_disable_int_tx_empty(spi);
 	ll_func_disable_int_rx_not_empty(spi);
 	ll_func_disable_int_errors(spi);
@@ -493,7 +493,9 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-	ll_func_disable_spi(spi);
+	if (!(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
+		ll_func_disable_spi(spi);
+	}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, dev, status);
@@ -687,8 +689,10 @@ static int spi_stm32_release(const struct device *dev,
 			     const struct spi_config *config)
 {
 	struct spi_stm32_data *data = dev->data;
+	const struct spi_stm32_config *cfg = dev->config;
 
 	spi_context_unlock_unconditionally(&data->ctx);
+	ll_func_disable_spi(cfg->spi);
 
 	return 0;
 }
