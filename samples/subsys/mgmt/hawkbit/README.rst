@@ -86,6 +86,15 @@ hawkBit can be built for the :ref:`Freedom-K64F <frdm_k64f>` as follows:
     :conf: "prj.conf"
     :goals: build
 
+If you want to build it with the ability to set the hawkBit server address
+and port during runtime, you can use the following command:
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/subsys/mgmt/hawkbit
+    :board: frdm_k64f
+    :conf: "prj.conf overlay-runtime.conf"
+    :goals: build
+
 .. _hawkbit_sample_sign:
 
 Step 5: Sign and confirm the first image
