@@ -1417,6 +1417,8 @@ class KeepSorted(ComplianceTest):
 
         start_marker = f"{self.MARKER}-start"
         stop_marker = f"{self.MARKER}-stop"
+        start_line = None
+        stop_line = None
 
         for line_num, line in enumerate(fp.readlines(), start=1):
             if start_marker in line:
@@ -1426,15 +1428,18 @@ class KeepSorted(ComplianceTest):
                                      desc=desc)
                 in_block = True
                 block_data = ""
+                start_line = line_num + 1
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
                                      desc=desc)
                 in_block = False
+                stop_line = line_num - 1
 
                 if not self.block_is_sorted(block_data):
-                    desc = f"sorted block is not sorted"
+                    desc = (f"sorted block is not sorted, sort by running: " +
+                            f"\"ex -s -c '{start_line},{stop_line} sort i|x' {file}\"")
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
                                       desc=desc)
             elif not line.strip() or line.startswith("#"):
