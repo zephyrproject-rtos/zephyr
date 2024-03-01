@@ -59,6 +59,14 @@
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 	};
 
+	octo_nor: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
 	transceiver0: can-phy0 {
 		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
 		standby-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
