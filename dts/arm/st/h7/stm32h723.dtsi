@@ -136,7 +136,7 @@
 			};
 		};
 
-		timers23: timers@0x4000e000 {
+		timers23: timers@4000e000 {
 			compatible = "st,stm32-timers";
 			reg = <0x4000e000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x01000000>;
