@@ -38,7 +38,7 @@ tests:
       - nucleo_l152re
       - nucleo_wb55rg
       - nucleo_wl55jc
-      - stm32f3_disco@B
+      - stm32f3_disco
       - stm32l562e_dk
       - disco_l475_iot1
       - stm32h573i_dk
@@ -65,7 +65,7 @@ tests:
       - nucleo_l152re
       - nucleo_wb55rg
       - nucleo_wl55jc
-      - stm32f3_disco@B
+      - stm32f3_disco
       - stm32l562e_dk
       - disco_l475_iot1
       - stm32h573i_dk

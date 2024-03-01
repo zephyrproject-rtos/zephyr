@@ -10,7 +10,7 @@ tests:
     timeout: 80
     platform_exclude:
       - nucleo_l053r8
-      - nucleo_f030r8@1
+      - nucleo_f030r8
       - stm32f0_disco
       - nrf52_bsim
   logging.immediate.clean_output:
@@ -21,6 +21,6 @@ tests:
     timeout: 80
     platform_exclude:
       - nucleo_l053r8
-      - nucleo_f030r8@1
+      - nucleo_f030r8
       - stm32f0_disco
       - nrf52_bsim

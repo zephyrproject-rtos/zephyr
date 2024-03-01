@@ -13,7 +13,7 @@ tests:
     extra_args: CONF_FILE='common.conf;mt.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board@1
+      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
@@ -25,7 +25,7 @@ tests:
     extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board@1
+      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
@@ -35,7 +35,7 @@ tests:
     extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;no-timers.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board@1
+      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
@@ -45,7 +45,7 @@ tests:
     extra_args: CONF_FILE='common.conf;no-mt.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board@1
+      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822
@@ -55,7 +55,7 @@ tests:
     extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;arm.conf'
     build_only: true
     platform_allow:
-      - reel_board@1
+      - reel_board
       - frdm_k64f
       - mps2/an385
       - nrf51dk/nrf51822

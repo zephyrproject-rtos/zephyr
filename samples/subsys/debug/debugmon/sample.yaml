@@ -3,5 +3,5 @@ sample:
 tests:
   sample.debug.debugmon:
     build_only: true
-    platform_allow: reel_board@1
+    platform_allow: reel_board
     tags: debug

@@ -8,7 +8,7 @@ tests:
       - mps2/an385
       - mps2/an521/cpu0
       - nrf52840dk/nrf52840
-      - nrf9160dk@0.14.0/nrf9160
+      - nrf9160dk/nrf9160
       - nrf51dk/nrf51822
       - nsim/nsim_em
       - nsim/nsim_em7d_v22

@@ -6,7 +6,7 @@ tests:
     filter: dt_compat_enabled("pwm-leds")
     tags: LED
     depends_on: pwm
-    platform_exclude: reel_board@1
+    platform_exclude: reel_board
     timeout: 20
     harness: console
     harness_config:
