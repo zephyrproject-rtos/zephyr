@@ -15,6 +15,7 @@ source "drivers/sdhc/Kconfig.mcux_sdif"
 source "drivers/sdhc/Kconfig.sam_hsmci"
 source "drivers/sdhc/Kconfig.intel"
 source "drivers/sdhc/Kconfig.sdhc_cdns"
+source "drivers/sdhc/Kconfig.esp32"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
