@@ -66,7 +66,15 @@ int stream_flash_callback(uint8_t *buf, size_t len, size_t offset)
 
 static void erase_flash(void)
 {
+#if IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
+#if IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+	const struct flash_parameters *fparam = flash_get_parameters(fdev);
+
+	if (!fparam->caps.explicit_erase) {
+		return;
+	}
+#endif
 
 	for (int i = 0; i < MAX_NUM_PAGES; i++) {
 		rc = flash_erase(fdev,
@@ -74,6 +82,7 @@ static void erase_flash(void)
 				 layout->pages_size);
 		zassert_equal(rc, 0, "should succeed");
 	}
+#endif
 }
 
 
