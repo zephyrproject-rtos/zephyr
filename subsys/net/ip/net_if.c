@@ -589,9 +589,6 @@ struct net_if *net_if_get_default(void)
 #if defined(CONFIG_NET_DEFAULT_IF_IEEE802154)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
 #endif
-#if defined(CONFIG_NET_DEFAULT_IF_BLUETOOTH)
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(BLUETOOTH));
-#endif
 #if defined(CONFIG_NET_DEFAULT_IF_DUMMY)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 #endif
