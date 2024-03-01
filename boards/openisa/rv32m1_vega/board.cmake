@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright 2018 Foundries.io Ltd
 
 set(OPENOCD_USE_LOAD_IMAGE NO)
 

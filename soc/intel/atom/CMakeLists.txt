@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2011-2014, Wind River Systems, Inc.
 
 zephyr_include_directories(.)
 
