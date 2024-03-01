@@ -20,7 +20,7 @@
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/bluetooth/l2cap.h>
 
-#include <zephyr/bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"

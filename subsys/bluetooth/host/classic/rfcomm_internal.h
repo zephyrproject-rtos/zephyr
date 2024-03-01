@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
 
 typedef enum {
 	BT_RFCOMM_CFC_UNKNOWN,

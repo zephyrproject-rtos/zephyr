@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 
-#include <zephyr/bluetooth/avdtp.h>
+#include <zephyr/bluetooth/classic/avdtp.h>
 
 #ifdef __cplusplus
 extern "C" {

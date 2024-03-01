@@ -16,7 +16,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/avdtp.h>
+#include <zephyr/bluetooth/classic/avdtp.h>
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"

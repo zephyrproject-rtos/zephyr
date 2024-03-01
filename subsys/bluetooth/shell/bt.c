@@ -29,8 +29,8 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/rfcomm.h>
-#include <zephyr/bluetooth/sdp.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/iso.h>
 
 #include <zephyr/shell/shell.h>

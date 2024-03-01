@@ -16,8 +16,8 @@
 
 #include "common/assert.h"
 
-#include <zephyr/bluetooth/rfcomm.h>
-#include <zephyr/bluetooth/hfp_hf.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
+#include <zephyr/bluetooth/classic/hfp_hf.h>
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"

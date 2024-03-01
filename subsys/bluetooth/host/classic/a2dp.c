@@ -18,8 +18,8 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
-#include <zephyr/bluetooth/avdtp.h>
-#include <zephyr/bluetooth/a2dp.h>
+#include <zephyr/bluetooth/classic/avdtp.h>
+#include <zephyr/bluetooth/classic/a2dp.h>
 
 #include "common/assert.h"
 

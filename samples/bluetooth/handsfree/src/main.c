@@ -16,7 +16,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/hfp_hf.h>
+#include <zephyr/bluetooth/classic/hfp_hf.h>
 
 static void connected(struct bt_conn *conn)
 {
