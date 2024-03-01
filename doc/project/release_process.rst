@@ -229,40 +229,6 @@ before the scheduled release date. The stabilization period for LTS is extended
 by 3 weeks with the feature freeze occurring 6-7 weeks before the anticipated
 release date. The time between code freeze and release date is extended in this case.
 
-Stable APIs
-+++++++++++
-
-Zephyr LTS provides a stable and long-lived foundation for developing
-products. To guarantee stability of the APIs and the implementation of such
-APIs it is required that any release software that makes the core of the OS
-went through the Zephyr API lifecycle and stabilized over at least 2 releases.
-This guarantees that we release many of the highlighted and core features with
-mature and well-established implementations with stable APIs that are
-supported during the lifetime of the release LTS.
-
-- API Freeze (LTS - 2)
-
-  - All stable APIs need to be frozen 2 releases before an LTS. APIs can be extended
-    with additional features, but the core implementation is not modified. This
-    is valid for the following subsystems for example:
-
-    - Device Drivers (i2c.h, spi.h)...
-    - Kernel (k_*):
-    - OS services (logging,debugging, ..)
-    - DTS: API and bindings stability
-    - Kconfig
-
-  - New APIs for experimental features can be added at any time as long as they
-    are standalone and documented as experimental or unstable features/APIs.
-- Feature Freeze (LTS - 1)
-  - No new features or overhaul/restructuring of code covering major LTS features.
-
-    - Kernel + Base OS
-    - Additional advertised LTS features
-
-  - Auxiliary features on top of and/or extending the base OS and advertised LTS features
-    can be added at any time and should be marked as experimental if applicable
-
 Quality Driven Process
 ++++++++++++++++++++++
 
