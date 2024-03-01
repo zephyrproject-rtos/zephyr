@@ -536,21 +536,8 @@ class KconfigCheck(ComplianceTest):
         os.makedirs(os.path.join(kconfiglib_dir, 'soc'), exist_ok=True)
         os.makedirs(os.path.join(kconfiglib_dir, 'arch'), exist_ok=True)
 
-        if hwm is None or hwm == "v1":
-            v1_file = os.path.join(kconfiglib_dir, "Kconfig.v1")
-            v1_syms_file = os.path.join(kconfiglib_boards_dir, 'Kconfig.syms.v1')
-            with open(v1_file, 'w') as fp:
-                fp.write('source "boards/boards_legacy/*/*/Kconfig.defconfig"\n')
-                fp.write('osource "soc/soc_legacy/*/*/Kconfig.defconfig"\n')
-                fp.write('source "boards/Kconfig"\n')
-                fp.write('source "soc/Kconfig"\n')
-
-            os.environ["BOARD_DIR"] = "boards/boards_legacy/*/*"
-            self.get_v1_model_syms(v1_file, v1_syms_file)
-
-        if hwm is None or hwm == "v2":
-            os.environ["BOARD_DIR"] = kconfiglib_boards_dir
-            self.get_v2_model(kconfiglib_dir)
+        os.environ["BOARD_DIR"] = kconfiglib_boards_dir
+        self.get_v2_model(kconfiglib_dir)
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
