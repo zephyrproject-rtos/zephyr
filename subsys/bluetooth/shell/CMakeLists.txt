@@ -10,7 +10,7 @@ zephyr_library_sources_ifdef(
   gatt.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_BREDR
+  CONFIG_BT_CLASSIC
   bredr.c
   )
 zephyr_library_sources_ifdef(

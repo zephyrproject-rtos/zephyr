@@ -52,7 +52,7 @@ ZTEST,n
 BT_A2DP,n,experimental
 BT_AUDIO,n,experimental
 BT_AVDTP,n,experimental
-BT_BREDR,n,experimental
+BT_CLASSIC,n,experimental
 BT_CTLR_ADV_DATA_CHAIN,n,experimental
 BT_CTLR_DTM_HCI_DF_IQ_REPORT,n,experimental
 BT_CTLR_SET_HOST_FEATURE,n,experimental
