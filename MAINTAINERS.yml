@@ -2536,6 +2536,7 @@ Networking:
     - rlubos
     - jukkar
   collaborators:
+    - pdgendt
     - tbursztyka
     - ssharks
   files:
