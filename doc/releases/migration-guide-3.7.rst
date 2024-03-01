@@ -142,5 +142,11 @@ Userspace
 Architectures
 *************
 
+* x86
+
+  * Kconfigs ``CONFIG_DISABLE_SSBD`` and ``CONFIG_ENABLE_EXTENDED_IBRS``
+    are deprecated. Use :kconfig:option:`CONFIG_X86_DISABLE_SSBD` and
+    :kconfig:option:`CONFIG_X86_ENABLE_EXTENDED_IBRS` instead.
+
 Xtensa
 ======
