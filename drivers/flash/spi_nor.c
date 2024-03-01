@@ -1344,11 +1344,6 @@ static int spi_nor_configure(const struct device *dev)
 	(void) mxicy_configure(dev, jedec_id);
 #endif /* DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode) */
 
-	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)
-	    && (enter_dpd(dev) != 0)) {
-		return -ENODEV;
-	}
-
 	return 0;
 }
 
