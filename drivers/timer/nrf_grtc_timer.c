@@ -21,8 +21,8 @@
 #if !DT_NODE_HAS_PROP(GRTC_NODE, owned_channels)
 #error GRTC owned-channels DT property is not defined
 #endif
-#define OWNED_CHANNELS_MASK       NRFX_CONFIG_GRTC_MASK_DT(owned_channels)
-#define CHILD_OWNED_CHANNELS_MASK NRFX_CONFIG_GRTC_MASK_DT(child_owned_channels)
+#define OWNED_CHANNELS_MASK       NRFX_CONFIG_MASK_DT(GRTC_NODE, owned_channels)
+#define CHILD_OWNED_CHANNELS_MASK NRFX_CONFIG_MASK_DT(GRTC_NODE, child_owned_channels)
 #if ((OWNED_CHANNELS_MASK | CHILD_OWNED_CHANNELS_MASK) != OWNED_CHANNELS_MASK)
 #error GRTC child-owned-channels DT property must be a subset of owned-channels
 #endif
