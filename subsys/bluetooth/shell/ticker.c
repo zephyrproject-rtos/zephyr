@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
 #include "../controller/util/memq.h"
@@ -28,6 +29,8 @@
 #endif
 
 #include "bt.h"
+
+LOG_MODULE_REGISTER(ticker_shell, LOG_LEVEL_DBG);
 
 static void ticker_op_done(uint32_t err, void *context)
 {
