@@ -52,7 +52,7 @@
 #include "settings.h"
 
 #if defined(CONFIG_BT_BREDR)
-#include "br.h"
+#include "classic/br.h"
 #endif
 
 #if defined(CONFIG_BT_DF)
