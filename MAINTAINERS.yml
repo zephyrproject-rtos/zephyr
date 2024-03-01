@@ -2010,7 +2010,7 @@ Xen Platform:
     - include/zephyr/xen/
     - drivers/xen/
     - arch/arm64/core/xen/
-    - soc/xenvm/
+    - soc/xen/
     - boards/xen/
   labels:
     - "area: Xen Platform"
