@@ -83,8 +83,6 @@ struct w5500_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
 	struct gpio_dt_spec reset;
-	void (*config_func)(void);
-	uint8_t full_duplex;
 	int32_t timeout;
 };
 
@@ -99,7 +97,6 @@ struct w5500_runtime {
 	struct k_sem tx_sem;
 	struct k_sem int_sem;
 	bool link_up;
-	void (*generate_mac)(uint8_t *mac);
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
 };
 
