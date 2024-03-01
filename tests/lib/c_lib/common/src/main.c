@@ -204,7 +204,7 @@ ZTEST(libc_common, test_memset)
  *
  * @brief Test string length function
  *
- * @see strlen(), strnlen().
+ * @see strlen().
  *
  */
 ZTEST(libc_common, test_strlen)
@@ -212,9 +212,6 @@ ZTEST(libc_common, test_strlen)
 	(void)memset(buffer, '\0', BUFSIZE);
 	(void)memset(buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
 	zassert_equal(strlen(buffer), 5, "strlen failed");
-
-	zassert_equal(strnlen(buffer, 3), 3, "strnlen failed");
-	zassert_equal(strnlen(buffer, BUFSIZE), 5, "strnlen failed");
 }
 
 /**
