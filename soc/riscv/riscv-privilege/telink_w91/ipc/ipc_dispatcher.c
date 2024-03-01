@@ -49,7 +49,7 @@ static void endpoint_received(const void *data, size_t len, void *priv)
 		k_mutex_unlock(&ipc_mutex);
 
 		if (!processed) {
-			LOG_WRN("IPC received (id = %u) unprocessed", *id);
+			LOG_WRN("IPC received (id = %x) unprocessed", *id);
 		}
 	} else {
 		LOG_WRN("IPC received malformed message");

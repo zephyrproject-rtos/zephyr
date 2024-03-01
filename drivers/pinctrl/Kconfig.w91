@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_TELINK_W91
+	bool "Telink W91-series pin controller driver"
+	default y
+	depends on DT_HAS_TELINK_W91_PINCTRL_ENABLED
+	help
+	  Enables Telink W91-series pin controller driver
+
+if PINCTRL_TELINK_W91
+
+config PINCTRL_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 10
+	help
+	  This option sets Telink IPC dispatcher response driver timeout in mS.
+
+endif # PINCTRL_TELINK_W91

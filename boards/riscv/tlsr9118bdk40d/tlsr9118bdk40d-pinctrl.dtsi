@@ -5,3 +5,25 @@
  */
 
 #include <zephyr/dt-bindings/pinctrl/w91-pinctrl.h>
+
+&pinctrl {
+	/* Set pad-mul-sel register value.
+	 * Note: Pins functions below (pinmux = <...>) depend on this value.
+	 */
+	pad-mul-sel = <1>;
+
+	/* UART2: TX(P16), RX(P15), RTS(P18), CTS(P17) */
+
+	uart2_tx_p16_default: uart2_tx_p16_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_UART2_TXD)>;
+	};
+	uart2_rx_p15_default: uart2_rx_p15_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_15, W91_FUNC_UART2_RXD)>;
+	};
+	uart2_rts_p18_default: uart2_rts_p18_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_18, W91_FUNC_UART2_RTS)>;
+	};
+	uart2_cts_p17_default: uart2_cts_p17_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_17, W91_FUNC_UART2_CTS)>;
+	};
+};

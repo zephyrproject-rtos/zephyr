@@ -113,5 +113,15 @@
 			#gpio-cells = <2>;
 			ngpios = <25>;
 		};
+
+		pinctrl: pinctrl{
+			compatible = "telink,w91-pinctrl";
+			status = "okay";
+		};
+
+		uart2: uart2 {
+			compatible = "telink,w91-uart";
+			status = "disabled";
+		};
 	};
 };
