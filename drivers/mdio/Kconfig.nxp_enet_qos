@@ -3,7 +3,8 @@
 
 config MDIO_NXP_ENET_QOS
 	bool "NXP ENET QoS MDIO driver"
-	default y if DT_HAS_NXP_ENET_QOS_MDIO_ENABLED
+	default y
+	depends on DT_HAS_NXP_ENET_QOS_MDIO_ENABLED
 	help
 	  Enable NXP ENET QOS (Quality of Service) MDIO driver.
 
