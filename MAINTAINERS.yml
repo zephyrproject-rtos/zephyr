@@ -3281,17 +3281,13 @@ NXP Drivers:
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
-  files-exclude:
-    - drivers/*/*s32*
-    - drivers/misc/*/*s32*
-    - include/zephyr/dt-bindings/*/*s32*
-    - include/zephyr/drivers/*/*s32*
-    - dts/bindings/*/*s32*
+  files-regex-exclude:
+    - .*s32.*
   labels:
     - "platform: NXP Drivers"
   description: NXP Drivers
 
-NXP Platforms (MCUX):
+NXP Platforms (MCU):
   status: maintained
   maintainers:
     - dleach02
@@ -3303,22 +3299,21 @@ NXP Platforms (MCUX):
     - EmilioCBen
     - decsny
   files:
-    - boards/nxp/mimx*/
+    - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
     - boards/nxp/vmu*/
-    - soc/nxp/imx/
+    - soc/nxp/imxrt/
     - soc/nxp/kinetis/
     - soc/nxp/lpc/
     - dts/arm/nxp/
     - samples/boards/nxp*/
-  files-exclude:
-    - dts/arm/nxp/*s32*
-    - samples/boards/nxp_s32/
+  files-regex-exclude:
+    - .*s32.*
   labels:
     - "platform: NXP"
-  description: NXP Platforms supported by MCUXpresso suite
+  description: NXP MCU Platforms supported by MCUXpresso suite
 
 NXP Platforms (S32):
   status: maintained
@@ -3346,6 +3341,26 @@ NXP Platforms (S32):
     - "platform: NXP S32"
   description: NXP S32 platforms and S32-specific drivers
 
+NXP Platforms (MPU):
+  status: maintained
+  maintainers:
+    - dleach
+  collaborators:
+    - JiafeiPan
+    - dbaluta
+    - iuliana-prodan
+    - danieldegrasse
+    - decsny
+    - yvanderv
+  files:
+    - soc/nxp/imx/
+    - soc/nxp/layerscape/
+  files-regex:
+    - boards/nxp/m?imx[^(rt)].*/
+  labels:
+    - "platform: NXP MPU"
+  description: NXP MPU platforms
+
 NXP Platforms (Xtensa):
   status: maintained
   maintainers:
@@ -3354,10 +3369,9 @@ NXP Platforms (Xtensa):
     - iuliana-prodan
   files:
     - soc/nxp/imx/*/adsp/
-    - soc/nxp/imxrt/imxrt5xx/f1/include/adsp/
-    - boards/nxp/
+    - soc/nxp/imxrt/imxrt5xx/f1/
   labels:
-    - "platform: NXP ADSP"
+    - "platform: NXP Xtensa"
   description: NXP Xtensa platforms
 
 Microchip MEC Platforms:
