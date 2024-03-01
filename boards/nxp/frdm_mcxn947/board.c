@@ -153,6 +153,15 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableClock(kCLOCK_Dac1);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+	CLOCK_AttachClk(kNONE_to_ENETRMII);
+	CLOCK_EnableClock(kCLOCK_Enet);
+	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
+	SYSCON0->PRESETCTRL2 &= ~SYSCON_PRESETCTRL2_ENET_RST_MASK;
+	/* rmii selection for this board */
+	SYSCON->ENET_PHY_INTF_SEL = SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(1);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
