@@ -163,6 +163,14 @@ if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_DPPI)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
 endif()
 
+if(CONFIG_SOC_SERIES_NRF54HX AND
+   (CONFIG_DT_HAS_NORDIC_NRF_DPPIC_LOCAL_ENABLED OR
+    CONFIG_DT_HAS_NORDIC_NRF_DPPIC_GLOBAL_ENABLED))
+  zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib.c)
+  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/apb/nrfx_interconnect_apb.c)
+  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/ipct/nrfx_interconnect_ipct.c)
+endif()
+
 # Get the SVD file for the current SoC
 macro(mdk_svd_ifdef feature_toggle filename)
   if(${feature_toggle})
