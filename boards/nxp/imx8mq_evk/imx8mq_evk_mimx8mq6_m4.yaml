@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimx8mq_evk_cm4
+identifier: imx8mq_evk/mimx8mq6/m4
 name: NXP i.MX8MQ EVK CM4
 type: mcu
 arch: arm

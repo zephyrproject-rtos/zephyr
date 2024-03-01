@@ -66,7 +66,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/arm/mimx8mq_evk/mimx8mq_evk_cm4_defconfig`.
+:zephyr_file:`boards/nxp/imx8mq_evk/imx8mq_evk_mimx8mq6_m4_defconfig`.
 
 Other hardware features are not currently supported by the port.
 
@@ -122,7 +122,7 @@ For more information about memory mapping see the
 `i.MX 8M Applications Processor Reference Manual`_  (section 2.1.2 and 2.1.3)
 
 At compilation time you have to choose which RAM will be used. This
-configuration is done in the file ``boards/arm/mimx8mq_evk/mimx8mq_evk_cm4.dts``
+configuration is done in the file :zephyr_file:`boards/nxp/imx8mq_evk/imx8mq_evk_mimx8mq6_m4.dts`
 with "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram" properties.
 The available configurations are:
 
@@ -194,7 +194,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimx8mq_evk_cm4
+   :board: imx8mq_evk/mimx8mq6/m4
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -203,7 +203,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS build zephyr-v2.6.99-30942-g6ee70bd22058 *****
-   Hello World! mimx8mq_evk_cm4
+   Hello World! imx8mq_evk
 
 References
 ==========
