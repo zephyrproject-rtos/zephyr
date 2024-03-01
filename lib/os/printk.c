@@ -107,7 +107,7 @@ static int buf_char_out(int c, void *ctx_p)
 
 static int char_out(int c, void *ctx_p)
 {
-	(void) ctx_p;
+	ARG_UNUSED(ctx_p);
 	return _char_out(c);
 }
 
