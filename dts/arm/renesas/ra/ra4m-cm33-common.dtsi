@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
