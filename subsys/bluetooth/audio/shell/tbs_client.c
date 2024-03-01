@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
@@ -23,6 +24,8 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 
 #include "shell/bt.h"
+
+LOG_MODULE_REGISTER(tbs_client_shell, LOG_LEVEL_DBG);
 
 static int cmd_tbs_client_discover(const struct shell *sh, size_t argc,
 				   char *argv[])

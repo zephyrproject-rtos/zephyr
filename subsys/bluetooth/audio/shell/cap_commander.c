@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
@@ -18,46 +19,48 @@
 #include "shell/bt.h"
 #include "audio.h"
 
+LOG_MODULE_REGISTER(cap_commander_shell, LOG_LEVEL_DBG);
+
 static void cap_discover_cb(struct bt_conn *conn, int err,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "discover failed (%d)", err);
+		LOG_ERR("discover failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "discovery completed%s", csis_inst == NULL ? "" : " with CSIS");
+	LOG_DBG("discovery completed%s", csis_inst == NULL ? "" : " with CSIS");
 }
 
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Volume change failed (%d)", err);
+		LOG_ERR("Volume change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Volume change completed");
+	LOG_DBG("Volume change completed");
 }
 
 static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Volume mute change failed (%d)", err);
+		LOG_ERR("Volume mute change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Volume mute change completed");
+	LOG_DBG("Volume mute change completed");
 }
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Volume offset change failed (%d)", err);
+		LOG_ERR("Volume offset change failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Volume offset change completed");
+	LOG_DBG("Volume offset change completed");
 }
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
@@ -81,10 +84,6 @@ static int cmd_cap_commander_discover(const struct shell *sh, size_t argc, char 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	}
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
 	}
 
 	if (!cbs_registered) {

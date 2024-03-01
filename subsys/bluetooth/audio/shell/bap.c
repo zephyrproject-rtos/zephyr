@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
@@ -37,6 +38,8 @@
 
 #include "shell/bt.h"
 #include "audio.h"
+
+LOG_MODULE_REGISTER(bap_shell, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -235,13 +238,13 @@ static int init_lc3_encoder(const struct shell_stream *sh_stream)
 	size_t num_samples;
 
 	if (sh_stream == NULL) {
-		shell_error(ctx_shell, "invalid stream to init LC3");
+		LOG_ERR("invalid stream to init LC3");
 		return -EINVAL;
 	}
 
 	if (sh_stream->lc3_freq_hz == 0 || sh_stream->lc3_frame_duration_us == 0) {
-		shell_error(ctx_shell, "Invalid freq (%u) or frame duration (%u)",
-			    sh_stream->lc3_freq_hz, sh_stream->lc3_frame_duration_us);
+		LOG_ERR("Invalid freq (%u) or frame duration (%u)", sh_stream->lc3_freq_hz,
+			sh_stream->lc3_frame_duration_us);
 
 		return -EINVAL;
 	}
@@ -252,7 +255,7 @@ static int init_lc3_encoder(const struct shell_stream *sh_stream)
 					&lc3_encoder_mem);
 
 	if (lc3_encoder == NULL) {
-		shell_error(ctx_shell, "Failed to setup LC3 encoder - wrong parameters?\n");
+		LOG_ERR("Failed to setup LC3 encoder - wrong parameters?\n");
 		return -EINVAL;
 	}
 
@@ -265,7 +268,7 @@ static int init_lc3_encoder(const struct shell_stream *sh_stream)
 
 	num_samples = ((lc3_encoder_frame_duration_us * lc3_encoder_freq_hz) / USEC_PER_SEC);
 	for (size_t i = 0; i < num_samples; i++) {
-		printk("%zu: %6i\n", i, lc3_tx_buf[i]);
+		LOG_INF("%zu: %6i", i, lc3_tx_buf[i]);
 	}
 
 	return 0;
@@ -288,25 +291,23 @@ static void lc3_audio_send_data(struct k_work *work)
 	}
 
 	if (lc3_encoder == NULL) {
-		shell_error(ctx_shell, "LC3 encoder not setup, cannot encode data");
+		LOG_ERR("LC3 encoder not setup, cannot encode data");
 		return;
 	}
 
 	if (bap_stream == NULL || bap_stream->qos == NULL) {
-		shell_error(ctx_shell, "invalid stream, aborting");
+		LOG_ERR("invalid stream, aborting");
 		return;
 	}
 
 	if (tx_sdu_len == 0U) {
-		shell_error(
-			ctx_shell,
-			"Cannot send 0 length SDU (from frames per sdu %u and %u octets per frame)",
+		LOG_DBG("Cannot send 0 length SDU (from frames per sdu %u and %u octets per frame)",
 			sh_stream->lc3_frames_per_sdu, sh_stream->lc3_octets_per_frame);
 		return;
 	}
 
 	if (atomic_get(&sh_stream->lc3_enqueue_cnt) == 0U) {
-		shell_error(ctx_shell, "Stream %p enqueue count was 0", bap_stream);
+		LOG_ERR("Stream %p enqueue count was 0", bap_stream);
 
 		/* Reschedule for next interval */
 		k_work_reschedule(k_work_delayable_from_work(work),
@@ -328,8 +329,7 @@ static void lc3_audio_send_data(struct k_work *work)
 		offset += sh_stream->lc3_octets_per_frame;
 
 		if (lc3_ret == -1) {
-			shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
-				    lc3_ret);
+			LOG_ERR("LC3 encoder failed - wrong parameters?: %d", lc3_ret);
 			net_buf_unref(buf);
 
 			/* Reschedule for next interval */
@@ -341,7 +341,7 @@ static void lc3_audio_send_data(struct k_work *work)
 
 	err = bt_bap_stream_send(bap_stream, buf, sh_stream->seq_num);
 	if (err < 0) {
-		shell_error(ctx_shell, "Failed to send LC3 audio data (%d)", err);
+		LOG_ERR("Failed to send LC3 audio data (%d)", err);
 		net_buf_unref(buf);
 
 		/* Reschedule for next interval */
@@ -351,8 +351,8 @@ static void lc3_audio_send_data(struct k_work *work)
 	}
 
 	if ((sh_stream->lc3_sdu_cnt % 100) == 0) {
-		shell_info(ctx_shell, "[%zu]: stream %p : TX LC3: %zu (seq_num %u)",
-			   sh_stream->lc3_sdu_cnt, bap_stream, tx_sdu_len, sh_stream->seq_num);
+		LOG_DBG("[%zu]: stream %p : TX LC3: %zu (seq_num %u)", sh_stream->lc3_sdu_cnt,
+			bap_stream, tx_sdu_len, sh_stream->seq_num);
 	}
 
 	sh_stream->lc3_sdu_cnt++;
@@ -381,7 +381,7 @@ static void lc3_sent_cb(struct bt_bap_stream *bap_stream)
 
 	err = k_work_schedule(&sh_stream->audio_send_work, K_NO_WAIT);
 	if (err < 0) {
-		shell_error(ctx_shell, "Failed to schedule TX for stream %p: %d", bap_stream, err);
+		LOG_ERR("Failed to schedule TX for stream %p: %d", bap_stream, err);
 	}
 }
 #endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
@@ -416,7 +416,7 @@ static void set_unicast_stream(struct bt_bap_stream *stream)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		if (stream == &unicast_streams[i].stream.bap_stream) {
-			shell_print(ctx_shell, "Default stream: %u", i + 1);
+			LOG_DBG("Default stream: %u", i + 1);
 		}
 	}
 }
@@ -464,20 +464,20 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
 		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
+	LOG_DBG("ASE Codec Config: conn %p ep %p dir %u", (void *)conn, (void *)ep, dir);
 
-	print_codec_cfg(ctx_shell, codec_cfg);
+	print_codec_cfg(codec_cfg);
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
-		shell_print(ctx_shell, "No unicast_streams available");
+		LOG_DBG("No unicast_streams available");
 
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
 
 		return -ENOMEM;
 	}
 
-	shell_print(ctx_shell, "ASE Codec Config stream %p", *stream);
+	LOG_DBG("ASE Codec Config stream %p", *stream);
 
 	set_unicast_stream(*stream);
 
@@ -490,9 +490,9 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
 			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p", stream);
+	LOG_DBG("ASE Codec Reconfig: stream %p", stream);
 
-	print_codec_cfg(ctx_shell, codec_cfg);
+	print_codec_cfg(codec_cfg);
 
 	if (default_stream == NULL) {
 		set_unicast_stream(stream);
@@ -506,9 +506,9 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
+	LOG_DBG("QoS: stream %p %p", stream, qos);
 
-	print_qos(ctx_shell, qos);
+	print_qos(qos);
 
 	return 0;
 }
@@ -516,15 +516,14 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos
 static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 		      struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Enable: stream %p meta_len %zu", stream,
-		    meta_len);
+	LOG_DBG("Enable: stream %p meta_len %zu", stream, meta_len);
 
 	return 0;
 }
 
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Start: stream %p", stream);
+	LOG_DBG("Start: stream %p", stream);
 
 	return 0;
 }
@@ -535,7 +534,7 @@ static bool meta_data_func_cb(struct bt_data *data, void *user_data)
 	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
 
 	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
-		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		LOG_INF("Invalid metadata type %u or length %u", data->type, data->data_len);
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
 		return false;
 	}
@@ -546,29 +545,28 @@ static bool meta_data_func_cb(struct bt_data *data, void *user_data)
 static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 			struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Metadata: stream %p meta_len %zu", stream,
-		    meta_len);
+	LOG_DBG("Metadata: stream %p meta_len %zu", stream, meta_len);
 
 	return bt_audio_data_parse(meta, meta_len, meta_data_func_cb, rsp);
 }
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Disable: stream %p", stream);
+	LOG_DBG("Disable: stream %p", stream);
 
 	return 0;
 }
 
 static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Stop: stream %p", stream);
+	LOG_DBG("Stop: stream %p", stream);
 
 	return 0;
 }
 
 static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Release: stream %p", stream);
+	LOG_DBG("Release: stream %p", stream);
 
 	if (stream == default_stream) {
 		default_stream = NULL;
@@ -748,10 +746,9 @@ static void print_remote_codec_cap(const struct bt_conn *conn,
 				   const struct bt_audio_codec_cap *codec_cap,
 				   enum bt_audio_dir dir)
 {
-	shell_print(ctx_shell, "conn %p: codec_cap %p dir 0x%02x", conn, codec_cap,
-		    dir);
+	LOG_DBG("conn %p: codec_cap %p dir 0x%02x", (void *)conn, codec_cap, dir);
 
-	print_codec_cap(ctx_shell, codec_cap);
+	print_codec_cap(codec_cap);
 }
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -761,14 +758,14 @@ static void add_sink(const struct bt_conn *conn, struct bt_bap_ep *ep)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
 		if (snks[conn_index][i] == NULL) {
-			shell_print(ctx_shell, "Conn: %p, Sink #%zu: ep %p", conn, i, ep);
+			LOG_DBG("Conn: %p, Sink #%zu: ep %p", (void *)conn, i, (void *)ep);
 
 			snks[conn_index][i] = ep;
 			return;
 		}
 	}
 
-	shell_error(ctx_shell, "Could not add more sink endpoints");
+	LOG_ERR("Could not add more sink endpoints");
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
@@ -779,14 +776,14 @@ static void add_source(const struct bt_conn *conn, struct bt_bap_ep *ep)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
 		if (srcs[conn_index][i] == NULL) {
-			shell_print(ctx_shell, "Conn: %p, Source #%zu: ep %p", conn, i, ep);
+			LOG_DBG("Conn: %p, Source #%zu: ep %p", (void *)conn, i, (void *)ep);
 
 			srcs[conn_index][i] = ep;
 			return;
 		}
 	}
 
-	shell_error(ctx_shell, "Could not add more sink endpoints");
+	LOG_ERR("Could not add more sink endpoints");
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
@@ -813,7 +810,7 @@ static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_b
 
 static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
-	shell_print(ctx_shell, "Discover complete: err %d", err);
+	LOG_DBG("Discover complete: err %d", err);
 }
 
 static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir)
@@ -825,7 +822,7 @@ static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 
 		err = bt_bap_unicast_client_discover(default_conn, dir);
 		if (err) {
-			shell_error(ctx_shell, "bt_bap_unicast_client_discover err %d", err);
+			LOG_ERR("bt_bap_unicast_client_discover err %d", err);
 		}
 	}
 }
@@ -834,21 +831,20 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 				      enum bt_audio_dir dir,
 				      enum bt_audio_location loc)
 {
-	shell_print(ctx_shell, "dir %u loc %X\n", dir, loc);
+	LOG_DBG("dir %u loc %X\n", dir, loc);
 }
 
 static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
-	shell_print(ctx_shell, "snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+	LOG_DBG("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
 static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		      enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p config operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p config operation rsp_code %u reason %u", stream, rsp_code, reason);
 
 	if (default_stream == NULL) {
 		default_stream = stream;
@@ -858,50 +854,43 @@ static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rs
 static void qos_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		   enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p qos operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p qos operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
 static void enable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		      enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p enable operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p enable operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
 static void start_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		     enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p start operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p start operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
 static void stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		    enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p stop operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p stop operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
 static void disable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		       enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p disable operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p disable operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
 static void metadata_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 			enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p metadata operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p metadata operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
 static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		       enum bt_bap_ascs_reason reason)
 {
-	shell_print(ctx_shell, "stream %p release operation rsp_code %u reason %u",
-		    stream, rsp_code, reason);
+	LOG_DBG("stream %p release operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
@@ -1972,8 +1961,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "%s", named_preset->name);
 
-	print_codec_cfg(sh, &named_preset->preset.codec_cfg);
-	print_qos(sh, &named_preset->preset.qos);
+	print_codec_cfg(&named_preset->preset.codec_cfg);
+	print_qos(&named_preset->preset.qos);
 
 	return 0;
 }
@@ -2049,7 +2038,7 @@ static void conn_list_eps(struct bt_conn *conn, void *data)
 	const struct shell *sh = (const struct shell *)data;
 	uint8_t conn_index = bt_conn_index(conn);
 
-	shell_print(sh, "Conn: %p", conn);
+	shell_print(sh, "Conn: %p", (void *)conn);
 	shell_print(sh, "  Sinks:");
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -2057,7 +2046,7 @@ static void conn_list_eps(struct bt_conn *conn, void *data)
 		const struct bt_bap_ep *ep = snks[conn_index][i];
 
 		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
+			shell_print(sh, "    #%u: ep %p", i, (void *)ep);
 		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
@@ -2069,7 +2058,7 @@ static void conn_list_eps(struct bt_conn *conn, void *data)
 		const struct bt_bap_ep *ep = srcs[conn_index][i];
 
 		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
+			shell_print(sh, "    #%u: ep %p", i, (void *)ep);
 		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
@@ -2181,8 +2170,8 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X",
-		    broadcast_id, le_addr, info->sid);
+	LOG_DBG("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X", broadcast_id,
+		le_addr, info->sid);
 
 	if (auto_scan.broadcast_id == broadcast_id && auto_scan.broadcast_sink != NULL &&
 	    auto_scan.broadcast_sink->pa_sync == NULL) {
@@ -2191,7 +2180,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 		err = bt_le_scan_stop();
 		if (err != 0) {
-			shell_error(ctx_shell, "Could not stop scan: %d", err);
+			LOG_ERR("Could not stop scan: %d", err);
 		}
 
 		bt_addr_le_copy(&create_params.addr, info->addr);
@@ -2200,10 +2189,10 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		create_params.skip = PA_SYNC_SKIP;
 		create_params.timeout = interval_to_sync_timeout(info->interval);
 
-		shell_print(ctx_shell, "Attempting to PA sync to the broadcaster");
+		LOG_DBG("Attempting to PA sync to the broadcaster");
 		err = bt_le_per_adv_sync_create(&create_params, &auto_scan.broadcast_sink->pa_sync);
 		if (err != 0) {
-			shell_error(ctx_shell, "Could not create Broadcast PA sync: %d", err);
+			LOG_ERR("Could not create Broadcast PA sync: %d", err);
 		}
 	}
 
@@ -2224,7 +2213,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 	/* Don't print duplicates */
 	if (base_size != default_broadcast_sink.base_size ||
 	    memcmp(base, &default_broadcast_sink.received_base, base_size) != 0) {
-		shell_print(ctx_shell, "Received BASE from sink %p:", sink);
+		LOG_DBG("Received BASE from sink %p:", (void *)sink);
 		(void)memcpy(&default_broadcast_sink.received_base, base, base_size);
 		default_broadcast_sink.base_size = base_size;
 
@@ -2239,8 +2228,8 @@ static void syncable(struct bt_bap_broadcast_sink *sink, bool encrypted)
 			return;
 		}
 
-		shell_print(ctx_shell, "Sink %p is ready to sync %s encryption", sink,
-			    encrypted ? "with" : "without");
+		LOG_DBG("Sink %p is ready to sync %s encryption", (void *)sink,
+			encrypted ? "with" : "without");
 		default_broadcast_sink.syncable = true;
 	}
 }
@@ -2249,20 +2238,19 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
 	if (auto_scan.broadcast_sink != NULL && sync == auto_scan.broadcast_sink->pa_sync) {
-		shell_print(ctx_shell, "PA synced to broadcast with broadcast ID 0x%06x",
-			    auto_scan.broadcast_id);
+		LOG_DBG("PA synced to broadcast with broadcast ID 0x%06x", auto_scan.broadcast_id);
 
 		if (auto_scan.broadcast_sink->bap_sink == NULL) {
-			shell_print(ctx_shell, "Attempting to sync to the BIG");
+			LOG_DBG("Attempting to sync to the BIG");
 			int err;
 
 			err = bt_bap_broadcast_sink_create(sync, auto_scan.broadcast_id,
 							   &auto_scan.broadcast_sink->bap_sink);
 			if (err != 0) {
-				shell_error(ctx_shell, "Could not create broadcast sink: %d", err);
+				LOG_ERR("Could not create broadcast sink: %d", err);
 			}
 		} else {
-			shell_print(ctx_shell, "BIG is already synced");
+			LOG_DBG("BIG is already synced");
 		}
 	}
 
@@ -2283,7 +2271,7 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 
 static void broadcast_scan_timeout_cb(void)
 {
-	shell_print(ctx_shell, "Scan timeout");
+	LOG_DBG("Scan timeout");
 
 	clear_auto_scan();
 }
@@ -2332,12 +2320,11 @@ static void audio_recv(struct bt_bap_stream *stream,
 	}
 
 	if ((sh_stream->rx_cnt % recv_stats_interval) == 0) {
-		shell_print(ctx_shell,
-			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
-			    "(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu)",
-			    sh_stream->rx_cnt, stream, buf->len, info->ts, info->seq_num,
-			    info->flags, sh_stream->dup_ts, sh_stream->dup_psn, sh_stream->err_pkts,
-			    sh_stream->lost_pkts);
+		LOG_DBG("[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
+			"(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu)",
+			sh_stream->rx_cnt, stream, buf->len, info->ts, info->seq_num, info->flags,
+			sh_stream->dup_ts, sh_stream->dup_psn, sh_stream->err_pkts,
+			sh_stream->lost_pkts);
 	}
 
 	(void)memcpy(&sh_stream->last_info, info, sizeof(sh_stream->last_info));
@@ -2346,7 +2333,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
-	shell_print(ctx_shell, "Stream %p enabled", stream);
+	LOG_DBG("Stream %p enabled", stream);
 
 	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
 		struct bt_bap_ep_info ep_info;
@@ -2355,7 +2342,7 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 
 		err = bt_conn_get_info(stream->conn, &conn_info);
 		if (err != 0) {
-			shell_error(ctx_shell, "Failed to get conn info: %d", err);
+			LOG_ERR("Failed to get conn info: %d", err);
 			return;
 		}
 
@@ -2365,7 +2352,7 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 
 		err = bt_bap_ep_get_info(stream->ep, &ep_info);
 		if (err != 0) {
-			shell_error(ctx_shell, "Failed to get ep info: %d", err);
+			LOG_ERR("Failed to get ep info: %d", err);
 			return;
 		}
 
@@ -2374,7 +2361,7 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 			err = bt_bap_stream_start(stream);
 
 			if (err != 0) {
-				shell_error(ctx_shell, "Failed to start stream: %d", err);
+				LOG_ERR("Failed to start stream: %d", err);
 				return;
 			}
 		}
@@ -2393,7 +2380,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 #endif /* CONFIG_LIBLC3 */
 #endif /* CONFIG_BT_AUDIO_TX */
 
-	printk("Stream %p started\n", bap_stream);
+	LOG_INF("Stream %p started", bap_stream);
 
 #if defined(CONFIG_BT_AUDIO_RX)
 	sh_stream->lost_pkts = 0U;
@@ -2406,7 +2393,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stream %p stopped with reason 0x%02X", stream, reason);
 
 #if defined(CONFIG_LIBLC3)
 	clear_lc3_sine_data(stream);
@@ -2449,16 +2436,15 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 				    ret == 48000) {
 					sh_stream->lc3_freq_hz = (uint32_t)ret;
 				} else {
-					shell_error(ctx_shell, "Unsupported frequency for LC3: %d",
-						    ret);
+					LOG_ERR("Unsupported frequency for LC3: %d", ret);
 					sh_stream->lc3_freq_hz = 0U;
 				}
 			} else {
-				shell_error(ctx_shell, "Invalid frequency: %d", ret);
+				LOG_ERR("Invalid frequency: %d", ret);
 				sh_stream->lc3_freq_hz = 0U;
 			}
 		} else {
-			shell_error(ctx_shell, "Could not get frequency: %d", ret);
+			LOG_ERR("Could not get frequency: %d", ret);
 			sh_stream->lc3_freq_hz = 0U;
 		}
 
@@ -2468,11 +2454,11 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 			if (ret > 0) {
 				sh_stream->lc3_frame_duration_us = (uint32_t)ret;
 			} else {
-				shell_error(ctx_shell, "Invalid frame duration: %d", ret);
+				LOG_ERR("Invalid frame duration: %d", ret);
 				sh_stream->lc3_frame_duration_us = 0U;
 			}
 		} else {
-			shell_error(ctx_shell, "Could not get frame duration: %d", ret);
+			LOG_ERR("Could not get frame duration: %d", ret);
 			sh_stream->lc3_frame_duration_us = 0U;
 		}
 
@@ -2480,7 +2466,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 		if (ret > 0) {
 			sh_stream->lc3_frames_per_sdu = (uint8_t)ret;
 		} else {
-			shell_error(ctx_shell, "Could not get frame blocks per SDU: %d", ret);
+			LOG_ERR("Could not get frame blocks per SDU: %d", ret);
 			sh_stream->lc3_frames_per_sdu = 0U;
 		}
 
@@ -2488,18 +2474,18 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 		if (ret > 0) {
 			sh_stream->lc3_octets_per_frame = (uint16_t)ret;
 		} else {
-			shell_error(ctx_shell, "Could not get octets per frame: %d", ret);
+			LOG_ERR("Could not get octets per frame: %d", ret);
 			sh_stream->lc3_octets_per_frame = 0U;
 		}
 	}
 #endif /* CONFIG_LIBLC3 */
 
-	shell_print(ctx_shell, "Stream %p configured\n", stream);
+	LOG_DBG("Stream %p configured\n", stream);
 }
 
 static void stream_released_cb(struct bt_bap_stream *stream)
 {
-	shell_print(ctx_shell, "Stream %p released\n", stream);
+	LOG_DBG("Stream %p released\n", stream);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	if (default_unicast_group != NULL) {
@@ -2525,12 +2511,12 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 		if (group_can_be_deleted) {
 			int err;
 
-			shell_print(ctx_shell, "All streams released, deleting group\n");
+			LOG_DBG("All streams released, deleting group\n");
 
 			err = bt_bap_unicast_group_delete(default_unicast_group);
 
 			if (err != 0) {
-				shell_error(ctx_shell, "Failed to delete unicast group: %d", err);
+				LOG_ERR("Failed to delete unicast group: %d", err);
 			} else {
 				default_unicast_group = NULL;
 			}
@@ -2970,7 +2956,7 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_pacs_set_location(dir, loc);
 	if (err) {
-		shell_error(ctx_shell, "Set available contexts err %d", err);
+		LOG_ERR("Set available contexts err %d", err);
 		return -ENOEXEC;
 	}
 
@@ -3012,13 +2998,13 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 	if (!strcmp(argv[3], "supported")) {
 		err = bt_pacs_set_supported_contexts(dir, ctx);
 		if (err) {
-			shell_error(ctx_shell, "Set supported contexts err %d", err);
+			LOG_ERR("Set supported contexts err %d", err);
 			return err;
 		}
 	} else if (!strcmp(argv[3], "available")) {
 		err = bt_pacs_set_available_contexts(dir, ctx);
 		if (err) {
-			shell_error(ctx_shell, "Set available contexts err %d", err);
+			LOG_ERR("Set available contexts err %d", err);
 			return err;
 		}
 	} else {
@@ -3032,8 +3018,6 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, i;
-
-	ctx_shell = sh;
 
 	if (initialized) {
 		shell_print(sh, "Already initialized");
@@ -3410,8 +3394,7 @@ static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 	struct bt_bap_ep_info info;
 
 	bt_bap_ep_get_info(ep, &info);
-	printk("ASE info: id %u state %u dir %u\n", info.id, info.state,
-	       info.dir);
+	LOG_INF("ASE info: id %u state %u dir %u", info.id, info.state, info.dir);
 }
 
 static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
@@ -3576,7 +3559,7 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 		size_t uuid16_size;
 
 		if (data_array_size <= ad_len) {
-			shell_warn(ctx_shell, "No space for AD_UUID16");
+			LOG_WRN("No space for AD_UUID16");
 			return ad_len;
 		}
 
@@ -3635,7 +3618,7 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 
 		err = bt_bap_broadcast_source_get_id(default_source.bap_source, &broadcast_id);
 		if (err != 0) {
-			printk("Unable to get broadcast ID: %d\n", err);
+			LOG_INF("Unable to get broadcast ID: %d", err);
 
 			return -1;
 		}
@@ -3650,7 +3633,7 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 
 	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
 		if (data_array_size <= ad_len) {
-			shell_warn(ctx_shell, "No space for AD_UUID16");
+			LOG_WRN("No space for AD_UUID16");
 			return ad_len;
 		}
 
@@ -3692,7 +3675,7 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 
 		err = bt_bap_broadcast_source_get_base(default_source.bap_source, &base_buf);
 		if (err != 0) {
-			printk("Unable to get BASE: %d\n", err);
+			LOG_INF("Unable to get BASE: %d", err);
 
 			return -1;
 		}

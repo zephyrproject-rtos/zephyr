@@ -10,11 +10,14 @@
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/bluetooth/audio/tbs.h>
 
 #include "shell/bt.h"
+
+LOG_MODULE_REGISTER(tbs_shell, LOG_LEVEL_DBG);
 
 static struct bt_conn *tbs_authorized_conn;
 static bool cbs_registered;

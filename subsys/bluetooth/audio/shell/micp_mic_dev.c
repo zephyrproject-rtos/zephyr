@@ -10,15 +10,18 @@
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/micp.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "shell/bt.h"
 
+LOG_MODULE_REGISTER(micp_mic_dev_shell, LOG_LEVEL_DBG);
+
 static void micp_mic_dev_mute_cb(uint8_t mute)
 {
-	shell_print(ctx_shell, "Mute value %u", mute);
+	LOG_DBG("Mute value %u", mute);
 }
 
 static struct bt_micp_mic_dev_cb micp_mic_dev_cbs = {
@@ -32,61 +35,52 @@ static void micp_mic_dev_aics_state_cb(struct bt_aics *inst, int err,
 				       int8_t gain, uint8_t mute, uint8_t mode)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS state get failed (%d) for "
-			    "inst %p", err, inst);
+		LOG_ERR("AICS state get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p state gain %d, mute %u, "
-			    "mode %u", inst, gain, mute, mode);
+		LOG_DBG("AICS inst %p state gain %d, mute %u, mode %u", (void *)inst, gain, mute,
+			mode);
 	}
-
 }
+
 static void micp_mic_dev_aics_gain_setting_cb(struct bt_aics *inst, int err,
 					      uint8_t units, int8_t minimum,
 					      int8_t maximum)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS gain settings get failed (%d) for "
-			    "inst %p", err, inst);
+		LOG_ERR("AICS gain settings get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p gain settings units %u, "
-			    "min %d, max %d", inst, units, minimum,
-			    maximum);
+		LOG_DBG("AICS inst %p gain settings units %u, min %d, max %d", (void *)inst, units,
+			minimum, maximum);
 	}
-
 }
+
 static void micp_mic_dev_aics_input_type_cb(struct bt_aics *inst, int err,
 					    uint8_t input_type)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS input type get failed (%d) for "
-			    "inst %p", err, inst);
+		LOG_ERR("AICS input type get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p input type %u",
-			    inst, input_type);
+		LOG_DBG("AICS inst %p input type %u", (void *)inst, input_type);
 	}
-
 }
+
 static void micp_mic_dev_aics_status_cb(struct bt_aics *inst, int err,
 					bool active)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS status get failed (%d) for "
-			    "inst %p", err, inst);
+		LOG_ERR("AICS status get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p status %s",
-			    inst, active ? "active" : "inactive");
+		LOG_DBG("AICS inst %p status %s", (void *)inst, active ? "active" : "inactive");
 	}
-
 }
+
 static void micp_mic_dev_aics_description_cb(struct bt_aics *inst, int err,
 					     char *description)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS description get failed (%d) for "
-			    "inst %p", err, inst);
+		LOG_ERR("AICS description get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p description %s",
-			    inst, description);
+		LOG_DBG("AICS inst %p description %s", (void *)inst, description);
 	}
 }
 
@@ -104,10 +98,6 @@ static int cmd_micp_mic_dev_param(const struct shell *sh, size_t argc,
 {
 	int result;
 	struct bt_micp_mic_dev_register_param micp_param;
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
-	}
 
 	(void)memset(&micp_param, 0, sizeof(micp_param));
 

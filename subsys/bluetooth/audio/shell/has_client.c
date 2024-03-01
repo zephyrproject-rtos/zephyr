@@ -11,11 +11,14 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "shell/bt.h"
+
+LOG_MODULE_REGISTER(has_client_shell, LOG_LEVEL_DBG);
 
 static struct bt_has *inst;
 
@@ -24,12 +27,12 @@ static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has 
 				   enum bt_has_capabilities caps)
 {
 	if (err) {
-		shell_error(ctx_shell, "HAS discovery (err %d)", err);
+		LOG_ERR("HAS discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "HAS discovered %p type 0x%02x caps 0x%02x for conn %p",
-		    has, type, caps, conn);
+	LOG_DBG("HAS discovered %p type 0x%02x caps 0x%02x for conn %p", (void *)has, type, caps,
+		(void *)conn);
 
 	inst = has;
 }
@@ -37,9 +40,9 @@ static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has 
 static void has_client_preset_switch_cb(struct bt_has *has, int err, uint8_t index)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "HAS %p preset switch error (err %d)", has, err);
+		LOG_ERR("HAS %p preset switch error (err %d)", (void *)has, err);
 	} else {
-		shell_print(ctx_shell, "HAS %p preset switch index 0x%02x", has, index);
+		LOG_DBG("HAS %p preset switch index 0x%02x", (void *)has, index);
 	}
 }
 
@@ -47,15 +50,15 @@ static void has_client_preset_read_rsp_cb(struct bt_has *has, int err,
 					  const struct bt_has_preset_record *record, bool is_last)
 {
 	if (err) {
-		shell_error(ctx_shell, "Preset Read operation failed (err %d)", err);
+		LOG_ERR("Preset Read operation failed (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Preset Index: 0x%02x\tProperties: 0x%02x\tName: %s",
-		    record->index, record->properties, record->name);
+	LOG_DBG("Preset Index: 0x%02x\tProperties: 0x%02x\tName: %s", record->index,
+		record->properties, record->name);
 
 	if (is_last) {
-		shell_print(ctx_shell, "Preset Read operation complete");
+		LOG_DBG("Preset Read operation complete");
 	}
 }
 
@@ -68,10 +71,6 @@ static const struct bt_has_client_cb has_client_cb = {
 static int cmd_has_client_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
 
 	err = bt_has_client_cb_register(&has_client_cb);
 	if (err != 0) {
@@ -88,10 +87,6 @@ static int cmd_has_client_discover(const struct shell *sh, size_t argc, char **a
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	err = bt_has_client_discover(default_conn);

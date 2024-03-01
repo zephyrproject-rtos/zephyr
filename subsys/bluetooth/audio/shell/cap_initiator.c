@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include <zephyr/types.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -17,6 +18,8 @@
 
 #include "shell/bt.h"
 #include "audio.h"
+
+LOG_MODULE_REGISTER(cap_initiator_shell, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
@@ -28,51 +31,49 @@ static void cap_discover_cb(struct bt_conn *conn, int err,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "discover failed (%d)", err);
+		LOG_ERR("discover failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "discovery completed%s",
-		    csis_inst == NULL ? "" : " with CSIS");
+	LOG_DBG("discovery completed%s", csis_inst == NULL ? "" : " with CSIS");
 }
 
 static void cap_unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err == -ECANCELED) {
-		shell_print(ctx_shell, "Unicast start was cancelled for conn %p", conn);
+		LOG_DBG("Unicast start was cancelled for conn %p", (void *)conn);
 	} else if (err != 0) {
-		shell_error(ctx_shell, "Unicast start failed for conn %p (%d)", conn, err);
+		LOG_ERR("Unicast start failed for conn %p (%d)", (void *)conn, err);
 	} else {
-		shell_print(ctx_shell, "Unicast start completed");
+		LOG_DBG("Unicast start completed");
 	}
 }
 
 static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err == -ECANCELED) {
-		shell_print(ctx_shell, "Unicast update was cancelled for conn %p", conn);
+		LOG_DBG("Unicast update was cancelled for conn %p", (void *)conn);
 	} else if (err != 0) {
-		shell_error(ctx_shell, "Unicast update failed for conn %p (%d)",
-			    conn, err);
+		LOG_ERR("Unicast update failed for conn %p (%d)", (void *)conn, err);
 	} else {
-		shell_print(ctx_shell, "Unicast updated completed");
+		LOG_DBG("Unicast updated completed");
 	}
 }
 
 static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err == -ECANCELED) {
-		shell_print(ctx_shell, "Unicast stop was cancelled for conn %p", conn);
+		LOG_DBG("Unicast stop was cancelled for conn %p", (void *)conn);
 	} else if (err != 0) {
-		shell_error(ctx_shell, "Unicast stop failed for conn %p (%d)", conn, err);
+		LOG_ERR("Unicast stop failed for conn %p (%d)", (void *)conn, err);
 	} else {
-		shell_print(ctx_shell, "Unicast stop completed");
+		LOG_DBG("Unicast stop completed");
 
 		if (default_unicast_group != NULL) {
 			err = bt_bap_unicast_group_delete(default_unicast_group);
 			if (err != 0) {
-				shell_error(ctx_shell, "Failed to delete unicast group %p: %d",
-					    default_unicast_group, err);
+				LOG_ERR("Failed to delete unicast group %p: %d",
+					(void *)default_unicast_group, err);
 			} else {
 				default_unicast_group = NULL;
 			}
@@ -96,10 +97,6 @@ static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc,
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	}
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
 	}
 
 	if (!cbs_registered) {
@@ -558,8 +555,7 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 		for (size_t j = 0U; j < param->snk_cnt[i]; j++) {
 			snk_eps[snk_ep_cnt] = snks[bt_conn_index(connected_conns[i])][j];
 			if (snk_eps[snk_ep_cnt] == NULL) {
-				shell_error(ctx_shell, "No sink[%zu][%zu] endpoint available", i,
-					    j);
+				LOG_ERR("No sink[%zu][%zu] endpoint available", i, j);
 
 				return -ENOEXEC;
 			}
@@ -571,8 +567,7 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 		for (size_t j = 0U; j < param->src_cnt[i]; j++) {
 			src_eps[src_ep_cnt] = srcs[bt_conn_index(connected_conns[i])][j];
 			if (src_eps[src_ep_cnt] == NULL) {
-				shell_error(ctx_shell, "No source[%zu][%zu] endpoint available", i,
-					    j);
+				LOG_ERR("No source[%zu][%zu] endpoint available", i, j);
 
 				return -ENOEXEC;
 			}
@@ -582,15 +577,14 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	}
 
 	if (snk_ep_cnt != snk_cnt) {
-		shell_error(ctx_shell, "Sink endpoint and stream count mismatch: %zu != %zu",
-			    snk_ep_cnt, snk_cnt);
+		LOG_ERR("Sink endpoint and stream count mismatch: %zu != %zu", snk_ep_cnt, snk_cnt);
 
 		return -ENOEXEC;
 	}
 
 	if (src_ep_cnt != src_cnt) {
-		shell_error(ctx_shell, "Source  endpoint and stream count mismatch: %zu != %zu",
-			    src_ep_cnt, src_cnt);
+		LOG_ERR("Source  endpoint and stream count mismatch: %zu != %zu", src_ep_cnt,
+			src_cnt);
 
 		return -ENOEXEC;
 	}
@@ -630,10 +624,9 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
 				if (err < 0) {
-					shell_error(ctx_shell,
-						    "Failed to set channel allocation for "
-						    "snk[%zu][%zu]: %d",
-						    i, j, err);
+					LOG_ERR("Failed to set channel allocation for "
+						"snk[%zu][%zu]: %d",
+						i, j, err);
 
 					return err;
 				}
@@ -660,10 +653,9 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
 				if (err < 0) {
-					shell_error(ctx_shell,
-						    "Failed to set channel allocation for "
-						    "src[%zu][%zu]: %d",
-						    i, j, err);
+					LOG_ERR("Failed to set channel allocation for "
+						"src[%zu][%zu]: %d",
+						i, j, err);
 
 					return err;
 				}
@@ -760,10 +752,6 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 			shell_error(sh, "Unable to parse src_named_preset %s", argv[1]);
 			return -ENOEXEC;
 		}
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	/* Setup arrays of parameters based on the preset for easier access. This also copies the

@@ -10,6 +10,7 @@
  */
 
 #include <stdlib.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -21,7 +22,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_mpl_shell, CONFIG_BT_MPL_LOG_LEVEL);
+LOG_MODULE_REGISTER(mpl_shell, CONFIG_BT_MPL_LOG_LEVEL);
 
 #if defined(CONFIG_BT_MPL)
 
@@ -73,10 +74,6 @@ int cmd_mpl_debug_dump_state(const struct shell *sh, size_t argc,
 
 int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
 {
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
-
 	int err = media_proxy_pl_init();
 
 	if (err) {

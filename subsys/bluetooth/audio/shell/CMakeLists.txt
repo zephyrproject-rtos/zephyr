@@ -4,6 +4,10 @@ zephyr_library()
 zephyr_library_link_libraries(subsys__bluetooth)
 
 zephyr_library_sources_ifdef(
+  CONFIG_BT_AUDIO
+  audio.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_VCP_VOL_REND
   vcp_vol_rend.c
   )

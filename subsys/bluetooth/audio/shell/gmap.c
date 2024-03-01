@@ -14,12 +14,15 @@
 #include <zephyr/bluetooth/audio/gmap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include "shell/bt.h"
 #include "audio.h"
+
+LOG_MODULE_REGISTER(gmap_shell, LOG_LEVEL_DBG);
 
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
@@ -55,15 +58,14 @@ static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role ro
 			     struct bt_gmap_feat features)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "gmap discovery (err %d)", err);
+		LOG_ERR("gmap discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell,
-		    "gmap discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
-		    "0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x",
-		    conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
-		    features.bgr_feat);
+	LOG_DBG("gmap discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
+		"0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x",
+		(void *)conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
+		features.bgr_feat);
 }
 
 static const struct bt_gmap_cb gmap_cb = {
@@ -186,10 +188,6 @@ static int cmd_gmap_discover(const struct shell *sh, size_t argc, char **argv)
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	err = bt_gmap_discover(default_conn);
