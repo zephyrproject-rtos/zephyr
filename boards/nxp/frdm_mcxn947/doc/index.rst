@@ -74,6 +74,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
+| ENET QOS  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
