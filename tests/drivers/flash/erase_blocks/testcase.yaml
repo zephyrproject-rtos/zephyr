@@ -13,5 +13,5 @@ tests:
     platform_allow:
       - sam_v71_xult/samv71q21
       - b_u585i_iot02a
-      - nrf9160dk@0.14.0/nrf9160
+      - nrf9160dk/nrf9160
       - nrf5340dk/nrf5340/cpuapp

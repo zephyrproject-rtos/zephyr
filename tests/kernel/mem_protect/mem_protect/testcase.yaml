@@ -25,7 +25,7 @@ tests:
     platform_allow:
       - efr32_radio/efr32mg21a020f1024im32
       - mps3/an547
-      - nrf9160dk@0.14.0/nrf9160
+      - nrf9160dk/nrf9160
     integration_platforms:
       - mps3/an547
     extra_args: CONFIG_MPU_GAP_FILLING=y

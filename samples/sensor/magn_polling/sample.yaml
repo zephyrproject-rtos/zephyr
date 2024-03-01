@@ -9,5 +9,5 @@ tests:
       - frdm_k64f               # fxos8700
       - thingy53/nrf5340/cpuapp # bmm150
       - sensortile_box          # lis2mdl
-      - stm32f411e_disco@D        # lsm303agr_magn
-      - stm32f3_disco@B           # lsm303dlhc_magn
+      - stm32f411e_disco        # lsm303agr_magn
+      - stm32f3_disco           # lsm303dlhc_magn

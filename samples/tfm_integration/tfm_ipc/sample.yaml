@@ -11,7 +11,7 @@ tests:
     platform_allow:
       - mps2/an521/cpu0/ns
       - nrf5340dk/nrf5340/cpuapp/ns
-      - nrf9160dk@0.14.0/nrf9160/ns
+      - nrf9160dk/nrf9160/ns
       - nucleo_l552ze_q/stm32l552xx/ns
       - stm32l562e_dk/stm32l562xx/ns
       - v2m_musca_s1/musca_s1/ns

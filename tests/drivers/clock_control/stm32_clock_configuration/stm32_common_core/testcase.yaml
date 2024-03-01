@@ -186,14 +186,14 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/hsi_8.overlay"
     platform_allow:
       - nucleo_f091rc
-      - stm32f3_disco@B
+      - stm32f3_disco
     integration_platforms:
       - nucleo_f091rc
   drivers.clock.stm32_clock_configuration.common_core.f0_f3.sysclksrc_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/hse_8_bypass.overlay"
     platform_allow:
       - nucleo_f091rc
-      - stm32f3_disco@B
+      - stm32f3_disco
     integration_platforms:
       - nucleo_f091rc
   drivers.clock.stm32_clock_configuration.common_core.f0_f3.sysclksrc_pll_32_hsi_8:
@@ -201,7 +201,7 @@ tests:
       DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/f0_f3_pll_32_hsi_8.overlay"
     platform_allow:
       - nucleo_f091rc
-      - stm32f3_disco@B
+      - stm32f3_disco
     integration_platforms:
       - nucleo_f091rc
   drivers.clock.stm32_clock_configuration.common_core.f0_f3.sysclksrc_pll_32_hse_8:
@@ -209,7 +209,7 @@ tests:
       DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/f0_f3_pll_32_hse_8.overlay"
     platform_allow:
       - nucleo_f091rc
-      - stm32f3_disco@B
+      - stm32f3_disco
     integration_platforms:
       - nucleo_f091rc
   drivers.clock.stm32_clock_configuration.common_core.f1.sysclksrc_hsi_8:

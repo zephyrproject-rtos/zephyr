@@ -12,7 +12,7 @@ tests:
       - mps2/an521/cpu0
       - mps3/an547
       - nrf52840dk/nrf52840
-      - nrf9160dk@0.14.0/nrf9160
+      - nrf9160dk/nrf9160
       - nrf51dk/nrf51822
     integration_platforms:
       - qemu_cortex_m0

@@ -4,8 +4,8 @@ tests:
   sample.drivers.flash.soc_flash_nrf:
     platform_allow:
       - nrf52dk/nrf52832
-      - nrf9160dk@0.14.0/nrf9160
-      - nrf9160dk@0.14.0/nrf9160/ns
+      - nrf9160dk/nrf9160
+      - nrf9160dk/nrf9160/ns
     integration_platforms:
       - nrf52dk/nrf52832
     tags:

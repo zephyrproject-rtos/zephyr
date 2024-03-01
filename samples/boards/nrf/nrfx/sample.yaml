@@ -4,7 +4,7 @@ tests:
   sample.boards.nrf.nrfx:
     platform_allow:
       - nrf52840dk/nrf52840
-      - nrf9160dk@0.14.0/nrf9160
+      - nrf9160dk/nrf9160
     integration_platforms:
       - nrf52840dk/nrf52840
     tags: board
