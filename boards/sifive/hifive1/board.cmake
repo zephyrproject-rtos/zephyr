@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2018 SiFive, Inc.
 
 set(SUPPORTED_EMU_PLATFORMS renode qemu)
 set(RENODE_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/support/hifive1.resc)

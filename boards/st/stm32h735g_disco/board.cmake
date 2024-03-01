@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2021 SILA Embedded Solutions GmbH
 
 board_runner_args(jlink "--device=STM32H735IG" "--speed=4000")
 board_runner_args(openocd --target-handle=_CHIPNAME.cpu0)

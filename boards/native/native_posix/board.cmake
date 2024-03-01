@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2017 Oticon A/S
 
 set(SUPPORTED_EMU_PLATFORMS native)
 

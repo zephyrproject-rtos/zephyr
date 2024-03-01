@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2018 SiFive, Inc.
 
 if BOARD_HIFIVE1_FE310
 

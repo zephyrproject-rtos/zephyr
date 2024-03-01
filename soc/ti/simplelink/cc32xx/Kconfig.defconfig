@@ -1,5 +1,6 @@
 # TI SimpleLink Family
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2016-2017, Texas Instruments Incorporated
 
 if SOC_SERIES_CC32XX
 

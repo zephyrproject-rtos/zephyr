@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2019 Intel Corp.
 
 CONFIG_SRAM_OFFSET=0x100000
 CONFIG_KERNEL_VM_SIZE=0x400000

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
 
 zephyr_sources()
 
