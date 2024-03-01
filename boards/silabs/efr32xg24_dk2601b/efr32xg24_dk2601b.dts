@@ -79,8 +79,8 @@
 };
 
 &i2c0 {
-	location-sda = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(5)>;
-	location-scl = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(4)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	veml6035: veml6035@29 {
