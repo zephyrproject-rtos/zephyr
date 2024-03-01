@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8mq_m4.dtsi>
-#include "mimx8mq_evk-pinctrl.dtsi"
+#include "imx8mq_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8MQ EVK board";
