@@ -150,16 +150,14 @@ ARC arch:
 ARM arch:
   status: maintained
   maintainers:
-    - microbuilder
+    - ithinuel
   collaborators:
+    - microbuilder
     - carlocaione
     - galak
     - MaureenHelm
     - stephanosio
     - bbolen
-    - povergoing
-    - ithinuel
-    - sgrrzhf
   files:
     - arch/arm/
     - arch/arm/core/offsets/
