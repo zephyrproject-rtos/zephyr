@@ -3329,9 +3329,9 @@ NXP Platforms (S32):
     - bperseghetti
     - Dat-NguyenDuy
   files:
-    - boards/arm/s32*/
-    - boards/arm/mr_canhubk3/
-    - boards/arm/ucans32k1sic/
+    - boards/nxp/s32*/
+    - boards/nxp/mr_canhubk3/
+    - boards/nxp/ucans32k1sic/
     - boards/common/*nxp_s32*
     - soc/nxp/s32/
     - drivers/*/*nxp_s32*
@@ -3353,8 +3353,9 @@ NXP Platforms (Xtensa):
   collaborators:
     - iuliana-prodan
   files:
-    - soc/xtensa/nxp_adsp/
-    - boards/xtensa/nxp_adsp_*/
+    - soc/nxp/imx/*/adsp/
+    - soc/nxp/imxrt/imxrt5xx/f1/include/adsp/
+    - boards/nxp/
   labels:
     - "platform: NXP ADSP"
   description: NXP Xtensa platforms
@@ -3400,9 +3401,9 @@ nRF Platforms:
   maintainers:
     - anangl
   files:
-    - boards/nordic_nrf/
+    - boards/nordic/
     - drivers/*/*nrfx*.c
-    - soc/nordic_nrf/
+    - soc/nordic/
     - samples/boards/nrf/
     - dts/arm/nordic/
     - dts/bindings/*/nordic,*
@@ -3606,7 +3607,7 @@ Xilinx Platforms:
     - dts/*/xilinx/
     - dts/bindings/*/*xlnx*
     - include/zephyr/*/*/*xlnx*
-    - soc/xilinx*/
+    - soc/xlnx/
   labels:
     - "platform: Xilinx"
 
@@ -3626,7 +3627,7 @@ Infineon Platforms:
     - drivers/*/*/*xmc*
     - dts/arm/infineon/
     - dts/arm/cypress/
-    - soc/arm/cypress/
+    - soc/cypress/
     - dts/bindings/*/*infineon*
     - soc/infineon/
   labels:
@@ -4586,7 +4587,7 @@ Xtensa arch:
     - dts/xtensa/
     - boards/qemu/xtensa/
     - boards/cdns/xt-sim/
-    - soc/cadence/dc233c/
+    - soc/cdns/dc233c/
     - soc/cdns/dc233c/
     - soc/cdns/xtensa_sample_controller/
   labels:
