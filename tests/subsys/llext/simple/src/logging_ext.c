@@ -13,14 +13,14 @@
 
 #include <stdint.h>
 #include <zephyr/llext/symbol.h>
-
-extern void printk(char *fmt, ...);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(logging_ext);
 
 static const uint32_t number = 42;
 
-void hello_world(void)
+void test_entry(void)
 {
-	printk("hello world\n");
-	printk("A number is %lu\n", number);
+	LOG_INF("hello world");
+	LOG_INF("A number is %" PRIu32, number);
 }
-LL_EXTENSION_SYMBOL(hello_world);
+LL_EXTENSION_SYMBOL(test_entry);
