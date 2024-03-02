@@ -18,6 +18,12 @@ the :ref:`release notes<zephyr_3.7>`.
 Build System
 ************
 
+* Completely overhauled the way SoCs and boards are defined. This requires all
+  out-of-tree SoCs and boards to be ported to the new model. See the
+  :ref:`board_porting_guide` for more detailed information.
+  * Pull Request: https://github.com/zephyrproject-rtos/zephyr/pull/69607
+  * Issue: https://github.com/zephyrproject-rtos/zephyr/issues/51831
+
 Kernel
 ******
 
