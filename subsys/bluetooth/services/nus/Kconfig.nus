@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_NUS
+	bool "GATT Nordic UART Service"
+
+if BT_NUS
+
+config BT_NUS_DEFAULT_INSTANCE
+	bool "Use default NUS Service instance"
+	default y
+	help
+	  Enable default Nordic UART Service Instance. Allows using the NUS as
+	  the other services, where the Service is hosted by the subsystem itself.
+	  If the user wishes to declare NUS instances externally by using
+	  BT_NUS_INST_DEFINE(), it may not be beneficial having an internal
+	  instance as well.
+
+endif # BT_NUS

@@ -140,6 +140,10 @@
 	ITERABLE_SECTION_RAM(device_mutable, 4)
 #endif
 
+#if defined(CONFIG_BT_NUS)
+	ITERABLE_SECTION_RAM(bt_nus_inst, 4)
+#endif
+
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
