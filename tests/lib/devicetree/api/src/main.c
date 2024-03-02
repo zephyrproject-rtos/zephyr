@@ -3201,6 +3201,17 @@ ZTEST(devicetree_api, test_interrupt_controller)
 
 	/* DT_INST_IRQ_INTC */
 	zassert_true(DT_SAME_NODE(DT_INST_IRQ_INTC(0), TEST_INTC), "");
+
+#ifdef CONFIG_2ND_LEVEL_INTERRUPTS
+	/* the following asserts check if interrupt IDs are encoded
+	 * properly when dealing with a node that consumes interrupts
+	 * from L2 aggregators extending different L1 interrupts.
+	 */
+	zassert_true(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 0) ==
+		     (((70 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11), "");
+	zassert_true(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 2) ==
+		     (((42 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 12), "");
+#endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
 }
 
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);
