@@ -147,8 +147,8 @@
 		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 	};
 
-	lps22hb-press@5d {
-		compatible = "st,lps22hb-press";
+	lps22hb@5d {
+		compatible = "st,lps22hb";
 		reg = <0x5d>;
 	};
 

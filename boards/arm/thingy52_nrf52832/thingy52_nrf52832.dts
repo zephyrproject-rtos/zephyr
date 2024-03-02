@@ -150,8 +150,8 @@
 		init-out-low = <0x1f1f>;
 	};
 
-	lps22hb_press: lps22hb_press@5c {
-		compatible = "st,lps22hb-press";
+	lps22hb: lps22hb@5c {
+		compatible = "st,lps22hb";
 		reg = <0x5c>;
 		vin-supply = <&vdd_pwr>;
 	};

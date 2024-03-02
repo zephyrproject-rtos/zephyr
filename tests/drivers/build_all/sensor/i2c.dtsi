@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
+#include <zephyr/dt-bindings/sensor/lps22hb.h>
 #include <zephyr/dt-bindings/sensor/lps22hh.h>
 #include <zephyr/dt-bindings/sensor/lps2xdf.h>
 #include <zephyr/dt-bindings/sensor/lis2ds12.h>
@@ -339,9 +340,12 @@ test_i2c_lis3mdl_magn: lis3mdl-magn@30 {
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lps22hb_press: lps22hb-press@31 {
-	compatible = "st,lps22hb-press";
+test_i2c_lps22hb_press: lps22hb@31 {
+	compatible = "st,lps22hb";
 	reg = <0x31>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = <LPS22HB_DT_ODR_75HZ>;
+
 };
 
 test_i2c_lps22hh: lps22hh@32 {

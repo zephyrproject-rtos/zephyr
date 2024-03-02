@@ -28,8 +28,8 @@
 		reg = <0x5f>;
 	};
 
-	lps22hb: lps22hb-press@5c {
-		compatible = "st,lps22hb-press";
+	lps22hb: lps22hb@5c {
+		compatible = "st,lps22hb";
 		status = "okay";
 		reg = <0x5c>;
 	};
