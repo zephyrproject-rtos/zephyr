@@ -430,6 +430,19 @@
 			interrupt-parent = <&test_cpu_intc>;
 		};
 
+		/* same as `test_intc` but extends a different L1 interrupt.
+		 * Required for testing if interrupts are encoded properly for
+		 * nodes consuming interrupts from different aggregators.
+		 */
+		test_intc2: interrupt-controller@bbbbdccc {
+			compatible = "vnd,intc";
+			reg = <0xbbbbdccc 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <12 0>;
+			interrupt-parent = <&test_cpu_intc>;
+		};
+
 		/* there should only be one of these */
 		test_irq: interrupt-holder {
 			compatible = "vnd,interrupt-holder";
@@ -444,8 +457,9 @@
 			compatible = "vnd,interrupt-holder-extended";
 			status = "okay";
 			interrupts-extended = <&test_intc 70 7>,
-					      <&test_gpio_4 30 3>;
-			interrupt-names = "int1", "int2";
+					      <&test_gpio_4 30 3>,
+					      <&test_intc2 42 7>;
+			interrupt-names = "int1", "int2", "int3";
 		};
 
 		test_fixed_clk: test-fixed-clock {
