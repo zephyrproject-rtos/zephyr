@@ -24,7 +24,7 @@ tests:
       fixture: external_flash_mx25l51245g
     integration_platforms:
       - nrf52840dk/nrf52840
-  drivers.flash.common.soc_flash/nrf:
+  drivers.flash.common.soc_flash_nrf:
     platform_allow: nrf52840dk/nrf52840
     extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
     integration_platforms:
