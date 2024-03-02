@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: d45b14c198d778658b7853b48378d2e132a6c4be
+      revision: pull/301/head
       path: modules/hal/nxp
       groups:
         - hal
@@ -249,7 +249,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: 08325d6fb7190a105f5382d35e64ed2812c57cf4
+      revision: 4f3293cbb79b9d210c0fe0a4b238417043c5438b
       path: modules/hal/xtensa
       groups:
         - hal

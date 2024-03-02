@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Google LLC.
+# Copyright (c) 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NXP RT6xx ADSP SoC Selection"
+	depends on SOC_SERIES_NXP_RT6XX
+
+	config SOC_NXP_RT685
+		bool "NXP RT685"
+		select HAS_MCUX
+endchoice

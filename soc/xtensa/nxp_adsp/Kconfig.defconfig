@@ -1,6 +1,6 @@
 # NXP i.MX8/RT SoC family default configuration options
 #
-# Copyright (c) 2021 NXP
+# Copyright (c) 2021, 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_NXP_ADSP

@@ -1,0 +1,41 @@
+# Copyright (c) 2023 Google LLC.
+# Copyright (c) 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NXP_RT6XX
+
+config SOC_SERIES
+	string
+	default "rt6xx"
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "nxp_rt600_adsp"
+
+config SOC
+	string
+	default "mimxrt685s"
+
+config SOC_PART_NUMBER
+	string
+	default "MIMXRT685SFVKB_dsp" if SOC_NXP_RT685
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 198000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config CACHE
+	default n
+
+config DCACHE
+	default n
+
+config CACHE_MANAGEMENT
+	default n
+
+config LOG
+	default n
+
+endif # SOC_SERIES_NXP_RT6XX
