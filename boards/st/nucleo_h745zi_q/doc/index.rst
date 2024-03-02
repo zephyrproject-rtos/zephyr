@@ -94,32 +94,34 @@ Supported Features
 The Zephyr nucleo_h745zi_q board configuration supports the following hardware
 features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
++-------------+------------+-------------------------------------+
+| Interface   | Controller | Driver/Component                    |
++=============+============+=====================================+
+| NVIC        | on-chip    | nested vector interrupt controller  |
++-------------+------------+-------------------------------------+
+| UART        | on-chip    | serial port                         |
++-------------+------------+-------------------------------------+
+| PINMUX      | on-chip    | pinmux                              |
++-------------+------------+-------------------------------------+
+| GPIO        | on-chip    | gpio                                |
++-------------+------------+-------------------------------------+
+| RTC         | on-chip    | counter                             |
++-------------+------------+-------------------------------------+
+| I2C         | on-chip    | i2c                                 |
++-------------+------------+-------------------------------------+
+| PWM         | on-chip    | pwm                                 |
++-------------+------------+-------------------------------------+
+| ETHERNET    | on-chip    | ethernet                            |
++-------------+------------+-------------------------------------+
+| RNG         | on-chip    | True Random number generator        |
++-------------+------------+-------------------------------------+
+| USB OTG FS  | on-chip    | USB device                          |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/st/nucleo_h745zi_q/nucleo_h745zi_q_stm32h745xx_m7_defconfig`` and
+:zephyr_file:`boards/st/nucleo_h745zi_q/nucleo_h745zi_q_stm32h745xx_m7_defconfig` and
 :zephyr_file:`boards/st/nucleo_h745zi_q/nucleo_h745zi_q_stm32h745xx_m4_defconfig`
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
