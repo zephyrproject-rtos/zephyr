@@ -750,6 +750,20 @@ ZTEST(devicetree_api, test_irq)
 	zassert_true(DT_INST_IRQ_HAS_NAME(0, stat), "");
 	zassert_true(DT_INST_IRQ_HAS_NAME(0, done), "");
 	zassert_false(DT_INST_IRQ_HAS_NAME(0, alpha), "");
+
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	/* the following asserts check if interrupt IDs are encoded
+	 * properly when dealing with a node that consumes interrupts
+	 * from L2 aggregators extending different L1 interrupts.
+	 */
+	zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 0),
+		      ((70 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 2),
+		      ((42 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 12, "");
+#else
+	zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 0), 70, "");
+	zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 2), 42, "");
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 }
 
 ZTEST(devicetree_api, test_irq_level)
