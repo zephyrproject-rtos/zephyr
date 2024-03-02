@@ -154,6 +154,28 @@ arduino_i2c: &lpi2c1 {};
 		reg = <0x48>;
 		status = "okay";
 
+		/* camera resolution configured for VGA 640 x 480 */
+		cam-aet-min-frame-rate = <7578>;
+		cam-aet-max-frame-rate = <7578>;
+		cam-crop-window-width = <640>;
+		cam-crop-window-height = <480>;
+		cam-crop-window-xoffset = <0>;
+		cam-crop-window-yoffset = <0>;
+		cam-output-width = <640>;
+		cam-output-height = <480>;
+		cam-sensor-cfg-cpipe-last-row = <483>;
+		cam-sensor-cfg-frame-length-lines = <766>;
+		cam-sensor-cfg-line-length-pck = <2117>;
+		cam-sensor-cfg-x-addr-start = <0>;
+		cam-sensor-cfg-y-addr-start = <0>;
+		cam-sensor-cfg-x-addr-end = <1293>;
+		cam-sensor-cfg-y-addr-end = <973>;
+		cam-sensor-control-read-mode = <0x0110>;
+		cam-stat-ae-initial-window-xend = <127>;
+		cam-stat-ae-initial-window-yend = <95>;
+		cam-stat-awb-clip-window-xend = <639>;
+		cam-stat-awb-clip-window-yend = <479>;
+
 		port {
 			mt9m114_ep_out: endpoint {
 				remote-endpoint = <&csi_ep_in>;
