@@ -1,0 +1,29 @@
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config I2S_INIT_BUFFERS
+	int "number of i2s transfer buffer"
+	default 2
+	help
+	  i2s init buffers used in transfer
+
+config SAMPLE_FREQ
+	int "sample rate"
+	default 48000
+	help
+	  fample rate
+
+config USE_DMIC
+	bool "use dmic as input"
+
+if USE_DMIC
+
+config DMIC_CHANNEL
+	int "DMIC channels"
+	default 1
+	help
+	  DMIC channel number
+
+endif
