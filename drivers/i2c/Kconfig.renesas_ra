@@ -1,0 +1,9 @@
+# Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_RENESAS_RA
+	bool "Renesas RA Series I2C driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_I2C_ENABLED
+	help
+	  Enable Renesas RA series I2C driver.
