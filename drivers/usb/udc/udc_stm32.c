@@ -322,6 +322,13 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 		return;
 	}
 
+	if (udc_ep_buf_has_zlp(buf) && ep != USB_CONTROL_EP_IN) {
+		udc_ep_buf_clear_zlp(buf);
+		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
+
+		return;
+	}
+
 	udc_buf_get(dev, ep);
 
 	if (ep == USB_CONTROL_EP_IN) {
