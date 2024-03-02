@@ -64,10 +64,35 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 # error Too many priorities for multiqueue scheduler (max 32)
 # endif
 
+#if defined(CONFIG_SCHED_DEADLINE)
+
+static ALWAYS_INLINE int z_deadline_cmp(struct k_thread *thread_1,
+	struct k_thread *thread_2)
+{
+	uint32_t d1 = thread_1->base.prio_deadline;
+	uint32_t d2 = thread_2->base.prio_deadline;
+
+	return (int32_t) (d2 - d1);
+}
+
+#endif
+
 static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
 					struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
+
+#ifdef CONFIG_SCHED_DEADLINE
+	struct k_thread *t;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&pq->queues[priority_bit], t, base.qnode_dlist) {
+		if (z_deadline_cmp(thread, t) > 0) {
+			sys_dlist_insert(&t->base.qnode_dlist,
+					 &thread->base.qnode_dlist);
+			return;
+		}
+	}
+#endif
 
 	sys_dlist_append(&pq->queues[priority_bit], &thread->base.qnode_dlist);
 	pq->bitmask |= BIT(priority_bit);

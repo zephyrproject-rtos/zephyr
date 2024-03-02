@@ -1,3 +1,4 @@
 tests:
   kernel.scheduler.deadline:
     tags: kernel
+    filter: CONFIG_SCHED_DUMB, CONFIG_SCHED_MULTIQ
