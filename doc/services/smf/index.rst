@@ -102,10 +102,10 @@ function is used and it has the following prototype:
 
 .. note:: If :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION` is not set,
    :c:func:`smf_set_initial` and :c:func:`smf_set_state` function should
-   not be passed a parent state as they will not know which child state
-   to transition to. Transitioning to a parent state is OK if an initial
-   transition to a child state is defined. A well-formed HSM will have
-   initial transitions defined for all parent states.
+   not be passed a parent state as the parent state does not know which
+   child state to transition to. Transitioning to a parent state is OK
+   if an initial transition to a child state is defined. A well-formed
+   HSM will have initial transitions defined for all parent states.
 
 .. note:: While the state machine is running, smf_set_state should only be
    called from the Entry and Run functions. Calling smf_set_state from the
@@ -353,9 +353,9 @@ When designing hierarchical state machines, the following should be considered:
    is called.
  - The parent_run function only executes if the child_run function does not
    call either :c:func:`smf_set_state` or :c:func:`smf_set_handled`.
- - When a parent state intitiates a transition to self, the parents's exit
-   action is not called, e.g. instead of child_exit, parent_exit, parent_entry
-   it performs child_exit, parent_entry
+ - Transitions to self in super-states containing sub-states are not supported.
+   Transitions to self from the most-nested child state are supported and will
+   call the exit and entry function of the child state correctly.
 
 Event Driven State Machine Example
 ==================================
