@@ -97,11 +97,38 @@ of this sample application (i.e., :zephyr_file:`samples/net/mqtt_publisher`) and
    :goals: build flash
    :compact:
 
+If the board is connected directly to the Linux host computer through LAN,
+configure the network interface:
+
+.. code-block:: console
+
+	$ IFACE=eth0 # Change this to the interface to which the LAN cable is connected
+
+	$ IPV4_ADDR_1="192.0.2.2/24"
+	$ IPV4_ROUTE_1="192.0.2.0/24"
+
+	$ sudo ip address add $IPV4_ADDR_1 dev $IFACE
+	$ sudo ip route add $IPV4_ROUTE_1 dev $IFACE
+	$ sudo ip link set dev $IFACE up
+
+You can run ``sudo ip addr flush dev $IFACE`` to undo the steps above.
+
+.. note::
+	For mosquitto 2.0 and up, ensure you set unauthenticated access by
+	adding the following to the mosquitto configuration file ``mosquitto.conf``:
+
+	.. code-block:: none
+
+		listener 1883
+		allow_anonymous true
+		bind_interface eth0
+
 Open another terminal window and type:
 
 .. code-block:: console
 
-	$ sudo mosquitto -v -p 1883
+	$ sudo mosquitto -v -p 1883		# For mosquitto < 2.0
+	$ sudo mosquitto -v -c mosquitto.conf	# For mosquitto >= 2.0
 
 Open another terminal window and type:
 
