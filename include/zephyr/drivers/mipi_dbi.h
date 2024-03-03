@@ -106,16 +106,23 @@ extern "C" {
 		},							\
 	}
 
+#define MIPI_DBI_INTEL8080_CONFIG_DT(n, t) .dummy = 0
 /**
  * @brief MIPI DBI controller configuration
  *
  * Configuration for MIPI DBI controller write
  */
 struct mipi_dbi_config {
+#ifdef CONFIG_MIPI_DBI_SPI
 	/** MIPI DBI mode (SPI 3 wire or 4 wire) */
 	uint8_t mode;
 	/** SPI configuration */
 	struct spi_config config;
+#endif
+#ifdef CONFIG_MIPI_DBI_INTEL8080
+	/** Intel8080 Parallel configuration */
+	uint8_t dummy;
+#endif
 };
 
 

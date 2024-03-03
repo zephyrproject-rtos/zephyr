@@ -1,0 +1,63 @@
+# Copyright 2024 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Common fields for MIPI DBI devices using Mode A (Intel8080)
+
+description: |
+  MIPI-DBI Mode A compatible parallel controller. This driver emulates
+  MIPI-DBI mode A (known as Intel 8080 mode) using GPIO pins
+
+compatible: "zephyr,mipi-dbi-intel8080"
+
+include: base.yaml
+
+bus: mipi-dbi
+
+properties:
+  rd-gpios:
+    type: phandle-array
+    description: |
+      RD strobe. Active low.
+
+  wr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Wr strobe.
+      Active low. On low to high transition, device will
+      latch data pins
+
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/Command gpio pin. Set to low when sending a command,
+      or high when sending data
+
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      CS pin
+      Active low.
+      When high RD, WR, DC/RS are ignored
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin. Set high to reset display
+
+  data-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data pins
+
+  write-only:
+    type: boolean
+    description: |
+      Only writes to display controller, do not perform reads.
+      If all controllers are write-only, read functions will be
+      optimized out for size.
+      It can also be used as an alternative to half duplex when
+      only one data line is connected.

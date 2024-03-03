@@ -1,0 +1,20 @@
+# Copyright 2024 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_INTEL8080
+	bool "MIPI DBI Intel8080 parallel driver"
+	default y
+	depends on DT_HAS_ZEPHYR_MIPI_DBI_INTEL8080_ENABLED
+	help
+	  Enable support for MIPI DBI Intel8080 driver. This driver implements
+	  a MIPI-DBI mode A compatible controller using a  GPIO outputs
+
+if MIPI_DBI_INTEL8080
+
+config MIPI_DBI_INTEL8080_BUS_WIDTH
+	int "Width of databus"
+	default 8
+	help
+	  Width of parallelbus and thus number of GPIOs to configuire
+
+endif # MIPI_DBI_INTEL8080
