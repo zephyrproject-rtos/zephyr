@@ -72,6 +72,10 @@ Drivers and Sensors
 
 * CAN
 
+  * Deprecated the :c:func:`can_calc_prescaler` API function, as it allows for bitrate
+    errors. Bitrate errors between nodes on the same network leads to them drifting apart after the
+    start-of-frame (SOF) synchronization has taken place, leading to bus errors.
+
 * Clock control
 
 * Counter
