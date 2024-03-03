@@ -945,12 +945,14 @@ config BT_MESH_BLOB_IO_FLASH
 
 config BT_MESH_DFU_SRV
 	bool "Support for Firmware Update Server model"
+	depends on BT_MESH_MODEL_EXTENSIONS
 	depends on BT_MESH_BLOB_SRV
 	help
 	  Enable the Firmware Update Server model.
 
 config BT_MESH_DFU_CLI
 	bool "Support for Firmware Update Client model"
+	depends on BT_MESH_MODEL_EXTENSIONS
 	depends on BT_MESH_BLOB_CLI
 	help
 	  Enable the Firmware Update Client model.
