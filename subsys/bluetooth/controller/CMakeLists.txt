@@ -184,13 +184,13 @@ zephyr_library_include_directories_ifdef(
 zephyr_library_include_directories_ifdef(
   CONFIG_SOC_COMPATIBLE_NRF
   ll_sw/nordic
-  hci/nordic
+  ll_sw/nordic/hci
   )
 
 zephyr_library_include_directories_ifdef(
   CONFIG_SOC_OPENISA_RV32M1
   ll_sw/openisa
-  hci/openisa
+  ll_sw/openisa/hci
   )
 
 add_subdirectory_ifdef(
