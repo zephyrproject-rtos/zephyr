@@ -8,6 +8,63 @@ directory* with various files in it. Files in the board directory inherit
 support for at least one SoC and all of its features. Therefore, Zephyr must
 support your :term:`SoC` as well.
 
+.. _hw_model_v2:
+
+Transition to the current hardware model
+****************************************
+
+Shortly after Zephyr 3.6.0 was released, a new hardware model was introduced to
+Zephyr. This new model overhauls the way both SoCs and boards are named and
+defined, and adds support for features that had been identified as important
+over the years. Among them:
+
+- Support for multi-core, multi-arch AMP (Asymmetrical Multi Processing) SoCs
+- Support for multi-SoC boards
+- Support for reusing the SoC and board Kconfig trees outside of the Zephyr
+  build system
+- Support for advanced use cases with :ref:`sysbuild`
+- Removal of all existing arbitrary and inconsistent uses of Kconfig and folder
+  names
+
+All the documentation in this page refers to the current hardware model. Please
+refer to the documentation in Zephyr v3.6.0 (or earlier) for information on the
+previous, now obsolete, hardware model.
+
+More information about the rationale, development and concepts behind the new
+model can be found in the :github:`original issue <51381>`, the
+:github:`original Pull Request <50305>` and, for a complete set of changes
+introduced, the `hardware model v2 commit`_.
+
+Some non-critical features, enhancements and improvements of the new hardware
+model are still in development. Check the
+:github:`hardware model v2 enhancements issue <69546>` for a complete list.
+
+The transition from the previous hardware model to the current one (commonly
+referred to as "hardware model v2") requires modifications to all existing board
+and SoC definitions. A decision was made not to provide direct backwards
+compatibility for the previous model, which leaves users transitioning from a
+previous version of Zephyr to one including the new model (v3.7.0 and onwards)
+with two options if they have an out-of-tree board (or SoC):
+
+#. Convert the out-of-tree board to the current hardware model (recommended)
+#. Take the SoC definition from Zephyr v3.6.0 and copy it to your downstream
+   repository (ensuring that the build system can find it via a
+   :ref:`zephyr module <modules>` or ``SOC_ROOT``). This will allow your board,
+   defined in the previous hardware model, to continue to work
+
+When converting your board from the previous to the current hardware model, we
+recommend first reading through this page to understand the model in detail. You
+can then use the `example-application conversion Pull Request`_ as an example on
+how to port a simple board. Additionally, a `conversion script`_ is available
+and works reliably in many cases (though multi-core SoCs may not be handled
+entirely). Finally, the `hardware model v2 commit`_ contains the full conversion
+of all existing boards from the old to the current model, so you can use it as a
+complete conversion reference.
+
+.. _hardware model v2 commit: https://github.com/zephyrproject-rtos/zephyr/commit/8dc3f856229ce083c956aa301c31a23e65bd8cd8
+.. _example-application conversion Pull Request: https://github.com/zephyrproject-rtos/example-application/pull/58
+.. _conversion script: https://github.com/zephyrproject-rtos/zephyr/blob/main/scripts/utils/board_v1_to_v2.py
+
 .. _board_and_identifiers:
 
 Board and board identifiers
