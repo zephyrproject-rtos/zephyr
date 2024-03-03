@@ -1,0 +1,8 @@
+# Copyright (c) 2024, Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ILI9488 320x480 display controller - mipi-dbi, mode A (intel8080)
+
+compatible: "ilitek,ili9488-intel8080"
+
+include: ["ilitek,ili9488-common.yaml", "mipi-dbi-device.yaml"]

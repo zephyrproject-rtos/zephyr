@@ -66,7 +66,7 @@ struct ili9342c_regs {
 };
 
 /* Initializer macro for ILI9342C registers. */
-#define ILI9342c_REGS_INIT(n)                                           \
+#define ILI9342c_REGS_INIT(n, t)                                         \
 	static const struct ili9342c_regs ili9xxx_regs_##n = {		\
 	.gamset = DT_PROP(DT_INST(n, ilitek_ili9342c), gamset),		\
 	.ifmode = DT_PROP(DT_INST(n, ilitek_ili9342c), ifmode),		\

@@ -3,6 +3,8 @@
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
+ * Copyright (c) 2024 Kim Bøndergaard <kim@fam-boendergaard.dk>
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -375,55 +377,62 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)
 
-#define ILI9XXX_INIT(n, t)                                                     \
-	ILI##t##_REGS_INIT(n);                                                 \
-									       \
-	static const struct ili9xxx_config ili9xxx_config_##n = {              \
-		.quirks = &ili##t##_quirks,                                    \
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),   \
-		.dbi_config = {                                                \
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,                       \
-			.config = MIPI_DBI_SPI_CONFIG_DT(                      \
-						INST_DT_ILI9XXX(n, t),         \
-						SPI_OP_MODE_MASTER |           \
-						SPI_WORD_SET(8),               \
-						0),                            \
-		},                                                             \
-		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),  \
-		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
-		.x_resolution = ILI##t##_X_RES,                                \
-		.y_resolution = ILI##t##_Y_RES,                                \
-		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
-		.regs = &ili9xxx_regs_##n,                                     \
-		.regs_init_fn = ili##t##_regs_init,                            \
-	};                                                                     \
-									       \
-	static struct ili9xxx_data ili9xxx_data_##n;                           \
-									       \
-	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init,                  \
-			    NULL, &ili9xxx_data_##n,                           \
-			    &ili9xxx_config_##n, POST_KERNEL,                  \
-			    CONFIG_DISPLAY_INIT_PRIORITY, &ili9xxx_api)
+#define ILI9XXX_CONFIG_MIPI_SPI(n, t)                                                              \
+	.mode = MIPI_DBI_MODE_SPI_4WIRE,                                                           \
+	.config = MIPI_DBI_SPI_CONFIG_DT(INST_DT_ILI9XXX(n, t),                                    \
+					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
 
-#define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t)                                 \
-	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI9XXX_INIT, (;), t)
+#define ILI9XXX_CONFIG_MIPI_INTEL8080(n, t) MIPI_DBI_INTEL8080_CONFIG_DT(n, t)
+
+#define ILI9XXX_INIT(n, c, t)                                                                      \
+	ILI##t##_REGS_INIT(n, ilitek_ili##c);                                                      \
+                                                                                                   \
+	static const struct ili9xxx_config ili9xxx_config_##n = {                                  \
+		.quirks = &ili##t##_quirks,                                                        \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, c))),                       \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				COND_CODE_1(CONFIG_MIPI_DBI_SPI, (ILI9XXX_CONFIG_MIPI_SPI(n, c)),  \
+					    (ILI9XXX_CONFIG_MIPI_INTEL8080(n, c))),                \
+			},                                                                         \
+		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, c), pixel_format),                      \
+		.rotation = DT_PROP(INST_DT_ILI9XXX(n, c), rotation),                              \
+		.x_resolution = ILI##t##_X_RES,                                                    \
+		.y_resolution = ILI##t##_Y_RES,                                                    \
+		.inversion = DT_PROP(INST_DT_ILI9XXX(n, c), display_inversion),                    \
+		.regs = &ili9xxx_regs_##n,                                                         \
+		.regs_init_fn = ili##t##_regs_init,                                                \
+	};                                                                                         \
+                                                                                                   \
+	static struct ili9xxx_data ili9xxx_data_##n;                                               \
+                                                                                                   \
+	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, c), ili9xxx_init, NULL, &ili9xxx_data_##n,             \
+			 &ili9xxx_config_##n, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,           \
+			 &ili9xxx_api)
+
+#define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(c, t)                                                  \
+	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##c), ILI9XXX_INIT, (;), c, t)
 
 #ifdef CONFIG_ILI9340
 #include "display_ili9340.h"
-DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9340);
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9340, 9340);
 #endif
 
 #ifdef CONFIG_ILI9341
 #include "display_ili9341.h"
-DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9341);
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9341, 9341);
 #endif
 
 #ifdef CONFIG_ILI9342C
 #include "display_ili9342c.h"
-DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9342c);
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9342c, 9342c);
 #endif
 
 #ifdef CONFIG_ILI9488
 #include "display_ili9488.h"
-DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9488);
+#ifdef CONFIG_MIPI_DBI_SPI
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9488, 9488);
+#else
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9488_intel8080, 9488);
+#endif
 #endif

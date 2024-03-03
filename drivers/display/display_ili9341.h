@@ -81,7 +81,7 @@ struct ili9341_regs {
 };
 
 /* Initializer macro for ILI9341 registers. */
-#define ILI9341_REGS_INIT(n)                                                                       \
+#define ILI9341_REGS_INIT(n, t)                                                                    \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), gamset) == ILI9341_GAMSET_LEN,        \
 		     "ili9341: Error length gamma set (GAMSET) register");                         \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifmode) == ILI9341_IFMODE_LEN,        \

@@ -40,7 +40,7 @@ config ILI9342C
 config ILI9488
 	bool "ILI9488 display driver"
 	default y
-	depends on DT_HAS_ILITEK_ILI9488_ENABLED
+	depends on DT_HAS_ILITEK_ILI9488_ENABLED || DT_HAS_ILITEK_ILI9488_INTEL8080_ENABLED
 	select MIPI_DBI
 	select ILI9XXX
 	help

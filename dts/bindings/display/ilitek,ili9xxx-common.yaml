@@ -4,7 +4,7 @@
 
 description: ILI9XXX display controllers common properties.
 
-include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+include: [display-controller.yaml]
 
 properties:
   pixel-format:

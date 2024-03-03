@@ -43,15 +43,15 @@ struct ili9488_regs {
 };
 
 /* Initializer macro for ILI9488 registers. */
-#define ILI9488_REGS_INIT(n)                                                   \
-	static const struct ili9488_regs ili9xxx_regs_##n = {                  \
-		.frmctr1 = DT_PROP(DT_INST(n, ilitek_ili9488), frmctr1),       \
-		.disctrl = DT_PROP(DT_INST(n, ilitek_ili9488), disctrl),       \
-		.pwctrl1 = DT_PROP(DT_INST(n, ilitek_ili9488), pwctrl1),       \
-		.pwctrl2 = DT_PROP(DT_INST(n, ilitek_ili9488), pwctrl2),       \
-		.vmctrl = DT_PROP(DT_INST(n, ilitek_ili9488), vmctrl),         \
-		.pgamctrl = DT_PROP(DT_INST(n, ilitek_ili9488), pgamctrl),     \
-		.ngamctrl = DT_PROP(DT_INST(n, ilitek_ili9488), ngamctrl),     \
+#define ILI9488_REGS_INIT(n, t)                                                                    \
+	static const struct ili9488_regs ili9xxx_regs_##n = {                                      \
+		.frmctr1 = DT_PROP(DT_INST(n, t), frmctr1),                                        \
+		.disctrl = DT_PROP(DT_INST(n, t), disctrl),                                        \
+		.pwctrl1 = DT_PROP(DT_INST(n, t), pwctrl1),                                        \
+		.pwctrl2 = DT_PROP(DT_INST(n, t), pwctrl2),                                        \
+		.vmctrl = DT_PROP(DT_INST(n, t), vmctrl),                                          \
+		.pgamctrl = DT_PROP(DT_INST(n, t), pgamctrl),                                      \
+		.ngamctrl = DT_PROP(DT_INST(n, t), ngamctrl),                                      \
 	}
 
 /**
