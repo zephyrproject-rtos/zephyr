@@ -1,0 +1,44 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: PMW3610 Low Power Laser Mouse Sensor
+
+compatible: "pixart,pmw3610"
+
+include: spi-device.yaml
+
+properties:
+  motion-gpios:
+    type: phandle-array
+    required: true
+    description:
+      GPIO connected to the motion pin, active low.
+
+  reset-gpios:
+    type: phandle-array
+    description:
+      GPIO connected to the reset pin, active low.
+
+  zephyr,axis-x:
+    type: int
+    required: true
+    description: |
+      The input code for the X axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device X axis if unspecified.
+
+  zephyr,axis-y:
+    type: int
+    required: true
+    description: |
+      The input code for the Y axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device Y axis if unspecified.
+
+  invert-x:
+    type: boolean
+    description: |
+      Invert X axis values.
+
+  invert-y:
+    type: boolean
+    description: |
+      Invert Y axis values.
