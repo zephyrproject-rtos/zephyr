@@ -679,8 +679,10 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 		}
 	} else if ((sr & CAN_SJA1000_SR_ES) != 0) {
 		data->state = CAN_STATE_ERROR_WARNING;
+		can_sja1000_tx_done(dev, -ENETRESET);
 	} else {
 		data->state = CAN_STATE_ERROR_ACTIVE;
+		can_sja1000_tx_done(dev, -ENETDOWN);
 	}
 }
 
