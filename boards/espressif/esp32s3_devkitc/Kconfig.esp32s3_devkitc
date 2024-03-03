@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S3_DEVKITC
+	select SOC_ESP32S3_WROOM_N8R8
