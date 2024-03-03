@@ -222,7 +222,8 @@
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices */
-			cs-gpios = <&test_gpio 0 0>;
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
 
 			xpt2046@0 {
 				compatible = "xptek,xpt2046";
@@ -235,6 +236,18 @@
 				min-y = <0>;
 				max-x = <1>;
 				max-y = <1>;
+			};
+
+			pmw3610@1 {
+				compatible = "pixart,pmw3610";
+				spi-max-frequency = <0>;
+				reg = <0x1>;
+				motion-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
+				invert-x;
+				invert-y;
 			};
 		};
 	};
