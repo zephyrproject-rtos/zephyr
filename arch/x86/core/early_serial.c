@@ -8,6 +8,7 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/pcie/pcie.h>
+#include <soc.h>
 
 
 #if DT_PROP_OR(DT_CHOSEN(zephyr_console), io_mapped, 0) != 0

@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(nvme, CONFIG_NVME_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 
+#include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
