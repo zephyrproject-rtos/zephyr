@@ -13,4 +13,6 @@ tests:
       - gpio
       - i2c
   drivers.video.mcux_csi.build:
-    platform_allow: mimxrt1064_evk
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1170_evk/mimxrt1176/cm7
