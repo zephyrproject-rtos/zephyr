@@ -214,6 +214,7 @@ void clock_full_power(void)
 #if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(flash)))
 	clock_set_div(kCLOCK_FlexspiDiv, flexspi_div);
 	clock_set_mux(kCLOCK_FlexspiMux, 3);
+#endif
 #if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(flash)))
 	clock_set_div(kCLOCK_Flexspi2Div, flexspi_div);
 	clock_set_mux(kCLOCK_Flexspi2Mux, 1);
@@ -261,6 +262,7 @@ void clock_low_power(void)
 	clock_set_div(kCLOCK_FlexspiDiv, 0);
 	/* FLEXSPI1 mux to PLL3 PFD0 BYPASS */
 	clock_set_mux(kCLOCK_FlexspiMux, 3);
+#endif
 #if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(flash)))
 	clock_set_div(kCLOCK_Flexspi2Div, 0);
 	/* FLEXSPI2 mux to PLL3 PFD0 BYPASS */
