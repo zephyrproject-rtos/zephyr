@@ -85,8 +85,7 @@ zephyr_library_sources_ifdef(
   ull/ull_iso_vendor.c
   )
 
-zephyr_library_sources_ifdef(
-  CONFIG_SOC_FAMILY_NORDIC_NRF
+zephyr_library_sources(
   hci/hci_vendor.c
   )
 
