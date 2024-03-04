@@ -119,6 +119,14 @@ Bluetooth Mesh
 Bluetooth Audio
 ===============
 
+Bluetooth Classic
+=================
+
+* The source files of Host BR/EDR have been moved to ``subsys/bluetooth/host/classic``.
+  The Header files of Host BR/EDR have been moved to ``include/zephyr/bluetooth/classic``.
+  Removed the :kconfig:option:`CONFIG_BT_BREDR`. It is replaced by new option
+  :kconfig:option:`CONFIG_BT_CLASSIC`. (:github:`69651`)
+
 Networking
 **********
 
