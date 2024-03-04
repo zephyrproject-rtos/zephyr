@@ -206,6 +206,10 @@ config XTENSA_MMU_DOUBLE_MAP
 		  This invalidates all TLBs referred by the incoming thread's
 		  memory domain when swapping page tables.
 
+config PRIVILEGED_STACK_SIZE
+	# Must be multiple of CONFIG_MMU_PAGE_SIZE
+	default 4096
+
 endif # XTENSA_MMU
 
 config XTENSA_SYSCALL_USE_HELPER
