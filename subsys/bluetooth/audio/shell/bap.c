@@ -2251,7 +2251,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 	}
 }
 
-static void syncable(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	if (default_broadcast_sink.bap_sink == sink) {
 		if (default_broadcast_sink.syncable) {
@@ -2259,7 +2259,7 @@ static void syncable(struct bt_bap_broadcast_sink *sink, bool encrypted)
 		}
 
 		shell_print(ctx_shell, "Sink %p is ready to sync %s encryption", sink,
-			    encrypted ? "with" : "without");
+			    biginfo->encryption ? "with" : "without");
 		default_broadcast_sink.syncable = true;
 	}
 }
