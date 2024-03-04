@@ -77,6 +77,7 @@ def test_robot_configure():
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [])
     mock_testsuite.name = "mock_testsuite"
@@ -100,6 +101,7 @@ def test_robot_handle():
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [])
     mock_testsuite.name = "mock_testsuite"
@@ -140,6 +142,7 @@ def test_robot_run_robot_test(caplog, exp_out, returncode, expected_status):
 
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [mock.Mock()])
     mock_testsuite.name = "mock_testsuite"
@@ -184,6 +187,7 @@ def test_console_configure(type, num_patterns):
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [])
     mock_testsuite.name = "mock_testsuite"
@@ -222,6 +226,7 @@ TEST_DATA_4 = [("one_line", True, "passed", "line", False, False),
 def test_console_handle(line_type, ordered_val, exp_state, line, exp_fault, exp_capture):
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [])
     mock_testsuite.name = "mock_testsuite"
@@ -277,6 +282,7 @@ def test_pytest__generate_parameters_for_hardware(pty_value, hardware_value):
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [])
     mock_testsuite.name = "mock_testsuite"
@@ -359,6 +365,7 @@ def test_pytest_run(caplog):
 
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [], source_dir = 'source_dir', harness_config = {})
     mock_testsuite.name = "mock_testsuite"
@@ -416,6 +423,7 @@ def test_test_handle(caplog, exp_out, line, exp_suite_name, exp_status, ztest, s
     line = line
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(id = 'id', testcases = [])
     mock_testsuite.name = "mock_testsuite"
@@ -445,6 +453,7 @@ def test_test_handle(caplog, exp_out, line, exp_suite_name, exp_status, ztest, s
 def gtest(tmp_path):
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
     mock_testsuite = mock.Mock()
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.detailed_test_id = True
