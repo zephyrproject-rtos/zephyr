@@ -12,4 +12,7 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+  renode:
+    uart: sysbus.uart
+    resc: boards/microchip/m2gl025_miv/support/m2gl025_miv.resc
 vendor: microchip

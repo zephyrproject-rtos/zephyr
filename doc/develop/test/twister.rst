@@ -1347,12 +1347,6 @@ To execute a Robot test suite with twister, run the following command:
 
          python .\scripts\twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
 
-It's also possible to run it by `west` directly, with:
-
-.. code-block:: bash
-
-   $ ROBOT_FILES=shell_module.robot west build -p -b hifive1 -s samples/subsys/shell/shell_module -t run_renode_test
-
 Writing Robot tests
 ===================
 

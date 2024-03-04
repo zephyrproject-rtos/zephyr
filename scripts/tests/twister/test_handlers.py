@@ -18,10 +18,12 @@ from contextlib import nullcontext
 from importlib import reload
 from serial import SerialException
 from subprocess import CalledProcessError, TimeoutExpired
+from types import SimpleNamespace
 
 import twisterlib.harness
 
-from conftest import ZEPHYR_BASE
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
+
 from twisterlib.error import TwisterException
 from twisterlib.handlers import (
     Handler,
@@ -413,7 +415,7 @@ TESTDATA_4 = [
      ['valgrind', '--error-exitcode=2', '--leak-check=full',
       f'--suppressions={ZEPHYR_BASE}/scripts/valgrind.supp',
       '--log-file=build_dir/valgrind.log', '--track-origins=yes',
-      'generator', 'run_renode_test']),
+      'generator']),
     (False, True, False, 123, None, ['generator', 'run', '--seed=123']),
     (False, False, False, None, ['ex1', 'ex2'], ['build_dir/zephyr/zephyr.exe', 'ex1', 'ex2']),
 ]
@@ -437,11 +439,16 @@ def test_binaryhandler_create_command(
     handler.generator_cmd = 'generator'
     handler.binary = 'bin'
     handler.call_make_run = call_make_run
-    handler.options = mock.Mock(enable_valgrind=enable_valgrind)
+    handler.options = SimpleNamespace()
+    handler.options.enable_valgrind = enable_valgrind
+    handler.options.coverage_basedir = "coverage_basedir"
     handler.seed = seed
     handler.extra_test_args = extra_args
     handler.build_dir = 'build_dir'
     handler.instance.testsuite.sysbuild = False
+    handler.platform = SimpleNamespace()
+    handler.platform.resc = "file.resc"
+    handler.platform.uart = "uart"
 
     command = handler._create_command(robot_test)
 

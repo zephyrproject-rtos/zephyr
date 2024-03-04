@@ -166,7 +166,7 @@ TEST_DATA_2 = [("", 0, "passed"), ("Robot test failure: sourcedir for mock_platf
 )
 def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_status):
     # Arrange
-    command = "command"
+    command = ["command"]
 
     handler = mock.Mock()
     handler.sourcedir = "sourcedir"

@@ -21,6 +21,7 @@ import time
 from queue import Queue, Empty
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
+from twisterlib.platform import Platform
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 
@@ -232,7 +233,21 @@ class BinaryHandler(Handler):
 
     def _create_command(self, robot_test):
         if robot_test:
-            command = [self.generator_cmd, "run_renode_test"]
+            keywords = os.path.join(self.options.coverage_basedir, 'tests/robot/common.robot')
+            elf = os.path.join(self.build_dir, "zephyr/zephyr.elf")
+            command = [self.generator_cmd]
+            resc = ""
+            uart = ""
+            # os.path.join cannot be used on a Mock object, so we are
+            # explicitly checking the type
+            if isinstance(self.instance.platform, Platform):
+                resc = os.path.join(self.options.coverage_basedir, self.instance.platform.resc)
+                uart = self.instance.platform.uart
+                command = ["renode-test",
+                            "--variable", "KEYWORDS:" + keywords,
+                            "--variable", "ELF:@" + elf,
+                            "--variable", "RESC:@" + resc,
+                            "--variable", "UART:" + uart]
         elif self.call_make_run:
             command = [self.generator_cmd, "run"]
         elif self.instance.testsuite.type == "unit":
