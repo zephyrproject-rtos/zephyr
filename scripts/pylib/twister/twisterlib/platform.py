@@ -23,6 +23,7 @@ class Platform:
         """
 
         self.name = ""
+        self.normalized_name = ""
         self.twister = True
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = 128
