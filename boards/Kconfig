@@ -19,6 +19,17 @@ config BOARD_REVISION
 	  "plank@foo", this option will be "foo". If BOARD is "plank",
 	  this option will be the empty string.
 
+config BOARD_TARGET
+	string
+	default "$(BOARD)@$(BOARD_REVISION)$(BOARD_QUALIFIERS)" if "$(BOARD_REVISION)" != ""
+	default "$(BOARD)$(BOARD_QUALIFIERS)"
+	help
+	  Contains the board target (full string including name, revision, soc, cluster and
+	  variant) of the board being used.
+
+	  For example, if building for ``nrf5340dk/nrf5340/cpuapp`` then this will contain the
+	  value ``nrf5340dk/nrf5340/cpuapp``.
+
 config BOARD_DEPRECATED_RELEASE
 	string
 	help
