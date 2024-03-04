@@ -489,6 +489,10 @@ config X86_EFI_CONSOLE
 	  Likewise be sure to disable any other console/printk
 	  drivers!
 
+config PRIVILEGED_STACK_SIZE
+	# Must be multiple of CONFIG_MMU_PAGE_SIZE
+	default 4096 if X86_MMU
+
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"
 
