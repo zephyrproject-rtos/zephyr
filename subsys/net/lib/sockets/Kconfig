@@ -64,7 +64,27 @@ config NET_SOCKETS_DNS_TIMEOUT
 	help
 	  This variable specifies time in milliseconds after which DNS
 	  query is considered timeout. Minimum timeout is 1 second and
-	  maximum timeout is 5 min.
+	  maximum timeout is 5 min. If the value is higher than
+	  CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL, then we try multiple
+	  times with exponential backoff until the timeout is reached.
+
+config NET_SOCKETS_DNS_BACKOFF_INTERVAL
+	int "Backoff interval for the DNS timeout"
+	default 5000
+	range 1000 300000
+	depends on DNS_RESOLVER
+	help
+	  This variable is related to the DNS timeout. If the DNS timeout is
+	  smaller than this value, then this value is ignored. If the timeout
+	  is larger, then this variable specifies time in milliseconds after
+	  which DNS query is re-tried. If there is no reply, the backoff
+	  interval is doubled and query is retried.
+	  Example:
+	     The CONFIG_NET_SOCKETS_DNS_TIMEOUT is set to 17000 (17 secs).
+	     This value is 5000 (5 sec). If there is no reply from DNS server
+	     within 5 secs, a 2nd query is done with timeout set to 10 sec (5 * 2).
+	     If no reply is received, a 3rd query is done after 15 sec (5 + 5 * 2),
+	     and the timeout is set to 2 sec so that the total timeout is 17 seconds.
 
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
