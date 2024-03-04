@@ -264,7 +264,7 @@ static void signal_pending_ipi(void)
 
 		cpu_bitmap = (uint32_t)atomic_clear(&_kernel.pending_ipi);
 		if (cpu_bitmap != 0) {
-			arch_sched_ipi();
+			arch_sched_ipi(cpu_bitmap);
 		}
 	}
 #endif
@@ -721,7 +721,7 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 		 * here, not deferred!
 		 */
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-		arch_sched_ipi();
+		arch_sched_ipi(1 << thread->base.cpu);
 #endif
 	}
 

@@ -64,7 +64,7 @@ extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
 
 extern void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
-extern void arch_sched_ipi(void);
+extern void arch_sched_ipi(uint32_t cpu_bitmap);
 
 extern void z_arc_switch(void *switch_to, void **switched_from);
 

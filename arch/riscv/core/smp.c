@@ -86,14 +86,16 @@ static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED	0
 #define IPI_FPU_FLUSH	1
 
-void arch_sched_ipi(void)
+void arch_sched_ipi(uint32_t cpu_bitmap)
 {
 	unsigned int key = arch_irq_lock();
 	unsigned int id = _current_cpu->id;
 	unsigned int num_cpus = arch_num_cpus();
+	uint32_t bit = 1;
 
-	for (unsigned int i = 0; i < num_cpus; i++) {
-		if (i != id && _kernel.cpus[i].arch.online) {
+	for (unsigned int i = 0; i < num_cpus; i++, bit <<= 1) {
+		if ((i != id) && _kernel.cpus[i].arch.online &&
+		    ((cpu_bitmap & bit) != 0)) {
 			atomic_set_bit(&cpu_pending_ipi[i], IPI_SCHED);
 			MSIP(_kernel.cpus[i].arch.hartid) = 1;
 		}
