@@ -543,11 +543,11 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	k_sem_give(&sem_base_received);
 }
 
-static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	k_sem_give(&sem_syncable);
 
-	if (!encrypted) {
+	if (!biginfo->encryption) {
 		/* Use the semaphore as a boolean */
 		k_sem_reset(&sem_broadcast_code_received);
 		k_sem_give(&sem_broadcast_code_received);
