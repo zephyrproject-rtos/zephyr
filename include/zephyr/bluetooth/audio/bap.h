@@ -1814,9 +1814,9 @@ struct bt_bap_broadcast_sink_cb {
 	 *  bt_bap_broadcast_sink_sync() to synchronize to the audio stream(s).
 	 *
 	 *  @param sink          Pointer to the sink structure.
-	 *  @param encrypted     Whether or not the broadcast is encrypted
+	 *  @param biginfo       The BIGInfo report.
 	 */
-	void (*syncable)(struct bt_bap_broadcast_sink *sink, bool encrypted);
+	void (*syncable)(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo);
 
 	/* Internally used list node */
 	sys_snode_t _node;
