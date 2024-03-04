@@ -1122,6 +1122,14 @@
 				status = "disabled";
 			};
 		};
+
+		flexio1: flexio@401ac000 {
+			compatible = "nxp,flexio";
+			reg = <0x401ac000 0x4000>;
+			status = "disabled";
+			interrupts = <90 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO1_CLK 0 0>;
+		};
 	};
 };
 

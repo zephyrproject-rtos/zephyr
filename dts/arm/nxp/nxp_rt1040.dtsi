@@ -33,6 +33,22 @@
 		/delete-node/ csi@402bc000;
 		/* LPSPI at 0x4039c000 is not present */
 		/delete-node/ spi@4039c000;
+
+		flexio2: flexio@401b0000 {
+			compatible = "nxp,flexio";
+			reg = <0x401b0000 0x4000>;
+			status = "disabled";
+			interrupts = <91 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
+		};
+
+		flexio3: flexio@42020000 {
+			compatible = "nxp,flexio";
+			reg = <0x42020000 0x4000>;
+			status = "disabled";
+			interrupts = <156 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
+		};
 	};
 };
 
