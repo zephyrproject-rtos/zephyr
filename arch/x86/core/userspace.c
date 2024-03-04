@@ -11,6 +11,9 @@
 #include <ksched.h>
 #include <x86_mmu.h>
 
+BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
+	     (CONFIG_PRIVILEGED_STACK_SIZE % CONFIG_MMU_PAGE_SIZE) == 0);
+
 #ifdef CONFIG_DEMAND_PAGING
 #include <zephyr/kernel/mm/demand_paging.h>
 #endif
