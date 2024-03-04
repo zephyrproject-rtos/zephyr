@@ -8,10 +8,6 @@ config SOC_SERIES_IMX8M
 config SOC_SERIES
 	default "imx8m" if SOC_SERIES_IMX8M
 
-config SOC_MIMX8MP
-	bool
-	select SOC_SERIES_IMX8M
-
 config SOC_MIMX8MM6
 	bool
 	select SOC_SERIES_IMX8M
