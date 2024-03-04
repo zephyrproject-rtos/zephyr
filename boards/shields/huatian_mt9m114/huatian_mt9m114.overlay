@@ -1,0 +1,35 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	chosen {
+		zephyr,camera = &csi;
+	};
+};
+
+&zephyr_cam_i2c {
+	mt9m114: mt9m114@48 {
+		compatible = "aptina,mt9m114";
+		reg = <0x48>;
+
+		port {
+			mt9m114_ep_out: endpoint {
+				remote-endpoint = <&csi_ep_in>;
+			};
+		};
+	};
+};
+
+&csi {
+	status = "okay";
+	sdev = <&mt9m114>;
+
+	port {
+		csi_ep_in: endpoint {
+			remote-endpoint = <&mt9m114_ep_out>;
+		};
+	};
+};
