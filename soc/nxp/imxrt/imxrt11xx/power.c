@@ -9,7 +9,7 @@
 #include <fsl_dcdc.h>
 #include <fsl_gpc.h>
 #include <zephyr/dt-bindings/pm/imx_spc.h>
-#include "power_rt11xx.h"
+#include "power.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
