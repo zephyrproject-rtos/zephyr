@@ -11,12 +11,11 @@
  * crossing clock domains (no pun intended). Use accordingly.
  */
 
-#include <zephyr/spinlock.h>
+#define DT_DRV_COMPAT motorola_mc146818
+
 #include <zephyr/drivers/counter.h>
 #include <zephyr/device.h>
-#include <limits.h>
-
-#define DT_DRV_COMPAT motorola_mc146818
+#include <soc.h>
 
 /* The "CMOS" device is accessed via an address latch and data port. */
 
