@@ -31,10 +31,11 @@ LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
 /* Largest block size */
 #define MAX_WRITE_SIZE                  (RTC_TIME_REGISTERS_SIZE)
 
-/* tm struct uses years since 1900 but unix time uses years since
- * 1970. MCP7940N default year is '1' so the offset is 69
+/* tm struct uses years since 1900 but MCP7940N only keeps track of the last
+ * two digits of the year. This offset is used to decode back to tm struct
+ * format making the conversion valid only for the years from 2000 to 2099.
  */
-#define UNIX_YEAR_OFFSET		69
+#define MCP7940N_YEAR_OFFSET	100
 
 /* Macro used to decode BCD to UNIX time to avoid potential copy and paste
  * errors.
@@ -83,9 +84,11 @@ static time_t decode_rtc(const struct device *dev)
 	time.tm_wday = data->registers.rtc_weekday.weekday;
 	/* tm struct starts months at 0, mcp7940n starts at 1 */
 	time.tm_mon = RTC_BCD_DECODE(data->registers.rtc_month.month) - 1;
-	/* tm struct uses years since 1900 but unix time uses years since 1970 */
+	/* tm struct uses years since 1900 but mcp7940n only keeps track of
+	 * the last two digits
+	 */
 	time.tm_year = RTC_BCD_DECODE(data->registers.rtc_year.year) +
-		UNIX_YEAR_OFFSET;
+		MCP7940N_YEAR_OFFSET;
 
 	time_unix = timeutil_timegm(&time);
 
@@ -107,18 +110,16 @@ static int encode_rtc(const struct device *dev, struct tm *time_buffer)
 {
 	struct mcp7940n_data *data = dev->data;
 	uint8_t month;
-	uint8_t year_since_epoch;
+	uint8_t year;
 
 	/* In a tm struct, months start at 0, mcp7940n starts with 1 */
 	month = time_buffer->tm_mon + 1;
 
-	if (time_buffer->tm_year < UNIX_YEAR_OFFSET) {
-		return -EINVAL;
-	}
-	year_since_epoch = time_buffer->tm_year - UNIX_YEAR_OFFSET;
-
 	/* Set external oscillator configuration bit */
 	data->registers.rtc_sec.start_osc = 1;
+
+	/* Only encode the last two digits of the year */
+	year = time_buffer->tm_year % 100;
 
 	data->registers.rtc_sec.sec_one = time_buffer->tm_sec % 10;
 	data->registers.rtc_sec.sec_ten = time_buffer->tm_sec / 10;
@@ -131,8 +132,8 @@ static int encode_rtc(const struct device *dev, struct tm *time_buffer)
 	data->registers.rtc_date.date_ten = time_buffer->tm_mday / 10;
 	data->registers.rtc_month.month_one = month % 10;
 	data->registers.rtc_month.month_ten = month / 10;
-	data->registers.rtc_year.year_one = year_since_epoch % 10;
-	data->registers.rtc_year.year_ten = year_since_epoch / 10;
+	data->registers.rtc_year.year_one = year % 10;
+	data->registers.rtc_year.year_ten = year / 10;
 
 	return 0;
 }
