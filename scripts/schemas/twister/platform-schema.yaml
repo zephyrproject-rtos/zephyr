@@ -100,3 +100,10 @@ mapping:
         type: seq
         seq:
           - type: str
+      "renode":
+        type: map
+        mapping:
+          "uart":
+            type: str
+          "resc":
+            type: str
