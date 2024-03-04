@@ -38,3 +38,62 @@ family:
           - name: nrf9151
           - name: nrf9160
           - name: nrf9161
+
+# Recovery/erase is only needed once per core. Prevent resetting the cores whilst flashing
+# multiple images until all images for each core have been flashed, this allows security
+# bits to be set during programming without them interfering with additional flashing
+# operations.
+runners:
+  run_once:
+    '--recover':
+      - runners:
+          - nrfjprog
+        run: first
+        groups:
+          - qualifiers:
+              - nrf51([0-9]{3})((.+)?)
+          - qualifiers:
+              - nrf52([0-9]{3})((.+)?)
+          - qualifiers:
+              - nrf5340/cpunet
+              - nrf5340/cpuapp
+              - nrf5340/cpuapp/ns
+          - qualifiers:
+              - nrf9160
+              - nrf9160/ns
+    '--erase':
+      - runners:
+          - nrfjprog
+          - jlink
+        run: first
+        groups:
+          - qualifiers:
+              - nrf51([0-9]{3})((.+)?)
+          - qualifiers:
+              - nrf52([0-9]{3})((.+)?)
+          - qualifiers:
+              - nrf5340/cpunet
+          - qualifiers:
+              - nrf5340/cpuapp
+              - nrf5340/cpuapp/ns
+          - qualifiers:
+              - nrf9160
+              - nrf9160/ns
+    '--reset':
+      - runners:
+          - nrfjprog
+          - jlink
+        run: last
+        groups:
+          - qualifiers:
+              - nrf51([0-9]{3})((.+)?)
+          - qualifiers:
+              - nrf52([0-9]{3})((.+)?)
+          - qualifiers:
+              - nrf5340/cpunet
+          - qualifiers:
+              - nrf5340/cpuapp
+              - nrf5340/cpuapp/ns
+          - qualifiers:
+              - nrf9160
+              - nrf9160/ns
