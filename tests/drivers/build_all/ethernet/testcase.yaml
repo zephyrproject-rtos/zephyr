@@ -3,17 +3,15 @@ common:
   tags:
     - drivers
     - ethernet
+  depends_on:
+    - eth
 tests:
-  net.ethernet.build:
-    min_flash: 42
-    min_ram: 32
-    platform_exclude:
-      - frdm_kw41z
-      - mimxrt1020_evk
-      - mimxrt1024_evk
-      - mimxrt1050_evk
-      - mimxrt1060_evk
-      - mimxrt1064_evk
-    depends_on:
-      - spi
-      - netif
+  net.ethernet.build.default: {}
+
+  net.ethernet.build.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim_64
