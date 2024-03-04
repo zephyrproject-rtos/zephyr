@@ -474,7 +474,11 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 		thread->base.thread_state |= (terminate ? _THREAD_ABORTING
 					      : _THREAD_SUSPENDING);
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-		arch_sched_ipi();
+#ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
+		arch_sched_directed_ipi(IPI_CPU_MASK(cpu->id));
+#else
+		arch_sched_broadcast_ipi();
+#endif
 #endif
 		if (arch_is_in_isr()) {
 			thread_halt_spin(thread, key);

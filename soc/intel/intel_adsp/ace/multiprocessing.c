@@ -21,6 +21,7 @@
 #include <adsp_interrupt.h>
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
+#include <ipi.h>
 
 #define CORE_POWER_CHECK_NUM 128
 
@@ -209,7 +210,7 @@ void soc_mp_startup(uint32_t cpu)
 #ifndef CONFIG_XTENSA_MMU
 ALWAYS_INLINE
 #endif
-static void send_ipi(uint32_t msg)
+static void send_ipi(uint32_t msg, uint32_t cpu_bitmap)
 {
 	uint32_t curr = arch_proc_id();
 
@@ -217,23 +218,29 @@ static void send_ipi(uint32_t msg)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int core = 0; core < num_cpus; core++) {
-		if (core != curr && soc_cpus_active[core]) {
+		if ((core != curr) && soc_cpus_active[core] &&
+		    ((cpu_bitmap & BIT(core)) != 0)) {
 			IDC[core].agents[1].ipc.idr = msg | INTEL_ADSP_IPC_BUSY;
 		}
 	}
 }
 
-void arch_sched_ipi(void)
-{
-	send_ipi(0);
-}
-
 #if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 void xtensa_mmu_tlb_ipi(void)
 {
-	send_ipi(IPI_TLB_FLUSH);
+	send_ipi(IPI_TLB_FLUSH, IPI_ALL_CPUS_MASK);
 }
 #endif
+
+void arch_sched_broadcast_ipi(void)
+{
+	send_ipi(0, IPI_ALL_CPUS_MASK);
+}
+
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
+{
+	send_ipi(0, cpu_bitmap);
+}
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 int soc_adsp_halt_cpu(int id)
