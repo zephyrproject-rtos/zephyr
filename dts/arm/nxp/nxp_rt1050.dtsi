@@ -43,6 +43,14 @@
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
+
+		flexio2: flexio@401b0000 {
+			compatible = "nxp,flexio";
+			reg = <0x401b0000 0x4000>;
+			status = "disabled";
+			interrupts = <91 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
+		};
 	};
 };
 
