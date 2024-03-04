@@ -10,6 +10,7 @@
 #include <zephyr/pm/state.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <errno.h>
 
 void intel_adsp_ipc_set_message_handler(const struct device *dev,
@@ -73,6 +74,10 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 			external_completion = devdata->done_notify(dev, devdata->done_arg);
 		}
 		devdata->tx_ack_pending = false;
+		/* Allow the system to enter the runtime idle state after the IPC acknowledgment
+		 * is received.
+		 */
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 		k_sem_give(&devdata->sem);
 
 		/* IPC completion registers will be set externally */
@@ -158,6 +163,8 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 	}
 
 	k_sem_init(&devdata->sem, 0, 1);
+	/* Prevent entering runtime idle state until IPC acknowledgment is received. */
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	devdata->tx_ack_pending = true;
 	config->regs->idd = ext_data;
 	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
