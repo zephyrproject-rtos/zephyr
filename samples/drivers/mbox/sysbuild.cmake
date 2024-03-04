@@ -20,9 +20,8 @@ native_simulator_set_child_images(${DEFAULT_IMAGE} ${REMOTE_APP})
 
 native_simulator_set_final_executable(${DEFAULT_IMAGE})
 
-if ("${BOARD}" STREQUAL "mimxrt1170_evkb_cm7" OR
-	"${BOARD}" STREQUAL "mimxrt1170_evk_cm7"  OR
-	"${BOARD}" STREQUAL "mimxrt1160_evk_cm7" OR
+if ("${BOARD}" STREQUAL "mimxrt1170_evk" OR
+	"${BOARD}" STREQUAL "mimxrt1160_evk" OR
 	"${BOARD}" STREQUAL "lpcxpresso55s69"
 	)
 	# For these NXP boards the main core application is dependent on
