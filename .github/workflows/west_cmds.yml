@@ -8,6 +8,7 @@ on:
     branches:
     - main
     - v*-branch
+    - collab-*
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'
@@ -16,6 +17,7 @@ on:
     branches:
     - main
     - v*-branch
+    - collab-*
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'

@@ -8,6 +8,7 @@ on:
     branches:
     - main
     - v*-branch
+    - collab-*
     paths:
     - 'scripts/pylib/**'
     - 'scripts/twister'
