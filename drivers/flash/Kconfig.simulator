@@ -26,7 +26,8 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	bool "Allow program units to be programmed more than once"
 	help
 	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
-	 Keep in mind that write operations can only pull bits to zero, regardless.
+	 Keep in mind that write operations can only change value of a bit from erase-value to the
+	 opposite.
 
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Hardware timing simulation"
