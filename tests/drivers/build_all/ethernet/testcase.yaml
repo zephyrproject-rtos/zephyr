@@ -15,3 +15,10 @@ tests:
     platform_allow:
       - native_sim
       - native_sim_64
+
+  net.ethernet.build.stm32_ethernet:
+    filter: dt_compat_enabled("st,stm32-ethernet")
+    extra_configs:
+      - CONFIG_ETH_STM32_MULTICAST_FILTER=y
+    platform_allow:
+      - stm32h573i_dk
