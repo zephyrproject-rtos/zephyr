@@ -204,9 +204,9 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 	.add_rx_filter = can_mcan_add_rx_filter,
 	.remove_rx_filter = can_mcan_remove_rx_filter,
 	.get_state = can_mcan_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_mcan_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE*/
 	.get_core_clock = can_stm32h7_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_mcan_set_state_change_callback,

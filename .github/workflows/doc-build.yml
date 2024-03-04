@@ -54,7 +54,9 @@ jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
     needs: [doc-file-check]
-    if: github.repository_owner == 'zephyrproject-rtos' && needs.doc-file-check.outputs.file_check == 'true'
+    if: >
+      github.repository_owner == 'zephyrproject-rtos' &&
+        ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
     runs-on: zephyr-runner-linux-x64-4xlarge
     timeout-minutes: 45
     concurrency:
@@ -169,6 +171,7 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
+    needs: [doc-file-check]
     if: |
       github.event_name != 'pull_request' &&
       github.repository_owner == 'zephyrproject-rtos'

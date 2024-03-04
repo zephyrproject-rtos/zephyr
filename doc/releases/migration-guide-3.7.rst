@@ -18,6 +18,10 @@ the :ref:`release notes<zephyr_3.7>`.
 Build System
 ************
 
+* Completely overhauled the way SoCs and boards are defined. This requires all
+  out-of-tree SoCs and boards to be ported to the new model. See the
+  :ref:`hw_model_v2` for more detailed information.
+
 Kernel
 ******
 
@@ -57,6 +61,24 @@ Controller Area Network (CAN)
   * ``prop-seg-data``
   * ``phase-seg1-data``
   * ``phase-seg1-data``
+
+* Support for manual bus-off recovery was reworked:
+
+  * Automatic bus recovery will always be enabled upon driver initialization regardless of Kconfig
+    options. Since CAN controllers are initialized in "stopped" state, no unwanted bus-off recovery
+    will be started at this point.
+  * The Kconfig ``CONFIG_CAN_AUTO_BUS_OFF_RECOVERY`` was renamed (and inverted) to
+    :kconfig:option:`CONFIG_CAN_MANUAL_RECOVERY_MODE`, which is disabled by default. This Kconfig
+    option enables support for the :c:func:`can_recover()` API function and a new manual recovery mode
+    (see the next bullet).
+  * A new CAN controller operational mode :c:macro:`CAN_MODE_MANUAL_RECOVERY` was added. Support for
+    this is only enabled if :kconfig:option:`CONFIG_CAN_MANUAL_RECOVERY_MODE` is enabled. Having
+    this as a mode allows applications to inquire whether the CAN controller supports manual
+    recovery mode via the :c:func:`can_get_capabilities` API function. The application can then
+    either fail initialization or rely on automatic bus-off recovery. Having this as a mode
+    furthermore allows CAN controller drivers not supporting manual recovery mode to fail early in
+    :c:func:`can_set_mode` during application startup instead of failing when :c:func:`can_recover`
+    is called at a later point in time.
 
 Display
 =======

@@ -2,7 +2,7 @@ sample:
   description: BSD Sockets API HTTP GET example
   name: socket_http_get
 common:
-  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  filter: CONFIG_FULL_LIBC_SUPPORTED
   harness: net
   min_ram: 32
   min_flash: 80
@@ -16,7 +16,7 @@ tests:
       # Forcibly defines CONFIG_POSIX_API, which is incompatible with
       # CONFIG_NET_SOCKETS_POSIX_NAMES.
   sample.net.sockets.http_get.posix:
-    filter: not CONFIG_NET_SOCKETS_OFFLOAD
+    filter: not CONFIG_NET_SOCKETS_OFFLOAD and not CONFIG_NATIVE_LIBC
     platform_exclude:
       - cc3220sf_launchxl
       - cc3235sf_launchxl

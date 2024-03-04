@@ -17,7 +17,7 @@ config SOC_JH7110
 	select SOC_SERIES_STARFIVE_JH71XX
 	help
 	  Starfive JH7110
-
+    
 config SOC_SERIES
 	default "starfive_jh71xx" if SOC_SERIES_STARFIVE_JH71XX
 

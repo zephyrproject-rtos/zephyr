@@ -227,13 +227,13 @@ int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callba
  */
 void can_sja1000_remove_rx_filter(const struct device *dev, int filter_id);
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 /**
  * @brief SJA1000 callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
 int can_sja1000_recover(const struct device *dev, k_timeout_t timeout);
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 /**
  * @brief SJA1000 callback API upon getting the CAN controller state

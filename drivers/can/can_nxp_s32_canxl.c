@@ -123,9 +123,13 @@ static int can_nxp_s32_get_capabilities(const struct device *dev, can_mode_t *ca
 
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
 
-#ifdef CAN_NXP_S32_FD_MODE
-	*cap |= CAN_MODE_FD;
-#endif
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		*cap |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
+	if (IS_ENABLED(CAN_NXP_S32_FD_MODE)) {
+		*cap |= CAN_MODE_FD;
+	}
 
 	return 0;
 }
@@ -271,6 +275,7 @@ static int can_nxp_s32_stop(const struct device *dev)
 
 static int can_nxp_s32_set_mode(const struct device *dev, can_mode_t mode)
 {
+	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
 	const struct can_nxp_s32_config *config = dev->config;
 	struct can_nxp_s32_data *data = dev->data;
 	Canexcel_Ip_ModesType can_nxp_s32_mode = CAN_MODE_NORMAL;
@@ -280,11 +285,16 @@ static int can_nxp_s32_set_mode(const struct device *dev, can_mode_t mode)
 	if (data->common.started) {
 		return -EBUSY;
 	}
-#ifdef CAN_NXP_S32_FD_MODE
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_FD)) != 0) {
-#else
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
-#endif
+
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		supported |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
+	if (IS_ENABLED(CAN_NXP_S32_FD_MODE)) {
+		supported |= CAN_MODE_FD;
+	}
+
+	if ((mode & ~(supported)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -308,6 +318,20 @@ static int can_nxp_s32_set_mode(const struct device *dev, can_mode_t mode)
 	Canexcel_Ip_EnterFreezeMode(config->instance);
 
 	CanXL_SetFDEnabled(config->base_sic, canfd, brs);
+
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		Canexcel_Ip_StatusType status;
+		uint32_t options = 0U;
+
+		if ((mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+			options = CANXL_IP_BUSOFF_RECOVERY_U32;
+		}
+
+		status = CanXL_ConfigCtrlOptions(config->base_sic, options);
+		if (status != CANEXCEL_STATUS_SUCCESS) {
+			return -EIO;
+		}
+	}
 
 	CanXL_SetOperationMode(config->base_sic, can_nxp_s32_mode);
 
@@ -377,7 +401,7 @@ static void can_nxp_s32_set_state_change_callback(const struct device *dev,
 	data->common.state_change_cb_user_data = user_data;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static int can_nxp_s32_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_nxp_s32_config *config = dev->config;
@@ -388,6 +412,10 @@ static int can_nxp_s32_recover(const struct device *dev, k_timeout_t timeout)
 
 	if (!data->common.started) {
 		return -ENETDOWN;
+	}
+
+	if ((data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		return -ENOTSUP;
 	}
 
 	can_nxp_s32_get_state(dev, &state, NULL);
@@ -415,7 +443,7 @@ static int can_nxp_s32_recover(const struct device *dev, k_timeout_t timeout)
 
 	return ret;
 }
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 static void can_nxp_s32_remove_rx_filter(const struct device *dev, int filter_id)
 {
@@ -1024,9 +1052,9 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	.add_rx_filter = can_nxp_s32_add_rx_filter,
 	.remove_rx_filter = can_nxp_s32_remove_rx_filter,
 	.get_state = can_nxp_s32_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_nxp_s32_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = can_nxp_s32_set_state_change_callback,
 	.get_core_clock = can_nxp_s32_get_core_clock,
 	.get_max_filters = can_nxp_s32_get_max_filters,
@@ -1102,12 +1130,6 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 #define CAN_NXP_S32_BRS		0
 #endif
 
-#ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-#define CAN_NXP_S32_CTRL_OPTIONS CANXL_IP_BUSOFF_RECOVERY_U32
-#else
-#define CAN_NXP_S32_CTRL_OPTIONS 0
-#endif
-
 #define CAN_NXP_S32_HW_INSTANCE_CHECK(i, n) \
 	((DT_INST_REG_ADDR(n) == IP_CANXL_##i##__SIC_BASE) ? i : 0)
 
@@ -1135,7 +1157,7 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 		.CanxlMode = CANEXCEL_LISTEN_ONLY_MODE,					\
 		.fd_enable = (boolean)IS_ENABLED(CAN_NXP_S32_FD_MODE),			\
 		.bitRateSwitch = (boolean)CAN_NXP_S32_BRS,				\
-		.ctrlOptions = (uint32)CAN_NXP_S32_CTRL_OPTIONS,			\
+		.ctrlOptions = CANXL_IP_BUSOFF_RECOVERY_U32,				\
 		.Callback = nxp_s32_can_##n##_ctrl_callback,				\
 		.ErrorCallback = nxp_s32_can_##n##_err_callback,			\
 		IF_ENABLED(CONFIG_CAN_NXP_S32_RX_FIFO,					\

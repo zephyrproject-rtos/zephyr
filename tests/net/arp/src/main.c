@@ -154,13 +154,13 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->config.ip.ipv4->unicast[i].is_used &&
-		    iface->config.ip.ipv4->unicast[i].address.family ==
+		if (iface->config.ip.ipv4->unicast[i].ipv4.is_used &&
+		    iface->config.ip.ipv4->unicast[i].ipv4.address.family ==
 								AF_INET &&
-		    iface->config.ip.ipv4->unicast[i].addr_state ==
+		    iface->config.ip.ipv4->unicast[i].ipv4.addr_state ==
 							NET_ADDR_PREFERRED) {
 			return
-			    &iface->config.ip.ipv4->unicast[i].address.in_addr;
+			    &iface->config.ip.ipv4->unicast[i].ipv4.address.in_addr;
 		}
 	}
 
@@ -347,7 +347,6 @@ ZTEST(arp_fn_tests, test_arp)
 	iface = net_if_lookup_by_dev(DEVICE_GET(net_arp_test));
 
 	net_if_ipv4_set_gw(iface, &gw);
-	net_if_ipv4_set_netmask(iface, &netmask);
 
 	/* Unicast test */
 	ifaddr = net_if_ipv4_addr_add(iface,
@@ -356,6 +355,8 @@ ZTEST(arp_fn_tests, test_arp)
 				      0);
 	zassert_not_null(ifaddr, "Cannot add address");
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	net_if_ipv4_set_netmask_by_addr(iface, &src, &netmask);
 
 	len = strlen(app_data);
 

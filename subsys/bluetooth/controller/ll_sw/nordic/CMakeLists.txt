@@ -86,6 +86,10 @@ zephyr_library_sources_ifdef(
   )
 
 zephyr_library_sources(
+  hci/hci_vendor.c
+  )
+
+zephyr_library_sources(
   hal/nrf5/cntr.c
   hal/nrf5/ecb.c
   hal/nrf5/radio/radio.c

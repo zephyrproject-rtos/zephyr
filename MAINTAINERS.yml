@@ -901,6 +901,8 @@ Release Notes:
   status: maintained
   maintainers:
     - anangl
+  collaborators:
+    - decsny
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
@@ -2534,6 +2536,7 @@ Networking:
     - rlubos
     - jukkar
   collaborators:
+    - pdgendt
     - tbursztyka
     - ssharks
   files:
@@ -2857,6 +2860,7 @@ RISCV arch:
     - edersondisouza
     - carlocaione
     - npitre
+    - ycsin
     - pfarwsi
     - kanakshilledar
   files:
@@ -2864,7 +2868,6 @@ RISCV arch:
     - boards/qemu/riscv*/
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
-    - boards/starfive/ 
     - dts/bindings/riscv/
     - dts/riscv/
     - dts/riscv/starfive/

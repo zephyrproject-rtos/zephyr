@@ -67,7 +67,7 @@ static void server_iface_init(struct net_if *iface)
 	test_ctx.iface = iface;
 
 	(void)net_if_ipv4_addr_add(iface, &server_addr, NET_ADDR_MANUAL, 0);
-	(void)net_if_ipv4_set_netmask(iface, &netmask);
+	(void)net_if_ipv4_set_netmask_by_addr(iface, &server_addr, &netmask);
 }
 
 static void send_icmp_echo_reply(struct net_pkt *pkt,

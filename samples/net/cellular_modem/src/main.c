@@ -127,7 +127,7 @@ static int sample_dns_request(void)
 	return 0;
 }
 
-int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen)
+int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
 {
 	int ret;
 	int socket_fd;
@@ -140,22 +140,16 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 
 	socket_fd = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (socket_fd < 0) {
-		printk("Failed to open socket\n");
+		printk("Failed to open socket (%d)\n", errno);
 		return -1;
 	}
 
 	printk("Socket opened\n");
 
-	if (ai_addr->sa_family == AF_INET) {
-		net_sin(ai_addr)->sin_port = htons(SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT);
-	} else if (ai_addr->sa_family == AF_INET6) {
-		net_sin6(ai_addr)->sin6_port = htons(SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT);
-	} else {
-		printk("Unsupported address family\n");
-		return -1;
-	}
+	*port = htons(SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT);
 
 	for (uint32_t i = 0; i < SAMPLE_TEST_ECHO_PACKETS; i++) {
+		printk("Sending echo packet\n");
 		send_start_ms = k_uptime_get_32();
 
 		ret = zsock_sendto(socket_fd, sample_test_packet, sizeof(sample_test_packet), 0,
@@ -166,6 +160,7 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 			continue;
 		}
 
+		printk("Receiving echoed packet");
 		ret = zsock_recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
 		if (ret != sizeof(sample_test_packet)) {
 			printk("Echoed sample test packet has incorrect size\n");
@@ -204,7 +199,7 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 }
 
 
-int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen)
+int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
 {
 	int ret;
 	int socket_fd;
@@ -224,14 +219,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 
 	printk("Socket opened\n");
 
-	if (ai_addr->sa_family == AF_INET) {
-		net_sin(ai_addr)->sin_port = htons(SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT);
-	} else if (ai_addr->sa_family == AF_INET6) {
-		net_sin6(ai_addr)->sin6_port = htons(SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT);
-	} else {
-		printk("Unsupported address family\n");
-		return -1;
-	}
+	*port = htons(SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT);
 
 	printk("Sending %u packets\n", SAMPLE_TEST_TRANSMIT_PACKETS);
 	send_start_ms = k_uptime_get_32();
@@ -276,7 +264,9 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 
 int main(void)
 {
+	struct net_if *const iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 	uint32_t raised_event;
+	uint16_t *port;
 	const void *info;
 	size_t info_len;
 	int ret;
@@ -287,14 +277,14 @@ int main(void)
 	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
 
 	printk("Bring up network interface\n");
-	ret = net_if_up(net_if_get_default());
+	ret = net_if_up(iface);
 	if (ret < 0) {
 		printk("Failed to bring up network interface\n");
 		return -1;
 	}
 
 	printk("Waiting for L4 connected\n");
-	ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
+	ret = net_mgmt_event_wait_on_iface(iface,
 					   NET_EVENT_L4_CONNECTED, &raised_event, &info,
 					   &info_len, K_SECONDS(120));
 
@@ -304,7 +294,7 @@ int main(void)
 	}
 
 	printk("Waiting for DNS server added\n");
-	ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
+	ret = net_mgmt_event_wait_on_iface(iface,
 					   NET_EVENT_DNS_SERVER_ADD, &raised_event, &info,
 					   &info_len, K_SECONDS(10));
 
@@ -318,8 +308,29 @@ int main(void)
 		return -1;
 	}
 
+	{
+		char ip_str[INET6_ADDRSTRLEN];
+		const void *src;
+
+		switch (sample_test_dns_addrinfo.ai_addr.sa_family) {
+		case AF_INET:
+			src = &net_sin(&sample_test_dns_addrinfo.ai_addr)->sin_addr;
+			port = &net_sin(&sample_test_dns_addrinfo.ai_addr)->sin_port;
+			break;
+		case AF_INET6:
+			src = &net_sin6(&sample_test_dns_addrinfo.ai_addr)->sin6_addr;
+			port = &net_sin6(&sample_test_dns_addrinfo.ai_addr)->sin6_port;
+			break;
+		default:
+			printk("Unsupported address family\n");
+			return -1;
+		}
+		inet_ntop(sample_test_dns_addrinfo.ai_addr.sa_family, src, ip_str, sizeof(ip_str));
+		printk("Resolved to %s\n", ip_str);
+	}
+
 	ret = sample_echo_packet(&sample_test_dns_addrinfo.ai_addr,
-				 sample_test_dns_addrinfo.ai_addrlen);
+				 sample_test_dns_addrinfo.ai_addrlen, port);
 
 	if (ret < 0) {
 		printk("Failed to send echo\n");
@@ -327,7 +338,7 @@ int main(void)
 	}
 
 	ret = sample_transmit_packets(&sample_test_dns_addrinfo.ai_addr,
-				      sample_test_dns_addrinfo.ai_addrlen);
+				      sample_test_dns_addrinfo.ai_addrlen, port);
 
 	if (ret < 0) {
 		printk("Failed to send packets\n");
@@ -342,6 +353,8 @@ int main(void)
 	}
 
 	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
+
+	printk("Waiting for L4 connected\n");
 	ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
 					   NET_EVENT_L4_CONNECTED, &raised_event, &info,
 					   &info_len, K_SECONDS(60));
@@ -352,7 +365,7 @@ int main(void)
 	}
 
 	ret = sample_echo_packet(&sample_test_dns_addrinfo.ai_addr,
-				 sample_test_dns_addrinfo.ai_addrlen);
+				 sample_test_dns_addrinfo.ai_addrlen, port);
 
 	if (ret < 0) {
 		printk("Failed to send echo after restart\n");
