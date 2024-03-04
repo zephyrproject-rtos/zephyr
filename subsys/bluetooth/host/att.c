@@ -3863,13 +3863,18 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 	__ASSERT_NO_MSG(conn);
 	__ASSERT_NO_MSG(req);
 
+	k_sched_lock();
+
 	att = att_get(conn);
 	if (!att) {
+		k_sched_unlock();
 		return -ENOTCONN;
 	}
 
 	sys_slist_append(&att->reqs, &req->node);
 	att_req_send_process(att);
+
+	k_sched_unlock();
 
 	return 0;
 }
