@@ -196,7 +196,7 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 		return -EIO;
 	}
 
-	for (prescaler = MAX(core_clock / (total_tq * bitrate), 1);
+	for (prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
 	     prescaler <= max->prescaler;
 	     prescaler++) {
 
