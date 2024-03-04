@@ -116,6 +116,16 @@ config SOC_ESP32S3
 	help
 	  ESP32S3
 
+config SOC_ESP32S3_PROCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for PROCPU (core 0).
+
+config SOC_ESP32S3_APPCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for APPCPU (core 1).
+
 config SOC_SERIES
 	default "esp32s3" if SOC_SERIES_ESP32S3
 

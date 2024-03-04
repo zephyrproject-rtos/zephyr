@@ -1,6 +1,0 @@
-# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_OLIMEX_ESP32_EVB
-	select SOC_ESP32_PROCPU if BOARD_OLIMEX_ESP32_EVB_ESP32_PROCPU
-	select SOC_ESP32_APPCPU if BOARD_OLIMEX_ESP32_EVB_ESP32_APPCPU
