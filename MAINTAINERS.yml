@@ -2857,17 +2857,22 @@ RISCV arch:
     - edersondisouza
     - carlocaione
     - npitre
+    - pfarwsi
+    - kanakshilledar
   files:
     - arch/riscv/
     - boards/qemu/riscv*/
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
+    - boards/starfive/ 
     - dts/bindings/riscv/
     - dts/riscv/
+    - dts/riscv/starfive/
     - include/zephyr/arch/riscv/
     - soc/common/riscv-privileged/
     - soc/sifive/
     - soc/riscv/
+    - soc/starfive/jh71xx/
     - tests/arch/riscv/
     - doc/hardware/arch/risc-v.rst
     - drivers/interrupt_controller/intc_plic.c
