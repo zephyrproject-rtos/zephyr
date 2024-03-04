@@ -3,6 +3,7 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 import argparse
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -231,7 +232,10 @@ def find_v2_boards(args):
     boards = []
     board_files = []
     for root in args.board_roots:
-        board_files.extend((root / 'boards').rglob(BOARD_YML))
+        for root, _, files in os.walk(root / 'boards/'):
+            for file in files:
+                if (file[:len(BOARD_YML)] == BOARD_YML):
+                    board_files.append(Path(os.path.join(root, file)))
 
     for board_yml in board_files:
         b = load_v2_boards(args.board, board_yml, systems)
