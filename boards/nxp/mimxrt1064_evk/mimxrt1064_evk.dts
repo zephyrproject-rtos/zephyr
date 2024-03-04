@@ -342,3 +342,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-0 = <&pinmux_swo>;
 	pinctrl-names = "default";
 };
+
+dvp_fpc24_i2c: &lpi2c1 {};
+
+dvp_fpc24_interface: &csi {};
