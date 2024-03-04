@@ -317,7 +317,7 @@ manifest:
       groups:
         - debug
     - name: tinycrypt
-      revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
+      revision: 1012a3ebee18c15ede5efc8332ee2fc37817670f
       path: modules/crypto/tinycrypt
       groups:
         - crypto
