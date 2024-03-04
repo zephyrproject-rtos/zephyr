@@ -31,7 +31,7 @@ refer to the documentation in Zephyr v3.6.0 (or earlier) for information on the
 previous, now obsolete, hardware model.
 
 More information about the rationale, development and concepts behind the new
-model can be found in the :github:`original issue <51381>`, the
+model can be found in the :github:`original issue <51831>`, the
 :github:`original Pull Request <50305>` and, for a complete set of changes
 introduced, the `hardware model v2 commit`_.
 
