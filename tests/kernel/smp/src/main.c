@@ -695,8 +695,8 @@ void z_trace_sched_ipi(void)
  * - To verify architecture layer provides a mechanism to issue an interprocessor
  *   interrupt to all other CPUs in the system that calls the scheduler IPI.
  *   We simply add a hook in z_sched_ipi(), in order to check if it has been
- *   called once in another CPU except the caller, when arch_sched_ipi() is
- *   called.
+ *   called once in another CPU except the caller, when arch_sched_broadcast_ipi()
+ *   is called.
  *
  * Testing techniques:
  * - Interface testing, function and block box testing,
@@ -711,7 +711,7 @@ void z_trace_sched_ipi(void)
  *
  * Test Procedure:
  * -# In main thread, given a global variable sched_ipi_has_called equaled zero.
- * -# Call arch_sched_ipi() then sleep for 100ms.
+ * -# Call arch_sched_broadcast_ipi() then sleep for 100ms.
  * -# In z_sched_ipi() handler, increment the sched_ipi_has_called.
  * -# In main thread, check the sched_ipi_has_called is not equaled to zero.
  * -# Repeat step 1 to 4 for 3 times.
@@ -727,7 +727,7 @@ void z_trace_sched_ipi(void)
  * - This test using for the platform that support SMP, in our current scenario
  *   , only x86_64 and arc supported.
  *
- * @see arch_sched_ipi()
+ * @see arch_sched_broadcast_ipi()
  */
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 ZTEST(smp, test_smp_ipi)
@@ -741,7 +741,7 @@ ZTEST(smp, test_smp_ipi)
 	for (int i = 0; i < 3 ; i++) {
 		/* issue a sched ipi to tell other CPU to run thread */
 		sched_ipi_has_called = 0;
-		arch_sched_ipi();
+		arch_sched_broadcast_ipi();
 
 		/* Need to wait longer than we think, loaded CI
 		 * systems need to wait for host scheduling to run the

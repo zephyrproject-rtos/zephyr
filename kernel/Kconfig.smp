@@ -56,12 +56,11 @@ config MP_MAX_NUM_CPUS
 config SCHED_IPI_SUPPORTED
 	bool
 	help
-	  True if the architecture supports a call to
-	  arch_sched_ipi() to broadcast an interrupt that will call
-	  z_sched_ipi() on other CPUs in the system.  Required for
-	  k_thread_abort() to operate with reasonable latency
-	  (otherwise we might have to wait for the other thread to
-	  take an interrupt, which can be arbitrarily far in the
+	  True if the architecture supports a call to arch_sched_broadcast_ipi()
+	  to broadcast an interrupt that will call z_sched_ipi() on other CPUs
+	  in the system.  Required for k_thread_abort() to operate with
+	  reasonable latency (otherwise we might have to wait for the other
+	  thread to take an interrupt, which can be arbitrarily far in the
 	  future).
 
 config TRACE_SCHED_IPI
