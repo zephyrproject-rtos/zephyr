@@ -348,9 +348,9 @@
 
 /* Digital Mic Shim Registers */
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL
-#include <intel_ace20_lnl/dmic_regs_ace2x.h>
+#include <ace20_lnl/dmic_regs_ace2x.h>
 #elif CONFIG_SOC_INTEL_ACE15_MTPM
-#include "intel_ace15_mtpm/dmic_regs_ace1x.h"
+#include <ace15_mtpm/dmic_regs_ace1x.h>
 #else
 #error "Unknown SoC"
 #endif

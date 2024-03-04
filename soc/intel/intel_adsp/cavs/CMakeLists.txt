@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(include)
-zephyr_include_directories(include/${SOC_TOOLCHAIN_NAME})
+zephyr_include_directories(include/${CONFIG_SOC})
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 zephyr_library_sources(
