@@ -680,7 +680,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	LOG_DBG("bis_index_bitfield 0x%08x", broadcaster->bis_index_bitfield);
 }
 
-static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	int err;
 	uint32_t index_bitfield;
@@ -692,10 +692,10 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 		return;
 	}
 
-	LOG_DBG("Broadcaster PA found, encrypted %d, requested_bis_sync %d", encrypted,
+	LOG_DBG("Broadcaster PA found, encrypted %d, requested_bis_sync %d", biginfo->encryption,
 		broadcaster->requested_bis_sync);
 
-	if (encrypted) {
+	if (biginfo->encryption) {
 		/* Wait for Set Broadcast Code and start sync at broadcast_code_cb */
 		return;
 	}

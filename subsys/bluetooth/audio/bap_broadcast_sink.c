@@ -900,7 +900,7 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->syncable != NULL) {
-			listener->syncable(sink, biginfo->encryption);
+			listener->syncable(sink, biginfo);
 		}
 	}
 }

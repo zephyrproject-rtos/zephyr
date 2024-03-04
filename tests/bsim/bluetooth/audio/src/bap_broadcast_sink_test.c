@@ -238,10 +238,10 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	SET_FLAG(flag_base_received);
 }
 
-static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	printk("Broadcast sink %p syncable with%s encryption\n",
-	       sink, encrypted ? "" : "out");
+	       sink, biginfo->encryption ? "" : "out");
 	SET_FLAG(flag_syncable);
 }
 
