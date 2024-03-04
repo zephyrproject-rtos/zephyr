@@ -7,7 +7,7 @@
 
 from os import path
 
-from runners.core import ZephyrBinaryRunner
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_ARC_GDB_PORT = 3333
 DEFAULT_PROPS_FILE = 'nsim_em.props'
@@ -39,6 +39,10 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def name(cls):
         return 'arc-nsim'
+
+    @classmethod
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'})
 
     @classmethod
     def do_add_parser(cls, parser):
