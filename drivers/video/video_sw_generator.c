@@ -55,7 +55,7 @@ static int video_sw_generator_stream_start(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	k_work_schedule(&data->buf_work, K_MSEC(33));
+	k_work_schedule(&data->buf_work, K_MSEC(1000 / VIDEO_PATTERN_FPS));
 
 	return 0;
 }
