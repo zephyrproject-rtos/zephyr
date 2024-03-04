@@ -38,7 +38,11 @@ SECTION_FUNC(reset, __reset)
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
-	csrr a0, mhartid
+#ifdef CONFIG_RISCV_HAS_HART_ID
+	csrr a0, xhartid
+#else
+    li a0, CONFIG_RV_BOOT_HART
+#endif
 	li t0, CONFIG_RV_BOOT_HART
 	beq a0, t0, boot_first_core
 	j boot_secondary_core

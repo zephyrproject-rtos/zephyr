@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 Michael Schaffner
  * Copyright (c) 2020 BayLibre, SAS
+ * Copyright (c) 2024 sensry.io
  *
  * SPDX-License-Identifier: SHL-0.51
  * SPDX-License-Identifier: Apache-2.0
@@ -232,5 +233,74 @@
 				: : "rK" (__cv)			\
 				: "memory");			\
 })
+
+#ifdef CONFIG_RISCV_KERNEL_IN_USER_MODE
+/* zephyr runs in user mode */
+
+/* inline assembly defines */
+#define XSTATUS_IEN         USTATUS_IEN
+#define XSTATUS_DEF_RESTORE USTATUS_DEF_RESTORE
+#define XSTATUS             0x000
+
+/* register definition for assembly */
+#ifdef CONFIG_RISCV_HAS_HART_ID
+#define uhartid 0x014
+#define xhartid uhartid
+#endif
+
+#define xscratch uscratch
+#define xstatus  ustatus
+#define xepc     uepc
+#define xcause   ucause
+#define xret     uret
+#define xtvec    utvec
+#define xie      uie
+#define xip      uip
+#define xtval    utval
+#elif CONFIG_RISCV_KERNEL_IN_SUPERVISOR_MODE
+/* zephyr runs in supervisor mode */
+
+/* inline assembly defines */
+#define XSTATUS_IEN         SSTATUS_IEN
+#define XSTATUS_DEF_RESTORE SSTATUS_DEF_RESTORE
+#define XSTATUS             0x100
+
+/* register definition for assembly */
+#ifdef CONFIG_RISCV_HAS_HART_ID
+#define shartid 0x7D2
+#define xhartid shartid
+#endif
+
+#define xscratch sscratch
+#define xstatus  sstatus
+#define xepc     sepc
+#define xcause   scause
+#define xret     sret
+#define xtvec    stvec
+#define xie      sie
+#define xip      sip
+#define xtval    stval
+#elif CONFIG_RISCV_KERNEL_IN_MACHINE_MODE
+/* default: zephyr runs in machine mode */
+
+/* inline assembly defines */
+#define XSTATUS_IEN         MSTATUS_IEN
+#define XSTATUS_DEF_RESTORE MSTATUS_DEF_RESTORE
+#define XSTATUS             0x300
+
+/* register definition for assembly */
+#define xhartid             mhartid
+#define xscratch            mscratch
+#define xstatus             mstatus
+#define xepc                mepc
+#define xcause              mcause
+#define xret                mret
+#define xtvec               mtvec
+#define xie                 mie
+#define xip                 mip
+#define xtval               mtval
+#else
+#error "missing mode"
+#endif
 
 #endif /* CSR_H_ */

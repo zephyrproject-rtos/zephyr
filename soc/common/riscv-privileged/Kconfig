@@ -2,6 +2,7 @@
 # architecture specification
 
 # Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (c) 2024 sensry.io
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_VECTORED_MODE
@@ -9,3 +10,11 @@ config RISCV_VECTORED_MODE
 	depends on RISCV_PRIVILEGED
 	help
 	  Should the SOC use vectored mode.
+
+config RISCV_HAS_HART_ID
+	bool "Use of hartID directly from CSR (mhartid/shartid/uarthid)"
+	default y
+	help
+	  When booting the CSR is used to determine the current hartID.
+	  Should be enabled when booting in machine mode; if disabled
+	  then booting on core defined by RV_BOOT_HART will be assumed.

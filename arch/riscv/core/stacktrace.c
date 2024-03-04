@@ -180,7 +180,7 @@ static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k
 	if (esf != NULL) {
 		/* Unwind the provided exception stack frame */
 		sp = z_riscv_get_sp_before_exc(esf);
-		ra = esf->mepc;
+		ra = esf->xepc;
 	} else if ((csf == NULL) || (csf == &_current->callee_saved)) {
 		/* Unwind current thread (default case when nothing is provided ) */
 		sp = current_stack_pointer;

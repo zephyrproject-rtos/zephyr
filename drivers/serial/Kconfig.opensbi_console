@@ -1,0 +1,17 @@
+# openSBI Console UART driver configuration options
+
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+
+if RISCV_OPENSBI
+
+config UART_OPENSBI_CONSOLE
+	bool "openSBI console serial driver"
+	default y
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the console driver for openSBI based RISCV family of
+	  processors.
+
+endif # RISCV_OPENSBI

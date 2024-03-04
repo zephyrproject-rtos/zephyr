@@ -1,0 +1,32 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_UART_CONSOLE=y
+CONFIG_STACK_SENTINEL=y
+CONFIG_XIP=n
+CONFIG_RISCV_PMP=y
+CONFIG_SMP=y
+CONFIG_MP_MAX_NUM_CPUS=1
+CONFIG_IDLE_STACK_SIZE=1024
+CONFIG_QEMU_ICOUNT=n
+
+# enable the openSBI support, requires a compiled version of openSBI binary in machine mode
+CONFIG_RISCV_OPENSBI=y
+
+# we run zephyr in supervisor mode
+CONFIG_RISCV_KERNEL_IN_SUPERVISOR_MODE=y
+CONFIG_RISCV_MACHINE_TIMER=n
+
+# options that have to be disabled by now
+CONFIG_USERSPACE=n
+CONFIG_RISCV_HAS_HART_ID=n
+CONFIG_SMP=n
+CONFIG_RISCV_PMP=n
+
+# build output for qemu
+CONFIG_BUILD_OUTPUT_BIN=y
+
+
+CONFIG_THREAD_MONITOR=n

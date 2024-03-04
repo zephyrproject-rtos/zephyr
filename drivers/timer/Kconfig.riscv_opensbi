@@ -1,0 +1,15 @@
+# openSBI timer driver configuration options
+
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+
+if RISCV_OPENSBI
+
+config RISCV_OPENSBI_TIMER
+	bool "RISCV openSBI Timer"
+	default y
+	help
+	  This enabled the use of openSBI timer to trigger the zephyr scheduler
+
+endif

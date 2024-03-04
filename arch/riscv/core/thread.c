@@ -63,7 +63,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    counter will be restored following the MEPC value set within the
 	 *    thread stack.
 	 */
-	stack_init->mstatus = MSTATUS_DEF_RESTORE;
+	stack_init->xstatus = XSTATUS_DEF_RESTORE;
 
 #if defined(CONFIG_FPU_SHARING)
 	/* thread birth happens through the exception return path */
@@ -83,11 +83,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if (IS_ENABLED(CONFIG_USERSPACE)
 	    && (thread->base.user_options & K_USER)) {
 		/* User thread */
-		stack_init->mepc = (unsigned long)k_thread_user_mode_enter;
+		stack_init->xepc = (unsigned long)k_thread_user_mode_enter;
 
 	} else {
 		/* Supervisor thread */
-		stack_init->mepc = (unsigned long)z_thread_entry;
+		stack_init->xepc = (unsigned long)z_thread_entry;
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 		/* Enable PMP in mstatus.MPRV mode for RISC-V machine mode

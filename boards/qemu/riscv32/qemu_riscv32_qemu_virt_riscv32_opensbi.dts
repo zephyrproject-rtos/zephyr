@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 sensry.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <qemu/virt-riscv32.dtsi>
+
+/delete-node/ &ram0;
+
+/ {
+	console0: console {
+		compatible = "opensbi,console-uart";
+		status = "okay";
+	};
+
+	ram0: memory@80400000 {
+		device_type = "memory";
+		reg = < 0x80400000 0x100000 >;
+	};
+
+	chosen {
+		zephyr,console = &console0;
+		zephyr,shell-uart = &console0;
+		zephyr,sram = &ram0;
+	};
+};
+
+
+
+&uart0 {
+	status = "disabled";
+};
+
+&plic {
+	status = "disabled";
+};
+
+&clint {
+	status = "disabled";
+};

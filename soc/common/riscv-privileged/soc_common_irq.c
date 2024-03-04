@@ -65,7 +65,7 @@ void arch_irq_enable(unsigned int irq)
 	 * CSR mie register is updated using atomic instruction csrrs
 	 * (atomic read and set bits in CSR register)
 	 */
-	mie = csr_read_set(mie, 1 << irq);
+	mie = csr_read_set(xie, 1 << irq);
 }
 
 void arch_irq_disable(unsigned int irq)
@@ -85,7 +85,7 @@ void arch_irq_disable(unsigned int irq)
 	 * Use atomic instruction csrrc to disable device interrupt in mie CSR.
 	 * (atomic read and clear bits in CSR register)
 	 */
-	mie = csr_read_clear(mie, 1 << irq);
+	mie = csr_read_clear(xie, 1 << irq);
 }
 
 int arch_irq_is_enabled(unsigned int irq)
@@ -100,7 +100,7 @@ int arch_irq_is_enabled(unsigned int irq)
 	}
 #endif
 
-	mie = csr_read(mie);
+	mie = csr_read(xie);
 
 	return !!(mie & (1 << irq));
 }
@@ -123,7 +123,7 @@ __weak void soc_interrupt_init(void)
 	/* ensure that all interrupts are disabled */
 	(void)arch_irq_lock();
 
-	csr_write(mie, 0);
-	csr_write(mip, 0);
+	csr_write(xie, 0);
+	csr_write(xip, 0);
 }
 #endif

@@ -1,0 +1,15 @@
+identifier: qemu_riscv32/qemu_virt_riscv32/opensbi
+name: QEMU Emulation for RISC-V 32-bit openSBI
+type: qemu
+simulation: qemu
+arch: riscv
+toolchain:
+  - zephyr
+  - xtools
+supported:
+  - netif
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

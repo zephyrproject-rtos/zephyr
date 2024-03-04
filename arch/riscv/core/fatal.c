@@ -79,8 +79,8 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 #endif /* CONFIG_RISCV_ISA_RV32E */
 		LOG_ERR("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
 		LOG_ERR("     ra: " PR_REG, esf->ra);
-		LOG_ERR("   mepc: " PR_REG, esf->mepc);
-		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
+		LOG_ERR("   xepc: " PR_REG, esf->xepc);
+		LOG_ERR("xstatus: " PR_REG, esf->xstatus);
 		LOG_ERR("");
 	}
 
@@ -209,11 +209,11 @@ void _Fault(struct arch_esf *esf)
 
 	unsigned long mcause;
 
-	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+	__asm__ volatile("csrr %0," STRINGIFY(xcause) : "=r"(mcause));
 
 #ifndef CONFIG_SOC_OPENISA_RV32M1
 	unsigned long mtval;
-	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
+	__asm__ volatile("csrr %0," STRINGIFY(xtval) : "=r"(mtval));
 #endif
 
 	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;

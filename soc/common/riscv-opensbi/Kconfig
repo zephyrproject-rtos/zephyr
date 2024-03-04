@@ -1,0 +1,11 @@
+# Configuration options for riscv SOCs supporting the riscv openSBI
+# interface
+
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_OPENSBI
+	bool "openSBI support for RISCV SOCs"
+	help
+	  This is the "master" switch to enable the support
+	  for openSBI drivers.

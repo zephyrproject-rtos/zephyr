@@ -166,6 +166,12 @@
 #define MSTATUS_FS_CLEAN (2UL << 13)
 #define MSTATUS_FS_DIRTY (3UL << 13)
 
+#define SSTATUS_IEN      (1UL << 1)
+#define SSTATUS_UPIE_IEN (1UL << 5)
+
+#define USTATUS_IEN      (1UL << 0)
+#define USTATUS_UPIE_IEN (1UL << 4)
+
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
  * - Preserve machine privileges in MPP. If you see any documentation
@@ -175,6 +181,8 @@
  *   by setting MPIE now, so it will be copied into IE on mret.
  */
 #define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+#define SSTATUS_DEF_RESTORE (SSTATUS_SPP | SSTATUS_UPIE_IEN | SSTATUS_IEN)
+#define USTATUS_DEF_RESTORE (USTATUS_UPIE_IEN | USTATUS_IEN)
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
@@ -238,10 +246,10 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 #else
 	unsigned int key;
 
-	__asm__ volatile ("csrrc %0, mstatus, %1"
-			  : "=r" (key)
-			  : "rK" (MSTATUS_IEN)
-			  : "memory");
+	__asm__ volatile("csrrc %0, %1, %2"
+			 : "=r"(key)
+			 : "i"(XSTATUS), "rK"(XSTATUS_IEN)
+			 : "memory");
 
 	return key;
 #endif
@@ -254,21 +262,20 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	extern void z_soc_irq_unlock(unsigned int key);
 	z_soc_irq_unlock(key);
 #else
-	__asm__ volatile ("csrs mstatus, %0"
-			  :
-			  : "r" (key & MSTATUS_IEN)
-			  : "memory");
+	__asm__ volatile("csrs %0, %1" : : "i"(XSTATUS), "r"(key & XSTATUS_IEN) : "memory");
 #endif
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	extern bool z_soc_irq_unlocked(unsigned int key);
 	return z_soc_irq_unlocked(key);
 #else
-	return (key & MSTATUS_IEN) != 0;
+	return (key & XSTATUS_IEN) != 0;
 #endif
 }
 
@@ -302,6 +309,5 @@ static inline uint64_t arch_k_cycle_get_64(void)
 #if defined(CONFIG_RISCV_PRIVILEGED)
 #include <zephyr/arch/riscv/riscv-privileged/asm_inline.h>
 #endif
-
 
 #endif

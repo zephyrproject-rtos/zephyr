@@ -1,0 +1,5 @@
+description: OpenSBI Console UART
+
+compatible: "opensbi,console-uart"
+
+include: [base.yaml]

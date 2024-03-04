@@ -13,6 +13,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/arch/riscv/csr.h>
 
 /*
  * __soc_handle_irq is defined as .weak to allow re-implementation by
@@ -28,7 +29,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 	/* Clear exception number from CSR mip register */
 	li t1, 1
 	sll t0, t1, a0
-	csrrc t1, mip, t0
+	csrrc t1, xip, t0
 
 	/* Return */
 	ret
