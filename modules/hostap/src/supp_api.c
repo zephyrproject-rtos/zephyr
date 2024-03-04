@@ -521,7 +521,7 @@ static int wpas_disconnect_network(const struct device *dev, int cur_mode)
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 
-	if (!wpa_s->current_ssid || wpa_s->current_ssid->mode != cur_mode) {
+	if (wpa_s->current_ssid && wpa_s->current_ssid->mode != cur_mode) {
 		ret = -EBUSY;
 		wpa_printf(MSG_ERROR, "Interface %s is not in %s mode", dev->name,
 			   cur_mode == WPAS_MODE_INFRA ? "STA" : "AP");
