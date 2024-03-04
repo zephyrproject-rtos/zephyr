@@ -15,6 +15,7 @@ supported:
   - dma
   - adc
   - dac
+  - netif:eth
   - pwm
   - counter
   - spi
