@@ -207,6 +207,7 @@ def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, 
     testsuite = class_testplan.testsuites.get(testsuite_path)
     testsuite.detailed_test_id = detailed_test_id
     class_testplan.platforms = platforms_list
+    print(class_testplan.platforms)
     platform = class_testplan.get_platform("demo_board_2")
 
     testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
