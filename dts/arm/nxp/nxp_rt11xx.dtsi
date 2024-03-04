@@ -1230,3 +1230,7 @@
 	 */
 	status = "disabled";
 };
+
+zephyr_cam_i2c: &lpi2c6 {};
+
+zephyr_mipi_csi: &mipi_csi2rx {};
