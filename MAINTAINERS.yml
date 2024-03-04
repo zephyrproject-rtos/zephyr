@@ -522,7 +522,7 @@ Board/SoC configuration:
     - "57300"
   files:
     - soc/Kconfig*
-    - boards/Kconfig
+    - boards/Kconfig*
   labels:
     - "area: Board/SoC configuration"
 
