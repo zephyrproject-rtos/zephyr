@@ -2541,10 +2541,10 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 
 			if (bap_stream->ep != NULL) {
 				struct bt_bap_ep_info ep_info;
+				int err;
 
-				bt_bap_ep_get_info(bap_stream->ep, &ep_info);
-
-				if (ep_info.state != BT_BAP_EP_STATE_CODEC_CONFIGURED &&
+				err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+				if (err == 0 && ep_info.state != BT_BAP_EP_STATE_CODEC_CONFIGURED &&
 				    ep_info.state != BT_BAP_EP_STATE_IDLE) {
 					group_can_be_deleted = false;
 					break;
@@ -3439,10 +3439,12 @@ static int cmd_recv_stats(const struct shell *sh, size_t argc, char *argv[])
 static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
 	struct bt_bap_ep_info info;
+	int err;
 
-	bt_bap_ep_get_info(ep, &info);
-	printk("ASE info: id %u state %u dir %u\n", info.id, info.state,
-	       info.dir);
+	err = bt_bap_ep_get_info(ep, &info);
+	if (err == 0) {
+		printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
+	}
 }
 
 static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
