@@ -6,6 +6,7 @@
 
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
+#include <wrap_max32_dma.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
@@ -43,9 +44,15 @@ struct max32_uart_config {
 };
 
 #ifdef CONFIG_UART_ASYNC_API
+#define MAX32_UART_TX_CACHE_NUM 2
 struct max32_uart_async_tx {
 	const uint8_t *buf;
+	const uint8_t *src;
 	size_t len;
+	uint8_t cache[MAX32_UART_TX_CACHE_NUM][CONFIG_UART_TX_CACHE_LEN];
+	uint8_t cache_id;
+	struct dma_block_config dma_blk;
+	int32_t timeout;
 	struct k_work_delayable timeout_work;
 };
 
@@ -84,6 +91,10 @@ struct max32_uart_data {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_max32_isr(const struct device *dev);
+#endif
+
+#ifdef CONFIG_UART_ASYNC_API
+static int uart_max32_tx_dma_load(const struct device *dev, uint8_t *buf, size_t len);
 #endif
 
 static void api_poll_out(const struct device *dev, unsigned char c)
@@ -492,13 +503,22 @@ static void async_user_callback(const struct device *dev, struct uart_event *evt
 	}
 }
 
+static uint32_t load_tx_cache(const uint8_t *src, size_t len, uint8_t *dest)
+{
+	memcpy(dest, src, MIN(len, CONFIG_UART_TX_CACHE_LEN));
+
+	return MIN(len, CONFIG_UART_TX_CACHE_LEN);
+}
+
 static void uart_max32_async_tx_callback(const struct device *dma_dev, void *user_data,
 					 uint32_t channel, int status)
 {
 	const struct device *dev = user_data;
 	const struct max32_uart_config *config = dev->config;
 	struct max32_uart_data *data = dev->data;
+	struct max32_uart_async_tx *tx = &data->async.tx;
 	struct dma_status dma_stat;
+	int ret;
 
 	unsigned int key = irq_lock();
 
@@ -509,17 +529,73 @@ static void uart_max32_async_tx_callback(const struct device *dma_dev, void *use
 		return;
 	}
 
-	k_work_cancel_delayable(&data->async.tx.timeout_work);
+	k_work_cancel_delayable(&tx->timeout_work);
 	Wrap_MXC_UART_DisableTxDMA(config->regs);
 
 	irq_unlock(key);
 
-	struct uart_event tx_done = {
-		.type = status == 0 ? UART_TX_DONE : UART_TX_ABORTED,
-		.data.tx.buf = data->async.tx.buf,
-		.data.tx.len = data->async.tx.len,
-	};
-	async_user_callback(dev, &tx_done);
+	tx->len -= tx->dma_blk.block_size;
+	if (tx->len > 0) {
+		tx->cache_id = !(tx->cache_id);
+		ret = uart_max32_tx_dma_load(dev, tx->cache[tx->cache_id],
+					     MIN(tx->len, CONFIG_UART_TX_CACHE_LEN));
+		if (ret < 0) {
+			LOG_ERR("Error configuring Tx DMA (%d)", ret);
+			return;
+		}
+
+		ret = dma_start(config->tx_dma.dev, config->tx_dma.channel);
+		if (ret < 0) {
+			LOG_ERR("Error starting Tx DMA (%d)", ret);
+			return;
+		}
+
+		async_timer_start(&tx->timeout_work, tx->timeout);
+
+		Wrap_MXC_UART_SetTxDMALevel(config->regs, 2);
+		Wrap_MXC_UART_EnableTxDMA(config->regs);
+
+		/* Load next chunk as well */
+		if (tx->len > CONFIG_UART_TX_CACHE_LEN) {
+			tx->src += load_tx_cache(tx->src, tx->len - CONFIG_UART_TX_CACHE_LEN,
+						 tx->cache[!(tx->cache_id)]);
+		}
+	} else {
+		struct uart_event tx_done = {
+			.type = status == 0 ? UART_TX_DONE : UART_TX_ABORTED,
+			.data.tx.buf = tx->buf,
+			.data.tx.len = tx->len,
+		};
+		async_user_callback(dev, &tx_done);
+	}
+}
+
+static int uart_max32_tx_dma_load(const struct device *dev, uint8_t *buf, size_t len)
+{
+	int ret;
+	const struct max32_uart_config *config = dev->config;
+	struct max32_uart_data *data = dev->data;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config *dma_blk = &data->async.tx.dma_blk;
+
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	dma_cfg.dma_callback = uart_max32_async_tx_callback;
+	dma_cfg.user_data = (void *)dev;
+	dma_cfg.dma_slot = config->tx_dma.slot;
+	dma_cfg.block_count = 1;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.source_burst_length = 1U;
+	dma_cfg.dest_data_size = 1U;
+	dma_cfg.head_block = dma_blk;
+	dma_blk->block_size = len;
+	dma_blk->source_address = (uint32_t)buf;
+
+	ret = dma_config(config->tx_dma.dev, config->tx_dma.channel, &dma_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
 }
 
 static int api_callback_set(const struct device *dev, uart_callback_t callback, void *user_data)
@@ -537,15 +613,14 @@ static int api_tx(const struct device *dev, const uint8_t *buf, size_t len, int3
 	struct max32_uart_data *data = dev->data;
 	const struct max32_uart_config *config = dev->config;
 	struct dma_status dma_stat;
-	struct dma_config dma_cfg = {0};
-	struct dma_block_config dma_blk = {0};
 	int ret;
+	bool use_cache = false;
 	unsigned int key = irq_lock();
 
 	if (config->tx_dma.channel == 0xFF) {
 		LOG_ERR("Tx DMA channel is not configured");
-		irq_unlock(key);
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		goto unlock;
 	}
 
 	ret = dma_get_status(config->tx_dma.dev, config->tx_dma.channel, &dma_stat);
@@ -557,38 +632,37 @@ static int api_tx(const struct device *dev, const uint8_t *buf, size_t len, int3
 
 	data->async.tx.buf = buf;
 	data->async.tx.len = len;
+	data->async.tx.src = data->async.tx.buf;
 
-	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
-	dma_cfg.dma_callback = uart_max32_async_tx_callback;
-	dma_cfg.user_data = (void *)dev;
-	dma_cfg.dma_slot = config->tx_dma.slot;
-	dma_cfg.block_count = 1;
-	dma_cfg.source_data_size = 1U;
-	dma_cfg.source_burst_length = 1U;
-	dma_cfg.dest_data_size = 1U;
-	dma_cfg.head_block = &dma_blk;
-	dma_blk.block_size = len;
-	dma_blk.source_address = (uint32_t)buf;
+	if (((uint32_t)buf < MXC_SRAM_MEM_BASE) ||
+	    (((uint32_t)buf + len) > (MXC_SRAM_MEM_BASE + MXC_SRAM_MEM_SIZE))) {
+		use_cache = true;
+		len = load_tx_cache(data->async.tx.src, MIN(len, CONFIG_UART_TX_CACHE_LEN),
+				    data->async.tx.cache[0]);
+		data->async.tx.src += len;
+		data->async.tx.cache_id = 0;
+	}
 
-	ret = dma_config(config->tx_dma.dev, config->tx_dma.channel, &dma_cfg);
+	ret = uart_max32_tx_dma_load(dev, use_cache ? data->async.tx.cache[0] : ((uint8_t *)buf),
+				     len);
 	if (ret < 0) {
 		LOG_ERR("Error configuring Tx DMA (%d)", ret);
-		irq_unlock(key);
-		return ret;
+		goto unlock;
 	}
 
 	ret = dma_start(config->tx_dma.dev, config->tx_dma.channel);
 	if (ret < 0) {
 		LOG_ERR("Error starting Tx DMA (%d)", ret);
-		irq_unlock(key);
-		return ret;
+		goto unlock;
 	}
 
+	data->async.tx.timeout = timeout;
 	async_timer_start(&data->async.tx.timeout_work, timeout);
 
 	Wrap_MXC_UART_SetTxDMALevel(config->regs, 2);
 	Wrap_MXC_UART_EnableTxDMA(config->regs);
 
+unlock:
 	irq_unlock(key);
 
 	return ret;
@@ -709,6 +783,12 @@ static void uart_max32_async_rx_callback(const struct device *dma_dev, void *use
 	unsigned int key = irq_lock();
 
 	dma_get_status(config->rx_dma.dev, config->rx_dma.channel, &dma_stat);
+
+	if (dma_stat.pending_length > 0) {
+		irq_unlock(key);
+		return;
+	}
+
 	total_rx = async->rx.len - dma_stat.pending_length;
 
 	api_irq_rx_disable(dev);
@@ -717,7 +797,6 @@ static void uart_max32_async_rx_callback(const struct device *dma_dev, void *use
 
 	if (total_rx > async->rx.offset) {
 		async->rx.counter = total_rx - async->rx.offset;
-
 		struct uart_event rdy_event = {
 			.type = UART_RX_RDY,
 			.data.rx.buf = async->rx.buf,
