@@ -14,6 +14,6 @@ config RISCV_CORE_NORDIC_VPR
 	select RISCV_ISA_EXT_ZIFENCEI
 	select RISCV_SOC_HAS_ISR_STACKING
 	select RISCV_SOC_CONTEXT_SAVE
-	select HAS_FLASH_LOAD_OFFSET if XIP
+	select HAS_FLASH_LOAD_OFFSET
 	help
 	  Enable support for the RISC-V Nordic VPR core.
