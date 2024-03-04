@@ -8,6 +8,7 @@
  */
 
 
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/printk-hooks.h>
@@ -15,6 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/drivers/console/ram_console.h>
 
 #ifdef CONFIG_RAM_CONSOLE_BUFFER_SECTION
 #if !DT_HAS_CHOSEN(zephyr_ram_console)
@@ -31,13 +33,26 @@
 
 char ram_console_buf[CONFIG_RAM_CONSOLE_BUFFER_SIZE] RAM_CONSOLE_BUF_ATTR;
 char *ram_console;
+#ifdef CONFIG_RAM_CONSOLE_HEADER
+static struct ram_console_header *header;
+#else
 static int pos;
+#endif
 
 static int ram_console_out(int character)
 {
+#ifdef CONFIG_RAM_CONSOLE_HEADER
+	header->buf_addr[header->pos % header->buf_size] = (char)character;
+	header->pos++;
+	/* in case of overflow as it is absolute position */
+	if (header->pos == 0)
+		header->pos = (0xFFFFFFFF % header->buf_size) + 1;
+#else
 	ram_console[pos] = (char)character;
 	/* Leave one byte to ensure we're always NULL-terminated */
 	pos = (pos + 1) % (CONFIG_RAM_CONSOLE_BUFFER_SIZE - 1);
+#endif
+
 	return character;
 }
 
@@ -52,6 +67,17 @@ static int ram_console_init(void)
 #else
 	ram_console = ram_console_buf;
 #endif
+#ifdef CONFIG_RAM_CONSOLE_HEADER
+	unsigned int size = CONFIG_RAM_CONSOLE_BUFFER_SIZE - 1;
+
+	memset(ram_console, 0, size + 1);
+	header = (struct ram_console_header *)ram_console;
+	strcpy(header->flag_string, RAM_CONSOLE_HEAD_STR);
+	header->buf_addr = (char *)(ram_console + RAM_CONSOLE_HEAD_SIZE);
+	header->buf_size = size - RAM_CONSOLE_HEAD_SIZE;
+	header->pos = 0;
+#endif
+
 	__printk_hook_install(ram_console_out);
 	__stdout_hook_install(ram_console_out);
 
