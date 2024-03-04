@@ -162,6 +162,30 @@ static int update_sample_pnt(uint32_t total_tq, uint32_t sample_pnt, struct can_
 }
 
 /**
+ * @brief Get the sample point location for a given bitrate
+ *
+ * @param  bitrate The bitrate in bits/second.
+ * @return The sample point in permille.
+ */
+static uint16_t sample_point_for_bitrate(uint32_t bitrate)
+{
+	uint16_t sample_pnt;
+
+	if (bitrate > 800000) {
+		/* 75.0% */
+		sample_pnt = 750;
+	} else if (bitrate > 500000) {
+		/* 80.0% */
+		sample_pnt = 800;
+	} else {
+		/* 87.5% */
+		sample_pnt = 875;
+	}
+
+	return sample_pnt;
+}
+
+/**
  * @brief Internal function for calculating CAN timing parameters.
  *
  * @param dev        Pointer to the device structure for the driver instance.
@@ -194,6 +218,10 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 	err = can_get_core_clock(dev, &core_clock);
 	if (err != 0) {
 		return -EIO;
+	}
+
+	if (sample_pnt == 0U) {
+		sample_pnt = sample_point_for_bitrate(bitrate);
 	}
 
 	for (prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
@@ -283,30 +311,6 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 	timing->prescaler = core_clock / (bitrate * ts);
 
 	return core_clock % (ts * timing->prescaler);
-}
-
-/**
- * @brief Get the sample point location for a given bitrate
- *
- * @param  bitrate The bitrate in bits/second.
- * @return The sample point in permille.
- */
-static uint16_t sample_point_for_bitrate(uint32_t bitrate)
-{
-	uint16_t sample_pnt;
-
-	if (bitrate > 800000) {
-		/* 75.0% */
-		sample_pnt = 750;
-	} else if (bitrate > 500000) {
-		/* 80.0% */
-		sample_pnt = 800;
-	} else {
-		/* 87.5% */
-		sample_pnt = 875;
-	}
-
-	return sample_pnt;
 }
 
 static int check_timing_in_range(const struct can_timing *timing,
