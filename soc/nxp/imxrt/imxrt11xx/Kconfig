@@ -45,6 +45,7 @@ config SOC_SERIES_IMXRT11XX
 	select HAS_MCUX_XBARA
 	select HAS_SWO
 	select HAS_PM
+	select HAS_MCUX_CSI
 
 config SOC_MIMXRT1176_CM4
 	select CPU_CORTEX_M4
