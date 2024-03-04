@@ -41,12 +41,16 @@
 #define ADSP_DW_SLOT_SIZE		ADSP_DW_PAGE_SIZE
 #define ADSP_DW_SLOT_COUNT		15
 
+/* debug window slots usage */
+#define ADSP_DW_SLOT_NUM_TRACE		1
+
 /* debug log slot types */
 #define ADSP_DW_SLOT_UNUSED		0x00000000
 #define ADSP_DW_SLOT_CRITICAL_LOG	0x54524300
 #define ADSP_DW_SLOT_DEBUG_LOG		0x474f4c00 /* byte 0: core ID */
 #define ADSP_DW_SLOT_GDB_STUB		0x42444700
 #define ADSP_DW_SLOT_TELEMETRY		0x4c455400
+#define ADSP_DW_SLOT_TRACE		0x54524143
 #define ADSP_DW_SLOT_BROKEN		0x44414544
 
  /* for debug and critical types */
