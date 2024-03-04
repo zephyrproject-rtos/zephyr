@@ -871,13 +871,18 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
  * always match perfectly. If no result can be reached for the given parameters,
  * -EINVAL is returned.
  *
+ * If the sample point is set to 0, this function defaults to a sample point of 75.0%
+ * for bitrates over 800 kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for
+ * all other bitrates.
+ *
  * @note The requested ``sample_pnt`` will not always be matched perfectly. The
  * algorithm calculates the best possible match.
  *
  * @param dev        Pointer to the device structure for the driver instance.
  * @param[out] res   Result is written into the @a can_timing struct provided.
  * @param bitrate    Target bitrate in bits/s.
- * @param sample_pnt Sampling point in permill of the entire bit time.
+ * @param sample_pnt Sample point in permille of the entire bit time or 0 for
+ *                   automatic sample point location.
  *
  * @retval 0 or positive sample point error on success.
  * @retval -EINVAL if the requested bitrate or sample point is out of range.
@@ -947,7 +952,8 @@ static inline const struct can_timing *z_impl_can_get_timing_data_max(const stru
  * @param dev        Pointer to the device structure for the driver instance.
  * @param[out] res   Result is written into the @a can_timing struct provided.
  * @param bitrate    Target bitrate for the data phase in bits/s
- * @param sample_pnt Sampling point for the data phase in permille of the entire bit time.
+ * @param sample_pnt Sample point for the data phase in permille of the entire bit
+ *                   time or 0 for automatic sample point location.
  *
  * @retval 0 or positive sample point error on success.
  * @retval -EINVAL if the requested bitrate or sample point is out of range.
