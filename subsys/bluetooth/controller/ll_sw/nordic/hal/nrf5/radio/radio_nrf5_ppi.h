@@ -383,12 +383,8 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
 	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + (index))
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(chan) \
-	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_offset) \
 	((uint32_t)&(SW_SWITCH_TIMER->EVENTS_COMPARE[cc_offset]))
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(chan) \
-	NRF_PPI->CH[chan].TEP
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(index) \
 	((uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_TIMER_TASK_GROUP(index)].DIS))
 
@@ -409,12 +405,8 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + (index))
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(chan) \
-	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_offset) \
 	((uint32_t)&(SW_SWITCH_TIMER->EVENTS_COMPARE[cc_offset]))
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(chan) \
-	NRF_PPI->CH[chan].TEP
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX \
 	((uint32_t)&(NRF_RADIO->TASKS_TXEN))
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX \
@@ -533,44 +525,36 @@ static inline void hal_radio_sw_switch_cleanup(void)
 /* Cancel the SW switch timer running considering S8 timing:
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  */
-#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT \
-	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI].EEP
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT \
 	((uint32_t)&(NRF_RADIO->EVENTS_RATEBOOST))
-#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK \
-	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI].TEP
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(index) \
 	((uint32_t)&(SW_SWITCH_TIMER->TASKS_CAPTURE[index]))
 
 static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	uint8_t ppi_dis, uint8_t cc_s2, uint8_t group_index)
 {
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(ppi_en) =
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_s2);
+	nrf_ppi_event_endpoint_setup(NRF_PPI, ppi_en,
+				     HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_s2));
 
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi_en) =
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX;
+	nrf_ppi_task_endpoint_setup(NRF_PPI, ppi_en,
+				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
 
 	/* Wire the Group task disable
 	 * to the S2 EVENTS_COMPARE.
 	 */
-	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(
-	    ppi_dis)	=
-	    HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_s2);
+	nrf_ppi_event_endpoint_setup(NRF_PPI, ppi_dis,
+				     HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_s2));
 
-	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(
-	    ppi_dis) =
-	    HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
-	    group_index);
+	nrf_ppi_task_endpoint_setup(NRF_PPI, ppi_dis,
+				    HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(group_index));
 
 	/* Capture CC to cancel the timer that has assumed
 	 * S8 reception, if packet will be received in S2.
 	 */
-	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT =
-		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT;
-	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK =
-		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(
-			group_index);
+	nrf_ppi_event_endpoint_setup(NRF_PPI, HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI,
+				     HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT);
+	nrf_ppi_task_endpoint_setup(NRF_PPI, HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI,
+				    HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(group_index));
 
 	nrf_ppi_channels_enable(
 		NRF_PPI,
@@ -581,20 +565,18 @@ static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
 	uint8_t ppi_dis, uint8_t cc_reg, uint8_t group_index)
 {
 	/* Invalidate PPI used when RXing on LE Coded PHY. */
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(
-		ppi_en) = 0;
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(
-		ppi_en) = 0;
+	nrf_ppi_event_endpoint_setup(NRF_PPI, ppi_en, 0);
+	nrf_ppi_task_endpoint_setup(NRF_PPI, ppi_en, 0);
 }
 
 static inline void hal_radio_sw_switch_disable_group_clear(uint8_t ppi_dis, uint8_t cc_reg,
 							   uint8_t group_index)
 {
 	/* Wire the Group task disable to the default EVENTS_COMPARE. */
-	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(ppi_dis) =
-		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_reg);
-	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(ppi_dis) =
-		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(group_index);
+	nrf_ppi_event_endpoint_setup(NRF_PPI, ppi_dis,
+				     HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_reg));
+	nrf_ppi_task_endpoint_setup(NRF_PPI, ppi_dis,
+				    HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(group_index));
 }
 
 #else
@@ -638,12 +620,8 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 /* Cancel the SW switch timer running considering PHYEND delay compensation timing:
  * wire the RADIO EVENTS_CTEPRESENT event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  */
-#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_EVT \
-	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI].EEP
 #define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_EVT \
 	((uint32_t)&(NRF_RADIO->EVENTS_CTEPRESENT))
-#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK \
-	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI].TEP
 #define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK(index) \
 	((uint32_t)&(SW_SWITCH_TIMER->TASKS_CAPTURE[index]))
 
@@ -673,17 +651,19 @@ hal_radio_sw_switch_phyend_delay_compensation_config_set(uint8_t radio_enable_pp
 							 uint8_t phyend_delay_cc)
 {
 	/* Wire EVENTS_COMPARE[<phyend_delay_cc_offs>] event to Radio TASKS_TXEN */
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(radio_enable_ppi) =
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(phyend_delay_cc);
+	nrf_ppi_event_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				     HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(phyend_delay_cc));
 
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(radio_enable_ppi) =
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX;
+	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
 
 	/* Wire Radio CTEPRESENT event to cancel EVENTS_COMPARE[<cc_offs>] timer */
-	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_EVT =
-		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_EVT;
-	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK =
-		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK(phyend_delay_cc);
+	nrf_ppi_event_endpoint_setup(NRF_PPI,
+				     HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI,
+				     HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_EVT);
+	nrf_ppi_task_endpoint_setup(NRF_PPI,
+		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI,
+		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK(phyend_delay_cc));
 
 	/*  Enable CTEPRESENT event to disable EVENTS_COMPARE[<cc_offs>] PPI channel */
 	nrf_ppi_channels_enable(NRF_PPI,
@@ -704,8 +684,8 @@ hal_radio_sw_switch_phyend_delay_compensation_config_clear(uint8_t radio_enable_
 							   uint8_t phyend_delay_cc)
 {
 	/* Invalidate PPI used when */
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(radio_enable_ppi) = NRF_PPI_NONE;
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(radio_enable_ppi) = NRF_PPI_NONE;
+	nrf_ppi_event_endpoint_setup(NRF_PPI, radio_enable_ppi, NRF_PPI_NONE);
+	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi, NRF_PPI_NONE);
 
 	/* Disable CTEPRESENT event to disable EVENTS_COMPARE[<phyend_delay_cc_offs>] PPI channel */
 	nrf_ppi_channels_disable(NRF_PPI,
