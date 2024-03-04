@@ -47,7 +47,7 @@
 /* thread stack */
 #ifdef CONFIG_XTENSA_MMU
 struct xtensa_thread_stack_header {
-	char privilege_stack[CONFIG_MMU_PAGE_SIZE];
+	char privilege_stack[CONFIG_PRIVILEGED_STACK_SIZE];
 } __packed __aligned(XTENSA_STACK_BASE_ALIGN);
 
 #define ARCH_THREAD_STACK_RESERVED		\

@@ -9,6 +9,11 @@
 #include <xtensa_mmu_priv.h>
 #include <zephyr/cache.h>
 
+#ifdef CONFIG_USERSPACE
+BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
+	     (CONFIG_PRIVILEGED_STACK_SIZE % CONFIG_MMU_PAGE_SIZE) == 0);
+#endif
+
 #define ASID_INVALID 0
 
 struct tlb_regs {
