@@ -206,6 +206,18 @@ config RISCV_GENERIC_TOOLCHAIN
 	  Allow SOCs that have custom extended riscv ISA to still
 	  compile with generic riscv32 toolchain.
 
+config RISCV_KERNEL_IN_USER_MODE
+	bool "Start zephyr in user mode"
+	help
+	  Replaces CSR access from machine mode to user mode.
+	  Allows zephyr to run as guest in user mode only
+
+config RISCV_KERNEL_IN_SUPERVISOR_MODE
+	bool "Start zephyr in supervisor mode"
+	help
+	  Replaces CSR access from machine mode to supervisor mode.
+	  Allows zephyr to run as guest in supervisor mode only
+
 config GEN_ISR_TABLES
 	default y
 

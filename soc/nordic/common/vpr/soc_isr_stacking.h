@@ -91,16 +91,16 @@
 
 #define STORE_SP_ALIGN_BIT_FROM_MEPC				\
 	addi t1, sp, __struct_arch_esf_soc_context_OFFSET;	\
-	lr t0, __struct_arch_esf_mepc_OFFSET(sp);		\
+	lr t0, __struct_arch_esf_xepc_OFFSET(sp);		\
 	andi t0, t0, MEPC_SP_ALIGN_BIT_MASK;			\
 	sr t0, __soc_esf_t_sp_align_OFFSET(t1)
 
 #define RESTORE_SP_ALIGN_BIT_TO_MEPC				\
 	addi t1, sp, __struct_arch_esf_soc_context_OFFSET;	\
 	lr t0, __soc_esf_t_sp_align_OFFSET(t1);			\
-	lr t1, __struct_arch_esf_mepc_OFFSET(sp);		\
+	lr t1, __struct_arch_esf_xepc_OFFSET(sp);		\
 	or t2, t1, t0;						\
-	sr t2, __struct_arch_esf_mepc_OFFSET(sp)
+	sr t2, __struct_arch_esf_xepc_OFFSET(sp)
 
 #define SOC_ISR_SW_STACKING			\
 	csrw mscratch, t0;			\

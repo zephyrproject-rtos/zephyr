@@ -11,7 +11,7 @@ void __weak arch_cpu_idle(void)
 {
 	sys_trace_idle();
 	__asm__ volatile("wfi");
-	irq_unlock(MSTATUS_IEN);
+	irq_unlock(XSTATUS_IEN);
 }
 
 void __weak arch_cpu_atomic_idle(unsigned int key)

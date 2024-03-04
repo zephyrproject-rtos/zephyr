@@ -13,9 +13,9 @@
  * structures.
  */
 
-#include <zephyr/arch/exception.h>
 #include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
+#include <zephyr/arch/exception.h>
 #include <gen_offset.h>
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -109,8 +109,8 @@ GEN_OFFSET_STRUCT(arch_esf, a6);
 GEN_OFFSET_STRUCT(arch_esf, a7);
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
-GEN_OFFSET_STRUCT(arch_esf, mepc);
-GEN_OFFSET_STRUCT(arch_esf, mstatus);
+GEN_OFFSET_STRUCT(arch_esf, xepc);
+GEN_OFFSET_STRUCT(arch_esf, xstatus);
 
 GEN_OFFSET_STRUCT(arch_esf, s0);
 
