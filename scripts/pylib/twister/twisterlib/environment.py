@@ -242,7 +242,7 @@ Artificially long but functional example:
     # Start of individual args place them in alpha-beta order
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
+                       "%s/subsys/testsuite/boards" % ZEPHYR_BASE]
 
     modules = zephyr_module.parse_modules(ZEPHYR_BASE)
     for module in modules:
