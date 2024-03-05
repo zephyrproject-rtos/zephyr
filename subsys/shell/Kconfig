@@ -40,9 +40,8 @@ endif
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
-	default 3168 if OPENTHREAD_SHELL && OPENTHREAD_JOINER
+	default 3168 if OPENTHREAD_SHELL
 	default 3072 if 64BIT
-	default 2616 if OPENTHREAD_SHELL
 	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
 	help
