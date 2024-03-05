@@ -118,4 +118,10 @@ config ESPI_NPCX_SUPP_VW_GPIO
 	help
 	  Selected if NPCX series supports virtual wire GPIOs in eSPI module.
 
+config ESPI_NPCX_CAF_GLOBAL_RESET_WORKAROUND
+	bool
+	default y if SOC_SERIES_NPCX4 && ESPI_FLASH_CHANNEL
+	help
+	  Workaround the issue "Global Reset" in the npcx4 SoC errata.
+
 endif #ESPI_NPCX
