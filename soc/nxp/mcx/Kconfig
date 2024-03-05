@@ -1,0 +1,13 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_NXP_MCX
+	select HAS_SEGGER_RTT
+	select CLOCK_CONTROL
+	select ARM
+
+if SOC_FAMILY_NXP_MCX
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_NXP_MCX
