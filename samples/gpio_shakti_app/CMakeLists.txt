@@ -6,7 +6,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(gpio_shakti_app)
 
 target_sources(app PRIVATE src/main.c)
-
+# zephyr_library_include_directories(include(zephyr(drivers(gpio_shakti.h))))
 if(CONFIG_XIP)
     zephyr_code_relocate(src/main.c ROM_TEXT NOCOPY)
     zephyr_code_relocate(src/main.c ROM_DATA)

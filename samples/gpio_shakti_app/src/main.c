@@ -1,7 +1,7 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 // #include <zephyr/drivers/gpio/gpio_shakti.h>
-#include <zephyr/drivers/gpio/gpio_shakti.h>
+#include <zephyr/drivers/gpio_shakti.h>
 #include "../drivers/gpio/gpio_shakti.c"
 
 void main(){

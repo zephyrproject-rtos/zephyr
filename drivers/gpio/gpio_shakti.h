@@ -1,5 +1,5 @@
-// #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
-// #define ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
+// #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SHAKTI_H_
+// #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SHAKTI_H_
 
 #include <stdint.h>
 #include <errno.h>
@@ -81,8 +81,7 @@ static int gpio_shakti_pin_get_raw(const struct device *dev,
                     gpio_pin_t pin);
 
 static int gpio_shakti_pin_set_raw(const struct device *dev,
-                    gpio_pin_t pin,
-                    int value);
+                    gpio_pin_t pin);
 
 static int gpio_shakti_pin_clear_raw(const struct device *dev,
                     gpio_pin_t pin);
