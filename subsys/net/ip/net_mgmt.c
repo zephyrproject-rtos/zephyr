@@ -338,6 +338,9 @@ void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb)
 
 	(void)k_mutex_lock(&net_mgmt_callback_lock, K_FOREVER);
 
+	/* Remove the callback if it already exists to avoid loop */
+	sys_slist_find_and_remove(&event_callbacks, &cb->node);
+
 	sys_slist_prepend(&event_callbacks, &cb->node);
 
 	mgmt_add_event_mask(cb->event_mask);
