@@ -12,8 +12,15 @@ config SOC_JH7100
 	help
 	  Starfive JH7100
 
+config SOC_JH7110
+	bool
+	select SOC_SERIES_STARFIVE_JH71XX
+	help
+	  Starfive JH7110
+
 config SOC_SERIES
 	default "starfive_jh71xx" if SOC_SERIES_STARFIVE_JH71XX
 
 config SOC
 	default "jh7100" if SOC_JH7100
+	default "jh7110" if SOC_JH7110
