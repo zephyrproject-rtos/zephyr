@@ -10,42 +10,27 @@
 #include <hal/adc_hal.h>
 #include <hal/adc_types.h>
 #include <esp_adc_cal.h>
-#include <esp_heap_caps.h>
+#include <esp_private/periph_ctrl.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
-#include "driver/periph_ctrl.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 
-#if CONFIG_SOC_SERIES_ESP32
-#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_VREF
 #define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MIN_BITWIDTH
 #define ADC_RESOLUTION_MAX	SOC_ADC_DIGI_MAX_BITWIDTH
 
+#if CONFIG_SOC_SERIES_ESP32
+#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_VREF
 /* Due to significant measurement discrepancy in higher voltage range, we
  * clip the value instead of yet another correction. The IDF implementation
  * for ESP32-S2 is doing it, so we copy that approach in Zephyr driver
  */
 #define ADC_CLIP_MVOLT_11DB	2550
-
-#elif CONFIG_SOC_SERIES_ESP32S2
+#else
 #define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP
-#define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MAX_BITWIDTH
-#define ADC_RESOLUTION_MAX	SOC_ADC_MAX_BITWIDTH
-
-#elif CONFIG_SOC_SERIES_ESP32C3
-#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP
-#define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MAX_BITWIDTH
-#define ADC_RESOLUTION_MAX	SOC_ADC_DIGI_MAX_BITWIDTH
-
-#elif CONFIG_SOC_SERIES_ESP32S3
-#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP_FIT
-#define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MIN_BITWIDTH
-#define ADC_RESOLUTION_MAX	SOC_ADC_DIGI_MAX_BITWIDTH
-
 #endif
 
 /* Convert resolution in bits to esp32 enum values */
@@ -64,9 +49,9 @@ struct adc_esp32_conf {
 };
 
 struct adc_esp32_data {
-	adc_atten_t attenuation[ADC_CHANNEL_MAX];
-	uint8_t resolution[ADC_CHANNEL_MAX];
-	esp_adc_cal_characteristics_t chars[ADC_CHANNEL_MAX];
+	adc_atten_t attenuation[SOC_ADC_MAX_CHANNEL_NUM];
+	uint8_t resolution[SOC_ADC_MAX_CHANNEL_NUM];
+	esp_adc_cal_characteristics_t chars[SOC_ADC_MAX_CHANNEL_NUM];
 	uint16_t meas_ref_internal;
 	uint16_t *buffer;
 	uint16_t *buffer_repeat;
@@ -334,7 +319,7 @@ static const struct adc_driver_api api_esp32_driver_api = {
 #define ESP32_ADC_INIT(inst)							\
 										\
 	static const struct adc_esp32_conf adc_esp32_conf_##inst = {		\
-		.unit = DT_PROP(DT_DRV_INST(inst), unit),			\
+		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,			\
 		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),	\
 	};									\
 										\
