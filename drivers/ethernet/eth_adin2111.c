@@ -903,7 +903,7 @@ static int adin2111_init(const struct device *dev)
 	}
 
 	/* configure interrupt masks */
-	ctx->imask0 = ~ADIN2111_IMASK0_PHYINTM;
+	ctx->imask0 = ~((uint32_t)ADIN2111_IMASK0_PHYINTM);
 	ctx->imask1 = ~(ADIN2111_IMASK1_TX_RDY_MASK |
 			ADIN2111_IMASK1_P1_RX_RDY_MASK |
 			ADIN2111_IMASK1_SPI_ERR_MASK |
