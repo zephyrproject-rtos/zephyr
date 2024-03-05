@@ -28,6 +28,7 @@ config SOC_SERIES_IMXRT10XX
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_USB_EHCI
 	select HAS_SWO
+	select HAS_PM
 
 config SOC_MIMXRT1011
 	select CPU_HAS_FPU
