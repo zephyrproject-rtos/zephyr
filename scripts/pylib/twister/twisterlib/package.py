@@ -26,7 +26,9 @@ class Artifacts:
             jtp = json.load(json_test_plan)
             for t in jtp['testsuites']:
                 if t['status'] != "filtered":
-                    dirs.append(os.path.join(self.options.outdir, t['platform'], t['name']))
+                    p = t['platform']
+                    normalized  = p.replace("/", "_")
+                    dirs.append(os.path.join(self.options.outdir, normalized, t['name']))
 
         dirs.extend(
             [
