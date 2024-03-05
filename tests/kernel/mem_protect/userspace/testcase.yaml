@@ -14,6 +14,11 @@ tests:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
     platform_exclude:
       - ucans32k1sic
+      # Commit cb19bd4fc2541931beb0e1f157127f7a50a082d4
+      # explicitly disabled CONFIG_USERSPACE so xenvm
+      # boards cannot run this test.
+      - xenvm
+      - xenvm/xenvm/gicv3
   kernel.memory_protection.userspace.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arc
