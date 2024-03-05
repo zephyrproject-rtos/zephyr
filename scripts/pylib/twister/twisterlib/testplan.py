@@ -405,7 +405,7 @@ class TestPlan:
         # but in Zephyr build system, the board root is without the `boards` in folder path.
         board_roots = [Path(os.path.dirname(root)) for root in self.env.board_roots]
         lb_args = Namespace(arch_roots=[Path(ZEPHYR_BASE)], soc_roots=[Path(ZEPHYR_BASE),
-                            Path(ZEPHYR_BASE) / 'scripts' / 'pylib' / 'twister'],
+                            Path(ZEPHYR_BASE) / 'subsys' / 'testsuite'],
                             board_roots=board_roots, board=None, board_dir=None)
         v1_boards = list_boards.find_boards(lb_args)
         v2_boards = list_boards.find_v2_boards(lb_args)
