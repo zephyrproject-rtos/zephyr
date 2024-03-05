@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_IT8XXX2_EVB
-	select SOC_IT82202_AX
+	select SOC_IT81302_BX
