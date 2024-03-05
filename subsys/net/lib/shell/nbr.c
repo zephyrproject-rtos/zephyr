@@ -12,12 +12,10 @@ LOG_MODULE_DECLARE(net_shell);
 
 static int cmd_net_nbr_rm(const struct shell *sh, size_t argc, char *argv[])
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct in6_addr addr;
 	int ret;
-#endif
 
-#if defined(CONFIG_NET_IPV6)
 	if (!argv[1]) {
 		PR_WARNING("Neighbor IPv6 address missing.\n");
 		return -ENOEXEC;
@@ -37,16 +35,17 @@ static int cmd_net_nbr_rm(const struct shell *sh, size_t argc, char *argv[])
 
 	PR("Neighbor %s removed.\n", net_sprint_ipv6_addr(&addr));
 #else
+	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	PR_INFO("IPv6 not enabled.\n");
+	PR_INFO("Native IPv6 not enabled.\n");
 #endif
 
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 static void nbr_cb(struct net_nbr *nbr, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -111,15 +110,10 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 
 static int cmd_net_nbr(const struct shell *sh, size_t argc, char *argv[])
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	int count = 0;
 	struct net_shell_user_data user_data;
-#endif
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-#if defined(CONFIG_NET_IPV6)
 	user_data.sh = sh;
 	user_data.user_data = &count;
 
@@ -129,13 +123,17 @@ static int cmd_net_nbr(const struct shell *sh, size_t argc, char *argv[])
 		PR("No neighbors.\n");
 	}
 #else
-	PR_INFO("IPv6 not enabled.\n");
-#endif /* CONFIG_NET_IPV6 */
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	PR_INFO("Native IPv6 not enabled.\n");
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
+#if defined(CONFIG_NET_NATIVE_IPV6) && defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 static char nbr_address_buffer[CONFIG_NET_IPV6_MAX_NEIGHBORS][NET_IPV6_ADDR_LEN];
 
 static void nbr_address_cb(struct net_nbr *nbr, void *user_data)
@@ -193,7 +191,7 @@ static void nbr_address_get(size_t idx, struct shell_static_entry *entry)
 
 #else
 #define NBR_ADDRESS_CMD NULL
-#endif /* CONFIG_NET_IPV6 && CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
+#endif /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_nbr,
 	SHELL_CMD(rm, NBR_ADDRESS_CMD,
