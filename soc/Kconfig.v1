@@ -23,5 +23,3 @@ config SOC_FAMILY
 
 # This loads custom SoC root Kconfig (only available if custom SoC root are defined)
 osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc.arch"
-# This loads Zephyr base SoC Kconfigs
-osource "soc/soc_legacy/$(ARCH)/*/Kconfig"

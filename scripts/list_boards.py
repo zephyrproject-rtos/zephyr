@@ -156,17 +156,17 @@ def find_arch2board_set_in(root, arches, board_dir):
     boards = root / 'boards'
 
     for arch in arches:
-        if not (boards / "boards_legacy" / arch).is_dir():
+        if not (boards / arch).is_dir():
             continue
 
-        for maybe_board in (boards / "boards_legacy" / arch).iterdir():
+        for maybe_board in (boards / arch).iterdir():
             if not maybe_board.is_dir():
                 continue
             if board_dir is not None and board_dir != maybe_board:
                 continue
             for maybe_defconfig in maybe_board.iterdir():
                 file_name = maybe_defconfig.name
-                if file_name.endswith('_defconfig'):
+                if file_name.endswith('_defconfig') and not (maybe_board / BOARD_YML).is_file():
                     board_name = file_name[:-len('_defconfig')]
                     ret[arch].add(Board(board_name, maybe_board, 'v1', arch=arch))
 
