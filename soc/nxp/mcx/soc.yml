@@ -1,0 +1,9 @@
+family:
+- name: nxp_mcx
+  series:
+  - name: mcxnx4x
+    socs:
+    - name: mcxn947
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1

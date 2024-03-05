@@ -3334,6 +3334,7 @@ NXP Platforms (MCU):
     - soc/nxp/kinetis/
     - soc/nxp/lpc/
     - soc/nxp/rw/
+    - soc/nxp/mcx/
     - dts/arm/nxp/
     - samples/boards/nxp*/
   files-regex-exclude:
