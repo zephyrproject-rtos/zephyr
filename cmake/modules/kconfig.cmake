@@ -35,13 +35,13 @@ if(HWMv1)
   set(OPERATION WRITE)
   foreach(root ${kconfig_soc_root})
     file(APPEND ${soc_defconfig_file}
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig.defconfig\"\n")
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n")
     file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.choice
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig.soc\"\n"
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
     )
     file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.arch
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/Kconfig\"\n"
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig\"\n"
+         "osource \"${root}/soc/$(ARCH)/Kconfig\"\n"
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig\"\n"
     )
     set(OPERATION APPEND)
   endforeach()
