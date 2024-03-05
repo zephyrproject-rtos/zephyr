@@ -1817,7 +1817,7 @@ static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
 	buf = pkt->buffer;
 
 	while (buf) {
-		if (buf->data <= ptr && ptr <= (buf->data + buf->len)) {
+		if (buf->data <= ptr && ptr < (buf->data + buf->len)) {
 			ret = offset + (ptr - buf->data);
 			break;
 		}
