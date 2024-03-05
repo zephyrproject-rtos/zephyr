@@ -496,8 +496,8 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 
 	/* burst read must be in multiples of 4 */
 	padding_len = ((fsize % 4) == 0) ? 0U : (ROUND_UP(fsize, 4U) - fsize);
-	/* actual frame length is FSIZE - FRAME HEADER */
-	fsize_real = fsize - ADIN2111_FRAME_HEADER_SIZE;
+	/* actual frame length is FSIZE - FRAME HEADER - CRC32 */
+	fsize_real = fsize - (ADIN2111_FRAME_HEADER_SIZE + sizeof(uint32_t));
 
 	/* spi header */
 	*(uint16_t *)cmd_buf = htons((ADIN2111_READ_TXN_CTRL | rx_reg));
