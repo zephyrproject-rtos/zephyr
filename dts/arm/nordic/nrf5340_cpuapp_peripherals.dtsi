@@ -449,7 +449,7 @@ nfct: nfct@2d000 {
 	compatible = "nordic,nrf-nfct";
 	reg = <0x2d000 0x1000>;
 	interrupts = <45 NRF_DEFAULT_IRQ_PRIORITY>;
-	status = "okay";
+	status = "disabled";
 };
 
 mutex: mutex@30000 {
