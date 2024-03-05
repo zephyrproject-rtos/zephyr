@@ -10,6 +10,7 @@
 #include <soc/system_reg.h>
 #include <hal/systimer_hal.h>
 #include <hal/systimer_ll.h>
+#include <esp_private/systimer.h>
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
 
@@ -41,26 +42,26 @@ static systimer_hal_context_t systimer_hal;
 static void set_systimer_alarm(uint64_t time)
 {
 	systimer_hal_select_alarm_mode(&systimer_hal,
-		SYSTIMER_LL_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
+		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
 
 	systimer_counter_value_t alarm = {.val = time};
 
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, false);
-	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, alarm.val);
-	systimer_ll_apply_alarm_value(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, true);
-	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0, true);
+	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
+	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, alarm.val);
+	systimer_ll_apply_alarm_value(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
+	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
+	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
 }
 
 static uint64_t get_systimer_alarm(void)
 {
-	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
+	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 }
 
 static void sys_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_LL_ALARM_OS_TICK_CORE0);
+	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = get_systimer_alarm();
@@ -146,10 +147,10 @@ static int sys_clock_driver_init(void)
 
 	systimer_hal_init(&systimer_hal);
 	systimer_hal_connect_alarm_counter(&systimer_hal,
-		SYSTIMER_LL_ALARM_OS_TICK_CORE0, SYSTIMER_LL_COUNTER_OS_TICK);
+		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_COUNTER_OS_TICK);
 
-	systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
-	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, 0, true);
+	systimer_hal_enable_counter(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
+	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 0, true);
 	last_count = get_systimer_alarm();
 	set_systimer_alarm(last_count + CYC_PER_TICK);
 	return 0;
