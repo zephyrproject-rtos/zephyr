@@ -2,14 +2,17 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+include(extensions)
+include(west)
 include(root)
+include(zephyr_module)
 include(boards)
-include(arch_v1)
+include(hwm_v2)
 include(configuration_files)
 
-include(west)
-include(zephyr_module)
 include(kconfig)
+include(arch_v2)
+include(soc_v2)
 
 find_package(TargetTools)
 
