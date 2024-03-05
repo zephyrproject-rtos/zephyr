@@ -1105,9 +1105,12 @@ Release Notes:
   status: maintained
   maintainers:
     - kv2019i
+    - LaurentiuM1234
   collaborators:
     - lgirdwood
     - juimonen
+    - iuliana-prodan
+    - dbaluta
   files:
     - drivers/dai/
     - doc/hardware/peripherals/audio/dai.rst
