@@ -40,77 +40,77 @@ manifest:
         - babblesim
     - name: babblesim_base
       remote: babblesim
-      repo-path: base.git
+      repo-path: base
       path: tools/bsim/components
       revision: 19d62424c0802c6c9fc15528febe666e40f372a1
       groups:
         - babblesim
     - name: babblesim_ext_2G4_libPhyComv1
       remote: babblesim
-      repo-path: ext_2G4_libPhyComv1.git
+      repo-path: ext_2G4_libPhyComv1
       path: tools/bsim/components/ext_2G4_libPhyComv1
       revision: 9018113a362fa6c9e8f4b9cab9e5a8f12cc46b94
       groups:
         - babblesim
     - name: babblesim_ext_2G4_phy_v1
       remote: babblesim
-      repo-path: ext_2G4_phy_v1.git
+      repo-path: ext_2G4_phy_v1
       path: tools/bsim/components/ext_2G4_phy_v1
       revision: d47c6dd90035b41b14f6921785ccb7b8484868e2
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
       remote: babblesim
-      repo-path: ext_2G4_channel_NtNcable.git
+      repo-path: ext_2G4_channel_NtNcable
       path: tools/bsim/components/ext_2G4_channel_NtNcable
       revision: 20a38c997f507b0aa53817aab3d73a462fff7af1
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_multiatt
       remote: babblesim
-      repo-path: ext_2G4_channel_multiatt.git
+      repo-path: ext_2G4_channel_multiatt
       path: tools/bsim/components/ext_2G4_channel_multiatt
       revision: bde72a57384dde7a4310bcf3843469401be93074
       groups:
         - babblesim
     - name: babblesim_ext_2G4_modem_magic
       remote: babblesim
-      repo-path: ext_2G4_modem_magic.git
+      repo-path: ext_2G4_modem_magic
       path: tools/bsim/components/ext_2G4_modem_magic
       revision: cb70771794f0bf6f262aa474848611c68ae8f1ed
       groups:
         - babblesim
     - name: babblesim_ext_2G4_modem_BLE_simple
       remote: babblesim
-      repo-path: ext_2G4_modem_BLE_simple.git
+      repo-path: ext_2G4_modem_BLE_simple
       path: tools/bsim/components/ext_2G4_modem_BLE_simple
       revision: 809ab073159c9ab6686c2fea5749b0702e0909f7
       groups:
         - babblesim
     - name: babblesim_ext_2G4_device_burst_interferer
       remote: babblesim
-      repo-path: ext_2G4_device_burst_interferer.git
+      repo-path: ext_2G4_device_burst_interferer
       path: tools/bsim/components/ext_2G4_device_burst_interferer
       revision: 5b5339351d6e6a2368c686c734dc8b2fc65698fc
       groups:
         - babblesim
     - name: babblesim_ext_2G4_device_WLAN_actmod
       remote: babblesim
-      repo-path: ext_2G4_device_WLAN_actmod.git
+      repo-path: ext_2G4_device_WLAN_actmod
       path: tools/bsim/components/ext_2G4_device_WLAN_actmod
       revision: 9cb6d8e72695f6b785e57443f0629a18069d6ce4
       groups:
         - babblesim
     - name: babblesim_ext_2G4_device_playback
       remote: babblesim
-      repo-path: ext_2G4_device_playback.git
+      repo-path: ext_2G4_device_playback
       path: tools/bsim/components/ext_2G4_device_playback
       revision: 85c645929cf1ce995d8537107d9dcbd12ed64036
       groups:
         - babblesim
     - name: babblesim_ext_libCryptov1
       remote: babblesim
-      repo-path: ext_libCryptov1.git
+      repo-path: ext_libCryptov1
       path: tools/bsim/components/ext_libCryptov1
       revision: eed6d7038e839153e340bd333bc43541cb90ba64
       groups:
