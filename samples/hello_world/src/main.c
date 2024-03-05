@@ -8,6 +8,13 @@
 
 int main(void)
 {
-	printf("Hello World! %s\n", CONFIG_BOARD);
+	printf("Hello World! %s\n",
+#ifdef CONFIG_BOARD_TARGET
+	       CONFIG_BOARD_TARGET
+#else
+	       CONFIG_BOARD
+#endif
+	);
+
 	return 0;
 }
