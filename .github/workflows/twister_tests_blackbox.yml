@@ -50,7 +50,7 @@ jobs:
         echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
     - name: Set Up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
