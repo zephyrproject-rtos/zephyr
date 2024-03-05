@@ -3346,7 +3346,7 @@ NXP Platforms (S32):
 NXP Platforms (MPU):
   status: maintained
   maintainers:
-    - dleach
+    - dleach02
   collaborators:
     - JiafeiPan
     - dbaluta
