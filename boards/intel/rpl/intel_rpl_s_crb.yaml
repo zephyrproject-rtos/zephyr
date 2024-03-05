@@ -12,6 +12,7 @@ supported:
   - watchdog
   - rtc
   - pwm
+  - gpio
 testing:
   ignore_tags:
     - net
