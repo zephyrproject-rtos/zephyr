@@ -21,6 +21,15 @@ jobs:
       fail-fast: false
       matrix:
         platform: ["mps2/an385", "native_sim", "qemu_x86", "unit_testing"]
+        include:
+          - platform: 'mps2/an385'
+            normalized: 'mps2_an385'
+          - platform: 'native_sim'
+            normalized: 'native_sim'
+          - platform: 'qemu_x86'
+            normalized: 'qemu_x86'
+          - platform: 'unit_testing'
+            normalized: 'unit_testing'
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -90,7 +99,8 @@ jobs:
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
           pip3 install gcovr==6.0
-          ./scripts/twister -E ${{ matrix.platform }}-testplan.json
+          ./scripts/twister -E ${{matrix.normalized}}-testplan.json
+          ls -la
           ./scripts/twister -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano
 
       - name: ccache stats post
@@ -101,16 +111,16 @@ jobs:
       - name: Rename coverage files
         if: always()
         run: |
-          cp twister-out/coverage.json coverage/reports/${{ matrix.platform }}.json
+          mv twister-out/coverage.json coverage/reports/${{matrix.normalized}}.json
 
       - name: Upload Coverage Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage Data (Subset ${{ matrix.platform }})
+          name: Coverage Data (Subset ${{ matrix.normalized }})
           path: |
-            coverage/reports/${{ matrix.platform }}.json
-            ${{ matrix.platform }}-testplan.json
+            coverage/reports/${{ matrix.normalized }}.json
+            ${{ matrix.normalized }}-testplan.json
 
   codecov-results:
     name: "Publish Coverage Results"
