@@ -26,20 +26,20 @@
 
 	i2c2_default: i2c2_default {
 		group1 {
-			pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 19)>,
-				<SMARTBOND_PINMUX(I2C2_SCL, 0, 18)>;
+			pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 28)>,
+				<SMARTBOND_PINMUX(I2C2_SCL, 0, 29)>;
 			bias-pull-up;
 		};
 	};
 
 	spi_controller: spi_controller {
 		group1 {
-			pinmux = < SMARTBOND_PINMUX(SPI_CLK, 0, 21) >,
-				<SMARTBOND_PINMUX(SPI_DO, 0, 26)>;
+			pinmux = <SMARTBOND_PINMUX(SPI_CLK, 0, 22)>,
+				<SMARTBOND_PINMUX(SPI_DO, 0, 23)>;
 			output-enable;
 		};
 		group2 {
-			pinmux = <SMARTBOND_PINMUX(SPI_DI, 0, 24)>;
+			pinmux = <SMARTBOND_PINMUX(SPI_DI, 0, 25)>;
 			input-enable;
 		};
 	};
