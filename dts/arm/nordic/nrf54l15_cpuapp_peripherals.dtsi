@@ -379,7 +379,7 @@ wdt30: watchdog@108000 {
 	compatible = "nordic,nrf-wdt";
 	reg = <0x108000 0x620>;
 	interrupts = <264 NRF_DEFAULT_IRQ_PRIORITY>;
-	status = "disabled";
+	status = "okay";
 };
 
 wdt31: watchdog@109000 {
