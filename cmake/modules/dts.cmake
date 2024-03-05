@@ -133,16 +133,18 @@ if(NOT DEFINED DTS_SOURCE)
 endif()
 
 if(EXISTS ${DTS_SOURCE})
-  # We found a devicetree. Check for a board revision overlay.
-  if(DEFINED BOARD_REVISION)
-    zephyr_build_string(dts_board_string BOARD ${BOARD}
-                                         BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
-                                         BOARD_REVISION ${BOARD_REVISION}
-    )
-    if(EXISTS ${BOARD_DIR}/${dts_board_string}.overlay)
-      list(APPEND DTS_SOURCE ${BOARD_DIR}/${dts_board_string}.overlay)
-    endif()
-  endif()
+  # We found a devicetree. Append all relevant dts overlays we can find...
+  zephyr_file(CONF_FILES ${BOARD_DIR} DTS DTS_SOURCE)
+
+  zephyr_file(
+    CONF_FILES ${BOARD_DIR}
+    DTS no_rev_suffix_dts_board_overlays
+    BOARD ${BOARD}
+    BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+  )
+
+  # ...but remove the ones that do not include the revision suffix
+  list(REMOVE_ITEM DTS_SOURCE ${no_rev_suffix_dts_board_overlays})
 else()
   # If we don't have a devicetree, provide an empty stub
   set(DTS_SOURCE ${ZEPHYR_BASE}/boards/common/stub.dts)
