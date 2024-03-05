@@ -15,6 +15,9 @@ menuconfig WIFI_ESP32
 	select MBEDTLS_ECDH_C
 	select MBEDTLS_ECDSA_C
 	select MBEDTLS_ECP_C
+	select THREAD_STACK_INFO
+	select DYNAMIC_THREAD
+	select DYNAMIC_THREAD_ALLOC
 	help
 	  Enable ESP32 SoC WiFi support. Only supported in single
 	  core mode because the network stack is not aware of SMP
@@ -43,28 +46,31 @@ config ESP32_WIFI_STA_RECONNECT
 	help
 	  Set auto WiFI reconnection when disconnected.
 
-config ESP32_WIFI_EVENT_TASK_STACK_SIZE
-	int "Event Task Stack Size"
-	default 4096
+config ESP32_WIFI_SW_COEXIST_ENABLE
+	bool
+	help
+	  Software controls WiFi/Bluetooth coexistence. Not supported yet.
 
-config ESP32_WIFI_EVENT_TASK_PRIO
-	int "Event Task Priority"
-	default 4
+config ESP32_WIFI_NET_ALLOC_SPIRAM
+	bool "Allocate memory of WiFi and NET in SPIRAM"
+	depends on ESP_SPIRAM
+	help
+	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
+	  for application stack.
 
 config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 	int "Max number of WiFi static RX buffers"
 	range 2 25
 	default 10
 	help
-	  Set the number of WiFi static RX buffers. Each buffer takes approximately
-	  1.6KB of RAM. The static rx buffers are allocated when esp_wifi_init is
-	  called, they are not freed until esp_wifi_deinit is called.
+	  Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
+	  The static rx buffers are allocated when esp_wifi_init is called, they are not freed
+	  until esp_wifi_deinit is called.
 
-	  WiFi hardware use these buffers to receive all 802.11 frames. A higher
-	  number may allow higher throughput but increases memory use.
-	  If ESP32_WIFI_AMPDU_RX_ENABLED is enabled, this value is recommended to
-	  set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to achieve better
-	  throughput and compatibility with both stations and APs.
+	  WiFi hardware use these buffers to receive all 802.11 frames.
+	  A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
+	  is enabled, this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to
+	  achieve better throughput and compatibility with both stations and APs.
 
 config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
 	int "Max number of WiFi dynamic RX buffers"
@@ -133,6 +139,7 @@ config ESP32_WIFI_STATIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_CACHE_TX_BUFFER_NUM
 	int "Max number of WiFi cache TX buffers"
+	depends on ESP_SPIRAM
 	range 16 128
 	default 32
 	help
@@ -162,6 +169,7 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_CSI_ENABLED
 	bool "WiFi CSI(Channel State Information)"
+	default n
 	help
 	  Select this option to enable CSI(Channel State Information) feature.
 	  CSI takes about CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM.
@@ -211,23 +219,17 @@ config ESP32_WIFI_RX_BA_WIN
 	  should be 16 to achieve better throughput and compatibility with both
 	  stations and APs.
 
-choice ESP32_WIFI_TASK_CORE_ID
-	prompt "WiFi Task Core ID"
-	default ESP32_WIFI_TASK_PINNED_TO_CORE_0
+config ESP32_WIFI_AMSDU_TX_ENABLED
+	bool "WiFi AMSDU TX"
+	depends on ESP_SPIRAM
+	default n
 	help
-	  Pinned WiFi task to core 0 (core 1 not supported yet)
-
-	config ESP32_WIFI_TASK_PINNED_TO_CORE_0
-		bool "Core 0"
-endchoice
-
-config ESP32_WIFI_SW_COEXIST_ENABLE
-	bool
-	help
-	  Software controls WiFi/Bluetooth coexistence. Not supported yet.
+	  Select this option to enable AMSDU TX feature
 
 config ESP32_WIFI_IRAM_OPT
 	bool "WiFi IRAM speed optimization"
+	default n if (BT && ESP_SPIRAM && SOC_SERIES_ESP32)
+	default y
 	help
 	  Select this option to place frequently called Wi-Fi library functions in IRAM.
 	  When this option is disabled, more than 10Kbytes of IRAM memory will be saved
@@ -235,22 +237,79 @@ config ESP32_WIFI_IRAM_OPT
 
 config ESP32_WIFI_RX_IRAM_OPT
 	bool "WiFi RX IRAM speed optimization"
+	default n if (BT && ESP_SPIRAM && SOC_SERIES_ESP32)
 	help
 	  Select this option to place frequently called Wi-Fi library RX functions in IRAM.
 	  When this option is disabled, more than 17Kbytes of IRAM memory will be saved
 	  but Wi-Fi performance will be reduced.
 
-config ESP32_WIFI_NET_ALLOC_SPIRAM
-	bool "Allocate memory of WiFi and NET in SPIRAM"
-	depends on ESP_SPIRAM
+config ESP32_WIFI_FTM_ENABLE
+	bool "WiFi FTM"
+	default n
+	depends on SOC_SERIES_ESP32C3
 	help
-	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
-	  for application stack.
+	  Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
 
-config ESP_WIFI_SOFTAP_SUPPORT
+config ESP32_WIFI_FTM_INITIATOR_SUPPORT
+	bool "FTM Initiator support"
+	default y
+	depends on ESP32_WIFI_FTM_ENABLE
+
+config ESP32_WIFI_FTM_RESPONDER_SUPPORT
+	bool "FTM Responder support"
+	default y
+	depends on ESP32_WIFI_FTM_ENABLE
+
+config ESP32_WIFI_SOFTAP_SUPPORT
 	bool
 	default y
 	help
 	  Hidden option to enable Wi-Fi SoftAP functions in WPA supplicant and RF libraries.
+
+config ESP32_WIFI_MBEDTLS_CRYPTO
+	bool "Use MbedTLS crypto APIs"
+	default n
+	select MBEDTLS_ECP_C
+	select MBEDTLS_ECDH_C
+	select MBEDTLS_ECDSA_C
+	select MBEDTLS_PKCS5_C
+	select MBEDTLS_PK_WRITE_C
+	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
+	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
+
+config ESP32_WIFI_ENABLE_WPA3_SAE
+	bool "WPA3-Personal"
+	default n
+	select ESP32_WIFI_MBEDTLS_CRYPTO
+	help
+	  Select this option to allow the device to establish a WPA3-Personal connection.
+
+config ESP32_WIFI_ENABLE_WPA3_OWE_STA
+	bool "OWE STA"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to allow the device to establish OWE connection with eligible AP's.
+
+config ESP32_WIFI_ENABLE_SAE_PK
+	bool "SAE-PK"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to enable SAE-PK
+
+config ESP32_WIFI_DEBUG_PRINT
+	bool "Print debug messages from WPA Supplicant"
+	default n
+	help
+	  Select this option to print logging information from WPA supplicant,
+	  this includes handshake information and key hex dumps depending
+	  on the project logging level.
+
+	  Enabling this could increase the build size ~60kb
+	  depending on the project logging level.
 
 endif # WIFI_ESP32

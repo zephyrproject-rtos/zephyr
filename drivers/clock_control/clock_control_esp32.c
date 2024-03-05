@@ -14,29 +14,29 @@
 #undef CPU_RESET_REASON
 #define CPU_RESET_REASON SW_CPU_RESET
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
-#include "esp32/rom/rtc.h"
-#include "soc/dport_reg.h"
+#include <esp32/rom/rtc.h>
+#include <soc/dport_reg.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32S2)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx7
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
-#include "esp32s2/rom/rtc.h"
-#include "soc/dport_reg.h"
+#include <esp32s2/rom/rtc.h>
+#include <soc/dport_reg.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx7
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
-#include "esp32s3/rom/rtc.h"
-#include "soc/dport_reg.h"
-#include "esp32s3/clk.h"
+#include <esp32s3/rom/rtc.h>
+#include <soc/dport_reg.h>
 #elif CONFIG_SOC_SERIES_ESP32C3
 #define DT_CPU_COMPAT espressif_riscv
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
-#include "esp32c3/rom/rtc.h"
+#include <esp32c3/rom/rtc.h>
 #include <soc/soc_caps.h>
 #include <soc/soc.h>
 #include <soc/rtc.h>
 #endif /* CONFIG_SOC_SERIES_ESP32xx */
 
-#include "esp_rom_sys.h"
+#include <esp_rom_sys.h>
+#include <esp_rom_uart.h>
 #include <soc/rtc.h>
 #include <soc/i2s_reg.h>
 #include <soc/apb_ctrl_reg.h>
@@ -44,29 +44,16 @@
 #include <hal/clk_gate_ll.h>
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
-#include <driver/periph_ctrl.h>
-#include <hal/cpu_hal.h>
+#include <esp_private/periph_ctrl.h>
+#include <esp_private/esp_clk.h>
+#include <esp_cpu.h>
+#include <esp_rom_caps.h>
 
 struct esp32_clock_config {
 	int clk_src_sel;
 	uint32_t cpu_freq;
 	uint32_t xtal_freq_sel;
 	int xtal_div;
-};
-
-static uint8_t const xtal_freq[] = {
-#if defined(CONFIG_SOC_SERIES_ESP32) || \
-	defined(CONFIG_SOC_SERIES_ESP32S3)
-	[ESP32_CLK_XTAL_24M] = 24,
-	[ESP32_CLK_XTAL_26M] = 26,
-	[ESP32_CLK_XTAL_40M] = 40,
-	[ESP32_CLK_XTAL_AUTO] = 0
-#elif defined(CONFIG_SOC_SERIES_ESP32S2)
-	[ESP32_CLK_XTAL_40M] = 40,
-#elif defined(CONFIG_SOC_SERIES_ESP32C3)
-	[ESP32_CLK_XTAL_32M] = 32,
-	[ESP32_CLK_XTAL_40M] = 40,
-#endif
 };
 
 static int clock_control_esp32_on(const struct device *dev,
@@ -377,7 +364,7 @@ static void esp32_clock_perip_init(void)
 
 		wifi_bt_sdio_clk = SYSTEM_WIFI_CLK_WIFI_EN |
 			SYSTEM_WIFI_CLK_BT_EN_M |
-			SYSTEM_WIFI_CLK_UNUSED_BIT5 |
+			SYSTEM_WIFI_CLK_I2C_CLK_EN |
 			SYSTEM_WIFI_CLK_UNUSED_BIT12 |
 			SYSTEM_WIFI_CLK_SDIO_HOST_EN;
 	}
@@ -424,8 +411,14 @@ static void esp32_clock_perip_init(void)
 	/* Enable RNG clock. */
 	periph_module_enable(PERIPH_RNG_MODULE);
 
-	esp_rom_uart_tx_wait_idle(0);
-	esp_rom_uart_set_clock_baudrate(0, UART_CLK_FREQ_ROM, 115200);
+	/* Enable TimerGroup 0 clock to ensure its reference counter will never
+	 * be decremented to 0 during normal operation and preventing it from
+	 * being disabled.
+	 * If the TimerGroup 0 clock is disabled and then reenabled, the watchdog
+	 * registers (Flashboot protection included) will be reenabled, and some
+	 * seconds later, will trigger an unintended reset.
+	 */
+	periph_module_enable(PERIPH_TIMG0_MODULE);
 }
 #endif /* CONFIG_SOC_SERIES_ESP32S3 */
 
@@ -472,7 +465,7 @@ static void esp32_clock_perip_init(void)
 
 		wifi_bt_sdio_clk = SYSTEM_WIFI_CLK_WIFI_EN |
 				SYSTEM_WIFI_CLK_BT_EN_M |
-				SYSTEM_WIFI_CLK_UNUSED_BIT5 |
+				SYSTEM_WIFI_CLK_I2C_CLK_EN |
 				SYSTEM_WIFI_CLK_UNUSED_BIT12;
 	}
 
@@ -529,10 +522,10 @@ static int clock_control_esp32_init(const struct device *dev)
 	if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || rtc_get_reset_reason(0) != CPU_RESET_REASON) {
 		rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
 
-		clk_cfg.xtal_freq = xtal_freq[cfg->xtal_freq_sel];
+		clk_cfg.xtal_freq = cfg->xtal_freq_sel;
 		clk_cfg.cpu_freq_mhz = cfg->cpu_freq;
-		clk_cfg.slow_freq = rtc_clk_slow_freq_get();
-		clk_cfg.fast_freq = rtc_clk_fast_freq_get();
+		clk_cfg.slow_clk_src = rtc_clk_slow_freq_get();
+		clk_cfg.fast_clk_src = rtc_clk_fast_freq_get();
 		rtc_clk_init(clk_cfg);
 	}
 
@@ -563,10 +556,19 @@ static int clock_control_esp32_init(const struct device *dev)
 	rtc_clk_cpu_freq_set_config(&new_config);
 
 	/* Re-calculate the ccount to make time calculation correct */
-	cpu_hal_set_cycle_count((uint64_t)cpu_hal_get_cycle_count() * new_freq_mhz / old_freq_mhz);
+	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
 
 	esp32_clock_perip_init();
 
+	uint32_t clock_hz = esp_clk_apb_freq();
+#if ESP_ROM_UART_CLK_IS_XTAL
+	clock_hz = esp_clk_xtal_freq();
+#endif
+	esp_rom_uart_tx_wait_idle(ESP_CONSOLE_UART_NUM);
+
+#if !defined(ESP_CONSOLE_UART_NONE)
+	esp_rom_uart_set_clock_baudrate(ESP_CONSOLE_UART_NUM, clock_hz, ESP_CONSOLE_UART_BAUDRATE);
+#endif
 	return 0;
 }
 
