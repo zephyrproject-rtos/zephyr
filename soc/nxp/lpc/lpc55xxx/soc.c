@@ -88,8 +88,8 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
-	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S36) || \
-	defined(CONFIG_SOC_LPC55S69_CPU0)
+	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) || \
+	defined(CONFIG_SOC_LPC55S36) || defined(CONFIG_SOC_LPC55S69_CPU0)
 	/* Set up the clock sources */
 	/* Configure FRO192M */
 	/* Ensure FRO is on  */

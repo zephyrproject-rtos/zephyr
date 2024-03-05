@@ -31,6 +31,17 @@ config SOC_LPC55S16
 	select HAS_MCUX_MCAN
 	select HAS_MCUX_RNG
 
+config SOC_LPC55S26
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select HAS_MCUX_IAP
+	select HAS_MCUX_LPADC
+	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_RNG
+
 config SOC_LPC55S28
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
