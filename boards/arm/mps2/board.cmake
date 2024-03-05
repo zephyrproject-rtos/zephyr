@@ -26,7 +26,10 @@ board_set_debugger_ifnset(qemu)
 if(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG_BOARD_MPS2_AN521_CPU1)
   # To enable a host tty switch between serial and pty
   #  -chardev serial,path=/dev/ttyS0,id=hostS0
-  list(APPEND QEMU_EXTRA_FLAGS -chardev pty,id=hostS0 -serial chardev:hostS0)
+  # pty is not available on Windows.
+  if(CMAKE_HOST_UNIX)
+    list(APPEND QEMU_EXTRA_FLAGS -chardev pty,id=hostS0 -serial chardev:hostS0)
+  endif()
 
   if(CONFIG_BUILD_WITH_TFM)
     # Override the binary used by qemu, to use the combined
