@@ -1433,8 +1433,6 @@ enum chip_pll_mode {
 #define IT8XXX2_I2C_IDR_CLR           BIT(2)
 #define IT8XXX2_I2C_SLVDATAFLG        BIT(1)
 #define IT8XXX2_I2C_P_CLR             BIT(0)
-#define IT8XXX2_I2C_INT_ANY           (IT8XXX2_I2C_CNT_HOLD | IT8XXX2_I2C_IDW_CLR | \
-				       IT8XXX2_I2C_IDR_CLR | IT8XXX2_I2C_SLVDATAFLG)
 /* 0x13: Nack Status */
 #define IT8XXX2_I2C_NST_CNS           BIT(7)
 #define IT8XXX2_I2C_NST_ID_NACK       BIT(3)
