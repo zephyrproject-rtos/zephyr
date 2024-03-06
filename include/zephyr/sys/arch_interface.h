@@ -489,11 +489,15 @@ static inline struct _cpu *arch_curr_cpu(void);
 static inline uint32_t arch_proc_id(void);
 
 /**
- * Broadcast an interrupt to all CPUs
+ * Send an interrupt to specified CPUs
  *
- * This will invoke z_sched_ipi() on other CPUs in the system.
+ * This will invoke z_sched_ipi() on other CPUs in the system. Whether the IPIs
+ * are targeted to specific CPUs or broadcast to all other cores is up to the
+ * specific implementation.
+ *
+ * @param cpu_bitmap A hint indicating which CPUs need the IPI
  */
-void arch_sched_ipi(void);
+void arch_sched_ipi(uint32_t cpu_bitmap);
 
 
 int arch_smp_init(void);

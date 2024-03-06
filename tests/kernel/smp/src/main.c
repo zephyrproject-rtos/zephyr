@@ -732,16 +732,19 @@ void z_trace_sched_ipi(void)
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 ZTEST(smp, test_smp_ipi)
 {
+	uint32_t  num_cpus;
+
 #ifndef CONFIG_TRACE_SCHED_IPI
 	ztest_test_skip();
 #endif
 
-	TC_PRINT("cpu num=%d", arch_num_cpus());
+	num_cpus = arch_num_cpus();
+	TC_PRINT("cpu num=%d", num_cpus);
 
 	for (int i = 0; i < 3 ; i++) {
 		/* issue a sched ipi to tell other CPU to run thread */
 		sched_ipi_has_called = 0;
-		arch_sched_ipi();
+		arch_sched_ipi((1 << num_cpus) - 1);
 
 		/* Need to wait longer than we think, loaded CI
 		 * systems need to wait for host scheduling to run the

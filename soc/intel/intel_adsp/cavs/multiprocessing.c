@@ -121,13 +121,15 @@ void soc_start_core(int cpu_num)
 	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP;
 }
 
-void arch_sched_ipi(void)
+void arch_sched_ipi(uint32_t cpu_bitmap)
 {
 	uint32_t curr = arch_proc_id();
 	unsigned int num_cpus = arch_num_cpus();
+	uint32_t bit = 1;
 
-	for (int c = 0; c < num_cpus; c++) {
-		if (c != curr && soc_cpus_active[c]) {
+	for (int c = 0; c < num_cpus; c++, bit <<= 1) {
+		if ((c != curr) && soc_cpus_active[c] &&
+		    ((cpu_bitmap & bit) != 0)) {
 			IDC[curr].core[c].itc = BIT(31);
 		}
 	}

@@ -181,12 +181,11 @@ handle the newly-runnable load.
 So where possible, Zephyr SMP architectures should implement an
 interprocessor interrupt.  The current framework is very simple: the
 architecture provides a :c:func:`arch_sched_ipi` call, which when invoked
-will flag an interrupt on all CPUs (except the current one, though
-that is allowed behavior) which will then invoke the :c:func:`z_sched_ipi`
-function implemented in the scheduler.  The expectation is that these
-APIs will evolve over time to encompass more functionality
-(e.g. cross-CPU calls), and that the scheduler-specific calls here
-will be implemented in terms of a more general framework.
+will flag an interrupt on at least the specified CPUs which will then invoke
+the :c:func:`z_sched_ipi` function implemented in the scheduler.  The
+expectation is that these APIs will evolve over time to encompass more
+functionality (e.g. cross-CPU calls), and that the scheduler-specific calls
+here will be implemented in terms of a more general framework.
 
 Note that not all SMP architectures will have a usable IPI mechanism
 (either missing, or just undocumented/unimplemented).  In those cases

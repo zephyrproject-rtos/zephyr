@@ -290,9 +290,11 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	smp_log("ESP32: APPCPU initialized");
 }
 
-void arch_sched_ipi(void)
+void arch_sched_ipi(uint32_t cpu_bitmap)
 {
 	const int core_id = esp_core_id();
+
+	ARG_UNUSED(cpu_bitmap);
 
 	if (core_id == 0) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);

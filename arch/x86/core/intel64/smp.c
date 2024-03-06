@@ -34,8 +34,10 @@ int arch_smp_init(void)
  * it is not clear exactly how/where/why to abstract this, as it
  * assumes the use of a local APIC (but there's no other mechanism).
  */
-void arch_sched_ipi(void)
+void arch_sched_ipi(uint32_t cpu_bitmap)
 {
+	ARG_UNUSED(cpu_bitmap);
+
 	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
 }
 

@@ -260,9 +260,11 @@ static void signal_pending_ipi(void)
 	 */
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
 	if (arch_num_cpus() > 1) {
-		if (_kernel.pending_ipi) {
-			_kernel.pending_ipi = false;
-			arch_sched_ipi();
+		uint32_t cpu_bitmap;
+
+		cpu_bitmap = (uint32_t)atomic_clear(&_kernel.pending_ipi);
+		if (cpu_bitmap != 0) {
+			arch_sched_ipi(cpu_bitmap);
 		}
 	}
 #endif
@@ -397,12 +399,40 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 	update_cache(thread == _current);
 }
 
-static void flag_ipi(void)
+static void flag_ipi(uint32_t ipi_mask)
 {
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
 	if (arch_num_cpus() > 1) {
-		_kernel.pending_ipi = true;
+		atomic_or(&_kernel.pending_ipi, (atomic_val_t)ipi_mask);
 	}
+#endif
+}
+
+/* Create a bitmask of CPUs that need an IPI. Note: sched_spinlock is held. */
+static atomic_val_t ipi_mask_create(struct k_thread *thread)
+{
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	uint32_t  ipi_mask = 0;
+	struct k_thread *cpu_thread;
+	unsigned int num_cpus = arch_num_cpus();
+	uint32_t  id = arch_proc_id();
+
+	for (uint32_t i = 0; i < num_cpus; i++) {
+		if (id == i) {
+			continue;
+		}
+
+		cpu_thread = _kernel.cpus[i].current;
+		if ((cpu_thread != NULL) &&
+		    (cpu_thread->base.prio > thread->base.prio)) {
+			ipi_mask |= (1 << i);
+		}
+	}
+
+	return (atomic_val_t)ipi_mask;
+#else
+	ARG_UNUSED(thread);
+	return 0;
 #endif
 }
 
@@ -458,11 +488,10 @@ static void slice_timeout(struct _timeout *t)
 	slice_expired[cpu] = true;
 
 	/* We need an IPI if we just handled a timeslice expiration
-	 * for a different CPU.  Ideally this would be able to target
-	 * the specific core, but that's not part of the API yet.
+	 * for a different CPU.
 	 */
 	if (IS_ENABLED(CONFIG_SMP) && cpu != _current_cpu->id) {
-		flag_ipi();
+		flag_ipi(1 << cpu);
 	}
 }
 
@@ -616,7 +645,8 @@ static void ready_thread(struct k_thread *thread)
 
 		queue_thread(thread);
 		update_cache(0);
-		flag_ipi();
+
+		flag_ipi(ipi_mask_create(thread));
 	}
 }
 
@@ -691,7 +721,7 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 		 * here, not deferred!
 		 */
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-		arch_sched_ipi();
+		arch_sched_ipi(1 << thread->base.cpu);
 #endif
 	}
 
@@ -1002,6 +1032,8 @@ bool z_set_prio(struct k_thread *thread, int prio)
 			} else {
 				thread->base.prio = prio;
 			}
+
+			flag_ipi(ipi_mask_create(thread));
 			update_cache(1);
 		} else {
 			thread->base.prio = prio;
@@ -1016,8 +1048,6 @@ bool z_set_prio(struct k_thread *thread, int prio)
 void z_thread_priority_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = z_set_prio(thread, prio);
-
-	flag_ipi();
 
 	if (need_sched && _current->base.sched_locked == 0U) {
 		z_reschedule_unlocked();

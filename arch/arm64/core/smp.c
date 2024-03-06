@@ -210,8 +210,10 @@ void sched_ipi_handler(const void *unused)
 }
 
 /* arch implementation of sched_ipi */
-void arch_sched_ipi(void)
+void arch_sched_ipi(uint32_t cpu_bitmap)
 {
+	ARG_UNUSED(cpu_bitmap);
+
 	broadcast_ipi(SGI_SCHED_IPI);
 }
 
