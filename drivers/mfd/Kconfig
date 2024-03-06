@@ -30,4 +30,6 @@ source "drivers/mfd/Kconfig.npm6001"
 source "drivers/mfd/Kconfig.lpflexcomm"
 source "drivers/mfd/Kconfig.tle9104"
 
+source "drivers/mfd/ateccx08/Kconfig"
+
 endif # MFD

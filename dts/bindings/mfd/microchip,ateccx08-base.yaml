@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: [i2c-device.yaml]
+
+bus: ateccx08
+
+properties:
+  wake-delay:
+    type: int
+    description: Delay in us to wait for the device to wake up. 1500us is the
+      minimum value according to the datasheet.
+    default: 1500
+  retries:
+    type: int
+    description: number of retries for operations
