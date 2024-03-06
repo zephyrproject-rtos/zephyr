@@ -199,6 +199,7 @@ if(NOT "${ret_board}" STREQUAL "")
   set(multi_val  "REVISIONS;SOCS;QUALIFIERS")
   cmake_parse_arguments(LIST_BOARD "" "${single_val}" "${multi_val}" ${ret_board})
   set(BOARD_DIR ${LIST_BOARD_DIR} CACHE PATH "Board directory for board (${BOARD})" FORCE)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${BOARD_DIR}/board.yml)
 
   # Create two CMake variables identifying the hw model.
   # CMake variable: HWM=[v1,v2]
