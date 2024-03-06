@@ -76,7 +76,7 @@ static int gpio_shakti_pin_configure (const struct device *dev,
                         gpio_flags_t flags){
 
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);
-    const struct gpio_shakti_regs_t *cfg = DEV_GPIO_CFG(dev);
+    const struct gpio_shakti_config *cfg = DEV_GPIO_CFG(dev);
 
     gpio->direction |= (flags << pin);
     printk("Configuration Done2\n");
