@@ -8,6 +8,10 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
 
+/* Warning: The test has been written for testing boards with single
+ * instance of Flash Simulator device only.
+ */
+
 /* configuration derived from DT */
 #ifdef CONFIG_ARCH_POSIX
 #define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_0)
@@ -73,6 +77,44 @@ static void test_check_pattern32(off_t start, uint32_t (*pattern_gen)(void),
 			     "expected 0x%08x",
 			     start + off, r_val32, val32);
 	}
+}
+
+/* ret < 0 is errno; ret == 1 is bad value in flash */
+static int test_check_erase(const struct device *dev, off_t offset, size_t size)
+{
+	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
+	int rc;
+	int i = 0;
+
+	BUILD_ASSERT(sizeof(buf) >= FLASH_SIMULATOR_PROG_UNIT);
+
+	i = 0;
+	while (i < size) {
+		size_t chunk = MIN(size - i, sizeof(buf));
+		/* The memset is done to set buf to something else than
+		 * FLASH_SIMULATOR_ERASE_VALUE, as we are trying to chek
+		 * whether that is what is now in the memory.
+		 */
+		memset(buf, ~FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+		rc = flash_read(flash_dev, offset + i,
+				buf, chunk);
+		if (rc < 0) {
+			TC_PRINT("Unexpected flash_read fail @ %ld",
+				 (long)(offset + i));
+			return rc;
+		}
+		do {
+			if ((uint8_t)buf[i & (sizeof(buf) - 1)] !=
+			    (uint8_t)FLASH_SIMULATOR_ERASE_VALUE) {
+				TC_PRINT("Flash not erased at %ld\n",
+					 (long)(offset + i));
+				return 1;
+			}
+			++i;
+			--chunk;
+		} while (chunk);
+	}
+	return 0;
 }
 
 /* Get access to the device and erase it ready for testing*/
@@ -259,6 +301,8 @@ ZTEST(flash_sim_api, test_align)
 	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
+#if !IS_ENABLED(CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES) &&	\
+	!IS_ENABLED(CONFIG_FLASH_SIMULATOR_RAMLIKE)
 ZTEST(flash_sim_api, test_double_write)
 {
 	int rc;
@@ -282,6 +326,122 @@ ZTEST(flash_sim_api, test_double_write)
 				 &data, sizeof(data));
 	zassert_equal(-EIO, rc, "Unexpected error code (%d)", rc);
 }
+#endif
+
+#if IS_ENABLED(CONFIG_FLASH_SIMULATOR_RAMLIKE)
+ZTEST(flash_sim_api, test_ramlike)
+{
+	/* Within code below there is assumption that the src size is
+	 * equal or greater than the FLASH_SIMULATOR_PROG_UNIT
+	 * (write-block-size) of device.
+	 */
+	const uint8_t src[] = "Hello world! This is test string";
+	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
+	/* Round up to next write-block-size */
+	int max = (sizeof(src) + FLASH_SIMULATOR_PROG_UNIT - 1) &
+		  ~(FLASH_SIMULATOR_PROG_UNIT - 1);
+	int rc;
+	int i = 0;
+	int is = 0;	/* The index within src */
+
+	BUILD_ASSERT(sizeof(src) >= FLASH_SIMULATOR_PROG_UNIT);
+
+	/* Scrub memory with something constant */
+	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+	while (i < max) {
+		rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + i,
+				 buf, sizeof(buf));
+		zassert_equal(0, rc, "flash_write should succeed");
+		i += sizeof(buf);
+	}
+
+	/* Check the scrubbing */
+	zassert_equal(0, test_check_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, max),
+		      "Area not erased");
+
+	/* Now write something new */
+	i = 0;
+	while (i < max) {
+		do {
+			buf[i & (sizeof(buf) - 1)] = src[is];
+			++i;
+			++is;
+
+			/* Continue writing from the beginning of the src */
+			if (is >= sizeof(src)) {
+				is = 0;
+			}
+		} while (i & (sizeof(buf) - 1));
+		rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET	+ i - sizeof(buf),
+				 buf, sizeof(buf));
+		zassert_equal(0, rc, "flash_write should succeed");
+	}
+
+	/* Check the write */
+	i = 0;
+	is = 0;
+	while (i < max) {
+		rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + i,
+				buf, sizeof(buf));
+		zassert_equal(0, rc, "flash_read should succeed");
+		do {
+			zassert_equal((uint8_t)src[is], (uint8_t)buf[i & (sizeof(buf) - 1)],
+				      "Expected src and buf to match at index %d\n", i);
+			++i;
+			++is;
+			/* Src has wrapped around */
+			if (is >= sizeof(src)) {
+				is = 0;
+			}
+		} while (i & (sizeof(buf) - 1));
+		zassert_equal(0, rc, "Unexpected value read");
+	}
+
+	/* Because we are checking random access writes, we are now going to
+	 * write binary not of the same data we have just written. If this would be
+	 * program-erase type memory, where you can only change from erase value
+	 * to opposite, such write would render incorrect data in memory,
+	 * but this is random access device so we should get exactly what we write.
+	 */
+	i = 0;
+	is = 0;
+	while (i < max) {
+		do {
+			buf[i & (sizeof(buf) - 1)] = ~src[is];
+			++i;
+			++is;
+
+			/* Continue writing from the beginning of the src */
+			if (is >= sizeof(src)) {
+				is = 0;
+			}
+		} while (i & (sizeof(buf) - 1));
+		rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET	+ i - sizeof(buf),
+				 buf, sizeof(buf));
+		zassert_equal(0, rc, "flash_write should succeed");
+	}
+
+	/* Check the write */
+	i = 0;
+	is = 0;
+	while (i < max) {
+		rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + i,
+				buf, sizeof(buf));
+		zassert_equal(0, rc, "flash_read should succeed");
+		do {
+			zassert_equal((uint8_t)~src[is], (uint8_t)buf[i & (sizeof(buf) - 1)],
+				      "Expected src and buf to match at index %d\n", i);
+			++i;
+			++is;
+			/* Src has wrapped around */
+			if (is >= sizeof(src)) {
+				is = 0;
+			}
+		} while (i & (sizeof(buf) - 1));
+		zassert_equal(0, rc, "Unexpected value read");
+	}
+}
+#endif
 
 ZTEST(flash_sim_api, test_get_erase_value)
 {
