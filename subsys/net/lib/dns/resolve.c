@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include "dns_pack.h"
 #include "dns_internal.h"
+#include "dns_cache.h"
 
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
@@ -38,14 +39,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define DNS_BUF_TIMEOUT K_MSEC(500) /* ms */
 
-/* RFC 1035, 3.1. Name space definitions
- * To simplify implementations, the total length of a domain name (i.e.,
- * label octets and label length octets) is restricted to 255 octets or
- * less.
- */
-#define DNS_MAX_NAME_LEN	255
-
-#define DNS_QUERY_MAX_SIZE	(DNS_MSG_HEADER_SIZE + DNS_MAX_NAME_LEN + \
+#define DNS_QUERY_MAX_SIZE	(DNS_MSG_HEADER_SIZE + CONFIG_DNS_RESOLVER_MAX_QUERY_LEN + \
 				 DNS_QTYPE_LEN + DNS_QCLASS_LEN)
 
 /* This value is recommended by RFC 1035 */
@@ -71,8 +65,12 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
-NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, DNS_MAX_NAME_LEN,
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
 		    0, NULL);
+
+#ifdef CONFIG_DNS_RESOLVER_CACHE
+DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);
+#endif /* CONFIG_DNS_RESOLVER_CACHE */
 
 static struct dns_resolve_context dns_default_ctx;
 
@@ -635,6 +633,10 @@ query_known:
 
 			invoke_query_callback(DNS_EAI_INPROGRESS, &info,
 					      &ctx->queries[*query_idx]);
+#ifdef CONFIG_DNS_RESOLVER_CACHE
+			dns_cache_add(&dns_cache,
+				ctx->queries[*query_idx].query, &info, ttl);
+#endif /* CONFIG_DNS_RESOLVER_CACHE */
 			items++;
 			break;
 
@@ -1123,6 +1125,9 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 	int failure = 0;
 	bool mdns_query = false;
 	uint8_t hop_limit;
+#ifdef CONFIG_DNS_RESOLVER_CACHE
+	struct dns_addrinfo cached_info[CONFIG_DNS_RESOLVER_AI_MAX_ENTRIES] = {0};
+#endif /* CONFIG_DNS_RESOLVER_CACHE */
 
 	if (!ctx || !query || !cb) {
 		return -EINVAL;
@@ -1184,6 +1189,21 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 	}
 
 try_resolve:
+#ifdef CONFIG_DNS_RESOLVER_CACHE
+	ret = dns_cache_find(&dns_cache, query, cached_info, sizeof(cached_info));
+	if (ret > 0) {
+		/* The query was cached, no
+		 * need to continue further.
+		 */
+		for (size_t cache_index = 0; cache_index < ret; cache_index++) {
+			cb(DNS_EAI_INPROGRESS, &cached_info[cache_index], user_data);
+		}
+		cb(DNS_EAI_ALLDONE, NULL, user_data);
+
+		return 0;
+	}
+#endif /* CONFIG_DNS_RESOLVER_CACHE */
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
@@ -1220,7 +1240,7 @@ try_resolve:
 	}
 
 	ret = dns_msg_pack_qname(&dns_qname->len, dns_qname->data,
-				DNS_MAX_NAME_LEN, ctx->queries[i].query);
+				CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, ctx->queries[i].query);
 	if (ret < 0) {
 		goto quit;
 	}
