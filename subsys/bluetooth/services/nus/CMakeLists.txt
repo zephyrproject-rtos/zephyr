@@ -8,3 +8,7 @@ zephyr_library_sources(
 	nus.c
 	nus_inst.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_BT_NUS_AUTO_START_BLUETOOTH
+	bt_nus_auto_start_bt.c
+)
