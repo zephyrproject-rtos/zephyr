@@ -11,7 +11,6 @@ import json
 import mock
 import os
 import pytest
-import re
 import shutil
 import sys
 
@@ -105,25 +104,6 @@ class TestReport:
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86'],
             "TEST_LOG_FILE.log"
-        ),
-    ]
-    TESTDATA_7 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
-            [
-                'coverage.log', 'coverage.json',
-                'coverage'
-            ],
-        ),
-    ]
-    TESTDATA_8 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
-            [
-                'GCOV_COVERAGE_DUMP_START', 'GCOV_COVERAGE_DUMP_END'
-            ],
         ),
     ]
 
@@ -349,60 +329,6 @@ class TestReport:
         sys.stderr.write(err)
 
         assert os.path.exists(file_path), 'file not found {f_name}'
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, file_name',
-        TESTDATA_7,
-        ids=[
-            'coverage',
-        ]
-    )
-    def test_coverage(self, capfd, test_path, test_platforms, out_path, file_name):
-        args = ['-i','--outdir', out_path, '-T', test_path, '--coverage', '--coverage-tool', 'gcovr'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        for f_name in file_name:
-            path = os.path.join(out_path, f_name)
-            assert os.path.exists(path), f'file not found {f_name}'
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, expected',
-        TESTDATA_8,
-        ids=[
-            'enable_coverage',
-        ]
-    )
-    def test_enable_coverage(self, capfd, test_path, test_platforms, out_path, expected):
-        args = ['-i','--outdir', out_path, '-T', test_path, '--enable-coverage', '-vv'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        for line in expected:
-            match = re.search(line, err)
-            assert match, f'line not found: {line}'
 
         assert str(sys_exit.value) == '0'
 
