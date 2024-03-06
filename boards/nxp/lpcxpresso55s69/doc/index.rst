@@ -335,13 +335,14 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0 *****
-   Hello World! lpcxpresso55s69_cpu0
+   Hello World! lpcxpresso55s69
 
 Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
 ----------------------------------------------------------------------
-The TF-M integration samples can be run using the ``lpcxpresso55s69_ns`` target.
-To run we need to manually flash the resulting image (``tfm_merged.hex``) with
-a J-Link as follows (reset and erase are for recovering a locked core):
+The TF-M integration samples can be run using the
+``lpcxpresso55s69/lpc55s69/cpu0/ns`` target. To run we need to manually flash
+the resulting image (``tfm_merged.hex``) with a J-Link as follows
+(reset and erase are for recovering a locked core):
 
    .. code-block:: console
 
@@ -354,20 +355,11 @@ We need to reset the board manually after flashing the image to run this code.
 
 Building a dual-core image
 --------------------------
-The dual-core samples are run using ``lpcxpresso55s69_cpu0`` target,
-``lpcxpresso55s69_cpu1`` will be automatically built and merged in a single
-image when ``SECOND_CORE_MCUX`` is selected.
-To run we need to manually flash the resulting image (``multicore.bin``) with a
-J-Link as follows (reset and erase are for recovering a locked core):
-
-   .. code-block:: console
-
-      JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
-      J-Link>r
-      J-Link>erase
-      J-Link>loadfile build/multicore.bin
-
-We need to reset the board manually after flashing the image to run this code.
+The dual-core samples are run using ``lpcxpresso55s69/lpc55s69/cpu0`` target.
+Images built for ``lpcxpresso55s69/lpc55s69/cpu1`` will be loaded from flash
+and executed on the second core when ``SECOND_CORE_MCUX`` is selected. For
+an example of building for both cores with sysbuild, see
+``samples/subsys/ipc/openamp/``
 
 Debugging
 =========
@@ -377,7 +369,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso55s69_cpu0
+   :board: lpcxpresso55s69/lpc55s69/cpu0
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -386,7 +378,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS zephyr-v1.14.0 *****
-   Hello World! lpcxpresso55s69_cpu0
+   Hello World! lpcxpresso55s69
 
 .. _LPC55S69 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/lpc-cortex-m-mcus/lpc5500-cortex-m33/high-efficiency-arm-cortex-m33-based-microcontroller-family:LPC55S6x
