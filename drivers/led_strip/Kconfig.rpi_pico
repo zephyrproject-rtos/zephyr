@@ -1,0 +1,11 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config RASPBERRYPI_PICO_WS2812_CONTROLLER_PIO
+	bool "Raspberry Pi Pico PIO based WS2812 controller"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_WS2812_CONTROLLER_PIO_ENABLED
+	select PICOSDK_USE_PIO
+	help
+	  Use the PIO as WS2812 LED strip controller
