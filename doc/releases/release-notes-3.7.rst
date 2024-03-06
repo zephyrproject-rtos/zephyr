@@ -87,6 +87,7 @@ Drivers and Sensors
     supported bitrate of a CAN controller/transceiver combination.
   * Updated the CAN timing functions to take the minimum supported bitrate into consideration when
     validating the bitrate.
+  * Made the ``sample-point`` and ``sample-point-data`` devicetree properties optional.
 
 * Clock control
 
