@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: ["eeprom-base.yaml", i2c-device.yaml]
+
+properties:
+  wake-delay:
+    type: int
+    description: delay in us to wait for the device to wake up
+    default: 1500
+  retries:
+    type: int
+    description: number of retries for operations
+    default: 20
