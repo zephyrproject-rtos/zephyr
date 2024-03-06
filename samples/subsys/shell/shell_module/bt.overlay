@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Croxel, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+	chosen {
+		zephyr,console = &bt_nus_console_uart;
+		zephyr,shell-uart = &bt_nus_console_uart;
+	};
+
+	bt_nus_console_uart: bt_nus_console_uart {
+		compatible = "zephyr,nus-uart";
+		rx-fifo-size = <1024>;
+		tx-fifo-size = <1024>;
+	};
+};
