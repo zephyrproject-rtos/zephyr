@@ -443,8 +443,6 @@
 				  NUMAKER_CLK_CLKDIV5_CANFD0(1)>;
 			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
 			status = "disabled";
-			sample-point = <875>;
-			sample-point-data = <875>;
 		};
 
 		canfd1: canfd@40024000 {
@@ -459,8 +457,6 @@
 				  NUMAKER_CLK_CLKDIV5_CANFD1(1)>;
 			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
 			status = "disabled";
-			sample-point = <875>;
-			sample-point-data = <875>;
 		};
 
 		canfd2: canfd@40028000 {
@@ -475,8 +471,6 @@
 				  NUMAKER_CLK_CLKDIV5_CANFD2(1)>;
 			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
 			status = "disabled";
-			sample-point = <875>;
-			sample-point-data = <875>;
 		};
 
 		canfd3: canfd@4002c000 {
@@ -491,8 +485,6 @@
 				  NUMAKER_CLK_CLKDIV5_CANFD3(1)>;
 			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
 			status = "disabled";
-			sample-point = <875>;
-			sample-point-data = <875>;
 		};
 
 		emac: ethernet@40012000 {

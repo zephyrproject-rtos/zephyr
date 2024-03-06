@@ -328,8 +328,6 @@
 		interrupt-names = "int0", "int1";
 		clocks = <&syscon MCUX_MCAN_CLK>;
 		bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
-		sample-point = <875>;
-		sample-point-data = <875>;
 		status = "disabled";
 	};
 

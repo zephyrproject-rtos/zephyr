@@ -504,7 +504,6 @@
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning", "rx-warning", "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
 			clk-source = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 

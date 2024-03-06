@@ -208,7 +208,6 @@
 &can_node1 {
 	status = "okay";
 	bus-speed = <125000>;
-	sample-point = <875>;
 	input-src = "RXDC";
 	pinctrl-0 = <&can_tx_p1_12_node1 &can_rx_p1_13_node1>;
 	pinctrl-names = "default";
