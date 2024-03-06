@@ -528,7 +528,6 @@
 		test_can0: can@55553333 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55553333 0x1000 >;
-			sample-point = <875>;
 			bus-speed = <125000>;
 			status = "okay";
 			phys = <&test_transceiver0>;
@@ -537,7 +536,6 @@
 		test_can1: can@55554444 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55554444 0x1000 >;
-			sample-point = <875>;
 			bus-speed = <125000>;
 			status = "okay";
 
@@ -550,7 +548,6 @@
 		test_can2: can@55555555 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55555555 0x1000 >;
-			sample-point = <875>;
 			bus-speed = <125000>;
 			status = "okay";
 
@@ -562,7 +559,6 @@
 		test_can3: can@55557777 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55556666 0x1000 >;
-			sample-point = <875>;
 			bus-speed = <125000>;
 			status = "okay";
 			phys = <&test_transceiver1>;

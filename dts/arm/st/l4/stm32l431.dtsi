@@ -107,7 +107,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			sample-point = <875>;
 			status = "disabled";
 		};
 

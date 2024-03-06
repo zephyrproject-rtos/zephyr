@@ -157,8 +157,6 @@
 	phys = <&transceiver0>;
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
-	sample-point = <875>;
-	sample-point-data = <875>;
 	status = "okay";
 };
 
