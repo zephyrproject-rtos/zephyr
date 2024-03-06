@@ -30,6 +30,78 @@
 		};
 	};
 
+	irqsteer: interrupt-controller@510a0000 {
+		compatible = "nxp,irqsteer-intc";
+		reg = <0x510a0000 DT_SIZE_K(64)>;
+
+		#size-cells = <0>;
+		#address-cells = <1>;
+
+		master0: interrupt-controller@0 {
+			compatible = "nxp,irqsteer-master";
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 19 0 0>;
+		};
+
+		master1: interrupt-controller@1 {
+			compatible = "nxp,irqsteer-master";
+			reg = <1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 20 0 0>;
+		};
+
+		master2: interrupt-controller@2 {
+			compatible = "nxp,irqsteer-master";
+			reg = <2>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 21 0 0>;
+		};
+
+		master3: interrupt-controller@3 {
+			compatible = "nxp,irqsteer-master";
+			reg = <3>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 22 0 0>;
+		};
+
+		master4: interrupt-controller@4 {
+			compatible = "nxp,irqsteer-master";
+			reg = <4>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 23 0 0>;
+		};
+
+		master5: interrupt-controller@5 {
+			compatible = "nxp,irqsteer-master";
+			reg = <5>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 24 0 0>;
+		};
+
+		master6: interrupt-controller@6 {
+			compatible = "nxp,irqsteer-master";
+			reg = <6>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 25 0 0>;
+		};
+
+		master7: interrupt-controller@7 {
+			compatible = "nxp,irqsteer-master";
+			reg = <7>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 26 0 0>;
+		};
+	};
+
 	sram0: memory@92400000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
@@ -64,15 +136,8 @@
 	lpuart2: serial@5a080000 {
 		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
 		reg = <0x5a080000 DT_SIZE_K(4)>;
-		/* TODO: THIS INTID IS JUST A DUMMY ONE UNTIL IRQ_STEER
-		 * DRIVER CAN BE USED ON i.MX8QM/QXP. DO NOT ATTEMPT TO
-		 * ENABLE UART INTERRUPT SUPPORT.
-		 *
-		 * THE CURRENT INTID VALUE IS CHOSEN SUCH THAT gen_isr_tables.py
-		 * WILL BREAK IF YOU ATTEMPT TO IRQ_CONNECT().
-		 */
-		interrupt-parent = <&clic>;
-		interrupts = <259 0 0>;
+		interrupt-parent = <&master4>;
+		interrupts = <3>;
 		/* this is actually LPUART2 clock but the macro indexing starts at 1 */
 		clocks = <&ccm IMX_CCM_LPUART3_CLK 0x0 0x0>;
 		status = "disabled";
