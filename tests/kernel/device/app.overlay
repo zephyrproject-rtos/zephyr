@@ -52,6 +52,18 @@
 		status = "okay";
 	};
 
+	fakedeferdriver@E7000000 {
+		compatible = "fakedeferdriver";
+		reg = <0xE7000000 0x2000>;
+		status = "okay";
+	};
+
+	fakedeferdriver@E8000000 {
+		compatible = "fakedeferdriver";
+		reg = <0xE8000000 0x2000>;
+		status = "okay";
+	};
+
 	fakedomain_0: fakedomain_0 {
 		compatible = "fakedomain";
 		status = "okay";

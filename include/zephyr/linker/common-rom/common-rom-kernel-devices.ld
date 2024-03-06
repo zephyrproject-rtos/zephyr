@@ -18,9 +18,16 @@
 		CREATE_OBJ_LEVEL(init, APPLICATION)
 		CREATE_OBJ_LEVEL(init, SMP)
 		__init_end = .;
+#ifdef CONFIG_DEVICE_DEFER_CALLBACK_SECTION
+		KEEP(*(.device_init_cb))
+#endif
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	ITERABLE_SECTION_ROM_NUMERIC(device, 4)
+
+#ifdef CONFIG_DEVICE_DEFER_INIT
+	ITERABLE_SECTION_ROM(z_device_before_init, 4)
+#endif
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SHARED_INTERRUPTS)
 	/* since z_shared_isr() is not referenced anywhere when

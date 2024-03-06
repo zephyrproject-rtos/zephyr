@@ -1297,6 +1297,30 @@ config DEVICE_MUTABLE
 	  Support mutable devices. Mutable devices are instantiated in SRAM
 	  instead of Flash and are runtime modifiable in kernel mode.
 
+config DEVICE_DEFER_INIT
+	bool "Device deferred initialization"
+	help
+	  Allows device initialization to be deferred to a later time,
+	  instead of automatically happening at boot time. To defer
+	  initialization of a given device, one has to register,
+	  via device_before_init_register_callback(), a callback
+	  that will be called before each device initialization, to decide
+	  if initialization shall proceed or be deferred. To initialize a
+	  device later, one has to use device_init().
+
+if DEVICE_DEFER_INIT
+
+config DEVICE_DEFER_CALLBACK_SECTION
+	bool
+	help
+	  Places callback on a special section inside the ELF file, usually
+	  close to the kernel initialization code. Useful for platforms that
+	  need memory subsystem initialized to access callbacks on arbitrary
+	  locations, but callback is called earlier than that during
+	  initialization.
+
+endif
+
 endmenu
 
 rsource "Kconfig.vm"
