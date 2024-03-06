@@ -441,7 +441,7 @@ class KconfigCheck(ComplianceTest):
 
         with open(kconfig_defconfig_file, 'w') as fp:
             for board in v2_boards:
-                fp.write('osource "' + os.path.join(board.dir, 'Kconfig.defconfig') + '"\n')
+                fp.write('osource "' + (Path(board.dir) / 'Kconfig.defconfig').as_posix() + '"\n')
 
         with open(kconfig_boards_file, 'w') as fp:
             for board in v2_boards:
@@ -452,12 +452,16 @@ class KconfigCheck(ComplianceTest):
                     board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", identifier).upper()
                     fp.write('config  ' + board_str + '\n')
                     fp.write('\t bool\n')
-                fp.write('source "' + os.path.join(board.dir, 'Kconfig.') + board.name + '"\n\n')
+                fp.write(
+                    'source "' + (Path(board.dir) / ('Kconfig.' + board.name)).as_posix() + '"\n\n'
+                )
 
         with open(kconfig_file, 'w') as fp:
-            fp.write('osource "' + os.path.join(kconfig_dir, 'boards', 'Kconfig.syms.v1') + '"\n')
+            fp.write(
+                'osource "' + (Path(kconfig_dir) / 'boards' / 'Kconfig.syms.v1').as_posix() + '"\n'
+            )
             for board in v2_boards:
-                fp.write('osource "' + os.path.join(board.dir, 'Kconfig') + '"\n')
+                fp.write('osource "' + (Path(board.dir) / 'Kconfig').as_posix() + '"\n')
 
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.defconfig')
         kconfig_soc_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc')
@@ -469,15 +473,15 @@ class KconfigCheck(ComplianceTest):
         soc_folders = {soc.folder for soc in v2_systems.get_socs()}
         with open(kconfig_defconfig_file, 'w') as fp:
             for folder in soc_folders:
-                fp.write('osource "' + os.path.join(folder, 'Kconfig.defconfig') + '"\n')
+                fp.write('osource "' + (Path(folder) / 'Kconfig.defconfig').as_posix() + '"\n')
 
         with open(kconfig_soc_file, 'w') as fp:
             for folder in soc_folders:
-                fp.write('source "' + os.path.join(folder, 'Kconfig.soc') + '"\n')
+                fp.write('source "' + (Path(folder) / 'Kconfig.soc').as_posix() + '"\n')
 
         with open(kconfig_file, 'w') as fp:
             for folder in soc_folders:
-                fp.write('source "' + os.path.join(folder, 'Kconfig') + '"\n')
+                fp.write('source "' + (Path(folder) / 'Kconfig').as_posix() + '"\n')
 
         kconfig_file = os.path.join(kconfig_dir, 'arch', 'Kconfig')
 
@@ -486,7 +490,7 @@ class KconfigCheck(ComplianceTest):
 
         with open(kconfig_file, 'w') as fp:
             for arch in v2_archs['archs']:
-                fp.write('source "' + os.path.join(arch['path'], 'Kconfig') + '"\n')
+                fp.write('source "' + (Path(arch['path']) / 'Kconfig').as_posix() + '"\n')
 
     def parse_kconfig(self, filename="Kconfig", hwm=None):
         """

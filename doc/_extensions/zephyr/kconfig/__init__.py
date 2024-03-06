@@ -97,18 +97,18 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
 
         with open(Path(td) / "soc" / "Kconfig.soc", "w") as f:
             for folder in soc_folders:
-                f.write('source "' + os.path.join(folder, 'Kconfig.soc') + '"\n')
+                f.write('source "' + (Path(folder) / 'Kconfig.soc').as_posix() + '"\n')
 
         with open(Path(td) / "soc" / "Kconfig", "w") as f:
             for folder in soc_folders:
-                f.write('osource "' + os.path.join(folder, 'Kconfig') + '"\n')
+                f.write('osource "' + (Path(folder) / 'Kconfig').as_posix() + '"\n')
 
         (Path(td) / 'arch').mkdir(exist_ok=True)
         root_args = argparse.Namespace(**{'arch_roots': [Path(ZEPHYR_BASE)], 'arch': None})
         v2_archs = list_hardware.find_v2_archs(root_args)
         kconfig = ""
         for arch in v2_archs['archs']:
-            kconfig += 'source "' + str(Path(arch['path']) / 'Kconfig') + '"\n'
+            kconfig += 'source "' + (Path(arch['path']) / 'Kconfig').as_posix() + '"\n'
         with open(Path(td) / "arch" / "Kconfig", "w") as f:
             f.write(kconfig)
 
@@ -126,7 +126,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
                     board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", identifier).upper()
                     f.write('config  ' + board_str + '\n')
                     f.write('\t bool\n')
-                f.write('source "' + os.path.join(board.dir, 'Kconfig.') + board.name + '"\n\n')
+                f.write('source "' + (board.dir / ('Kconfig.' + board.name)).as_posix() + '"\n\n')
 
         # base environment
         os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
