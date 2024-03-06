@@ -16,8 +16,6 @@ description: |
         reset-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
         int-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
         bosch,mram-cfg = <0x0 15 15 5 5 0 10 10>;
-        sample-point = <875>;
-        sample-point-data = <875>;
         bus-speed = <125000>;
         bus-speed-data = <1000000>;
         status = "okay";
