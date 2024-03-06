@@ -11,6 +11,7 @@
 #define ZEPHYR_INCLUDE_SYS_ATOMIC_BUILTIN_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <zephyr/sys/atomic_types.h>
 
 #ifdef __cplusplus
