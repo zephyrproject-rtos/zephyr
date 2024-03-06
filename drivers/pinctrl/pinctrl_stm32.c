@@ -58,6 +58,11 @@ static const struct device *const gpio_ports[] = {
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiol)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiom)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpion)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioo)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiop)),
 };
 
 /** Number of GPIO ports. */
