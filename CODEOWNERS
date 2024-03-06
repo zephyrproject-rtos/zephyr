@@ -40,6 +40,7 @@
 /soc/riscv/riscv-privileged/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
 /soc/riscv/riscv-privileged/neorv32/       @henrikbrixandersen
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
+/soc/starfive/jh71xx/ 			  @pfarwsi
 /soc/riscv/riscv-privileged/niosv/         @sweeaun
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
@@ -118,6 +119,7 @@
 /boards/riscv/niosv*/                     @sweeaun
 /boards/riscv/sparkfun_red_v_things_plus/ @soburi
 /boards/riscv/stamp_c3/                   @soburi
+/boards/starfive/visionfive2/	 	  @kanakshilledar @pfarwsi
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
 /boards/shields/inventek_eswifi/          @nandojve
@@ -437,7 +439,7 @@
 /dts/riscv/microchip/microchip-miv.dtsi   @galak
 /dts/riscv/openisa/rv32m1*                @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
-/dts/riscv/starfive/                      @rajnesh-kanwal
+/dts/riscv/starfive/                      @rajnesh-kanwal @pfarwsi
 /dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
 /dts/riscv/niosv/                         @sweeaun
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
