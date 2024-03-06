@@ -902,9 +902,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			net_if_ipv4_set_netmask_by_addr(iface,
-							&iface->config.dhcpv4.requested_ip,
-							&netmask);
+			iface->config.dhcpv4.netmask = netmask;
+
 			NET_DBG("options_subnet_mask %s",
 				net_sprint_ipv4_addr(&netmask));
 			break;
@@ -1205,6 +1204,10 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 			NET_DBG("Failed to add IPv4 addr to iface %p", iface);
 			return;
 		}
+
+		net_if_ipv4_set_netmask_by_addr(iface,
+						&iface->config.dhcpv4.requested_ip,
+						&iface->config.dhcpv4.netmask);
 
 		dhcpv4_enter_bound(iface);
 		break;

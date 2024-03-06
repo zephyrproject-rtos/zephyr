@@ -425,6 +425,9 @@ struct net_if_dhcpv4 {
 	/** Requested IP addr */
 	struct in_addr requested_ip;
 
+	/** Received netmask from the server */
+	struct in_addr netmask;
+
 	/**
 	 *  DHCPv4 client state in the process of network
 	 *  address allocation.
