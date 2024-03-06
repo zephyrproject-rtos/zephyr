@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
+#include <zephyr/sys/math_extras.h>
 
 void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
@@ -94,16 +95,25 @@ struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 
 struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 {
-	if (!pq->bitmask) {
-		return NULL;
-	}
-
 	struct k_thread *thread = NULL;
-	sys_dlist_t *l = &pq->queues[__builtin_ctz(pq->bitmask)];
-	sys_dnode_t *n = sys_dlist_peek_head(l);
 
-	if (n != NULL) {
-		thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+	for (int i = 0; i < PRIQ_BITMAP_SIZE; ++i) {
+		if (!pq->bitmask[i]) {
+			continue;
+		}
+
+#ifdef CONFIG_64BIT
+		sys_dlist_t *l = &pq->queues[i * 64 + u64_count_trailing_zeros(pq->bitmask[i])];
+#else
+		sys_dlist_t *l = &pq->queues[i * 32 + u32_count_trailing_zeros(pq->bitmask[i])];
+#endif
+		sys_dnode_t *n = sys_dlist_peek_head(l);
+
+		if (n != NULL) {
+			thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+			break;
+		}
 	}
+
 	return thread;
 }
