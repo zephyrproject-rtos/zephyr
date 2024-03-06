@@ -1,6 +1,7 @@
 tests:
-  xtensa.save_restore_hifi.mtl:
-    platform_allow: intel_adsp/ace15_mtpm
+  arch.xtensa.save_restore_hifi.mtl:
+    platform_allow:
+      - intel_adsp/ace15_mtpm
     tags:
       - kernel
     ignore_faults: true
