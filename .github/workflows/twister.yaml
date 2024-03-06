@@ -33,7 +33,7 @@ jobs:
       fullrun: ${{ steps.output-services.outputs.fullrun }}
     env:
       MATRIX_SIZE: 10
-      PUSH_MATRIX_SIZE: 15
+      PUSH_MATRIX_SIZE: 20
       DAILY_MATRIX_SIZE: 80
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
