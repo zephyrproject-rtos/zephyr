@@ -110,7 +110,7 @@ tests:
   sample.display.mipi_dbi:
     platform_allow:
       - da1469x_dk_pro
-    extra_args: DTC_OVERLAY_FILE="boards/da1469x_dk_pro_mipi_dbi.overlay"
+    extra_args: DTC_OVERLAY_FILE="da1469x_dk_pro_mipi_dbi.overlay"
     tags:
       - display
       - mipi_dbi
