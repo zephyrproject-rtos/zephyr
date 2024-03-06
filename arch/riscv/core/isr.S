@@ -41,6 +41,23 @@
 	RV_I(	op a7, __z_arch_esf_t_a7_OFFSET(sp)	);\
 	RV_E(	op ra, __z_arch_esf_t_ra_OFFSET(sp)	)
 
+#ifdef CONFIG_EXCEPTION_DEBUG
+/* Convenience macro for storing callee saved register [s0 - s11] states. */
+#define STORE_CALLEE_SAVED() \
+	RV_E(	sr s0, ___callee_saved_t_s0_OFFSET(sp)		);\
+	RV_E(	sr s1, ___callee_saved_t_s1_OFFSET(sp)		);\
+	RV_I(	sr s2, ___callee_saved_t_s2_OFFSET(sp)		);\
+	RV_I(	sr s3, ___callee_saved_t_s3_OFFSET(sp)		);\
+	RV_I(	sr s4, ___callee_saved_t_s4_OFFSET(sp)		);\
+	RV_I(	sr s5, ___callee_saved_t_s5_OFFSET(sp)		);\
+	RV_I(	sr s6, ___callee_saved_t_s6_OFFSET(sp)		);\
+	RV_I(	sr s7, ___callee_saved_t_s7_OFFSET(sp)		);\
+	RV_I(	sr s8, ___callee_saved_t_s8_OFFSET(sp)		);\
+	RV_I(	sr s9, ___callee_saved_t_s9_OFFSET(sp)		);\
+	RV_I(	sr s10, ___callee_saved_t_s10_OFFSET(sp)	);\
+	RV_I(	sr s11, ___callee_saved_t_s11_OFFSET(sp)	)
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
 	.macro get_current_cpu dst
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
 	csrr \dst, mscratch
@@ -61,7 +78,7 @@ GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-GTEXT(z_riscv_fatal_error)
+GTEXT(z_riscv_fatal_error_csf)
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
@@ -386,7 +403,17 @@ do_fault:
 	/* Handle RV_ECALL_RUNTIME_EXCEPT. Retrieve reason in a0, esf in A1. */
 	lr a0, __z_arch_esf_t_a0_OFFSET(sp)
 1:	mv a1, sp
-	tail z_riscv_fatal_error
+
+#ifdef CONFIG_EXCEPTION_DEBUG
+	/* Allocate space for caller-saved registers on current thread stack */
+	addi sp, sp, -__callee_saved_t_SIZEOF
+
+	/* Save callee-saved registers to be passed as 3rd arg */
+	STORE_CALLEE_SAVED()		;
+	mv a2, sp
+#endif
+
+	tail z_riscv_fatal_error_csf
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
