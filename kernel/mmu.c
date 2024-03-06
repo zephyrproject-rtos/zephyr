@@ -513,7 +513,6 @@ static int map_anon_page(void *addr, uint32_t flags)
 	struct z_page_frame *pf;
 	uintptr_t phys;
 	bool lock = (flags & K_MEM_MAP_LOCK) != 0U;
-	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
@@ -549,23 +548,17 @@ static int map_anon_page(void *addr, uint32_t flags)
 
 	LOG_DBG("memory mapping anon page %p -> 0x%lx", addr, phys);
 
-	if (!uninit) {
-		/* If we later implement mappings to a copy-on-write
-		 * zero page, won't need this step
-		 */
-		memset(addr, 0, CONFIG_MMU_PAGE_SIZE);
-	}
-
 	return 0;
 }
 
-void *k_mem_map(size_t size, uint32_t flags)
+void *k_mem_map_impl(uintptr_t phys, size_t size, uint32_t flags, bool is_anon)
 {
 	uint8_t *dst;
 	size_t total_size;
 	int ret;
 	k_spinlock_key_t key;
 	uint8_t *pos;
+	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
 	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0U) &&
 		   ((flags & K_MEM_MAP_UNINIT) != 0U)),
@@ -573,7 +566,8 @@ void *k_mem_map(size_t size, uint32_t flags)
 	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned size %zu passed to %s", size, __func__);
 	__ASSERT(size != 0, "zero sized memory mapping");
-	__ASSERT(page_frames_initialized, "%s called too early", __func__);
+	__ASSERT(!is_anon || (is_anon && page_frames_initialized),
+		 "%s called too early", __func__);
 	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
 
@@ -605,24 +599,43 @@ void *k_mem_map(size_t size, uint32_t flags)
 	/* Skip over the "before" guard page in returned address. */
 	dst += CONFIG_MMU_PAGE_SIZE;
 
-	VIRT_FOREACH(dst, size, pos) {
-		ret = map_anon_page(pos, flags);
+	if (is_anon) {
+		/* Mapping from annoymous memory */
+		VIRT_FOREACH(dst, size, pos) {
+			ret = map_anon_page(pos, flags);
 
-		if (ret != 0) {
-			/* TODO: call k_mem_unmap(dst, pos - dst)  when
-			 * implemented in #28990 and release any guard virtual
-			 * page as well.
-			 */
-			dst = NULL;
-			goto out;
+			if (ret != 0) {
+				/* TODO: call k_mem_unmap(dst, pos - dst)  when
+				 * implemented in #28990 and release any guard virtual
+				 * page as well.
+				 */
+				dst = NULL;
+				goto out;
+			}
 		}
+	} else {
+		/* Mapping known physical memory.
+		 *
+		 * arch_mem_map() is a void function and does not return
+		 * anything. Arch code usually uses ASSERT() to catch
+		 * mapping errors. Assume this works correctly for now.
+		 */
+		arch_mem_map(dst, phys, size, flags);
 	}
+
+	if (!uninit) {
+		/* If we later implement mappings to a copy-on-write
+		 * zero page, won't need this step
+		 */
+		memset(dst, 0, size);
+	}
+
 out:
 	k_spin_unlock(&z_mm_lock, key);
 	return dst;
 }
 
-void k_mem_unmap(void *addr, size_t size)
+void k_mem_unmap_impl(void *addr, size_t size, bool is_anon)
 {
 	uintptr_t phys;
 	uint8_t *pos;
@@ -663,43 +676,55 @@ void k_mem_unmap(void *addr, size_t size)
 		goto out;
 	}
 
-	VIRT_FOREACH(addr, size, pos) {
-		ret = arch_page_phys_get(pos, &phys);
+	if (is_anon) {
+		/* Unmapping anonymous memory */
+		VIRT_FOREACH(addr, size, pos) {
+			ret = arch_page_phys_get(pos, &phys);
 
-		__ASSERT(ret == 0,
-			 "%s: cannot unmap an unmapped address %p",
-			 __func__, pos);
-		if (ret != 0) {
-			/* Found an address not mapped. Do not continue. */
-			goto out;
+			__ASSERT(ret == 0,
+				 "%s: cannot unmap an unmapped address %p",
+				 __func__, pos);
+			if (ret != 0) {
+				/* Found an address not mapped. Do not continue. */
+				goto out;
+			}
+
+			__ASSERT(z_is_page_frame(phys),
+				 "%s: 0x%lx is not a page frame", __func__, phys);
+			if (!z_is_page_frame(phys)) {
+				/* Physical address has no corresponding page frame
+				 * description in the page frame array.
+				 * This should not happen. Do not continue.
+				 */
+				goto out;
+			}
+
+			/* Grab the corresponding page frame from physical address */
+			pf = z_phys_to_page_frame(phys);
+
+			__ASSERT(z_page_frame_is_mapped(pf),
+				 "%s: 0x%lx is not a mapped page frame", __func__, phys);
+			if (!z_page_frame_is_mapped(pf)) {
+				/* Page frame is not marked mapped.
+				 * This should not happen. Do not continue.
+				 */
+				goto out;
+			}
+
+			arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+
+			/* Put the page frame back into free list */
+			page_frame_free_locked(pf);
 		}
-
-		__ASSERT(z_is_page_frame(phys),
-			 "%s: 0x%lx is not a page frame", __func__, phys);
-		if (!z_is_page_frame(phys)) {
-			/* Physical address has no corresponding page frame
-			 * description in the page frame array.
-			 * This should not happen. Do not continue.
-			 */
-			goto out;
-		}
-
-		/* Grab the corresponding page frame from physical address */
-		pf = z_phys_to_page_frame(phys);
-
-		__ASSERT(z_page_frame_is_mapped(pf),
-			 "%s: 0x%lx is not a mapped page frame", __func__, phys);
-		if (!z_page_frame_is_mapped(pf)) {
-			/* Page frame is not marked mapped.
-			 * This should not happen. Do not continue.
-			 */
-			goto out;
-		}
-
-		arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
-
-		/* Put the page frame back into free list */
-		page_frame_free_locked(pf);
+	} else {
+		/*
+		 * Unmapping previous mapped memory with specific physical address.
+		 *
+		 * Note that we don't have to unmap the guard pages, as they should
+		 * have been unmapped. We just need to unmapped the in-between
+		 * region [addr, (addr + size)).
+		 */
+		arch_mem_unmap(addr, size);
 	}
 
 	/* There are guard pages just before and after the mapped
