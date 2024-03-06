@@ -1,0 +1,31 @@
+# NXP K32 family
+
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_K32
+
+config I2C_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on I2C
+
+config SPI_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on SPI
+
+config CLOCK_CONTROL_MCUX_SYSCON
+	default y if HAS_MCUX_SYSCON
+	depends on CLOCK_CONTROL
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_K32

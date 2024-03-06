@@ -109,6 +109,13 @@ config BT_PSOC6_BLESS
 	  PSOC6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
 
+config BT_NXP_IPM
+	bool "NXP IPM HCI"
+	select EVENTS
+	select ENTROPY_GENERATOR
+	help
+	  This driver provides access and enables NXPs bluetooth controller
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
 	select BT_HAS_HCI_VS
@@ -234,3 +241,21 @@ config BT_SILABS_HCI_BUFFER_MEMORY
 	help
 	  Select the size of allocated memory buffer for the Silicon Labs
 	  Bluetooth Library.
+
+if BT_NXP_IPM
+
+config BT_NXP_IPM_INIT_PRIORITY
+	int "BT NXP IPM init priority"
+	default 75
+
+if SOC_FAMILY_K32
+
+config BT_NXP_FIXED_MAC_ADDR
+	hex "Fixed BT-MAC address of k32 soc"
+	default 0
+	help
+		6-byte hexadecimal address, eg: 0xffaa01610401.
+		Value is split in a  a hex-array by k32 driver-system.
+
+endif # SOC_FAMILY_K32
+endif # BT_NXP_IPM

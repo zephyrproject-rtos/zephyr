@@ -33,6 +33,8 @@ LOG_MODULE_REGISTER(flash_mcux);
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc553), okay)
 #define DT_DRV_COMPAT nxp_iap_fmc553
 #define SOC_HAS_IAP 1
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_k32), okay)
+#define DT_DRV_COMPAT nxp_iap_k32
 #else
 #error No matching compatible for soc_flash_mcux.c
 #endif
@@ -45,6 +47,11 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
+#ifdef CONFIG_HAS_MCUX_IAP_K32
+/* tmp buf to which page is loaded */
+static uint32_t _flash_page_buf[FLASH_PAGE_SIZE/4];
+#endif
 
 #if defined(CONFIG_CHECK_BEFORE_READING)  && !defined(CONFIG_SOC_LPC55S36)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
@@ -131,7 +138,11 @@ static const struct flash_parameters flash_mcux_parameters = {
 #else
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 #endif
+#ifdef CONFIG_HAS_MCUX_IAP_K32
+	.erase_value = 0x00,
+#else
 	.erase_value = 0xff,
+#endif
 };
 
 /*
@@ -158,7 +169,13 @@ static int flash_mcux_erase(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
+#ifdef CONFIG_HAS_MCUX_IAP_K32
+	uint32_t rcf = FLASH_Erase(FLASH, (uint8_t *)addr, (uint8_t *)addr + len - 1);
+
+	rc = (rcf == kStatus_FLASH_Success) ? kStatus_Success : ~kStatus_Success;
+#else
 	rc = FLASH_Erase(&priv->config, addr, len, kFLASH_ApiEraseKey);
+#endif
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -191,6 +208,44 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	 */
 	addr = offset + priv->pflash_block_base;
 
+#if CONFIG_HAS_MCUX_IAP_K32
+	/*
+	 * K32 can't do a direct read without busfault,
+	 * so we iteratively read 16-byte blocks
+	 */
+	uint32_t rcf;
+	uint8_t *data_ptr = data;
+	uint32_t data_len = len;
+
+	/* Address needs to be aligned on 16 byte [=size of read_buffer]  */
+	uint32_t read_addr = addr & ~0xF;
+	uint32_t read_off = addr - read_addr;
+	uint32_t read_buf[4];
+
+	while (data_len > 0) {
+		/* Read 16 bytes from flash */
+		rcf = FLASH_Read(FLASH, (uint8_t *)read_addr, FLASH_ReadModeNormal, read_buf);
+		if (rcf != kStatus_FLASH_Success) {
+			rc = -ENODATA;
+			break;
+		}
+
+		/* Copy data to buffer. Start copy from offset as we do not care
+		 * about data before this point (it is only included for alignment
+		 */
+		for (uint32_t i = read_off; i < sizeof(read_buf) && data_len > 0; i++) {
+			*data_ptr++ = ((uint8_t *)read_buf)[i];
+			data_len--;
+		}
+
+		/* Next block is shifted 16 bytes */
+		read_addr += sizeof(read_buf);
+		read_off = 0;
+	}
+
+	rc = 0;
+#else
+
 #ifdef CONFIG_CHECK_BEFORE_READING
   #ifdef CONFIG_SOC_LPC55S36
 	/* Validates the given address range is loaded in the flash hiding region. */
@@ -221,6 +276,9 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 		rc = 0;
 	}
 #endif
+
+#endif /* not(CONFIG_HAS_MCUX_IAP_K32) */
+
 	return rc;
 }
 
@@ -239,7 +297,61 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
+
+#ifdef CONFIG_HAS_MCUX_IAP_K32
+	/*
+	 * K32-series can't do a partial write. So for a (partial) write we need to:
+	 * - read a page into buffer
+	 * - erase the pase
+	 * - apply write to the buffer
+	 * - write buffer to flash.
+	 */
+
+	uint32_t rcf;
+	uint32_t page_addr = addr - (addr % FLASH_PAGE_SIZE);
+
+	/* assume all is good */
+	rc = kStatus_Success;
+
+	for (uint32_t i = 0; i < FLASH_PAGE_SIZE; i += 16) {
+		rcf = FLASH_Read(FLASH, (uint8_t *)(page_addr + i), FLASH_ReadModeNormal,
+				 (uint32_t *)&_flash_page_buf[i / 4]);
+		if (rcf != kStatus_FLASH_Success) {
+			rc = ~kStatus_Success;
+			break;
+		}
+	}
+
+	if (rc == kStatus_Success) {
+		/* Erase page */
+		rcf = FLASH_Erase(FLASH, (uint8_t *)page_addr,
+				  (uint8_t *)(page_addr + FLASH_PAGE_SIZE));
+
+		if (rcf != kStatus_FLASH_Success) {
+			rc = ~kStatus_Success;
+		}
+	}
+
+	if (rc == kStatus_Success) {
+		/* Copy data to buffer */
+		uint8_t *ptr_page = (uint8_t *)_flash_page_buf;
+		uint8_t *ptr_data = (uint8_t *)data;
+
+		/* Flash of K32-series writes 0 => 1 instead of 1 => 0, hence "OR" */
+		for (uint16_t i = 0; i < len; i++) {
+			ptr_page[(addr - page_addr) + i] |= ptr_data[i];
+		}
+
+		/* Write page to flash */
+		rcf = FLASH_Program(FLASH, (uint32_t *)page_addr, _flash_page_buf, FLASH_PAGE_SIZE);
+
+		if (rcf != kStatus_FLASH_Success) {
+			rc = ~kStatus_Success;
+		}
+	}
+#else
 	rc = FLASH_Program(&priv->config, addr, (uint8_t *) data, len);
+#endif
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -291,9 +403,18 @@ static int flash_mcux_init(const struct device *dev)
 
 	k_sem_init(&priv->write_lock, 1, 1);
 
-	rc = FLASH_Init(&priv->config);
+#ifdef CONFIG_HAS_MCUX_IAP_K32
+	FLASH_Init(FLASH);
+	uint32_t rcf = FLASH_GetStatus(FLASH);
 
-#ifdef SOC_HAS_IAP
+	rc = (rcf == kStatus_FLASH_Success) ? kStatus_Success : ~kStatus_Success;
+#else
+	rc = FLASH_Init(&priv->config);
+#endif
+
+#if defined(CONFIG_HAS_MCUX_IAP_K32)
+	pflash_block_base = DT_REG_ADDR(SOC_NV_FLASH_NODE);
+#elif defined(SOC_HAS_IAP)
 	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflashBlockBaseAddr,
 			  &pflash_block_base);
 #else

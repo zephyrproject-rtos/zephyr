@@ -102,7 +102,7 @@ config HWINFO_MCUX_SRC_V2
 config HWINFO_MCUX_SYSCON
 	bool "NXP LPC device ID"
 	default y
-	depends on DT_HAS_NXP_LPC_UID_ENABLED
+	depends on DT_HAS_NXP_LPC_UID_ENABLED && !SOC_SERIES_K32
 	help
 	  Enable NXP LPC mcux hwinfo driver.
 

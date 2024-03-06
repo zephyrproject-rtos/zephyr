@@ -6,7 +6,8 @@
 config HAS_MCUX
 	bool
 	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
-		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT
+		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT || SOC_FAMILY_K32
+
 if HAS_MCUX
 
 config MCUX_CORE_SUFFIX
@@ -98,6 +99,11 @@ config HAS_MCUX_FTFX
 	help
 	  Set if the flash memory (FTFA, FTFE, or FTFL) module is present in
 	  the SoC.
+
+config HAS_MCUX_IAP_K32
+	bool
+	help
+	  Set if the flash memory In Application Programming is present.
 
 config HAS_MCUX_FTM
 	bool

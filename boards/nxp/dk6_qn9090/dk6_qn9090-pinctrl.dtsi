@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2023 Sendrato
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/k32/qn9090-pinctrl.h>
+
+&pinctrl {
+	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+		group0 {
+			pinmux = <USART0_RXD_PIO0_9>, <USART0_TXD_PIO0_8>;
+			slew-rate = "standard";
+			nxp,plain-mode;
+		};
+	};
+
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <I2C0_SDA_PIO0_11>, <I2C0_SCL_PIO0_10>;
+			nxp,i2c-pin;
+			slew-rate = "standard";
+			nxp,i2c-mode;
+			nxp,i2c-speed = "slow";
+			nxp,i2c-pullup;
+			nxp,i2c-filter = "slow";
+		};
+	};
+
+	pinmux_flexcomm6_i2c: pinmux_flexcomm6_i2c {
+		/* no pinctrl : I2C2 (nfc) is internally connected */
+	};
+};

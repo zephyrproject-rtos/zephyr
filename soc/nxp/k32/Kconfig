@@ -1,0 +1,24 @@
+# NXP K32 family
+
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_K32
+	bool
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select ARM
+
+if SOC_FAMILY_K32
+
+config MCUX_MIDDLEWARE_MEMMANAGER_HEAP_SIZE
+	int "MemManager Heap-size"
+	default 1024
+	help
+		Maximum number of bytes available for MemManager in the mcux middleware.
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_K32

@@ -1,0 +1,23 @@
+# NXP K32 series
+
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_K32
+	select ARM
+	select HAS_MCUX
+	select HAS_MCUX_RNG
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_SYSCON
+	select CPU_CORTEX_M_HAS_SYSTICK
+
+config SOC_QN9090
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CLOCK_CONTROL
+	select HAS_MCUX_IAP_K32
+	select BUILD_OUTPUT_HEX

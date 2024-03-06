@@ -297,7 +297,9 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 	usart_parity_mode_t parity_mode;
 	usart_stop_bit_count_t stop_bits;
 	usart_data_len_t data_bits = kUSART_8BitsPerChar;
+#ifndef CONFIG_SOC_SERIES_K32
 	bool nine_bit_mode = false;
+#endif
 	uint32_t clock_freq;
 
 	/* Set up structure to reconfigure UART */
@@ -336,8 +338,11 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 		data_bits = kUSART_7BitsPerChar;
 	} else if (cfg->data_bits == UART_CFG_DATA_BITS_8) {
 		data_bits = kUSART_8BitsPerChar;
+#ifndef CONFIG_SOC_SERIES_K32
+    /* K32 does not support 9 bit mode */
 	} else if (cfg->data_bits == UART_CFG_DATA_BITS_9) {
 		nine_bit_mode = true;
+#endif
 	} else {
 		return -EINVAL;
 	}
@@ -359,8 +364,10 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 	clock_control_get_rate(config->clock_dev,
 		config->clock_subsys, &clock_freq);
 
+#ifndef CONFIG_SOC_SERIES_K32
 	/* Handle 9 bit mode */
 	USART_Enable9bitMode(config->base, nine_bit_mode);
+#endif
 
 	/* Reconfigure UART */
 	USART_Init(config->base, &usart_config, clock_freq);

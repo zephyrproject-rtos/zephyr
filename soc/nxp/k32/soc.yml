@@ -1,0 +1,6 @@
+family:
+- name: k32
+  series:
+  - name: k32
+    socs:
+    - name: qn9090

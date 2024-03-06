@@ -1,0 +1,5 @@
+board:
+  name: dk6_qn9090
+  vendor: nxp
+  socs:
+  - name: qn9090

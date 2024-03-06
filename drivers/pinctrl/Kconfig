@@ -67,5 +67,6 @@ source "drivers/pinctrl/Kconfig.eos_s3"
 source "drivers/pinctrl/Kconfig.renesas_ra"
 source "drivers/pinctrl/Kconfig.rzt2m"
 source "drivers/pinctrl/Kconfig.zynqmp"
+source "drivers/pinctrl/Kconfig.k32_iocon"
 
 endif # PINCTRL

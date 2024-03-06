@@ -1,0 +1,31 @@
+# K32 MCU line
+
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_K32
+	bool
+	select SOC_FAMILY_K32
+
+config SOC_SERIES
+	default "k32" if SOC_SERIES_K32
+
+config SOC_QN9090
+	bool
+	select SOC_SERIES_K32
+
+config SOC
+	default "qn9090" if SOC_QN9090
+
+config SOC_PART_NUMBER_QN9090THN
+	bool
+
+config SOC_PART_NUMBER_QN9090HN
+	bool
+
+config SOC_PART_NUMBER
+	default "QN9090HN" if SOC_PART_NUMBER_QN9090HN
+	default "QN9090THN" if SOC_PART_NUMBER_QN9090THN

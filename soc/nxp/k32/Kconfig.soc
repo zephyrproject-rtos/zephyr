@@ -1,0 +1,15 @@
+# NXP K32 family
+
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_K32
+	bool
+
+config SOC_FAMILY
+	default "k32" if SOC_FAMILY_K32
+
+rsource "*/Kconfig.soc"

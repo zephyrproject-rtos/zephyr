@@ -33,3 +33,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_SILABS_HCI  slz_hci.c)
 zephyr_library_sources_ifdef(CONFIG_BT_PSOC6_BLESS hci_psoc6_bless.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUAPP nrf53_support.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AMBIQ_HCI   hci_ambiq.c apollox_blue.c)
+zephyr_library_sources_ifdef(CONFIG_BT_NXP_IPM     ipm_nxp.c)
+
+if ((CONFIG_CODE_DATA_RELOCATION) AND (CONFIG_SOC_QN9090))
+    zephyr_code_relocate(FILES ipm_nxp.c LOCATION SRAM1_BSS)
+endif()

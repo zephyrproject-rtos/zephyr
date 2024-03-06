@@ -1,0 +1,17 @@
+# NXP K32 series
+
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_K32
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 56
+
+rsource "Kconfig.defconfig.qn*"
+
+endif # SOC_SERIES_K32

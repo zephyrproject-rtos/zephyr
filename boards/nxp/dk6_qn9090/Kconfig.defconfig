@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_DK6_QN9090
+
+# no configurations
+
+endif # BOARD_DK6_QN9090

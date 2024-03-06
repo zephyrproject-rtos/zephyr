@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2023 Sendrato
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_DK6_QN9090
+	bool
+	default y
+	select SOC_QN9090
+	select SOC_PART_NUMBER_QN9090HN
