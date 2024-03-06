@@ -12,10 +12,14 @@
 #include <zephyr/drivers/pinctrl.h>
 
 struct pwm_b9x_config {
-	const struct pinctrl_dev_config *pcfg;
+	const pinctrl_soc_pin_t *pins;
 	uint32_t clock_frequency;
 	uint8_t channels;
 	uint8_t clk32k_ch_enable;
+};
+
+struct pwm_b9x_data {
+	uint8_t out_pin_ch_connected;
 };
 
 /* API implementation: init */
@@ -23,7 +27,6 @@ static int pwm_b9x_init(const struct device *dev)
 {
 	const struct pwm_b9x_config *config = dev->config;
 
-	int status = 0;
 	uint32_t pwm_clk_div;
 
 	/* Calculate and check PWM clock divider */
@@ -35,28 +38,7 @@ static int pwm_b9x_init(const struct device *dev)
 	/* Set PWM Peripheral clock */
 	pwm_set_clk((unsigned char) (pwm_clk_div & 0xFF));
 
-	#if DT_NODE_EXISTS(DT_PATH_INTERNAL(pwm_leds))
-		/* Start PWM from device tree */
-		static const struct pwm_dt_spec pwm_leds[] = {
-			DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH_INTERNAL(pwm_leds),
-				PWM_DT_SPEC_GET, (,))
-		};
-
-		for (size_t i = 0; !status && i < ARRAY_SIZE(pwm_leds); i++) {
-			if (dev == pwm_leds[i].dev) {
-				status = pwm_set(dev,
-					pwm_leds[i].channel, pwm_leds[i].period, 0,
-					pwm_leds[i].flags);
-			}
-		}
-	#endif /* DT_NODE_EXISTS(DT_PATH_INTERNAL(pwm_leds)) */
-
-	/* Config PWM pins */
-	if (!status) {
-		status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	}
-
-	return status;
+	return 0;
 }
 
 /* API implementation: set_cycles */
@@ -64,6 +46,7 @@ static int pwm_b9x_set_cycles(const struct device *dev, uint32_t channel,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
 			      pwm_flags_t flags)
 {
+	struct pwm_b9x_data *data = dev->data;
 	const struct pwm_b9x_config *config = dev->config;
 
 	/* check pwm channel */
@@ -92,8 +75,28 @@ static int pwm_b9x_set_cycles(const struct device *dev, uint32_t channel,
 	pwm_start(channel);
 
 	/* switch to 32K */
-	if ((config->clk32k_ch_enable & BIT(channel)) != 0U) {
+	if (config->clk32k_ch_enable & BIT(channel)) {
 		pwm_32k_chn_en(BIT(channel));
+	}
+
+	/* connect output */
+	if (!(data->out_pin_ch_connected & BIT(channel)) &&
+		config->pins[channel] != UINT32_MAX) {
+		const struct pinctrl_state pinctrl_state = {
+			.pins = &config->pins[channel],
+			.pin_cnt = 1,
+			.id = PINCTRL_STATE_DEFAULT,
+		};
+		const struct pinctrl_dev_config pinctrl = {
+			.states = &pinctrl_state,
+			.state_cnt = 1,
+		};
+
+		if (!pinctrl_apply_state(&pinctrl, PINCTRL_STATE_DEFAULT)) {
+			data->out_pin_ch_connected |= BIT(channel);
+		} else {
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -126,25 +129,48 @@ static const struct pwm_driver_api pwm_b9x_driver_api = {
 };
 
 /* PWM driver registration */
-#define PWM_b9x_INIT(n)							       \
-	PINCTRL_DT_INST_DEFINE(n);					       \
-									       \
-	static const struct pwm_b9x_config config##n = {		       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		       \
-		.clock_frequency = DT_INST_PROP(n, clock_frequency),	       \
-		.channels = DT_INST_PROP(n, channels),			       \
-		.clk32k_ch_enable =					       \
-			((DT_INST_PROP(n, clk32k_ch0_enable) << 0U) |	       \
-			 (DT_INST_PROP(n, clk32k_ch1_enable) << 1U) |	       \
-			 (DT_INST_PROP(n, clk32k_ch2_enable) << 2U) |	       \
-			 (DT_INST_PROP(n, clk32k_ch3_enable) << 3U) |	       \
-			 (DT_INST_PROP(n, clk32k_ch4_enable) << 4U) |	       \
-			 (DT_INST_PROP(n, clk32k_ch5_enable) << 5U)),	       \
-	};								       \
-									       \
-	DEVICE_DT_INST_DEFINE(n, pwm_b9x_init,				       \
-			      NULL, NULL, &config##n,			       \
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	       \
-			      &pwm_b9x_driver_api);
+#define PWM_b9x_INIT(n)                                                 \
+                                                                        \
+	static const pinctrl_soc_pin_t pwm_b9x_pins##n[] = {                \
+		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), pinctrl_ch0),      \
+		(Z_PINCTRL_STATE_PIN_INIT(DT_DRV_INST(n), pinctrl_ch0, 0)),     \
+		(UINT32_MAX,))                                                  \
+		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), pinctrl_ch1),      \
+		(Z_PINCTRL_STATE_PIN_INIT(DT_DRV_INST(n), pinctrl_ch1, 0)),     \
+		(UINT32_MAX,))                                                  \
+		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), pinctrl_ch2),      \
+		(Z_PINCTRL_STATE_PIN_INIT(DT_DRV_INST(n), pinctrl_ch2, 0)),     \
+		(UINT32_MAX,))                                                  \
+		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), pinctrl_ch3),      \
+		(Z_PINCTRL_STATE_PIN_INIT(DT_DRV_INST(n), pinctrl_ch3, 0)),     \
+		(UINT32_MAX,))                                                  \
+		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), pinctrl_ch4),      \
+		(Z_PINCTRL_STATE_PIN_INIT(DT_DRV_INST(n), pinctrl_ch4, 0)),     \
+		(UINT32_MAX,))                                                  \
+		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), pinctrl_ch5),      \
+		(Z_PINCTRL_STATE_PIN_INIT(DT_DRV_INST(n), pinctrl_ch5, 0)),     \
+		(UINT32_MAX,))                                                  \
+	};                                                                  \
+                                                                        \
+	static const struct pwm_b9x_config config##n = {                    \
+		.pins = pwm_b9x_pins##n,                                        \
+		.clock_frequency = DT_INST_PROP(n, clock_frequency),            \
+		.channels = DT_INST_PROP(n, channels),                          \
+		.clk32k_ch_enable = (                                           \
+			(DT_INST_PROP(n, clk32k_ch0_enable) << 0U) |                \
+			(DT_INST_PROP(n, clk32k_ch1_enable) << 1U) |                \
+			(DT_INST_PROP(n, clk32k_ch2_enable) << 2U) |                \
+			(DT_INST_PROP(n, clk32k_ch3_enable) << 3U) |                \
+			(DT_INST_PROP(n, clk32k_ch4_enable) << 4U) |                \
+			(DT_INST_PROP(n, clk32k_ch5_enable) << 5U)                  \
+		),                                                              \
+	};                                                                  \
+                                                                        \
+	struct pwm_b9x_data data##n;                                        \
+                                                                        \
+	DEVICE_DT_INST_DEFINE(n, pwm_b9x_init,                              \
+		NULL, &data##n, &config##n,                                     \
+		POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,                          \
+		&pwm_b9x_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(PWM_b9x_INIT)
+DT_INST_FOREACH_STATUS_OKAY(PWM_b9x_INIT);

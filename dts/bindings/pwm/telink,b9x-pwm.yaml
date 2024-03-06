@@ -10,14 +10,29 @@ compatible: "telink,b9x-pwm"
 
 properties:
 
-  pinctrl-0:
+  pinctrl-ch0:
     type: phandles
-    required: true
+    description: PWM cahnnel 0 pincontrol
 
-  clock-frequency:
-    type: int
-    required: true
-    description: Default PWM Peripheral Clock frequency in Hz (is used if 32K Clock is disabled)
+  pinctrl-ch1:
+    type: phandles
+    description: PWM cahnnel 1 pincontrol
+
+  pinctrl-ch2:
+    type: phandles
+    description: PWM cahnnel 2 pincontrol
+
+  pinctrl-ch3:
+    type: phandles
+    description: PWM cahnnel 3 pincontrol
+
+  pinctrl-ch4:
+    type: phandles
+    description: PWM cahnnel 4 pincontrol
+
+  pinctrl-ch5:
+    type: phandles
+    description: PWM cahnnel 5 pincontrol
 
   clk32k-ch0-enable:
     type: boolean
@@ -42,6 +57,11 @@ properties:
   clk32k-ch5-enable:
     type: boolean
     description: Enable 32K Source Clock for PWM Channel 5
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Default PWM Peripheral Clock frequency in Hz (is used if 32K Clock is disabled)
 
   channels:
     type: int
