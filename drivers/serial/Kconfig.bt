@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_BT
+	bool "UART over NUS Bluetooth LE"
+	depends on BT_NUS
+	depends on DT_HAS_ZEPHYR_NUS_UART_ENABLED
+	select UART_INTERRUPT_DRIVEN
+	select RING_BUFFER
+	select EXPERIMENTAL
+	help
+	  Enable the UART over NUS Bluetooth driver, which can be used to pipe
+	  serial data over Bluetooth LE GATT using NUS (Nordic UART Service).
