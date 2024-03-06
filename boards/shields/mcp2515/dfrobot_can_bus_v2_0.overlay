@@ -16,7 +16,6 @@
 		reg = <0x0>;
 		osc-freq = <16000000>;
 		bus-speed = <125000>;
-		sample-point = <875>;
 
 		can-transceiver {
 			min-bitrate = <60000>;

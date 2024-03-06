@@ -354,7 +354,6 @@
 			interrupts = <TWAI_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TWAI_MODULE>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 
