@@ -403,7 +403,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sample-point = <875>;
 		};
 
 		timers1: timers@40010000 {
