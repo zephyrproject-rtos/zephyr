@@ -277,7 +277,7 @@ static inline void z_sched_lock(void)
  * Given a wait_q, wake up the highest priority thread on the queue. If the
  * queue was empty just return false.
  *
- * Otherwise, do the following, in order,  holding sched_spinlock the entire
+ * Otherwise, do the following, in order,  holding _sched_spinlock the entire
  * time so that the thread state is guaranteed not to change:
  * - Set the thread's swap return values to swap_retval and swap_data
  * - un-pend and ready the thread, but do not invoke the scheduler.
@@ -363,7 +363,7 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
  * @brief Walks the wait queue invoking the callback on each waiting thread
  *
  * This function walks the wait queue invoking the callback function on each
- * waiting thread while holding sched_spinlock. This can be useful for routines
+ * waiting thread while holding _sched_spinlock. This can be useful for routines
  * that need to operate on multiple waiting threads.
  *
  * CAUTION! As a wait queue is of indeterminate length, the scheduler will be
