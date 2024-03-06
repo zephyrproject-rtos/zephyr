@@ -175,9 +175,7 @@
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 	status = "okay";
 };
 
@@ -186,8 +184,6 @@
 	pinctrl-names = "default";
 	phys = <&can_phy1>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 	status = "okay";
 };

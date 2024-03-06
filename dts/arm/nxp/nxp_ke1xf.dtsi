@@ -405,7 +405,6 @@
 					  "mb-0-15";
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			clk-source = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 
@@ -417,7 +416,6 @@
 					  "mb-0-15";
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			clk-source = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 

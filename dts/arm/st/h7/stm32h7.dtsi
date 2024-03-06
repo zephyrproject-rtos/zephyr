@@ -516,8 +516,6 @@
 			interrupts = <19 0>, <21 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 
@@ -529,8 +527,6 @@
 			interrupts = <20 0>, <22 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 

@@ -425,8 +425,6 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
 			divider = <6>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 
@@ -438,8 +436,6 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
 			divider = <6>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 

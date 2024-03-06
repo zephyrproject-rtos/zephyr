@@ -330,9 +330,7 @@
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 	status = "okay";
 };
 
@@ -341,9 +339,7 @@
 	pinctrl-names = "default";
 	phys = <&can_phy1>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 };
 
 &flexcan2 {
@@ -351,9 +347,7 @@
 	pinctrl-names = "default";
 	phys = <&can_phy2>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 };
 
 &flexcan3 {
@@ -361,9 +355,7 @@
 	pinctrl-names = "default";
 	phys = <&can_phy3>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 };
 
 &flexcan4 {
@@ -371,9 +363,7 @@
 	pinctrl-names = "default";
 	phys = <&can_phy4>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 };
 
 &flexcan5 {
@@ -381,9 +371,7 @@
 	pinctrl-names = "default";
 	phys = <&can_phy5>;
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 };
 
 &lpi2c0 {
