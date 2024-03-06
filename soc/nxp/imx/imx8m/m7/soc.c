@@ -148,6 +148,38 @@ static void SOC_ClockInit(void)
 	CLOCK_EnableClock(kCLOCK_Sec_Debug);
 }
 
+static void gpio_init(void)
+{
+
+#if defined(CONFIG_GPIO_MCUX_IGPIO)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio1);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio2);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio3);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio4);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio5);
+
+#endif
+#endif
+}
+
 static int nxp_mimx8ml8_init(void)
 {
 
@@ -156,6 +188,8 @@ static int nxp_mimx8ml8_init(void)
 
 	/* SoC specific Clock settings */
 	SOC_ClockInit();
+
+	gpio_init();
 
 	return 0;
 }
