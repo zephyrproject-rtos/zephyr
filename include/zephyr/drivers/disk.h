@@ -70,7 +70,7 @@ struct disk_info {
 	/** Internally used list node */
 	sys_dnode_t node;
 	/** Disk name */
-	char *name;
+	const char *name;
 	/** Disk operations */
 	const struct disk_operations *ops;
 	/** Device associated to this disk */
