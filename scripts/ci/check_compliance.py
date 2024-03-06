@@ -202,7 +202,7 @@ class CheckPatch(ComplianceTest):
         if not os.path.exists(checkpatch):
             self.skip(f'{checkpatch} not found')
 
-        diff = subprocess.Popen(('git', 'diff', COMMIT_RANGE),
+        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
                                 cwd=GIT_TOP)
         try:
