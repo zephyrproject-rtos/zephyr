@@ -95,7 +95,7 @@ See the example below for lpcxpresso55s69 board using Mikrobus serial:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: lpcxpresso55s69_cpu0
+   :board: lpcxpresso55s69/lpc55s69/cpu0
    :shield: mikroe_wifi_bt_click_mikrobus
    :goals: build flash
 
