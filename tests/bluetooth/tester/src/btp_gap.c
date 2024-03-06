@@ -228,6 +228,7 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_GAP_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(rp->data, BTP_GAP_READ_CONTROLLER_INDEX_LIST);
 	tester_set_bit(rp->data, BTP_GAP_READ_CONTROLLER_INFO);
+	tester_set_bit(rp->data, BTP_GAP_SET_POWERED);
 	tester_set_bit(rp->data, BTP_GAP_SET_CONNECTABLE);
 
 	/* octet 1 */
@@ -448,6 +449,37 @@ static uint8_t set_oob_sc_remote_data(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 #endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
+
+static uint8_t set_powered(const void *cmd, uint16_t cmd_len,
+					void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_set_powered_cmd *cp = cmd;
+	struct btp_gap_set_powered_rp *rp = rsp;
+	int err;
+
+	if (cp->powered) {
+		err = bt_enable(NULL);
+		if (err < 0) {
+			LOG_ERR("Unable to enable Bluetooth: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+		bt_conn_cb_register(&conn_callbacks);
+		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_POWERED);
+	} else {
+		err = bt_disable();
+		if (err < 0) {
+			LOG_ERR("Unable to disable Bluetooth: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+		bt_conn_cb_unregister(&conn_callbacks);
+		atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_POWERED);
+	}
+	rp->current_settings = sys_cpu_to_le32(current_settings);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
 
 static uint8_t set_connectable(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
@@ -1682,6 +1714,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GAP_READ_CONTROLLER_INFO,
 		.expect_len = 0,
 		.func = controller_info,
+	},
+	{
+		.opcode = BTP_GAP_SET_POWERED,
+		.expect_len = sizeof(struct btp_gap_set_powered_cmd),
+		.func = set_powered,
 	},
 	{
 		.opcode = BTP_GAP_SET_CONNECTABLE,
