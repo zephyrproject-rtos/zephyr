@@ -641,11 +641,14 @@ static const uint32_t table_oversampling_ratio[] = {
  */
 static void adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
 {
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	/*
-	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
-	 * or enabled without conversion on going : disable it, it will stop
+	 * Setting OVS bits is conditioned to ADC state: ADC must be disabled
+	 * or enabled without conversion on going : disable it, it will stop.
+	 * For the G0 series, ADC must be disabled to prevent CKMODE bitfield
+	 * from getting reset, see errata ES0418 section 2.6.4.
 	 */
 	if (LL_ADC_GetOverSamplingScope(adc) == ovs_scope) {
 		return;
