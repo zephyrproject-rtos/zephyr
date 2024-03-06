@@ -210,6 +210,13 @@
 				interrupts = <37 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			ecb020: ecb@27000 {
+				compatible = "nordic,nrf-ecb";
+				reg = <0x27000 0x1000>;
+				status = "disabled";
+				interrupts = <39 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			timer020: timer@28000 {
 				compatible = "nordic,nrf-timer";
 				reg = <0x28000 0x1000>;
