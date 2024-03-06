@@ -10,9 +10,12 @@ properties:
       Initial data phase bitrate in bit/s.
   sample-point-data:
     type: int
-    required: true
     description: |
       Initial data phase sample point in per mille (e.g. 875 equals 87.5%).
+
+      If this is unset (or if it is set to 0), the initial sample point will default to 75.0% for
+      bitrates over 800 kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for all other
+      bitrates.
   tx-delay-comp-offset:
     type: int
     default: 0
