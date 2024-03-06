@@ -24,6 +24,13 @@
 #define _priq_run_best		z_priq_rb_best
  /* Multi Queue Scheduling */
 #elif defined(CONFIG_SCHED_MULTIQ)
+
+# if defined(CONFIG_64BIT)
+#  define NBITS 64
+# else
+#  define NBITS 32
+# endif
+
 #define _priq_run_add		z_priq_mq_add
 #define _priq_run_remove	z_priq_mq_remove
 #define _priq_run_best		z_priq_mq_best
@@ -60,27 +67,41 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 
 #ifdef CONFIG_SCHED_MULTIQ
-# if (K_LOWEST_THREAD_PRIO - K_HIGHEST_THREAD_PRIO) > 31
-# error Too many priorities for multiqueue scheduler (max 32)
-# endif
+
+struct prio_info {
+	uint8_t offset_prio;
+	uint8_t idx;
+	uint8_t bit;
+};
+
+static ALWAYS_INLINE struct prio_info get_prio_info(int8_t old_prio)
+{
+	struct prio_info ret;
+
+	ret.offset_prio = old_prio - K_HIGHEST_THREAD_PRIO;
+	ret.idx = ret.offset_prio / NBITS;
+	ret.bit = ret.offset_prio % NBITS;
+
+	return ret;
+}
 
 static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
 					struct k_thread *thread)
 {
-	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
+	struct prio_info pos = get_prio_info(thread->base.prio);
 
-	sys_dlist_append(&pq->queues[priority_bit], &thread->base.qnode_dlist);
-	pq->bitmask |= BIT(priority_bit);
+	sys_dlist_append(&pq->queues[pos.offset_prio], &thread->base.qnode_dlist);
+	pq->bitmask[pos.idx] |= BIT(pos.bit);
 }
 
 static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
 					   struct k_thread *thread)
 {
-	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
+	struct prio_info pos = get_prio_info(thread->base.prio);
 
 	sys_dlist_remove(&thread->base.qnode_dlist);
-	if (sys_dlist_is_empty(&pq->queues[priority_bit])) {
-		pq->bitmask &= ~BIT(priority_bit);
+	if (sys_dlist_is_empty(&pq->queues[pos.offset_prio])) {
+		pq->bitmask[pos.idx] &= ~BIT(pos.bit);
 	}
 }
 #endif /* CONFIG_SCHED_MULTIQ */
