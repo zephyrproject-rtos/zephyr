@@ -75,6 +75,48 @@ typedef void *clock_control_subsys_t;
  */
 typedef void *clock_control_subsys_rate_t;
 
+/**
+ * clock_control_cb_reason identifies the reasons for a clock callback,
+ * which a driver can use to determine which action to take when the callback
+ * occurs
+ */
+enum clock_control_cb_reason {
+	CLOCK_CONTROL_REASON_STARTED, /*!< Clock has started */
+	CLOCK_CONTROL_REASON_STOPPED, /*!< Clock has stopped */
+	CLOCK_CONTROL_REASON_CHANGED, /*!< Clock rate has changed */
+};
+
+struct clock_control_callback;
+
+/** @brief Callback called on clock tree status change
+ *
+ * @param dev		Device structure whose driver controls the clock.
+ * @param user_data	User data, set in callback initializer
+ */
+typedef void (*clock_control_status_cb_t)(const struct device *dev,
+					  void *user_data);
+
+/** @brief clock control callback structure
+ *
+ * Used to register a callback for a clock subsystem change event. Should
+ * be initialized with @ref clock_control_init_callback.
+ * As many callbacks as needed can be added, as long as each is a unique
+ * pointer of struct clock_control_callback. Structures should not be allocated
+ * on the stack.
+ */
+struct clock_control_callback {
+	/** This is meant to be used in the driver and the user should not
+	 * mess with it (see drivers/clock_control/clock_control_utils.h)
+	 */
+	sys_snode_t node;
+
+	/** Callback function */
+	clock_control_status_cb_t handler;
+
+	/** User data */
+	void *user_data;
+};
+
 /** @brief Callback called on clock started.
  *
  * @param dev		Device structure whose driver controls the clock.
@@ -112,6 +154,12 @@ typedef int (*clock_control_configure_fn)(const struct device *dev,
 typedef int (*clock_control_setpoint_fn)(const struct device *dev,
 					 uint32_t setpoint);
 
+typedef int (*clock_control_add_cb_fn)(const struct device *dev,
+				       struct clock_control_callback *cb);
+
+typedef int (*clock_control_remove_cb_fn)(const struct device *dev,
+					  struct clock_control_callback *cb);
+
 struct clock_control_driver_api {
 	clock_control			on;
 	clock_control			off;
@@ -121,6 +169,8 @@ struct clock_control_driver_api {
 	clock_control_set		set_rate;
 	clock_control_configure_fn	configure;
 	clock_control_setpoint_fn	select_setpoint;
+	clock_control_add_cb_fn		add_callback;
+	clock_control_remove_cb_fn	remove_callback;
 };
 
 /**
@@ -335,6 +385,70 @@ static inline int clock_control_setpoint(const struct device *dev,
 	}
 
 	return api->select_setpoint(dev, setpoint_id);
+}
+
+/**
+ * @brief Initialize a clock callback
+ *
+ * This function initializes a struct clock_control_callback structure
+ * @param callback A clock callback pointer. Must not be allocated on stack.
+ * @param handler A valid handler function pointer.
+ * @param user_data User data to pass to callback function (may be NULL)
+ */
+static inline void clock_control_init_callback(struct clock_control_callback *callback,
+					       clock_control_status_cb_t handler,
+					       void *user_data)
+{
+	__ASSERT(callback, "Callback pointer should not be NULL");
+	__ASSERT(handler, "Callback handler pointer should not be NULL");
+
+	callback->handler = handler;
+	callback->user_data = user_data;
+}
+
+/**
+ * @brief Add a clock control callback
+ * Adds a clock control callback. The callback will be called whenever
+ * the state of the system clock tree changes.
+ * @param dev: Device structure whose driver controls the clock
+ * @param callback: Valid clock control callback structure pointer
+ * @retval 0 on success
+ * @retval -ENOSYS if the device driver does not implement this call
+ * @retval -errno Other negative errno on failure.
+ */
+static inline int clock_control_add_callback(const struct device *dev,
+					     struct clock_control_callback *callback)
+{
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->add_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->add_callback(dev, callback);
+}
+
+/**
+ * @brief Remove a clock control callback
+ * Removes a clock control callback
+ * @param dev: Device structure whose driver controls the clock
+ * @param callback: Valid clock control callback structure pointer
+ * @retval 0 on success
+ * @retval -ENOSYS if the device driver does not implement this call
+ * @retval -errno Other negative errno on failure.
+ */
+static inline int clock_control_remove_callback(const struct device *dev,
+						struct clock_control_callback *callback)
+{
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->remove_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->remove_callback(dev, callback);
 }
 
 #ifdef __cplusplus
