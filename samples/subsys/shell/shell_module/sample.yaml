@@ -44,6 +44,20 @@ tests:
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
     integration_platforms:
       - nrf52833dk/nrf52833
+  sample.shell.shell_module.bt:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    tags:
+      - shell
+      - bluetooth
+    filter: CONFIG_DT_HAS_ZEPHYR_NUS_UART_ENABLED
+    arch_exclude:
+      - posix
+    extra_args:
+      - OVERLAY_CONFIG="overlay-bt.conf"
+      - DTC_OVERLAY_FILE="bt.overlay"
   sample.shell.shell_module.login:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
