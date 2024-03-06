@@ -41,6 +41,24 @@
 	RV_I(	op a7, __z_arch_esf_t_a7_OFFSET(sp)	);\
 	RV_E(	op ra, __z_arch_esf_t_ra_OFFSET(sp)	)
 
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+#define CALLEE_SAVED_OFFSET (__z_arch_esf_t_extra_info_OFFSET + ___extra_esf_info_t_callee_OFFSET)
+/* Convenience macro for loading/storing callee saved register states. */
+#define DO_CALLEE_SAVED(op) \
+	RV_E(	op s0, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s0_OFFSET)(sp)		);\
+	RV_E(	op s1, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s1_OFFSET)(sp)		);\
+	RV_I(	op s2, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s2_OFFSET)(sp)		);\
+	RV_I(	op s3, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s3_OFFSET)(sp)		);\
+	RV_I(	op s4, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s4_OFFSET)(sp)		);\
+	RV_I(	op s5, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s5_OFFSET)(sp)		);\
+	RV_I(	op s6, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s6_OFFSET)(sp)		);\
+	RV_I(	op s7, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s7_OFFSET)(sp)		);\
+	RV_I(	op s8, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s8_OFFSET)(sp)		);\
+	RV_I(	op s9, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s9_OFFSET)(sp)		);\
+	RV_I(	op s10, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s10_OFFSET)(sp)	);\
+	RV_I(	op s11, (CALLEE_SAVED_OFFSET + ___callee_saved_t_s11_OFFSET)(sp)	)
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 	.macro get_current_cpu dst
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
 	csrr \dst, mscratch
@@ -161,6 +179,10 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 	DO_CALLER_SAVED(sr)		;
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
+
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	DO_CALLEE_SAVED(sr)		;
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
 	/* Save s0 in the esf and load it with &_current_cpu. */
 	sr s0, __z_arch_esf_t_s0_OFFSET(sp)
@@ -697,6 +719,9 @@ fp_trap_exit:
 #else
 	/* Restore caller-saved registers from thread stack */
 	DO_CALLER_SAVED(lr)
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	DO_CALLEE_SAVED(lr)
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
 #ifdef CONFIG_USERSPACE
 	/* retrieve saved stack pointer */

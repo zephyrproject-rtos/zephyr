@@ -45,6 +45,13 @@ struct soc_esf {
 };
 #endif
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+struct __extra_esf_info {
+	_callee_saved_t callee;
+};
+typedef struct __extra_esf_info _extra_esf_info_t;
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 #if defined(CONFIG_RISCV_SOC_HAS_ISR_STACKING)
 	SOC_ISR_STACKING_ESF_DECLARE;
 #else
@@ -83,6 +90,10 @@ struct __esf {
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	struct soc_esf soc_context;
+#endif
+
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	struct __extra_esf_info extra_info;
 #endif
 } __aligned(16);
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
