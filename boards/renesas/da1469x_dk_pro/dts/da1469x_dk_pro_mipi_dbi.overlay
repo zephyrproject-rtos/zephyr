@@ -32,10 +32,17 @@
     };
 };
 
-&mipi_dbi {
-    reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+&lcdc {
+    compatible = "renesas,smartbond-mipi-dbi";
     status = "okay";
+    reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
     spi-dev = <&spi2>;
+    pinctrl-0 = <&mipi_dbi_default>;
+    pinctrl-1 = <&mipi_dbi_read>;
+    pinctrl-2 = <&mipi_dbi_sleep>;
+    pinctrl-names = "default", "read", "sleep";
+    #address-cells = <1>;
+    #size-cells = <0>;
 
     ili9340: ili9340@0 {
         compatible = "ilitek,ili9340";
