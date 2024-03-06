@@ -102,8 +102,20 @@ static void unwind_stack(const z_arch_esf_t *esf)
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
 {
+	z_riscv_fatal_error_csf(reason, esf, NULL);
+}
+
+FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf_t *esf,
+					   const _callee_saved_t *csf)
+{
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
+		/*
+		 * Kernel stack pointer prior this exception i.e. before
+		 * storing the exception stack frame.
+		 */
+		uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
+
 		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
 		LOG_ERR("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
 		LOG_ERR("     a2: " PR_REG "    t2: " PR_REG, esf->a2, esf->t2);
@@ -119,8 +131,15 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a7: " PR_REG, esf->a7);
 #endif /* CONFIG_RISCV_ISA_RV32E */
 #ifdef CONFIG_USERSPACE
-		LOG_ERR("     sp: " PR_REG, esf->sp);
+		if ((esf->mstatus & MSTATUS_MPP) == 0) {
+			/*
+			 * Exception happened in user space:
+			 * consider the saved user stack instead.
+			 */
+			sp = esf->sp;
+		}
 #endif
+		LOG_ERR("     sp: " PR_REG, sp);
 		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
@@ -128,6 +147,21 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 #ifdef CONFIG_RISCV_EXCEPTION_STACK_TRACE
 		unwind_stack(esf);
 #endif /* CONFIG_RISCV_EXCEPTION_STACK_TRACE */
+	}
+
+	if (csf != NULL) {
+#if defined(CONFIG_RISCV_ISA_RV32E)
+		LOG_ERR("     s0: " PR_REG, csf->s0);
+		LOG_ERR("     s1: " PR_REG, csf->s1);
+#else
+		LOG_ERR("     s0: " PR_REG "    s6: " PR_REG, csf->s0, csf->s6);
+		LOG_ERR("     s1: " PR_REG "    s7: " PR_REG, csf->s1, csf->s7);
+		LOG_ERR("     s2: " PR_REG "    s8: " PR_REG, csf->s2, csf->s8);
+		LOG_ERR("     s3: " PR_REG "    s9: " PR_REG, csf->s3, csf->s9);
+		LOG_ERR("     s4: " PR_REG "   s10: " PR_REG, csf->s4, csf->s10);
+		LOG_ERR("     s5: " PR_REG "   s11: " PR_REG, csf->s5, csf->s11);
+#endif /* CONFIG_RISCV_ISA_RV32E */
+		LOG_ERR("");
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);

@@ -60,6 +60,8 @@ Architectures
 
   * Implemented frame-pointer based stack unwinding.
 
+  * The fatal error message triggered from a fault now contains the callee-saved-registers states.
+
 * Xtensa
 
 Bluetooth
