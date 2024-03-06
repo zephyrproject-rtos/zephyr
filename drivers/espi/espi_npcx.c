@@ -917,10 +917,9 @@ static int espi_npcx_receive_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	struct espi_npcx_data *const data = dev->data;
 	uint8_t *oob_buf = pckt->buf;
 	uint32_t oob_data;
-	int idx_rx_buf, sz_oob_rx, ret;
+	int idx_rx_buf, sz_oob_rx;
 
 	/* Check eSPI bus status first */
 	if (IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_BERR)) {
@@ -929,6 +928,9 @@ static int espi_npcx_receive_oob(const struct device *dev,
 	}
 
 #if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
+	struct espi_npcx_data *const data = dev->data;
+	int ret;
+
 	/* Wait until get oob package or timeout */
 	ret = k_sem_take(&data->oob_rx_lock, K_MSEC(ESPI_OOB_MAX_TIMEOUT));
 	if (ret == -EAGAIN) {
