@@ -3,6 +3,8 @@
 
 include: ["eeprom-base.yaml", i2c-device.yaml]
 
+bus: ateccx08
+
 properties:
   wake-delay:
     type: int
