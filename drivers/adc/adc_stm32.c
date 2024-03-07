@@ -547,6 +547,23 @@ static int adc_stm32_calibrate(const struct device *dev)
 	ADC_TypeDef *adc = config->base;
 	int err;
 
+#if defined(CONFIG_ADC_STM32_DMA)
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+	/* Make sure DMA is disabled before starting calibration */
+	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc == ADC4) {
+		/* Make sure DMA is disabled before starting calibration */
+		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+	}
+#endif /* CONFIG_SOC_SERIES_* */
+#endif /* CONFIG_ADC_STM32_DMA */
+
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	adc_stm32_disable(adc);
 	adc_stm32_calibration_start(dev);
