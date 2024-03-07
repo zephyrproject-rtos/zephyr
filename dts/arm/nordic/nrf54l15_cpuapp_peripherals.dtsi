@@ -330,7 +330,9 @@ grtc: grtc@e2000 {
 	reg = <0xe2000 0x1000>;
 	cc-num = <12>;
 	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
-	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>;
+	child-owned-channels = <7 8 9 10 11>;
+	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <229 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 };
 
