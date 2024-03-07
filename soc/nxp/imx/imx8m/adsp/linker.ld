@@ -529,4 +529,5 @@ SECTIONS
   } >fw_metadata_seg :metadata_entries_phdr
 
   #include <snippets-sections.ld>
+  /DISCARD/ : { *(.note.GNU-stack) }
 }
