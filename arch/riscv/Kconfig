@@ -229,6 +229,15 @@ config RV_BOOT_HART
 	  For RISC-V systems such as MPFS and FU540 this would be set to 1 to
 	  skip the E51 HART 0 as it is not usable in SMP configurations.
 
+config RISCV_HART_MASK
+	int
+	default -1
+	help
+	  Configures the mask for the HART ID.
+	  For RISC-V systems with HART ID starting from non-zero value,
+	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
+	  such that we can extract the bits that start from 0.
+
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	select THREAD_STACK_INFO
