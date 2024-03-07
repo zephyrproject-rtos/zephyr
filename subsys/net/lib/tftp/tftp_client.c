@@ -55,7 +55,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 {
 	int ret;
 	int send_count = 0, ack_count = 0;
-	struct pollfd fds = {
+	struct zsock_pollfd fds = {
 		.fd     = sock,
 		.events = ZSOCK_POLLIN,
 	};
@@ -73,7 +73,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 		sys_put_be16(block_no, client->tftp_buf + 2);
 		memcpy(client->tftp_buf + TFTP_HEADER_SIZE, data_buffer, data_size);
 
-		ret = send(sock, client->tftp_buf, data_size + TFTP_HEADER_SIZE, 0);
+		ret = zsock_send(sock, client->tftp_buf, data_size + TFTP_HEADER_SIZE, 0);
 		if (ret < 0) {
 			LOG_ERR("send() error: %d", -errno);
 			return -errno;
@@ -85,7 +85,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 				break;
 			}
 
-			ret = poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
+			ret = zsock_poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
 			if (ret < 0) {
 				LOG_ERR("recv() error: %d", -errno);
 				return -errno;  /* IO error */
@@ -93,7 +93,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 				break;		/* no response, re-send data */
 			}
 
-			ret = recv(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0);
+			ret = zsock_recv(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0);
 			if (ret < 0) {
 				LOG_ERR("recv() error: %d", -errno);
 				return -errno;
@@ -166,7 +166,7 @@ static inline int send_err(int sock, struct tftpc *client, int err_code, char *e
 	}
 
 	/* Send Error to server. */
-	return send(sock, client->tftp_buf, req_size, 0);
+	return zsock_send(sock, client->tftp_buf, req_size, 0);
 }
 
 /*
@@ -176,7 +176,7 @@ static inline int send_ack(int sock, struct tftphdr_ack *ackhdr)
 {
 	LOG_DBG("Client acking block number: %d", ntohs(ackhdr->block));
 
-	return send(sock, ackhdr, sizeof(struct tftphdr_ack), 0);
+	return zsock_send(sock, ackhdr, sizeof(struct tftphdr_ack), 0);
 }
 
 static int send_request(int sock, struct tftpc *client,
@@ -196,19 +196,19 @@ static int send_request(int sock, struct tftpc *client,
 			remote_file);
 
 		/* Send the request to the server */
-		ret = sendto(sock, client->tftp_buf, req_size, 0, &client->server,
-			     ADDRLEN(client->server));
+		ret = zsock_sendto(sock, client->tftp_buf, req_size, 0, &client->server,
+				   ADDRLEN(client->server));
 		if (ret < 0) {
 			break;
 		}
 
 		/* Poll for the response */
-		struct pollfd fds = {
+		struct zsock_pollfd fds = {
 			.fd     = sock,
 			.events = ZSOCK_POLLIN,
 		};
 
-		ret = poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
+		ret = zsock_poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
 		if (ret <= 0) {
 			LOG_DBG("Failed to get data from the TFTP Server"
 				", req. no. %d", tx_count);
@@ -219,8 +219,8 @@ static int send_request(int sock, struct tftpc *client,
 		struct sockaddr from_addr;
 		socklen_t from_addr_len = sizeof(from_addr);
 
-		ret = recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0,
-				&from_addr, &from_addr_len);
+		ret = zsock_recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0,
+				     &from_addr, &from_addr_len);
 		if (ret < TFTP_HEADER_SIZE) {
 			req_size = make_request(client->tftp_buf, request,
 						remote_file, mode);
@@ -228,7 +228,7 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Limit communication to the specific address:port */
-		if (connect(sock, &from_addr, from_addr_len) < 0) {
+		if (zsock_connect(sock, &from_addr, from_addr_len) < 0) {
 			ret = -errno;
 			LOG_ERR("connect failed, err %d", ret);
 			break;
@@ -258,7 +258,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 		return -EINVAL;
 	}
 
-	sock = socket(client->server.sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(client->server.sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket: %d", errno);
 		return -errno;
@@ -338,7 +338,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 		}
 
 		/* Poll for the response */
-		struct pollfd fds = {
+		struct zsock_pollfd fds = {
 			.fd     = sock,
 			.events = ZSOCK_POLLIN,
 		};
@@ -353,10 +353,10 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 			/* Send ACK to the TFTP Server */
 			(void)send_ack(sock, &ackhdr);
 			tx_count++;
-		} while (poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT) <= 0);
+		} while (zsock_poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT) <= 0);
 
 		/* Receive data from the TFTP Server. */
-		ret = recv(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0);
+		ret = zsock_recv(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0);
 		rcv_size = ret;
 	}
 
@@ -365,7 +365,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 	}
 
 get_end:
-	close(sock);
+	zsock_close(sock);
 	return ret;
 }
 
@@ -383,7 +383,7 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 		return -EINVAL;
 	}
 
-	sock = socket(client->server.sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(client->server.sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket: %d", errno);
 		return -errno;
@@ -449,6 +449,6 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 	} while (true);
 
 put_end:
-	close(sock);
+	zsock_close(sock);
 	return ret;
 }
