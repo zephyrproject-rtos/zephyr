@@ -10,6 +10,7 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <timeout_q.h>
+#include <kthread.h>
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
@@ -52,7 +53,7 @@ void z_unpend_thread(struct k_thread *thread);
 int z_unpend_all(_wait_q_t *wait_q);
 bool z_thread_prio_set(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
-void idle(void *unused1, void *unused2, void *unused3);
+
 void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
 void z_sched_abort(struct k_thread *thread);
@@ -66,127 +67,6 @@ void z_thread_abort(struct k_thread *thread);
 static inline void z_reschedule_unlocked(void)
 {
 	(void) z_reschedule_irqlock(arch_irq_lock());
-}
-
-static inline bool z_is_idle_thread_entry(void *entry_point)
-{
-	return entry_point == idle;
-}
-
-static inline bool z_is_idle_thread_object(struct k_thread *thread)
-{
-#ifdef CONFIG_MULTITHREADING
-#ifdef CONFIG_SMP
-	return thread->base.is_idle;
-#else
-	return thread == &z_idle_threads[0];
-#endif /* CONFIG_SMP */
-#else
-	return false;
-#endif /* CONFIG_MULTITHREADING */
-}
-
-static inline bool z_is_thread_suspended(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_SUSPENDED) != 0U;
-}
-
-static inline bool z_is_thread_pending(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_PENDING) != 0U;
-}
-
-static inline bool z_is_thread_prevented_from_running(struct k_thread *thread)
-{
-	uint8_t state = thread->base.thread_state;
-
-	return (state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
-			 _THREAD_DUMMY | _THREAD_SUSPENDED)) != 0U;
-
-}
-
-static inline bool z_is_thread_timeout_active(struct k_thread *thread)
-{
-	return !z_is_inactive_timeout(&thread->base.timeout);
-}
-
-static inline bool z_is_thread_ready(struct k_thread *thread)
-{
-	return !((z_is_thread_prevented_from_running(thread)) != 0U ||
-		 z_is_thread_timeout_active(thread));
-}
-
-static inline bool z_has_thread_started(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_PRESTART) == 0U;
-}
-
-static inline bool z_is_thread_state_set(struct k_thread *thread, uint32_t state)
-{
-	return (thread->base.thread_state & state) != 0U;
-}
-
-static inline bool z_is_thread_queued(struct k_thread *thread)
-{
-	return z_is_thread_state_set(thread, _THREAD_QUEUED);
-}
-
-static inline void z_mark_thread_as_suspended(struct k_thread *thread)
-{
-	thread->base.thread_state |= _THREAD_SUSPENDED;
-
-	SYS_PORT_TRACING_FUNC(k_thread, sched_suspend, thread);
-}
-
-static inline void z_mark_thread_as_not_suspended(struct k_thread *thread)
-{
-	thread->base.thread_state &= ~_THREAD_SUSPENDED;
-
-	SYS_PORT_TRACING_FUNC(k_thread, sched_resume, thread);
-}
-
-static inline void z_mark_thread_as_started(struct k_thread *thread)
-{
-	thread->base.thread_state &= ~_THREAD_PRESTART;
-}
-
-static inline void z_mark_thread_as_pending(struct k_thread *thread)
-{
-	thread->base.thread_state |= _THREAD_PENDING;
-}
-
-static inline void z_mark_thread_as_not_pending(struct k_thread *thread)
-{
-	thread->base.thread_state &= ~_THREAD_PENDING;
-}
-
-/*
- * This function tags the current thread as essential to system operation.
- * Exceptions raised by this thread will be treated as a fatal system error.
- */
-static inline void z_thread_essential_set(struct k_thread *thread)
-{
-	thread->base.user_options |= K_ESSENTIAL;
-}
-
-/*
- * This function tags the current thread as not essential to system operation.
- * Exceptions raised by this thread may be recoverable.
- * (This is the default tag for a thread.)
- */
-static inline void z_thread_essential_clear(struct k_thread *thread)
-{
-	thread->base.user_options &= ~K_ESSENTIAL;
-}
-
-/*
- * This routine indicates if the current thread is an essential system thread.
- *
- * Returns true if current thread is essential, false if it is not.
- */
-static inline bool z_is_thread_essential(struct k_thread *thread)
-{
-	return (thread->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
 }
 
 static inline bool z_is_under_prio_ceiling(int prio)
