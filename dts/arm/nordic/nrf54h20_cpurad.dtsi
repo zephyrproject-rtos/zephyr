@@ -47,5 +47,6 @@ cpuppr_vevif: &cpuppr_vevif_remote {};
 };
 
 &grtc {
-	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>;
+	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <108 NRF_DEFAULT_IRQ_PRIORITY>;
 };
