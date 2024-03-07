@@ -60,7 +60,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 	CODE_UNREACHABLE;
 }
 
-static char *cause_str(unsigned long cause)
+static const char *cause_str(unsigned long cause)
 {
 	switch (cause) {
 	case 0:

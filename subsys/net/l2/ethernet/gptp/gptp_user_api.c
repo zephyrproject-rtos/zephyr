@@ -76,7 +76,7 @@ int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present)
 	return -EAGAIN;
 }
 
-char *gptp_sprint_clock_id(const uint8_t *clk_id, char *output, size_t output_len)
+const char *gptp_sprint_clock_id(const uint8_t *clk_id, char *output, size_t output_len)
 {
 	return net_sprint_ll_addr_buf(clk_id, 8, output, output_len);
 }

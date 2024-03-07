@@ -34,7 +34,7 @@ bool lwm2m_obj_path_equal(const struct lwm2m_obj_path *a, const struct lwm2m_obj
  * @param addr sockaddr for socket using ipv4 or ipv6
  * @return ip address in readable form
  */
-char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
+const char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
 /**
  * @brief Converts the token to a printable format.

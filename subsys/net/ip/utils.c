@@ -83,7 +83,7 @@ char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad)
 	return ptr;
 }
 
-char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+const char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 			     char *buf, int buflen)
 {
 	uint8_t i, len, blen;

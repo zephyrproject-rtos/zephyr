@@ -290,7 +290,7 @@ int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present);
  *
  * @return Pointer to output buffer
  */
-char *gptp_sprint_clock_id(const uint8_t *clk_id, char *output,
+const char *gptp_sprint_clock_id(const uint8_t *clk_id, char *output,
 			   size_t output_len);
 
 /**

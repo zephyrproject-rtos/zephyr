@@ -48,7 +48,7 @@ bool arp_add(struct net_if *iface, struct in_addr *src,
 #define PKT_ALLOC_TIME K_MSEC(50)
 #define TEST_PORT 9999
 
-static char *test_data = "Test data to be sent";
+static const char *test_data = "Test data to be sent";
 
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
@@ -774,7 +774,7 @@ ZTEST(net_virtual, test_virtual_07_verify_name)
 #define NAME "foobar"
 #define NAME2 "123456789"
 	struct net_if *iface = virtual_interfaces[0];
-	char *tmp = NAME;
+	const char *tmp = NAME;
 	char buf[sizeof(NAME2)];
 	char *name;
 

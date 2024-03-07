@@ -556,16 +556,16 @@ const static struct hl7800_config hl7800_cfg = {
 static struct hl7800_iface_ctx iface_ctx;
 
 static size_t hl7800_read_rx(struct net_buf **buf);
-static char *get_network_state_string(enum mdm_hl7800_network_state state);
-static char *get_startup_state_string(enum mdm_hl7800_startup_state state);
-static char *get_sleep_state_string(enum mdm_hl7800_sleep state);
+static const char *get_network_state_string(enum mdm_hl7800_network_state state);
+static const char *get_startup_state_string(enum mdm_hl7800_startup_state state);
+static const char *get_sleep_state_string(enum mdm_hl7800_sleep state);
 static void set_network_state(enum mdm_hl7800_network_state state);
 static void set_startup_state(enum mdm_hl7800_startup_state state);
 static void set_sleep_state(enum mdm_hl7800_sleep state);
 static void generate_network_state_event(void);
 static void generate_startup_state_event(void);
 static void generate_sleep_state_event(void);
-static int modem_boot_handler(char *reason);
+static int modem_boot_handler(const char *reason);
 static void mdm_vgpio_work_cb(struct k_work *item);
 static void mdm_reset_work_callback(struct k_work *item);
 static void mdm_power_off_work_callback(struct k_work *item);
@@ -582,7 +582,7 @@ static int set_sleep_level(void);
 #endif
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
-static char *get_fota_state_string(enum mdm_hl7800_fota_state state);
+static const char *get_fota_state_string(enum mdm_hl7800_fota_state state);
 static void set_fota_state(enum mdm_hl7800_fota_state state);
 static void generate_fota_state_event(void);
 static void generate_fota_count_event(void);
@@ -2390,7 +2390,7 @@ static bool on_cmd_radio_active_bands(struct net_buf **buf, uint16_t len)
 	return true;
 }
 
-static char *get_startup_state_string(enum mdm_hl7800_startup_state state)
+static const char *get_startup_state_string(enum mdm_hl7800_startup_state state)
 {
 	/* clang-format off */
 	switch (state) {
@@ -2503,7 +2503,7 @@ error:
 
 #endif /* CONFIG_MODEM_HL7800_LOW_POWER_MODE */
 
-static char *get_sleep_state_string(enum mdm_hl7800_sleep state)
+static const char *get_sleep_state_string(enum mdm_hl7800_sleep state)
 {
 	/* clang-format off */
 	switch (state) {
@@ -2538,7 +2538,7 @@ static void generate_sleep_state_event(void)
 }
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
-static char *get_fota_state_string(enum mdm_hl7800_fota_state state)
+static const char *get_fota_state_string(enum mdm_hl7800_fota_state state)
 {
 	/* clang-format off */
 	switch (state) {
@@ -3382,7 +3382,7 @@ done:
 	hl7800_unlock();
 }
 
-static char *get_network_state_string(enum mdm_hl7800_network_state state)
+static const char *get_network_state_string(enum mdm_hl7800_network_state state)
 {
 	switch (state) {
 		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800, NOT_REGISTERED);
@@ -5074,7 +5074,7 @@ static void modem_run(void)
 	k_sleep(MDM_RESET_HIGH_TIME);
 }
 
-static int modem_boot_handler(char *reason)
+static int modem_boot_handler(const char *reason)
 {
 	int ret;
 
@@ -5249,7 +5249,7 @@ static int modem_reset_and_configure(void)
 	int ret = 0;
 	bool sleep = false;
 	bool config_apn = false;
-	char *apn;
+	const char *apn;
 #ifdef CONFIG_MODEM_HL7800_EDRX
 	int edrx_act_type;
 	char set_edrx_msg[sizeof("AT+CEDRXS=2,4,\"0000\"")];
@@ -5595,7 +5595,7 @@ error:
 	return 0;
 }
 
-static int write_apn(char *access_point_name)
+static int write_apn(const char *access_point_name)
 {
 	char cmd_string[MDM_HL7800_APN_CMD_MAX_SIZE];
 

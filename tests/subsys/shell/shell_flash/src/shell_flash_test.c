@@ -29,7 +29,7 @@
 ZTEST(shell_flash, test_flash_read)
 {
 	/* To keep the test simple, just compare against known data */
-	char *const lines[] = {
+	const char *const lines[] = {
 		"00000000: 41 42 43 44 45 46 47 48  49 4a 4b 4c 4d 4e 4f 50 |ABCDEFGH IJKLMNOP|",
 		"00000010: 51 52 53 54 55 56 57 58  59 5a 5b 5c 5d 5e 5f 60 |QRSTUVWX YZ[\\]^_`|",
 		"00000020: 61 62 63                                         |abc              |",

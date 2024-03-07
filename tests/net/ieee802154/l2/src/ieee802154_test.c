@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 #include <ipv6.h>
 
 struct ieee802154_pkt_test {
-	char *name;
+	const char *name;
 	struct in6_addr src;
 	struct in6_addr dst;
 	uint8_t *pkt;

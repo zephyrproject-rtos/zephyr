@@ -327,7 +327,7 @@ void nsi_cmd_print_long_help(struct args_struct_t args_struct[])
 
 	while (args_struct[count].option != NULL) {
 		int printed_right;
-		char *toprint;
+		const char *toprint;
 		int total_to_print;
 
 		nsi_cmd_gen_switch_syntax(stringy, _MAX_STRINGY_LEN,

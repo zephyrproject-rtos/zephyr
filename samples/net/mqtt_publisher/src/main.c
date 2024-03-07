@@ -229,7 +229,7 @@ static char *get_mqtt_payload(enum mqtt_qos qos)
 	return payload;
 }
 
-static char *get_mqtt_topic(void)
+static const char *get_mqtt_topic(void)
 {
 #if APP_BLUEMIX_TOPIC
 	return "iot-2/type/"BLUEMIX_DEVTYPE"/id/"BLUEMIX_DEVID
@@ -244,7 +244,7 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	struct mqtt_publish_param param;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (uint8_t *)get_mqtt_topic();
+	param.message.topic.topic.utf8 = (const uint8_t *)get_mqtt_topic();
 	param.message.topic.topic.size =
 			strlen(param.message.topic.topic.utf8);
 	param.message.payload.data = get_mqtt_payload(qos);

@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #define TEST_PORT 9999
 
-static char *test_data = "Test data to be sent";
+static const char *test_data = "Test data to be sent";
 static uint8_t test_data_large[2000];
 static uint8_t verify_buf[2000];
 

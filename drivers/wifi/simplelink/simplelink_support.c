@@ -472,7 +472,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		 * for the WiFi interface, so hardcoding the interface
 		 * id to 1 here.
 		 */
-		SlNetIf_add(SLNETIF_ID_1, SLNET_IF_WIFI_NAME,
+		SlNetIf_add(SLNETIF_ID_1, (char *)SLNET_IF_WIFI_NAME,
 			(const SlNetIf_Config_t *)&slnetifwifi_config_zephyr,
 			SLNET_IF_WIFI_PRIO);
 

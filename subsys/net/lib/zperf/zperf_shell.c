@@ -152,7 +152,7 @@ static long parse_number(const char *string, const uint32_t *divisor_arr,
 	return (*divisor == 0U) ? dec : dec * *divisor;
 }
 
-static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
+static int parse_ipv6_addr(const struct shell *sh, const char *host, const char *port,
 			   struct sockaddr_in6 *addr)
 {
 	int ret;
@@ -178,7 +178,7 @@ static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
 	return 0;
 }
 
-static int parse_ipv4_addr(const struct shell *sh, char *host, char *port,
+static int parse_ipv4_addr(const struct shell *sh, const char *host, const char *port,
 			   struct sockaddr_in *addr)
 {
 	int ret;
@@ -743,7 +743,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	struct zperf_upload_params param = { 0 };
 	struct sockaddr_in6 ipv6 = { .sin6_family = AF_INET6 };
 	struct sockaddr_in ipv4 = { .sin_family = AF_INET };
-	char *port_str;
+	const char *port_str;
 	bool async = false;
 	bool is_udp;
 	int start = 0;

@@ -34,11 +34,11 @@ struct native_tty_data {
 	/* File descriptor used for the tty device. */
 	int fd;
 	/* Absolute path to the tty device. */
-	char *serial_port;
+	const char *serial_port;
 	/* Baudrate set from the command line. If UINT32_MAX, it was not set. */
 	int cmd_baudrate;
 	/* Serial port set from the command line. If NULL, it was not set. */
-	char *cmd_serial_port;
+	const char *cmd_serial_port;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Emulated tx irq is enabled. */
 	bool tx_irq_enabled;

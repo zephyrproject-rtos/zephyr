@@ -255,7 +255,7 @@ ZTEST(test_gatt, test_gatt_read)
 ZTEST(test_gatt, test_gatt_write)
 {
 	const struct bt_gatt_attr *attr;
-	char *value = "    ";
+	const char *value = "    ";
 	ssize_t ret;
 
 	/* Need our service to be registered */

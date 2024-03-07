@@ -26,7 +26,7 @@ struct sdmmc_config {
 struct sdmmc_data {
 	struct sd_card card;
 	enum sd_status status;
-	char *name;
+	const char *name;
 };
 
 

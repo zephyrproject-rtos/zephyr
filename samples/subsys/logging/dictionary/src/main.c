@@ -27,11 +27,11 @@ int main(void)
 	int64_t i64 = 64;
 	uint64_t u64 = 65;
 	char c = '!';
-	char *s = "static str";
-	char *s1 = "c str";
+	const char *s = "static str";
+	const char *s1 = "c str";
 	char vs0[32];
 	char vs1[32];
-	void *p = s;
+	void *p = (char *)s;
 
 	printk("Hello World! %s\n", CONFIG_BOARD);
 

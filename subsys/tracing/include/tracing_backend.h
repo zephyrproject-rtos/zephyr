@@ -90,7 +90,7 @@ static inline void tracing_backend_output(
  *
  * @return Pointer of the wanted backend or NULL.
  */
-static inline struct tracing_backend *tracing_backend_get(char *name)
+static inline struct tracing_backend *tracing_backend_get(const char *name)
 {
 	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
 		if (strcmp(backend->name, name) == 0) {

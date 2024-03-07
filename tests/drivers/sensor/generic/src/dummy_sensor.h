@@ -20,7 +20,7 @@ struct dummy_sensor_data {
 };
 
 struct dummy_sensor_config {
-	char *i2c_name;
+	const char *i2c_name;
 	uint8_t i2c_address;
 };
 

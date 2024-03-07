@@ -160,7 +160,7 @@ int cavp_sign(bool verbose)
 	/*
 	 * [P-256,SHA-256]
 	 */
-	char *d[] = {
+	const char *d[] = {
 		"519b423d715f8b581f4fa8ee59f4771a5b44c8130b4e3eacca54a56dda72b464",
 		"0f56db78ca460b055c500064824bed999a25aaf48ebb519ac201537b85479813",
 		"e283871239837e13b95f789e6e1af63bf61c918c992e62bca040d64cad1fc2ef",
@@ -178,7 +178,7 @@ int cavp_sign(bool verbose)
 		"34fa4682bf6cb5b16783adcd18f0e6879b92185f76d7c920409f904f522db4b1",
 	};
 
-	char *k[] = {
+	const char *k[] = {
 		"94a1bbb14b906a61a280f245f9e93c7f3b4a6247824f5d33b9670787642a68de",
 		"6d3e71882c3b83b156bb14e0ab184aa9fb728068d3ae9fac421187ae0b2f34c6",
 		"ad5e887eb2b380b8d8280ad6e5ff8a60f4d26243e0124c2f31a297b5d0835de2",
@@ -196,7 +196,7 @@ int cavp_sign(bool verbose)
 		"a6f463ee72c9492bc792fe98163112837aebd07bab7a84aaed05be64db3086f4",
 	};
 
-	char *Msg[] = {
+	const char *Msg[] = {
 		"5905238877c77421f73e43ee3da6f2d9e2ccad5fc942dcec0cbd25482935faaf416983fe16"
 		"5b1a045ee2bcd2e6dca3bdf46c4310a7461f9a37960ca672d3feb5473e253605fb1ddfd280"
 		"65b53cb5858a8ad28175bf9bd386a5e471ea7a65c17cc934a9d791e91491eb3754d0379979"
@@ -259,7 +259,7 @@ int cavp_sign(bool verbose)
 		"46f23c1aa2e54b7fb6448a0da922bd7f34",
 	};
 
-	char *Qx[] = {
+	const char *Qx[] = {
 		"1ccbe91c075fc7f4f033bfa248db8fccd3565de94bbfb12f3c59ff46c271bf83",
 		"e266ddfdc12668db30d4ca3e8f7749432c416044f2d2b8c10bf3d4012aeffa8a",
 		"74ccd8a62fba0e667c50929a53f78c21b8ff0c3c737b0b40b1750b2302b0bde8",
@@ -277,7 +277,7 @@ int cavp_sign(bool verbose)
 		"105d22d9c626520faca13e7ced382dcbe93498315f00cc0ac39c4821d0d73737",
 	};
 
-	char *Qy[] = {
+	const char *Qy[] = {
 		"ce4014c68811f9a21a1fdb2c0e6113e06db7ca93b7404e78dc7ccd5ca89a4ca9",
 		"bfa86404a2e9ffe67d47c587ef7a97a7f456b863b4d02cfc6928973ab5b1cb39",
 		"29074e21f3a0ef88b9efdf10d06aa4c295cc1671f758ca0e4cd108803d0f2614",
@@ -295,7 +295,7 @@ int cavp_sign(bool verbose)
 		"6c47f3cbbfa97dfcebe16270b8c7d5d3a5900b888c42520d751e8faf3b401ef4",
 	};
 
-	char *R[] = {
+	const char *R[] = {
 		"f3ac8061b514795b8843e3d6629527ed2afd6b1f6a555a7acabb5e6f79c8c2ac",
 		"976d3a4e9d23326dc0baa9fa560b7c4e53f42864f508483a6473b6a11079b2db",
 		"35fb60f5ca0f3ca08542fb3cc641c8263a2cab7a90ee6a5e1583fac2bb6f6bd1",
@@ -313,7 +313,7 @@ int cavp_sign(bool verbose)
 		"542c40a18140a6266d6f0286e24e9a7bad7650e72ef0e2131e629c076d962663",
 	};
 
-	char *S[] = {
+	const char *S[] = {
 		"8bf77819ca05a6b2786c76262bf7371cef97b218e96f175a3ccdda2acc058903",
 		"1b766e9ceb71ba6c01dcd46e0af462cd4cfa652ae5017d4555b8eeefe36e1932",
 		"ee59d81bc9db1055cc0ed97b159d8784af04e98511d0a9a407b99bb292572e96",
@@ -425,7 +425,7 @@ int cavp_verify(bool verbose)
 	/*
 	 * [P-256,SHA-256]
 	 */
-	char *Msg[] = {
+	const char *Msg[] = {
 		"e4796db5f785f207aa30d311693b3702821dff1168fd2e04c0836825aefd850d9aa60326d8"
 		"8cde1a23c7745351392ca2288d632c264f197d05cd424a30336c19fd09bb229654f0222fcb"
 		"881a4b35c290a093ac159ce13409111ff0358411133c24f5b8e2090d6db6558afc36f06ca1"
@@ -488,7 +488,7 @@ int cavp_verify(bool verbose)
 		"2320bd102229f46495ae6d0857cc452a84",
 	};
 
-	char *Qx[] = {
+	const char *Qx[] = {
 		"87f8f2b218f49845f6f10eec3877136269f5c1a54736dbdf69f89940cad41555",
 		"5cf02a00d205bdfee2016f7421807fc38ae69e6b7ccd064ee689fc1a94a9f7d2",
 		"2ddfd145767883ffbb0ac003ab4a44346d08fa2570b3120dcce94562422244cb",
@@ -506,7 +506,7 @@ int cavp_verify(bool verbose)
 		"2d98ea01f754d34bbc3003df5050200abf445ec728556d7ed7d5c54c55552b6d",
 	};
 
-	char *Qy[] = {
+	const char *Qy[] = {
 		"e15f369036f49842fac7a86c8a2b0557609776814448b8f5e84aa9f4395205e9",
 		"ec530ce3cc5c9d1af463f264d685afe2b4db4b5828d7e61b748930f3ce622a85",
 		"5f70c7d11ac2b7a435ccfbbae02c3df1ea6b532cc0e9db74f93fffca7c6f9a64",
@@ -524,7 +524,7 @@ int cavp_verify(bool verbose)
 		"9b52672742d637a32add056dfd6d8792f2a33c2e69dafabea09b960bc61e230a",
 	};
 
-	char *R[] = {
+	const char *R[] = {
 		"d19ff48b324915576416097d2544f7cbdf8768b1454ad20e0baac50e211f23b0",
 		"dc23d130c6117fb5751201455e99f36f59aba1a6a21cf2d0e7481a97451d6693",
 		"9913111cff6f20c5bf453a99cd2c2019a4e749a49724a08774d14e4c113edda8",
@@ -544,7 +544,7 @@ int cavp_verify(bool verbose)
 
 	int results[] = { 3, 2, 4, 0, 0, 2, 4, 1, 3, 2, 3, 1, 4, 1, 0 };
 
-	char *S[] = {
+	const char *S[] = {
 		"a3e81e59311cdfff2d4784949f7a2cb50ba6c3a91fa54710568e61aca3e847c6",
 		"d6ce7708c18dbf35d4f8aa7240922dc6823f2e7058cbc1484fcad1599db5018c",
 		"9467cd4cd21ecb56b0cab0a9a453b43386845459127a952421f5c6382866c5cc",

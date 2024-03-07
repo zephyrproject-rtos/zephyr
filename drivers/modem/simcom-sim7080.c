@@ -133,7 +133,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	uint16_t dst_port = 0;
-	char *protocol;
+	const char *protocol;
 	struct modem_cmd cmd[] = { MODEM_CMD("+CAOPEN: ", on_cmd_caopen, 2U, ",") };
 	char buf[sizeof("AT+CAOPEN: #,#,#####,#xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx#,####")];
 	char ip_str[NET_IPV6_ADDR_LEN];
@@ -1109,7 +1109,7 @@ MODEM_CMD_DEFINE(on_cmd_csq)
 static void modem_rssi_query_work(struct k_work *work)
 {
 	struct modem_cmd cmd[] = { MODEM_CMD("+CSQ: ", on_cmd_csq, 2U, ",") };
-	static char *send_cmd = "AT+CSQ";
+	static const char *send_cmd = "AT+CSQ";
 	int ret;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), send_cmd,

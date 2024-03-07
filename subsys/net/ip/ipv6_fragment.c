@@ -202,7 +202,7 @@ static bool reassembly_cancel(uint32_t id,
 	return false;
 }
 
-static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
+static void reassembly_info(const char *str, struct net_ipv6_reassembly *reass)
 {
 	NET_DBG("%s id 0x%x src %s dst %s remain %d ms", str, reass->id,
 		net_sprint_ipv6_addr(&reass->src),

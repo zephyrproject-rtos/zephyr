@@ -48,7 +48,7 @@ K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
 
 static struct k_work_q zperf_work_q;
 
-int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr)
+int zperf_get_ipv6_addr(const char *host, const char *prefix_str, struct in6_addr *addr)
 {
 	struct net_if_ipv6_prefix *prefix;
 	struct net_if_addr *ifaddr;
@@ -85,7 +85,7 @@ int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr)
 }
 
 
-int zperf_get_ipv4_addr(char *host, struct in_addr *addr)
+int zperf_get_ipv4_addr(const char *host, struct in_addr *addr)
 {
 	struct net_if_addr *ifaddr;
 	int ret;

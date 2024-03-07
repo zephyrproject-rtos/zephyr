@@ -1279,7 +1279,7 @@ ZTEST(net_iface, test_interface_name)
 #if defined(CONFIG_NET_INTERFACE_NAME)
 	char buf[CONFIG_NET_INTERFACE_NAME_LEN + 1];
 	struct net_if *iface;
-	char *name;
+	const char *name;
 
 	iface = net_if_get_default();
 	memset(buf, 0, sizeof(buf));

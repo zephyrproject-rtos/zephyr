@@ -246,7 +246,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	uint32_t rnd_value = sys_rand32_get();
 	char sec_ws_key[] =
 		"Sec-WebSocket-Key: 0123456789012345678901==\r\n";
-	char *headers[] = {
+	const char *headers[] = {
 		sec_ws_key,
 		"Upgrade: websocket\r\n",
 		"Connection: Upgrade\r\n",

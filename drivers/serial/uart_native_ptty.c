@@ -43,7 +43,7 @@ static void np_uart_poll_out(const struct device *dev,
 
 static bool auto_attach;
 static bool wait_pts;
-static char *auto_attach_cmd = CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD;
+static const char *auto_attach_cmd = CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD;
 
 struct native_uart_status {
 	int out_fd; /* File descriptor used for output */

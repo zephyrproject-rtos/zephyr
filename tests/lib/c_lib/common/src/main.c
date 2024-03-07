@@ -636,8 +636,8 @@ ZTEST(libc_common, test_memmove)
 ZTEST(libc_common, test_str_operate)
 {
 	char str1[10] = "aabbcc", ncat[10] = "ddee";
-	char *str2 = "b";
-	char *str3 = "d";
+	const char *str2 = "b";
+	const char *str3 = "d";
 	int ret;
 	char *ptr;
 
@@ -1032,7 +1032,7 @@ ZTEST(libc_common, test_tolower_toupper)
 	zassert_equal(strcmp(lw, tolw), 0, "tolower error");
 }
 
-void test_strtok_r_do(char *str, char *sep, int tlen,
+void test_strtok_r_do(const char *str, const char *sep, int tlen,
 		      const char * const *toks, bool expect)
 {
 	int len = 0;

@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #include <xtensa/simcall.h>
 #endif
 
-char *xtensa_exccause(unsigned int cause_code)
+const char *xtensa_exccause(unsigned int cause_code)
 {
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	switch (cause_code) {

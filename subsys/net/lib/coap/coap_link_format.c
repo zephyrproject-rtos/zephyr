@@ -555,7 +555,7 @@ end:
 static int format_uri(const char * const *path, struct coap_packet *response)
 {
 	const char * const *p;
-	char *prefix = "</";
+	const char *prefix = "</";
 	bool res;
 
 	if (!path) {

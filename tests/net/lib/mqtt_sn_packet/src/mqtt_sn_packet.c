@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(test);
 struct mqtt_sn_decode_test {
 	uint8_t *data;
 	size_t datasz;
-	char *name;
+	const char *name;
 	struct mqtt_sn_param expected;
 };
 

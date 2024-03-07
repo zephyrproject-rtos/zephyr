@@ -172,7 +172,7 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 {
 	char *current_argv, *has_equal;
 #ifdef GNU_COMPATIBLE
-	char *current_dash = "";
+	const char *current_dash = "";
 #endif
 	size_t current_argv_len;
 	int i, match, exact_match, second_partial_match;
@@ -389,7 +389,7 @@ start:
 	if (state->optreset || !*(state->place)) {/* update scanning pointer */
 		state->optreset = 0;
 		if (state->optind >= nargc) {          /* end of argument vector */
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			if (state->nonopt_end != -1) {
 				/* do permutation, if we have to */
 				permute_args(state->nonopt_start,
@@ -414,7 +414,7 @@ start:
 #else
 		    (state->place[1] == '\0' && strchr(options, '-') == NULL)) {
 #endif
-			state->place = EMSG;		/* found non-option */
+			state->place = (char *)EMSG;		/* found non-option */
 			if (flags & FLAG_ALLARGS) {
 				/*
 				 * GNU extension:
@@ -456,7 +456,7 @@ start:
 		if (state->place[1] != '\0' && *++(state->place) == '-' &&
 		    state->place[1] == '\0') {
 			state->optind++;
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			/*
 			 * We found an option (--), so if we skipped
 			 * non-options, we have to permute.
@@ -499,7 +499,7 @@ start:
 					     long_options, idx, short_too,
 					     flags);
 		if (optchar != -1) {
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			return optchar;
 		}
 	}
@@ -536,7 +536,7 @@ start:
 		if (*(state->place)) {		/* no space */
 			; /* NOTHING */
 		} else if (++(state->optind) >= nargc) {	/* no arg */
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			if (PRINT_ERROR) {
 				LOG_WRN(RECARGCHAR, optchar);
 			}
@@ -550,7 +550,7 @@ start:
 #endif
 		optchar = parse_long_options(state, nargv, options,
 					     long_options, idx, 0, flags);
-		state->place = EMSG;
+		state->place = (char *)EMSG;
 		return optchar;
 	}
 	if (*++oli != ':') {			/* doesn't take argument */
@@ -563,7 +563,7 @@ start:
 			state->optarg = state->place;
 		} else if (oli[1] != ':') {	/* arg not optional */
 			if (++state->optind >= nargc) {	/* no arg */
-				state->place = EMSG;
+				state->place = (char *)EMSG;
 				if (PRINT_ERROR) {
 					LOG_WRN(RECARGCHAR, optchar);
 				}
@@ -572,7 +572,7 @@ start:
 			}
 			state->optarg = nargv[state->optind];
 		}
-		state->place = EMSG;
+		state->place = (char *)EMSG;
 		++state->optind;
 	}
 	/* dump back option letter */

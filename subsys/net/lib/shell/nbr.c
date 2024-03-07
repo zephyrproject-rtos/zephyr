@@ -51,8 +51,8 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
-	char *padding = "";
-	char *state_pad = "";
+	const char *padding = "";
+	const char *state_pad = "";
 	const char *state_str;
 #if defined(CONFIG_NET_IPV6_ND)
 	int64_t remaining;

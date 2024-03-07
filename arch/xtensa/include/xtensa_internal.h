@@ -34,7 +34,7 @@ void xtensa_dump_stack(const z_arch_esf_t *stack);
  *
  * @return String description.
  */
-char *xtensa_exccause(unsigned int cause_code);
+const char *xtensa_exccause(unsigned int cause_code);
 
 /**
  * @brief Called upon a fatal error.

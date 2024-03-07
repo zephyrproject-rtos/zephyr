@@ -37,7 +37,7 @@ int tagoio_connect(struct tagoio_context *ctx)
 	struct addrinfo *addr;
 	struct addrinfo hints;
 	char hr_addr[INET6_ADDRSTRLEN];
-	char *port;
+	const char *port;
 	int dns_attempts = 3;
 	int ret = -1;
 

@@ -157,7 +157,8 @@ static int connect_socket(sa_family_t family, const char *server, int port,
 
 static int connect_cb(int sock, struct http_request *req, void *user_data)
 {
-	LOG_INF("Websocket %d for %s connected.", sock, (char *)user_data);
+	const char *protocol = user_data;
+	LOG_INF("Websocket %d for %s connected.", sock, protocol);
 
 	return 0;
 }
@@ -374,7 +375,7 @@ int main(void)
 		req.tmp_buf = temp_recv_buf_ipv4;
 		req.tmp_buf_len = sizeof(temp_recv_buf_ipv4);
 
-		websock4 = websocket_connect(sock4, &req, timeout, "IPv4");
+		websock4 = websocket_connect(sock4, &req, timeout, (char *)"IPv4");
 		if (websock4 < 0) {
 			LOG_ERR("Cannot connect to %s:%d", SERVER_ADDR4,
 				SERVER_PORT);
@@ -394,7 +395,7 @@ int main(void)
 		req.tmp_buf = temp_recv_buf_ipv6;
 		req.tmp_buf_len = sizeof(temp_recv_buf_ipv6);
 
-		websock6 = websocket_connect(sock6, &req, timeout, "IPv6");
+		websock6 = websocket_connect(sock6, &req, timeout, (char *)"IPv6");
 		if (websock6 < 0) {
 			LOG_ERR("Cannot connect to [%s]:%d", SERVER_ADDR6,
 				SERVER_PORT);

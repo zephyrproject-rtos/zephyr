@@ -126,7 +126,7 @@ static kbd_row_t kbd_matrix_key_mask[CONFIG_INPUT_SHELL_KBD_MATRIX_STATE_MAX_COL
 			   KEY_MATRIX_ENTRY_LEN)
 static char kbd_matrix_buf[KEY_MATRIX_BUF_SZ];
 
-static void kbd_matrix_state_log_entry(char *header, kbd_row_t *data)
+static void kbd_matrix_state_log_entry(const char *header, kbd_row_t *data)
 {
 	const struct input_kbd_matrix_common_config *cfg = kbd_matrix_state_dev->config;
 	char *buf = kbd_matrix_buf;
@@ -139,7 +139,7 @@ static void kbd_matrix_state_log_entry(char *header, kbd_row_t *data)
 	blank[sizeof(blank) - 1] = '\0';
 
 	for (int i = 0; i < cfg->col_size; i++) {
-		char *sep = (i + 1) < cfg->col_size ? " " : "";
+		const char *sep = (i + 1) < cfg->col_size ? " " : "";
 
 		if (data[i] != 0) {
 			ret = snprintf(buf, size, "%" PRIkbdrow "%s", data[i], sep);

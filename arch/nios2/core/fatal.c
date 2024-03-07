@@ -43,7 +43,7 @@ FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && \
 	(defined(CONFIG_PRINTK) || defined(CONFIG_LOG)) \
 	&& defined(ALT_CPU_HAS_EXTRA_EXCEPTION_INFO)
-static char *cause_str(uint32_t cause_code)
+static const char *cause_str(uint32_t cause_code)
 {
 	switch (cause_code) {
 	case 0:

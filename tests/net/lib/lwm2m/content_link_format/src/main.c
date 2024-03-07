@@ -294,7 +294,7 @@ ZTEST(net_content_link_format, test_put_corelink_bs_discovery_ssid)
 {
 	int ret;
 	int i;
-	char * const expected_payload[] = {
+	const char * const expected_payload[] = {
 		"</0/0>;ssid=" STRINGIFY(TEST_SSID),
 		"</1/0>;ssid=" STRINGIFY(TEST_SSID),
 	};

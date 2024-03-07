@@ -445,11 +445,11 @@ static void init_idle_thread(int i)
 	char tname[8];
 	snprintk(tname, 8, "idle %02d", i);
 #else
-	char *tname = "idle";
+	const char *tname = "idle";
 #endif
 
 #else
-	char *tname = NULL;
+	const char *tname = NULL;
 #endif /* CONFIG_THREAD_NAME */
 
 	z_setup_new_thread(thread, stack,

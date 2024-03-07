@@ -48,11 +48,11 @@ uint8_t ai1[MAX_BIN_SIZE];
 uint8_t ai2[MAX_BIN_SIZE];
 
 struct prng_vector {
-	char *entropy;
-	char *personal;	/* may be null */
-	char *extra1;	/* may be null */
-	char *extra2;	/* may be null */
-	char *expected;
+	const char *entropy;
+	const char *personal;	/* may be null */
+	const char *extra1;	/* may be null */
+	const char *extra2;	/* may be null */
+	const char *expected;
 };
 
 /* vectors taken from NIST CAVS 14.3 CTR_DRBG.rsp */
@@ -265,7 +265,7 @@ static uint8_t char_to_nibble(char c)
  * Convert a string of characters representing a hex buffer into a series of
  * bytes of that real value
  */
-static void hex_str_to_num(uint8_t *buf, char *in)
+static void hex_str_to_num(uint8_t *buf, const char *in)
 {
 	int len;
 	int i;

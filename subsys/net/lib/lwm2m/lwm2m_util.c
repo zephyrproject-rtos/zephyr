@@ -530,7 +530,7 @@ bool lwm2m_obj_path_equal(const struct lwm2m_obj_path *a, const struct lwm2m_obj
 }
 
 /* for debugging: to print IP addresses */
-char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
+const char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 {
 	static char buf[NET_IPV6_ADDR_LEN];
 

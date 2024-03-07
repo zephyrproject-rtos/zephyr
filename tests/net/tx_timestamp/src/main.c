@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #define TEST_PORT 9999
 
-static char *test_data = "Test data to be sent";
+static const char *test_data = "Test data to be sent";
 
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,

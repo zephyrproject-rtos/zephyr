@@ -78,7 +78,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fmt,
 {
 	size_t count = 0;
 	char buf[DIGITS_BUFLEN];
-	char *prefix, *data;
+	const char *prefix, *data;
 	int min_width, precision, data_len;
 	char padding_mode, length_mod, special;
 

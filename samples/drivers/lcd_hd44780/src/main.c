@@ -432,7 +432,7 @@ void pi_lcd_auto_scroll_left(const struct device *gpio_dev)
 			LCD_ENTRY_MODE_SET | lcd_data.disp_cntl);
 }
 
-void pi_lcd_string(const struct device *gpio_dev, char *msg)
+void pi_lcd_string(const struct device *gpio_dev, const char *msg)
 {
 	int i;
 	int len = 0;

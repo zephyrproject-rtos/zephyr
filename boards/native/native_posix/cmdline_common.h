@@ -51,12 +51,12 @@ struct args_struct_t {
 	/* It is just a switch: it does not have something to store after */
 	bool is_switch;
 	/* Option name we search for: --<option> */
-	char *option;
+	const char *option;
 	/*
 	 * Name of the option destination in the help messages:
 	 * "--<option>=<name>"
 	 */
-	char *name;
+	const char *name;
 	/* Type of option (see cmd_read_option_value()) */
 	char type;
 	/* Pointer to where the read value will be stored (may be NULL) */
@@ -64,7 +64,7 @@ struct args_struct_t {
 	/* Optional callback to be called when the switch is found */
 	option_found_callback_f call_when_found;
 	/* Long description for the help messages */
-	char *descript;
+	const char *descript;
 };
 
 #define ARG_TABLE_ENDMARKER \

@@ -75,7 +75,7 @@ int out(int c, void *ctx)
 static void basic_validate(struct log_msg *msg,
 			   const struct log_source_const_data *source,
 			   uint8_t domain, uint8_t level, log_timestamp_t t,
-			   const void *data, size_t data_len, char *str)
+			   const void *data, size_t data_len, const char *str)
 {
 	int rv;
 	uint8_t *d;
@@ -150,7 +150,7 @@ void clear_pkg_flags(struct log_msg *msg)
 void validate_base_message_set(const struct log_source_const_data *source,
 				uint8_t domain, uint8_t level,
 				log_timestamp_t t, const void *data,
-				size_t data_len, char *str)
+				size_t data_len, const char *str)
 {
 	uint8_t __aligned(Z_LOG_MSG_ALIGNMENT) buf0[256];
 	uint8_t __aligned(Z_LOG_MSG_ALIGNMENT) buf1[256];

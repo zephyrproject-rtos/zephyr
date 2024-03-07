@@ -57,7 +57,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-static int cmd_cfb_print(const struct shell *sh, int col, int row, char *str)
+static int cmd_cfb_print(const struct shell *sh, int col, int row, const char *str)
 {
 	int err;
 	uint8_t ppt;

@@ -144,7 +144,7 @@ static void print_ppp_stats(struct net_if *iface, struct net_stats_ppp *data,
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
 	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
 #if (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1)
-static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
+static const char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
 					  bool is_tx)
 {
 	static char extra_stats[sizeof("\t[0=xxxx us]") +
@@ -278,7 +278,7 @@ static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 	defined(CONFIG_NET_PKT_RXTIME_STATS)
 
 #if (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1)
-static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
+static const char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
 					 bool is_tx)
 {
 	ARG_UNUSED(iface);

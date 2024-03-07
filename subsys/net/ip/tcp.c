@@ -402,7 +402,7 @@ static void tcp_derive_rto(struct tcp *conn)
 
 /* Implementation according to RFC6582 */
 
-static void tcp_new_reno_log(struct tcp *conn, char *step)
+static void tcp_new_reno_log(struct tcp *conn, const char *step)
 {
 	NET_DBG("conn: %p, ca %s, cwnd=%d, ssthres=%d, fast_pend=%i",
 		conn, step, conn->ca.cwnd, conn->ca.ssthresh,

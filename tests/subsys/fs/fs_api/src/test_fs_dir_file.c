@@ -416,7 +416,7 @@ static int _test_lsdir(const char *path)
 	memset(&entry, 0, sizeof(entry));
 
 	TC_PRINT("read an unopened dir\n");
-	dirp.dirp = "somepath";
+	dirp.dirp = (char *)"somepath";
 	ret = fs_readdir(&dirp, &entry);
 	if (!ret) {
 		return TC_FAIL;

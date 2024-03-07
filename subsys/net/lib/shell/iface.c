@@ -210,7 +210,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
 		struct net_if *orig_iface;
-		char *name, buf[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN];
+		const char *name;
+		char buf[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN];
 
 		name = net_virtual_get_name(iface, buf, sizeof(buf));
 		if (!(name && name[0])) {

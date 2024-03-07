@@ -458,7 +458,7 @@ static void call_log_generic(const char *fmt, ...)
 
 ZTEST(test_log_core_additional, test_log_generic)
 {
-	char *log_msg = "log user space";
+	const char *log_msg = "log user space";
 	int i = 100;
 
 	log_setup(false);

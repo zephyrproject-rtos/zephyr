@@ -117,7 +117,7 @@ int cavp_ecdh(bool verbose)
 	/*
 	 * P-256
 	 */
-	char *d[] = {
+	const char *d[] = {
 		"7d7dc5f71eb29ddaf80d6214632eeae03d9058af1fb6d22ed80badb62bc1a534",
 		"38f65d6dce47676044d58ce5139582d568f64bb16098d179dbab07741dd5caf5",
 		"1accfaf1b97712b85a6f54b148985a1bdc4c9bec0bd258cad4b3d603f49f32c8",
@@ -145,7 +145,7 @@ int cavp_ecdh(bool verbose)
 		"85a268f9d7772f990c36b42b0a331adc92b5941de0b862d5d89a347cbf8faab0",
 	};
 
-	char *x[] = {
+	const char *x[] = {
 		"700c48f77f56584c5cc632ca65640db91b6bacce3a4df6b42ce7cc838833d287",
 		"809f04289c64348c01515eb03d5ce7ac1a8cb9498f5caa50197e58d43a86a7ae",
 		"a2339c12d4a03c33546de533268b4ad667debf458b464d77443636440ee7fec3",
@@ -173,7 +173,7 @@ int cavp_ecdh(bool verbose)
 		"356c5a444c049a52fee0adeb7e5d82ae5aa83030bfff31bbf8ce2096cf161c4b",
 	};
 
-	char *y[] = {
+	const char *y[] = {
 		"db71e509e3fd9b060ddb20ba5c51dcc5948d46fbf640dfe0441782cab85fa4ac",
 		"b29d84e811197f25eba8f5194092cb6ff440e26d4421011372461f579271cda3",
 		"ef48a3ab26e20220bcda2c1851076839dae88eae962869a497bf73cb66faf536",
@@ -201,7 +201,7 @@ int cavp_ecdh(bool verbose)
 		"57d128de8b2a57a094d1a001e572173f96e8866ae352bf29cddaf92fc85b2f92",
 	};
 
-	char *Z[] = {
+	const char *Z[] = {
 		"46fc62106420ff012e54a434fbdd2d25ccc5852060561e68040dd7778997bd7b",
 		"057d636096cb80b67a8c038c890e887d1adfa4195e9b3ce241c8a778c59cda67",
 		"2d457b78b4614132477618a5b077965ec90730a8c81a1c75d6d4ec68005d67ec",
@@ -245,7 +245,7 @@ int cavp_keygen(bool verbose)
 	/*
 	 * [P-256, B.4.2 Key Pair Generation by Testing Candidates]
 	 */
-	char *d[] = {
+	const char *d[] = {
 		"c9806898a0334916c860748880a541f093b579a9b1f32934d86c363c39800357",
 		"710735c8388f48c684a97bd66751cc5f5a122d6b9a96a2dbe73662f78217446d",
 		"78d5d8b7b3e2c16b3e37e7e63becd8ceff61e2ce618757f514620ada8a11f6e4",
@@ -258,7 +258,7 @@ int cavp_keygen(bool verbose)
 		"d40b07b1ea7b86d4709ef9dc634c61229feb71abd63dc7fc85ef46711a87b210",
 	};
 
-	char *x[] = {
+	const char *x[] = {
 		"d0720dc691aa80096ba32fed1cb97c2b620690d06de0317b8618d5ce65eb728f",
 		"f6836a8add91cb182d8d258dda6680690eb724a66dc3bb60d2322565c39e4ab9",
 		"76711126cbb2af4f6a5fe5665dad4c88d27b6cb018879e03e54f779f203a854e",
@@ -271,7 +271,7 @@ int cavp_keygen(bool verbose)
 		"fbcea7c2827e0e8085d7707b23a3728823ea6f4878b24747fb4fd2842d406c73",
 	};
 
-	char *y[] = {
+	const char *y[] = {
 		"9681b517b1cda17d0d83d335d9c4a8a9a9b0b1b3c7106d8f3c72bc5093dc275f",
 		"1f837aa32864870cb8e8d0ac2ff31f824e7beddc4bb7ad72c173ad974b289dc2",
 		"a26df39960ab5248fd3620fd018398e788bd89a3cea509b352452b69811e6856",
@@ -353,7 +353,7 @@ int cavp_pkv(bool verbose)
 	/*
 	 * [P-256]
 	 */
-	char *x[] = {
+	const char *x[] = {
 		"e0f7449c5588f24492c338f2bc8f7865f755b958d48edb0f2d0056e50c3fd5b7",
 		"d17c446237d9df87266ba3a91ff27f45abfdcb77bfd83536e92903efb861a9a9",
 		"17875397ae87369365656d490e8ce956911bd97607f2aff41b56f6f3a61989826",
@@ -368,7 +368,7 @@ int cavp_pkv(bool verbose)
 		"7a81a7e0b015252928d8b36e4ca37e92fdc328eb25c774b4f872693028c4be38",
 	};
 
-	char *y[] = {
+	const char *y[] = {
 		"86d7e9255d0f4b6f44fa2cd6f8ba3c0aa828321d6d8cc430ca6284ce1d5b43a0",
 		"1eabb6a349ce2cd447d777b6739c5fc066add2002d2029052c408d0701066231c",
 		"980a3c4f61b9692633fbba5ef04c9cb546dd05cdec9fa8428b8849670e2fba92",

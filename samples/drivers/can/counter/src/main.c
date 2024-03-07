@@ -47,7 +47,7 @@ static struct k_poll_event change_led_events[1] = {
 
 void tx_irq_callback(const struct device *dev, int error, void *arg)
 {
-	char *sender = (char *)arg;
+	const char *sender = (char *)arg;
 
 	ARG_UNUSED(dev);
 
@@ -114,7 +114,7 @@ void change_led_work_handler(struct k_work *work)
 	}
 }
 
-char *state_to_str(enum can_state state)
+const char *state_to_str(enum can_state state)
 {
 	switch (state) {
 	case CAN_STATE_ERROR_ACTIVE:
@@ -286,7 +286,7 @@ int main(void)
 		/* This sending call is none blocking. */
 		can_send(can_dev, &change_led_frame, K_FOREVER,
 			 tx_irq_callback,
-			 "LED change");
+			 (char *)"LED change");
 		k_sleep(SLEEP_TIME);
 
 		UNALIGNED_PUT(sys_cpu_to_be16(counter),

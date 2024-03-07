@@ -283,7 +283,7 @@ ZTEST(semaphore, test_named_semaphore)
 	zassert_equal(nsem_get_ref_count(different_sem1), 2);
 
 	/* Stress test: open & close "sem1" repeatedly */
-	zassert_ok(pthread_create(&thread1, NULL, nsem_open_func, "sem1"));
+	zassert_ok(pthread_create(&thread1, NULL, nsem_open_func, (char *)"sem1"));
 	zassert_ok(pthread_create(&thread2, NULL, nsem_close_func, different_sem1));
 
 	/* Make sure the threads are terminated */

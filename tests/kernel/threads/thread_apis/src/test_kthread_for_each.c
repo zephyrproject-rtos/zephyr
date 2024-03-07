@@ -33,7 +33,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 
 static void thread_callback(const struct k_thread *thread, void *user_data)
 {
-	char *str = (char *)user_data;
+	const char *str = (char *)user_data;
 
 	if (thread == &tdata) {
 		TC_PRINT("%s: Newly added thread found\n", str);
@@ -47,7 +47,7 @@ static void thread_callback(const struct k_thread *thread, void *user_data)
 static
 void thread_callback_unlocked(const struct k_thread *thread, void *user_data)
 {
-	char *str = (char *)user_data;
+	const char *str = (char *)user_data;
 
 	if (create_thread) {
 		in_callback_tid = k_thread_create(&tdata1, tstack1,
@@ -90,7 +90,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
 {
 	int count;
 
-	k_thread_foreach(thread_callback, TEST_STRING);
+	k_thread_foreach(thread_callback, (char *)TEST_STRING);
 
 	/* Check thread_count non-zero, thread_flag
 	 * and stack_flag are not set.
@@ -111,7 +111,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
 	 * the newly added thread.
 	 */
 	tcount = 0;
-	k_thread_foreach(thread_callback, TEST_STRING);
+	k_thread_foreach(thread_callback, (char *)TEST_STRING);
 
 	/* Check thread_count > temp, thread_flag and stack_flag are set */
 	zassert_true((tcount > count) && thread_flag,
@@ -139,7 +139,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
 	thread_flag = false;
 	tcount = 0;
 	k_thread_foreach_unlocked(thread_callback_unlocked,
-				  TEST_STRING_UNLOCKED);
+				  (char *)TEST_STRING_UNLOCKED);
 
 	/* Check thread_count non-zero, thread_flag
 	 * and stack_flag are not set.
@@ -164,7 +164,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
 	tcount = 0;
 	create_thread = true;
 	k_thread_foreach_unlocked(thread_callback_unlocked,
-				  TEST_STRING_UNLOCKED);
+				  (char *)TEST_STRING_UNLOCKED);
 
 	/* Check thread_count > temp, thread_flag and stack_flag are set */
 	zassert_true((tcount > count) && thread_flag,
@@ -175,7 +175,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
 	 */
 	tcount = 0;
 	k_thread_foreach_unlocked(thread_callback_unlocked,
-				  TEST_STRING_UNLOCKED);
+				  (char *)TEST_STRING_UNLOCKED);
 	zassert_true((tcount > count) && thread_flag,
 					"thread_callback() not getting called");
 	k_thread_abort(tid);
@@ -191,7 +191,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
  */
 ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_null_cb)
 {
-	k_thread_foreach(NULL, TEST_STRING);
+	k_thread_foreach(NULL, (char *)TEST_STRING);
 }
 
 /**
@@ -206,7 +206,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_null_cb)
 
 ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked_null_cb)
 {
-	k_thread_foreach_unlocked(NULL, TEST_STRING_UNLOCKED);
+	k_thread_foreach_unlocked(NULL, (char *)TEST_STRING_UNLOCKED);
 }
 
 /**

@@ -110,7 +110,7 @@ static bool reassembly_cancel(uint32_t id, struct in_addr *src, struct in_addr *
 	return false;
 }
 
-static void reassembly_info(char *str, struct net_ipv4_reassembly *reass)
+static void reassembly_info(const char *str, struct net_ipv4_reassembly *reass)
 {
 	LOG_DBG("%s id 0x%x src %s dst %s remain %d ms", str, reass->id,
 		net_sprint_ipv4_addr(&reass->src),

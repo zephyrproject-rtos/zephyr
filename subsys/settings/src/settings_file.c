@@ -192,7 +192,7 @@ static int settings_file_load(struct settings_store *cs,
 				       true);
 }
 
-static void settings_tmpfile(char *dst, const char *src, char *pfx)
+static void settings_tmpfile(char *dst, const char *src, const char *pfx)
 {
 	int len;
 	int pfx_len;

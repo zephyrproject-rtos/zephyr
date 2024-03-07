@@ -200,7 +200,7 @@ static int run_queries(void)
 		req.recv_buf = recv_buf_ipv4;
 		req.recv_buf_len = sizeof(recv_buf_ipv4);
 
-		ret = http_client_req(sock4, &req, timeout, "IPv4 GET");
+		ret = http_client_req(sock4, &req, timeout, (char *)"IPv4 GET");
 
 		close(sock4);
 	}
@@ -218,7 +218,7 @@ static int run_queries(void)
 		req.recv_buf = recv_buf_ipv6;
 		req.recv_buf_len = sizeof(recv_buf_ipv6);
 
-		ret = http_client_req(sock6, &req, timeout, "IPv6 GET");
+		ret = http_client_req(sock6, &req, timeout, (char *)"IPv6 GET");
 
 		close(sock6);
 	}
@@ -258,7 +258,7 @@ static int run_queries(void)
 		req.recv_buf = recv_buf_ipv4;
 		req.recv_buf_len = sizeof(recv_buf_ipv4);
 
-		ret = http_client_req(sock4, &req, timeout, "IPv4 POST");
+		ret = http_client_req(sock4, &req, timeout, (char *)"IPv4 POST");
 
 		close(sock4);
 	}
@@ -278,7 +278,7 @@ static int run_queries(void)
 		req.recv_buf = recv_buf_ipv6;
 		req.recv_buf_len = sizeof(recv_buf_ipv6);
 
-		ret = http_client_req(sock6, &req, timeout, "IPv6 POST");
+		ret = http_client_req(sock6, &req, timeout, (char *)"IPv6 POST");
 
 		close(sock6);
 	}
@@ -324,7 +324,7 @@ static int run_queries(void)
 		req.recv_buf = recv_buf_ipv4;
 		req.recv_buf_len = sizeof(recv_buf_ipv4);
 
-		ret = http_client_req(sock4, &req, timeout, "IPv4 POST");
+		ret = http_client_req(sock4, &req, timeout, (char *)"IPv4 POST");
 
 		close(sock4);
 	}
@@ -348,7 +348,7 @@ static int run_queries(void)
 		req.recv_buf = recv_buf_ipv6;
 		req.recv_buf_len = sizeof(recv_buf_ipv6);
 
-		ret = http_client_req(sock6, &req, timeout, "IPv6 POST");
+		ret = http_client_req(sock6, &req, timeout, (char *)"IPv6 POST");
 
 		close(sock6);
 	}

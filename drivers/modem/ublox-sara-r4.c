@@ -1084,10 +1084,10 @@ static void modem_rssi_query_work(struct k_work *work)
 	static const struct modem_cmd cmd =
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
-	static char *send_cmd = "AT+CSQ";
+	static const char *send_cmd = "AT+CSQ";
 #else
 		MODEM_CMD("+CESQ: ", on_cmd_atcmdinfo_rssi_cesq, 6U, ",");
-	static char *send_cmd = "AT+CESQ";
+	static const char *send_cmd = "AT+CESQ";
 #endif
 	int ret;
 
@@ -2061,7 +2061,7 @@ static struct net_offload modem_net_offload = {
 };
 
 #define HASH_MULTIPLIER		37
-static uint32_t hash32(char *str, int len)
+static uint32_t hash32(const char *str, int len)
 {
 	uint32_t h = 0;
 	int i;

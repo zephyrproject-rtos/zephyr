@@ -97,9 +97,9 @@ int gnss_dump_nav_data(char *str, uint16_t strsize, const struct navigation_data
 	int ret;
 	const char *fmt = "navigation_data: {latitude: %s%lli.%09lli, longitude : %s%lli.%09lli, "
 			  "bearing %u.%03u, speed %u.%03u, altitude: %s%i.%03i}";
-	char *lat_sign = nav_data->latitude < 0 ? "-" : "";
-	char *lon_sign = nav_data->longitude < 0 ? "-" : "";
-	char *alt_sign = nav_data->altitude < 0 ? "-" : "";
+	const char *lat_sign = nav_data->latitude < 0 ? "-" : "";
+	const char *lon_sign = nav_data->longitude < 0 ? "-" : "";
+	const char *alt_sign = nav_data->altitude < 0 ? "-" : "";
 
 	ret = snprintk(str, strsize, fmt,
 		       lat_sign,

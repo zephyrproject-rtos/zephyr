@@ -23,7 +23,7 @@
 struct fs_mount_t testfs_mnt = {
 	.type = FS_EXT2,
 	.mnt_point = "/sml",
-	.storage_dev = STORAGE_DEVICE,
+	.storage_dev = (char *)STORAGE_DEVICE,
 	.flags = 0,
 };
 

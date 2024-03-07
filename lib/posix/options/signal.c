@@ -7,6 +7,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <zephyr/posix/signal.h>
 
@@ -82,7 +83,9 @@ char *strsignal(int signum)
 
 	if (!signo_valid(signum)) {
 		errno = EINVAL;
-		return "Invalid signal";
+		const char *invalid_signal = "Invalid signal";
+		memcpy(buf, invalid_signal, strlen(invalid_signal)+1);
+		return buf;
 	}
 
 	if (signo_is_rt(signum)) {

@@ -57,7 +57,7 @@ void getopt_init(void)
 	state->optreset = 0;
 	state->optarg = NULL;
 
-	state->place = ""; /* EMSG */
+	state->place = (char *)""; /* EMSG */
 
 #if CONFIG_GETOPT_LONG
 	state->nonopt_start = -1; /* first non option argument (for permute) */
@@ -88,7 +88,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 		state->place = nargv[state->optind];
 		if (state->optind >= nargc || *state->place++ != '-') {
 			/* Argument is absent or is not an option */
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			z_getopt_global_state_update(state);
 			return -1;
 		}
@@ -96,7 +96,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 		if (state->optopt == '-' && *state->place == 0) {
 			/* "--" => end of options */
 			++state->optind;
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			z_getopt_global_state_update(state);
 			return -1;
 		}
@@ -104,7 +104,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 			/* Solitary '-', treat as a '-' option
 			 * if the program (eg su) is looking for it.
 			 */
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			if (strchr(ostr, '-') == NULL) {
 				z_getopt_global_state_update(state);
 				return -1;
@@ -145,7 +145,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 			state->optarg = nargv[state->optind];
 		} else {
 			/* option-argument absent */
-			state->place = EMSG;
+			state->place = (char *)EMSG;
 			if (*ostr == ':') {
 				z_getopt_global_state_update(state);
 				return BADARG;
@@ -157,7 +157,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 			z_getopt_global_state_update(state);
 			return BADCH;
 		}
-		state->place = EMSG;
+		state->place = (char *)EMSG;
 		++state->optind;
 	}
 	z_getopt_global_state_update(state);

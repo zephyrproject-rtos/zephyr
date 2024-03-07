@@ -80,7 +80,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
-		bt_audio_data_parse(codec_cfg->data, codec_cfg->data_len, print_cb, "data");
+		bt_audio_data_parse(codec_cfg->data, codec_cfg->data_len, print_cb, (char *)"data");
 
 		ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 		if (ret > 0) {
@@ -105,7 +105,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		print_hex(codec_cfg->data, codec_cfg->data_len);
 	}
 
-	bt_audio_data_parse(codec_cfg->meta, codec_cfg->meta_len, print_cb, "meta");
+	bt_audio_data_parse(codec_cfg->meta, codec_cfg->meta_len, print_cb, (char *)"meta");
 }
 
 static void print_qos(const struct bt_audio_codec_qos *qos)

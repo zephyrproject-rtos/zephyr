@@ -147,7 +147,7 @@ static int max31865_set_three_wire(const struct device *dev, bool enable)
 	return configure_device(dev);
 }
 
-static char *max31865_error_to_string(uint8_t fault_register)
+static const char *max31865_error_to_string(uint8_t fault_register)
 {
 	switch (fault_register) {
 	case 0:

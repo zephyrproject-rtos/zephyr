@@ -151,7 +151,7 @@ struct hawkbit_cancel {
 };
 
 struct entry {
-	char *http_req_str;
+	const char *http_req_str;
 	int n;
 };
 

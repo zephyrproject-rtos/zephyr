@@ -28,7 +28,7 @@ extern void z_arm64_fpu_restore(struct z_arm64_fp_context *saved_fp_context);
 
 #include <string.h>
 
-static void DBG(char *msg, struct k_thread *th)
+static void DBG(const char *msg, struct k_thread *th)
 {
 	char buf[80], *p;
 	unsigned int v;
@@ -56,7 +56,7 @@ static void DBG(char *msg, struct k_thread *th)
 
 #else
 
-static inline void DBG(char *msg, struct k_thread *t) { }
+static inline void DBG(const char *msg, struct k_thread *t) { }
 
 #endif /* FPU_DEBUG */
 

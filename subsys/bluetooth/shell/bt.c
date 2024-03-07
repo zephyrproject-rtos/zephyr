@@ -510,10 +510,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 				cmd_scan_off(ctx_shell);
 
 				/* "name" is what would be in argv[0] normally */
-				cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){"name"});
+				cmd_scan_filter_clear_name(ctx_shell, 1,
+							   (char *[]){(char *)"name"});
 
 				/* "connect" is what would be in argv[0] normally */
-				cmd_connect_le(ctx_shell, 1, (char *[]){"connect"});
+				cmd_connect_le(ctx_shell, 1, (char *[]){(char *)"connect"});
 			}
 		} else {
 			bt_conn_unref(conn);
@@ -530,7 +531,7 @@ static void scan_timeout(void)
 	if (auto_connect.connect_name) {
 		auto_connect.connect_name = false;
 		/* "name" is what would be in argv[0] normally */
-		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ (char *)"name" });
 	}
 #endif /* CONFIG_BT_CENTRAL */
 }

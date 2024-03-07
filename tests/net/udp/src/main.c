@@ -148,7 +148,7 @@ struct ud {
 	const struct sockaddr *local_addr;
 	uint16_t remote_port;
 	uint16_t local_port;
-	char *test;
+	const char *test;
 	void *handle;
 };
 

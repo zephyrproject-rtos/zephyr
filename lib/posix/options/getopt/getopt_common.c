@@ -30,7 +30,7 @@ static struct getopt_state m_getopt_common_state = {
 	.optreset = 0,
 	.optarg = NULL,
 
-	.place = "", /* EMSG */
+	.place = (char *)"", /* EMSG */
 
 #if CONFIG_GETOPT_LONG
 	.nonopt_start = -1, /* first non option argument (for permute) */

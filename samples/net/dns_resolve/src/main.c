@@ -35,7 +35,7 @@ void dns_result_cb(enum dns_resolve_status status,
 		   void *user_data)
 {
 	char hr_addr[NET_IPV6_ADDR_LEN];
-	char *hr_family;
+	const char *hr_family;
 	void *addr;
 
 	switch (status) {
@@ -84,7 +84,7 @@ void mdns_result_cb(enum dns_resolve_status status,
 		    void *user_data)
 {
 	char hr_addr[NET_IPV6_ADDR_LEN];
-	char *hr_family;
+	const char *hr_family;
 	void *addr;
 
 	switch (status) {

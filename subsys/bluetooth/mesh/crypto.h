@@ -59,7 +59,7 @@ int bt_mesh_k3(const uint8_t n[16], uint8_t out[8]);
 
 int bt_mesh_k4(const uint8_t n[16], uint8_t out[1]);
 
-int bt_mesh_k5(const uint8_t *n, size_t n_len, const uint8_t salt[32], uint8_t *p, uint8_t out[32]);
+int bt_mesh_k5(const uint8_t *n, size_t n_len, const uint8_t salt[32], const uint8_t *p, uint8_t out[32]);
 
 int bt_mesh_id128(const uint8_t n[16], const char *s, enum bt_mesh_key_type type,
 		  struct bt_mesh_key *out);

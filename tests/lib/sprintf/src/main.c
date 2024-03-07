@@ -81,7 +81,7 @@ union raw_double_u {
 };
 #endif
 
-static int WriteFrmtd_vf(FILE *stream, char *format, ...)
+static int WriteFrmtd_vf(FILE *stream, const char *format, ...)
 {
 	int ret;
 	va_list args;
@@ -830,7 +830,7 @@ ZTEST(sprintf, test_vfprintf)
  *
  */
 
-static int WriteFrmtd_v(char *format, ...)
+static int WriteFrmtd_v(const char *format, ...)
 {
 	int ret;
 	va_list args;

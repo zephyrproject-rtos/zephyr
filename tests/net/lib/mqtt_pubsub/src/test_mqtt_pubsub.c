@@ -243,7 +243,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 	}
 }
 
-static char *get_mqtt_topic(void)
+static const char *get_mqtt_topic(void)
 {
 	return "sensors";
 }

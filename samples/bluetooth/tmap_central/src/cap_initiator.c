@@ -195,14 +195,14 @@ static void print_remote_codec(const struct bt_audio_codec_cap *codec_cap, enum 
 	       codec_cap->vid, codec_cap->data_len);
 
 	if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
-		bt_audio_data_parse(codec_cap->data, codec_cap->data_len, print_cb, "data");
+		bt_audio_data_parse(codec_cap->data, codec_cap->data_len, print_cb, (char *)"data");
 	} else { /* If not LC3, we cannot assume it's LTV */
 		printk("data: ");
 		print_hex(codec_cap->data, codec_cap->data_len);
 		printk("\n");
 	}
 
-	bt_audio_data_parse(codec_cap->meta, codec_cap->meta_len, print_cb, "meta");
+	bt_audio_data_parse(codec_cap->meta, codec_cap->meta_len, print_cb, (char *)"meta");
 }
 
 static void add_remote_sink(struct bt_bap_ep *ep)

@@ -689,7 +689,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 {
 	struct modem_socket *sock     = (struct modem_socket *) obj;
 	uint16_t	    dst_port  = 0;
-	char		    *protocol = "TCP";
+	const char	    *protocol = "TCP";
 	struct modem_cmd    cmd[]     = { MODEM_CMD("+QIOPEN: ", on_cmd_atcmdinfo_sockopen, 2U, ",") };
 	char		    buf[sizeof("AT+QIOPEN=#,#,'###','###',"
 				       "####.####.####.####.####.####.####.####,######,"
@@ -867,7 +867,7 @@ static void modem_rx(void *p1, void *p2, void *p3)
 static void modem_rssi_query_work(struct k_work *work)
 {
 	struct modem_cmd cmd  = MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
-	static char *send_cmd = "AT+CSQ";
+	static const char *send_cmd = "AT+CSQ";
 	int ret;
 
 	/* query modem RSSI */

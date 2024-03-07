@@ -69,7 +69,7 @@ ZTEST(net_content_plain_text, test_put_s8)
 	int i;
 	uint16_t offset = 0;
 	int8_t value[] = { 0, INT8_MAX, INT8_MIN };
-	char * const expected_payload[] = { "0", "127", "-128" };
+	const char * const expected_payload[] = { "0", "127", "-128" };
 
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
 		ret = plain_text_writer.put_s8(&test_out, &test_path, value[i]);
@@ -100,7 +100,7 @@ ZTEST(net_content_plain_text, test_put_s16)
 	int i;
 	uint16_t offset = 0;
 	int16_t value[] = { 0, INT16_MAX, INT16_MIN };
-	char * const expected_payload[] = { "0", "32767", "-32768" };
+	const char * const expected_payload[] = { "0", "32767", "-32768" };
 
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
 		ret = plain_text_writer.put_s16(&test_out, &test_path, value[i]);
@@ -131,7 +131,7 @@ ZTEST(net_content_plain_text, test_put_s32)
 	int i;
 	uint16_t offset = 0;
 	int32_t value[] = { 0, INT32_MAX, INT32_MIN };
-	char * const expected_payload[] = { "0", "2147483647", "-2147483648" };
+	const char * const expected_payload[] = { "0", "2147483647", "-2147483648" };
 
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
 		ret = plain_text_writer.put_s32(&test_out, &test_path, value[i]);
@@ -162,7 +162,7 @@ ZTEST(net_content_plain_text, test_put_s64)
 	int i;
 	uint16_t offset = 0;
 	int64_t value[] = { 0, INT64_MAX, INT64_MIN };
-	char * const expected_payload[] = {
+	const char * const expected_payload[] = {
 		"0", "9223372036854775807", "-9223372036854775808"
 	};
 
@@ -222,7 +222,7 @@ ZTEST(net_content_plain_text, test_put_float)
 	int i;
 	uint16_t offset = 0;
 	double value[] = { 0., 0.123, -0.987, 3., -10., 2.333, -123.125 };
-	char * const expected_payload[] = {
+	const char * const expected_payload[] = {
 		"0.0", "0.123", "-0.987", "3.0", "-10.0", "2.333", "-123.125"
 	};
 
@@ -256,7 +256,7 @@ ZTEST(net_content_plain_text, test_put_bool)
 	int i;
 	uint16_t offset = 0;
 	bool value[] = { true, false };
-	char * const expected_payload[] = { "1", "0" };
+	const char * const expected_payload[] = { "1", "0" };
 
 	for (i = 0; i < ARRAY_SIZE(expected_payload); i++) {
 		ret = plain_text_writer.put_bool(&test_out, &test_path, value[i]);
@@ -289,7 +289,7 @@ ZTEST(net_content_plain_text, test_put_objlnk)
 	struct lwm2m_objlnk value[] = {
 		{ 0, 0 }, { 1, 1 }, { LWM2M_OBJLNK_MAX_ID, LWM2M_OBJLNK_MAX_ID }
 	};
-	char * const expected_payload[] = {
+	const char * const expected_payload[] = {
 		"0:0", "1:1", "65535:65535"
 	};
 
@@ -321,7 +321,7 @@ ZTEST(net_content_plain_text, test_get_s32)
 {
 	int ret;
 	int i;
-	char * const payload[] = { "0", "2147483647", "-2147483648" };
+	const char * const payload[] = { "0", "2147483647", "-2147483648" };
 	int32_t expected_value[] = { 0, INT32_MAX, INT32_MIN };
 	int32_t value;
 
@@ -350,7 +350,7 @@ ZTEST(net_content_plain_text, test_get_s64)
 {
 	int ret;
 	int i;
-	char * const payload[] = {
+	const char * const payload[] = {
 		"0", "9223372036854775807", "-9223372036854775808"
 	};
 	int64_t expected_value[] = { 0, INT64_MAX, INT64_MIN };
@@ -410,7 +410,7 @@ ZTEST(net_content_plain_text, test_get_float)
 {
 	int ret;
 	int i;
-	char * const payload[] = {
+	const char * const payload[] = {
 		"0", "0.123", "-0.987", "3", "-10",  "2.333", "-123.125"
 	};
 	double expected_value[] = {
@@ -445,7 +445,7 @@ ZTEST(net_content_plain_text, test_get_bool)
 {
 	int ret;
 	int i;
-	char * const payload[] = { "1", "0" };
+	const char * const payload[] = { "1", "0" };
 	bool expected_value[] = { true, false };
 	bool value;
 
@@ -474,7 +474,7 @@ ZTEST(net_content_plain_text, test_get_objlnk)
 {
 	int ret;
 	int i;
-	char * const payload[] = { "0:0", "1:1", "65535:65535" };
+	const char * const payload[] = { "0:0", "1:1", "65535:65535" };
 	struct lwm2m_objlnk expected_value[] = {
 		{ 0, 0 }, { 1, 1 }, { LWM2M_OBJLNK_MAX_ID, LWM2M_OBJLNK_MAX_ID }
 	};

@@ -53,7 +53,7 @@ static struct in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 
 static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
 
-static char *test_data = "Test data to be sent";
+static const char *test_data = "Test data to be sent";
 
 static bool test_failed;
 static bool cb_failure;

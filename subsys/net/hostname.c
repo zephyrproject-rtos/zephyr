@@ -43,7 +43,7 @@ const char *net_hostname_get(void)
 }
 
 #if defined(CONFIG_NET_HOSTNAME_DYNAMIC)
-int net_hostname_set(char *host, size_t len)
+int net_hostname_set(const char *host, size_t len)
 {
 	if (len > NET_HOSTNAME_MAX_LEN) {
 		return -ENOMEM;
