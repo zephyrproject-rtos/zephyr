@@ -40,6 +40,7 @@ def test_runner_imports():
                     'pyocd',
                     'qemu',
                     'renode',
+                    'renode-robot',
                     'silabs_commander',
                     'spi_burn',
                     'stm32cubeprogrammer',

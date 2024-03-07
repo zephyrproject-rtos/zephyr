@@ -705,7 +705,7 @@ endfunction()
 # This section provides glue between CMake and the Python code that
 # manages the runners.
 
-set(TYPES "FLASH" "DEBUG" "SIM")
+set(TYPES "FLASH" "DEBUG" "SIM" "ROBOT")
 function(_board_check_runner_type type) # private helper
   if (NOT "${type}" IN_LIST TYPES)
     message(FATAL_ERROR "invalid type ${type}; should be one of: ${TYPES}")
@@ -724,7 +724,7 @@ endfunction()
 #
 # This would set the board's flash runner to "pyocd".
 #
-# In general, "type" is FLASH, DEBUG or SIM and "runner" is
+# In general, "type" is FLASH, DEBUG, SIM or ROBOT and "runner" is
 # the name of a runner.
 function(board_set_runner type runner)
   _board_check_runner_type(${type})
@@ -764,6 +764,11 @@ endmacro()
 # A convenience macro for board_set_runner_ifnset(DEBUG ${runner}).
 macro(board_set_debugger_ifnset runner)
   board_set_runner_ifnset(DEBUG ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(ROBOT ${runner}).
+macro(board_set_robot_runner_ifnset runner)
+  board_set_runner_ifnset(ROBOT ${runner})
 endmacro()
 
 # A convenience macro for board_set_runner_ifnset(SIM ${runner}).
