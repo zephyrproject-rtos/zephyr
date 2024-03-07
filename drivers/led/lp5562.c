@@ -81,6 +81,11 @@ LOG_MODULE_REGISTER(lp5562);
 #define LP5562_MIN_BRIGHTNESS 0
 #define LP5562_MAX_BRIGHTNESS 100
 
+/* Output current defines in 0.1mA */
+#define LP5562_MIN_CURRENT_SETTING 0
+#define LP5562_DEFAULT_CURRENT_SETTING 175
+#define LP5562_MAX_CURRENT_SETTING 255
+
 /* Values for ENABLE register. */
 #define LP5562_ENABLE_CHIP_EN (1 << 6)
 #define LP5562_ENABLE_LOG_EN  (1 << 7)
@@ -159,6 +164,10 @@ enum lp5562_engine_fade_dirs {
 
 struct lp5562_config {
 	struct i2c_dt_spec bus;
+	int r_current;
+	int g_current;
+	int b_current;
+	int w_current;
 };
 
 struct lp5562_data {
@@ -895,6 +904,66 @@ static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 	return lp5562_led_set_brightness(dev, led, dev_data->min_brightness);
 }
 
+static int lp5562_verify_config(const struct lp5562_config *config)
+{
+	if (!IN_RANGE(config->r_current, LP5562_MIN_CURRENT_SETTING, LP5562_MAX_CURRENT_SETTING)) {
+		LOG_ERR("Set output current of red channel out of range.");
+		return -EINVAL;
+	}
+
+	if (!IN_RANGE(config->g_current, LP5562_MIN_CURRENT_SETTING, LP5562_MAX_CURRENT_SETTING)) {
+		LOG_ERR("Set output current of green channel out of range.");
+		return -EINVAL;
+	}
+
+	if (!IN_RANGE(config->b_current, LP5562_MIN_CURRENT_SETTING, LP5562_MAX_CURRENT_SETTING)) {
+		LOG_ERR("Set output current of blue channel out of range.");
+		return -EINVAL;
+	}
+
+	if (!IN_RANGE(config->w_current, LP5562_MIN_CURRENT_SETTING, LP5562_MAX_CURRENT_SETTING)) {
+		LOG_ERR("Set output current of white channel out of range.");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int lp5562_led_update_current(const struct device *dev, uint32_t led)
+{
+	const struct lp5562_config *config = dev->config;
+	uint8_t val, reg;
+
+	switch (led) {
+	case LP5562_CHANNEL_W:
+		reg = LP5562_W_CURRENT;
+		val = config->w_current;
+		break;
+	case LP5562_CHANNEL_R:
+		reg = LP5562_R_CURRENT;
+		val = config->r_current;
+		break;
+	case LP5562_CHANNEL_G:
+		reg = LP5562_G_CURRENT;
+		val = config->g_current;
+		break;
+	case LP5562_CHANNEL_B:
+		reg = LP5562_B_CURRENT;
+		val = config->b_current;
+		break;
+	default:
+		LOG_ERR("Invalid channel given.");
+		return -EINVAL;
+	}
+
+	if (i2c_reg_write_byte_dt(&config->bus, reg, val)) {
+		LOG_ERR("Setting led current failed.");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int lp5562_led_init(const struct device *dev)
 {
 	const struct lp5562_config *config = dev->config;
@@ -911,6 +980,31 @@ static int lp5562_led_init(const struct device *dev)
 	dev_data->max_period = LP5562_MAX_BLINK_PERIOD;
 	dev_data->min_brightness = LP5562_MIN_BRIGHTNESS;
 	dev_data->max_brightness = LP5562_MAX_BRIGHTNESS;
+
+	int result = lp5562_verify_config(config);
+	if (result != 0) {
+		return result;
+	}
+
+	result = lp5562_led_update_current(dev, LP5562_CHANNEL_R);
+	if (result != 0) {
+		return result;
+	}
+
+	result = lp5562_led_update_current(dev, LP5562_CHANNEL_G);
+	if (result != 0) {
+		return result;
+	}
+
+	result = lp5562_led_update_current(dev, LP5562_CHANNEL_B);
+	if (result != 0) {
+		return result;
+	}
+
+	result = lp5562_led_update_current(dev, LP5562_CHANNEL_W);
+	if (result != 0) {
+		return result;
+	}
 
 	if (i2c_reg_write_byte_dt(&config->bus, LP5562_ENABLE,
 				  LP5562_ENABLE_CHIP_EN)) {
@@ -948,6 +1042,10 @@ static const struct led_driver_api lp5562_led_api = {
 #define LP5562_DEFINE(id)						\
 	static const struct lp5562_config lp5562_config_##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),			\
+		.r_current = DT_INST_PROP_OR(id, red_output_current, LP5562_DEFAULT_CURRENT_SETTING), \
+		.g_current = DT_INST_PROP_OR(id, green_output_current, LP5562_DEFAULT_CURRENT_SETTING), \
+		.b_current = DT_INST_PROP_OR(id, blue_output_current, LP5562_DEFAULT_CURRENT_SETTING), \
+		.w_current = DT_INST_PROP_OR(id, white_output_current, LP5562_DEFAULT_CURRENT_SETTING), \
 	};								\
 									\
 	struct lp5562_data lp5562_data_##id;				\
