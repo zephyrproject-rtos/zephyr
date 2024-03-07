@@ -1011,3 +1011,11 @@ test_i2c_am2301b: am2301b@89 {
 	reg = <0x89>;
 	status = "okay";
 };
+
+test_i2c_iis328dq: iis328dq@8a {
+	compatible = "st,iis328dq";
+	status = "okay";
+	reg = <0x8a>;
+	int2-gpios = <&test_gpio 0 0>;
+	threshold-int-pad = <2>;
+};
