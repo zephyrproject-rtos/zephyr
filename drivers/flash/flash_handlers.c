@@ -50,6 +50,22 @@ static inline const struct flash_parameters *z_vrfy_flash_get_parameters(const s
 }
 #include <syscalls/flash_get_parameters_mrsh.c>
 
+int z_vrfy_flash_fill(const struct device *dev, uint8_t val, off_t offset,
+		      size_t size)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
+	return z_impl_flash_fill(dev, val, offset, size);
+}
+#include <syscalls/flash_fill_mrsh.c>
+
+int z_vrfy_flash_flatten(const struct device *dev, off_t offset, size_t size)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
+	return z_impl_flash_flatten(dev, offset, size);
+}
+
+#include <syscalls/flash_flatten_mrsh.c>
+
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline int z_vrfy_flash_get_page_info_by_offs(const struct device *dev,
 						     off_t offs,
