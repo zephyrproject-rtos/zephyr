@@ -938,3 +938,11 @@ test_i2c_tsl2591: tsl2591@84 {
 	reg = <0x84>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_iis328dq: iis328dq@85 {
+	compatible = "st,iis328dq";
+	status = "okay";
+	reg = <0x85>;
+	int2-gpios = <&test_gpio 0 0>;
+	threshold-int-pad = <2>;
+};

@@ -352,3 +352,12 @@ test_spi_bd8lb600fs: bd8lb600fs@2b {
 		#sensor-cells = <0>;
 	};
 };
+
+test_spi_iis328dq: iis328dq@2c {
+	compatible = "st,iis328dq";
+	status = "okay";
+	reg = <0x2c>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	drdy-int-pad = <1>;
+};
