@@ -301,8 +301,8 @@ ZTEST(flash_sim_api, test_align)
 	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
-#if !IS_ENABLED(CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES) &&	\
-	!IS_ENABLED(CONFIG_FLASH_SIMULATOR_RAMLIKE)
+#if defined(CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES) &&	\
+	defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 ZTEST(flash_sim_api, test_double_write)
 {
 	int rc;
@@ -328,7 +328,7 @@ ZTEST(flash_sim_api, test_double_write)
 }
 #endif
 
-#if IS_ENABLED(CONFIG_FLASH_SIMULATOR_RAMLIKE)
+#if !defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 ZTEST(flash_sim_api, test_ramlike)
 {
 	/* Within code below there is assumption that the src size is
@@ -450,6 +450,110 @@ ZTEST(flash_sim_api, test_get_erase_value)
 	zassert_equal(fp->erase_value, FLASH_SIMULATOR_ERASE_VALUE,
 		      "Expected erase value %x",
 		      FLASH_SIMULATOR_ERASE_VALUE);
+}
+
+ZTEST(flash_sim_api, test_flash_fill)
+{
+	off_t i;
+	int rc;
+	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_erase should succeed");
+#else
+	rc = flash_fill(flash_dev, FLASH_SIMULATOR_ERASE_VALUE,
+			FLASH_SIMULATOR_BASE_OFFSET,
+			FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_fill should succeed");
+#endif
+	size_t size = FLASH_SIMULATOR_FLASH_SIZE;
+
+	zassert_equal(0, test_check_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+					  FLASH_SIMULATOR_FLASH_SIZE),
+		      "Area not erased");
+
+	rc = flash_fill(flash_dev, 0x55,
+			FLASH_SIMULATOR_BASE_OFFSET,
+			FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_fill should succeed");
+
+	/* Check if fill did work on both type of devices */
+	i = 0;
+	size = FLASH_SIMULATOR_FLASH_SIZE;
+	while (i < FLASH_SIMULATOR_FLASH_SIZE) {
+		size_t chunk = MIN(size, FLASH_SIMULATOR_PROG_UNIT);
+
+		memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+		rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + i,
+				buf, chunk);
+		zassert_equal(0, rc, "flash_read should succeed at offset %d", i);
+		do {
+			zassert_equal((uint8_t)buf[i & (sizeof(buf) - 1)], 0x55,
+				      "Unexpected value at offset %d\n", i);
+			++i;
+			--size;
+			--chunk;
+		} while (chunk);
+	}
+}
+
+ZTEST(flash_sim_api, test_flash_flatten)
+{
+	int rc;
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_erase should succeed");
+#else
+	rc = flash_fill(flash_dev, FLASH_SIMULATOR_ERASE_VALUE,
+			FLASH_SIMULATOR_BASE_OFFSET,
+			FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_fill should succeed");
+#endif
+	/* Now fill the device with anything */
+	rc = flash_fill(flash_dev, 0xaa,
+			FLASH_SIMULATOR_BASE_OFFSET,
+			FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_fill should succeed");
+
+	/* And erase */
+	rc = flash_flatten(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			   FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_flatten should succeed");
+
+#if !defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+	/* In case of RAM like devices, the erase may not be
+	 * provided, in such case flash_flatten calls flash_fill
+	 * with erase_value.
+	 */
+	struct device other;
+	struct flash_driver_api api;
+
+	memcpy(&other, flash_dev, sizeof(other));
+	other.api = &api;
+	memcpy(&api, flash_dev->api, sizeof(api));
+	api.erase = NULL;
+
+	/* Now fill the device with anything */
+	rc = flash_fill(flash_dev, 0xaa,
+			FLASH_SIMULATOR_BASE_OFFSET,
+			FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_fill should succeed");
+
+	/* The erase is not implemented */
+	rc = flash_erase(&other, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(-ENOSYS, rc, "Expected not implemented");
+
+	rc = flash_flatten(&other, FLASH_SIMULATOR_BASE_OFFSET,
+				  FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_flatten should succeed");
+
+	test_check_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+
+#endif
 }
 
 #include <zephyr/drivers/flash/flash_simulator.h>
