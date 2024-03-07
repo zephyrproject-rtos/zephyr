@@ -752,8 +752,8 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 		if (dir_curr == SW_SWITCH_RX && end_evt_delay_en == END_EVT_DELAY_ENABLED &&
 		    !(phy_curr & PHY_CODED)) {
-			SW_SWITCH_TIMER->CC[phyend_delay_cc] =
-				SW_SWITCH_TIMER->CC[cc] - RADIO_EVENTS_PHYEND_DELAY_US;
+			nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
+					 SW_SWITCH_TIMER->CC[cc] - RADIO_EVENTS_PHYEND_DELAY_US);
 			if (delay < SW_SWITCH_TIMER->CC[cc]) {
 				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
 						 (SW_SWITCH_TIMER->CC[phyend_delay_cc] - delay));
@@ -783,6 +783,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			    SW_SWITCH_TIMER_S2_EVTS_COMP(sw_tifs_toggle);
 
 			uint32_t delay_s2;
+			uint32_t new_cc_s2_value;
 
 			/* Calculate assuming reception on S2 coding scheme. */
 			delay_s2 = HAL_RADIO_NS2US_ROUND(
@@ -790,13 +791,15 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 								flags_next) +
 				hal_radio_rx_chain_delay_ns_get(phy_curr, 0));
 
-			SW_SWITCH_TIMER->CC[cc_s2] = SW_SWITCH_TIMER->CC[cc];
+			new_cc_s2_value = SW_SWITCH_TIMER->CC[cc];
 
-			if (delay_s2 < SW_SWITCH_TIMER->CC[cc_s2]) {
-				SW_SWITCH_TIMER->CC[cc_s2] -= delay_s2;
+			if (delay_s2 < new_cc_s2_value) {
+				new_cc_s2_value -= delay_s2;
 			} else {
-				SW_SWITCH_TIMER->CC[cc_s2] = 1;
+				new_cc_s2_value = 1;
 			}
+			nrf_timer_cc_set(SW_SWITCH_TIMER, cc_s2,
+					 new_cc_s2_value);
 
 			/* Setup the Tx start for S2 using a dedicated compare,
 			 * setup a PPI to disable PPI group on that compare
@@ -1527,7 +1530,7 @@ void radio_tmr_sample(void)
 	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 
 	tmr_sample_val = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
-	EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET] = cc;
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
