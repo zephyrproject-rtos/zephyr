@@ -392,8 +392,13 @@ __set_comp_west_projs()
 
 __set_comp_west_boards()
 {
-	boards="$(__west_x boards --format={identifiers} "$@")\n$(__west_x boards --format={name} "$@")"
-	__set_comp ${boards//,/\ }
+	boards=( $(__west_x boards --format='{name}|{qualifiers}' "$@") )
+	for i in ${!boards[@]}; do
+		name="${boards[$i]%%|*}"
+		transformed_board="${boards[$i]//|//}"
+		boards[$i]="${transformed_board//,/\ ${name}\/}"
+	done
+	__set_comp ${boards[@]}
 }
 
 __comp_west_west()
