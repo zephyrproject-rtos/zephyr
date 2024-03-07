@@ -3329,6 +3329,7 @@ NXP Platforms (MCU):
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
     - boards/nxp/vmu*/
+    - boards/nxp/*rw*/
     - soc/nxp/imxrt/
     - soc/nxp/kinetis/
     - soc/nxp/lpc/
