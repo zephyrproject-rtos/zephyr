@@ -449,7 +449,8 @@ class KconfigCheck(ComplianceTest):
                 fp.write('config  ' + board_str + '\n')
                 fp.write('\t bool\n')
                 for qualifier in list_boards.board_v2_qualifiers(board):
-                    board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier).upper()
+                    board_str = ('BOARD_' + board.name + '_' +
+                                 re.sub(r"[^a-zA-Z0-9_]", "_", qualifier)).upper()
                     fp.write('config  ' + board_str + '\n')
                     fp.write('\t bool\n')
                 fp.write(
