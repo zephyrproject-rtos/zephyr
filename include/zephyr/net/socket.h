@@ -1361,4 +1361,27 @@ struct net_socket_register {
  * @}
  */
 
+/* Avoid circular loops with POSIX socket headers.
+ * We have these includes here so that we do not need
+ * to change the applications that were only including
+ * zephyr/net/socket.h header file.
+ */
+#if defined(CONFIG_POSIX_API)
+#if !defined(ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_)
+#include <zephyr/posix/arpa/inet.h>
+#endif
+#if !defined(ZEPHYR_INCLUDE_POSIX_NETDB_H_)
+#include <zephyr/posix/netdb.h>
+#endif
+#if !defined(ZEPHYR_INCLUDE_POSIX_UNISTD_H_)
+#include <zephyr/posix/unistd.h>
+#endif
+#if !defined(ZEPHYR_INCLUDE_POSIX_POLL_H_)
+#include <zephyr/posix/poll.h>
+#endif
+#if !defined(ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_)
+#include <zephyr/posix/sys/socket.h>
+#endif
+#endif /* CONFIG_POSIX_API */
+
 #endif /* ZEPHYR_INCLUDE_NET_SOCKET_H_ */
