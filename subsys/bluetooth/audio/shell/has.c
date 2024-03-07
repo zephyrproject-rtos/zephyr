@@ -11,11 +11,14 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "shell/bt.h"
+
+LOG_MODULE_REGISTER(has_shell, LOG_LEVEL_DBG);
 
 static int preset_select(uint8_t index, bool sync)
 {
@@ -24,7 +27,7 @@ static int preset_select(uint8_t index, bool sync)
 
 static void preset_name_changed(uint8_t index, const char *name)
 {
-	shell_print(ctx_shell, "Preset name changed index %u name %s", index, name);
+	LOG_DBG("Preset name changed index %u name %s", index, name);
 }
 
 static const struct bt_has_preset_ops preset_ops = {

@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -23,7 +24,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_mcc_shell, CONFIG_BT_MCC_LOG_LEVEL);
+LOG_MODULE_REGISTER(mcc_shell, LOG_LEVEL_DBG);
 
 static struct bt_mcc_cb cb;
 
@@ -44,21 +45,21 @@ static struct object_ids_t obj_ids;
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "Discovery failed (%d)", err);
+		LOG_ERR("Discovery failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Discovery complete");
+	LOG_DBG("Discovery complete");
 }
 
 static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *name)
 {
 	if (err) {
-		shell_error(ctx_shell, "Player Name read failed (%d)", err);
+		LOG_ERR("Player Name read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player name: %s", name);
+	LOG_DBG("Player name: %s", name);
 }
 
 #ifdef CONFIG_BT_MCC_OTS
@@ -67,12 +68,12 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Icon Object ID read failed (%d)", err);
+		LOG_ERR("Icon Object ID read failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Icon object ID: %s", str);
+	LOG_DBG("Icon object ID: %s", str);
 
 	obj_ids.icon_obj_id = id;
 }
@@ -82,11 +83,11 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
 	if (err) {
-		shell_error(ctx_shell, "Icon URL read failed (%d)", err);
+		LOG_ERR("Icon URL read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Icon URL: 0x%s", url);
+	LOG_DBG("Icon URL: 0x%s", url);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) */
 
@@ -94,33 +95,33 @@ static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *title)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track title read failed (%d)", err);
+		LOG_ERR("Track title read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track title: %s", title);
+	LOG_DBG("Track title: %s", title);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE) */
 
 static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track changed notification failed (%d)", err);
+		LOG_ERR("Track changed notification failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track changed");
+	LOG_DBG("Track changed");
 }
 
 #if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track duration read failed (%d)", err);
+		LOG_ERR("Track duration read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track duration: %d", dur);
+	LOG_DBG("Track duration: %d", dur);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
 
@@ -128,11 +129,11 @@ static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t du
 static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track position read failed (%d)", err);
+		LOG_ERR("Track position read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track Position: %d", pos);
+	LOG_DBG("Track Position: %d", pos);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) */
 
@@ -140,11 +141,11 @@ static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t po
 static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track Position set failed (%d)", err);
+		LOG_ERR("Track Position set failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track Position: %d", pos);
+	LOG_DBG("Track Position: %d", pos);
 }
 #endif /* defined(CONFIG_BT_MCC_SET_TRACK_POSITION) */
 
@@ -153,11 +154,11 @@ static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err,
 				       int8_t speed)
 {
 	if (err) {
-		shell_error(ctx_shell, "Playback speed read failed (%d)", err);
+		LOG_ERR("Playback speed read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playback speed: %d", speed);
+	LOG_DBG("Playback speed: %d", speed);
 }
 #endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) */
 
@@ -165,11 +166,11 @@ static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err,
 static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
-		shell_error(ctx_shell, "Playback speed set failed (%d)", err);
+		LOG_ERR("Playback speed set failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playback speed: %d", speed);
+	LOG_DBG("Playback speed: %d", speed);
 }
 #endif /* defined (CONFIG_BT_MCC_SET_PLAYBACK_SPEED) */
 
@@ -178,11 +179,11 @@ static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err,
 				      int8_t speed)
 {
 	if (err) {
-		shell_error(ctx_shell, "Seeking speed read failed (%d)", err);
+		LOG_ERR("Seeking speed read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Seeking speed: %d", speed);
+	LOG_DBG("Seeking speed: %d", speed);
 }
 #endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
 
@@ -194,13 +195,12 @@ static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell,
-			    "Track Segments Object ID read failed (%d)", err);
+		LOG_ERR("Track Segments Object ID read failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Track Segments Object ID: %s", str);
+	LOG_DBG("Track Segments Object ID: %s", str);
 
 	obj_ids.track_segments_obj_id = id;
 }
@@ -212,13 +212,12 @@ static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Current Track Object ID read failed (%d)",
-			    err);
+		LOG_ERR("Current Track Object ID read failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Track Object ID: %s", str);
+	LOG_DBG("Current Track Object ID: %s", str);
 
 	obj_ids.current_track_obj_id = id;
 }
@@ -230,12 +229,12 @@ static void mcc_set_current_track_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Current Track Object ID set failed (%d)", err);
+		LOG_ERR("Current Track Object ID set failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Track Object ID written: %s", str);
+	LOG_DBG("Current Track Object ID written: %s", str);
 }
 
 
@@ -245,16 +244,15 @@ static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Next Track Object ID read failed (%d)",
-			    err);
+		LOG_ERR("Next Track Object ID read failed (%d)", err);
 		return;
 	}
 
 	if (id == MPL_NO_TRACK_ID) {
-		shell_print(ctx_shell, "Next Track Object ID is empty");
+		LOG_DBG("Next Track Object ID is empty");
 	} else {
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		shell_print(ctx_shell, "Next Track Object ID: %s", str);
+		LOG_DBG("Next Track Object ID: %s", str);
 	}
 
 	obj_ids.next_track_obj_id = id;
@@ -267,12 +265,12 @@ static void mcc_set_next_track_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Next Track Object ID set failed (%d)", err);
+		LOG_ERR("Next Track Object ID set failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Next Track Object ID written: %s", str);
+	LOG_DBG("Next Track Object ID written: %s", str);
 }
 
 
@@ -282,13 +280,12 @@ static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell,
-			    "Parent Group Object ID read failed (%d)", err);
+		LOG_ERR("Parent Group Object ID read failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Parent Group Object ID: %s", str);
+	LOG_DBG("Parent Group Object ID: %s", str);
 
 	obj_ids.parent_group_obj_id = id;
 }
@@ -300,13 +297,12 @@ static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell,
-			    "Current Group Object ID read failed (%d)", err);
+		LOG_ERR("Current Group Object ID read failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Group Object ID: %s", str);
+	LOG_DBG("Current Group Object ID: %s", str);
 
 	obj_ids.current_group_obj_id = id;
 }
@@ -317,12 +313,12 @@ static void mcc_set_current_group_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Current Group Object ID set failed (%d)", err);
+		LOG_ERR("Current Group Object ID set failed (%d)", err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Group Object ID written: %s", str);
+	LOG_DBG("Current Group Object ID written: %s", str);
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
@@ -331,11 +327,11 @@ static void mcc_set_current_group_obj_id_cb(struct bt_conn *conn, int err,
 static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
-		shell_error(ctx_shell, "Playing order read failed (%d)", err);
+		LOG_ERR("Playing order read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playing order: %d", order);
+	LOG_DBG("Playing order: %d", order);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
 
@@ -343,11 +339,11 @@ static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t ord
 static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
-		shell_error(ctx_shell, "Playing order set failed (%d)", err);
+		LOG_ERR("Playing order set failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playing order: %d", order);
+	LOG_DBG("Playing order: %d", order);
 }
 #endif /* defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) */
 
@@ -356,12 +352,11 @@ static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err,
 						 uint16_t orders)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Playing orders supported read failed (%d)", err);
+		LOG_ERR("Playing orders supported read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playing orders supported: %d", orders);
+	LOG_DBG("Playing orders supported: %d", orders);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) */
 
@@ -369,11 +364,11 @@ static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err,
 static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state)
 {
 	if (err) {
-		shell_error(ctx_shell, "Media State read failed (%d)", err);
+		LOG_ERR("Media State read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Media State: %d", state);
+	LOG_DBG("Media State: %d", state);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
@@ -381,13 +376,12 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Command send failed (%d) - opcode: %d, param: %d",
-			    err, cmd->opcode, cmd->param);
+		LOG_ERR("Command send failed (%d) - opcode: %d, param: %d", err, cmd->opcode,
+			cmd->param);
 		return;
 	}
 
-	shell_print(ctx_shell, "Command opcode: %d, param: %d", cmd->opcode, cmd->param);
+	LOG_DBG("Command opcode: %d, param: %d", cmd->opcode, cmd->param);
 }
 #endif /* defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) */
 
@@ -395,14 +389,12 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 			   const struct mpl_cmd_ntf *ntf)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Command notification error (%d) - opcode: %d, result: %d",
-			    err, ntf->requested_opcode, ntf->result_code);
+		LOG_ERR("Command notification error (%d) - opcode: %d, result: %d", err,
+			ntf->requested_opcode, ntf->result_code);
 		return;
 	}
 
-	shell_print(ctx_shell, "Command opcode: %d, result: %d",
-		    ntf->requested_opcode, ntf->result_code);
+	LOG_DBG("Command opcode: %d, result: %d", ntf->requested_opcode, ntf->result_code);
 }
 
 #if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
@@ -410,12 +402,11 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 					    uint32_t opcodes)
 {
 	if (err) {
-		shell_error(ctx_shell, "Opcodes supported read failed (%d)",
-			    err);
+		LOG_ERR("Opcodes supported read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Opcodes supported: %d", opcodes);
+	LOG_DBG("Opcodes supported: %d", opcodes);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 
@@ -424,25 +415,21 @@ static void mcc_send_search_cb(struct bt_conn *conn, int err,
 			       const struct mpl_search *search)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Search send failed (%d)", err);
+		LOG_ERR("Search send failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Search sent");
+	LOG_DBG("Search sent");
 }
 
 static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Search notification error (%d), result code: %d",
-			    err, result_code);
+		LOG_ERR("Search notification error (%d), result code: %d", err, result_code);
 		return;
 	}
 
-	shell_print(ctx_shell, "Search notification result code: %d",
-		    result_code);
+	LOG_DBG("Search notification result code: %d", result_code);
 }
 
 static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
@@ -451,16 +438,15 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell,
-			    "Search Results Object ID read failed (%d)", err);
+		LOG_ERR("Search Results Object ID read failed (%d)", err);
 		return;
 	}
 
 	if (id == 0) {
-		shell_print(ctx_shell, "Search Results Object ID: 0x000000000000");
+		LOG_DBG("Search Results Object ID: 0x000000000000");
 	} else {
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		shell_print(ctx_shell, "Search Results Object ID: %s", str);
+		LOG_DBG("Search Results Object ID: %s", str);
 	}
 
 	obj_ids.search_results_obj_id = id;
@@ -471,11 +457,11 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
 static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
 	if (err) {
-		shell_error(ctx_shell, "Content Control ID read failed (%d)", err);
+		LOG_ERR("Content Control ID read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Content Control ID: %d", ccid);
+	LOG_DBG("Content Control ID: %d", ccid);
 }
 #endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 
@@ -484,36 +470,33 @@ static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_
 static void mcc_otc_obj_selected_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Error in selecting object (err %d)", err);
+		LOG_ERR("Error in selecting object (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Selecting object succeeded");
+	LOG_DBG("Selecting object succeeded");
 }
 
 static void mcc_otc_obj_metadata_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Error in reading object metadata (err %d)", err);
+		LOG_ERR("Error in reading object metadata (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Reading object metadata succeeded\n");
+	LOG_DBG("Reading object metadata succeeded\n");
 }
 
 static void mcc_icon_object_read_cb(struct bt_conn *conn, int err,
 				    struct net_buf_simple *buf)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Icon Object read failed (%d)", err);
+		LOG_ERR("Icon Object read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Icon content (%d octets)", buf->len);
-	shell_hexdump(ctx_shell, buf->data, buf->len);
+	LOG_DBG("Icon content (%d octets)", buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
 }
 
 /* TODO: May want to use a parsed type, instead of the raw buf, here */
@@ -521,65 +504,60 @@ static void mcc_track_segments_object_read_cb(struct bt_conn *conn, int err,
 					      struct net_buf_simple *buf)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Track Segments Object read failed (%d)", err);
+		LOG_ERR("Track Segments Object read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track Segments content (%d octets)", buf->len);
-	shell_hexdump(ctx_shell, buf->data, buf->len);
+	LOG_DBG("Track Segments content (%d octets)", buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
 }
 
 static void mcc_otc_read_current_track_object_cb(struct bt_conn *conn, int err,
 						 struct net_buf_simple *buf)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Current Track Object read failed (%d)", err);
+		LOG_ERR("Current Track Object read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Current Track content (%d octets)", buf->len);
-	shell_hexdump(ctx_shell, buf->data, buf->len);
+	LOG_DBG("Current Track content (%d octets)", buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
 }
 
 static void mcc_otc_read_next_track_object_cb(struct bt_conn *conn, int err,
 						 struct net_buf_simple *buf)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Next Track Object read failed (%d)", err);
+		LOG_ERR("Next Track Object read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Next Track content (%d octets)", buf->len);
-	shell_hexdump(ctx_shell, buf->data, buf->len);
+	LOG_DBG("Next Track content (%d octets)", buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
 }
 
 static void mcc_otc_read_parent_group_object_cb(struct bt_conn *conn, int err,
 						struct net_buf_simple *buf)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Parent Group Object read failed (%d)", err);
+		LOG_ERR("Parent Group Object read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Parent Group content (%d octets)", buf->len);
-	shell_hexdump(ctx_shell, buf->data, buf->len);
+	LOG_DBG("Parent Group content (%d octets)", buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
 }
 
 static void mcc_otc_read_current_group_object_cb(struct bt_conn *conn, int err,
 						 struct net_buf_simple *buf)
 {
 	if (err) {
-		shell_error(ctx_shell,
-			    "Current Group Object read failed (%d)", err);
+		LOG_ERR("Current Group Object read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Current Group content (%d octets)", buf->len);
-	shell_hexdump(ctx_shell, buf->data, buf->len);
+	LOG_DBG("Current Group content (%d octets)", buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
 }
 
 #endif /* CONFIG_BT_MCC_OTS */
@@ -588,10 +566,6 @@ static void mcc_otc_read_current_group_object_cb(struct bt_conn *conn, int err,
 static int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int result;
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
 
 	/* Set up the callbacks */
 	cb.discover_mcs                  = mcc_discover_mcs_cb;

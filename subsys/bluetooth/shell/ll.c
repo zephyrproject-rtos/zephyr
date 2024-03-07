@@ -17,12 +17,15 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
 #include "../controller/util/memq.h"
 #include "../controller/include/ll.h"
 
 #include "bt.h"
+
+LOG_MODULE_REGISTER(ll_shell, LOG_LEVEL_DBG);
 
 int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 {

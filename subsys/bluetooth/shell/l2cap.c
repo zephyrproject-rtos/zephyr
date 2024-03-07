@@ -27,9 +27,12 @@
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
 #include "bt.h"
+
+LOG_MODULE_REGISTER(l2cap_shell, LOG_LEVEL_DBG);
 
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
@@ -89,7 +92,7 @@ static void l2cap_recv_cb(struct k_work *work)
 	struct net_buf *buf;
 
 	while ((buf = net_buf_get(&l2cap_recv_fifo, K_NO_WAIT))) {
-		shell_print(ctx_shell, "Confirming reception");
+		LOG_DBG("Confirming reception");
 		bt_l2cap_chan_recv_complete(&c->ch.chan, buf);
 	}
 }
@@ -102,18 +105,16 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return l2cap_recv_metrics(chan, buf);
 	}
 
-	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
-		    buf->len);
+	LOG_DBG("Incoming data channel %p len %u", chan, buf->len);
 
 	if (buf->len) {
-		shell_hexdump(ctx_shell, buf->data, buf->len);
+		LOG_HEXDUMP_DBG(buf->data, buf->len, "");
 	}
 
 	if (l2cap_recv_delay_ms > 0) {
 		/* Submit work only if queue is empty */
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
-			shell_print(ctx_shell, "Delaying response in %u ms...",
-				    l2cap_recv_delay_ms);
+			LOG_DBG("Delaying response in %u ms...", l2cap_recv_delay_ms);
 		}
 
 		net_buf_put(&l2cap_recv_fifo, buf);
@@ -127,12 +128,12 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 static void l2cap_sent(struct bt_l2cap_chan *chan)
 {
-	shell_print(ctx_shell, "Outgoing data channel %p transmitted", chan);
+	LOG_DBG("Outgoing data channel %p transmitted", chan);
 }
 
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
-	shell_print(ctx_shell, "Channel %p status %u", chan, (uint32_t)*status);
+	LOG_DBG("Channel %p status %u", chan, (uint32_t)*status);
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
@@ -141,19 +142,19 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 
 	k_work_init_delayable(&c->recv_work, l2cap_recv_cb);
 
-	shell_print(ctx_shell, "Channel %p connected", chan);
+	LOG_DBG("Channel %p connected", chan);
 }
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
-	shell_print(ctx_shell, "Channel %p disconnected", chan);
+	LOG_DBG("Channel %p disconnected", chan);
 }
 
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	/* print if metrics is disabled */
 	if (!metrics) {
-		shell_print(ctx_shell, "Channel %p requires buffer", chan);
+		LOG_DBG("Channel %p requires buffer", chan);
 	}
 
 	return net_buf_alloc(&data_rx_pool, K_FOREVER);
@@ -217,7 +218,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 {
 	int err;
 
-	shell_print(ctx_shell, "Incoming conn %p", conn);
+	LOG_DBG("Incoming conn %p", (void *)conn);
 
 	err = l2cap_accept_policy(conn);
 	if (err < 0) {
@@ -225,7 +226,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 	}
 
 	if (l2ch_chan.ch.chan.conn) {
-		shell_print(ctx_shell, "No channels available");
+		LOG_DBG("No channels available");
 		return -ENOMEM;
 	}
 

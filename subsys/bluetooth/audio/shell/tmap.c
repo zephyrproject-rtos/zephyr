@@ -11,10 +11,13 @@
 
 #include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 
 #include "shell/bt.h"
+
+LOG_MODULE_REGISTER(tmap_shell, LOG_LEVEL_DBG);
 
 static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 {
@@ -41,11 +44,11 @@ static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 static void tmap_discover_cb(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "tmap discovery (err %d)", err);
+		LOG_ERR("tmap discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "tmap discovered for conn %p: role 0x%02x", conn, role);
+	LOG_DBG("tmap discovered for conn %p: role 0x%02x", (void *)conn, role);
 }
 
 static const struct bt_tmap_cb tmap_cb = {
@@ -60,10 +63,6 @@ static int cmd_tmap_discover(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "Not connected");
 
 		return -ENOEXEC;
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	err = bt_tmap_discover(default_conn, &tmap_cb);

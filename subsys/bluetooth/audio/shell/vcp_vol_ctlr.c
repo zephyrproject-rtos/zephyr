@@ -10,10 +10,13 @@
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 
 #include "shell/bt.h"
+
+LOG_MODULE_REGISTER(vcp_vol_ctlr_shell, LOG_LEVEL_DBG);
 
 static struct bt_vcp_vol_ctlr *vcp_vol_ctlr;
 static struct bt_vcp_included vcp_included;
@@ -22,13 +25,12 @@ static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			    uint8_t vocs_count, uint8_t aics_count)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP discover failed (%d)", err);
+		LOG_ERR("VCP discover failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP discover done with %u VOCS and %u AICS", vocs_count,
-			    aics_count);
+		LOG_DBG("VCP discover done with %u VOCS and %u AICS", vocs_count, aics_count);
 
 		if (bt_vcp_vol_ctlr_included_get(vol_ctlr, &vcp_included)) {
-			shell_error(ctx_shell, "Could not get VCP context");
+			LOG_ERR("Could not get VCP context");
 		}
 	}
 }
@@ -36,63 +38,63 @@ static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 static void vcs_vol_down_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP vol_down failed (%d)", err);
+		LOG_ERR("VCP vol_down failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP vol_down done");
+		LOG_DBG("VCP vol_down done");
 	}
 }
 
 static void vcs_vol_up_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP vol_up failed (%d)", err);
+		LOG_ERR("VCP vol_up failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP vol_up done");
+		LOG_DBG("VCP vol_up done");
 	}
 }
 
 static void vcs_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP mute failed (%d)", err);
+		LOG_ERR("VCP mute failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP mute done");
+		LOG_DBG("VCP mute done");
 	}
 }
 
 static void vcs_unmute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP unmute failed (%d)", err);
+		LOG_ERR("VCP unmute failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP unmute done");
+		LOG_DBG("VCP unmute done");
 	}
 }
 
 static void vcs_vol_down_unmute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP vol_down_unmute failed (%d)", err);
+		LOG_ERR("VCP vol_down_unmute failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP vol_down_unmute done");
+		LOG_DBG("VCP vol_down_unmute done");
 	}
 }
 
 static void vcs_vol_up_unmute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP vol_up_unmute failed (%d)", err);
+		LOG_ERR("VCP vol_up_unmute failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP vol_up_unmute done");
+		LOG_DBG("VCP vol_up_unmute done");
 	}
 }
 
 static void vcs_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP vol_set failed (%d)", err);
+		LOG_ERR("VCP vol_set failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP vol_set done");
+		LOG_DBG("VCP vol_set done");
 	}
 }
 
@@ -100,9 +102,9 @@ static void vcs_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			 uint8_t volume, uint8_t mute)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP state get failed (%d)", err);
+		LOG_ERR("VCP state get failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP volume %u, mute %u", volume, mute);
+		LOG_DBG("VCP volume %u, mute %u", volume, mute);
 	}
 }
 
@@ -110,9 +112,9 @@ static void vcs_flags_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			 uint8_t flags)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VCP flags get failed (%d)", err);
+		LOG_ERR("VCP flags get failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP flags 0x%02X", flags);
+		LOG_DBG("VCP flags 0x%02X", flags);
 	}
 }
 
@@ -120,53 +122,45 @@ static void vcs_flags_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 static void vcs_aics_set_gain_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Set gain failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("Set gain failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "Gain set for inst %p", inst);
+		LOG_DBG("Gain set for inst %p", (void *)inst);
 	}
 }
 
 static void vcs_aics_unmute_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Unmute failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("Unmute failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "Unmuted inst %p", inst);
+		LOG_DBG("Unmuted inst %p", (void *)inst);
 	}
 }
 
 static void vcs_aics_mute_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Mute failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("Mute failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "Muted inst %p", inst);
+		LOG_DBG("Muted inst %p", (void *)inst);
 	}
 }
 
 static void vcs_aics_set_manual_mode_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "Set manual mode failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("Set manual mode failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "Manuel mode set for inst %p", inst);
+		LOG_DBG("Manuel mode set for inst %p", (void *)inst);
 	}
 }
 
 static void vcs_aics_automatic_mode_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "Set automatic mode failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("Set automatic mode failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "Automatic mode set for inst %p",
-			    inst);
+		LOG_DBG("Automatic mode set for inst %p", (void *)inst);
 	}
 }
 
@@ -174,12 +168,10 @@ static void vcs_aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			      uint8_t mute, uint8_t mode)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "AICS state get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("AICS state get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell,
-			    "AICS inst %p state gain %d, mute %u, mode %u",
-			    inst, gain, mute, mode);
+		LOG_DBG("AICS inst %p state gain %d, mute %u, mode %u", (void *)inst, gain, mute,
+			mode);
 	}
 }
 
@@ -188,13 +180,10 @@ static void vcs_aics_gain_setting_cb(struct bt_aics *inst, int err,
 				     int8_t maximum)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "AICS gain settings get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("AICS gain settings get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell,
-			    "AICS inst %p gain settings units %u, min %d, max %d",
-			    inst, units, minimum, maximum);
+		LOG_DBG("AICS inst %p gain settings units %u, min %d, max %d", (void *)inst, units,
+			minimum, maximum);
 	}
 }
 
@@ -202,24 +191,18 @@ static void vcs_aics_input_type_cb(struct bt_aics *inst, int err,
 				   uint8_t input_type)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "AICS input type get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("AICS input type get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p input type %u",
-			    inst, input_type);
+		LOG_DBG("AICS inst %p input type %u", (void *)inst, input_type);
 	}
 }
 
 static void vcs_aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "AICS status get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("AICS status get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p status %s",
-			    inst, active ? "active" : "inactive");
+		LOG_DBG("AICS inst %p status %s", (void *)inst, active ? "active" : "inactive");
 	}
 
 }
@@ -227,12 +210,9 @@ static void vcs_aics_description_cb(struct bt_aics *inst, int err,
 				    char *description)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "AICS description get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("AICS description get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "AICS inst %p description %s",
-			    inst, description);
+		LOG_DBG("AICS inst %p description %s", (void *)inst, description);
 	}
 }
 #endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0 */
@@ -241,20 +221,18 @@ static void vcs_aics_description_cb(struct bt_aics *inst, int err,
 static void vcs_vocs_set_offset_cb(struct bt_vocs *inst, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Set offset failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("Set offset failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "Offset set for inst %p", inst);
+		LOG_DBG("Offset set for inst %p", (void *)inst);
 	}
 }
 
 static void vcs_vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "VOCS state get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("VOCS state get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "VOCS inst %p offset %d", inst, offset);
+		LOG_DBG("VOCS inst %p offset %d", (void *)inst, offset);
 	}
 }
 
@@ -262,12 +240,9 @@ static void vcs_vocs_location_cb(struct bt_vocs *inst, int err,
 				 uint32_t location)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "VOCS location get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("VOCS location get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "VOCS inst %p location %u",
-			    inst, location);
+		LOG_DBG("VOCS inst %p location %u", (void *)inst, location);
 	}
 }
 
@@ -275,12 +250,9 @@ static void vcs_vocs_description_cb(struct bt_vocs *inst, int err,
 				    char *description)
 {
 	if (err != 0) {
-		shell_error(ctx_shell,
-			    "VOCS description get failed (%d) for inst %p",
-			    err, inst);
+		LOG_ERR("VOCS description get failed (%d) for inst %p", err, (void *)inst);
 	} else {
-		shell_print(ctx_shell, "VOCS inst %p description %s",
-			    inst, description);
+		LOG_DBG("VOCS inst %p description %s", (void *)inst, description);
 	}
 }
 #endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0 */
@@ -328,10 +300,6 @@ static int cmd_vcp_vol_ctlr_discover(const struct shell *sh, size_t argc,
 {
 	static bool cb_registered;
 	int result;
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
 
 	if (!cb_registered) {
 		result = bt_vcp_vol_ctlr_cb_register(&vcp_cbs);

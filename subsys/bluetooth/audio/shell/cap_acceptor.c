@@ -9,11 +9,14 @@
 #include <stdlib.h>
 
 #include <zephyr/types.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include "shell/bt.h"
+
+LOG_MODULE_REGISTER(cap_acceptor_shell, LOG_LEVEL_DBG);
 
 static size_t ad_cap_announcement_data_add(struct bt_data data[], size_t data_size)
 {
@@ -31,7 +34,6 @@ static size_t ad_cap_announcement_data_add(struct bt_data data[], size_t data_si
 }
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)
-extern const struct shell *ctx_shell;
 static struct bt_csip_set_member_svc_inst *cap_csip_svc_inst;
 static uint8_t sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 
@@ -40,15 +42,13 @@ static void locked_cb(struct bt_conn *conn,
 		      bool locked)
 {
 	if (conn == NULL) {
-		shell_error(ctx_shell, "Server %s the device",
-			    locked ? "locked" : "released");
+		LOG_ERR("Server %s the device", locked ? "locked" : "released");
 	} else {
 		char addr[BT_ADDR_LE_STR_LEN];
 
 		conn_addr_str(conn, addr, sizeof(addr));
 
-		shell_print(ctx_shell, "Client %s %s the device",
-			    addr, locked ? "locked" : "released");
+		LOG_DBG("Client %s %s the device", addr, locked ? "locked" : "released");
 	}
 }
 
@@ -62,8 +62,8 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn,
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
-	shell_print(ctx_shell, "Client %s requested to read the sirk. "
-		    "Responding with %s", addr, rsp_strings[sirk_read_rsp]);
+	LOG_DBG("Client %s requested to read the sirk. Responding with %s", addr,
+		rsp_strings[sirk_read_rsp]);
 
 	return sirk_read_rsp;
 }
@@ -343,12 +343,12 @@ size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool di
 		 */
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		    !IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT)) {
-			shell_warn(ctx_shell, "RSI derived from unencrypted SIRK");
+			LOG_WRN("RSI derived from unencrypted SIRK");
 		}
 
 		err = bt_csip_set_member_generate_rsi(cap_csip_svc_inst, ad_rsi);
 		if (err != 0) {
-			shell_error(ctx_shell, "Failed to generate RSI (err %d)", err);
+			LOG_ERR("Failed to generate RSI (err %d)", err);
 
 			return err;
 		}
