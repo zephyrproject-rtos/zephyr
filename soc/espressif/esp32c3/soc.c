@@ -7,17 +7,21 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
+#include <soc/ext_mem_defs.h>
 #include <soc/gpio_reg.h>
 #include <soc/syscon_reg.h>
 #include <soc/system_reg.h>
-#include <soc/cache_memory.h>
-#include "hal/soc_ll.h"
 #include "hal/wdt_hal.h"
 #include "esp_cpu.h"
+#include "hal/soc_hal.h"
+#include "hal/cpu_hal.h"
 #include "esp_timer.h"
-#include "esp_spi_flash.h"
+#include "esp_private/system_internal.h"
 #include "esp_clk_internal.h"
 #include <soc/interrupt_reg.h>
+#include <esp_private/spi_flash_os.h>
+#include "esp_private/esp_mmu_map_private.h"
+
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 
 #include <zephyr/kernel_structs.h>
@@ -82,9 +86,9 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 	extern int _rodata_reserved_start;
 	uint32_t rodata_reserved_start_align =
-		(uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
+		(uint32_t)&_rodata_reserved_start & ~(CONFIG_MMU_PAGE_SIZE - 1);
 	uint32_t cache_mmu_irom_size =
-		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) *
+		((rodata_reserved_start_align - SOC_DROM_LOW) / CONFIG_MMU_PAGE_SIZE) *
 			sizeof(uint32_t);
 
 	esp_rom_cache_set_idrom_mmu_size(cache_mmu_irom_size,
@@ -95,6 +99,22 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 */
 	REG_CLR_BIT(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_SDIOSLAVE_EN);
 	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
+
+#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_mspi_pin_init();
+
+    /**
+     * This function initialise the Flash chip to the user-defined settings.
+     *
+     * In bootloader, we only init Flash (and MSPI) to a preliminary state, for being flexible to
+     * different chips.
+     * In this stage, we re-configure the Flash (and MSPI) to required configuration
+     */
+	spi_flash_init_chip_state();
+
+	esp_mmu_map_init();
+
+#endif /*CONFIG_SOC_FLASH_ESP32*/
 
 	/* Configures the CPU clock, RTC slow and fast clocks, and performs
 	 * RTC slow clock calibration.
@@ -126,52 +146,6 @@ int IRAM_ATTR arch_printk_char_out(int c)
 	}
 	esp_rom_uart_tx_one_char(c);
 	return 0;
-}
-
-void IRAM_ATTR esp_restart_noos(void)
-{
-	/* Disable interrupts */
-	csr_read_clear(mstatus, MSTATUS_MIE);
-
-	/* Flush any data left in UART FIFOs */
-	esp_rom_uart_tx_wait_idle(0);
-	esp_rom_uart_tx_wait_idle(1);
-
-	/* 2nd stage bootloader reconfigures SPI flash signals. */
-	/* Reset them to the defaults expected by ROM */
-	WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-
-	/* Reset wifi/bluetooth/ethernet/sdio (bb/mac) */
-	SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-			SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST | SYSTEM_BT_RST |
-			SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST | SYSTEM_EMAC_RST |
-			SYSTEM_MACPWR_RST | SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST |
-			BLE_REG_REST_BIT | BLE_PWR_REG_REST_BIT | BLE_BB_REG_REST_BIT);
-
-	REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
-
-	/* Reset uart0 core first, then reset apb side. */
-	SET_PERI_REG_MASK(UART_CLK_CONF_REG(0), UART_RST_CORE_M);
-
-	/* Reset timer/spi/uart */
-	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-				SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
-	REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
-	/* Reset dma */
-	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
-	REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
-
-	/* Reset core */
-	soc_ll_reset_core(0);
-
-	while (true) {
-		;
-	}
 }
 
 void sys_arch_reboot(int type)
