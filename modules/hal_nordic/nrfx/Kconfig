@@ -144,6 +144,7 @@ config NRFX_NVMC
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF51_FLASH_CONTROLLER)) \
 		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF52_FLASH_CONTROLLER)) \
 		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF53_FLASH_CONTROLLER)) \
+		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_RRAM_CONTROLLER))        \
 		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF91_FLASH_CONTROLLER))
 
 config NRFX_PDM
