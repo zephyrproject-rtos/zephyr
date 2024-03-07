@@ -1246,6 +1246,7 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	sync_info.addr = &per_adv_sync->addr;
 	sync_info.sid = per_adv_sync->sid;
 	sync_info.service_data = sys_le16_to_cpu(evt->service_data);
+	sync_info.recv_enabled = true;
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	sync_info.num_subevents =  per_adv_sync->num_subevents;
