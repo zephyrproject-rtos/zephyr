@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpc_syscon
 #include <errno.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_utils.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <soc.h>
 #include <fsl_clock.h>
@@ -31,6 +32,10 @@ struct mcux_lpc_syscon_setpoint {
 struct mcux_lpc_syscon_config {
 	struct mcux_lpc_syscon_setpoint *setpoints;
 	uint32_t setpoint_count;
+};
+
+struct mcux_lpc_syscon_data {
+	sys_slist_t callbacks;
 };
 
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
@@ -211,24 +216,50 @@ static int mcux_lpc_syscon_clock_control_select_setpoint(const struct device *de
 							 uint32_t setpoint_id)
 {
 	const struct mcux_lpc_syscon_config *config = dev->config;
+	struct mcux_lpc_syscon_data *data = dev->data;
+	int ret;
 
 	if (setpoint_id >= config->setpoint_count) {
 		return -EINVAL;
 	}
 	for (uint8_t i = 0; i < config->setpoint_count; i++) {
 		if (config->setpoints[i].id == setpoint_id) {
-			return config->setpoints[i].setpoint();
+			ret = config->setpoints[i].setpoint();
+			if (ret < 0) {
+				return ret;
+			}
+			clock_control_fire_callbacks(&data->callbacks, dev);
+			return ret;
 		}
 	}
 	/* Setpoint was not found */
 	return -ENOENT;
 }
 
+static int mcux_lpc_syscon_clock_control_add_cb(const struct device *dev,
+						struct clock_control_callback *cb)
+{
+	struct mcux_lpc_syscon_data *data = dev->data;
+
+	return clock_control_manage_callback(&data->callbacks, cb, true);
+}
+
+static int mcux_lpc_syscon_clock_control_remove_cb(const struct device *dev,
+						   struct clock_control_callback *cb)
+{
+	struct mcux_lpc_syscon_data *data = dev->data;
+
+	return clock_control_manage_callback(&data->callbacks, cb, false);
+}
+
+
 static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
 	.get_rate = mcux_lpc_syscon_clock_control_get_subsys_rate,
 	.select_setpoint = mcux_lpc_syscon_clock_control_select_setpoint,
+	.add_callback = mcux_lpc_syscon_clock_control_add_cb,
+	.remove_callback = mcux_lpc_syscon_clock_control_remove_cb,
 };
 
 #define LPC_CLOCK_DEFINE(node, prop, idx)	\
@@ -251,11 +282,12 @@ static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 		.setpoints = lpc_syscon_setpoints_##n,				\
 		.setpoint_count = DT_INST_PROP_LEN_OR(n, setpoints, 0),		\
 	};									\
+	struct mcux_lpc_syscon_data lpc_syscon_data_##n;			\
 										\
 	DEVICE_DT_INST_DEFINE(n, \
 		    NULL, \
 		    NULL, \
-		    NULL, &lpc_syscon_config_##n, \
+		    &lpc_syscon_data_##n, &lpc_syscon_config_##n, \
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, \
 		    &mcux_lpc_syscon_api);
 
