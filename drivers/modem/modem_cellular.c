@@ -1516,7 +1516,7 @@ static int modem_cellular_init(const struct device *dev)
 			.delimiter = data->chat_delimiter,
 			.delimiter_size = strlen(data->chat_delimiter),
 			.filter = data->chat_filter,
-			.filter_size = strlen(data->chat_filter),
+			.filter_size = data->chat_filter ? strlen(data->chat_filter) : 0,
 			.argv = data->chat_argv,
 			.argv_size = ARRAY_SIZE(data->chat_argv),
 			.unsol_matches = unsol_matches,
