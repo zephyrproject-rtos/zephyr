@@ -30,35 +30,10 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 
-
-static inline int is_preempt(struct k_thread *thread)
-{
-	/* explanation in kernel_struct.h */
-	return thread->base.preempt <= _PREEMPT_THRESHOLD;
-}
-
 BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
 	     "You need to provide at least as many CONFIG_NUM_COOP_PRIORITIES as "
 	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
 	     "threads.");
-
-static inline int is_metairq(struct k_thread *thread)
-{
-#if CONFIG_NUM_METAIRQ_PRIORITIES > 0
-	return (thread->base.prio - K_HIGHEST_THREAD_PRIO)
-		< CONFIG_NUM_METAIRQ_PRIORITIES;
-#else
-	ARG_UNUSED(thread);
-	return 0;
-#endif /* CONFIG_NUM_METAIRQ_PRIORITIES */
-}
-
-#if CONFIG_ASSERT
-static inline bool is_thread_dummy(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_DUMMY) != 0U;
-}
-#endif /* CONFIG_ASSERT */
 
 /*
  * Return value same as e.g. memcmp
@@ -100,43 +75,6 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1,
 	}
 #endif /* CONFIG_SCHED_DEADLINE */
 	return 0;
-}
-
-static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
-					 int preempt_ok)
-{
-	/* Preemption is OK if it's being explicitly allowed by
-	 * software state (e.g. the thread called k_yield())
-	 */
-	if (preempt_ok != 0) {
-		return true;
-	}
-
-	__ASSERT(_current != NULL, "");
-
-	/* Or if we're pended/suspended/dummy (duh) */
-	if (z_is_thread_prevented_from_running(_current)) {
-		return true;
-	}
-
-	/* Edge case on ARM where a thread can be pended out of an
-	 * interrupt handler before the "synchronous" swap starts
-	 * context switching.  Platforms with atomic swap can never
-	 * hit this.
-	 */
-	if (IS_ENABLED(CONFIG_SWAP_NONATOMIC)
-	    && z_is_thread_timeout_active(thread)) {
-		return true;
-	}
-
-	/* Otherwise we have to be running a preemptible thread or
-	 * switching to a metairq
-	 */
-	if (is_preempt(_current) || is_metairq(thread)) {
-		return true;
-	}
-
-	return false;
 }
 
 #ifdef CONFIG_SCHED_CPU_MASK

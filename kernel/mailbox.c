@@ -18,6 +18,7 @@
 #include <zephyr/init.h>
 /* private kernel APIs */
 #include <ksched.h>
+#include <kthread.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
