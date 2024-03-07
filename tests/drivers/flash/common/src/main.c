@@ -44,6 +44,11 @@
 
 #define EXPECTED_SIZE	512
 
+#if !IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&		\
+	!IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#error There is no flash device enabled or it is missing Kconfig options
+#endif
+
 static const struct device *const flash_dev = TEST_AREA_DEVICE;
 static struct flash_pages_info page_info;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
@@ -59,7 +64,7 @@ static void *flash_driver_setup(void)
 	zassert_true(device_is_ready(flash_dev));
 
 	/* Check for erase is only needed when there is mix of devices */
-	if (IS_ENABLED(CONFIG_FLASH_HAS_PROGRAM_ERASE)) {
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)) {
 		const struct flash_parameters *fparams = flash_get_parameters(flash_dev);
 
 		erase_value = fparams->erase_value;
@@ -94,7 +99,7 @@ static void *flash_driver_setup(void)
 		     "Test area exceeds flash size");
 
 	/* Check if flash is cleared */
-	if (IS_ENABLED(CONFIG_FLASH_HAS_PROGRAM_ERASE) && ebw_required) {
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
 		bool is_buf_clear = true;
 
 		for (off_t i = 0; i < EXPECTED_SIZE; i++) {
@@ -125,8 +130,15 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	const uint8_t canary = erase_value;
 	uint32_t start;
 
-	if (IS_ENABLED(CONFIG_FLASH_HAS_PROGRAM_ERASE) && ebw_required) {
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
 		start = page_info.start_offset;
+		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+		rc = flash_erase(flash_dev, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+
+		zassert_equal(rc, 0, "Flash memory not properly erased");
 	} else {
 		start = TEST_AREA_OFFSET;
 	}
@@ -166,5 +178,79 @@ ZTEST(flash_driver, test_read_unaligned_address)
 		}
 	}
 }
+
+ZTEST(flash_driver, test_flash_fill)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	int rc;
+	off_t i;
+
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
+		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+		rc = flash_erase(flash_dev, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+
+		zassert_equal(rc, 0, "Flash memory not properly erased");
+	} else {
+		rc = flash_fill(flash_dev, 0x55, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+		zassert_equal(rc, 0, "Leveling memory with fill failed\n");
+	}
+
+	/* Fill the device with 0xaa */
+	rc = flash_fill(flash_dev, 0xaa, page_info.start_offset,
+			(page_info.size *
+			((EXPECTED_SIZE + page_info.size - 1)
+			/ page_info.size)));
+	zassert_equal(rc, 0, "Fill failed\n");
+
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET,
+			buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	for (i = 0; i < EXPECTED_SIZE; i++) {
+		if (buf[i] != 0xaa) {
+			break;
+		}
+	}
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+}
+
+ZTEST(flash_driver, test_flash_flatten)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	int rc;
+	off_t i;
+
+	rc = flash_flatten(flash_dev, page_info.start_offset,
+			   (page_info.size *
+			   ((EXPECTED_SIZE + page_info.size - 1)
+			   / page_info.size)));
+
+	zassert_equal(rc, 0, "Flash not leveled not properly erased");
+
+	/* Fill the device with 0xaa */
+	rc = flash_fill(flash_dev, 0xaa, page_info.start_offset,
+			(page_info.size *
+			((EXPECTED_SIZE + page_info.size - 1)
+			/ page_info.size)));
+	zassert_equal(rc, 0, "Fill failed\n");
+
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET,
+			buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	for (i = 0; i < EXPECTED_SIZE; i++) {
+		if (buf[i] != 0xaa) {
+			break;
+		}
+	}
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+}
+
 
 ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);
