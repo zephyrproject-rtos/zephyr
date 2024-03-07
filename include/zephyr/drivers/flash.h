@@ -141,6 +141,11 @@ typedef int (*flash_api_write)(const struct device *dev, off_t offset,
  * the driver, with the driver responsible for ensuring the "erase-protect"
  * after the operation completes (successfully or not) matches the erase-protect
  * state when the operation was started.
+ *
+ * The callback is optional for RAM non-volatile devices, which do not
+ * require erase by design, but may be provided if it allows device to
+ * work more effectively, or if device has a support for internal fill
+ * operation the erase in driver uses.
  */
 typedef int (*flash_api_erase)(const struct device *dev, off_t offset,
 			       size_t size);
@@ -278,12 +283,19 @@ static inline int z_impl_flash_write(const struct device *dev, off_t offset,
  *  Any necessary erase protection management is performed by the driver
  *  erase implementation itself.
  *
+ *  The function should be used only for devices that are really
+ *  explicit erase devices; in case when code relies on erasing
+ *  device, i.e. setting it to erase-value, prior to some operations,
+ *  but should work with explicit erase and RAM non-volatile devices,
+ *  then flash_flatten should rather be used.
+ *
  *  @param  dev             : flash device
  *  @param  offset          : erase area starting offset
  *  @param  size            : size of area to be erased
  *
  *  @return  0 on success, negative errno code on fail.
  *
+ *  @see flash_flatten()
  *  @see flash_get_page_info_by_offs()
  *  @see flash_get_page_info_by_idx()
  */
@@ -292,14 +304,58 @@ __syscall int flash_erase(const struct device *dev, off_t offset, size_t size);
 static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 				     size_t size)
 {
+	int rc = -ENOSYS;
+
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
-	int rc;
 
-	rc = api->erase(dev, offset, size);
+	if (api->erase != NULL) {
+		rc = api->erase(dev, offset, size);
+	}
 
 	return rc;
 }
+
+__syscall int flash_fill(const struct device *dev, uint8_t val, off_t offset, size_t size);
+
+/**
+ *  @brief  Erase part or all of a flash memory or level it
+ *
+ *  If device is explicit erase type device or device driver provides erase
+ *  callback, the callback of the device is called, in which it behaves
+ *  the same way as flash_erase.
+ *  If a device is does not require explicit erase, either because
+ *  it has no erase at all or has auto-erase/erase-on-write,
+ *  and does not provide erase callback then erase is emulated by
+ *  leveling selected device memory area with erase_value assigned to
+ *  device.
+ *
+ *  Erase page offset and size are constrains of paged, explicit erase devices,
+ *  but can be relaxed with devices without such requirement, which means that
+ *  it is up to user code to make sure they are correct as the function
+ *  will return on, if these constrains are not met, -EINVAL for
+ *  paged device, but may succeed on non-explicit erase devices.
+ *  For RAM non-volatile devices the erase pages are emulated,
+ *  at this point, to allow smooth transition for code relying on
+ *  device being paged to function properly; but this is completely
+ *  software constrain.
+ *
+ *  Generally: if your code previously required device to be erase
+ *  prior to some actions to work, replace flash_erase calls with this
+ *  function; but if your code can work with non-volatile RAM type devices,
+ *  without emulating erase, you should rather have different path
+ *  of execution for page-erase, i.e. Flash, devices and call
+ *  flash_erase for them.
+ *
+ *  @param  dev             : flash device
+ *  @param  offset          : erase area starting offset
+ *  @param  size            : size of area to be erased
+ *
+ *  @return  0 on success, negative errno code on fail.
+ *
+ *  @see flash_erase()
+ */
+__syscall int flash_flatten(const struct device *dev, off_t offset, size_t size);
 
 struct flash_pages_info {
 	off_t start_offset; /* offset from the base of flash address */

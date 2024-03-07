@@ -127,6 +127,19 @@ config FLASH_SHELL_BUFFER_SIZE
 
 endif # FLASH_SHELL
 
+config FLASH_FILL_BUFFER_SIZE
+	int "Buffer size of flash_fill funciton"
+	default 32
+	help
+	  Size of a buffer used by flash_fill function to fill a device with
+	  specific value; this buffer is allocated on stack.
+	  The buffer is needed as most devices have write-block alignment
+	  requirements that which imposes minimal size of data, which can
+	  be written to a device, and alignment of write offset.
+	  Even if device does not have such requirement, filling device by
+	  single bytes is not efficient.
+	  Value selected here should be multiply of the largest write-block-size
+	  among all the memory devices used in system.
 
 if FLASH_HAS_PAGE_LAYOUT
 
