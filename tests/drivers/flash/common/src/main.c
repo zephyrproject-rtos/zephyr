@@ -180,4 +180,78 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	}
 }
 
+ZTEST(flash_driver, test_flash_fill)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	int rc;
+	off_t i;
+
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
+		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+		rc = flash_erase(flash_dev, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+
+		zassert_equal(rc, 0, "Flash memory not properly erased");
+	} else {
+		rc = flash_fill(flash_dev, 0x55, page_info.start_offset,
+				(page_info.size *
+				((EXPECTED_SIZE + page_info.size - 1)
+				/ page_info.size)));
+		zassert_equal(rc, 0, "Leveling memory with fill failed\n");
+	}
+
+	/* Fill the device with 0xaa */
+	rc = flash_fill(flash_dev, 0xaa, page_info.start_offset,
+			(page_info.size *
+			((EXPECTED_SIZE + page_info.size - 1)
+			/ page_info.size)));
+	zassert_equal(rc, 0, "Fill failed\n");
+
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET,
+			buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	for (i = 0; i < EXPECTED_SIZE; i++) {
+		if (buf[i] != 0xaa) {
+			break;
+		}
+	}
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+}
+
+ZTEST(flash_driver, test_flash_flatten)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	int rc;
+	off_t i;
+
+	rc = flash_flatten(flash_dev, page_info.start_offset,
+			   (page_info.size *
+			   ((EXPECTED_SIZE + page_info.size - 1)
+			   / page_info.size)));
+
+	zassert_equal(rc, 0, "Flash not leveled not properly erased");
+
+	/* Fill the device with 0xaa */
+	rc = flash_fill(flash_dev, 0xaa, page_info.start_offset,
+			(page_info.size *
+			((EXPECTED_SIZE + page_info.size - 1)
+			/ page_info.size)));
+	zassert_equal(rc, 0, "Fill failed\n");
+
+	rc = flash_read(flash_dev, TEST_AREA_OFFSET,
+			buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	for (i = 0; i < EXPECTED_SIZE; i++) {
+		if (buf[i] != 0xaa) {
+			break;
+		}
+	}
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+}
+
+
 ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);
