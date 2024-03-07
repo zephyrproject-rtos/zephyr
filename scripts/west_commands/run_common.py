@@ -512,7 +512,7 @@ def runners_yaml_path(build_dir, board):
     ret = Path(build_dir) / 'zephyr' / 'runners.yaml'
     if not ret.is_file():
         log.die(f'either a pristine build is needed, or board {board} '
-                "doesn't support west flash/debug "
+                "doesn't support west flash/debug/simulate "
                 '(no ZEPHYR_RUNNERS_YAML in CMake cache)')
     return ret
 

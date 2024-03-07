@@ -48,6 +48,7 @@ _names = [
     'nxp_s32dbg',
     'openocd',
     'pyocd',
+    'renode',
     'qemu',
     'silabs_commander',
     'spi_burn',
