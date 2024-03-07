@@ -66,6 +66,11 @@ west-commands:
       - name: bindesc
         class: Bindesc
         help: work with Binary Descriptors
+  - file: scripts/west_commands/robot.py
+    commands:
+      - name: robot
+        class: Robot
+        help: run RobotFramework test suites
   - file: scripts/west_commands/simulate.py
     commands:
       - name: simulate

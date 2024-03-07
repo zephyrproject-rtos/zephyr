@@ -49,6 +49,7 @@ _names = [
     'openocd',
     'pyocd',
     'renode',
+    'renode-robot',
     'qemu',
     'silabs_commander',
     'spi_burn',
