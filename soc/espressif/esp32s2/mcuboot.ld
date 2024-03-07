@@ -36,8 +36,8 @@
 
 MEMORY
 {
-  iram_seg        (RWX) : org = 0x40040000, len = 0x6000
-  iram_loader_seg (RWX) : org = 0x40046000, len = 0x2000
+  iram_seg        (RWX) : org = 0x40040000, len = 0x7000
+  iram_loader_seg (RWX) : org = 0x40047000, len = 0x3000
   dram_seg        (RW) : org = 0x3FFE6000, len = 0x6000
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -136,7 +136,8 @@ SECTIONS
     *(.sdata2)
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
-
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
+    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     . = ALIGN(4);
@@ -237,6 +238,10 @@ SECTIONS
     *libzephyr.a:esp_efuse_api_key_esp32xx.*(.literal .text .literal.* .text.*)
     *esp_mcuboot.*(.literal .text .literal.* .text.*)
     *esp_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
