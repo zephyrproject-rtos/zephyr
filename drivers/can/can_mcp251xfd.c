@@ -19,14 +19,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(can_mcp251xfd, CONFIG_CAN_LOG_LEVEL);
 
-#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
-
-/*
- * Macro to exclude the sample point algorithm from compilation if not used
- * Without the macro, the algorithm would always waste ROM
- */
-#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
-
 static void mcp251xfd_canframe_to_txobj(const struct can_frame *src, int mailbox_idx,
 					struct mcp251xfd_txobj *dst)
 {
@@ -748,21 +740,6 @@ static int mcp251xfd_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int mcp251xfd_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct mcp251xfd_data *dev_data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!dev_data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return -ENOTSUP;
-}
-#endif
-
 static int mcp251xfd_handle_fifo_read(const struct device *dev, const struct mcp251xfd_fifo *fifo,
 				      uint8_t fifo_type)
 {
@@ -1296,68 +1273,6 @@ static void mcp251xfd_tef_fifo_handler(const struct device *dev, void *data)
 	k_sem_give(&dev_data->tx_sem);
 }
 
-#if defined(CONFIG_CAN_FD_MODE)
-static int mcp251xfd_init_timing_struct_data(struct can_timing *timing,
-					     const struct device *dev,
-					     const struct mcp251xfd_timing_params *timing_params)
-{
-	const struct mcp251xfd_config *dev_cfg = dev->config;
-	int ret;
-
-	if (USE_SP_ALGO && dev_cfg->common.sample_point_data > 0) {
-		ret = can_calc_timing_data(dev, timing, dev_cfg->common.bus_speed_data,
-					   dev_cfg->common.sample_point_data);
-		if (ret < 0) {
-			return ret;
-		}
-		LOG_DBG("Data phase Presc: %d, BS1: %d, BS2: %d", timing->prescaler,
-			timing->phase_seg1, timing->phase_seg2);
-		LOG_DBG("Data phase Sample-point err : %d", ret);
-	} else {
-		timing->sjw = timing_params->sjw;
-		timing->prop_seg = timing_params->prop_seg;
-		timing->phase_seg1 = timing_params->phase_seg1;
-		timing->phase_seg2 = timing_params->phase_seg2;
-		ret = can_calc_prescaler(dev, timing, dev_cfg->common.bus_speed_data);
-		if (ret > 0) {
-			LOG_WRN("Data phase Bitrate error: %d", ret);
-		}
-	}
-
-	return ret;
-}
-#endif
-
-static int mcp251xfd_init_timing_struct(struct can_timing *timing,
-					const struct device *dev,
-					const struct mcp251xfd_timing_params *timing_params)
-{
-	const struct mcp251xfd_config *dev_cfg = dev->config;
-	int ret;
-
-	if (USE_SP_ALGO && dev_cfg->common.sample_point > 0) {
-		ret = can_calc_timing(dev, timing, dev_cfg->common.bus_speed,
-				      dev_cfg->common.sample_point);
-		if (ret < 0) {
-			return ret;
-		}
-		LOG_DBG("Presc: %d, BS1: %d, BS2: %d", timing->prescaler, timing->phase_seg1,
-			timing->phase_seg2);
-		LOG_DBG("Sample-point err : %d", ret);
-	} else {
-		timing->sjw = timing_params->sjw;
-		timing->prop_seg = timing_params->prop_seg;
-		timing->phase_seg1 = timing_params->phase_seg1;
-		timing->phase_seg2 = timing_params->phase_seg2;
-		ret = can_calc_prescaler(dev, timing, dev_cfg->common.bus_speed);
-		if (ret > 0) {
-			LOG_WRN("Bitrate error: %d", ret);
-		}
-	}
-
-	return ret;
-}
-
 static inline int mcp251xfd_init_con_reg(const struct device *dev)
 {
 	uint32_t *reg;
@@ -1593,18 +1508,28 @@ static int mcp251xfd_init(const struct device *dev)
 		goto done;
 	}
 
-	ret = mcp251xfd_init_timing_struct(&timing, dev, &dev_cfg->timing_params);
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+			      dev_cfg->common.sample_point);
 	if (ret < 0) {
 		LOG_ERR("Can't find timing for given param");
 		goto done;
 	}
 
+	LOG_DBG("Presc: %d, BS1: %d, BS2: %d", timing.prescaler, timing.phase_seg1,
+		timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", ret);
+
 #if defined(CONFIG_CAN_FD_MODE)
-	ret = mcp251xfd_init_timing_struct_data(&timing_data, dev, &dev_cfg->timing_params_data);
+	ret = can_calc_timing_data(dev, &timing_data, dev_cfg->common.bus_speed_data,
+				   dev_cfg->common.sample_point_data);
 	if (ret < 0) {
 		LOG_ERR("Can't find data timing for given param");
 		goto done;
 	}
+
+	LOG_DBG("Data phase Presc: %d, BS1: %d, BS2: %d", timing_data.prescaler,
+		timing_data.phase_seg1, timing_data.phase_seg2);
+	LOG_DBG("Data phase Sample-point err : %d", ret);
 #endif
 
 	reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
@@ -1706,9 +1631,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 	.send = mcp251xfd_send,
 	.add_rx_filter = mcp251xfd_add_rx_filter,
 	.remove_rx_filter = mcp251xfd_remove_rx_filter,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = mcp251xfd_recover,
-#endif
 	.get_state = mcp251xfd_get_state,
 	.set_state_change_callback = mcp251xfd_set_state_change_callback,
 	.get_core_clock = mcp251xfd_get_core_clock,
@@ -1745,23 +1667,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 #endif
 };
 
-#define MCP251XFD_SET_TIMING_MACRO(inst, type)                                                     \
-	.timing_params##type = {                                                                   \
-		.sjw = DT_INST_PROP(inst, sjw##type),                                              \
-		.prop_seg = DT_INST_PROP_OR(inst, prop_seg##type, 0),                              \
-		.phase_seg1 = DT_INST_PROP_OR(inst, phase_seg1##type, 0),                          \
-		.phase_seg2 = DT_INST_PROP_OR(inst, phase_seg2##type, 0),                          \
-	}
-
-#if defined(CONFIG_CAN_FD_MODE)
-#define MCP251XFD_SET_TIMING(inst)                                                                 \
-	MCP251XFD_SET_TIMING_MACRO(inst,),                                                         \
-	MCP251XFD_SET_TIMING_MACRO(inst, _data)
-#else
-#define MCP251XFD_SET_TIMING(inst)                                                                 \
-	MCP251XFD_SET_TIMING_MACRO(inst,)
-#endif
-
 #define MCP251XFD_SET_CLOCK(inst)                                                                  \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                                           \
 		    (.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                          \
@@ -1786,7 +1691,7 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 		.timestamp_prescaler = DT_INST_PROP(inst, timestamp_prescaler),                    \
                                                                                                    \
 		.osc_freq = DT_INST_PROP(inst, osc_freq),                                          \
-		MCP251XFD_SET_TIMING(inst),                                                        \
+                                                                                                   \
 		.rx_fifo = {.ram_start_addr = MCP251XFD_RX_FIFO_START_ADDR,                        \
 			    .reg_fifocon_addr = MCP251XFD_REG_FIFOCON(MCP251XFD_RX_FIFO_IDX),      \
 			    .capacity = MCP251XFD_RX_FIFO_ITEMS,                                   \

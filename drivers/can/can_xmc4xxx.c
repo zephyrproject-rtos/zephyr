@@ -19,14 +19,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(can_xmc4xxx, CONFIG_CAN_LOG_LEVEL);
 
-#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
-
-/*
- * Macro to exclude the sample point algorithm from compilation if not used
- * Without the macro, the algorithm would always waste ROM
- */
-#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
-
 #define CAN_XMC4XXX_MULTICAN_NODE DT_INST(0, infineon_xmc4xxx_can)
 
 #define CAN_XMC4XXX_NUM_MESSAGE_OBJECTS DT_PROP(CAN_XMC4XXX_MULTICAN_NODE, message_objects)
@@ -87,11 +79,6 @@ struct can_xmc4xxx_config {
 
 	CAN_NODE_TypeDef *can;
 	bool clock_div8;
-
-	uint8_t sjw;
-	uint8_t prop_seg;
-	uint8_t phase_seg1;
-	uint8_t phase_seg2;
 
 	uint8_t service_request;
 	void (*irq_config_func)(void);
@@ -527,21 +514,6 @@ static int can_xmc4xxx_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int can_xmc4xxx_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct can_xmc4xxx_data *dev_data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!dev_data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return -ENOTSUP;
-}
-#endif
-
 static void can_xmc4xxx_reset_tx_fifos(const struct device *dev, int status)
 {
 	struct can_xmc4xxx_data *dev_data = dev->data;
@@ -812,34 +784,6 @@ static int can_xmc4xxx_stop(const struct device *dev)
 	return 0;
 }
 
-static int can_xmc4xxx_init_timing_struct(struct can_timing *timing, const struct device *dev)
-{
-	int ret;
-	const struct can_xmc4xxx_config *dev_cfg = dev->config;
-
-	if (USE_SP_ALGO && dev_cfg->common.sample_point > 0) {
-		ret = can_calc_timing(dev, timing, dev_cfg->common.bus_speed,
-				      dev_cfg->common.sample_point);
-		if (ret < 0) {
-			return ret;
-		}
-		LOG_DBG("Presc: %d, BS1: %d, BS2: %d", timing->prescaler, timing->phase_seg1,
-			timing->phase_seg2);
-		LOG_DBG("Sample-point err : %d", ret);
-	} else {
-		timing->sjw = dev_cfg->sjw;
-		timing->prop_seg = dev_cfg->prop_seg;
-		timing->phase_seg1 = dev_cfg->phase_seg1;
-		timing->phase_seg2 = dev_cfg->phase_seg2;
-		ret = can_calc_prescaler(dev, timing, dev_cfg->common.bus_speed);
-		if (ret > 0) {
-			LOG_WRN("Bitrate error: %d", ret);
-		}
-	}
-
-	return ret;
-}
-
 static int can_xmc4xxx_init(const struct device *dev)
 {
 	struct can_xmc4xxx_data *dev_data = dev->data;
@@ -927,10 +871,15 @@ static int can_xmc4xxx_init(const struct device *dev)
 	}
 #endif
 
-	ret = can_xmc4xxx_init_timing_struct(&timing, dev);
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+			      dev_cfg->common.sample_point);
 	if (ret < 0) {
 		return ret;
 	}
+
+	LOG_DBG("Presc: %d, BS1: %d, BS2: %d", timing.prescaler, timing.phase_seg1,
+		timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", ret);
 
 	return can_set_timing(dev, &timing);
 }
@@ -944,9 +893,6 @@ static const struct can_driver_api can_xmc4xxx_api_funcs = {
 	.send = can_xmc4xxx_send,
 	.add_rx_filter = can_xmc4xxx_add_rx_filter,
 	.remove_rx_filter = can_xmc4xxx_remove_rx_filter,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_xmc4xxx_recover,
-#endif
 	.get_state = can_xmc4xxx_get_state,
 	.set_state_change_callback = can_xmc4xxx_set_state_change_callback,
 	.get_core_clock = can_xmc4xxx_get_core_clock,
@@ -982,10 +928,6 @@ static const struct can_driver_api can_xmc4xxx_api_funcs = {
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 1000000),                            \
 		.can = (CAN_NODE_TypeDef *)DT_INST_REG_ADDR(inst),                                 \
 		.clock_div8 = DT_INST_PROP(inst, clock_div8),                                      \
-		.sjw = DT_INST_PROP(inst, sjw),                                                    \
-		.prop_seg = DT_INST_PROP_OR(inst, prop_seg, 0),                                    \
-		.phase_seg1 = DT_INST_PROP_OR(inst, phase_seg1, 0),                                \
-		.phase_seg2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                                \
 		.irq_config_func = can_xmc4xxx_irq_config_##inst,                                  \
 		.service_request = DT_INST_IRQN(inst) - CAN_XMC4XXX_IRQ_MIN,                       \
 		.input_src = DT_INST_ENUM_IDX(inst, input_src),                                    \

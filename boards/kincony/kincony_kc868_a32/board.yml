@@ -1,0 +1,5 @@
+board:
+  name: kincony_kc868_a32
+  vendor: kincony
+  socs:
+  - name: esp32

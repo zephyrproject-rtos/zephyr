@@ -10,7 +10,7 @@ tests:
       - CONFIG_GLIBCXX_LIBCPP=y
       - CONFIG_CPP_EXCEPTIONS=y
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   cpp.libcxx.glibcxx.newlib_nano:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     toolchain_exclude: xcc
@@ -22,7 +22,7 @@ tests:
       - CONFIG_NEWLIB_LIBC_NANO=y
       - CONFIG_GLIBCXX_LIBCPP=y
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   cpp.libcxx.glibcxx.picolibc:
     filter: TOOLCHAIN_HAS_PICOLIBC == 1
     toolchain_exclude: xcc
@@ -33,7 +33,7 @@ tests:
       - CONFIG_GLIBCXX_LIBCPP=y
       - CONFIG_CPP_EXCEPTIONS=y
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   cpp.libcxx.arcmwdtlib:
     toolchain_allow: arcmwdt
     min_flash: 54

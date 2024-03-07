@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Schlumberger
+
+if BOARD_XMC47_RELAX_KIT
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+config MDIO
+	default y
+config TEST_RANDOM_GENERATOR
+	default y
+
+endif # NETWORKING
+
+endif

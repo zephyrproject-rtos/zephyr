@@ -234,6 +234,14 @@ config NET_CONFIG_SNTP_INIT_SERVER
 	  e.g. server information at
 	  https://support.ntp.org/bin/view/Servers/NTPPoolServers
 
+config NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
+	bool "SNTP server to use for system clock init is set using DHCPv4 option"
+	default y
+	depends on NET_DHCPV4_OPTION_NTP_SERVER
+	help
+	  If this option is set, then the SNTP server to use for system
+	  clock init can be set using DHCPv4 option.
+
 config NET_CONFIG_SNTP_INIT_TIMEOUT
 	int "SNTP timeout to init system clock (ms)"
 	default 3000

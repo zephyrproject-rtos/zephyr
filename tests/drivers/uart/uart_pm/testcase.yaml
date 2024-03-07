@@ -4,7 +4,7 @@ common:
     - uart
   harness: ztest
   platform_allow:
-    - nrf52840dk_nrf52840
+    - nrf52840dk/nrf52840
     - nrf52_bsim
   harness_config:
     fixture: gpio_loopback

@@ -160,6 +160,11 @@ _restore_context:
 	FPU_REG_RESTORE
 #endif
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+.extern _xtensa_hifi_load
+	call0 _xtensa_hifi_load
+#endif
+
 	l32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
 	wsr a0, SAR
 #if XCHAL_HAVE_LOOPS
@@ -248,6 +253,10 @@ xtensa_switch:
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+	call0 _xtensa_hifi_save
+#endif
+
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
 
@@ -312,37 +321,50 @@ _handle_excint:
 
 DEF_EXCINT 1, _handle_excint, xtensa_excint1_c
 
-#if XCHAL_NMILEVEL >= 2
+/* In code below we are using XCHAL_NMILEVEL and XCHAL_NUM_INTLEVELS
+ * (whichever is higher), since not all Xtensa configurations support
+ * NMI. In such case we will use XCHAL_NUM_INTLEVELS.
+ */
+#if XCHAL_HAVE_NMI
+#define MAX_INTR_LEVEL XCHAL_NMILEVEL
+#elif XCHAL_HAVE_INTERRUPTS
+#define MAX_INTR_LEVEL XCHAL_NUM_INTLEVELS
+#else
+#error Xtensa core with no interrupt support is used
+#define MAX_INTR_LEVEL 0
+#endif
+
+#if MAX_INTR_LEVEL >= 2
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 2))
 DEF_EXCINT 2, _handle_excint, xtensa_int2_c
 #endif
 #endif
 
-#if XCHAL_NMILEVEL >= 3
+#if MAX_INTR_LEVEL >= 3
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 3))
 DEF_EXCINT 3, _handle_excint, xtensa_int3_c
 #endif
 #endif
 
-#if XCHAL_NMILEVEL >= 4
+#if MAX_INTR_LEVEL >= 4
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 4))
 DEF_EXCINT 4, _handle_excint, xtensa_int4_c
 #endif
 #endif
 
-#if XCHAL_NMILEVEL >= 5
+#if MAX_INTR_LEVEL >= 5
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 5))
 DEF_EXCINT 5, _handle_excint, xtensa_int5_c
 #endif
 #endif
 
-#if XCHAL_NMILEVEL >= 6
+#if MAX_INTR_LEVEL >= 6
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 6))
 DEF_EXCINT 6, _handle_excint, xtensa_int6_c
 #endif
 #endif
 
-#if XCHAL_NMILEVEL >= 7
+#if MAX_INTR_LEVEL >= 7
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 7))
 DEF_EXCINT 7, _handle_excint, xtensa_int7_c
 #endif

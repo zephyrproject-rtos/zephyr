@@ -677,8 +677,8 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 
 	/* Set IP Address */
 	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (ipv4->unicast[i].is_used) {
-			unicast = &ipv4->unicast[i];
+		if (ipv4->unicast[i].ipv4.is_used) {
+			unicast = &ipv4->unicast[i].ipv4;
 			break;
 		}
 	}

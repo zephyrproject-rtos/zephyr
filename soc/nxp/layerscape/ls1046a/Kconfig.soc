@@ -1,0 +1,31 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_LS1046A
+	bool
+	select SOC_FAMILY_NXP_LAYERSCAPE
+
+config SOC_LS1046A
+	bool
+	select SOC_SERIES_LS1046A
+	help
+	  NXP Layerscape ls1046a
+
+config SOC
+	default "ls1046a" if SOC_LS1046A
+
+config SOC_SERIES
+	default "ls1046a" if SOC_SERIES_LS1046A
+
+config SOC_PART_NUMBER_LS1046A
+	bool
+
+config SOC_PART_NUMBER_LS1026A
+	bool
+
+config SOC_PART_NUMBER
+	default "LS1046A" if SOC_PART_NUMBER_LS1046A
+	default "LS1026A" if SOC_PART_NUMBER_LS1026A

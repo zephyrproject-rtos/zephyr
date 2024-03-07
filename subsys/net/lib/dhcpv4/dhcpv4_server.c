@@ -1466,7 +1466,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 		return -EINVAL;
 	}
 
-	netmask = net_if_ipv4_get_netmask(iface);
+	netmask = net_if_ipv4_get_netmask_by_addr(iface, server_addr);
 	if (net_ipv4_is_addr_unspecified(&netmask)) {
 		LOG_ERR("Failed to obtain subnet mask.");
 		return -EINVAL;

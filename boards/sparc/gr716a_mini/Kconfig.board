@@ -1,7 +1,0 @@
-# Copyright (c) 2019-2020 Cobham Gaisler AB
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_GR716A_MINI
-	bool "GR716-MINI Development Board"
-	depends on SOC_GR716A

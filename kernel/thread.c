@@ -16,6 +16,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys_clock.h>
 #include <ksched.h>
+#include <kthread.h>
 #include <wait_q.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
@@ -24,7 +25,6 @@
 #include <zephyr/tracing/tracing.h>
 #include <string.h>
 #include <stdbool.h>
-#include <zephyr/irq_offload.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/atomic.h>
@@ -69,109 +69,15 @@ SYS_INIT(init_thread_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif
 
-#ifdef CONFIG_THREAD_MONITOR
-/* This lock protects the linked list of active threads; i.e. the
- * initial _kernel.threads pointer and the linked list made up of
- * thread->next_thread (until NULL)
- */
-static struct k_spinlock z_thread_monitor_lock;
-#endif /* CONFIG_THREAD_MONITOR */
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
-
-void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
-{
-#if defined(CONFIG_THREAD_MONITOR)
-	struct k_thread *thread;
-	k_spinlock_key_t key;
-
-	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
-
-	/*
-	 * Lock is needed to make sure that the _kernel.threads is not being
-	 * modified by the user_cb either directly or indirectly.
-	 * The indirect ways are through calling k_thread_create and
-	 * k_thread_abort from user_cb.
-	 */
-	key = k_spin_lock(&z_thread_monitor_lock);
-
-	SYS_PORT_TRACING_FUNC_ENTER(k_thread, foreach);
-
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		user_cb(thread, user_data);
-	}
-
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, foreach);
-
-	k_spin_unlock(&z_thread_monitor_lock, key);
-#else
-	ARG_UNUSED(user_cb);
-	ARG_UNUSED(user_data);
-#endif
-}
-
-void k_thread_foreach_unlocked(k_thread_user_cb_t user_cb, void *user_data)
-{
-#if defined(CONFIG_THREAD_MONITOR)
-	struct k_thread *thread;
-	k_spinlock_key_t key;
-
-	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
-
-	key = k_spin_lock(&z_thread_monitor_lock);
-
-	SYS_PORT_TRACING_FUNC_ENTER(k_thread, foreach_unlocked);
-
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		k_spin_unlock(&z_thread_monitor_lock, key);
-		user_cb(thread, user_data);
-		key = k_spin_lock(&z_thread_monitor_lock);
-	}
-
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, foreach_unlocked);
-
-	k_spin_unlock(&z_thread_monitor_lock, key);
-#else
-	ARG_UNUSED(user_cb);
-	ARG_UNUSED(user_data);
-#endif
-}
 
 bool k_is_in_isr(void)
 {
 	return arch_is_in_isr();
 }
 EXPORT_SYMBOL(k_is_in_isr);
-
-/*
- * This function tags the current thread as essential to system operation.
- * Exceptions raised by this thread will be treated as a fatal system error.
- */
-void z_thread_essential_set(void)
-{
-	_current->base.user_options |= K_ESSENTIAL;
-}
-
-/*
- * This function tags the current thread as not essential to system operation.
- * Exceptions raised by this thread may be recoverable.
- * (This is the default tag for a thread.)
- */
-void z_thread_essential_clear(void)
-{
-	_current->base.user_options &= ~K_ESSENTIAL;
-}
-
-/*
- * This routine indicates if the current thread is an essential system thread.
- *
- * Returns true if current thread is essential, false if it is not.
- */
-bool z_is_thread_essential(void)
-{
-	return (_current->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
-}
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 void z_impl_k_thread_custom_data_set(void *value)
@@ -201,33 +107,6 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
 
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
-
-#if defined(CONFIG_THREAD_MONITOR)
-/*
- * Remove a thread from the kernel's list of active threads.
- */
-void z_thread_monitor_exit(struct k_thread *thread)
-{
-	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
-
-	if (thread == _kernel.threads) {
-		_kernel.threads = _kernel.threads->next_thread;
-	} else {
-		struct k_thread *prev_thread;
-
-		prev_thread = _kernel.threads;
-		while ((prev_thread != NULL) &&
-			(thread != prev_thread->next_thread)) {
-			prev_thread = prev_thread->next_thread;
-		}
-		if (prev_thread != NULL) {
-			prev_thread->next_thread = thread->next_thread;
-		}
-	}
-
-	k_spin_unlock(&z_thread_monitor_lock, key);
-}
-#endif
 
 int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 {
@@ -462,21 +341,6 @@ static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 #endif
 #endif
 
-#ifdef CONFIG_MULTITHREADING
-static void schedule_new_thread(struct k_thread *thread, k_timeout_t delay)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	if (K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
-		k_thread_start(thread);
-	} else {
-		z_add_thread_timeout(thread, delay);
-	}
-#else
-	ARG_UNUSED(delay);
-	k_thread_start(thread);
-#endif
-}
-#endif
 
 #if CONFIG_STACK_POINTER_RANDOM
 int z_stack_adjust_initialized;
@@ -747,7 +611,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			  prio, options, NULL);
 
 	if (!K_TIMEOUT_EQ(delay, K_FOREVER)) {
-		schedule_new_thread(new_thread, delay);
+		thread_schedule_new(new_thread, delay);
 	}
 
 	return new_thread;
@@ -819,7 +683,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			   entry, p1, p2, p3, prio, options, NULL);
 
 	if (!K_TIMEOUT_EQ(delay, K_FOREVER)) {
-		schedule_new_thread(new_thread, delay);
+		thread_schedule_new(new_thread, delay);
 	}
 
 	return new_thread;
@@ -828,64 +692,6 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
 
-#ifdef CONFIG_MULTITHREADING
-#ifdef CONFIG_USERSPACE
-
-static void grant_static_access(void)
-{
-	STRUCT_SECTION_FOREACH(k_object_assignment, pos) {
-		for (int i = 0; pos->objects[i] != NULL; i++) {
-			k_object_access_grant(pos->objects[i],
-					      pos->thread);
-		}
-	}
-}
-#endif /* CONFIG_USERSPACE */
-
-void z_init_static_threads(void)
-{
-	_FOREACH_STATIC_THREAD(thread_data) {
-		z_setup_new_thread(
-			thread_data->init_thread,
-			thread_data->init_stack,
-			thread_data->init_stack_size,
-			thread_data->init_entry,
-			thread_data->init_p1,
-			thread_data->init_p2,
-			thread_data->init_p3,
-			thread_data->init_prio,
-			thread_data->init_options,
-			thread_data->init_name);
-
-		thread_data->init_thread->init_data = thread_data;
-	}
-
-#ifdef CONFIG_USERSPACE
-	grant_static_access();
-#endif
-
-	/*
-	 * Non-legacy static threads may be started immediately or
-	 * after a previously specified delay. Even though the
-	 * scheduler is locked, ticks can still be delivered and
-	 * processed. Take a sched lock to prevent them from running
-	 * until they are all started.
-	 *
-	 * Note that static threads defined using the legacy API have a
-	 * delay of K_FOREVER.
-	 */
-	k_sched_lock();
-	_FOREACH_STATIC_THREAD(thread_data) {
-		k_timeout_t init_delay = Z_THREAD_INIT_DELAY(thread_data);
-
-		if (!K_TIMEOUT_EQ(init_delay, K_FOREVER)) {
-			schedule_new_thread(thread_data->init_thread,
-					    init_delay);
-		}
-	}
-	k_sched_unlock();
-}
-#endif
 
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
 		       uint32_t initial_state, unsigned int options)
@@ -919,7 +725,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	SYS_PORT_TRACING_FUNC(k_thread, user_mode_enter);
 
 	_current->base.user_options |= K_USER;
-	z_thread_essential_clear();
+	z_thread_essential_clear(_current);
 #ifdef CONFIG_THREAD_MONITOR
 	_current->entry.pEntry = entry;
 	_current->entry.parameter1 = p1;
@@ -944,93 +750,6 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	z_thread_entry(entry, p1, p2, p3);
 #endif
 }
-
-/* These spinlock assertion predicates are defined here because having
- * them in spinlock.h is a giant header ordering headache.
- */
-#ifdef CONFIG_SPIN_VALIDATE
-bool z_spin_lock_valid(struct k_spinlock *l)
-{
-	uintptr_t thread_cpu = l->thread_cpu;
-
-	if (thread_cpu != 0U) {
-		if ((thread_cpu & 3U) == _current_cpu->id) {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool z_spin_unlock_valid(struct k_spinlock *l)
-{
-	if (l->thread_cpu != (_current_cpu->id | (uintptr_t)_current)) {
-		return false;
-	}
-	l->thread_cpu = 0;
-	return true;
-}
-
-void z_spin_lock_set_owner(struct k_spinlock *l)
-{
-	l->thread_cpu = _current_cpu->id | (uintptr_t)_current;
-}
-
-#ifdef CONFIG_KERNEL_COHERENCE
-bool z_spin_lock_mem_coherent(struct k_spinlock *l)
-{
-	return arch_mem_coherent((void *)l);
-}
-#endif /* CONFIG_KERNEL_COHERENCE */
-
-#endif /* CONFIG_SPIN_VALIDATE */
-
-int z_impl_k_float_disable(struct k_thread *thread)
-{
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	return arch_float_disable(thread);
-#else
-	ARG_UNUSED(thread);
-	return -ENOTSUP;
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
-}
-
-int z_impl_k_float_enable(struct k_thread *thread, unsigned int options)
-{
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	return arch_float_enable(thread, options);
-#else
-	ARG_UNUSED(thread);
-	ARG_UNUSED(options);
-	return -ENOTSUP;
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_float_disable(struct k_thread *thread)
-{
-	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	return z_impl_k_float_disable(thread);
-}
-#include <syscalls/k_float_disable_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_IRQ_OFFLOAD
-/* Make offload_sem visible outside under testing, in order to release
- * it outside when error happened.
- */
-K_SEM_DEFINE(offload_sem, 1, 1);
-
-void irq_offload(irq_offload_routine_t routine, const void *parameter)
-{
-#ifdef CONFIG_IRQ_OFFLOAD_NESTED
-	arch_irq_offload(routine, parameter);
-#else
-	k_sem_take(&offload_sem, K_FOREVER);
-	arch_irq_offload(routine, parameter);
-	k_sem_give(&offload_sem);
-#endif
-}
-#endif
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 #ifdef CONFIG_STACK_GROWS_UP
@@ -1125,18 +844,18 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 
 #ifdef CONFIG_USERSPACE
 static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
-						    const struct k_thread *t)
+						    const struct k_thread *thread)
 {
-	K_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
-	return z_impl_k_thread_timeout_remaining_ticks(t);
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_timeout_remaining_ticks(thread);
 }
 #include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
 
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
-						  const struct k_thread *t)
+						  const struct k_thread *thread)
 {
-	K_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
-	return z_impl_k_thread_timeout_expires_ticks(t);
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_timeout_expires_ticks(thread);
 }
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
 #endif

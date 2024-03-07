@@ -20,7 +20,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ["mps2_an385", "native_sim", "qemu_x86", "unit_testing"]
+        platform: ["mps2/an385", "native_sim", "qemu_x86", "unit_testing"]
+        include:
+          - platform: 'mps2/an385'
+            normalized: 'mps2_an385'
+          - platform: 'native_sim'
+            normalized: 'native_sim'
+          - platform: 'qemu_x86'
+            normalized: 'qemu_x86'
+          - platform: 'unit_testing'
+            normalized: 'unit_testing'
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -90,6 +99,8 @@ jobs:
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
           pip3 install gcovr==6.0
+          ./scripts/twister -E ${{matrix.normalized}}-testplan.json
+          ls -la
           ./scripts/twister -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano
 
       - name: ccache stats post
@@ -100,14 +111,16 @@ jobs:
       - name: Rename coverage files
         if: always()
         run: |
-          cp twister-out/coverage.json coverage/reports/${{ matrix.platform }}.json
+          mv twister-out/coverage.json coverage/reports/${{matrix.normalized}}.json
 
       - name: Upload Coverage Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage Data (Subset ${{ matrix.platform }})
-          path: coverage/reports/${{ matrix.platform }}.json
+          name: Coverage Data (Subset ${{ matrix.normalized }})
+          path: |
+            coverage/reports/${{ matrix.normalized }}.json
+            ${{ matrix.normalized }}-testplan.json
 
   codecov-results:
     name: "Publish Coverage Results"
@@ -121,6 +134,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -128,7 +142,9 @@ jobs:
 
       - name: Move coverage files
         run: |
-          mv ./coverage/reports/*/*.json ./coverage/reports
+          ls -lRt  ./coverage/reports
+          mv ./coverage/reports/*/*testplan.json .
+          mv ./coverage/reports/*/coverage/reports/*.json ./coverage/reports
           ls -la ./coverage/reports
 
       - name: Generate list of coverage files
@@ -159,19 +175,42 @@ jobs:
 
       - name: Merge coverage files
         run: |
-          cd ./coverage/reports
+          pushd ./coverage/reports
           pip3 install gcovr==6.0
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
+          popd
 
-      - name: Upload Merged Coverage Results
+      - name: Get current date
+        id: run_date
+        run: |
+            echo "run_date=$(date --iso-8601=minutes)" >> "$GITHUB_OUTPUT"
+            echo "run_date_short=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+            echo "run_date_year=$(date +'%Y')" >> "$GITHUB_OUTPUT"
+            echo "run_date_month=$(date +'%m')" >> "$GITHUB_OUTPUT"
+
+      - name: Generate Coverage Report
+        if: always()
+        run: |
+          pip install xlsxwriter ijson
+          python3 ./scripts/ci/coverage/coverage_analysis.py \
+            -t native_sim-testplan.json \
+            -m MAINTAINERS.yml \
+            -c coverage/reports/merged.json \
+            -o coverage-report-${{ steps.run_date.outputs.run_date_short }} \
+            -f all
+          cp coverage-report-* coverage/reports/
+
+      - name: Upload Merged Coverage Results and Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Merged Coverage Data
+          name: Coverage Data and report
           path: |
             coverage/reports/merged.json
             coverage/reports/merged.xml
+            coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.json
+            coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.xlsx
 
       - name: Upload coverage to Codecov
         if: always()

@@ -1,0 +1,5 @@
+board:
+  name: nucleo_f756zg
+  vendor: st
+  socs:
+    - name: stm32f756xx

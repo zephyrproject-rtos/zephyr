@@ -265,15 +265,15 @@ details).
 Tested Boards
 =============
 
-+-----------------------------+------------------------------+-----------+
-| Board                       | Disabled Interface           | Variation |
-+=============================+==============================+===========+
-| ATMEL sam4s_xplained        |                              |     2     |
-+-----------------------------+------------------------------+-----------+
-| ATMEL sam4e_xpro            | Ethernet                     |   3 , 4   |
-+-----------------------------+------------------------------+-----------+
-| ATMEL sam_v71_xult          | Ethernet                     | 3 , 4 , 5 |
-+-----------------------------+------------------------------+-----------+
++------------------------------+------------------------------+-----------+
+| Board                        | Disabled Interface           | Variation |
++==============================+==============================+===========+
+| ATMEL sam4s_xplained         |                              |     2     |
++------------------------------+------------------------------+-----------+
+| ATMEL sam4e_xpro             | Ethernet                     |   3 , 4   |
++------------------------------+------------------------------+-----------+
+| ATMEL sam_v71_xult/samv71q21 | Ethernet                     | 3 , 4 , 5 |
++------------------------------+------------------------------+-----------+
 
 Sample usage
 ************
@@ -303,7 +303,7 @@ Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
-   :board: [sam4e_xpro | sam_v71_xult]
+   :board: [sam4e_xpro | sam_v71_xult/samv71q21]
    :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
    :shield: [atmel_rf2xx_xpro | atmel_rf2xx_legacy]
    :goals: build flash
@@ -312,7 +312,7 @@ Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
-   :board: [sam_v71_xult | frdm_k64f | nucleo_f767zi]
+   :board: [sam_v71_xult/samv71q21 | frdm_k64f | nucleo_f767zi]
    :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
    :shield: atmel_rf2xx_arduino
    :goals: build flash

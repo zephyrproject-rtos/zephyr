@@ -353,7 +353,7 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 	case IMX_CCM_FLEXSPI_CLK:
 		__fallthrough;
 	case IMX_CCM_FLEXSPI2_CLK:
-#if defined(CONFIG_SOC_SERIES_IMX_RT10XX) && defined(CONFIG_MEMC_MCUX_FLEXSPI)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) && defined(CONFIG_MEMC_MCUX_FLEXSPI)
 		/* The SOC is using the FlexSPI for XIP. Therefore,
 		 * the FlexSPI itself must be managed within the function,
 		 * which is SOC specific.

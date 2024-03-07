@@ -1,0 +1,14 @@
+# ST STM32F767ZI MCU configuration options
+
+# Copyright (c) 2019 Roland Ma
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F767XX
+
+config NUM_IRQS
+	default 110
+
+config CPU_HAS_FPU_DOUBLE_PRECISION
+	default y
+
+endif # SOC_STM32F767XX

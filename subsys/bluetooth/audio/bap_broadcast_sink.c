@@ -186,7 +186,7 @@ static struct bt_bap_broadcast_sink *broadcast_sink_lookup_iso_chan(
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sinks); i++) {
 		for (uint8_t j = 0U; j < broadcast_sinks[i].stream_count; j++) {
-			if (broadcast_sinks[i].bis[j] == chan) {
+			if (broadcast_sinks[i].bis[j].chan == chan) {
 				return &broadcast_sinks[i];
 			}
 		}
@@ -251,6 +251,7 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep = iso->rx.ep;
+	size_t buf_len;
 
 	if (ep == NULL) {
 		LOG_ERR("iso %p not bound with ep", chan);
@@ -265,8 +266,14 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 
 	ops = stream->ops;
 
+	buf_len = net_buf_frags_len(buf);
 	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
-		LOG_DBG("stream %p ep %p len %zu", stream, stream->ep, net_buf_frags_len(buf));
+		LOG_DBG("stream %p ep %p len %zu", stream, stream->ep, buf_len);
+	}
+
+	if (buf_len > stream->qos->sdu) {
+		LOG_WRN("Received %u octets but stream %p was only configured for %u", buf_len,
+			stream, stream->qos->sdu);
 	}
 
 	if (ops != NULL && ops->recv != NULL) {
@@ -522,64 +529,145 @@ static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
 	return true;
 }
 
+struct store_base_info_data {
+	struct bt_bap_broadcast_sink_bis bis[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+	struct bt_bap_broadcast_sink_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT];
+	struct bt_audio_codec_cfg *subgroup_codec_cfg;
+	uint32_t valid_indexes_bitfield;
+	uint8_t subgroup_count;
+	uint8_t bis_count;
+};
+
+static bool merge_bis_and_subgroup_data_cb(struct bt_data *data, void *user_data)
+{
+	struct bt_audio_codec_cfg *codec_cfg = user_data;
+	int err;
+
+	err = bt_audio_codec_cfg_set_val(codec_cfg, data->type, data->data, data->data_len);
+	if (err < 0) {
+		LOG_DBG("Failed to set type %u with len %u in codec_cfg: %d", data->type,
+			data->data_len, err);
+
+		return false;
+	}
+
+	return true;
+}
+
 static bool base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bis *bis, void *user_data)
 {
-	uint32_t *bis_indexes = user_data;
+	struct bt_bap_broadcast_sink_subgroup *sink_subgroup;
+	struct store_base_info_data *data = user_data;
+	struct bt_bap_broadcast_sink_bis *sink_bis;
 
-	*bis_indexes |= BIT(bis->index);
+	if (data->bis_count == ARRAY_SIZE(data->bis)) {
+		/* We've parsed as many subgroups as we support */
+		LOG_DBG("Could only store %u BIS", data->bis_count);
+		return false;
+	}
+
+	sink_bis = &data->bis[data->bis_count];
+	sink_subgroup = &data->subgroups[data->subgroup_count];
+
+	sink_bis->index = bis->index;
+	sink_subgroup->bis_indexes |= BIT(bis->index);
+
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	int err;
+
+	memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg, sizeof(sink_bis->codec_cfg));
+
+	/* Merge subgroup codec configuration with the BIS configuration
+	 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it is
+	 * the value at level 3 that shall be used
+	 */
+	if (sink_bis->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
+		memcpy(&sink_bis->codec_cfg, data->subgroup_codec_cfg, sizeof(sink_bis->codec_cfg));
+
+		err = bt_audio_data_parse(bis->data, bis->data_len, merge_bis_and_subgroup_data_cb,
+					  &sink_bis->codec_cfg);
+		if (err != 0) {
+			LOG_DBG("Could not merge BIS and subgroup config in codec_cfg: %d", err);
+
+			return false;
+		}
+	} else {
+		/* If it is not LC3, then we don't know how to merge the subgroup and BIS codecs,
+		 * so we just append them
+		 */
+		if (sink_bis->codec_cfg.data_len + bis->data_len >
+		    sizeof(sink_bis->codec_cfg.data)) {
+			LOG_DBG("Could not store BIS and subgroup config in codec_cfg (%u > %u)",
+				sink_bis->codec_cfg.data_len + bis->data_len,
+				sizeof(sink_bis->codec_cfg.data));
+
+			return false;
+		}
+
+		memcpy(&sink_bis->codec_cfg.data[sink_bis->codec_cfg.data_len], bis->data,
+		       bis->data_len);
+	}
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+
+	data->bis_count++;
 
 	return true;
 }
 
 static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
-	struct bt_bap_broadcast_sink *sink = user_data;
-	struct bt_bap_broadcast_sink_subgroup *sink_subgroup =
-		&sink->subgroups[sink->subgroup_count];
+	struct bt_bap_broadcast_sink_subgroup *sink_subgroup;
 	struct codec_cap_lookup_id_data lookup_data = {0};
+	struct store_base_info_data *data = user_data;
+	struct bt_audio_codec_cfg codec_cfg;
 	int ret;
 
-	if (sink->subgroup_count == ARRAY_SIZE(sink->subgroups)) {
+	if (data->subgroup_count == ARRAY_SIZE(data->subgroups)) {
 		/* We've parsed as many subgroups as we support */
-		LOG_DBG("Could only store %u subgroups", sink->subgroup_count);
+		LOG_DBG("Could only store %u subgroups", data->subgroup_count);
 		return false;
 	}
 
-	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &sink_subgroup->codec_cfg);
+	sink_subgroup = &data->subgroups[data->subgroup_count];
+
+	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
 	if (ret < 0) {
 		LOG_DBG("Could not store codec_cfg: %d", ret);
 		return false;
 	}
 
-	ret = bt_bap_base_subgroup_foreach_bis(subgroup, base_subgroup_bis_index_cb,
-					       &sink_subgroup->bis_indexes);
-	if (ret < 0) {
-		LOG_DBG("Could not parse BISes: %d", ret);
-		return false;
-	}
-
 	/* Lookup and assign path_id based on capabilities */
-	lookup_data.id = sink_subgroup->codec_cfg.id;
+	lookup_data.id = codec_cfg.id;
 
 	bt_pacs_cap_foreach(BT_AUDIO_DIR_SINK, codec_lookup_id, &lookup_data);
 	if (lookup_data.codec_cap == NULL) {
 		LOG_DBG("Codec with id %u is not supported by our capabilities", lookup_data.id);
 	} else {
-		/* Add BIS to bitfield of valid BIS indexes we support */
-		sink->valid_indexes_bitfield |= sink_subgroup->bis_indexes;
-	}
+		codec_cfg.path_id = lookup_data.codec_cap->path_id;
+		codec_cfg.ctlr_transcode = lookup_data.codec_cap->ctlr_transcode;
 
-	sink->subgroup_count++;
+		data->subgroup_codec_cfg = &codec_cfg;
+
+		ret = bt_bap_base_subgroup_foreach_bis(subgroup, base_subgroup_bis_index_cb, data);
+		if (ret < 0) {
+			LOG_DBG("Could not parse BISes: %d", ret);
+			return false;
+		}
+
+		/* Add BIS to bitfield of valid BIS indexes we support */
+		data->valid_indexes_bitfield |= sink_subgroup->bis_indexes;
+		data->subgroup_count++;
+	}
 
 	return true;
 }
 
 static int store_base_info(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
 {
+	/* data is static due to its size, which easily can exceed the stack size */
+	static struct store_base_info_data data;
+	uint32_t pres_delay;
 	int ret;
-
-	sink->valid_indexes_bitfield = 0U;
-	sink->subgroup_count = 0U;
 
 	ret = bt_bap_base_get_pres_delay(base);
 	if (ret < 0) {
@@ -587,12 +675,23 @@ static int store_base_info(struct bt_bap_broadcast_sink *sink, const struct bt_b
 		return ret;
 	}
 
-	sink->codec_qos.pd = (uint32_t)ret;
+	pres_delay = (uint32_t)ret;
 
-	ret = bt_bap_base_foreach_subgroup(base, base_subgroup_cb, sink);
+	memset(&data, 0, sizeof(data));
+
+	ret = bt_bap_base_foreach_subgroup(base, base_subgroup_cb, &data);
 	if (ret != 0) {
 		LOG_DBG("Failed to parse all subgroups: %d", ret);
 		return ret;
+	}
+
+	/* Ensure that we have not synced while parsing the BASE */
+	if (sink->big == NULL) {
+		sink->codec_qos.pd = pres_delay;
+		memcpy(sink->bis, data.bis, sizeof(sink->bis));
+		memcpy(sink->subgroups, data.subgroups, sizeof(sink->subgroups));
+		sink->subgroup_count = data.subgroup_count;
+		sink->valid_indexes_bitfield = data.valid_indexes_bitfield;
 	}
 
 	return 0;
@@ -801,7 +900,7 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->syncable != NULL) {
-			listener->syncable(sink, biginfo->encryption);
+			listener->syncable(sink, biginfo);
 		}
 	}
 }
@@ -940,14 +1039,18 @@ static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink)
 
 	(void)memset(sink, 0, sizeof(*sink)); /* also clears flags */
 }
+
 static struct bt_audio_codec_cfg *codec_cfg_from_base_by_index(struct bt_bap_broadcast_sink *sink,
 							       uint8_t index)
 {
-	for (size_t i = 0U; i < sink->subgroup_count; i++) {
-		struct bt_bap_broadcast_sink_subgroup *subgroup = &sink->subgroups[i];
+	for (size_t i = 0U; i < ARRAY_SIZE(sink->bis); i++) {
+		struct bt_bap_broadcast_sink_bis *bis = &sink->bis[i];
 
-		if ((subgroup->bis_indexes & BIT(index)) != 0) {
-			return &subgroup->codec_cfg;
+		if (bis->index == index) {
+			return &bis->codec_cfg;
+		} else if (bis->index == 0) {
+			/* index 0 is invalid, so we can use that as a terminator in the array */
+			break;
 		}
 	}
 
@@ -1015,7 +1118,8 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 			       struct bt_bap_stream *streams[], const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
-	struct bt_audio_codec_cfg *codec_cfgs[CONFIG_BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT] = {NULL};
+	struct bt_audio_codec_cfg *codec_cfgs[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT] = {NULL};
+	struct bt_iso_chan *bis_channels[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	uint8_t stream_count;
 	int err;
 
@@ -1110,12 +1214,14 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 			return err;
 		}
 
-		sink->bis[i] = bt_bap_stream_iso_chan_get(stream);
+		sink->bis[i].chan = bt_bap_stream_iso_chan_get(stream);
 		sys_slist_append(&sink->streams, &stream->_node);
 		sink->stream_count++;
+
+		bis_channels[i] = sink->bis[i].chan;
 	}
 
-	param.bis_channels = sink->bis;
+	param.bis_channels = bis_channels;
 	param.num_bis = sink->stream_count;
 	param.bis_bitfield = indexes_bitfield;
 	param.mse = 0; /* Let controller decide */

@@ -84,6 +84,7 @@ config BT_HCI_RESERVE
 	default 1 if BT_ESP32
 	default 0 if BT_B91
 	default 1 if BT_AMBIQ_HCI
+	default 1 if BT_SILABS_HCI
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
@@ -1025,7 +1026,7 @@ config BT_CONN_DISABLE_SECURITY
 	  WARNING: This option enables anyone to snoop on-air traffic.
 	  Use of this feature in production is strongly discouraged.
 
-config BT_BREDR
+config BT_CLASSIC
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	depends on BT_HCI_HOST
 	select BT_PERIPHERAL
@@ -1036,7 +1037,7 @@ config BT_BREDR
 	help
 	  This option enables Bluetooth BR/EDR support
 
-if BT_BREDR
+if BT_CLASSIC
 config BT_MAX_SCO_CONN
 	int "Maximum number of simultaneous SCO connections"
 	default 1
@@ -1097,7 +1098,7 @@ config BT_COD
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
-endif # BT_BREDR
+endif # BT_CLASSIC
 
 config BT_HCI_VS_EVT_USER
 	bool "User Vendor-Specific event handling"

@@ -1,0 +1,17 @@
+# Copyright (c) 2021 Rajnesh Kanwal <rajnesh.kanwal49@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STARFIVE_JH71XX
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+
+config SOC_JH7100
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI

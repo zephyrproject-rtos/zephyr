@@ -9,6 +9,10 @@ We are pleased to announce the release of Zephyr version 3.7.0.
 
 Major enhancements with this release include:
 
+* A new, completely overhauled hardware model has been introduced. This changes
+  the way both SoCs and boards are named, defined and constructed in Zephyr.
+  Additional information can be found in the :ref:`board_porting_guide`.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.6.0 to Zephyr v3.7.0 can be found in the separate :ref:`migration guide<migration_3.7>`.
 
@@ -67,6 +71,12 @@ Drivers and Sensors
 * Battery backed up RAM
 
 * CAN
+
+  * Deprecated the :c:func:`can_calc_prescaler` API function, as it allows for bitrate
+    errors. Bitrate errors between nodes on the same network leads to them drifting apart after the
+    start-of-frame (SOF) synchronization has taken place, leading to bus errors.
+  * Extended support for automatic sample point location to also cover :c:func:`can_calc_timing` and
+    :c:func:`can_calc_timing_data`.
 
 * Clock control
 

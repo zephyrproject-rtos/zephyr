@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <zephyr/ztest_assert.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
@@ -35,6 +36,12 @@ static struct sockaddr_in addr_v4;
 static struct sockaddr_in6 addr_v6;
 
 static int queries_received;
+static int expected_query_count =
+	CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL >= CONFIG_NET_SOCKETS_DNS_TIMEOUT ?
+	2 :
+	/* Calculate for both IPv4 and IPv6 so need to double the value */
+	2 * (LOG2CEIL(DIV_ROUND_UP(CONFIG_NET_SOCKETS_DNS_TIMEOUT,
+				   CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL) + 1));
 
 /* The semaphore is there to wait the data to be received. */
 static ZTEST_BMEM struct sys_sem wait_data;
@@ -230,15 +237,12 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_ok)
 	 */
 	(void)getaddrinfo(QUERY_HOST, NULL, NULL, &res);
 
-	if (sys_sem_count_get(&wait_data) != 2) {
-		zassert_true(false, "Did not receive all queries");
-	}
-
 	(void)sys_sem_take(&wait_data, K_NO_WAIT);
 	(void)sys_sem_take(&wait_data, K_NO_WAIT);
 
-	zassert_equal(queries_received, 2,
-		      "Did not receive both IPv4 and IPv6 query");
+	zassert_equal(queries_received, expected_query_count,
+		      "Did not receive both IPv4 and IPv6 query (got %d, expected %d)",
+		      queries_received, expected_query_count);
 
 	freeaddrinfo(res);
 }
@@ -250,12 +254,12 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_cancelled)
 
 	ret = getaddrinfo(QUERY_HOST, NULL, NULL, &res);
 
-	if (sys_sem_count_get(&wait_data) != 2) {
-		zassert_true(false, "Did not receive all queries");
-	}
+	(void)sys_sem_take(&wait_data, K_NO_WAIT);
+	(void)sys_sem_take(&wait_data, K_NO_WAIT);
 
-	(void)sys_sem_take(&wait_data, K_NO_WAIT);
-	(void)sys_sem_take(&wait_data, K_NO_WAIT);
+	zassert_equal(queries_received, expected_query_count,
+		      "Did not receive both IPv4 and IPv6 query (got %d, expected %d)",
+		      queries_received, expected_query_count);
 
 	/* Without a local DNS server this request will be canceled. */
 	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result");

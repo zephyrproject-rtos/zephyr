@@ -759,6 +759,10 @@ static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_
  * the same behavior.  See the documentation of `struct i2c_msg` for
  * limitations on support for multi-message bus transactions.
  *
+ * @note The last message in the scatter/gather transaction implies a STOP
+ * whether or not it is explicitly set. This ensures the bus is in a good
+ * state for the next transaction which may be from a different call context.
+ *
  * @param dev Pointer to the device structure for an I2C controller
  * driver configured in controller mode.
  * @param msgs Array of messages to transfer.
@@ -1005,6 +1009,23 @@ extern const struct rtio_iodev_api i2c_iodev_api;
 #define I2C_DT_IODEV_DEFINE(name, node_id)					\
 	const struct i2c_dt_spec _i2c_dt_spec_##name =				\
 		I2C_DT_SPEC_GET(node_id);					\
+	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
+
+/**
+ * @brief Define an iodev for a given i2c device on a bus
+ *
+ * These do not need to be shared globally but doing so
+ * will save a small amount of memory.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param _bus Node ID for I2C bus
+ * @param _addr I2C target address
+ */
+#define I2C_IODEV_DEFINE(name, _bus, _addr)                                     \
+	const struct i2c_dt_spec _i2c_dt_spec_##name = {                        \
+		.bus = DEVICE_DT_GET(_bus),                                     \
+		.addr = _addr,                                                  \
+	};                                                                      \
 	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
 
 /**

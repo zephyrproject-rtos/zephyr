@@ -728,6 +728,18 @@ def test_testplan_load(
     testplan.platforms[9].name = 'lt-p2'
     testplan.platforms[10].name = 'lt-p3'
     testplan.platforms[11].name = 'lt-p4'
+    testplan.platforms[0].normalized_name = 't-p1'
+    testplan.platforms[1].normalized_name = 't-p2'
+    testplan.platforms[2].normalized_name = 't-p3'
+    testplan.platforms[3].normalized_name = 't-p4'
+    testplan.platforms[4].normalized_name = 'ts-p1'
+    testplan.platforms[5].normalized_name = 'ts-p2'
+    testplan.platforms[6].normalized_name = 'ts-p3'
+    testplan.platforms[7].normalized_name = 'ts-p4'
+    testplan.platforms[8].normalized_name = 'lt-p1'
+    testplan.platforms[9].normalized_name = 'lt-p2'
+    testplan.platforms[10].normalized_name = 'lt-p3'
+    testplan.platforms[11].normalized_name = 'lt-p4'
     testplan.generate_subset = mock.Mock()
     testplan.apply_filters = mock.Mock()
 
@@ -1098,6 +1110,21 @@ def test_testplan_add_configurations(
     tmp_p1_dir = tmp_arch1_dir / 'p1'
     tmp_p1_dir.mkdir()
 
+    p1e1_bs_yaml = """\
+boards:
+
+  - name: ple1
+    vendor: zephyr
+    socs:
+      - name: unit_testing
+  - name: ple2
+    vendor: zephyr
+    socs:
+      - name: unit_testing
+"""
+    p1e1_yamlfile = tmp_p1_dir / 'board.yml'
+    p1e1_yamlfile.write_text(p1e1_bs_yaml)
+
     p1e1_yaml = """\
 identifier: p1e1
 name: Platform 1 Edition 1
@@ -1125,6 +1152,21 @@ toolchain:
 
     tmp_p2_dir = tmp_arch1_dir / 'p2'
     tmp_p2_dir.mkdir()
+
+    p2_bs_yaml = """\
+boards:
+
+  - name: p2
+    vendor: zephyr
+    socs:
+      - name: unit_testing
+  - name: p2_2
+    vendor: zephyr
+    socs:
+      - name: unit_testing
+"""
+    p2_yamlfile = tmp_p2_dir / 'board.yml'
+    p2_yamlfile.write_text(p2_bs_yaml)
 
     p2_yaml = """\
 identifier: p2
@@ -1163,6 +1205,17 @@ toolchain:
 
     tmp_p3_dir = tmp_arch2_dir / 'p3'
     tmp_p3_dir.mkdir()
+
+    p3_bs_yaml = """\
+boards:
+
+  - name: p3
+    vendor: zephyr
+    socs:
+      - name: unit_testing
+"""
+    p3_yamlfile = tmp_p3_dir / 'board.yml'
+    p3_yamlfile.write_text(p3_bs_yaml)
 
     p3_yaml = """\
 identifier: p3
@@ -1375,6 +1428,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     def get_platform(name):
         p = mock.Mock()
         p.name = name
+        p.normalized_name = name
         return p
 
     ts1tc1 = mock.Mock()

@@ -3,7 +3,7 @@ tests:
     tags:
       - kernel
       - smp
-    platform_allow: intel_adsp_cavs25 qemu_x86_64
+    platform_allow: intel_adsp/cavs25 qemu_x86_64
     integration_platforms:
       - qemu_x86_64
   kernel.multiprocessing.smp_boot_delay.minimallibc:
@@ -12,7 +12,7 @@ tests:
       - kernel
       - smp
       - libc
-    platform_allow: intel_adsp_cavs25 qemu_x86_64
+    platform_allow: intel_adsp/cavs25 qemu_x86_64
     integration_platforms:
       - qemu_x86_64
     extra_configs:

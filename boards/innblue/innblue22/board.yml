@@ -1,0 +1,7 @@
+board:
+  name: innblue22
+  vendor: innblue
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'

@@ -23,6 +23,7 @@ class Platform:
         """
 
         self.name = ""
+        self.normalized_name = ""
         self.twister = True
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = 128
@@ -52,6 +53,7 @@ class Platform:
         data = scp.data
 
         self.name = data['identifier']
+        self.normalized_name = self.name.replace("/", "_")
         self.twister = data.get("twister", True)
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = data.get("ram", 128)

@@ -9,7 +9,7 @@ common:
 tests:
   portability.posix.common:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
@@ -17,7 +17,7 @@ tests:
       - qemu_x86
   portability.posix.common.newlib:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
       - lpcxpresso55s06
     filter: TOOLCHAIN_HAS_NEWLIB == 1
@@ -37,7 +37,7 @@ tests:
       - CONFIG_ARCMWDT_LIBC=y
   portability.posix.common.tls:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
     filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
     extra_configs:
@@ -47,7 +47,7 @@ tests:
       - qemu_x86
   portability.posix.common.tls.newlib:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
       - lpcxpresso55s06
     filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and
@@ -60,12 +60,12 @@ tests:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
   portability.posix.common.nsim:
-    platform_allow: nsim_sem_mpu_stack_guard
+    platform_allow: nsim/nsim_sem/mpu_stack_guard
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
       - CONFIG_TEST_HW_STACK_PROTECTION=n
   portability.posix.common.newlib.nsim:
-    platform_allow: nsim_sem_mpu_stack_guard
+    platform_allow: nsim/nsim_sem/mpu_stack_guard
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
@@ -81,7 +81,7 @@ tests:
     extra_configs:
       - CONFIG_SPIN_VALIDATE=n
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   portability.posix.common.signal.strsignal_no_desc:
     extra_configs:
       - CONFIG_POSIX_SIGNAL_STRING_DESC=n

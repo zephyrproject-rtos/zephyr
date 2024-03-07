@@ -13,3 +13,7 @@ tests:
   net.dhcpv4_client.optioncbs:
     extra_configs:
       - CONFIG_NET_DHCPV4_OPTION_CALLBACKS=y
+  net.dhcpv4_client.optioncbs_vendor_specific:
+    extra_configs:
+      - CONFIG_NET_DHCPV4_OPTION_CALLBACKS=y
+      - CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC=y

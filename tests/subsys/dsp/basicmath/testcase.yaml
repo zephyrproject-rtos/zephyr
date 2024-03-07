@@ -3,8 +3,8 @@ tests:
     filter: CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
-      - sam_e70_xplained
-      - mps2_an521
+      - sam_e70_xplained/same70q21
+      - mps2/an521/cpu0
       - native_sim
     tags: zdsp
     min_flash: 128
@@ -12,8 +12,8 @@ tests:
   zdsp.basicmath.fpu:
     filter: (CONFIG_CPU_HAS_FPU and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - mps2_an521_remote
-      - mps3_an547
+      - mps2/an521/cpu1
+      - mps3/an547
     tags:
       - zdsp
       - fpu
@@ -24,5 +24,5 @@ tests:
   zdsp.basicmath.arcmwdt:
     filter: CONFIG_ISA_ARCV2
     toolchain_allow: arcmwdt
-    platform_allow: nsim_em11d
+    platform_allow: nsim/nsim_em11d
     extra_args: CONF_FILE=prj_arc.conf

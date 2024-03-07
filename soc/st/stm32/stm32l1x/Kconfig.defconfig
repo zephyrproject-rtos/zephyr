@@ -1,0 +1,15 @@
+# STMicroelectronics STM32L1 MCU line
+
+# Copyright (c) 2019 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32L1X
+
+rsource "Kconfig.defconfig.stm32l1*"
+
+# adjust the fallback because of the LSI oscaillator characteristics
+config TASK_WDT_HW_FALLBACK_DELAY
+	depends on TASK_WDT_HW_FALLBACK
+	default 200
+
+endif # SOC_SERIES_STM32L1X

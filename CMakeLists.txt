@@ -118,7 +118,7 @@ zephyr_include_directories(
 
 include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
-zephyr_include_directories(${SOC_DIR}/${ARCH}/${SOC_PATH})
+zephyr_include_directories(${SOC_FULL_DIR})
 
 # Don't inherit compiler flags from the environment
 foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
@@ -214,7 +214,7 @@ endif()
 zephyr_compile_options(${OPTIMIZATION_FLAG})
 
 if(CONFIG_LTO)
-  add_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
   add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
 endif()
 
@@ -1875,27 +1875,30 @@ list(APPEND
   )
 
 if(CONFIG_LOG_DICTIONARY_DB)
-  set(log_dict_db_output --json=${PROJECT_BINARY_DIR}/log_dictionary.json)
+  set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/log_dictionary.json)
+  set(LOG_DICT_DB_NAME_ARG --json)
 elseif(CONFIG_LOG_MIPI_SYST_USE_CATALOG)
-  set(log_dict_db_output --syst=${PROJECT_BINARY_DIR}/mipi_syst_collateral.xml)
+  set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/mipi_syst_collateral.xml)
+  set(LOG_DICT_DB_NAME_ARG --syst)
 endif()
 
-if(log_dict_db_output)
-  list(APPEND
-    post_build_commands
+if(LOG_DICT_DB_NAME_ARG)
+  if (NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
+    set(LOG_DICT_DB_ALL_TARGET ALL)
+  endif()
+  add_custom_command(
+    OUTPUT ${LOG_DICT_DB_NAME}
     COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
-    ${KERNEL_ELF_NAME}
-    ${log_dict_db_output}
-    --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
-    )
-  list(APPEND
-    post_build_byproducts
-    ${LOG_DICT_DB_NAME}
-    )
-
-  unset(log_dict_db_output)
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
+      ${KERNEL_ELF_NAME}
+      ${LOG_DICT_DB_NAME_ARG}=${LOG_DICT_DB_NAME}
+      --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
+    DEPENDS ${logical_target_for_zephyr_elf}
+  )
+  add_custom_target(log_dict_db_gen ${LOG_DICT_DB_ALL_TARGET} DEPENDS ${LOG_DICT_DB_NAME})
 endif()
 
 # Add post_build_commands to post-process the final .elf file produced by

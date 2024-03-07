@@ -9,6 +9,7 @@
 cpu: &cpurad {};
 systick: &cpurad_systick {};
 nvic: &cpurad_nvic {};
+cpuppr_vevif: &cpuppr_vevif_remote {};
 
 /delete-node/ &cpuapp;
 /delete-node/ &cpuapp_peripherals;
@@ -27,6 +28,18 @@ nvic: &cpurad_nvic {};
 &cpurad_ppb {
 	compatible = "simple-bus";
 	ranges;
+};
+
+&cpusec_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&cpuapp_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&cpurad_bellboard {
+	compatible = "nordic,nrf-bellboard-local";
 };
 
 &gpiote130 {

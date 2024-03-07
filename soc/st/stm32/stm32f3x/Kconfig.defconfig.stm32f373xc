@@ -1,0 +1,14 @@
+# STMicroelectronics STM32F373XC MCU
+
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F373XC
+
+config NUM_IRQS
+	default 82
+
+config CPU_HAS_ARM_MPU
+	default y
+
+endif # SOC_STM32F373XC

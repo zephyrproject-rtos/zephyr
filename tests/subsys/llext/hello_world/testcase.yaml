@@ -4,11 +4,11 @@ common:
     - arm
     - xtensa
   platform_exclude:
-    - nuvoton_pfm_m487 # See #63167
+    - numaker_pfm_m487 # See #63167
 tests:
   llext.simple.readonly:
     arch_exclude: xtensa # for now
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
@@ -19,7 +19,7 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.writable:
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y

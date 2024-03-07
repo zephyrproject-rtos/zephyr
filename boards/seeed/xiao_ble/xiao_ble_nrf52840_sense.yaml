@@ -1,0 +1,24 @@
+identifier: xiao_ble/nrf52840/sense
+name: XIAO BLE Sense
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - usb_cdc
+  - usb_device
+  - watchdog
+  - netif:openthread
+vendor: seeed

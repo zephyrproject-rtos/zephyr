@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_G0B1RE
+	select SOC_STM32G0B1XX

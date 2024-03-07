@@ -354,6 +354,91 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # SHELL_BACKEND_MQTT
 
+config SHELL_BACKEND_RPMSG
+	bool "RPMsg backend."
+	depends on OPENAMP
+	help
+	  Enable RPMsg backend.
+
+if SHELL_BACKEND_RPMSG
+
+config SHELL_PROMPT_RPMSG
+	string "Displayed prompt name"
+	default "ipc:~$ "
+	help
+	  Displayed prompt name for RPMsg backend. If prompt is set, the shell will
+	  send two newlines during initialization.
+
+config SHELL_RPMSG_SERVICE_NAME
+	string "Service name"
+	default "rpmsg-tty"
+	help
+	  The service name associated with the RPMsg endpoint.
+
+config SHELL_RPMSG_SRC_ADDR
+	hex "Local address"
+	default 0xffffffff # The ANY address
+	help
+	  Local address of the RPMsg endpoint.
+
+config SHELL_RPMSG_DST_ADDR
+	hex "Remote address"
+	default 0xffffffff # The ANY address
+	help
+	  Target address of the RPMsg endpoint.
+
+config SHELL_RPMSG_MAX_RX
+	int "Receive buffer size"
+	default 10
+	help
+	  The maximum number of received messages to be queued.
+
+module = SHELL_BACKEND_RPMSG
+default-timeout = 100
+source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
+
+default-size = 512
+source "subsys/shell/Kconfig.template.shell_log_queue_size"
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_RPMSG_INIT_LOG_LEVEL_DEFAULT
+
+config SHELL_RPMSG_INIT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_RPMSG_INIT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_RPMSG_INIT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_RPMSG_INIT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_RPMSG_INIT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_RPMSG_INIT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice # SHELL_RPMSG_INIT_LOG_LEVEL
+
+config SHELL_RPMSG_INIT_LOG_LEVEL
+	int
+	default 0 if SHELL_RPMSG_INIT_LOG_LEVEL_NONE
+	default 1 if SHELL_RPMSG_INIT_LOG_LEVEL_ERR
+	default 2 if SHELL_RPMSG_INIT_LOG_LEVEL_WRN
+	default 3 if SHELL_RPMSG_INIT_LOG_LEVEL_INF
+	default 4 if SHELL_RPMSG_INIT_LOG_LEVEL_DBG
+	default 5 if SHELL_RPMSG_INIT_LOG_LEVEL_DEFAULT
+
+module = SHELL_RPMSG
+module-str = RPMsg shell backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SHELL_BACKEND_RPMSG
+
 config SHELL_BACKEND_TELNET
 	bool "TELNET backend."
 	depends on NET_TCP

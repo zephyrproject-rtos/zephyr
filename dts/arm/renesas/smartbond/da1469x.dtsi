@@ -16,6 +16,10 @@
 		zephyr,flash-controller = &flash_controller;
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -298,6 +302,15 @@
 			reg = <0x50040c00 0x0C>;
 			interrupts = <24 0>;
 			status = "okay";
+		};
+
+		mipi_dbi: lcdc@30030000 {
+			compatible = "renesas,smartbond-mipi-dbi";
+			reg = <0x30030000 0x18C>;
+			interrupts = <32 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		i2c: i2c@50020600 {

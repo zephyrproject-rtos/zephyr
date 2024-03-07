@@ -1,9 +1,0 @@
-# Copyright (c) 2021 Synopsys, Inc. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-if SOC_QEMU_ARC_HS6X
-
-config CPU_HS6X
-	default y
-
-endif

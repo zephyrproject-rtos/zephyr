@@ -230,7 +230,9 @@ static int setup_iface(struct net_if *iface, const char *ipaddr,
 		/* Set the netmask so that we do not get IPv4 traffic routed
 		 * into this interface.
 		 */
-		net_if_ipv4_set_netmask(iface, &netmask);
+		net_if_ipv4_set_netmask_by_addr(iface,
+						&net_sin(addr)->sin_addr,
+						&netmask);
 
 		*addr_len = sizeof(struct sockaddr_in);
 	} else {

@@ -18,7 +18,7 @@ Sample can be built and executed for the nRF52840 DK NRF52840 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/ipsp
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 
@@ -27,7 +27,7 @@ To build a debug version, with logging and shell support, use the config file
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/ipsp
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :conf: prj_dbg.conf
    :goals: build flash
    :compact:
@@ -43,7 +43,7 @@ Building and Running for Linux kernels released before 4.12
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/ipsp
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :conf: "prj_zep1656.conf"
    :goals: build flash
    :compact:

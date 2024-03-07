@@ -15,10 +15,10 @@ tests:
       - native_posix_64
       - native_sim
       - native_sim_64
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
-    platform_exclude: nrf52dk_nrf52810
+    platform_exclude: nrf52dk/nrf52810
     tags: bluetooth
     harness: keyboard
     min_flash: 145
@@ -39,10 +39,10 @@ tests:
       - native_posix_64
       - native_sim
       - native_sim_64
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - native_sim
-    platform_exclude: nrf52dk_nrf52810
+    platform_exclude: nrf52dk/nrf52810
     tags: bluetooth
     harness: keyboard
     min_flash: 350
@@ -59,7 +59,7 @@ tests:
       - native_sim_64
     integration_platforms:
       - native_sim
-    platform_exclude: nrf52dk_nrf52810
+    platform_exclude: nrf52dk/nrf52810
     tags: bluetooth
     harness: keyboard
   bluetooth.shell.no_privacy:
@@ -204,6 +204,34 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_PAC_SRC=n
+  bluetooth.audio_shell.only_unicast_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_SERVER=n
+      - CONFIG_BT_BAP_BROADCAST_SINK=n
+      - CONFIG_BT_BAP_BROADCAST_SOURCE=n
+  bluetooth.audio_shell.only_unicast_server:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+      - CONFIG_BT_BAP_BROADCAST_SINK=n
+      - CONFIG_BT_BAP_BROADCAST_SOURCE=n
+  bluetooth.audio_shell.only_broadcast_source:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_SERVER=n
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+      - CONFIG_BT_BAP_BROADCAST_SINK=n
+  bluetooth.audio_shell.only_broadcast_sink:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_SERVER=n
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+      - CONFIG_BT_BAP_BROADCAST_SOURCE=n
   bluetooth.audio_shell.no_unicast_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true

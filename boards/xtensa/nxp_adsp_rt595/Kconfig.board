@@ -1,6 +1,0 @@
-# Copyright (c) 2023 Google LLC.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NXP_ADSP_RT595
-	bool "NXP ADSP RT595"
-	depends on SOC_SERIES_NXP_RT5XX

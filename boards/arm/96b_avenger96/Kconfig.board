@@ -1,8 +1,0 @@
-# 96Boards Avenger96 board configuration
-
-# Copyright (c) 2019 Linaro Ltd.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_96B_AVENGER96
-	bool "96Boards Avenger96 Board"
-	depends on SOC_STM32MP15_M4

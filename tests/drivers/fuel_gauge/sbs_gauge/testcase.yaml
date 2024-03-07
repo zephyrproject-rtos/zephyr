@@ -12,12 +12,12 @@ tests:
     platform_exclude:
       - hifive_unmatched
       - qemu_cortex_a53
-      - qemu_cortex_a53_smp
+      - qemu_cortex_a53/qemu_cortex_a53/smp
       - qemu_kvm_arm64
       - xenvm
-      - xenvm_gicv3
-      - rcar_h3ulcb_ca57
-      - rcar_salvator_xs_m3
+      - xenvm/xenvm/gicv3
+      - rcar_h3ulcb/r8a77951/a57
+      - rcar_salvator_xs
     integration_platforms:
       - qemu_x86
   drivers.fuel_gauge.sbs_gauge_new_api.emulated_64_bit_i2c_addr:
@@ -30,10 +30,10 @@ tests:
     platform_allow:
       - hifive_unmatched
       - qemu_cortex_a53
-      - qemu_cortex_a53_smp
+      - qemu_cortex_a53/qemu_cortex_a53/smp
       - qemu_kvm_arm64
       - xenvm
-      - xenvm_gicv3
+      - xenvm/xenvm/gicv3
     integration_platforms:
       - qemu_cortex_a53
     extra_args:

@@ -1,0 +1,21 @@
+identifier: arduino_opta/stm32h747xx/m4
+name: ARDUINO OPTA (M4)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 288
+flash: 512
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - mpu
+    - nfc
+    - net
+    - flash
+    - input
+    - mcumgr
+vendor: arduino

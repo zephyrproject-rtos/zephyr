@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if TEST
+config TEST_EXTRA_STACK_SIZE
+	default 1024
+endif # TEST
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 2048 if HPET_TIMER # HPET is 32768 HZ

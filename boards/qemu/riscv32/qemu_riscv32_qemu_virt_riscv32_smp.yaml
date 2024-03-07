@@ -1,0 +1,16 @@
+identifier: qemu_riscv32/qemu_virt_riscv32/smp
+name: QEMU Emulation for RISC-V 32-bit SMP
+type: qemu
+simulation: qemu
+arch: riscv
+toolchain:
+  - zephyr
+  - xtools
+supported:
+  - netif
+  - smp
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

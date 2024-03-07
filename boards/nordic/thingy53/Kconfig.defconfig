@@ -1,0 +1,146 @@
+# Thingy53 NRF5340 board configuration
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+# Code Partition:
+#
+# For the secure version of the board the firmware is linked at the beginning
+# of the flash, or into the code-partition defined in DT if it is intended to
+# be loaded by MCUboot. If the secure firmware is to be combined with a non-
+# secure image (TRUSTED_EXECUTION_SECURE=y), the secure FW image shall always
+# be restricted to the size of its code partition.
+#
+# For the non-secure version of the board, the firmware
+# must be linked into the code-partition (non-secure) defined in DT, regardless.
+# Apply this configuration below by setting the Kconfig symbols used by
+# the linker according to the information extracted from DT partitions.
+
+# SRAM Partition:
+#
+# If the secure firmware is to be combined with a non-secure image
+# (TRUSTED_EXECUTION_SECURE=y), the secure FW image SRAM shall always
+# be restricted to the secure image SRAM partition (sram-secure-partition).
+# Otherwise (if TRUSTED_EXECUTION_SECURE is not set) the whole zephyr,sram
+# may be used by the image.
+#
+# For the non-secure version of the board, the firmware image SRAM is
+# always restricted to the allocated non-secure SRAM partition.
+#
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
+
+if BOARD_THINGY53_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config SRAM_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM_PARTITION),0,K)
+
+endif # BOARD_THINGY53_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
+
+if BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+endif # BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+if !TRUSTED_EXECUTION_SECURE
+
+choice BT_HCI_BUS_TYPE
+	default BT_HCI_IPC if BT
+endchoice
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+
+config BT_HAS_HCI_VS
+	default BT
+
+config USB_NRFX_ATTACHED_EVENT_DELAY
+	default 700 if USB_DEVICE_DRIVER
+
+config I2C
+	default y
+
+config SPI
+	default y
+
+config REGULATOR
+	default y
+
+endif # !TRUSTED_EXECUTION_SECURE
+
+if BOARD_SERIAL_BACKEND_CDC_ACM
+
+config USB_DEVICE_PRODUCT
+	default "Thingy:53 Application"
+
+config USB_DEVICE_VID
+	default 0x1915
+
+config USB_DEVICE_PID
+	default 0x530C
+
+config USB_DEVICE_STACK
+	default y
+
+config USB_CDC_ACM
+	default y
+
+config UART_CONSOLE
+	default CONSOLE
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	default y if !MCUBOOT
+
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	default SHELL
+	depends on UART_LINE_CTRL
+
+config UART_LINE_CTRL
+	default SHELL
+
+config USB_DEVICE_REMOTE_WAKEUP
+	default n
+
+if LOG
+
+# Logger cannot use itself to log
+choice USB_CDC_ACM_LOG_LEVEL_CHOICE
+	default USB_CDC_ACM_LOG_LEVEL_OFF
+endchoice
+
+# Set USB log level to error only
+choice USB_DEVICE_LOG_LEVEL_CHOICE
+	default USB_DEVICE_LOG_LEVEL_ERR
+endchoice
+
+# Wait 4000ms at startup for logging
+config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
+	default 4000
+
+endif # LOG
+
+endif # BOARD_SERIAL_BACKEND_CDC_ACM
+
+endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+if BOARD_THINGY53_NRF5340_CPUNET
+
+config BT_CTLR
+	default BT
+
+config BT_ECC
+	default BT
+
+endif # BOARD_THINGY53_NRF5340_CPUNET

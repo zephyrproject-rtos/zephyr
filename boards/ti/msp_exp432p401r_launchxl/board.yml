@@ -1,0 +1,5 @@
+board:
+  name: msp_exp432p401r_launchxl
+  vendor: ti
+  socs:
+  - name: msp432p401r

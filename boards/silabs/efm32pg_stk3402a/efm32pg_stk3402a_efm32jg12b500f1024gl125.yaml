@@ -1,0 +1,19 @@
+identifier: efm32pg_stk3402a/efm32jg12b500f1024gl125
+name: EFM32PG-STK3402A-JG
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - gpio
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

@@ -1,0 +1,5 @@
+board:
+  name: odroid_go
+  vendor: hardkernel
+  socs:
+  - name: esp32

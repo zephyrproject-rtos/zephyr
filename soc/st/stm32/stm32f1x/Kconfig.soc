@@ -1,0 +1,76 @@
+# ST Microelectronics STM32F1 MCU line
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32F1X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32f1x" if SOC_SERIES_STM32F1X
+
+config SOC_STM32F100XB
+	bool
+	select SOC_SERIES_STM32F1X
+
+config SOC_STM32F100XE
+	bool
+	select SOC_SERIES_STM32F1X
+
+config SOC_STM32F103XE
+	bool
+	select SOC_SERIES_STM32F1X
+	select SOC_STM32F10X_DENSITY_DEVICE
+
+config SOC_STM32F103XB
+	bool
+	select SOC_SERIES_STM32F1X
+	select SOC_STM32F10X_DENSITY_DEVICE
+
+config SOC_STM32F103X8
+	bool
+	select SOC_SERIES_STM32F1X
+	select SOC_STM32F10X_DENSITY_DEVICE
+
+config SOC_STM32F105XB
+	bool
+	select SOC_SERIES_STM32F1X
+	select SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+
+config SOC_STM32F105XC
+	bool
+	select SOC_SERIES_STM32F1X
+	select SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+
+config SOC_STM32F107XC
+	bool
+	select SOC_SERIES_STM32F1X
+	select SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+
+config SOC_STM32F10X_DENSITY_DEVICE
+	bool
+	help
+	  STM32F101xx, STM32F102xx, STM32F103xx:
+	  * Low density Value line devices
+	  * Medium density Value line devices
+	  * High density Value line devices
+	  * XL-density devices Value line devices
+
+config SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
+	bool
+	help
+	  Connectivity line devices are STM32F105xx and STM32F107xx
+	  microcontrollers.  They are intended for applications where
+	  connectivity and real-time performances are required such as
+	  industrial control, control panels for security applications, UPS or
+	  home audio.  For STM32F107xx also the Ethernet MAC is available.
+
+config SOC
+	default "stm32f100xb" if SOC_STM32F100XB
+	default "stm32f100xe" if SOC_STM32F100XE
+	default "stm32f103xb" if SOC_STM32F103XB || SOC_STM32F103X8
+	default "stm32f103xe" if SOC_STM32F103XE
+	default "stm32f105xc" if SOC_STM32F105XC || SOC_STM32F105XB
+	default "stm32f107xc" if SOC_STM32F107XC

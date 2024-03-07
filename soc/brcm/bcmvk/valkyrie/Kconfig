@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2020 Broadcom.
+#
+
+config SOC_SERIES_VALKYRIE
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_ARM_MPU

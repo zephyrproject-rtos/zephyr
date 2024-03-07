@@ -23,13 +23,13 @@
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
-#include <zephyr/kernel/internal/sched_priq.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/arch/structs.h>
 #include <zephyr/kernel/stats.h>
 #include <zephyr/kernel/obj_core.h>
+#include <zephyr/sys/rb.h>
 #endif
 
 #ifdef __cplusplus
@@ -83,6 +83,43 @@ extern "C" {
 #define _PREEMPT_THRESHOLD (_NON_PREEMPT_THRESHOLD - 1U)
 
 #if !defined(_ASMLANGUAGE)
+
+/* Two abstractions are defined here for "thread priority queues".
+ *
+ * One is a "dumb" list implementation appropriate for systems with
+ * small numbers of threads and sensitive to code size.  It is stored
+ * in sorted order, taking an O(N) cost every time a thread is added
+ * to the list.  This corresponds to the way the original _wait_q_t
+ * abstraction worked and is very fast as long as the number of
+ * threads is small.
+ *
+ * The other is a balanced tree "fast" implementation with rather
+ * larger code size (due to the data structure itself, the code here
+ * is just stubs) and higher constant-factor performance overhead, but
+ * much better O(logN) scaling in the presence of large number of
+ * threads.
+ *
+ * Each can be used for either the wait_q or system ready queue,
+ * configurable at build time.
+ */
+
+struct _priq_rb {
+	struct rbtree tree;
+	int next_order_key;
+};
+
+
+/* Traditional/textbook "multi-queue" structure.  Separate lists for a
+ * small number (max 32 here) of fixed priorities.  This corresponds
+ * to the original Zephyr scheduler.  RAM requirements are
+ * comparatively high, but performance is very fast.  Won't work with
+ * features like deadline scheduling which need large priority spaces
+ * to represent their requirements.
+ */
+struct _priq_mq {
+	sys_dlist_t queues[32];
+	unsigned int bitmask; /* bit 1<<i set if queues[i] is non-empty */
+};
 
 struct _ready_q {
 #ifndef CONFIG_SMP
@@ -228,13 +265,13 @@ bool z_smp_cpu_mobile(void);
 #endif
 
 /* kernel wait queue record */
-
 #ifdef CONFIG_WAITQ_SCALABLE
 
 typedef struct {
 	struct _priq_rb waitq;
 } _wait_q_t;
 
+/* defined in kernel/priority_queues.c */
 bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 #define Z_WAIT_Q_INIT(wait_q) { { { .lessthan_fn = z_priq_rb_lessthan } } }
@@ -247,10 +284,9 @@ typedef struct {
 
 #define Z_WAIT_Q_INIT(wait_q) { SYS_DLIST_STATIC_INIT(&(wait_q)->waitq) }
 
-#endif
+#endif /* CONFIG_WAITQ_SCALABLE */
 
 /* kernel timeout record */
-
 struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
 

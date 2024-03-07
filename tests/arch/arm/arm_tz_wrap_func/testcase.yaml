@@ -7,4 +7,4 @@ tests:
       - tz_wrap_func
     filter: CONFIG_CPU_CORTEX_M
     integration_platforms:
-      - mps2_an385
+      - mps2/an385

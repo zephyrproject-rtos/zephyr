@@ -20,6 +20,7 @@ from twisterlib.handlers import (
     SimulationHandler,
     BinaryHandler,
     QEMUHandler,
+    QEMUWinHandler,
     DeviceHandler,
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
@@ -56,13 +57,13 @@ class TestInstance:
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.dut = None
+
         if testsuite.detailed_test_id:
-            self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
+            self.build_dir = os.path.join(outdir, platform.normalized_name, testsuite.name)
         else:
             # if suite is not in zephyr, keep only the part after ".." in reconstructed dir structure
             source_dir_rel = testsuite.source_dir_rel.rsplit(os.pardir+os.path.sep, 1)[-1]
-            self.build_dir = os.path.join(outdir, platform.name, source_dir_rel, testsuite.name)
-
+            self.build_dir = os.path.join(outdir, platform.normalized_name, source_dir_rel, testsuite.name)
         self.run_id = self._get_run_id()
         self.domains = None
 
@@ -178,9 +179,13 @@ class TestInstance:
             handler.ready = True
         elif self.platform.simulation != "na":
             if self.platform.simulation == "qemu":
-                handler = QEMUHandler(self, "qemu")
-                handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
-                handler.ready = True
+                if os.name != "nt":
+                    handler = QEMUHandler(self, "qemu")
+                    handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
+                    handler.ready = True
+                else:
+                    handler = QEMUWinHandler(self, "qemu")
+                    handler.ready = True
             else:
                 handler = SimulationHandler(self, self.platform.simulation)
 
@@ -204,9 +209,14 @@ class TestInstance:
     # Global testsuite parameters
     def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[], hardware_map=None):
 
-        # running on simulators is currently not supported on Windows
-        if os.name == 'nt' and self.platform.simulation != 'na':
-            return False
+        if os.name == 'nt':
+            # running on simulators is currently supported only for QEMU on Windows
+            if self.platform.simulation not in ('na', 'qemu'):
+                return False
+
+            # check presence of QEMU on Windows
+            if 'QEMU_BIN_PATH' not in os.environ:
+                return False
 
         # we asked for build-only on the command line
         if self.testsuite.build_only:

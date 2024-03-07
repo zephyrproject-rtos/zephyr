@@ -23,6 +23,7 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 void bt_bap_stream_detach(struct bt_bap_stream *stream);
 
 enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos);
+bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len);
 bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg);
 bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream);
 

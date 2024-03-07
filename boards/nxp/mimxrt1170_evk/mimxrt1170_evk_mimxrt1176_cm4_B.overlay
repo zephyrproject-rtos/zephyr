@@ -1,0 +1,81 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,flash-controller;
+		/delete-property/ zephyr,code-partition;
+	};
+
+	aliases {
+		/delete-property/ magn0;
+		/delete-property/ accel0;
+	};
+};
+
+&flexspi {
+	/* RT1170 EVKB uses a different QSPI flash chip */
+	/delete-node/ is25wp128@0;
+	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+	w25q512nw:w25q512nw@0 {
+		/* IS25WP128 flash chip not currently enabled */
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(512)>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [ef 60 20];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		/*
+		 * Partitions are present to support dual core operation.
+		 * as flash write is not supported, MCUBoot is not enabled.
+		 */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x301000>;
+			};
+			slot1_partition: partition@321000 {
+				label = "image-1";
+				reg = <0x00321000 0x300000>;
+			};
+			storage_partition: partition@621000 {
+				label = "storage";
+				reg = <0x00621000 DT_SIZE_K(1984)>;
+			};
+		};
+	};
+};
+
+&lpspi1 {
+	dmas = <&edma_lpsr0 0 36>, <&edma_lpsr0 1 37>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&lpi2c5 {
+	/* FXOS accelerometer is not present in this board */
+	/delete-node/ fxos8700@1f;
+};
+
+/* Disable ethernet, as PHY is not supported */
+&enet {
+	status = "disabled";
+};

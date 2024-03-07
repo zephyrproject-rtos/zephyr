@@ -1,0 +1,5 @@
+board:
+  name: same54_xpro
+  vendor: atmel
+  socs:
+    - name: same54p20a

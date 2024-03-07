@@ -6,6 +6,7 @@
 import inspect
 import os
 import pickle
+import re
 import sys
 from pathlib import Path
 
@@ -840,6 +841,17 @@ def dt_gpio_hogs_enabled(kconf, _):
 
     return "n"
 
+
+def sanitize_upper(kconf, _, string):
+    """
+    Sanitize the string, so that the string only contains alpha-numeric
+    characters or underscores. All non-alpha-numeric characters are replaced
+    with an underscore, '_'.
+    When string has been sanitized it will be converted into upper case.
+    """
+    return re.sub(r'[^a-zA-Z0-9_]', '_', string).upper()
+
+
 def shields_list_contains(kconf, _, shield):
     """
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
@@ -907,5 +919,6 @@ functions = {
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
         "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
+        "sanitize_upper": (sanitize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }

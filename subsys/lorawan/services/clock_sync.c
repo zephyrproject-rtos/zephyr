@@ -85,6 +85,12 @@ static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 	return sizeof(uint32_t);
 }
 
+static inline k_timeout_t clock_sync_calc_periodicity(void)
+{
+	/* add +-30s jitter to nominal periodicity as required by the spec */
+	return K_SECONDS(ctx.periodicity - 30 + sys_rand32_get() % 61);
+}
+
 static void clock_sync_package_callback(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
 					uint8_t len, const uint8_t *rx_buf)
 {
@@ -145,6 +151,9 @@ static void clock_sync_package_callback(uint8_t port, bool data_pending, int16_t
 			tx_pos += clock_sync_serialize_device_time(tx_buf + tx_pos,
 								   sizeof(tx_buf) - tx_pos);
 
+			lorawan_services_reschedule_work(&ctx.resync_work,
+							 clock_sync_calc_periodicity());
+
 			LOG_DBG("DeviceAppTimePeriodicityReq period: %u", period);
 			break;
 		}
@@ -191,24 +200,20 @@ static int clock_sync_app_time_req(void)
 
 	lorawan_services_schedule_uplink(LORAWAN_PORT_CLOCK_SYNC, tx_buf, tx_pos, 0);
 
-	if (ctx.nb_transmissions > 0) {
-		ctx.nb_transmissions--;
-		lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(CLOCK_RESYNC_DELAY));
-	}
-
 	return 0;
 }
 
 static void clock_sync_resync_handler(struct k_work *work)
 {
-	uint32_t periodicity;
-
 	clock_sync_app_time_req();
 
-	/* Add +-30s jitter to actual periodicity as required */
-	periodicity = ctx.periodicity - 30 + sys_rand32_get() % 61;
-
-	lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(periodicity));
+	if (ctx.nb_transmissions > 0) {
+		ctx.nb_transmissions--;
+		lorawan_services_reschedule_work(&ctx.resync_work, K_SECONDS(CLOCK_RESYNC_DELAY));
+	} else {
+		lorawan_services_reschedule_work(&ctx.resync_work,
+						 clock_sync_calc_periodicity());
+	}
 }
 
 int lorawan_clock_sync_get(uint32_t *gps_time)

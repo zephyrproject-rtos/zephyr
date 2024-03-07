@@ -24,23 +24,6 @@
 
 LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 
-#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
-
-/* Macro to exclude the sample point algorithm from compilation if not used
- * Without the macro, the algorithm would always waste ROM
- */
-#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
-
-#define SP_AND_TIMING_NOT_SET(inst) \
-	(!DT_INST_NODE_HAS_PROP(inst, sample_point) && \
-	!(DT_INST_NODE_HAS_PROP(inst, prop_seg) && \
-	DT_INST_NODE_HAS_PROP(inst, phase_seg1) && \
-	DT_INST_NODE_HAS_PROP(inst, phase_seg2))) ||
-
-#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_NOT_SET) 0
-#error You must either set a sampling-point or timings (phase-seg* and prop-seg)
-#endif
-
 #if ((defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) || \
 	(defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5829) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5829))
 /* the first valid MB should be occupied by ERRATA 5461 or 5829. */
@@ -90,16 +73,8 @@ struct mcux_flexcan_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	int clk_source;
-	uint32_t sjw;
-	uint32_t prop_seg;
-	uint32_t phase_seg1;
-	uint32_t phase_seg2;
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	bool flexcan_fd;
-	uint32_t sjw_data;
-	uint32_t prop_seg_data;
-	uint32_t phase_seg1_data;
-	uint32_t phase_seg2_data;
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 	void (*irq_config_func)(const struct device *dev);
 	void (*irq_enable_func)(void);
@@ -201,6 +176,10 @@ static int mcux_flexcan_get_capabilities(const struct device *dev, can_mode_t *c
 	__maybe_unused const struct mcux_flexcan_config *config = dev->config;
 
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES;
+
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		*cap |= CAN_MODE_MANUAL_RECOVERY;
+	}
 
 	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD), config->flexcan_fd)) {
 		*cap |= CAN_MODE_FD;
@@ -413,6 +392,10 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 		return -EBUSY;
 	}
 
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		supported |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
 	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD), config->flexcan_fd)) {
 		supported |= CAN_MODE_FD;
 	}
@@ -454,6 +437,16 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	} else {
 		/* Disable triple sampling mode */
 		ctrl1 &= ~(CAN_CTRL1_SMP_MASK);
+	}
+
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		if ((mode & CAN_MODE_MANUAL_RECOVERY) != 0) {
+			/* Disable auto-recovery from bus-off */
+			ctrl1 |= CAN_CTRL1_BOFFREC_MASK;
+		} else {
+			/* Enable auto-recovery from bus-off */
+			ctrl1 &= ~(CAN_CTRL1_BOFFREC_MASK);
+		}
 	}
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
@@ -844,7 +837,7 @@ static void mcux_flexcan_set_state_change_callback(const struct device *dev,
 	data->common.state_change_cb_user_data = user_data;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct mcux_flexcan_config *config = dev->config;
@@ -855,6 +848,10 @@ static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 
 	if (!data->common.started) {
 		return -ENETDOWN;
+	}
+
+	if ((data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		return -ENOTSUP;
 	}
 
 	(void)mcux_flexcan_get_state(dev, &state, NULL);
@@ -882,7 +879,7 @@ static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 
 	return ret;
 }
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_id)
 {
@@ -1146,28 +1143,16 @@ static int mcux_flexcan_init(const struct device *dev)
 	k_sem_init(&data->tx_allocs_sem, MCUX_FLEXCAN_MAX_TX,
 		   MCUX_FLEXCAN_MAX_TX);
 
-	data->timing.sjw = config->sjw;
-	if (config->common.sample_point && USE_SP_ALGO) {
-		err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
-				      config->common.sample_point);
-		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
-			data->timing.prescaler, data->timing.phase_seg1,
-			data->timing.phase_seg2);
-		LOG_DBG("Sample-point err : %d", err);
-	} else {
-		data->timing.sjw = config->sjw;
-		data->timing.prop_seg = config->prop_seg;
-		data->timing.phase_seg1 = config->phase_seg1;
-		data->timing.phase_seg2 = config->phase_seg2;
-		err = can_calc_prescaler(dev, &data->timing, config->common.bus_speed);
-		if (err) {
-			LOG_WRN("Bitrate error: %d", err);
-		}
+	err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
+			      config->common.sample_point);
+	if (err == -EINVAL) {
+		LOG_ERR("Can't find timing for given param");
+		return -EIO;
 	}
+	LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
+		 data->timing.prescaler, data->timing.phase_seg1,
+		 data->timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", err);
 
 	/* Validate initial timing parameters */
 	err = can_set_timing(dev, &data->timing);
@@ -1178,39 +1163,25 @@ static int mcux_flexcan_init(const struct device *dev)
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
-		data->timing_data.sjw = config->sjw_data;
-		if (config->common.sample_point_data && USE_SP_ALGO) {
-			err = can_calc_timing_data(dev, &data->timing_data,
-						   config->common.bus_speed_data,
-						   config->common.sample_point_data);
-			if (err == -EINVAL) {
-				LOG_ERR("Can't find timing for given param");
-				return -EIO;
-			}
-			LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
-				data->timing_data.prescaler, data->timing_data.phase_seg1,
-				data->timing_data.phase_seg2);
-			LOG_DBG("Sample-point err : %d", err);
-		} else {
-			data->timing_data.sjw = config->sjw_data;
-			data->timing_data.prop_seg = config->prop_seg_data;
-			data->timing_data.phase_seg1 = config->phase_seg1_data;
-			data->timing_data.phase_seg2 = config->phase_seg2_data;
-			err = can_calc_prescaler(dev, &data->timing_data,
-						 config->common.bus_speed_data);
-			if (err) {
-				LOG_WRN("Bitrate error: %d", err);
-			}
+		err = can_calc_timing_data(dev, &data->timing_data,
+					   config->common.bus_speed_data,
+					   config->common.sample_point_data);
+		if (err == -EINVAL) {
+			LOG_ERR("Can't find timing for given param");
+			return -EIO;
+		}
+		LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
+			data->timing_data.prescaler, data->timing_data.phase_seg1,
+			data->timing_data.phase_seg2);
+		LOG_DBG("Sample-point err : %d", err);
+
+		/* Validate initial data phase timing parameters */
+		err = can_set_timing_data(dev, &data->timing_data);
+		if (err != 0) {
+			LOG_ERR("failed to set data phase timing (err %d)", err);
+			return -ENODEV;
 		}
 	}
-
-	/* Validate initial data phase timing parameters */
-	err = can_set_timing_data(dev, &data->timing_data);
-	if (err != 0) {
-		LOG_ERR("failed to set data phase timing (err %d)", err);
-		return -ENODEV;
-	}
-
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -1276,9 +1247,8 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	config->base->CTRL1 |= CAN_CTRL1_BOFFREC_MASK;
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+	/* Enable auto-recovery from bus-off */
+	config->base->CTRL1 &= ~(CAN_CTRL1_BOFFREC_MASK);
 
 	(void)mcux_flexcan_get_state(dev, &data->state, NULL);
 
@@ -1295,9 +1265,9 @@ __maybe_unused static const struct can_driver_api mcux_flexcan_driver_api = {
 	.add_rx_filter = mcux_flexcan_add_rx_filter,
 	.remove_rx_filter = mcux_flexcan_remove_rx_filter,
 	.get_state = mcux_flexcan_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = mcux_flexcan_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
@@ -1338,9 +1308,9 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 	.add_rx_filter = mcux_flexcan_add_rx_filter,
 	.remove_rx_filter = mcux_flexcan_remove_rx_filter,
 	.get_state = mcux_flexcan_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = mcux_flexcan_recover,
-#endif
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
@@ -1436,16 +1406,8 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(id, name),			\
 		.clk_source = DT_INST_PROP(id, clk_source),		\
-		.sjw = DT_INST_PROP(id, sjw),				\
-		.prop_seg = DT_INST_PROP_OR(id, prop_seg, 0),		\
-		.phase_seg1 = DT_INST_PROP_OR(id, phase_seg1, 0),	\
-		.phase_seg2 = DT_INST_PROP_OR(id, phase_seg2, 0),	\
 		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD, (		\
 			.flexcan_fd = DT_NODE_HAS_COMPAT(DT_DRV_INST(id), FLEXCAN_FD_DRV_COMPAT), \
-			.sjw_data = DT_INST_PROP_OR(id, sjw_data, 0),			\
-			.prop_seg_data = DT_INST_PROP_OR(id, prop_seg_data, 0),		\
-			.phase_seg1_data = DT_INST_PROP_OR(id, phase_seg1_data, 0),	\
-			.phase_seg2_data = DT_INST_PROP_OR(id, phase_seg2_data, 0),	\
 		))							\
 		.irq_config_func = mcux_flexcan_irq_config_##id,	\
 		.irq_enable_func = mcux_flexcan_irq_enable_##id,	\

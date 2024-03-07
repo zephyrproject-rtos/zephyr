@@ -173,16 +173,6 @@ void state_change_work_handler(struct k_work *work)
 	       "tx error count: %d\n",
 		state_to_str(current_state),
 		current_err_cnt.rx_err_cnt, current_err_cnt.tx_err_cnt);
-
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	if (current_state == CAN_STATE_BUS_OFF) {
-		printf("Recover from bus-off\n");
-
-		if (can_recover(can_dev, K_MSEC(100)) != 0) {
-			printf("Recovery timed out\n");
-		}
-	}
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 }
 
 void state_change_callback(const struct device *dev, enum can_state state,

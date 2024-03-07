@@ -15,4 +15,4 @@ tests:
       - native_sim_64
     integration_platforms:
       - native_sim
-    depends_on: netif
+    depends_on: eth

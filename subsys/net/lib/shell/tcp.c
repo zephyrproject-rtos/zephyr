@@ -51,7 +51,7 @@ static void get_my_ipv4_addr(struct net_if *iface,
 #if defined(CONFIG_NET_NATIVE_IPV4)
 	/* Just take the first IPv4 address of an interface. */
 	memcpy(&net_sin(myaddr)->sin_addr,
-	       &iface->config.ip.ipv4->unicast[0].address.in_addr,
+	       &iface->config.ip.ipv4->unicast[0].ipv4.address.in_addr,
 	       sizeof(struct in_addr));
 
 	net_sin(myaddr)->sin_port = 0U; /* let the IP stack to select */

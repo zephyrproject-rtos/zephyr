@@ -1,0 +1,14 @@
+# Raspberry Pi RP2XXX MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RP2XXX
+
+rsource "Kconfig.defconfig.rp2*"
+
+config NUM_IRQS
+	default 26
+
+endif # SOC_SERIES_RP2XXX

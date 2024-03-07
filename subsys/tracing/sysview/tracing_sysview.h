@@ -641,7 +641,7 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT,	       \
 					(uint32_t)ret)
 #define sys_port_trace_pm_device_runtime_put_async_enter(dev, delay)	       \
-	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,	       \
+	SEGGER_SYSVIEW_RecordU32x2(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,	       \
 			 (uint32_t)(uintptr_t)dev, (uint32_t)delay.ticks)
 #define sys_port_trace_pm_device_runtime_put_async_exit(dev, delay, ret)       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,       \

@@ -112,25 +112,25 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	}
 
 	info->can_send = false;
+	info->can_recv = false;
 	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && ep->stream != NULL) {
 		if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) && bt_bap_ep_is_broadcast_src(ep)) {
 			info->can_send = true;
-		} else if (IS_ENABLED(CONFIG_BT_CONN) && ep->stream->conn != NULL) {
-			struct bt_conn_info conn_info;
-			uint8_t role;
-			int err;
-
-			err = bt_conn_get_info(ep->stream->conn, &conn_info);
-			if (err != 0) {
-				LOG_DBG("Could not get conn info: %d", err);
-
-				return err;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
+			   bt_bap_ep_is_broadcast_snk(ep)) {
+			info->can_recv = true;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+			   bt_bap_ep_is_unicast_client(ep)) {
+			/* dir is not initialized before the connection is set */
+			if (ep->stream->conn != NULL) {
+				info->can_send = dir == BT_AUDIO_DIR_SINK;
+				info->can_recv = dir == BT_AUDIO_DIR_SOURCE;
 			}
-
-			role = conn_info.role;
-			if ((role == BT_CONN_ROLE_CENTRAL && dir == BT_AUDIO_DIR_SINK) ||
-			    (role == BT_CONN_ROLE_PERIPHERAL && dir == BT_AUDIO_DIR_SOURCE)) {
-				info->can_send = true;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+			/* dir is not initialized before the connection is set */
+			if (ep->stream->conn != NULL) {
+				info->can_send = dir == BT_AUDIO_DIR_SOURCE;
+				info->can_recv = dir == BT_AUDIO_DIR_SINK;
 			}
 		}
 	}
@@ -180,6 +180,17 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos
 	return BT_BAP_ASCS_REASON_NONE;
 }
 
+static bool valid_ltv_cb(struct bt_data *data, void *user_data)
+{
+	/* just return true to continue parsing as bt_data_parse will validate for us */
+	return true;
+}
+
+bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
+{
+	return bt_audio_data_parse(data, data_len, valid_ltv_cb, NULL) == 0;
+}
+
 bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
 	if (codec_cfg == NULL) {
@@ -212,11 +223,23 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		LOG_DBG("codec_cfg->data_len (%zu) is invalid", codec_cfg->data_len);
 		return false;
 	}
+
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+	    !bt_audio_valid_ltv(codec_cfg->data, codec_cfg->data_len)) {
+		LOG_DBG("codec_cfg->data not valid LTV");
+		return false;
+	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	if (codec_cfg->meta_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
 		LOG_DBG("codec_cfg->meta_len (%zu) is invalid", codec_cfg->meta_len);
+		return false;
+	}
+
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+	    !bt_audio_valid_ltv(codec_cfg->data, codec_cfg->data_len)) {
+		LOG_DBG("codec_cfg->meta not valid LTV");
 		return false;
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */

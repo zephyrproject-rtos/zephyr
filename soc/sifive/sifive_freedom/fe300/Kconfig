@@ -1,0 +1,19 @@
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SIFIVE_FREEDOM_FE300
+	bool
+
+	# RISC-V options
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+	select ATOMIC_OPERATIONS_C
+	select INCLUDE_RESET_VECTOR

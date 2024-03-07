@@ -145,9 +145,9 @@ static void udp_received(int sock, const struct sockaddr *addr, uint8_t *data,
 	case STATE_ONGOING:
 		if (id < 0) { /* Negative id means session end. */
 			struct zperf_results results = { 0 };
-			uint32_t duration;
+			uint64_t duration;
 
-			duration = k_ticks_to_us_ceil32(time -
+			duration = k_ticks_to_us_ceil64(time -
 							session->start_time);
 
 			/* Update state machine */

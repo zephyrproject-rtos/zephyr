@@ -1,8 +1,0 @@
-# STM32H7B0VBT FK7B0M1_VBT6 board
-
-# Copyright (c) 2023 Charles Dias <charlesdias.cd@outlook.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_FK7B0M1_VBT6
-	bool "FANKE FK7B0M1-VBT6 board"
-	depends on SOC_STM32H7B0XX

@@ -1,9 +1,0 @@
-# TWR-KE18F board configuration
-
-# Copyright (c) 2019 Vestas Wind Systems A/S
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_TWR_KE18F
-	bool "NXP TWR-KE18F"
-	depends on SOC_SERIES_KINETIS_KE1XF
-	select SOC_PART_NUMBER_MKE18F512VLL16

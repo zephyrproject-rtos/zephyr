@@ -410,7 +410,11 @@ enum net_ip_mtu {
 	/** IPv6 MTU length. We must be able to receive this size IPv6 packet
 	 * without fragmentation.
 	 */
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	NET_IPV6_MTU = CONFIG_NET_IPV6_MTU,
+#else
 	NET_IPV6_MTU = 1280,
+#endif
 
 	/** IPv4 MTU length. We must be able to receive this size IPv4 packet
 	 * without fragmentation.
@@ -1599,6 +1603,17 @@ __syscall char *net_addr_ntop(sa_family_t family, const void *src,
  */
 bool net_ipaddr_parse(const char *str, size_t str_len,
 		      struct sockaddr *addr);
+
+/**
+ * @brief Set the default port in the sockaddr structure.
+ * If the port is already set, then do nothing.
+ *
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param default_port Default port number to set.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_port_set_default(struct sockaddr *addr, uint16_t default_port);
 
 /**
  * @brief Compare TCP sequence numbers.

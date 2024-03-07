@@ -8,6 +8,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/mbox.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/util_macro.h>
 #include <fsl_mailbox.h>
 

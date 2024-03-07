@@ -55,11 +55,18 @@ config USE_USB_AUDIO_OUTPUT
 	  phone or PC as a USB-in device (such as a USB microphone).
 	  USB audio only supports a single audio channel.
 
+config USE_SPECIFIC_BROADCAST_CHANNEL
+	bool "Use specific Broadcast Channel Audio Location"
+	default y
+	depends on USE_USB_AUDIO_OUTPUT
+	help
+	  Enables the use of a specific Channel Audio Location (see config TARGET_BROADCAST_CHANNEL).
+
 config TARGET_BROADCAST_CHANNEL
 	int "Broadcast Channel Audio Location to sync to"
 	range 0 2
 	default 1
-	depends on USE_USB_AUDIO_OUTPUT
+	depends on USE_SPECIFIC_BROADCAST_CHANNEL
 	help
 	  Channel Audio Location to sync to. These corresponds to the bt_audio_location,
 	  supporting mono, left and right channels

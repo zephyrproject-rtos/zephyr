@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+ * Copyright (c) 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+&dtcm {
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+};
+
+tst_dma0: &edma0 { };

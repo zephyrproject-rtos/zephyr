@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "SoC/CPU/Configuration Selection"
+
+# This loads custom SoC root Kconfig (only available if custom SoC root are defined)
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc.choice"
+# This loads Zephyr base SoC scheme v1 root Kconfig
+osource "soc/soc_legacy/$(ARCH)/*/Kconfig.soc"
+
+endchoice

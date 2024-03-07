@@ -1,0 +1,22 @@
+identifier: seeeduino_xiao
+name: Seeeduino XIAO
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 256
+ram: 32
+supported:
+  - dma
+  - dac
+  - gpio
+  - hwinfo
+  - i2c
+  - spi
+  - uart
+  - usb
+  - usb_device
+  - watchdog
+vendor: seeed

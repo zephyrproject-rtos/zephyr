@@ -1274,7 +1274,7 @@ void net_if_start_dad(struct net_if *iface)
 	struct net_if_addr *ifaddr;
 	struct net_if_ipv6 *ipv6;
 	struct in6_addr addr = { };
-	int ret, i;
+	int ret;
 
 	net_if_lock(iface);
 
@@ -1304,7 +1304,7 @@ void net_if_start_dad(struct net_if *iface)
 	/* Start DAD for all the addresses that were added earlier when
 	 * the interface was down.
 	 */
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
 		    ipv6->unicast[i].address.family != AF_INET6 ||
 		    &ipv6->unicast[i] == ifaddr ||
@@ -1522,7 +1522,6 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv6 *ipv6;
-		int i;
 
 		net_if_lock(iface);
 
@@ -1532,7 +1531,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 			continue;
 		}
 
-		for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		ARRAY_FOR_EACH(ipv6->unicast, i) {
 			if (!ipv6->unicast[i].is_used ||
 			    ipv6->unicast[i].address.family != AF_INET6) {
 				continue;
@@ -1565,7 +1564,6 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 {
 	struct net_if_addr *ifaddr = NULL;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -1574,7 +1572,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
 		    ipv6->unicast[i].address.family != AF_INET6) {
 			continue;
@@ -1709,9 +1707,8 @@ static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
 					  struct in6_addr *addr)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
-	int i;
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used) {
 			continue;
 		}
@@ -1758,7 +1755,6 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 {
 	struct net_if_addr *ifaddr = NULL;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -1771,7 +1767,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (ipv6->unicast[i].is_used) {
 			continue;
 		}
@@ -1779,7 +1775,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		net_if_addr_init(&ipv6->unicast[i], addr, addr_type,
 				 vlifetime);
 
-		NET_DBG("[%d] interface %p address %s type %s added", i,
+		NET_DBG("[%zu] interface %p address %s type %s added", i,
 			iface, net_sprint_ipv6_addr(addr),
 			net_addr_type2str(addr_type));
 
@@ -1793,7 +1789,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			 * address.
 			 */
 			/* The allnodes multicast group is only joined once as
-			 * net_ipv6_mcast_join() checks if we have already
+			 * net_ipv6_mld_join() checks if we have already
 			 * joined.
 			 */
 			join_mcast_nodes(iface,
@@ -1841,7 +1837,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 	net_ipv6_addr_create_solicited_node(addr, &maddr);
 
-	for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct in6_addr unicast_maddr;
 
 		if (!ipv6->unicast[i].is_used) {
@@ -2014,7 +2010,7 @@ void net_if_ipv6_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
 		goto out;
 	}
 
-	for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_addr *if_addr = &ipv6->unicast[i];
 
 		if (!if_addr->is_used) {
@@ -2033,7 +2029,6 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 {
 	struct net_if_mcast_addr *ifmaddr = NULL;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -2053,7 +2048,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
 		if (ipv6->mcast[i].is_used) {
 			continue;
 		}
@@ -2062,7 +2057,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		ipv6->mcast[i].address.family = AF_INET6;
 		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
 
-		NET_DBG("[%d] interface %p address %s added", i, iface,
+		NET_DBG("[%zu] interface %p address %s added", i, iface,
 			net_sprint_ipv6_addr(addr));
 
 		net_mgmt_event_notify_with_info(
@@ -2084,7 +2079,6 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	bool ret = false;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -2093,7 +2087,7 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
 		if (!ipv6->mcast[i].is_used) {
 			continue;
 		}
@@ -2105,7 +2099,7 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 		ipv6->mcast[i].is_used = false;
 
-		NET_DBG("[%d] interface %p address %s removed",
+		NET_DBG("[%zu] interface %p address %s removed",
 			i, iface, net_sprint_ipv6_addr(addr));
 
 		net_mgmt_event_notify_with_info(
@@ -2123,6 +2117,33 @@ out:
 	return ret;
 }
 
+void net_if_ipv6_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
+			       void *user_data)
+{
+	struct net_if_ipv6 *ipv6;
+
+	NET_ASSERT(iface);
+	NET_ASSERT(cb);
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (!ipv6) {
+		goto out;
+	}
+
+	for (int i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!ipv6->mcast[i].is_used) {
+			continue;
+		}
+
+		cb(iface, &ipv6->mcast[i], user_data);
+	}
+
+out:
+	net_if_unlock(iface);
+}
+
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 						   struct net_if **ret)
 {
@@ -2130,7 +2151,6 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv6 *ipv6;
-		int i;
 
 		if (ret && *ret && iface != *ret) {
 			continue;
@@ -2144,7 +2164,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 			continue;
 		}
 
-		for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		ARRAY_FOR_EACH(ipv6->mcast, i) {
 			if (!ipv6->mcast[i].is_used ||
 			    ipv6->mcast[i].address.family != AF_INET6) {
 				continue;
@@ -2196,9 +2216,7 @@ static void remove_prefix_addresses(struct net_if *iface,
 				    struct in6_addr *addr,
 				    uint8_t len)
 {
-	int i;
-
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
 		    ipv6->unicast[i].address.family != AF_INET6 ||
 		    ipv6->unicast[i].addr_type != NET_ADDR_AUTOCONF) {
@@ -2339,13 +2357,12 @@ static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 						   uint8_t prefix_len)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
-	int i;
 
 	if (!ipv6) {
 		return NULL;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
 		if (!ipv6->prefix[i].is_used) {
 			continue;
 		}
@@ -2383,7 +2400,6 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 {
 	struct net_if_ipv6_prefix *ifprefix = NULL;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -2400,7 +2416,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
 		if (ipv6->prefix[i].is_used) {
 			continue;
 		}
@@ -2408,7 +2424,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 		net_if_ipv6_prefix_init(iface, &ipv6->prefix[i], prefix,
 					len, lifetime);
 
-		NET_DBG("[%d] interface %p prefix %s/%d added", i, iface,
+		NET_DBG("[%zu] interface %p prefix %s/%d added", i, iface,
 			net_sprint_ipv6_addr(prefix), len);
 
 		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
@@ -2440,7 +2456,6 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 {
 	bool ret = false;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -2449,7 +2464,7 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
 		if (!ipv6->prefix[i].is_used) {
 			continue;
 		}
@@ -2497,7 +2512,6 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 {
 	struct net_if_ipv6_prefix *prefix = NULL;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	if (!iface) {
 		iface = net_if_get_default();
@@ -2510,7 +2524,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
 		if (!ipv6->prefix[i].is_used) {
 			continue;
 		}
@@ -2536,7 +2550,6 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 {
 	struct net_if_ipv6_prefix *prefix = NULL;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -2545,7 +2558,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
 		if (!ipv6->prefix[i].is_used) {
 			continue;
 		}
@@ -2569,7 +2582,6 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 
 	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		struct net_if_ipv6 *ipv6;
-		int i;
 
 		if (iface && *iface && *iface != tmp) {
 			continue;
@@ -2583,7 +2595,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 			continue;
 		}
 
-		for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+		ARRAY_FOR_EACH(ipv6->prefix, i) {
 			if (ipv6->prefix[i].is_used &&
 			    net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
 					       addr->s6_addr,
@@ -2767,7 +2779,6 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 {
 	struct in6_addr *addr = NULL;
 	struct net_if_ipv6 *ipv6;
-	int i;
 
 	net_if_lock(iface);
 
@@ -2776,7 +2787,7 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
 		    (addr_state != NET_ADDR_ANY_STATE &&
 		     ipv6->unicast[i].addr_state != addr_state) ||
@@ -2825,13 +2836,12 @@ static inline struct in6_addr *check_global_addr(struct net_if *iface,
 						 enum net_addr_state state)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
-	int i;
 
 	if (!ipv6) {
 		return NULL;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
 		    (ipv6->unicast[i].addr_state != state) ||
 		    ipv6->unicast[i].address.family != AF_INET6) {
@@ -2899,7 +2909,6 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 	struct net_if_ipv6 *ipv6;
 	struct in6_addr *src = NULL;
 	uint8_t len;
-	int i;
 
 	net_if_lock(iface);
 
@@ -2908,7 +2917,7 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!is_proper_ipv6_address(&ipv6->unicast[i])) {
 			continue;
 		}
@@ -3046,8 +3055,6 @@ static void iface_ipv6_start(struct net_if *iface)
 
 static void iface_ipv6_init(int if_count)
 {
-	int i;
-
 	iface_ipv6_dad_init();
 	iface_ipv6_nd_init();
 
@@ -3063,7 +3070,7 @@ static void iface_ipv6_init(int if_count)
 			 "value.");
 	}
 
-	for (i = 0; i < ARRAY_SIZE(ipv6_addresses); i++) {
+	ARRAY_FOR_EACH(ipv6_addresses, i) {
 		ipv6_addresses[i].ipv6.hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
 		ipv6_addresses[i].ipv6.mcast_hop_limit = CONFIG_NET_INITIAL_MCAST_HOP_LIMIT;
 		ipv6_addresses[i].ipv6.base_reachable_time = REACHABLE_TIME;
@@ -3112,7 +3119,6 @@ struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
 int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
 {
 	int ret = 0;
-	int i;
 
 	net_if_lock(iface);
 
@@ -3131,7 +3137,7 @@ int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	for (i = 0; i < ARRAY_SIZE(ipv4_addresses); i++) {
+	ARRAY_FOR_EACH(ipv4_addresses, i) {
 		if (ipv4_addresses[i].iface) {
 			continue;
 		}
@@ -3159,7 +3165,6 @@ out:
 int net_if_config_ipv4_put(struct net_if *iface)
 {
 	int ret = 0;
-	int i;
 
 	net_if_lock(iface);
 
@@ -3175,7 +3180,7 @@ int net_if_config_ipv4_put(struct net_if *iface)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	for (i = 0; i < ARRAY_SIZE(ipv4_addresses); i++) {
+	ARRAY_FOR_EACH(ipv4_addresses, i) {
 		if (ipv4_addresses[i].iface != iface) {
 			continue;
 		}
@@ -3325,7 +3330,6 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 	bool ret = false;
 	struct net_if_ipv4 *ipv4;
 	uint32_t subnet;
-	int i;
 
 	net_if_lock(iface);
 
@@ -3334,16 +3338,17 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 		goto out;
 	}
 
-	subnet = UNALIGNED_GET(&addr->s_addr) & ipv4->netmask.s_addr;
-
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (!ipv4->unicast[i].is_used ||
-		    ipv4->unicast[i].address.family != AF_INET) {
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
 			continue;
 		}
 
-		if ((ipv4->unicast[i].address.in_addr.s_addr &
-		     ipv4->netmask.s_addr) == subnet) {
+		subnet = UNALIGNED_GET(&addr->s_addr) &
+			 ipv4->unicast[i].netmask.s_addr;
+
+		if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr &
+		     ipv4->unicast[i].netmask.s_addr) == subnet) {
 			ret = true;
 			goto out;
 		}
@@ -3360,6 +3365,7 @@ static bool ipv4_is_broadcast_address(struct net_if *iface,
 {
 	struct net_if_ipv4 *ipv4;
 	bool ret = false;
+	struct in_addr bcast;
 
 	net_if_lock(iface);
 
@@ -3369,15 +3375,19 @@ static bool ipv4_is_broadcast_address(struct net_if *iface,
 		goto out;
 	}
 
-	if (!net_if_ipv4_addr_mask_cmp(iface, addr)) {
-		ret = false;
-		goto out;
-	}
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
+			continue;
+		}
 
-	if ((UNALIGNED_GET(&addr->s_addr) & ~ipv4->netmask.s_addr) ==
-	    ~ipv4->netmask.s_addr) {
-		ret = true;
-		goto out;
+		bcast.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr |
+			       ~ipv4->unicast[i].netmask.s_addr;
+
+		if (bcast.s_addr == addr->s_addr) {
+			ret = true;
+			goto out;
+		}
 	}
 
 out:
@@ -3452,7 +3462,6 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 	struct net_if_ipv4 *ipv4;
 	struct in_addr *src = NULL;
 	uint8_t len;
-	int i;
 
 	net_if_lock(iface);
 
@@ -3461,15 +3470,15 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (!is_proper_ipv4_address(&ipv4->unicast[i])) {
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!is_proper_ipv4_address(&ipv4->unicast[i].ipv4)) {
 			continue;
 		}
 
-		len = get_diff_ipv4(dst, &ipv4->unicast[i].address.in_addr);
+		len = get_diff_ipv4(dst, &ipv4->unicast[i].ipv4.address.in_addr);
 		if (len >= *best_so_far) {
 			*best_so_far = len;
-			src = &ipv4->unicast[i].address.in_addr;
+			src = &ipv4->unicast[i].ipv4.address.in_addr;
 		}
 	}
 
@@ -3484,7 +3493,6 @@ static struct in_addr *if_ipv4_get_addr(struct net_if *iface,
 {
 	struct in_addr *addr = NULL;
 	struct net_if_ipv4 *ipv4;
-	int i;
 
 	if (!iface) {
 		return NULL;
@@ -3497,15 +3505,15 @@ static struct in_addr *if_ipv4_get_addr(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (!ipv4->unicast[i].is_used ||
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
 		    (addr_state != NET_ADDR_ANY_STATE &&
-		     ipv4->unicast[i].addr_state != addr_state) ||
-		    ipv4->unicast[i].address.family != AF_INET) {
+		     ipv4->unicast[i].ipv4.addr_state != addr_state) ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
 			continue;
 		}
 
-		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].address.in_addr)) {
+		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr)) {
 			if (!ll) {
 				continue;
 			}
@@ -3515,7 +3523,7 @@ static struct in_addr *if_ipv4_get_addr(struct net_if *iface,
 			}
 		}
 
-		addr = &ipv4->unicast[i].address.in_addr;
+		addr = &ipv4->unicast[i].ipv4.address.in_addr;
 		goto out;
 	}
 
@@ -3613,7 +3621,6 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv4 *ipv4;
-		int i;
 
 		net_if_lock(iface);
 
@@ -3623,20 +3630,20 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 			continue;
 		}
 
-		for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-			if (!ipv4->unicast[i].is_used ||
-			    ipv4->unicast[i].address.family != AF_INET) {
+		ARRAY_FOR_EACH(ipv4->unicast, i) {
+			if (!ipv4->unicast[i].ipv4.is_used ||
+			    ipv4->unicast[i].ipv4.address.family != AF_INET) {
 				continue;
 			}
 
 			if (UNALIGNED_GET(&addr->s4_addr32[0]) ==
-			    ipv4->unicast[i].address.in_addr.s_addr) {
+			    ipv4->unicast[i].ipv4.address.in_addr.s_addr) {
 
 				if (ret) {
 					*ret = iface;
 				}
 
-				ifaddr = &ipv4->unicast[i];
+				ifaddr = &ipv4->unicast[i].ipv4;
 				net_if_unlock(iface);
 				goto out;
 			}
@@ -3675,9 +3682,12 @@ static inline int z_vrfy_net_if_ipv4_addr_lookup_by_index(
 #include <syscalls/net_if_ipv4_addr_lookup_by_index_mrsh.c>
 #endif
 
-struct in_addr net_if_ipv4_get_netmask(struct net_if *iface)
+struct in_addr net_if_ipv4_get_netmask_by_addr(struct net_if *iface,
+					       const struct in_addr *addr)
 {
 	struct in_addr netmask = { 0 };
+	struct net_if_ipv4 *ipv4;
+	uint32_t subnet;
 
 	net_if_lock(iface);
 
@@ -3685,33 +3695,151 @@ struct in_addr net_if_ipv4_get_netmask(struct net_if *iface)
 		goto out;
 	}
 
-	if (!iface->config.ip.ipv4) {
+	ipv4 = iface->config.ip.ipv4;
+	if (ipv4 == NULL) {
 		goto out;
 	}
 
-	netmask = iface->config.ip.ipv4->netmask;
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
+			continue;
+		}
+
+		subnet = UNALIGNED_GET(&addr->s_addr) &
+			 ipv4->unicast[i].netmask.s_addr;
+
+		if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr &
+		     ipv4->unicast[i].netmask.s_addr) == subnet) {
+			netmask = ipv4->unicast[i].netmask;
+			goto out;
+		}
+	}
+
 out:
 	net_if_unlock(iface);
 
 	return netmask;
 }
 
-void net_if_ipv4_set_netmask(struct net_if *iface,
-			     const struct in_addr *netmask)
+bool net_if_ipv4_set_netmask_by_addr(struct net_if *iface,
+				     const struct in_addr *addr,
+				     const struct in_addr *netmask)
 {
+	struct net_if_ipv4 *ipv4;
+	uint32_t subnet;
+	bool ret = false;
+
 	net_if_lock(iface);
 
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
 		goto out;
 	}
 
-	if (!iface->config.ip.ipv4) {
+	ipv4 = iface->config.ip.ipv4;
+	if (ipv4 == NULL) {
 		goto out;
 	}
 
-	net_ipaddr_copy(&iface->config.ip.ipv4->netmask, netmask);
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
+			continue;
+		}
+
+		subnet = UNALIGNED_GET(&addr->s_addr) &
+			 ipv4->unicast[i].netmask.s_addr;
+
+		if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr &
+		     ipv4->unicast[i].netmask.s_addr) == subnet) {
+			ipv4->unicast[i].netmask = *netmask;
+			ret = true;
+			goto out;
+		}
+	}
+
 out:
 	net_if_unlock(iface);
+
+	return ret;
+}
+
+/* Using this function is problematic as if we have multiple
+ * addresses configured, which one to return. Use heuristic
+ * in this case and return the first one found. Please use
+ * net_if_ipv4_get_netmask_by_addr() instead.
+ */
+struct in_addr net_if_ipv4_get_netmask(struct net_if *iface)
+{
+	struct in_addr netmask = { 0 };
+	struct net_if_ipv4 *ipv4;
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	ipv4 = iface->config.ip.ipv4;
+	if (ipv4 == NULL) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
+			continue;
+		}
+
+		netmask = iface->config.ip.ipv4->unicast[i].netmask;
+		break;
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return netmask;
+}
+
+/* Using this function is problematic as if we have multiple
+ * addresses configured, which one to set. Use heuristic
+ * in this case and set the first one found. Please use
+ * net_if_ipv4_set_netmask_by_addr() instead.
+ */
+static void net_if_ipv4_set_netmask_deprecated(struct net_if *iface,
+					       const struct in_addr *netmask)
+{
+	struct net_if_ipv4 *ipv4;
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	ipv4 = iface->config.ip.ipv4;
+	if (ipv4 == NULL) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
+			continue;
+		}
+
+		net_ipaddr_copy(&ipv4->unicast[i].netmask, netmask);
+		break;
+	}
+
+out:
+	net_if_unlock(iface);
+}
+
+void net_if_ipv4_set_netmask(struct net_if *iface,
+			     const struct in_addr *netmask)
+{
+	net_if_ipv4_set_netmask_deprecated(iface, netmask);
 }
 
 bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
@@ -3724,7 +3852,23 @@ bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
 		return false;
 	}
 
-	net_if_ipv4_set_netmask(iface, netmask);
+	net_if_ipv4_set_netmask_deprecated(iface, netmask);
+
+	return true;
+}
+
+bool z_impl_net_if_ipv4_set_netmask_by_addr_by_index(int index,
+						     const struct in_addr *addr,
+						     const struct in_addr *netmask)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	net_if_ipv4_set_netmask_by_addr(iface, addr, netmask);
 
 	return true;
 }
@@ -3748,6 +3892,30 @@ bool z_vrfy_net_if_ipv4_set_netmask_by_index(int index,
 }
 
 #include <syscalls/net_if_ipv4_set_netmask_by_index_mrsh.c>
+
+bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
+						     const struct in_addr *addr,
+						     const struct in_addr *netmask)
+{
+	struct in_addr ipv4_addr, netmask_addr;
+	struct net_if *iface;
+
+	iface = z_vrfy_net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	K_OOPS(k_usermode_from_copy(&ipv4_addr, (void *)addr,
+				    sizeof(ipv4_addr)));
+	K_OOPS(k_usermode_from_copy(&netmask_addr, (void *)netmask,
+				    sizeof(netmask_addr)));
+
+	return z_impl_net_if_ipv4_set_netmask_by_addr_by_index(index,
+							       &ipv4_addr,
+							       &netmask_addr);
+}
+
+#include <syscalls/net_if_ipv4_set_netmask_by_addr_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw)
@@ -3806,16 +3974,15 @@ static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
 					  struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	int i;
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (!ipv4->unicast[i].is_used) {
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used) {
 			continue;
 		}
 
 		if (net_ipv4_addr_cmp(addr,
-				      &ipv4->unicast[i].address.in_addr)) {
-			return &ipv4->unicast[i];
+				      &ipv4->unicast[i].ipv4.address.in_addr)) {
+			return &ipv4->unicast[i].ipv4;
 		}
 	}
 
@@ -3829,7 +3996,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 {
 	struct net_if_addr *ifaddr = NULL;
 	struct net_if_ipv4 *ipv4;
-	int i;
+	int idx;
 
 	net_if_lock(iface);
 
@@ -3843,17 +4010,19 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		struct net_if_addr *cur = &ipv4->unicast[i];
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		struct net_if_addr *cur = &ipv4->unicast[i].ipv4;
 
 		if (addr_type == NET_ADDR_DHCP
 		    && cur->addr_type == NET_ADDR_OVERRIDABLE) {
 			ifaddr = cur;
+			idx = i;
 			break;
 		}
 
-		if (!ipv4->unicast[i].is_used) {
+		if (!ipv4->unicast[i].ipv4.is_used) {
 			ifaddr = cur;
+			idx = i;
 			break;
 		}
 	}
@@ -3878,8 +4047,8 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		 */
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
 
-		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
-			net_sprint_ipv4_addr(addr),
+		NET_DBG("[%d] interface %p address %s type %s added",
+			idx, iface, net_sprint_ipv4_addr(addr),
 			net_addr_type2str(addr_type));
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_ADD, iface,
@@ -3898,7 +4067,6 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4;
 	bool ret = false;
-	int i;
 
 	net_if_lock(iface);
 
@@ -3907,24 +4075,24 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (!ipv4->unicast[i].is_used) {
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used) {
 			continue;
 		}
 
-		if (!net_ipv4_addr_cmp(&ipv4->unicast[i].address.in_addr,
+		if (!net_ipv4_addr_cmp(&ipv4->unicast[i].ipv4.address.in_addr,
 				       addr)) {
 			continue;
 		}
 
-		ipv4->unicast[i].is_used = false;
+		ipv4->unicast[i].ipv4.is_used = false;
 
-		NET_DBG("[%d] interface %p address %s removed",
+		NET_DBG("[%zu] interface %p address %s removed",
 			i, iface, net_sprint_ipv4_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV4_ADDR_DEL, iface,
-			&ipv4->unicast[i].address.in_addr,
+			&ipv4->unicast[i].ipv4.address.in_addr,
 			sizeof(struct in_addr));
 
 		ret = true;
@@ -4028,8 +4196,8 @@ void net_if_ipv4_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
 		goto out;
 	}
 
-	for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		struct net_if_addr *if_addr = &ipv4->unicast[i];
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		struct net_if_addr *if_addr = &ipv4->unicast[i].ipv4;
 
 		if (!if_addr->is_used) {
 			continue;
@@ -4047,13 +4215,12 @@ static struct net_if_mcast_addr *ipv4_maddr_find(struct net_if *iface,
 						 const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	int i;
 
 	if (!ipv4) {
 		return NULL;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
 		if ((is_used && !ipv4->mcast[i].is_used) ||
 		    (!is_used && ipv4->mcast[i].is_used)) {
 			continue;
@@ -4136,6 +4303,33 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 	return ret;
 }
 
+void net_if_ipv4_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
+			       void *user_data)
+{
+	struct net_if_ipv4 *ipv4;
+
+	NET_ASSERT(iface);
+	NET_ASSERT(cb);
+
+	net_if_lock(iface);
+
+	ipv4 = iface->config.ip.ipv4;
+	if (!ipv4) {
+		goto out;
+	}
+
+	for (int i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+		if (!ipv4->mcast[i].is_used) {
+			continue;
+		}
+
+		cb(iface, &ipv4->mcast[i], user_data);
+	}
+
+out:
+	net_if_unlock(iface);
+}
+
 struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
 						   struct net_if **ret)
 {
@@ -4206,13 +4400,12 @@ static void iface_ipv4_init(int if_count)
 static void leave_ipv4_mcast_all(struct net_if *iface)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	int i;
 
 	if (!ipv4) {
 		return;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
 		if (!ipv4->mcast[i].is_used ||
 		    !ipv4->mcast[i].is_joined) {
 			continue;

@@ -1,0 +1,43 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic BELLBOARD
+
+  BELLBOARD provides support for inter-domain software signaling. It implements
+  a set of tasks and events intended for signaling within an interprocessor
+  communication (IPC) framework. When used in local mode, the BELLBOARD
+  instance is used to receive events triggered by other remote cores.
+
+  Example definition:
+
+    bellboard: mailbox@deadbeef {
+      compatible = "nordic,nrf-bellboard-local";
+      reg = <0xdeadbeef 0x1000>;
+      interrupts = <98 NRF_DEFAULT_IRQ_PRIORITY>,
+                   <99 NRF_DEFAULT_IRQ_PRIORITY>;
+      interrupt-names = "irq2", "irq3";
+      nordic,interrupt-mapping = <0x0000000f 2>, <0x000000f0 3>;
+      #mbox-cells = <1>;
+    };
+
+compatible: "nordic,nrf-bellboard-local"
+
+include: "nordic,nrf-bellboard-common.yaml"
+
+properties:
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  nordic,interrupt-mapping:
+    type: array
+    required: true
+    description: |
+      Set of interrupt mapping pairs. Each pair consists of a bitmask and an
+      interrupt identifier. The bitmask is used to indicate which of the 32
+      possible events are mapped to the given interrupt. For example, given
+      <0x0000000f 2>, the first four events are mapped to interrupt 2
+      (irq2).

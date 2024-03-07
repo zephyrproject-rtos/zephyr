@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2021-2023 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "bl5340_dvk_nrf5340_cpunet-pinctrl.dtsi"
+#include "bl5340_dvk_nrf5340_cpunet_common.dtsi"
+
+/ {
+	model = "Laird Connectivity BL5340 (nRF5340) Network";
+	compatible = "lairdconnect,bl5340-dvk-cpunet";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci-ipc = &ipc0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};

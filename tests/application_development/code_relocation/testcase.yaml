@@ -26,8 +26,8 @@ tests:
       - _CUSTOM_SECTION_NAME2
     platform_allow:
       - qemu_cortex_m3
-      - mps2_an385
-      - sam_e70_xplained
+      - mps2/an385
+      - sam_e70_xplained/same70q21
     integration_platforms:
       - qemu_cortex_m3
   application_development.code_relocation.riscv:

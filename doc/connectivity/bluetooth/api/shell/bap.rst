@@ -24,6 +24,8 @@ Commands
       delete_broadcast       :
       create_broadcast_sink  : 0x<broadcast_id>
       sync_broadcast         : 0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]
+                              [bcode <broadcast code> || bcode_str <broadcast code
+                              as string>]
       stop_broadcast_sink    : Stops broadcast sink
       term_broadcast_sink    :
       discover               : [dir: sink, source]
@@ -210,7 +212,26 @@ sync (if exist) or start scanning and sync to the periodic advertising before sy
    [0]: 0x01
    [1]: 0x01
    Possible indexes: 0x01 0x01
+   Sink 0x20019110 is ready to sync without encryption
    uart:~$ bap sync_broadcast 0x01
+
+Syncing to encrypted broadcast
+------------------------------
+
+If the broadcast is encrypted, the broadcast code can be entered with the :code:`bap sync_broadcast`
+command as such:
+
+.. code-block:: console
+
+   Sink 0x20019110 is ready to sync with encryption
+   uart:~$ bap sync_broadcast 0x01 bcode 0102030405060708090a0b0c0d0e0f
+
+The broadcast code can be 1-16 values, either as a string or a hexadecimal value.
+
+.. code-block:: console
+
+   Sink 0x20019110 is ready to sync with encryption
+   uart:~$ bap sync_broadcast 0x01 bcode_str thisismycode
 
 Stop and release a broadcast sink stream:
 

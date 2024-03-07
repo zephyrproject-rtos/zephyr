@@ -5,4 +5,4 @@ tests:
     harness: ztest
     filter: dt_alias_exists("dmic-dev")
     integration_platforms:
-      - mimxrt595_evk_cm33
+      - mimxrt595_evk/mimxrt595s/cm33

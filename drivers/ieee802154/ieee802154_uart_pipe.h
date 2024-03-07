@@ -20,7 +20,7 @@ struct upipe_context {
 	bool rx;
 	uint8_t rx_len;
 	uint8_t rx_off;
-	uint8_t rx_buf[127];
+	uint8_t rx_buf[IEEE802154_MAX_PHY_PACKET_SIZE];
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_UART_PIPE_H_ */

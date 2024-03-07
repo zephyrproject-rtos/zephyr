@@ -141,6 +141,10 @@ int can_sja1000_get_capabilities(const struct device *dev, can_mode_t *cap)
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY |
 	       CAN_MODE_ONE_SHOT | CAN_MODE_3_SAMPLES;
 
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		*cap |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
 	return 0;
 }
 
@@ -213,12 +217,17 @@ int can_sja1000_stop(const struct device *dev)
 
 int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 {
+	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT |
+		CAN_MODE_3_SAMPLES;
 	struct can_sja1000_data *data = dev->data;
 	uint8_t btr1;
 	uint8_t mod;
 
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT |
-		      CAN_MODE_3_SAMPLES)) != 0) {
+	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
+		supported |= CAN_MODE_MANUAL_RECOVERY;
+	}
+
+	if ((mode & ~(supported)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -464,7 +473,7 @@ void can_sja1000_remove_rx_filter(const struct device *dev, int filter_id)
 	}
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 int can_sja1000_recover(const struct device *dev, k_timeout_t timeout)
 {
 	struct can_sja1000_data *data = dev->data;
@@ -474,6 +483,10 @@ int can_sja1000_recover(const struct device *dev, k_timeout_t timeout)
 
 	if (!data->common.started) {
 		return -ENETDOWN;
+	}
+
+	if ((data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		return -ENOTSUP;
 	}
 
 	sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
@@ -509,7 +522,7 @@ int can_sja1000_recover(const struct device *dev, k_timeout_t timeout)
 
 	return 0;
 }
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 			  struct can_bus_err_cnt *err_cnt)
@@ -659,11 +672,11 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 	if ((sr & CAN_SJA1000_SR_BS) != 0) {
 		data->state = CAN_STATE_BUS_OFF;
 		can_sja1000_tx_done(dev, -ENETUNREACH);
-#ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-		if (data->common.started) {
+
+		if (data->common.started &&
+			(data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
 			can_sja1000_leave_reset_mode_nowait(dev);
 		}
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	} else if ((sr & CAN_SJA1000_SR_ES) != 0) {
 		data->state = CAN_STATE_ERROR_WARNING;
 	} else {
@@ -770,26 +783,14 @@ int can_sja1000_init(const struct device *dev)
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
 
-	if (config->common.sample_point != 0) {
-		err = can_calc_timing(dev, &timing, config->common.bus_speed,
-				      config->common.sample_point);
-		if (err == -EINVAL) {
-			LOG_ERR("bitrate/sample point cannot be met (err %d)", err);
-			return err;
-		}
-
-		LOG_DBG("initial sample point error: %d", err);
-	} else {
-		timing.sjw = config->sjw;
-		timing.prop_seg = 0;
-		timing.phase_seg1 = config->phase_seg1;
-		timing.phase_seg2 = config->phase_seg2;
-
-		err = can_calc_prescaler(dev, &timing, config->common.bus_speed);
-		if (err != 0) {
-			LOG_WRN("initial bitrate error: %d", err);
-		}
+	err = can_calc_timing(dev, &timing, config->common.bus_speed,
+			      config->common.sample_point);
+	if (err == -EINVAL) {
+		LOG_ERR("bitrate/sample point cannot be met (err %d)", err);
+		return err;
 	}
+
+	LOG_DBG("initial sample point error: %d", err);
 
 	/* Configure timing */
 	err = can_set_timing(dev, &timing);

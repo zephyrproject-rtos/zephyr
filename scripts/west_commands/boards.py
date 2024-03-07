@@ -49,6 +49,7 @@ class Boards(WestCommand):
             The following arguments are available:
 
             - name: board name
+            - identifiers: board identifiers
             - arch: board architecture
             - dir: directory that contains the board definition
             '''))
@@ -72,6 +73,7 @@ class Boards(WestCommand):
             name_re = None
 
         args.arch_roots = [ZEPHYR_BASE]
+        args.soc_roots = [ZEPHYR_BASE]
         modules_board_roots = [ZEPHYR_BASE]
 
         for module in zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest):
@@ -85,4 +87,10 @@ class Boards(WestCommand):
             if name_re is not None and not name_re.search(board.name):
                 continue
             log.inf(args.format.format(name=board.name, arch=board.arch,
-                                       dir=board.dir))
+                                       dir=board.dir, hwm=board.hwm, identifiers=''))
+
+        for board in list_boards.find_v2_boards(args):
+            if name_re is not None and not name_re.search(board.name):
+                continue
+            log.inf(args.format.format(name=board.name, dir=board.dir, hwm=board.hwm,
+                                       identifiers=list_boards.board_v2_identifiers_csv(board)))

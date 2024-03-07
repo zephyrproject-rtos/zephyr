@@ -1,0 +1,11 @@
+# ST STM32H725X MCU configuration options
+
+# Copyright (c) 2021 Esco Medical ApS
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H725XX
+
+config NUM_IRQS
+	default 163
+
+endif # SOC_STM32H725XX

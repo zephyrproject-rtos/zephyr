@@ -15,6 +15,6 @@ tests:
     filter: not CONFIG_SMP
     integration_platforms:
       - qemu_x86
-      - mps2_an385
+      - mps2/an385
     platform_exclude:
       - mr_canhubk3

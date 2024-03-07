@@ -25,7 +25,7 @@ The application will build only for a target that has a :ref:`devicetree <dt-gui
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

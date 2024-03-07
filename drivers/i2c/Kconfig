@@ -56,8 +56,33 @@ config I2C_CALLBACK
 
 config I2C_RTIO
 	bool "I2C RTIO API"
+	select RTIO
 	help
 	  API and implementations of I2C for RTIO
+
+if I2C_RTIO
+config I2C_RTIO_SQ_SIZE
+	int "Submission queue size for blocking calls"
+	default 4
+	help
+	  Blocking i2c calls when I2C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i2c_msg
+	  structs that may be in the array given to i2c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+config I2C_RTIO_CQ_SIZE
+	int "Completion queue size for blocking calls"
+	default 4
+	help
+	  Blocking i2c calls when I2C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i2c_msg
+	  structs that may be in the array given to i2c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+endif # I2C_RTIO
+
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)

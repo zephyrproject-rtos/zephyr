@@ -1,8 +1,0 @@
-# Kinetis K80F25615 configuration options
-
-# Copyright (c) 2019 SEAL AG
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC
-	default "mk80f25615"
-	depends on SOC_MK80F25615

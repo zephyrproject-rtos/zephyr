@@ -62,9 +62,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 	__ASSERT(type == BT_BUF_EVT || type == BT_BUF_ACL_IN ||
 		 type == BT_BUF_ISO_IN, "Invalid buffer type requested");
 
-	if ((IS_ENABLED(CONFIG_BT_ISO_UNICAST) ||
-	     IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) &&
-	     type == BT_BUF_ISO_IN) {
+	if (IS_ENABLED(CONFIG_BT_ISO_RX) && type == BT_BUF_ISO_IN) {
 		return bt_iso_get_rx(timeout);
 	}
 

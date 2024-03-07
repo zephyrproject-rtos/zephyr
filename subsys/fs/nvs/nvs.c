@@ -237,18 +237,24 @@ static int nvs_flash_cmp_const(struct nvs_fs *fs, uint32_t addr, uint8_t value,
 {
 	int rc;
 	size_t bytes_to_cmp, block_size;
-	uint8_t cmp[NVS_BLOCK_SIZE];
+	uint8_t buf[NVS_BLOCK_SIZE];
 
 	block_size =
 		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
 
-	(void)memset(cmp, value, block_size);
 	while (len) {
 		bytes_to_cmp = MIN(block_size, len);
-		rc = nvs_flash_block_cmp(fs, addr, cmp, bytes_to_cmp);
+		rc = nvs_flash_rd(fs, addr, buf, bytes_to_cmp);
 		if (rc) {
 			return rc;
 		}
+
+		for (size_t i = 0; i < bytes_to_cmp; i++) {
+			if (buf[i] != value) {
+				return 1;
+			}
+		}
+
 		len -= bytes_to_cmp;
 		addr += bytes_to_cmp;
 	}

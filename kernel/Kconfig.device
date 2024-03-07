@@ -1,0 +1,63 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2024 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+menu "Device Options"
+
+config DEVICE_DEPS
+	bool "Store device dependencies"
+	help
+	  When enabled, device dependencies will be stored so that they can be
+	  queried at runtime. Device dependencies are typically inferred from
+	  devicetree. Enabling this option will increase ROM usage (or RAM if
+	  dynamic device dependencies are enabled).
+
+config DEVICE_DEPS_DYNAMIC
+	bool "Dynamic device dependencies"
+	depends on DEVICE_DEPS
+	help
+	  Option that makes it possible to manipulate device dependencies at
+	  runtime.
+
+config DEVICE_MUTABLE
+	bool "Mutable devices [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Support mutable devices. Mutable devices are instantiated in SRAM
+	  instead of Flash and are runtime modifiable in kernel mode.
+
+endmenu
+
+menu "Initialization Priorities"
+
+config KERNEL_INIT_PRIORITY_OBJECTS
+	int "Kernel objects initialization priority"
+	default 30
+	help
+	  Kernel objects use this priority for initialization. This
+	  priority needs to be higher than minimal default initialization
+	  priority.
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	int "Default init priority"
+	default 40
+	help
+	  Default minimal init priority for each init level.
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	int "Default init priority for device drivers"
+	default 50
+	help
+	  Device driver, that depends on common components, such as
+	  interrupt controller, but does not depend on other devices,
+	  uses this init priority.
+
+config APPLICATION_INIT_PRIORITY
+	int "Default init priority for application level drivers"
+	default 90
+	help
+	  This priority level is for end-user drivers such as sensors and display
+	  which have no inward dependencies.
+
+
+endmenu

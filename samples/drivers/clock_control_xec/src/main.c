@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(clock32k, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #include <soc.h>
 
-#ifdef CONFIG_SOC_SERIES_MEC1501X
+#ifdef CONFIG_SOC_SERIES_MEC15XX
 static void pcr_clock_regs(void)
 {
 	struct pcr_regs *pcr = ((struct pcr_regs *)DT_REG_ADDR_BY_IDX(DT_NODELABEL(pcr), 0));

@@ -46,6 +46,14 @@ config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 	  DHCPv4 request message. The options are added using the
 	  net_dhcpv4_add_option_callback() API.
 
+config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+	bool "Encapsulated vendor specific option callbacks"
+	depends on NET_DHCPV4
+	select NET_DHCPV4_OPTION_CALLBACKS
+	help
+	  If set, custom callbacks for encapsulated vendor-specific
+	  information in DHCP option 43 can be added.
+
 config NET_DHCPV4_ACCEPT_UNICAST
 	bool "Accept unicast DHCPv4 traffic"
 	depends on NET_DHCPV4
@@ -68,6 +76,14 @@ config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING
 	help
 	  The string to include in the DHCPv4 vendor class identifier option
 	  in the DHCPv4 request.
+
+config NET_DHCPV4_OPTION_NTP_SERVER
+	bool "Use NTP server from DHCPv4 option and save it in the net_if"
+	default y
+	depends on SNTP
+	help
+	  If this option is set, then the NTP server can be set from the
+	  DHCPv4 option.
 
 endif # NET_DHCPV4
 

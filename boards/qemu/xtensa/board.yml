@@ -1,0 +1,7 @@
+board:
+  name: qemu_xtensa
+  vendor: cdns
+  socs:
+  - name: dc233c
+    variants:
+    - name: mmu

@@ -7,8 +7,8 @@ tests:
     build_only: true
     platform_allow:
       - stm32mp157c_dk2
-      - nxp_adsp_imx8m
+      - imx8mp_evk/mimx8ml8/adsp
     integration_platforms:
       - stm32mp157c_dk2
-      - nxp_adsp_imx8m
+      - imx8mp_evk/mimx8ml8/adsp
     tags: ipm

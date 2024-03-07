@@ -1,0 +1,38 @@
+# NXP S32K3XX MCU series
+
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_S32K3
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 2000000
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 239
+
+config FPU
+	default y
+
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
+if NET_L2_ETHERNET
+
+config NET_TCP_CHECKSUM
+	default n
+
+config NET_UDP_CHECKSUM
+	default n
+
+endif # NET_L2_ETHERNET
+
+config CACHE_MANAGEMENT
+	default y
+
+endif # SOC_SERIES_S32K3

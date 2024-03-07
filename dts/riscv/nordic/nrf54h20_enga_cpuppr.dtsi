@@ -8,6 +8,7 @@
 
 cpu: &cpuppr {};
 clic: &cpuppr_clic {};
+cpuppr_vevif: &cpuppr_vevif_local {};
 
 /delete-node/ &cpuapp;
 /delete-node/ &cpuapp_peripherals;
@@ -24,6 +25,18 @@ clic: &cpuppr_clic {};
 		interrupt-parent = <&cpuppr_clic>;
 		ranges;
 	};
+};
+
+&cpusec_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&cpuapp_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&cpurad_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
 };
 
 &gpiote130 {

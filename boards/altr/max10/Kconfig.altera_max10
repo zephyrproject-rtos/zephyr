@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2018 Intel
+
+config BOARD_ALTERA_MAX10
+	select SOC_ZEPHYR_NIOS2F

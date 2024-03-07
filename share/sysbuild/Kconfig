@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "Kconfig.$(HWM_SCHEME)"
+
 comment "Sysbuild image configuration"
 
 osource "$(BOARD_DIR)/Kconfig.sysbuild"

@@ -1,0 +1,5 @@
+board:
+  name: nucleo_u575zi_q
+  vendor: st
+  socs:
+    - name: stm32u575xx

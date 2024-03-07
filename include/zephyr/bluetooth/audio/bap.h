@@ -400,6 +400,9 @@ struct bt_bap_ep_info {
 	/** @brief True if the stream associated with the endpoint is able to send data */
 	bool can_send;
 
+	/** @brief True if the stream associated with the endpoint is able to receive data */
+	bool can_recv;
+
 	/** Pointer to paired endpoint if the endpoint is part of a bidirectional CIS,
 	 *  otherwise NULL
 	 */
@@ -1811,9 +1814,9 @@ struct bt_bap_broadcast_sink_cb {
 	 *  bt_bap_broadcast_sink_sync() to synchronize to the audio stream(s).
 	 *
 	 *  @param sink          Pointer to the sink structure.
-	 *  @param encrypted     Whether or not the broadcast is encrypted
+	 *  @param biginfo       The BIGInfo report.
 	 */
-	void (*syncable)(struct bt_bap_broadcast_sink *sink, bool encrypted);
+	void (*syncable)(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo);
 
 	/* Internally used list node */
 	sys_snode_t _node;
@@ -2147,6 +2150,8 @@ struct bt_bap_broadcast_assistant_cb {
 	 * @param err     Error value. 0 on success, GATT error on fail.
 	 */
 	void (*rem_src)(struct bt_conn *conn, int err);
+
+	sys_snode_t _node;
 };
 
 /**
@@ -2190,8 +2195,26 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn);
 
 /**
  * @brief Registers the callbacks used by Broadcast Audio Scan Service client.
+ *
+ * @param cb	The callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was already registered
  */
-void bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb);
+int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb);
+
+/**
+ * @brief Unregisters the callbacks used by the Broadcast Audio Scan Service client.
+ *
+ * @param cb   The callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was not registered
+ */
+int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb);
+
 
 /** Parameters for adding a source to a Broadcast Audio Scan Service server */
 struct bt_bap_broadcast_assistant_add_src_param {

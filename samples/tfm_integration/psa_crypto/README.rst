@@ -84,14 +84,14 @@ On MPS2+ AN521:
 ===============
 
 1. Build Zephyr with a non-secure configuration
-   (``-DBOARD=mps2_an521_ns``).
+   (``-DBOARD=mps2/an521/cpu0/ns``).
 
    Using ``west``
 
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_ns samples/tfm_integration/psa_crypto
+      west build -p -b mps2/an521/cpu0/ns samples/tfm_integration/psa_crypto
 
    Using ``cmake`` and ``ninja``
 
@@ -100,7 +100,7 @@ On MPS2+ AN521:
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=mps2_an521_ns ..
+      cmake -GNinja -DBOARD=mps2/an521/cpu0/ns ..
       ninja
 
    Using ``cmake`` and ``make``
@@ -110,7 +110,7 @@ On MPS2+ AN521:
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -DBOARD=mps2_an521_ns ..
+      cmake -DBOARD=mps2/an521/cpu0/ns ..
       make
 
 2. Copy application binary files (mcuboot.bin and tfm_sign.bin) to
@@ -137,7 +137,7 @@ On MPS2+ AN521:
 On QEMU:
 ========
 
-Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_ns``)
+Build Zephyr with a non-secure configuration (``-DBOARD=mps2/an521/cpu0/ns``)
 and run it in qemu via the ``run`` command.
 
    Using ``west``
@@ -145,7 +145,7 @@ and run it in qemu via the ``run`` command.
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_ns samples/tfm_integration/psa_crypto -t run
+      west build -p -b mps2/an521/cpu0/ns samples/tfm_integration/psa_crypto -t run
 
    Using ``cmake`` and ``ninja``
 
@@ -154,7 +154,7 @@ and run it in qemu via the ``run`` command.
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=mps2_an521_ns ..
+      cmake -GNinja -DBOARD=mps2/an521/cpu0/ns ..
       ninja run
 
    Using ``cmake`` and ``make``
@@ -164,7 +164,7 @@ and run it in qemu via the ``run`` command.
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -DBOARD=mps2_an521_ns ..
+      cmake -DBOARD=mps2/an521/cpu0/ns ..
       make run
 
 On LPCxpresso55S69:
@@ -198,7 +198,7 @@ On nRF5340 and nRF9160:
 =======================
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns`` or ``-DBOARD=nrf9160dk_nrf9160_ns``).
+(``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns`` or ``-DBOARD=nrf9160dk/nrf9160/ns``).
 
    Example, for nRF9160, using ``cmake`` and ``ninja``
 
@@ -207,7 +207,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=nrf9160dk_nrf9160_ns ..
+      cmake -GNinja -DBOARD=nrf9160dk/nrf9160/ns ..
 
 If building with BL2 (MCUboot bootloader) enabled, manually flash
 the MCUboot bootloader image binary (``bl2.hex``).
@@ -230,7 +230,7 @@ On BL5340:
 ==========
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=bl5340_dvk_cpuapp_ns``).
+(``-DBOARD=bl5340_dvk/nrf5340/cpuapp/ns``).
 
    Example using ``cmake`` and ``ninja``
 
@@ -239,7 +239,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=bl5340_dvk_cpuapp_ns ..
+      cmake -GNinja -DBOARD=bl5340_dvk/nrf5340/cpuapp/ns ..
 
 Flash the concatenated TF-M + Zephyr binary.
 

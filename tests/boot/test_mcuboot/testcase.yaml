@@ -20,7 +20,7 @@ tests:
       - lpcxpresso55s16
       - lpcxpresso55s28
       - lpcxpresso55s36
-      - lpcxpresso55s69_cpu0
+      - lpcxpresso55s69/lpc55s69/cpu0
       - mimxrt1010_evk
       - mimxrt1015_evk
       - mimxrt1020_evk
@@ -29,14 +29,14 @@ tests:
       - mimxrt1050_evk
       - mimxrt1060_evk
       - mimxrt1064_evk
-      - mimxrt1160_evk_cm7
-      - mimxrt1170_evk_cm7
-      - mimxrt595_evk_cm33
-      - mimxrt685_evk_cm33
-      - nrf52840dk_nrf52840
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk
+      - nrf52840dk/nrf52840
     integration_platforms:
       - frdm_k64f
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   bootloader.mcuboot.assert:
     tags: mcuboot
     platform_allow:

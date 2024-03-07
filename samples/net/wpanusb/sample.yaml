@@ -9,8 +9,8 @@ common:
 tests:
   sample.net.wpanusb:
     filter: dt_chosen_enabled("zephyr,ieee802154")
-    platform_exclude: thingy53_nrf5340_cpuapp_ns raytac_mdbt53_db_40_nrf5340_cpuapp_ns
-                      raytac_mdbt53_db_40_nrf5340_cpuapp
+    platform_exclude: thingy53/nrf5340/cpuapp/ns raytac_mdbt53_db_40/nrf5340/cpuapp/ns
+                      raytac_mdbt53_db_40/nrf5340/cpuapp
   sample.net.wpanusb_frdm_cr20a:
     extra_args: SHIELD=frdm_cr20a
     platform_allow: frdm_k64f

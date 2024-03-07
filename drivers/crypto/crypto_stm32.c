@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(crypto_stm32);
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
 static int copy_reverse_words(uint8_t *dst_buf, int dst_len,
-			      uint8_t *src_buf, int src_len)
+			      const uint8_t *src_buf, int src_len)
 {
 	int i;
 

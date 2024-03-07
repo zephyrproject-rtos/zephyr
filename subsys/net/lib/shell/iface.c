@@ -54,9 +54,8 @@ static void print_supported_ethernet_capabilities(
 	const struct shell *sh, struct net_if *iface)
 {
 	enum ethernet_hw_caps caps = net_eth_get_hw_capabilities(iface);
-	int i;
 
-	for (i = 0; i < ARRAY_SIZE(eth_hw_caps); i++) {
+	ARRAY_FOR_EACH(eth_hw_caps, i) {
 		if (caps & eth_hw_caps[i].capability) {
 			PR("\t%s\n", eth_hw_caps[i].description);
 		}
@@ -149,8 +148,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	int ret;
 #endif
 	const char *extra;
-#if defined(CONFIG_NET_IP)
-	int i, count;
+#if defined(CONFIG_NET_IP) || defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	int count;
 #endif
 
 	if (data->user_data && data->user_data != iface) {
@@ -257,7 +256,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		if (!ret && params.priority_queues_num) {
 			count = params.priority_queues_num;
 			PR("Priority queues:\n");
-			for (i = 0; i < count; ++i) {
+			for (int i = 0; i < count; ++i) {
 				params.qav_param.queue_id = i;
 				params.qav_param.type =
 					ETHERNET_QAV_PARAM_TYPE_STATUS;
@@ -290,7 +289,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		eth_ctx = net_if_l2_data(iface);
 
 		if (eth_ctx->vlan_enabled) {
-			for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
+			for (int i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
 				if (eth_ctx->vlan[i].iface != iface ||
 				    eth_ctx->vlan[i].tag ==
 							NET_VLAN_TAG_UNSPEC) {
@@ -316,17 +315,16 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 #if defined(CONFIG_NET_IPV6)
 	count = 0;
+	ipv6 = iface->config.ip.ipv6;
 
-	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6) || ipv6 == NULL) {
 		PR("%s not %s for this interface.\n", "IPv6", "enabled");
 		ipv6 = NULL;
 		goto skip_ipv6;
 	}
 
-	ipv6 = iface->config.ip.ipv6;
-
 	PR("IPv6 unicast addresses (max %d):\n", NET_IF_MAX_IPV6_ADDR);
-	for (i = 0; ipv6 && i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		unicast = &ipv6->unicast[i];
 
 		if (!unicast->is_used) {
@@ -349,7 +347,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	count = 0;
 
 	PR("IPv6 multicast addresses (max %d):\n", NET_IF_MAX_IPV6_MADDR);
-	for (i = 0; ipv6 && i < NET_IF_MAX_IPV6_MADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
 		mcast = &ipv6->mcast[i];
 
 		if (!mcast->is_used) {
@@ -368,7 +366,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	count = 0;
 
 	PR("IPv6 prefixes (max %d):\n", NET_IF_MAX_IPV6_PREFIX);
-	for (i = 0; ipv6 && i < NET_IF_MAX_IPV6_PREFIX; i++) {
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
 		prefix = &ipv6->prefix[i];
 
 		if (!prefix->is_used) {
@@ -426,25 +424,26 @@ skip_ipv6:
 	}
 
 	count = 0;
+	ipv4 = iface->config.ip.ipv4;
 
-	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+	if (!net_if_flag_is_set(iface, NET_IF_IPV4) || ipv4 == NULL) {
 		PR("%s not %s for this interface.\n", "IPv4", "enabled");
 		ipv4 = NULL;
 		goto skip_ipv4;
 	}
 
-	ipv4 = iface->config.ip.ipv4;
-
 	PR("IPv4 unicast addresses (max %d):\n", NET_IF_MAX_IPV4_ADDR);
-	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_ADDR; i++) {
-		unicast = &ipv4->unicast[i];
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		unicast = &ipv4->unicast[i].ipv4;
 
 		if (!unicast->is_used) {
 			continue;
 		}
 
-		PR("\t%s %s %s%s\n",
+		PR("\t%s/%s %s %s%s\n",
 		   net_sprint_ipv4_addr(&unicast->address.in_addr),
+		   net_sprint_ipv4_addr(&ipv4->unicast[i].netmask),
+
 		   addrtype2str(unicast->addr_type),
 		   addrstate2str(unicast->addr_state),
 		   unicast->is_infinite ? " infinite" : "");
@@ -459,7 +458,7 @@ skip_ipv6:
 	count = 0;
 
 	PR("IPv4 multicast addresses (max %d):\n", NET_IF_MAX_IPV4_MADDR);
-	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_MADDR; i++) {
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
 		mcast = &ipv4->mcast[i];
 
 		if (!mcast->is_used) {
@@ -480,8 +479,6 @@ skip_ipv4:
 	if (ipv4) {
 		PR("IPv4 gateway : %s\n",
 		   net_sprint_ipv4_addr(&ipv4->gw));
-		PR("IPv4 netmask : %s\n",
-		   net_sprint_ipv4_addr(&ipv4->netmask));
 	}
 #endif /* CONFIG_NET_IPV4 */
 

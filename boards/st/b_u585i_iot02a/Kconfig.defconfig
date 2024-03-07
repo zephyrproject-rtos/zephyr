@@ -1,0 +1,31 @@
+# B_U585I_IOT02A discovery kit board configuration
+
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_B_U585I_IOT02A
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+if BUILD_WITH_TFM
+
+# Initial Attestation key provisioned by the BL1 bootloader
+config TFM_INITIAL_ATTESTATION_KEY
+	default y
+
+config TFM_DUMMY_PROVISIONING
+	default n
+
+endif # BUILD_WITH_TFM
+
+# Disable Flow control
+if BT
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
+endif # BOARD_B_U585I_IOT02A

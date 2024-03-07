@@ -54,7 +54,7 @@ Set ``-DSHIELD=st7735r_ada_160x128`` when you invoke ``west build``. For example
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: st7735r_ada_160x128
    :goals: build
 

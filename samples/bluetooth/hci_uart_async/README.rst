@@ -47,7 +47,7 @@ For example, to build for the nRF52832 Development Kit:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/hci_uart_async
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :goals: build flash
 
 .. _bluetooth-hci-uart-async-qemu-posix:

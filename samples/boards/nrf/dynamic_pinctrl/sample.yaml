@@ -4,6 +4,6 @@ sample:
 tests:
   sample.boards.nrf.dynamic_pinctrl:
     build_only: true
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840

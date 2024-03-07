@@ -33,8 +33,7 @@ The following :ref:`Kconfig <kconfig>` options enable additional subcommands and
 * :kconfig:option:`CONFIG_CAN_STATS` enables printing of various statistics for the CAN controller
   in the ``can show`` subcommand. This depends on :kconfig:option:`CONFIG_STATS` being enabled as
   well.
-* :kconfig:option:`CONFIG_CAN_AUTO_BUS_OFF_RECOVERY` enables the ``can recover`` subcommand when
-  disabled.
+* :kconfig:option:`CONFIG_CAN_MANUAL_RECOVERY_MODE` enables the ``can recover`` subcommand.
 
 For example, building the :ref:`hello_world` sample for the :ref:`frdm_k64f` with the CAN shell and
 CAN statistics enabled:
@@ -253,8 +252,8 @@ details on the supported arguments.
 Bus Recovery
 ************
 
-The ``can recover`` subcommand can be used for initiating recovery from a CAN bus-off event as shown
-below:
+The ``can recover`` subcommand can be used for initiating manual recovery from a CAN bus-off event
+as shown below:
 
 .. code-block:: console
 
@@ -265,5 +264,5 @@ The subcommand accepts an optional bus recovery timeout in milliseconds. If no t
 the command will wait indefinitely for the bus recovery to succeed.
 
 .. note::
-   The ``recover`` subcommand is only available if
-   :kconfig:option:`CONFIG_CAN_AUTO_BUS_OFF_RECOVERY` is disabled.
+   The ``recover`` subcommand is only available if :kconfig:option:`CONFIG_CAN_MANUAL_RECOVERY_MODE`
+   is enabled.

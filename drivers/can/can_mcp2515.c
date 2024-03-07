@@ -17,23 +17,6 @@ LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 
 #include "can_mcp2515.h"
 
-#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
-
-/* Macro to exclude the sample point algorithm from compilation if not used
- * Without the macro, the algorithm would always waste ROM
- */
-#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
-
-#define SP_AND_TIMING_NOT_SET(inst) \
-	(!DT_INST_NODE_HAS_PROP(inst, sample_point) && \
-	!(DT_INST_NODE_HAS_PROP(inst, prop_seg) && \
-	DT_INST_NODE_HAS_PROP(inst, phase_seg1) && \
-	DT_INST_NODE_HAS_PROP(inst, phase_seg2))) ||
-
-#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_NOT_SET) 0
-#error You must either set a sampling-point or timings (phase-seg* and prop-seg)
-#endif
-
 /* Timeout for changing mode */
 #define MCP2515_MODE_CHANGE_TIMEOUT_USEC 1000
 #define MCP2515_MODE_CHANGE_RETRIES      100
@@ -806,21 +789,6 @@ static void mcp2515_handle_errors(const struct device *dev)
 	}
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int mcp2515_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct mcp2515_data *dev_data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!dev_data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return -ENOTSUP;
-}
-#endif
-
 static void mcp2515_handle_interrupts(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
@@ -921,9 +889,6 @@ static const struct can_driver_api can_api_funcs = {
 	.add_rx_filter = mcp2515_add_rx_filter,
 	.remove_rx_filter = mcp2515_remove_rx_filter,
 	.get_state = mcp2515_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = mcp2515_recover,
-#endif
 	.set_state_change_callback = mcp2515_set_state_change_callback,
 	.get_core_clock = mcp2515_get_core_clock,
 	.get_max_filters = mcp2515_get_max_filters,
@@ -1009,26 +974,16 @@ static int mcp2515_init(const struct device *dev)
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
 	dev_data->old_state = CAN_STATE_ERROR_ACTIVE;
 
-	if (dev_cfg->common.sample_point && USE_SP_ALGO) {
-		ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
-				      dev_cfg->common.sample_point);
-		if (ret == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		LOG_DBG("Presc: %d, BS1: %d, BS2: %d",
-			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
-		LOG_DBG("Sample-point err : %d", ret);
-	} else {
-		timing.sjw = dev_cfg->tq_sjw;
-		timing.prop_seg = dev_cfg->tq_prop;
-		timing.phase_seg1 = dev_cfg->tq_bs1;
-		timing.phase_seg2 = dev_cfg->tq_bs2;
-		ret = can_calc_prescaler(dev, &timing, dev_cfg->common.bus_speed);
-		if (ret) {
-			LOG_WRN("Bitrate error: %d", ret);
-		}
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+			      dev_cfg->common.sample_point);
+	if (ret == -EINVAL) {
+		LOG_ERR("Can't find timing for given param");
+		return -EIO;
 	}
+
+	LOG_DBG("Presc: %d, BS1: %d, BS2: %d",
+		timing.prescaler, timing.phase_seg1, timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", ret);
 
 	k_usleep(MCP2515_OSC_STARTUP_US);
 
@@ -1058,14 +1013,10 @@ static int mcp2515_init(const struct device *dev)
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,                 \
 		.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,                         \
-		.tq_sjw = DT_INST_PROP(inst, sjw),                                                 \
-		.tq_prop = DT_INST_PROP_OR(inst, prop_seg, 0),                                     \
-		.tq_bs1 = DT_INST_PROP_OR(inst, phase_seg1, 0),                                    \
-		.tq_bs2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                                    \
 		.osc_freq = DT_INST_PROP(inst, osc_freq),                                          \
 	};                                                                                         \
                                                                                                    \
-	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                 \
+	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                  \
 				  &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
 				  &can_api_funcs);
 

@@ -3,6 +3,6 @@ sample:
   name: LP5562 sample
 tests:
   sample.drivers.led.lp5562:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     tags: led
     harness: TBD

@@ -12,49 +12,40 @@
 
 static K_SEM_DEFINE(g_mbox_data_rx_sem, 0, 1);
 
-static uint32_t g_mbox_received_data;
-static uint32_t g_mbox_received_channel;
+static mbox_channel_id_t g_mbox_received_data;
+static mbox_channel_id_t g_mbox_received_channel;
 
-#define TX_ID (3)
-#define RX_ID (2)
-
-static void callback(const struct device *dev, uint32_t channel, void *user_data,
+static void callback(const struct device *dev, mbox_channel_id_t channel_id, void *user_data,
 		     struct mbox_msg *data)
 {
 	memcpy(&g_mbox_received_data, data->data, data->size);
-	g_mbox_received_channel = channel;
+	g_mbox_received_channel = channel_id;
 
 	k_sem_give(&g_mbox_data_rx_sem);
 }
 
 int main(void)
 {
-	struct mbox_channel tx_channel;
-	struct mbox_channel rx_channel;
-	const struct device *dev;
+	const struct mbox_dt_spec tx_channel = MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx);
+	const struct mbox_dt_spec rx_channel = MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx);
 	struct mbox_msg msg = {0};
 	uint32_t message = 0;
 
 	printk("mbox_data Client demo started\n");
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(mbox));
-
-	mbox_init_channel(&tx_channel, dev, TX_ID);
-	mbox_init_channel(&rx_channel, dev, RX_ID);
-
-	const int max_transfer_size_bytes = mbox_mtu_get(dev);
+	const int max_transfer_size_bytes = mbox_mtu_get_dt(&tx_channel);
 	/* Sample currently supports only transfer size up to 4 bytes */
 	if ((max_transfer_size_bytes < 0) || (max_transfer_size_bytes > 4)) {
 		printk("mbox_mtu_get() error\n");
 		return 0;
 	}
 
-	if (mbox_register_callback(&rx_channel, callback, NULL)) {
+	if (mbox_register_callback_dt(&rx_channel, callback, NULL)) {
 		printk("mbox_register_callback() error\n");
 		return 0;
 	}
 
-	if (mbox_set_enabled(&rx_channel, 1)) {
+	if (mbox_set_enabled_dt(&rx_channel, 1)) {
 		printk("mbox_set_enable() error\n");
 		return 0;
 	}
@@ -63,8 +54,8 @@ int main(void)
 		msg.data = &message;
 		msg.size = max_transfer_size_bytes;
 
-		printk("Client send (on channel %d) value: %d\n", tx_channel.id, message);
-		if (mbox_send(&tx_channel, &msg) < 0) {
+		printk("Client send (on channel %d) value: %d\n", tx_channel.channel_id, message);
+		if (mbox_send_dt(&tx_channel, &msg) < 0) {
 			printk("mbox_send() error\n");
 			return 0;
 		}

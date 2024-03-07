@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2022, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt595_evk/mimxrt595s/cm33
+name: NXP MIMXRT595-EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 4608
+flash: 65536
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - spi
+  - usb_device
+  - watchdog
+  - sdhc
+  - pwm
+  - i2s
+  - dmic
+vendor: nxp

@@ -26,9 +26,9 @@ tests:
       - arduino_i2c
       - arduino_spi
     platform_exclude:
-      - ubx_evkannab1_nrf52832
-      - sam_v71_xult
-      - sam_v71b_xult
+      - ubx_evkannab1/nrf52832
+      - sam_v71_xult/samv71q21
+      - sam_v71_xult/samv71q21b
       - pan1781_evb
       - pan1782_evb
       - pan1770_evb

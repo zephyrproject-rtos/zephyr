@@ -11,7 +11,7 @@ tests:
       - native_posix_64
       - native_sim
       - native_sim_64
-      - qemu_riscv32_smp
+      - qemu_riscv32/qemu_virt_riscv32/smp
       - qemu_riscv64
     tags:
       - cb_notifications

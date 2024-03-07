@@ -1,0 +1,39 @@
+family:
+- name: nordic_nrf
+  series:
+  - name: nrf51
+    socs:
+    - name: nrf51822
+  - name: nrf52
+    socs:
+    - name: nrf52805
+    - name: nrf52810
+    - name: nrf52811
+    - name: nrf52820
+    - name: nrf52832
+    - name: nrf52833
+    - name: nrf52840
+  - name: nrf53
+    socs:
+    - name: nrf5340
+      cpuclusters:
+      - name: cpuapp
+      - name: cpunet
+  - name: nrf54l
+    socs:
+    - name: nrf54l15
+      cpuclusters:
+      - name: cpuapp
+  - name: nrf54h
+    socs:
+    - name: nrf54h20
+      cpuclusters:
+      - name: cpuapp
+      - name: cpurad
+      - name: cpuppr
+  - name: nrf91
+    socs:
+    - name: nrf9131
+    - name: nrf9151
+    - name: nrf9160
+    - name: nrf9161

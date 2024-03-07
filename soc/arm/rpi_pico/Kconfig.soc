@@ -1,6 +1,0 @@
-# Raspberry Pi (RP) MCU line
-
-# Copyright (c) 2021 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-source "soc/arm/rpi_pico/*/Kconfig.series"

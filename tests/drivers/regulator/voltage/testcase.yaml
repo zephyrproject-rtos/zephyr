@@ -9,7 +9,7 @@ common:
 
 tests:
   drivers.regulator.voltage.nrf52840dk_nrf52840_npm6001:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_npm6001.overlay
       - SHIELD=npm6001_ek
@@ -17,7 +17,7 @@ tests:
       fixture: npm6001_ek_to_adc
   drivers.regulator.voltage.nxp:
     platform_allow:
-      - mimxrt685_evk_cm33
+      - mimxrt685_evk
       - lpcxpresso55s36
     harness_config:
       fixture: gpio_loopback

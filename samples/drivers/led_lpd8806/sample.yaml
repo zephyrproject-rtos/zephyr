@@ -3,5 +3,5 @@ sample:
   name: LPD880x sample
 tests:
   sample.drivers.led.lpd8806:
-    platform_allow: 96b_carbon
+    platform_allow: 96b_carbon/stm32f401xe
     tags: LED

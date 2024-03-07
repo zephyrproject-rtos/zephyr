@@ -1,9 +1,0 @@
-# Copyright (c) 2023 ITE Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-if SOC_IT82302_AX
-
-config SOC
-	default "it82302ax"
-
-endif

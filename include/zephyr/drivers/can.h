@@ -89,19 +89,22 @@ extern "C" {
 #define CAN_MODE_NORMAL     0
 
 /** Controller is in loopback mode (receives own frames). */
-#define CAN_MODE_LOOPBACK   BIT(0)
+#define CAN_MODE_LOOPBACK        BIT(0)
 
 /** Controller is not allowed to send dominant bits. */
-#define CAN_MODE_LISTENONLY BIT(1)
+#define CAN_MODE_LISTENONLY      BIT(1)
 
 /** Controller allows transmitting/receiving CAN FD frames. */
-#define CAN_MODE_FD         BIT(2)
+#define CAN_MODE_FD              BIT(2)
 
 /** Controller does not retransmit in case of lost arbitration or missing ACK */
-#define CAN_MODE_ONE_SHOT   BIT(3)
+#define CAN_MODE_ONE_SHOT        BIT(3)
 
 /** Controller uses triple sampling mode */
-#define CAN_MODE_3_SAMPLES  BIT(4)
+#define CAN_MODE_3_SAMPLES       BIT(4)
+
+/** Controller requires manual recovery after entering bus-off state */
+#define CAN_MODE_MANUAL_RECOVERY BIT(5)
 
 /** @} */
 
@@ -450,7 +453,7 @@ typedef int (*can_add_rx_filter_t)(const struct device *dev,
 typedef void (*can_remove_rx_filter_t)(const struct device *dev, int filter_id);
 
 /**
- * @brief Callback API upon recovering the CAN bus
+ * @brief Optional callback API upon manually recovering the CAN controller from bus-off state
  * See @a can_recover() for argument description
  */
 typedef int (*can_recover_t)(const struct device *dev, k_timeout_t timeout);
@@ -491,9 +494,9 @@ __subsystem struct can_driver_api {
 	can_send_t send;
 	can_add_rx_filter_t add_rx_filter;
 	can_remove_rx_filter_t remove_rx_filter;
-#if !defined(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY) || defined(__DOXYGEN__)
+#if defined(CONFIG_CAN_MANUAL_RECOVERY_MODE) || defined(__DOXYGEN__)
 	can_recover_t recover;
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	can_get_state_t get_state;
 	can_set_state_change_callback_t set_state_change_callback;
 	can_get_core_clock_t get_core_clock;
@@ -868,13 +871,18 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
  * always match perfectly. If no result can be reached for the given parameters,
  * -EINVAL is returned.
  *
+ * If the sample point is set to 0, this function defaults to a sample point of 75.0%
+ * for bitrates over 800 kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for
+ * all other bitrates.
+ *
  * @note The requested ``sample_pnt`` will not always be matched perfectly. The
  * algorithm calculates the best possible match.
  *
  * @param dev        Pointer to the device structure for the driver instance.
  * @param[out] res   Result is written into the @a can_timing struct provided.
  * @param bitrate    Target bitrate in bits/s.
- * @param sample_pnt Sampling point in permill of the entire bit time.
+ * @param sample_pnt Sample point in permille of the entire bit time or 0 for
+ *                   automatic sample point location.
  *
  * @retval 0 or positive sample point error on success.
  * @retval -EINVAL if the requested bitrate or sample point is out of range.
@@ -944,7 +952,8 @@ static inline const struct can_timing *z_impl_can_get_timing_data_max(const stru
  * @param dev        Pointer to the device structure for the driver instance.
  * @param[out] res   Result is written into the @a can_timing struct provided.
  * @param bitrate    Target bitrate for the data phase in bits/s
- * @param sample_pnt Sampling point for the data phase in permille of the entire bit time.
+ * @param sample_pnt Sample point for the data phase in permille of the entire bit
+ *                   time or 0 for automatic sample point location.
  *
  * @retval 0 or positive sample point error on success.
  * @retval -EINVAL if the requested bitrate or sample point is out of range.
@@ -1013,6 +1022,10 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
  * The returned bitrate error is remainder of the division of the clock rate by
  * the bitrate times the timing segments.
  *
+ * @deprecated This function allows for bitrate errors, but bitrate errors between nodes on the same
+ *             network leads to them drifting apart after the start-of-frame (SOF) synchronization
+ *             has taken place.
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param timing  Result is written into the can_timing struct provided.
  * @param bitrate Target bitrate.
@@ -1020,8 +1033,8 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
  * @retval 0 or positive bitrate error.
  * @retval Negative error code on error.
  */
-int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
-		       uint32_t bitrate);
+__deprecated int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
+				    uint32_t bitrate);
 
 /**
  * @brief Configure the bus timing of a CAN controller.
@@ -1413,34 +1426,32 @@ static inline int z_impl_can_get_state(const struct device *dev, enum can_state 
  *
  * Recover the CAN controller from bus-off state to error-active state.
  *
- * @note @kconfig{CONFIG_CAN_AUTO_BUS_OFF_RECOVERY} must be deselected for this
+ * @note @kconfig{CONFIG_CAN_MANUAL_RECOVERY_MODE} must be enabled for this
  * function to be available.
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param timeout Timeout for waiting for the recovery or ``K_FOREVER``.
  *
  * @retval 0 on success.
+ * @retval -ENOTSUP if the CAN controller is not in manual recovery mode.
  * @retval -ENETDOWN if the CAN controller is in stopped state.
  * @retval -EAGAIN on timeout.
+ * @retval -ENOSYS If this function is not implemented by the driver.
  */
-#if !defined(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY) || defined(__DOXYGEN__)
 __syscall int can_recover(const struct device *dev, k_timeout_t timeout);
 
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
+	if (api->recover == NULL) {
+		return -ENOSYS;
+	}
+
 	return api->recover(dev, timeout);
 }
-#else /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
-/* This implementation prevents inking errors for auto recovery */
-static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeout)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(timeout);
-	return 0;
-}
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 /**
  * @brief Set a callback for CAN controller state change events

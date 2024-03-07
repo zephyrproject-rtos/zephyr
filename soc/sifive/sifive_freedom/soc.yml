@@ -1,0 +1,12 @@
+family:
+  - name: sifive_freedom
+    series:
+      - name: fe300
+        socs:
+          - name: fe310
+      - name: fu500
+        socs:
+          - name: fu540
+      - name: fu700
+        socs:
+          - name: fu740

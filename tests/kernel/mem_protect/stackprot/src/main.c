@@ -19,7 +19,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
 	if (reason != K_ERR_STACK_CHK_FAIL) {
 		printk("wrong error type\n");
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 }

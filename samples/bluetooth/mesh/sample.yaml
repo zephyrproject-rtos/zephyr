@@ -6,8 +6,8 @@ tests:
     platform_allow:
       - bbc_microbit
       - qemu_x86
-      - nrf52840dk_nrf52840
-      - nrf5340dk_nrf5340_cpuapp_ns
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp/ns
     integration_platforms:
       - qemu_x86
     tags: bluetooth

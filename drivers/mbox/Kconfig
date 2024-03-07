@@ -17,6 +17,8 @@ source "drivers/mbox/Kconfig.nxp_s32"
 source "drivers/mbox/Kconfig.nxp_imx"
 source "drivers/mbox/Kconfig.nxp_mailbox"
 source "drivers/mbox/Kconfig.andes"
+source "drivers/mbox/Kconfig.nrf_vevif"
+source "drivers/mbox/Kconfig.nrf_bellboard"
 
 config MBOX_INIT_PRIORITY
 	int "MBOX init priority"

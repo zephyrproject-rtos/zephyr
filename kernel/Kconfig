@@ -192,6 +192,11 @@ config THREAD_STACK_INFO
 	  This option allows each thread to store the thread stack info into
 	  the k_thread data structure.
 
+config THREAD_ABORT_HOOK
+	bool
+	help
+	  Used by portability layers to modify locally managed status mask.
+
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help
@@ -203,11 +208,19 @@ config THREAD_USERSPACE_LOCAL_DATA
 	depends on USERSPACE
 	default y if ERRNO && !ERRNO_IN_TLS && !LIBC_ERRNO
 
+config USERSPACE_THREAD_MAY_RAISE_PRIORITY
+	bool "Thread can raise own priority"
+	depends on USERSPACE
+	depends on TEST # This should only be enabled by tests.
+	help
+	  Thread can raise its own priority in userspace mode.
+
 config DYNAMIC_THREAD
 	bool "Support for dynamic threads [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	depends on THREAD_STACK_INFO
 	select DYNAMIC_OBJECTS if USERSPACE
+	select THREAD_MONITOR
 	help
 	  Enable support for dynamic threads and stacks.
 
@@ -264,43 +277,6 @@ config DYNAMIC_THREAD_PREFER_POOL
 endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
-
-config LIBC_ERRNO
-	bool
-	help
-	  Use external libc errno, not the internal one. This eliminates any
-	  locally allocated errno storage and usage.
-
-config ERRNO
-	bool "Errno support"
-	default y
-	help
-	  Enable per-thread errno in the kernel. Application and library code must
-	  include errno.h provided by the C library (libc) to use the errno
-	  symbol. The C library must access the per-thread errno via the
-	  z_errno() symbol.
-
-config ERRNO_IN_TLS
-	bool "Store errno in thread local storage (TLS)"
-	depends on ERRNO && THREAD_LOCAL_STORAGE && !LIBC_ERRNO
-	default y
-	help
-	  Use thread local storage to store errno instead of storing it in
-	  the kernel thread struct. This avoids a syscall if userspace is enabled.
-
-config CURRENT_THREAD_USE_NO_TLS
-	bool
-	help
-	  Hidden symbol to not use thread local storage to store current
-	  thread.
-
-config CURRENT_THREAD_USE_TLS
-	bool "Store current thread in thread local storage (TLS)"
-	depends on THREAD_LOCAL_STORAGE && !CURRENT_THREAD_USE_NO_TLS
-	default y
-	help
-	  Use thread local storage to store the current thread. This avoids a
-	  syscall if userspace is enabled.
 
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
@@ -385,6 +361,46 @@ config WAITQ_DUMB
 	  a few threads blocked on any single IPC primitive.
 
 endchoice # WAITQ_ALGORITHM
+
+menu "Misc Kernel related options"
+config LIBC_ERRNO
+	bool
+	help
+	  Use external libc errno, not the internal one. This eliminates any
+	  locally allocated errno storage and usage.
+
+config ERRNO
+	bool "Errno support"
+	default y
+	help
+	  Enable per-thread errno in the kernel. Application and library code must
+	  include errno.h provided by the C library (libc) to use the errno
+	  symbol. The C library must access the per-thread errno via the
+	  z_errno() symbol.
+
+config ERRNO_IN_TLS
+	bool "Store errno in thread local storage (TLS)"
+	depends on ERRNO && THREAD_LOCAL_STORAGE && !LIBC_ERRNO
+	default y
+	help
+	  Use thread local storage to store errno instead of storing it in
+	  the kernel thread struct. This avoids a syscall if userspace is enabled.
+
+config CURRENT_THREAD_USE_NO_TLS
+	bool
+	help
+	  Hidden symbol to not use thread local storage to store current
+	  thread.
+
+config CURRENT_THREAD_USE_TLS
+	bool "Store current thread in thread local storage (TLS)"
+	depends on THREAD_LOCAL_STORAGE && !CURRENT_THREAD_USE_NO_TLS
+	default y
+	help
+	  Use thread local storage to store the current thread. This avoids a
+	  syscall if userspace is enabled.
+
+endmenu
 
 menu "Kernel Debugging and Metrics"
 
@@ -518,160 +534,9 @@ endif # THREAD_RUNTIME_STATS
 
 endmenu
 
-menuconfig OBJ_CORE
-	bool "Object core framework"
-	default n
-	help
-	  This option enables the object core framework. This will link
-	  participating kernel objects and their respective types together
-	  in a way that allows them to both have common information stored
-	  together and for that information to be easily retrieved by
-	  automated means.
+rsource "Kconfig.obj_core"
 
-if OBJ_CORE
-config OBJ_CORE_CONDVAR
-	bool "Integrate condition variables into object core framework"
-	default y
-	help
-	  When enabled, this option integrates condition variables into the
-	  object core framework.
-
-config OBJ_CORE_EVENT
-	bool "Integrate events into object core framework"
-	default y if EVENTS
-	help
-	  When enabled, this option integrate kernel events into the object
-	  core framework.
-
-config OBJ_CORE_FIFO
-	bool "Integrate FIFOs into object core framework"
-	default y
-	help
-	  When enabled, this option integrates FIFOs into the object core
-	  framework.
-
-config OBJ_CORE_LIFO
-	bool "Integrate LIFOs into object core framework"
-	default y
-	help
-	  When enabled, this option integrates LIFOs into the object core
-	  framework.
-
-config OBJ_CORE_MAILBOX
-	bool "Integrate mailboxes into object core framework"
-	default y
-	help
-	  When enabled, this option integrates mailboxes into the object core
-	  framework.
-
-config OBJ_CORE_MEM_SLAB
-	bool "Integrate memory slabs into object core framework"
-	default y
-	help
-	  When enabled, this option integrates memory slabs into the object
-	  core framework.
-
-config OBJ_CORE_MUTEX
-	bool "Integrate mutexes into object core framework"
-	default y
-	help
-	  When enabled, this option integrates mutexes into the object core
-	  framework.
-
-config OBJ_CORE_MSGQ
-	bool "Integrate message queues into object core framework"
-	default y
-	help
-	  When enabled, this option integrates message queues into the object
-	  core framework.
-
-config OBJ_CORE_SEM
-	bool "Integrate semaphores into object core framework"
-	default y
-	help
-	  When enabled, this option integrates semaphores into the object core
-	  framework.
-
-config OBJ_CORE_PIPE
-	bool "Integrate pipe into object core framework"
-	default y if PIPES
-	help
-	  When enabled, this option integrates pipes into the object core
-	  framework.
-
-config OBJ_CORE_SEM
-	bool "Integrate semaphores into object core framework"
-	default y
-	help
-	  When enabled, this option integrates semaphores into the object core
-	  framework.
-
-config OBJ_CORE_STACK
-	bool "Integrate stacks into object core framework"
-	default y
-	help
-	  When enabled, this option integrates stacks into the object core
-	  framework.
-
-config OBJ_CORE_THREAD
-	bool "Integrate threads into object core framework"
-	default y
-	help
-	  When enabled, this option integrates threads into the object core
-	  framework.
-
-config OBJ_CORE_TIMER
-	bool "Integrate timers into object core framework"
-	default y
-	help
-	  When enabled, this option integrates timers into the object core
-	  framework.
-
-config OBJ_CORE_SYSTEM
-	bool
-	default y
-	help
-	  When enabled, this option integrates the internal CPU and kernel
-	  system objects into the object core framework. As these are internal
-	  structures, this option is hidden by default and only available to
-	  advanced users.
-
-menuconfig OBJ_CORE_STATS
-	bool "Object core statistics"
-	default n
-	help
-	  This option integrates statistics gathering into the object core
-	  framework.
-
-if OBJ_CORE_STATS
-config OBJ_CORE_STATS_MEM_SLAB
-	bool "Object core statistics for memory slabs"
-	default y if OBJ_CORE_MEM_SLAB
-	help
-	  When enabled, this allows memory slab statistics to be integrated
-	  into kernel objects.
-
-config OBJ_CORE_STATS_THREAD
-	bool "Object core statistics for threads"
-	default y if OBJ_CORE_THREAD
-	select THREAD_RUNTIME_STATS
-	help
-	  When enabled, this integrates thread runtime statistics into the
-	  object core statistics framework.
-
-config OBJ_CORE_STATS_SYSTEM
-	bool "Object core statistics for system level objects"
-	default y if OBJ_CORE_SYSTEM
-	select SCHED_THREAD_USAGE_ALL
-	help
-	  When enabled, this integrates thread runtime statistics at the
-	  CPU and system level into the object core statistics framework.
-
-endif  # OBJ_CORE_STATS
-
-endif  # OBJ_CORE
-
-menu "Work Queue Options"
+menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
 	default 4096 if COVERAGE_GCOV
@@ -777,6 +642,10 @@ config TIMESLICE_PER_THREAD
 	  a per-thread basis, with an application callback invoked when
 	  a thread reaches the end of its timeslice.
 
+endmenu
+
+menu "Other Kernel Object Options"
+
 config POLL
 	bool "Async I/O Framework"
 	help
@@ -784,10 +653,6 @@ config POLL
 	  k_poll_signal_raise() APIs.  The former can wait on multiple events
 	  concurrently, which can be either directly triggered or triggered by
 	  the availability of some kernel objects (semaphores and FIFOs).
-
-endmenu
-
-menu "Other Kernel Object Options"
 
 config MEM_SLAB_TRACE_MAX_UTILIZATION
 	bool "Getting maximum slab utilization"
@@ -976,39 +841,6 @@ config XIP
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.
 
-menu "Initialization Priorities"
-
-config KERNEL_INIT_PRIORITY_OBJECTS
-	int "Kernel objects initialization priority"
-	default 30
-	help
-	  Kernel objects use this priority for initialization. This
-	  priority needs to be higher than minimal default initialization
-	  priority.
-
-config KERNEL_INIT_PRIORITY_DEFAULT
-	int "Default init priority"
-	default 40
-	help
-	  Default minimal init priority for each init level.
-
-config KERNEL_INIT_PRIORITY_DEVICE
-	int "Default init priority for device drivers"
-	default 50
-	help
-	  Device driver, that depends on common components, such as
-	  interrupt controller, but does not depend on other devices,
-	  uses this init priority.
-
-config APPLICATION_INIT_PRIORITY
-	int "Default init priority for application level drivers"
-	default 90
-	help
-	  This priority level is for end-user drivers such as sensors and display
-	  which have no inward dependencies.
-
-
-endmenu
 
 menu "Security Options"
 
@@ -1095,6 +927,9 @@ config BOUNDS_CHECK_BYPASS_MITIGATION
 	  macros do nothing.
 endmenu
 
+
+menu "Memory Domains"
+
 config MAX_DOMAIN_PARTITIONS
 	int "Maximum number of partitions per memory domain"
 	default 16
@@ -1143,111 +978,9 @@ config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	  tables, these APIs don't need to be implemented as the underlying
 	  memory management hardware will be reprogrammed on context switch
 	  anyway.
-
-menu "SMP Options"
-
-config SMP
-	bool "Symmetric multiprocessing support"
-	depends on USE_SWITCH
-	depends on !ATOMIC_OPERATIONS_C
-	help
-	  When true, kernel will be built with SMP support, allowing
-	  more than one CPU to schedule Zephyr tasks at a time.
-
-config USE_SWITCH
-	bool "Use new-style _arch_switch instead of arch_swap"
-	depends on USE_SWITCH_SUPPORTED
-	help
-	  The _arch_switch() API is a lower level context switching
-	  primitive than the original arch_swap mechanism.  It is required
-	  for an SMP-aware scheduler, or if the architecture does not
-	  provide arch_swap.  In uniprocess situations where the
-	  architecture provides both, _arch_switch incurs more somewhat
-	  overhead and may be slower.
-
-config USE_SWITCH_SUPPORTED
-	bool
-	help
-	  Indicates whether _arch_switch() API is supported by the
-	  currently enabled platform. This option should be selected by
-	  platforms that implement it.
-
-config SMP_BOOT_DELAY
-	bool "Delay booting secondary cores"
-	depends on SMP
-	help
-	  By default Zephyr will boot all available CPUs during start up.
-	  Select this option to skip this and allow custom code
-	  (architecture/SoC/board/application) to boot secondary CPUs at
-	  a later time.
-
-config MP_NUM_CPUS
-	int "Number of CPUs/cores [DEPRECATED]"
-	default MP_MAX_NUM_CPUS
-	range 1 12
-	help
-	  This is deprecated, please use MP_MAX_NUM_CPUS instead.
-
-config MP_MAX_NUM_CPUS
-	int "Maximum number of CPUs/cores"
-	default 1
-	range 1 12
-	help
-	  Maximum number of multiprocessing-capable cores available to the
-	  multicpu API and SMP features.
-
-config SCHED_IPI_SUPPORTED
-	bool
-	help
-	  True if the architecture supports a call to
-	  arch_sched_ipi() to broadcast an interrupt that will call
-	  z_sched_ipi() on other CPUs in the system.  Required for
-	  k_thread_abort() to operate with reasonable latency
-	  (otherwise we might have to wait for the other thread to
-	  take an interrupt, which can be arbitrarily far in the
-	  future).
-
-config TRACE_SCHED_IPI
-	bool "Test IPI"
-	help
-	  When true, it will add a hook into z_sched_ipi(), in order
-	  to check if schedule IPI has called or not, for testing
-	  purpose.
-	depends on SCHED_IPI_SUPPORTED
-	depends on MP_MAX_NUM_CPUS>1
-
-config KERNEL_COHERENCE
-	bool "Place all shared data into coherent memory"
-	depends on ARCH_HAS_COHERENCE
-	default y if SMP && MP_MAX_NUM_CPUS > 1
-	select THREAD_STACK_INFO
-	help
-	  When available and selected, the kernel will build in a mode
-	  where all shared data is placed in multiprocessor-coherent
-	  (generally "uncached") memory.  Thread stacks will remain
-	  cached, as will application memory declared with
-	  __incoherent.  This is intended for Zephyr SMP kernels
-	  running on cache-incoherent architectures only.  Note that
-	  when this is selected, there is an implicit API change that
-	  assumes cache coherence to any memory passed to the kernel.
-	  Code that creates kernel data structures in uncached regions
-	  may fail strangely.  Some assertions exist to catch these
-	  mistakes, but not all circumstances can be tested.
-
-config TICKET_SPINLOCKS
-	bool "Ticket spinlocks for lock acquisition fairness [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	help
-	  Basic spinlock implementation is based on single
-	  atomic variable and doesn't guarantee locking fairness
-	  across multiple CPUs. It's even possible that single CPU
-	  will win the contention every time which will result
-	  in a live-lock.
-	  Ticket spinlocks provide a FIFO order of lock acquisition
-	  which resolves such unfairness issue at the cost of slightly
-	  increased memory footprint.
-
 endmenu
+
+rsource "Kconfig.smp"
 
 config TICKLESS_KERNEL
 	bool "Tickless kernel"
@@ -1273,30 +1006,5 @@ config THREAD_LOCAL_STORAGE
 
 endmenu
 
-menu "Device Options"
-
-config DEVICE_DEPS
-	bool "Store device dependencies"
-	help
-	  When enabled, device dependencies will be stored so that they can be
-	  queried at runtime. Device dependencies are typically inferred from
-	  devicetree. Enabling this option will increase ROM usage (or RAM if
-	  dynamic device dependencies are enabled).
-
-config DEVICE_DEPS_DYNAMIC
-	bool "Dynamic device dependencies"
-	depends on DEVICE_DEPS
-	help
-	  Option that makes it possible to manipulate device dependencies at
-	  runtime.
-
-config DEVICE_MUTABLE
-	bool "Mutable devices [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	help
-	  Support mutable devices. Mutable devices are instantiated in SRAM
-	  instead of Flash and are runtime modifiable in kernel mode.
-
-endmenu
-
+rsource "Kconfig.device"
 rsource "Kconfig.vm"

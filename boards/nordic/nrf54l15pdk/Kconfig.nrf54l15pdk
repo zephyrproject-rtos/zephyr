@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF54L15PDK_NRF54L15_CPUAPP
+	select SOC_NRF54L15_ENGA_CPUAPP

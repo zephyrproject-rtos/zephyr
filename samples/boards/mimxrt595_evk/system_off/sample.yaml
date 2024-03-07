@@ -1,0 +1,13 @@
+#
+# Copyright 2022, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+sample:
+  name: Deep Power Down State Sample for mimxrt595_evk
+common:
+  tags: power
+tests:
+  sample.boards.mimxrt595_evk.system_off:
+    build_only: true
+    platform_allow: mimxrt595_evk/mimxrt595s/cm33
