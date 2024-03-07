@@ -24,6 +24,8 @@
 
 LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 
+#define PINCTRL_STATE_FLOWCONTROL PINCTRL_STATE_PRIV_START
+
 #ifdef CONFIG_UART_ASYNC_API
 struct lpuart_dma_config {
 	const struct device *dma_dev;
@@ -1060,7 +1062,16 @@ static int mcux_lpuart_init(const struct device *dev)
 
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (config->flow_ctrl) {
+		const struct pinctrl_state *state;
+
+		err = pinctrl_lookup_state(config->pincfg, PINCTRL_STATE_FLOWCONTROL, &state);
+		if (err < 0) {
+			err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		}
+	} else {
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	}
 	if (err < 0) {
 		return err;
 	}
