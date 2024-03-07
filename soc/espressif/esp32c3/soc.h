@@ -13,12 +13,17 @@
 #include <rom/spi_flash.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include "esp32c3/clk.h"
+#include <esp_private/esp_clk.h>
 #endif
 
 #ifndef _ASMLANGUAGE
 
 void __esp_platform_start(void);
+
+static inline uint32_t esp_core_id(void)
+{
+	return 0;
+}
 
 extern void esp_rom_intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 extern void esp_rom_uart_attach(void);
@@ -40,7 +45,6 @@ extern int esp_rom_Cache_Dbus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t
 extern int esp_rom_Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,
 				uint32_t psize, uint32_t num, uint32_t fixed);
 extern void esp_rom_Cache_Resume_ICache(uint32_t autoload);
-extern spiflash_legacy_data_t esp_rom_spiflash_legacy_data;
 extern int esp_rom_gpio_matrix_in(uint32_t gpio, uint32_t signal_index,
 				    bool inverted);
 extern int esp_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,
