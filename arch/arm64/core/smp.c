@@ -133,10 +133,10 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 }
 
 /* the C entry of secondary cores */
-void arch_secondary_cpu_init(int cpu_num)
+FUNC_NORETURN void arch_secondary_cpu_init(void)
 {
-	cpu_num = arm64_cpu_boot_params.cpu_num;
-	arch_cpustart_t fn;
+	int cpu_num = arm64_cpu_boot_params.cpu_num;
+	FUNC_NORETURN arch_cpustart_t fn;
 	void *arg;
 
 	__ASSERT(arm64_cpu_boot_params.mpid == MPIDR_TO_CORE(GET_MPIDR()), "");
