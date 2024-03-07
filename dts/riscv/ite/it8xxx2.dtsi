@@ -709,12 +709,6 @@
 			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		};
 
-		sha0: sha@f0202d {
-			compatible = "ite,it8xxx2-sha";
-			reg = <0x00f0202d 0x3>;
-			status = "disabled";
-		};
-
 		usbpd0: usbpd@f03700 {
 			compatible = "ite,it8xxx2-usbpd";
 			reg = <0x00f03700 0x100>;
