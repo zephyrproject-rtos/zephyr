@@ -8,7 +8,7 @@
 #include "xtensa_backtrace.h"
 #include <zephyr/sys/printk.h>
 #if defined(CONFIG_SOC_SERIES_ESP32)
-#include "soc/soc_memory_layout.h"
+#include <esp_memory_utils.h>
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 #include "debug_helpers.h"
 #elif defined(CONFIG_SOC_XTENSA_DC233C)
