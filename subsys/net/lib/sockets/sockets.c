@@ -2027,7 +2027,7 @@ fail:
 /* As this is limited function, we don't follow POSIX signature, with
  * "..." instead of last arg.
  */
-int z_impl_zsock_fcntl(int sock, int cmd, int flags)
+int z_impl_zsock_fcntl_impl(int sock, int cmd, int flags)
 {
 	const struct socket_op_vtable *vtable;
 	struct k_mutex *lock;
@@ -2051,14 +2051,14 @@ int z_impl_zsock_fcntl(int sock, int cmd, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_fcntl(int sock, int cmd, int flags)
+static inline int z_vrfy_zsock_fcntl_impl(int sock, int cmd, int flags)
 {
-	return z_impl_zsock_fcntl(sock, cmd, flags);
+	return z_impl_zsock_fcntl_impl(sock, cmd, flags);
 }
-#include <syscalls/zsock_fcntl_mrsh.c>
+#include <syscalls/zsock_fcntl_impl_mrsh.c>
 #endif
 
-int z_impl_zsock_ioctl(int sock, unsigned long request, va_list args)
+int z_impl_zsock_ioctl_impl(int sock, unsigned long request, va_list args)
 {
 	const struct socket_op_vtable *vtable;
 	struct k_mutex *lock;
@@ -2084,7 +2084,7 @@ int z_impl_zsock_ioctl(int sock, unsigned long request, va_list args)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_ioctl(int sock, unsigned long request, va_list args)
+static inline int z_vrfy_zsock_ioctl_impl(int sock, unsigned long request, va_list args)
 {
 	switch (request) {
 	case ZFD_IOCTL_FIONBIO:
@@ -2104,9 +2104,9 @@ static inline int z_vrfy_zsock_ioctl(int sock, unsigned long request, va_list ar
 		return -1;
 	}
 
-	return z_impl_zsock_ioctl(sock, request, args);
+	return z_impl_zsock_ioctl_impl(sock, request, args);
 }
-#include <syscalls/zsock_ioctl_mrsh.c>
+#include <syscalls/zsock_ioctl_impl_mrsh.c>
 #endif
 
 static int zsock_poll_prepare_ctx(struct net_context *ctx,
