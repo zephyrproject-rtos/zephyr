@@ -5,4 +5,43 @@ if SOC_FAMILY_ESPRESSIF_ESP32
 
 rsource "*/Kconfig"
 
+menu "MAC Config"
+
+config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	bool
+
+config ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+	bool
+
+config ESP_MAC_ADDR_UNIVERSE_ETH
+	bool
+
+config ESP_MAC_ADDR_UNIVERSE_BT
+	bool
+
+config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
+	bool
+
+config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+	bool
+
+config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+	bool
+
+# Insert chip-specific MAC config
+rsource "*/Kconfig.mac"
+
+endmenu
+
+menu "RTC Clock Config"
+
+config ESP_SYSTEM_RTC_EXT_XTAL
+	bool
+
+config ESP_SYSTEM_RTC_EXT_OSC
+	bool
+
+rsource "*/Kconfig.rtc"
+endmenu
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32

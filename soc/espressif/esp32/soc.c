@@ -11,6 +11,12 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
+#include <esp_private/spi_flash_os.h>
+#include <esp_private/esp_mmu_map_private.h>
+#if CONFIG_ESP_SPIRAM
+#include <esp_psram.h>
+#include <esp_private/esp_psram_extram.h>
+#endif
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
@@ -19,17 +25,16 @@
 #include <zephyr/linker/linker-defs.h>
 #include <kernel_internal.h>
 
-#include "esp_private/system_internal.h"
-#include "esp32/rom/cache.h"
-#include "hal/soc_ll.h"
-#include "soc/cpu.h"
-#include "soc/gpio_periph.h"
-#include "esp_spi_flash.h"
-#include "esp_err.h"
-#include "esp_timer.h"
-#include "esp32/spiram.h"
-#include "esp_app_format.h"
-#include "hal/wdt_hal.h"
+#include <esp_private/system_internal.h>
+#include <esp32/rom/cache.h>
+#include <esp_cpu.h>
+#include <hal/soc_hal.h>
+#include <hal/cpu_hal.h>
+#include <soc/gpio_periph.h>
+#include <esp_err.h>
+#include <esp_timer.h>
+#include <hal/wdt_hal.h>
+#include <esp_app_format.h>
 
 #ifndef CONFIG_SOC_ENABLE_APPCPU
 #include "esp_clk_internal.h"
@@ -39,6 +44,11 @@
 #include "bootloader_init.h"
 #endif /* CONFIG_MCUBOOT */
 #include <zephyr/sys/printk.h>
+
+#if CONFIG_ESP_SPIRAM
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
+#endif
 
 extern void z_cstart(void);
 extern void esp_reset_reason_init(void);
@@ -115,7 +125,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
 	 */
-	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
 	esp_reset_reason_init();
 
@@ -135,7 +145,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	wdt_hal_disable(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-#ifdef CONFIG_SOC_ESP32_APPCPU
+#ifndef CONFIG_SOC_ENABLE_APPCPU
 	/* Configures the CPU clock, RTC slow and fast clocks, and performs
 	 * RTC slow clock calibration.
 	 */
@@ -149,18 +159,34 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	esp_start_appcpu();
 #endif
 
+	esp_mmu_map_init();
+
+#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_mspi_pin_init();
+	spi_flash_init_chip_state();
+#endif
+
 #if CONFIG_ESP_SPIRAM
-	esp_err_t err = esp_spiram_init();
+	esp_err_t err = esp_psram_init();
 
 	if (err != ESP_OK) {
 		printk("Failed to Initialize SPIRAM, aborting.\n");
 		abort();
 	}
-	esp_spiram_init_cache();
-	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
 		printk("SPIRAM size is less than configured size, aborting.\n");
 		abort();
 	}
+
+	if (esp_psram_is_initialized()) {
+		if (!esp_psram_extram_test()) {
+			printk("External RAM failed memory test!");
+			abort();
+		}
+	}
+
+	memset(&_ext_ram_bss_start, 0,
+	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 #endif
 
 /* Scheduler is not started at this point. Hence, guard functions
@@ -195,72 +221,4 @@ int IRAM_ATTR arch_printk_char_out(int c)
 void sys_arch_reboot(int type)
 {
 	esp_restart_noos();
-}
-
-void IRAM_ATTR esp_restart_noos(void)
-{
-	/* Disable interrupts */
-	z_xt_ints_off(0xFFFFFFFF);
-
-	const uint32_t core_id = cpu_hal_get_core_id();
-	const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-
-	soc_ll_reset_core(other_core_id);
-	soc_ll_stall_core(other_core_id);
-
-	/* Flush any data left in UART FIFOs */
-	esp_rom_uart_tx_wait_idle(0);
-	esp_rom_uart_tx_wait_idle(1);
-	esp_rom_uart_tx_wait_idle(2);
-
-	/* Disable cache */
-	Cache_Read_Disable(0);
-	Cache_Read_Disable(1);
-
-	/* 2nd stage bootloader reconfigures SPI flash signals. */
-	/* Reset them to the defaults expected by ROM */
-	WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-
-	/* Reset wifi/bluetooth/ethernet/sdio (bb/mac) */
-	DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
-				DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
-				DPORT_BT_RST | DPORT_BTMAC_RST |
-				DPORT_SDIO_RST | DPORT_SDIO_HOST_RST |
-				DPORT_EMAC_RST | DPORT_MACPWR_RST |
-				DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
-	DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
-
-	/* Reset timer/spi/uart */
-	DPORT_SET_PERI_REG_MASK(
-		DPORT_PERIP_RST_EN_REG,
-		/* UART TX FIFO cannot be reset correctly on ESP32, */
-		/* so reset the UART memory by DPORT here. */
-		DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST |
-		DPORT_UART1_RST | DPORT_UART2_RST | DPORT_UART_MEM_RST);
-	DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
-
-	/* Clear entry point for APP CPU */
-	DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
-
-	/* Reset CPUs */
-	if (core_id == 0) {
-		/* Running on PRO CPU: APP CPU is stalled. Can reset both CPUs. */
-		soc_ll_reset_core(1);
-		soc_ll_reset_core(0);
-	} else {
-		/* Running on APP CPU: need to reset PRO CPU and unstall it, */
-		/* then reset APP CPU */
-		soc_ll_reset_core(0);
-		soc_ll_stall_core(0);
-		soc_ll_reset_core(1);
-	}
-
-	while (true) {
-		;
-	}
 }
