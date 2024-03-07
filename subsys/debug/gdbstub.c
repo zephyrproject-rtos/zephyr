@@ -585,6 +585,28 @@ static int gdb_send_exception(uint8_t *buf, size_t len, uint8_t exception)
 	return gdb_send_packet(buf, size);
 }
 
+static bool gdb_qsupported(uint8_t *buf, size_t len, enum gdb_loop_state *next_state)
+{
+	size_t n = 0;
+	const char *c_buf = (const char *) buf;
+
+	if (strstr(buf, "qSupported") != c_buf) {
+		return false;
+	}
+
+	gdb_send_packet(buf, n);
+	return true;
+}
+
+static void gdb_q_packet(uint8_t *buf, size_t len, enum gdb_loop_state *next_state)
+{
+	if (gdb_qsupported(buf, len, next_state)) {
+		return;
+	}
+
+	gdb_send_packet(NULL, 0);
+}
+
 /**
  * Synchronously communicate with gdb on the host
  */
@@ -807,6 +829,13 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		case '?':
 			gdb_send_exception(buf, sizeof(buf),
 					   ctx->exception);
+			break;
+
+		/* Query packets*/
+		case 'q':
+			__fallthrough;
+		case 'Q':
+			gdb_q_packet(buf, sizeof(buf), &state);
 			break;
 
 		/*
