@@ -61,8 +61,6 @@
 &grtc {
 	status = "okay";
 	child-owned-channels = <8 9 10 11 12>;
-	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>,
-		     <108 NRF_DEFAULT_IRQ_PRIORITY>;
 	nonsecure-channels = <8 9 10 11 12>;
 	owned-channels = <7 8 9 10 11 12 13 14>;
 };
