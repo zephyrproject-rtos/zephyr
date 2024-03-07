@@ -559,7 +559,24 @@ static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
  * it may conflict with generic POSIX ``fcntl()`` function).
  * @endrst
  */
-__syscall int zsock_fcntl(int sock, int cmd, int flags);
+__syscall int zsock_fcntl_impl(int sock, int cmd, int flags);
+
+/*
+ * Need this wrapper because newer GCC versions got too smart and "typecheck"
+ * even macros.
+ */
+static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
+{
+	va_list args;
+	int flags;
+
+	va_start(args, cmd);
+	flags = va_arg(args, int);
+	va_end(args);
+	return zsock_fcntl_impl(sock, cmd, flags);
+}
+
+#define zsock_fcntl zsock_fcntl_wrapper
 
 /**
  * @brief Control underlying socket parameters
@@ -578,7 +595,21 @@ __syscall int zsock_fcntl(int sock, int cmd, int flags);
  * it may conflict with generic POSIX ``ioctl()`` function).
  * @endrst
  */
-__syscall int zsock_ioctl(int sock, unsigned long request, va_list ap);
+__syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
+
+static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, request);
+	ret = zsock_ioctl_impl(sock, request, args);
+	va_end(args);
+
+	return ret;
+}
+
+#define zsock_ioctl zsock_ioctl_wrapper
 
 /**
  * @brief Efficiently poll multiple sockets for events
@@ -888,38 +919,6 @@ static inline ssize_t send(int sock, const void *buf, size_t len, int flags)
 static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 {
 	return zsock_recv(sock, buf, max_len, flags);
-}
-
-/** @cond INTERNAL_HIDDEN */
-/*
- * Need this wrapper because newer GCC versions got too smart and "typecheck"
- * even macros, so '#define fcntl zsock_fcntl' leads to error.
- */
-static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
-{
-	va_list args;
-	int flags;
-
-	va_start(args, cmd);
-	flags = va_arg(args, int);
-	va_end(args);
-	return zsock_fcntl(sock, cmd, flags);
-}
-
-#define fcntl zsock_fcntl_wrapper
-/** @endcond */
-
-/** POSIX wrapper for @ref zsock_ioctl */
-static inline int ioctl(int sock, unsigned long request, ...)
-{
-	int ret;
-	va_list args;
-
-	va_start(args, request);
-	ret = zsock_ioctl(sock, request, args);
-	va_end(args);
-
-	return ret;
 }
 
 /** POSIX wrapper for @ref zsock_sendto */
