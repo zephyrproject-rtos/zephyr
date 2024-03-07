@@ -86,6 +86,8 @@ struct mcux_flexcomm_data {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	struct uart_config uart_config;
 #endif
+	struct clock_control_callback clock_cb;
+	uint32_t clock_freq;
 };
 
 static int mcux_flexcomm_poll_in(const struct device *dev, unsigned char *c)
@@ -298,7 +300,6 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 	usart_stop_bit_count_t stop_bits;
 	usart_data_len_t data_bits = kUSART_8BitsPerChar;
 	bool nine_bit_mode = false;
-	uint32_t clock_freq;
 
 	/* Set up structure to reconfigure UART */
 	USART_GetDefaultConfig(&usart_config);
@@ -357,13 +358,13 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 
 	/* Get UART clock frequency */
 	clock_control_get_rate(config->clock_dev,
-		config->clock_subsys, &clock_freq);
+		config->clock_subsys, &data->clock_freq);
 
 	/* Handle 9 bit mode */
 	USART_Enable9bitMode(config->base, nine_bit_mode);
 
 	/* Reconfigure UART */
-	USART_Init(config->base, &usart_config, clock_freq);
+	USART_Init(config->base, &usart_config, data->clock_freq);
 
 	/* Update driver device data */
 	uart_config->parity = cfg->parity;
@@ -1000,33 +1001,11 @@ static void mcux_flexcomm_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT */
 
-
-static int mcux_flexcomm_init(const struct device *dev)
+static void mcux_flexcomm_uart_setup(const struct device *dev, uint32_t clock_rate)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	struct mcux_flexcomm_data *data = dev->data;
-	struct uart_config *cfg = &data->uart_config;
-#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 	usart_config_t usart_config;
 	usart_parity_mode_t parity_mode;
-	uint32_t clock_freq;
-	int err;
-
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		return err;
-	}
-
-	if (!device_is_ready(config->clock_dev)) {
-		return -ENODEV;
-	}
-
-	/* Get the clock frequency */
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
-		return -EINVAL;
-	}
 
 	if (config->parity == UART_CFG_PARITY_ODD) {
 		parity_mode = kUSART_ParityOdd;
@@ -1042,6 +1021,66 @@ static int mcux_flexcomm_init(const struct device *dev)
 	usart_config.parityMode = parity_mode;
 	usart_config.baudRate_Bps = config->baud_rate;
 
+	USART_Init(config->base, &usart_config, clock_rate);
+}
+
+static void mcux_flexcomm_clock_cb(const struct device *dev,
+				   void *user_data)
+{
+	const struct device *uart_dev = user_data;
+	const struct mcux_flexcomm_config *config = uart_dev->config;
+	struct mcux_flexcomm_data *data = uart_dev->data;
+	uint32_t clock_freq;
+
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		/* Error occurred */
+		return;
+	}
+
+	if (clock_freq != data->clock_freq) {
+		/* Deinit USART */
+		USART_Deinit(config->base);
+		/* Reconfigure USART */
+		mcux_flexcomm_uart_setup(uart_dev, clock_freq);
+		data->clock_freq = clock_freq;
+	}
+}
+
+
+static int mcux_flexcomm_init(const struct device *dev)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct mcux_flexcomm_data *data = dev->data;
+	struct uart_config *cfg = &data->uart_config;
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
+	/* Get the clock frequency */
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				   &data->clock_freq)) {
+		return -EINVAL;
+	}
+
+	clock_control_init_callback(&data->clock_cb, mcux_flexcomm_clock_cb,
+				    (void *)dev);
+	err = clock_control_add_callback(config->clock_dev, &data->clock_cb);
+	if (err) {
+		return err;
+	}
+
+	mcux_flexcomm_uart_setup(dev, data->clock_freq);
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	cfg->baudrate = config->baud_rate;
 	cfg->parity = config->parity;
@@ -1050,8 +1089,6 @@ static int mcux_flexcomm_init(const struct device *dev)
 	cfg->data_bits = UART_CFG_DATA_BITS_8;
 	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
-
-	USART_Init(config->base, &usart_config, clock_freq);
 
 #ifdef CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT
 	config->irq_config_func(dev);
