@@ -6,11 +6,10 @@
 
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
+#include <soc/ext_mem_defs.h>
 #include <soc/gpio_reg.h>
 #include <soc/syscon_reg.h>
 #include <soc/system_reg.h>
-#include <soc/cache_memory.h>
-#include "hal/soc_ll.h"
 #include <riscv/interrupt.h>
 #include <soc/interrupt_reg.h>
 #include <soc/periph_defs.h>
