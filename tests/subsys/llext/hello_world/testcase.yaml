@@ -13,6 +13,7 @@ tests:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.readonly_mpu:
+    min_ram: 128
     arch_exclude: xtensa # for now
     filter: CONFIG_CPU_HAS_MPU
     extra_configs:
