@@ -96,6 +96,7 @@
 		mram1x: mram@e000000 {
 			compatible = "nordic,mram";
 			reg = <0xe000000 DT_SIZE_K(2048)>;
+			erase-block-size = <4096>;
 			write-block-size = <16>;
 		};
 
