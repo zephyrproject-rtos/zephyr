@@ -88,6 +88,11 @@ static inline ssize_t sendmsg(int sock, const struct msghdr *message,
 	return zsock_sendmsg(sock, message, flags);
 }
 
+static inline ssize_t recvmsg(int sock, struct msghdr *msg, int flags)
+{
+	return zsock_recvmsg(sock, msg, flags);
+}
+
 static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
 			       struct sockaddr *src_addr, socklen_t *addrlen)
 {
