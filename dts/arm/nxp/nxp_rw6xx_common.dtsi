@@ -1,0 +1,161 @@
+/*
+ * Copyright 2022-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sram_data: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000 DT_SIZE_K(960)>;
+	};
+
+	sram_code: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(256)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	clkctl0: clkctl@1000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x1000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	pinctrl: mci_iomux@4000 {
+		compatible = "nxp,rw-iomux-pinctrl";
+		reg = <0x4000 0x1000>;
+		status = "okay";
+	};
+
+	clkctl1: clkctl@21000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x21000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	hsgpio0: hsgpio@0 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x4000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <0>;
+		int-source = "pint";
+	};
+
+	hsgpio1: hsgpio@1 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x4000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <1>;
+		int-source = "pint";
+	};
+
+	flexcomm0: flexcomm@106000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x106000 0x1000>;
+		interrupts = <14 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
+		status = "disabled";
+	};
+
+	flexcomm1: flexcomm@107000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x107000 0x1000>;
+		interrupts = <15 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>;
+		status = "disabled";
+	};
+
+	flexcomm2: flexcomm@108000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x108000 0x1000>;
+		interrupts = <16 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK>;
+		status = "disabled";
+	};
+
+	flexcomm3: flexcomm@109000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x109000 0x1000>;
+		interrupts = <17 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>;
+		status = "disabled";
+	};
+
+	flexcomm14: flexcom@126000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x126000 0x2000>;
+		interrupts = <20 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM14_CLK>;
+		status = "disabled";
+	};
+
+	aon_soc_ctrl: aon_soc_ctrl@5000800 {
+		compatible = "nxp,rw-soc-ctrl";
+		reg = <0x5000800 0x1000>;
+		status = "okay";
+	};
+
+	soc_ctrl: soc_ctrl@5001000 {
+		compatible = "nxp,rw-soc-ctrl";
+		reg = <0x5001000 0x1000>;
+		status = "okay";
+	};
+
+	pint: pint@25000 {
+		compatible = "nxp,pint";
+		reg = <0x25000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <0>;
+		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+			<35 2>, <36 2>, <37 2>, <38 2>;
+		num-lines = <8>;
+		num-inputs = <64>;
+	};
+};
+
+&flexspi {
+	compatible = "nxp,imx-flexspi";
+	status = "disabled";
+	interrupts = <42 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl1 MCUX_FLEXSPI_CLK>;
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
