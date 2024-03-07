@@ -39,6 +39,7 @@ def test_runner_imports():
                     'openocd',
                     'pyocd',
                     'qemu',
+                    'renode',
                     'silabs_commander',
                     'spi_burn',
                     'stm32cubeprogrammer',

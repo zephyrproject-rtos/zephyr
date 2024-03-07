@@ -97,6 +97,10 @@ function(create_runners_yaml)
     runners_yaml_append("\n# Default debug runner if --runner is not given.")
     runners_yaml_append("debug-runner: ${BOARD_DEBUG_RUNNER}")
   endif()
+  if(DEFINED BOARD_SIM_RUNNER)
+    runners_yaml_append("\n# Default simulation runner if --runner is not given.")
+    runners_yaml_append("sim-runner: ${BOARD_SIM_RUNNER}")
+  endif()
 
   # Sets up common runner configuration values.
   runners_yaml_append_config()
