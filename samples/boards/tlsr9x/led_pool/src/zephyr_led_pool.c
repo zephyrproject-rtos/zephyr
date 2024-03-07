@@ -17,7 +17,7 @@ struct led_pool_aux_data {
 	bool            current_state;
 };
 
-/* Get timeout to ext event in auxiliary data */
+/* Get timeout to next event in auxiliary data */
 static k_timeout_t led_pool_aux_timeout(const struct led_pool_data *led_pool)
 {
 	k_timeout_t timeout = {
@@ -61,7 +61,8 @@ static void led_pool_aux_update(const struct led_pool_data *led_pool)
 			if (t_next <= t_now) {
 				led_pool_aux[i].current_state = !led_pool_aux[i].current_state;
 				led_pool_aux[i].t_event = t_now;
-				gpio_pin_set_dt(&led_pool->out[i], led_pool_aux[i].current_state);
+				(void) gpio_pin_set_dt(
+					&led_pool->out[i], led_pool_aux[i].current_state);
 			}
 		}
 	}
