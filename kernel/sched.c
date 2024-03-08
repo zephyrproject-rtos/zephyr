@@ -1280,12 +1280,21 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = tid;
+	int32_t newdl = k_cycle_get_32() + deadline;
 
+	/* The prio_deadline field changes the sorting order, so can't
+	 * change it while the thread is in the run queue (dlists
+	 * actually are benign as long as we requeue it before we
+	 * release the lock, but an rbtree will blow up if we break
+	 * sorting!)
+	 */
 	K_SPINLOCK(&_sched_spinlock) {
-		thread->base.prio_deadline = k_cycle_get_32() + deadline;
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
+			thread->base.prio_deadline = newdl;
 			queue_thread(thread);
+		} else {
+			thread->base.prio_deadline = newdl;
 		}
 	}
 }
