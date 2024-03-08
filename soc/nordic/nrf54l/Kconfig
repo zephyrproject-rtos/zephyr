@@ -43,12 +43,6 @@ config SOC_NRF54L_VREG_MAIN_DCDC
 config SOC_NRF54L_NORMAL_VOLTAGE_MODE
 	bool "NRF54L Normal Voltage Mode."
 
-config SOC_NRF54L_GLITCHDET_WORKAROUND
-	bool "Workaround that disables glitch detector"
-	default y
-	help
-	  Temporary workaround - disabling glitch detector to limit power consumption.
-
 if NRF_GRTC_TIMER
 
 config ELV_GRTC_LFXO_ALLOWED
