@@ -51,6 +51,12 @@ BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT4_PARTITION) &&
 	     "Missing partitions?");
 #endif
 
+/* Used for slot erase callback */
+static struct img_mgmt_erase_context {
+	const struct flash_area *fa;
+	int *rc;
+};
+
 /**
  * Determines if the specified area of flash is completely unwritten.
  *
@@ -277,6 +283,24 @@ int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b
 	return 0;
 }
 
+static bool img_mgmt_do_erase_cb(const struct flash_pages_info *info, void *data)
+{
+	struct img_mgmt_erase_context *erase_context = (struct img_mgmt_erase_context *)data;
+
+	if (info->start_offset < erase_context->fa->fa_off) {
+		return true;
+	} else if (info->start_offset >= (erase_context->fa->fa_size +
+					  erase_context->fa->fa_off)) {
+		return false;
+	}
+
+	*erase_context->rc = flash_area_erase(erase_context->fa,
+					      (info->start_offset - erase_context->fa->fa_off),
+					      info->size);
+
+	return *erase_context->rc ? false : true;
+}
+
 int img_mgmt_erase_slot(int slot)
 {
 	const struct flash_area *fa;
@@ -297,7 +321,12 @@ int img_mgmt_erase_slot(int slot)
 	rc = img_mgmt_flash_check_empty_inner(fa);
 
 	if (rc == 0) {
-		rc = flash_area_erase(fa, 0, fa->fa_size);
+		struct img_mgmt_erase_context erase_context = {
+			.fa = fa,
+			.rc = &rc,
+		};
+
+		flash_page_foreach(fa->fa_dev, img_mgmt_do_erase_cb, &erase_context);
 
 		if (rc != 0) {
 			LOG_ERR("Failed to erase flash area: %d", rc);
