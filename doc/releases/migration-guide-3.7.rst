@@ -28,6 +28,9 @@ Kernel
 Boards
 ******
 
+* Reordered D1 and D0 in the `pro_micro` connector gpio-map for SparkFun Pro Micro RP2040 to match
+  original Pro Micro definition. Out-of-tree shields must be updated to reflect this change.
+
 Modules
 *******
 
