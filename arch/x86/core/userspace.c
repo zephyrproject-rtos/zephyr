@@ -134,7 +134,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	stack_start = POINTER_TO_UINT(_current->stack_obj);
 	stack_size = K_THREAD_STACK_LEN(_current->stack_info.size);
 
-#if defined(CONFIG_HW_STACK_PROTECTION)
+#if defined(CONFIG_X86_STACK_PROTECTION)
 	/* With hardware stack protection, the first page of stack
 	 * is a guard page. So need to skip it.
 	 */

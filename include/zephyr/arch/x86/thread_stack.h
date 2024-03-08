@@ -14,7 +14,7 @@
 #define ARCH_STACK_PTR_ALIGN 4UL
 #endif
 
-#if defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
+#if defined(CONFIG_X86_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
 #define Z_X86_STACK_BASE_ALIGN	CONFIG_MMU_PAGE_SIZE
 #else
 #define Z_X86_STACK_BASE_ALIGN	ARCH_STACK_PTR_ALIGN
@@ -62,7 +62,7 @@
  * privileged mode stack.
  */
 struct z_x86_thread_stack_header {
-#ifdef CONFIG_HW_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 	char guard_page[CONFIG_MMU_PAGE_SIZE];
 #endif
 #ifdef CONFIG_USERSPACE
@@ -78,7 +78,7 @@ struct z_x86_thread_stack_header {
 #define ARCH_THREAD_STACK_RESERVED \
 	sizeof(struct z_x86_thread_stack_header)
 
-#ifdef CONFIG_HW_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 #define ARCH_KERNEL_STACK_RESERVED	CONFIG_MMU_PAGE_SIZE
 #define ARCH_KERNEL_STACK_OBJ_ALIGN	CONFIG_MMU_PAGE_SIZE
 #else
