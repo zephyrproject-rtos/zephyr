@@ -120,7 +120,7 @@ void z_x86_pentry_get(int *paging_level, pentry_t *val, pentry_t *ptables,
 void z_x86_dump_page_tables(pentry_t *ptables);
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-#ifdef CONFIG_HW_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 /* Legacy function - set identity-mapped MMU stack guard page to RO in the
  * kernel's page tables to prevent writes and generate an exception
  */

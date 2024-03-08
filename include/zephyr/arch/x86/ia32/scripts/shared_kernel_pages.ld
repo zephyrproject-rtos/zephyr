@@ -41,7 +41,7 @@
 
 #ifdef CONFIG_USERSPACE
     #define GDT_NUM_ENTRIES 7
-#elif defined(CONFIG_HW_STACK_PROTECTION)
+#elif defined(CONFIG_X86_STACK_PROTECTION)
     #define GDT_NUM_ENTRIES 5
 #else
     #define GDT_NUM_ENTRIES 3
