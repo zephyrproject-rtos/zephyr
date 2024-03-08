@@ -45,7 +45,7 @@
  */
 #if defined(CONFIG_USERSPACE)
 #define GS_TLS_SEG	(0x38 | 0x03)
-#elif defined(CONFIG_HW_STACK_PROTECTION)
+#elif defined(CONFIG_X86_STACK_PROTECTION)
 #define GS_TLS_SEG	(0x28 | 0x03)
 #else
 #define GS_TLS_SEG	(0x18 | 0x03)

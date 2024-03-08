@@ -185,7 +185,7 @@ def main():
     # fault exception handling
     if "CONFIG_USERSPACE" in syms:
         num_entries = 7
-    elif "CONFIG_HW_STACK_PROTECTION" in syms:
+    elif "CONFIG_X86_STACK_PROTECTION" in syms:
         num_entries = 5
     else:
         num_entries = 3
