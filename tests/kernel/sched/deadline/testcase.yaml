@@ -1,3 +1,7 @@
 tests:
   kernel.scheduler.deadline:
     tags: kernel
+  kernel.scheduler.deadline.scalable:
+    tags: kernel
+    extra_configs:
+      - CONFIG_SCHED_SCALABLE=y
