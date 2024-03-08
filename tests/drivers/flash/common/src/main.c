@@ -54,6 +54,7 @@ static void *flash_driver_setup(void)
 {
 	int rc;
 
+	TC_PRINT("Test will run on device %s\n", flash_dev->name);
 	zassert_true(device_is_ready(flash_dev));
 
 	flash_params = flash_get_parameters(flash_dev);
