@@ -2372,6 +2372,7 @@ LoRa and LoRaWAN:
     - "area: LoRa"
   tests:
     - sample.driver.lora
+    - lorawan
 
 MAINTAINERS file:
   status: maintained
