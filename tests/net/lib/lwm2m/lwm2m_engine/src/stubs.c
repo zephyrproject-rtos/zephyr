@@ -129,7 +129,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	return 0;
 }
 
-int z_impl_zsock_fcntl(int sock, int cmd, int flags)
+int z_impl_zsock_fcntl_impl(int sock, int cmd, int flags)
 {
 	return 0;
 }
