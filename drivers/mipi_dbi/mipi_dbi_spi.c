@@ -25,7 +25,7 @@ struct mipi_dbi_spi_config {
 struct mipi_dbi_spi_data {
 	/* Used for 3 wire mode */
 	uint16_t spi_byte;
-	struct k_spinlock lock;
+	struct k_mutex lock;
 };
 
 /* Expands to 1 if the node does not have the `write-only` property */
@@ -58,7 +58,11 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		.count = 1,
 	};
 	int ret = 0;
-	k_spinlock_key_t spinlock_key = k_spin_lock(&data->lock);
+
+	ret = k_mutex_lock(&data->lock, K_FOREVER);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
 	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
@@ -124,7 +128,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		ret = -ENOTSUP;
 	}
 out:
-	k_spin_unlock(&data->lock, spinlock_key);
+	k_mutex_unlock(&data->lock);
 	return ret;
 }
 
@@ -164,9 +168,12 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 		.count = 1,
 	};
 	int ret = 0;
-	k_spinlock_key_t spinlock_key = k_spin_lock(&data->lock);
 	struct spi_config tmp_config;
 
+	ret = k_mutex_lock(&data->lock, K_FOREVER);
+	if (ret < 0) {
+		return ret;
+	}
 	memcpy(&tmp_config, &dbi_config->config, sizeof(tmp_config));
 	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
 	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
@@ -231,7 +238,7 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 	}
 out:
 	spi_release(config->spi_dev, &tmp_config);
-	k_spin_unlock(&data->lock, spinlock_key);
+	k_mutex_unlock(&data->lock);
 	return ret;
 }
 
@@ -262,6 +269,7 @@ static int mipi_dbi_spi_reset(const struct device *dev, uint32_t delay)
 static int mipi_dbi_spi_init(const struct device *dev)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
+	struct mipi_dbi_spi_data *data = dev->data;
 	int ret;
 
 	if (!device_is_ready(config->spi_dev)) {
@@ -290,6 +298,8 @@ static int mipi_dbi_spi_init(const struct device *dev)
 			return ret;
 		}
 	}
+
+	k_mutex_init(&data->lock);
 
 	return 0;
 }
