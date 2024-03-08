@@ -10,6 +10,7 @@
 #include <kthread.h>
 #include <priority_q.h>
 #include <kswap.h>
+#include <ipi.h>
 #include <kernel_arch_func.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -22,6 +23,10 @@
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#if defined(CONFIG_SWAP_NONATOMIC) && defined(CONFIG_TIMESLICING)
+extern struct k_thread *pending_current;
+#endif
 
 struct k_spinlock _sched_spinlock;
 
@@ -188,25 +193,6 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 	}
 }
 
-static void signal_pending_ipi(void)
-{
-	/* Synchronization note: you might think we need to lock these
-	 * two steps, but an IPI is idempotent.  It's OK if we do it
-	 * twice.  All we require is that if a CPU sees the flag true,
-	 * it is guaranteed to send the IPI, and if a core sets
-	 * pending_ipi, the IPI will be sent the next time through
-	 * this code.
-	 */
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (arch_num_cpus() > 1) {
-		if (_kernel.pending_ipi) {
-			_kernel.pending_ipi = false;
-			arch_sched_ipi();
-		}
-	}
-#endif /* CONFIG_SMP && CONFIG_SCHED_IPI_SUPPORTED */
-}
-
 #ifdef CONFIG_SMP
 /* Called out of z_swap() when CONFIG_SMP.  The current thread can
  * never live in the run queue until we are inexorably on the context
@@ -330,7 +316,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 #endif /* CONFIG_SMP */
 }
 
-static void move_thread_to_end_of_prio_q(struct k_thread *thread)
+void move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
 	if (z_is_thread_queued(thread)) {
 		dequeue_thread(thread);
@@ -338,140 +324,6 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 	queue_thread(thread);
 	update_cache(thread == _current);
 }
-
-static void flag_ipi(void)
-{
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (arch_num_cpus() > 1) {
-		_kernel.pending_ipi = true;
-	}
-#endif /* CONFIG_SMP && CONFIG_SCHED_IPI_SUPPORTED */
-}
-
-#ifdef CONFIG_TIMESLICING
-
-static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
-static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
-static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
-static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
-
-#ifdef CONFIG_SWAP_NONATOMIC
-/* If z_swap() isn't atomic, then it's possible for a timer interrupt
- * to try to timeslice away _current after it has already pended
- * itself but before the corresponding context switch.  Treat that as
- * a noop condition in z_time_slice().
- */
-static struct k_thread *pending_current;
-#endif /* CONFIG_SWAP_NONATOMIC */
-
-static inline int slice_time(struct k_thread *thread)
-{
-	int ret = slice_ticks;
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (thread->base.slice_ticks != 0) {
-		ret = thread->base.slice_ticks;
-	}
-#else
-	ARG_UNUSED(thread);
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-	return ret;
-}
-
-static inline bool sliceable(struct k_thread *thread)
-{
-	bool ret = is_preempt(thread)
-		&& slice_time(thread) != 0
-		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_thread_prevented_from_running(thread)
-		&& !z_is_idle_thread_object(thread);
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	ret |= thread->base.slice_ticks != 0;
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-
-	return ret;
-}
-
-static void slice_timeout(struct _timeout *timeout)
-{
-	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
-
-	slice_expired[cpu] = true;
-
-	/* We need an IPI if we just handled a timeslice expiration
-	 * for a different CPU.  Ideally this would be able to target
-	 * the specific core, but that's not part of the API yet.
-	 */
-	if (IS_ENABLED(CONFIG_SMP) && cpu != _current_cpu->id) {
-		flag_ipi();
-	}
-}
-
-void z_reset_time_slice(struct k_thread *thread)
-{
-	int cpu = _current_cpu->id;
-
-	z_abort_timeout(&slice_timeouts[cpu]);
-	slice_expired[cpu] = false;
-	if (sliceable(thread)) {
-		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
-			      K_TICKS(slice_time(thread) - 1));
-	}
-}
-
-void k_sched_time_slice_set(int32_t slice, int prio)
-{
-	K_SPINLOCK(&_sched_spinlock) {
-		slice_ticks = k_ms_to_ticks_ceil32(slice);
-		slice_max_prio = prio;
-		z_reset_time_slice(_current);
-	}
-}
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks,
-			     k_thread_timeslice_fn_t expired, void *data)
-{
-	K_SPINLOCK(&_sched_spinlock) {
-		thread->base.slice_ticks = thread_slice_ticks;
-		thread->base.slice_expired = expired;
-		thread->base.slice_data = data;
-	}
-}
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-
-/* Called out of each timer interrupt */
-void z_time_slice(void)
-{
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-	struct k_thread *curr = _current;
-
-#ifdef CONFIG_SWAP_NONATOMIC
-	if (pending_current == curr) {
-		z_reset_time_slice(curr);
-		k_spin_unlock(&_sched_spinlock, key);
-		return;
-	}
-	pending_current = NULL;
-#endif /* CONFIG_SWAP_NONATOMIC */
-
-	if (slice_expired[_current_cpu->id] && sliceable(curr)) {
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-		if (curr->base.slice_expired) {
-			k_spin_unlock(&_sched_spinlock, key);
-			curr->base.slice_expired(curr, curr->base.slice_data);
-			key = k_spin_lock(&_sched_spinlock);
-		}
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-		if (!z_is_thread_prevented_from_running(curr)) {
-			move_thread_to_end_of_prio_q(curr);
-		}
-		z_reset_time_slice(curr);
-	}
-	k_spin_unlock(&_sched_spinlock, key);
-}
-#endif /* CONFIG_TIMESLICING */
 
 /* Track cooperative threads preempted by metairqs so we can return to
  * them specifically.  Called at the moment a new thread has been
@@ -1432,28 +1284,6 @@ void z_impl_k_wakeup(k_tid_t thread)
 		z_reschedule(&_sched_spinlock, key);
 	}
 }
-
-#ifdef CONFIG_TRACE_SCHED_IPI
-extern void z_trace_sched_ipi(void);
-#endif /* CONFIG_TRACE_SCHED_IPI */
-
-#ifdef CONFIG_SMP
-void z_sched_ipi(void)
-{
-	/* NOTE: When adding code to this, make sure this is called
-	 * at appropriate location when !CONFIG_SCHED_IPI_SUPPORTED.
-	 */
-#ifdef CONFIG_TRACE_SCHED_IPI
-	z_trace_sched_ipi();
-#endif /* CONFIG_TRACE_SCHED_IPI */
-
-#ifdef CONFIG_TIMESLICING
-	if (sliceable(_current)) {
-		z_time_slice();
-	}
-#endif /* CONFIG_TIMESLICING */
-}
-#endif /* CONFIG_SMP */
 
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_wakeup(k_tid_t thread)
