@@ -28,6 +28,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define COUNTER_OVERFLOW_SHORT NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK
 #define COUNTER_READ_CC NRF_TIMER_CC_CHANNEL1
 
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+#define MAYBE_CONST_CONFIG
+#else
+#define MAYBE_CONST_CONFIG const
+#endif
+
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
 	void *top_user_data;
@@ -283,7 +289,16 @@ static uint32_t get_pending_int(const struct device *dev)
 static int init_timer(const struct device *dev,
 		      const struct counter_timer_config *config)
 {
-	const struct counter_nrfx_config *nrfx_config = dev->config;
+	MAYBE_CONST_CONFIG struct counter_nrfx_config *nrfx_config =
+			(MAYBE_CONST_CONFIG struct counter_nrfx_config *)dev->config;
+
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+	/* For simulated devices we need to convert the hardcoded DT address from the real
+	 * peripheral into the correct one for simulation
+	 */
+	nrfx_config->timer = nhw_convert_periph_base_addr(nrfx_config->timer);
+#endif
+
 	NRF_TIMER_Type *reg = nrfx_config->timer;
 
 	nrf_timer_bit_width_set(reg, config->bit_width);
@@ -430,7 +445,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static struct counter_nrfx_ch_data							\
 		counter##idx##_ch_data[CC_TO_ID(DT_INST_PROP(idx, cc_num))];			\
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL);			\
-	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {			\
+	static MAYBE_CONST_CONFIG struct counter_nrfx_config nrfx_counter_##idx##_config = {	\
 		.info = {									\
 			.max_top_value = (uint32_t)BIT64_MASK(DT_INST_PROP(idx, max_bit_width)),\
 			.freq = TIMER_CLOCK((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)) /		\
@@ -439,7 +454,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			.channels = CC_TO_ID(DT_INST_PROP(idx, cc_num)),			\
 		},										\
 		.ch_data = counter##idx##_ch_data,						\
-		.timer = (NRF_TIMER_Type *)_CONCAT(NRF_TIMER, idx),				\
+		.timer = (NRF_TIMER_Type *)DT_INST_REG_ADDR(idx),				\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
 	};											\
 	DEVICE_DT_INST_DEFINE(idx,								\
