@@ -405,18 +405,18 @@ static int set_up_recv_socket(enum net_sock_type socket_type)
 	};
 	int fd;
 
-	fd = socket(AF_PACKET, socket_type, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, socket_type, ETH_P_IEEE802154);
 	if (fd < 0) {
 		NET_ERR("*** Failed to create recv socket : %d", errno);
 		return fd;
 	}
 
-	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+	if (zsock_bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d", errno);
 		goto release_fd;
 	}
 
-	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
+	if (zsock_setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
 		NET_ERR("*** Failed to set reception timeout on packet socket : %d", errno);
 		goto release_fd;
 	}
@@ -424,7 +424,7 @@ static int set_up_recv_socket(enum net_sock_type socket_type)
 	return fd;
 
 release_fd:
-	close(fd);
+	zsock_close(fd);
 	return -EFAULT;
 }
 #endif /* CONFIG_NET_SOCKETS */
@@ -697,7 +697,7 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 	}
 
 	NET_INFO("- Sending DGRAM packet via AF_PACKET socket");
-	fd = socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
 	if (fd < 0) {
 		NET_ERR("*** Failed to create DGRAM socket : %d", errno);
 		goto reset_security;
@@ -715,13 +715,13 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 		goto release_fd;
 	}
 
-	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+	if (zsock_bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d", errno);
 		goto release_fd;
 	}
 
-	if (sendto(fd, payload, sizeof(payload), 0, (const struct sockaddr *)&pkt_dst_sll,
-		   sizeof(struct sockaddr_ll)) != sizeof(payload)) {
+	if (zsock_sendto(fd, payload, sizeof(payload), 0, (const struct sockaddr *)&pkt_dst_sll,
+			 sizeof(struct sockaddr_ll)) != sizeof(payload)) {
 		NET_ERR("*** Failed to send, errno %d", errno);
 		goto release_fd;
 	}
@@ -762,7 +762,7 @@ release_frag:
 	current_pkt->frags = NULL;
 release_fd:
 	tear_down_short_addr(net_iface, ctx);
-	close(fd);
+	zsock_close(fd);
 reset_security:
 	tear_down_security();
 out:
@@ -877,8 +877,8 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	}
 
 	recv_src_sll_len = sizeof(recv_src_sll);
-	received_len = recvfrom(fd, received_payload, sizeof(received_payload), 0,
-				(struct sockaddr *)&recv_src_sll, &recv_src_sll_len);
+	received_len = zsock_recvfrom(fd, received_payload, sizeof(received_payload), 0,
+				      (struct sockaddr *)&recv_src_sll, &recv_src_sll_len);
 	if (received_len < 0) {
 		NET_ERR("*** Failed to receive packet, errno %d", errno);
 		goto release_pkt;
@@ -905,7 +905,7 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 release_pkt:
 	net_pkt_unref(pkt);
 release_fd:
-	close(fd);
+	zsock_close(fd);
 reset_security:
 	tear_down_security();
 out:
@@ -924,7 +924,7 @@ static bool test_raw_packet_sending(void)
 
 	NET_INFO("- Sending RAW packet via AF_PACKET socket");
 
-	fd = socket(AF_PACKET, SOCK_RAW, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_IEEE802154);
 	if (fd < 0) {
 		NET_ERR("*** Failed to create RAW socket : %d", errno);
 		goto out;
@@ -934,7 +934,7 @@ static bool test_raw_packet_sending(void)
 	socket_sll.sll_family = AF_PACKET;
 	socket_sll.sll_protocol = ETH_P_IEEE802154;
 
-	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+	if (zsock_bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d", errno);
 		goto release_fd;
 	}
@@ -944,7 +944,7 @@ static bool test_raw_packet_sending(void)
 	msg.msg_iov = &io_vector;
 	msg.msg_iovlen = 1;
 
-	if (sendmsg(fd, &msg, 0) != sizeof(raw_payload)) {
+	if (zsock_sendmsg(fd, &msg, 0) != sizeof(raw_payload)) {
 		NET_ERR("*** Failed to send, errno %d", errno);
 		goto release_fd;
 	}
@@ -977,7 +977,7 @@ release_frag:
 	net_pkt_frag_unref(current_pkt->frags);
 	current_pkt->frags = NULL;
 release_fd:
-	close(fd);
+	zsock_close(fd);
 out:
 	return result;
 }
@@ -1031,7 +1031,7 @@ static bool test_raw_packet_reception(void)
 	 *       extracted. We'll only be able to do so when Zephyr provides hooks to
 	 *       call out to L2 from raw socket contexts.
 	 */
-	received_len = recv(fd, received_payload, sizeof(received_payload), 0);
+	received_len = zsock_recv(fd, received_payload, sizeof(received_payload), 0);
 	if (received_len < 0) {
 		NET_ERR("*** Failed to receive packet, errno %d", errno);
 		goto release_pkt;
@@ -1058,7 +1058,7 @@ static bool test_raw_packet_reception(void)
 release_pkt:
 	net_pkt_unref(pkt);
 release_fd:
-	close(fd);
+	zsock_close(fd);
 out:
 	return result;
 }
@@ -1108,18 +1108,18 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 
 	NET_INFO("- Sending ACK reply to a data packet");
 
-	fd = socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
 	if (fd < 0) {
 		NET_ERR("*** Failed to create DGRAM socket : %d", errno);
 		goto out;
 	}
 
-	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+	if (zsock_bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d", errno);
 		goto release_fd;
 	}
 
-	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
+	if (zsock_setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
 		NET_ERR("*** Failed to set reception timeout on packet socket : %d", errno);
 		goto release_fd;
 	}
@@ -1139,8 +1139,8 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	}
 
 	recv_src_sll_len = sizeof(recv_src_sll);
-	received_len = recvfrom(fd, received_payload, sizeof(received_payload), 0,
-				(struct sockaddr *)&recv_src_sll, &recv_src_sll_len);
+	received_len = zsock_recvfrom(fd, received_payload, sizeof(received_payload), 0,
+				      (struct sockaddr *)&recv_src_sll, &recv_src_sll_len);
 	if (received_len < 0) {
 		NET_ERR("*** Failed to receive packet, errno %d", errno);
 		goto release_rx_pkt;
@@ -1202,7 +1202,7 @@ release_rx_pkt:
 reset_short_addr:
 	tear_down_short_addr(net_iface, ctx);
 release_fd:
-	close(fd);
+	zsock_close(fd);
 out:
 	return result;
 }
