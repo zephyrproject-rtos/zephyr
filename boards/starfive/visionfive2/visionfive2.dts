@@ -15,7 +15,7 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &ram0;
+		zephyr,sram = &l2lim;
 	};
 };
 
