@@ -56,7 +56,7 @@ void syslog(int priority, const char *format, ...)
 
 int setlogmask(int maskpri)
 {
-	int oldpri;
+	int oldpri = -1;
 
 	K_SPINLOCK(&syslog_lock) {
 		oldpri = syslog_mask;
@@ -68,7 +68,7 @@ int setlogmask(int maskpri)
 
 void vsyslog(int priority, const char *format, va_list ap)
 {
-	uint8_t mask;
+	uint8_t mask = 0;
 	int level = syslog_priority_to_zephyr_log_level(priority);
 
 	if (level < 0) {
