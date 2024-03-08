@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_DEMAND_PAGING
 #include <zephyr/kernel/mm/demand_paging.h>
-#endif
+#endif /* CONFIG_DEMAND_PAGING */
 
 /*
  * General terminology:
@@ -76,7 +76,7 @@ static bool page_frames_initialized;
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
 #define COLOR(x)	do { } while (false)
-#endif
+#endif /* COLOR_PAGE_FRAMES */
 
 /* LCOV_EXCL_START */
 static void page_frame_dump(struct z_page_frame *pf)
@@ -729,7 +729,7 @@ size_t k_mem_free_get(void)
 	}
 #else
 	ret = z_free_page_count;
-#endif
+#endif /* CONFIG_DEMAND_PAGING */
 	k_spin_unlock(&z_mm_lock, key);
 
 	return ret * (size_t)CONFIG_MMU_PAGE_SIZE;
@@ -767,7 +767,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 
 #ifndef CONFIG_KERNEL_DIRECT_MAP
 	__ASSERT(!(flags & K_MEM_DIRECT_MAP), "The direct-map is not enabled");
-#endif
+#endif /* CONFIG_KERNEL_DIRECT_MAP */
 	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,
 					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
@@ -959,12 +959,12 @@ void z_mem_manage_init(void)
 	 * boot process. Will be un-pinned once boot process completes.
 	 */
 	mark_linker_section_pinned(lnkr_boot_start, lnkr_boot_end, true);
-#endif
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
 	/* Pin the page frames correspondng to the pinned symbols */
 	mark_linker_section_pinned(lnkr_pinned_start, lnkr_pinned_end, true);
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 	/* Any remaining pages that aren't mapped, reserved, or pinned get
 	 * added to the free pages list
@@ -979,10 +979,10 @@ void z_mem_manage_init(void)
 #ifdef CONFIG_DEMAND_PAGING
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 	z_paging_histogram_init();
-#endif
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 	k_mem_paging_backing_store_init();
 	k_mem_paging_eviction_init();
-#endif
+#endif /* CONFIG_DEMAND_PAGING */
 #if __ASSERT_ON
 	page_frames_initialized = true;
 #endif
@@ -996,7 +996,7 @@ void z_mem_manage_init(void)
 	 * memory to be cleared.
 	 */
 	z_bss_zero();
-#endif
+#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 }
 
 void z_mem_manage_boot_finish(void)
@@ -1006,7 +1006,7 @@ void z_mem_manage_boot_finish(void)
 	 * as they don't need to be in memory all the time anymore.
 	 */
 	mark_linker_section_pinned(lnkr_boot_start, lnkr_boot_end, false);
-#endif
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 }
 
 #ifdef CONFIG_DEMAND_PAGING
@@ -1016,7 +1016,7 @@ struct k_mem_paging_stats_t paging_stats;
 extern struct k_mem_paging_histogram_t z_paging_histogram_eviction;
 extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_in;
 extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_out;
-#endif
+#endif /* CONFIG_DEMAND_PAGING_STATS */
 
 static inline void do_backing_store_page_in(uintptr_t location)
 {
@@ -1162,7 +1162,7 @@ static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 	__ASSERT(!z_page_frame_is_busy(pf), "page frame 0x%lx is already busy",
 		 phys);
 	pf->flags |= Z_PAGE_FRAME_BUSY;
-#endif
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	/* Update dirty parameter, since we set to true if it wasn't backed
 	 * even if otherwise clean
 	 */
@@ -1320,7 +1320,7 @@ static inline void paging_stats_faults_inc(struct k_thread *faulting_thread,
 	}
 #else
 	ARG_UNUSED(faulting_thread);
-#endif
+#endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
 
 #ifndef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	if (k_is_in_isr()) {
@@ -1328,7 +1328,7 @@ static inline void paging_stats_faults_inc(struct k_thread *faulting_thread,
 
 #ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
 		faulting_thread->paging_stats.pagefaults.in_isr++;
-#endif
+#endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
 	}
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 #endif /* CONFIG_DEMAND_PAGING_STATS */

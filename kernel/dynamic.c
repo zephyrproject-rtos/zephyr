@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define BA_SIZE CONFIG_DYNAMIC_THREAD_POOL_SIZE
 #else
 #define BA_SIZE 1
-#endif
+#endif /* CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0 */
 
 struct dyn_cb_data {
 	k_tid_t tid;
@@ -71,7 +71,7 @@ static k_thread_stack_t *stack_alloc_dyn(size_t size, int flags)
 		 * enabled we can't proceed.
 		 */
 		return NULL;
-#endif
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 	}
 
 	return z_thread_stack_alloc_dyn(Z_KERNEL_STACK_OBJ_ALIGN,
@@ -106,7 +106,7 @@ static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, int fla
 	return z_impl_k_thread_stack_alloc(size, flags);
 }
 #include <syscalls/k_thread_stack_alloc_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 static void dyn_cb(const struct k_thread *thread, void *user_data)
 {
@@ -154,7 +154,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 		}
 #else
 		k_free(stack);
-#endif
+#endif /* CONFIG_USERSPACE */
 	} else {
 		LOG_DBG("Invalid stack %p", stack);
 		return -EINVAL;
@@ -169,4 +169,4 @@ static inline int z_vrfy_k_thread_stack_free(k_thread_stack_t *stack)
 	return z_impl_k_thread_stack_free(stack);
 }
 #include <syscalls/k_thread_stack_free_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */

@@ -8,4 +8,4 @@
 
 void z_sched_ipi(void);
 
-#endif
+#endif /* ZEPHYR_INCLUDE_KERNEL_INTERNAL_SMP_H_ */
