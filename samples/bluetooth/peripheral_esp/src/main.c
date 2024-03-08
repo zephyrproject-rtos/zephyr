@@ -32,20 +32,66 @@
 #define SENSOR_3_UPDATE_IVAL			60
 
 /* ESS error definitions */
-#define ESS_ERR_WRITE_REJECT			0x80
-#define ESS_ERR_COND_NOT_SUPP			0x81
+#define ESS_ERR_WRITE_REJECT					0x80
+#define ESS_ERR_COND_NOT_SUPP					0x81
 
 /* ESS Trigger Setting conditions */
-#define ESS_TRIGGER_INACTIVE			0x00
-#define ESS_FIXED_TIME_INTERVAL			0x01
-#define ESS_NO_LESS_THAN_SPECIFIED_TIME		0x02
-#define ESS_VALUE_CHANGED			0x03
-#define ESS_LESS_THAN_REF_VALUE			0x04
-#define ESS_LESS_OR_EQUAL_TO_REF_VALUE		0x05
-#define ESS_GREATER_THAN_REF_VALUE		0x06
-#define ESS_GREATER_OR_EQUAL_TO_REF_VALUE	0x07
-#define ESS_EQUAL_TO_REF_VALUE			0x08
-#define ESS_NOT_EQUAL_TO_REF_VALUE		0x09
+#define ESS_TRIGGER_INACTIVE					0x00
+#define ESS_TRIGGER_FIXED_TIME_INTERVAL				0x01
+#define ESS_TRIGGER_NO_LESS_THAN_SPECIFIED_TIME			0x02
+#define ESS_TRIGGER_VALUE_CHANGED				0x03
+#define ESS_TRIGGER_LESS_THAN_REF_VALUE				0x04
+#define ESS_TRIGGER_LESS_OR_EQUAL_TO_REF_VALUE			0x05
+#define ESS_TRIGGER_GREATER_THAN_REF_VALUE			0x06
+#define ESS_TRIGGER_GREATER_OR_EQUAL_TO_REF_VALUE		0x07
+#define ESS_TRIGGER_EQUAL_TO_REF_VALUE				0x08
+#define ESS_TRIGGER_NOT_EQUAL_TO_REF_VALUE			0x09
+
+/* ESS Measurement Descriptor – Sampling Functions */
+#define ESS_DESC_SAMPLING_UNSPECIFIED				0x00
+#define ESS_DESC_SAMPLING_INSTANTANEOUS				0x01
+#define ESS_DESC_SAMPLING_ARITHMETIC_MEAN			0x02
+#define ESS_DESC_SAMPLING_RMS					0x03
+#define ESS_DESC_SAMPLING_MAXIMUM				0x04
+#define ESS_DESC_SAMPLING_MINIMUM				0x05
+#define ESS_DESC_SAMPLING_ACCUMULATED				0x06
+#define ESS_DESC_SAMPLING_COUNT					0x07
+
+/* ES Measurement Descriptor - Applications */
+#define ESS_DESC_APP_UNSPECIFIED				0x00
+#define ESS_DESC_APP_AIR					0x01
+#define ESS_DESC_APP_WATER					0x02
+#define ESS_DESC_APP_BAROMETRIC					0x03
+#define ESS_DESC_APP_SOIL					0x04
+#define ESS_DESC_APP_INFRARED					0x05
+#define ESS_DESC_APP_MAP_DATABASE				0x06
+#define ESS_DESC_APP_BAROMETRIC_ELEVATION_SOURCE		0x07
+#define ESS_DESC_APP_GPS_ONLY_ELEVATION_SOURCE			0x08
+#define ESS_DESC_APP_GPS_AND_MAP_DATABASE_ELEVATION_SOURCE	0x09
+#define ESS_DESC_APP_VERTICAL_DATUM_ELEVATION_SOURCE		0x0A
+#define ESS_DESC_APP_ONSHORE					0x0B
+#define ESS_DESC_APP_ONBOARD_VESSEL_OR_VEHICLE			0x0C
+#define ESS_DESC_APP_FRONT					0x0D
+#define ESS_DESC_APP_BACK_REAR					0x0E
+#define ESS_DESC_APP_UPPER					0x0F
+#define ESS_DESC_APP_LOWER					0x10
+#define ESS_DESC_APP_PRIMARY					0x11
+#define ESS_DESC_APP_SECONDARY					0x12
+#define ESS_DESC_APP_OUTDOOR					0x13
+#define ESS_DESC_APP_INDOOR					0x14
+#define ESS_DESC_APP_TOP					0x15
+#define ESS_DESC_APP_BOTTOM					0x16
+#define ESS_DESC_APP_MAIN					0x17
+#define ESS_DESC_APP_BACKUP					0x18
+#define ESS_DESC_APP_AUXILIARY					0x19
+#define ESS_DESC_APP_SUPPLEMENTARY				0x1A
+#define ESS_DESC_APP_INSIDE					0x1B
+#define ESS_DESC_APP_OUTSIDE					0x1C
+#define ESS_DESC_APP_LEFT					0x1D
+#define ESS_DESC_APP_RIGHT					0x1E
+#define ESS_DESC_APP_INTERNAL					0x1F
+#define ESS_DESC_APP_EXTERNAL					0x20
+#define ESS_DESC_APP_SOLAR					0x21
 
 static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -96,11 +142,11 @@ static struct temperature_sensor sensor_1 = {
 		.temp_value = 1200,
 		.lower_limit = -10000,
 		.upper_limit = 10000,
-		.condition = ESS_VALUE_CHANGED,
-		.meas.sampling_func = 0x00,
+		.condition = ESS_TRIGGER_VALUE_CHANGED,
+		.meas.sampling_func = ESS_DESC_SAMPLING_UNSPECIFIED,
 		.meas.meas_period = 0x01,
 		.meas.update_interval = SENSOR_1_UPDATE_IVAL,
-		.meas.application = 0x1c,
+		.meas.application = ESS_DESC_APP_OUTSIDE,
 		.meas.meas_uncertainty = 0x04,
 };
 
@@ -108,20 +154,20 @@ static struct temperature_sensor sensor_2 = {
 		.temp_value = 1800,
 		.lower_limit = -1000,
 		.upper_limit = 5000,
-		.condition = ESS_VALUE_CHANGED,
-		.meas.sampling_func = 0x00,
+		.condition = ESS_TRIGGER_VALUE_CHANGED,
+		.meas.sampling_func = ESS_DESC_SAMPLING_UNSPECIFIED,
 		.meas.meas_period = 0x01,
 		.meas.update_interval = SENSOR_2_UPDATE_IVAL,
-		.meas.application = 0x1b,
+		.meas.application = ESS_DESC_APP_INSIDE,
 		.meas.meas_uncertainty = 0x04,
 };
 
 static struct humidity_sensor sensor_3 = {
 		.humid_value = 6233,
-		.meas.sampling_func = 0x02,
+		.meas.sampling_func = ESS_DESC_SAMPLING_ARITHMETIC_MEAN,
 		.meas.meas_period = 0x0e10,
 		.meas.update_interval = SENSOR_3_UPDATE_IVAL,
-		.meas.application = 0x1c,
+		.meas.application = ESS_DESC_APP_OUTSIDE,
 		.meas.meas_uncertainty = 0x01,
 };
 
@@ -191,14 +237,14 @@ static ssize_t read_temp_trigger_setting(struct bt_conn *conn,
 	/* Operand N/A */
 	case ESS_TRIGGER_INACTIVE:
 		__fallthrough;
-	case ESS_VALUE_CHANGED:
+	case ESS_TRIGGER_VALUE_CHANGED:
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
 					 &sensor->condition,
 					 sizeof(sensor->condition));
 	/* Seconds */
-	case ESS_FIXED_TIME_INTERVAL:
+	case ESS_TRIGGER_FIXED_TIME_INTERVAL:
 		__fallthrough;
-	case ESS_NO_LESS_THAN_SPECIFIED_TIME: {
+	case ESS_TRIGGER_NO_LESS_THAN_SPECIFIED_TIME: {
 			struct es_trigger_setting_seconds rp;
 
 			rp.condition = sensor->condition;
@@ -226,23 +272,23 @@ static bool check_condition(uint8_t condition, int16_t old_val, int16_t new_val,
 	switch (condition) {
 	case ESS_TRIGGER_INACTIVE:
 		return false;
-	case ESS_FIXED_TIME_INTERVAL:
-	case ESS_NO_LESS_THAN_SPECIFIED_TIME:
+	case ESS_TRIGGER_FIXED_TIME_INTERVAL:
+	case ESS_TRIGGER_NO_LESS_THAN_SPECIFIED_TIME:
 		/* TODO: Check time requirements */
 		return false;
-	case ESS_VALUE_CHANGED:
+	case ESS_TRIGGER_VALUE_CHANGED:
 		return new_val != old_val;
-	case ESS_LESS_THAN_REF_VALUE:
+	case ESS_TRIGGER_LESS_THAN_REF_VALUE:
 		return new_val < ref_val;
-	case ESS_LESS_OR_EQUAL_TO_REF_VALUE:
+	case ESS_TRIGGER_LESS_OR_EQUAL_TO_REF_VALUE:
 		return new_val <= ref_val;
-	case ESS_GREATER_THAN_REF_VALUE:
+	case ESS_TRIGGER_GREATER_THAN_REF_VALUE:
 		return new_val > ref_val;
-	case ESS_GREATER_OR_EQUAL_TO_REF_VALUE:
+	case ESS_TRIGGER_GREATER_OR_EQUAL_TO_REF_VALUE:
 		return new_val >= ref_val;
-	case ESS_EQUAL_TO_REF_VALUE:
+	case ESS_TRIGGER_EQUAL_TO_REF_VALUE:
 		return new_val == ref_val;
-	case ESS_NOT_EQUAL_TO_REF_VALUE:
+	case ESS_TRIGGER_NOT_EQUAL_TO_REF_VALUE:
 		return new_val != ref_val;
 	default:
 		return false;
