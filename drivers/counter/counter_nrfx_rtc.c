@@ -645,8 +645,10 @@ static void alarm_irq_handle(const struct device *dev, uint32_t chan)
 	}
 }
 
-static void irq_handler(const struct device *dev)
+static void irq_handler(const void *arg)
 {
+	const struct device *dev = arg;
+
 	top_irq_handle(dev);
 
 	for (uint32_t i = 0; i < counter_get_num_of_channels(dev); i++) {
