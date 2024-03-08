@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MILKV_DUOS
+	select SOC_SG2000
