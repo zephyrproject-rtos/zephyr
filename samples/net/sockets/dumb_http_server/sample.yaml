@@ -13,11 +13,6 @@ common:
 tests:
   sample.net.sockets.dumb_http_server:
     extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=y
-  sample.net.sockets.dumb_http_server.posix:
-    filter: not CONFIG_NET_SOCKETS_OFFLOAD
-    extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
   sample.net.sockets.dumb_http_server.netusb:
     depends_on: usb_device
