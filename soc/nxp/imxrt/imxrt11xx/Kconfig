@@ -70,6 +70,7 @@ config ADJUST_LDO
 	bool "Adjust LDO setting"
 
 config ADJUST_DCDC
+	default y
 	bool "Adjust internal DCDC output"
 
 endif # SOC_SERIES_IMXRT11XX
