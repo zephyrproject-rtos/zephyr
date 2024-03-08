@@ -1127,9 +1127,9 @@
 			status = "disabled";
 		};
 
-		pit1: pit@400D8000 {
+		pit1: pit@400d8000 {
 			compatible = "nxp,pit";
-			reg = <0x400D8000 0x4000>;
+			reg = <0x400d8000 0x4000>;
 			clocks = <&ccm IMX_CCM_PIT_CLK 0x0 0>;
 			interrupts = <155 0>;
 			max-load-value = <0xffffffff>;
@@ -1162,9 +1162,9 @@
 			};
 		};
 
-		pit2: pit@40CB0000 {
+		pit2: pit@40cb0000 {
 			compatible = "nxp,pit";
-			reg = <0x40CB0000 0x4000>;
+			reg = <0x40cb0000 0x4000>;
 			clocks = <&ccm IMX_CCM_PIT1_CLK 0x0 0>;
 			interrupts = <156 0>;
 			max-load-value = <0xffffffff>;
@@ -1189,7 +1189,7 @@
 			};
 			pit2_channel3: pit2_channel@3 {
 				compatible = "nxp,pit-channel";
-				reg = <2>;
+				reg = <3>;
 				status = "disabled";
 			};
 		};
