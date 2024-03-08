@@ -178,6 +178,18 @@ Bluetooth Classic
 Networking
 **********
 
+* Deprecate the :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` option. It is a legacy option
+  and was used to allow user to call BSD socket API while not enabling POSIX API.
+  This could cause complications when building applications that wanted to enable the
+  :kconfig:option:`CONFIG_POSIX_API` option. This means that if the application wants to use
+  normal BSD socket interface, then it needs to enable :kconfig:option:`CONFIG_POSIX_API`.
+  If the application does not want or is not able to enable that option, then the socket API
+  calls need to be prefixed by a ``zsock_`` string.
+  All the sample applications that use BSD socket interface are changed to enable
+  :kconfig:option:`CONFIG_POSIX_API`. Internally the network stack will not enable POSIX API
+  option which means that various network libraries that use sockets, are converted to
+  use the ``zsock_*`` API calls. (:github:`69950`)
+
 * The zperf zperf_results struct is changed to support 64 bits transferred bytes (total_len)
   and test duration (time_in_us and client_time_in_us), instead of 32 bits. This will make
   the long-duration zperf test show with correct throughput result.
