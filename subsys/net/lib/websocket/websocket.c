@@ -397,7 +397,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 
 out:
 	if (fd >= 0) {
-		(void)close(fd);
+		(void)zsock_close(fd);
 	}
 
 	websocket_context_unref(ctx);
@@ -406,7 +406,7 @@ out:
 
 int websocket_disconnect(int ws_sock)
 {
-	return close(ws_sock);
+	return zsock_close(ws_sock);
 }
 
 static int websocket_interal_disconnect(struct websocket_context *ctx)
@@ -963,8 +963,8 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 
 			ret = wait_rx(ctx->real_sock, timeout_to_ms(&tout));
 			if (ret == 0) {
-				ret = recv(ctx->real_sock, ctx->recv_buf.buf,
-					   ctx->recv_buf.size, MSG_DONTWAIT);
+				ret = zsock_recv(ctx->real_sock, ctx->recv_buf.buf,
+						 ctx->recv_buf.size, MSG_DONTWAIT);
 				if (ret < 0) {
 					ret = -errno;
 				}
