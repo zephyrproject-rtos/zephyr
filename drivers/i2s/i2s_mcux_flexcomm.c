@@ -17,6 +17,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/pinctrl.h>
 
+#ifdef CONFIG_DT_HAS_NXP_LPC_I2S_ENABLED
+
 LOG_MODULE_REGISTER(i2s_mcux_flexcomm);
 
 #define NUM_RX_DMA_BLOCKS	2
@@ -990,3 +992,4 @@ static int i2s_mcux_init(const struct device *dev)
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2S_MCUX_FLEXCOMM_DEVICE)
+#endif /* ifdef CONFIG_DT_HAS_NXP_LPC_I2S_ENABLED */
