@@ -119,7 +119,7 @@ void k_thread_system_pool_assign(struct k_thread *thread)
 }
 #else
 #define _SYSTEM_HEAP	NULL
-#endif
+#endif /* K_HEAP_MEM_POOL_SIZE */
 
 void *z_thread_aligned_alloc(size_t align, size_t size)
 {

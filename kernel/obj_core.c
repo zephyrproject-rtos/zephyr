@@ -28,7 +28,7 @@ void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type)
 	obj_core->type = type;
 #ifdef CONFIG_OBJ_CORE_STATS
 	obj_core->stats = NULL;
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS */
 }
 
 void k_obj_core_link(struct k_obj_core *obj_core)
@@ -324,4 +324,4 @@ int k_obj_core_stats_enable(struct k_obj_core *obj_core)
 
 	return rv;
 }
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS */

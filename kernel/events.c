@@ -47,7 +47,7 @@ struct event_walk_data {
 
 #ifdef CONFIG_OBJ_CORE_EVENT
 static struct k_obj_type obj_type_event;
-#endif
+#endif /* CONFIG_OBJ_CORE_EVENT */
 
 void z_impl_k_event_init(struct k_event *event)
 {
@@ -62,7 +62,7 @@ void z_impl_k_event_init(struct k_event *event)
 
 #ifdef CONFIG_OBJ_CORE_EVENT
 	k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
-#endif
+#endif /* CONFIG_OBJ_CORE_EVENT */
 }
 
 #ifdef CONFIG_USERSPACE
@@ -72,7 +72,7 @@ void z_vrfy_k_event_init(struct k_event *event)
 	z_impl_k_event_init(event);
 }
 #include <syscalls/k_event_init_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 /**
  * @brief determine if desired set of events been satisfied
@@ -191,7 +191,7 @@ uint32_t z_vrfy_k_event_post(struct k_event *event, uint32_t events)
 	return z_impl_k_event_post(event, events);
 }
 #include <syscalls/k_event_post_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_set(struct k_event *event, uint32_t events)
 {
@@ -205,7 +205,7 @@ uint32_t z_vrfy_k_event_set(struct k_event *event, uint32_t events)
 	return z_impl_k_event_set(event, events);
 }
 #include <syscalls/k_event_set_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
 			       uint32_t events_mask)
@@ -221,7 +221,7 @@ uint32_t z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
 	return z_impl_k_event_set_masked(event, events, events_mask);
 }
 #include <syscalls/k_event_set_masked_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_clear(struct k_event *event, uint32_t events)
 {
@@ -235,7 +235,7 @@ uint32_t z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
 	return z_impl_k_event_clear(event, events);
 }
 #include <syscalls/k_event_clear_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 				      unsigned int options, k_timeout_t timeout)
@@ -321,7 +321,7 @@ uint32_t z_vrfy_k_event_wait(struct k_event *event, uint32_t events,
 	return z_impl_k_event_wait(event, events, reset, timeout);
 }
 #include <syscalls/k_event_wait_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 /**
  * Wait for all of the specified events
@@ -343,7 +343,7 @@ uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 	return z_impl_k_event_wait_all(event, events, reset, timeout);
 }
 #include <syscalls/k_event_wait_all_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_EVENT
 static int init_event_obj_core_list(void)
@@ -364,4 +364,4 @@ static int init_event_obj_core_list(void)
 
 SYS_INIT(init_event_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif
+#endif /* CONFIG_OBJ_CORE_EVENT */

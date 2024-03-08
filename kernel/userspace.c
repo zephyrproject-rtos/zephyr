@@ -25,7 +25,7 @@
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
-#endif
+#endif /* Z_LIBC_PARTITION_EXISTS */
 
 /* TODO: Find a better place to put this. Since we pull the entire
  * lib..__modules__crypto__mbedtls.a  globals into app shared memory
@@ -33,7 +33,7 @@ K_APPMEM_PARTITION_DEFINE(z_libc_partition);
  */
 #ifdef CONFIG_MBEDTLS
 K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
-#endif
+#endif /* CONFIG_MBEDTLS */
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -68,14 +68,14 @@ static struct k_spinlock objfree_lock;     /* k_object_free */
 #define STACK_ELEMENT_DATA_SIZE(size) Z_THREAD_STACK_SIZE_ADJUST(size)
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
-#endif
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 static struct k_spinlock obj_lock;         /* kobj struct data */
 
 #define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
-#endif
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 
 static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
 
@@ -102,7 +102,7 @@ const char *otype_to_str(enum k_objects otype)
 #else
 	ARG_UNUSED(otype);
 	ret = NULL;
-#endif
+#endif /* CONFIG_LOG */
 	return ret;
 }
 
@@ -147,7 +147,7 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT)
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD	(sizeof(void *))
-#endif
+#endif /* ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT */
 
 #ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
 #ifndef CONFIG_MPU_STACK_GUARD
@@ -211,7 +211,7 @@ static size_t obj_align_get(enum k_objects otype)
 		ret = ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT;
 #else
 		ret = __alignof(struct dyn_obj);
-#endif
+#endif /* ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT */
 		break;
 	default:
 		ret = __alignof(struct dyn_obj);
@@ -349,11 +349,11 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 			  Z_THREAD_STACK_OBJ_ALIGN(size));
 #else
 		dyn->kobj.name = dyn->data;
-#endif
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
 #else
 		dyn->kobj.name = dyn->data;
 		dyn->kobj.data.stack_size = adjusted_size;
-#endif
+#endif /* CONFIG_GEN_PRIV_STACKS */
 	} else {
 		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
 		if (dyn->data == NULL) {
@@ -561,7 +561,7 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	case K_OBJ_PIPE:
 		k_pipe_cleanup((struct k_pipe *)ko->name);
 		break;
-#endif
+#endif /* CONFIG_PIPES */
 	case K_OBJ_MSGQ:
 		k_msgq_cleanup((struct k_msgq *)ko->name);
 		break;
@@ -577,7 +577,7 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	k_free(dyn->data);
 	k_free(dyn);
 out:
-#endif
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 	k_spin_unlock(&obj_lock, key);
 }
 

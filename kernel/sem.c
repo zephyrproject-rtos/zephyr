@@ -40,7 +40,7 @@ static struct k_spinlock lock;
 
 #ifdef CONFIG_OBJ_CORE_SEM
 static struct k_obj_type obj_type_sem;
-#endif
+#endif /* CONFIG_OBJ_CORE_SEM */
 
 int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
@@ -62,12 +62,12 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	z_waitq_init(&sem->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
-#endif
+#endif /* CONFIG_POLL */
 	k_object_init(sem);
 
 #ifdef CONFIG_OBJ_CORE_SEM
 	k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);
-#endif
+#endif /* CONFIG_OBJ_CORE_SEM */
 
 	return 0;
 }
@@ -80,7 +80,7 @@ int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	return z_impl_k_sem_init(sem, initial_count, limit);
 }
 #include <syscalls/k_sem_init_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 static inline bool handle_poll_events(struct k_sem *sem)
 {
@@ -90,7 +90,7 @@ static inline bool handle_poll_events(struct k_sem *sem)
 #else
 	ARG_UNUSED(sem);
 	return false;
-#endif
+#endif /* CONFIG_POLL */
 }
 
 void z_impl_k_sem_give(struct k_sem *sem)
@@ -127,7 +127,7 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 	z_impl_k_sem_give(sem);
 }
 #include <syscalls/k_sem_give_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
@@ -207,7 +207,7 @@ static inline unsigned int z_vrfy_k_sem_count_get(struct k_sem *sem)
 }
 #include <syscalls/k_sem_count_get_mrsh.c>
 
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_SEM
 static int init_sem_obj_core_list(void)
@@ -228,4 +228,4 @@ static int init_sem_obj_core_list(void)
 
 SYS_INIT(init_sem_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif
+#endif /* CONFIG_OBJ_CORE_SEM */

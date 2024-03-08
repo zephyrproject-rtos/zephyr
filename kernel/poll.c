@@ -93,7 +93,7 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 			*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
 			return true;
 		}
-#endif
+#endif /* CONFIG_PIPES */
 	case K_POLL_TYPE_IGNORE:
 		break;
 	default:
@@ -159,7 +159,7 @@ static inline void register_event(struct k_poll_event *event,
 		__ASSERT(event->pipe != NULL, "invalid pipe\n");
 		add_event(&event->pipe->poll_events, event, poller);
 		break;
-#endif
+#endif /* CONFIG_PIPES */
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
@@ -200,7 +200,7 @@ static inline void clear_event_registration(struct k_poll_event *event)
 		__ASSERT(event->pipe != NULL, "invalid pipe\n");
 		remove_event = true;
 		break;
-#endif
+#endif /* CONFIG_PIPES */
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
@@ -417,7 +417,7 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
 			K_OOPS(K_SYSCALL_OBJ(e->pipe, K_OBJ_PIPE));
 			break;
-#endif
+#endif /* CONFIG_PIPES */
 		default:
 			ret = -EINVAL;
 			goto out_free;
@@ -435,7 +435,7 @@ oops_free:
 	K_OOPS(1);
 }
 #include <syscalls/k_poll_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 /* must be called with interrupts locked */
 static int signal_poll_event(struct k_poll_event *event, uint32_t state)
@@ -494,7 +494,7 @@ static inline void z_vrfy_k_poll_signal_init(struct k_poll_signal *sig)
 	z_impl_k_poll_signal_init(sig);
 }
 #include <syscalls/k_poll_signal_init_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_poll_signal_reset(struct k_poll_signal *sig)
 {
@@ -522,7 +522,7 @@ void z_vrfy_k_poll_signal_check(struct k_poll_signal *sig,
 	z_impl_k_poll_signal_check(sig, signaled, result);
 }
 #include <syscalls/k_poll_signal_check_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 int z_impl_k_poll_signal_raise(struct k_poll_signal *sig, int result)
 {
@@ -565,7 +565,7 @@ static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *sig)
 }
 #include <syscalls/k_poll_signal_reset_mrsh.c>
 
-#endif
+#endif /* CONFIG_USERSPACE */
 
 static void triggered_work_handler(struct k_work *work)
 {

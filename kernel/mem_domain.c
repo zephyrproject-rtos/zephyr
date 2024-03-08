@@ -43,7 +43,7 @@ static bool check_add_partition(struct k_mem_domain *domain,
 			part->start);
 		return false;
 	}
-#endif
+#endif /* CONFIG_EXECUTE_XOR_WRITE */
 
 	if (part->size == 0U) {
 		LOG_ERR("zero sized partition at %p with base 0x%lx",
@@ -124,7 +124,7 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		ret = -ENOMEM;
 		goto unlock_out;
 	}
-#endif
+#endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 	if (num_parts != 0U) {
 		uint32_t i;
 
@@ -145,7 +145,7 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 			CHECKIF(ret2 != 0) {
 				ret = ret2;
 			}
-#endif
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 		}
 	}
 
@@ -200,7 +200,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	ret = arch_mem_domain_partition_add(domain, p_idx);
-#endif
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 unlock_out:
 	k_spin_unlock(&z_mem_domain_lock, key);
@@ -242,7 +242,7 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	ret = arch_mem_domain_partition_remove(domain, p_idx);
-#endif
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 	/* A zero-sized partition denotes it's a free partition */
 	domain->partitions[p_idx].size = 0U;
@@ -271,7 +271,7 @@ static int add_thread_locked(struct k_mem_domain *domain,
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	ret = arch_mem_domain_thread_add(thread);
-#endif
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 	return ret;
 }
@@ -287,7 +287,7 @@ static int remove_thread_locked(struct k_thread *thread)
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	ret = arch_mem_domain_thread_remove(thread);
-#endif
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 	return ret;
 }

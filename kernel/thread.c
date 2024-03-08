@@ -47,7 +47,7 @@ static struct k_obj_core_stats_desc  thread_stats_desc = {
 	.disable = z_thread_stats_disable,
 	.enable  = z_thread_stats_enable,
 };
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
 
 static int init_thread_obj_core_list(void)
 {
@@ -56,18 +56,18 @@ static int init_thread_obj_core_list(void)
 #ifdef CONFIG_OBJ_CORE_THREAD
 	z_obj_type_init(&obj_type_thread, K_OBJ_TYPE_THREAD_ID,
 			offsetof(struct k_thread, obj_core));
-#endif
+#endif /* CONFIG_OBJ_CORE_THREAD */
 
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
 	k_obj_type_stats_init(&obj_type_thread, &thread_stats_desc);
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
 
 	return 0;
 }
 
 SYS_INIT(init_thread_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif
+#endif /* CONFIG_OBJ_CORE_THREAD */
 
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
@@ -91,7 +91,7 @@ static inline void z_vrfy_k_thread_custom_data_set(void *data)
 	z_impl_k_thread_custom_data_set(data);
 }
 #include <syscalls/k_thread_custom_data_set_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 void *z_impl_k_thread_custom_data_get(void)
 {
@@ -338,8 +338,8 @@ static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 	return z_impl_k_thread_start(thread);
 }
 #include <syscalls/k_thread_start_mrsh.c>
-#endif
-#endif
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_MULTITHREADING */
 
 
 #if CONFIG_STACK_POINTER_RANDOM
@@ -388,7 +388,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 		stack_buf_start = Z_THREAD_STACK_BUFFER(stack);
 		stack_buf_size = stack_obj_size - K_THREAD_STACK_RESERVED;
 	} else
-#endif
+#endif /* CONFIG_USERSPACE */
 	{
 		/* Object cannot host a user mode thread */
 		stack_obj_size = Z_KERNEL_STACK_SIZE_ADJUST(stack_size);
@@ -417,7 +417,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 
 #ifdef CONFIG_INIT_STACKS
 	memset(stack_buf_start, 0xaa, stack_buf_size);
-#endif
+#endif /* CONFIG_INIT_STACKS */
 #ifdef CONFIG_STACK_SENTINEL
 	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
 	 * We periodically check that it's still present and kill the thread
@@ -436,10 +436,10 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	delta += tls_size;
 	new_thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)(stack_ptr - delta);
-#endif
+#endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #if CONFIG_STACK_POINTER_RANDOM
 	delta += random_offset(stack_buf_size);
-#endif
+#endif /* CONFIG_STACK_POINTER_RANDOM */
 	delta = ROUND_UP(delta, ARCH_STACK_PTR_ALIGN);
 #ifdef CONFIG_THREAD_STACK_INFO
 	/* Initial values. Arches which implement MPU guards that "borrow"
@@ -452,7 +452,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	new_thread->stack_info.start = (uintptr_t)stack_buf_start;
 	new_thread->stack_info.size = stack_buf_size;
 	new_thread->stack_info.delta = delta;
-#endif
+#endif /* CONFIG_THREAD_STACK_INFO */
 	stack_ptr -= delta;
 
 	return stack_ptr;
@@ -479,8 +479,8 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	k_obj_core_stats_register(K_OBJ_CORE(new_thread),
 				  &new_thread->base.usage,
 				  sizeof(new_thread->base.usage));
-#endif
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
+#endif /* CONFIG_OBJ_CORE_THREAD */
 
 #ifdef CONFIG_USERSPACE
 	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
@@ -493,7 +493,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
-#endif
+#endif /* CONFIG_USERSPACE */
 	z_waitq_init(&new_thread->join_queue);
 
 	/* Initialize various struct k_thread members */
@@ -513,7 +513,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	__ASSERT_NO_MSG(!arch_mem_coherent(stack));
 #endif  /* CONFIG_DYNAMIC_THREAD */
 
-#endif
+#endif /* CONFIG_KERNEL_COHERENCE */
 
 	arch_new_thread(new_thread, stack, stack_ptr, entry, p1, p2, p3);
 
@@ -527,14 +527,14 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	 */
 	__ASSERT(new_thread->switch_handle != NULL,
 		 "arch layer failed to initialize switch_handle");
-#endif
+#endif /* CONFIG_USE_SWITCH */
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 	new_thread->custom_data = NULL;
-#endif
+#endif /* CONFIG_THREAD_CUSTOM_DATA */
 #ifdef CONFIG_EVENTS
 	new_thread->no_wake_on_timeout = false;
-#endif
+#endif /* CONFIG_EVENTS */
 #ifdef CONFIG_THREAD_MONITOR
 	new_thread->entry.pEntry = entry;
 	new_thread->entry.parameter1 = p1;
@@ -546,7 +546,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->next_thread = _kernel.threads;
 	_kernel.threads = new_thread;
 	k_spin_unlock(&z_thread_monitor_lock, key);
-#endif
+#endif /* CONFIG_THREAD_MONITOR */
 #ifdef CONFIG_THREAD_NAME
 	if (name != NULL) {
 		strncpy(new_thread->name, name,
@@ -556,42 +556,42 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	} else {
 		new_thread->name[0] = '\0';
 	}
-#endif
+#endif /* CONFIG_THREAD_NAME */
 #ifdef CONFIG_SCHED_CPU_MASK
 	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
 		new_thread->base.cpu_mask = 1; /* must specify only one cpu */
 	} else {
 		new_thread->base.cpu_mask = -1; /* allow all cpus */
 	}
-#endif
+#endif /* CONFIG_SCHED_CPU_MASK */
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
 	if (!_current) {
 		new_thread->resource_pool = NULL;
 		return stack_ptr;
 	}
-#endif
+#endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
 #ifdef CONFIG_USERSPACE
 	z_mem_domain_init_thread(new_thread);
 
 	if ((options & K_INHERIT_PERMS) != 0U) {
 		k_thread_perms_inherit(_current, new_thread);
 	}
-#endif
+#endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_SCHED_DEADLINE
 	new_thread->base.prio_deadline = 0;
-#endif
+#endif /* CONFIG_SCHED_DEADLINE */
 	new_thread->resource_pool = _current->resource_pool;
 
 #ifdef CONFIG_SMP
 	z_waitq_init(&new_thread->halt_queue);
-#endif
+#endif /* CONFIG_SMP */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	new_thread->base.usage = (struct k_cycle_stats) {};
 	new_thread->base.usage.track_usage =
 		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE */
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
@@ -661,7 +661,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	stack_obj_size = stack_object->data.stack_data->size;
 #else
 	stack_obj_size = stack_object->data.stack_size;
-#endif
+#endif /* CONFIG_GEN_PRIV_STACKS */
 	K_OOPS(K_SYSCALL_VERIFY_MSG(total_size <= stack_obj_size,
 				    "stack size %zu is too big, max is %zu",
 				    total_size, stack_obj_size));
@@ -707,12 +707,12 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 #ifdef CONFIG_SMP
 	thread_base->is_idle = 0;
-#endif
+#endif /* CONFIG_SMP */
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	thread_base->slice_ticks = 0;
 	thread_base->slice_expired = NULL;
-#endif
+#endif /* CONFIG_TIMESLICE_PER_THREAD */
 
 	/* swap_data does not need to be initialized */
 
@@ -731,30 +731,30 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter1 = p1;
 	_current->entry.parameter2 = p2;
 	_current->entry.parameter3 = p3;
-#endif
+#endif /* CONFIG_THREAD_MONITOR */
 #ifdef CONFIG_USERSPACE
 	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
 		 "dropping to user mode with kernel-only stack object");
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	memset(_current->userspace_local_data, 0,
 	       sizeof(struct _thread_userspace_local_data));
-#endif
+#endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	arch_tls_stack_setup(_current,
 			     (char *)(_current->stack_info.start +
 				      _current->stack_info.size));
-#endif
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
 	arch_user_mode_enter(entry, p1, p2, p3);
 #else
 	/* XXX In this case we do not reset the stack */
 	z_thread_entry(entry, p1, p2, p3);
-#endif
+#endif /* CONFIG_USERSPACE */
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 #ifdef CONFIG_STACK_GROWS_UP
 #error "Unsupported configuration for stack analysis"
-#endif
+#endif /* CONFIG_STACK_GROWS_UP */
 
 int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr)
 {
@@ -858,25 +858,25 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 	return z_impl_k_thread_timeout_expires_ticks(thread);
 }
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 void z_thread_mark_switched_in(void)
 {
 #if defined(CONFIG_SCHED_THREAD_USAGE) && !defined(CONFIG_USE_SWITCH)
 	z_sched_usage_start(_current);
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE && !CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_TRACING
 	SYS_PORT_TRACING_FUNC(k_thread, switched_in);
-#endif
+#endif /* CONFIG_TRACING */
 }
 
 void z_thread_mark_switched_out(void)
 {
 #if defined(CONFIG_SCHED_THREAD_USAGE) && !defined(CONFIG_USE_SWITCH)
 	z_sched_usage_stop();
-#endif
+#endif /*CONFIG_SCHED_THREAD_USAGE && !CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_TRACING
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
@@ -884,9 +884,9 @@ void z_thread_mark_switched_out(void)
 	if (!_current_cpu->current ||
 	    (_current_cpu->current->base.thread_state & _THREAD_DUMMY) != 0)
 		return;
-#endif
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
 	SYS_PORT_TRACING_FUNC(k_thread, switched_out);
-#endif
+#endif /* CONFIG_TRACING */
 }
 #endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
@@ -901,7 +901,7 @@ int k_thread_runtime_stats_get(k_tid_t thread,
 	z_sched_thread_usage(thread, stats);
 #else
 	*stats = (k_thread_runtime_stats_t) {};
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE */
 
 	return 0;
 }
@@ -910,7 +910,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 {
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	k_thread_runtime_stats_t  tmp_stats;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
 	if (stats == NULL) {
 		return -EINVAL;
@@ -932,10 +932,10 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 		stats->current_cycles   += tmp_stats.current_cycles;
 		stats->peak_cycles      += tmp_stats.peak_cycles;
 		stats->average_cycles   += tmp_stats.average_cycles;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 		stats->idle_cycles      += tmp_stats.idle_cycles;
 	}
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
 	return 0;
 }

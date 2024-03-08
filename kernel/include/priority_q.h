@@ -16,7 +16,7 @@
 #  define _priq_run_best	_priq_dumb_mask_best
 # else
 #  define _priq_run_best	z_priq_dumb_best
-# endif
+# endif /* CONFIG_SCHED_CPU_MASK */
 /* Scalable Scheduling */
 #elif defined(CONFIG_SCHED_SCALABLE)
 #define _priq_run_add		z_priq_rb_add

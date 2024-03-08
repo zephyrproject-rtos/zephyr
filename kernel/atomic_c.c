@@ -56,7 +56,7 @@ static struct k_spinlock lock;
 #else
 #define ATOMIC_SYSCALL_HANDLER_TARGET(name)
 #define ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(name)
-#endif
+#endif /* CONFIG_USERSPACE */
 
 /**
  *
@@ -411,4 +411,4 @@ ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_nand);
 #include <syscalls/atomic_xor_mrsh.c>
 #include <syscalls/atomic_and_mrsh.c>
 #include <syscalls/atomic_nand_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */

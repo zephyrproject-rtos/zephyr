@@ -108,7 +108,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
 		LOG_ERR("Fault during interrupt handling\n");
 	}
-#endif
+#endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 
 	LOG_ERR("Current thread: %p (%s)", thread,
 		thread_name_get(thread));
