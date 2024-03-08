@@ -11,9 +11,4 @@ common:
 tests:
   sample.net.sockets.echo_async:
     extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=y
-  sample.net.sockets.echo_async.posix:
-    filter: not CONFIG_NET_SOCKETS_OFFLOAD
-    extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y

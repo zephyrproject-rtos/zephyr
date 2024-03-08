@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
+#if !defined(__ZEPHYR__)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
