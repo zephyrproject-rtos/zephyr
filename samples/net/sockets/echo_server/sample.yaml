@@ -128,6 +128,7 @@ tests:
     extra_args:
       - CONFIG_USERSPACE=y
       - OVERLAY_CONFIG="overlay-e1000.conf"
+      - CONFIG_MAX_THREAD_BYTES=3
     platform_allow:
       - qemu_x86
       - qemu_x86_64
