@@ -1,0 +1,5 @@
+board:
+  name: milkv_duos
+  vendor: milkv
+  socs:
+  - name: sg2000
