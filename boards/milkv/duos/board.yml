@@ -1,0 +1,6 @@
+board:
+  name: milkv_duos
+  full_name: Duo S
+  vendor: milkv
+  socs:
+  - name: sg2000
