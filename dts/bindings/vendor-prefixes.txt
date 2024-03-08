@@ -699,6 +699,7 @@ vivante	Vivante Corporation
 vnd	A stand-in for a real vendor which can be used in examples and tests
 vngiotlab	VNGIoTLab
 vocore	VoCore Studio
+vogl    Vogl Electronic GmbH
 voipac	Voipac Technologies s.r.o.
 vot	Vision Optical Technology Co., Ltd.
 vxt	VXT Ltd
