@@ -13,3 +13,4 @@ testing:
     - bsim_skip_CI
 supported:
   - gpio
+  - counter
