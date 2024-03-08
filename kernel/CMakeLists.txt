@@ -86,9 +86,16 @@ list(APPEND kernel_files
 
 if(CONFIG_SMP)
 list(APPEND kernel_files
-     smp.c)
+     smp.c
+     ipi.c)
 endif()
 
+endif()
+
+
+if(CONFIG_TIMESLICING)
+list(APPEND kernel_files
+     timeslicing.c)
 endif()
 
 if(CONFIG_SPIN_VALIDATE)
