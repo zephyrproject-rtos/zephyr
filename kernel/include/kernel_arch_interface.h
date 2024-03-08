@@ -37,7 +37,7 @@ extern "C" {
  * @param usec_to_wait Wait period, in microseconds
  */
 void arch_busy_wait(uint32_t usec_to_wait);
-#endif
+#endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
 
 /** @} */
 
@@ -154,7 +154,7 @@ int arch_swap(unsigned int key);
  */
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
-#endif /* CONFIG_USE_SWITCH i*/
+#endif /* CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 /**

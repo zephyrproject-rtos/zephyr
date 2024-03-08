@@ -34,7 +34,7 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #else
 #define Z_VALID_PRIO(prio, entry_point) ((prio) == -1)
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
-#endif
+#endif /* CONFIG_MULTITHREADING */
 
 void z_sched_init(void);
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
@@ -80,7 +80,7 @@ static inline bool z_is_idle_thread_object(struct k_thread *thread)
 	return thread->base.is_idle;
 #else
 	return thread == &z_idle_threads[0];
-#endif
+#endif /* CONFIG_SMP */
 #else
 	return false;
 #endif /* CONFIG_MULTITHREADING */
@@ -417,7 +417,7 @@ static inline void z_sched_usage_switch(struct k_thread *thread)
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	z_sched_usage_stop();
 	z_sched_usage_start(thread);
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE */
 }
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */
