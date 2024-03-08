@@ -128,16 +128,16 @@ ZTEST(test_net_pm_test_suite, test_pm)
 
 	addr4.sin_family = AF_INET;
 	addr4.sin_port = htons(12345);
-	inet_pton(AF_INET, "192.168.0.1", &addr4.sin_addr);
+	zsock_inet_pton(AF_INET, "192.168.0.1", &addr4.sin_addr);
 
-	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock >= 0, "Could not open socket");
 
 	zassert_false(net_if_is_suspended(iface), "net iface is not suspended");
 
 	/* Let's send some data, it should go through */
-	ret = sendto(sock, data, ARRAY_SIZE(data), 0,
-		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
+	ret = zsock_sendto(sock, data, ARRAY_SIZE(data), 0,
+			   (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret > 0, "Could not send data");
 
 	/* Let's make sure net stack's thread gets ran, or setting PM state
@@ -157,8 +157,8 @@ ZTEST(test_net_pm_test_suite, test_pm)
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
 
 	/* Let's send some data, it should fail relevantly */
-	ret = sendto(sock, data, ARRAY_SIZE(data), 0,
-		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
+	ret = zsock_sendto(sock, data, ARRAY_SIZE(data), 0,
+			   (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret < 0, "Could send data");
 
 	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
@@ -170,11 +170,11 @@ ZTEST(test_net_pm_test_suite, test_pm)
 	zassert_true(ret == -EALREADY, "Could change state");
 
 	/* Let's send some data, it should go through */
-	ret = sendto(sock, data, ARRAY_SIZE(data), 0,
-		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
+	ret = zsock_sendto(sock, data, ARRAY_SIZE(data), 0,
+			   (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret > 0, "Could not send data");
 
-	close(sock);
+	zsock_close(sock);
 }
 
 ZTEST_SUITE(test_net_pm_test_suite, NULL, test_setup, NULL, NULL, NULL);

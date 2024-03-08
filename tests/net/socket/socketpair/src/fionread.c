@@ -20,7 +20,7 @@ ZTEST_F(net_socketpair, test_ioctl_fionread)
 	/* both ends should have zero bytes available after being newly created */
 	for (int i = 0; i < 2; ++i) {
 		avail = 42;
-		zassert_ok(ioctl(fixture->sv[i], ZFD_IOCTL_FIONREAD, &avail));
+		zassert_ok(zsock_ioctl(fixture->sv[i], ZFD_IOCTL_FIONREAD, &avail));
 		zassert_equal(avail, 0);
 	}
 
@@ -29,14 +29,14 @@ ZTEST_F(net_socketpair, test_ioctl_fionread)
 		int j = (i + 1) % 2;
 
 		zassert_equal(1, write(fixture->sv[i], "\x42", 1));
-		zassert_ok(ioctl(fixture->sv[j], ZFD_IOCTL_FIONREAD, &avail));
+		zassert_ok(zsock_ioctl(fixture->sv[j], ZFD_IOCTL_FIONREAD, &avail));
 		zassert_equal(avail, 1);
 	}
 
 	/* read the other end, ensure availability is zero again */
 	for (int i = 0; i < 2; ++i) {
 		zassert_equal(1, read(fixture->sv[i], &byte, 1));
-		zassert_ok(ioctl(fixture->sv[i], ZFD_IOCTL_FIONREAD, &avail));
+		zassert_ok(zsock_ioctl(fixture->sv[i], ZFD_IOCTL_FIONREAD, &avail));
 		zassert_equal(avail, 0);
 	}
 }

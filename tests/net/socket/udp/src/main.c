@@ -78,21 +78,21 @@ static void comm_sendto_recvfrom(int client_sock,
 	 * Test client -> server sending
 	 */
 
-	sent = sendto(client_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
-		      0, server_addr, server_addrlen);
+	sent = zsock_sendto(client_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
+			    0, server_addr, server_addrlen);
 	zassert_equal(sent, strlen(TEST_STR_SMALL), "sendto failed");
 
 	k_msleep(100);
 
 	avail = 42;
-	zassert_ok(ioctl(server_sock, ZFD_IOCTL_FIONREAD, &avail));
+	zassert_ok(zsock_ioctl(server_sock, ZFD_IOCTL_FIONREAD, &avail));
 	zassert_equal(avail, strlen(TEST_STR_SMALL));
 
 	/* Test recvfrom(MSG_PEEK) */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
-			  MSG_PEEK, &addr, &addrlen);
+	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+				ZSOCK_MSG_PEEK, &addr, &addrlen);
 	zassert_true(recved >= 0, "recvfrom fail");
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
@@ -102,8 +102,8 @@ static void comm_sendto_recvfrom(int client_sock,
 	/* Test normal recvfrom() */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
-			  0, &addr, &addrlen);
+	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+				0, &addr, &addrlen);
 	zassert_true(recved >= 0, "recvfrom fail");
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
@@ -121,15 +121,15 @@ static void comm_sendto_recvfrom(int client_sock,
 	 * Test server -> client sending
 	 */
 
-	sent = sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
-		      0, &addr, addrlen);
+	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
+			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
 
 	/* Test normal recvfrom() */
 	addrlen2 = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvfrom(client_sock, rx_buf, sizeof(rx_buf),
-			  0, &addr2, &addrlen2);
+	recved = zsock_recvfrom(client_sock, rx_buf, sizeof(rx_buf),
+				0, &addr2, &addrlen2);
 	zassert_true(recved >= 0, "recvfrom fail");
 	zassert_equal(recved, STRLEN(TEST_STR2),
 		      "unexpected received bytes");
@@ -144,24 +144,24 @@ static void comm_sendto_recvfrom(int client_sock,
 	/* Test that unleft leftover data from datagram is discarded. */
 
 	/* Send 2 datagrams */
-	sent = sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
-		      0, &addr, addrlen);
+	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
+			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
-	sent = sendto(server_sock, BUF_AND_SIZE(TEST_STR_SMALL),
-		      0, &addr, addrlen);
+	sent = zsock_sendto(server_sock, BUF_AND_SIZE(TEST_STR_SMALL),
+			    0, &addr, addrlen);
 	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendto failed");
 
 	/* Receive just beginning of 1st datagram */
 	addrlen2 = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvfrom(client_sock, rx_buf, 16, 0, &addr2, &addrlen2);
+	recved = zsock_recvfrom(client_sock, rx_buf, 16, 0, &addr2, &addrlen2);
 	zassert_true(recved == 16, "recvfrom fail");
 	zassert_mem_equal(rx_buf, TEST_STR2, 16, "wrong data");
 
 	/* Make sure that now we receive 2nd datagram */
 	addrlen2 = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvfrom(client_sock, rx_buf, 16, 0, &addr2, &addrlen2);
+	recved = zsock_recvfrom(client_sock, rx_buf, 16, 0, &addr2, &addrlen2);
 	zassert_true(recved == STRLEN(TEST_STR_SMALL), "recvfrom fail");
 	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
 }
@@ -177,9 +177,9 @@ ZTEST(net_socket_udp, test_02_v4_sendto_recvfrom)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr,
-		  sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
 	zassert_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
@@ -189,9 +189,9 @@ ZTEST(net_socket_udp, test_02_v4_sendto_recvfrom)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -206,8 +206,8 @@ ZTEST(net_socket_udp, test_03_v6_sendto_recvfrom)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr, sizeof(server_addr));
 	zassert_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
@@ -217,9 +217,9 @@ ZTEST(net_socket_udp, test_03_v6_sendto_recvfrom)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -234,12 +234,12 @@ ZTEST(net_socket_udp, test_04_v4_bind_sendto)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr, sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr, sizeof(client_addr));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr, sizeof(server_addr));
 	zassert_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
@@ -249,9 +249,9 @@ ZTEST(net_socket_udp, test_04_v4_bind_sendto)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -266,12 +266,12 @@ ZTEST(net_socket_udp, test_05_v6_bind_sendto)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr, sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr, sizeof(client_addr));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr, sizeof(server_addr));
 	zassert_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
@@ -281,9 +281,9 @@ ZTEST(net_socket_udp, test_05_v6_bind_sendto)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -297,28 +297,28 @@ ZTEST(net_socket_udp, test_01_send_recv_2_sock)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock2, &conn_addr);
 
-	rv = bind(sock1, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
+	rv = zsock_bind(sock1, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
+	rv = zsock_connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
 	zassert_equal(rv, 0, "connect failed");
 
-	len = send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	len = zsock_send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
 	clear_buf(buf);
-	len = recv(sock1, buf, sizeof(buf), MSG_PEEK);
+	len = zsock_recv(sock1, buf, sizeof(buf), ZSOCK_MSG_PEEK);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
 	zassert_mem_equal(buf, BUF_AND_SIZE(TEST_STR_SMALL), "Wrong data");
 
 	clear_buf(buf);
-	len = recv(sock1, buf, sizeof(buf), 0);
+	len = zsock_recv(sock1, buf, sizeof(buf), 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
 	zassert_mem_equal(buf, BUF_AND_SIZE(TEST_STR_SMALL), "Wrong data");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -332,25 +332,25 @@ ZTEST(net_socket_udp, test_07_so_priority)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, 55555, &sock2, &bind_addr6);
 
-	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	rv = zsock_bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
+	rv = zsock_bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
 	zassert_equal(rv, 0, "bind failed");
 
 	optval = 2;
-	rv = setsockopt(sock1, SOL_SOCKET, SO_PRIORITY, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock1, SOL_SOCKET, SO_PRIORITY, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval = 8;
-	rv = setsockopt(sock2, SOL_SOCKET, SO_PRIORITY, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_PRIORITY, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -375,7 +375,7 @@ static void comm_sendmsg_recvfrom(int client_sock,
 	 * Test client -> server sending
 	 */
 
-	sent = sendmsg(client_sock, client_msg, 0);
+	sent = zsock_sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
@@ -387,8 +387,8 @@ static void comm_sendmsg_recvfrom(int client_sock,
 	/* Test recvfrom(MSG_PEEK) */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
-			  MSG_PEEK, &addr, &addrlen);
+	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+			  ZSOCK_MSG_PEEK, &addr, &addrlen);
 	zassert_true(recved >= 0, "recvfrom fail");
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
@@ -402,7 +402,7 @@ static void comm_sendmsg_recvfrom(int client_sock,
 	/* Test normal recvfrom() */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
 			  0, &addr, &addrlen);
 	zassert_true(recved >= 0, "recvfrom fail");
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
@@ -436,14 +436,14 @@ ZTEST_USER(net_socket_udp, test_12_v4_sendmsg_recvfrom)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr,
-		  sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -471,9 +471,9 @@ ZTEST_USER(net_socket_udp, test_12_v4_sendmsg_recvfrom)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -490,14 +490,14 @@ ZTEST_USER(net_socket_udp, test_13_v4_sendmsg_recvfrom_no_aux_data)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr,
-		  sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -517,9 +517,9 @@ ZTEST_USER(net_socket_udp, test_13_v4_sendmsg_recvfrom_no_aux_data)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -541,13 +541,13 @@ ZTEST_USER(net_socket_udp, test_14_v6_sendmsg_recvfrom)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr, sizeof(server_addr));
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -575,9 +575,9 @@ ZTEST_USER(net_socket_udp, test_14_v6_sendmsg_recvfrom)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -599,18 +599,18 @@ ZTEST_USER(net_socket_udp, test_15_v4_sendmsg_recvfrom_connected)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr,
-		  sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
-	rv = connect(client_sock, (struct sockaddr *)&server_addr,
-		     sizeof(server_addr));
+	rv = zsock_connect(client_sock, (struct sockaddr *)&server_addr,
+			   sizeof(server_addr));
 	zassert_equal(rv, 0, "connect failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -636,9 +636,9 @@ ZTEST_USER(net_socket_udp, test_15_v4_sendmsg_recvfrom_connected)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -660,17 +660,17 @@ ZTEST_USER(net_socket_udp, test_06_v6_sendmsg_recvfrom_connected)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr, sizeof(server_addr));
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
-	rv = connect(client_sock, (struct sockaddr *)&server_addr,
-		     sizeof(server_addr));
+	rv = zsock_connect(client_sock, (struct sockaddr *)&server_addr,
+			   sizeof(server_addr));
 	zassert_equal(rv, 0, "connect failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -696,9 +696,9 @@ ZTEST_USER(net_socket_udp, test_06_v6_sendmsg_recvfrom_connected)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -713,19 +713,19 @@ ZTEST(net_socket_udp, test_06_so_type)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, 55555, &sock2, &bind_addr6);
 
-	rv = getsockopt(sock1, SOL_SOCKET, SO_TYPE, &optval, &optsize);
+	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_TYPE, &optval, &optsize);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, SOCK_DGRAM, "getsockopt got invalid type");
 	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
 
-	rv = getsockopt(sock2, SOL_SOCKET, SO_TYPE, &optval, &optsize);
+	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_TYPE, &optval, &optsize);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, SOCK_DGRAM, "getsockopt got invalid type");
 	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -740,39 +740,39 @@ ZTEST(net_socket_udp, test_08_so_txtime)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, 55555, &sock2, &bind_addr6);
 
-	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	rv = zsock_bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
+	rv = zsock_bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
 	zassert_equal(rv, 0, "bind failed");
 
 	optval = true;
-	rv = setsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval = false;
-	rv = setsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed");
 
 	optlen = sizeof(optval);
-	rv = getsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
+	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
 		      optlen, sizeof(optval));
 	zassert_equal(optval, true, "getsockopt txtime");
 
 	optlen = sizeof(optval);
-	rv = getsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
+	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
 		      optlen, sizeof(optval));
 	zassert_equal(optval, false, "getsockopt txtime");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -794,26 +794,26 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, 55555, &sock2, &bind_addr6);
 
-	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	rv = zsock_bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
+	rv = zsock_bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = setsockopt(sock1, SOL_SOCKET, SO_RCVTIMEO, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock1, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval.tv_usec = 400000;
-	rv = setsockopt(sock2, SOL_SOCKET, SO_RCVTIMEO, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
 	start_time = k_uptime_get_32();
-	recved = recvfrom(sock1, rx_buf, sizeof(rx_buf),
-			  0, &addr, &addrlen);
+	recved = zsock_recvfrom(sock1, rx_buf, sizeof(rx_buf),
+				0, &addr, &addrlen);
 	time_diff = k_uptime_get_32() - start_time;
 
 	zassert_equal(recved, -1, "Unexpected return code");
@@ -822,8 +822,8 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 			"was %dms", time_diff);
 
 	start_time = k_uptime_get_32();
-	recved = recvfrom(sock2, rx_buf, sizeof(rx_buf),
-			  0, &addr, &addrlen);
+	recved = zsock_recvfrom(sock2, rx_buf, sizeof(rx_buf),
+				0, &addr, &addrlen);
 	time_diff = k_uptime_get_32() - start_time;
 
 	zassert_equal(recved, -1, "Unexpected return code");
@@ -831,9 +831,9 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 	zassert_true(time_diff >= 400, "Expected timeout after 400ms but "
 			"was %dms", time_diff);
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -851,24 +851,24 @@ ZTEST(net_socket_udp, test_10_so_sndtimeo)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, 55555, &sock2, &bind_addr6);
 
-	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	rv = zsock_bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
+	rv = zsock_bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
 	zassert_equal(rv, 0, "bind failed");
 
-	rv = setsockopt(sock1, SOL_SOCKET, SO_SNDTIMEO, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock1, SOL_SOCKET, SO_SNDTIMEO, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval.tv_usec = 0;
-	rv = setsockopt(sock2, SOL_SOCKET, SO_SNDTIMEO, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_SNDTIMEO, &optval,
+			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -883,19 +883,19 @@ ZTEST(net_socket_udp, test_11_so_protocol)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, 55555, &sock2, &bind_addr6);
 
-	rv = getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optsize);
+	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optsize);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, IPPROTO_UDP, "getsockopt got invalid protocol");
 	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
 
-	rv = getsockopt(sock2, SOL_SOCKET, SO_PROTOCOL, &optval, &optsize);
+	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_PROTOCOL, &optval, &optsize);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, IPPROTO_UDP, "getsockopt got invalid protocol");
 	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -913,7 +913,7 @@ static void comm_sendmsg_with_txtime(int client_sock,
 	 * Test client -> server sending
 	 */
 
-	sent = sendmsg(client_sock, client_msg, 0);
+	sent = zsock_sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
@@ -1037,7 +1037,7 @@ ZTEST(net_socket_udp, test_17_setup_eth_for_ipv6)
 	(void)memset(&udp_server_addr, 0, sizeof(udp_server_addr));
 	udp_server_addr.sin6_family = AF_INET6;
 	udp_server_addr.sin6_port = htons(1234);
-	ret = inet_pton(AF_INET6, PEER_IPV6_ADDR_ETH, &udp_server_addr.sin6_addr);
+	ret = zsock_inet_pton(AF_INET6, PEER_IPV6_ADDR_ETH, &udp_server_addr.sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	/* In order to avoid neighbor discovery, populate neighbor cache */
@@ -1062,9 +1062,9 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 
 	prepare_sock_udp_v6(MY_IPV6_ADDR_ETH, ANY_PORT, &client_sock, &client_addr);
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -1087,8 +1087,8 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 	*(net_time_t *)CMSG_DATA(cmsg) = txtime;
 
 	optval = true;
-	rv = setsockopt(client_sock, SOL_SOCKET, SO_TXTIME, &optval,
-			sizeof(optval));
+	rv = zsock_setsockopt(client_sock, SOL_SOCKET, SO_TXTIME, &optval,
+			      sizeof(optval));
 
 	test_started = true;
 
@@ -1097,7 +1097,7 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 				 sizeof(client_addr),
 				 &msg);
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
 
 	if (sys_mutex_lock(&wait_data, WAIT_TIME)) {
@@ -1116,50 +1116,50 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 	int rv;
 	uint8_t str_buf[sizeof(TEST_STR_SMALL) - 1];
 
-	rv = bind(sock_s, addr_s, addrlen_s);
+	rv = zsock_bind(sock_s, addr_s, addrlen_s);
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(sock_c, addr_c, addrlen_c);
+	rv = zsock_bind(sock_c, addr_c, addrlen_c);
 	zassert_equal(rv, 0, "client bind failed");
 
-	rv = connect(sock_c, addr_s, addrlen_s);
+	rv = zsock_connect(sock_c, addr_s, addrlen_s);
 	zassert_equal(rv, 0, "connect failed");
 
 	/* MSG_TRUNC */
 
-	rv = send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	rv = zsock_send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
 
 	memset(str_buf, 0, sizeof(str_buf));
-	rv = recv(sock_s, str_buf, 2, ZSOCK_MSG_TRUNC);
+	rv = zsock_recv(sock_s, str_buf, 2, ZSOCK_MSG_TRUNC);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "MSG_TRUNC flag failed");
 	zassert_mem_equal(str_buf, TEST_STR_SMALL, 2, "invalid rx data");
 	zassert_equal(str_buf[2], 0, "received more than requested");
 
 	/* The remaining data should've been discarded */
-	rv = recv(sock_s, str_buf, sizeof(str_buf), ZSOCK_MSG_DONTWAIT);
+	rv = zsock_recv(sock_s, str_buf, sizeof(str_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_equal(rv, -1, "consecutive recv should've failed");
 	zassert_equal(errno, EAGAIN, "incorrect errno value");
 
 	/* MSG_TRUNC & MSG_PEEK combo */
 
-	rv = send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	rv = zsock_send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
 
 	memset(str_buf, 0, sizeof(str_buf));
-	rv = recv(sock_s, str_buf, 2, ZSOCK_MSG_TRUNC | ZSOCK_MSG_PEEK);
+	rv = zsock_recv(sock_s, str_buf, 2, ZSOCK_MSG_TRUNC | ZSOCK_MSG_PEEK);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "MSG_TRUNC flag failed");
 
 	/* The packet should still be available due to MSG_PEEK */
-	rv = recv(sock_s, str_buf, sizeof(str_buf), ZSOCK_MSG_TRUNC);
+	rv = zsock_recv(sock_s, str_buf, sizeof(str_buf), ZSOCK_MSG_TRUNC);
 	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1,
 		      "recv after MSG_PEEK failed");
 	zassert_mem_equal(str_buf, BUF_AND_SIZE(TEST_STR_SMALL),
 			  "invalid rx data");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1200,22 +1200,22 @@ static void test_dgram_overflow(int sock_c, int sock_s,
 {
 	int rv;
 
-	rv = bind(sock_s, addr_s, addrlen_s);
+	rv = zsock_bind(sock_s, addr_s, addrlen_s);
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(sock_c, addr_c, addrlen_c);
+	rv = zsock_bind(sock_c, addr_c, addrlen_c);
 	zassert_equal(rv, 0, "client bind failed");
 
-	rv = connect(sock_c, addr_s, addrlen_s);
+	rv = zsock_connect(sock_c, addr_s, addrlen_s);
 	zassert_equal(rv, 0, "connect failed");
 
-	rv = send(sock_c, buf, buf_size, 0);
+	rv = zsock_send(sock_c, buf, buf_size, 0);
 	zassert_equal(rv, -1, "send succeeded");
 	zassert_equal(errno, ENOMEM, "incorrect errno value");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1226,26 +1226,26 @@ static void test_dgram_fragmented(int sock_c, int sock_s,
 {
 	int rv;
 
-	rv = bind(sock_s, addr_s, addrlen_s);
+	rv = zsock_bind(sock_s, addr_s, addrlen_s);
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(sock_c, addr_c, addrlen_c);
+	rv = zsock_bind(sock_c, addr_c, addrlen_c);
 	zassert_equal(rv, 0, "client bind failed");
 
-	rv = connect(sock_c, addr_s, addrlen_s);
+	rv = zsock_connect(sock_c, addr_s, addrlen_s);
 	zassert_equal(rv, 0, "connect failed");
 
-	rv = send(sock_c, buf, buf_size, 0);
+	rv = zsock_send(sock_c, buf, buf_size, 0);
 	zassert_equal(rv, buf_size, "send failed");
 
 	memset(rx_buf, 0, sizeof(rx_buf));
-	rv = recv(sock_s, rx_buf, sizeof(rx_buf), 0);
+	rv = zsock_recv(sock_s, rx_buf, sizeof(rx_buf), 0);
 	zassert_equal(rv, buf_size, "recv failed");
 	zassert_mem_equal(rx_buf, buf, buf_size, "wrong data");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1313,46 +1313,46 @@ static void test_dgram_connected(int sock_c, int sock_s1, int sock_s2,
 	uint8_t rx_buf;
 	int rv;
 
-	rv = bind(sock_c, addr_c, addrlen_c);
+	rv = zsock_bind(sock_c, addr_c, addrlen_c);
 	zassert_equal(rv, 0, "client bind failed");
 
-	rv = bind(sock_s1, addr_s1, addrlen_s1);
+	rv = zsock_bind(sock_s1, addr_s1, addrlen_s1);
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(sock_s2, addr_s2, addrlen_s2);
+	rv = zsock_bind(sock_s2, addr_s2, addrlen_s2);
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = connect(sock_c, addr_s1, addrlen_s1);
+	rv = zsock_connect(sock_c, addr_s1, addrlen_s1);
 	zassert_equal(rv, 0, "connect failed");
 
 	/* Verify that a datagram can be received from the connected address */
-	rv = sendto(sock_s1, &tx_buf, sizeof(tx_buf), 0, addr_c, addrlen_c);
+	rv = zsock_sendto(sock_s1, &tx_buf, sizeof(tx_buf), 0, addr_c, addrlen_c);
 	zassert_equal(rv, sizeof(tx_buf), "send failed %d", errno);
 
 	/* Give the packet a chance to go through the net stack */
 	k_msleep(10);
 
 	rx_buf = 0;
-	rv = recv(sock_c, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT);
+	rv = zsock_recv(sock_c, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_equal(rv, sizeof(rx_buf), "recv failed");
 	zassert_equal(rx_buf, tx_buf, "wrong data");
 
 	/* Verify that a datagram is not received from other address */
-	rv = sendto(sock_s2, &tx_buf, sizeof(tx_buf), 0, addr_c, addrlen_c);
+	rv = zsock_sendto(sock_s2, &tx_buf, sizeof(tx_buf), 0, addr_c, addrlen_c);
 	zassert_equal(rv, sizeof(tx_buf), "send failed");
 
 	/* Give the packet a chance to go through the net stack */
 	k_msleep(10);
 
-	rv = recv(sock_c, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT);
+	rv = zsock_recv(sock_c, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_equal(rv, -1, "recv should've failed");
 	zassert_equal(errno, EAGAIN, "incorrect errno");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s1);
+	rv = zsock_close(sock_s1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s2);
+	rv = zsock_close(sock_s2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1412,19 +1412,19 @@ ZTEST_USER(net_socket_udp, test_26_recvmsg_invalid)
 	io_vector[0].iov_base = TEST_STR_SMALL;
 	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
 
-	ret = recvmsg(0, NULL, 0);
+	ret = zsock_recvmsg(0, NULL, 0);
 	zassert_true(ret < 0 && errno == EINVAL, "Wrong errno (%d)", errno);
 
 	/* Set various pointers to NULL or invalid value which should cause failure */
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 
-	ret = recvmsg(0, &msg, 0);
+	ret = zsock_recvmsg(0, &msg, 0);
 	zassert_true(ret < 0, "recvmsg() succeed");
 
 	msg.msg_control = &cmsgbuf.buf;
 
-	ret = recvmsg(0, &msg, 0);
+	ret = zsock_recvmsg(0, &msg, 0);
 	zassert_true(ret < 0 && errno == ENOMEM, "Wrong errno (%d)", errno);
 
 	msg.msg_iov = io_vector;
@@ -1438,7 +1438,7 @@ ZTEST_USER(net_socket_udp, test_26_recvmsg_invalid)
 	cmsg->cmsg_type = 1122;
 	*(int *)CMSG_DATA(cmsg) = 42;
 
-	ret = recvmsg(0, &msg, 0);
+	ret = zsock_recvmsg(0, &msg, 0);
 	zassert_true(ret < 0, "recvmsg() succeed");
 }
 
@@ -1471,12 +1471,12 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	 * Test client -> server sending
 	 */
 
-	sent = sendmsg(client_sock, client_msg, 0);
+	sent = zsock_sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed, %s (%d)", strerror(errno), -errno);
 
 	/* One negative test with invalid msg_iov */
 	memset(msg, 0, sizeof(*msg));
-	recved = recvmsg(server_sock, msg, 0);
+	recved = zsock_recvmsg(server_sock, msg, 0);
 	zassert_true(recved < 0 && errno == ENOMEM, "Wrong errno (%d)", errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
@@ -1498,7 +1498,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	msg->msg_namelen = addrlen;
 
 	/* Test recvmsg(MSG_PEEK) */
-	recved = recvmsg(server_sock, msg, MSG_PEEK);
+	recved = zsock_recvmsg(server_sock, msg, ZSOCK_MSG_PEEK);
 	zassert_true(recved > 0, "recvmsg fail, %s (%d)", strerror(errno), -errno);
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes (%d vs %d)",
@@ -1512,7 +1512,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 
 	/* Test normal recvmsg() */
 	clear_buf(rx_buf);
-	recved = recvmsg(server_sock, msg, 0);
+	recved = zsock_recvmsg(server_sock, msg, 0);
 	zassert_true(recved > 0, "recvfrom fail");
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
@@ -1547,7 +1547,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	/* Then send the message again and verify that we could receive
 	 * the full message in smaller chunks too.
 	 */
-	sent = sendmsg(client_sock, client_msg, 0);
+	sent = zsock_sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
@@ -1571,7 +1571,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	msg->msg_namelen = addrlen;
 
 	/* Test recvmsg(MSG_PEEK) */
-	recved = recvmsg(server_sock, msg, MSG_PEEK);
+	recved = zsock_recvmsg(server_sock, msg, ZSOCK_MSG_PEEK);
 	zassert_true(recved >= 0, "recvfrom fail (errno %d)", errno);
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes (%d vs %d)", recved, strlen(TEST_STR_SMALL));
@@ -1586,7 +1586,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Test normal recvfrom() */
-	recved = recvmsg(server_sock, msg, MSG_PEEK);
+	recved = zsock_recvmsg(server_sock, msg, ZSOCK_MSG_PEEK);
 	zassert_true(recved >= 0, "recvfrom fail (errno %d)", errno);
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes (%d vs %d)", recved, strlen(TEST_STR_SMALL));
@@ -1608,7 +1608,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	}
 
 	/* Then check that the trucation flag is set correctly */
-	sent = sendmsg(client_sock, client_msg, 0);
+	sent = zsock_sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
@@ -1630,12 +1630,12 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	msg->msg_namelen = addrlen;
 
 	/* Test recvmsg */
-	recved = recvmsg(server_sock, msg, 0);
+	recved = zsock_recvmsg(server_sock, msg, 0);
 	zassert_true(recved > 0, "recvmsg fail, %s (%d)", strerror(errno), errno);
 	zassert_equal(recved, sizeof(buf2),
 		      "unexpected received bytes (%d vs %d)",
 		      recved, sizeof(buf2));
-	zassert_true(msg->msg_flags & MSG_TRUNC, "Message not truncated");
+	zassert_true(msg->msg_flags & ZSOCK_MSG_TRUNC, "Message not truncated");
 
 	zassert_mem_equal(buf2, TEST_STR_SMALL, sizeof(buf2),
 			  "wrong data (%s)", buf2);
@@ -1662,14 +1662,14 @@ ZTEST_USER(net_socket_udp, test_27_recvmsg_user)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr,
-		  sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -1690,9 +1690,9 @@ ZTEST_USER(net_socket_udp, test_27_recvmsg_user)
 			     sizeof(server_addr),
 			     &server_msg, NULL, 0, false);
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1722,10 +1722,10 @@ static void run_ancillary_recvmsg_test(int client_sock,
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_RECV_PKTINFO);
 
-	rv = bind(server_sock, server_addr, server_addr_len);
+	rv = zsock_bind(server_sock, server_addr, server_addr_len);
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock, client_addr, client_addr_len);
+	rv = zsock_bind(client_sock, client_addr, client_addr_len);
 	zassert_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
@@ -1776,7 +1776,7 @@ static void run_ancillary_recvmsg_test(int client_sock,
 
 	opt = 1;
 	optlen = sizeof(opt);
-	rv = setsockopt(server_sock, IPPROTO_IP, IP_PKTINFO, &opt, optlen);
+	rv = zsock_setsockopt(server_sock, IPPROTO_IP, IP_PKTINFO, &opt, optlen);
 	zassert_equal(rv, 0, "setsockopt failed (%d)", -errno);
 
 	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
@@ -1837,8 +1837,8 @@ static void run_ancillary_recvmsg_test(int client_sock,
 	}
 
 	/* Make sure that the recvmsg() fails if control area is too small */
-	rv = sendto(client_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0,
-		    server_addr, server_addr_len);
+	rv = zsock_sendto(client_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0,
+			  server_addr, server_addr_len);
 	zassert_equal(rv, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", -errno);
 
 	io_vector[0].iov_base = buf;
@@ -1850,14 +1850,14 @@ static void run_ancillary_recvmsg_test(int client_sock,
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = 1;
 
-	rv = recvmsg(server_sock, &msg, 0);
+	rv = zsock_recvmsg(server_sock, &msg, 0);
 	zassert_true(rv, "recvmsg succeed (%d)", rv);
 
-	zassert_true(msg.msg_flags & MSG_CTRUNC, "Control message not truncated");
+	zassert_true(msg.msg_flags & ZSOCK_MSG_CTRUNC, "Control message not truncated");
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1926,7 +1926,7 @@ static int bind_socket(int sock, struct net_if *iface)
 	addr.sll_ifindex = net_if_get_by_iface(iface);
 	addr.sll_family = AF_PACKET;
 
-	return bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+	return zsock_bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 }
 
 static void test_check_ttl(int sock_c, int sock_s, int sock_p,
@@ -1961,37 +1961,37 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_INTERFACE_NAME);
 
-	ret = bind(sock_c, addr_c, addrlen_c);
+	ret = zsock_bind(sock_c, addr_c, addrlen_c);
 	zassert_equal(ret, 0, "client bind failed");
 
 	ret = net_if_get_name(lo0, ifname, sizeof(ifname));
 	zassert_true(ret > 0, "cannot get interface name (%d)", ret);
 
 	strncpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name));
-	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
-			sizeof(ifreq));
+	ret = zsock_setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+			       sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", -errno);
 
-	ret = connect(sock_c, addr_s, addrlen_s);
+	ret = zsock_connect(sock_c, addr_s, addrlen_s);
 	zassert_equal(ret, 0, "connect failed");
 
-	ret = setsockopt(sock_s, SOL_SOCKET, SO_RCVTIMEO,
-			&timeo_optval, sizeof(timeo_optval));
+	ret = zsock_setsockopt(sock_s, SOL_SOCKET, SO_RCVTIMEO,
+			       &timeo_optval, sizeof(timeo_optval));
 	zassert_equal(ret, 0, "Cannot set receive timeout (%d)", -errno);
 
 	while (count > 0) {
-		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
-			     addr_sendto, addrlen_sendto);
+		ret = zsock_sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+				   addr_sendto, addrlen_sendto);
 		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
 
-		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT);
+		ret = zsock_recv(sock_s, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 		if (ret > 0) {
 			zassert_equal(ret, sizeof(rx_buf), "recv failed (%d)", ret);
 			zassert_equal(rx_buf, tx_buf, "wrong data");
 		}
 
-		ret = recvfrom(sock_p, data_to_receive, sizeof(data_to_receive), 0,
-			       (struct sockaddr *)&src, &addrlen);
+		ret = zsock_recvfrom(sock_p, data_to_receive, sizeof(data_to_receive), 0,
+				     (struct sockaddr *)&src, &addrlen);
 		if (ret > 0) {
 			int hdr_size = family == AF_INET ?
 				V4_HDR_SIZE : V6_HDR_SIZE;
@@ -2054,7 +2054,7 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 		}
 
 		opt = 0;
-		ret = setsockopt(sock_c, IPPROTO_IP, option, &opt, sizeof(opt));
+		ret = zsock_setsockopt(sock_c, IPPROTO_IP, option, &opt, sizeof(opt));
 		zassert_equal(ret, 0, "Cannot set %s TTL (%d)",
 			      option == IP_TTL ? "unicast" : "multicast",
 			      -errno);
@@ -2066,8 +2066,8 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 		net_mgmt(NET_REQUEST_STATS_GET_IPV4, lo0,
 			 &ipv4_stats_before, sizeof(ipv4_stats_before));
 #endif
-		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
-			     addr_sendto, addrlen_sendto);
+		ret = zsock_sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+				   addr_sendto, addrlen_sendto);
 		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
 
 #if defined(CONFIG_NET_STATISTICS)
@@ -2080,7 +2080,7 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 			      ipv4_stats_before.drop + 1,
 			      ipv4_stats_after.drop);
 #endif
-		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
+		ret = zsock_recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
 		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
 	}
 
@@ -2097,8 +2097,8 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 		}
 
 		opt = 0;
-		ret = setsockopt(sock_c, IPPROTO_IPV6, option,
-				 &opt, sizeof(opt));
+		ret = zsock_setsockopt(sock_c, IPPROTO_IPV6, option,
+				       &opt, sizeof(opt));
 		zassert_equal(ret, 0, "Cannot set %s hops (%d)",
 			      option == IPV6_UNICAST_HOPS ? "unicast" : "multicast",
 			      -errno);
@@ -2110,8 +2110,8 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 		net_mgmt(NET_REQUEST_STATS_GET_IPV6, lo0,
 			 &ipv6_stats_before, sizeof(ipv6_stats_before));
 #endif
-		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
-			     addr_sendto, addrlen_sendto);
+		ret = zsock_sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+				   addr_sendto, addrlen_sendto);
 		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
 
 #if defined(CONFIG_NET_STATISTICS)
@@ -2124,16 +2124,16 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 			      ipv6_stats_before.drop + 1,
 			      ipv6_stats_after.drop);
 #endif
-		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
+		ret = zsock_recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
 		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
 
 	}
 
-	ret = close(sock_c);
+	ret = zsock_close(sock_c);
 	zassert_equal(ret, 0, "close failed");
-	ret = close(sock_s);
+	ret = zsock_close(sock_s);
 	zassert_equal(ret, 0, "close failed");
-	ret = close(sock_p);
+	ret = zsock_close(sock_p);
 	zassert_equal(ret, 0, "close failed");
 }
 
@@ -2153,7 +2153,7 @@ ZTEST(net_socket_udp, test_31_v4_ttl)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2169,11 +2169,11 @@ ZTEST(net_socket_udp, test_31_v4_ttl)
 	zassert_equal(verify, ttl, "Different TTLs (%d vs %d)", ttl, verify);
 
 	ttl = 128;
-	ret = setsockopt(client_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+	ret = zsock_setsockopt(client_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
 	zassert_equal(ret, 0, "Cannot set unicast TTL (%d)", -errno);
 
 	optlen = sizeof(verify);
-	ret = getsockopt(client_sock, IPPROTO_IP, IP_TTL, &verify, &optlen);
+	ret = zsock_getsockopt(client_sock, IPPROTO_IP, IP_TTL, &verify, &optlen);
 	zassert_equal(ret, 0, "Cannot get unicast TTL (%d)", -errno);
 	zassert_equal(verify, ttl, "Different unicast TTL (%d vs %d)",
 		      ttl, verify);
@@ -2202,7 +2202,7 @@ ZTEST(net_socket_udp, test_32_v4_mcast_ttl)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2213,13 +2213,13 @@ ZTEST(net_socket_udp, test_32_v4_mcast_ttl)
 			 net_if_get_by_iface(lo0), lo0);
 
 	mcast_ttl = 8;
-	ret = setsockopt(client_sock, IPPROTO_IP, IP_MULTICAST_TTL, &mcast_ttl,
-			sizeof(mcast_ttl));
+	ret = zsock_setsockopt(client_sock, IPPROTO_IP, IP_MULTICAST_TTL, &mcast_ttl,
+			       sizeof(mcast_ttl));
 	zassert_equal(ret, 0, "Cannot set multicast ttl (%d)", -errno);
 
 	optlen = sizeof(verify);
-	ret = getsockopt(client_sock, IPPROTO_IP, IP_MULTICAST_TTL, &verify,
-			 &optlen);
+	ret = zsock_getsockopt(client_sock, IPPROTO_IP, IP_MULTICAST_TTL, &verify,
+			       &optlen);
 	zassert_equal(ret, 0, "Cannot get multicast ttl (%d)", -errno);
 	zassert_equal(verify, mcast_ttl, "Different multicast TTLs (%d vs %d)",
 		      mcast_ttl, verify);
@@ -2252,7 +2252,7 @@ ZTEST(net_socket_udp, test_33_v6_mcast_hops)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2268,26 +2268,26 @@ ZTEST(net_socket_udp, test_33_v6_mcast_hops)
 	if_mcast_hops = net_if_ipv6_get_mcast_hop_limit(lo0);
 
 	opt = -1;
-	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &opt,
-			sizeof(opt));
+	ret = zsock_setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &opt,
+			       sizeof(opt));
 	zassert_equal(ret, 0, "Cannot set multicast hop limit (%d)", -errno);
 
 	optlen = sizeof(verify);
-	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
-			 &optlen);
+	ret = zsock_getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
+			       &optlen);
 	zassert_equal(ret, 0, "Cannot get multicast hop limit (%d)", -errno);
 	zassert_equal(verify, if_mcast_hops, "Different multicast hop limit (%d vs %d)",
 		      if_mcast_hops, verify);
 
 	/* Then test the normal case where we set the value */
 	mcast_hops = 8;
-	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &mcast_hops,
-			sizeof(mcast_hops));
+	ret = zsock_setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &mcast_hops,
+			       sizeof(mcast_hops));
 	zassert_equal(ret, 0, "Cannot set multicast hop limit (%d)", -errno);
 
 	optlen = sizeof(verify);
-	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
-			 &optlen);
+	ret = zsock_getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
+			       &optlen);
 	zassert_equal(ret, 0, "Cannot get multicast hop limit (%d)", -errno);
 	zassert_equal(verify, mcast_hops, "Different multicast hop limit (%d vs %d)",
 		      mcast_hops, verify);
@@ -2318,7 +2318,7 @@ ZTEST(net_socket_udp, test_34_v6_hops)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2334,13 +2334,13 @@ ZTEST(net_socket_udp, test_34_v6_hops)
 	zassert_equal(verify, hops, "Different hop limit (%d vs %d)", hops, verify);
 
 	hops = 8;
-	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &hops,
-			sizeof(hops));
+	ret = zsock_setsockopt(client_sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &hops,
+			       sizeof(hops));
 	zassert_equal(ret, 0, "Cannot set unicast hops (%d)", -errno);
 
 	optlen = sizeof(verify);
-	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &verify,
-			 &optlen);
+	ret = zsock_getsockopt(client_sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &verify,
+			       &optlen);
 	zassert_equal(ret, 0, "Cannot get unicast hops (%d)", -errno);
 	zassert_equal(verify, hops, "Different unicast hops (%d vs %d)",
 		      hops, verify);
@@ -2369,14 +2369,14 @@ ZTEST_USER(net_socket_udp, test_35_recvmsg_msg_controllen_update)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	rv = bind(server_sock,
-		  (struct sockaddr *)&server_addr,
-		  sizeof(server_addr));
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
 	zassert_equal(rv, 0, "server bind failed");
 
-	rv = bind(client_sock,
-		  (struct sockaddr *)&client_addr,
-		  sizeof(client_addr));
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
 	zassert_equal(rv, 0, "client bind failed");
 
 	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
@@ -2402,9 +2402,9 @@ ZTEST_USER(net_socket_udp, test_35_recvmsg_msg_controllen_update)
 			     sizeof(cmsgbuf.buf),
 			     false);
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
