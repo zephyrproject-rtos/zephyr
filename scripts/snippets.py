@@ -56,7 +56,7 @@ class Snippet:
                 path = pathobj.parent / value
                 if not path.is_file():
                     _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
-                return f'"{path}"'
+                return f'"{path.as_posix()}"'
             if variable in ('DTS_EXTRA_CPPFLAGS'):
                 return f'"{value}"'
             _err(f'unknown append variable: {variable}')
