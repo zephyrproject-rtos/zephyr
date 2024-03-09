@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2024 TOKITA Hiroshi
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +20,14 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr/sys/util.h>
 
 #define STRIP_NODE		DT_ALIAS(led_strip)
+
+#if CONFIG_SAMPLE_LED_STRIP_LENGTH != 0
+#define STRIP_NUM_PIXELS	CONFIG_SAMPLE_LED_STRIP_LENGTH
+#elif DT_NODE_HAS_PROP(DT_ALIAS(led_strip), chain_length)
 #define STRIP_NUM_PIXELS	DT_PROP(DT_ALIAS(led_strip), chain_length)
+#else
+#error Unable to determine length of LED strip
+#endif
 
 #define DELAY_TIME K_MSEC(CONFIG_SAMPLE_LED_UPDATE_DELAY)
 
@@ -31,7 +39,7 @@ static const struct led_rgb colors[] = {
 	RGB(0x00, 0x00, 0x0f), /* blue */
 };
 
-struct led_rgb pixels[STRIP_NUM_PIXELS];
+static struct led_rgb pixels[STRIP_NUM_PIXELS];
 
 static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 

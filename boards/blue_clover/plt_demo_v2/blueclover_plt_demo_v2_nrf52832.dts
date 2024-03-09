@@ -45,6 +45,7 @@
 		pwm-buzzer = &pwm0;
 		watchdog0 = &wdt0;
 		accel0 = &bmi270;
+		led-strip = &apa102;
 	};
 };
 
@@ -102,7 +103,7 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
-	apa102@0 {
+	apa102: apa102@0 {
 		compatible = "apa,apa102";
 		reg = <0>;
 		spi-max-frequency = <5250000>;
