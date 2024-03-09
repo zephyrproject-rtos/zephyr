@@ -80,7 +80,7 @@ void input_kbd_matrix_drive_column_hook(const struct device *dev, int col)
 static void state_set_rows_by_column(kbd_row_t c0, kbd_row_t c1, kbd_row_t c2)
 {
 	memcpy(&state.rows, (kbd_row_t[]){c0, c1, c2}, sizeof(state.rows));
-	TC_PRINT("set state [" PRIkbdrow " " PRIkbdrow " " PRIkbdrow "]\n", c0, c1, c2);
+	TC_PRINT("set state [%" PRIkbdrow " %" PRIkbdrow " %" PRIkbdrow "]\n", c0, c1, c2);
 }
 
 static struct {
