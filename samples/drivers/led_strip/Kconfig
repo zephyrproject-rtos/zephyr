@@ -9,6 +9,14 @@ config SAMPLE_LED_UPDATE_DELAY
 	help
 	  Delay between LED updates in ms.
 
+config SAMPLE_LED_STRIP_LENGTH
+	int "LED strip length"
+	default 0
+	help
+	  Number of LEDs in the strip.
+	  If the value is zero, use the 'chain-length' property in
+	  devicetree instead to determine LED numbers.
+
 endmenu
 
 source "Kconfig.zephyr"

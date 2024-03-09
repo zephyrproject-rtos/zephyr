@@ -6,9 +6,15 @@
 
 &spi2 {
 
-	led_strip@0 {
+	lpd8806: lpd8806@0 {
 		compatible = "greeled,lpd8806";
 		reg = <0>;
 		spi-max-frequency = <2000000>;
+	};
+};
+
+/ {
+	aliases {
+		led-strip = &lpd8806;
 	};
 };
