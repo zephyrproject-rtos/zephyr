@@ -89,7 +89,7 @@ static int setup_flash(struct fs_mount_t *mnt)
 
 	if (rc < 0 && IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
 		printk("Erasing flash area ... ");
-		rc = flash_area_erase(pfa, 0, pfa->fa_size);
+		rc = flash_area_flatten(pfa, 0, pfa->fa_size);
 		printk("%d\n", rc);
 	}
 
