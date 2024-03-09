@@ -58,7 +58,7 @@ void test_fcb_wipe(void)
 	zassert_true(rc == 0, "flash area open call failure");
 
 	for (i = 0; i < ARRAY_SIZE(test_fcb_sector); i++) {
-		rc = flash_area_erase(fap, test_fcb_sector[i].fs_off,
+		rc = flash_area_flatten(fap, test_fcb_sector[i].fs_off,
 				      test_fcb_sector[i].fs_size);
 		zassert_true(rc == 0, "erase call failure");
 	}
