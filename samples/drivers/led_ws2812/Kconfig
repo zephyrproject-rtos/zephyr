@@ -1,11 +1,6 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# Use the SPI driver by default, unless the GPIO driver is
-# specifically configured in.
-config SPI
-	default y
-
 menu "WS2812 Sample Configuration"
 
 config SAMPLE_LED_UPDATE_DELAY
