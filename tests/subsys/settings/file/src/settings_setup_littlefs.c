@@ -29,7 +29,7 @@ void *config_setup_fs(void)
 	rc = flash_area_open(LITTLEFS_PARTITION_ID, &fap);
 	zassume_true(rc == 0, "opening flash area for erase [%d]\n", rc);
 
-	rc = flash_area_erase(fap, 0, fap->fa_size);
+	rc = flash_area_flatten(fap, 0, fap->fa_size);
 	zassume_true(rc == 0, "erasing flash area [%d]\n", rc);
 
 	rc = fs_mount(&littlefs_mnt);
