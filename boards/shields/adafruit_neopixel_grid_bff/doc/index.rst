@@ -39,7 +39,7 @@ LED Strip Example
 Set ``-DSHIELD=adafruit_neopixel_grid_bff`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_ws2812
+   :zephyr-app: samples/drivers/led_strip
    :board: adafruit_qt_py_rp2040
    :shield: adafruit_neopixel_grid_bff
    :goals: build
