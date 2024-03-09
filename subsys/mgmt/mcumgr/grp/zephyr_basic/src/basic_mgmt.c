@@ -31,7 +31,7 @@ static int storage_erase(void)
 			LOG_ERR("Failed to get flash area device");
 			rc = ZEPHYRBASIC_MGMT_ERR_FLASH_CONFIG_QUERY_FAIL;
 		} else {
-			rc = flash_area_erase(fa, 0, fa->fa_size);
+			rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 			if (rc < 0) {
 				LOG_ERR("Failed to erase flash area");
