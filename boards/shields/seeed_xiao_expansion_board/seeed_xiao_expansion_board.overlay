@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &ssd1306_128x64;
+		zephyr,rtc = &pfc8563_rtc;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		xiao_button0: button_0 {
+			gpios = <&xiao_d 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		sw0 = &xiao_button0;
+		rtc = &pfc8563_rtc;
+	};
+};
+
+&xiao_i2c {
+	status = "okay";
+
+	ssd1306_128x64: ssd1306@3c {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3c>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+	};
+
+	pfc8563_rtc: pfc8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+};
+
+&xiao_spi {
+	status = "okay";
+	cs-gpios = <&xiao_d 2 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+		spi-max-frequency = <24000000>;
+	};
+};

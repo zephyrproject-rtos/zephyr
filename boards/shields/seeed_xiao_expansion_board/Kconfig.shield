@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEEED_XIAO_EXPANSION_BOARD
+	def_bool $(shields_list_contains,seeed_xiao_expansion_board)
