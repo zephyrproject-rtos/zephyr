@@ -3,7 +3,8 @@
 
 config LPD880X_STRIP
 	bool "LPD880x SPI LED strip driver"
-	depends on SPI
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_GREELED_LPD8803),spi) \
+		   || $(dt_compat_on_bus,$(DT_COMPAT_GREELED_LPD8806),spi)
 	help
 	  Enable LED strip driver for daisy chains of LPD880x
 	  (LPD8803, LPD8806, or compatible) devices.

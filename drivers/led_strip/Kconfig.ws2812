@@ -7,27 +7,16 @@
 #
 # https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
 
-menuconfig WS2812_STRIP
-	bool "WS2812 (and compatible) LED strip driver"
-	help
-	  Enable LED strip driver for daisy chains of WS2812-ish (or WS2812B,
-	  WS2813, SK6812, Everlight B1414, or compatible) devices.
-
-choice WS2812_STRIP_DRIVER
-	prompt "Driver backend"
-	default WS2812_STRIP_SPI
-	depends on WS2812_STRIP
-
 config WS2812_STRIP_SPI
 	bool "SPI driver"
-	depends on SPI
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_SPI),spi)
 	help
 	  The SPI driver is portable, but requires significantly more
 	  memory (1 byte of overhead per bit of pixel data).
 
 config WS2812_STRIP_I2S
 	bool "I2S driver"
-	depends on I2S
+	select I2S if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_I2S),i2s)
 	help
 	  Uses the I2S peripheral, memory usage is 4 bytes per color,
 	  times the number of pixels. A few more for the start and end
@@ -52,5 +41,3 @@ config WS2812_STRIP_RPI_PICO_PIO
 	select PICOSDK_USE_PIO
 	help
 	  Use the PIO feature available on RaspberryPi Pico devices.
-
-endchoice

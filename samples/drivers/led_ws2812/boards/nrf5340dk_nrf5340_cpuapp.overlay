@@ -16,9 +16,7 @@ i2s_led: &i2s0 {
 	status = "okay";
 	pinctrl-0 = <&i2s0_default_alt>;
 	pinctrl-names = "default";
-};
 
-/ {
 	led_strip: ws2812 {
 		compatible = "worldsemi,ws2812-i2s";
 
@@ -29,7 +27,9 @@ i2s_led: &i2s0 {
 					LED_COLOR_ID_BLUE>;
 		reset-delay = <500>;
 	};
+};
 
+/ {
 	aliases {
 		led-strip = &led_strip;
 	};
