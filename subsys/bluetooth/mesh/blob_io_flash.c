@@ -88,8 +88,8 @@ static int block_start(const struct bt_mesh_blob_io *io,
 	erase_size = block->size;
 #endif
 
-	return flash_area_erase(flash->area, flash->offset + block->offset,
-				erase_size);
+	return flash_area_flatten(flash->area, flash->offset + block->offset,
+				  erase_size);
 }
 
 static int rd_chunk(const struct bt_mesh_blob_io *io,
