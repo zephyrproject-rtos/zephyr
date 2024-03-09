@@ -297,7 +297,7 @@ int img_mgmt_erase_slot(int slot)
 	rc = img_mgmt_flash_check_empty_inner(fa);
 
 	if (rc == 0) {
-		rc = flash_area_erase(fa, 0, fa->fa_size);
+		rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 		if (rc != 0) {
 			LOG_ERR("Failed to erase flash area: %d", rc);
@@ -476,7 +476,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 	size_t erase_size = page.start_offset + page.size - fa->fa_off;
 
-	rc = flash_area_erase(fa, 0, erase_size);
+	rc = flash_area_flatten(fa, 0, erase_size);
 
 	if (rc != 0) {
 		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
@@ -501,7 +501,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		off = page.start_offset - fa->fa_off;
 		erase_size = fa->fa_size - off;
 
-		rc = flash_area_erase(fa, off, erase_size);
+		rc = flash_area_flatten(fa, off, erase_size);
 		if (rc != 0) {
 			LOG_ERR("image slot trailer erase of 0x%zx bytes failed (err %d)",
 					erase_size, rc);
