@@ -45,7 +45,7 @@ ZTEST(settings_functional, test_clear_settings)
 	rc = flash_area_open(TEST_FLASH_AREA_ID, &fap);
 
 	if (rc == 0) {
-		rc = flash_area_erase(fap, 0, fap->fa_size);
+		rc = flash_area_flatten(fap, 0, fap->fa_size);
 		flash_area_close(fap);
 	}
 	zassert_true(rc == 0, "clear settings failed");
