@@ -6,7 +6,7 @@
 
 config APA102_STRIP
 	bool "APA102 SPI LED strip driver"
-	depends on SPI
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_APA_APA102),spi)
 	select LED_STRIP_RGB_SCRATCH
 	help
 	  Enable the LED strip driver for a chain of APA102 RGB LEDs.
