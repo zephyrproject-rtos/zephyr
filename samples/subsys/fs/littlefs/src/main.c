@@ -252,7 +252,7 @@ static int littlefs_flash_erase(unsigned int id)
 
 	/* Optional wipe flash contents */
 	if (IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
-		rc = flash_area_erase(pfa, 0, pfa->fa_size);
+		rc = flash_area_flatten(pfa, 0, pfa->fa_size);
 		LOG_ERR("Erasing flash area ... %d", rc);
 	}
 
