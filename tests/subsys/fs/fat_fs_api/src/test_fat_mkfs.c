@@ -45,7 +45,7 @@ static int wipe_partition(void)
 	}
 
 	TC_PRINT("Erasing %zu (0x%zx) bytes\n", pfa->fa_size, pfa->fa_size);
-	rc = flash_area_erase(pfa, 0, pfa->fa_size);
+	rc = flash_area_flatten(pfa, 0, pfa->fa_size);
 	(void)flash_area_close(pfa);
 
 	if (rc < 0) {
