@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: led-ws2812
-   :name: WS2812 LED strip
+.. zephyr:code-sample:: led-strip
+   :name: LED strip sample
    :relevant-api: led_strip_interface
 
    Control an LED strip using a WS2812 (or compatible) driver chip.
@@ -41,14 +41,14 @@ Wiring on a thingy52
 The thingy52 has integrated NMOS transistors, that can be used instead of a level shifter.
 The I2S driver supports inverting the output to suit this scheme, using the ``out-active-low`` dts
 property. See the overlay file
-:zephyr_file:`samples/drivers/led_ws2812/boards/thingy52_nrf52832.overlay` for more detail.
+:zephyr_file:`samples/drivers/led_strip/boards/thingy52_nrf52832.overlay` for more detail.
 
 Building and Running
-*********************
+********************
 
 .. _blog post on WS2812 timing: https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
 
-This sample's source directory is :zephyr_file:`samples/drivers/led_ws2812/`.
+This sample's source directory is :zephyr_file:`samples/drivers/led_strip/`.
 
 To make sure the sample is set up properly for building, you must:
 
@@ -80,7 +80,7 @@ modified by changing the :kconfig:option:`CONFIG_SAMPLE_LED_UPDATE_DELAY`.
 Then build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_ws2812
+   :zephyr-app: samples/drivers/led_strip
    :board: <board>
    :goals: flash
    :compact:
