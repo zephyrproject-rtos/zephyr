@@ -92,7 +92,7 @@ The wio_terminal board configuration supports the following hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/seeed_studio/wio_terminal/wio_terminal_defconfig`.
+:zephyr_file:`boards/seeed/wio_terminal/wio_terminal_defconfig`.
 
 Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific RTC.
 To use the RTC, set :kconfig:option:`CONFIG_CORTEX_M_SYSTICK=n` and set
