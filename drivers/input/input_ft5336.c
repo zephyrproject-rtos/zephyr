@@ -13,6 +13,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
@@ -35,7 +36,13 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 #define EVENT_CONTACT		0x02U
 #define EVENT_NONE		0x03U
 
-/* REG_Pn_XH: Position */
+/* REG_Pn_YH: Touch ID */
+#define TOUCH_ID_POS		4U
+#define TOUCH_ID_MSK		0x0FU
+
+#define TOUCH_ID_INVALID	0x0FU
+
+/* REG_Pn_XH and REG_Pn_YH: Position */
 #define POSITION_H_MSK		0x0FU
 
 /* REG_G_PMODE: Power Consume Mode */
@@ -77,35 +84,46 @@ static int ft5336_process(const struct device *dev)
 	int r;
 	uint8_t points;
 	uint8_t coords[4U];
-	uint8_t event;
 	uint16_t row, col;
 	bool pressed;
 
-	/* obtain number of touch points (NOTE: multi-touch ignored) */
+	/* obtain number of touch points */
 	r = i2c_reg_read_byte_dt(&config->bus, REG_TD_STATUS, &points);
 	if (r < 0) {
 		return r;
 	}
 
-	points = (points >> TOUCH_POINTS_POS) & TOUCH_POINTS_MSK;
-	if (points != 0U && points != 1U) {
-		return 0;
+	points = FIELD_GET(TOUCH_POINTS_MSK, points);
+	if (points != 0) {
+		/* Any number of touches still counts as one touch. All touch
+		 * points except the first are ignored. Obtain first point
+		 * X, Y coordinates from:
+		 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
+		 * We ignore the Event Flag because Zephyr only cares about
+		 * pressed / not pressed and not press down / lift up
+		 */
+		r = i2c_burst_read_dt(&config->bus, REG_P1_XH, coords, sizeof(coords));
+		if (r < 0) {
+			return r;
+		}
+
+		row = ((coords[0] & POSITION_H_MSK) << 8U) | coords[1];
+		col = ((coords[2] & POSITION_H_MSK) << 8U) | coords[3];
+
+		uint8_t touch_id = FIELD_GET(TOUCH_ID_MSK, coords[2]);
+
+		if (touch_id != TOUCH_ID_INVALID) {
+			pressed = true;
+			LOG_DBG("points: %d, touch_id: %d, row: %d, col: %d",
+				 points, touch_id, row, col);
+		} else {
+			pressed = false;
+			LOG_WRN("bad TOUCH_ID: row: %d, col: %d", row, col);
+		}
+	} else  {
+		/* no touch = no press */
+		pressed = false;
 	}
-
-	/* obtain first point X, Y coordinates and event from:
-	 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
-	 */
-	r = i2c_burst_read_dt(&config->bus, REG_P1_XH, coords, sizeof(coords));
-	if (r < 0) {
-		return r;
-	}
-
-	event = (coords[0] >> EVENT_POS) & EVENT_MSK;
-	row = ((coords[0] & POSITION_H_MSK) << 8U) | coords[1];
-	col = ((coords[2] & POSITION_H_MSK) << 8U) | coords[3];
-	pressed = (event == EVENT_PRESS_DOWN) || (event == EVENT_CONTACT);
-
-	LOG_DBG("event: %d, row: %d, col: %d", event, row, col);
 
 	if (pressed) {
 		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
