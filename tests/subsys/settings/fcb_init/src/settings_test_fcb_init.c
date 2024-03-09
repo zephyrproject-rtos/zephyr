@@ -110,7 +110,7 @@ void test_prepare_storage(void)
 		err = flash_area_open(TEST_PARTITION_ID, &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
-		err = flash_area_erase(fa, 0, fa->fa_size);
+		err = flash_area_flatten(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
 		err = flash_area_open(CODE_PARTITION_ID, &fa);
