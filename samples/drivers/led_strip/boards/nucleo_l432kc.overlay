@@ -6,9 +6,15 @@
 
 &spi1 {
 
-	apa102@0 {
+	apa102: apa102@0 {
 		compatible = "apa,apa102";
 		reg = <0>;
 		spi-max-frequency = <5250000>;
+	};
+};
+
+/ {
+	aliases {
+		led-strip = &apa102;
 	};
 };

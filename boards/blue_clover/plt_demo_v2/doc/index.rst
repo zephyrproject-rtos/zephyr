@@ -122,7 +122,7 @@ Flashing
 Flashing Zephyr onto the ``blueclover_plt_demo_v2/nrf52832`` board requires
 an external programmer. The programmer is attached to the SWD header.
 
-Build the Zephyr kernel and the :zephyr:code-sample:`led-apa102` sample application.
+Build the Zephyr kernel and the :zephyr:code-sample:`led-strip` sample application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/drivers/led_apa102
