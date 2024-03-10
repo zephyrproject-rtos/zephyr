@@ -1427,32 +1427,6 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE)
-	err = can_mcan_read_reg(dev, CAN_MCAN_DBTP, &reg);
-	if (err != 0) {
-		return err;
-	}
-
-	reg |= CAN_MCAN_DBTP_TDC;
-
-	err = can_mcan_write_reg(dev, CAN_MCAN_DBTP, reg);
-	if (err != 0) {
-		return err;
-	}
-
-	err = can_mcan_read_reg(dev, CAN_MCAN_TDCR, &reg);
-	if (err != 0) {
-		return err;
-	}
-
-	reg |= FIELD_PREP(CAN_MCAN_TDCR_TDCO, config->tx_delay_comp_offset);
-
-	err = can_mcan_write_reg(dev, CAN_MCAN_TDCR, reg);
-	if (err != 0) {
-		return err;
-	}
-#endif /* defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE) */
-
 	err = can_mcan_read_reg(dev, CAN_MCAN_GFC, &reg);
 	if (err != 0) {
 		return err;
