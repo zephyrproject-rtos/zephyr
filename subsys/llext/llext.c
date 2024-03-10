@@ -746,9 +746,10 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 			name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
-			LOG_DBG("relocation %d:%d info %x (type %d, sym %d) offset %zd sym_name "
+			LOG_DBG("relocation %d:%d info %zx (type %zd, sym %zd) offset %zd sym_name "
 				"%s sym_type %d sym_bind %d sym_ndx %d",
-				i, j, rel.r_info, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
+				i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
+				(size_t)ELF_R_SYM(rel.r_info),
 				(size_t)rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
 				ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
@@ -784,9 +785,9 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 				name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
 				sym.st_shndx, (size_t)rel.r_offset, shdr.sh_link);
 
-			LOG_INF("writing relocation symbol %s type %d sym %d at addr 0x%lx "
+			LOG_INF("writing relocation symbol %s type %zd sym %zd at addr 0x%lx "
 				"addr 0x%lx",
-				name, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
+				name, (size_t)ELF_R_TYPE(rel.r_info), (size_t)ELF_R_SYM(rel.r_info),
 				op_loc, link_addr);
 
 			/* relocation */
