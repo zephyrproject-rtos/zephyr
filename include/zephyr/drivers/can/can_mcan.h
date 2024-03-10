@@ -1253,7 +1253,6 @@ struct can_mcan_config {
 	uint8_t sjw_data;
 	uint8_t prop_ts1_data;
 	uint8_t ts2_data;
-	uint8_t tx_delay_comp_offset;
 #endif
 	const struct device *phy;
 	uint32_t max_bitrate;
@@ -1327,7 +1326,6 @@ struct can_mcan_config {
 		.prop_ts1_data = DT_PROP_OR(node_id, prop_seg_data, 0) +                           \
 				 DT_PROP_OR(node_id, phase_seg1_data, 0),                          \
 		.ts2_data = DT_PROP_OR(node_id, phase_seg2_data, 0),                               \
-		.tx_delay_comp_offset = DT_PROP(node_id, tx_delay_comp_offset),                    \
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),                           \
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 8000000),                   \
 		.custom = _custom,                                                                 \
