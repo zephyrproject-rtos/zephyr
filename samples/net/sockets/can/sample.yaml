@@ -12,20 +12,22 @@ tests:
   sample.net.sockets.can.one_socket:
     extra_configs:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=1
+      - CONFIG_LOG_BACKEND_SHOW_COLOR=n
     harness_config:
       type: multi_line
       ordered: true
       regex:
-        - "(.*)\\[0\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
+        - "(.*)\\[0|3\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
   sample.net.sockets.can.two_sockets:
     extra_configs:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=2
+      - CONFIG_LOG_BACKEND_SHOW_COLOR=n
     harness_config:
       type: multi_line
       ordered: true
       regex:
-        - "(.*)\\[0\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
+        - "(.*)\\[0|3\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
-        - "(.*)\\[1\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
+        - "(.*)\\[1|4\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
