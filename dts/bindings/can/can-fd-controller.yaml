@@ -47,6 +47,3 @@ properties:
     description: |
       Initial time quanta of phase buffer 2 segment for the data phase (ISO11898-1:2015). Deprecated
       in favor of setting advanced timing parameters from the application.
-  tx-delay-comp-offset:
-    type: int
-    default: 0
