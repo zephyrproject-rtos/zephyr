@@ -22,6 +22,7 @@ jobs:
         platform: ["mps2_an385", "native_sim", "qemu_x86", "unit_testing"]
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
+      CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
     steps:
       - name: Apply container owner mismatch workaround
         run: |
