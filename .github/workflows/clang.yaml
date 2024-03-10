@@ -19,6 +19,7 @@ jobs:
       matrix:
         platform: ["native_sim"]
     env:
+      CCACHE_DIR: /node-cache/ccache-zephyr
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -79,31 +80,12 @@ jobs:
           gcc --version
           ls -la
 
-      - name: Prepare ccache timestamp/data
-        id: ccache_cache_timestamp
-        shell: cmake -P {0}
+      - name: Set up ccache
         run: |
-          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
-          string(REPLACE "/" "_" repo ${{github.repository}})
-          string(REPLACE "-" "_" repo2 ${repo})
-          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
-
-      - name: use cache
-        id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
-        with:
-          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
-          path: /github/home/.cache/ccache
-          aws-s3-bucket: ccache.zephyrproject.org
-          aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_CCACHE_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: ccache stats initial
-        run: |
-          mkdir -p /github/home/.cache
-          test -d github/home/.cache/ccache && rm -rf /github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
-          ccache -M 10G -s
+          mkdir -p ${CCACHE_DIR}
+          ccache -M 10G
+          ccache -p
+          ccache -z -s -vv
 
       - name: Run Tests with Twister
         id: twister
@@ -124,10 +106,10 @@ jobs:
             echo "report_needed=0" >> $GITHUB_OUTPUT
           fi
 
-      - name: ccache stats post
+      - name: Print ccache stats
+        if: always()
         run: |
-          ccache -s
-          ccache -p
+          ccache -s -vv
 
       - name: Upload Unit Test Results
         if: always() && steps.twister.outputs.report_needed != 0
