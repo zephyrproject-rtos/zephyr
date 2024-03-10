@@ -788,7 +788,9 @@ struct can_device_state {
 /**
  * @brief Get the CAN core clock rate
  *
- * Returns the CAN core clock rate. One time quantum is 1/(core clock rate).
+ * Returns the CAN core clock rate. One minimum time quantum (mtq) is 1/(core clock rate). The CAN
+ * core clock can be further divided by the CAN clock prescaler (see the @a can_timing struct),
+ * providing the time quantum (tq).
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param[out] rate CAN core clock rate in Hz.
