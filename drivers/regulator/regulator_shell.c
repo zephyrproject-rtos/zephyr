@@ -389,7 +389,7 @@ static int cmd_adset(const struct shell *sh, size_t argc, char **argv)
 
 	ret = regulator_set_active_discharge(dev, ad);
 	if (ret < 0) {
-		shell_error(sh, "Could not set mode (%d)", ret);
+		shell_error(sh, "Could not set active discharge (%d)", ret);
 		return ret;
 	}
 
@@ -566,7 +566,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_adset, 3, 0),
 	SHELL_CMD_ARG(adget, NULL,
 		      "Get active discharge\n"
-		      "Usage: adset <device>",
+		      "Usage: adget <device>",
 		      cmd_adget, 2, 0),
 	SHELL_CMD_ARG(errors, &dsub_device_name,
 		      "Get errors\n"
