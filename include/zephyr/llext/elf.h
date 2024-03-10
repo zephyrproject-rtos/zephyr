@@ -309,7 +309,7 @@ struct elf32_rel {
 struct elf32_rela {
 	elf32_addr r_offset;
 	elf32_word r_info;
-	elf32_word r_addend;
+	elf32_sword r_addend;
 };
 
 /**
