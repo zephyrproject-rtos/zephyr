@@ -24,6 +24,7 @@ jobs:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
+      CCACHE_REMOTE_ONLY: "true"
       # `--specs` is ignored because ccache is unable to resovle the toolchain specs file path.
       CCACHE_IGNOREOPTIONS: '--specs=*'
     steps:
