@@ -15,6 +15,7 @@ target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/arch/${ARCH}/include
 )
 
+if(NOT LOADER_BUILD_ONLY)
 # generate extension targets foreach extension given by name
 foreach(ext_name hello_world logging relative_jump object)
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
@@ -26,3 +27,4 @@ foreach(ext_name hello_world logging relative_jump object)
   )
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
 endforeach()
+endif()
