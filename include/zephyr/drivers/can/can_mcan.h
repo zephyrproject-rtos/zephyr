@@ -1240,12 +1240,9 @@ struct can_mcan_config {
 	uint16_t sjw;
 	uint16_t prop_ts1;
 	uint16_t ts2;
-#ifdef CONFIG_CAN_FD_MODE
 	uint8_t sjw_data;
 	uint8_t prop_ts1_data;
 	uint8_t ts2_data;
-	uint8_t tx_delay_comp_offset;
-#endif
 	const void *custom;
 };
 
@@ -1313,7 +1310,6 @@ struct can_mcan_config {
 		.prop_ts1_data = DT_PROP_OR(node_id, prop_seg_data, 0) +                           \
 				 DT_PROP_OR(node_id, phase_seg1_data, 0),                          \
 		.ts2_data = DT_PROP_OR(node_id, phase_seg2_data, 0),                               \
-		.tx_delay_comp_offset = DT_PROP(node_id, tx_delay_comp_offset),                    \
 		.custom = _custom,                                                                 \
 	}
 #else /* CONFIG_CAN_FD_MODE */
