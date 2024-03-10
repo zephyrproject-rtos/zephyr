@@ -147,24 +147,24 @@ static int llext_find_tables(struct llext_loader *ldr)
 	     i++, pos += ldr->hdr.e_shentsize) {
 		ret = llext_seek(ldr, pos);
 		if (ret != 0) {
-			LOG_ERR("failed seeking to position %u\n", pos);
+			LOG_ERR("failed seeking to position %zu\n", pos);
 			return ret;
 		}
 
 		ret = llext_read(ldr, &shdr, sizeof(elf_shdr_t));
 		if (ret != 0) {
-			LOG_ERR("failed reading section header at position %u\n", pos);
+			LOG_ERR("failed reading section header at position %zu\n", pos);
 			return ret;
 		}
 
-		LOG_DBG("section %d at %x: name %d, type %d, flags %x, addr %x, size %d",
+		LOG_DBG("section %d at %zx: name %d, type %d, flags %zx, addr %zx, size %zd",
 			i,
-			ldr->hdr.e_shoff + i * ldr->hdr.e_shentsize,
+			(size_t)ldr->hdr.e_shoff + i * ldr->hdr.e_shentsize,
 			shdr.sh_name,
 			shdr.sh_type,
-			shdr.sh_flags,
-			shdr.sh_addr,
-			shdr.sh_size);
+			(size_t)shdr.sh_flags,
+			(size_t)shdr.sh_addr,
+			(size_t)shdr.sh_size);
 
 		switch (shdr.sh_type) {
 		case SHT_SYMTAB:
@@ -570,9 +570,9 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 	 */
 	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
 
-	LOG_DBG("Found %p in PLT %u size %u cnt %u text %p",
+	LOG_DBG("Found %p in PLT %u size %zu cnt %u text %p",
 		(void *)llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name),
-		shdr->sh_type, shdr->sh_entsize, sh_cnt, (void *)text);
+		shdr->sh_type, (size_t)shdr->sh_entsize, sh_cnt, (void *)text);
 
 	const elf_shdr_t *sym_shdr = ldr->sects + LLEXT_MEM_SYMTAB;
 	unsigned int sym_cnt = sym_shdr->sh_size / sym_shdr->sh_entsize;
@@ -654,9 +654,9 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			}
 		}
 
-		LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x stb %u",
+		LOG_DBG("symbol %s offset %#zx r-offset %#zx .text offset %#zx stb %u",
 			name, got_offset,
-			rela.r_offset, ldr->sects[LLEXT_MEM_TEXT].sh_offset, stb);
+			(size_t)rela.r_offset, (size_t)ldr->sects[LLEXT_MEM_TEXT].sh_offset, stb);
 	}
 }
 
@@ -717,8 +717,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 			continue;
 		}
 
-		LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations",
-			name, i, shdr.sh_link, rel_cnt);
+		LOG_DBG("relocation section %s (%d) linked to section %d has %zd relocations",
+			name, i, shdr.sh_link, (size_t)rel_cnt);
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
@@ -746,10 +746,10 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 			name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
-			LOG_DBG("relocation %d:%d info %x (type %d, sym %d) offset %d sym_name "
+			LOG_DBG("relocation %d:%d info %x (type %d, sym %d) offset %zd sym_name "
 				"%s sym_type %d sym_bind %d sym_ndx %d",
 				i, j, rel.r_info, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
-				rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
+				(size_t)rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
 				ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
 			uintptr_t link_addr, op_loc;
@@ -762,8 +762,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 				if (link_addr == 0) {
 					LOG_ERR("Undefined symbol with no entry in "
-						"symbol table %s, offset %d, link section %d",
-						name, rel.r_offset, shdr.sh_link);
+						"symbol table %s, offset %zd, link section %d",
+						name, (size_t)rel.r_offset, shdr.sh_link);
 					return -ENODATA;
 				}
 			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
@@ -780,9 +780,9 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 			}
 
 			LOG_INF("relocating (linking) symbol %s type %d binding %d ndx %d offset "
-				"%d link section %d",
+				"%zd link section %d",
 				name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
-				sym.st_shndx, rel.r_offset, shdr.sh_link);
+				sym.st_shndx, (size_t)rel.r_offset, shdr.sh_link);
 
 			LOG_INF("writing relocation symbol %s type %d sym %d at addr 0x%lx "
 				"addr 0x%lx",
@@ -822,7 +822,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 
 	ldr->sect_map = k_heap_alloc(&llext_heap, sect_map_sz, K_NO_WAIT);
 	if (!ldr->sect_map) {
-		LOG_ERR("Failed to allocate memory for section map, size %u", sect_map_sz);
+		LOG_ERR("Failed to allocate memory for section map, size %zu", sect_map_sz);
 		ret = -ENOMEM;
 		goto out;
 	}
