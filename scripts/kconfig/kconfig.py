@@ -78,6 +78,14 @@ def main():
         check_assigned_sym_values(kconf)
         check_assigned_choice_values(kconf)
 
+    # In case the application provides its own Kconfig file a common mistake
+    # is to forget to "source 'Kconfig.zephyr'" in the Kconfig hierarchy. In
+    # such a case, the below keys in konf.syms do not exist.
+    if 'WARN_DEPRECATED' not in kconf.syms or 'WARN_EXPERIMENTAL' not in kconf.syms:
+        err(f"""\
+Failed to parse {args.kconfig_file}. Please make sure that 'Kconfig.zephyr'
+is sourced once in your Kconfig hierarchy.""")
+
     if kconf.syms.get('WARN_DEPRECATED', kconf.y).tri_value == 2:
         check_deprecated(kconf)
 
