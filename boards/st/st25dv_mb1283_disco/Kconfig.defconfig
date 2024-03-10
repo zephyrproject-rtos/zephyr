@@ -1,0 +1,12 @@
+# ST25DV DISCOVERY board configuration
+
+# Copyright (c) 2024 Eve Redero
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ST25DV_MB1283_DISCO
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_ST25DV_MB1283_DISCO
