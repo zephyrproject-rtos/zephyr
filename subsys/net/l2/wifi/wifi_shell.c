@@ -442,73 +442,69 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-static int __wifi_args_to_params(size_t argc, char *argv[],
+static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 				 struct wifi_connect_req_params *params,
 				 enum wifi_iface_mode iface_mode)
 {
 	char *endptr;
 	int idx = 1;
-	const struct shell *sh = context.sh;
+	struct getopt_state *state;
+	int opt;
+	bool secure_connection = false;
+	static struct option long_options[] = {{"ssid", required_argument, 0, 's'},
+					       {"passphrase", required_argument, 0, 'p'},
+					       {"key-mgmt", required_argument, 0, 'k'},
+					       {"ieee-80211w", required_argument, 0, 'w'},
+					       {"bssid", required_argument, 0, 'm'},
+					       {"band", required_argument, 0, 'b'},
+					       {"channel", required_argument, 0, 'c'},
+					       {"help", no_argument, 0, 'h'},
+					       {0, 0, 0, 0}};
+	int opt_index = 0;
+	uint8_t band;
+	const uint8_t all_bands[] = {
+		WIFI_FREQ_BAND_2_4_GHZ,
+		WIFI_FREQ_BAND_5_GHZ,
+		WIFI_FREQ_BAND_6_GHZ
+	};
+	bool found = false;
+	char bands_str[MAX_BANDS_STR_LEN] = {0};
+	size_t offset = 0;
 
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
 	params->channel = WIFI_CHANNEL_ANY;
 	params->security = WIFI_SECURITY_TYPE_NONE;
+	params->mfp = WIFI_MFP_OPTIONAL;
 
-	/* SSID */
-	params->ssid = argv[0];
-	params->ssid_length = strlen(params->ssid);
-	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
-		PR_WARNING("SSID too long (max %d characters)\n",
-			   WIFI_SSID_MAX_LEN);
-		return -EINVAL;
-	}
-
-	/* Channel (optional: STA, mandatory: AP) */
-	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
-		uint8_t band;
-		long channel = strtol(argv[idx], &endptr, 10);
-		const uint8_t all_bands[] = {WIFI_FREQ_BAND_2_4_GHZ,
-					WIFI_FREQ_BAND_5_GHZ,
-					WIFI_FREQ_BAND_6_GHZ};
-		bool found = false;
-		char bands_str[MAX_BANDS_STR_LEN] = {0};
-		size_t offset = 0;
-
-		if (*endptr != '\0') {
-			PR_ERROR("Failed to parse channel: %s: endp: %s, err: %s\n",
-				 argv[idx],
-				 endptr,
-				 strerror(errno));
-			return -EINVAL;
-		}
-
-		if (iface_mode == WIFI_MODE_INFRA) {
-			if (channel < 0) {
-				/* Negative channel means band */
-				switch (-channel) {
-				case 2:
-					params->band = WIFI_FREQ_BAND_2_4_GHZ;
-					break;
-				case 5:
-					params->band = WIFI_FREQ_BAND_5_GHZ;
-					break;
-				case 6:
-					params->band = WIFI_FREQ_BAND_6_GHZ;
-					break;
-				default:
-					PR_ERROR("Invalid band: %ld\n", channel);
-					return -EINVAL;
-				}
-			}
-		} else {
-			if (channel < 0) {
-				PR_ERROR("Invalid channel: %ld\n", channel);
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:h", long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 's':
+			params->ssid = optarg;
+			params->ssid_length = strlen(params->ssid);
+			if (params->ssid_length > WIFI_SSID_MAX_LEN) {
+				PR_WARNING("SSID too long (max %d characters)\n",
+					    WIFI_SSID_MAX_LEN);
 				return -EINVAL;
 			}
-		}
-
-		if (channel > 0) {
+			break;
+		case 'k':
+			params->security = atoi(optarg);
+			if (params->security) {
+				secure_connection = true;
+			}
+			break;
+		case 'p':
+			if (secure_connection) {
+				params->psk = optarg;
+				params->psk_length = strlen(params->psk);
+			} else {
+				PR_WARNING("Passphrase provided without security configuration\n");
+			}
+			break;
+		case 'c':
+			long channel = strtol(optarg, &endptr, 10);
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset,
 						   sizeof(bands_str) - offset,
@@ -537,63 +533,43 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			}
 
 			params->channel = channel;
-		}
-		idx++;
-	}
-
-	if ((idx == 1) && (iface_mode == WIFI_MODE_AP)) {
-		PR_ERROR("Invalid channel: %s\n", argv[idx]);
-		return -EINVAL;
-	}
-
-	/* PSK (optional) */
-	if (idx < argc) {
-		params->psk = argv[idx];
-		params->psk_length = strlen(argv[idx]);
-		/* Defaults */
-		params->security = WIFI_SECURITY_TYPE_PSK;
-		params->mfp = WIFI_MFP_OPTIONAL;
-		idx++;
-
-		/* Security type (optional) */
-		if (idx < argc) {
-			unsigned int security = strtol(argv[idx], &endptr, 10);
-
-			if (security <= WIFI_SECURITY_TYPE_MAX) {
-				params->security = security;
-			}
-			idx++;
-
-			/* MFP (optional) */
-			if (idx < argc) {
-				unsigned int mfp = strtol(argv[idx], &endptr, 10);
-
-				if (security == WIFI_SECURITY_TYPE_NONE ||
-				    security == WIFI_SECURITY_TYPE_WPA_PSK) {
-					PR_ERROR("MFP not supported for security type %s\n",
-						 wifi_security_txt(security));
+			break;
+		case 'b':
+			if (iface_mode == WIFI_MODE_INFRA) {
+				switch (atoi(optarg)) {
+				case 2:
+					params->band = WIFI_FREQ_BAND_2_4_GHZ;
+					break;
+				case 5:
+					params->band = WIFI_FREQ_BAND_5_GHZ;
+					break;
+				case 6:
+					params->band = WIFI_FREQ_BAND_6_GHZ;
+					break;
+				default:
+					PR_ERROR("Invalid band: %d\n", atoi(optarg));
 					return -EINVAL;
 				}
-
-				if (mfp <= WIFI_MFP_REQUIRED) {
-					params->mfp = mfp;
-				}
-				idx++;
 			}
-		}
-
-		if (params->psk_length < WIFI_PSK_MIN_LEN ||
-		    (params->security != WIFI_SECURITY_TYPE_SAE &&
-		     params->psk_length > WIFI_PSK_MAX_LEN) ||
-		    (params->security == WIFI_SECURITY_TYPE_SAE &&
-		     params->psk_length > WIFI_SAE_PSWD_MAX_LEN)) {
-			PR_ERROR("Invalid PSK length (%d) for security type %s\n",
-				 params->psk_length,
-				 wifi_security_txt(params->security));
+			break;
+		case 'w':
+			if (params->security == WIFI_SECURITY_TYPE_NONE ||
+				params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
+				PR_ERROR("MFP not supported for security type %s\n",
+						 wifi_security_txt(params->security));
+				return -EINVAL;
+			}
+			params->mfp = atoi(optarg);
+			break;
+		case 'h':
+			shell_help(sh);
+			break;
+		default:
+			PR_ERROR("Invalid option %c\n", opt);
+			shell_help(sh);
 			return -EINVAL;
 		}
 	}
-
 	return 0;
 }
 
@@ -604,7 +580,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	struct wifi_connect_req_params cnx_params = { 0 };
 
 	context.sh = sh;
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_INFRA)) {
+	if (__wifi_args_to_params(sh, argc, argv, &cnx_params, WIFI_MODE_INFRA)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -1259,7 +1235,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	int ret;
 
 	context.sh = sh;
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
+	if (__wifi_args_to_params(sh, argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -1875,16 +1851,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands.\n", NULL),
 	SHELL_CMD_ARG(connect, NULL,
 		  "Connect to a Wi-Fi AP\n"
-		  "\"<SSID>\"\n"
-		  "[channel number/band: > 0:Channel, 0:any channel,\n"
-		  "< 0:band (-2:2.4GHz, -5:5GHz, -6:6GHz]\n"
-		  "[PSK: valid only for secure SSIDs]\n"
-		  "[Security type: valid only for secure SSIDs]\n"
+		  "<-s --ssid \"<SSID>\">: SSID.\n"
+		  "[-c --channel]: Channel that needs to be scanned for connection. 0:any channel.\n"
+		  "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
+		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
+		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
-		  "[MFP (optional: needs security type to be specified)]\n"
+		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n",
 		  cmd_wifi_connect,
-		  2, 4),
+		  2, 5),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
 		  cmd_wifi_disconnect,
 		  1, 0),
