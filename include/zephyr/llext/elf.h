@@ -338,8 +338,8 @@ struct elf64_rel {
 
 struct elf64_rela {
 	elf64_addr r_offset;
-	elf64_word r_info;
-	elf64_word r_addend;
+	elf64_xword r_info;
+	elf64_sxword r_addend;
 };
 
 /** @brief Relocation symbol from r_info
