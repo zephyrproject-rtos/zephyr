@@ -35,13 +35,29 @@ env:
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     timeout-minutes: 45
     concurrency:
       group: doc-build-html-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
+    - name: Print cloud service information
+      run: |
+        echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+        echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+        echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+    - name: install-pkgs
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget python3-pip git ninja-build graphviz
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+        sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
+        echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
     - name: checkout
       uses: actions/checkout@v3
       with:
@@ -59,13 +75,22 @@ jobs:
         git rebase origin/${BASE_REF}
         git log --graph --oneline HEAD...${PR_HEAD}
 
-    - name: install-pkgs
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Rebase
+      continue-on-error: true
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        PR_HEAD: ${{ github.event.pull_request.head.sha }}
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build graphviz
-        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
-        tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
-        echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+        git config --global user.email "actions@zephyrproject.org"
+        git config --global user.name "Github Actions"
+        git rebase origin/${BASE_REF}
+        git log --graph --oneline HEAD...${PR_HEAD}
 
     - name: cache-pip
       uses: actions/cache@v3
@@ -131,7 +156,8 @@ jobs:
   doc-build-pdf:
     name: "Documentation Build (PDF)"
     if: github.event_name != 'pull_request'
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     container: texlive/texlive:latest
     timeout-minutes: 60
     concurrency:
@@ -139,6 +165,12 @@ jobs:
       cancel-in-progress: true
 
     steps:
+    - name: Print cloud service information
+      run: |
+        echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+        echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+        echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
     - name: checkout
       uses: actions/checkout@v3
 
