@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/ztest.h>
 #include <zephyr/random/random.h>
 
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
