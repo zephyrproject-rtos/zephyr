@@ -566,7 +566,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_adset, 3, 0),
 	SHELL_CMD_ARG(adget, NULL,
 		      "Get active discharge\n"
-		      "Usage: adset <device>",
+		      "Usage: adget <device>",
 		      cmd_adget, 2, 0),
 	SHELL_CMD_ARG(errors, &dsub_device_name,
 		      "Get errors\n"
