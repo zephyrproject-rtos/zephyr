@@ -22,6 +22,7 @@ jobs:
         platform: ["native_posix", "qemu_x86", "unit_testing"]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
+      CCACHE_DIR: /node-cache/ccache-zephyr
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -62,30 +63,13 @@ jobs:
           cmake --version
           gcc --version
           ls -la
-      - name: Prepare ccache keys
-        id: ccache_cache_prop
-        shell: cmake -P {0}
-        run: |
-          string(REPLACE "/" "_" repo ${{github.repository}})
-          string(REPLACE "-" "_" repo2 ${repo})
-          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
 
-      - name: use cache
-        id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
-        with:
-          key: ${{ steps.ccache_cache_prop.outputs.repo }}-${{github.event_name}}-${{matrix.platform}}-codecov-ccache
-          path: /github/home/.cache/ccache
-          aws-s3-bucket: ccache.zephyrproject.org
-          aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_CCACHE_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: ccache stats initial
+      - name: Set up ccache
         run: |
-          mkdir -p /github/home/.cache
-          test -d github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
-          ccache -M 10G -s
+          mkdir -p ${CCACHE_DIR}
+          ccache -M 10G
+          ccache -p
+          ccache -z -s -vv
 
       - name: Run Tests with Twister (Push)
         continue-on-error: true
@@ -103,10 +87,10 @@ jobs:
             --remove lcov.pre.info *generated*  \
             -o coverage/reports/${{ matrix.platform }}.info --rc lcov_branch_coverage=1
 
-      - name: ccache stats post
+      - name: Print ccache stats
+        if: always()
         run: |
-          ccache -s
-          ccache -p
+          ccache -s -vv
 
       - name: Upload Coverage Results
         if: always()
