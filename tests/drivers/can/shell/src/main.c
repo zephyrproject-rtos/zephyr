@@ -234,8 +234,6 @@ ZTEST(can_shell, test_can_timing_missing_value)
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int err;
 
-	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_FD_MODE);
-
 	err = shell_execute_cmd(sh, "can timing " FAKE_CAN_NAME);
 	zassert_not_equal(err, 0, " executed shell command without timing");
 	zassert_equal(fake_can_set_timing_fake.call_count, 0,
@@ -253,6 +251,8 @@ ZTEST(can_shell, test_can_dtiming)
 		.prescaler = 5U,
 	};
 	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_FD_MODE);
 
 	fake_can_set_timing_data_fake.custom_fake = can_shell_test_capture_timing;
 
