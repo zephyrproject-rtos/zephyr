@@ -225,8 +225,10 @@ unlock:
 #ifdef CONFIG_CAN_FD_MODE
 int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data)
 {
+	const uint8_t tdco_max = FIELD_GET(CAN_MCAN_TDCR_TDCO, CAN_MCAN_TDCR_TDCO);
 	struct can_mcan_data *data = dev->data;
 	uint32_t dbtp = 0U;
+	uint8_t tdco;
 	int err;
 
 	if (data->common.started) {
@@ -239,6 +241,23 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 		FIELD_PREP(CAN_MCAN_DBTP_DTSEG1, timing_data->phase_seg1 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DTSEG2, timing_data->phase_seg2 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DBRP, timing_data->prescaler - 1UL);
+
+	if (timing_data->prescaler == 1U || timing_data->prescaler == 2U) {
+		/* TDC can only be enabled if DBRP = { 0, 1 } */
+		dbtp |= CAN_MCAN_DBTP_TDC;
+
+		/* Set TDC offset for correct location of the Secondary Sample Point (SSP) */
+		tdco = CAN_CALC_TDCO(timing_data, 0U, tdco_max);
+		LOG_DBG("TDC enabled, using TDCO %u", tdco);
+
+		err = can_mcan_write_reg(dev, CAN_MCAN_TDCR, FIELD_PREP(CAN_MCAN_TDCR_TDCO, tdco));
+		if (err != 0) {
+			goto unlock;
+		}
+	} else {
+		LOG_DBG("TDC cannot be enabled, prescaler value %u too high",
+			timing_data->prescaler);
+	}
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_DBTP, dbtp);
 	if (err != 0) {
