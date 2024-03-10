@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   codecov:
-    if: github.repository == 'zephyrproject-rtos/zephyr'
+    if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
