@@ -23,7 +23,7 @@ struct bundle_data {
 	size_t soff, eoff;
 
 	 /* Masks for start/end bundles */
-	uint32_t smask, emask;
+	sys_bits smask, emask;
 };
 
 static void setup_bundle_data(sys_bitarray_t *bitarray,
@@ -68,8 +68,8 @@ static bool match_region(sys_bitarray_t *bitarray, size_t offset,
 			 size_t *mismatch)
 {
 	size_t idx;
-	uint32_t bundle;
-	uint32_t mismatch_bundle;
+	sys_bits bundle;
+	sys_bits mismatch_bundle;
 	size_t mismatch_bundle_idx;
 	size_t mismatch_bit_off;
 
@@ -152,7 +152,7 @@ mismatch:
 		mismatch_bit_off = find_lsb_set(mismatch_bundle) - 1;
 		mismatch_bit_off += mismatch_bundle_idx *
 				    bundle_bitness(bitarray);
-		*mismatch = (uint32_t)mismatch_bit_off;
+		*mismatch = (sys_bits)mismatch_bit_off;
 	}
 	return false;
 }
@@ -385,7 +385,7 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		       size_t *offset)
 {
 	k_spinlock_key_t key;
-	uint32_t bit_idx;
+	sys_bits bit_idx;
 	int ret;
 	struct bundle_data bd;
 	size_t off_start, off_end;

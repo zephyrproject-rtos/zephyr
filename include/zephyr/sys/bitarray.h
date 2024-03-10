@@ -17,6 +17,12 @@ extern "C" {
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_64BIT
+typedef uint64_t sys_bits;
+#else
+typedef uint32_t sys_bits;
+#endif
+
 /**
  * @file
  *
@@ -31,13 +37,13 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 struct sys_bitarray {
 	/* Number of bits */
-	uint32_t num_bits;
+	sys_bits num_bits;
 
 	/* Number of bundles */
-	uint32_t num_bundles;
+	sys_bits num_bundles;
 
 	/* Bundle of bits */
-	uint32_t *bundles;
+	sys_bits *bundles;
 
 	/* Spinlock guarding access to this bit array */
 	struct k_spinlock lock;
@@ -55,13 +61,13 @@ typedef struct sys_bitarray sys_bitarray_t;
  * @param sba_mod Modifier to the bitarray variables.
  */
 #define _SYS_BITARRAY_DEFINE(name, total_bits, sba_mod)			\
-	sba_mod uint32_t _sys_bitarray_bundles_##name			\
+	sba_mod sys_bits _sys_bitarray_bundles_##name			\
 		[DIV_ROUND_UP(DIV_ROUND_UP(total_bits, 8),		\
-			       sizeof(uint32_t))] = {0};		\
+			       sizeof(sys_bits))] = {0};		\
 	sba_mod sys_bitarray_t name = {					\
 		.num_bits = total_bits,					\
 		.num_bundles = DIV_ROUND_UP(				\
-			DIV_ROUND_UP(total_bits, 8), sizeof(uint32_t)),	\
+			DIV_ROUND_UP(total_bits, 8), sizeof(sys_bits)),	\
 		.bundles = _sys_bitarray_bundles_##name,		\
 	}
 
