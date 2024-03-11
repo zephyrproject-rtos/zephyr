@@ -790,16 +790,34 @@ uint32_t ull_big_sync_delay(const struct lll_sync_iso *lll_iso)
 			lll_iso->phy);
 }
 
+static void disable(uint8_t sync_idx)
+{
+	struct ll_sync_iso_set *sync_iso;
+	int err;
+
+	sync_iso = &ll_sync_iso[sync_idx];
+
+	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_ISO_BASE +
+					sync_idx, sync_iso, &sync_iso->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+}
+
 static int init_reset(void)
 {
-	/* Add initializations common to power up initialization and HCI reset
-	 * initializations.
-	 */
+	uint8_t idx;
+
+	/* Disable all active BIGs (uses blocking ull_ticker_stop_with_mark) */
+	for (idx = 0U; idx < CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET; idx++) {
+		disable(idx);
+	}
 
 	mem_init((void *)stream_pool, sizeof(struct lll_sync_iso_stream),
 		 CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT, &stream_free);
 
-	return 0;
+	memset(&ll_sync_iso, 0, sizeof(ll_sync_iso));
+
+	/* Initialize LLL */
+	return lll_sync_iso_init();
 }
 
 static struct ll_sync_iso_set *sync_iso_get(uint8_t handle)
