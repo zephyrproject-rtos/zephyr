@@ -3764,6 +3764,18 @@ Task Watchdog:
   tests:
     - drivers.syscon
 
+TDK Sensors:
+  status: maintained
+  maintainers:
+    - teburd
+    - MaureenHelm
+  files:
+    - drivers/sensor/tdk/
+  labels:
+    - "area: Sensors"
+  tests:
+    - drivers.sensors
+
 "Drivers: Time Aware GPIO":
   status: maintained
   maintainers:
