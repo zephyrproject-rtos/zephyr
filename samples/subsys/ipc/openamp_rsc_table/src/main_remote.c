@@ -71,7 +71,6 @@ struct rpmsg_rcv_msg {
 };
 
 static struct metal_io_region *shm_io;
-static struct rpmsg_virtio_shm_pool shpool;
 
 static struct metal_io_region *rsc_io;
 static struct rpmsg_virtio_device rvdev;
@@ -259,9 +258,7 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 		goto failed;
 	}
 
-	rpmsg_virtio_init_shm_pool(&shpool, NULL, SHM_SIZE);
-	ret =  rpmsg_init_vdev(&rvdev, vdev, ns_cb, shm_io, &shpool);
-
+	ret = rpmsg_init_vdev(&rvdev, vdev, ns_cb, shm_io, NULL);
 	if (ret) {
 		LOG_ERR("failed rpmsg_init_vdev");
 		goto failed;
