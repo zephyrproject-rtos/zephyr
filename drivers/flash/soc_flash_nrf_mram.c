@@ -21,13 +21,8 @@ LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 #define MRAM_WORD_MASK 0xf
 
 #define WRITE_BLOCK_SIZE DT_INST_PROP_OR(0, write_block_size, MRAM_WORD_SIZE)
-#define ERASE_BLOCK_SIZE DT_INST_PROP_OR(0, erase_block_size, WRITE_BLOCK_SIZE)
-
-#define ERASE_VALUE 0xff
 
 BUILD_ASSERT(MRAM_START > 0, "nordic,mram: start address expected to be non-zero");
-BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
-	     "erase-block-size expected to be a multiple of write-block-size");
 
 /**
  * @param[in,out] offset      Relative offset into memory, from the driver API.
@@ -117,60 +112,24 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 	return 0;
 }
 
-static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
-{
-	ARG_UNUSED(dev);
-
-	const uintptr_t addr = validate_and_map_addr(offset, size, true);
-
-	if (!addr) {
-		return -EINVAL;
-	}
-
-	LOG_DBG("erase: %p:%zu", (void *)addr, size);
-
-	memset((void *)addr, ERASE_VALUE, size);
-	commit_changes(addr + size);
-
-	return 0;
-}
-
 static const struct flash_parameters *nrf_mram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	static const struct flash_parameters parameters = {
 		.write_block_size = WRITE_BLOCK_SIZE,
-		.erase_value = ERASE_VALUE,
+		.caps = {
+			.explicit_erase,
+		},
 	};
 
 	return &parameters;
 }
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void nrf_mram_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
-				 size_t *layout_size)
-{
-	ARG_UNUSED(dev);
-
-	static const struct flash_pages_layout pages_layout = {
-		.pages_count = (MRAM_SIZE) / (ERASE_BLOCK_SIZE),
-		.pages_size = ERASE_BLOCK_SIZE,
-	};
-
-	*layout = &pages_layout;
-	*layout_size = 1;
-}
-#endif
-
 static const struct flash_driver_api nrf_mram_api = {
 	.read = nrf_mram_read,
 	.write = nrf_mram_write,
-	.erase = nrf_mram_erase,
 	.get_parameters = nrf_mram_get_parameters,
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = nrf_mram_page_layout,
-#endif
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
