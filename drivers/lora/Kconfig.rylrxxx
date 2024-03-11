@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2024 David Ullmann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LORA_RYLRXXX
+	bool "Reyax LYLR driver"
+	depends on DT_HAS_REYAX_RYLRXXX_ENABLED
+	select MODEM_MODULES
+	select MODEM_CHAT
+	select MODEM_PIPE
+	select MODEM_BACKEND_UART
+	select GPIO
+	help
+	  Enable the Reyax LYLR driver
+
+if LORA_RYLRXXX
+
+config LORA_RYLRXX_CMD_BUF_SIZE
+	int "cmd buffer size"
+	default 256
+	help
+	  Configure the cmd buffer size
+
+config RYLRXXX_UNSOLICITED_RX_MSGQ_SIZE
+	int "number of message to store in message queue"
+	default 1
+	help
+	  Configure the size of message queue
+
+config RYLRXXX_RADIO_CMD_RESPONSE_TIMEOUT_MS
+	int "timeout when waiting for response from radio serial interface after send cmd"
+	default 500
+	help
+	  Configure the number of milliseconds before timing out when waiting for acknowledgment from radio after sending cmd
+
+config RYLRXXX_MODEM_BUFFERS_SIZE
+	int "size of buffers for modem library"
+	default 512
+	help
+	  Configure the size of buffers for modem library
+
+endif # LORA_RYLRXXX
