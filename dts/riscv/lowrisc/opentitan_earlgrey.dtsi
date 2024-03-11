@@ -76,7 +76,7 @@
 			interrupts-extended = <&hlic 11>;
 			reg = <0x48000000 0x04000000>;
 			riscv,max-priority = <7>;
-			riscv,ndev = <184>;
+			riscv,ndev = <182>;
 			status = "okay";
 		};
 

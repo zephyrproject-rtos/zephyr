@@ -6,3 +6,5 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_BUILD_OUTPUT_BIN=n
+# TODO: verilator boot broken when multi-threading is enabled.
+CONFIG_MULTITHREADING=n
