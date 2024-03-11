@@ -7,11 +7,13 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/symbol.h>
 #include <zephyr/llext/buf_loader.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/libc-hooks.h>
-
 #include "syscalls_ext.h"
+#include "threads_kernel_objects_ext.h"
+
 
 LOG_MODULE_REGISTER(test_llext_simple);
 
@@ -28,8 +30,9 @@ struct llext_test {
 	size_t buf_len;
 
 	LLEXT_CONST uint8_t *buf;
-};
 
+	void (*perm_setup)(struct k_thread *llext_thread);
+};
 
 
 K_THREAD_STACK_DEFINE(llext_stack, 1024);
@@ -45,6 +48,9 @@ void llext_entry(void *arg0, void *arg1, void *arg2)
 }
 #endif /* CONFIG_USERSPACE */
 
+
+/* syscalls test */
+
 int z_impl_ext_syscall_ok(int a)
 {
 	return a + 1;
@@ -56,6 +62,33 @@ static inline int z_vrfy_ext_syscall_ok(int a)
 	return z_impl_ext_syscall_ok(a);
 }
 #include <syscalls/ext_syscall_ok_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+
+/* threads kernel objects test */
+
+/* For these to be accessible from user space, they must be top-level globals
+ * in the Zephyr image. Also, macros that add objects to special linker sections,
+ * such as K_THREAD_STACK_DEFINE, do not work properly from extensions code.
+ */
+K_SEM_DEFINE(my_sem, 1, 1);
+EXPORT_SYMBOL(my_sem);
+struct k_thread my_thread;
+EXPORT_SYMBOL(my_thread);
+K_THREAD_STACK_DEFINE(my_thread_stack, MY_THREAD_STACK_SIZE);
+EXPORT_SYMBOL(my_thread_stack);
+
+#ifdef CONFIG_USERSPACE
+/* Allow the user space test thread to access global objects */
+static void threads_objects_perm_setup(struct k_thread *llext_thread)
+{
+	k_object_access_grant(&my_sem, llext_thread);
+	k_object_access_grant(&my_thread, llext_thread);
+	k_object_access_grant(&my_thread_stack, llext_thread);
+}
+#else
+/* No need to set up permissions for supervisor mode */
+#define threads_objects_perm_setup NULL
 #endif /* CONFIG_USERSPACE */
 
 void load_call_unload(struct llext_test *test_case)
@@ -108,6 +141,14 @@ void load_call_unload(struct llext_test *test_case)
 
 	k_mem_domain_add_thread(&domain, &llext_thread);
 
+	/* Even in supervisor mode, initialize permissions on objects used in
+	 * the test by this thread, so that user mode descendant threads can
+	 * inherit these permissions.
+	 */
+	if (test_case->perm_setup) {
+		test_case->perm_setup(&llext_thread);
+	}
+
 	k_thread_start(&llext_thread);
 	k_thread_join(&llext_thread, K_FOREVER);
 
@@ -123,10 +164,13 @@ void load_call_unload(struct llext_test *test_case)
 
 		k_mem_domain_add_thread(&domain, &llext_thread);
 
+		if (test_case->perm_setup) {
+			test_case->perm_setup(&llext_thread);
+		}
+
 		k_thread_start(&llext_thread);
 		k_thread_join(&llext_thread, K_FOREVER);
 	}
-
 
 #else /* CONFIG_USERSPACE */
 	zassert_ok(llext_call_fn(ext, "test_entry"),
@@ -143,7 +187,7 @@ void load_call_unload(struct llext_test *test_case)
  * unloading each extension which may itself excercise various APIs provided by
  * Zephyr.
  */
-#define LLEXT_LOAD_UNLOAD(_name, _userspace)					\
+#define LLEXT_LOAD_UNLOAD(_name, _userspace, _perm_setup)			\
 	ZTEST(llext, test_load_unload_##_name)					\
 	{									\
 		struct llext_test test_case = {					\
@@ -151,34 +195,41 @@ void load_call_unload(struct llext_test *test_case)
 			.try_userspace = _userspace,				\
 			.buf_len = ARRAY_SIZE(_name ## _ext),			\
 			.buf = _name ## _ext,					\
+			.perm_setup = _perm_setup,				\
 		};								\
 		load_call_unload(&test_case);					\
 	}
 static LLEXT_CONST uint8_t hello_world_ext[] __aligned(4) = {
 	#include "hello_world.inc"
 };
-LLEXT_LOAD_UNLOAD(hello_world, false)
+LLEXT_LOAD_UNLOAD(hello_world, false, NULL)
 
 static LLEXT_CONST uint8_t logging_ext[] __aligned(4) = {
 	#include "logging.inc"
 };
-LLEXT_LOAD_UNLOAD(logging, true)
+LLEXT_LOAD_UNLOAD(logging, true, NULL)
 
 static LLEXT_CONST uint8_t relative_jump_ext[] __aligned(4) = {
 	#include "relative_jump.inc"
 };
-LLEXT_LOAD_UNLOAD(relative_jump, true)
+LLEXT_LOAD_UNLOAD(relative_jump, true, NULL)
 
 static LLEXT_CONST uint8_t object_ext[] __aligned(4) = {
 	#include "object.inc"
 };
-LLEXT_LOAD_UNLOAD(object, true)
+LLEXT_LOAD_UNLOAD(object, true, NULL)
 
 static LLEXT_CONST uint8_t syscalls_ext[] __aligned(4) = {
 	#include "syscalls.inc"
 };
-LLEXT_LOAD_UNLOAD(syscalls, true)
+LLEXT_LOAD_UNLOAD(syscalls, true, NULL)
+
+static LLEXT_CONST uint8_t threads_kernel_objects_ext[] __aligned(4) = {
+	#include "threads_kernel_objects.inc"
+};
+LLEXT_LOAD_UNLOAD(threads_kernel_objects, true, threads_objects_perm_setup)
 #endif /* ! LOADER_BUILD_ONLY */
+
 
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address
