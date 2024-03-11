@@ -2552,10 +2552,12 @@ Networking:
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/buf.h
+    - include/zephyr/net/dhcpv4*.h
     - samples/net/gptp/
     - samples/net/sockets/coap_*/
     - samples/net/lwm2m_client/
     - samples/net/wifi/
+    - samples/net/dhcpv4_client/
     - subsys/net/buf*.c
     - subsys/net/l2/ethernet/gptp/
     - subsys/net/l2/ieee802154/
@@ -2564,6 +2566,8 @@ Networking:
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/lwm2m/
     - subsys/net/lib/tls_credentials/
+    - subsys/net/lib/dhcpv4/
+    - tests/net/dhcpv4/
     - tests/net/ieee802154/
     - tests/net/wifi/
   labels:
@@ -2635,6 +2639,24 @@ Networking:
     - "area: Networking"
   tests:
     - net.coap
+
+"Networking: DHCPv4":
+  status: maintained
+  maintainers:
+    - rlubos
+    - jukkar
+  collaborators:
+    - maass-hamburg
+  files:
+    - subsys/net/lib/dhcpv4/
+    - samples/net/dhcpv4_client/
+    - tests/net/dhcpv4/
+    - include/zephyr/net/dhcpv4*.h
+  labels:
+    - "area: Networking"
+  tests:
+    - net.dhcpv4_client
+    - net.dhcpv4_server
 
 "Networking: gPTP":
   status: maintained
