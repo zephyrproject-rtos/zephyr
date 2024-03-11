@@ -2451,7 +2451,6 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 		if (default_broadcast_sink.stream_cnt == 0) {
 			/* All streams in the broadcast sink has been terminated */
 			default_broadcast_sink.syncable = true;
-			default_broadcast_sink.bap_sink = NULL;
 			memset(&default_broadcast_sink.received_base, 0,
 			       sizeof(default_broadcast_sink.received_base));
 			default_broadcast_sink.broadcast_id = 0;
