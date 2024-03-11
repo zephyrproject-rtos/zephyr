@@ -75,6 +75,8 @@ source "drivers/spi/Kconfig.mcux_dspi"
 
 source "drivers/spi/Kconfig.mcux_flexcomm"
 
+source "drivers/spi/Kconfig.mcux_flexio"
+
 source "drivers/spi/Kconfig.mcux_lpspi"
 
 source "drivers/spi/Kconfig.rv32m1_lpspi"
