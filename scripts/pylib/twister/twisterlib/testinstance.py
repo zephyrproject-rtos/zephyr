@@ -181,11 +181,10 @@ class TestInstance:
             if self.platform.simulation == "qemu":
                 if os.name != "nt":
                     handler = QEMUHandler(self, "qemu")
-                    handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
-                    handler.ready = True
                 else:
                     handler = QEMUWinHandler(self, "qemu")
-                    handler.ready = True
+                handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
+                handler.ready = True
             else:
                 handler = SimulationHandler(self, self.platform.simulation)
 
