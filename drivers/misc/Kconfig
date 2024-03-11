@@ -12,5 +12,6 @@ source "drivers/misc/nxp_s32_emios/Kconfig"
 source "drivers/misc/timeaware_gpio/Kconfig"
 source "drivers/misc/devmux/Kconfig"
 source "drivers/misc/nordic_vpr_launcher/Kconfig"
+source "drivers/misc/mcux_flexio/Kconfig"
 
 endmenu
