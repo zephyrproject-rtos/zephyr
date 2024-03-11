@@ -66,7 +66,6 @@ struct lll_sync_iso {
 
 	uint8_t term_reason;
 
-	uint8_t ctrl_chan_use;
 	uint16_t ctrl_instant;
 
 	uint8_t stream_count;
