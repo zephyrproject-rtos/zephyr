@@ -290,7 +290,7 @@ manifest:
         - debug
       revision: a819419603a2dfcb47f7f39092e1bc112e45d1ef
     - name: net-tools
-      revision: 3a677d355cc7f73e444801a6280d0ccec80a1957
+      revision: pull/70/head
       path: tools/net-tools
       groups:
         - tools
