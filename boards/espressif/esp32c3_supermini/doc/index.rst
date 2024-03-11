@@ -32,6 +32,10 @@ The features include the following:
 
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 
+.. figure:: img/esp32c3-supermini.jpg
+     :align: center
+     :alt: ESP32C3_SUPERMINI
+
 Supported Features
 ==================
 
@@ -71,6 +75,15 @@ Current Zephyr's ESP32-C3-supermini board supports the following features:
 +------------+------------+-------------------------------------+
 | Bluetooth  | on-chip    |                                     |
 +------------+------------+-------------------------------------+
+
+Pin Mapping
+===========
+
+.. figure:: img/esp32c3-supermini-pinout.jpg
+     :align: center
+     :alt: ESP32C3_SUPERMINI
+
+     ESP32C3 SuperMini Pinout
 
 System requirements
 *******************
@@ -236,6 +249,5 @@ References
 **********
 
 .. [1] https://www.espressif.com/en/products/socs/esp32-c3
-.. _ESP32C3 supermini User Guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html
 .. _ESP32C3 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
 .. _ESP32C3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
