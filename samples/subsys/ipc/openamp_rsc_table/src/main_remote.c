@@ -53,6 +53,7 @@ static const struct device *const ipm_handle =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
 static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
+static metal_phys_addr_t rsc_tab_physmap;
 
 static struct metal_io_region shm_io_data; /* shared memory */
 static struct metal_io_region rsc_io_data; /* rsc_table memory */
@@ -67,7 +68,7 @@ static struct metal_io_region *shm_io = &shm_io_data;
 static struct metal_io_region *rsc_io = &rsc_io_data;
 static struct rpmsg_virtio_device rvdev;
 
-static void *rsc_table;
+static struct fw_resource_table *rsc_table;
 static struct rpmsg_device *rpdev;
 
 static char rx_sc_msg[20];  /* should receive "Hello world!" */
@@ -139,7 +140,6 @@ int mailbox_notify(void *priv, uint32_t id)
 
 int platform_init(void)
 {
-	void *rsc_tab_addr;
 	int rsc_size;
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 	int status;
@@ -155,11 +155,11 @@ int platform_init(void)
 		      SHM_SIZE, -1, 0, NULL);
 
 	/* declare resource table region */
-	rsc_table_get(&rsc_tab_addr, &rsc_size);
-	rsc_table = (struct st_resource_table *)rsc_tab_addr;
+	rsc_table_get(&rsc_table, &rsc_size);
+	rsc_tab_physmap = (uintptr_t)rsc_table;
 
 	metal_io_init(rsc_io, rsc_table,
-		      (metal_phys_addr_t *)rsc_table, rsc_size, -1, 0, NULL);
+		      &rsc_tab_physmap, rsc_size, -1, 0, NULL);
 
 	/* setup IPM */
 	if (!device_is_ready(ipm_handle)) {
