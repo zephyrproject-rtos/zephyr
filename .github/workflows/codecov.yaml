@@ -81,7 +81,8 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           mkdir -p coverage/reports
-          ./scripts/twister --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage -T tests
+          ./scripts/twister --force-color -N -v --filter runnable -p ${{ matrix.platform }} \
+            --coverage -T tests --timeout-multiplier 2
 
       - name: Generate Coverage Report
         run: |
