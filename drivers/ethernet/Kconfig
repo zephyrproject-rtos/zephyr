@@ -5,11 +5,20 @@
 
 menuconfig ETH_DRIVER
 	bool "Ethernet drivers"
-	default y
-	depends on NET_L2_ETHERNET
+	depends on NETWORKING
 	depends on !NET_TEST
+	default y if NET_L2_ETHERNET
 
 if ETH_DRIVER
+
+config ETH_DRIVER_RAW_MODE
+	bool "Ethernet driver without the MAC stack"
+	select NET_RAW_MODE
+	depends on !NET_L2_ETHERNET
+	help
+	  This option enables using the drivers in a so-called "raw" mode,
+	  i.e. without a MAC stack (the net L2 layer for ethernet will not
+	  be built).
 
 module = ETHERNET
 module-dep = LOG
@@ -74,7 +83,7 @@ endif # "Ethernet Drivers"
 config ETH_INIT_PRIORITY
 	int "Ethernet driver init priority"
 	default 80
-	depends on NET_L2_ETHERNET
+	depends on NET_L2_ETHERNET || ETH_DRIVER
 	help
 	  Ethernet device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
