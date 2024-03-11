@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 68a91bb343ff47e40dbd9189a7d6e3ee801a7135
+      revision: cf24f9ebd893b349cec439ef7eaac6554a6b6d6f
       path: modules/hal/nuvoton
       groups:
         - hal
