@@ -9,6 +9,24 @@ config SOC_NRF54H20
 	help
 	  nRF54H20
 
+config SOC_NRF54H20_CPUAPP
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 CPUAPP
+
+config SOC_NRF54H20_CPURAD
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 CPURAD
+
+config SOC_NRF54H20_CPUPPR
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 CPUPPR
+
 config SOC_NRF54H20_ENGA_CPUAPP
 	bool
 	select SOC_NRF54H20
