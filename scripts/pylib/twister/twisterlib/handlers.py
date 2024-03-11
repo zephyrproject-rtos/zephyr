@@ -1050,15 +1050,13 @@ class QEMUHandler(Handler):
 
 
 class QEMUWinHandler(Handler):
-    """Spawns a thread to monitor QEMU output on Windows OS
+    """Spawns a thread to monitor QEMU output from pipes on Windows OS
 
-    We redirect subprocess output to pipe and monitor the pipes for output.
-    We need to do this as once qemu starts, it runs forever until killed.
-    Test cases emit special messages to the console as they run, we check
-    for these to collect whether the test passed or failed.
-    The pipe includes also messages from ninja command which is used for
-    running QEMU.
-    """
+     QEMU creates single duplex pipe at //.pipe/path, where path is fifo_fn.
+     We need to do this as once qemu starts, it runs forever until killed.
+     Test cases emit special messages to the console as they run, we check
+     for these to collect whether the test passed or failed.
+     """
 
     def __init__(self, instance, type_str):
         """Constructor
@@ -1068,6 +1066,8 @@ class QEMUWinHandler(Handler):
 
         super().__init__(instance, type_str)
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
+        self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
+        self.pipe_handle = None
         self.pid = 0
         self.thread = None
         self.stop_thread = False
@@ -1108,6 +1108,8 @@ class QEMUWinHandler(Handler):
                     os.kill(pid, signal.SIGTERM)
             except (ProcessLookupError, psutil.NoSuchProcess):
                 # Oh well, as long as it's dead! User probably sent Ctrl-C
+                pass
+            except OSError:
                 pass
 
     @staticmethod
@@ -1165,15 +1167,21 @@ class QEMUWinHandler(Handler):
                     self.instance.reason = "Exited with {}".format(self.returncode)
             self.instance.add_missing_case_status("blocked")
 
-    def _enqueue_char(self, stdout, queue):
+    def _enqueue_char(self, queue):
         while not self.stop_thread:
+            if not self.pipe_handle:
+                try:
+                    self.pipe_handle = os.open(r"\\.\pipe\\" + self.fifo_fn, os.O_RDONLY)
+                except FileNotFoundError as e:
+                    if e.args[0] == 2:
+                        # Pipe is not opened yet, try again after a delay.
+                        time.sleep(1)
+                continue
+
+            c = ""
             try:
-                c = stdout.read(1)
-            except ValueError:
-                # Reading on closed file exception can occur when subprocess is killed.
-                # Can be ignored.
-                pass
-            else:
+                c = os.read(self.pipe_handle, 1)
+            finally:
                 queue.put(c)
 
     def _monitor_output(self, queue, timeout, logfile, pid_fn, harness, ignore_unexpected_eof=False):
@@ -1283,10 +1291,11 @@ class QEMUWinHandler(Handler):
         self.stop_thread = False
         queue = Queue()
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+        with subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+                              cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
 
-            self.thread = threading.Thread(target=self._enqueue_char, args=(proc.stdout, queue))
+            self.thread = threading.Thread(target=self._enqueue_char, args=(queue,))
             self.thread.daemon = True
             self.thread.start()
 
@@ -1312,6 +1321,12 @@ class QEMUWinHandler(Handler):
 
         logger.debug(f"return code from QEMU ({self.pid}): {self.returncode}")
 
+        os.close(self.pipe_handle)
+        self.pipe_handle = None
+
         self._update_instance_info(harness.state, is_timeout)
 
         self._final_handle_actions(harness, 0)
+
+    def get_fifo(self):
+        return self.fifo_fn
