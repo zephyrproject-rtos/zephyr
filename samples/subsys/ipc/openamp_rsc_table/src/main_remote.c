@@ -291,6 +291,10 @@ void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 	ret = rpmsg_create_ept(&sc_ept, rpdev, "rpmsg-client-sample",
 			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 			       rpmsg_recv_cs_callback, NULL);
+	if (ret) {
+		LOG_ERR("[Linux sample client] Could not create endpoint: %d\n", ret);
+		goto task_end;
+	}
 
 	while (msg_cnt < 100) {
 		k_sem_take(&data_sc_sem,  K_FOREVER);
@@ -301,6 +305,7 @@ void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 	}
 	rpmsg_destroy_ept(&sc_ept);
 
+task_end:
 	printk("OpenAMP Linux sample client responder ended\n");
 }
 
@@ -321,6 +326,10 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 	ret = rpmsg_create_ept(&tty_ept, rpdev, "rpmsg-tty",
 			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 			       rpmsg_recv_tty_callback, NULL);
+	if (ret) {
+		LOG_ERR("[Linux TTY] Could not create endpoint: %d\n", ret);
+		goto task_end;
+	}
 
 	while (tty_ept.addr !=  RPMSG_ADDR_ANY) {
 		k_sem_take(&data_tty_sem,  K_FOREVER);
@@ -336,6 +345,7 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 	}
 	rpmsg_destroy_ept(&tty_ept);
 
+task_end:
 	printk("OpenAMP Linux TTY responder ended\n");
 }
 
