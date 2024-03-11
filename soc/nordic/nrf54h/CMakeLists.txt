@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SOC_NRF54H20_ENGA_CPUAPP OR CONFIG_SOC_NRF54H20_ENGA_CPURAD)
+if(CONFIG_ARM)
   zephyr_include_directories(.)
   zephyr_library_sources(soc.c)
 endif()
