@@ -12,7 +12,7 @@ config BOARD
 	  soc/<arch>/<family>/<series>
 
 config BOARD_REVISION
-	def_string "$BOARD_REVISION"
+	def_string "$(BOARD_REVISION)"
 	help
 	  If the BOARD has a revision field set, this is the revision.
 	  Otherwise, it is the empty string. For example, if BOARD is
