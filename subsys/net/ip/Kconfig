@@ -583,12 +583,6 @@ config NET_CONTEXT_RECV_PKTINFO
 	  This way user can get extra information about the received data in the
 	  socket.
 
-config NET_TEST
-	bool "Network Testing"
-	help
-	  Used for self-contained networking tests that do not require a
-	  network device.
-
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
 	depends on NET_QEMU_SLIP
@@ -605,6 +599,12 @@ config NET_SLIP_TAP
 	  https://github.com/zephyrproject-rtos/net-tools for more details.
 
 endif # NET_RAW_MODE
+
+config NET_TEST
+	bool "Network Testing"
+	help
+	  Used for self-contained networking tests that do not require a
+	  network device.
 
 config NET_PKT_RX_COUNT
 	int "How many packet receives can be pending at the same time"

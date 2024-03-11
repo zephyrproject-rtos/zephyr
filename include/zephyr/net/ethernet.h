@@ -932,6 +932,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 }
 #endif
 
+#if !defined(CONFIG_ETH_DRIVER_RAW_MODE)
 #if defined(CONFIG_NET_VLAN)
 
 #define Z_ETH_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
@@ -956,6 +957,17 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 				   api, ETHERNET_L2,			\
 				   NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 #endif /* CONFIG_NET_VLAN */
+
+#else /* CONFIG_ETH_DRIVER_RAW_MODE */
+
+#define Z_ETH_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
+				       init_fn, pm, data, config, prio,	\
+				       api, mtu)			\
+	Z_DEVICE_STATE_DEFINE(dev_id);					\
+	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
+			config, POST_KERNEL, prio, api,			\
+			&Z_DEVICE_STATE_NAME(dev_id));
+#endif /* CONFIG_ETH_DRIVER_RAW_MODE */
 
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
 			      config, prio, api, mtu)			\
