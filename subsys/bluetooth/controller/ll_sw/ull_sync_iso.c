@@ -86,6 +86,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	struct node_rx_hdr *node_rx;
 	struct ll_sync_set *sync;
 	struct lll_sync_iso *lll;
+	int8_t last_index;
 
 	sync = ull_sync_is_enabled_get(sync_handle);
 	if (!sync || sync->iso.sync_iso) {
@@ -107,11 +108,29 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO: Check parameters */
+	/* TODO: Check remaining parameters */
+
+	/* Check BIS indices */
+	last_index = -1;
+	for (uint8_t i = 0U; i < num_bis; i++) {
+		/* Stream index must be in valid range and in ascending order */
+		if (!IN_RANGE(bis[i], 0x01, 0x1F) || (bis[i] <= last_index)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+
+		} else if (bis[i] > sync->num_bis) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+		last_index = bis[i];
+	}
+
+	/* Check if requested encryption matches */
+	if (encryption != sync->enc) {
+		return BT_HCI_ERR_ENC_MODE_NOT_ACCEPTABLE;
+	}
 
 	/* Check if free BISes available */
 	if (mem_free_count_get(stream_free) < num_bis) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	link_sync_estab = ll_rx_link_alloc();
