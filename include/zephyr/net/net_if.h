@@ -2990,14 +2990,21 @@ struct net_if_api {
 
 /* Network device initialization macros */
 
-#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
-			  config, prio, api, l2, l2_ctx_type, mtu)	\
+#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
+				   init_fn, pm, data, config, prio,	\
+				   api, l2, l2_ctx_type, mtu)		\
 	Z_DEVICE_STATE_DEFINE(dev_id);					\
 	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, 0, l2_ctx_type);			\
-	NET_IF_INIT(dev_id, 0, l2, mtu, NET_IF_MAX_CONFIGS)
+	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
+	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+
+#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			  config, prio, api, l2, l2_ctx_type, mtu)	\
+	Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, 0, init_fn,	\
+				   pm, data, config, prio, api, l2,	\
+				   l2_ctx_type, mtu)
 
 /**
  * @brief Create a network interface and bind it to network device.
@@ -3057,16 +3064,6 @@ struct net_if_api {
  */
 #define NET_DEVICE_DT_INST_DEFINE(inst, ...) \
 	NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
-
-#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
-				   init_fn, pm, data, config, prio,	\
-				   api, l2, l2_ctx_type, mtu)		\
-	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
-			config,	POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create multiple network interfaces and bind them to network device.
