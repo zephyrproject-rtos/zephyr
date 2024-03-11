@@ -185,6 +185,14 @@ Networking
   used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
   implemented in `recv` callback. (:github:`70549`)
 
+* Modified the ``wifi connect`` command to use key-value format for the arguments. In the
+  previous implementation, we were identifying an option using its position in the argument string.
+  This made it difficult to deal with optional arguments or extending the support
+  for other options. Having this key-value format makes it easier to extend the options that
+  can be passed to the connect command.
+  ``wifi -h`` will give more information about the usage of connect command.
+  (:github:`70024`)
+
 Other Subsystems
 ****************
 
