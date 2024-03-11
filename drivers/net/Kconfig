@@ -153,7 +153,6 @@ config SLIP_STATISTICS
 config SLIP_TAP
 	bool "Use TAP interface to host"
 	default y
-	select NET_L2_ETHERNET
 	help
 	  In TAP the Ethernet frames are transferred over SLIP.
 
