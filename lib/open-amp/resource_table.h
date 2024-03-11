@@ -41,10 +41,8 @@ enum rsc_table_entries {
 };
 
 struct fw_resource_table {
-	unsigned int ver;
-	unsigned int num;
-	unsigned int reserved[2];
-	unsigned int offset[RSC_TABLE_NUM_ENTRY];
+	struct resource_table hdr;
+	uint32_t offset[RSC_TABLE_NUM_ENTRY];
 
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
 	struct fw_rsc_vdev vdev;
