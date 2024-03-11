@@ -3,8 +3,11 @@
 # Copyright (c) 2021 IP-Logix Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Ethernet PHY Drivers"
-	depends on NET_L2_ETHERNET
+menuconfig ETH_PHY_DRIVER
+	bool "Ethernet PHY drivers"
+	default y if NET_L2_ETHERNET || ETH_DRIVER
+
+if ETH_PHY_DRIVER
 
 module = PHY
 module-dep = LOG
@@ -63,4 +66,4 @@ config PHY_MONITOR_PERIOD
 	  periodically executed to detect and report any changes in the
 	  PHY link status to the operating system.
 
-endmenu # "Ethernet PHY Drivers"
+endif # "Ethernet PHY Drivers"
