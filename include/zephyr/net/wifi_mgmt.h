@@ -359,6 +359,8 @@ struct wifi_connect_req_params {
 	enum wifi_security_type security;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
+	/** BSSID */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
 };
