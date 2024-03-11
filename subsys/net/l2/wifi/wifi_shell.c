@@ -477,7 +477,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:h", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 's':
@@ -561,6 +561,12 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			params->mfp = atoi(optarg);
 			break;
+		case 'm':
+			sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				&params->bssid[0], &params->bssid[1],
+				&params->bssid[2], &params->bssid[3],
+				&params->bssid[4], &params->bssid[5]);
+			break;
 		case 'h':
 			shell_help(sh);
 			break;
@@ -570,6 +576,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			return -EINVAL;
 		}
 	}
+
 	return 0;
 }
 
@@ -1858,9 +1865,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
-		  ": 0:Disable, 1:Optional, 2:Required.\n",
+		  ": 0:Disable, 1:Optional, 2:Required.\n"
+		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
+		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		  2, 5),
+		  2, 7),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
 		  cmd_wifi_disconnect,
 		  1, 0),
