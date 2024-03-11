@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 David Ullmann
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/{
+	aliases {
+		lora0 = &rylr_lora_modem;
+	};
+};
+
+
+&arduino_serial {
+	current-speed = <115200>;
+	status = "okay";
+	rylr_lora_modem: rylr_lora_modem {
+			compatible = "reyax,rylrxxx";
+			status = "okay";
+			reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;
+	};
+};
