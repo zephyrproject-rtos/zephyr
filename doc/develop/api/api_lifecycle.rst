@@ -166,6 +166,8 @@ The Pull Request must include the following:
   upcoming release
 - The labels ``API``, ``Breaking API Change`` and ``Release Notes``, as well as
   any others that are applicable
+- The label ``Architecture Review`` if the RFC was not yet discussed and agreed upon in `Zephyr
+  Architecture meeting`_
 
 Once the steps above have been completed, the outcome of the proposal will
 depend on the approval of the actual Pull Request by the maintainer of the
