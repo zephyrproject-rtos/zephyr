@@ -554,6 +554,7 @@ renode	Antmicro's open source simulation and virtual development framework
 rervision	Shenzhen Rervision Technology Co., Ltd.
 revotics	Revolution Robotics, Inc. (Revotics)
 rex	iMX6 Rex Project
+reyax	Reyax Technology Co., Ltd.
 richtek	Richtek Technology Corporation
 ricoh	Ricoh Co. Ltd.
 rikomagic	Rikomagic Tech Corp. Ltd
