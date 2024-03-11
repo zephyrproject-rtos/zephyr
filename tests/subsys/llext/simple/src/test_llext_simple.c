@@ -152,6 +152,11 @@ static LLEXT_CONST uint8_t relative_jump_ext[] __aligned(4) = {
 };
 LLEXT_LOAD_UNLOAD(relative_jump, true)
 
+static LLEXT_CONST uint8_t object_ext[] __aligned(4) = {
+	#include "object.inc"
+};
+LLEXT_LOAD_UNLOAD(object, true)
+
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address
  * to it.

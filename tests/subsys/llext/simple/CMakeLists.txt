@@ -16,7 +16,7 @@ target_include_directories(app PRIVATE
 )
 
 # generate extension targets foreach extension given by name
-foreach(ext_name hello_world logging relative_jump)
+foreach(ext_name hello_world logging relative_jump object)
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
   set(ext_bin ${ZEPHYR_BINARY_DIR}/${ext_name}.llext)
   set(ext_inc ${ZEPHYR_BINARY_DIR}/include/generated/${ext_name}.inc)
