@@ -311,7 +311,7 @@ i2s20: i2s@dd000 {
 	status = "disabled";
 };
 
-qdec20: qdec@e0000 {
+qdec: qdec20: qdec@e0000 {
 	compatible = "nordic,nrf-qdec";
 	reg = <0xe0000 0x1000>;
 	interrupts = <224 NRF_DEFAULT_IRQ_PRIORITY>;

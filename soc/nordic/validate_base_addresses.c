@@ -171,7 +171,11 @@ CHECK_DT_REG(pwm0, NRF_PWM0);
 CHECK_DT_REG(pwm1, NRF_PWM1);
 CHECK_DT_REG(pwm2, NRF_PWM2);
 CHECK_DT_REG(pwm3, NRF_PWM3);
+#if !defined(CONFIG_SOC_SERIES_NRF54LX)
 CHECK_DT_REG(qdec, NRF_QDEC0);	/* this should be the same node as qdec0 */
+#else
+CHECK_DT_REG(qdec, NRF_QDEC20);	/* nRF54L does not have qdec0, use qdec20 instead */
+#endif
 CHECK_DT_REG(qdec0, NRF_QDEC0);
 CHECK_DT_REG(qdec1, NRF_QDEC1);
 CHECK_DT_REG(radio, NRF_RADIO);

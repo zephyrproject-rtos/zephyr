@@ -458,7 +458,7 @@ mutex: mutex@30000 {
 	status = "okay";
 };
 
-qdec0: qdec@33000 {
+qdec: qdec0: qdec@33000 {
 	compatible = "nordic,nrf-qdec";
 	reg = <0x33000 0x1000>;
 	interrupts = <51 NRF_DEFAULT_IRQ_PRIORITY>;
