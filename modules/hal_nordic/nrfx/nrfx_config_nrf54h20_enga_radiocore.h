@@ -386,6 +386,33 @@
 #endif
 
 /**
+ * @brief NRFX_GRTC_CONFIG_SLEEP_ALLOWED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_GRTC_CONFIG_SLEEP_ALLOWED
+#define NRFX_GRTC_CONFIG_SLEEP_ALLOWED 0
+#endif
+
+/**
+ * @brief NRFX_GRTC_CONFIG_AUTOEN
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_GRTC_CONFIG_AUTOEN
+#define NRFX_GRTC_CONFIG_AUTOEN 0
+#endif
+
+/**
+ * @brief NRFX_GRTC_CONFIG_AUTOSTART
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_GRTC_CONFIG_AUTOSTART
+#define NRFX_GRTC_CONFIG_AUTOSTART 0
+#endif
+
+/**
  * @brief NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS
  *
  * Integer value.
