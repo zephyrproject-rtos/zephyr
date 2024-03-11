@@ -2130,6 +2130,18 @@ struct bt_le_scan_cb {
 					   BT_GAP_SCAN_FAST_WINDOW)
 
 /**
+ * @brief Helper macro to enable active scanning to discover new devices with window == interval.
+ *
+ * Continuous scanning should be used to maximize the chances of receiving advertising packets.
+ */
+#define BT_LE_SCAN_ACTIVE_CONTINUOUS BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
+						      BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
+						      BT_GAP_SCAN_FAST_INTERVAL_MIN, \
+						      BT_GAP_SCAN_FAST_WINDOW)
+BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
+	     "Continuous scanning is requested by setting window and interval equal.");
+
+/**
  * @brief Helper macro to enable passive scanning to discover new devices.
  *
  * This macro should be used if information required for device identification
@@ -2139,6 +2151,19 @@ struct bt_le_scan_cb {
 					    BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					    BT_GAP_SCAN_FAST_INTERVAL, \
 					    BT_GAP_SCAN_FAST_WINDOW)
+
+/**
+ * @brief Helper macro to enable passive scanning to discover new devices with window==interval.
+ *
+ * This macro should be used if information required for device identification
+ * (e.g., UUID) are known to be placed in Advertising Data.
+ */
+#define BT_LE_SCAN_PASSIVE_CONTINUOUS BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
+						       BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
+						       BT_GAP_SCAN_FAST_INTERVAL_MIN, \
+						       BT_GAP_SCAN_FAST_WINDOW)
+BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
+	     "Continuous scanning is requested by setting window and interval equal.");
 
 /**
  * @brief Helper macro to enable active scanning to discover new devices.
