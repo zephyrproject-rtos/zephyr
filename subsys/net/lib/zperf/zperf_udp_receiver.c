@@ -311,12 +311,15 @@ static void udp_svc_handler(struct k_work *work)
 static int zperf_udp_receiver_init(void)
 {
 	int ret;
+	int family;
 
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		fds[i].fd = -1;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+	family = udp_server_addr.sa_family;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && (family == AF_INET || family == AF_UNSPEC)) {
 		const struct in_addr *in4_addr = NULL;
 
 		in4_addr_my = zperf_get_sin();
@@ -365,7 +368,7 @@ use_any_ipv4:
 		fds[SOCK_ID_IPV4].events = ZSOCK_POLLIN;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && (family == AF_INET6 || family == AF_UNSPEC)) {
 		const struct in6_addr *in6_addr = NULL;
 
 		in6_addr_my = zperf_get_sin6();
