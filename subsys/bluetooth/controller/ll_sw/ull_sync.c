@@ -201,6 +201,10 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	sync->skip = skip;
 	sync->is_stop = 0U;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	sync->enc = 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
 	/* NOTE: Use timeout not zero to represent sync context used for sync
 	 * create.
 	 */
@@ -1492,7 +1496,6 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
 	struct pdu_adv_ext_hdr *hdr;
-	uint8_t *dptr;
 
 	com_hdr = &pdu->adv_ext_ind;
 	hdr = &com_hdr->ext_hdr;
@@ -1500,9 +1503,6 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 	if (!com_hdr->ext_hdr_len || (com_hdr->ext_hdr_len != 0 && !hdr->cte_info)) {
 		return NULL;
 	}
-
-	/* Skip flags in extended advertising header */
-	dptr = hdr->data;
 
 	/* Make sure there are no fields that are not allowd for AUX_SYNC_IND and AUX_CHAIN_IND */
 	LL_ASSERT(!hdr->adv_addr);
