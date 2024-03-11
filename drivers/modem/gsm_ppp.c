@@ -1461,6 +1461,16 @@ wait_at:
 		goto retry;
 	}
 
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+				    &response_cmds[0],
+				    ARRAY_SIZE(response_cmds),
+				    "AT+QSCLK=1", &gsm->sem_response,
+				    GSM_CMD_AT_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("AT+QSCLK=1 ret:%d", ret);
+		goto retry;
+	}
+
 	gsm->state = GSM_PPP_AT_RDY;
 
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
