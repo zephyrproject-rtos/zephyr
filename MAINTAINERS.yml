@@ -2571,8 +2571,8 @@ Networking:
     - net
 
 "Networking: BSD sockets":
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - rlubos
     - jukkar
   files:
@@ -2580,6 +2580,7 @@ Networking:
     - subsys/net/lib/sockets/
     - tests/net/socket/
   labels:
+    - "area: Networking"
     - "area: Sockets"
   tests:
     - net.socket
