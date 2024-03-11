@@ -708,6 +708,7 @@ extern "C" {
  * @name Defined GAP timers
  * @{
  */
+#define BT_GAP_SCAN_FAST_INTERVAL_MIN           0x0030  /* 30 ms    */
 #define BT_GAP_SCAN_FAST_INTERVAL               0x0060  /* 60 ms    */
 #define BT_GAP_SCAN_FAST_WINDOW                 0x0030  /* 30 ms    */
 #define BT_GAP_SCAN_SLOW_INTERVAL_1             0x0800  /* 1.28 s   */
