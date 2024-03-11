@@ -6,16 +6,18 @@
 
 #include <zephyr/toolchain.h>
 
-/* imports */
-GTEXT(__start)
+/* exports */
+GTEXT(__rom_header)
 
-/* OpenTitan manifest consists of 896 bytes (224 words) containing signature,
- * device ID, version info, etc. The test ROM ignores all of these fields
- * except for entry point (final word in manifest).
+/* OpenTitan manifest consists of 964 bytes (226 words, plus 15 words
+ * of manifest extenstion) containing signature, device ID, version
+ * info, etc. The test ROM ignores all of these fields except for entry
+ * point (final word in the base manifest).
  */
 SECTION_FUNC(rom_header, __rom_header)
-	.rept(223)
-	.word 0
-	.endr
-	/* Entry point is relative to the beginning of manifest. */
-	.word(__start - __rom_header)
+        .rept(225)
+        .word 0
+        .endr
+        /* Entry point is relative to the beginning of manifest. */
+        .word(__reset - __rom_header)
+        /* TODO: extensions entry table goes here. */
