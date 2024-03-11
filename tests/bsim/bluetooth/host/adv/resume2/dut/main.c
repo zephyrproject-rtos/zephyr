@@ -21,7 +21,7 @@ extern enum bst_result_t bst_result;
 extern atomic_t connected_count;
 extern size_t count_conn_marked_peripheral(void);
 
-LOG_MODULE_REGISTER(dut, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 
 /* Note `BT_LE_ADV_OPT_ONE_TIME`. The stack is not responsible
  * for resuming.
@@ -34,18 +34,17 @@ LOG_MODULE_REGISTER(dut, LOG_LEVEL_INF);
 /* Obs! Synchronization: Do not modify when running. */
 static uint8_t target_peripheral_count;
 
-static bool should_restart(void)
-{
-	return count_conn_marked_peripheral() < target_peripheral_count;
-}
-
 static int my_adv_start(void)
 {
-	if (!should_restart()) {
-		/* Returning 0 here will allow the resumer to be enabled even
-                 * when it's not possible to start the advertiser. To faithfully
-                 * emulate the legacy behavior, return -ECONNREFUSED instead.
-                 */
+	LOG_DBG("");
+	/* Limit the number of peripheral connections. This is useful in
+	 * case you want to reserve a connection slot for an outgoing
+	 * connection.
+	 */
+	if (count_conn_marked_peripheral() >= target_peripheral_count) {
+		/* Delay the start. The resumer will invoke this function again
+		 * when there may be a new connection slot available.
+		 */
 		return 0;
 	}
 
@@ -76,9 +75,9 @@ int main(void)
 	err = bt_set_name("dut");
 	__ASSERT_NO_MSG(!err);
 
+	/* Try to fill the connection slots. */
 	target_peripheral_count = CONFIG_BT_MAX_CONN;
-	err = adv_resumer_start(my_adv_start);
-	__ASSERT_NO_MSG(!err);
+	adv_resumer_set(my_adv_start);
 
 	LOG_INF("Waiting for connections...");
 	while (atomic_get(&connected_count) < CONFIG_BT_MAX_CONN) {
@@ -88,8 +87,7 @@ int main(void)
 	LOG_INF("✅ Ok");
 	LOG_INF("🧹 Clean up");
 
-	err = adv_resumer_stop();
-	__ASSERT_NO_MSG(!err);
+	adv_resumer_set(NULL);
 
 	bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
 
@@ -115,8 +113,9 @@ int main(void)
 	err = bt_set_name("dut");
 	__ASSERT_NO_MSG(!err);
 
+	/* Try to limit the fill. */
 	target_peripheral_count = CONFIG_BT_MAX_CONN - 1;
-	err = adv_resumer_start(my_adv_start);
+	adv_resumer_set(my_adv_start);
 	__ASSERT_NO_MSG(!err);
 
 	LOG_INF("Waiting for connections...");

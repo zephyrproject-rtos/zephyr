@@ -10,6 +10,9 @@ project(dut)
 
 target_sources(app PRIVATE
   main.c
+  adv_resumer.c
+  count_peripherals.c
+  connected_count.c
 )
 
 zephyr_include_directories(
