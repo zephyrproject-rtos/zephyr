@@ -148,7 +148,7 @@ static int ii2sdlpc_set_slope_th(const struct device *dev, uint16_t th)
 	err = iis2dlpc_wkup_threshold_set(ctx, th & 0x3F);
 	if (err) {
 		LOG_ERR("Could not set WK_THS to 0x%02X, error %d",
-			th & 0x03, err);
+			th & 0x3F, err);
 		return err;
 	}
 	return 0;
