@@ -541,6 +541,40 @@ ZTEST_USER(can_classic, test_set_bitrate)
 }
 
 /**
+ * @brief Test that the minimum timing values can be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_min)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing(can_dev, can_get_timing_min(can_dev));
+	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that the maximum timing values can be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_max)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing(can_dev, can_get_timing_max(can_dev));
+	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test sending a message with no filters installed.
  *
  * This basic test work since the CAN controller is in loopback mode and
