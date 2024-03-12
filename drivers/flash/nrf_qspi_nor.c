@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 #include "spi_nor.h"
 #include "jesd216.h"
 #include "flash_priv.h"
+#include <nrf_erratas.h>
 #include <nrfx_qspi.h>
 #include <hal/nrf_clock.h>
 #include <hal/nrf_gpio.h>
@@ -101,6 +102,11 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 /* For requested SCK >= 96 MHz, use HFCLK192M / 1 / (2*1) = 96 MHz */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
+/* If anomaly 159 is to be prevented, only /1 divider can be used. */
+#elif NRF53_ERRATA_159_ENABLE_WORKAROUND
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
+				     INST_0_SCK_FREQUENCY) - 1)
 #elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 2))
 /* For 96 MHz > SCK >= 48 MHz, use HFCLK192M / 2 / (2*1) = 48 MHz */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
@@ -115,6 +121,13 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
 				     INST_0_SCK_FREQUENCY) - 1)
 #endif
+/* After the base clock divider is changed, some time is needed for the new
+ * setting to take effect. This value specifies the delay (in microseconds)
+ * to be applied to ensure that the clock is ready when the QSPI operation
+ * starts. It was measured with a logic analyzer (unfortunately, the nRF5340
+ * specification does not provide any numbers in this regard).
+ */
+#define BASE_CLOCK_SWITCH_DELAY_US 7
 
 #else
 /*
@@ -230,6 +243,12 @@ static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
 		return -EINVAL;
 	case NRFX_ERROR_INVALID_STATE:
 		return -ECANCELED;
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	case NRFX_ERROR_FORBIDDEN:
+		LOG_ERR("nRF5340 anomaly 159 conditions detected");
+		LOG_ERR("Set the CPU clock to 64 MHz before starting QSPI operation");
+		return -ECANCELED;
+#endif
 	case NRFX_ERROR_BUSY:
 	case NRFX_ERROR_TIMEOUT:
 	default:
@@ -262,6 +281,7 @@ static inline void qspi_clock_div_change(void)
 	 * before a QSPI transfer is performed.
 	 */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
+	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 }
 
