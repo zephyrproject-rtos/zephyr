@@ -355,19 +355,6 @@ static int set_up_plls(void)
 	int r;
 	uint32_t vco_input_range;
 
-	/*
-	 * Case of chain-loaded applications:
-	 * Switch to HSI and disable the PLL before configuration.
-	 * (Switching to HSI makes sure we have a SYSCLK source in
-	 * case we're currently running from the PLL we're about to
-	 * turn off and reconfigure.)
-	 *
-	 */
-	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1R) {
-		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
-		stm32_clock_switch_to_hsi();
-	}
-
 	LL_RCC_PLL1_Disable();
 
 	/* Configure PLL source */
@@ -511,10 +498,19 @@ int stm32_clock_control_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
+	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL) &&
+			(LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1R)) {
+		/* In case of chainloaded application, it may happen that PLL
+		 * was already configured as sysclk src by bootloader.
+		 * Don't test other cases as there are multiple options but
+		 * they will be handled smoothly by the function.
+		 */
+		SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+		return 0;
+	}
+
 	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
 					       GET_CURRENT_FLASH_PRESCALER());
-
-
 
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
