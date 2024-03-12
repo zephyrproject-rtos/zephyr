@@ -1259,7 +1259,7 @@ static int init(void)
 
 	usb_audio_register(hs_dev, &usb_ops);
 	err = usb_enable(NULL);
-	if (err != 0) {
+	if (err && err != -EALREADY) {
 		printk("Failed to enable USB\n");
 		return err;
 	}
