@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017,2021 NXP
+ * Copyright 2017,2021,2023-2024 NXP
  * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -21,6 +21,9 @@
 #include <zephyr/logging/log.h>
 
 #include <fsl_lpuart.h>
+#if CONFIG_NXP_LP_FLEXCOMM
+#include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
+#endif
 
 LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 
@@ -36,6 +39,9 @@ struct lpuart_dma_config {
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+	const struct device *parent_dev;
+#endif
 	const struct device *clock_dev;
 	const struct pinctrl_dev_config *pincfg;
 	clock_control_subsys_t clock_subsys;
@@ -1077,7 +1083,16 @@ static int mcux_lpuart_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
+#if CONFIG_NXP_LP_FLEXCOMM
+	/* When using LP Flexcomm driver, register the interrupt handler
+	 * so we receive notification from the LP Flexcomm interrupt handler.
+	 */
+	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev,
+				      LP_FLEXCOMM_PERIPH_LPUART, mcux_lpuart_isr);
+#else
+	/* Interrupt is managed by this driver */
 	config->irq_config_func(dev);
+#endif
 #endif
 
 #ifdef CONFIG_PM
@@ -1205,10 +1220,17 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 		: DT_INST_PROP(n, nxp_rs485_mode)\
 				? UART_CFG_FLOW_CTRL_RS485   \
 				: UART_CFG_FLOW_CTRL_NONE
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+#define PARENT_DEV(n) \
+	.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
+#else
+#define PARENT_DEV(n)
+#endif /* CONFIG_NXP_LP_FLEXCOMM */
 
 #define LPUART_MCUX_DECLARE_CFG(n)                                      \
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
+	PARENT_DEV(n)		\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
