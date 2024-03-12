@@ -212,6 +212,9 @@ static void tx_free(struct bt_conn_tx *tx)
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_notify(struct bt_conn *conn)
 {
+	__ASSERT_NO_MSG(k_current_get() ==
+			k_work_queue_thread_get(&k_sys_work_q));
+
 	LOG_DBG("conn %p", conn);
 
 	while (1) {
@@ -377,15 +380,22 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 static void wait_for_tx_work(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_CONN_TX)
-	struct k_work_sync sync;
+	LOG_DBG("conn %p", conn);
 
-	/* API docs mention undefined behavior if syncing on work item from wq
-	 * execution context.
-	 */
-	__ASSERT_NO_MSG(k_current_get() != &k_sys_work_q.thread);
+	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS)) {
+		tx_notify(conn);
+	} else {
+		struct k_work_sync sync;
 
-	k_work_submit(&conn->tx_complete_work);
-	k_work_flush(&conn->tx_complete_work, &sync);
+		/* API docs mention undefined behavior if syncing on work item
+		 * from wq execution context.
+		 */
+		__ASSERT_NO_MSG(k_current_get() !=
+				k_work_queue_thread_get(&k_sys_work_q));
+
+		k_work_submit(&conn->tx_complete_work);
+		k_work_flush(&conn->tx_complete_work, &sync);
+	}
 #else
 	ARG_UNUSED(conn);
 #endif	/* CONFIG_BT_CONN_TX */
@@ -1494,8 +1504,6 @@ static void tx_complete_work(struct k_work *work)
 {
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
 					    tx_complete_work);
-
-	LOG_DBG("conn %p", conn);
 
 	tx_notify(conn);
 }
