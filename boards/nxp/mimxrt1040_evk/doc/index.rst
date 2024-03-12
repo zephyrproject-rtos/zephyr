@@ -119,9 +119,8 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/nxp/mimxrt1040_evk/mimxrt1040_evk_defconfig`
+The default configuration can be found in
+:zephyr_file:`boards/nxp/mimxrt1040_evk/mimxrt1040_evk_defconfig`
 
 Other hardware features are not currently supported by the port.
 
