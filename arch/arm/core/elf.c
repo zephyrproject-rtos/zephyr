@@ -26,6 +26,9 @@ void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 
 	switch (reloc_type) {
 	case R_ARM_ABS32:
+		/* Add the addend stored at opaddr to opval */
+		opval += *((uint32_t *)opaddr);
+
 		/* Update the absolute address of a load/store instruction */
 		*((uint32_t *)opaddr) = (uint32_t)opval;
 		break;
