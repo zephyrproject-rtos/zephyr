@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVE
 
 #include "common/bt_str.h"
 
-#define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
 
 /* any value above 0xFFFFFF is invalid, so we can just use 0xFFFFFFFF to denote
@@ -908,20 +908,16 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 static uint16_t interval_to_sync_timeout(uint16_t interval)
 {
 	uint32_t interval_ms;
-	uint16_t timeout;
-
-	/* Ensure that the following calculation does not overflow silently */
-	__ASSERT(SYNC_RETRY_COUNT < 10, "SYNC_RETRY_COUNT shall be less than 10");
+	uint32_t timeout;
 
 	/* Add retries and convert to unit in 10's of ms */
 	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
-	timeout = (interval_ms * SYNC_RETRY_COUNT) / 10;
+	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
 
 	/* Enforce restraints */
-	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
-			BT_GAP_PER_ADV_MAX_TIMEOUT);
+	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 
-	return timeout;
+	return (uint16_t)timeout;
 }
 
 int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)

@@ -19,8 +19,6 @@
 #include "common.h"
 
 #define SEM_TIMEOUT K_SECONDS(1.5)
-#define PA_SYNC_SKIP         5
-#define SYNC_RETRY_COUNT     6 /* similar to retries for connections */
 
 extern enum bst_result_t bst_result;
 
@@ -105,20 +103,16 @@ static void recv_cb(struct bt_bap_stream *stream,
 static uint16_t interval_to_sync_timeout(uint16_t interval)
 {
 	uint32_t interval_ms;
-	uint16_t timeout;
-
-	/* Ensure that the following calculation does not overflow silently */
-	__ASSERT(SYNC_RETRY_COUNT < 10, "SYNC_RETRY_COUNT shall be less than 10");
+	uint32_t timeout;
 
 	/* Add retries and convert to unit in 10's of ms */
 	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
-	timeout = (interval_ms * SYNC_RETRY_COUNT) / 10;
+	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
 
 	/* Enforce restraints */
-	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
-			BT_GAP_PER_ADV_MAX_TIMEOUT);
+	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 
-	return timeout;
+	return (uint16_t)timeout;
 }
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)

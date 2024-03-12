@@ -102,7 +102,7 @@ static const uint8_t mock_iso_data[] = {
 #define AD_SIZE 1
 
 #define INVALID_BROADCAST_ID (BT_AUDIO_BROADCAST_ID_MAX + 1)
-#define SYNC_RETRY_COUNT     6 /* similar to retries for connections */
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP         5
 
 #define PBP_STREAMS_TO_SEND  2
