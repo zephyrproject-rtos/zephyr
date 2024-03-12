@@ -339,8 +339,8 @@ static void test_main(void)
 			sent_cb(&broadcast_stream->bap_stream);
 		}
 
-		/* Keeping running for a little while */
-		k_sleep(K_SECONDS(3));
+		/* Wait for other devices to let us know when we can stop the source */
+		printk("Waiting for signal from receiver to stop\n"); backchannel_sync_wait_any();
 
 		err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 		if (err != 0) {
