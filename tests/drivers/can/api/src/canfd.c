@@ -376,6 +376,40 @@ ZTEST_USER(canfd, test_filters_preserved_through_fd_to_classic_mode_change)
 }
 
 /**
+ * @brief Test that the minimum timing values for the data phase can be set.
+ */
+ZTEST_USER(canfd, test_set_timing_data_min)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing_data(can_dev, can_get_timing_data_min(can_dev));
+	zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that the maximum timing values for the data phase can be set.
+ */
+ZTEST_USER(canfd, test_set_timing_data_max)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing_data(can_dev, can_get_timing_data_max(can_dev));
+	zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test setting data phase bitrate is not allowed while started.
  */
 ZTEST_USER(canfd, test_set_bitrate_data_while_started)
