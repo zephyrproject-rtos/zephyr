@@ -33,12 +33,11 @@ config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
 	help
 	  Disable trimming of the device. When the device is trimmed it
 	  will copy all the trimming values from FICR into the target
-	  addresses. When TF-M is enabled it will trim the device before
-	  booting this image.
+	  addresses.
 
 config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
 	bool "Skip disabling glitch detector"
-	default n
+	default y if TRUSTED_EXECUTION_NONSECURE
 	help
 	  With this option, the glitch detector is not disabled during system initialization.
 	  The CPU runs with the default state of glitch detector.
