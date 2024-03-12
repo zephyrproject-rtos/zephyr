@@ -22,6 +22,11 @@
 		};
 	};
 
+	wifi: wifi {
+		compatible = "telink,w91-wifi";
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

@@ -63,6 +63,10 @@
 	clock-frequency = <160000000>;
 };
 
+&wifi {
+	status = "okay";
+};
+
 &flash {
 	reg = <0x80000000 0x300000>;
 
