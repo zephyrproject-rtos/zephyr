@@ -38,7 +38,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #endif /* CONFIG_SCAN_SELF */
 
 #define INVALID_BROADCAST_ID        (BT_AUDIO_BROADCAST_ID_MAX + 1)
-#define SYNC_RETRY_COUNT            6 /* similar to retries for connections */
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                5
 #define NAME_LEN                    sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
 #define BROADCAST_DATA_ELEMENT_SIZE sizeof(int16_t)
@@ -870,16 +870,15 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 		/* Use maximum value to maximize chance of success */
 		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
 	} else {
-		/* Ensure that the following calculation does not overflow silently */
-		__ASSERT(SYNC_RETRY_COUNT < 10,
-			 "SYNC_RETRY_COUNT shall be less than 10");
+		uint32_t interval_ms;
+		uint32_t timeout;
 
 		/* Add retries and convert to unit in 10's of ms */
-		pa_timeout = ((uint32_t)pa_interval * SYNC_RETRY_COUNT) / 10;
+		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
+		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
 
 		/* Enforce restraints */
-		pa_timeout = CLAMP(pa_timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
-				   BT_GAP_PER_ADV_MAX_TIMEOUT);
+		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 	}
 
 	return pa_timeout;
