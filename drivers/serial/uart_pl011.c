@@ -9,6 +9,7 @@
 #define DT_DRV_COMPAT arm_pl011
 #define SBSA_COMPAT arm_sbsa_uart
 
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
@@ -44,7 +45,7 @@ struct pl011_config {
 /* Device data structure */
 struct pl011_data {
 	DEVICE_MMIO_RAM;
-	uint32_t baud_rate;	/* Baud rate */
+	struct uart_config uart_cfg;
 	bool sbsa;		/* SBSA mode */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	volatile bool sw_call_txdrdy;
@@ -138,6 +139,115 @@ static void pl011_poll_out(const struct device *dev,
 	/* Send a character */
 	get_uart(dev)->dr = (uint32_t)c;
 }
+
+static int pl011_runtime_configure_internal(const struct device *dev,
+					const struct uart_config *cfg,
+					bool disable)
+{
+	const struct pl011_config *config = dev->config;
+	struct pl011_data *data = dev->data;
+	uint32_t lcrh;
+	int ret = -ENOTSUP;
+
+	if (data->sbsa) {
+		goto out;
+	}
+
+	if (disable) {
+		pl011_disable(dev);
+		pl011_disable_fifo(dev);
+	}
+
+	lcrh = get_uart(dev)->lcr_h & ~(PL011_LCRH_FORMAT_MASK | PL011_LCRH_STP2);
+
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		lcrh &= ~(BIT(1) | BIT(2));
+		break;
+	case UART_CFG_PARITY_ODD:
+		lcrh |= PL011_LCRH_PARITY_ODD;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		lcrh |= PL011_LCRH_PARTIY_EVEN;
+		break;
+	default:
+		goto enable;
+	}
+
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		lcrh &= ~(PL011_LCRH_STP2);
+		break;
+	case UART_CFG_STOP_BITS_2:
+		lcrh |= PL011_LCRH_STP2;
+		break;
+	default:
+		goto enable;
+	}
+
+	switch (cfg->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		lcrh |= PL011_LCRH_WLEN_SIZE(5) << PL011_LCRH_WLEN_SHIFT;
+		break;
+	case UART_CFG_DATA_BITS_6:
+		lcrh |= PL011_LCRH_WLEN_SIZE(6) << PL011_LCRH_WLEN_SHIFT;
+		break;
+	case UART_CFG_DATA_BITS_7:
+		lcrh |= PL011_LCRH_WLEN_SIZE(7) << PL011_LCRH_WLEN_SHIFT;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		lcrh |= PL011_LCRH_WLEN_SIZE(8) << PL011_LCRH_WLEN_SHIFT;
+		break;
+	default:
+		goto enable;
+	}
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		break;
+	default:
+		goto enable;
+	}
+
+	/* Set baud rate */
+	ret = pl011_set_baudrate(dev, config->sys_clk_freq, cfg->baudrate);
+	if (ret != 0) {
+		goto enable;
+	}
+
+	/* Update settings */
+	get_uart(dev)->lcr_h = lcrh;
+
+	memcpy(&data->uart_cfg, cfg, sizeof(data->uart_cfg));
+
+enable:
+	if (disable) {
+		pl011_enable_fifo(dev);
+		pl011_enable(dev);
+	}
+
+out:
+	return ret;
+}
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static int pl011_runtime_configure(const struct device *dev,
+				const struct uart_config *cfg)
+{
+	return pl011_runtime_configure_internal(dev, cfg, true);
+}
+
+static int pl011_runtime_config_get(const struct device *dev,
+				struct uart_config *cfg)
+{
+	struct pl011_data *data = dev->data;
+
+	*cfg = data->uart_cfg;
+	return 0;
+}
+
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int pl011_fifo_fill(const struct device *dev,
@@ -268,6 +378,10 @@ static void pl011_irq_callback_set(const struct device *dev,
 static const struct uart_driver_api pl011_driver_api = {
 	.poll_in = pl011_poll_in,
 	.poll_out = pl011_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = pl011_runtime_configure,
+	.config_get = pl011_runtime_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = pl011_fifo_fill,
 	.fifo_read = pl011_fifo_read,
@@ -291,7 +405,6 @@ static int pl011_init(const struct device *dev)
 	const struct pl011_config *config = dev->config;
 	struct pl011_data *data = dev->data;
 	int ret;
-	uint32_t lcrh;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -324,18 +437,7 @@ static int pl011_init(const struct device *dev)
 			}
 		}
 
-		/* Set baud rate */
-		ret = pl011_set_baudrate(dev, config->sys_clk_freq,
-					 data->baud_rate);
-		if (ret != 0) {
-			return ret;
-		}
-
-		/* Setting the default character format */
-		lcrh = get_uart(dev)->lcr_h & ~(PL011_LCRH_FORMAT_MASK);
-		lcrh &= ~(BIT(0) | BIT(7));
-		lcrh |= PL011_LCRH_WLEN_SIZE(8) << PL011_LCRH_WLEN_SHIFT;
-		get_uart(dev)->lcr_h = lcrh;
+		pl011_runtime_configure_internal(dev, &data->uart_cfg, false);
 
 		/* Setting transmit and receive interrupt FIFO level */
 		get_uart(dev)->ifls = FIELD_PREP(PL011_IFLS_TXIFLSEL_M, TXIFLSEL_1_8_FULL)
@@ -439,7 +541,13 @@ void pl011_isr(const struct device *dev)
 	PL011_CONFIG_PORT(n)					\
 								\
 	static struct pl011_data pl011_data_port_##n = {	\
-		.baud_rate = DT_INST_PROP(n, current_speed),	\
+		.uart_cfg = {					\
+			.baudrate = DT_INST_PROP(n, current_speed), \
+			.parity = UART_CFG_PARITY_NONE,			\
+			.stop_bits = UART_CFG_STOP_BITS_1,		\
+			.data_bits = UART_CFG_DATA_BITS_8,		\
+			.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,		\
+		},							\
 	};							\
 								\
 	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
