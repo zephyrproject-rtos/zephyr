@@ -38,9 +38,13 @@ static int stm32g4_init(void)
 	LL_DBGMCU_EnableDBGSleepMode();
 
 #if defined(PWR_CR3_UCPD_DBDIS)
-	/* Disable USB Type-C dead battery pull-down behavior */
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-	LL_PWR_DisableUCPDDeadBattery();
+	if (IS_ENABLED(CONFIG_DT_HAS_ST_STM32_UCPD_ENABLED) ||
+		!IS_ENABLED(CONFIG_USB_DEVICE_DRIVER)) {
+		/* Disable USB Type-C dead battery pull-down behavior */
+		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+		LL_PWR_DisableUCPDDeadBattery();
+	}
+
 #endif /* PWR_CR3_UCPD_DBDIS */
 	return 0;
 }
