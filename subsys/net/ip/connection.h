@@ -157,19 +157,6 @@ static inline int net_conn_unregister(struct net_conn_handle *handle)
 #endif
 
 /**
- * @brief Change the callback and user_data for a registered connection
- * handle.
- *
- * @param handle A handle registered with net_conn_register()
- * @param cb Callback to be called
- * @param user_data User data supplied by caller.
- *
- * @return Return 0 if the the change succeed, <0 otherwise.
- */
-int net_conn_change_callback(struct net_conn_handle *handle,
-			     net_conn_cb_t cb, void *user_data);
-
-/**
  * @brief Called by net_core.c when a network packet is received.
  *
  * @param pkt Network packet holding received data
