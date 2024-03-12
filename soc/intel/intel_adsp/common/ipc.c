@@ -292,7 +292,6 @@ static int ipc_pm_action(const struct device *dev, enum pm_device_action action)
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		pm_device_state_lock(dev);
 		if (api->suspend_fn) {
 			ret = api->suspend_fn(dev, api->suspend_fn_args);
 			if (!ret) {
@@ -301,7 +300,6 @@ static int ipc_pm_action(const struct device *dev, enum pm_device_action action)
 		}
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-		pm_device_state_lock(dev);
 		irq_enable(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE));
 		if (!irq_is_enabled(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE))) {
 			ret = -EINTR;
@@ -321,7 +319,6 @@ static int ipc_pm_action(const struct device *dev, enum pm_device_action action)
 		return -ENOTSUP;
 	}
 
-	pm_device_state_unlock(dev);
 	return ret;
 }
 
