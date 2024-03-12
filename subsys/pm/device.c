@@ -49,10 +49,6 @@ int pm_device_action_run(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	if (pm_device_state_is_locked(dev)) {
-		return -EPERM;
-	}
-
 	/* Validate action against current state */
 	if (pm->state == action_target_state[action]) {
 		return -EALREADY;
@@ -325,36 +321,6 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 
 	return atomic_test_bit(&pm->flags,
 			       PM_DEVICE_FLAG_WS_CAPABLE);
-}
-
-void pm_device_state_lock(const struct device *dev)
-{
-	struct pm_device_base *pm = dev->pm_base;
-
-	if ((pm != NULL) && !pm_device_runtime_is_enabled(dev)) {
-		atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_STATE_LOCKED);
-	}
-}
-
-void pm_device_state_unlock(const struct device *dev)
-{
-	struct pm_device_base *pm = dev->pm_base;
-
-	if (pm != NULL) {
-		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_STATE_LOCKED);
-	}
-}
-
-bool pm_device_state_is_locked(const struct device *dev)
-{
-	struct pm_device_base *pm = dev->pm_base;
-
-	if (pm == NULL) {
-		return false;
-	}
-
-	return atomic_test_bit(&pm->flags,
-			       PM_DEVICE_FLAG_STATE_LOCKED);
 }
 
 bool pm_device_on_power_domain(const struct device *dev)
