@@ -2434,6 +2434,11 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 		return -EINVAL;
 	}
 
+	if (callback_list == NULL) {
+		/* No callsback registered */
+		return -ENOENT;
+	}
+
 	if (callback_list == cb) {
 		callback_list = callback_list->_next;
 		return 0;
