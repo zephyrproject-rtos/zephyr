@@ -20,6 +20,11 @@
 #include "posix_core.h"
 #include <zephyr/arch/posix/posix_soc_if.h>
 
+#ifdef CONFIG_TRACING
+#include <zephyr/tracing/tracing_macros.h>
+#include <zephyr/tracing/tracing.h>
+#endif
+
 /* Note that in this arch we cheat quite a bit: we use as stack a normal
  * pthreads stack and therefore we ignore the stack size
  */
@@ -62,6 +67,8 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	unsigned int key;
 	int thread_idx;
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
+
 	posix_thread_status_t *tstatus =
 					(posix_thread_status_t *)
 					thread->callee_saved.thread_status;
@@ -103,5 +110,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	/* The abort handler might have altered the ready queue. */
 	z_reschedule_irqlock(key);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, abort, thread);
 }
 #endif
