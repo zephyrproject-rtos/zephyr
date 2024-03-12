@@ -67,5 +67,6 @@ source "drivers/usb/udc/Kconfig.numaker"
 source "drivers/usb/udc/Kconfig.rpi_pico"
 source "drivers/usb/udc/Kconfig.ambiq"
 source "drivers/usb/udc/Kconfig.renesas_ra"
+source "drivers/usb/udc/Kconfig.max32"
 
 endif # UDC_DRIVER
