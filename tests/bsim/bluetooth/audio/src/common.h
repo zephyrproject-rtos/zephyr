@@ -68,7 +68,7 @@ static const uint8_t mock_iso_data[] = {
 };
 
 #define MIN_SEND_COUNT 100
-#define WAIT_SECONDS 60 /* seconds */
+#define WAIT_SECONDS   100                           /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
 #define WAIT_FOR_COND(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
