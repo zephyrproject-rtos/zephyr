@@ -150,7 +150,7 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 #endif
 
 	while (!(LPUART_GetStatusFlags(config->base)
-		& kLPUART_TxDataRegEmptyFlag)) {
+		& LPUART_STAT_TDRE_MASK)) {
 	}
 	/* Lock interrupts while we send data */
 	key = irq_lock();
@@ -215,7 +215,7 @@ static int mcux_lpuart_fifo_fill(const struct device *dev,
 
 	while ((len - num_tx > 0) &&
 	       (LPUART_GetStatusFlags(config->base)
-		& kLPUART_TxDataRegEmptyFlag)) {
+		& LPUART_STAT_TDRE_MASK)) {
 
 		LPUART_WriteByte(config->base, tx_data[num_tx++]);
 	}
@@ -301,7 +301,7 @@ static int mcux_lpuart_irq_tx_ready(const struct device *dev)
 	uint32_t flags = LPUART_GetStatusFlags(config->base);
 
 	return (LPUART_GetEnabledInterrupts(config->base) & mask)
-		&& (flags & kLPUART_TxDataRegEmptyFlag);
+		&& (flags & LPUART_STAT_TDRE_MASK);
 }
 
 static void mcux_lpuart_irq_rx_enable(const struct device *dev)
