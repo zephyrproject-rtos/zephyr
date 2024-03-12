@@ -148,10 +148,6 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 	}
 #endif
 
-	if (pm_device_state_is_locked(INTEL_ADSP_IPC_HOST_DEV)) {
-		return -EAGAIN;
-	}
-
 	pm_device_busy_set(dev);
 	const struct intel_adsp_ipc_config *config = dev->config;
 	struct intel_adsp_ipc_data *devdata = dev->data;
