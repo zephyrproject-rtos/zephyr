@@ -141,6 +141,12 @@ int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp)
 		return -EIO;
 	}
 
+	if (len == CONFIG_WIFI_ESWIFI_MAX_DATA_SIZE) {
+		LOG_WRN("Buffer might be too small for response!");
+		LOG_WRN("See CONFIG_WIFI_ESWIFI_MAX_DATA_SIZE (in build: %d)",
+			CONFIG_WIFI_ESWIFI_MAX_DATA_SIZE);
+	}
+
 	/*
 	 * Check response, format should be "\r\n[DATA]\r\nOK\r\n>"
 	 * Data is in arbitrary format (not only ASCII)
