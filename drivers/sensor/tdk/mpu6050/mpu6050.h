@@ -16,6 +16,7 @@
 
 #define MPU6050_REG_CHIP_ID		0x75
 #define MPU6050_CHIP_ID			0x68
+#define MPU6500_CHIP_ID			0x70
 #define MPU9250_CHIP_ID			0x71
 #define MPU6880_CHIP_ID			0x19
 
@@ -38,6 +39,12 @@ static const uint16_t mpu6050_gyro_sensitivity_x10[] = {
 	1310, 655, 328, 164
 };
 
+/* Device type, uses the correct offets for a particular device */
+enum mpu6050_device_type {
+	DEVICE_TYPE_MPU6050 = 0,
+	DEVICE_TYPE_MPU6500,
+};
+
 struct mpu6050_data {
 	int16_t accel_x;
 	int16_t accel_y;
@@ -50,6 +57,8 @@ struct mpu6050_data {
 	int16_t gyro_y;
 	int16_t gyro_z;
 	uint16_t gyro_sensitivity_x10;
+
+	enum mpu6050_device_type device_type;
 
 #ifdef CONFIG_MPU6050_TRIGGER
 	const struct device *dev;
