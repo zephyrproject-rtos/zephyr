@@ -88,7 +88,7 @@ endchoice # BOOT_DEVICE
 
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	hex "FlexSPI config block offset"
-	default 0x400 if SOC_SERIES_IMXRT5XX || SOC_SERIES_IMXRT6XX
+	default 0x400 if SOC_SERIES_IMXRT5XX || SOC_SERIES_IMXRT6XX || SOC_MIMXRT1011
 	default 0x0 if BOOT_FLEXSPI_NOR
 	help
 	  FlexSPI configuration block consists of parameters regarding specific
