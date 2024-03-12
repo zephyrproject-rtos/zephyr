@@ -139,7 +139,7 @@ static int iis2dlpc_channel_get(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS2DLPC_ACTIVITY
-static int ii2sdlpc_set_slope_th(const struct device *dev, uint16_t th)
+static int iis2dlpc_set_slope_th(const struct device *dev, uint16_t th)
 {
 	int err;
 	const struct iis2dlpc_config *cfg = dev->config;
@@ -153,7 +153,7 @@ static int ii2sdlpc_set_slope_th(const struct device *dev, uint16_t th)
 	}
 	return 0;
 }
-static int ii2sdlpc_set_slope_dur(const struct device *dev, uint16_t dur)
+static int iis2dlpc_set_slope_dur(const struct device *dev, uint16_t dur)
 {
 	int err;
 	const struct iis2dlpc_config *cfg = dev->config;
@@ -191,9 +191,9 @@ static int iis2dlpc_dev_config(const struct device *dev,
 		return iis2dlpc_set_odr(dev, val->val1);
 #ifdef CONFIG_IIS2DLPC_ACTIVITY
 	case SENSOR_ATTR_SLOPE_TH:
-		return ii2sdlpc_set_slope_th(dev, val->val1);
+		return iis2dlpc_set_slope_th(dev, val->val1);
 	case SENSOR_ATTR_SLOPE_DUR:
-		return ii2sdlpc_set_slope_dur(dev, val->val1);
+		return iis2dlpc_set_slope_dur(dev, val->val1);
 #endif /* CONFIG_IIS2DLPC_ACTIVITY */
 	default:
 		LOG_DBG("Acc attribute not supported");
