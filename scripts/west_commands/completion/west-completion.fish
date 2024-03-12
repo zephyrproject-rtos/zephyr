@@ -195,15 +195,141 @@ function __zephyr_west_complete_help
     end
 end
 
-function __zephyr_west_complete_board
-    set -l boards (west 2>/dev/null boards --format="{name}|{qualifiers}")
-    for board in $boards
-        set -l b (string split "|" $board)
-        set -l qualifiers (string split "," $b[2])
-        for i in $qualifiers
-            printf "%s\n" $b[1]/$i
+function __zephyr_west_topdir
+    set -l cwd (pwd)
+    set -l fallback 1
+
+    if test (count $argv) -eq 2
+        set cwd $argv[1]
+        set fallback $argv[2]
+    end
+
+    set -l cwd_split (string split '/' $cwd)
+
+    while true
+        set -l tmp_path (path normalize /(string join "/" $cwd_split))
+
+        if test -d $tmp_path/.west
+            echo "$tmp_path"
+            return
+        end
+
+        if test -z "$tmp_path" -o $tmp_path = "/"
+            break
+        end
+
+        set -e cwd_split[-1]
+        set tmp_path (string join "/" $cwd_split)
+    end
+
+    if test $fallback -eq 1 -a -n "$ZEPHYR_BASE"
+        west-topdir "$ZEPHYR_BASE" 0
+    end
+end
+
+function __zephyr_west_manifest_path
+    set -l west_topdir (__zephyr_west_topdir)
+
+    set -l config (cat $west_topdir/.west/config)
+
+    set -l manifest_path ""
+    set -l manifest_file ""
+
+    set -l in_manifest_group 0
+
+    for line in $config
+        if string match -rq '^\s*\[manifest\]\s*$' $line
+            set in_manifest_group 1
+            continue
+        else if string match -rq '^\[.*\]$' $line
+            set in_manifest_group 0
+            continue
+        end
+
+        if test $in_manifest_group -eq 1
+            set -l tmp_manifest_path (string match -r '^path\s*=\s*(\S*)\s*$' $line)[2]
+            if test $status -eq 0
+                set manifest_path "$tmp_manifest_path"
+                continue
+            end
+
+            set -l tmp_manifest_file (string match -r '^file\s*=\s*(\S*)\s*$' $line)[2]
+            if test $status -eq 0
+                set manifest_file "$tmp_manifest_file"
+                continue
+            end
         end
     end
+
+    if test -z "$manifest_path" -o -z "$manifest_file"
+        return
+    end
+
+    echo (path normalize "$west_topdir"/"$manifest_path"/"$manifest_file")
+end
+
+function __zephyr_west_get_cache_dir
+    set -l manifest_path $argv[1]
+    set -l manifest_path_hash (echo "$manifest_path" | md5sum | string trim --chars=' -')
+
+    echo (__zephyr_west_topdir)/.west/fish/$manifest_path_hash
+end
+
+function __zephyr_west_complete_board
+    set -l is_cache_valid 1 # 0: invalid; 1: valid
+
+    set -l manifest_file (__zephyr_west_manifest_path)
+    set -l manifest_dir (path dirname "$manifest_file")
+
+    set -l cache_folder (__zephyr_west_get_cache_dir "$manifest_file")
+    set -l cache_file $cache_folder/fish_boards_completion.cache
+
+    set -l manifest_hash (git --work-tree "$manifest_dir" log -1 --pretty=format:'%H' 2> /dev/null)
+
+    if test $status -ne 0
+        # if the manifest folder is not a git repo, use the hash of the manifest file
+        set manifest_hash (md5sum "$manifest_path")
+    end
+
+    if test ! -f $cache_file
+        mkdir -p $cache_folder
+        touch $cache_file
+
+        set is_cache_valid 0
+    else
+        set -l cache_manifest_hash (head -n 1 $cache_file)
+
+        if test -z "$manifest_hash" -o -z "$cache_manifest_hash" -o "$manifest_hash" != "$cache_manifest_hash"
+            set is_cache_valid 0
+        end
+    end
+
+    if test $is_cache_valid -eq 0
+        set -l boards (west boards --format="{name}|{qualifiers}|{vendor}" 2> /dev/null)
+
+        if test $status -eq 0
+            echo $manifest_hash > $cache_file
+        end
+
+        for board in $boards
+            set -l split_b (string split "|" $board)
+            set -l name $split_b[1]
+            set -l qualifiers $split_b[2]
+            set -l vendor $split_b[3]
+
+            if test $vendor != "None"
+                for qualifier in (string split "," $qualifiers)
+                    printf "%s\t%s\n" $name/$qualifier $vendor >> $cache_file
+                end
+            else
+                for qualifier in (string split "," $qualifiers)
+                    printf "%s\n" $name/$qualifier >> $cache_file
+                end
+            end
+        end
+    end
+
+    tail -n +2 $cache_file
 end
 
 # disable file completion, if an option need it, it should use '--force-files'
@@ -296,6 +422,8 @@ complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o n -l name -d 
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l arch-root -xa "(__zephyr_west_complete_directories)" -d "add an arch root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l soc-root -xa "(__zephyr_west_complete_directories)" -d "add a soc root"
+complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board -xa "(__zephyr_west_complete_board)" -d "lookup the specific board"
+complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-dir -xa "(__zephyr_west_complete_directories)" -d "only look for boards in this directory"
 
 # build
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra build -d "compile a Zephyr application"
