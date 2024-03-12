@@ -205,7 +205,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/laird_connect/pinnacle_100_dvk/pinnacle_100_dvk.dts`.
+:zephyr_file:`boards/lairdconnect/pinnacle_100_dvk/pinnacle_100_dvk.dts`.
 
 References
 **********
