@@ -1,4 +1,4 @@
-identifier: imx8ulp_evk/imx8ulp/adsp
+identifier: imx8ulp_evk/mimx8ud7/adsp
 name: NXP i.MX 8ULP Audio DSP
 type: mcu
 arch: xtensa
