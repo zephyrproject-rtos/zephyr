@@ -173,7 +173,7 @@ def find_v2_systems(args):
     yml_files = []
     systems = Systems()
     for root in args.soc_roots:
-        yml_files.extend((root / 'soc').rglob(SOC_YML))
+        yml_files.extend(sorted((root / 'soc').rglob(SOC_YML)))
 
     for soc_yml in yml_files:
         if soc_yml.is_file():
