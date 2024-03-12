@@ -1061,11 +1061,14 @@ static struct dsa_api dsa_api_f = {
  * For simple cases it is just good enough.
  */
 
+#define KSZ8XXX_STR(x)		#x
+#define KSZ8XXX_XSTR(x)	KSZ8XXX_STR(x)
 #define NET_SLAVE_DEVICE_INIT_INSTANCE(slave, n)                           \
 	const struct dsa_slave_config dsa_0_slave_##slave##_config = {     \
 		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})      \
 	};                                                                 \
-	NET_DEVICE_DT_DEFINE_INSTANCE(slave,                               \
+	NET_DEVICE_INIT_INSTANCE(dsa_slave_port_##slave,                   \
+	"lan" KSZ8XXX_XSTR(n),                                             \
 	n,                                                                 \
 	dsa_port_init,                                                     \
 	NULL,                                                              \
