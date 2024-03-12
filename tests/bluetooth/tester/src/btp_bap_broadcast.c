@@ -30,7 +30,7 @@ static struct btp_bap_broadcast_remote_source *broadcast_source_to_sync;
 /* A mask for the maximum BIS we can sync to. +1 since the BIS indexes start from 1. */
 static const uint32_t bis_index_mask = BIT_MASK(CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT + 1);
 #define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
-#define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5
 static struct bt_bap_bass_subgroup
 	delegator_subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
