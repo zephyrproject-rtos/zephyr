@@ -268,6 +268,16 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 	return NULL;
 }
 
+static void net_conn_change_callback(struct net_conn *conn,
+				     net_conn_cb_t cb, void *user_data)
+{
+	NET_DBG("[%zu] connection handler %p changed callback",
+		conn - conns, conn);
+
+	conn->cb = cb;
+	conn->user_data = user_data;
+}
+
 int net_conn_register(uint16_t proto, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
@@ -376,8 +386,8 @@ int net_conn_register(uint16_t proto, uint8_t family,
 		net_sin(&conn->local_addr)->sin_port = htons(local_port);
 	}
 
-	conn->cb = cb;
-	conn->user_data = user_data;
+	net_conn_change_callback(conn, cb, user_data);
+
 	conn->flags = flags;
 	conn->proto = proto;
 	conn->family = family;
@@ -418,28 +428,6 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	k_mutex_unlock(&conn_lock);
 
 	conn_set_unused(conn);
-
-	return 0;
-}
-
-int net_conn_change_callback(struct net_conn_handle *handle,
-			     net_conn_cb_t cb, void *user_data)
-{
-	struct net_conn *conn = (struct net_conn *)handle;
-
-	if (conn < &conns[0] || conn > &conns[CONFIG_NET_MAX_CONN]) {
-		return -EINVAL;
-	}
-
-	if (!(conn->flags & NET_CONN_IN_USE)) {
-		return -ENOENT;
-	}
-
-	NET_DBG("[%zu] connection handler %p changed callback",
-		conn - conns, conn);
-
-	conn->cb = cb;
-	conn->user_data = user_data;
 
 	return 0;
 }
