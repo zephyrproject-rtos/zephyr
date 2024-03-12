@@ -73,9 +73,15 @@ To change CONF_FILE, use the CONF_FILE variable." ${CONF_FILE_FORCE_CACHE})
 # The CONF_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(CONF_FILE)
 
-zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS APP_BOARD_DTS SUFFIX ${FILE_SUFFIX})
-
 zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
+
+# If DTC_OVERLAY_FILE is not set by the user, look for board-specific overlays
+# in the 'boards' configuration subdirectory.
+if(NOT DEFINED DTC_OVERLAY_FILE)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
+endif()
+
+# If still not found, search for other overlays in the configuration directory.
 if(NOT DEFINED DTC_OVERLAY_FILE)
   zephyr_build_string(board_overlay_strings
                       BOARD ${BOARD}
@@ -85,7 +91,7 @@ if(NOT DEFINED DTC_OVERLAY_FILE)
   list(TRANSFORM board_overlay_strings APPEND ".overlay")
 
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
-              NAMES "${APP_BOARD_DTS};${board_overlay_strings};app.overlay" SUFFIX ${FILE_SUFFIX})
+              NAMES "${board_overlay_strings};app.overlay" SUFFIX ${FILE_SUFFIX})
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
