@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/sys/util.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/toolchain/common.h>
 
 #if defined(CONFIG_DSA_SPI)
 #include <zephyr/drivers/spi.h>
@@ -1065,7 +1066,8 @@ static struct dsa_api dsa_api_f = {
 	const struct dsa_slave_config dsa_0_slave_##slave##_config = {     \
 		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})      \
 	};                                                                 \
-	NET_DEVICE_DT_DEFINE_INSTANCE(slave,                               \
+	NET_DEVICE_INIT_INSTANCE(CONCAT(dsa_slave_port_, slave),           \
+	"lan" STRINGIFY(n),                                                \
 	n,                                                                 \
 	dsa_port_init,                                                     \
 	NULL,                                                              \
