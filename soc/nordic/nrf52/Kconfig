@@ -31,13 +31,17 @@ config SOC_NRF52840
 if SOC_SERIES_NRF52X
 
 config SOC_DCDC_NRF52X
-	bool
+	bool "DC/DC mode"
+	depends on $(dt_nodelabel_enabled,dcdcen)
+	default $(dt_nodelabel_bool_prop,dcdcen,regulator-boot-on)
 	help
 	  Enable nRF52 series System on Chip DC/DC converter.
 
 config SOC_DCDC_NRF52X_HV
-	bool
+	bool "High Voltage DCDC converter"
 	depends on SOC_NRF52840_QIAA
+	depends on $(dt_nodelabel_enabled,dcdcen0)
+	default $(dt_nodelabel_bool_prop,dcdcen0,regulator-boot-on)
 	help
 	  Enable nRF52 series System on Chip High Voltage DC/DC converter.
 

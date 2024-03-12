@@ -61,6 +61,18 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			dcdcen: dcdcen@40000578 {
+				compatible = "regulator-fixed";
+				regulator-name = "dcdcen";
+				reg = <0x40000578 0x1>;
+			};
+
+			dcdcen0: dcdcen0@40000580 {
+				compatible = "regulator-fixed";
+				regulator-name = "dcdcen0";
+				reg = <0x40000580 0x1>;
+			};
+
 			gpregret1: gpregret1@4000051c {
 				#address-cells = <1>;
 				#size-cells = <1>;
