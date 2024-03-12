@@ -101,7 +101,7 @@ already supported, which can also be re-used on this mimxrt1010_evk board:
 | PIT       | on-chip    | pit                                 |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
+The default configuration can be found in
 :zephyr_file:`boards/nxp/mimxrt1010_evk/mimxrt1010_evk_defconfig`
 
 Other hardware features are not currently supported by the port.
