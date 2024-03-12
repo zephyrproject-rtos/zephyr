@@ -78,6 +78,12 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_thread_abort(thread)                                                      \
 	SEGGER_SYSVIEW_RecordU32(TID_THREAD_ABORT, (uint32_t)(uintptr_t)thread)
 
+#define sys_port_trace_k_thread_abort_enter(thread)                                                \
+	SEGGER_SYSVIEW_RecordU32(TID_THREAD_ABORT, (uint32_t)(uintptr_t)thread)
+
+#define sys_port_trace_k_thread_abort_exit(thread)                                                 \
+	SEGGER_SYSVIEW_RecordEndCall(TID_THREAD_ABORT)
+
 #define sys_port_trace_k_thread_suspend_enter(thread)                                              \
 	SEGGER_SYSVIEW_RecordU32(TID_THREAD_SUSPEND, (uint32_t)(uintptr_t)thread)
 
