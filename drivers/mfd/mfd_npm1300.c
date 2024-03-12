@@ -29,6 +29,8 @@
 #define MAIN_OFFSET_INTENCLR 0x03U
 
 #define SHIP_OFFSET_HIBERNATE 0x00U
+#define SHIP_OFFSET_CONFIG    0x04U
+#define SHIP_OFFSET_LPCONFIG  0x06U
 
 #define GPIO_OFFSET_MODE 0x00U
 
@@ -43,6 +45,8 @@ struct mfd_npm1300_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec host_int_gpios;
 	uint8_t pmic_int_pin;
+	uint8_t active_time;
+	uint8_t lp_reset;
 };
 
 struct mfd_npm1300_data {
@@ -166,7 +170,12 @@ static int mfd_npm1300_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	ret = mfd_npm1300_reg_write(dev, SHIP_BASE, SHIP_OFFSET_CONFIG, config->active_time);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return mfd_npm1300_reg_write(dev, SHIP_BASE, SHIP_OFFSET_LPCONFIG, config->lp_reset);
 }
 
 int mfd_npm1300_reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
@@ -300,6 +309,8 @@ int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.host_int_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, host_int_gpios, {0}),             \
 		.pmic_int_pin = DT_INST_PROP_OR(inst, pmic_int_pin, 0),                            \
+		.active_time = DT_INST_ENUM_IDX(inst, ship_to_active_time_ms),                     \
+		.lp_reset = DT_INST_ENUM_IDX_OR(inst, long_press_reset, 0),                        \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mfd_npm1300_init, NULL, &data_##inst, &config##inst,           \
