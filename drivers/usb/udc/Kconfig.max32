@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_MAX32
+	bool "MAX32 USB device controller driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_USBHS_ENABLED
+	help
+	  MAX32 USB device controller driver.
+
+if UDC_MAX32
+
+config UDC_MAX32_THREAD_PRIORITY
+	int "MAX32 USB device controller driver thread priority"
+	default 8
+	help
+	  MAX32 USB device device controller driver thread priority.
+
+config UDC_MAX32_THREAD_STACK_SIZE
+	int "MAX32 UDC driver internal thread stack size"
+	default 1024
+	help
+	  Size of the stack for the driver internal thread.
+
+config UDC_MAX32_MAX_QMESSAGES
+	int "MAX32 UDC driver maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of messages for handling of MAX32 USBD ISR events.
+
+endif # UDC_MAX32
