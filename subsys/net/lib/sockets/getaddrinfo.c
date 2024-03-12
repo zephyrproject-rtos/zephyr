@@ -133,7 +133,7 @@ static int exec_query(const char *host, int family,
 	}
 
 again:
-	timeout_ms = k_ticks_to_ms_floor32(timeout.ticks);
+	timeout_ms = k_ticks_to_ms_ceil32(timeout.ticks);
 
 	NET_DBG("Timeout %d", timeout_ms);
 
