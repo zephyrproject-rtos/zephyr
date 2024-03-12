@@ -187,14 +187,9 @@ For more information about memory mapping see the
 `i.MX 8M Applications Processor Reference Manual`_  (section 2.1.2 and 2.1.3)
 
 At compilation time you have to choose which RAM will be used. This
-configuration is done in the file ``boards/arm/mimx8mm_evk/mimx8mm_evk.dts``
+configuration is done in
+:zephyr_file:`boards/phytec/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_mimx8mm6_m4.dts`
 with "zephyr,flash" (when CONFIG_XIP=y) and "zephyr,sram" properties.
-The available configurations are:
-
-If you don't want to use the TCM memory area, you can either overwrite the
-boards devicetree in your program or edit the board devicetree located here:
-
-:zephyr_file:`boards/phytec/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_mimx8mm6_m4.dts`.
 
 You also have to set XIP=n or edit the boards defconfig file, if you don't want
 the TCM memory area to be used. You can find the defconf file here:

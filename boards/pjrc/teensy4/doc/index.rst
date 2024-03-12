@@ -67,10 +67,8 @@ features:
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
 
-
-The default configuration can be found in the defconfig file:
+The default configuration can be found in
 :zephyr_file:`boards/pjrc/teensy4/teensy40_defconfig`
-
 
 The teensy41 board configuration supports additional hardware
 features:
@@ -83,8 +81,7 @@ features:
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
 
-
-The default configuration can be found in the defconfig file:
+The default configuration can be found in
 :zephyr_file:`boards/pjrc/teensy4/teensy41_defconfig`
 
 Other hardware features are not currently supported by the port.
