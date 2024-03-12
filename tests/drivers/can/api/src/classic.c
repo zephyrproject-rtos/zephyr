@@ -502,22 +502,22 @@ ZTEST_USER(can_classic, test_bitrate_limits)
  */
 ZTEST_USER(can_classic, test_set_bitrate_too_high)
 {
-	uint32_t max = 0U;
+	uint32_t max = 1000000U;
+	int expected = -EINVAL;
 	int err;
 
 	err = can_get_max_bitrate(can_dev, &max);
-	if (err == -ENOSYS) {
-		ztest_test_skip();
+	if (err != -ENOSYS) {
+		zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
+		zassert_not_equal(max, 0, "max bitrate is 0");
+		expected = -ENOTSUP;
 	}
-
-	zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
-	zassert_not_equal(max, 0, "max bitrate is 0");
 
 	err = can_stop(can_dev);
 	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
 
 	err = can_set_bitrate(can_dev, max + 1);
-	zassert_equal(err, -ENOTSUP, "too high bitrate accepted");
+	zassert_equal(err, expected, "too high bitrate accepted");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
