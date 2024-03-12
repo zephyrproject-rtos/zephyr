@@ -27,6 +27,22 @@ config SOC_NRF54LX_SKIP_CLOCK_CONFIG
 	  With this option, the CPU clock frequency is not set during system initialization.
 	  The CPU runs with the default, hardware-selected frequency.
 
+config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
+	bool "Disable trimming of the device"
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  Disable trimming of the device. When the device is trimmed it
+	  will copy all the trimming values from FICR into the target
+	  addresses. When TF-M is enabled it will trim the device before
+	  booting this image.
+
+config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
+	bool "Skip disabling glitch detector"
+	default n
+	help
+	  With this option, the glitch detector is not disabled during system initialization.
+	  The CPU runs with the default state of glitch detector.
+
 config SOC_NRF_FORCE_CONSTLAT
 	bool "Force constant-latency mode"
 	help
