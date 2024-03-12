@@ -769,10 +769,9 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 				}
 			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
 				   ELF_ST_TYPE(sym.st_info) == STT_FUNC) {
-				/* Current relocation location holds an offset into the section */
+				/* Link address is relative to the start of the section */
 				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
-					+ sym.st_value
-					+ *((uintptr_t *)op_loc);
+					+ sym.st_value;
 
 				LOG_INF("found section symbol %s addr 0x%lx", name, link_addr);
 			} else {
