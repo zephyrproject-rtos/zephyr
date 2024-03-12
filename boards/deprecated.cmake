@@ -588,7 +588,7 @@ set(nxp_adsp_imx8m_DEPRECATED
     imx8mp_evk/mimx8ml8/adsp
 )
 set(nxp_adsp_imx8ulp_DEPRECATED
-    imx8ulp_evk/imx8ulp/adsp
+    imx8ulp_evk/mimx8ud7/adsp
 )
 set(nxp_adsp_imx8x_DEPRECATED
     imx8qxp_mek/mimx8qx6/adsp
