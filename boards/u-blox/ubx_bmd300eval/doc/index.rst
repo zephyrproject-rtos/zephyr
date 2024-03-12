@@ -387,7 +387,7 @@ There are 2 samples that allow you to test that the buttons
 
 You can build and flash the examples to make sure Zephyr is
 running correctly on your board. The button and LED definitions
-can be found in :zephyr_file:`boards/ublox/ubx_bmd300eval/ubx_bmd300eval_nrf52832.dts`.
+can be found in :zephyr_file:`boards/u-blox/ubx_bmd300eval/ubx_bmd300eval_nrf52832.dts`.
 
 References
 **********

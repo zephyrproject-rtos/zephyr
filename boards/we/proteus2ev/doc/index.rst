@@ -150,7 +150,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/wurth_elektronik/proteus2ev/we_proteus2ev_nrf52832.dts`.
+:zephyr_file:`boards/we/proteus2ev/we_proteus2ev_nrf52832.dts`.
 
 References
 **********
