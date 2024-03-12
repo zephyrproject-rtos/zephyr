@@ -40,19 +40,24 @@ static void mpu6050_convert_gyro(struct sensor_value *val, int16_t raw_val,
 }
 
 /* see "Temperature Measurement" section from register map description */
-static inline void mpu6050_convert_temp(struct sensor_value *val,
+static inline void mpu6050_convert_temp(enum mpu6050_device_type device_type,
+					struct sensor_value *val,
 					int16_t raw_val)
 {
-	val->val1 = raw_val / 340 + 36;
-	val->val2 = ((int64_t)(raw_val % 340) * 1000000) / 340 + 530000;
+	int64_t tmp_val = (int64_t)raw_val * 1000000;
 
-	if (val->val2 < 0) {
-		val->val1--;
-		val->val2 += 1000000;
-	} else if (val->val2 >= 1000000) {
-		val->val1++;
-		val->val2 -= 1000000;
-	}
+	switch (device_type) {
+	case DEVICE_TYPE_MPU6500:
+		tmp_val = (tmp_val * 1000 / 333870) + 21000000;
+		break;
+
+	case DEVICE_TYPE_MPU6050:
+	default:
+		tmp_val = (tmp_val / 340) + 36000000;
+	};
+
+	val->val1 = tmp_val / 1000000;
+	val->val2 = tmp_val % 1000000;
 }
 
 static int mpu6050_channel_get(const struct device *dev,
@@ -103,7 +108,7 @@ static int mpu6050_channel_get(const struct device *dev,
 				     drv_data->gyro_sensitivity_x10);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
-		mpu6050_convert_temp(val, drv_data->temp);
+		mpu6050_convert_temp(drv_data->device_type, val, drv_data->temp);
 		break;
 	default:
 		return -ENOTSUP;
@@ -161,7 +166,13 @@ int mpu6050_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if ((id != MPU6050_CHIP_ID) && (id != MPU9250_CHIP_ID) && (id != MPU6880_CHIP_ID)) {
+	if (id == MPU6050_CHIP_ID || id == MPU9250_CHIP_ID || id == MPU6880_CHIP_ID) {
+		LOG_DBG("MPU6050/MPU9250/MPU6880 detected");
+		drv_data->device_type = DEVICE_TYPE_MPU6050;
+	} else if (id == MPU6500_CHIP_ID) {
+		LOG_DBG("MPU6500 detected");
+		drv_data->device_type = DEVICE_TYPE_MPU6500;
+	} else {
 		LOG_ERR("Invalid chip ID.");
 		return -EINVAL;
 	}
