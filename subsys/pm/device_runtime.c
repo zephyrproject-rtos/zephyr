@@ -422,11 +422,6 @@ int pm_device_runtime_enable(const struct device *dev)
 		goto end;
 	}
 
-	if (pm_device_state_is_locked(dev)) {
-		ret = -EPERM;
-		goto end;
-	}
-
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		ret = runtime_enable_sync(dev);
 		goto end;
