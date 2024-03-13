@@ -30,6 +30,7 @@ struct qdec_stm32_dev_cfg {
 	const struct pinctrl_dev_config *pin_config;
 	struct stm32_pclken pclken;
 	TIM_TypeDef *timer_inst;
+	uint32_t encoder_mode;
 	bool is_input_polarity_inverted;
 	uint8_t input_filtering_level;
 	uint32_t counts_per_revolution;
@@ -107,6 +108,8 @@ static int qdec_stm32_initialize(const struct device *dev)
 
 	LL_TIM_ENCODER_StructInit(&init_props);
 
+	init_props.EncoderMode = dev_cfg->encoder_mode;
+
 	if (dev_cfg->is_input_polarity_inverted) {
 		init_props.IC1Polarity = LL_TIM_IC_POLARITY_FALLING;
 		init_props.IC2Polarity = LL_TIM_IC_POLARITY_FALLING;
@@ -139,12 +142,16 @@ static const struct sensor_driver_api qdec_stm32_driver_api = {
 };
 
 #define QDEC_STM32_INIT(n)                                                                         \
+	BUILD_ASSERT(!(DT_INST_PROP(n, st_encoder_mode) & ~TIM_SMCR_SMS),                          \
+		     "Encoder mode is not supported by this MCU");                                 \
+                                                                                                   \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static const struct qdec_stm32_dev_cfg qdec##n##_stm32_config = {                          \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
 		.timer_inst = ((TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n))),                     \
 		.pclken = {.bus = DT_CLOCKS_CELL(DT_INST_PARENT(n), bus),                          \
 			   .enr = DT_CLOCKS_CELL(DT_INST_PARENT(n), bits)},                        \
+		.encoder_mode = DT_INST_PROP(n, st_encoder_mode),                                  \
 		.is_input_polarity_inverted = DT_INST_PROP(n, st_input_polarity_inverted),         \
 		.input_filtering_level = DT_INST_PROP(n, st_input_filter_level),                   \
 		.counts_per_revolution = DT_INST_PROP(n, st_counts_per_revolution),                \
