@@ -16,3 +16,4 @@ ram: 960
 flash: 65536
 supported:
   - gpio
+  - spi
