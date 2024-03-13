@@ -218,6 +218,11 @@ __ramfunc void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 4);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lcdic), okay) && CONFIG_MIPI_DBI_NXP_LCDIC
+	CLOCK_AttachClk(kMAIN_CLK_to_LCD_CLK);
+	RESET_PeripheralReset(kLCDIC_RST_SHIFT_RSTn);
+#endif
+
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer0), nxp_lpc_ctimer, okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER0);
