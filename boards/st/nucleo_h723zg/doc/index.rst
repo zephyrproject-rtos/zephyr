@@ -119,7 +119,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig files:
-:zephyr_file:`boards/st/nucleo_h723zg/nucleo_h723zg_defconfig``
+:zephyr_file:`boards/st/nucleo_h723zg/nucleo_h723zg_defconfig`
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
