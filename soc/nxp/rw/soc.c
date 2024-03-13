@@ -159,6 +159,23 @@ __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM14);
 #endif
 
+/* Any flexcomm can be I2C */
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM0);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM1);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM2);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM3);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM14);
+#endif
+
 /* Clock flexcomms when used as SPI */
 #ifdef CONFIG_SPI
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_spi, okay))
