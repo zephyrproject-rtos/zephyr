@@ -100,3 +100,7 @@ arduino_spi: &flexcomm0 {
 		};
 	};
 };
+
+&dma0 {
+	status = "okay";
+};
