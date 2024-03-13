@@ -218,5 +218,5 @@ References
 
 .. target-notes::
 
-.. _E73-TBB website: https://www.ebyte.com/en/product-view-news.html?id=889
+.. _E73-TBB website: https://www.cdebyte.com/products/E73-TBB
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
