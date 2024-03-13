@@ -1,0 +1,24 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: handsfree AG"
+
+config BT_HFP_AG_DISCOVER_RESULT_COUNT
+	int "Maximum result count per device discovery"
+	default 10
+
+config BT_HFP_AG_CALL_OUTGOING
+	bool "The simulate call: outgoing (y), incoming (n)"
+
+config BT_HFP_AG_START_CALL_DELAY_TIME
+	int "The delay time used to start simulating a call after AG connection"
+	default 5000
+	help
+	  The Delay time is used to wait for the peer to start dialing. If the
+	  peer does not dial within the timeout period, AG satrt simulating a
+	  call. The unit is ms.
+
+source "Kconfig.zephyr"
