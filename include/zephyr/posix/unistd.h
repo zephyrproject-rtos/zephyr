@@ -134,7 +134,8 @@ extern "C" {
 #define _POSIX_LOGIN_NAME_MAX		    (9)
 #define _POSIX_MAX_CANON		    (255)
 #define _POSIX_MAX_INPUT		    (255)
-#define _POSIX_MQ_OPEN_MAX		    CONFIG_MSG_COUNT_MAX
+#define _POSIX_MQ_OPEN_MAX                  Z_SC_VAL_IFDEF(CONFIG_POSIX_MQUEUE, \
+						CONFIG_MSG_COUNT_MAX)
 #define _POSIX_MQ_PRIO_MAX		    (32)
 #define _POSIX_NAME_MAX			    (14)
 #define _POSIX_NGROUPS_MAX		    (8)
@@ -216,7 +217,7 @@ extern "C" {
 #define SIGQUEUE_MAX		      _POSIX_SIGQUEUE_MAX
 #define STREAM_MAX		      _POSIX_STREAM_MAX
 #define SYMLOOP_MAX		      _POSIX_SYMLOOP_MAX
-#define TIMER_MAX		      CONFIG_MAX_TIMER_COUNT
+#define TIMER_MAX                     Z_SC_VAL_IFDEF(CONFIG_TIMER, CONFIG_MAX_TIMER_COUNT)
 #define TTY_NAME_MAX		      _POSIX_TTY_NAME_MAX
 #define TZNAME_MAX		      _POSIX_TZNAME_MAX
 
