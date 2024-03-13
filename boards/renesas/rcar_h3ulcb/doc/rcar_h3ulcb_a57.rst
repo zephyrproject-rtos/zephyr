@@ -62,7 +62,7 @@ hardware features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/renesas/rcar_h3ulcb/rcar_h3ulcb_r8a77951_a57_defconfig``
+:zephyr_file:`boards/renesas/rcar_h3ulcb/rcar_h3ulcb_r8a77951_a57_defconfig`
 
 Programming and Debugging
 *************************

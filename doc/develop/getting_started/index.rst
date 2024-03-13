@@ -170,7 +170,7 @@ The current minimum required version for the main dependencies are:
       #. `Install chocolatey`_.
 
       #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
-         type ``cmd.exe``, right-click the :guilabel:`Command Prompt`` search result, and choose
+         type ``cmd.exe``, right-click the :guilabel:`Command Prompt` search result, and choose
          :guilabel:`Run as Administrator`.
 
       #. Disable global confirmation to avoid having to confirm the
