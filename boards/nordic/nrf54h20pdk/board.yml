@@ -1,8 +1,0 @@
-board:
-  name: nrf54h20pdk
-  vendor: nordic
-  socs:
-  - name: nrf54h20
-    variants:
-    - name: ram
-      cpucluster: cpuppr
