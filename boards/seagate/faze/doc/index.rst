@@ -102,7 +102,7 @@ Flashing
 
 The NXP LPC11U67 MCU can be flashed by connecting an external debug probe to
 the SWD port (on-board 4-pins J2 header). In the default OpenOCD configuration
-(``boards/arm/faze/support/openocd.cfg``) the ST Link interface is selected.
+(:zephyr_file:`boards/seagate/faze/support/openocd.cfg`) the ST Link interface is selected.
 You may need to replace it with the interface of your debug probe.
 
 Once the debug probe is connected to both the FaZe board and your host computer
