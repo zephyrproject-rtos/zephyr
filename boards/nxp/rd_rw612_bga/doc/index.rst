@@ -39,6 +39,8 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | USART     | on-chip    | serial                            |
 +-----------+------------+-----------------------------------+
+| SPI       | on-chip    | spi                               |
++-----------+------------+-----------------------------------+
 
 The default configuration can be found in the defconfig file:
 
