@@ -55,9 +55,9 @@ void load_call_unload(struct llext_test *test_case)
 
 	zassert_ok(res, "load should succeed");
 
-	void (*test_entry_fn)() = llext_find_sym(&ext->exp_tab, "test_entry");
+	void (*test_entry_fn)() = llext_find_sym(&ext->exp_tab, "start");
 
-	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
+	zassert_not_null(test_entry_fn, "start should be an exported symbol");
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -114,8 +114,8 @@ void load_call_unload(struct llext_test *test_case)
 
 
 #else /* CONFIG_USERSPACE */
-	zassert_ok(llext_call_fn(ext, "test_entry"),
-		   "test_entry call should succeed");
+	zassert_ok(llext_call_fn(ext, "start"),
+		   "start call should succeed");
 #endif /* CONFIG_USERSPACE */
 
 	llext_unload(&ext);

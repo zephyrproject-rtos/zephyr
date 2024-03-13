@@ -18,11 +18,10 @@ target_include_directories(app PRIVATE
 # generate extension targets foreach extension given by name
 foreach(ext_name hello_world logging relative_jump object)
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
-  set(ext_bin ${ZEPHYR_BINARY_DIR}/${ext_name}.llext)
+  zephyr_llext(${ext_name})
+  zephyr_llext_sources(${ext_src})
+
+  set(ext_bin ${CMAKE_CURRENT_BINARY_DIR}/${ext_name}.llext)
   set(ext_inc ${ZEPHYR_BINARY_DIR}/include/generated/${ext_name}.inc)
-  add_llext_target(${ext_name}_ext
-    OUTPUT  ${ext_bin}
-    SOURCES ${ext_src}
-  )
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
 endforeach()
