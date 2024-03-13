@@ -37,6 +37,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 #endif /* defined(CONFIG_COUNTER_NXP_MRT) */
+#if defined(CONFIG_MIPI_DBI_NXP_LCDIC)
+	if ((uint32_t)sub_system == MCUX_LCDIC_CLK) {
+		CLOCK_EnableClock(kCLOCK_Lcdic);
+	}
+#endif
 
 #if defined(CONFIG_PINCTRL_NXP_KINETIS)
 	switch ((uint32_t)sub_system) {
@@ -287,6 +292,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 
+#if defined(CONFIG_MIPI_DBI_NXP_LCDIC)
+	case MCUX_LCDIC_CLK:
+		*rate = CLOCK_GetLcdClkFreq();
+		break;
+#endif
 	}
 
 	return 0;
@@ -331,6 +341,14 @@ static int SYSCON_SET_FUNC_ATTR
 		 * which is SOC specific.
 		 */
 		return flexspi_clock_set_freq(clock_name, clock_rate);
+#endif
+#if defined(CONFIG_MIPI_DBI_NXP_LCDIC)
+	case MCUX_LCDIC_CLK:
+		/* Set LCDIC clock div */
+		uint32_t root_rate = (CLOCK_GetLcdClkFreq() *
+			((CLKCTL0->LCDFCLKDIV & CLKCTL0_LCDFCLKDIV_DIV_MASK) + 1));
+		CLOCK_SetClkDiv(kCLOCK_DivLcdClk, (root_rate / clock_rate));
+		return 0;
 #endif
 	default:
 		/* Silence unused variable warning */
