@@ -97,7 +97,7 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 +-------+-------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efr32_radio/efr32_radio_efr32mg24b220f1536im48_defconfig``
+:zephyr_file:`boards/silabs/efr32_radio/efr32_radio_efr32mg24b220f1536im48_defconfig`
 
 System Clock
 ============
