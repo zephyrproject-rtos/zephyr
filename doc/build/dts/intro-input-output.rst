@@ -34,7 +34,7 @@ The devicetree files inside the :file:`zephyr` directory look like this:
 
 Generally speaking, every supported board has a :file:`BOARD.dts` file
 describing its hardware. For example, the ``reel_board`` has
-:zephyr_file:`boards/arm/reel_board/reel_board.dts`.
+:zephyr_file:`boards/phytec/reel_board/reel_board.dts`.
 
 :file:`BOARD.dts` includes one or more ``.dtsi`` files. These ``.dtsi`` files
 describe the CPU or system-on-chip Zephyr runs on, perhaps by including other
