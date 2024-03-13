@@ -428,6 +428,14 @@ config BT_DEBUG_HFP_HF
 	  This option enables debug support for the Bluetooth
 	  Hands Free Profile (HFP).
 
+config BT_DEBUG_HFP_AG
+	bool "[DEPRECATED] Bluetooth Hands Free Audio Gateway (HFP_AG) debug"
+	select DEPRECATED
+	depends on BT_HFP_AG
+	help
+	  This option enables debug support for the Bluetooth
+	  Hands Free Audio Gateway (HFP_AG).
+
 config BT_DEBUG_AVDTP
 	bool "[DEPRECATED] Bluetooth AVDTP debug"
 	select DEPRECATED
@@ -950,6 +958,11 @@ source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 module = BT_HFP_HF
 legacy-debug-sym = BT_DEBUG_HFP_HF
 module-str = "Bluetooth Hands Free Profile (HFP)"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_HFP_AG
+legacy-debug-sym = BT_DEBUG_HFP_AG
+module-str = "Bluetooth Hands Free Audio Gateway Profile (HFP AG)"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 module = BT_AVDTP
