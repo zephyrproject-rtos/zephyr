@@ -1060,6 +1060,9 @@ void tls_entry(void *p1, void *p2, void *p3)
 ZTEST(userspace, test_tls_pointer)
 {
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	char *stack_obj_ptr;
+	size_t stack_obj_sz;
+
 	k_thread_create(&test_thread, test_stack, STACKSIZE, tls_entry,
 			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
 
@@ -1071,15 +1074,23 @@ ZTEST(userspace, test_tls_pointer)
 	       (void *)(test_thread.stack_info.start +
 			test_thread.stack_info.size));
 
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	stack_obj_ptr = (char *)test_thread.stack_obj_mapped;
+	stack_obj_sz = test_thread.stack_obj_size;
+#else
+	stack_obj_ptr = (char *)test_stack;
+	stack_obj_sz = sizeof(test_stack);
+#endif
+
 	printk("stack object bounds: [%p, %p)\n",
-	       test_stack, test_stack + sizeof(test_stack));
+	       stack_obj_ptr, stack_obj_ptr + stack_obj_sz);
 
 	uintptr_t tls_start = (uintptr_t)test_thread.userspace_local_data;
 	uintptr_t tls_end = tls_start +
 		sizeof(struct _thread_userspace_local_data);
 
-	if ((tls_start < (uintptr_t)test_stack) ||
-	    (tls_end > (uintptr_t)test_stack + sizeof(test_stack))) {
+	if ((tls_start < (uintptr_t)stack_obj_ptr) ||
+	    (tls_end > (uintptr_t)stack_obj_ptr + stack_obj_sz)) {
 		printk("tls area out of bounds\n");
 		ztest_test_fail();
 	}
