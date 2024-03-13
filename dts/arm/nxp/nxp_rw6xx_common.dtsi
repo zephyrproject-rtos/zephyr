@@ -191,6 +191,17 @@
 		dma-channels = <33>;
 	};
 
+	lcdic: lcdic@128000 {
+		compatible = "nxp,lcdic";
+		reg = <0x128000 0x52>;
+		interrupts = <61 0>;
+		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clkctl1 MCUX_LCDIC_CLK>;
+		dmas = <&dma0 0>;
+	};
+
 	ctimer0: ctimer@28000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
