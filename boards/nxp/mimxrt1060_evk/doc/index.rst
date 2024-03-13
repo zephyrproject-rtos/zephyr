@@ -154,7 +154,7 @@ already supported, which can also be re-used on this mimxrt1060_evk board:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/mimxrt1060_evk/mimxrt1060_evk_defconfig``
+:zephyr_file:`boards/nxp/mimxrt1060_evk/mimxrt1060_evk_defconfig`
 
 Other hardware features are not currently supported by the port.
 

@@ -108,7 +108,7 @@ Targets available
 ==================
 
 The default configuration file
-``boards/arm/lpcxpresso55s69/lpcxpresso55s69_lpc55s69_cpu0_defconfig``
+:zephyr_file:`boards/nxp/lpcxpresso55s69/lpcxpresso55s69_lpc55s69_cpu0_defconfig`
 only enables the first core.
 CPU0 is the only target that can run standalone.
 
