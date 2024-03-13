@@ -173,7 +173,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/laird_connect/bl654_dvk/bl654_dvk.dts`.
+:zephyr_file:`boards/lairdconnect/bl654_dvk/bl654_dvk.dts`.
 
 
 References
