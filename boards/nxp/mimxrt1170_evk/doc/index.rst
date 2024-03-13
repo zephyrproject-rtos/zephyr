@@ -169,6 +169,9 @@ RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | PIT       | on-chip    | pit                                 | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
+| VIDEO     | on-chip    | CSI; MIPI CSI-2 Rx. Tested with     | Supported (M7)  | Supported (M7)  |
+|           |            | :ref:`nxp_btb44_ov5640` shield      |                 |                 |
++-----------+------------+-------------------------------------+-----------------+-----------------+
 
 The default configuration can be found in the defconfig files:
 :zephyr_file:`boards/nxp/mimxrt1170_evk/mimxrt1170_evk_mimxrt1176_cm7_defconfig`
