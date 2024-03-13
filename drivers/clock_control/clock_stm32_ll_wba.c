@@ -346,6 +346,22 @@ static void stm32_clock_switch_to_hsi(void)
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
+
+	/* Erratum 2.2.4: Spurious deactivation of HSE when HSI is selected as
+	 * system clock source
+	 * Re-enable HSE clock if required after switch source to HSI
+	 */
+	if (IS_ENABLED(STM32_HSE_ENABLED)) {
+		if (IS_ENABLED(STM32_HSE_DIV2)) {
+			LL_RCC_HSE_EnablePrescaler();
+		}
+
+		/* Enable HSE */
+		LL_RCC_HSE_Enable();
+		while (LL_RCC_HSE_IsReady() != 1) {
+		/* Wait for HSE ready */
+		}
+	}
 }
 
 __unused
