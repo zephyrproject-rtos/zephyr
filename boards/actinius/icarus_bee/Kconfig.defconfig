@@ -5,7 +5,7 @@
 
 if BOARD_ACTINIUS_ICARUS_BEE
 
-source "boards/common/actinius/Kconfig"
+source "boards/actinius/common/Kconfig"
 
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
