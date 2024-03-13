@@ -115,7 +115,17 @@ foreach(root ${DTS_ROOTS})
 endforeach()
 
 if(DT_TURBO_MODE)
+  message(WARNING "DT 'turbo mode' is enabled.\n"
+                  "The index of Devicetree bindings won't be generated and Sphinx roles such as "
+                  ":dtcompatible: won't be able to link to them.")
   list(APPEND DTS_ARGS --turbo-mode)
+endif()
+
+if(DOXYGENGROUPS_TURBO_MODE)
+  message(WARNING "Doxygen groups 'turbo mode' is enabled.\n"
+                  "Doxygen groups won't be rendered in the documentation and Sphinx roles such as "
+                  ":c:func: won't be able to link to them.")
+  list(APPEND SPHINXOPTS_EXTRA -D zephyr_breathe_skip_doxygen_groups=1)
 endif()
 
 add_custom_target(

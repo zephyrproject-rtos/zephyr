@@ -8,6 +8,7 @@ SPHINXOPTS ?= -j auto -W --keep-going -T
 SPHINXOPTS_EXTRA ?=
 LATEXMKOPTS ?= -halt-on-error -no-shell-escape
 DT_TURBO_MODE ?= 0
+DOXYGENGROUPS_TURBO_MODE ?= 0
 
 # ------------------------------------------------------------------------------
 # Documentation targets
@@ -15,7 +16,7 @@ DT_TURBO_MODE ?= 0
 .PHONY: configure clean html html-fast latex pdf doxygen
 
 html-fast:
-	${MAKE} html DT_TURBO_MODE=1
+	${MAKE} html DT_TURBO_MODE=1 DOXYGENGROUPS_TURBO_MODE=1
 
 html latex pdf linkcheck doxygen: configure
 	cmake --build ${BUILDDIR} --target $@
@@ -29,7 +30,8 @@ configure:
 		-DSPHINXOPTS="${SPHINXOPTS}" \
 		-DSPHINXOPTS_EXTRA="${SPHINXOPTS_EXTRA}" \
 		-DLATEXMKOPTS="${LATEXMKOPTS}" \
-		-DDT_TURBO_MODE=${DT_TURBO_MODE}
+		-DDT_TURBO_MODE=${DT_TURBO_MODE} \
+		-DDOXYGENGROUPS_TURBO_MODE=${DOXYGENGROUPS_TURBO_MODE}
 
 clean:
 	cmake --build ${BUILDDIR} --target clean

@@ -264,18 +264,17 @@ Developer-mode Document Building
 ********************************
 
 When making and testing major changes to the documentation, we provide an option
-to temporarily stub-out the auto-generated Devicetree bindings documentation so
-the doc build process runs faster.
+to temporarily stub-out some of the more time-consuming parts of the build, such
+as cross references to Doxygen-generated content, or Devicetree bindings
+documentation, so that the doc build process runs faster.
 
-To enable this mode, set the following option when invoking cmake::
+To enable this mode, set the following options when invoking cmake::
 
-   -DDT_TURBO_MODE=1
+   -DDT_TURBO_MODE=1 -DDOXYGENGROUPS_TURBO_MODE=1
 
 or invoke make with the following target::
 
    cd ~/zephyr
-
-   # To generate HTML output without detailed Kconfig
    make html-fast
 
 Viewing generated documentation locally
