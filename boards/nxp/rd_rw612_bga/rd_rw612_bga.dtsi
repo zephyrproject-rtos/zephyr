@@ -78,13 +78,21 @@ arduino_i2c: &flexcomm2 {
 
 &flexspi {
 	status = "okay";
+	ahb-bufferable;
+	ahb-prefetch;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	status = "okay";
 	mx25u51245g: mx25u51245g@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		spi-max-frequency = <133000000>;
 		reg = <0>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
-		status = "disabled";
+		status = "okay";
 		jedec-id = [c2 25 3a];
 		erase-block-size = <4096>;
 		write-block-size = <1>;

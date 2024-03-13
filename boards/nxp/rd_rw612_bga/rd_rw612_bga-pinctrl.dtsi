@@ -31,4 +31,22 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_flexspi: pinmux_flexspi {
+		group0 {
+			pinmux = <IO_MUX_QUAD_SPI_FLASH_IO28
+				IO_MUX_QUAD_SPI_FLASH_IO30
+				IO_MUX_QUAD_SPI_FLASH_IO31
+				IO_MUX_QUAD_SPI_FLASH_IO32
+				IO_MUX_QUAD_SPI_FLASH_IO33
+				IO_MUX_QUAD_SPI_FLASH_IO34>;
+			slew-rate = "ultra";
+		};
+
+		group1 {
+			pinmux = <IO_MUX_QUAD_SPI_FLASH_IO29>;
+			slew-rate = "ultra";
+			bias-pull-down;
+		};
+	};
 };
