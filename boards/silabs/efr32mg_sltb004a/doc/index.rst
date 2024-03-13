@@ -83,7 +83,7 @@ The efr32mg_sltb004a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efr32mg_sltb004a/efr32mg_sltb004a_defconfig``
+:zephyr_file:`boards/silabs/efr32mg_sltb004a/efr32mg_sltb004a_defconfig`
 
 Other hardware features are currently not supported by the port.
 
