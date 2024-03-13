@@ -131,13 +131,13 @@ References
 .. target-notes::
 
 .. _Arduino Nicla Sense ME:
-    https://docs.arduino.cc/hardware/nicla-sense-me
+   https://docs.arduino.cc/hardware/nicla-sense-me
 
 .. _datasheet:
    https://docs.arduino.cc/resources/datasheets/ABX00050-datasheet.pdf
 
 .. _full pinout:
-    https://docs.arduino.cc/static/b35956b631d757a0455c286da441641b/ABX00050-full-pinout.pdf
+   https://docs.arduino.cc/resources/pinouts/ABX00050-full-pinout.pdf
 
 .. _schematics:
-    https://docs.arduino.cc/static/ebd652e859efba8536a7e275c79d5f79/ABX00050-schematics.pdf
+   https://docs.arduino.cc/resources/schematics/ABX00050-schematics.pdf
