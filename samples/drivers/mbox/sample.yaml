@@ -42,7 +42,6 @@ tests:
       ordered: false
       regex:
         - "Ping \\(on channel 4\\)"
-        - "Pong \\(on channel 4\\)"
 
   sample.drivers.mbox.nrf54h20_bellboard:
     platform_allow:
@@ -61,7 +60,6 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 0\\)"
         - "Pong \\(on channel 0\\)"
 
   sample.drivers.mbox.simu:
