@@ -26,15 +26,15 @@ tests:
 
   sample.drivers.mbox.nrf54h20_vevif:
     platform_allow:
-      - nrf54h20pdk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
-      - nrf54h20pdk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-ppr
-      mbox_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_vevif.conf
-      mbox_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_vevif.overlay
-      remote_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_vevif.conf
-      remote_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_vevif.overlay
+      mbox_EXTRA_CONF_FILE=boards/nrf54h20dk_nrf54h20_cpuapp_vevif.conf
+      mbox_DTC_OVERLAY_FILE=boards/nrf54h20dk_nrf54h20_cpuapp_vevif.overlay
+      remote_EXTRA_CONF_FILE=boards/nrf54h20dk_nrf54h20_cpuppr_vevif.conf
+      remote_DTC_OVERLAY_FILE=boards/nrf54h20dk_nrf54h20_cpuppr_vevif.overlay
     sysbuild: true
     harness: console
     harness_config:
@@ -45,15 +45,15 @@ tests:
 
   sample.drivers.mbox.nrf54h20_bellboard:
     platform_allow:
-      - nrf54h20pdk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
-      - nrf54h20pdk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-ppr
-      mbox_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_bellboard.conf
-      mbox_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_bellboard.overlay
-      remote_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_bellboard.conf
-      remote_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_bellboard.overlay
+      mbox_EXTRA_CONF_FILE=boards/nrf54h20dk_nrf54h20_cpuapp_bellboard.conf
+      mbox_DTC_OVERLAY_FILE=boards/nrf54h20dk_nrf54h20_cpuapp_bellboard.overlay
+      remote_EXTRA_CONF_FILE=boards/nrf54h20dk_nrf54h20_cpuppr_bellboard.conf
+      remote_DTC_OVERLAY_FILE=boards/nrf54h20dk_nrf54h20_cpuppr_bellboard.overlay
     sysbuild: true
     harness: console
     harness_config:
