@@ -18,7 +18,7 @@ upper and lower window boundaries.
 References
 **********
 
- - ADT7420: http://www.analog.com/adt7420
+ - ADT7420: https://www.analog.com/adt7420
 
 Wiring
 *******
