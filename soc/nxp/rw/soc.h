@@ -17,7 +17,7 @@
 
 
 #ifdef CONFIG_MEMC
-uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);
+int flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);
 #endif
 
 
