@@ -47,13 +47,6 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP NRF_APPLICATION
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUAPP NRF54H20_ENGA_XXAA
-                                                                 NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPURAD NRF54H20_ENGA_XXAA
-                                                                 NRF_RADIOCORE)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUPPR NRF54H20_ENGA_XXAA
-                                                                 NRF_PPR)
-
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
                                  ENABLE_APPROTECT)
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_USER_HANDLING
@@ -197,8 +190,5 @@ mdk_svd_ifdef(CONFIG_SOC_NRF5340_CPUNET       nrf5340_network.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUAPP      nrf54h20_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUPPR      nrf54h20_ppr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPURAD      nrf54h20_radiocore.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUAPP nrf54h20_enga_application.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUPPR nrf54h20_enga_ppr.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPURAD nrf54h20_enga_radiocore.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9120              nrf9120.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9160              nrf9160.svd)
