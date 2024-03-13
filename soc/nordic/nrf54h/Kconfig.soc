@@ -27,23 +27,5 @@ config SOC_NRF54H20_CPUPPR
 	help
 	  nRF54H20 CPUPPR
 
-config SOC_NRF54H20_ENGA_CPUAPP
-	bool
-	select SOC_NRF54H20
-	help
-	  nRF54H20 ENGA CPUAPP
-
-config SOC_NRF54H20_ENGA_CPURAD
-	bool
-	select SOC_NRF54H20
-	help
-	  nRF54H20 ENGA CPURAD
-
-config SOC_NRF54H20_ENGA_CPUPPR
-	bool
-	select SOC_NRF54H20
-	help
-	  nRF54H20 ENGA CPUPPR
-
 config SOC
 	default "nrf54h20" if SOC_NRF54H20
