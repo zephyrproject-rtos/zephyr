@@ -35,7 +35,7 @@ hardware features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/raspberry_pi/rpi_4b/rpi_4b_defconfig`
+:zephyr_file:`boards/raspberrypi/rpi_4b/rpi_4b_defconfig`
 
 Programming and Debugging
 *************************
