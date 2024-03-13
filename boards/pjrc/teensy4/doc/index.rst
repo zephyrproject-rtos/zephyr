@@ -69,7 +69,7 @@ features:
 
 
 The default configuration can be found in the defconfig file:
-``boards/arm/teensy4/teensy40_defconfig``
+:zephyr_file:`boards/pjrc/teensy4/teensy40_defconfig`
 
 
 The teensy41 board configuration supports additional hardware
@@ -85,7 +85,7 @@ features:
 
 
 The default configuration can be found in the defconfig file:
-``boards/arm/teensy4/teensy41_defconfig``
+:zephyr_file:`boards/pjrc/teensy4/teensy41_defconfig`
 
 Other hardware features are not currently supported by the port.
 
