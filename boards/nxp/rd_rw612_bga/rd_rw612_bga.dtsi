@@ -203,6 +203,12 @@ arduino_i2c: &flexcomm2 {
 	status = "okay";
 };
 
+&lcdic {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lcdic>;
+	pinctrl-names = "default";
+};
+
 &mrt0_channel0 {
 	status = "okay";
 };
