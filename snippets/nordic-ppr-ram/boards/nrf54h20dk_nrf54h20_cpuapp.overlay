@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&cpuppr_ram3x_region {
+&cpuppr_code_data {
 	status = "okay";
 };
 
 &cpuppr_vpr {
-	execution-memory = <&cpuppr_ram3x_region>;
+	execution-memory = <&cpuppr_code_data>;
 };
 
 &uart135 {
