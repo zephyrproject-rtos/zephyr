@@ -5,9 +5,6 @@
 
 if BOARD_LPCXPRESSO55S36
 
-config BOARD
-	default "lpcxpresso55s36"
-
 if BOOTLOADER_MCUBOOT
 choice MCUBOOT_BOOTLOADER_MODE
 	# Board only supports MCUBoot via "upgrade only" method:
