@@ -325,10 +325,10 @@ static int pat912x_pm_action(const struct device *dev,
 #endif
 
 #define PAT912X_INIT(n)								\
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, res_x_cpi), 0, RES_MAX),		\
-		     "invalid res-x-cpy");					\
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, res_y_cpi), 0, RES_MAX),		\
-		     "invalid res-y-cpy");					\
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_x_cpi, 0), 0, RES_MAX),	\
+		     "invalid res-x-cpi");					\
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_y_cpi, 0), 0, RES_MAX),	\
+		     "invalid res-y-cpi");					\
 	BUILD_ASSERT(DT_INST_PROP(n, sleep1_enable) ||				\
 		     !DT_INST_PROP(n, sleep2_enable),				\
 		     "invalid sleep configuration");				\
