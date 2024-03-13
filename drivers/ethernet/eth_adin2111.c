@@ -935,13 +935,14 @@ static int adin2111_filter_multicast(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
 	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
-	uint8_t mm[6] = {BIT(0), 0U,  0U, 0U, 0U, 0U};
+	uint8_t mm[6] = {BIT(0), 0U, 0U, 0U, 0U, 0U};
+	uint8_t mmask[6] = {0xFFU, 0U, 0U, 0U, 0U, 0U};
 	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
 			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
 			 ADIN2111_ADDR_TO_HOST |
 			 ADIN2111_ADDR_TO_OTHER_PORT;
 
-	return adin2111_write_filter_address(dev, mm, mm, rules,
+	return adin2111_write_filter_address(dev, mm, mmask, rules,
 					     ADIN2111_MULTICAST_ADDR_SLOT);
 }
 
