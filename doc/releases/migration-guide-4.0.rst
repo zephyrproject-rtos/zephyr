@@ -45,6 +45,12 @@ Device Drivers and Devicetree
 * The ``compatible`` of the LiteX uart controller has been renamed from
   ``litex,uart0`` to :dtcompatible:`litex,uart`. (:github:`74522`)
 
+* The devicetree bindings for the Microchip ``mcp23xxx`` series have been split up. Users of
+  ``microchip,mcp230xx`` and ``microchip,mcp23sxx`` should change their devicetree ``compatible``
+  values to the specific chip variant, e.g. :dtcompatible:`microchip,mcp23017`.
+  The ``ngpios`` devicetree property has been removed, since it is implied by the model name.
+  (:github:`65797`)
+
 Controller Area Network (CAN)
 =============================
 
