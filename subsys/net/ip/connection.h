@@ -157,6 +157,24 @@ static inline int net_conn_unregister(struct net_conn_handle *handle)
 #endif
 
 /**
+ * @brief Update the callback, user data, remote address, and port
+ * for a registered connection handle.
+ *
+ * @param handle A handle registered with net_conn_register()
+ * @param cb Callback to be called
+ * @param user_data User data supplied by caller.
+ * @param remote_addr Remote address
+ * @param remote_port Remote port
+ *
+ * @return Return 0 if the the change succeed, <0 otherwise.
+ */
+int net_conn_update(struct net_conn_handle *handle,
+		    net_conn_cb_t cb,
+		    void *user_data,
+		    const struct sockaddr *remote_addr,
+		    uint16_t remote_port);
+
+/**
  * @brief Called by net_core.c when a network packet is received.
  *
  * @param pkt Network packet holding received data
