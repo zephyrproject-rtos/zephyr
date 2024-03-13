@@ -48,8 +48,6 @@ static const struct can_timing_test can_timing_tests[] = {
 	/** Additional, valid sample points. */
 	{  125000, 900, false },
 	{  125000, 800, false },
-	/** Valid bitrate, invalid sample point. */
-	{  125000, 1000, true },
 };
 
 /**
@@ -63,8 +61,6 @@ static const struct can_timing_test can_timing_data_tests[] = {
 	/** Additional, valid sample points. */
 	{  500000, 900, false },
 	{  500000, 800, false },
-	/** Valid bitrate, invalid sample point. */
-	{  500000, 1000, true },
 };
 #endif /* CONFIG_CAN_FD_MODE */
 

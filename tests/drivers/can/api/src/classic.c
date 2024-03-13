@@ -524,6 +524,18 @@ ZTEST_USER(can_classic, test_set_bitrate_too_high)
 }
 
 /**
+ * @brief Test using an invalid sample point.
+ */
+ZTEST_USER(can_classic, test_invalid_sample_point)
+{
+	struct can_timing timing;
+	int err;
+
+	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, 1000);
+	zassert_equal(err, -EINVAL, "invalid sample point of 100.0% accepted (err %d)", err);
+}
+
+/**
  * @brief Test setting bitrate.
  */
 ZTEST_USER(can_classic, test_set_bitrate)
