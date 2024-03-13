@@ -11,6 +11,7 @@
 		usart-0 = &flexcomm3;
 		led0 = &green_led;
 		sw0 = &sw_4;
+		i2c-0 = &flexcomm2;
 	};
 
 	chosen {
@@ -46,6 +47,16 @@ arduino_spi: &flexcomm0 {
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+};
+
+arduino_i2c: &flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
 };
 
 &flexcomm3 {

@@ -18,3 +18,4 @@ supported:
   - dma
   - gpio
   - spi
+  - i2c
