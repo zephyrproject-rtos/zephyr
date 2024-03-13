@@ -43,6 +43,24 @@
 int bt_testlib_connect(const bt_addr_le_t *peer, struct bt_conn **connp);
 
 /**
+ * @brief Disconnect, wait and dispose of reference.
+ *
+ * The disconnect reason for a normal disconnect should be @ref
+ * BT_HCI_ERR_REMOTE_USER_TERM_CONN.
+ *
+ * The following disconnect reasons are allowed:
+ *
+ *  - @ref BT_HCI_ERR_AUTH_FAIL
+ *  - @ref BT_HCI_ERR_REMOTE_USER_TERM_CONN
+ *  - @ref BT_HCI_ERR_REMOTE_LOW_RESOURCES
+ *  - @ref BT_HCI_ERR_REMOTE_POWER_OFF
+ *  - @ref BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
+ *  - @ref BT_HCI_ERR_PAIRING_NOT_SUPPORTED
+ *  - @ref BT_HCI_ERR_UNACCEPT_CONN_PARAM
+ */
+int bt_testlib_disconnect(struct bt_conn **connp, uint8_t reason);
+
+/**
  * @brief Wait for connected state
  *
  * Thread-safe.
