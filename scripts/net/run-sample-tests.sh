@@ -150,6 +150,17 @@ stop_configuration ()
 			               stop > /dev/null 2>&1
 }
 
+compile_zephyr ()
+{
+    if [ -n "$*" ]; then
+	    echo "Building Zephyr with additional arguments '$@'..." >&2
+    fi
+
+    rm -rf build && mkdir build && \
+	cmake -GNinja -DBOARD=native_sim -B build "$@" . && \
+	ninja -C build
+}
+
 start_zephyr ()
 {
     if [ -n "$*" ]; then
@@ -168,6 +179,11 @@ start_zephyr ()
 
     sleep 3
     echo "Zephyr PID $zephyr_pid"
+}
+
+start_zephyr_tee ()
+{
+    start_zephyr "$@" | tee /dev/tty
 }
 
 list_children () {
@@ -199,15 +215,30 @@ wait_zephyr ()
 {
     local result=""
 
-    echo "Waiting for Zephyr $zephyr_pid..."
-    wait $zephyr_pid
-    result=$?
+    if [ "$zephyr_pid" -ne 0 ]; then
+	echo "Waiting for Zephyr $zephyr_pid..."
+	wait $zephyr_pid
+	result=$?
 
-    zephyr_pid=0
+	zephyr_pid=0
+    fi
 
     return $result
 }
 
+start_zephyr_and_wait_str ()
+{
+    local search_term="$1"; shift
+    local wait_time="${1:-5m}"; shift # 5 minutes as default timeout
+
+    compile_zephyr "$@"
+
+    (timeout $wait_time build/zephyr/zephyr.exe &) | tee /dev/tty \
+	| grep -q -e "$search_term" && return 0
+
+    echo "Timeout of $wait_time reached. Unable to find '$search_term' in stdout"
+    return 1
+}
 
 docker_run ()
 {
