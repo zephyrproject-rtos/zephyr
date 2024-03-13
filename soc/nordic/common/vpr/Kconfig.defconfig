@@ -1,12 +1,6 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-CPU_PATH := $(dt_nodelabel_path,cpu)
-CPU_ID := $(dt_node_reg_addr_int,$(CPU_PATH))
-
-config RV_BOOT_HART
-	default $(CPU_ID) if SOC_NRF54H20_ENGA_CPUPPR
-
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0xFFF
 

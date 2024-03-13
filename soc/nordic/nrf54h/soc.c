@@ -44,10 +44,6 @@ static void power_domain_init(void)
 
 	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, true);
 	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, true);
-
-#if defined(CONFIG_SOC_NRF54H20_ENGA_CPUAPP)
-	nrf_lrcconf_poweron_force_set(NRF_LRCCONF000, NRF_LRCCONF_POWER_DOMAIN_0, true);
-#endif
 }
 
 static int trim_hsfll(void)
@@ -69,12 +65,6 @@ static int trim_hsfll(void)
 	nrf_hsfll_trim_set(hsfll, &trim);
 
 	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
-#if defined(CONFIG_SOC_NRF54H20_ENGA_CPUAPP) || defined(CONFIG_SOC_NRF54H20_ENGA_CPURAD)
-	/* In this HW revision, HSFLL task frequency change needs to be
-	 * triggered additional time to take effect.
-	 */
-	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
-#endif
 
 	LOG_DBG("NRF_HSFLL->TRIM.VSUP = %d", hsfll->TRIM.VSUP);
 	LOG_DBG("NRF_HSFLL->TRIM.COARSE = %d", hsfll->TRIM.COARSE);
