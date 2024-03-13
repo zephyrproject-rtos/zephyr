@@ -34,6 +34,12 @@ config LLEXT_STORAGE_WRITABLE
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
 
+config LLEXT_HEAP_STAT
+	bool "llext info on llext heap support"
+	select SYS_HEAP_INFO
+	help
+	  Enable shell command to print information about llext private heap
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"

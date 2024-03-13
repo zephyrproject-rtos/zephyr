@@ -62,6 +62,10 @@ extern char __ram_text_reloc_start[];
 extern char __ram_text_reloc_size[];
 #endif
 
+#if defined(CONFIG_LLEXT)
+extern char __llext_heap_start[];
+#endif
+
 static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 		{

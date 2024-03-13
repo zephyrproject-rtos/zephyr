@@ -134,6 +134,10 @@
 
 #endif /* _ASMLANGUAGE */
 
+#ifdef CONFIG_LLEXT
+#define _LLEXT_SECTION_NAME llext_heap_noinit
+#endif
+
 #include <zephyr/linker/section_tags.h>
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTIONS_H_ */
