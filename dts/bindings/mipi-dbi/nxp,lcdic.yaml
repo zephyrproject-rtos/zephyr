@@ -1,0 +1,25 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP LCDIC Controller. This controller implements 8080 and SPI mode MIPI-DBI
+  compliant transfers. Only SPI mode is currently supported.
+compatible: "nxp,lcdic"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  nxp,swap-bytes:
+    type: boolean
+    description: |
+      Swap bytes while transferring on LCDIC. When set, the LCDIC will send
+      the most significant byte first when using multibyte pixel formats.
