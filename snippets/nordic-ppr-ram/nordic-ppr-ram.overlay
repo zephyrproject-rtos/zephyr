@@ -11,5 +11,5 @@
 
 /* code partition size must match RAM size */
 &cpuppr_code_partition {
-	reg = <0x126000 DT_SIZE_K(28)>;
+	reg = <0x126000 DT_SIZE_K(62)>;
 };
