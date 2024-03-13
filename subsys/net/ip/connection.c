@@ -457,6 +457,30 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	return 0;
 }
 
+int net_conn_update(struct net_conn_handle *handle,
+		    net_conn_cb_t cb,
+		    void *user_data,
+		    const struct sockaddr *remote_addr,
+		    uint16_t remote_port)
+{
+	struct net_conn *conn = (struct net_conn *)handle;
+	int ret;
+
+	if (conn < &conns[0] || conn > &conns[CONFIG_NET_MAX_CONN]) {
+		return -EINVAL;
+	}
+
+	if (!(conn->flags & NET_CONN_IN_USE)) {
+		return -ENOENT;
+	}
+
+	net_conn_change_callback(conn, cb, user_data);
+
+	ret = net_conn_change_remote(conn, remote_addr, remote_port);
+
+	return ret;
+}
+
 static bool conn_addr_cmp(struct net_pkt *pkt,
 			  union net_ip_header *ip_hdr,
 			  struct sockaddr *addr,
