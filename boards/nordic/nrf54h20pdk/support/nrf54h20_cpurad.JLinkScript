@@ -1,4 +1,0 @@
-void ConfigTargetSettings(void) {
-  JLINK_ExecCommand("CORESIGHT_AddAP = Index=1 Type=AHB-AP");
-  CORESIGHT_IndexAHBAPToUse = 1;
-}
