@@ -26,4 +26,5 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - video
 vendor: nxp
