@@ -11,6 +11,7 @@ SECTIONS
   .text :
   {
     . = ALIGN(4);
+    *(.literal .literal.*)
     *(.text)                 /* .text sections (code) */
     *(.text*)                /* .text* sections (code) */
     . = ALIGN(4);
@@ -43,11 +44,20 @@ SECTIONS
   {
       . = ALIGN(4);
       app_sgot = .;
-      *(.got)        
+      *(.got)
       *(.got.plt)
       app_egot = .;
       . = ALIGN(4);
   } > all
+
+  /* .got.loc section (xtensa only) */
+  .got.loc :
+  {
+      . = ALIGN(4);
+      *(.got.loc)
+      . = ALIGN(4);
+  } >all
+
 
   /* PLT section contains code for accessing the dynamically linked functions
   * ie funtions from shared libraries in a postion independent manner */
@@ -76,6 +86,26 @@ SECTIONS
     . = ALIGN(4);
   } > all
 
+  /** This section will be used by the debugger and disassembler to get more information
+    * about raw data present in the code.
+    * Indeed, it may be required to add some padding at some points in the code
+    * in order to align a branch/jump destination on a particular bound.
+    * Padding these instructions will generate null bytes that shall be
+    * interpreted as data, and not code by the debugger or disassembler.
+    * This section will only be present in the ELF file, not in the final binary
+    * For more details, check GCC-212
+    */
+  .xt.prop 0 :
+  {
+    KEEP (*(.xt.prop))
+  }
+
+  .xt.lit 0 :
+  {
+    KEEP (*(.xt.lit))
+    KEEP (*(.xt.lit.*))
+  }
+
 
 
   .dynsym : { *(.dynsym) }
@@ -97,12 +127,12 @@ SECTIONS
 
   /*
    .ARM.extab and .ARM.exidx are related to unwinding.
-   You can find more information here http://infocenter.arm.com/help/topic/com.arm.doc.ihi0044e/index.html. 
+   You can find more information here http://infocenter.arm.com/help/topic/com.arm.doc.ihi0044e/index.html.
    You don't need them if you don't care about unwinding (unwinding is useful for C++ exception and for debugging)
   */
   /DISCARD/ :  {  *(.ARM.extab* .gnu.linkonce.armextab.*)  }
   /DISCARD/ :  {  *(.ARM.exidx*)  }
-  
+
   /* discard .comment section */
   /DISCARD/ :  {  *(.comment)  }
 
