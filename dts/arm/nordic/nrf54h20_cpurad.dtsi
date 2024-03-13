@@ -54,3 +54,23 @@ cpuppr_vevif: &cpuppr_vevif_remote {};
 		     <109 NRF_DEFAULT_IRQ_PRIORITY>,
 		     <110 NRF_DEFAULT_IRQ_PRIORITY>;
 };
+
+&dppic130 {
+	owned-channels = <0>;
+	sink-channels = <0>;
+	nonsecure-channels = <0>;
+	status = "okay";
+};
+
+&dppic132 {
+	owned-channels = <0>;
+	source-channels = <0>;
+	nonsecure-channels = <0>;
+	status = "okay";
+};
+
+&ipct130 {
+	owned-channels = <0>;
+	source-channel-links = <0 3 0>;
+	status = "okay";
+};
