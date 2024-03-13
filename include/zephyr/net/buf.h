@@ -1726,6 +1726,36 @@ static inline void net_buf_add_be32(struct net_buf *buf, uint32_t val)
 }
 
 /**
+ * @brief Add 40-bit value at the end of the buffer
+ *
+ * Adds 40-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 40-bit value to be added.
+ */
+static inline void net_buf_add_le40(struct net_buf *buf, uint64_t val)
+{
+	net_buf_simple_add_le40(&buf->b, val);
+}
+
+/**
+ * @brief Add 40-bit value at the end of the buffer
+ *
+ * Adds 40-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 40-bit value to be added.
+ */
+static inline void net_buf_add_be40(struct net_buf *buf, uint64_t val)
+{
+	net_buf_simple_add_be40(&buf->b, val);
+}
+
+/**
  * @brief Add 48-bit value at the end of the buffer
  *
  * Adds 48-bit value in little endian format at the end of buffer.
@@ -1903,6 +1933,36 @@ static inline uint32_t net_buf_remove_le32(struct net_buf *buf)
 static inline uint32_t net_buf_remove_be32(struct net_buf *buf)
 {
 	return net_buf_simple_remove_be32(&buf->b);
+}
+
+/**
+ * @brief Remove and convert 40 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 40-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 40-bit value converted from little endian to host endian.
+ */
+static inline uint64_t net_buf_remove_le40(struct net_buf *buf)
+{
+	return net_buf_simple_remove_le40(&buf->b);
+}
+
+/**
+ * @brief Remove and convert 40 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 40-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 40-bit value converted from big endian to host endian.
+ */
+static inline uint64_t net_buf_remove_be40(struct net_buf *buf)
+{
+	return net_buf_simple_remove_be40(&buf->b);
 }
 
 /**
@@ -2097,6 +2157,34 @@ static inline void net_buf_push_be32(struct net_buf *buf, uint32_t val)
 }
 
 /**
+ * @brief Push 40-bit value to the beginning of the buffer
+ *
+ * Adds 40-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 40-bit value to be pushed to the buffer.
+ */
+static inline void net_buf_push_le40(struct net_buf *buf, uint64_t val)
+{
+	net_buf_simple_push_le40(&buf->b, val);
+}
+
+/**
+ * @brief Push 40-bit value to the beginning of the buffer
+ *
+ * Adds 40-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 40-bit value to be pushed to the buffer.
+ */
+static inline void net_buf_push_be40(struct net_buf *buf, uint64_t val)
+{
+	net_buf_simple_push_be40(&buf->b, val);
+}
+
+/**
  * @brief Push 48-bit value to the beginning of the buffer
  *
  * Adds 48-bit value in little endian format to the beginning of the
@@ -2287,6 +2375,36 @@ static inline uint32_t net_buf_pull_le32(struct net_buf *buf)
 static inline uint32_t net_buf_pull_be32(struct net_buf *buf)
 {
 	return net_buf_simple_pull_be32(&buf->b);
+}
+
+/**
+ * @brief Remove and convert 40 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 40-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 40-bit value converted from little endian to host endian.
+ */
+static inline uint64_t net_buf_pull_le40(struct net_buf *buf)
+{
+	return net_buf_simple_pull_le40(&buf->b);
+}
+
+/**
+ * @brief Remove and convert 40 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 40-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 40-bit value converted from big endian to host endian.
+ */
+static inline uint64_t net_buf_pull_be40(struct net_buf *buf)
+{
+	return net_buf_simple_pull_be40(&buf->b);
 }
 
 /**
