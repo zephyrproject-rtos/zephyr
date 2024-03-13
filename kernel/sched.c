@@ -1058,6 +1058,9 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #ifdef CONFIG_SCHED_DEADLINE
 void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
+
+	deadline = CLAMP(deadline, 0, INT_MAX);
+
 	struct k_thread *thread = tid;
 	int32_t newdl = k_cycle_get_32() + deadline;
 
