@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  * Copyright (c) 2020 Toby Firth
  *
  * Based on adc_mcux_adc16.c and adc_mcux_adc12.c, which are:
@@ -16,7 +16,7 @@
 #include <zephyr/sys/util.h>
 #include <fsl_lpadc.h>
 #include <zephyr/drivers/regulator.h>
-
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
@@ -46,6 +46,8 @@ struct mcux_lpadc_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
 	const struct device **ref_supplies;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 struct mcux_lpadc_data {
@@ -57,7 +59,107 @@ struct mcux_lpadc_data {
 	lpadc_conv_command_config_t cmd_config[CONFIG_LPADC_CHANNEL_COUNT];
 };
 
+static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t acq_time,
+					     lpadc_conv_command_config_t *cmd)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	uint32_t adc_freq_hz = 0;
+	float adc_cycle_ns = 0.0;
+	/* The unit of elements in the sample time array is ADCK. */
+	float sample_time_array[] = {3.0, 5.0, 7.0, 11.0, 19.0, 35.0, 67.0, 131.0};
+	uint8_t sample_time_array_size = sizeof(sample_time_array) / sizeof(*sample_time_array);
+	uint32_t acquisition_time_value = ADC_ACQ_TIME_VALUE(acq_time);
+	uint8_t acquisition_time_unit = ADC_ACQ_TIME_UNIT(acq_time);
+	uint8_t array_left_index = 0;
+	uint8_t array_right_index = sample_time_array_size - 1;
+	uint8_t array_mid_index = (array_left_index + array_right_index) / 2;
+	int left_gap = 0;
+	int right_gap = 0;
 
+	if (acquisition_time_value == ADC_ACQ_TIME_DEFAULT) {
+		return 0;
+	}
+
+	/* If the acquisition time is expressed in ADC ticks, direct match the option. */
+	if (ADC_ACQ_TIME_TICKS == acquisition_time_unit) {
+		switch (acquisition_time_value) {
+		case 3:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK3;
+			break;
+		case 5:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK5;
+			break;
+		case 7:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK7;
+			break;
+		case 11:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK11;
+			break;
+		case 19:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK19;
+			break;
+		case 35:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK35;
+			break;
+		case 67:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK67;
+			break;
+		case 131:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK131;
+			break;
+		default:
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK3;
+			return -EINVAL;
+		}
+	}
+	/* If the acquisition time is expressed in nanoseconds or microseconds, each option in the
+	 * sample time array should be converted to nanoseconds, and then find the closest
+	 * configuration option.
+	 */
+	else {
+		/* Get ADC functional clock frequency to configure ADC acquisition time. */
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &adc_freq_hz)) {
+			LOG_ERR("Get device LPADC operating frequency failed");
+			return -EINVAL;
+		}
+
+		adc_cycle_ns = ((float)1000000000.0 / adc_freq_hz);
+
+		for (uint8_t index = 0; index < sample_time_array_size; ++index) {
+			sample_time_array[index] = sample_time_array[index] * adc_cycle_ns;
+		}
+
+		if (ADC_ACQ_TIME_MICROSECONDS == acquisition_time_unit) {
+			acquisition_time_value *= 1000;
+		}
+
+		if (sample_time_array[0] > acquisition_time_value) {
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK3;
+		} else if (sample_time_array[sample_time_array_size - 1] < acquisition_time_value) {
+			cmd->sampleTimeMode = kLPADC_SampleTimeADCK131;
+		} else {
+			while ((array_right_index - array_left_index) > 1) {
+				array_mid_index = (array_left_index + array_right_index) / 2;
+
+				if (sample_time_array[array_mid_index] >= acquisition_time_value) {
+					array_right_index = array_mid_index;
+				} else {
+					array_left_index = array_mid_index;
+				}
+			}
+
+			left_gap = abs((int)((int)sample_time_array[array_left_index] -
+					     acquisition_time_value));
+			right_gap = abs((int)((int)sample_time_array[array_right_index] -
+					      acquisition_time_value));
+
+			cmd->sampleTimeMode =
+				(left_gap > right_gap ? array_right_index : array_left_index);
+		}
+	}
+
+	return 0;
+}
 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
@@ -75,11 +177,6 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid channel acquisition time");
-		return -EINVAL;
-	}
-
 	/* Select ADC CMD register to configure based off channel ID */
 	cmd = &data->cmd_config[channel_cfg->channel_id];
 
@@ -92,6 +189,12 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		channel_side == 0 ? 'A' : 'B');
 
 	LPADC_GetDefaultConvCommandConfig(cmd);
+
+	/* Configure LPADC acquisition time. */
+	if (mcux_lpadc_acquisition_time_setup(dev, channel_cfg->acquisition_time, cmd)) {
+		LOG_ERR("LPADC acquisition time setting failed");
+		return -EINVAL;
+	}
 
 	if (channel_cfg->differential) {
 		/* Channel pairs must match in differential mode */
@@ -493,6 +596,8 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.ref_supplies = mcux_lpadc_ref_supplies_##n, \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	};									\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\
 		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),	\
