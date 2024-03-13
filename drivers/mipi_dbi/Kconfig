@@ -22,7 +22,7 @@ config MIPI_DBI_INIT_PRIORITY
 	  MIPI-DBI Host Controllers initialization priority.
 
 source "drivers/mipi_dbi/Kconfig.spi"
-
 source "drivers/mipi_dbi/Kconfig.smartbond"
+source "drivers/mipi_dbi/Kconfig.nxp_lcdic"
 
 endif
