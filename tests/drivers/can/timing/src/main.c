@@ -29,8 +29,6 @@ struct can_timing_test {
 	uint32_t bitrate;
 	/** Desired sample point in permille */
 	uint16_t sp;
-	/** Do these values represent an invalid CAN timing? */
-	bool invalid;
 };
 
 /**
@@ -38,16 +36,16 @@ struct can_timing_test {
  */
 static const struct can_timing_test can_timing_tests[] = {
 	/** Standard bitrates. */
-	{   20000, 875, false },
-	{   50000, 875, false },
-	{  125000, 875, false },
-	{  250000, 875, false },
-	{  500000, 875, false },
-	{  800000, 800, false },
-	{ 1000000, 750, false },
+	{   20000, 875 },
+	{   50000, 875 },
+	{  125000, 875 },
+	{  250000, 875 },
+	{  500000, 875 },
+	{  800000, 800 },
+	{ 1000000, 750 },
 	/** Additional, valid sample points. */
-	{  125000, 900, false },
-	{  125000, 800, false },
+	{  125000, 900 },
+	{  125000, 800 },
 };
 
 /**
@@ -56,11 +54,11 @@ static const struct can_timing_test can_timing_tests[] = {
 #ifdef CONFIG_CAN_FD_MODE
 static const struct can_timing_test can_timing_data_tests[] = {
 	/** Standard bitrates. */
-	{  500000, 875, false },
-	{ 1000000, 750, false },
+	{  500000, 875 },
+	{ 1000000, 750 },
 	/** Additional, valid sample points. */
-	{  500000, 900, false },
-	{  500000, 800, false },
+	{  500000, 900 },
+	{  500000, 800 },
 };
 #endif /* CONFIG_CAN_FD_MODE */
 
@@ -155,8 +153,8 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 	int sp_err;
 	int err;
 
-	printk("testing bitrate %u, sample point %u.%u%% (%s): ",
-		test->bitrate, test->sp / 10, test->sp % 10, test->invalid ? "invalid" : "valid");
+	printk("testing bitrate %u, sample point %u.%u%%: ",
+		test->bitrate, test->sp / 10, test->sp % 10);
 
 	if (data_phase) {
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
@@ -172,10 +170,7 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 		sp_err = can_calc_timing(dev, &timing, test->bitrate, test->sp);
 	}
 
-	if (test->invalid) {
-		zassert_equal(sp_err, -EINVAL, "err %d, expected -EINVAL", sp_err);
-		printk("OK\n");
-	} else if (sp_err == -ENOTSUP) {
+	if (sp_err == -ENOTSUP) {
 		printk("bitrate not supported\n");
 	} else {
 		zassert_true(sp_err >= 0, "unknown error %d", sp_err);
