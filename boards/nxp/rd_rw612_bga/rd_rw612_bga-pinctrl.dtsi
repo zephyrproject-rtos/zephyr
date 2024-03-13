@@ -23,4 +23,12 @@
 			slew-rate = "ultra";
 		};
 	};
+
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <IO_MUX_FC2_I2C_16_17>;
+			slew-rate = "normal";
+			bias-pull-up;
+		};
+	};
 };

@@ -17,3 +17,4 @@ flash: 65536
 supported:
   - gpio
   - spi
+  - i2c
