@@ -720,8 +720,6 @@ static void tcp_conn_release(struct k_work *work)
 	}
 #endif
 
-	k_mutex_lock(&tcp_lock, K_FOREVER);
-
 	/* Application is no longer there, unref any remaining packets on the
 	 * fifo (although there shouldn't be any at this point.)
 	 */
@@ -761,11 +759,11 @@ static void tcp_conn_release(struct k_work *work)
 	net_context_unref(conn->context);
 	conn->context = NULL;
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
+	k_mutex_unlock(&tcp_lock);
 
 	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
-
-	k_mutex_unlock(&tcp_lock);
 }
 
 #if defined(CONFIG_NET_TEST)
@@ -2092,7 +2090,9 @@ static struct tcp *tcp_conn_alloc(void)
 
 	tcp_conn_ref(conn);
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 	sys_slist_append(&tcp_conns, &conn->next);
+	k_mutex_unlock(&tcp_lock);
 out:
 	NET_DBG("conn: %p", conn);
 
@@ -2113,19 +2113,15 @@ int net_tcp_get(struct net_context *context)
 	int ret = 0;
 	struct tcp *conn;
 
-	k_mutex_lock(&tcp_lock, K_FOREVER);
-
 	conn = tcp_conn_alloc();
 	if (conn == NULL) {
 		ret = -ENOMEM;
-		goto out;
+		return ret;
 	}
 
 	/* Mutually link the net_context and tcp connection */
 	conn->context = context;
 	context->tcp = conn;
-out:
-	k_mutex_unlock(&tcp_lock);
 
 	return ret;
 }
@@ -2154,12 +2150,16 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	struct tcp *conn;
 	struct tcp *tmp;
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
 		found = tcp_conn_cmp(conn, pkt);
 		if (found) {
 			break;
 		}
 	}
+
+	k_mutex_unlock(&tcp_lock);
 
 	return found ? conn : NULL;
 }
@@ -2178,8 +2178,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
-
-	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	conn = tcp_conn_search(pkt);
 	if (conn) {
@@ -2200,8 +2198,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 		conn->accepted_conn = conn_old;
 	}
 in:
-	k_mutex_unlock(&tcp_lock);
-
 	if (conn) {
 		verdict = tcp_in(conn, pkt);
 	} else {
@@ -4270,7 +4266,6 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
-
 		if (atomic_get(&conn->ref_count) > 0) {
 			k_mutex_unlock(&tcp_lock);
 			cb(conn, user_data);
