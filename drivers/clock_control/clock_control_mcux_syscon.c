@@ -249,15 +249,77 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetDmicClkFreq();
 		break;
 #endif
+#if defined(CONFIG_MEMC_MCUX_FLEXSPI)
+	case MCUX_FLEXSPI_CLK:
+#if (FSL_FEATURE_SOC_FLEXSPI_COUNT == 1)
+		*rate = CLOCK_GetFlexspiClkFreq();
+#else
+		*rate = CLOCK_GetFlexspiClkFreq(0);
+#endif
+		break;
+#if (FSL_FEATURE_SOC_FLEXSPI_COUNT == 2)
+	case MCUX_FLEXSPI2_CLK:
+		*rate = CLOCK_GetFlexspiClkFreq(1);
+		break;
+#endif
+#endif /* CONFIG_MEMC_MCUX_FLEXSPI */
 	}
 
 	return 0;
+}
+
+#if defined(CONFIG_MEMC)
+/*
+ * Weak implemenetation of flexspi_clock_set_freq- SOC implementations are
+ * expected to override this
+ */
+__weak int flexspi_clock_set_freq(uint32_t clock_name, uint32_t freq)
+{
+	ARG_UNUSED(clock_name);
+	ARG_UNUSED(freq);
+	return -ENOTSUP;
+}
+#endif
+
+/*
+ * Since this function is used to reclock the FlexSPI when running in
+ * XIP, it must be located in RAM when MEMC driver is enabled.
+ */
+#ifdef CONFIG_MEMC
+#define SYSCON_SET_FUNC_ATTR __ramfunc
+#else
+#define SYSCON_SET_FUNC_ATTR
+#endif
+
+static int SYSCON_SET_FUNC_ATTR
+	mcux_lpc_syscon_clock_control_set_subsys_rate(const struct device *dev,
+			clock_control_subsys_t subsys,
+			clock_control_subsys_rate_t rate)
+{
+	uint32_t clock_name = (uintptr_t)subsys;
+	uint32_t clock_rate = (uintptr_t)rate;
+
+	switch (clock_name) {
+	case MCUX_FLEXSPI_CLK:
+#if defined(CONFIG_MEMC)
+		/* The SOC is using the FlexSPI for XIP. Therefore,
+		 * the FlexSPI itself must be managed within the function,
+		 * which is SOC specific.
+		 */
+		return flexspi_clock_set_freq(clock_name, clock_rate);
+#endif
+	default:
+		/* Silence unused variable warning */
+		ARG_UNUSED(clock_rate);
+		return -ENOTSUP;
+	}
 }
 
 static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
 	.get_rate = mcux_lpc_syscon_clock_control_get_subsys_rate,
+	.set_rate = mcux_lpc_syscon_clock_control_set_subsys_rate,
 };
 
 #define LPC_CLOCK_INIT(n) \
