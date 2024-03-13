@@ -25,7 +25,7 @@ config INIT_SYS_PLL
 
 menuconfig NXP_RW6XX_BOOT_HEADER
 	bool "Create boot header"
-	default y
+	default y if !BOOTLOADER_MCUBOOT
 	help
 	  Create data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -57,6 +57,8 @@ config IMAGE_VECTOR_TABLE_OFFSET
 	  the application entry point and device configuration data. The boot
 	  ROM requires a fixed IVT offset for each type of boot device.
 
+endif # NXP_RW6XX_BOOT_HEADER
+
 # Used for default value in FLASH_MCUX_FLEXSPI_XIP
 DT_CHOSEN_Z_FLASH := zephyr,flash
 DT_COMPAT_FLEXSPI := nxp,imx-flexspi
@@ -82,6 +84,9 @@ config NXP_RW_ROM_RAMLOADER
 	  FlexSPI boot device into RAM region. The image will be loaded
 	  from FLEXSPI into the region specified by `zephyr,flash` node.
 
-endif # NXP_RW6XX_BOOT_HEADER
+config FLASH_MCUX_FLEXSPI_XIP_MEM
+	string
+	default "RAM"
+	depends on MEMC_MCUX_FLEXSPI
 
 endif # SOC_SERIES_RW6XX
