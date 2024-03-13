@@ -250,7 +250,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/nordic_nrf/nrf9160dk/nrf9160dk_nrf9160_common.dtsi`.
+:zephyr_file:`boards/nordic/nrf9160dk/nrf9160dk_nrf9160_common.dtsi`.
 
 .. _nrf9160dk_nrf52840:
 
@@ -498,8 +498,8 @@ following:
    };
 
 A few helper .dtsi files are provided in the directories
-:zephyr_file:`boards/nordic_nrf/nrf9160dk/dts/nrf52840` and
-:zephyr_file:`boards/nordic_nrf/nrf9160dk/dts/nrf9160`. They can serve as examples of
+:zephyr_file:`boards/nordic/nrf9160dk/dts/nrf52840` and
+:zephyr_file:`boards/nordic/nrf9160dk/dts/nrf9160`. They can serve as examples of
 how to configure and use the above routings. You can also include them from
 respective devicetree overlay files in your applications to conveniently
 configure the signal routing between nRF9160 and nRF52840 on the nRF9160 DK.
