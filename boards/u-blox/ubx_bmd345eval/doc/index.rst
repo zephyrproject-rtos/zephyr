@@ -460,7 +460,7 @@ There are 2 samples that allow you to test that the buttons
 You can build and flash the examples to make sure Zephyr is running
 correctly on your board. The button and LED definitions can be found
 in
-:zephyr_file:`boards/ublox/ubx_bmd345eval/ubx_bmd345eval_nrf52840.dts`.
+:zephyr_file:`boards/u-blox/ubx_bmd345eval/ubx_bmd345eval_nrf52840.dts`.
 
 Using UART1
 ***********
