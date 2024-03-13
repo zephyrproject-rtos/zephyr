@@ -324,8 +324,6 @@ end:
 
 static void tcp_send(struct net_pkt *pkt)
 {
-	NET_DBG("%s", tcp_th(pkt));
-
 	tcp_pkt_ref(pkt);
 
 	if (tcp_send_cb) {
@@ -1465,6 +1463,8 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 		goto err;
 	}
 
+	NET_DBG("%s", tcp_th(rst));
+
 	tcp_send(rst);
 
 	return;
@@ -1521,8 +1521,6 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		tcp_pkt_unref(pkt);
 		goto out;
 	}
-
-	NET_DBG("%s", tcp_th(pkt));
 
 	if (tcp_send_cb) {
 		ret = tcp_send_cb(pkt);
@@ -1633,7 +1631,9 @@ static bool tcp_window_full(struct tcp *conn)
 	window_full = window_full || (conn->send_data_total >= conn->ca.cwnd);
 #endif
 
-	NET_DBG("conn: %p window_full=%hu", conn, window_full);
+	if (window_full) {
+		NET_DBG("conn: %p TX window_full", conn);
+	}
 
 	return window_full;
 }
@@ -1664,8 +1664,6 @@ static int tcp_unsent_len(struct tcp *conn)
 #endif
 	}
  out:
-	NET_DBG("unsent_len=%d", unsent_len);
-
 	return unsent_len;
 }
 
