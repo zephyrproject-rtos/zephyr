@@ -3,3 +3,21 @@ description: TI LP5562 LED
 compatible: "ti,lp5562"
 
 include: i2c-device.yaml
+
+properties:
+    red-output-current:
+      type: int
+      required: false
+      description: Output current of red channel in 0.1mV (0-25.5mA)
+    green-output-current:
+      type: int
+      required: false
+      description: Output current of green channel in 0.1mV (0-25.5mA)
+    blue-output-current:
+      type: int
+      required: false
+      description: Output current of blue channel in 0.1mV (0-25.5mA)
+    white-output-current:
+      type: int
+      required: false
+      description: Output current of white channel in 0.1mV (0-25.5mA)
