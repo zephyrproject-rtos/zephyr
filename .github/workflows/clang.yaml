@@ -89,6 +89,17 @@ jobs:
           ccache -p
           ccache -z -s -vv
 
+      - name: Update BabbleSim to manifest revision
+        run: |
+          export BSIM_VERSION=$( west list bsim -f {revision} )
+          echo "Manifest points to bsim sha $BSIM_VERSION"
+          cd /opt/bsim_west/bsim
+          git fetch -n origin ${BSIM_VERSION}
+          git config --global advice.detachedHead false
+          git checkout ${BSIM_VERSION}
+          west update
+          make everything -s -j 8
+
       - name: Run Tests with Twister
         id: twister
         run: |
