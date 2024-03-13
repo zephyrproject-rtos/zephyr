@@ -122,7 +122,7 @@ already supported, which can also be re-used on this mimxrt1060_evk board:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/mimxrt1062_fmurt6/mimxrt1062_fmurt6_defconfig``
+:zephyr_file:`boards/nxp/mimxrt1062_fmurt6/mimxrt1062_fmurt6_defconfig`
 
 Other hardware features are not currently supported by the port.
 
