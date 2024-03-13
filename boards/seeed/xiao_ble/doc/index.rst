@@ -182,7 +182,7 @@ properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The LED definitions can be found in
-:zephyr_file:`boards/seeed_studio/xiao_ble/xiao_ble_common.dtsi`.
+:zephyr_file:`boards/seeed/xiao_ble/xiao_ble_common.dtsi`.
 
 Testing shell over USB in the XIAO BLE (Sense)
 **********************************************
