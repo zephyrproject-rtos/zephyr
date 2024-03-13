@@ -32,7 +32,7 @@ features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/broadcom/bcm958401m2/bcm958401m2_defconfig`
+:zephyr_file:`boards/brcm/bcm958401m2/bcm958401m2_defconfig`
 
 Connections and IOs
 ===================
