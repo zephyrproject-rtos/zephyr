@@ -65,7 +65,8 @@ static int wdt_nrf_disable(const struct device *dev)
 	err_code = nrfx_wdt_stop(&config->wdt);
 
 	if (err_code != NRFX_SUCCESS) {
-		return -ENOTSUP;
+		/* This can only happen if wdt_nrf_setup() is not called first. */
+		return -EFAULT;
 	}
 
 	return 0;
