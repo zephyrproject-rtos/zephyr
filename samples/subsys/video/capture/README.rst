@@ -21,12 +21,19 @@ Supported camera modules on some i.MX RT boards can be found below.
 - :ref:`mimxrt1064_evk`
 - `MT9M114 camera module`_
 
+- :ref:`mimxrt1170_evk`
+- `OV5640 camera module`_
+
 Wiring
 ******
 
 On :ref:`mimxrt1064_evk`, the MT9M114 camera module should be plugged in the
 J35 camera connector. A USB cable should be connected from a host to the micro
 USB debug connector (J41) in order to get console output via the freelink interface.
+
+On :ref:`mimxrt1170_evk`, the OV5640 camera module should be plugged into the
+J2 camera connector. A USB cable should be connected from a host to the micro
+USB debug connector (J11) in order to get console output via the daplink interface.
 
 Building and Running
 ********************
@@ -40,8 +47,18 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
    :goals: build
    :compact:
 
-For testing purpose without the need of any real video capture hardware, a video software
-pattern generator is supported by the above build command without specifying any shield.
+For :ref:`mimxrt1170_evk`, build this sample application with the following commands:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: mimxrt1170_evk/mimxrt1176/cm7
+   :shield: "nxp_btb44_ov5640 rk055hdmipi4ma0"
+   :goals: build
+   :compact:
+
+For testing purpose without the need of any real video capture and/or display hardwares,
+a video software pattern generator is supported by the above build commands without
+specifying the shields.
 
 Sample Output
 =============
@@ -79,3 +96,4 @@ References
 
 .. _Camera iMXRT: https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Connecting-camera-and-LCD-to-i-MX-RT-EVKs/ta-p/1122183
 .. _MT9M114 camera module: https://www.onsemi.com/PowerSolutions/product.do?id=MT9M114
+.. _OV5640 camera module: https://cdn.sparkfun.com/datasheets/Sensors/LightImaging/OV5640_datasheet.pdf
