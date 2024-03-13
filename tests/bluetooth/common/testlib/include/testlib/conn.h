@@ -72,4 +72,37 @@ int bt_testlib_wait_disconnected(struct bt_conn *conn);
  */
 void bt_testlib_conn_unref(struct bt_conn **connp);
 
+/** @brief Obtain a reference to a connection object by its
+ *  index
+ *
+ *  This is an inverse of @ref bt_conn_index during the lifetime
+ *  of the original  @ref bt_conn reference.
+ *
+ *  This function can be used instead of @ref bt_conn_foreach to
+ *  loop over all connections.
+ *
+ *  @note The ranges of conn_index overlap for different
+ *  connection types. They all range from 0 up to their
+ *  respective capacities, tabulated below.
+ *
+ *    @p conn_type     | Capacity
+ *   ------------------|------------------------
+ *    BT_CONN_TYPE_LE  | CONFIG_BT_MAX_CONN
+ *    BT_CONN_TYPE_SCO | CONFIG_BT_MAX_SCO_CONN
+ *    BT_CONN_TYPE_ISO | CONFIG_BT_ISO_MAX_CHAN
+ *
+ * Internal details that cannot be relied on:
+ *  - The memory addresses returned point into an array.
+ *  - The same index and type always yields the same memory
+ *    address.
+ *
+ * Guarantees:
+ *  - Looping over the whole range is equivalent to @ref
+ *    bt_conn_foreach.
+ *
+ *  @retval NULL if the reference is dead
+ *  @retval conn a reference to the found connection object
+ */
+struct bt_conn *bt_testlib_conn_unindex(enum bt_conn_type conn_type, uint8_t conn_index);
+
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_H_ */
