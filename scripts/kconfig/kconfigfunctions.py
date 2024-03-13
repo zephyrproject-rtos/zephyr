@@ -866,6 +866,16 @@ def shields_list_contains(kconf, _, shield):
     return "y" if shield in list.split(";") else "n"
 
 
+def substring(kconf, _, string, start, stop=None):
+    """
+    Extracts a portion of the string, removing characters from the front, back or both.
+    """
+    if stop is not None:
+        return string[int(start):int(stop)]
+    else:
+        return string[int(start):]
+
+
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
 #
@@ -921,4 +931,5 @@ functions = {
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
+        "substring": (substring, 2, 3),
 }
