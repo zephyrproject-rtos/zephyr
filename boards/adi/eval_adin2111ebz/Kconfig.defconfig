@@ -5,9 +5,6 @@
 
 if BOARD_ADI_EVAL_ADIN2111EBZ
 
-config BOARD
-	default "adi_eval_adin2111ebz"
-
 config MDIO_INIT_PRIORITY
 	default 81
 	depends on MDIO
