@@ -1048,6 +1048,77 @@ config BT_HFP_HF
 	help
 	  This option enables Bluetooth HF support
 
+config BT_HFP_AG
+	bool "Bluetooth Handsfree profile AG Role support [EXPERIMENTAL]"
+	depends on PRINTK
+	select BT_RFCOMM
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth AG support
+
+if BT_HFP_AG
+config BT_HFP_AG_TX_BUF_COUNT
+	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
+	default BT_RFCOMM_TX_MAX
+	range BT_RFCOMM_TX_MAX 255
+	help
+	  Maximum number of pending TX buffers that have an associated
+	  sending buf. Normally this can be left to the default value, which
+	  is equal to the number of session in the stack-internal pool.
+
+config BT_HFP_AG_THREAD_STACK_SIZE
+	int "Size of the HFP AG thread stack [EXPERIMENTAL]"
+	default 1024
+	help
+	  Stack size needed for executing thread for HFP AG.
+
+config BT_HFP_AG_THREAD_PRIO
+	# Hidden option for HFP AG thread priority
+	int
+	default 6
+
+config BT_HFP_AG_OUTGOING_TIMEOUT
+	int "Call outgoing timeout value for HFP AG [EXPERIMENTAL]"
+	default 3
+	range 1 10
+	help
+	  The option sets the timeout of call outgoing. If the call does
+	  not switch to alerting state before timeout, it will be
+	  stopped by the HFP AG. The unit is seconds.
+
+config BT_HFP_AG_INCOMING_TIMEOUT
+	int "Incoming call timeout value for HFP AG [EXPERIMENTAL]"
+	default 3
+	range 1 10
+	help
+	  The option sets the timeout of incoming call. If the call does
+	  not switch to ringing state before timeout, it will be
+	  stopped by the HFP AG. The unit is seconds.
+
+config BT_HFP_AG_ALERTING_TIMEOUT
+	int "Call alerting/ringing timeout value for HFP AG [EXPERIMENTAL]"
+	default 60
+	range 10 60
+	help
+	  The option sets the timeout of call alerting/ringing. If the
+	  call is not active before timeout, it will be stopped
+	  by the HFP AG. The unit is seconds.
+
+config BT_HFP_AG_PHONE_NUMBER_MAX_LEN
+	int "Supported max length of phone number for HFP AG [EXPERIMENTAL]"
+	default 32
+	range 1 255
+	help
+	  Supported max length of phone number for HFP AG.
+
+config BT_HFP_AG_RING_NOTIFY_INTERVAL
+	int "Ring notification interval [EXPERIMENTAL]"
+	default 3
+	help
+	  Ring notification interval if the call is in alert state.
+	  The unit is seconds.
+endif # BT_HFP_AG
+
 config BT_AVDTP
 	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
 	select EXPERIMENTAL
