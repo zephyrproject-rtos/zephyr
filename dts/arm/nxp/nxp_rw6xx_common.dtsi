@@ -145,6 +145,15 @@
 		num-lines = <8>;
 		num-inputs = <64>;
 	};
+
+	dma0: dma-controller@104000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x104000 0x1000>;
+		interrupts = <1 0>;
+		status = "disabled";
+		#dma-cells = <1>;
+		dma-channels = <33>;
+	};
 };
 
 &flexspi {
