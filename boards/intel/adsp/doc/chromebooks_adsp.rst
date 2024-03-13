@@ -408,7 +408,7 @@ Upstream documentation from which these instructions were drawn:
 
 This page has the best reference for the boot process:
 
-http://www.chromium.org/chromium-os/chromiumos-design-docs/disk-format
+https://www.chromium.org/chromium-os/developer-library/reference/device/disk-format
 
 This is great too, with an eye toward booting things other than ChromeOS:
 
