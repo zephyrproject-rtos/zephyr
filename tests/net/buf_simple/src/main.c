@@ -18,6 +18,8 @@ static const uint8_t le24[3] = { 0x03, 0x02, 0x01 };
 static const uint8_t be24[3] = { 0x01, 0x02, 0x03 };
 static const uint8_t le32[4] = { 0x04, 0x03, 0x02, 0x01 };
 static const uint8_t be32[4] = { 0x01, 0x02, 0x03, 0x04 };
+static const uint8_t le40[5] = { 0x05, 0x04, 0x03, 0x02, 0x01 };
+static const uint8_t be40[5] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static const uint8_t le48[6] = { 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 static const uint8_t be48[6] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 static const uint8_t le64[8] = { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
@@ -25,6 +27,7 @@ static const uint8_t be64[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 
 static const uint16_t u16 = 0x0102;
 static const uint32_t u24 = 0x010203;
 static const uint32_t u32 = 0x01020304;
+static const uint64_t u40 = 0x0102030405;
 static const uint64_t u48 = 0x010203040506;
 static const uint64_t u64 = 0x0102030405060708;
 
@@ -139,6 +142,38 @@ ZTEST(net_buf_simple_test_suite, test_net_buf_simple_add_be32)
 
 	zassert_mem_equal(be32, net_buf_simple_pull_mem(&buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_pull_le40)
+{
+	net_buf_simple_add_mem(&buf, &le40, sizeof(le40));
+
+	zassert_equal(u40, net_buf_simple_pull_le40(&buf),
+		      "Invalid 40 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_pull_be40)
+{
+	net_buf_simple_add_mem(&buf, &be40, sizeof(be40));
+
+	zassert_equal(u40, net_buf_simple_pull_be40(&buf),
+		      "Invalid 40 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_add_le40)
+{
+	net_buf_simple_add_le40(&buf, u40);
+
+	zassert_mem_equal(le40, net_buf_simple_pull_mem(&buf, sizeof(le40)),
+			  sizeof(le40), "Invalid 40 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_add_be40)
+{
+	net_buf_simple_add_be40(&buf, u40);
+
+	zassert_mem_equal(be40, net_buf_simple_pull_mem(&buf, sizeof(be40)),
+			  sizeof(be40), "Invalid 40 bits byte order");
 }
 
 ZTEST(net_buf_simple_test_suite, test_net_buf_simple_pull_le48)
@@ -323,6 +358,44 @@ ZTEST(net_buf_simple_test_suite, test_net_buf_simple_push_be32)
 
 	zassert_mem_equal(be32, net_buf_simple_remove_mem(&buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_remove_le40)
+{
+	net_buf_simple_reserve(&buf, 16);
+
+	net_buf_simple_push_mem(&buf, &le40, sizeof(le40));
+
+	zassert_equal(u40, net_buf_simple_remove_le40(&buf), "Invalid 40 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_remove_be40)
+{
+	net_buf_simple_reserve(&buf, 16);
+
+	net_buf_simple_push_mem(&buf, &be40, sizeof(be40));
+
+	zassert_equal(u40, net_buf_simple_remove_be40(&buf), "Invalid 40 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_push_le40)
+{
+	net_buf_simple_reserve(&buf, 16);
+
+	net_buf_simple_push_le40(&buf, u40);
+
+	zassert_mem_equal(le40, net_buf_simple_remove_mem(&buf, sizeof(le40)), sizeof(le40),
+			  "Invalid 40 bits byte order");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_push_be40)
+{
+	net_buf_simple_reserve(&buf, 16);
+
+	net_buf_simple_push_be40(&buf, u40);
+
+	zassert_mem_equal(be40, net_buf_simple_remove_mem(&buf, sizeof(be40)), sizeof(be40),
+			  "Invalid 40 bits byte order");
 }
 
 ZTEST(net_buf_simple_test_suite, test_net_buf_simple_remove_le48)
