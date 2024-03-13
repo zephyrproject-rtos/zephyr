@@ -278,6 +278,53 @@ static void net_conn_change_callback(struct net_conn *conn,
 	conn->user_data = user_data;
 }
 
+static int net_conn_change_remote(struct net_conn *conn,
+				  const struct sockaddr *remote_addr,
+				  uint16_t remote_port)
+{
+	NET_DBG("[%zu] connection handler %p changed remote",
+		conn - conns, conn);
+
+	if (remote_addr) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		    remote_addr->sa_family == AF_INET6) {
+			memcpy(&conn->remote_addr, remote_addr,
+			       sizeof(struct sockaddr_in6));
+
+			if (!net_ipv6_is_addr_unspecified(
+				    &net_sin6(remote_addr)->
+				    sin6_addr)) {
+				conn->flags |= NET_CONN_REMOTE_ADDR_SPEC;
+			}
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+			   remote_addr->sa_family == AF_INET) {
+			memcpy(&conn->remote_addr, remote_addr,
+			       sizeof(struct sockaddr_in));
+
+			if (net_sin(remote_addr)->sin_addr.s_addr) {
+				conn->flags |= NET_CONN_REMOTE_ADDR_SPEC;
+			}
+		} else {
+			NET_ERR("Remote address family not set");
+			return -EINVAL;
+		}
+
+		conn->flags |= NET_CONN_REMOTE_ADDR_SET;
+	} else {
+		conn->flags &= ~NET_CONN_REMOTE_ADDR_SPEC;
+		conn->flags &= ~NET_CONN_REMOTE_ADDR_SET;
+	}
+
+	if (remote_port) {
+		conn->flags |= NET_CONN_REMOTE_PORT_SPEC;
+		net_sin(&conn->remote_addr)->sin_port = htons(remote_port);
+	} else {
+		conn->flags &= ~NET_CONN_REMOTE_PORT_SPEC;
+	}
+
+	return 0;
+}
+
 int net_conn_register(uint16_t proto, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
@@ -290,6 +337,7 @@ int net_conn_register(uint16_t proto, uint8_t family,
 {
 	struct net_conn *conn;
 	uint8_t flags = 0U;
+	int ret;
 
 	conn = conn_find_handler(context != NULL ? net_context_get_iface(context) : NULL,
 				 proto, family, remote_addr, local_addr,
@@ -305,33 +353,6 @@ int net_conn_register(uint16_t proto, uint8_t family,
 	conn = conn_get_unused();
 	if (!conn) {
 		return -ENOENT;
-	}
-
-	if (remote_addr) {
-		if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		    remote_addr->sa_family == AF_INET6) {
-			memcpy(&conn->remote_addr, remote_addr,
-			       sizeof(struct sockaddr_in6));
-
-			if (!net_ipv6_is_addr_unspecified(
-				    &net_sin6(remote_addr)->
-				    sin6_addr)) {
-				flags |= NET_CONN_REMOTE_ADDR_SPEC;
-			}
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-			   remote_addr->sa_family == AF_INET) {
-			memcpy(&conn->remote_addr, remote_addr,
-			       sizeof(struct sockaddr_in));
-
-			if (net_sin(remote_addr)->sin_addr.s_addr) {
-				flags |= NET_CONN_REMOTE_ADDR_SPEC;
-			}
-		} else {
-			NET_ERR("Remote address family not set");
-			goto error;
-		}
-
-		flags |= NET_CONN_REMOTE_ADDR_SET;
 	}
 
 	if (local_addr) {
@@ -376,11 +397,6 @@ int net_conn_register(uint16_t proto, uint8_t family,
 		}
 	}
 
-	if (remote_port) {
-		flags |= NET_CONN_REMOTE_PORT_SPEC;
-		net_sin(&conn->remote_addr)->sin_port = htons(remote_port);
-	}
-
 	if (local_port) {
 		flags |= NET_CONN_LOCAL_PORT_SPEC;
 		net_sin(&conn->local_addr)->sin_port = htons(local_port);
@@ -392,6 +408,15 @@ int net_conn_register(uint16_t proto, uint8_t family,
 	conn->proto = proto;
 	conn->family = family;
 	conn->context = context;
+
+	/*
+	 * Since the net_conn_change_remote() updates the flags in connection,
+	 * must to be called after set the flags to connection.
+	 */
+	ret = net_conn_change_remote(conn, remote_addr, remote_port);
+	if (ret) {
+		goto error;
+	}
 
 	if (handle) {
 		*handle = (struct net_conn_handle *)conn;
