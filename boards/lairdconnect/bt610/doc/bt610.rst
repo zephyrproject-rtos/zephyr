@@ -612,4 +612,4 @@ References
 .. _TI TMUX1204 datasheet: https://www.ti.com/lit/gpn/TMUX1204
 .. _TI TCA9538 datasheet: https://www.ti.com/lit/gpn/TCA9538
 .. _Macronix MX25R6435FZNIL0 datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7913/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.5.pdf
-.. _BT610 Zephyr Application Thermistor Calibration: https://www.lairdconnect.com/documentation/application-note-bt610-zephyr-application-thermistor-calibration
+.. _BT610 Zephyr Application Thermistor Calibration: https://www.lairdconnect.com/technology/bt610-thermistor-coefficient-calculator
