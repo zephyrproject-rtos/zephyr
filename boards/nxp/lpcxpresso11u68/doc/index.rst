@@ -109,7 +109,7 @@ probe (based on a NXP LPC43xx MCU). This MCU provides either a CMSIS-DAP or
 a J-Link interface. It depends on the embedded firmware image. The default
 OpenOCD configuration supports the CMSIS-DAP interface. If you want to
 switch to J-Link, then you need to edit the
-``boards/arm/lpcxpresso11u68/support/openocd.cfg`` file and to replace::
+:zephyr_file:`boards/nxp/lpcxpresso11u68/support/openocd.cfg` file and to replace::
 
    source [find interface/cmsis-dap.cfg]
 
