@@ -48,6 +48,9 @@ check_set_compiler_property(PROPERTY warning_base
 # C implicit promotion rules will want to make floats into doubles very easily
 check_set_compiler_property(APPEND PROPERTY warning_base -Wdouble-promotion)
 
+# String literals are readonly and shouldn't be assigned to a non-const `char *`
+check_set_compiler_property(APPEND PROPERTY warning_base -Wwrite-strings)
+
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 
 # Prohibit void pointer arithmetic. Illegal in C99
