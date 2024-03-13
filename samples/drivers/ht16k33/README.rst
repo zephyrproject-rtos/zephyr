@@ -40,4 +40,4 @@ References
 
 .. target-notes::
 
-.. _Holtek HT16K33: http://www.holtek.com/productdetail/-/vg/HT16K33
+.. _Holtek HT16K33: https://www.holtek.com/page/vg/HT16K33A
