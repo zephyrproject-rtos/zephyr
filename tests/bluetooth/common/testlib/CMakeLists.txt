@@ -20,6 +20,7 @@ target_sources(testlib PRIVATE
   src/conn_ref.c
   src/conn_wait.c
   src/connect.c
+  src/disconnect.c
   src/scan.c
 )
 
