@@ -125,7 +125,7 @@ following hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/vmu_rt1170/vmu_rt1170_defconfig``
+:zephyr_file:`boards/nxp/vmu_rt1170/vmu_rt1170_defconfig`
 
 Other hardware features are not currently supported by the port.
 

@@ -111,7 +111,7 @@ already supported, which can also be re-used on this mimxrt685_evk board:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/mimxrt685_evk/mimxrt685_evk_defconfig``
+	:zephyr_file:`boards/nxp/mimxrt685_evk/mimxrt685_evk_defconfig`
 
 Other hardware features are not currently supported by the port.
 

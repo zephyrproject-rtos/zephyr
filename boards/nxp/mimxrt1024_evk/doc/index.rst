@@ -125,7 +125,7 @@ already supported, which can also be re-used on this mimxrt1024_evk board:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-``boards/arm/mimxrt1024_evk/mimxrt1024_evk_defconfig``
+:zephyr_file:`boards/nxp/mimxrt1024_evk/mimxrt1024_evk_defconfig`
 
 Other hardware features are not currently supported by the port.
 
