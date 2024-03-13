@@ -34,7 +34,7 @@ manifest:
       path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 384a091445c57b44ac8cbd18ebd245b47c71db94
+      revision: 68f6282c6a7f54641b75f5f9fc953c85e272a983
       path: tools/bsim
       groups:
         - babblesim
@@ -42,21 +42,21 @@ manifest:
       remote: babblesim
       repo-path: base
       path: tools/bsim/components
-      revision: 19d62424c0802c6c9fc15528febe666e40f372a1
+      revision: 4bd907be0b2abec3b31a23fd8ca98db2a07209d2
       groups:
         - babblesim
     - name: babblesim_ext_2G4_libPhyComv1
       remote: babblesim
       repo-path: ext_2G4_libPhyComv1
       path: tools/bsim/components/ext_2G4_libPhyComv1
-      revision: 9018113a362fa6c9e8f4b9cab9e5a8f12cc46b94
+      revision: 93f5eba512c438b0c9ebc1b1a947517c865b3643
       groups:
         - babblesim
     - name: babblesim_ext_2G4_phy_v1
       remote: babblesim
       repo-path: ext_2G4_phy_v1
       path: tools/bsim/components/ext_2G4_phy_v1
-      revision: d47c6dd90035b41b14f6921785ccb7b8484868e2
+      revision: 1ab9a884621d9ca719ef23536ca47d10494220c6
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -77,14 +77,14 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_modem_magic
       path: tools/bsim/components/ext_2G4_modem_magic
-      revision: cb70771794f0bf6f262aa474848611c68ae8f1ed
+      revision: edfcda2d3937a74be0a59d6cd47e0f50183453da
       groups:
         - babblesim
     - name: babblesim_ext_2G4_modem_BLE_simple
       remote: babblesim
       repo-path: ext_2G4_modem_BLE_simple
       path: tools/bsim/components/ext_2G4_modem_BLE_simple
-      revision: 809ab073159c9ab6686c2fea5749b0702e0909f7
+      revision: a38d2d24b04a6f970a225d1316047256ebf5a539
       groups:
         - babblesim
     - name: babblesim_ext_2G4_device_burst_interferer
@@ -105,7 +105,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_device_playback
       path: tools/bsim/components/ext_2G4_device_playback
-      revision: 85c645929cf1ce995d8537107d9dcbd12ed64036
+      revision: abb48cd71ddd4e2a9022f4bf49b2712524c483e8
       groups:
         - babblesim
     - name: babblesim_ext_libCryptov1
