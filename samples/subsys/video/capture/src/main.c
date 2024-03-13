@@ -17,9 +17,10 @@ LOG_MODULE_REGISTER(main);
 #define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
 
 #if DT_HAS_CHOSEN(zephyr_display)
-static inline int display_setup(const struct device *const display_dev)
+static inline int display_setup(const struct device *const display_dev, const uint32_t pixfmt)
 {
 	struct display_capabilities capabilities;
+	int ret = 0;
 
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device %s not found", display_dev->name);
@@ -36,6 +37,23 @@ static inline int display_setup(const struct device *const display_dev)
 	       capabilities.x_resolution, capabilities.y_resolution,
 	       capabilities.supported_pixel_formats, capabilities.current_pixel_format,
 	       capabilities.current_orientation);
+
+	/* Set display pixel format to match the one in use by the camera */
+	switch (pixfmt) {
+	case VIDEO_PIX_FMT_RGB565:
+		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_BGR_565);
+		break;
+	case VIDEO_PIX_FMT_XRGB32:
+		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if (ret) {
+		LOG_ERR("Unable to set display format");
+		return ret;
+	}
 
 	return display_blanking_off(display_dev);
 }
@@ -119,7 +137,7 @@ int main(void)
 		return 0;
 	}
 
-	err = display_setup(display_dev);
+	err = display_setup(display_dev, fmt.pixelformat);
 	if (err) {
 		LOG_ERR("Unable to set up display");
 		return err;
@@ -131,7 +149,11 @@ int main(void)
 
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(bsize);
+		/*
+		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
+		 * buffer alignment is needed in order to achieve the best performance
+		 */
+		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
