@@ -610,6 +610,11 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 		ret = spi_context_wait_for_completion(ctx);
 	} while (!ret && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)));
 
+	if (ret < 0) {
+		dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
+		dma_stop(cfg->rx_dma.dev, cfg->rx_dma.channel);
+	}
+
 unlock:
 	/* Deassert the CS line if hw control disabled */
 	if (!hw_cs_ctrl) {
