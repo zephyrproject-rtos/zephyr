@@ -42,6 +42,18 @@
 		};
 	};
 
+	pinmux_lcdic: pinmux_lcdic {
+		group0 {
+			pinmux = <IO_MUX_LCD_SPI_IO44>,
+				<IO_MUX_LCD_SPI_IO45>,
+				<IO_MUX_LCD_SPI_IO46>,
+				<IO_MUX_LCD_SPI_IO47>,
+				<IO_MUX_LCD_SPI_IO48>,
+				<IO_MUX_LCD_SPI_IO49>;
+			slew-rate = "ultra";
+		};
+	};
+
 	pinmux_flexspi: pinmux_flexspi {
 		group0 {
 			pinmux = <IO_MUX_QUAD_SPI_FLASH_IO28
