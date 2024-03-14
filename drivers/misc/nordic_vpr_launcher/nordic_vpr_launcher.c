@@ -51,8 +51,8 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 	 COND_CODE_0(DT_FIXED_PARTITION_EXISTS(node_id), (0), (DT_REG_ADDR(DT_GPARENT(node_id)))))
 
 #define NORDIC_VPR_LAUNCHER_DEFINE(inst)                                                           \
-	COND_CODE_1(DT_NODE_HAS_PROP(inst, source_memory),                                         \
-		    (BUILD_ASSERT((DT_REG_SIZE(DT_INST_PHANDLE(inst, execution_memory)) ==         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, source_memory),                                    \
+		    (BUILD_ASSERT((DT_REG_SIZE(DT_INST_PHANDLE(inst, execution_memory)) >=         \
 				   DT_REG_SIZE(DT_INST_PHANDLE(inst, source_memory))),             \
 				  "Source/execution memory sizes mismatch");),                     \
 		    ())                                                                            \
