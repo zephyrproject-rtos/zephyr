@@ -126,6 +126,26 @@ SECTIONS
 		KEEP(*(.reset.*))
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+#ifdef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+#define JTAG_DEBUG_RESERVED_ADDR_START 0x80000800
+#define JTAG_DEBUG_RESERVED_ADDR_END 0x800008FF
+	/* The CPU address from 0x80000800 to 0x800008FF is reserved for JTAG
+	 * debug usage. */
+	SECTION_PROLOGUE(jtag_dbg,,)
+	{
+		__jtag_dbg_pad_start = ABSOLUTE(.);
+		ASSERT((__jtag_dbg_pad_start < JTAG_DEBUG_RESERVED_ADDR_START),
+			"The start address of jtag debug section is incorrect.");
+
+		__jtag_dbg_pad_size = JTAG_DEBUG_RESERVED_ADDR_END - __jtag_dbg_pad_start;
+		. = . + __jtag_dbg_pad_size;
+
+		__jtag_dbg_pad_end = ABSOLUTE(.);
+		ASSERT((__jtag_dbg_pad_end == JTAG_DEBUG_RESERVED_ADDR_END),
+			"The end address of jtag debug section is incorrect.");
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 #ifndef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
     SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
 	{

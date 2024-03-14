@@ -239,8 +239,10 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	chip_pll_ctrl(mode);
 
 	do {
+#ifndef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
 		/* Wait for interrupt */
 		__asm__ volatile ("wfi");
+#endif
 		/*
 		 * Sometimes wfi instruction may fail due to CPU's MTIP@mip
 		 * register is non-zero.
