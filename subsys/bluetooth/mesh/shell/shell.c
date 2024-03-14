@@ -726,6 +726,11 @@ static int cmd_beacon_listen(const struct shell *sh, size_t argc,
 		return err;
 	}
 
+	if (!bt_mesh_is_provisioned()) {
+		shell_error(sh, "Not yet provisioned");
+		return -EINVAL;
+	}
+
 	if (val) {
 		bt_mesh_shell_prov.unprovisioned_beacon = print_unprovisioned_beacon;
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
