@@ -79,6 +79,19 @@ config HAWKBIT_DDI_SECURITY_TOKEN
 	  Authentication security token for the configured hawkBit DDI
 	  authentication mode.
 
+config HAWKBIT_CUSTOM_ATTRIBUTES
+	bool "Custom device attributes"
+	help
+	  Use custom definition of device attributes.
+
+config HAWKBIT_STATUS_BUFFER_SIZE
+	int "hawkBit status buffer size"
+	default 200
+	help
+	  Set the size of the buffer, which is used to store the
+	  json strings, that are sent to the hawkBit server. It might
+	  be increased if the custom attributes are used extensively.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.
