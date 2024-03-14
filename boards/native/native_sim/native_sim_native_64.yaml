@@ -1,0 +1,20 @@
+identifier: native_sim/native/64
+name: Native Simulation port - 64-bit variant
+type: native
+simulation: native
+arch: posix
+ram: 65536
+flash: 65536
+toolchain:
+  - host
+  - llvm
+supported:
+  - can
+  - counter
+  - eeprom
+  - netif:eth
+  - usb_device
+  - adc
+  - gpio
+  - rtc
+vendor: zephyr
