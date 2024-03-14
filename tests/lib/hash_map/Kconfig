@@ -18,7 +18,7 @@ config TEST_LIB_HASH_MAP_MAX_ENTRIES
 
 	  CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
 
-	  For native_posix_64, the number of entries can be configured
+	  For native_sim, the number of entries can be configured
 	  independently of the arena size since the native libc is used.
 
 source "Kconfig.zephyr"
