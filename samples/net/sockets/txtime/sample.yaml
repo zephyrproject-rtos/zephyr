@@ -4,9 +4,9 @@ common:
   # We can only run this in platforms that support PTP clock and TXTIME
   platform_allow:
     - native_posix
-    - native_posix_64
+    - native_posix/native/64
     - native_sim
-    - native_sim_64
+    - native_sim/native/64
     - qemu_x86
     - qemu_x86_64
   integration_platforms:
