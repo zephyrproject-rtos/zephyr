@@ -8,7 +8,7 @@ common:
   # needs root permission.
   platform_exclude:
     - native_posix
-    - native_posix_64
+    - native_posix/native/64
 tests:
   net.socket.af_packet.ipproto_raw:
     min_ram: 21
