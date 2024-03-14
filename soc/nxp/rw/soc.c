@@ -207,6 +207,21 @@ __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM14);
 #endif
 #endif /* CONFIG_SPI */
+
+#ifdef CONFIG_COUNTER_MCUX_CTIMER
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer0), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER0);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer1), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER1);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer2), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER2);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer3), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER3);
+#endif
+#endif /* CONFIG_COUNTER_MCUX_CTIMER */
 }
 
 /**
