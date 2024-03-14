@@ -8,7 +8,7 @@ tests:
   libraries.ring_buffer:
     integration_platforms:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
 
   libraries.ring_buffer.concurrent:
     platform_allow: qemu_x86

@@ -49,4 +49,4 @@ tests:
       - CONFIG_CPP_EXCEPTIONS=y
     integration_platforms:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
