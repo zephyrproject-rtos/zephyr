@@ -544,6 +544,15 @@
 	status = "disabled";
 };
 
+&flexspi {
+	compatible = "nxp,imx-flexspi";
+	interrupts = <58 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "disabled";
+	clocks = <&syscon MCUX_FLEXSPI_CLK>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
