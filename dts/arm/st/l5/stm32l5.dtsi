@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/reset/stm32g4_l4_5_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <freq.h>
 
 / {
