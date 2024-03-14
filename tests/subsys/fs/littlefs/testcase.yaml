@@ -5,7 +5,7 @@ common:
   platform_allow:
     - nrf52840dk/nrf52840
     - native_sim
-    - native_sim_64
+    - native_sim/native/64
     - mimxrt1060_evk
     - mr_canhubk3
   integration_platforms:
