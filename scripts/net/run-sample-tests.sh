@@ -348,6 +348,9 @@ stop_sample_test () {
     stop_docker
 
     stop_configuration
+
+    killall zephyr.exe
+
     exit 2
 }
 
