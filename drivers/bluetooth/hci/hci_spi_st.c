@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define READY_NOW		0x02
 
 #define EVT_BLUE_INITIALIZED	0x01
-
+#define FW_STARTED_PROPERLY	0X01
 /* Offsets */
 #define STATUS_HEADER_READY	0
 #define STATUS_HEADER_TOREAD	3
@@ -51,6 +51,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define EVT_LE_META_SUBEVENT	3
 #define EVT_VENDOR_CODE_LSB	3
 #define EVT_VENDOR_CODE_MSB	4
+#define REASON_CODE		5
 
 #define CMD_OGF			1
 #define CMD_OCF			2
@@ -89,8 +90,6 @@ static struct k_thread spi_rx_thread_data;
 #define BLUENRG_CONFIG_LL_ONLY_OFFSET       0x2C
 #define BLUENRG_CONFIG_LL_ONLY_LEN          0x01
 
-static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t value_len);
-
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
 	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON, 0);
 
@@ -109,6 +108,43 @@ struct bt_hci_ext_evt_hdr {
 	uint8_t evt;
 	uint16_t len;
 } __packed;
+
+int bluenrg_bt_reset(bool updater_mode)
+{
+	int err = 0;
+	/* Assert reset */
+	if (!updater_mode) {
+		gpio_pin_set_dt(&rst_gpio, 1);
+		k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
+		gpio_pin_set_dt(&rst_gpio, 0);
+	} else {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
+		return -ENOTSUP;
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
+		gpio_pin_set_dt(&rst_gpio, 1);
+		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
+		/* Configure IRQ pin as output and force it high */
+		err = gpio_pin_configure_dt(&irq_gpio, GPIO_OUTPUT_ACTIVE);
+		if (err) {
+			return err;
+		}
+		/* Add reset delay and release reset */
+		k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
+		gpio_pin_set_dt(&rst_gpio, 0);
+		/* Give firmware some time to read the IRQ high */
+		k_sleep(K_MSEC(5));
+		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+		/* Reconfigure IRQ pin as input */
+		err = gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
+		if (err) {
+			return err;
+		}
+		/* Emulate possibly missed rising edge IRQ by signaling the IRQ semaphore */
+		k_sem_give(&sem_request);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2) */
+	}
+	return err;
+}
 
 static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
 				    void *rx, uint32_t rx_len)
@@ -142,13 +178,17 @@ static void bt_spi_isr(const struct device *unused1,
 static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 {
 	bool handled = false;
+	uint8_t reset_reason;
 
 	switch (bt_spi_get_evt(msg)) {
 	case EVT_BLUE_INITIALIZED: {
-		k_sem_give(&sem_initialised);
+		reset_reason = msg[REASON_CODE];
+		if (reset_reason == FW_STARTED_PROPERLY) {
+			k_sem_give(&sem_initialised);
 #if defined(CONFIG_BT_BLUENRG_ACI)
-		handled = true;
+			handled = true;
 #endif
+		}
 	}
 	default:
 		break;
