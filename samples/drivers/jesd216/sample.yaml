@@ -29,5 +29,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.drivers.stm32.jesd216:
-    filter: dt_compat_enabled("st,stm32-ospi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
+    filter: dt_compat_enabled("st,stm32-xspi-nor")
+      or dt_compat_enabled("st,stm32-ospi-nor")
+      or dt_compat_enabled("st,stm32-qspi-nor")
     depends_on: spi
