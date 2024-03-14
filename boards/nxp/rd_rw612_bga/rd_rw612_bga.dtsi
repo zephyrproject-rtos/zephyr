@@ -12,6 +12,7 @@
 		led0 = &green_led;
 		sw0 = &sw_4;
 		i2c-0 = &flexcomm2;
+		watchdog0 = &wwdt;
 	};
 
 	chosen {
@@ -38,6 +39,10 @@
 			gpios = <&hsgpio0 25 0>;
 		};
 	};
+};
+
+&wwdt {
+	status = "okay";
 };
 
 arduino_spi: &flexcomm0 {
