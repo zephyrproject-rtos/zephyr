@@ -3491,6 +3491,21 @@ nRF Platforms:
   labels:
     - "platform: nRF"
 
+OpenTitan Platforms:
+  status: maintained
+  maintainers:
+    - snematbakhsh
+  files:
+    - boards/lowrisc/opentitan_earlgrey/
+    - drivers/*/*opentitan*
+    - dts/bindings/*/*opentitan*
+    - dts/riscv/lowrisc/*opentitan*
+    - soc/lowrisc/opentitan/
+  labels:
+    - "platform: OpenTitan"
+  description: >-
+    OpenTitan boards, SOCs, dts files and related drivers.
+
 Renesas SmartBond Platforms:
   status: maintained
   maintainers:
