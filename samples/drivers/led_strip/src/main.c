@@ -45,7 +45,7 @@ static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 
 int main(void)
 {
-	size_t cursor = 0, color = 0;
+	size_t color = 0;
 	int rc;
 
 	if (device_is_ready(strip)) {
@@ -57,24 +57,20 @@ int main(void)
 
 	LOG_INF("Displaying pattern on strip");
 	while (1) {
-		memset(&pixels, 0x00, sizeof(pixels));
-		memcpy(&pixels[cursor], &colors[color], sizeof(struct led_rgb));
-		rc = led_strip_update_rgb(strip, pixels, STRIP_NUM_PIXELS);
+		for (size_t cursor = 0; cursor < ARRAY_SIZE(pixels); cursor++) {
+			memset(&pixels, 0x00, sizeof(pixels));
+			memcpy(&pixels[cursor], &colors[color], sizeof(struct led_rgb));
 
-		if (rc) {
-			LOG_ERR("couldn't update strip: %d", rc);
-		}
-
-		cursor++;
-		if (cursor >= STRIP_NUM_PIXELS) {
-			cursor = 0;
-			color++;
-			if (color == ARRAY_SIZE(colors)) {
-				color = 0;
+			rc = led_strip_update_rgb(strip, pixels, STRIP_NUM_PIXELS);
+			if (rc) {
+				LOG_ERR("couldn't update strip: %d", rc);
 			}
+
+			k_sleep(DELAY_TIME);
 		}
 
-		k_sleep(DELAY_TIME);
+		color = (color + 1) % ARRAY_SIZE(colors);
 	}
+
 	return 0;
 }
