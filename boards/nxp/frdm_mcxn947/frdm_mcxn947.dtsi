@@ -11,6 +11,8 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
 	};
 
 	leds {
@@ -28,6 +30,20 @@
 		red_led: led_3 {
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
+			status = "disabled";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			status = "disabled";
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			status = "disabled";
 		};
 	};
