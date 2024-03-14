@@ -277,9 +277,15 @@ void arch_cpu_idle(void)
 		irq_unlock(MSTATUS_IEN);
 	} else
 #endif
+#ifdef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+	{
+		irq_unlock(MSTATUS_IEN);
+	}
+#else  /* !CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE */
 	{
 		riscv_idle(CHIP_PLL_DOZE, MSTATUS_IEN);
 	}
+#endif /* CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE */
 }
 
 void arch_cpu_atomic_idle(unsigned int key)
