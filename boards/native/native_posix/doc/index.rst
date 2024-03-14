@@ -91,6 +91,6 @@ dependent on the size of pointers and longs.
 This target requires either a 64 bit system with multilib support installed or
 one with a 32bit userspace.
 
-The 64 bit version, ``native_posix_64``, compiles your code targeting the
+The 64 bit version, ``native_posix/native/64``, compiles your code targeting the
 LP64 ABI (x86-64 in x86 systems), where pointers and longs are 64 bits.
 You can use this target if you cannot compile or run 32 bit binaries.
