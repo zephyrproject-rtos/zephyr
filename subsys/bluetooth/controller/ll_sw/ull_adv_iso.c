@@ -710,11 +710,8 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	while (num_bis--) {
 		stream_handle = lll_adv_iso->stream_handle[num_bis];
 		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
-		err = ll_remove_iso_path(handle,
+		(void)ll_remove_iso_path(handle,
 					 BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
-		if (err) {
-			return err;
-		}
 	}
 
 	lll_adv_sync = lll_adv->sync;
