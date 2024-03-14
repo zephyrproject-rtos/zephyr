@@ -3,9 +3,9 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     tags:
       - settings
       - nvs
@@ -13,9 +13,9 @@ tests:
     extra_args: DTC_OVERLAY_FILE=./chosen.overlay
     platform_allow:
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     tags:
       - settings
       - nvs
