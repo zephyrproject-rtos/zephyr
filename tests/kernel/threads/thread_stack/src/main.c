@@ -66,6 +66,10 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 ZTEST_BMEM struct scenario_data {
 	k_thread_stack_t *stack;
 
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	k_thread_stack_t *stack_mapped;
+#endif
+
 	/* If this was declared with K_THREAD_STACK_DEFINE and not
 	 * K_KERNEL_STACK_DEFINE
 	 */
@@ -89,7 +93,7 @@ ZTEST_BMEM struct scenario_data {
 
 void stack_buffer_scenarios(void)
 {
-	k_thread_stack_t *stack_obj = scenario_data.stack;
+	k_thread_stack_t *stack_obj;
 	size_t obj_size = scenario_data.object_size;
 	size_t stack_size, unused, carveout, reserved, alignment, adjusted;
 	uint8_t val = 0;
@@ -97,9 +101,17 @@ void stack_buffer_scenarios(void)
 	char *stack_buf;
 	volatile char *pos;
 	int ret, expected;
-	uintptr_t base = (uintptr_t)stack_obj;
+	uintptr_t base;
 	bool is_usermode;
 	long int end_space;
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	stack_obj = scenario_data.stack_mapped;
+#else
+	stack_obj = scenario_data.stack;
+#endif
+
+	base = (uintptr_t)stack_obj;
 
 #ifdef CONFIG_USERSPACE
 	is_usermode = arch_is_user_context();
@@ -211,8 +223,10 @@ void stack_buffer_scenarios(void)
 			      stack_size);
 	}
 #endif
+
 	carveout = stack_start - stack_buf;
 	printk("   - Carved-out space in buffer: %zu\n", carveout);
+
 	zassert_true(carveout < stack_size,
 		     "Suspicious carve-out space reported");
 	/* 0 unless this is a stack array */
@@ -318,12 +332,28 @@ void stest_thread_launch(uint32_t flags, bool drop)
 	k_thread_create(&test_thread, scenario_data.stack, STEST_STACKSIZE,
 			stest_thread_entry,
 			(void *)drop, NULL, NULL,
-			-1, flags, K_NO_WAIT);
+			-1, flags, K_FOREVER);
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	scenario_data.stack_mapped = test_thread.stack_info.mapped.addr;
+
+	printk("   - Memory mapped stack object %p\n", scenario_data.stack_mapped);
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+	k_thread_start(&test_thread);
 	k_thread_join(&test_thread, K_FOREVER);
 
 	ret = k_thread_stack_space_get(&test_thread, &unused);
-	zassert_equal(ret, 0, "failed to calculate unused stack space\n");
-	printk("target thread unused stack space: %zu\n", unused);
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	if (ret == -EINVAL) {
+		printk("! cannot report unused stack space due to stack no longer mapped.\n");
+	} else
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+	{
+		zassert_equal(ret, 0, "failed to calculate unused stack space\n");
+		printk("target thread unused stack space: %zu\n", unused);
+	}
 }
 
 void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
