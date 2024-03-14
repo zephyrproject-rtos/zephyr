@@ -79,6 +79,18 @@ config HAWKBIT_DDI_SECURITY_TOKEN
 	  Authentication security token for the configured Hawkbit DDI
 	  authentication mode.
 
+config HAWKBIT_CUSTOM_DEVICE_ID
+	bool "Custom device id"
+	help
+	  Be able to set the device id durring runtime to a custom value.
+
+config HAWKBIT_DEVICE_ID_MAX_LENGTH
+	int "Maximum length of the device id"
+	depends on HAWKBIT_CUSTOM_DEVICE_ID
+	default 32
+	help
+	  Maximum length of the device id.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for Hawkbit code.
