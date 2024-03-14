@@ -372,10 +372,13 @@ function(ExternalZephyrProject_Add)
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 
+  set(image_default "${CMAKE_SOURCE_DIR}/image_configurations/ALL_image_default.cmake")
+
   if(DEFINED ZBUILD_APP_TYPE)
-    set(image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
-    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES IMAGE_CONF_SCRIPT ${image_default})
+    list(APPEND image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
   endif()
+
+  set_target_properties(${ZBUILD_APPLICATION} PROPERTIES IMAGE_CONF_SCRIPT "${image_default}")
 
   if(DEFINED ZBUILD_BOARD)
     # Only set image specific board if provided.
