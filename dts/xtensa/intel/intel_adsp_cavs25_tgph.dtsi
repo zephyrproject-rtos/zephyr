@@ -92,6 +92,16 @@
 	};
 
 	soc {
+		lsbpm: lsbpm@71d50 {
+			compatible = "intel,adsp-lsbpm";
+			reg = <0x71d50 0x10>;
+		};
+
+		hsbpm: hsbpm@71d10 {
+			compatible = "intel,adsp-hsbpm";
+			reg = <0x71d10 0x10>;
+		};
+
 		shim: shim@71f00 {
 			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
