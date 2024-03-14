@@ -6,7 +6,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
       - mr_canhubk3
     tags:
       - settings
