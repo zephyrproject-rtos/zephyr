@@ -89,6 +89,8 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 
 source "drivers/gpio/Kconfig.ad5592"
 
+source "drivers/gpio/Kconfig.adp5585_gpio"
+
 source "drivers/gpio/Kconfig.axp192"
 
 source "drivers/gpio/Kconfig.b91"
