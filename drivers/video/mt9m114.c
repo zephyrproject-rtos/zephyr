@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,16 +21,30 @@ LOG_MODULE_REGISTER(mt9m114);
 #define MT9M114_CHIP_ID_VAL 0x2481
 
 /* Sysctl registers */
-#define MT9M114_CHIP_ID                         0x0000
-#define MT9M114_COMMAND_REGISTER                0x0080
-#define MT9M114_COMMAND_REGISTER_SET_STATE      (1 << 1)
-#define MT9M114_COMMAND_REGISTER_OK             (1 << 15)
+#define MT9M114_CHIP_ID                    0x0000
+#define MT9M114_COMMAND_REGISTER           0x0080
+#define MT9M114_COMMAND_REGISTER_SET_STATE (1 << 1)
+#define MT9M114_COMMAND_REGISTER_OK        (1 << 15)
+#define MT9M114_RST_AND_MISC_CONTROL       0x001A
 
 /* Camera Control registers */
-#define MT9M114_CAM_OUTPUT_FORMAT 0xC86C
+#define MT9M114_CAM_SENSOR_CFG_Y_ADDR_START     0xC800
+#define MT9M114_CAM_SENSOR_CFG_X_ADDR_START     0xC802
+#define MT9M114_CAM_SENSOR_CFG_Y_ADDR_END       0xC804
+#define MT9M114_CAM_SENSOR_CFG_X_ADDR_END       0xC806
+#define MT9M114_CAM_SENSOR_CFG_CPIPE_LAST_ROW   0xC818
+#define MT9M114_CAM_CROP_WINDOW_WIDTH           0xC858
+#define MT9M114_CAM_CROP_WINDOW_HEIGHT          0xC85A
+#define MT9M114_CAM_OUTPUT_WIDTH                0xC868
+#define MT9M114_CAM_OUTPUT_HEIGHT               0xC86A
+#define MT9M114_CAM_OUTPUT_FORMAT               0xC86C
+#define MT9M114_CAM_STAT_AWB_CLIP_WINDOW_XEND   0xC918
+#define MT9M114_CAM_STAT_AWB_CLIP_WINDOW_YEND   0xC91A
+#define MT9M114_CAM_STAT_AE_INITIAL_WINDOW_XEND 0xC920
+#define MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND 0xC922
 
 /* System Manager registers */
-#define MT9M114_SYSMGR_NEXT_STATE    0xDC00
+#define MT9M114_SYSMGR_NEXT_STATE 0xDC00
 
 /* System States */
 #define MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE 0x28
@@ -54,45 +69,118 @@ struct mt9m114_reg {
 	uint32_t value;
 };
 
-static struct mt9m114_reg mt9m114_vga_24mhz_pll[] = {
-	{0x98E, 2, 0x1000},     /* logical_address_access = 0x1000 */
-	{0xC97E, 2, 0x01},      /* cam_sysctl_pll_enable = 1 */
-	{0xC980, 2, 0x0120},    /* cam_sysctl_pll_divider_m_n = 288 */
-	{0xC982, 2, 0x0700},    /* cam_sysctl_pll_divider_p = 1792 */
-	{0xC984, 2, 0x8000},    /* cam_port_output_control = 32776 */
-	{0xC800, 2, 0x0000},    /* cam_sensor_cfg_y_addr_start = 0 */
-	{0xC802, 2, 0x0000},    /* cam_sensor_cfg_x_addr_start = 0 */
-	{0xC804, 2, 0x03CD},    /* cam_sensor_cfg_y_addr_end = 973 */
-	{0xC806, 2, 0x050D},    /* cam_sensor_cfg_x_addr_end = 1293 */
-	{0xC808, 4, 0x2DC6C00}, /* cam_sensor_cfg_pixclk = 48000000 */
-	{0xC80C, 2, 0x0001},    /* cam_sensor_cfg_row_speed = 1 */
-	{0xC80E, 2, 0x00DB},    /* cam_sensor_cfg_fine_integ_min = 219 */
-	{0xC810, 2, 0x07C2},    /* cam_sensor_cfg_fine_integ_max = 1986 */
-	{0xC812, 2, 0x02FE},    /* cam_sensor_cfg_frame_length_lines = 766 */
-	{0xC814, 2, 0x0845},    /* cam_sensor_cfg_line_length_pck = 2117 */
-	{0xC816, 2, 0x0060},    /* cam_sensor_cfg_fine_correction = 96 */
-	{0xC818, 2, 0x01E3},    /* cam_sensor_cfg_cpipe_last_row = 483 */
-	{0xC826, 2, 0x0020},    /* cam_sensor_cfg_reg_0_data = 32 */
-	{0xC834, 2, 0x0110},    /* cam_sensor_control_read_mode = 272 */
-	{0xC854, 2, 0x0000},    /* cam_crop_window_xoffset = 0 */
-	{0xC856, 2, 0x0000},    /* cam_crop_window_yoffset = 0 */
-	{0xC858, 2, 0x0280},    /* cam_crop_window_width = 640 */
-	{0xC85A, 2, 0x01E0},    /* cam_crop_window_height = 480 */
-	{0xC85C, 1, 0x03},      /* cam_crop_cropmode = 3 */
-	{0xC868, 2, 0x0280},    /* cam_output_width = 640 */
-	{0xC86A, 2, 0x01E0},    /* cam_output_height = 480 */
-	{0xC878, 1, 0x00},      /* cam_aet_aemode = 0 */
-	{0xC88C, 2, 0x1D9A},    /* cam_aet_max_frame_rate = 7578 */
-	{0xC914, 2, 0x0000},    /* cam_stat_awb_clip_window_xstart = 0 */
-	{0xC88E, 2, 0x1D9A},    /* cam_aet_min_frame_rate = 7578 */
-	{0xC916, 2, 0x0000},    /* cam_stat_awb_clip_window_ystart = 0 */
-	{0xC918, 2, 0x027F},    /* cam_stat_awb_clip_window_xend = 639 */
-	{0xC91A, 2, 0x01DF},    /* cam_stat_awb_clip_window_yend = 479 */
-	{0xC91C, 2, 0x0000},    /* cam_stat_ae_initial_window_xstart = 0 */
-	{0xC91E, 2, 0x0000},    /* cam_stat_ae_initial_window_ystart = 0 */
-	{0xC920, 2, 0x007F},    /* cam_stat_ae_initial_window_xend = 127 */
-	{0xC922, 2, 0x005F},    /* cam_stat_ae_initial_window_yend = 95 */
+struct mt9m114_resolution_config {
+	uint16_t width;
+	uint16_t height;
+	struct mt9m114_reg *params;
+};
+
+static struct mt9m114_reg mt9m114_init_config[] = {
+	{0x098E, 2, 0x1000},    /* LOGICAL_ADDRESS_ACCESS */
+	{0xC97E, 1, 0x01},      /* CAM_SYSCTL_PLL_ENABLE */
+	{0xC980, 2, 0x0120},    /* CAM_SYSCTL_PLL_DIVIDER_M_N = 288 */
+	{0xC982, 2, 0x0700},    /* CAM_SYSCTL_PLL_DIVIDER_P = 1792 */
+	{0xC808, 4, 0x2DC6C00}, /* CAM_SENSOR_CFG_PIXCLK = 48 Mhz */
+	{0x316A, 2, 0x8270},    /* Auto txlo_row for hot pixel and linear full well optimization */
+	{0x316C, 2, 0x8270},    /* Auto txlo for hot pixel and linear full well optimization */
+	{0x3ED0, 2, 0x2305},    /* Eclipse setting, ecl range=1, ecl value=2, ivln=3 */
+	{0x3ED2, 2, 0x77CF},    /* TX_hi = 12 */
+	{0x316E, 2, 0x8202}, /* Auto ecl , threshold 2x, ecl=0 at high gain, ecl=2 for low gain */
+	{0x3180, 2, 0x87FF}, /* Enable delta dark */
+	{0x30D4, 2, 0x6080}, /* Disable column correction due to AE oscillation problem */
+	{0xA802, 2, 0x0008}, /* RESERVED_AE_TRACK_02 */
+	{0x3E14, 2, 0xFF39}, /* Enabling pixout clamping to VAA to solve column band issue */
+	{0xC80C, 2, 0x0001}, /* CAM_SENSOR_CFG_ROW_SPEED */
+	{0xC80E, 2, 0x00DB}, /* CAM_SENSOR_CFG_FINE_INTEG_TIME_MIN = 219 */
+	{0xC810, 2, 0x07C2}, /* CAM_SENSOR_CFG_FINE_INTEG_TIME_MAX = 1986 */
+	{0xC812, 2, 0x02FE}, /* CAM_SENSOR_CFG_FRAME_LENGTH_LINES = 766 */
+	{0xC814, 2, 0x0845}, /* CAM_SENSOR_CFG_LINE_LENGTH_PCK = 2117 */
+	{0xC816, 2, 0x0060}, /* CAM_SENSOR_CFG_FINE_CORRECTION = 96 */
+	{0xC826, 2, 0x0020}, /* CAM_SENSOR_CFG_REG_0_DATA = 32 */
+	{0xC834, 2, 0x0000}, /* CAM_SENSOR_CONTROL_READ_MODE */
+	{0xC854, 2, 0x0000}, /* CAM_CROP_WINDOW_XOFFSET */
+	{0xC856, 2, 0x0000}, /* CAM_CROP_WINDOW_YOFFSET */
+	{0xC85C, 1, 0x03},   /* CAM_CROP_CROPMODE */
+	{0xC878, 1, 0x00},   /* CAM_AET_AEMODE */
+	{0xC88C, 2, 0x1D9A}, /* CAM_AET_MAX_FRAME_RATE = 7578 */
+	{0xC88E, 2, 0x1D9A}, /* CAM_AET_MIN_FRAME_RATE = 7578 */
+	{0xC914, 2, 0x0000}, /* CAM_STAT_AWB_CLIP_WINDOW_XSTART */
+	{0xC916, 2, 0x0000}, /* CAM_STAT_AWB_CLIP_WINDOW_YSTART */
+	{0xC91C, 2, 0x0000}, /* CAM_STAT_AE_INITIAL_WINDOW_XSTART */
+	{0xC91E, 2, 0x0000}, /* CAM_STAT_AE_INITIAL_WINDOW_YSTART */
+	{0x001E, 2, 0x0777}, /* REG_PAD_SLEW */
+	{0xC86E, 2, 0x0038}, /* CAM_OUTPUT_FORMAT_YUV_CLIP for CSI */
+	{0xC984, 2, 0x8000}, /* CAM_PORT_OUTPUT_CONTROL, for MIPI CSI-2 interface : 0x8000 */
 	{/* NULL terminated */}};
+
+static struct mt9m114_reg mt9m114_480_272[] = {
+	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x00D4},     /* 212 */
+	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x00A4},     /* 164 */
+	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x02FB},       /* 763 */
+	{MT9M114_CAM_SENSOR_CFG_X_ADDR_END, 2, 0x046B},       /* 1131 */
+	{MT9M114_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 0x0223},   /* 547 */
+	{MT9M114_CAM_CROP_WINDOW_WIDTH, 2, 0x03C0},           /* 960 */
+	{MT9M114_CAM_CROP_WINDOW_HEIGHT, 2, 0x0220},          /* 544 */
+	{MT9M114_CAM_OUTPUT_WIDTH, 2, 0x01E0},                /* 480 */
+	{MT9M114_CAM_OUTPUT_HEIGHT, 2, 0x0110},               /* 272 */
+	{MT9M114_CAM_STAT_AWB_CLIP_WINDOW_XEND, 2, 0x01DF},   /* 479 */
+	{MT9M114_CAM_STAT_AWB_CLIP_WINDOW_YEND, 2, 0x010F},   /* 271 */
+	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 0x005F}, /* 95 */
+	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x0035}, /* 53 */
+	{/* NULL terminated */}};
+
+static struct mt9m114_reg mt9m114_640_480[] = {
+	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x0000},     /* 0 */
+	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x0000},     /* 0 */
+	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x03CD},       /* 973 */
+	{MT9M114_CAM_SENSOR_CFG_X_ADDR_END, 2, 0x050D},       /* 1293 */
+	{MT9M114_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 0x01E3},   /* 483 */
+	{MT9M114_CAM_CROP_WINDOW_WIDTH, 2, 0x0280},           /* 640 */
+	{MT9M114_CAM_CROP_WINDOW_HEIGHT, 2, 0x01E0},          /* 480 */
+	{MT9M114_CAM_OUTPUT_WIDTH, 2, 0x0280},                /* 640 */
+	{MT9M114_CAM_OUTPUT_HEIGHT, 2, 0x01E0},               /* 480 */
+	{MT9M114_CAM_STAT_AWB_CLIP_WINDOW_XEND, 2, 0x027F},   /* 639 */
+	{MT9M114_CAM_STAT_AWB_CLIP_WINDOW_YEND, 2, 0x01DF},   /* 479 */
+	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 0x007F}, /* 127 */
+	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x005F}, /* 95 */
+	{/* NULL terminated */}};
+
+static struct mt9m114_reg mt9m114_1280_720[] = {
+	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x007C},     /* 124 */
+	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x0004},     /* 4 */
+	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x0353},       /* 851 */
+	{MT9M114_CAM_SENSOR_CFG_X_ADDR_END, 2, 0x050B},       /* 1291 */
+	{MT9M114_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 0x02D3},   /* 723 */
+	{MT9M114_CAM_CROP_WINDOW_WIDTH, 2, 0x0500},           /* 1280 */
+	{MT9M114_CAM_CROP_WINDOW_HEIGHT, 2, 0x02D0},          /* 720 */
+	{MT9M114_CAM_OUTPUT_WIDTH, 2, 0x0500},                /* 1280 */
+	{MT9M114_CAM_OUTPUT_HEIGHT, 2, 0x02D0},               /* 720 */
+	{MT9M114_CAM_STAT_AWB_CLIP_WINDOW_XEND, 2, 0x04FF},   /* 1279 */
+	{MT9M114_CAM_STAT_AWB_CLIP_WINDOW_YEND, 2, 0x02CF},   /* 719 */
+	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 0x00FF}, /* 255 */
+	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x008F}, /* 143 */
+	{/* NULL terminated */}};
+
+static struct mt9m114_resolution_config resolutionConfigs[] = {
+	{.width = 480, .height = 272, .params = mt9m114_480_272},
+	{.width = 640, .height = 480, .params = mt9m114_640_480},
+	{.width = 1280, .height = 720, .params = mt9m114_1280_720},
+};
+
+#define MT9M114_VIDEO_FORMAT_CAP(width, height, format)                                            \
+	{                                                                                          \
+		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
+		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
+	}
+
+static const struct video_format_cap fmts[] = {
+	MT9M114_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_RGB565),
+	MT9M114_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_YUYV),
+	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),
+	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),
+	MT9M114_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_RGB565),
+	MT9M114_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_YUYV),
+	{0}};
 
 static inline int i2c_burst_read16_dt(const struct i2c_dt_spec *spec, uint16_t start_addr,
 				      uint8_t *buf, uint32_t num_bytes)
@@ -175,6 +263,22 @@ static int mt9m114_read_reg(const struct device *dev, uint16_t reg_addr, uint8_t
 	return 0;
 }
 
+static int mt9m114_modify_reg(const struct device *dev, const uint16_t addr, const uint8_t mask,
+			      const uint8_t val)
+{
+	uint8_t oldVal;
+	uint8_t newVal;
+	int ret = mt9m114_read_reg(dev, addr, sizeof(oldVal), &oldVal);
+
+	if (ret) {
+		return ret;
+	}
+
+	newVal = (oldVal & ~mask) | (val & mask);
+
+	return mt9m114_write_reg(dev, addr, sizeof(newVal), &newVal);
+}
+
 static int mt9m114_write_all(const struct device *dev, struct mt9m114_reg *reg)
 {
 	int i = 0;
@@ -189,6 +293,26 @@ static int mt9m114_write_all(const struct device *dev, struct mt9m114_reg *reg)
 
 		i++;
 	}
+
+	return 0;
+}
+
+static int mt9m114_software_reset(const struct device *dev)
+{
+	int ret = mt9m114_modify_reg(dev, MT9M114_RST_AND_MISC_CONTROL, 0x01, 0x01);
+
+	if (ret) {
+		return ret;
+	}
+
+	k_sleep(K_MSEC(1));
+
+	ret = mt9m114_modify_reg(dev, MT9M114_RST_AND_MISC_CONTROL, 0x01, 0x00);
+	if (ret) {
+		return ret;
+	}
+
+	k_sleep(K_MSEC(45));
 
 	return 0;
 }
@@ -251,9 +375,6 @@ static int mt9m114_set_output_format(const struct device *dev, int pixel_format)
 		output_format = (MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV | (1U << 1U));
 	} else if (pixel_format == VIDEO_PIX_FMT_RGB565) {
 		output_format = (MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB | (1U << 1U));
-	} else {
-		LOG_ERR("Image format not supported");
-		return -ENOTSUP;
 	}
 
 	ret = mt9m114_write_reg(dev, MT9M114_CAM_OUTPUT_FORMAT, sizeof(output_format),
@@ -267,16 +388,19 @@ static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 {
 	struct mt9m114_data *drv_data = dev->data;
 	int ret;
+	int i = 0;
 
-	/* we support RGB565 and YUV output pixel formats for now */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Unsupported output pixel format");
-		return -ENOTSUP;
+	while (fmts[i].pixelformat) {
+		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
+		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
+		    fmt->height <= fmts[i].height_max) {
+			break;
+		}
+		i++;
 	}
 
-	/* we only support one format size for now (VGA) */
-	if (fmt->height != 480 || fmt->width != 640) {
-		LOG_ERR("Unsupported output size format");
+	if (i == (ARRAY_SIZE(fmts) - 1)) {
+		LOG_ERR("Unsupported pixel format or resolution");
 		return -ENOTSUP;
 	}
 
@@ -287,24 +411,29 @@ static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 
 	drv_data->fmt = *fmt;
 
-	/* Configure Sensor */
-	ret = mt9m114_write_all(dev, mt9m114_vga_24mhz_pll);
+	/* Set output pixel format */
+	ret = mt9m114_set_output_format(dev, fmt->pixelformat);
 	if (ret) {
-		LOG_ERR("Unable to write mt9m114 config");
+		LOG_ERR("Unable to set pixel format");
 		return ret;
 	}
 
-	/* Set output format */
-	ret = mt9m114_set_output_format(dev, fmt->pixelformat);
-	if (ret) {
-		LOG_ERR("Unable to set output format");
-		return ret;
+	/* Set output resolution */
+	for (i = 0; i < ARRAY_SIZE(resolutionConfigs); i++) {
+		if (fmt->width == resolutionConfigs[i].width &&
+		    fmt->height == resolutionConfigs[i].height) {
+			ret = mt9m114_write_all(dev, resolutionConfigs[i].params);
+			if (ret) {
+				LOG_ERR("Unable to set resolution");
+				return ret;
+			}
+
+			break;
+		}
 	}
 
 	/* Apply Config */
-	mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
-
-	return 0;
+	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
 }
 
 static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
@@ -326,17 +455,6 @@ static int mt9m114_stream_stop(const struct device *dev)
 {
 	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 }
-
-#define MT9M114_VIDEO_FORMAT_CAP(width, height, format)                                            \
-	{                                                                                          \
-		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
-		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
-	}
-
-static const struct video_format_cap fmts[] = {
-	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565), /* VGA RGB565 */
-	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   /* VGA YUYV */
-	{0}};
 
 static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
 			    struct video_caps *caps)
@@ -373,11 +491,21 @@ static int mt9m114_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* set default/init format VGA RGB565 */
+	/* SW reset */
+	mt9m114_software_reset(dev);
+
+	/* Init registers */
+	ret = mt9m114_write_all(dev, mt9m114_init_config);
+	if (ret) {
+		LOG_ERR("Unable to initialize mt9m114 config");
+		return ret;
+	}
+
+	/* Set default format to 480x272 RGB565 */
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = 640;
-	fmt.height = 480;
-	fmt.pitch = 640 * 2;
+	fmt.width = 480;
+	fmt.height = 272;
+	fmt.pitch = fmt.width * 2;
 
 	ret = mt9m114_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
