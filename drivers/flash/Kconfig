@@ -132,6 +132,8 @@ source "drivers/flash/Kconfig.stm32_qspi"
 
 source "drivers/flash/Kconfig.stm32_ospi"
 
+source "drivers/flash/Kconfig.stm32_xspi"
+
 source "drivers/flash/Kconfig.sam0"
 
 source "drivers/flash/Kconfig.sam"
