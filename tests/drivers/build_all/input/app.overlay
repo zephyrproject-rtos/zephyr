@@ -248,6 +248,8 @@
 				zephyr,axis-y = <1>;
 				invert-x;
 				invert-y;
+				force-awake;
+				smart-mode;
 			};
 		};
 	};
