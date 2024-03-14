@@ -26,7 +26,9 @@
 #endif
 #define SPI_FLASH_SECTOR_SIZE        4096
 
-#if defined(CONFIG_FLASH_STM32_OSPI) || defined(CONFIG_FLASH_STM32_QSPI)
+#if defined(CONFIG_FLASH_STM32_OSPI) || \
+	defined(CONFIG_FLASH_STM32_QSPI) || \
+	defined(CONFIG_FLASH_STM32_XSPI)
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
 
