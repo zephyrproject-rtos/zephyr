@@ -209,11 +209,11 @@ option bit TZEN will be set).
 
    .. code-block:: bash
 
-      $ ./build/tfm/regression.sh
+      $ ./build/tfm/api_ns/regression.sh
       $ west flash
 
 Please note that, after having run a TFM sample on the board, you will need to
-run `./build/tfm/regression.sh` once more to clean up the board from secure
+run `./build/tfm/api_ns/regression.sh` once more to clean up the board from secure
 options and get back the platform back to a "normal" state and be able to run
 usual, non-TFM, binaries.
 Also note that, even then, TZEN will remain set, and you will need to use
@@ -326,36 +326,6 @@ You should see the following message on the console:
 .. code-block:: console
 
    Hello World! arm
-
-Building a secure/non-secure with Arm |reg| TrustZone |reg|
------------------------------------------------------------
-
-The TF-M integration sample :ref:`tfm_ipc` can be run on a ST Nucleo L552ZE Q.
-In TF-M configuration, Zephyr is run on the non-secure domain. A non-secure image
-can be generated using ``nucleo_l552ze_q/stm32l552xx/ns`` as build target.
-
-.. code-block:: bash
-
-   $ west build -b nucleo_l552ze_q/stm32l552xx/ns path/to/source/directory
-
-Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
-is run automatically in a post-build step to make some required flash layout changes.
-
-Once the build is completed, run the following script to initialize the option bytes.
-
-.. code-block:: bash
-
-   $ build/tfm/regression.sh
-
-Finally, to flash the board, run:
-
-.. code-block:: bash
-
-   $ west flash
-
-Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
-(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
-(which is used for initialization) is available in the PATH.
 
 Debugging
 =========

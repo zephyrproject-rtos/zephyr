@@ -124,7 +124,7 @@ Build Zephyr with a non-secure configuration:
 
    .. code-block:: bash
 
-      $ west build -b stm32l562e_dk_ns samples/tfm_integration/tfm_ipc/
+      $ west build -b stm32l562e_dk/stm32l562xx/ns samples/tfm_integration/tfm_ipc/
 
 The script to initialize the device is available in the ``build/tfm`` folder:
 
@@ -134,7 +134,7 @@ Run them in the following order to flash the board:
 
    .. code-block:: bash
 
-      $ ./build/tfm/regression.sh
+      $ ./build/tfm/api_ns/regression.sh
       $ west flash
 
  .. note::
