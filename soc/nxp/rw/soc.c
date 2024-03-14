@@ -222,6 +222,12 @@ __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kSFRO_to_CTIMER3);
 #endif
 #endif /* CONFIG_COUNTER_MCUX_CTIMER */
+
+#ifdef CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kFREEMRT_RST_SHIFT_RSTn);
+#endif
+
 }
 
 /**
