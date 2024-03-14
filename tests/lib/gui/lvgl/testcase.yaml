@@ -3,8 +3,8 @@ common:
     - display
     - gui
   platform_allow:
-    - native_posix_64
-    - native_sim_64
+    - native_posix/native/64
+    - native_sim/native/64
     - native_sim
   integration_platforms:
     - native_sim
