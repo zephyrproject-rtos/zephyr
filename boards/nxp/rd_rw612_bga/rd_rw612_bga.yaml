@@ -21,3 +21,4 @@ supported:
   - i2c
   - entropy
   - watchdog
+  - counter
