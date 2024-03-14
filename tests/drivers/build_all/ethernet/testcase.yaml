@@ -14,7 +14,7 @@ tests:
       - CONFIG_SPI=y
     platform_allow:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
 
   net.ethernet.build.stm32_ethernet:
     filter: dt_compat_enabled("st,stm32-ethernet")
