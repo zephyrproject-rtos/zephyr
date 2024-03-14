@@ -76,6 +76,14 @@
 		interrupts = <123 0>;
 	};
 
+	wwdt: watchdog@e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xe000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
 	hsgpio0: hsgpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x4000>;
