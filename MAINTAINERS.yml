@@ -2176,6 +2176,7 @@ Kernel:
     - dcpleung
     - cfriedt
     - npitre
+    - TaiJuWu
   files:
     - doc/kernel/
     - include/zephyr/kernel*.h
