@@ -4,7 +4,7 @@ tests:
   filesystem.ext2.default:
     platform_allow:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
       - hifive_unmatched
       - bl5340_dvk/nrf5340/cpuapp
     extra_args:
@@ -13,7 +13,7 @@ tests:
   filesystem.ext2.big:
     platform_allow:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     extra_args:
       - CONF_FILE=prj_big.conf
       - EXTRA_DTC_OVERLAY_FILE="ramdisk_big.overlay"
@@ -29,5 +29,5 @@ tests:
   filesystem.ext2.flash:
     platform_allow:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     extra_args: CONF_FILE=prj_flash.conf
