@@ -13,6 +13,6 @@ tests:
       - qemu_x86
       - pinnacle_100_dvk
       - mg100
-      - native_sim_64
+      - native_sim/native/64
     integration_platforms:
       - qemu_x86

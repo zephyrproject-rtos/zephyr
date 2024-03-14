@@ -67,7 +67,7 @@ Then, locate your zephyr directory and type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/mqtt_sn_publisher
-   :board: native_sim_64
+   :board: native_sim/native/64
    :goals: run
    :compact:
 
