@@ -128,3 +128,11 @@ arduino_i2c: &flexcomm2 {
 &dma0 {
 	status = "okay";
 };
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
