@@ -112,6 +112,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 		}
 
 		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
+			struct bt_conn_le_create_param *create_param;
 			struct bt_le_conn_param *param;
 			const struct bt_uuid *uuid;
 			uint16_t u16;
@@ -129,12 +130,24 @@ static bool eir_found(struct bt_data *data, void *user_data)
 				continue;
 			}
 
+			printk("Creating connection with Coded PHY support\n");
 			param = BT_LE_CONN_PARAM_DEFAULT;
-			err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-						param, &default_conn);
+			create_param = BT_CONN_LE_CREATE_CONN;
+			create_param->options |= BT_CONN_LE_OPT_CODED;
+			err = bt_conn_le_create(addr, create_param, param,
+						&default_conn);
 			if (err) {
-				printk("Create conn failed (err %d)\n", err);
-				start_scan();
+				printk("Create connection with Coded PHY support failed (err %d)\n",
+				       err);
+
+				printk("Creating non-Coded PHY connection\n");
+				create_param->options &= ~BT_CONN_LE_OPT_CODED;
+				err = bt_conn_le_create(addr, create_param,
+							param, &default_conn);
+				if (err) {
+					printk("Create connection failed (err %d)\n", err);
+					start_scan();
+				}
 			}
 
 			return false;
@@ -153,9 +166,12 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
 	       dev, type, ad->len, rssi);
 
-	/* We're only interested in connectable events */
+	/* We're only interested in legacy connectable events or
+	 * possible extended advertising that are connectable.
+	 */
 	if (type == BT_GAP_ADV_TYPE_ADV_IND ||
-	    type == BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
+	    type == BT_GAP_ADV_TYPE_ADV_DIRECT_IND ||
+	    type == BT_GAP_ADV_TYPE_EXT_ADV) {
 		bt_data_parse(ad, eir_found, (void *)addr);
 	}
 }
@@ -168,15 +184,22 @@ static void start_scan(void)
 	 * devices that might update their advertising data at runtime. */
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
-		.options    = BT_LE_SCAN_OPT_NONE,
+		.options    = BT_LE_SCAN_OPT_CODED,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};
 
 	err = bt_le_scan_start(&scan_param, device_found);
 	if (err) {
-		printk("Scanning failed to start (err %d)\n", err);
-		return;
+		printk("Scanning with Coded PHY support failed (err %d)\n", err);
+
+		printk("Scanning without Coded PHY\n");
+		scan_param.options &= ~BT_LE_SCAN_OPT_CODED;
+		err = bt_le_scan_start(&scan_param, device_found);
+		if (err) {
+			printk("Scanning failed to start (err %d)\n", err);
+			return;
+		}
 	}
 
 	printk("Scanning successfully started\n");
