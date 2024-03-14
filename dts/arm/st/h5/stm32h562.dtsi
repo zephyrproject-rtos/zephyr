@@ -6,6 +6,8 @@
 
 #include <st/h5/stm32h5.dtsi>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
+/* keep both header files for compatibility */
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 
 / {
 	clocks {
@@ -65,12 +67,12 @@
 			status = "disabled";
 		};
 
-		lptim4: timers@44004C00 {
+		lptim4: timers@44004c00 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x2000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x44004C00 0x400>;
+			reg = <0x44004c00 0x400>;
 			interrupts = <128 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
@@ -224,11 +226,11 @@
 			status = "disabled";
 		};
 
-		octospi1: octospi@47001400 {
-			compatible = "st,stm32-ospi";
+		xspi1: xspi@47001400 {
+			compatible = "st,stm32-xspi";
 			reg = <0x47001400 0x400>;
 			interrupts = <78 0>;
-			clock-names = "ospix", "ospi-ker";
+			clock-names = "xspix", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00100000>,
 				<&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
 			#address-cells = <1>;
