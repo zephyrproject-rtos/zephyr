@@ -47,6 +47,8 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | TRNG      | on-chip    | entropy                           |
 +-----------+------------+-----------------------------------+
+| WWDT      | on-chip    | watchdog                          |
++-----------+------------+-----------------------------------+
 
 
 The default configuration can be found in the defconfig file:
