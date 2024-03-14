@@ -404,6 +404,7 @@ SECTIONS
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
     _stext = .;
+    __text_region_start = .;
     _text_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
@@ -431,6 +432,7 @@ SECTIONS
     . += 16;
 
     _text_end = ABSOLUTE(.);
+    __text_region_end = .;
     _etext = .;
 
     /**
