@@ -2475,6 +2475,7 @@ hawkBit:
   status: odd fixes
   collaborators:
     - ycsin
+    - maass-hamburg
   files:
     - subsys/mgmt/hawkbit/
     - include/zephyr/mgmt/hawkbit.h
