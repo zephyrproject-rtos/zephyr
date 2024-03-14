@@ -3,12 +3,12 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-config ESP32C3_SYS_TIMER
-	bool "ESP32C3 sys-timer support"
+config ESP32_SYS_TIMER
+	bool "ESP32 sys-timer support (ESP32Cx series)"
 	depends on SOC_SERIES_ESP32C3
 	default y
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
-	  This option enables the system timer driver for the Espressif ESP32C3
+	  This option enables the system timer driver for the Espressif ESP32Cx
 	  and provides the standard "system clock driver" interface.
