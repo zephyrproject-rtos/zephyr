@@ -128,7 +128,7 @@ static int wdt_nrf_feed(const struct device *dev, int channel_id)
 	const struct wdt_nrfx_config *config = dev->config;
 	struct wdt_nrfx_data *data = dev->data;
 
-	if (channel_id > data->m_allocated_channels) {
+	if ((channel_id >= data->m_allocated_channels) || (channel_id < 0)) {
 		return -EINVAL;
 	}
 
