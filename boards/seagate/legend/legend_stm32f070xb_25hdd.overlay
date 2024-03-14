@@ -10,7 +10,6 @@
 
 	aliases {
 		pwm-led0 = &pwm_led0;
-		led-strip = &led_strip_spi;
 	};
 
 	led_pwm: pwmleds {
