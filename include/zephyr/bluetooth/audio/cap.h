@@ -226,6 +226,9 @@ struct bt_cap_unicast_audio_start_stream_param {
 	 * The @p codec_cfg.meta shall include a list of CCIDs
 	 * (@ref BT_AUDIO_METADATA_TYPE_CCID_LIST) as well as a non-0
 	 * stream context (@ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) bitfield.
+	 *
+	 * This value is assigned to the @p stream, and shall remain valid while the stream is
+	 * non-idle.
 	 */
 	struct bt_audio_codec_cfg *codec_cfg;
 };
