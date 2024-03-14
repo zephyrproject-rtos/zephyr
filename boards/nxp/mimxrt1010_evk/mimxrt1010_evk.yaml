@@ -26,4 +26,5 @@ supported:
   - usb_device
   - spi
   - adc
+  - gpio
 vendor: nxp
