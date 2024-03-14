@@ -1,0 +1,18 @@
+# STM32 xSPI flash driver configuration options
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_STM32_XSPI
+	bool "STM32 XSPI Flash driver"
+	default y
+	depends on DT_HAS_ST_STM32_XSPI_ENABLED && DT_HAS_ST_STM32_XSPI_NOR_ENABLED
+	select USE_STM32_HAL_XSPI
+	select USE_STM32_LL_DLYB
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_JESD216
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+
+	help
+	  Enable XSPI-NOR support on the STM32 family of processors.
