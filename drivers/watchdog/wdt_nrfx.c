@@ -60,13 +60,22 @@ static int wdt_nrf_disable(const struct device *dev)
 {
 #if NRFX_WDT_HAS_STOP
 	const struct wdt_nrfx_config *config = dev->config;
+	struct wdt_nrfx_data *data = dev->data;
 	nrfx_err_t err_code;
+	nrfx_wdt_channel_id channel_id;
 
 	err_code = nrfx_wdt_stop(&config->wdt);
 
 	if (err_code != NRFX_SUCCESS) {
 		return -ENOTSUP;
 	}
+
+	nrfx_wdt_channels_free(&config->wdt);
+
+	for (channel_id = 0; channel_id < data->m_allocated_channels; channel_id++) {
+		data->m_callbacks[channel_id] = NULL;
+	}
+	data->m_allocated_channels = 0;
 
 	return 0;
 #else
