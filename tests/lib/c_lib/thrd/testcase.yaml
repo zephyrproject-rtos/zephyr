@@ -6,7 +6,7 @@ common:
     - qemu_x86
   platform_exclude:
     - native_posix
-    - native_posix_64
+    - native_posix/native/64
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc
