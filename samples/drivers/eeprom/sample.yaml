@@ -7,11 +7,11 @@ tests:
     platform_allow:
       - gd32f450i_eval
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     integration_platforms:
-      - native_sim_64
+      - native_sim/native/64
     harness: console
     harness_config:
       type: one_line
