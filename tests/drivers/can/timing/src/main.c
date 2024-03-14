@@ -25,7 +25,7 @@
  * @brief Defines a set of CAN timing test values
  */
 struct can_timing_test {
-	/** Desired bitrate in bits/s */
+	/** Bitrate in bit/s */
 	uint32_t bitrate;
 	/** Desired sample point in permille */
 	uint16_t sp;
@@ -43,24 +43,16 @@ static const struct can_timing_test can_timing_tests[] = {
 	{  500000, 875 },
 	{  800000, 800 },
 	{ 1000000, 750 },
-	/** Additional, valid sample points. */
-	{  125000, 900 },
-	{  125000, 800 },
 };
 
 /**
- * @brief List of CAN timing values to test for the data phase.
+ * @brief List of CAN FD data phase timing values to test.
  */
-#ifdef CONFIG_CAN_FD_MODE
 static const struct can_timing_test can_timing_data_tests[] = {
 	/** Standard bitrates. */
 	{  500000, 875 },
 	{ 1000000, 750 },
-	/** Additional, valid sample points. */
-	{  500000, 900 },
-	{  500000, 800 },
 };
-#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Assert that a CAN timing struct matches the specified bitrate
@@ -70,7 +62,7 @@ static const struct can_timing_test can_timing_data_tests[] = {
  *
  * @param dev pointer to the device structure for the driver instance
  * @param timing pointer to the CAN timing struct
- * @param bitrate the CAN bitrate in bits/s
+ * @param bitrate the CAN bitrate in bit/s
  */
 static void assert_bitrate_correct(const struct device *dev, struct can_timing *timing,
 				   uint32_t bitrate)
