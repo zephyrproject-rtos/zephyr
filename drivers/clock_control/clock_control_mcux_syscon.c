@@ -249,6 +249,16 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetDmicClkFreq();
 		break;
 #endif
+
+#if defined(CONFIG_ADC_MCUX_LPADC)
+	case MCUX_LPADC1_CLK:
+#if defined(CONFIG_SOC_LPC55S36)
+		*rate = CLOCK_GetAdcClkFreq(0);
+#else
+		*rate = CLOCK_GetAdcClkFreq();
+#endif
+		break;
+#endif
 	}
 
 	return 0;

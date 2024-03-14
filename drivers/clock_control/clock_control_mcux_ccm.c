@@ -377,6 +377,15 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 					/ (CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
 	} break;
 #endif
+
+#ifdef CONFIG_ADC_MCUX_LPADC
+	case IMX_CCM_LPADC1_CLK:
+		*rate = CLOCK_GetRootClockFreq(kCLOCK_Root_Adc1);
+		break;
+	case IMX_CCM_LPADC2_CLK:
+		*rate = CLOCK_GetRootClockFreq(kCLOCK_Root_Adc2);
+		break;
+#endif
 	}
 
 	return 0;
