@@ -19,3 +19,4 @@ supported:
   - gpio
   - spi
   - i2c
+  - entropy

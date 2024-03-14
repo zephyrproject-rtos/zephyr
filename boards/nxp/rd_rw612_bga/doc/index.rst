@@ -45,6 +45,8 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | I2C       | on-chip    | i2c                               |
 +-----------+------------+-----------------------------------+
+| TRNG      | on-chip    | entropy                           |
++-----------+------------+-----------------------------------+
 
 
 The default configuration can be found in the defconfig file:
