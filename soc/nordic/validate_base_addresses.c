@@ -90,7 +90,7 @@
  */
 #define CHECK_DT_REG(lbl, mdk_addr)					\
 	BUILD_ASSERT(							\
-		UTIL_OR(UTIL_NOT(DT_NODE_EXISTS(DT_NODELABEL(lbl))),	\
+		UTIL_OR(UTIL_NOT(DT_REG_HAS_IDX(DT_NODELABEL(lbl), 0)),	\
 			(DT_REG_ADDR(DT_NODELABEL(lbl)) == (uint32_t)(mdk_addr))))
 
 /**
