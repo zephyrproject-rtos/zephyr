@@ -17,8 +17,8 @@ tests:
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
     integration_platforms:
       - frdm_k64f
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
