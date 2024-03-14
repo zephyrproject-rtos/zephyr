@@ -8,6 +8,6 @@ arch: riscv
 toolchain:
   - zephyr
 ram: 62
-flash: 64
+flash: 62
 supported:
   - gpio
