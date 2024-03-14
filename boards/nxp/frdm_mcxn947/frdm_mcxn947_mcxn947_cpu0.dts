@@ -17,29 +17,12 @@
 		/delete-node/ cpu@1;
 	};
 
-	aliases{
-		sw0 = &user_button_3;
-		sw1 = &user_button_2;
-	};
-
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
-	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-		user_button_2: button_0 {
-			label = "User SW2";
-			gpios = <&gpio0 29 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-		};
-		user_button_3: button_1 {
-			label = "User SW3";
-			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-		};
 	};
 };
 
@@ -74,6 +57,10 @@
 };
 
 &red_led {
+	status = "okay";
+};
+
+&user_button_2 {
 	status = "okay";
 };
 
