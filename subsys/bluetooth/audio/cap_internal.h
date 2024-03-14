@@ -59,7 +59,7 @@ struct bt_cap_initiator_proc_param {
 		struct {
 			struct bt_conn *conn;
 			struct bt_bap_ep *ep;
-			struct bt_audio_codec_cfg codec_cfg;
+			struct bt_audio_codec_cfg *codec_cfg;
 		} start;
 		struct {
 			/** Codec Specific Capabilities Metadata count */
