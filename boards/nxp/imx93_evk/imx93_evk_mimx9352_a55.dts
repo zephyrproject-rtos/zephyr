@@ -17,6 +17,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,sram = &sram0;
+		zephyr,canbus = &flexcan2;
 	};
 
 	cpus {
@@ -62,6 +63,14 @@
 			label = "BTN2";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	flexcan2_phy: can-phy-tja1057 {
+		compatible = "nxp,tja1057", "can-transceiver-gpio";
+		max-bitrate = <8000000>;
+		standby-gpios = <&gpio_exp0 8 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+		status = "disabled";
 	};
 };
 
@@ -139,4 +148,18 @@
 
 &gpio4{
 	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	sample-point = <875>;
+	sample-point-data = <875>;
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	phys = <&flexcan2_phy>;
+	status = "disabled";
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
 };
