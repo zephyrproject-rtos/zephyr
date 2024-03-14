@@ -48,8 +48,6 @@ void power_mode_od(void)
 
 static int frdm_mcxn947_init(void)
 {
-	/* Do not re-run this clock init code if using MCUBoot */
-#ifndef CONFIG_BOOTLOADER_MCUBOOT
 	enable_lpcac();
 
 	power_mode_od();
@@ -87,7 +85,6 @@ static int frdm_mcxn947_init(void)
 
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
-#endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
