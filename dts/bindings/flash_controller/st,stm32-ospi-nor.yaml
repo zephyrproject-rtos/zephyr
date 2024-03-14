@@ -9,8 +9,8 @@ description: |
         mx25lm51245: ospi-nor-flash@70000000 {
                 compatible = "st,stm32-ospi-nor";
                 reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
-                data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
-                data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
+                data-mode = <XSPI_OCTO_MODE>; /* access on 8 data lines */
+                data-rate = <XSPI_DTR_TRANSFER>; /* access in DTR */
                 ospi-max-frequency = <DT_FREQ_M(50)>;
                 status = "okay";
         };
@@ -39,10 +39,10 @@ properties:
      The width of (Octo)SPI bus to which flash memory is connected.
 
      Possible values are :
-      - OSPI_SPI_MODE  <1> = SPI mode on 1 data line
-      - OSPI_DUAL_MODE <2> = Dual mode on 2 data lines
-      - OSPI_QUAD_MODE <4> = Quad mode on 4 data lines
-      - OSPI_OPI_MODE  <8> = Octo mode on 8 data lines
+      - XSPI_SPI_MODE  <1> = SPI mode on 1 data line
+      - XSPI_DUAL_MODE <2> = Dual mode on 2 data lines
+      - XSPI_QUAD_MODE <4> = Quad mode on 4 data lines
+      - XSPI_OCTO_MODE  <8> = Octo mode on 8 data lines
     enum:
       - 1
       - 2
@@ -55,8 +55,8 @@ properties:
      The SPI data Rate is STR or DTR
 
      Possible values are :
-      - OSPI_STR_TRANSFER <1> = Single Rate Transfer
-      - OSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with OSPI_OPI_MODE)
+      - XSPI_STR_TRANSFER <1> = Single Rate Transfer
+      - XSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with XSPI_OCTO_MODE)
     enum:
       - 1
       - 2
@@ -75,14 +75,14 @@ properties:
       tables, hence it has been assumed that NOR flash memory
       supporting 1-4-4 mode also would support fast page programming.
 
-      Intended for modes other than OSPI_OPI_MODE.
+      Intended for modes other than XSPI_OCTO_MODE.
 
       If absent, then program page opcode is determined by the
       `spi-bus-width`:
 
-      * OSPI_SPI_MODE -> PP 1-1-1 (0x02)
-      * OSPI_DUAL_MODE -> PP 1-1-2 (0xA2)
-      * OSPI_QUAD_MODE -> PP 1-4-4 (0x38)
+      * OXSPI_SPI_MODE -> PP 1-1-1 (0x02)
+      * XSPI_DUAL_MODE -> PP 1-1-2 (0xA2)
+      * XSPI_QUAD_MODE -> PP 1-4-4 (0x38)
   four-byte-opcodes:
     type: boolean
     description: |
