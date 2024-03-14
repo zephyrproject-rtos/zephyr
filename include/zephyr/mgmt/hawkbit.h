@@ -96,6 +96,26 @@ enum hawkbit_response hawkbit_probe(void);
 void hawkbit_reboot(void);
 
 /**
+ * @brief Callback to get the device identity.
+ *
+ * @param id Pointer to the buffer to store the device identity
+ * @param id_max_len The maximum length of the buffer
+ */
+typedef bool (*hawkbit_get_device_identity_cb_handler_t)(char *id, int id_max_len);
+
+/**
+ * @brief Set the device identity callback.
+ *
+ * @details This function is used to set a custom device identity callback.
+ *
+ * @param cb The callback function.
+ *
+ * @return 0 on success.
+ * @return -EINVAL if the callback is NULL.
+ */
+int hawkbit_set_device_identity_cb(hawkbit_get_device_identity_cb_handler_t cb);
+
+/**
  * @}
  */
 
