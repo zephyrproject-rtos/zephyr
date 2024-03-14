@@ -104,8 +104,8 @@ tests:
   sample.display.sdl:
     build_only: true
     platform_allow:
-      - native_posix_64
-      - native_sim_64
+      - native_posix/native/64
+      - native_sim/native/64
     tags: display
   sample.display.mipi_dbi:
     platform_allow:
