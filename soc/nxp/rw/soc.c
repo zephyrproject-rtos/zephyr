@@ -137,6 +137,15 @@ __ramfunc void clock_init(void)
 	/* Call function set_flexspi_clock() to set flexspi clock source to aux0_pll_clk in XIP. */
 	set_flexspi_clock(FLEXSPI, 2U, 2U);
 
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
+	CLOCK_AttachClk(kLPOSC_to_WDT0_CLK);
+#else
+	/* Allowed to select none if not being used for watchdog to
+	 * reduce power
+	 */
+	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
+#endif
+
 /* Any flexcomm can be USART */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)) && CONFIG_SERIAL
 	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){0, kCLOCK_FrgPllDiv, 255, 0});
@@ -212,6 +221,9 @@ __ramfunc void clock_init(void)
 
 static int nxp_rw600_init(void)
 {
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
+	POWER_EnableResetSource(kPOWER_ResetSourceWdt);
+#endif
 
 	/* Initialize clock */
 	clock_init();
