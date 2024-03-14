@@ -105,4 +105,18 @@ void bt_testlib_conn_unref(struct bt_conn **connp);
  */
 struct bt_conn *bt_testlib_conn_unindex(enum bt_conn_type conn_type, uint8_t conn_index);
 
+/**
+ * @brief Wait until there is a free connection slot
+ *
+ * Thread-safe.
+ *
+ * Returns when there already is a free connection slot or a
+ * connection slot is recycled.
+ *
+ * @note The free connection slots may have been taken by the
+ * time this function returns. Call this function in a loop if
+ * needed.
+ */
+void bt_testlib_conn_wait_free(void);
+
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_H_ */
