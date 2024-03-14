@@ -6,8 +6,7 @@
 if SOC_SERIES_RCAR_GEN3
 
 config NUM_IRQS
-	default 512 if SOC_R8A77951_R7
-	default 240 if SOC_R8A77961 || SOC_R8A77951_A57
+	default 512
 
 config PINCTRL
 	default y
