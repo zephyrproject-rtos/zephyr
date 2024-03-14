@@ -2,9 +2,9 @@ tests:
   bluetooth.l2cap:
     platform_allow:
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
       - qemu_x86
       - qemu_cortex_m3
     integration_platforms:
