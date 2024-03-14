@@ -67,6 +67,9 @@ elseif(QEMU_PIPE)
   foreach(target ${qemu_targets})
     list(APPEND PRE_QEMU_COMMANDS_FOR_${target} COMMAND ${CMAKE_COMMAND} -E touch ${QEMU_PIPE})
   endforeach()
+elseif(QEMU_SOCKET)
+  # Serve serial console on a TCP/IP port.
+  list(APPEND QEMU_FLAGS -chardev socket,id=con,mux=on,server=on,host=127.0.0.1,port=4321)
 else()
   # Redirect console to stdio, used for manual debugging.
   list(APPEND QEMU_FLAGS -chardev stdio,id=con,mux=on)
