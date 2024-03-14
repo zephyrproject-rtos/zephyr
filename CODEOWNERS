@@ -380,7 +380,7 @@
 /drivers/timer/*leon_gptimer*             @julius-barendt
 /drivers/timer/*mips_cp0*                 @frantony
 /drivers/timer/*rcar_cmt*                 @aaillet
-/drivers/timer/*esp32c3_sys*              @uLipe
+/drivers/timer/*esp32_sys*                @uLipe
 /drivers/timer/*sam0_rtc*                 @bendiscz
 /drivers/timer/*arcv2*                    @ruuddw
 /drivers/timer/*xtensa*                   @dcpleung
