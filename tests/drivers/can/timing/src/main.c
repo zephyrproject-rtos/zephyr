@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Vestas Wind Systems A/S
+ * Copyright (c) 2022-2024 Vestas Wind Systems A/S
  * Copyright (c) 2019 Alexander Wachter
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -141,20 +141,21 @@ static void assert_sp_within_margin(struct can_timing *timing, uint16_t sp, uint
  * Test a set of CAN timing values on a specified CAN controller device
  * instance.
  *
- * @param dev pointer to the device structure for the driver instance
- * @param test pointer to the set of CAN timing values
+ * @param  dev pointer to the device structure for the driver instance
+ * @param  test pointer to the set of CAN timing values
+ * returns true if bitrate was supported, false otherwise
  */
-static void test_timing_values(const struct device *dev, const struct can_timing_test *test,
+static bool test_timing_values(const struct device *dev, const struct can_timing_test *test,
 			       bool data_phase)
 {
 	const struct can_timing *max = NULL;
 	const struct can_timing *min = NULL;
 	struct can_timing timing = { 0 };
-	int sp_err;
+	int sp_err = -EINVAL;
 	int err;
 
 	printk("testing bitrate %u, sample point %u.%u%%: ",
-		test->bitrate, test->sp / 10, test->sp % 10);
+	       test->bitrate, test->sp / 10, test->sp % 10);
 
 	if (data_phase) {
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
@@ -172,6 +173,7 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 
 	if (sp_err == -ENOTSUP) {
 		printk("bitrate not supported\n");
+		return false;
 	} else {
 		zassert_true(sp_err >= 0, "unknown error %d", sp_err);
 		zassert_true(sp_err <= SAMPLE_POINT_MARGIN, "sample point error %d too large",
@@ -194,6 +196,8 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 
 		printk("OK, sample point error %d.%d%%\n", sp_err / 10, sp_err % 10);
 	}
+
+	return true;
 }
 
 /**
@@ -202,11 +206,16 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 ZTEST_USER(can_timing, test_timing)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	int count = 0;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(can_timing_tests); i++) {
-		test_timing_values(dev, &can_timing_tests[i], false);
+		if (test_timing_values(dev, &can_timing_tests[i], false)) {
+			count++;
+		}
 	}
+
+	zassert_true(count > 0, "no bitrates supported");
 }
 
 /**
@@ -216,6 +225,7 @@ ZTEST_USER(can_timing, test_timing_data)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	can_mode_t cap;
+	int count = 0;
 	int err;
 	int i;
 
@@ -227,8 +237,12 @@ ZTEST_USER(can_timing, test_timing_data)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(can_timing_data_tests); i++) {
-		test_timing_values(dev, &can_timing_data_tests[i], true);
+		if (test_timing_values(dev, &can_timing_data_tests[i], true)) {
+			count++;
+		}
 	}
+
+	zassert_true(count > 0, "no data phase bitrates supported");
 }
 
 void *can_timing_setup(void)
