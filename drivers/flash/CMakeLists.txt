@@ -73,6 +73,8 @@ endif()
 if(CONFIG_SOC_FLASH_STM32)
   if(CONFIG_SOC_SERIES_STM32H7X)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
+  elseif(CONFIG_SOC_SERIES_STM32H7RSX)
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
   elseif(CONFIG_SOC_SERIES_STM32WBAX)
     if(CONFIG_BT_STM32WBA)
       # BLE is enabled. Use implementation over Flash Manager for coexistence wit RF activities
