@@ -376,6 +376,10 @@ static int pmw3610_configure(const struct device *dev)
 	}
 
 	/* Power-up init sequence */
+	ret = pmw3610_spi_clk_on(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = pmw3610_write_reg(dev, PMW3610_OBSERVATION1, 0);
 	if (ret < 0) {
@@ -424,11 +428,6 @@ static int pmw3610_configure(const struct device *dev)
 	/* Configuration */
 
 	if (cfg->invert_x || cfg->invert_y) {
-		ret = pmw3610_spi_clk_on(dev);
-		if (ret < 0) {
-			return ret;
-		}
-
 		ret = pmw3610_write_reg(dev, PWM3610_SPI_PAGE0, SPI_PAGE0_1);
 		if (ret < 0) {
 			return ret;
@@ -452,11 +451,14 @@ static int pmw3610_configure(const struct device *dev)
 			return ret;
 		}
 
-		ret = pmw3610_spi_clk_off(dev);
-		if (ret < 0) {
-			return ret;
-		}
 	}
+
+	ret = pmw3610_spi_clk_off(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The remaining functions call spi_clk_on/off independently. */
 
 	if (cfg->res_cpi > 0) {
 		pmw3610_set_resolution(dev, cfg->res_cpi);
