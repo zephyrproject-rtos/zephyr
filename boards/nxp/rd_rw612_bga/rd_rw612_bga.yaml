@@ -20,3 +20,4 @@ supported:
   - spi
   - i2c
   - entropy
+  - watchdog
