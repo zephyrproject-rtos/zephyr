@@ -35,7 +35,10 @@ struct can_timing_test {
  * @brief List of CAN timing values to test.
  */
 static const struct can_timing_test can_timing_tests[] = {
-	/** Standard bitrates. */
+	/* CiA 301 recommended bitrates */
+#ifdef CONFIG_TEST_ALL_BITRATES
+	{   10000, 875 },
+#endif /* CONFIG_TEST_ALL_BITRATES */
 	{   20000, 875 },
 	{   50000, 875 },
 	{  125000, 875 },
@@ -49,9 +52,14 @@ static const struct can_timing_test can_timing_tests[] = {
  * @brief List of CAN FD data phase timing values to test.
  */
 static const struct can_timing_test can_timing_data_tests[] = {
-	/** Standard bitrates. */
-	{  500000, 875 },
+	/* CiA 601-2 recommended data phase bitrates */
 	{ 1000000, 750 },
+#ifdef CONFIG_TEST_ALL_BITRATES
+	{ 2000000, 750 },
+	{ 4000000, 750 },
+	{ 5000000, 750 },
+	{ 8000000, 750 },
+#endif /* CONFIG_TEST_ALL_BITRATES */
 };
 
 /**
@@ -230,13 +238,39 @@ void *can_timing_setup(void)
 	int err;
 
 	zassert_true(device_is_ready(dev), "CAN device not ready");
+	k_object_access_grant(dev, k_current_get());
 
 	err = can_get_core_clock(dev, &core_clock);
 	zassert_equal(err, 0, "failed to get core CAN clock");
 
 	printk("testing on device %s @ %u Hz\n", dev->name, core_clock);
 
-	k_object_access_grant(dev, k_current_get());
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+		can_mode_t cap;
+
+		err = can_get_capabilities(dev, &cap);
+		zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+
+		if ((cap & CAN_MODE_FD) != 0) {
+			switch (core_clock) {
+			case MHZ(20):
+				break;
+			case MHZ(40):
+				break;
+			case MHZ(80):
+				break;
+			default:
+				TC_PRINT("Warning: CiA 601-3 recommends a CAN FD core clock of "
+					"20, 40, or 80 MHz for good node interoperability\n");
+				break;
+			}
+		}
+	}
+
+	if (!IS_ENABLED(CONFIG_TEST_ALL_BITRATES)) {
+		TC_PRINT("Warning: Testing limited selection of bitrates "
+			 "(CONFIG_TEST_ALL_BITRATES=n)\n");
+	}
 
 	return NULL;
 }
