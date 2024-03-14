@@ -24,9 +24,9 @@ tests:
       - CONFIG_SAMPLE_CAN_FD_MODE=y
     platform_allow:
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     harness: console
     harness_config:
       type: one_line
