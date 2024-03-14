@@ -22,31 +22,19 @@ LOG_MODULE_REGISTER(mt9m114);
 /* Sysctl registers */
 #define MT9M114_CHIP_ID                         0x0000
 #define MT9M114_COMMAND_REGISTER                0x0080
-#define MT9M114_COMMAND_REGISTER_APPLY_PATCH    (1 << 0)
 #define MT9M114_COMMAND_REGISTER_SET_STATE      (1 << 1)
-#define MT9M114_COMMAND_REGISTER_REFRESH        (1 << 2)
-#define MT9M114_COMMAND_REGISTER_WAIT_FOR_EVENT (1 << 3)
 #define MT9M114_COMMAND_REGISTER_OK             (1 << 15)
-#define MT9M114_PAD_CONTROL                     0x0032
-#define MT9M114_RST_AND_MISC_CONTROL            0x001A
 
 /* Camera Control registers */
-#define MT9M114_CAM_OUTPUT_FORMAT 0xc86c
+#define MT9M114_CAM_OUTPUT_FORMAT 0xC86C
 
 /* System Manager registers */
-#define MT9M114_SYSMGR_NEXT_STATE    0xdc00
-#define MT9M114_SYSMGR_CURRENT_STATE 0xdc01
-#define MT9M114_SYSMGR_CMD_STATUS    0xdc02
+#define MT9M114_SYSMGR_NEXT_STATE    0xDC00
 
 /* System States */
 #define MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE 0x28
-#define MT9M114_SYS_STATE_STREAMING           0x31
 #define MT9M114_SYS_STATE_START_STREAMING     0x34
 #define MT9M114_SYS_STATE_ENTER_SUSPEND       0x40
-#define MT9M114_SYS_STATE_SUSPENDED           0x41
-#define MT9M114_SYS_STATE_ENTER_STANDBY       0x50
-#define MT9M114_SYS_STATE_STANDBY             0x52
-#define MT9M114_SYS_STATE_LEAVE_STANDBY       0x54
 
 /* Camera output format */
 #define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV (0 << 8)
