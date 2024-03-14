@@ -42,3 +42,9 @@ config WARN_DEPRECATED
 	  features are enabled.
 
 rsource "images/Kconfig"
+
+menu "Build options"
+
+rsource "build/Kconfig"
+
+endmenu
