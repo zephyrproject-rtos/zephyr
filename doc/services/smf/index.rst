@@ -513,7 +513,7 @@ a state machine for testing initial transitions and :c:func:`smf_set_handled`.
 The statechart for this test is below.
 
 .. graphviz::
-   :caption: Test state machine for initial trnasitions and ``smf_set_handled``
+   :caption: Test state machine for initial transitions and ``smf_set_handled``
 
    digraph smf_hierarchical_initial {
       compound=true;
