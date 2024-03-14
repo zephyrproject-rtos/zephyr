@@ -16,6 +16,8 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -574,6 +576,11 @@ void *k_mem_map(size_t size, uint32_t flags)
 	__ASSERT(page_frames_initialized, "%s called too early", __func__);
 	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
+
+	CHECKIF(size_add_overflow(size, CONFIG_MMU_PAGE_SIZE * 2, &total_size)) {
+		LOG_ERR("too large size %zu passed to %s", size, __func__);
+		return NULL;
+	}
 
 	key = k_spin_lock(&z_mm_lock);
 
