@@ -5,4 +5,4 @@ tests:
     depends_on: adc
     platform_allow:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
