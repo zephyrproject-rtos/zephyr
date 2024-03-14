@@ -12,9 +12,9 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
       - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_x86
@@ -36,9 +36,9 @@ tests:
     depends_on: usb_device
     platform_allow:
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
       - nrf52840dk/nrf52840
     integration_platforms:
       - native_sim
@@ -54,9 +54,9 @@ tests:
       - qemu_cortex_m3
       - qemu_x86
       - native_posix
-      - native_posix_64
+      - native_posix/native/64
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     integration_platforms:
       - native_sim
     platform_exclude: nrf52dk/nrf52810
