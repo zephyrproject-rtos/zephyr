@@ -9,7 +9,7 @@ common:
     - littlefs
   platform_allow:
     - native_sim
-    - native_sim_64
+    - native_sim/native/64
     - nrf52840dk/nrf52840
     - mr_canhubk3
   integration_platforms:
