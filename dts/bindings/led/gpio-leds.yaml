@@ -3,8 +3,8 @@
 
 description: |
   This allows you to define a group of LEDs. Each LED in the group is
-  controlled by a GPIO. Each LED is defined in a child node of the
-  gpio-leds node.
+  controlled by one (single-color) or more (multi-color) GPIOs. Each LED is
+  defined in a child node of the gpio-leds node.
 
   Here is an example which defines three LEDs in the node /leds:
 
@@ -20,6 +20,14 @@ description: |
   		led_2 {
   			gpios = <&gpio1 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
   		};
+      led_3 {
+        gpios = <&gpio2 0 GPIO_ACTIVE_LOW>,
+                <&gpio2 1 GPIO_ACTIVE_LOW>,
+                <&gpio2 2 GPIO_ACTIVE_LOW>;
+        color-mapping = <LED_COLOR_ID_RED
+                         LED_COLOR_ID_GREEN
+                         LED_COLOR_ID_BLUE>;
+      };
   	};
   };
 
@@ -31,6 +39,10 @@ description: |
     and off when it is low.
   - led_2 is pin 15 on gpio1. The LED is on when the pin is low,
     and the pin's internal pull-up resistor should be enabled.
+  - led_3 is controlled by three pins on gpio2. The LED is a common-anode
+    RGB LED, with the red, green, and blue channels connected to pins 0, 1,
+    and 2, respectively. Each channel is on when the corresponding pin is
+    low, and off when the pin is high.
 
 compatible: "gpio-leds"
 
@@ -40,6 +52,20 @@ child-binding:
     gpios:
       type: phandle-array
       required: true
+    color-mapping:
+      type: array
+      description: |
+        Channel to color mapping (or pixel order). The number of elements
+        in the array must match the number of gpios.
+
+        This property is only required for multi-color LEDs. For single-color
+        LEDs, this property should be omitted.
+
+        For example a GRB channel to color mapping would be
+
+           color-mapping = <LED_COLOR_ID_GREEN
+                            LED_COLOR_ID_RED
+                            LED_COLOR_ID_BLUE>;
     label:
       type: string
       description: |
