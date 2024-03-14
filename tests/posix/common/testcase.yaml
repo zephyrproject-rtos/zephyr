@@ -2,7 +2,7 @@ common:
   filter: not CONFIG_NATIVE_LIBC
   platform_exclude:
     - native_posix
-    - native_posix_64
+    - native_posix/native/64
   tags: posix
   min_ram: 64
   timeout: 240

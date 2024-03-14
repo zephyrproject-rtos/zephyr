@@ -4,7 +4,7 @@ common:
     - nios2
   platform_exclude:
     - native_posix
-    - native_posix_64
+    - native_posix/native/64
   tags:
     - posix
     - filesystem
