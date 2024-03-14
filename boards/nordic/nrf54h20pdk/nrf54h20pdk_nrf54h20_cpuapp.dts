@@ -22,6 +22,7 @@
 		zephyr,code-partition = &cpuapp_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
+		zephyr,ieee802154 = &cpuapp_ieee802154;
 	};
 
 	aliases {
@@ -168,4 +169,8 @@
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&cpuapp_ieee802154 {
+	status = "okay";
 };
