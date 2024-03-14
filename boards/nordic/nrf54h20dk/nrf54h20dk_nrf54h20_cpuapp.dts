@@ -38,6 +38,7 @@
 		sw1 = &button1;
 		sw2 = &button2;
 		sw3 = &button3;
+		ipc-to-cpusys = &cpuapp_cpusys_ipc;
 	};
 
 	buttons {
@@ -117,6 +118,10 @@
 	status = "okay";
 };
 
+&cpusys_vevif {
+	status = "okay";
+};
+
 &cpusec_cpuapp_ipc {
 	mbox-names = "tx", "rx";
 	tx-region = <&cpuapp_cpusec_ipc_shm>;
@@ -133,6 +138,7 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &cpuapp_cpusys_ipc {
+	status = "okay";
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpusys_ipc_shm>;
 	rx-region = <&cpusys_cpuapp_ipc_shm>;
