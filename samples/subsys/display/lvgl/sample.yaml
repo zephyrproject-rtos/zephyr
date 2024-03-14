@@ -19,7 +19,7 @@ tests:
     modules:
       - lvgl
     integration_platforms:
-      - native_sim_64
+      - native_sim/native/64
   sample.display.lvgl.rk055hdmipi4m:
     # This sample is intended to test the RT1170 and RT595, which require
     # a display shield to work with LVGL
