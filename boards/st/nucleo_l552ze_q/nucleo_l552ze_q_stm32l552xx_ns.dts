@@ -19,10 +19,55 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 
 	aliases {
 		led0 = &blue_led_1;
 		sw0 = &user_button;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is compatible with requirements
+		 * given in TFM configuration given for current board:
+		 * multiple image boot, no tests.
+		 * It might require adjustment depending on evolutions on TFM.
+		 */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+			read-only;
+		};
+		/* Secure image primary slot */
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(180)>;
+		};
+		/* Non-secure image primary slot */
+		slot0_ns_partition: partition@41000 {
+			label = "image-0-nonsecure";
+			reg = <0x00041000 DT_SIZE_K(36)>;
+		};
+		/* Secure image secondary slot */
+		slot1_partition: partition@4a000 {
+			label = "image-1";
+			reg = <0x0004a000 DT_SIZE_K(180)>;
+		};
+		/* Non-secure image secondary slot */
+		slot1_ns_partition: partition@77000 {
+			label = "image-1-nonsecure";
+			reg = <0x00077000 DT_SIZE_K(36)>;
+		};
+		/* Applicative Non Volatile Storage */
+		/* Not available in this config, use secure storage */
 	};
 };
