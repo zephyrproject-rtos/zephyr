@@ -1,6 +1,7 @@
 /* main.c - Application main entry point */
 
 /*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -29,12 +30,23 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
 		      BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
 		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
-		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL))
+		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
+#if defined(CONFIG_BT_EXT_ADV)
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+#endif /* CONFIG_BT_EXT_ADV */
 };
 
+#if !defined(CONFIG_BT_EXT_ADV)
 static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
+#endif /* !CONFIG_BT_EXT_ADV */
+
+/* Use atomic variable, 2 bits for connection and disconnection state */
+static ATOMIC_DEFINE(state, 2U);
+
+#define STATE_CONNECTED    1U
+#define STATE_DISCONNECTED 2U
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -42,12 +54,16 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
+
+		(void)atomic_set_bit(state, STATE_CONNECTED);
 	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
+
+	(void)atomic_set_bit(state, STATE_DISCONNECTED);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -59,35 +75,13 @@ static void hrs_ntf_changed(bool enabled)
 {
 	hrf_ntf_enabled = enabled;
 
-	printk("HRS notification status changed: %s\n", enabled ? "enabled" : "disabled");
+	printk("HRS notification status changed: %s\n",
+	       enabled ? "enabled" : "disabled");
 }
 
 static struct bt_hrs_cb hrs_cb = {
 	.ntf_changed = hrs_ntf_changed,
 };
-
-/** @brief Heart rate service callback register
- *
- * This function will register callbacks that will be called in
- * certain events related to Heart rate service.
- *
- * @param cb Pointer to callbacks structure
- */
-
-static void bt_ready(void)
-{
-	int err;
-
-	printk("Bluetooth initialized\n");
-
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
-}
 
 static void auth_cancel(struct bt_conn *conn)
 {
@@ -140,14 +134,66 @@ int main(void)
 		return 0;
 	}
 
-	bt_ready();
+	printk("Bluetooth initialized\n");
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 
 	bt_hrs_cb_register(&hrs_cb);
-	/* Implement notification. At the moment there is no suitable way
-	 * of starting delayed work so we do it here
-	 */
+
+#if !defined(CONFIG_BT_EXT_ADV)
+	printk("Starting Legacy Advertising (connectable and scannable)\n");
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+		return 0;
+	}
+
+#else /* CONFIG_BT_EXT_ADV */
+	struct bt_le_adv_param adv_param = {
+		.id = BT_ID_DEFAULT,
+		.sid = 0U,
+		.secondary_max_skip = 0U,
+		.options = (BT_LE_ADV_OPT_EXT_ADV |
+			    BT_LE_ADV_OPT_CONNECTABLE |
+			    BT_LE_ADV_OPT_CODED),
+		.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
+		.interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
+		.peer = NULL,
+	};
+	struct bt_le_ext_adv *adv;
+
+	printk("Creating a Coded PHY connectable non-scannable advertising set\n");
+	err = bt_le_ext_adv_create(&adv_param, NULL, &adv);
+	if (err) {
+		printk("Failed to create Coded PHY extended advertising set (err %d)\n", err);
+
+		printk("Creating a non-Coded PHY connectable non-scannable advertising set\n");
+		adv_param.options &= ~BT_LE_ADV_OPT_CODED;
+		err = bt_le_ext_adv_create(&adv_param, NULL, &adv);
+		if (err) {
+			printk("Failed to create extended advertising set (err %d)\n", err);
+			return 0;
+		}
+	}
+
+	printk("Setting extended advertising data\n");
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Failed to set extended advertising data (err %d)\n", err);
+		return 0;
+	}
+
+	printk("Starting Extended Advertising (connectable non-scannable)\n");
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		printk("Failed to start extended advertising set (err %d)\n", err);
+		return 0;
+	}
+#endif /* CONFIG_BT_EXT_ADV */
+
+	printk("Advertising successfully started\n");
+
+	/* Implement notification. */
 	while (1) {
 		k_sleep(K_SECONDS(1));
 
@@ -156,6 +202,21 @@ int main(void)
 
 		/* Battery level simulation */
 		bas_notify();
+
+		if (atomic_test_and_clear_bit(state, STATE_CONNECTED)) {
+			/* Connected callback executed */
+
+		} else if (atomic_test_and_clear_bit(state, STATE_DISCONNECTED)) {
+#if defined(CONFIG_BT_EXT_ADV)
+			printk("Starting Extended Advertising (connectable and non-scannable)\n");
+			err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+			if (err) {
+				printk("Failed to start extended advertising set (err %d)\n", err);
+				return 0;
+			}
+#endif /* CONFIG_BT_EXT_ADV */
+		}
 	}
+
 	return 0;
 }
