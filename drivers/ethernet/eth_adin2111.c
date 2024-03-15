@@ -1123,6 +1123,24 @@ static int eth_adin2111_clear_mac_filter(const struct device *dev, uint8_t *mac,
 	return adin2111_write_filter_address(dev, cmac, cmac, 0, i);
 }
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+static int eth_adin2111_set_promiscuous(const struct device *dev, const uint16_t port_idx,
+					bool enable)
+{
+	const struct adin2111_config *cfg = dev->config;
+	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
+	uint32_t fwd_mask;
+
+	if ((!is_adin2111 && port_idx > 0) || (is_adin2111 && port_idx > 1)) {
+		return -EINVAL;
+	}
+
+	fwd_mask = port_idx ? ADIN2111_CONFIG2_P2_FWD_UNK2HOST : ADIN2111_CONFIG2_P1_FWD_UNK2HOST;
+
+	return eth_adin2111_reg_update(dev, ADIN2111_CONFIG2, fwd_mask, enable ? fwd_mask : 0);
+}
+#endif
+
 static void adin2111_port_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1200,7 +1218,7 @@ static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device 
 #if defined(CONFIG_NET_LLDP)
 		| ETHERNET_LLDP
 #endif
-		;
+		| ETHERNET_PROMISC_MODE;
 }
 
 static int adin2111_port_set_config(const struct device *dev,
@@ -1239,6 +1257,12 @@ static int adin2111_port_set_config(const struct device *dev,
 			}
 		}
 	}
+
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
+		ret = eth_adin2111_set_promiscuous(adin, cfg->port_idx, config->promisc_mode);
+	}
+#endif
 
 end_unlock:
 	(void)eth_adin2111_unlock(adin);
