@@ -63,6 +63,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_XILINX_AXI	i2c_xilinx_axi.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCHP_MSS		i2c_mchp_mss.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SEDI		i2c_sedi.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_AMBIQ		i2c_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_ENE_KB1200	i2c_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_I2C_SWITCH	gpio_i2c_switch.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NUMAKER		i2c_numaker.c)
 
