@@ -10,4 +10,4 @@ tests:
     depends_on:
       - gpio
     integration_platforms:
-      - native_posix
+      - native_sim
