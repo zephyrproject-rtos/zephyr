@@ -10,6 +10,7 @@ menuconfig ETH_NXP_ENET
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	select ARM_MPU if CPU_CORTEX_M7
 	select MDIO if DT_HAS_NXP_ENET_MDIO_ENABLED
+	select NET_POWER_MANAGEMENT if (PM_DEVICE && SOC_FAMILY_KINETIS)
 	select EXPERIMENTAL
 	help
 	  Enable NXP ENET Ethernet driver.
