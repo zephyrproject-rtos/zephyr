@@ -215,7 +215,7 @@ class TestInstance:
                 return False
 
             # check presence of QEMU on Windows
-            if 'QEMU_BIN_PATH' not in os.environ:
+            if self.platform.simulation == 'qemu' and 'QEMU_BIN_PATH' not in os.environ:
                 return False
 
         # we asked for build-only on the command line
