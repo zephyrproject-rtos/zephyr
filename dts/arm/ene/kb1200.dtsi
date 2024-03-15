@@ -59,6 +59,45 @@
 			#size-cells = <1>;
 			reg = <0x50000000 0x100>;
 			status = "okay";
+			gpio0x1x: gpio@50000000 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000000 0x04>, <0x50010000 0x04>;
+				interrupts = <2 3>, <3 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio2x3x: gpio@50000004 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000004 0x04>, <0x50010004 0x04>;
+				interrupts = <4 3>, <5 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio4x5x: gpio@50000008 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000008 0x04>, <0x50010008 0x04>;
+				interrupts = <6 3>, <7 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio6x7x: gpio@5000000c {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x5000000C 0x04>, <0x5001000C 0x04>;
+				interrupts = <8 3>, <9 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
 		};
 	};
 };
