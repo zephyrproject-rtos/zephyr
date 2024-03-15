@@ -65,4 +65,40 @@
 	/omit-if-no-ref/ adc11_gpio15: adc11_gpio15 {
 		pinmux = <ENE_KB1200_PINMUX(0x15, PINMUX_FUNC_A)>;
 	};
+	/omit-if-no-ref/ pwm0_gpio3a: pwm0_gpio3a {
+		pinmux = <ENE_KB1200_PINMUX(0x3A, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ pwm1_gpio38: pwm1_gpio38 {
+		pinmux = <ENE_KB1200_PINMUX(0x38, PINMUX_FUNC_C)>;
+	};
+	/omit-if-no-ref/ pwm2_gpio3b: pwm2_gpio3b {
+		pinmux = <ENE_KB1200_PINMUX(0x3B, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ pwm3_gpio26: pwm3_gpio26 {
+		pinmux = <ENE_KB1200_PINMUX(0x26, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ pwm4_gpio31: pwm4_gpio31 {
+		pinmux = <ENE_KB1200_PINMUX(0x31, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ pwm5_gpio30: pwm5_gpio30 {
+		pinmux = <ENE_KB1200_PINMUX(0x30, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ pwm6_gpio37: pwm6_gpio37 {
+		pinmux = <ENE_KB1200_PINMUX(0x37, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ pwm7_gpio23: pwm7_gpio23 {
+		pinmux = <ENE_KB1200_PINMUX(0x23, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ pwm8_gpio00: pwm8_gpio00 {
+		pinmux = <ENE_KB1200_PINMUX(0x00, PINMUX_FUNC_C)>;
+	};
+	/omit-if-no-ref/ pwm9_gpio22: pwm9_gpio22 {
+		pinmux = <ENE_KB1200_PINMUX(0x22, PINMUX_FUNC_C)>;
+	};
+	/omit-if-no-ref/ fanpwm0_gpio49: fanpwm0_gpio49 {
+		pinmux = <ENE_KB1200_PINMUX(0x49, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ fanpwm1_gpio74: fanpwm1_gpio74 {
+		pinmux = <ENE_KB1200_PINMUX(0x74, PINMUX_FUNC_B)>;
+	};
 };
