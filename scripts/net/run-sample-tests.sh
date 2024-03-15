@@ -267,6 +267,8 @@ stop_docker ()
 
 	    echo "Stopping Docker PIDs $dockers"
 	    kill $dockers 2> /dev/null
+
+	    docker container stop net-tools
     fi
 
     docker_pid=0
