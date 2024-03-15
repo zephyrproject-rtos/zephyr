@@ -92,8 +92,9 @@ class CoverageTool:
                 continue
 
             try:
+                hex_bytes = bytes.fromhex(hexdump_val)
                 with open(filename, 'wb') as fp:
-                    fp.write(bytes.fromhex(hexdump_val))
+                    fp.write(hex_bytes)
             except ValueError:
                 logger.exception("Unable to convert hex data for file: {}".format(filename))
                 gcda_created = False
