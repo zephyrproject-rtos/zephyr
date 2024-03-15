@@ -228,6 +228,11 @@ Libraries / Subsystems
 
 * Storage
 
+  * FAT FS: It is now possible to expose file system formatting functionality for FAT without also
+    enabling automatic formatting on mount failure by setting the
+    :kconfig:option:`CONFIG_FS_FATFS_MKFS` Kconfig option. This option is enabled by default if
+    :kconfig:option:`CONFIG_FILE_SYSTEM_MKFS` is set.
+
 * POSIX API
 
 * LoRa/LoRaWAN
