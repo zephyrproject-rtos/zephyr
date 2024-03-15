@@ -2,7 +2,7 @@
  *
  * Copyright 2023 NXP
  *
- * Inspiration from eth_mcux.c, which is:
+ * Inspiration from eth_mcux.c, which was:
  *  Copyright (c) 2016-2017 ARM Ltd
  *  Copyright (c) 2016 Linaro Ltd
  *  Copyright (c) 2018 Intel Corporation
@@ -19,46 +19,34 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-/*
- ************
- * Includes *
- ************
- */
-
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
+
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
-#include <ethernet/eth_stats.h>
-#include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/ethernet/eth_nxp_enet.h>
-#include <zephyr/dt-bindings/ethernet/nxp_enet.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
+#include <ethernet/eth_stats.h>
+
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
+
+#ifdef CONFIG_PTP_CLOCK
 #include <zephyr/drivers/ptp_clock.h>
-#if defined(CONFIG_NET_DSA)
+#endif
+
+#ifdef CONFIG_NET_DSA
 #include <zephyr/net/dsa.h>
 #endif
 
-#include "fsl_enet.h"
-
-/*
- ***********
- * Defines *
- ***********
- */
+#include <zephyr/drivers/ethernet/eth_nxp_enet.h>
+#include <zephyr/dt-bindings/ethernet/nxp_enet.h>
+#include <fsl_enet.h>
 
 #define RING_ID 0
-
-/*
- *********************
- * Driver Structures *
- *********************
- */
 
 struct nxp_enet_mac_config {
 	ENET_Type *base;
@@ -92,30 +80,9 @@ struct nxp_enet_mac_data {
 	struct k_sem ptp_ts_sem;
 	struct k_mutex *ptp_mutex; /* created in PTP driver */
 #endif
-	/* TODO: FIXME. This Ethernet frame sized buffer is used for
-	 * interfacing with MCUX. How it works is that hardware uses
-	 * DMA scatter buffers to receive a frame, and then public
-	 * MCUX call gathers them into this buffer (there's no other
-	 * public interface). All this happens only for this driver
-	 * to scatter this buffer again into Zephyr fragment buffers.
-	 * This is not efficient, but proper resolution of this issue
-	 * depends on introduction of zero-copy networking support
-	 * in Zephyr, and adding needed interface to MCUX (or
-	 * bypassing it and writing a more complex driver working
-	 * directly with hardware).
-	 *
-	 * Note that we do not copy FCS into this buffer thus the
-	 * size is 1514 bytes.
-	 */
-	uint8_t *tx_frame_buf; /* Max MTU + ethernet header */
-	uint8_t *rx_frame_buf; /* Max MTU + ethernet header */
+	uint8_t *tx_frame_buf;
+	uint8_t *rx_frame_buf;
 };
-
-/*
- ********************
- * Helper Functions *
- ********************
- */
 
 static inline struct net_if *get_iface(struct nxp_enet_mac_data *data)
 {
@@ -187,12 +154,6 @@ static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev)
 }
 #endif /* CONFIG_PTP_CLOCK */
 
-/*
- *********************************
- * Ethernet driver API Functions *
- *********************************
- */
-
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct nxp_enet_mac_config *config = dev->config;
@@ -207,7 +168,6 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Enter critical section for TX frame buffer access */
 	k_mutex_lock(&data->tx_frame_buf_mutex, K_FOREVER);
 
-	/* Read network packet from upper layer into frame buffer */
 	ret = net_pkt_read(pkt, data->tx_frame_buf, total_len);
 	if (ret) {
 		k_sem_give(&data->tx_buf_sem);
@@ -320,12 +280,6 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 
 	return -ENOTSUP;
 }
-
-/*
- *****************************
- * Ethernet RX Functionality *
- *****************************
- */
 
 static int eth_nxp_enet_rx(const struct device *dev)
 {
@@ -447,12 +401,6 @@ static void eth_nxp_enet_rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-/*
- ****************************
- * PHY management functions *
- ****************************
- */
-
 static int nxp_enet_phy_reset_and_configure(const struct device *phy)
 {
 	int ret;
@@ -510,12 +458,6 @@ static int nxp_enet_phy_init(const struct device *dev)
 
 	return ret;
 }
-
-/*
- ****************************
- * Callbacks and interrupts *
- ****************************
- */
 
 void nxp_enet_driver_cb(const struct device *dev, enum nxp_enet_driver dev_type,
 				enum nxp_enet_callback_reason event, void *data)
@@ -599,12 +541,6 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	irq_unlock(irq_lock_key);
 }
 
-/*
- ******************
- * Initialization *
- ******************
- */
-
 static int eth_nxp_enet_init(const struct device *dev)
 {
 	struct nxp_enet_mac_data *data = dev->data;
@@ -618,7 +554,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 		return err;
 	}
 
-	/* Initialize kernel objects */
 	k_mutex_init(&data->rx_frame_buf_mutex);
 	k_mutex_init(&data->tx_frame_buf_mutex);
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
@@ -640,14 +575,12 @@ static int eth_nxp_enet_init(const struct device *dev)
 			0, K_NO_WAIT);
 	k_thread_name_set(&data->rx_thread, "eth_nxp_enet_rx");
 
-	/* Get ENET IP module clock rate */
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys,
 			&enet_module_clock_rate);
 	if (err) {
 		return err;
 	}
 
-	/* Use HAL to set up MAC configuration */
 	ENET_GetDefaultConfig(&enet_config);
 
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
@@ -930,9 +863,6 @@ static const struct ethernet_api api_funcs = {
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_MAC_INIT)
 
-/*
- * ENET module-level management
- */
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet
 
