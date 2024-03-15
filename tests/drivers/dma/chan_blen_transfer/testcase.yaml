@@ -6,8 +6,8 @@ tests:
     tags:
       - dma
     integration_platforms:
-      - native_posix
-      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
     filter: dt_nodelabel_enabled("tst_dma0")
   drivers.dma.chan_blen_transfer.low_footprint:
     tags:

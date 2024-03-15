@@ -9,10 +9,10 @@ tests:
       - frdm_k64f
       - mimxrt1060_evk
       - lpcxpresso55s36
-      - native_posix
-      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
     filter: dt_alias_exists("dma0")
     integration_platforms:
       - intel_adsp/cavs25
-      - native_posix
-      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
