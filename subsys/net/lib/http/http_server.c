@@ -1105,13 +1105,11 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		return -EAGAIN;
 	}
 
-	if (!client->has_upgrade_header) {
-		method = http_method_str(client->parser.method);
-		path = client->url_buffer;
-	} else {
-		method = http_hpack_parse_header(client, HTTP_SERVER_HPACK_METHOD);
-		path = http_hpack_parse_header(client, HTTP_SERVER_HPACK_PATH);
-	}
+	/* TODO This doesn't make much sense, the method is ignored, and
+	 * handle_http2_static_resource() hardcodes it as GET.
+	 */
+	method = http_hpack_parse_header(client, HTTP_SERVER_HPACK_METHOD);
+	path = http_hpack_parse_header(client, HTTP_SERVER_HPACK_PATH);
 
 	detail = get_resource_detail(path, &path_len);
 	if (detail != NULL) {
