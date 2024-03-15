@@ -101,4 +101,16 @@
 	/omit-if-no-ref/ fanpwm1_gpio74: fanpwm1_gpio74 {
 		pinmux = <ENE_KB1200_PINMUX(0x74, PINMUX_FUNC_B)>;
 	};
+	/omit-if-no-ref/ tach0_gpio48: tach0_gpio48 {
+		pinmux = <ENE_KB1200_PINMUX(0x48, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ tach1_gpio4e: tach1_gpio4e {
+		pinmux = <ENE_KB1200_PINMUX(0x4E, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ tach2_gpio0e: tach2_gpio0e {
+		pinmux = <ENE_KB1200_PINMUX(0x0E, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ tach3_gpio43: tach3_gpio43 {
+		pinmux = <ENE_KB1200_PINMUX(0x43, PINMUX_FUNC_A)>;
+	};
 };

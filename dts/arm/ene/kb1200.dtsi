@@ -214,6 +214,30 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		tach0: tach@40100000 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100000 0x10>;
+			status = "disabled";
+		};
+
+		tach1: tach@40100010 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100010 0x10>;
+			status = "disabled";
+		};
+
+		tach2: tach@40100020 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100020 0x10>;
+			status = "disabled";
+		};
+
+		tach3: tach@40100030 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100030 0x10>;
+			status = "disabled";
+		};
 	};
 };
 
