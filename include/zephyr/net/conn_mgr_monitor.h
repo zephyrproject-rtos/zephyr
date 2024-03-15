@@ -210,6 +210,36 @@ static inline void conn_mgr_set_online_check_strategy(enum net_conn_mgr_online_c
 }
 #endif
 
+/**
+ * @brief Set the URL to where to do the online connectivity check.
+ *
+ * If application does not set the URL using this function, then the
+ * value set in CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP_URL
+ * is used as a default URL.
+ *
+ * Note that the online checker uses the pointer directly and it will
+ * not copy the URL anywhere. This means that the URL pointer should
+ * be valid when the online checker is running.
+ *
+ * @param url URL of the HTTP GET request. If the URL starts with
+ *        https:/ then an HTTPS request is made. This requires
+ *        that TLS support (CONFIG_NET_SOCKETS_SOCKOPT_TLS) is
+ *        enabled.
+ *
+ * @return Return 0 if URL registetration succeed, <0 otherwise.
+ */
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+int conn_mgr_register_online_checker_url(const char *url);
+#else
+static inline int conn_mgr_register_online_checker_url(const char *url)
+{
+	ARG_UNUSED(url);
+
+	return -ENOTSUP;
+}
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

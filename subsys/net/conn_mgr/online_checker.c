@@ -57,6 +57,7 @@ struct online_check_data {
 	enum net_conn_mgr_online_check_type strategy;
 	net_conn_mgr_online_checker_t cb;
 	void *user_data;
+	const char *url;
 	char *host; /* This points to hostname_port */
 	char *port; /* and same for this */
 	struct sockaddr hostaddr;
@@ -488,10 +489,14 @@ static int resolve_url(const char *url)
 	bool status;
 	int ret;
 
+	if (url == NULL) {
+		return -EINVAL;
+	}
+
 	ret = get_hostname(url, online_check->hostname_port,
 			   MAX_HOSTNAME_LEN, &is_tls);
 	if (ret < 0) {
-		NET_DBG("Cannot find hostname from %s", ONLINE_CHECK_URL);
+		NET_DBG("Cannot find hostname from %s", url);
 		return ret;
 	}
 
@@ -560,7 +565,7 @@ static int exec_http_query(struct net_if *iface, int sock)
 	memset(&req, 0, sizeof(req));
 
 	req.method = HTTP_GET;
-	req.url = ONLINE_CHECK_URL;
+	req.url = online_check->url;
 	req.host = online_check->host;
 	req.port = online_check->port;
 	req.protocol = "HTTP/1.1";
@@ -609,7 +614,7 @@ static int do_online_http_check(struct net_if *iface, const char *host)
 		ret = resolve_url(host);
 		if (ret < 0) {
 			NET_DBG("Cannot parse URL \"%s\" (%d)",
-				ONLINE_CHECK_URL, ret);
+				host, ret);
 			return ret;
 		}
 	}
@@ -736,7 +741,7 @@ static void do_online_check(struct net_if *iface)
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP) &&
 	    online_check->strategy == NET_CONN_MGR_ONLINE_CHECK_HTTP) {
-		ret = do_online_http_check(iface, ONLINE_CHECK_URL);
+		ret = do_online_http_check(iface, online_check->url);
 		if (ret == 0) {
 			online_check->running = true;
 		} else {
@@ -809,6 +814,10 @@ bool conn_mgr_trigger_online_connectivity_check(void)
 		online_check->trickle.k = TRICKLE_K;
 	}
 
+	if (online_check->url == NULL) {
+		conn_mgr_register_online_checker_url(ONLINE_CHECK_URL);
+	}
+
 	conn_mgr_trigger_online_checks = true;
 	k_sem_give(&conn_mgr_mon_updated);
 
@@ -842,4 +851,11 @@ void conn_mgr_set_online_check_strategy(enum net_conn_mgr_online_check_type type
 	} else {
 		NET_ERR("Invalid value %d for online connectivity check strategy.", type);
 	}
+}
+
+int conn_mgr_register_online_checker_url(const char *url)
+{
+	online_check->url = url;
+
+	return 0;
 }
