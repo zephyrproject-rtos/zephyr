@@ -485,22 +485,13 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		break;
 	case kENET_TxEvent:
 		ts_register_tx_event(dev, frameinfo);
-		/* Free the TX buffer. */
 		k_sem_give(&data->tx_buf_sem);
 		break;
-	case kENET_ErrEvent:
-		/* Error event: BABR/BABT/EBERR/LC/RL/UN/PLR.  */
-		break;
-	case kENET_WakeUpEvent:
-		/* Wake up from sleep mode event. */
-		break;
 	case kENET_TimeStampEvent:
-		/* Time stamp event.  */
 		/* Reset periodic timer to default value. */
 		config->base->ATPER = NSEC_PER_SEC;
 		break;
-	case kENET_TimeStampAvailEvent:
-		/* Time stamp available event.  */
+	default:
 		break;
 	}
 }
@@ -527,11 +518,6 @@ static void eth_nxp_enet_isr(const struct device *dev)
 
 	if (eir & kENET_TxFrameInterrupt) {
 		ENET_TransmitIRQHandler(ENET_IRQ_HANDLER_ARGS(config->base, &data->enet_handle));
-	}
-
-	if (eir & kENET_TxBufferInterrupt) {
-		ENET_ClearInterruptStatus(config->base, kENET_TxBufferInterrupt);
-		ENET_DisableInterrupts(config->base, kENET_TxBufferInterrupt);
 	}
 
 	if (eir & ENET_EIR_MII_MASK) {
