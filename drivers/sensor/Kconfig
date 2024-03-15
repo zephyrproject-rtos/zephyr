@@ -252,5 +252,6 @@ source "drivers/sensor/wsen_pads/Kconfig"
 source "drivers/sensor/wsen_pdus/Kconfig"
 source "drivers/sensor/wsen_tids/Kconfig"
 source "drivers/sensor/xmc4xxx_temp/Kconfig"
+source "drivers/sensor/ene_tach_kb1200/Kconfig"
 
 endif # SENSOR
