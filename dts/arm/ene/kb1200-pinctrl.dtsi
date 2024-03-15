@@ -29,4 +29,40 @@
 	/omit-if-no-ref/ uart2_rx_gpio55: uart2_rx_gpio55 {
 		pinmux = <ENE_KB1200_PINMUX(0x55, PINMUX_FUNC_A)>;
 	};
+	/omit-if-no-ref/ adc0_gpio0a: adc0_gpio0a {
+		pinmux = <ENE_KB1200_PINMUX(0x0A, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc1_gpio0b: adc1_gpio0b {
+		pinmux = <ENE_KB1200_PINMUX(0x0B, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc2_gpio0c: adc2_gpio0c {
+		pinmux = <ENE_KB1200_PINMUX(0x0C, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc3_gpio0d: adc3_gpio0d {
+		pinmux = <ENE_KB1200_PINMUX(0x0D, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc4_gpio0e: adc4_gpio0e {
+		pinmux = <ENE_KB1200_PINMUX(0x0E, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc5_gpio0f: adc5_gpio0f {
+		pinmux = <ENE_KB1200_PINMUX(0x0F, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc6_gpio10: adc6_gpio10 {
+		pinmux = <ENE_KB1200_PINMUX(0x10, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc7_gpio11: adc7_gpio11 {
+		pinmux = <ENE_KB1200_PINMUX(0x11, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc8_gpio12: adc8_gpio12 {
+		pinmux = <ENE_KB1200_PINMUX(0x12, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc9_gpio13: adc9_gpio13 {
+		pinmux = <ENE_KB1200_PINMUX(0x13, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc10_gpio14: adc10_gpio14 {
+		pinmux = <ENE_KB1200_PINMUX(0x14, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ adc11_gpio15: adc11_gpio15 {
+		pinmux = <ENE_KB1200_PINMUX(0x15, PINMUX_FUNC_A)>;
+	};
 };
