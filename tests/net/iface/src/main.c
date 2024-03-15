@@ -1321,4 +1321,160 @@ ZTEST(net_iface, test_interface_name)
 #endif
 }
 
+ZTEST(net_iface, test_interface_macros)
+{
+	zassert_equal(NET_IF_MAX_IPV6_ADDR,
+		      CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT,
+		      "Invalid IPv6 address count");
+
+	zassert_equal(NET_IF_MAX_IPV6_MADDR,
+		      CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT,
+		      "Invalid IPv6 multicast address count");
+
+	zassert_equal(NET_IF_MAX_IPV6_PREFIX,
+		      CONFIG_NET_IF_IPV6_PREFIX_COUNT,
+		      "Invalid IPv6 prefix count");
+
+	zassert_equal(NET_IF_MAX_IPV4_ADDR,
+		      CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT,
+		      "Invalid IPv4 address count");
+
+	zassert_equal(NET_IF_MAX_IPV4_MADDR,
+		      CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT,
+		      "Invalid IPv4 multicast address count");
+
+	zassert_not_null(&NET_IF_DHCPV4_CONFIG(net_if_get_default()),
+			 "DHCPv4 config is null");
+
+	static bool printed;
+
+#define printk_once(...)			\
+	do {					\
+		if (!printed) {			\
+			printk(__VA_ARGS__);	\
+			printed = true;		\
+		}				\
+	} while (0)
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		printed = false;
+
+		ARRAY_FOR_EACH(NET_IF_IPV4_UNICAST_ADDRESSES(iface), i) {
+			if (NET_IF_IPV4_CONFIG(iface) == NULL) {
+				continue;
+			}
+
+			if (!NET_IF_IPV4_UNICAST_ADDRESS(iface, i)->is_used) {
+				continue;
+			}
+
+			zassert_equal(NET_IF_IPV4_UNICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET,
+				      "Invalid family %d vs %d",
+				      NET_IF_IPV4_UNICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET);
+
+			printk_once("Unicast IPv4 addresses for interface %d:\n",
+				    net_if_get_by_iface(iface));
+			printk("[%d] %s\n", i,
+			       net_sprint_ipv4_addr(
+				       &NET_IF_IPV4_UNICAST_ADDRESS(iface,
+								    i)->address.in_addr));
+		}
+
+		printed = false;
+
+		ARRAY_FOR_EACH(NET_IF_IPV4_MULTICAST_ADDRESSES(iface), i) {
+			if (NET_IF_IPV4_CONFIG(iface) == NULL) {
+				continue;
+			}
+
+			if (!NET_IF_IPV4_MULTICAST_ADDRESS(iface, i)->is_used) {
+				continue;
+			}
+
+			zassert_equal(NET_IF_IPV4_MULTICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET,
+				      "Invalid family %d vs %d",
+				      NET_IF_IPV4_MULTICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET);
+
+			printk_once("Multicast IPv4 addresses for interface %d:\n",
+				    net_if_get_by_iface(iface));
+			printk("[%d] %s\n", i,
+			       net_sprint_ipv4_addr(
+				       &NET_IF_IPV4_MULTICAST_ADDRESS(iface,
+								      i)->address.in_addr));
+		}
+
+		printed = false;
+
+		ARRAY_FOR_EACH(NET_IF_IPV6_UNICAST_ADDRESSES(iface), i) {
+			if (NET_IF_IPV6_CONFIG(iface) == NULL) {
+				continue;
+			}
+
+			if (!NET_IF_IPV6_UNICAST_ADDRESS(iface, i)->is_used) {
+				continue;
+			}
+
+			zassert_equal(NET_IF_IPV6_UNICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET6,
+				      "Invalid family %d vs %d",
+				      NET_IF_IPV6_UNICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET6);
+
+			printk_once("Unicast IPv6 addresses for interface %d:\n",
+				    net_if_get_by_iface(iface));
+			printk("[%d] %s\n", i,
+			       net_sprint_ipv6_addr(
+				       &NET_IF_IPV6_UNICAST_ADDRESS(iface,
+								    i)->address.in6_addr));
+		}
+
+		printed = false;
+
+		ARRAY_FOR_EACH(NET_IF_IPV6_MULTICAST_ADDRESSES(iface), i) {
+			if (NET_IF_IPV6_CONFIG(iface) == NULL) {
+				continue;
+			}
+
+			if (!NET_IF_IPV6_MULTICAST_ADDRESS(iface, i)->is_used) {
+				continue;
+			}
+
+			zassert_equal(NET_IF_IPV6_MULTICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET6,
+				      "Invalid family %d vs %d",
+				      NET_IF_IPV6_MULTICAST_ADDRESS(iface, i)->address.family,
+				      AF_INET6);
+
+			printk_once("Multicast IPv6 addresses for interface %d:\n",
+				    net_if_get_by_iface(iface));
+			printk("[%d] %s\n", i,
+			       net_sprint_ipv6_addr(
+				       &NET_IF_IPV6_MULTICAST_ADDRESS(iface,
+								      i)->address.in6_addr));
+		}
+
+		printed = false;
+
+		ARRAY_FOR_EACH(NET_IF_IPV6_PREFIXES(iface), i) {
+			if (NET_IF_IPV6_CONFIG(iface) == NULL) {
+				continue;
+			}
+
+			if (!NET_IF_IPV6_PREFIX_ADDRESS(iface, i)->is_used) {
+				continue;
+			}
+
+			printk_once("IPv6 prefixes for interface %d:\n",
+				    net_if_get_by_iface(iface));
+			printk("[%d] %s\n", i,
+			       net_sprint_ipv6_addr(
+				       &NET_IF_IPV6_PREFIX_ADDRESS(iface, i)->prefix));
+		}
+	}
+}
+
 ZTEST_SUITE(net_iface, NULL, iface_setup, NULL, NULL, iface_teardown);
