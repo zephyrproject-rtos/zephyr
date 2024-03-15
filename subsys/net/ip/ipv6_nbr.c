@@ -866,6 +866,8 @@ ignore_frag_error:
 	if (net_if_ipv6_addr_onlink(&iface, (struct in6_addr *)ip_hdr->dst)) {
 		nexthop = (struct in6_addr *)ip_hdr->dst;
 		net_pkt_set_iface(pkt, iface);
+	} else if (net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->dst)) {
+		nexthop = (struct in6_addr *)ip_hdr->dst;
 	} else {
 		/* We need to figure out where the destination
 		 * host is located.
