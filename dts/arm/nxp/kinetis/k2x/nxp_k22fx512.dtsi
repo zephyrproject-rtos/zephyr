@@ -49,3 +49,8 @@
 		};
 	};
 };
+
+/* Flash controller sector size is 4096 bytes */
+&flash0 {
+	erase-block-size = <4096>;
+};
