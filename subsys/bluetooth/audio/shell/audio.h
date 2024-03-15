@@ -985,6 +985,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 extern struct broadcast_source default_source;
+extern struct named_lc3_preset default_broadcast_source_preset;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
