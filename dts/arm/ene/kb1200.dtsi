@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2023 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <arm/armv7-m.dtsi>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(48)>;
+		};
+	};
+
+	sram0: memory@20040000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000 0x10000>;
+	};
+
+	soc {
+		flash-controller@50100000 {
+			compatible = "ene,kb1200-flash-controller";
+			reg = <0x50100000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10000000 0x40000>;
+			};
+		};
+
+		pmu: pmu@40010000 {
+			compatible = "ene,kb1200-pmu";
+			reg = <0x40010000 0x100>;
+		};
+
+		gcfg: gcfg@40000000 {
+			compatible = "ene,kb1200-gcfg";
+			reg = <0x40000000 0x100>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
