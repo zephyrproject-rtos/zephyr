@@ -19,6 +19,7 @@
 #ifdef CONFIG_POSIX_SYSCONF
 #include <zephyr/posix/signal.h>
 #endif
+#include <zephyr/posix/sys/confstr.h>
 #include <zephyr/posix/sys/stat.h>
 #include <zephyr/posix/sys/sysconf.h>
 
@@ -265,6 +266,9 @@ unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_FULL
 long sysconf(int opt);
+#endif
+#if _POSIX_C_SOURCE >= 2
+size_t confstr(int name, char *buf, size_t len);
 #endif
 
 #ifdef __cplusplus
