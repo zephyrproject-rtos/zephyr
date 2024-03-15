@@ -967,6 +967,76 @@ int handle_http1_rest_json_resource(struct http_resource_detail_static *static_d
 	return 0;
 }
 
+/* This feature is theoretically obsoleted in RFC9113, but curl for instance
+ * still uses it, so implement as described in RFC7540.
+ */
+static int handle_http1_to_http2_upgrade(struct http_server_ctx *server,
+				  struct http_client_ctx *client)
+{
+	static const char switching_protocols[] =
+		"HTTP/1.1 101 Switching Protocols\r\n"
+		"Connection: Upgrade\r\n"
+		"Upgrade: h2c\r\n"
+		"\r\n";
+	struct http_frame frame = {
+		/* The HTTP/1.1 request that is sent prior to upgrade is
+		 * assigned a stream identifier of 1.
+		 */
+		.stream_identifier = 1
+	};
+	struct http_resource_detail *detail;
+	int path_len;
+	int ret;
+
+	ret = sendall(client->fd, switching_protocols, sizeof(switching_protocols) - 1);
+	if (ret < 0) {
+		goto error;
+	}
+
+	/* The first HTTP/2 frame sent by the server MUST be a server connection
+	 * preface */
+	ret = sendall(client->fd, settings_frame, sizeof(settings_frame));
+	if (ret < 0) {
+		goto error;
+	}
+
+	detail = get_resource_detail(client->url_buffer, &path_len);
+	if (detail != NULL) {
+		detail->path_len = path_len;
+
+		if (detail->type == HTTP_RESOURCE_TYPE_STATIC) {
+			ret = handle_http2_static_resource(
+				(struct http_resource_detail_static *)detail,
+				&frame, client->fd);
+			if (ret < 0) {
+				goto error;
+			}
+		}
+	} else {
+		ret = send_headers_frame(client->fd, HTTP_SERVER_HPACK_STATUS_4O4,
+					 frame.stream_identifier);
+		if (ret < 0) {
+			goto error;
+		}
+
+		ret = send_data_frame(client->fd, content_404, sizeof(content_404),
+				      frame.stream_identifier);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+	memset(client->buffer, 0, sizeof(client->buffer));
+	client->offset = 0;
+	client->server_state = HTTP_SERVER_PREFACE_STATE;
+
+	return 0;
+
+error:
+	close_client_connection(server, client);
+	return ret;
+}
+
 int handle_http1_request(struct http_server_ctx *server, struct http_client_ctx *client)
 {
 	int total_received = 0;
@@ -992,23 +1062,7 @@ int handle_http1_request(struct http_server_ctx *server, struct http_client_ctx 
 	}
 
 	if (client->has_upgrade_header) {
-		static const char response[] =
-			"HTTP/1.1 101 Switching Protocols\r\n"
-			"Connection: Upgrade\r\n"
-			"Upgrade: h2c\r\n"
-			"\r\n";
-
-		ret = sendall(client->fd, response, sizeof(response) - 1);
-		if (ret < 0) {
-			close_client_connection(server, client);
-			return ret;
-		}
-
-		memset(client->buffer, 0, sizeof(client->buffer));
-		client->offset = 0;
-		client->server_state = HTTP_SERVER_PREFACE_STATE;
-
-		return 0;
+		return handle_http1_to_http2_upgrade(server, client);
 	}
 
 	detail = get_resource_detail(client->url_buffer, &path_len);
