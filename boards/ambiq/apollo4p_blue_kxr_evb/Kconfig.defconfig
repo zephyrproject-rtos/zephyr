@@ -2,9 +2,17 @@
 #
 # Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
 
-if BOARD_APOLLO4P_BLUE_KXR_EVB
+config BOARD
+	default "apollo4p_blue_kxr_evb"
+	depends on BOARD_APOLLO4P_BLUE_KXR_EVB
 
 if BT
+
+config GPIO
+	default y
+
+config CLOCK_CONTROL
+	default y
 
 config MAIN_STACK_SIZE
 	default 2048
@@ -34,5 +42,3 @@ config BT_L2CAP_TX_MTU
 	default 247
 
 endif # BT
-
-endif # BOARD_APOLLO4P_BLUE_KXR_EVB
