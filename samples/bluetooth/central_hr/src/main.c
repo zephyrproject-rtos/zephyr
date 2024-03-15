@@ -27,6 +27,8 @@ static struct bt_uuid_16 discover_uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
+uint64_t total_rx_count; /* This value is exposed to test code */
+
 static uint8_t notify_func(struct bt_conn *conn,
 			   struct bt_gatt_subscribe_params *params,
 			   const void *data, uint16_t length)
@@ -38,6 +40,8 @@ static uint8_t notify_func(struct bt_conn *conn,
 	}
 
 	printk("[NOTIFICATION] data %p length %u\n", data, length);
+
+	total_rx_count++;
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -223,6 +227,8 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	}
 
 	printk("Connected: %s\n", addr);
+
+	total_rx_count = 0U;
 
 	if (conn == default_conn) {
 		memcpy(&discover_uuid, BT_UUID_HRS, sizeof(discover_uuid));

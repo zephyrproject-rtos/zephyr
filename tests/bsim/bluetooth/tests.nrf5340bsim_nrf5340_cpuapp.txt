@@ -2,4 +2,5 @@
 # This file is used in CI to select which tests are run
 tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_encrypted_split_privacy.sh
 tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso.sh
+tests/bsim/bluetooth/samples/
 tests/bsim/bluetooth/audio_samples/
