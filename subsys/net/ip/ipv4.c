@@ -317,7 +317,8 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (net_ipv4_is_addr_unspecified((struct in_addr *)hdr->src) &&
-	    !net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->dst)) {
+	    !net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->dst) &&
+	    (hdr->proto != IPPROTO_IGMP)) {
 		NET_DBG("DROP: src addr is %s", "unspecified");
 		goto drop;
 	}
