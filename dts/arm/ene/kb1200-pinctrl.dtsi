@@ -113,4 +113,84 @@
 	/omit-if-no-ref/ tach3_gpio43: tach3_gpio43 {
 		pinmux = <ENE_KB1200_PINMUX(0x43, PINMUX_FUNC_A)>;
 	};
+	/omit-if-no-ref/ i2c0_clk_gpio2c: i2c0_clk_gpio2c {
+		pinmux = <ENE_KB1200_PINMUX(0x2C, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c0_dat_gpio2d: i2c0_dat_gpio2d {
+		pinmux = <ENE_KB1200_PINMUX(0x2D, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c1_clk_gpio2e: i2c1_clk_gpio2e {
+		pinmux = <ENE_KB1200_PINMUX(0x2E, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c1_dat_gpio2f: i2c1_dat_gpio2f {
+		pinmux = <ENE_KB1200_PINMUX(0x2F, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c2_clk_gpio32: i2c2_clk_gpio32 {
+		pinmux = <ENE_KB1200_PINMUX(0x32, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c2_dat_gpio33: i2c2_dat_gpio33 {
+		pinmux = <ENE_KB1200_PINMUX(0x33, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c3_clk_gpio34: i2c3_clk_gpio34 {
+		pinmux = <ENE_KB1200_PINMUX(0x34, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c3_dat_gpio35: i2c3_dat_gpio35 {
+		pinmux = <ENE_KB1200_PINMUX(0x35, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c4_clk_gpio38: i2c4_clk_gpio38 {
+		pinmux = <ENE_KB1200_PINMUX(0x38, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c4_dat_gpio39: i2c4_dat_gpio39 {
+		pinmux = <ENE_KB1200_PINMUX(0x39, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c5_clk_gpio4a: i2c5_clk_gpio4a {
+		pinmux = <ENE_KB1200_PINMUX(0x4A, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c5_dat_gpio4b: i2c5_dat_gpio4b {
+		pinmux = <ENE_KB1200_PINMUX(0x4B, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c6_clk_gpio4c: i2c6_clk_gpio4c {
+		pinmux = <ENE_KB1200_PINMUX(0x4C, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c6_dat_gpio4d: i2c6_dat_gpio4d {
+		pinmux = <ENE_KB1200_PINMUX(0x4D, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c7_clk_gpio50: i2c7_clk_gpio50 {
+		pinmux = <ENE_KB1200_PINMUX(0x50, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c7_dat_gpio51: i2c7_dat_gpio51 {
+		pinmux = <ENE_KB1200_PINMUX(0x51, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c8_clk_gpio70: i2c8_clk_gpio70 {
+		pinmux = <ENE_KB1200_PINMUX(0x70, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c8_dat_gpio71: i2c8_dat_gpio71 {
+		pinmux = <ENE_KB1200_PINMUX(0x71, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c9_clk_gpio72: i2c9_clk_gpio72 {
+		pinmux = <ENE_KB1200_PINMUX(0x72, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
+	/omit-if-no-ref/ i2c9_dat_gpio73: i2c9_dat_gpio73 {
+		pinmux = <ENE_KB1200_PINMUX(0x73, PINMUX_FUNC_B)>;
+		bias-pull-up;
+	};
 };
