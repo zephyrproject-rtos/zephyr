@@ -31,6 +31,7 @@
 
 	aliases {
 		led0 = &led_r;
+		led1 = &led_g;
 		sw0 = &btn_1;
 	};
 
