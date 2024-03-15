@@ -241,8 +241,6 @@ static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
 		return -EINVAL;
 	}
 
-	chan->required_sec_level = sco_server->sec_level;
-
 	bt_sco_chan_add(sco, chan);
 	bt_sco_chan_set_state(chan, BT_SCO_STATE_CONNECTING);
 
@@ -330,31 +328,6 @@ void bt_sco_cleanup_acl(struct bt_conn *sco)
 	}
 }
 
-static int sco_chan_connect_security(struct bt_conn *sco, struct bt_sco_chan *chan)
-{
-	struct bt_conn *acl;
-
-	acl = sco->sco.acl;
-
-	if (acl->sec_level < chan->required_sec_level) {
-		int err;
-
-		err = bt_conn_set_security(acl,	chan->required_sec_level);
-		if (err != 0) {
-			LOG_DBG("Failed to set security: %d", err);
-
-			/* Restore states */
-			bt_sco_cleanup_acl(sco);
-			bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
-
-			return err;
-		}
-		bt_sco_chan_set_state(chan, BT_SCO_STATE_ENCRYPT_PENDING);
-	}
-
-	return 0;
-}
-
 static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 {
 	struct net_buf *buf;
@@ -421,15 +394,6 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 	bt_conn_set_state(chan->sco, BT_CONN_CONNECTING);
 	bt_sco_chan_set_state(chan, BT_SCO_STATE_CONNECTING);
 
-	if (sco_chan_connect_security(sco_conn, chan) != 0)	{
-		bt_sco_cleanup(sco_conn);
-		return NULL;
-	}
-
-	if (chan->state == BT_SCO_STATE_ENCRYPT_PENDING) {
-		return sco_conn;
-	}
-
 	if (sco_setup_sync_conn(sco_conn) < 0) {
 		bt_conn_set_state(chan->sco, BT_CONN_DISCONNECTED);
 		bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
@@ -438,91 +402,4 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 	}
 
 	return sco_conn;
-}
-
-struct sco_conns_scanning_data {
-	struct bt_conn *acl;
-	struct bt_conn *sco[CONFIG_BT_MAX_SCO_CONN];
-};
-
-static void sco_conns_scanning_cb(struct bt_conn *sco, void *user_data)
-{
-	struct sco_conns_scanning_data *data;
-	struct bt_sco_chan *chan;
-	int i;
-
-	data = (struct sco_conns_scanning_data *)user_data;
-
-	if (sco->sco.acl != data->acl) {
-		return;
-	}
-
-	chan = SCO_CHAN(sco);
-	if (chan->state != BT_SCO_STATE_ENCRYPT_PENDING) {
-		return;
-	}
-
-	for (i = 0; i < CONFIG_BT_MAX_SCO_CONN; i++) {
-		if (data->sco[i] == NULL) {
-			data->sco[i] = sco;
-			break;
-		}
-	}
-	bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
-}
-
-void bt_sco_security_changed(struct bt_conn *acl, uint8_t hci_status)
-{
-	struct sco_conns_scanning_data data;
-	struct bt_sco_chan *chan;
-	int err;
-	int i;
-	uint8_t hci_err;
-
-	/* The peripheral does not accept any SCO requests if security is
-	 * insufficient, so we only need to handle central here.
-	 * BT_SCO_STATE_ENCRYPT_PENDING is only set by the central.
-	 */
-	if (!IS_ENABLED(CONFIG_BT_CENTRAL) ||
-		acl->role != BT_CONN_ROLE_CENTRAL) {
-		return;
-	}
-
-	(void)memset(&data, 0, sizeof(data));
-
-	bt_conn_foreach(BT_CONN_TYPE_SCO, sco_conns_scanning_cb, &data);
-
-	for (i = 0; i < CONFIG_BT_MAX_SCO_CONN; i++) {
-		struct bt_conn *sco;
-
-		sco = data.sco[i];
-		if (sco != NULL) {
-			chan = SCO_CHAN(sco);
-			hci_err = hci_status;
-
-			if (hci_status == BT_HCI_ERR_SUCCESS) {
-				err = sco_setup_sync_conn(sco);
-				if (err < 0) {
-					LOG_ERR("Failed to setup sync conn: %d", err);
-					bt_sco_cleanup(sco);
-					hci_err = BT_HCI_ERR_UNSPECIFIED;
-				} else {
-					/* Set connection states */
-					bt_sco_chan_set_state(chan, BT_SCO_STATE_CONNECTING);
-				}
-			}
-
-			if (hci_err != BT_HCI_ERR_SUCCESS) {
-				LOG_DBG("Failed to encrypt ACL %p for SCO %p: %u", acl,
-							sco, hci_status);
-
-				/* Notify upper-layer that the SCO connection
-				 * cannot be created due to the error.
-				 */
-				if (chan->ops->disconnected) {
-					chan->ops->disconnected(chan, hci_err);
-				}
-			}
-		}
-	}
 }

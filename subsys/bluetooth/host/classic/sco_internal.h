@@ -53,16 +53,6 @@ struct bt_sco_chan {
 	struct bt_sco_chan_ops		*ops;
 
 	enum bt_sco_state		state;
-
-	/** @brief The required security level of the channel
-	 *
-	 * This value can be set as the central before calling bt_conn_create_sco().
-	 * The value is overwritten to @ref bt_iso_server::sec_level for the
-	 * peripheral once a channel has been accepted.
-	 *
-	 * Only available when @kconfig{CONFIG_BT_SMP} is enabled.
-	 */
-	bt_security_t			required_sec_level;
 };
 
 /** @brief Initiate an SCO connection to a remote device.
@@ -149,11 +139,7 @@ void bt_sco_connected(struct bt_conn *sco);
  */
 void bt_sco_disconnected(struct bt_conn *sco);
 
-/* Notify SCO connected channels of security changed */
-void bt_sco_security_changed(struct bt_conn *acl, uint8_t hci_status);
-
 uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt);
-
 
 #if defined(CONFIG_BT_CONN_LOG_LEVEL_DBG)
 void bt_sco_chan_set_state_debug(struct bt_sco_chan *chan,

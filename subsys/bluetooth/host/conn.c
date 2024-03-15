@@ -2325,10 +2325,6 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 		bt_iso_security_changed(conn, hci_err);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
-		bt_sco_security_changed(conn, hci_err);
-	}
-
 	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->security_changed) {
 			cb->security_changed(conn, conn->sec_level, err);
