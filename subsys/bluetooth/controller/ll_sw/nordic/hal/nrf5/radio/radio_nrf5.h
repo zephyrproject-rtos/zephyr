@@ -86,4 +86,8 @@
 #endif
 
 /* This is delay between PPI task START and timer actual start counting. */
+#if !defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
 #define HAL_RADIO_TMR_START_DELAY_US 1U
+#else /* For simulated targets there is no delay for the PPI task -> TIMER start */
+#define HAL_RADIO_TMR_START_DELAY_US 0U
+#endif
