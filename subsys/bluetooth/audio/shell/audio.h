@@ -71,6 +71,8 @@ struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_audio_codec_qos qos;
+	bool is_tx;
+	bool is_rx;
 
 #if defined(CONFIG_LIBLC3)
 	uint32_t lc3_freq_hz;
@@ -81,31 +83,38 @@ struct shell_stream {
 	uint8_t lc3_chan_cnt;
 #endif /* CONFIG_LIBLC3 */
 
+	union {
 #if defined(CONFIG_BT_AUDIO_TX)
-	int64_t connected_at_ticks; /* The uptime tick measured when stream was connected */
-	uint16_t seq_num;
-	struct k_work_delayable audio_send_work;
-	bool tx_active;
+		struct {
+			/* The uptime tick measured when stream was connected */
+			int64_t connected_at_ticks;
+			uint16_t seq_num;
+			struct k_work_delayable audio_send_work;
+			bool tx_active;
 #if defined(CONFIG_LIBLC3)
-	atomic_t lc3_enqueue_cnt;
-	size_t lc3_sdu_cnt;
+			atomic_t lc3_enqueue_cnt;
+			size_t lc3_sdu_cnt;
 #endif /* CONFIG_LIBLC3 */
+		} tx;
 #endif /* CONFIG_BT_AUDIO_TX */
 
 #if defined(CONFIG_BT_AUDIO_RX)
-	struct bt_iso_recv_info last_info;
-	size_t empty_sdu_pkts;
-	size_t lost_pkts;
-	size_t err_pkts;
-	size_t dup_psn;
-	size_t rx_cnt;
-	size_t dup_ts;
+		struct {
+			struct bt_iso_recv_info last_info;
+			size_t empty_sdu_pkts;
+			size_t lost_pkts;
+			size_t err_pkts;
+			size_t dup_psn;
+			size_t rx_cnt;
+			size_t dup_ts;
 #if defined(CONFIG_LIBLC3)
-	lc3_decoder_mem_48k_t lc3_decoder_mem;
-	lc3_decoder_t lc3_decoder;
-	size_t decoded_cnt;
+			lc3_decoder_mem_48k_t lc3_decoder_mem;
+			lc3_decoder_t lc3_decoder;
+			size_t decoded_cnt;
 #endif /* CONFIG_LIBLC3 */
+		} rx;
 #endif /* CONFIG_BT_AUDIO_RX */
+	};
 };
 
 struct broadcast_source {
