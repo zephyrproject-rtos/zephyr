@@ -52,7 +52,7 @@ struct input_event {
 /**
  * @brief Report a new input event.
  *
- * This causes all the listeners for the specified device to be triggered,
+ * This causes all the callbacks for the specified device to be executed,
  * either synchronously or through the input thread if utilized.
  *
  * @param dev Device generating the event or NULL.
@@ -118,9 +118,9 @@ static inline int input_report_abs(const struct device *dev,
 bool input_queue_empty(void);
 
 /**
- * @brief Input listener callback structure.
+ * @brief Input callback structure.
  */
-struct input_listener {
+struct input_callback {
 	/** @ref device pointer or NULL. */
 	const struct device *dev;
 	/** The callback function. */
@@ -138,8 +138,8 @@ struct input_listener {
  * @param _callback The callback function.
  */
 #define INPUT_CALLBACK_DEFINE(_dev, _callback)                                 \
-	static const STRUCT_SECTION_ITERABLE(input_listener,                   \
-					     _input_listener__##_callback) = { \
+	static const STRUCT_SECTION_ITERABLE(input_callback,                   \
+					     _input_callback__##_callback) = { \
 		.dev = _dev,                                                   \
 		.callback = _callback,                                         \
 	}
