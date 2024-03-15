@@ -155,8 +155,7 @@ int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
 				struct shell_stream *snk_uni_streams[], size_t snk_cnt,
 				struct shell_stream *src_uni_streams[], size_t src_cnt);
 
-int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
-		   const struct bap_unicast_ac_param *param);
+int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *param);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
@@ -946,6 +945,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 extern struct broadcast_source default_source;
+extern struct named_lc3_preset default_broadcast_source_preset;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
