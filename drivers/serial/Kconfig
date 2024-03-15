@@ -270,6 +270,8 @@ source "drivers/serial/Kconfig.intel_lw"
 
 source "drivers/serial/Kconfig.renesas_ra"
 
+source "drivers/serial/Kconfig.ene"
+
 source "drivers/serial/Kconfig.rzt2m"
 
 endif # SERIAL
