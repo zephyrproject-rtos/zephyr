@@ -52,6 +52,14 @@
 			compatible = "ene,kb1200-gcfg";
 			reg = <0x40000000 0x100>;
 		};
+
+		pinctrl: pin-controller@50000000 {
+			compatible = "ene,kb1200-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x50000000 0x100>;
+			status = "okay";
+		};
 	};
 };
 
