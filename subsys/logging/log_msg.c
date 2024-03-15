@@ -329,7 +329,6 @@ void z_impl_z_log_msg_static_create(const void *source,
 
 	z_log_msg_finalize(msg, source, out_desc, data);
 }
-EXPORT_SYSCALL(z_log_msg_static_create);
 
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_z_log_msg_static_create(const void *source,
