@@ -130,6 +130,90 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		pwm0: pwm@40210000 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210000 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@40210010 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210010 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@40210020 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210020 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@40210030 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210030 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@40210040 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210040 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm5: pwm@40210050 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210050 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@40210060 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210060 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@40210070 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210070 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm8: pwm@40210080 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210080 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm9: pwm@40210090 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210090 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		fanpwm0: pwm@40200000 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40200000 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		fanpwm1: pwm@40200010 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40200010 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
 
