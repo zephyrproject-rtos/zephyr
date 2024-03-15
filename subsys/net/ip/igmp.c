@@ -255,7 +255,6 @@ static int igmp_send(struct net_pkt *pkt)
 	ret = net_send_data(pkt);
 	if (ret < 0) {
 		net_stats_update_ipv4_igmp_drop(net_pkt_iface(pkt));
-		net_pkt_unref(pkt);
 		return ret;
 	}
 
