@@ -21,6 +21,7 @@
 /soc/arm/aspeed/                          @aspeeddylan
 /soc/atmel/                               @nandojve
 /soc/arm/bcm*/                            @sbranden
+/soc/arm/ene/                             @ene-steven
 /soc/arm/infineon_cat1/                   @ifyall @npal-cy
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/silabs_exx32/efm32pg1b/          @rdmeneze
@@ -42,6 +43,7 @@
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
 /soc/starfive/jh71xx/ 			  @pfarwsi
 /soc/riscv/riscv-privileged/niosv/         @sweeaun
+/boards/ene/                              @ene-steven
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
 /boards/arm/96b_carbon/                   @idlethread
@@ -164,6 +166,7 @@
 /drivers/adc/adc_rpi_pico.c               @soburi
 /drivers/adc/*ads114s0x*                  @benediktibk
 /drivers/adc/*max11102_17*                @benediktibk
+/drivers/adc/*kb1200*                     @ene-steven
 /drivers/adc/adc_ad5592.c                 @bbilas
 /drivers/audio/*nrfx*                     @anangl
 /drivers/auxdisplay/*pt6314*              @xingrz
@@ -239,6 +242,7 @@
 /drivers/gpio/*ads114s0x*                 @benediktibk
 /drivers/gpio/*bd8lb600fs*                @benediktibk
 /drivers/gpio/*pcal64xxa*                 @benediktibk
+/drivers/gpio/*kb1200*                    @ene-steven
 /drivers/gpio/gpio_altera_pio.c           @shilinte
 /drivers/gpio/gpio_ad5592.c               @bbilas
 /drivers/i2c/i2c_common.c                 @sjg20
@@ -252,6 +256,7 @@
 /drivers/i2c/Kconfig.test                 @mbolivar-ampere
 /drivers/i2c/i2c_test.c                   @mbolivar-ampere
 /drivers/i2c/*rcar*                       @aaillet
+/drivers/i2c/*kb1200*                     @ene-steven
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2s/*nrfx*                       @anangl
@@ -289,6 +294,7 @@
 /drivers/modem/Kconfig.simcom-sim7080     @lgehreke
 /drivers/pinctrl/*esp32*                  @sylvioalves
 /drivers/pinctrl/*it8xxx2*                @ite
+/drivers/pinctrl/*kb1200*                 @ene-steven
 /drivers/pm_cpu_ops/psci_shell.c          @nbalabak @gdengi
 /drivers/power_domain/                    @ceolin
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
@@ -307,6 +313,7 @@
 /drivers/pwm/*esp32*                      @LucasTambor
 /drivers/pwm/*rcar*                       @aaillet
 /drivers/pwm/*max31790*                   @benediktibk
+/drivers/pwm/*kb1200*                     @ene-steven
 /drivers/regulator/*                      @gmarull
 /drivers/regulator/regulator_max20335.c   @bbilas
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
@@ -326,6 +333,7 @@
 /drivers/sensor/qdec_stm32/               @valeriosetti
 /drivers/sensor/rpi_pico_temp/            @soburi
 /drivers/sensor/st*/                      @avisconti
+/drivers/sensor/ene_tack_kb1200/          @ene-steven
 /drivers/serial/*b91*                     @andy-liu-telink
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/uart_altera.c             @gohshunjing
@@ -350,6 +358,7 @@
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/serial/*intel_lw*                @shilinte
+/drivers/serial/*kb1200*                  @ene-steven
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/ptp_clock/                       @tbursztyka @jukkar
@@ -396,6 +405,7 @@
 /drivers/watchdog/*rpi_pico*              @thedjnK
 /drivers/watchdog/*dw*                    @softwarecki @pbalsundar
 /drivers/watchdog/*ifx*                   @sreeramIfx
+/drivers/watchdog/*kb1200*                @ene-steven
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
@@ -406,6 +416,7 @@
 /dts/arm/atmel/                           @galak @nandojve
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/cypress/                         @ifyall @npal-cy
+/dts/arm/ene/kb1200                       @ene-steven
 /dts/arm/gd/                              @nandojve
 /dts/arm/infineon/xmc4*                   @parthitce @ifyall @npal-cy
 /dts/arm/infineon/psoc6/                  @ifyall @npal-cy
