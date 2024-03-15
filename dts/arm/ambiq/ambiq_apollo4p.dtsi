@@ -3,6 +3,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -22,13 +23,36 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
 		};
-	};
 
-	/* MRAM region */
-	flash0: flash@18000 {
-		compatible = "soc-nv-flash";
-		reg = <0x00018000 0x1e8000>;
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/*
+				 * As Apollo4 datasheet, run_to_sleep and sleep_to_run
+				 * transition time are both lower than 1us, but
+				 * considering the software overhead we set a
+				 * bigger value.
+				 */
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				/*
+				 * As Apollo4 datasheet, run_to_deepsleep transition
+				 * time is lower than 1us and deepsleep_to_run
+				 * transition time is about 25us, but considering
+				 * the software overhead, we set a bigger value.
+				 */
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
+			};
+		};
 	};
 
 	/* TCM */
@@ -47,6 +71,20 @@
 	soc {
 		compatible = "ambiq,apollo4p", "ambiq,apollo4x", "simple-bus";
 
+		flash: flash-controller@18000 {
+			compatible = "ambiq,flash-controller";
+			reg = <0x00018000 0x1e8000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* MRAM region */
+			flash0: flash@18000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00018000 0x1e8000>;
+			};
+		};
+
 		pwrcfg: pwrcfg@40021000 {
 			compatible = "ambiq,pwrctrl";
 			reg = <0x40021000 0x400>;
@@ -60,9 +98,9 @@
 			status = "okay";
 		};
 
-		counter0: counter@40008000 {
+		counter0: counter@40008200 {
 			compatible = "ambiq,counter";
-			reg = <0x40008000 0x80>;
+			reg = <0x40008200 0x20>;
 			interrupts = <67 0>;
 			status = "disabled";
 		};
@@ -75,6 +113,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x200>;
+			zephyr,pm-device-runtime-auto;
 		};
 		uart1: uart@4001d000 {
 			compatible = "ambiq,uart", "arm,pl011";
@@ -84,6 +123,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x400>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		uart2: uart@4001e000 {
@@ -94,6 +134,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x800>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		uart3: uart@4001f000 {
@@ -104,6 +145,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		iom0_spi: spi@40050000 {
@@ -185,6 +227,7 @@
 			interrupts = <10 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		iom4_i2c: i2c@40054000 {
@@ -239,6 +282,7 @@
 			interrupts = <13 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		iom7_i2c: i2c@40057000 {
@@ -248,6 +292,18 @@
 			interrupts = <13 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+		};
+
+		adc0: adc@40038000 {
+			reg = <0x40038000 0x294>;
+			interrupts = <19 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			vref-mv = <1500>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x2000>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		mspi0: spi@40060000 {
