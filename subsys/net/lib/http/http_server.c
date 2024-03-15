@@ -976,12 +976,12 @@ int handle_http1_request(struct http_server_ctx *server, struct http_client_ctx 
 	LOG_DBG("HTTP_SERVER_REQUEST");
 
 	http_parser_init(&client->parser, HTTP_REQUEST);
-	http_parser_settings_init(&client->parserSettings);
+	http_parser_settings_init(&client->parser_settings);
 
-	client->parserSettings.on_header_field = on_header_field;
-	client->parserSettings.on_url = on_url;
+	client->parser_settings.on_header_field = on_header_field;
+	client->parser_settings.on_url = on_url;
 
-	http_parser_execute(&client->parser, &client->parserSettings,
+	http_parser_execute(&client->parser, &client->parser_settings,
 			    client->buffer + offset, client->offset);
 
 	total_received += client->offset;
