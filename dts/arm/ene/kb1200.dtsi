@@ -99,6 +99,30 @@
 				status = "disabled";
 			};
 		};
+
+		uart0: serial@40310000 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310000 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: serial@40310020 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310020 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: serial@40310040 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310040 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
 	};
 };
 
