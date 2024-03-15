@@ -42,6 +42,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/dsa.h>
 #endif
 
+#if defined(CONFIG_NET_POWER_MANAGEMENT) && defined(CONFIG_PM_DEVICE)
+#include <zephyr/pm/device.h>
+#endif
+
 #include <zephyr/drivers/ethernet/eth_nxp_enet.h>
 #include <zephyr/dt-bindings/ethernet/nxp_enet.h>
 #include <fsl_enet.h>
@@ -629,6 +633,50 @@ static int eth_nxp_enet_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct nxp_enet_mac_config *config = dev->config;
+	struct nxp_enet_mac_data *data = dev->data;
+	int ret;
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
+	if (action == PM_DEVICE_ACTION_SUSPEND) {
+		LOG_DBG("Suspending");
+
+		ret = net_if_suspend(data->iface);
+		if (ret) {
+			return ret;
+		}
+
+		ENET_Reset(config->base);
+		ENET_Down(config->base);
+		clock_control_off(config->clock_dev, (clock_control_subsys_t)config->clock_subsys);
+	} else if (action == PM_DEVICE_ACTION_RESUME) {
+		LOG_DBG("Resuming");
+
+		clock_control_on(config->clock_dev, (clock_control_subsys_t)config->clock_subsys);
+		eth_nxp_enet_init(dev);
+		net_if_resume(data->iface);
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#define ETH_NXP_ENET_PM_DEVICE_INIT(n)	\
+	PM_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_device_pm_action);
+#define ETH_NXP_ENET_PM_DEVICE_GET(n) PM_DEVICE_DT_INST_GET(n)
+
+#else
+#define ETH_NXP_ENET_PM_DEVICE_INIT(n)
+#define ETH_NXP_ENET_PM_DEVICE_GET(n) NULL
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
+
 #ifdef CONFIG_NET_DSA
 #define NXP_ENET_SEND_FUNC dsa_tx
 #else
@@ -842,7 +890,10 @@ static const struct ethernet_api api_funcs = {
 			.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,			\
 		};									\
 											\
-		ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_init, NULL,		\
+		ETH_NXP_ENET_PM_DEVICE_INIT(n)						\
+											\
+		ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_init,			\
+					ETH_NXP_ENET_PM_DEVICE_GET(n),			\
 					&nxp_enet_##n##_data, &nxp_enet_##n##_config,	\
 					CONFIG_ETH_INIT_PRIORITY,			\
 					&api_funcs, NET_ETH_MTU);
