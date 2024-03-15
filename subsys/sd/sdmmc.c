@@ -75,6 +75,8 @@ static int sdmmc_spi_send_ocr(struct sd_card *card, uint32_t arg)
 	cmd.opcode = SD_SPI_READ_OCR;
 	cmd.arg = arg;
 	cmd.response_type = SD_SPI_RSP_TYPE_R3;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 
@@ -103,6 +105,8 @@ static int sdmmc_send_ocr(struct sd_card *card, int ocr)
 	cmd.arg = ocr;
 	cmd.response_type = (SD_RSP_TYPE_R3 | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
+
 	/* Send initialization ACMD41 */
 	for (retries = 0; retries < CONFIG_SD_OCR_RETRY_COUNT; retries++) {
 		ret = sdmmc_app_command(card, 0U);
@@ -171,6 +175,7 @@ static int sdmmc_read_scr(struct sd_card *card)
 	cmd.arg = 0;
 	cmd.response_type =  (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 
 	data.block_size = 8U;
 	data.blocks = 1U;
@@ -209,8 +214,9 @@ static int sdmmc_set_blocklen(struct sd_card *card, uint32_t block_len)
 
 	cmd.opcode = SD_SET_BLOCK_SIZE;
 	cmd.arg = block_len;
-	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	cmd.response_type =  (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
@@ -234,9 +240,12 @@ static int sdmmc_set_bus_width(struct sd_card *card, enum sdhc_bus_width width)
 		LOG_DBG("SD app command failed for ACMD6");
 		return ret;
 	}
+
 	cmd.opcode = SD_APP_SET_BUS_WIDTH;
 	cmd.response_type = SD_RSP_TYPE_R1;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
+
 	switch (width) {
 	case SDHC_BUS_WIDTH1BIT:
 		cmd.arg = 0U;
@@ -286,6 +295,7 @@ static int sdmmc_switch(struct sd_card *card, enum sd_switch_arg mode,
 	cmd.arg |= (value & 0xF) << (group * 4);
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 
 	data.block_size = 64U;
 	data.blocks = 1;
