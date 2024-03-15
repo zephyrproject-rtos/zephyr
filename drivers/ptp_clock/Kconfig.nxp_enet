@@ -3,7 +3,7 @@
 
 config PTP_CLOCK_NXP_ENET
 	bool "NXP ENET PTP Clock driver"
-	default y if DT_HAS_NXP_ENET_PTP_CLOCK_ENABLED && \
-			(PTP_CLOCK || NET_L2_PTP)
+	default y
+	depends on DT_HAS_NXP_ENET_PTP_CLOCK_ENABLED && NET_L2_PTP
 	help
 	  Enable NXP ENET PTP clock support.
