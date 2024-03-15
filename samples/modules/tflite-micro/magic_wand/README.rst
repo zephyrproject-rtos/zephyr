@@ -24,6 +24,13 @@ from an accelerometer.
 Building and Running
 ********************
 
+Add the tflite-micro module to your West manifest and pull it:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +tflite-micro
+    west update
+
 The application can be built for the :ref:`litex-vexriscv` for
 emulation in Renode as follows:
 

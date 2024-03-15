@@ -34,6 +34,13 @@ Building and Running
 The sample should work on most boards since it does not rely
 on any sensors.
 
+Add the tflite-micro module to your West manifest and pull it:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +tflite-micro
+    west update
+
 The reference kernel application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
