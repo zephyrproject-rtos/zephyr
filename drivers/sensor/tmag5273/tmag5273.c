@@ -941,7 +941,7 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 		(int)drv_cfg->temperature;
 
 	drv_data->conversion_time_us = TMAG5273_T_CONVERSION_US(
-		(FIELD_GET(regdata, TMAG5273_CONV_AVB_MSK)), (nb_captured_channels));
+		(FIELD_GET(TMAG5273_CONV_AVB_MSK, regdata)), (nb_captured_channels));
 
 	regdata |= TMAG5273_I2C_READ_MODE_STANDARD;
 
