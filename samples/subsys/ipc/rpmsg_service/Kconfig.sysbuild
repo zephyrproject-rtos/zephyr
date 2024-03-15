@@ -6,11 +6,5 @@ source "share/sysbuild/Kconfig"
 
 config RPMSG_REMOTE_BOARD
 	string
-	default "nrf5340dk/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"
-	default "bl5340_dvk/nrf5340/cpunet" if $(BOARD) = "bl5340_dvk"
-	default "lpcxpresso54114/lpc54114/m0" if $(BOARD) = "lpcxpresso54114"
-	default "mps2_an521_remote" if $(BOARD) = "mps2_an521"
-	default "v2m_musca_b1_ns" if $(BOARD) = "v2m_musca_b1"
-	default "esp32_devkitc_wroom_appcpu" if $(BOARD) = "esp32_devkitc_wroom"
-	default "esp32_devkitc_wrover_appcpu" if $(BOARD) = "esp32_devkitc_wrover"
-	default "esp32s3_devkitm_appcpu" if $(BOARD) = "esp32s3_devkitm"
+	default "mps2/an521/cpu1" if $(BOARD) = "mps2"
+	default "v2m_musca_b1/musca_b1/ns" if $(BOARD) = "v2m_musca_b1"
