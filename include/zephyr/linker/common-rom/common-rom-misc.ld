@@ -27,7 +27,7 @@
 #endif
 
 #if defined(CONFIG_INPUT)
-	ITERABLE_SECTION_ROM(input_listener, 4)
+	ITERABLE_SECTION_ROM(input_callback, 4)
 #endif
 
 #if defined(CONFIG_EMUL)

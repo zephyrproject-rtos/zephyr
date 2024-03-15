@@ -20,9 +20,9 @@ K_MSGQ_DEFINE(input_msgq, sizeof(struct input_event),
 
 static void input_process(struct input_event *evt)
 {
-	STRUCT_SECTION_FOREACH(input_listener, listener) {
-		if (listener->dev == NULL || listener->dev == evt->dev) {
-			listener->callback(evt);
+	STRUCT_SECTION_FOREACH(input_callback, callback) {
+		if (callback->dev == NULL || callback->dev == evt->dev) {
+			callback->callback(evt);
 		}
 	}
 }
