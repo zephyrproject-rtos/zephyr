@@ -83,8 +83,9 @@ static int lsm6dsv16x_accel_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static const uint16_t lsm6dsv16x_gyro_fs_map[] = {250, 125, 500, 0, 1000, 0, 2000};
-static const uint16_t lsm6dsv16x_gyro_fs_sens[] = {2, 1, 4, 0, 8, 0, 16};
+static const uint16_t lsm6dsv16x_gyro_fs_map[] = {125, 250, 500, 1000, 2000, 0,   0,
+						  0,   0,   0,   0,    0,    4000};
+static const uint16_t lsm6dsv16x_gyro_fs_sens[] = {1, 2, 4, 8, 16, 0, 0, 0, 0, 0, 0, 0, 32};
 
 static int lsm6dsv16x_gyro_range_to_fs_val(int32_t range)
 {
@@ -919,9 +920,11 @@ static int lsm6dsv16x_init(const struct device *dev)
  */
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
-#define LSM6DSV16X_CFG_IRQ(inst)						\
+#define LSM6DSV16X_CFG_IRQ(inst)					\
 	.trig_enabled = true,						\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
+	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),	\
+	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, { 0 }),	\
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
 	.drdy_pin = DT_INST_PROP(inst, drdy_pin)
 #else
 #define LSM6DSV16X_CFG_IRQ(inst)
@@ -937,9 +940,9 @@ static int lsm6dsv16x_init(const struct device *dev)
 	.accel_range = DT_INST_PROP(inst, accel_range),			\
 	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
 	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
-	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
-		(LSM6DSV16X_CFG_IRQ(inst)), ())
+	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),	\
+		   (LSM6DSV16X_CFG_IRQ(inst)))
 
 #define LSM6DSV16X_CONFIG_SPI(inst)					\
 	{								\

@@ -259,11 +259,11 @@ static int cmd_has_client(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(has_client_cmds,
 	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_has_client_init, 1, 0),
 	SHELL_CMD_ARG(discover, NULL, HELP_NONE, cmd_has_client_discover, 1, 0),
-	SHELL_CMD_ARG(presets-read, NULL, "<start_index_hex> <max_count_dec>",
+	SHELL_CMD_ARG(presets_read, NULL, "<start_index_hex> <max_count_dec>",
 		      cmd_has_client_read_presets, 3, 0),
-	SHELL_CMD_ARG(preset-set, NULL, "<index_hex> [sync]", cmd_has_client_preset_set, 2, 1),
-	SHELL_CMD_ARG(preset-next, NULL, "[sync]", cmd_has_client_preset_next, 1, 1),
-	SHELL_CMD_ARG(preset-prev, NULL, "[sync]", cmd_has_client_preset_prev, 1, 1),
+	SHELL_CMD_ARG(preset_set, NULL, "<index_hex> [sync]", cmd_has_client_preset_set, 2, 1),
+	SHELL_CMD_ARG(preset_next, NULL, "[sync]", cmd_has_client_preset_next, 1, 1),
+	SHELL_CMD_ARG(preset_prev, NULL, "[sync]", cmd_has_client_preset_prev, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 

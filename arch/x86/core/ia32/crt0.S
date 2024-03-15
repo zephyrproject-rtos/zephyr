@@ -21,14 +21,14 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 	/* exports (private APIs) */
 
 	GTEXT(__start)
 
 	/* externs */
-	GTEXT(z_x86_prep_c)
+	GTEXT(z_prep_c)
 	GTEXT(z_bss_zero)
 	GTEXT(z_data_copy)
 
@@ -287,7 +287,7 @@ __csSet:
 	/* pointer to multiboot info, or NULL */
 	movl	%ebx, __x86_boot_arg_t_arg_OFFSET(%ebp)
 	pushl	$x86_cpu_boot_arg
-	call	z_x86_prep_c	/* enter kernel; never returns */
+	call	z_prep_c	/* enter kernel; never returns */
 
 #if defined(CONFIG_X86_SSE)
 

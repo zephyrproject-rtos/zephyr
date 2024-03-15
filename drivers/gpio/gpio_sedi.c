@@ -244,6 +244,8 @@ static int gpio_sedi_interrupt_configure(const struct device *dev,
 			pin_config.interrupt_mode =
 				SEDI_GPIO_INT_MODE_BOTH_EDGE;
 			break;
+		default:
+			return -EINVAL;
 		}
 	}
 	/* Configure interrupt mode */

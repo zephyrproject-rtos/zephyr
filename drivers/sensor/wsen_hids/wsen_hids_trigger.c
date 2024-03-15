@@ -89,8 +89,13 @@ static void hids_drdy_callback(const struct device *dev, struct gpio_callback *c
 }
 
 #ifdef CONFIG_WSEN_HIDS_TRIGGER_OWN_THREAD
-static void hids_thread(struct hids_data *data)
+static void hids_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct hids_data *data = p1;
+
 	while (true) {
 		k_sem_take(&data->drdy_sem, K_FOREVER);
 		hids_process_drdy_interrupt(data->dev);
@@ -151,7 +156,7 @@ int hids_init_interrupt(const struct device *dev)
 	k_sem_init(&data->drdy_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&data->thread, data->thread_stack, CONFIG_WSEN_HIDS_THREAD_STACK_SIZE,
-			(k_thread_entry_t)hids_thread, data, NULL, NULL,
+			hids_thread, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WSEN_HIDS_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_WSEN_HIDS_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = hids_work_cb;

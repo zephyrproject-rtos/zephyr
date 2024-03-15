@@ -303,7 +303,7 @@ the controller.
 I\ :sup:`2`\ C Devices under I3C Bus
 ====================================
 
-Since I3C is backware compatible with I\ :sup:`2`\ C, the I3C controller
+Since I3C is backward compatible with I\ :sup:`2`\ C, the I3C controller
 API can accommodate I2C API calls without modifications if the controller
 device driver implements the I2C API. This has the advantage of using
 existing I2C devices without any modifications to their device drivers.

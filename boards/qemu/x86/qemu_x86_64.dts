@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2019 Intel Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "qemu_x86.dts"
+
+/ {
+	cpus {
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "intel,x86";
+			d-cache-line-size = <64>;
+			reg = <1>;
+		};
+	};
+};
+
+&pcie0 {
+	smbus0: smbus0 {
+		compatible = "intel,pch-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		vendor-id = <0x8086>;
+		device-id = <0x2930>;
+		interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+		interrupt-parent = <&intc>;
+
+		status = "okay";
+	};
+};

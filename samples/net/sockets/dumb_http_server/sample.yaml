@@ -2,14 +2,14 @@ sample:
   description: BSD Sockets API dumb HTTP server example
   name: socket_dumb_http_server
 common:
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   harness: net
   min_ram: 32
   min_flash: 96
   tags:
     - net
     - socket
-  platform_exclude: intel_adsp_cavs25
+  platform_exclude: intel_adsp/cavs25
 tests:
   sample.net.sockets.dumb_http_server:
     extra_configs:

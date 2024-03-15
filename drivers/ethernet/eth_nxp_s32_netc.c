@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 
-#include <S32Z2.h>
+#include <soc.h>
 #include <Netc_Eth_Ip.h>
 #include <Netc_Eth_Ip_Irq.h>
 #include <Netc_EthSwt_Ip.h>
@@ -81,13 +81,13 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 
 	for (int i = 0; i < NETC_MSIX_EVENTS_COUNT; i++) {
 		msix = &cfg->msix[i];
-		if (msix->mbox_channel.dev != NULL) {
-			err = mbox_register_callback(&msix->mbox_channel,
-						     nxp_s32_eth_msix_wrapper,
-						     (void *)msix);
+		if (mbox_is_ready_dt(&msix->mbox_spec)) {
+			err = mbox_register_callback_dt(&msix->mbox_spec,
+							nxp_s32_eth_msix_wrapper,
+							(void *)msix);
 			if (err != 0) {
 				LOG_ERR("Failed to register MRU callback on channel %u",
-					msix->mbox_channel.id);
+					msix->mbox_spec.channel_id);
 				return err;
 			}
 		}

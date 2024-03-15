@@ -72,7 +72,7 @@ static int intel_adsp_wdt_setup(const struct device *dev, uint8_t options)
 		return ret;
 	}
 
-	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+	for (i = 0; i < arch_num_cpus(); i++) {
 		ret = dw_wdt_configure(dev_data->core_wdt[i], dev_data->period_cfg);
 		if (ret) {
 			return ret;
@@ -120,7 +120,7 @@ static int intel_adsp_wdt_feed(const struct device *dev, int channel_id)
 {
 	struct intel_adsp_wdt_dev_data *const dev_data = dev->data;
 
-	if (channel_id >= CONFIG_MP_MAX_NUM_CPUS) {
+	if (channel_id >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
@@ -154,7 +154,7 @@ static int intel_adsp_wdt_init(const struct device *dev)
 	unsigned int i;
 	int ret;
 
-	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+	for (i = 0; i < arch_num_cpus(); i++) {
 		dev_data->core_wdt[i] = intel_adsp_wdt_pointer_get(dev_config->base, i);
 		ret = dw_wdt_probe(dev_data->core_wdt[i], reset_pulse_length);
 		if (ret) {
@@ -183,7 +183,7 @@ int intel_adsp_watchdog_pause(const struct device *dev, const int channel_id)
 {
 	const struct intel_adsp_wdt_dev_cfg *const dev_config = dev->config;
 
-	if (channel_id >= CONFIG_MP_MAX_NUM_CPUS) {
+	if (channel_id >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
@@ -203,12 +203,17 @@ int intel_adsp_watchdog_resume(const struct device *dev, const int channel_id)
 {
 	const struct intel_adsp_wdt_dev_cfg *const dev_config = dev->config;
 
-	if (channel_id >= CONFIG_MP_MAX_NUM_CPUS) {
+	if (channel_id >= arch_num_cpus()) {
 		return -EINVAL;
 	}
 
 	intel_adsp_wdt_resume(dev_config->base, channel_id);
 	return 0;
+}
+
+int dw_wdt_disable(const struct device *dev)
+{
+	return -ENOTSUP;
 }
 
 static const struct wdt_driver_api intel_adsp_wdt_api = {

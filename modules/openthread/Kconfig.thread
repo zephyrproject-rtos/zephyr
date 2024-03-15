@@ -68,7 +68,6 @@ config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
 	int "The maximum number of IPv6 address registrations per child"
 	range 4 255
 	default 6
-	depends on OPENTHREAD_FTD
 
 config OPENTHREAD_CONFIG_PLATFORM_INFO
 	string "The platform-specific string to insert into the OpenThread version string"
@@ -182,3 +181,16 @@ config OPENTHREAD_DEFAULT_TX_POWER
 	default 0
 	help
 	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.
+
+config OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE
+	int "Openthread default TCAT stack size"
+	default 5120 if OPENTHREAD_CRYPTO_PSA
+	default 4200
+	help
+	   Openthread default TCAT stack size.
+
+config OPENTHREAD_BLE_TCAT_RING_BUF_SIZE
+	int "Openthread BLE ringbuffer size"
+	default 512
+	help
+	   Openthread BLE TCAT ringbuffer size.

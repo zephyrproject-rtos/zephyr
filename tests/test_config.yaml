@@ -10,10 +10,13 @@ levels:
       - kernel.timer.behavior
       - arch.interrupt
       - boards.*
+      - drivers.gpio.1pin
+      - drivers.console.uart
+      - drivers.entropy
   - name: acceptance
     description: >
       More coverage
+    inherits:
+      - smoke
     adds:
       - kernel.*
-      - arch.interrupt
-      - boards.*

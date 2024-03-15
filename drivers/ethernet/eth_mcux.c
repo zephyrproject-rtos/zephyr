@@ -240,6 +240,7 @@ struct eth_context {
 	ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
 #endif /* CONFIG_NET_VLAN */
 
+#ifdef CONFIG_SOC_FAMILY_KINETIS
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 static void eth_mcux_phy_enter_reset(struct eth_context *context);
 void eth_mcux_phy_stop(struct eth_context *context);
@@ -292,6 +293,7 @@ out:
 	return ret;
 }
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
+#endif /* CONFIG_SOC_FAMILY_KINETIS */
 
 #if ETH_MCUX_FIXED_LINK
 static void eth_mcux_get_phy_params(phy_duplex_t *p_phy_duplex,
@@ -394,7 +396,7 @@ static void eth_mcux_phy_start(struct eth_context *context)
 		k_work_submit(&context->phy_work);
 		break;
 #endif
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 		context->phy_state = eth_mcux_phy_state_initial;
 #else
 		context->phy_state = eth_mcux_phy_state_reset;
@@ -451,7 +453,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	uint32_t status;
 #endif
 	bool link_up;
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	status_t res;
 	uint16_t ctrl2;
 #endif
@@ -464,7 +466,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 #endif
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 		ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
 		res = PHY_Read(context->phy_handle, PHY_CONTROL2_REG, &ctrl2);
 		ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
@@ -479,7 +481,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 					   ctrl2);
 		}
 		context->phy_state = eth_mcux_phy_state_reset;
-#endif /* CONFIG_SOC_SERIES_IMX_RT */
+#endif
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 		/*
 		 * When the iface is available proceed with the eth link setup,
@@ -631,7 +633,7 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 
 static void eth_mcux_phy_setup(struct eth_context *context)
 {
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	status_t res;
 	uint16_t oms_override;
 
@@ -1022,14 +1024,14 @@ static void eth_mcux_init(const struct device *dev)
 	context->phy_state = eth_mcux_phy_state_initial;
 	context->phy_handle->ops = &phyksz8081_ops;
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
 	sys_clock = CLOCK_GetFreq(kCLOCK_EnetPll1Clk);
 #endif
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	sys_clock = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
 #else
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
@@ -1163,7 +1165,7 @@ static int eth_init(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 static void net_if_mcast_cb(struct net_if *iface,
 			    const struct net_addr *addr,
 			    bool is_joined)
@@ -1172,11 +1174,13 @@ static void net_if_mcast_cb(struct net_if *iface,
 	struct eth_context *context = dev->data;
 	struct net_eth_addr mac_addr;
 
-	if (addr->family != AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->family == AF_INET) {
+		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && addr->family == AF_INET6) {
+		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
+	} else {
 		return;
 	}
-
-	net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
 
 	if (is_joined) {
 		ENET_AddMulticastGroup(context->base, mac_addr.addr);
@@ -1184,18 +1188,18 @@ static void net_if_mcast_cb(struct net_if *iface,
 		ENET_LeaveMulticastGroup(context->base, mac_addr.addr);
 	}
 }
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->data;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 	static struct net_if_mcast_monitor mon;
 
 	net_if_mcast_mon_register(&mon, iface, net_if_mcast_cb);
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
 	net_if_set_link_addr(iface, context->mac_addr,
 			     sizeof(context->mac_addr),
@@ -1387,9 +1391,9 @@ static void eth_mcux_err_isr(const struct device *dev)
 }
 #endif
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define ETH_MCUX_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
@@ -1489,6 +1493,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		    (ETH_MCUX_MAC_ADDR_LOCAL(n)),			\
 		    (ETH_MCUX_MAC_ADDR_GENERATE(n)))
 
+#ifdef CONFIG_SOC_FAMILY_KINETIS
 #define ETH_MCUX_POWER_INIT(n)						\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 
@@ -1496,6 +1501,15 @@ static void eth_mcux_err_isr(const struct device *dev)
 	COND_CODE_1(CONFIG_NET_POWER_MANAGEMENT,			\
 		    (ETH_MCUX_POWER_INIT(n)),				\
 		    (ETH_MCUX_NONE))
+#define ETH_MCUX_PM_DEVICE_INIT(n)					\
+	PM_DEVICE_DT_INST_DEFINE(n, eth_mcux_device_pm_action);
+#define ETH_MCUX_PM_DEVICE_GET(n) PM_DEVICE_DT_INST_GET(n)
+#else
+#define ETH_MCUX_POWER(n)
+#define ETH_MCUX_PM_DEVICE_INIT(n)
+#define ETH_MCUX_PM_DEVICE_GET(n) NULL
+#endif /* CONFIG_SOC_FAMILY_KINETIS */
+
 #define ETH_MCUX_GEN_MAC(n)                                             \
 	COND_CODE_0(ETH_MCUX_MAC_ADDR_TO_BOOL(n),                       \
 		    (ETH_MCUX_GENERATE_MAC(n)),                         \
@@ -1627,11 +1641,11 @@ static void eth_mcux_err_isr(const struct device *dev)
 		ETH_MCUX_PTP_FRAMEINFO(n)				\
 	};								\
 									\
-	PM_DEVICE_DT_INST_DEFINE(n, eth_mcux_device_pm_action);		\
+	ETH_MCUX_PM_DEVICE_INIT(n)					\
 									\
 	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
 			    eth_init,					\
-			    PM_DEVICE_DT_INST_GET(n),			\
+			    ETH_MCUX_PM_DEVICE_GET(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\

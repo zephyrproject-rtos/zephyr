@@ -1,9 +1,0 @@
-# Copyright 2022 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_SERIES_MIMX9_A55
-	bool "NXP i.MX9 A55 Core Series"
-	select ARM64
-	select SOC_FAMILY_IMX
-	help
-	  Enable support for i.MX9 A55 Series.

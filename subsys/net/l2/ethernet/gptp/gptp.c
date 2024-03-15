@@ -540,8 +540,12 @@ static void gptp_state_machine(void)
 	gptp_mi_state_machines();
 }
 
-static void gptp_thread(void)
+static void gptp_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int port;
 
 	NET_DBG("Starting PTP thread");
@@ -917,7 +921,7 @@ static void init_ports(void)
 
 	tid = k_thread_create(&gptp_thread_data, gptp_stack,
 			      K_KERNEL_STACK_SIZEOF(gptp_stack),
-			      (k_thread_entry_t)gptp_thread,
+			      gptp_thread,
 			      NULL, NULL, NULL, K_PRIO_COOP(5), 0, K_NO_WAIT);
 	k_thread_name_set(&gptp_thread_data, "gptp");
 }

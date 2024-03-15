@@ -442,11 +442,11 @@ static bool img_mgmt_state_encode_slot(zcbor_state_t *zse, uint32_t slot, int st
 			ok = zcbor_tstr_put_lit(zse, "<\?\?\?>");
 		} else {
 			vers_str[sizeof(vers_str) - 1] = '\0';
-			ok = zcbor_tstr_put_term(zse, vers_str);
+			ok = zcbor_tstr_put_term(zse, vers_str, sizeof(vers_str));
 		}
 	}
 
-	ok = ok && zcbor_tstr_put_term(zse, "hash")						&&
+	ok = ok && zcbor_tstr_put_lit(zse, "hash")						&&
 	     zcbor_bstr_encode(zse, &zhash)						&&
 	     ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))	&&
 	     ZCBOR_ENCODE_FLAG(zse, "pending", state_flags & REPORT_SLOT_PENDING)	&&

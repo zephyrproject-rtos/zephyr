@@ -1,0 +1,52 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ITE_IT8XXX2
+	bool
+	select SOC_FAMILY_ITE_EC
+	help
+	    Enable support for ITE IT8XXX2
+
+config SOC_IT8XXX2
+	bool
+	select SOC_SERIES_ITE_IT8XXX2
+
+config SOC_IT81302_BX
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT81202_BX
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT81302_CX
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT81202_CX
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT82202_AX
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT82302_AX
+	bool
+	select SOC_IT8XXX2
+
+config SOC_IT82002_AW
+	bool
+	select SOC_IT8XXX2
+
+config SOC_SERIES
+	default "it8xxx2" if SOC_SERIES_ITE_IT8XXX2
+
+config SOC
+	default "it81202bx" if SOC_IT81202_BX
+	default "it81202cx" if SOC_IT81202_CX
+	default "it81302bx" if SOC_IT81302_BX
+	default "it81302cx" if SOC_IT81302_CX
+	default "it82002aw" if SOC_IT82002_AW
+	default "it82202ax" if SOC_IT82202_AX
+	default "it82302ax" if SOC_IT82302_AX

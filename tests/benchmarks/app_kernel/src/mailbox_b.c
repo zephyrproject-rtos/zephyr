@@ -8,31 +8,8 @@
 
 #include "master.h"
 
-#ifdef MAILBOX_BENCH
-
 static struct k_mbox_msg message;
 
-#ifdef FLOAT
-#define PRINT_HEADER()                                                       \
-	(PRINT_STRING                                                        \
-	   ("|   size(B) |       time/packet (usec)       |          MB/sec" \
-	    "                |\n"))
-#define PRINT_ONE_RESULT()                                                   \
-	PRINT_F("|%11u|%32.3f|%32f|\n", putsize, puttime / 1000.0,           \
-		(1000.0 * putsize) / SAFE_DIVISOR(puttime))
-
-#define PRINT_OVERHEAD()                                                     \
-	PRINT_F("| message overhead:  %10.3f     usec/packet               " \
-		"                |\n", empty_msg_put_time / 1000.0)
-
-#define PRINT_XFER_RATE()                                                     \
-	double netto_transfer_rate;                                           \
-	netto_transfer_rate = 1000.0 * \
-		(putsize >> 1) / SAFE_DIVISOR(puttime - empty_msg_put_time);  \
-	PRINT_F("| raw transfer rate:     %10.3f MB/sec (without"             \
-		" overhead)                 |\n", netto_transfer_rate)
-
-#else
 #define PRINT_HEADER()                                                       \
 	(PRINT_STRING                                                        \
 	   ("|   size(B) |       time/packet (nsec)       |          KB/sec" \
@@ -53,9 +30,6 @@ static struct k_mbox_msg message;
 		(uint32_t)((uint64_t)(putsize >> 1) * 1000000U /             \
 			   SAFE_DIVISOR(puttime - empty_msg_put_time)))
 
-#endif
-
-
 /*
  * Function prototypes.
  */
@@ -66,9 +40,7 @@ void mailbox_put(uint32_t size, int count, uint32_t *time);
  */
 
 /**
- *
  * @brief Mailbox transfer speed test
- *
  */
 void mailbox_test(void)
 {
@@ -115,31 +87,29 @@ void mailbox_test(void)
 
 
 /**
- *
  * @brief Write the number of data chunks into the mailbox
  *
  * @param size    The size of the data chunk.
  * @param count   Number of data chunks.
  * @param time    The total time.
- *
  */
 void mailbox_put(uint32_t size, int count, uint32_t *time)
 {
 	int i;
 	unsigned int t;
+	timing_t  start;
+	timing_t  end;
 
 	message.rx_source_thread = K_ANY;
 	message.tx_target_thread = K_ANY;
 
 	/* first sync with the receiver */
 	k_sem_give(&SEM0);
-	t = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < count; i++) {
 		k_mbox_put(&MAILB1, &message, K_FOREVER);
 	}
-	t = TIME_STAMP_DELTA_GET(t);
+	end = timing_timestamp_get();
+	t = (unsigned int)timing_cycles_get(&start, &end);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
-	check_result();
 }
-
-#endif /* MAILBOX_BENCH */

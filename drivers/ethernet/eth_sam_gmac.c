@@ -19,7 +19,7 @@
  * - no statistics collection
  */
 
-#if defined(CONFIG_SOC_FAMILY_SAM)
+#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 #define DT_DRV_COMPAT atmel_sam_gmac
 #else
 #define DT_DRV_COMPAT atmel_sam0_gmac
@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth.h"
 
-#ifdef CONFIG_SOC_FAMILY_SAM0
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #include "eth_sam0_gmac.h"
 #endif
 
@@ -97,9 +97,9 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #define dcache_clean(addr, size)
 #endif
 
-#ifdef CONFIG_SOC_FAMILY_SAM0
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
-#elif CONFIG_SOC_FAMILY_SAM
+#elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
 #else
 #error Unsupported SoC family
@@ -132,6 +132,8 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #error Not enough RX buffers to allocate descriptors for each HW queue
 #endif
 #endif /* !CONFIG_NET_TEST */
+
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection");
 
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
@@ -1113,7 +1115,20 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	gmac->GMAC_UR = DT_INST_ENUM_IDX(0, phy_connection_type);
+	/* Default (RMII) is defined at atmel,gmac-common.yaml file */
+	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
+	case 0: /* mii */
+		gmac->GMAC_UR = 0x1;
+		break;
+	case 1: /* rmii */
+		gmac->GMAC_UR = 0x0;
+		break;
+	default:
+		/* Build assert at top of file should catch this case */
+		LOG_ERR("The phy connection type is invalid");
+
+		return -EINVAL;
+	}
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
@@ -1781,7 +1796,7 @@ static int eth_initialize(const struct device *dev)
 
 	cfg->config_func();
 
-#ifdef CONFIG_SOC_FAMILY_SAM
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
@@ -2220,7 +2235,7 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct eth_sam_dev_cfg eth0_config = {
 	.regs = (Gmac *)DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-#ifdef CONFIG_SOC_FAMILY_SAM
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
 #endif
 	.config_func = eth0_irq_config,
@@ -2439,7 +2454,7 @@ static int ptp_clock_sam_gmac_adjust(const struct device *dev, int increment)
 	const struct eth_sam_dev_cfg *const cfg = ptp_context->eth_dev->config;
 	Gmac *gmac = cfg->regs;
 
-	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
+	if ((increment <= -(int)NSEC_PER_SEC) || (increment >= (int)NSEC_PER_SEC)) {
 		return -EINVAL;
 	}
 
@@ -2479,6 +2494,6 @@ static int ptp_gmac_init(const struct device *port)
 
 DEVICE_DEFINE(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
 		NULL, &ptp_gmac_0_context, NULL, POST_KERNEL,
-		CONFIG_APPLICATION_INIT_PRIORITY, &ptp_api);
+		CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_api);
 
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */

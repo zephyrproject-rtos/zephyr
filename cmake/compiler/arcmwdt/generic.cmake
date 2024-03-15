@@ -17,12 +17,12 @@ execute_process(
   COMMAND ${CMAKE_C_COMPILER} --version
   RESULT_VARIABLE ret
   OUTPUT_VARIABLE full_version_output
-  ERROR_QUIET
   )
 
 if(ret)
   message(FATAL_ERROR "Executing the below command failed. Are permissions set correctly?
-  '${CMAKE_C_COMPILER} --version'"
+  '${CMAKE_C_COMPILER} --version'
+  ${full_version_output}"
   )
 else()
   set(ARCMWDT_MIN_REQUIRED_VERS "2022.09")

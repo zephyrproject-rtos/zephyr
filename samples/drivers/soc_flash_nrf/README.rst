@@ -27,7 +27,7 @@ or `slot1_ns_partition`, when the Kconfig option is selected.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/soc_flash_nrf
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 
@@ -62,7 +62,7 @@ Sample Output
       Data read: 1234
       Data read matches data written. Good!
 
-   Test 3: Flash erase (4 pages at 0x80000)
+   Test 3: Flash erase (2 pages at 0x80000)
       Flash erase succeeded!
 
    Test 4: Flash write (word array 2)
@@ -131,3 +131,5 @@ Sample Output
 
    Test 8: Write block size API
       write-block-size = 1
+
+   Finished!

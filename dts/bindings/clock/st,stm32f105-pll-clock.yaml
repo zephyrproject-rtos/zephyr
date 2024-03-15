@@ -55,6 +55,6 @@ properties:
   otgfspre:
     type: boolean
     description: |
-        Otpional PLL output divisor to generate a 48MHz USB clock.
+        Optional PLL output divisor to generate a 48MHz USB clock.
         When set, PLL output clock is not divided.
         Otherwise, PLL output clock is divided by 1.5.

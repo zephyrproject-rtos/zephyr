@@ -9,18 +9,17 @@ config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 
 config TFM_BOARD
 	string
-	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_CPU0
+	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
 	default "arm/mps3/an547" if BOARD_MPS3_AN547
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
-	default "arm/musca_b1" if BOARD_MUSCA_B1
-	default "arm/musca_s1" if BOARD_MUSCA_S1
-	default "lairdconnectivity/bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPP_NS
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9160" if SOC_NRF9160
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9120" if SOC_NRF9120
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
+	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
+	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.
@@ -44,8 +43,8 @@ menuconfig BUILD_WITH_TFM
 	  them, are generated during the normal Zephyr build process.
 
 	  Notes:
-	    Building with the "_ns" BOARD variant (e.g. "mps2_an521_ns")
-		ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
+	    Building with the "/ns" BOARD variant (e.g. "mps2/an521/cpu0/ns")
+	    ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
 
 	    By default we allow Zephyr preemptible threads be preempted
 	    while performing a secure function call.
@@ -75,6 +74,7 @@ config TFM_PROFILE
 	depends on BUILD_WITH_TFM
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
 	default "profile_medium" if TFM_PROFILE_TYPE_MEDIUM
+	default "profile_medium_arotless" if TFM_PROFILE_TYPE_AROTLESS
 	default "profile_large" if TFM_PROFILE_TYPE_LARGE
 	help
 	  Build profile used to build tfm_s image. The available values are
@@ -92,13 +92,16 @@ choice TFM_PROFILE_TYPE
 	  isolation level.
 
 config TFM_PROFILE_TYPE_NOT_SET
-	bool "TF-M build profile is not set"
+	bool "TF-M build profile: not set (base)"
 
 config TFM_PROFILE_TYPE_SMALL
 	bool "TF-M build profile: small"
 
 config TFM_PROFILE_TYPE_MEDIUM
 	bool "TF-M build profile: medium"
+
+config TFM_PROFILE_TYPE_AROTLESS
+	bool "TF-M build profile: ARoT-less"
 
 config TFM_PROFILE_TYPE_LARGE
 	bool "TF-M build profile: large"
@@ -177,6 +180,25 @@ config TFM_PARTITION_PLATFORM_CUSTOM_REBOOT
 	  Instead the application will have to override the weak ARM
 	  implementation of sys_arch_reset().
 
+config TFM_DUMMY_PROVISIONING
+	bool "Provision with dummy values. NOT to be used in production"
+	select TFM_INITIAL_ATTESTATION_KEY
+	default y
+	help
+	  If this option is enabled (as it is by default), a set of dummy
+	  keys / data will be provisioned. The dummy IAK matches the IAK tested
+	  by the TF-M tests, and the dummy bl2 ROTPKs match the dummy bl2 keys
+	  used by default.
+	  This option MUST not be used in production hardware, as the keys are
+	  insecure.
+
+config TFM_INITIAL_ATTESTATION_KEY
+	bool
+	help
+	  Hidden option to mark that the TF-M platform has an initial
+	  attestation key, which is a requirement for the Initial Attestation
+	  partition.
+
 config TFM_BL2_NOT_SUPPORTED
 	bool
 	help
@@ -207,19 +229,8 @@ config TFM_BL2
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
 
-config TFM_BUILD_NS
-	bool "Build the TF-M Non-Secure application and libraries"
-	help
-	  Instruct the TF-M build system to build the TF-M Non-Secure
-	  application and libraries.
-
-	  This option is intended for testing purposes only, since this is the
-	  easiest way to build the TF-M regression tests application and test
-	  support libraries in the zephyr build system.
-
 config TFM_USE_NS_APP
 	bool "Use the TF-M Non-Secure application"
-	depends on TFM_BUILD_NS
 	help
 	  The TF-M build system can produce multiple executable files.
 	  The main one is the TF-M secure firmware. Optionally the TF-M
@@ -302,6 +313,7 @@ endif # TFM_BL2
 
 choice TFM_MODEL
 	prompt "TF-M Firmware Framework model"
+	default TFM_SFN if TFM_PROFILE_TYPE_SMALL
 	default TFM_IPC
 	help
 	  The Firmware Framework M (FF-M) provides different programming models
@@ -396,6 +408,21 @@ config ROM_START_OFFSET
 	  By default BL2 header size in TF-M is 0x400. ROM_START_OFFSET
 	  needs to be updated if TF-M switches to use a different header
 	  size for BL2.
+
+choice TFM_BL2_LOG_LEVEL
+	prompt "BL2 Log Level" if !TFM_LOG_LEVEL_SILENCE
+	default TFM_BL2_LOG_LEVEL_INFO
+	config TFM_BL2_LOG_LEVEL_DEBUG
+		bool "Debug"
+	config TFM_BL2_LOG_LEVEL_INFO
+		bool "Info"
+	config TFM_BL2_LOG_LEVEL_WARNING
+		bool "Warning"
+	config TFM_BL2_LOG_LEVEL_ERROR
+		bool "Error"
+	config TFM_BL2_LOG_LEVEL_OFF
+		bool "Off"
+endchoice
 
 endif # !TFM_BL2
 

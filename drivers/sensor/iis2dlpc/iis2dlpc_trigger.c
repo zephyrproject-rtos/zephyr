@@ -233,8 +233,13 @@ static void iis2dlpc_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD
-static void iis2dlpc_thread(struct iis2dlpc_data *iis2dlpc)
+static void iis2dlpc_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct iis2dlpc_data *iis2dlpc = p1;
+
 	while (1) {
 		k_sem_take(&iis2dlpc->gpio_sem, K_FOREVER);
 		iis2dlpc_handle_interrupt(iis2dlpc->dev);
@@ -270,7 +275,7 @@ int iis2dlpc_init_interrupt(const struct device *dev)
 
 	k_thread_create(&iis2dlpc->thread, iis2dlpc->thread_stack,
 		       CONFIG_IIS2DLPC_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)iis2dlpc_thread, iis2dlpc,
+		       iis2dlpc_thread, iis2dlpc,
 		       NULL, NULL, K_PRIO_COOP(CONFIG_IIS2DLPC_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2DLPC_TRIGGER_GLOBAL_THREAD)

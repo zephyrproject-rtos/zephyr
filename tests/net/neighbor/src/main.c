@@ -45,7 +45,7 @@ static void net_neighbor_table_clear(struct net_nbr_table *table)
 }
 
 NET_NBR_POOL_INIT(net_test_neighbor_pool, CONFIG_NET_IPV6_MAX_NEIGHBORS,
-		  0, net_neighbor_data_remove, 0);
+		  0, net_neighbor_data_remove);
 
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, test_neighbor, net_test_neighbor_pool,
 		   net_neighbor_table_clear);

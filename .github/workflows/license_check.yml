@@ -8,7 +8,7 @@ jobs:
     name: Scan code for licenses
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Scan the code
@@ -17,7 +17,7 @@ jobs:
       with:
         directory-to-scan: 'scan/'
     - name: Artifact Upload
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: scancode
         path: ./artifacts

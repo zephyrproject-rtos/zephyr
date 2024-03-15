@@ -7,6 +7,7 @@ if !LOG_MODE_MINIMAL
 
 config LOG_PRINTK
 	bool "Process printk messages"
+	depends on !USERSPACE
 	default y if PRINTK
 	help
 	  If enabled, printk messages are redirected to the logging subsystem.
@@ -156,6 +157,13 @@ config LOG_TRACE_SHORT_TIMESTAMP
 
 config LOG_TIMESTAMP_64BIT
 	bool "Use 64 bit timestamp"
+
+config LOG_TIMESTAMP_USE_REALTIME
+	bool "Use real time clock for timestamp"
+	select LOG_TIMESTAMP_64BIT
+	depends on POSIX_CLOCK
+	help
+	  When enabled, real time clock is used for timestamping.
 
 config LOG_SPEED
 	bool "Prefer performance over size"

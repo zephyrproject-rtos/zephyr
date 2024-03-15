@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2021 ASPEED Technology Inc.
+
+config SOC_FAMILY_ASPEED
+	select PLATFORM_SPECIFIC_INIT
+
+if SOC_FAMILY_ASPEED
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_ASPEED

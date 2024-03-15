@@ -20,7 +20,7 @@ properties:
     default: 100000
     description: |
       Visible light attenuation.
-      Integer value for a represenation with 5 decimal points.
+      Integer value for a representation with 5 decimal points.
       This default value (1.00000) is chosen for free open space (no glass).
       Example: 1.2 would be 120000
 
@@ -29,6 +29,6 @@ properties:
     default: 100000
     description: |
       Infa-red light attenuation.
-      Integer value for a represenation with 5 decimal points.
+      Integer value for a representation with 5 decimal points.
       This default value (1.00000) is chosen for free open space (no glass).
       Example: 1.2 would be 120000

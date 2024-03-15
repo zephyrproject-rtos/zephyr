@@ -644,7 +644,7 @@ error:
 	return err;
 }
 
-static struct i2c_driver_api i2c_gd32_driver_api = {
+static const struct i2c_driver_api i2c_gd32_driver_api = {
 	.configure = i2c_gd32_configure,
 	.transfer = i2c_gd32_transfer,
 };

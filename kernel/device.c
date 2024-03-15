@@ -9,7 +9,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/kobject.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
 
 /**
@@ -21,7 +21,7 @@
 void z_device_state_init(void)
 {
 	STRUCT_SECTION_FOREACH(device, dev) {
-		z_object_init(dev);
+		k_object_init(dev);
 	}
 }
 
@@ -59,7 +59,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 {
 	char name_copy[Z_DEVICE_MAX_NAME_LEN];
 
-	if (z_user_string_copy(name_copy, (char *)name, sizeof(name_copy))
+	if (k_usermode_string_copy(name_copy, (char *)name, sizeof(name_copy))
 	    != 0) {
 		return NULL;
 	}
@@ -70,7 +70,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 
 static inline bool z_vrfy_device_is_ready(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
 
 	return z_impl_device_is_ready(dev);
 }

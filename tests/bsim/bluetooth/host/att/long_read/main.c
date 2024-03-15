@@ -13,11 +13,9 @@
 #include "testlib/adv.h"
 #include "testlib/att_read.h"
 #include "testlib/att_write.h"
-#include "testlib/bs_macro.h"
-#include "testlib/bs_sync.h"
-#include "testlib/conn_ref.h"
-#include "testlib/conn_wait.h"
-#include "testlib/connect.h"
+#include "bs_macro.h"
+#include "bs_sync.h"
+#include <testlib/conn.h>
 #include "testlib/log_utils.h"
 #include "testlib/scan.h"
 #include "testlib/security.h"
@@ -25,7 +23,7 @@
 /* This test uses system asserts to fail tests. */
 BUILD_ASSERT(__ASSERT_ON);
 
-#define CENTRAL_DEVICE_NBR 0
+#define CENTRAL_DEVICE_NBR    0
 #define PERIPHERAL_DEVICE_NBR 1
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
@@ -146,8 +144,8 @@ static void test_long_read(enum bt_att_chan_opt bearer, uint16_t chrc_value_hand
 		NET_BUF_SIMPLE_DEFINE(attr_value_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
 		/* Perform the whole long read operation. */
-		EXPECT_ZERO(btt_gatt_long_read(&attr_value_buf, NULL, conn, bearer,
-					       chrc_value_handle, 0));
+		EXPECT_ZERO(bt_testlib_gatt_long_read(&attr_value_buf, NULL, NULL, conn, bearer,
+						      chrc_value_handle, 0));
 
 		/* Parse the read attribute value to verify the
 		 * integrity of the transfer.

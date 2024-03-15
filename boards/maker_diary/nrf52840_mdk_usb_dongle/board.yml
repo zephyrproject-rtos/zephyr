@@ -1,0 +1,5 @@
+board:
+  name: nrf52840_mdk_usb_dongle
+  vendor: makerdiary
+  socs:
+  - name: nrf52840

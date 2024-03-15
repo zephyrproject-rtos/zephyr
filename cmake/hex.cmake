@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# This code was deprecated after Zephyr v3.5.0
+message(DEPRECATION "The to_hex() and from_hex() functions are deprecated. Please "
+                    "use CMake's math(... OUTPUT_FORMAT <format>) instead.")
+
 # from https://gist.github.com/korzo89/71a6de0f388f7cf8b349101b0134060c
 function(from_hex HEX DEC)
     string(SUBSTRING "${HEX}" 2 -1 HEX)
@@ -34,6 +38,10 @@ function(from_hex HEX DEC)
 endfunction()
 
 function(to_hex DEC HEX)
+    if(DEC EQUAL 0)
+        set(${HEX} "0x0" PARENT_SCOPE)
+        return()
+    endif()
     while(DEC GREATER 0)
         math(EXPR _val "${DEC} % 16")
         math(EXPR DEC "${DEC} / 16")

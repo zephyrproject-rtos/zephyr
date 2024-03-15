@@ -29,3 +29,10 @@ int llext_buf_seek(struct llext_loader *l, size_t pos)
 
 	return 0;
 }
+
+void *llext_buf_peek(struct llext_loader *l, size_t pos)
+{
+	struct llext_buf_loader *buf_l = CONTAINER_OF(l, struct llext_buf_loader, loader);
+
+	return (void *)(buf_l->buf + pos);
+}

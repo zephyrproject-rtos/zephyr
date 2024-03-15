@@ -56,7 +56,7 @@ void bt_test_mesh_model_recv(uint16_t src, uint16_t dst, const void *payload,
 	}
 }
 
-void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
+void bt_test_mesh_model_bound(uint16_t addr, const struct bt_mesh_model *model,
 			      uint16_t key_idx)
 {
 	struct bt_test_cb *cb;
@@ -68,7 +68,7 @@ void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
 	}
 }
 
-void bt_test_mesh_model_unbound(uint16_t addr, struct bt_mesh_model *model,
+void bt_test_mesh_model_unbound(uint16_t addr, const struct bt_mesh_model *model,
 				uint16_t key_idx)
 {
 	struct bt_test_cb *cb;

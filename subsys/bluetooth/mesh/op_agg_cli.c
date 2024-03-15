@@ -24,7 +24,7 @@ NET_BUF_SIMPLE_DEFINE_STATIC(sdu, BT_MESH_TX_SDU_MAX);
 /** Mesh Opcodes Aggregator Client Model Context */
 static struct bt_mesh_op_agg_cli {
 	/** Composition data model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 	/** Acknowledge context. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;
 	/** List of source element addresses.
@@ -39,7 +39,7 @@ static struct bt_mesh_op_agg_cli {
 
 static int32_t msg_timeout;
 
-static int handle_status(struct bt_mesh_model *model,
+static int handle_status(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -102,7 +102,7 @@ const struct bt_mesh_model_op _bt_mesh_op_agg_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int op_agg_cli_init(struct bt_mesh_model *model)
+static int op_agg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Opcodes Aggregator Client only allowed in primary element");
@@ -203,9 +203,9 @@ void bt_mesh_op_agg_cli_timeout_set(int32_t timeout)
 	msg_timeout = timeout;
 }
 
-int bt_mesh_op_agg_cli_send(struct bt_mesh_model *model, struct net_buf_simple *msg)
+int bt_mesh_op_agg_cli_send(const struct bt_mesh_model *model, struct net_buf_simple *msg)
 {
-	uint16_t src = bt_mesh_model_elem(model)->addr;
+	uint16_t src = bt_mesh_model_elem(model)->rt->addr;
 
 	if (net_buf_simple_tailroom(&srcs) < 2) {
 		return -ENOMEM;

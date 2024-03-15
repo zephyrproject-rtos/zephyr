@@ -1,0 +1,8 @@
+# Copyright (c) 2023, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics SPI protocol V2 compatible with BlueNRG-1 and successor devices
+
+compatible: "st,hci-spi-v2"
+
+include: zephyr,bt-hci-spi.yaml

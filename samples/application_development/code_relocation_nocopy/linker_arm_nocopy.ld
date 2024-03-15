@@ -32,7 +32,7 @@
  * Add another fake portion of FLASH to simulate a secondary or external FLASH
  * that we can do XIP from.
  */
-#define EXTFLASH_ADDR	0x5000
+#define EXTFLASH_ADDR	0x7000
 #define EXTFLASH_SIZE	(CONFIG_FLASH_SIZE * 1K - EXTFLASH_ADDR)
 
 #endif

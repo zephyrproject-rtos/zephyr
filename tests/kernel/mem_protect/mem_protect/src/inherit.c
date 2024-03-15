@@ -5,7 +5,7 @@
  */
 
 #include "mem_protect.h"
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 /* function prototypes */

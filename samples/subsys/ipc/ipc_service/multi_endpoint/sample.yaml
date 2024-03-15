@@ -1,0 +1,19 @@
+sample:
+  name: IPC Service example integration (icmsg multi endpoint backend)
+tests:
+  sample.ipc.multi_endpoint:
+    platform_allow: nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    tags: ipc
+    sysbuild: true
+    harness: remote
+  sample.ipc.multi_endpoint.icbmsg:
+    platform_allow: nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    tags: ipc
+    sysbuild: true
+    extra_args:
+      DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpuapp_icbmsg.overlay
+      remote_DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpunet_icbmsg.overlay

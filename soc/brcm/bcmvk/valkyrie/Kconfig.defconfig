@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2020 Broadcom.
+#
+
+if SOC_SERIES_VALKYRIE
+
+config NUM_IRQS
+	int
+	default 240
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 500000000
+
+endif # SOC_SERIES_VALKYRIE

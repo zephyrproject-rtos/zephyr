@@ -1,0 +1,12 @@
+# Microchip MEC172x, MEC1501 MCU line
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_MEC
+	bool
+
+config SOC_FAMILY
+	default "microchip_mec" if SOC_FAMILY_MICROCHIP_MEC
+
+rsource "*/Kconfig.soc"

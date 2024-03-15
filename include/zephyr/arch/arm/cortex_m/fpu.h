@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_FPU_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_FPU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_FPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_FPU_H_
 
 struct fpu_ctx_full {
 	uint32_t caller_saved[16];
@@ -17,4 +17,4 @@ struct fpu_ctx_full {
 void z_arm_save_fp_context(struct fpu_ctx_full *buffer);
 void z_arm_restore_fp_context(const struct fpu_ctx_full *buffer);
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_FPU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_FPU_H_ */

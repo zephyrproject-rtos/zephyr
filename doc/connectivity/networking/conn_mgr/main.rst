@@ -197,7 +197,7 @@ Connectivity control
 
 Many network interfaces require a network association procedure to be completed before being usable.
 
-For such ifaces, connectivity control can provide a generic API to request network association (:c:func:`conn_mgr_if_connect`) and dissasociation (:c:func:`conn_mgr_if_disconnect`).
+For such ifaces, connectivity control can provide a generic API to request network association (:c:func:`conn_mgr_if_connect`) and disassociation (:c:func:`conn_mgr_if_disconnect`).
 Network interfaces implement support for this API by :ref:`binding themselves to a connectivity implementation <conn_mgr_impl_binding>`.
 
 Using this API, applications can associate with networks with minimal technology-specific boilerplate.
@@ -220,7 +220,7 @@ The following sections outline the basic operation of Connection Manager's conne
 Binding
 -------
 
-Before an iface can be commanded to associate or dissasociate using Connection Manager, it must first be bound to a :ref:`connectivity implementation <conn_mgr_impl>`.
+Before an iface can be commanded to associate or disassociate using Connection Manager, it must first be bound to a :ref:`connectivity implementation <conn_mgr_impl>`.
 Binding is performed by the provider of the iface, not by the application (see :ref:`conn_mgr_impl_binding`), and can be thought of as an extension of the iface declaration.
 
 Once an iface is bound, all connectivity commands passed to it (such as :c:func:`conn_mgr_if_connect` or :c:func:`conn_mgr_if_disconnect`) will be routed to the corresponding implementation function in the connectivity implementation.
@@ -421,7 +421,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically take any bound iface admin-down if it has given up on associating.
 
-   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_api:
 

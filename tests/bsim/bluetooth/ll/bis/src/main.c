@@ -183,9 +183,8 @@ static void iso_send(struct k_work *work)
 	iso_data_len = MAX(sizeof(seq_num), ((seq_num % CONFIG_BT_ISO_TX_MTU) + 1));
 	net_buf_add_mem(buf, iso_data, iso_data_len);
 
-	printk("ISO send: seq_num %u\n", seq_num);
-	ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++,
-			       BT_ISO_TIMESTAMP_NONE);
+	bs_trace_info_time(4, "ISO send: seq_num %u\n", seq_num);
+	ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++);
 	if (ret < 0) {
 		FAIL("Unable to broadcast data on channel (%d)\n", ret);
 		net_buf_unref(buf);
@@ -441,7 +440,7 @@ static void test_iso_main(void)
 	k_sleep(K_MSEC(2500));
 
 	printk("Periodic Advertising and ISO Channel Map Update...");
-	err = ll_chm_update(chan_map);
+	err = bt_le_set_chan_map(chan_map);
 	if (err) {
 		FAIL("Channel Map Update failed.\n");
 	}

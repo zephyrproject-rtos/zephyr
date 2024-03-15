@@ -1,0 +1,20 @@
+# Copyright (c), 2023 Grinn
+# SPDX -License-Identifier: Apache-2.0
+
+description: Maxim MAX20335 battery charger
+
+include: battery.yaml
+
+compatible: "maxim,max20335-charger"
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+
+  constant-charge-voltage-max-microvolt:
+    required: true
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin

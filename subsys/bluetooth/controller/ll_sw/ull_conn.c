@@ -273,6 +273,9 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 
 	pdu = (void *)((struct node_tx *)tx)->pdu;
 	tx_len += pdu->len;
+	if (delta == 0) { /* Let's avoid a division by 0 if we happen to have a really fast HCI IF*/
+		delta = 1;
+	}
 	tx_rate = ((uint64_t)tx_len << 3) * BT_CTLR_THROUGHPUT_PERIOD / delta;
 	tx_cnt++;
 #endif /* CONFIG_BT_CTLR_THROUGHPUT */
@@ -1381,7 +1384,7 @@ void ull_conn_link_tx_release(void *link)
 
 uint8_t ull_conn_ack_last_idx_get(void)
 {
-	return mfifo_conn_ack.l;
+	return mfifo_fifo_conn_ack.l;
 }
 
 memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
@@ -1394,7 +1397,7 @@ memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
 		return NULL;
 	}
 
-	*ack_last = mfifo_conn_ack.l;
+	*ack_last = mfifo_fifo_conn_ack.l;
 
 	*handle = lll_tx->handle;
 	*tx = lll_tx->node;
@@ -1407,8 +1410,8 @@ memq_link_t *ull_conn_ack_by_last_peek(uint8_t last, uint16_t *handle,
 {
 	struct lll_tx *lll_tx;
 
-	lll_tx = mfifo_dequeue_get(mfifo_conn_ack.m, mfifo_conn_ack.s,
-				   mfifo_conn_ack.f, last);
+	lll_tx = mfifo_dequeue_get(mfifo_fifo_conn_ack.m, mfifo_conn_ack.s,
+				   mfifo_fifo_conn_ack.f, last);
 	if (!lll_tx) {
 		return NULL;
 	}

@@ -1,4 +1,4 @@
-description: NXP LPC SoC series MCAN CAN-FD controller
+description: NXP LPC SoC series MCAN CAN FD controller
 
 compatible: "nxp,lpc-mcan"
 
@@ -9,6 +9,9 @@ properties:
     required: true
 
   interrupts:
+    required: true
+
+  interrupt-names:
     required: true
 
   clocks:

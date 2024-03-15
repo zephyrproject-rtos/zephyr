@@ -41,6 +41,240 @@ extern "C" {
 
 #define BT_AUDIO_BROADCAST_CODE_SIZE             16
 
+/**
+ * @brief Codec capability types
+ *
+ * Used to build and parse codec capabilities as specified in the PAC specification.
+ * Source is assigned numbers for Generic Audio, bluetooth.com.
+ */
+enum bt_audio_codec_cap_type {
+	/** Supported sampling frequencies */
+	BT_AUDIO_CODEC_CAP_TYPE_FREQ = 0x01,
+
+	/** Supported frame durations */
+	BT_AUDIO_CODEC_CAP_TYPE_DURATION = 0x02,
+
+	/** Supported audio channel counts */
+	BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT = 0x03,
+
+	/** Supported octets per codec frame */
+	BT_AUDIO_CODEC_CAP_TYPE_FRAME_LEN = 0x04,
+
+	/** Supported maximum codec frames per SDU  */
+	BT_AUDIO_CODEC_CAP_TYPE_FRAME_COUNT = 0x05,
+};
+
+/** @brief Supported frequencies bitfield */
+enum bt_audio_codec_cap_freq {
+	/** 8 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_8KHZ = BIT(0),
+
+	/** 11.025 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_11KHZ = BIT(1),
+
+	/** 16 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_16KHZ = BIT(2),
+
+	/** 22.05 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_22KHZ = BIT(3),
+
+	/** 24 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_24KHZ = BIT(4),
+
+	/** 32 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_32KHZ = BIT(5),
+
+	/** 44.1 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_44KHZ = BIT(6),
+
+	/** 48 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_48KHZ = BIT(7),
+
+	/** 88.2 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_88KHZ = BIT(8),
+
+	/** 96 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_96KHZ = BIT(9),
+
+	/** 176.4 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_176KHZ = BIT(10),
+
+	/** 192 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_192KHZ = BIT(11),
+
+	/** 384 Khz sampling frequency */
+	BT_AUDIO_CODEC_CAP_FREQ_384KHZ = BIT(12),
+
+	/** Any frequency capability */
+	BT_AUDIO_CODEC_CAP_FREQ_ANY =
+		(BT_AUDIO_CODEC_CAP_FREQ_8KHZ | BT_AUDIO_CODEC_CAP_FREQ_11KHZ |
+		 BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_22KHZ |
+		 BT_AUDIO_CODEC_CAP_FREQ_24KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
+		 BT_AUDIO_CODEC_CAP_FREQ_44KHZ | BT_AUDIO_CODEC_CAP_FREQ_48KHZ |
+		 BT_AUDIO_CODEC_CAP_FREQ_88KHZ | BT_AUDIO_CODEC_CAP_FREQ_96KHZ |
+		 BT_AUDIO_CODEC_CAP_FREQ_176KHZ | BT_AUDIO_CODEC_CAP_FREQ_192KHZ |
+		 BT_AUDIO_CODEC_CAP_FREQ_384KHZ),
+};
+
+/** @brief Supported frame durations bitfield */
+enum bt_audio_codec_cap_frame_dur {
+	/** 7.5 msec frame duration capability */
+	BT_AUDIO_CODEC_CAP_DURATION_7_5 = BIT(0),
+
+	/** 10 msec frame duration capability */
+	BT_AUDIO_CODEC_CAP_DURATION_10 = BIT(1),
+
+	/** Any frame duration capability */
+	BT_AUDIO_CODEC_CAP_DURATION_ANY =
+		(BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10),
+
+	/**
+	 * @brief 7.5 msec preferred frame duration capability.
+	 *
+	 * This shall only be set if @ref BT_AUDIO_CODEC_CAP_DURATION_7_5 is also set, and if @ref
+	 * BT_AUDIO_CODEC_CAP_DURATION_PREFER_10 is not set.
+	 */
+	BT_AUDIO_CODEC_CAP_DURATION_PREFER_7_5 = BIT(4),
+
+	/**
+	 * @brief 10 msec preferred frame duration capability
+	 *
+	 * This shall only be set if @ref BT_AUDIO_CODEC_CAP_DURATION_10 is also set, and if @ref
+	 * BT_AUDIO_CODEC_CAP_DURATION_PREFER_7_5 is not set.
+	 */
+	BT_AUDIO_CODEC_CAP_DURATION_PREFER_10 = BIT(5),
+};
+
+enum bt_audio_codec_cap_chan_count {
+	/** Supporting 1 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_1 = BIT(0),
+
+	/** Supporting 2 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_2 = BIT(1),
+
+	/** Supporting 3 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_3 = BIT(2),
+
+	/** Supporting 4 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_4 = BIT(3),
+
+	/** Supporting 5 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_5 = BIT(4),
+
+	/** Supporting 6 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_6 = BIT(5),
+
+	/** Supporting 7 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_7 = BIT(6),
+
+	/** Supporting 8 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_8 = BIT(7),
+
+	/** Supporting all channels */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_ANY =
+		(BT_AUDIO_CODEC_CAP_CHAN_COUNT_1 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_2 |
+		 BT_AUDIO_CODEC_CAP_CHAN_COUNT_3 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_4 |
+		 BT_AUDIO_CODEC_CAP_CHAN_COUNT_5 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_6 |
+		 BT_AUDIO_CODEC_CAP_CHAN_COUNT_7 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_8),
+};
+
+/** Minimum supported channel counts */
+#define BT_AUDIO_CODEC_CAP_CHAN_COUNT_MIN 1
+/** Maximum supported channel counts */
+#define BT_AUDIO_CODEC_CAP_CHAN_COUNT_MAX 8
+
+/**
+ *  @brief Channel count support capability
+ *
+ *  Macro accepts variable number of channel counts.
+ *  The allowed channel counts are defined by specification and have to be in range from
+ *  @ref BT_AUDIO_CODEC_CAP_CHAN_COUNT_MIN to @ref BT_AUDIO_CODEC_CAP_CHAN_COUNT_MAX inclusive.
+ *
+ *  Example to support 1 and 3 channels:
+ *    BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 3)
+ */
+#define BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(...)                                                 \
+	((enum bt_audio_codec_cap_chan_count)((FOR_EACH(BIT, (|), __VA_ARGS__)) >> 1))
+
+struct bt_audio_codec_octets_per_codec_frame {
+	/** Minimum number of octets supported per codec frame */
+	uint16_t min;
+	/** Maximum number of octets supported per codec frame */
+	uint16_t max;
+};
+
+/**
+ * @brief Codec configuration types
+ *
+ * Used to build and parse codec configurations as specified in the ASCS and BAP specifications.
+ * Source is assigned numbers for Generic Audio, bluetooth.com.
+ */
+enum bt_audio_codec_cfg_type {
+	/** Sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ = 0x01,
+
+	/** Frame duration */
+	BT_AUDIO_CODEC_CFG_DURATION = 0x02,
+
+	/** Audio channel allocation */
+	BT_AUDIO_CODEC_CFG_CHAN_ALLOC = 0x03,
+
+	/** Octets per codec frame */
+	BT_AUDIO_CODEC_CFG_FRAME_LEN = 0x04,
+
+	/** Codec frame blocks per SDU */
+	BT_AUDIO_CODEC_CFG_FRAME_BLKS_PER_SDU = 0x05,
+};
+
+enum bt_audio_codec_cfg_freq {
+	/** 8 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_8KHZ = 0x01,
+
+	/** 11.025 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_11KHZ = 0x02,
+
+	/** 16 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_16KHZ = 0x03,
+
+	/** 22.05 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_22KHZ = 0x04,
+
+	/** 24 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_24KHZ = 0x05,
+
+	/** 32 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_32KHZ = 0x06,
+
+	/** 44.1 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_44KHZ = 0x07,
+
+	/** 48 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_48KHZ = 0x08,
+
+	/** 88.2 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_88KHZ = 0x09,
+
+	/** 96 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_96KHZ = 0x0a,
+
+	/** 176.4 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_176KHZ = 0x0b,
+
+	/** 192 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_192KHZ = 0x0c,
+
+	/** 384 Khz codec sampling frequency */
+	BT_AUDIO_CODEC_CFG_FREQ_384KHZ = 0x0d,
+};
+
+enum bt_audio_codec_cfg_frame_dur {
+	/** 7.5 msec Frame Duration configuration */
+	BT_AUDIO_CODEC_CFG_DURATION_7_5 = 0x00,
+
+	/** 10 msec Frame Duration configuration */
+	BT_AUDIO_CODEC_CFG_DURATION_10 = 0x01,
+};
+
 /** @brief Audio Context Type for Generic Audio
  *
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
@@ -174,12 +408,14 @@ enum bt_audio_metadata_type {
 };
 
 /**
- * Helper to check whether metadata type is known by the stack.
+ * @brief Helper to check whether metadata type is known by the stack.
+ *
+ * @note @p _type is evaluated thrice.
  */
-#define BT_AUDIO_METADATA_TYPE_IS_KNOWN(_type) \
-	(IN_RANGE(_type, BT_AUDIO_METADATA_TYPE_PREF_CONTEXT, \
-			 BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE) || \
-	 IN_RANGE(_type, BT_AUDIO_METADATA_TYPE_EXTENDED, BT_AUDIO_METADATA_TYPE_VENDOR))
+#define BT_AUDIO_METADATA_TYPE_IS_KNOWN(_type)                                                     \
+	(IN_RANGE((_type), BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,                                    \
+		  BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE) ||                                   \
+	 (_type) == BT_AUDIO_METADATA_TYPE_EXTENDED || (_type) == BT_AUDIO_METADATA_TYPE_VENDOR)
 
 /* Unicast Announcement Type, Generic Audio */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
@@ -209,6 +445,7 @@ enum bt_audio_metadata_type {
 	((struct bt_audio_codec_cfg){                                                              \
 		/* Use HCI data path as default, can be overwritten by application */              \
 		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.ctlr_transcode = false,                                                           \
 		.id = _id,                                                                         \
 		.cid = _cid,                                                                       \
 		.vid = _vid,                                                                       \
@@ -231,6 +468,7 @@ enum bt_audio_metadata_type {
 	((struct bt_audio_codec_cap){                                                              \
 		/* Use HCI data path as default, can be overwritten by application */              \
 		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.ctlr_transcode = false,                                                           \
 		.id = (_id),                                                                       \
 		.cid = (_cid),                                                                     \
 		.vid = (_vid),                                                                     \
@@ -245,7 +483,7 @@ enum bt_audio_metadata_type {
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
  */
 enum bt_audio_location {
-	BT_AUDIO_LOCATION_PROHIBITED = 0,
+	BT_AUDIO_LOCATION_MONO_AUDIO = 0,
 	BT_AUDIO_LOCATION_FRONT_LEFT = BIT(0),
 	BT_AUDIO_LOCATION_FRONT_RIGHT = BIT(1),
 	BT_AUDIO_LOCATION_FRONT_CENTER = BIT(2),
@@ -316,6 +554,12 @@ struct bt_audio_codec_cap {
 	 * vendor specific ID.
 	 */
 	uint8_t path_id;
+	/** Whether or not the local controller should transcode
+	 *
+	 * This effectively sets the coding format for the ISO data path to @ref
+	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
+	 */
+	bool ctlr_transcode;
 	/** Codec ID */
 	uint8_t id;
 	/** Codec Company ID */
@@ -344,6 +588,12 @@ struct bt_audio_codec_cfg {
 	 * vendor specific ID.
 	 */
 	uint8_t path_id;
+	/** Whether or not the local controller should transcode
+	 *
+	 * This effectively sets the coding format for the ISO data path to @ref
+	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
+	 */
+	bool ctlr_transcode;
 	/** Codec ID */
 	uint8_t  id;
 	/** Codec Company ID */
@@ -405,7 +655,9 @@ enum bt_audio_dir {
 		.phy = _phy,                                                                       \
 		.sdu = _sdu,                                                                       \
 		.rtn = _rtn,                                                                       \
-		.latency = _latency,                                                               \
+		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE),                     \
+				   IS_ENABLED(CONFIG_BT_BAP_UNICAST)),                             \
+			   (.latency = _latency,))                                                 \
 		.pd = _pd,                                                                         \
 	})
 
@@ -599,7 +851,7 @@ struct bt_audio_codec_qos_pref {
  * @retval -EINVAL if arguments are invalid.
  * @retval The converted frequency value in Hz.
  */
-int bt_audio_codec_cfg_freq_to_freq_hz(enum bt_audio_codec_config_freq freq);
+int bt_audio_codec_cfg_freq_to_freq_hz(enum bt_audio_codec_cfg_freq freq);
 
 /**
  * @brief Convert frequency value to assigned numbers frequency.
@@ -607,7 +859,7 @@ int bt_audio_codec_cfg_freq_to_freq_hz(enum bt_audio_codec_config_freq freq);
  * @param freq_hz The frequency value to convert.
  *
  * @retval -EINVAL if arguments are invalid.
- * @retval The assigned numbers frequency (@ref bt_audio_codec_config_freq).
+ * @retval The assigned numbers frequency (@ref bt_audio_codec_cfg_freq).
  */
 int bt_audio_codec_cfg_freq_hz_to_freq(uint32_t freq_hz);
 
@@ -615,7 +867,7 @@ int bt_audio_codec_cfg_freq_hz_to_freq(uint32_t freq_hz);
  *
  * @param codec_cfg The codec configuration to extract data from.
  *
- *  @retval A @ref bt_audio_codec_config_freq value
+ *  @retval A @ref bt_audio_codec_cfg_freq value
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size or value
@@ -633,7 +885,7 @@ int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg);
  * @retval -ENOMEM if the new value could not set or added due to memory
  */
 int bt_audio_codec_cfg_set_freq(struct bt_audio_codec_cfg *codec_cfg,
-				enum bt_audio_codec_config_freq freq);
+				enum bt_audio_codec_cfg_freq freq);
 
 /**
  * @brief Convert assigned numbers frame duration to duration in microseconds.
@@ -643,7 +895,7 @@ int bt_audio_codec_cfg_set_freq(struct bt_audio_codec_cfg *codec_cfg,
  * @retval -EINVAL if arguments are invalid.
  * @retval The converted frame duration value in microseconds.
  */
-int bt_audio_codec_cfg_frame_dur_to_frame_dur_us(enum bt_audio_codec_config_frame_dur frame_dur);
+int bt_audio_codec_cfg_frame_dur_to_frame_dur_us(enum bt_audio_codec_cfg_frame_dur frame_dur);
 
 /**
  * @brief Convert frame duration in microseconds to assigned numbers frame duration.
@@ -651,7 +903,7 @@ int bt_audio_codec_cfg_frame_dur_to_frame_dur_us(enum bt_audio_codec_config_fram
  * @param frame_dur_us The frame duration in microseconds to convert.
  *
  * @retval -EINVAL if arguments are invalid.
- * @retval The assigned numbers frame duration (@ref bt_audio_codec_config_frame_dur).
+ * @retval The assigned numbers frame duration (@ref bt_audio_codec_cfg_frame_dur).
  */
 int bt_audio_codec_cfg_frame_dur_us_to_frame_dur(uint32_t frame_dur_us);
 
@@ -659,7 +911,7 @@ int bt_audio_codec_cfg_frame_dur_us_to_frame_dur(uint32_t frame_dur_us);
  *
  *  @param codec_cfg The codec configuration to extract data from.
  *
- *  @retval A @ref bt_audio_codec_config_frame_dur value
+ *  @retval A @ref bt_audio_codec_cfg_frame_dur value
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size or value
@@ -677,7 +929,7 @@ int bt_audio_codec_cfg_get_frame_dur(const struct bt_audio_codec_cfg *codec_cfg)
  * @retval -ENOMEM if the new value could not set or added due to memory
  */
 int bt_audio_codec_cfg_set_frame_dur(struct bt_audio_codec_cfg *codec_cfg,
-				     enum bt_audio_codec_config_frame_dur frame_dur);
+				     enum bt_audio_codec_cfg_frame_dur frame_dur);
 
 /** @brief Extract channel allocation from BT codec config
  *
@@ -685,7 +937,7 @@ int bt_audio_codec_cfg_set_frame_dur(struct bt_audio_codec_cfg *codec_cfg,
  *  specified by @ref bt_audio_location
  *  Shall match one or more of the bits set in BT_PAC_SNK_LOC/BT_PAC_SRC_LOC.
  *
- *  Up to the configured @ref BT_AUDIO_CODEC_LC3_CHAN_COUNT number of channels can be present.
+ *  Up to the configured @ref BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT number of channels can be present.
  *
  *  @param codec_cfg The codec configuration to extract data from.
  *  @param chan_allocation Pointer to the variable to store the extracted value in.
@@ -786,10 +1038,13 @@ int bt_audio_codec_cfg_set_frame_blocks_per_sdu(struct bt_audio_codec_cfg *codec
  *  @param[in] codec_cfg The codec data to search in.
  *  @param[in] type The type id to look for
  *  @param[out] data Pointer to the data-pointer to update when item is found
- *  @return Length of found @p data or 0 if not found
+ *
+ *  @retval Length of found @p data (may be 0)
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
  */
-uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
-				   const uint8_t **data);
+int bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
+			       enum bt_audio_codec_cfg_type type, const uint8_t **data);
 
 /**
  * @brief Set or add a specific codec configuration value
@@ -803,8 +1058,23 @@ uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, u
  * @retval -EINVAL if arguments are invalid
  * @retval -ENOMEM if the new value could not set or added due to memory
  */
-int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
-			       const uint8_t *data, size_t data_len);
+int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg,
+			       enum bt_audio_codec_cfg_type type, const uint8_t *data,
+			       size_t data_len);
+
+/**
+ * @brief Unset a specific codec configuration value
+ *
+ * The type and the value will be removed from the codec configuration.
+ *
+ * @param codec_cfg  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cfg_unset_val(struct bt_audio_codec_cfg *codec_cfg,
+				 enum bt_audio_codec_cfg_type type);
 
 /** @brief Lookup a specific metadata value based on type
  *
@@ -820,6 +1090,35 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t typ
 int bt_audio_codec_cfg_meta_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
 				    const uint8_t **data);
 
+/**
+ * @brief Set or add a specific codec configuration metadata value.
+ *
+ * @param codec_cfg  The codec configuration to set the value in.
+ * @param type       The type id to set.
+ * @param data       Pointer to the data-pointer to set.
+ * @param data_len   Length of @p data.
+ *
+ * @retval The meta_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_val(struct bt_audio_codec_cfg *codec_cfg,
+				    enum bt_audio_metadata_type type, const uint8_t *data,
+				    size_t data_len);
+
+/**
+ * @brief Unset a specific codec configuration metadata value
+ *
+ * The type and the value will be removed from the codec configuration metadata.
+ *
+ * @param codec_cfg  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The meta_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cfg_meta_unset_val(struct bt_audio_codec_cfg *codec_cfg,
+				      enum bt_audio_metadata_type type);
 /** @brief Extract preferred contexts
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_PREF_CONTEXT for more information about this value.
@@ -833,6 +1132,19 @@ int bt_audio_codec_cfg_meta_get_val(const struct bt_audio_codec_cfg *codec_cfg, 
  */
 int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *codec_cfg);
 
+/**
+ * @brief Set the preferred context of a codec configuration metadata.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ * @param ctx       The preferred context to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_pref_context(struct bt_audio_codec_cfg *codec_cfg,
+					     enum bt_audio_context ctx);
+
 /** @brief Extract stream contexts
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT for more information about this value.
@@ -845,6 +1157,19 @@ int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *co
  *  @retval -EBADMSG if found value has invalid size
  */
 int bt_audio_codec_cfg_meta_get_stream_context(const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the stream context of a codec configuration metadata.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ * @param ctx       The stream context to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_stream_context(struct bt_audio_codec_cfg *codec_cfg,
+					       enum bt_audio_context ctx);
 
 /** @brief Extract program info
  *
@@ -860,6 +1185,20 @@ int bt_audio_codec_cfg_meta_get_stream_context(const struct bt_audio_codec_cfg *
 int bt_audio_codec_cfg_meta_get_program_info(const struct bt_audio_codec_cfg *codec_cfg,
 					     const uint8_t **program_info);
 
+/**
+ * @brief Set the program info of a codec configuration metadata.
+ *
+ * @param codec_cfg        The codec configuration to set data for.
+ * @param program_info     The program info to set.
+ * @param program_info_len The length of @p program_info.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_program_info(struct bt_audio_codec_cfg *codec_cfg,
+					     const uint8_t *program_info, size_t program_info_len);
+
 /** @brief Extract stream language
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_LANG for more information about this value.
@@ -872,6 +1211,19 @@ int bt_audio_codec_cfg_meta_get_program_info(const struct bt_audio_codec_cfg *co
  *  @retval -EBADMSG if found value has invalid size
  */
 int bt_audio_codec_cfg_meta_get_stream_lang(const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the stream language of a codec configuration metadata.
+ *
+ * @param codec_cfg   The codec configuration to set data for.
+ * @param stream_lang The 24-bit stream language to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_stream_lang(struct bt_audio_codec_cfg *codec_cfg,
+					    uint32_t stream_lang);
 
 /** @brief Extract CCID list
  *
@@ -887,6 +1239,20 @@ int bt_audio_codec_cfg_meta_get_stream_lang(const struct bt_audio_codec_cfg *cod
 int bt_audio_codec_cfg_meta_get_ccid_list(const struct bt_audio_codec_cfg *codec_cfg,
 					  const uint8_t **ccid_list);
 
+/**
+ * @brief Set the CCID list of a codec configuration metadata.
+ *
+ * @param codec_cfg     The codec configuration to set data for.
+ * @param ccid_list     The program info to set.
+ * @param ccid_list_len The length of @p ccid_list.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_ccid_list(struct bt_audio_codec_cfg *codec_cfg,
+					  const uint8_t *ccid_list, size_t ccid_list_len);
+
 /** @brief Extract parental rating
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_PARENTAL_RATING for more information about this value.
@@ -899,6 +1265,19 @@ int bt_audio_codec_cfg_meta_get_ccid_list(const struct bt_audio_codec_cfg *codec
  *  @retval -EBADMSG if found value has invalid size
  */
 int bt_audio_codec_cfg_meta_get_parental_rating(const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the parental rating of a codec configuration metadata.
+ *
+ * @param codec_cfg       The codec configuration to set data for.
+ * @param parental_rating The parental rating to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_parental_rating(struct bt_audio_codec_cfg *codec_cfg,
+						enum bt_audio_parental_rating parental_rating);
 
 /** @brief Extract program info URI
  *
@@ -914,6 +1293,21 @@ int bt_audio_codec_cfg_meta_get_parental_rating(const struct bt_audio_codec_cfg 
 int bt_audio_codec_cfg_meta_get_program_info_uri(const struct bt_audio_codec_cfg *codec_cfg,
 						 const uint8_t **program_info_uri);
 
+/**
+ * @brief Set the program info URI of a codec configuration metadata.
+ *
+ * @param codec_cfg            The codec configuration to set data for.
+ * @param program_info_uri     The program info URI to set.
+ * @param program_info_uri_len The length of @p program_info_uri.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_program_info_uri(struct bt_audio_codec_cfg *codec_cfg,
+						 const uint8_t *program_info_uri,
+						 size_t program_info_uri_len);
+
 /** @brief Extract audio active state
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_AUDIO_STATE for more information about this value.
@@ -927,6 +1321,19 @@ int bt_audio_codec_cfg_meta_get_program_info_uri(const struct bt_audio_codec_cfg
  */
 int bt_audio_codec_cfg_meta_get_audio_active_state(const struct bt_audio_codec_cfg *codec_cfg);
 
+/**
+ * @brief Set the audio active state of a codec configuration metadata.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ * @param state     The audio active state to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_audio_active_state(struct bt_audio_codec_cfg *codec_cfg,
+						   enum bt_audio_active_state state);
+
 /** @brief Extract broadcast audio immediate rendering flag
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE for more information about this value.
@@ -939,6 +1346,18 @@ int bt_audio_codec_cfg_meta_get_audio_active_state(const struct bt_audio_codec_c
  */
 int bt_audio_codec_cfg_meta_get_bcast_audio_immediate_rend_flag(
 	const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the broadcast audio immediate rendering flag of a codec configuration metadata.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_bcast_audio_immediate_rend_flag(
+	struct bt_audio_codec_cfg *codec_cfg);
 
 /** @brief Extract extended metadata
  *
@@ -954,6 +1373,20 @@ int bt_audio_codec_cfg_meta_get_bcast_audio_immediate_rend_flag(
 int bt_audio_codec_cfg_meta_get_extended(const struct bt_audio_codec_cfg *codec_cfg,
 					 const uint8_t **extended_meta);
 
+/**
+ * @brief Set the extended metadata of a codec configuration metadata.
+ *
+ * @param codec_cfg         The codec configuration to set data for.
+ * @param extended_meta     The extended metadata to set.
+ * @param extended_meta_len The length of @p extended_meta.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_extended(struct bt_audio_codec_cfg *codec_cfg,
+					 const uint8_t *extended_meta, size_t extended_meta_len);
+
 /** @brief Extract vendor specific metadata
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_VENDOR for more information about this value.
@@ -967,6 +1400,20 @@ int bt_audio_codec_cfg_meta_get_extended(const struct bt_audio_codec_cfg *codec_
  */
 int bt_audio_codec_cfg_meta_get_vendor(const struct bt_audio_codec_cfg *codec_cfg,
 				       const uint8_t **vendor_meta);
+
+/**
+ * @brief Set the vendor specific metadata of a codec configuration metadata.
+ *
+ * @param codec_cfg       The codec configuration to set data for.
+ * @param vendor_meta     The vendor specific metadata to set.
+ * @param vendor_meta_len The length of @p vendor_meta.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_vendor(struct bt_audio_codec_cfg *codec_cfg,
+				       const uint8_t *vendor_meta, size_t vendor_meta_len);
 /** @} */ /* End of bt_audio_codec_cfg */
 
 /**
@@ -982,21 +1429,53 @@ int bt_audio_codec_cfg_meta_get_vendor(const struct bt_audio_codec_cfg *codec_cf
 /**
  * @brief Lookup a specific value based on type
  *
- * @param[in] codec_cap The codec data to search in.
- * @param[in] type The type id to look for
+ * @param[in]  codec_cap The codec data to search in.
+ * @param[in]  type The type id to look for
  * @param[out] data Pointer to the data-pointer to update when item is found
  *
- * @return Length of found @p data or 0 if not found
+ *  @retval Length of found @p data (may be 0)
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
  */
-uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, uint8_t type,
-				   const uint8_t **data);
+int bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
+			       enum bt_audio_codec_cap_type type, const uint8_t **data);
+
+/**
+ * @brief Set or add a specific codec capability value
+ *
+ * @param codec_cap  The codec data to set the value in.
+ * @param type       The type id to set
+ * @param data       Pointer to the data-pointer to set
+ * @param data_len   Length of @p data
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_val(struct bt_audio_codec_cap *codec_cap,
+			       enum bt_audio_codec_cap_type type, const uint8_t *data,
+			       size_t data_len);
+
+/**
+ * @brief Unset a specific codec capability value
+ *
+ * The type and the value will be removed from the codec capability.
+ *
+ * @param codec_cap  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cap_unset_val(struct bt_audio_codec_cap *codec_cap,
+				 enum bt_audio_codec_cap_type type);
 
 /**
  * @brief Extract the frequency from a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to extract data from.
  *
- * @retval Bitfield of supported frequencies if 0 or positive
+ * @retval Bitfield of supported frequencies (@ref bt_audio_codec_cap_freq) if 0 or positive
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
@@ -1004,21 +1483,47 @@ uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, u
 int bt_audio_codec_cap_get_freq(const struct bt_audio_codec_cap *codec_cap);
 
 /**
+ * @brief Set the supported frequencies of a codec capability.
+ *
+ * @param codec_cap The codec capabilities to set data for.
+ * @param freq      The supported frequencies to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_freq(struct bt_audio_codec_cap *codec_cap,
+				enum bt_audio_codec_cap_freq freq);
+
+/**
  * @brief Extract the frequency from a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to extract data from.
  *
  * @retval Bitfield of supported frame durations if 0 or positive
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cap_get_frame_duration(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_get_frame_dur(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the frame duration of a codec capability.
+ *
+ * @param codec_cap The codec capabilities to set data for.
+ * @param frame_dur The frame duration to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
+				     enum bt_audio_codec_cap_frame_dur frame_dur);
 
 /**
  * @brief Extract the frequency from a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to extract data from.
  *
  * @retval Bitfield of supported channel counts if 0 or positive
  * @retval -EINVAL if arguments are invalid
@@ -1028,9 +1533,22 @@ int bt_audio_codec_cap_get_frame_duration(const struct bt_audio_codec_cap *codec
 int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Set the channel count of a codec capability.
  *
- * @param[in]  codec_cap   The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to set data for.
+ * @param chan_count The channel count frequency to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_supported_audio_chan_counts(
+	struct bt_audio_codec_cap *codec_cap, enum bt_audio_codec_cap_chan_count chan_count);
+
+/**
+ * @brief Extract the supported octets per codec frame from a codec capability.
+ *
+ * @param[in]  codec_cap   The codec capabilities to extract data from.
  * @param[out] codec_frame Struct to place the resulting values in
  *
  * @retval 0 on success
@@ -1043,9 +1561,23 @@ int bt_audio_codec_cap_get_octets_per_frame(
 	struct bt_audio_codec_octets_per_codec_frame *codec_frame);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Set the octets per codec frame of a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap   The codec capabilities to set data for.
+ * @param codec_frame The octets per codec frame to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_octets_per_frame(
+	struct bt_audio_codec_cap *codec_cap,
+	const struct bt_audio_codec_octets_per_codec_frame *codec_frame);
+
+/**
+ * @brief Extract the maximum codec frames per SDU from a codec capability.
+ *
+ * @param codec_cap The codec capabilities to extract data from.
  *
  * @retval Maximum number of codec frames per SDU supported
  * @retval -EINVAL if arguments are invalid
@@ -1053,6 +1585,19 @@ int bt_audio_codec_cap_get_octets_per_frame(
  * @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the maximum codec frames per SDU of a codec capability.
+ *
+ * @param codec_cap            The codec capabilities to set data for.
+ * @param codec_frames_per_sdu The maximum codec frames per SDU to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_max_codec_frames_per_sdu(struct bt_audio_codec_cap *codec_cap,
+						    uint8_t codec_frames_per_sdu);
 
 /** @brief Lookup a specific metadata value based on type
  *
@@ -1067,6 +1612,36 @@ int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_
 int bt_audio_codec_cap_meta_get_val(const struct bt_audio_codec_cap *codec_cap, uint8_t type,
 				    const uint8_t **data);
 
+/**
+ * @brief Set or add a specific codec capability metadata value.
+ *
+ * @param codec_cap  The codec capability to set the value in.
+ * @param type       The type id to set.
+ * @param data       Pointer to the data-pointer to set.
+ * @param data_len   Length of @p data.
+ *
+ * @retval The meta_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_val(struct bt_audio_codec_cap *codec_cap,
+				    enum bt_audio_metadata_type type, const uint8_t *data,
+				    size_t data_len);
+
+/**
+ * @brief Unset a specific codec capability metadata value
+ *
+ * The type and the value will be removed from the codec capability metadata.
+ *
+ * @param codec_cap  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The meta_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cap_meta_unset_val(struct bt_audio_codec_cap *codec_cap,
+				      enum bt_audio_metadata_type type);
+
 /** @brief Extract preferred contexts
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_PREF_CONTEXT for more information about this value.
@@ -1080,6 +1655,19 @@ int bt_audio_codec_cap_meta_get_val(const struct bt_audio_codec_cap *codec_cap, 
  */
 int bt_audio_codec_cap_meta_get_pref_context(const struct bt_audio_codec_cap *codec_cap);
 
+/**
+ * @brief Set the preferred context of a codec capability metadata.
+ *
+ * @param codec_cap The codec capability to set data for.
+ * @param ctx       The preferred context to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_pref_context(struct bt_audio_codec_cap *codec_cap,
+					     enum bt_audio_context ctx);
+
 /** @brief Extract stream contexts
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT for more information about this value.
@@ -1092,6 +1680,19 @@ int bt_audio_codec_cap_meta_get_pref_context(const struct bt_audio_codec_cap *co
  *  @retval -EBADMSG if found value has invalid size
  */
 int bt_audio_codec_cap_meta_get_stream_context(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the stream context of a codec capability metadata.
+ *
+ * @param codec_cap The codec capability to set data for.
+ * @param ctx       The stream context to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_stream_context(struct bt_audio_codec_cap *codec_cap,
+					       enum bt_audio_context ctx);
 
 /** @brief Extract program info
  *
@@ -1107,6 +1708,20 @@ int bt_audio_codec_cap_meta_get_stream_context(const struct bt_audio_codec_cap *
 int bt_audio_codec_cap_meta_get_program_info(const struct bt_audio_codec_cap *codec_cap,
 					     const uint8_t **program_info);
 
+/**
+ * @brief Set the program info of a codec capability metadata.
+ *
+ * @param codec_cap        The codec capability to set data for.
+ * @param program_info     The program info to set.
+ * @param program_info_len The length of @p program_info.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_program_info(struct bt_audio_codec_cap *codec_cap,
+					     const uint8_t *program_info, size_t program_info_len);
+
 /** @brief Extract stream language
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_LANG for more information about this value.
@@ -1119,6 +1734,19 @@ int bt_audio_codec_cap_meta_get_program_info(const struct bt_audio_codec_cap *co
  *  @retval -EBADMSG if found value has invalid size
  */
 int bt_audio_codec_cap_meta_get_stream_lang(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the stream language of a codec capability metadata.
+ *
+ * @param codec_cap   The codec capability to set data for.
+ * @param stream_lang The 24-bit stream language to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_stream_lang(struct bt_audio_codec_cap *codec_cap,
+					    uint32_t stream_lang);
 
 /** @brief Extract CCID list
  *
@@ -1134,6 +1762,20 @@ int bt_audio_codec_cap_meta_get_stream_lang(const struct bt_audio_codec_cap *cod
 int bt_audio_codec_cap_meta_get_ccid_list(const struct bt_audio_codec_cap *codec_cap,
 					  const uint8_t **ccid_list);
 
+/**
+ * @brief Set the CCID list of a codec capability metadata.
+ *
+ * @param codec_cap     The codec capability to set data for.
+ * @param ccid_list     The program info to set.
+ * @param ccid_list_len The length of @p ccid_list.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_ccid_list(struct bt_audio_codec_cap *codec_cap,
+					  const uint8_t *ccid_list, size_t ccid_list_len);
+
 /** @brief Extract parental rating
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_PARENTAL_RATING for more information about this value.
@@ -1146,6 +1788,19 @@ int bt_audio_codec_cap_meta_get_ccid_list(const struct bt_audio_codec_cap *codec
  *  @retval -EBADMSG if found value has invalid size
  */
 int bt_audio_codec_cap_meta_get_parental_rating(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the parental rating of a codec capability metadata.
+ *
+ * @param codec_cap       The codec capability to set data for.
+ * @param parental_rating The parental rating to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_parental_rating(struct bt_audio_codec_cap *codec_cap,
+						enum bt_audio_parental_rating parental_rating);
 
 /** @brief Extract program info URI
  *
@@ -1161,6 +1816,21 @@ int bt_audio_codec_cap_meta_get_parental_rating(const struct bt_audio_codec_cap 
 int bt_audio_codec_cap_meta_get_program_info_uri(const struct bt_audio_codec_cap *codec_cap,
 						 const uint8_t **program_info_uri);
 
+/**
+ * @brief Set the program info URI of a codec capability metadata.
+ *
+ * @param codec_cap            The codec capability to set data for.
+ * @param program_info_uri     The program info URI to set.
+ * @param program_info_uri_len The length of @p program_info_uri.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_program_info_uri(struct bt_audio_codec_cap *codec_cap,
+						 const uint8_t *program_info_uri,
+						 size_t program_info_uri_len);
+
 /** @brief Extract audio active state
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_AUDIO_STATE for more information about this value.
@@ -1174,6 +1844,19 @@ int bt_audio_codec_cap_meta_get_program_info_uri(const struct bt_audio_codec_cap
  */
 int bt_audio_codec_cap_meta_get_audio_active_state(const struct bt_audio_codec_cap *codec_cap);
 
+/**
+ * @brief Set the audio active state of a codec capability metadata.
+ *
+ * @param codec_cap The codec capability to set data for.
+ * @param state     The audio active state to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_audio_active_state(struct bt_audio_codec_cap *codec_cap,
+						   enum bt_audio_active_state state);
+
 /** @brief Extract broadcast audio immediate rendering flag
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE for more information about this value.
@@ -1186,6 +1869,18 @@ int bt_audio_codec_cap_meta_get_audio_active_state(const struct bt_audio_codec_c
  */
 int bt_audio_codec_cap_meta_get_bcast_audio_immediate_rend_flag(
 	const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the broadcast audio immediate rendering flag of a codec capability metadata.
+ *
+ * @param codec_cap The codec capability to set data for.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_bcast_audio_immediate_rend_flag(
+	struct bt_audio_codec_cap *codec_cap);
 
 /** @brief Extract extended metadata
  *
@@ -1201,6 +1896,20 @@ int bt_audio_codec_cap_meta_get_bcast_audio_immediate_rend_flag(
 int bt_audio_codec_cap_meta_get_extended(const struct bt_audio_codec_cap *codec_cap,
 					 const uint8_t **extended_meta);
 
+/**
+ * @brief Set the extended metadata of a codec capability metadata.
+ *
+ * @param codec_cap         The codec capability to set data for.
+ * @param extended_meta     The extended metadata to set.
+ * @param extended_meta_len The length of @p extended_meta.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_extended(struct bt_audio_codec_cap *codec_cap,
+					 const uint8_t *extended_meta, size_t extended_meta_len);
+
 /** @brief Extract vendor specific metadata
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_VENDOR for more information about this value.
@@ -1214,6 +1923,21 @@ int bt_audio_codec_cap_meta_get_extended(const struct bt_audio_codec_cap *codec_
  */
 int bt_audio_codec_cap_meta_get_vendor(const struct bt_audio_codec_cap *codec_cap,
 				       const uint8_t **vendor_meta);
+
+/**
+ * @brief Set the vendor specific metadata of a codec capability metadata.
+ *
+ * @param codec_cap       The codec capability to set data for.
+ * @param vendor_meta     The vendor specific metadata to set.
+ * @param vendor_meta_len The length of @p vendor_meta.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_vendor(struct bt_audio_codec_cap *codec_cap,
+				       const uint8_t *vendor_meta, size_t vendor_meta_len);
+
 /** @} */ /* End of bt_audio_codec_cap */
 
 #ifdef __cplusplus

@@ -179,7 +179,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * This routine prepares for the execution of and runs C code.
  *
  */
-void z_arm_prep_c(void)
+void z_prep_c(void)
 {
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
@@ -187,7 +187,12 @@ void z_arm_prep_c(void)
 #endif
 	z_bss_zero();
 	z_data_copy();
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	/* Invoke SoC-specific interrupt controller initialization */
+	z_soc_irq_init();
+#else
 	z_arm_interrupt_init();
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	z_cstart();
 	CODE_UNREACHABLE;
 }

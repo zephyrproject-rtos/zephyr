@@ -23,4 +23,4 @@ extern struct k_mem_domain app_domain;
 #define THREAD_PRIORITY K_PRIO_PREEMPT(8)
 #endif
 
-int start_thread(void);
+void start_thread(void);

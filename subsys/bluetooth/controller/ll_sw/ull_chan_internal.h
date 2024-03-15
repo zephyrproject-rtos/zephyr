@@ -4,6 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int ull_chan_reset(void);
+void ull_chan_reset(void);
 uint8_t ull_chan_map_get(uint8_t *const chan_map);
 void ull_chan_map_set(uint8_t const *const chan_map);

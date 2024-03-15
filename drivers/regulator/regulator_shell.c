@@ -221,6 +221,38 @@ static int cmd_vget(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	unsigned int current_cnt;
+	int32_t last_current_ua;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	current_cnt = regulator_count_current_limits(dev);
+
+	for (unsigned int i = 0U; i < current_cnt; i++) {
+		int32_t current_ua;
+
+		(void)regulator_list_current_limit(dev, i, &current_ua);
+
+		/* do not print repeated current limits */
+		if ((i == 0U) || (last_current_ua != current_ua)) {
+			microtoshell(sh, 'A', current_ua);
+		}
+
+		last_current_ua = current_ua;
+	}
+
+	return 0;
+}
+
 static int cmd_iset(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -328,6 +360,63 @@ static int cmd_modeget(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "Mode: %u", (unsigned int)mode);
+
+	return 0;
+}
+
+static int cmd_adset(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	bool ad;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	if (strcmp(argv[2], "enable")) {
+		ad = true;
+	} else if (strcmp(argv[2], "disable")) {
+		ad = false;
+	} else {
+		shell_error(sh, "Invalid parameter");
+		return -EINVAL;
+	}
+
+	ret = regulator_set_active_discharge(dev, ad);
+	if (ret < 0) {
+		shell_error(sh, "Could not set active discharge (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_adget(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	bool ad;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	ret = regulator_get_active_discharge(dev, &ad);
+	if (ret < 0) {
+		shell_error(sh, "Could not get active discharge (%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Active Discharge: %s", ad ? "enabled" : "disabled");
 
 	return 0;
 }
@@ -449,6 +538,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get voltage\n"
 		      "Usage: vget <device>",
 		      cmd_vget, 2, 0),
+	SHELL_CMD_ARG(clist, &dsub_device_name,
+		      "List all supported current limits\n"
+		      "Usage: clist <device>",
+		      cmd_clist, 2, 0),
 	SHELL_CMD_ARG(iset, &dsub_device_name,
 		      "Set current limit\n"
 		      "Input requires units, e.g. 200ma, 20.5ma, 10ua, 1a...\n"
@@ -467,6 +560,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get regulator mode\n"
 		      "Usage: modeget <device>",
 		      cmd_modeget, 2, 0),
+	SHELL_CMD_ARG(adset, NULL,
+		      "Set active discharge\n"
+		      "Usage: adset <device> <enable/disable>",
+		      cmd_adset, 3, 0),
+	SHELL_CMD_ARG(adget, NULL,
+		      "Get active discharge\n"
+		      "Usage: adget <device>",
+		      cmd_adget, 2, 0),
 	SHELL_CMD_ARG(errors, &dsub_device_name,
 		      "Get errors\n"
 		      "Usage: errors <device>",

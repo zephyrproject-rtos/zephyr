@@ -1,0 +1,14 @@
+# I2C configuration options
+
+# Copyright (c) 2024, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_NXP_TRANSFER_TIMEOUT
+	int "Transfer timeout [ms]"
+	default 0
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.
+	  In conjunction with this, FSL_FEATURE_I2C_TIMEOUT_RECOVERY
+	  must be enabled to allow the driver to fully recover.

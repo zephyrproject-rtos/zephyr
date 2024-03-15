@@ -1,0 +1,17 @@
+identifier: da14695_dk_usb
+name: DA14695_DK_USB
+type: mcu
+arch: arm
+ram: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - gpio
+  - hwinfo
+  - watchdog
+  - i2c
+  - spi
+  - usb_device

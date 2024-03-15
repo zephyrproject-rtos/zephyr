@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TODO: This overlay file need to update once mc146818 driver eneable for acpi support.
+ */
+
+/ {
+	aliases {
+		acpi-dev = &rtc;
+	};
+};
+
+&rtc {
+	acpi-hid = "PNP0B00";
+	status = "okay";
+};

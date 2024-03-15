@@ -72,8 +72,8 @@ static LoRaMacEventInfoStatus_t last_mlme_indication_status;
 
 static LoRaMacRegion_t selected_region = DEFAULT_LORAWAN_REGION;
 
-static uint8_t (*get_battery_level_user)(void);
-static void (*dr_change_cb)(enum lorawan_datarate dr);
+static lorawan_battery_level_cb_t battery_level_cb;
+static lorawan_dr_changed_cb_t dr_changed_cb;
 
 /* implementation required by the soft-se (software secure element) */
 void BoardGetUniqueId(uint8_t *id)
@@ -83,11 +83,11 @@ void BoardGetUniqueId(uint8_t *id)
 
 static uint8_t get_battery_level(void)
 {
-	if (get_battery_level_user != NULL) {
-		return get_battery_level_user();
+	if (battery_level_cb != NULL) {
+		return battery_level_cb();
+	} else {
+		return 255;
 	}
-
-	return 255;
 }
 
 static void mac_process_notify(void)
@@ -105,8 +105,8 @@ static void datarate_observe(bool force_notification)
 	if ((mib_req.Param.ChannelsDatarate != current_datarate) ||
 	    (force_notification)) {
 		current_datarate = mib_req.Param.ChannelsDatarate;
-		if (dr_change_cb) {
-			dr_change_cb(current_datarate);
+		if (dr_changed_cb != NULL) {
+			dr_changed_cb(current_datarate);
 		}
 		LOG_INF("Datarate changed: DR_%d", current_datarate);
 	}
@@ -621,15 +621,9 @@ out:
 	return ret;
 }
 
-int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void))
+void lorawan_register_battery_level_callback(lorawan_battery_level_cb_t cb)
 {
-	if (battery_lvl_cb == NULL) {
-		return -EINVAL;
-	}
-
-	get_battery_level_user = battery_lvl_cb;
-
-	return 0;
+	battery_level_cb = cb;
 }
 
 void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
@@ -637,9 +631,9 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
 	sys_slist_append(&dl_callbacks, &cb->node);
 }
 
-void lorawan_register_dr_changed_callback(void (*cb)(enum lorawan_datarate))
+void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb)
 {
-	dr_change_cb = cb;
+	dr_changed_cb = cb;
 }
 
 int lorawan_start(void)

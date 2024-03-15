@@ -64,6 +64,8 @@ static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev,
 			case GPIO_INT_TRIG_BOTH:
 				port_interrupt = kPORT_InterruptEitherEdge;
 				break;
+			default:
+				return -EINVAL;
 			}
 		}
 	}

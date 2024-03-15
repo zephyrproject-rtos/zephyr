@@ -7,6 +7,7 @@
 #include "argparse.h"
 #include <bs_pc_backchannel.h>
 #include "mesh/crypto.h"
+#include <zephyr/bluetooth/hci.h>
 
 #define LOG_MODULE_NAME mesh_test
 
@@ -27,7 +28,7 @@ struct bt_mesh_test_stats test_stats;
 struct bt_mesh_msg_ctx test_send_ctx;
 static void (*ra_cb)(uint8_t *, size_t);
 
-static int msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int msg_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
 {
 	size_t len = buf->len + BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1);
@@ -75,7 +76,7 @@ static int msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int ra_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int ra_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		 struct net_buf_simple *buf)
 {
 	LOG_INF("\tlen: %d bytes", buf->len);
@@ -97,19 +98,19 @@ static const struct bt_mesh_model_op model_op[] = {
 	BT_MESH_MODEL_OP_END
 };
 
-int __weak test_model_pub_update(struct bt_mesh_model *mod)
+int __weak test_model_pub_update(const struct bt_mesh_model *mod)
 {
 	return -1;
 }
 
-int __weak test_model_settings_set(struct bt_mesh_model *model,
+int __weak test_model_settings_set(const struct bt_mesh_model *model,
 				   const char *name, size_t len_rd,
 				   settings_read_cb read_cb, void *cb_arg)
 {
 	return -1;
 }
 
-void __weak test_model_reset(struct bt_mesh_model *model)
+void __weak test_model_reset(const struct bt_mesh_model *model)
 {
 	/* No-op. */
 }
@@ -128,19 +129,19 @@ static const struct bt_mesh_model_op vnd_model_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-int __weak test_vnd_model_pub_update(struct bt_mesh_model *mod)
+int __weak test_vnd_model_pub_update(const struct bt_mesh_model *mod)
 {
 	return -1;
 }
 
-int __weak test_vnd_model_settings_set(struct bt_mesh_model *model,
+int __weak test_vnd_model_settings_set(const struct bt_mesh_model *model,
 				       const char *name, size_t len_rd,
 				       settings_read_cb read_cb, void *cb_arg)
 {
 	return -1;
 }
 
-void __weak test_vnd_model_reset(struct bt_mesh_model *model)
+void __weak test_vnd_model_reset(const struct bt_mesh_model *model)
 {
 	/* No-op. */
 }
@@ -174,7 +175,7 @@ static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
 static struct bt_mesh_od_priv_proxy_cli priv_proxy_cli;
 #endif
 
-static struct bt_mesh_model models[] = {
+static const struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_CB(TEST_MOD_ID, model_op, &pub, NULL, &test_model_cb),
@@ -195,16 +196,16 @@ static struct bt_mesh_model models[] = {
 #endif
 };
 
-struct bt_mesh_model *test_model = &models[2];
+const struct bt_mesh_model *test_model = &models[2];
 
-static struct bt_mesh_model vnd_models[] = {
+static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MOD_ID, vnd_model_op, &vnd_pub,
 			     NULL, &test_vnd_model_cb),
 };
 
-struct bt_mesh_model *test_vnd_model = &vnd_models[0];
+const struct bt_mesh_model *test_vnd_model = &vnd_models[0];
 
-static struct bt_mesh_elem elems[] = {
+static const struct bt_mesh_elem elems[] = {
 	BT_MESH_ELEM(0, models, vnd_models),
 };
 
@@ -545,6 +546,50 @@ uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr)
 {
 	return start_addr + get_device_nbr();
 }
+
+void bt_mesh_test_send_over_adv(void *data, size_t len)
+{
+	struct bt_mesh_adv *adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+						     BT_MESH_TRANSMIT(0, 20), K_NO_WAIT);
+	net_buf_simple_add_mem(&adv->b, data, len);
+	bt_mesh_adv_send(adv, NULL, NULL);
+}
+
+int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer_sem, uint16_t wait)
+{
+	struct bt_le_scan_param scan_param = {
+		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.options    = BT_LE_SCAN_OPT_NONE,
+		.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
+		.window     = BT_MESH_ADV_SCAN_UNIT(1000)
+	};
+	int err;
+	int returned_value = 0;
+
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err && err != -EALREADY) {
+		LOG_ERR("Starting scan failed (err %d)", err);
+		return err;
+	}
+
+	err = k_sem_take(observer_sem, K_SECONDS(wait));
+	if (err == -EAGAIN) {
+		LOG_WRN("Taking sem timed out (err %d)", err);
+		returned_value = -ETIMEDOUT;
+	} else if (err) {
+		LOG_ERR("Taking sem failed (err %d)", err);
+		return err;
+	}
+
+	err = bt_le_scan_stop();
+	if (err && err != -EALREADY) {
+		LOG_ERR("Stopping scan failed (err %d)", err);
+		return err;
+	}
+
+	return returned_value;
+}
+
 
 #if defined(CONFIG_BT_MESH_SAR_CFG)
 void bt_mesh_test_sar_conf_set(struct bt_mesh_sar_tx *tx_set, struct bt_mesh_sar_rx *rx_set)

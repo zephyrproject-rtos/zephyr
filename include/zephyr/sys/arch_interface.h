@@ -6,6 +6,7 @@
 
 /**
  * @defgroup arch-interface Architecture Interface
+ * @ingroup internal_api
  * @brief Internal kernel APIs with public scope
  *
  * Any public kernel APIs that are implemented as inline functions and need to
@@ -215,7 +216,7 @@ void arch_cpu_atomic_idle(unsigned int key);
  *
  * @param data context parameter, implementation specific
  */
-typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
+typedef void (*arch_cpustart_t)(void *data);
 
 /**
  * @brief Start a numbered CPU on a MP-capable system
@@ -494,6 +495,9 @@ static inline uint32_t arch_proc_id(void);
  */
 void arch_sched_ipi(void);
 
+
+int arch_smp_init(void);
+
 #endif /* CONFIG_SMP */
 
 /**
@@ -516,6 +520,8 @@ static inline unsigned int arch_num_cpus(void);
  */
 
 #ifdef CONFIG_USERSPACE
+#include <zephyr/arch/syscall.h>
+
 /**
  * Invoke a system call with 0 arguments.
  *
@@ -797,7 +803,7 @@ int arch_buffer_validate(void *addr, size_t size, int write);
 size_t arch_virt_region_align(uintptr_t phys, size_t size);
 
 /**
- * Perform a one-way transition from supervisor to kernel mode.
+ * Perform a one-way transition from supervisor to user mode.
  *
  * Implementations of this function must do the following:
  *
@@ -1054,7 +1060,13 @@ int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 #include <zephyr/timing/types.h>
 
 /**
- * @ingroup arch-timing
+ * @brief Arch specific Timing Measurement APIs
+ * @defgroup timing_api_arch Arch specific Timing Measurement APIs
+ * @ingroup timing_api
+ *
+ * Implements the necessary bits to support timing measurement
+ * using architecture specific timing measurement mechanism.
+ *
  * @{
  */
 
@@ -1098,16 +1110,24 @@ void arch_timing_stop(void);
 /**
  * @brief Return timing counter.
  *
+ * @parblock
+ *
  * @note Any call to arch_timing_counter_get() must be done between
  * calls to arch_timing_start() and arch_timing_stop(), and on the
  * same CPU core.
  *
- * @note Not all platforms have a timing counter with 64 bit precision.  It
- * is possible to see this value "go backwards" due to internal
+ * @endparblock
+ *
+ * @parblock
+ *
+ * @note Not all architectures have a timing counter with 64 bit precision.
+ * It is possible to see this value "go backwards" due to internal
  * rollover.  Timing code must be prepared to address the rollover
  * (with platform-dependent code, e.g. by casting to a uint32_t before
  * subtraction) or by using arch_timing_cycles_get() which is required
  * to understand the distinction.
+ *
+ * @endparblock
  *
  * @return Timing counter.
  *
@@ -1118,7 +1138,7 @@ timing_t arch_timing_counter_get(void);
 /**
  * @brief Get number of cycles between @p start and @p end.
  *
- * For some architectures or SoCs, the raw numbers from counter need
+ * @note For some architectures, the raw numbers from counter need
  * to be scaled to obtain actual number of cycles, or may roll over
  * internally.  This function computes a positive-definite interval
  * between two returned cycle values.

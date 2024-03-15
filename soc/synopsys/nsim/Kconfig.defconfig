@@ -1,0 +1,11 @@
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NSIM
+
+config XIP
+	default n
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_NSIM

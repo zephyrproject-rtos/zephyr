@@ -66,6 +66,8 @@ enum tls_credential_type {
  *    - TLS_CREDENTIAL_PSK with TLS_CREDENTIAL_PSK_ID.
  *    Such pairs of credentials must be assigned the same secure tag to be
  *    correctly handled in the system.
+ *
+ * @note Negative values are reserved for internal use.
  */
 typedef int sec_tag_t;
 

@@ -188,7 +188,7 @@ primary_core:
 #endif
 	/* load primary stack and entry point */
 	ldr	x24, =(z_interrupt_stacks + __z_interrupt_stack_SIZEOF)
-	ldr	x25, =z_arm64_prep_c
+	ldr	x25, =z_prep_c
 boot:
 	/* Prepare for calling C code */
 	bl	__reset_prep_c
@@ -248,4 +248,4 @@ switch_el:
 	msr	DAIFClr, #(DAIFCLR_ABT_BIT)
 	isb
 
-	ret	x25  /* either z_arm64_prep_c or z_arm64_secondary_prep_c */
+	ret	x25  /* either z_prep_c or z_arm64_secondary_prep_c */

@@ -1,0 +1,189 @@
+/*
+ * Copyright 2022 The Chromium OS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g4/stm32g474Xe.dtsi>
+#include <st/g4/stm32g474r(b-c-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "B-G474E-DPOW1 Discovery board";
+	compatible = "st,b-g474e-dpow1";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led_2: led2 {
+			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+			label = "LED_DOWN_BLUE";
+		};
+		orange_led_3: led3 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+			label = "LED_LEFT_ORANGE";
+		};
+		green_led_4: led4 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+			label = "LED_RIGHT_GREEN";
+		};
+		red_led_5: led5 {
+			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+			label = "LED_UP_RED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		joystick_sel: button0 {
+			label = "JOYSTICK_SEL";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+		joystick_left: button1 {
+			label = "JOYSTICK_LEFT";
+			gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+		joystick_down: button2 {
+			label = "JOYSTICK_DOWN";
+			gpios = <&gpioc 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+		joystick_right: button3 {
+			label = "JOYSTICK_RIGHT";
+			gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+		joystick_up: button4 {
+			label = "JOYSTICK_UP";
+			gpios = <&gpiob 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_2;
+		led1 = &orange_led_3;
+		led2 = &green_led_4;
+		led3 = &red_led_5;
+		sw0 = &joystick_sel;
+		sw1 = &joystick_left;
+		sw2 = &joystick_down;
+		sw3 = &joystick_right;
+		sw4 = &joystick_up;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <16>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(128)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	pinctrl-1 = <&analog_pc10 &analog_pc11>;
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_in8_pc2>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&ucpd1 {
+	status = "okay";
+
+	/*
+	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
+	 * a prescaler who's output feeds the 'half-bit' divider which is used
+	 * to generate clock for delay counters and BMC Rx/Tx blocks. The rx is
+	 * designed to work in freq ranges of 6 <--> 18 MHz, however recommended
+	 * range is 9 <--> 18 MHz.
+	 *
+	 *          +-------+ @ 16 MHz +-------+   @ ~600 kHz   +-----------+
+	 * HSI ---->| /psc  |--------->| /hbit |--------------->| trans_cnt |
+	 *          +-------+          +-------+   |            +-----------+
+	 *                                         |            +-----------+
+	 *                                         +----------->| ifrgap_cnt|
+	 *                                                      +-----------+
+	 * Requirements:
+	 *   1. hbit_clk ~= 600 kHz: 16 MHz / 600 kHz = 26.67
+	 *   2. tTransitionWindow - 12 to 20 uSec
+	 *   3. tInterframGap - uSec
+	 *
+	 * hbit_clk = HSI_clk / 27 = 592.6 kHz = 1.687 uSec period
+	 * tTransitionWindow = 1.687 uS * 8 = 13.5 uS
+	 * tInterFrameGap = 1.687 uS * 17 = 28.68 uS
+	 */
+	psc-ucpdclk = <1>;
+	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pb6 &ucpd1_cc2_pb4>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};

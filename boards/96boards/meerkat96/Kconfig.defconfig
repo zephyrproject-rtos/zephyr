@@ -1,0 +1,15 @@
+# 96Boards Meerkat96 board
+
+# Copyright (c) 2019, Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_96B_MEERKAT96
+
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
+endif # BOARD_96B_MEERKAT96

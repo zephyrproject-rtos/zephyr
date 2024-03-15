@@ -20,12 +20,10 @@
 extern "C" {
 #endif
 
-extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
-
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
-static ALWAYS_INLINE void z_xtensa_kernel_init(void)
+static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 
@@ -51,20 +49,28 @@ static ALWAYS_INLINE void z_xtensa_kernel_init(void)
 	 * win.
 	 */
 	XTENSA_WSR(ZSR_CPU_STR, cpu0);
-}
-
-static ALWAYS_INLINE void arch_kernel_init(void)
-{
-#ifndef CONFIG_XTENSA_MMU
-	/* This is called in z_xtensa_mmu_init() before z_cstart()
-	 * so we do not need to call it again.
-	 */
-	z_xtensa_kernel_init();
-#endif
 
 #ifdef CONFIG_INIT_STACKS
-	memset(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
-	       K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
+	char *stack_start = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]);
+	size_t stack_sz = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]);
+	char *stack_end = stack_start + stack_sz;
+
+	uint32_t sp;
+
+	__asm__ volatile("mov %0, sp" : "=a"(sp));
+
+	/* Only clear the interrupt stack if the current stack pointer
+	 * is not within the interrupt stack. Or else we would be
+	 * wiping the in-use stack.
+	 */
+	if (((uintptr_t)sp < (uintptr_t)stack_start) ||
+	    ((uintptr_t)sp >= (uintptr_t)stack_end)) {
+		memset(stack_start, 0xAA, stack_sz);
+	}
+#endif
+
+#ifdef CONFIG_XTENSA_MMU
+	xtensa_mmu_init();
 #endif
 }
 

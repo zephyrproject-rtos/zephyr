@@ -16,22 +16,21 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 
-/* Internal helpers only used by the sys_* APIs further below */
-#define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
-#define __bswap_24(x) ((uint32_t) ((((x) >> 16) & 0xff) | \
+#define BSWAP_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+#define BSWAP_24(x) ((uint32_t) ((((x) >> 16) & 0xff) | \
 				   (((x)) & 0xff00) | \
 				   (((x) & 0xff) << 16)))
-#define __bswap_32(x) ((uint32_t) ((((x) >> 24) & 0xff) | \
+#define BSWAP_32(x) ((uint32_t) ((((x) >> 24) & 0xff) | \
 				   (((x) >> 8) & 0xff00) | \
 				   (((x) & 0xff00) << 8) | \
 				   (((x) & 0xff) << 24)))
-#define __bswap_48(x) ((uint64_t) ((((x) >> 40) & 0xff) | \
+#define BSWAP_48(x) ((uint64_t) ((((x) >> 40) & 0xff) | \
 				   (((x) >> 24) & 0xff00) | \
 				   (((x) >> 8) & 0xff0000) | \
 				   (((x) & 0xff0000) << 8) | \
 				   (((x) & 0xff00) << 24) | \
 				   (((x) & 0xff) << 40)))
-#define __bswap_64(x) ((uint64_t) ((((x) >> 56) & 0xff) | \
+#define BSWAP_64(x) ((uint64_t) ((((x) >> 56) & 0xff) | \
 				   (((x) >> 40) & 0xff00) | \
 				   (((x) >> 24) & 0xff0000) | \
 				   (((x) >> 8) & 0xff000000) | \
@@ -222,16 +221,16 @@
 #define sys_cpu_to_le48(val) (val)
 #define sys_le64_to_cpu(val) (val)
 #define sys_cpu_to_le64(val) (val)
-#define sys_be16_to_cpu(val) __bswap_16(val)
-#define sys_cpu_to_be16(val) __bswap_16(val)
-#define sys_be24_to_cpu(val) __bswap_24(val)
-#define sys_cpu_to_be24(val) __bswap_24(val)
-#define sys_be32_to_cpu(val) __bswap_32(val)
-#define sys_cpu_to_be32(val) __bswap_32(val)
-#define sys_be48_to_cpu(val) __bswap_48(val)
-#define sys_cpu_to_be48(val) __bswap_48(val)
-#define sys_be64_to_cpu(val) __bswap_64(val)
-#define sys_cpu_to_be64(val) __bswap_64(val)
+#define sys_be16_to_cpu(val) BSWAP_16(val)
+#define sys_cpu_to_be16(val) BSWAP_16(val)
+#define sys_be24_to_cpu(val) BSWAP_24(val)
+#define sys_cpu_to_be24(val) BSWAP_24(val)
+#define sys_be32_to_cpu(val) BSWAP_32(val)
+#define sys_cpu_to_be32(val) BSWAP_32(val)
+#define sys_be48_to_cpu(val) BSWAP_48(val)
+#define sys_cpu_to_be48(val) BSWAP_48(val)
+#define sys_be64_to_cpu(val) BSWAP_64(val)
+#define sys_cpu_to_be64(val) BSWAP_64(val)
 
 #define sys_uint16_to_array(val) {		\
 	((val) & 0xff),				\
@@ -254,16 +253,16 @@
 	(((val) >> 56) & 0xff)}
 
 #else
-#define sys_le16_to_cpu(val) __bswap_16(val)
-#define sys_cpu_to_le16(val) __bswap_16(val)
-#define sys_le24_to_cpu(val) __bswap_24(val)
-#define sys_cpu_to_le24(val) __bswap_24(val)
-#define sys_le32_to_cpu(val) __bswap_32(val)
-#define sys_cpu_to_le32(val) __bswap_32(val)
-#define sys_le48_to_cpu(val) __bswap_48(val)
-#define sys_cpu_to_le48(val) __bswap_48(val)
-#define sys_le64_to_cpu(val) __bswap_64(val)
-#define sys_cpu_to_le64(val) __bswap_64(val)
+#define sys_le16_to_cpu(val) BSWAP_16(val)
+#define sys_cpu_to_le16(val) BSWAP_16(val)
+#define sys_le24_to_cpu(val) BSWAP_24(val)
+#define sys_cpu_to_le24(val) BSWAP_24(val)
+#define sys_le32_to_cpu(val) BSWAP_32(val)
+#define sys_cpu_to_le32(val) BSWAP_32(val)
+#define sys_le48_to_cpu(val) BSWAP_48(val)
+#define sys_cpu_to_le48(val) BSWAP_48(val)
+#define sys_le64_to_cpu(val) BSWAP_64(val)
+#define sys_cpu_to_le64(val) BSWAP_64(val)
 #define sys_be16_to_cpu(val) (val)
 #define sys_cpu_to_be16(val) (val)
 #define sys_be24_to_cpu(val) (val)

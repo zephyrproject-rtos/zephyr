@@ -15,11 +15,11 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include "power_ctrl.h"
 
-#define PORT1_NODE		DT_NODELABEL(port1)
-#define PORT1_POWER_ROLE	DT_ENUM_IDX(DT_NODELABEL(port1), power_role)
+#define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
+#define USBC_PORT0_POWER_ROLE	DT_ENUM_IDX(USBC_PORT0_NODE, power_role)
 
 /* A Source power role evauates to 1. See usbc_tc.h: TC_ROLE_SOURCE */
-#if (PORT1_POWER_ROLE != 1)
+#if (USBC_PORT0_POWER_ROLE != 1)
 #error "Unsupported board: Only Source device supported"
 #endif
 
@@ -29,9 +29,9 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 /**
  * @brief A structure that encapsulates Port data.
  */
-static struct port1_data_t {
+static struct port0_data_t {
 	/** Source Capabilities */
-	uint32_t src_caps[DT_PROP_LEN(DT_NODELABEL(port1), source_pdos)];
+	uint32_t src_caps[DT_PROP_LEN(USBC_PORT0_NODE, source_pdos)];
 	/** Number of Source Capabilities */
 	int src_cap_cnt;
 	/** CC Rp value */
@@ -48,10 +48,10 @@ static struct port1_data_t {
 	bool ps_tran_start;
 	/** Log Sink Requested RDO to console */
 	atomic_t show_sink_request;
-} port1_data = {
-	.rp = DT_ENUM_IDX(DT_NODELABEL(port1), typec_power_opmode),
-	.src_caps = {DT_FOREACH_PROP_ELEM(DT_NODELABEL(port1), source_pdos, SOURCE_PDO)},
-	.src_cap_cnt = DT_PROP_LEN(DT_NODELABEL(port1), source_pdos),
+} port0_data = {
+	.rp = DT_ENUM_IDX(USBC_PORT0_NODE, typec_power_opmode),
+	.src_caps = {DT_FOREACH_PROP_ELEM(USBC_PORT0_NODE, source_pdos, SOURCE_PDO)},
+	.src_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, source_pdos),
 };
 
 /* usbc.rst port data object end */
@@ -84,10 +84,10 @@ static void dump_sink_request_rdo(const uint32_t rdo)
 /**
  * @brief PE calls this function when it needs to set the Rp on CC
  */
-int port1_policy_cb_get_src_rp(const struct device *dev,
+int port0_policy_cb_get_src_rp(const struct device *dev,
 			       enum tc_rp_value *rp)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	*rp = dpm_data->rp;
 
@@ -98,7 +98,7 @@ int port1_policy_cb_get_src_rp(const struct device *dev,
  * @brief PE calls this function to Enable (5V) or Disable (0V) the
  *	  Power Supply
  */
-int port1_policy_cb_src_en(const struct device *dev, bool en)
+int port0_policy_cb_src_en(const struct device *dev, bool en)
 {
 	source_ctrl_set(en ? SOURCE_5V : SOURCE_0V);
 
@@ -108,9 +108,9 @@ int port1_policy_cb_src_en(const struct device *dev, bool en)
 /**
  * @brief PE calls this function to Enable or Disable VCONN
  */
-int port1_policy_cb_vconn_en(const struct device *dev, enum tc_cc_polarity pol, bool en)
+int port0_policy_cb_vconn_en(const struct device *dev, enum tc_cc_polarity pol, bool en)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	dpm_data->vconn_pol = pol;
 
@@ -132,10 +132,10 @@ int port1_policy_cb_vconn_en(const struct device *dev, enum tc_cc_polarity pol, 
  * @brief PE calls this function to get the Source Caps that will be sent
  *	  to the Sink
  */
-int port1_policy_cb_get_src_caps(const struct device *dev,
+int port0_policy_cb_get_src_caps(const struct device *dev,
 			const uint32_t **pdos, uint32_t *num_pdos)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	*pdos = dpm_data->src_caps;
 	*num_pdos = dpm_data->src_cap_cnt;
@@ -146,10 +146,10 @@ int port1_policy_cb_get_src_caps(const struct device *dev,
 /**
  * @brief PE calls this function to verify that a Sink's request if valid
  */
-static enum usbc_snk_req_reply_t port1_policy_cb_check_sink_request(const struct device *dev,
+static enum usbc_snk_req_reply_t port0_policy_cb_check_sink_request(const struct device *dev,
 					const uint32_t request_msg)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 	union pd_fixed_supply_pdo_source pdo;
 	uint32_t obj_pos;
 	uint32_t op_current;
@@ -171,13 +171,13 @@ static enum usbc_snk_req_reply_t port1_policy_cb_check_sink_request(const struct
 
 	dpm_data->obj_pos = obj_pos;
 
-	atomic_set_bit(&port1_data.show_sink_request, 0);
+	atomic_set_bit(&port0_data.show_sink_request, 0);
 
 	/*
 	 * Clear PS ready. This will be set to true after PS is ready after
 	 * it transitions to the new level.
 	 */
-	port1_data.ps_ready = false;
+	port0_data.ps_ready = false;
 
 	return SNK_REQUEST_VALID;
 }
@@ -186,9 +186,9 @@ static enum usbc_snk_req_reply_t port1_policy_cb_check_sink_request(const struct
  * @brief PE calls this function to check if the Power Supply is at the requested
  *	  level
  */
-static bool port1_policy_cb_is_ps_ready(const struct device *dev)
+static bool port0_policy_cb_is_ps_ready(const struct device *dev)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 
 	/* Return true to inform that the Power Supply is ready */
@@ -199,10 +199,10 @@ static bool port1_policy_cb_is_ps_ready(const struct device *dev)
  * @brief PE calls this function to check if the Present Contract is still
  *	  valid
  */
-static bool port1_policy_cb_present_contract_is_valid(const struct device *dev,
+static bool port0_policy_cb_present_contract_is_valid(const struct device *dev,
 					const uint32_t present_contract)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 	union pd_fixed_supply_pdo_source pdo;
 	union pd_rdo request;
 	uint32_t obj_pos;
@@ -228,10 +228,10 @@ static bool port1_policy_cb_present_contract_is_valid(const struct device *dev,
 /* usbc.rst callbacks end */
 
 /* usbc.rst notify start */
-static void port1_notify(const struct device *dev,
+static void port0_notify(const struct device *dev,
 			      const enum usbc_policy_notify_t policy_notify)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	switch (policy_notify) {
 	case PROTOCOL_ERROR:
@@ -277,10 +277,10 @@ static void port1_notify(const struct device *dev,
 /* usbc.rst notify end */
 
 /* usbc.rst check start */
-bool port1_policy_check(const struct device *dev,
+bool port0_policy_check(const struct device *dev,
 			const enum usbc_policy_check_t policy_check)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	switch (policy_check) {
 	case CHECK_POWER_ROLE_SWAP:
@@ -315,12 +315,12 @@ bool port1_policy_check(const struct device *dev,
 
 int main(void)
 {
-	const struct device *usbc_port1;
+	const struct device *usbc_port0;
 
 	/* Get the device for this port */
-	usbc_port1 = DEVICE_DT_GET(PORT1_NODE);
-	if (!device_is_ready(usbc_port1)) {
-		LOG_ERR("PORT1 device not ready");
+	usbc_port0 = DEVICE_DT_GET(USBC_PORT0_NODE);
+	if (!device_is_ready(usbc_port0)) {
+		LOG_ERR("PORT0 device not ready");
 		return 0;
 	}
 
@@ -328,63 +328,63 @@ int main(void)
 	/* Register USB-C Callbacks */
 
 	/* Register Policy Check callback */
-	usbc_set_policy_cb_check(usbc_port1, port1_policy_check);
+	usbc_set_policy_cb_check(usbc_port0, port0_policy_check);
 	/* Register Policy Notify callback */
-	usbc_set_policy_cb_notify(usbc_port1, port1_notify);
+	usbc_set_policy_cb_notify(usbc_port0, port0_notify);
 	/* Register Policy callback to set the Rp on CC lines */
-	usbc_set_policy_cb_get_src_rp(usbc_port1, port1_policy_cb_get_src_rp);
+	usbc_set_policy_cb_get_src_rp(usbc_port0, port0_policy_cb_get_src_rp);
 	/* Register Policy callback to enable or disable power supply */
-	usbc_set_policy_cb_src_en(usbc_port1, port1_policy_cb_src_en);
+	usbc_set_policy_cb_src_en(usbc_port0, port0_policy_cb_src_en);
 	/* Register Policy callback to enable or disable vconn */
-	usbc_set_vconn_control_cb(usbc_port1, port1_policy_cb_vconn_en);
+	usbc_set_vconn_control_cb(usbc_port0, port0_policy_cb_vconn_en);
 	/* Register Policy callback to send the source caps to the sink */
-	usbc_set_policy_cb_get_src_caps(usbc_port1, port1_policy_cb_get_src_caps);
+	usbc_set_policy_cb_get_src_caps(usbc_port0, port0_policy_cb_get_src_caps);
 	/* Register Policy callback to check if the sink request is valid */
-	usbc_set_policy_cb_check_sink_request(usbc_port1, port1_policy_cb_check_sink_request);
+	usbc_set_policy_cb_check_sink_request(usbc_port0, port0_policy_cb_check_sink_request);
 	/* Register Policy callback to check if the power supply is ready */
-	usbc_set_policy_cb_is_ps_ready(usbc_port1, port1_policy_cb_is_ps_ready);
+	usbc_set_policy_cb_is_ps_ready(usbc_port0, port0_policy_cb_is_ps_ready);
 	/* Register Policy callback to check if Present Contract is still valid */
-	usbc_set_policy_cb_present_contract_is_valid(usbc_port1,
-				port1_policy_cb_present_contract_is_valid);
+	usbc_set_policy_cb_present_contract_is_valid(usbc_port0,
+				port0_policy_cb_present_contract_is_valid);
 
 	/* usbc.rst register end */
 
 	/* usbc.rst user data start */
 	/* Set Application port data object. This object is passed to the policy callbacks */
-	usbc_set_dpm_data(usbc_port1, &port1_data);
+	usbc_set_dpm_data(usbc_port0, &port0_data);
 	/* usbc.rst user data end */
 
 	/* Flag to show sink request */
-	port1_data.show_sink_request = ATOMIC_INIT(0);
+	port0_data.show_sink_request = ATOMIC_INIT(0);
 
 	/* Init power supply transition start */
-	port1_data.ps_tran_start = false;
+	port0_data.ps_tran_start = false;
 	/* Init power supply ready */
-	port1_data.ps_ready = false;
+	port0_data.ps_ready = false;
 
 	/* usbc.rst usbc start */
 	/* Start the USB-C Subsystem */
-	usbc_start(usbc_port1);
+	usbc_start(usbc_port0);
 	/* usbc.rst usbc end */
 
 	while (1) {
 		/* Perform Application Specific functions */
 
 		/* Transition PS to new level */
-		if (port1_data.ps_tran_start) {
+		if (port0_data.ps_tran_start) {
 			/*
 			 * Transition Power Supply to new voltage.
 			 * Okay if this blocks.
 			 */
-			source_ctrl_set(port1_data.obj_pos);
-			port1_data.ps_ready = true;
-			port1_data.ps_tran_start = false;
+			source_ctrl_set(port0_data.obj_pos);
+			port0_data.ps_ready = true;
+			port0_data.ps_tran_start = false;
 		}
 
 		/* Display Sink Requests */
-		if (atomic_test_and_clear_bit(&port1_data.show_sink_request, 0)) {
+		if (atomic_test_and_clear_bit(&port0_data.show_sink_request, 0)) {
 			/* Display the Sink request */
-			dump_sink_request_rdo(port1_data.sink_request.raw_value);
+			dump_sink_request_rdo(port0_data.sink_request.raw_value);
 		}
 		/* Arbitrary delay */
 		k_msleep(10);

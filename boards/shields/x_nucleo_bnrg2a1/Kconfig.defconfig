@@ -1,0 +1,24 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_BNRG2A1
+
+if BT
+
+config SPI
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_SPI
+endchoice
+
+config BT_BLUENRG_ACI
+	default y
+
+# Disable Flow control
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
+endif # SHIELD_X_NUCLEO_BNRG2A1

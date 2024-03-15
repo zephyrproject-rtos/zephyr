@@ -34,11 +34,12 @@ config CPU_AARCH32_CORTEX_R
 	select HAS_CMSIS_CORE
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select HAS_FLASH_LOAD_OFFSET
-	select ARCH_HAS_USERSPACE if ARM_MPU
-	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_USERSPACE if ARM_MPU && !USE_SWITCH
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
 	select ARCH_SUPPORTS_ROM_START
+	select USE_SWITCH_SUPPORTED
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 
@@ -54,10 +55,20 @@ config CPU_AARCH32_CORTEX_A
 	select CPU_HAS_MMU
 	select HAS_CMSIS_CORE
 	select HAS_FLASH_LOAD_OFFSET
-	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select USE_SWITCH_SUPPORTED
+	# GDBSTUB has not yet been tested on Cortex M or R SoCs
+	select ARCH_HAS_GDBSTUB
+	# GDB on ARM needs the etxra registers
+	select EXTRA_EXCEPTION_INFO if GDBSTUB
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
+
+config GDBSTUB_BUF_SZ
+	# GDB for ARM expects up to 18 4-byte plus 8 12-byte
+	# registers - 336 HEX letters
+	default 350 if GDBSTUB
 
 config ISA_THUMB2
 	bool
@@ -266,16 +277,10 @@ choice
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
-	# TF-M build system does not build the NS app and libraries correctly with Hard ABI.
-	# This limitation should be removed in the next TF-M synchronization.
-	depends on !TFM_BUILD_NS
-	depends on !(BUILD_WITH_TFM && !TFM_IPC)
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
 	  conventions.
-
-	  Note: When building with TF-M enabled only the IPC mode is supported.
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"

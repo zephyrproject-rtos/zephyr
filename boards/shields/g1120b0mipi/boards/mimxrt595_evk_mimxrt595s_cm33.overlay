@@ -1,0 +1,15 @@
+/*
+ * Copyright 2023, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Change deep sleep config for suspend mode to keep SMARTDMA ram powered,
+ * so the SMARTDMA will continue functioning after deep sleep
+ */
+&suspend {
+	deep-sleep-config = <0xC800>,
+				<0x80030004>,
+				<0xFFFFFFFF>,
+				<0>;
+};

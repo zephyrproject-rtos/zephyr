@@ -27,3 +27,12 @@ properties:
     type: phandle
     description: |
       Specifies a reference to a node representing a PHY device.
+
+  phy-connection-type:
+    type: string
+    description: |
+      Specifies the interface connection type between ethernet MAC and PHY.
+    enum:
+      - "mii"
+      - "rmii"
+      - "gmii"

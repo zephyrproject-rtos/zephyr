@@ -8,7 +8,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include "common.h"
+#include "net_shell_private.h"
+#include "../ip/ipv6.h"
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 void ipv6_frag_cb(struct net_ipv6_reassembly *reass, void *user_data)
@@ -61,7 +62,6 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 	const struct shell *sh = data->sh;
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	const char *extra;
-	int i;
 
 	ARG_UNUSED(user_data);
 
@@ -76,7 +76,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 
 	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_ipv6_prefix *prefix;
 		char remaining_str[sizeof("01234567890")];
 		uint64_t remaining;
@@ -211,8 +211,23 @@ static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (!net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0)) {
-		PR_ERROR("Failed to add %s address to interface %p\n", argv[2], iface);
+	if (net_ipv6_is_addr_mcast(&addr)) {
+		int ret;
+
+		ret = net_ipv6_mld_join(iface, &addr);
+		if (ret < 0) {
+			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
+				 "join", net_sprint_ipv6_addr(&addr), idx, ret);
+			if (ret == -ENOTSUP) {
+				PR_INFO("Enable CONFIG_NET_IPV6_MLD for %s multicast "
+					"group\n", "joining");
+			}
+			return ret;
+		}
+	} else {
+		if (!net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0)) {
+			PR_ERROR("Failed to add %s address to interface %p\n", argv[2], iface);
+		}
 	}
 
 #else /* CONFIG_NET_NATIVE_IPV6 */
@@ -242,7 +257,7 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 	iface = net_if_get_by_index(idx);
 	if (!iface) {
 		PR_WARNING("No such interface in index %d\n", idx);
-		return -ENOEXEC;
+		return -ENOENT;
 	}
 
 	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
@@ -250,9 +265,24 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (!net_if_ipv6_addr_rm(iface, &addr)) {
-		PR_ERROR("Failed to delete %s\n", argv[2]);
-		return -1;
+	if (net_ipv6_is_addr_mcast(&addr)) {
+		int ret;
+
+		ret = net_ipv6_mld_leave(iface, &addr);
+		if (ret < 0) {
+			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
+				 "leave", net_sprint_ipv6_addr(&addr), idx, ret);
+			if (ret == -ENOTSUP) {
+				PR_INFO("Enable CONFIG_NET_IPV6_MLD for %s multicast "
+					"group\n", "leaving");
+			}
+			return ret;
+		}
+	} else {
+		if (!net_if_ipv6_addr_rm(iface, &addr)) {
+			PR_ERROR("Failed to delete %s\n", argv[2]);
+			return -1;
+		}
 	}
 
 #else /* CONFIG_NET_NATIVE_IPV6 */

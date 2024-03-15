@@ -9,6 +9,7 @@
 
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -254,7 +255,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 					   lll->data_chan_count,
 					   &lll->data_chan_prn_s,
 					   &lll->data_chan_remap_idx);
-	lll->ctrl_chan_use = data_chan_use;
 
 	/* Initialize stream current */
 	lll->stream_curr = 0U;
@@ -784,7 +784,7 @@ isr_rx_find_subevent:
 				 */
 				if (!lll->payload[bis_idx_new][payload_index]) {
 					/* bn = 1 Rx PDU not received */
-					skipped = (bis_idx_new - bis_idx - 1U) *
+					skipped = (bis_idx_new - bis_idx) *
 						  ((lll->bn * lll->irc) +
 						   lll->ptc);
 
@@ -798,10 +798,12 @@ isr_rx_find_subevent:
 					/* bn = 1 Rx PDU already received, skip
 					 * subevent.
 					 */
-					skipped = ((bis_idx_new - bis_idx -
-						    1U) *
+					skipped = ((bis_idx_new - bis_idx) *
 						   ((lll->bn * lll->irc) +
 						    lll->ptc)) + 1U;
+
+					/* BIS index */
+					bis_idx = lll->bis_curr - 1U;
 
 					/* Find the missing (bn_curr)th Rx PDU
 					 * of bis_curr
@@ -873,7 +875,15 @@ isr_rx_next_subevent:
 
 	/* Set the channel to use */
 	if (!bis) {
-		data_chan_use = lll->ctrl_chan_use;
+		const uint16_t event_counter =
+				(lll->payload_count / lll->bn) - 1U;
+
+		/* Calculate the radio channel to use for ISO event */
+		data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
+						   lll->data_chan_map,
+						   lll->data_chan_count,
+						   &lll->data_chan_prn_s,
+						   &lll->data_chan_remap_idx);
 	} else if (!skipped) {
 		data_chan_use = lll->next_chan_use;
 	} else {
@@ -894,7 +904,7 @@ isr_rx_next_subevent:
 						&lll->data_chan_prn_s,
 						&lll->data_chan_remap_idx);
 
-			skipped -= (bis_idx_new - bis_idx - 1U) *
+			skipped -= (bis_idx_new - bis_idx) *
 				   ((lll->bn * lll->irc) + lll->ptc);
 		}
 
@@ -987,7 +997,7 @@ isr_rx_next_subevent:
 		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
-		hcto -= (EVENT_CLOCK_JITTER_US << 1);
+		hcto -= (EVENT_CLOCK_JITTER_US << 1) * nse;
 
 		start_us = hcto;
 		hcto = radio_tmr_start_us(0U, start_us);
@@ -996,13 +1006,12 @@ isr_rx_next_subevent:
 		 */
 		/* LL_ASSERT(hcto == (start_us + 1U)); */
 
-		/* Add 4 us + 4 us + (4 us * subevents so far), as radio
-		 * was setup to listen 4 us early and subevents could have
-		 * a 4 us drift each until the current subevent we are
-		 * listening.
+		/* Add 8 us * subevents so far, as radio was setup to listen
+		 * 4 us early and subevents could have a 4 us drift each until
+		 * the current subevent we are listening.
 		 */
-		hcto += ((EVENT_CLOCK_JITTER_US << 1) * (2U + nse)) +
-			RANGE_DELAY_US + HCTO_START_DELAY_US;
+		hcto += (((EVENT_CLOCK_JITTER_US << 1) * nse) << 1) +
+			RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
 	} else {
 		/* First subevent PDU was not received, hence setup radio packet
 		 * timer header complete timeout from where the first subevent

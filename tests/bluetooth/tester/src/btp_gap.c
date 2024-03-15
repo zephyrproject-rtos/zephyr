@@ -36,6 +36,8 @@ static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
 static uint8_t oob_legacy_tk[16] = { 0 };
 
+static bool filter_list_in_use;
+
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static struct bt_le_oob oob_sc_local = { 0 };
 static struct bt_le_oob oob_sc_remote = { 0 };
@@ -226,6 +228,7 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_GAP_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(rp->data, BTP_GAP_READ_CONTROLLER_INDEX_LIST);
 	tester_set_bit(rp->data, BTP_GAP_READ_CONTROLLER_INFO);
+	tester_set_bit(rp->data, BTP_GAP_SET_POWERED);
 	tester_set_bit(rp->data, BTP_GAP_SET_CONNECTABLE);
 
 	/* octet 1 */
@@ -447,6 +450,37 @@ static uint8_t set_oob_sc_remote_data(const void *cmd, uint16_t cmd_len,
 }
 #endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
+static uint8_t set_powered(const void *cmd, uint16_t cmd_len,
+					void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_set_powered_cmd *cp = cmd;
+	struct btp_gap_set_powered_rp *rp = rsp;
+	int err;
+
+	if (cp->powered) {
+		err = bt_enable(NULL);
+		if (err < 0) {
+			LOG_ERR("Unable to enable Bluetooth: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+		bt_conn_cb_register(&conn_callbacks);
+		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_POWERED);
+	} else {
+		err = bt_disable();
+		if (err < 0) {
+			LOG_ERR("Unable to disable Bluetooth: %d", err);
+			return BTP_STATUS_FAILED;
+		}
+		bt_conn_cb_unregister(&conn_callbacks);
+		atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_POWERED);
+	}
+	rp->current_settings = sys_cpu_to_le32(current_settings);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t set_connectable(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
@@ -578,6 +612,14 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 
 	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
 		param->options |= BT_LE_ADV_OPT_CONNECTABLE;
+
+		if (filter_list_in_use) {
+			param->options |= BT_LE_ADV_OPT_FILTER_CONN;
+		}
+	}
+
+	if (filter_list_in_use) {
+		param->options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 	}
 
 	switch (own_addr_type) {
@@ -606,6 +648,11 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 	    BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
 		param->options |= BT_LE_ADV_OPT_EXT_ADV;
 		if (ext_adv != NULL) {
+			err = bt_le_ext_adv_stop(ext_adv);
+			if (err != 0) {
+				return err;
+			}
+
 			err = bt_le_ext_adv_delete(ext_adv);
 			if (err != 0) {
 				return err;
@@ -1305,6 +1352,8 @@ static uint8_t set_filter_list(const void *cmd, uint16_t cmd_len,
 		}
 	}
 
+	filter_list_in_use = cp->cnt != 0;
+
 	return BTP_STATUS_SUCCESS;
 }
 
@@ -1343,6 +1392,17 @@ static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 			      struct bt_le_per_adv_sync_synced_info *info)
 {
 	LOG_DBG("");
+
+	if (sync == pa_sync) {
+		struct btp_gap_ev_periodic_sync_established_ev ev;
+
+		bt_addr_le_copy(&ev.address, info->addr);
+		ev.sync_handle = sys_cpu_to_le16(sync->handle);
+		ev.status = 0;
+
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_ESTABLISHED,
+			     &ev, sizeof(ev));
+	}
 }
 
 static void pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
@@ -1351,8 +1411,16 @@ static void pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 	LOG_DBG("");
 
 	if (sync == pa_sync) {
+		struct btp_gap_ev_periodic_sync_lost_ev ev;
+
 		LOG_DBG("PA sync lost with reason %u", info->reason);
 		pa_sync = NULL;
+
+		ev.sync_handle = sys_cpu_to_le16(sync->handle);
+		ev.reason = info->reason;
+
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_LOST,
+			     &ev, sizeof(ev));
 	}
 }
 
@@ -1532,14 +1600,11 @@ static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
 	}
 
 	err = tester_gap_padv_set_data(padv, padv_len);
-	if (err != 0) {
-		return BTP_STATUS_FAILED;
-	}
 
-	return BTP_STATUS_SUCCESS;
+	return BTP_STATUS_VAL(err);
 }
 
-int tester_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
+int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
 {
 	int err;
 
@@ -1556,6 +1621,22 @@ int tester_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
 	return err;
 }
 
+int tester_gap_padv_stop_sync(void)
+{
+	int err;
+
+	if (pa_sync == NULL) {
+		return -EALREADY;
+	}
+
+	err = bt_le_per_adv_sync_delete(pa_sync);
+	if (err != 0) {
+		LOG_DBG("Unable to stop sync to PA: %d", err);
+	}
+
+	return err;
+}
+
 static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 				void *rsp, uint16_t *rsp_len)
 {
@@ -1564,17 +1645,22 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 	struct bt_le_per_adv_sync_param create_params = {0};
 
 	bt_addr_le_copy(&create_params.addr, &cp->address);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
 	create_params.sid = cp->advertiser_sid;
-	create_params.skip = cp->skip;
-	create_params.timeout = cp->sync_timeout;
+	create_params.skip = sys_le16_to_cpu(cp->skip);
+	create_params.timeout = sys_le16_to_cpu(cp->sync_timeout);
 
-	err = tester_padv_create_sync(&create_params);
-	if (err != 0) {
-		return BTP_STATUS_FAILED;
+	if (cp->flags & BTP_GAP_PADV_CREATE_SYNC_FLAG_REPORTS_DISABLED) {
+		create_params.options |= BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
 	}
 
-	return BTP_STATUS_SUCCESS;
+	if (cp->flags & BTP_GAP_PADV_CREATE_SYNC_FLAG_FILTER_DUPLICATES) {
+		create_params.options |= BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	}
+
+	err = tester_gap_padv_create_sync(&create_params);
+
+	return BTP_STATUS_VAL(err);
 }
 
 static uint8_t padv_sync_transfer_set_info(const void *cmd, uint16_t cmd_len,
@@ -1628,6 +1714,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GAP_READ_CONTROLLER_INFO,
 		.expect_len = 0,
 		.func = controller_info,
+	},
+	{
+		.opcode = BTP_GAP_SET_POWERED,
+		.expect_len = sizeof(struct btp_gap_set_powered_cmd),
+		.func = set_powered,
 	},
 	{
 		.opcode = BTP_GAP_SET_CONNECTABLE,

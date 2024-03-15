@@ -13,6 +13,8 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include "vector_table.h"
+#include "offsets_short.h"
+#include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
 
@@ -28,4 +30,28 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #else
 	ldr pc, =z_irq_spurious
 #endif
+#ifndef CONFIG_USE_SWITCH
 	ldr pc, =z_arm_nmi               /* FIQ            offset 0x1c */
+#else
+	ldr pc,=z_irq_spurious
+#endif
+
+
+#ifdef CONFIG_USE_SWITCH
+GTEXT(z_arm_cortex_ar_exit_exc)
+SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
+
+	/* decrement exception depth */
+	get_cpu r2
+	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
+	sub r1, r1, #1
+	strb r1, [r2, #_cpu_offset_to_exc_depth]
+
+	/*
+	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
+	 * and return to the current thread.
+	 */
+	ldmia sp, {r0-r3, r12, lr}^
+	add sp, #24
+	rfeia sp!
+#endif

@@ -5,6 +5,27 @@
  */
 #include <nxp/nxp_rt10xx.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <16>;
+	/* default fuse */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>;
+};
+
 &ccm {
 	arm-podf {
 		clock-div = <2>;
@@ -22,6 +43,14 @@
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
+
+		flexio2: flexio@401b0000 {
+			compatible = "nxp,flexio";
+			reg = <0x401b0000 0x4000>;
+			status = "disabled";
+			interrupts = <91 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
+		};
 	};
 };
 

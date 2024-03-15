@@ -98,7 +98,7 @@ static void z_riscv_fpu_load(void)
  *
  * This is called locally and also from flush_fpu_ipi_handler().
  */
-void z_riscv_flush_local_fpu(void)
+void arch_flush_local_fpu(void)
 {
 	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
 		 "must be called with IRQs disabled");
@@ -149,11 +149,11 @@ static void flush_owned_fpu(struct k_thread *thread)
 		/* we found it live on CPU i */
 		if (i == _current_cpu->id) {
 			z_riscv_fpu_disable();
-			z_riscv_flush_local_fpu();
+			arch_flush_local_fpu();
 			break;
 		}
 		/* the FPU context is live on another CPU */
-		z_riscv_flush_fpu_ipi(i);
+		arch_flush_fpu_ipi(i);
 
 		/*
 		 * Wait for it only if this is about the thread
@@ -170,7 +170,7 @@ static void flush_owned_fpu(struct k_thread *thread)
 		 */
 		if (thread == _current) {
 			z_riscv_fpu_disable();
-			z_riscv_flush_local_fpu();
+			arch_flush_local_fpu();
 			do {
 				arch_nop();
 				owner = atomic_ptr_get(&_kernel.cpus[i].arch.fpu_owner);
@@ -211,7 +211,7 @@ void z_riscv_fpu_trap(z_arch_esf_t *esf)
 		 "called despite FPU being accessible");
 
 	/* save current owner's content  if any */
-	z_riscv_flush_local_fpu();
+	arch_flush_local_fpu();
 
 	if (_current->arch.exception_depth > 0) {
 		/*
@@ -271,7 +271,7 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 			 * to come otherwise.
 			 */
 			z_riscv_fpu_disable();
-			z_riscv_flush_local_fpu();
+			arch_flush_local_fpu();
 #ifdef CONFIG_SMP
 			flush_owned_fpu(_current);
 #endif
@@ -329,7 +329,7 @@ int arch_float_disable(struct k_thread *thread)
 #else
 		if (thread == _current_cpu->arch.fpu_owner) {
 			z_riscv_fpu_disable();
-			z_riscv_flush_local_fpu();
+			arch_flush_local_fpu();
 		}
 #endif
 

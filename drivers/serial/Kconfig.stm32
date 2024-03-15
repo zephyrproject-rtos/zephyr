@@ -21,3 +21,18 @@ config UART_STM32
 	  This option enables the UART driver for STM32 family of
 	  processors.
 	  Say y if you wish to use serial port on STM32 MCU.
+
+if UART_STM32
+
+config UART_STM32U5_ERRATA_DMAT
+	bool
+	default y
+	depends on SOC_STM32U575XX || SOC_STM32U585XX || \
+		   SOC_STM32H562XX || SOC_STM32H563XX || SOC_STM32H573XX
+	help
+	  Handles erratum "USART does not generate DMA requests after
+	  setting/clearing DMAT bit".
+	  Seen in Errata Sheet 0499 § 2.19.2 and §2.20.1 for stm32u57x/u58x,
+	          Errata Sheet 0565 § 2.14.1 and §2.15.1 for stm32h56x/h57x
+
+endif

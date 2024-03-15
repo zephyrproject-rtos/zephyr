@@ -1,0 +1,5 @@
+board:
+  name: stm32f072_eval
+  vendor: st
+  socs:
+    - name: stm32f072xb

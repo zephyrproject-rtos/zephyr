@@ -8,7 +8,7 @@ jobs:
     name: Manifest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: zephyrproject/zephyr
           ref: ${{ github.event.pull_request.head.sha }}
@@ -26,7 +26,7 @@ jobs:
           west init -l . || true
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@v1.2.0
+        uses: zephyrproject-rtos/action-manifest@v1.2.2
         with:
           github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
           manifest-path: 'west.yml'

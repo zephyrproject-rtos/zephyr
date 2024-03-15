@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-23, NXP
+ * Copyright 2020-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,12 +19,41 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
 #if defined(CONFIG_CAN_MCUX_MCAN)
-	uint32_t clock_name = (uint32_t)sub_system;
-
-	if (clock_name == MCUX_MCAN_CLK) {
+	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
 	}
 #endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+#if defined(CONFIG_COUNTER_NXP_MRT)
+	if ((uint32_t)sub_system == MCUX_MRT_CLK) {
+#if defined(CONFIG_SOC_FAMILY_LPC)
+		CLOCK_EnableClock(kCLOCK_Mrt);
+#elif defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+		CLOCK_EnableClock(kCLOCK_Mrt0);
+#endif
+	}
+#endif /* defined(CONFIG_COUNTER_NXP_MRT) */
+
+#if defined(CONFIG_PINCTRL_NXP_KINETIS)
+	switch ((uint32_t)sub_system) {
+	case MCUX_PORT0_CLK:
+		CLOCK_EnableClock(kCLOCK_Port0);
+		break;
+	case MCUX_PORT1_CLK:
+		CLOCK_EnableClock(kCLOCK_Port1);
+		break;
+	case MCUX_PORT2_CLK:
+		CLOCK_EnableClock(kCLOCK_Port2);
+		break;
+	case MCUX_PORT3_CLK:
+		CLOCK_EnableClock(kCLOCK_Port3);
+		break;
+	case MCUX_PORT4_CLK:
+		CLOCK_EnableClock(kCLOCK_Port4);
+		break;
+	default:
+		break;
+	}
+#endif /* defined(CONFIG_PINCTRL_NXP_KINETIS) */
 
 	return 0;
 }
@@ -102,15 +131,55 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	case MCUX_HS_SPI1_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(16);
 		break;
+#elif defined(CONFIG_NXP_LP_FLEXCOMM)
+	case MCUX_FLEXCOMM0_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(0);
+		break;
+	case MCUX_FLEXCOMM1_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(1);
+		break;
+	case MCUX_FLEXCOMM2_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(2);
+		break;
+	case MCUX_FLEXCOMM3_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(3);
+		break;
+	case MCUX_FLEXCOMM4_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(4);
+		break;
+	case MCUX_FLEXCOMM5_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(5);
+		break;
+	case MCUX_FLEXCOMM6_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(6);
+		break;
+	case MCUX_FLEXCOMM7_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(7);
+		break;
+	case MCUX_FLEXCOMM8_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(8);
+		break;
+	case MCUX_FLEXCOMM9_CLK:
+		*rate = CLOCK_GetLPFlexCommClkFreq(9);
+		break;
+
 #endif
 
 #if (defined(FSL_FEATURE_SOC_USDHC_COUNT) && FSL_FEATURE_SOC_USDHC_COUNT)
+
+#if CONFIG_SOC_FAMILY_NXP_MCX
+	case MCUX_USDHC1_CLK:
+		*rate = CLOCK_GetUsdhcClkFreq();
+		break;
+#else
 	case MCUX_USDHC1_CLK:
 		*rate = CLOCK_GetSdioClkFreq(0);
 		break;
 	case MCUX_USDHC2_CLK:
 		*rate = CLOCK_GetSdioClkFreq(1);
 		break;
+#endif
+
 #endif
 
 #if (defined(FSL_FEATURE_SOC_SDIF_COUNT) && \
@@ -145,12 +214,18 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 
+#if defined(CONFIG_COUNTER_NXP_MRT)
+	case MCUX_MRT_CLK:
+#endif
 #if defined(CONFIG_PWM_MCUX_SCTIMER)
 	case MCUX_SCTIMER_CLK:
 #endif
+
+#ifndef CONFIG_SOC_SERIES_RW6XX
 	case MCUX_BUS_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;
+#endif
 
 #if defined(CONFIG_I3C_MCUX)
 	case MCUX_I3C_CLK:
@@ -167,6 +242,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 	case MCUX_LCDIF_PIXEL_CLK:
 		*rate = CLOCK_GetDcPixelClkFreq();
+		break;
+#endif
+#if defined(CONFIG_AUDIO_DMIC_MCUX)
+	case MCUX_DMIC_CLK:
+		*rate = CLOCK_GetDmicClkFreq();
 		break;
 #endif
 	}

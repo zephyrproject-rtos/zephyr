@@ -1,0 +1,18 @@
+# LPCXpresso55S36 board
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO55S36
+
+config BOARD
+	default "lpcxpresso55s36"
+
+if BOOTLOADER_MCUBOOT
+choice MCUBOOT_BOOTLOADER_MODE
+	# Board only supports MCUBoot via "upgrade only" method:
+	default MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+endchoice
+endif #BOOTLOADER_MCUBOOT
+
+endif # BOARD_LPCXPRESSO55S36

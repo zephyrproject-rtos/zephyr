@@ -1,0 +1,16 @@
+common:
+  tags:
+    - drivers
+    - console
+    - emul
+    - devmux
+  platform_allow:
+    - qemu_riscv64
+  integration_platforms:
+    - qemu_riscv64
+
+tests:
+  drivers.devmux.console_switching: {}
+  drivers.devmux.console_switching.user:
+    extra_configs:
+      - CONFIG_USERSPACE=y

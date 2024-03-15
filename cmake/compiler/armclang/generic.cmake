@@ -28,13 +28,13 @@ endif()
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} --version
   RESULT_VARIABLE ret
-  OUTPUT_QUIET
-  ERROR_QUIET
+  OUTPUT_VARIABLE stdoutput
   )
 
 if(ret)
   message(FATAL_ERROR "Executing the below command failed. "
   "Are permissions set correctly? '${CMAKE_C_COMPILER} --version' "
+  "${stdoutput}"
   "And is the license setup correctly ?"
   )
 endif()

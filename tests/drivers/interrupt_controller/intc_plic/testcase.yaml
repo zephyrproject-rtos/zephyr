@@ -1,0 +1,7 @@
+tests:
+  drivers.interrupt_controller.intc_plic:
+    tags:
+      - drivers
+      - interrupt
+      - plic
+    platform_allow: qemu_riscv64

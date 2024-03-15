@@ -37,6 +37,7 @@ static int ipv6cp_add_iid(struct ppp_context *ctx, struct net_pkt *pkt)
 	if (linkaddr->len == 8) {
 		memcpy(iid, linkaddr->addr, iid_len);
 	} else {
+		NET_ASSERT(linkaddr->len >= 6);
 		memcpy(iid, linkaddr->addr, 3);
 		iid[3] = 0xff;
 		iid[4] = 0xfe;

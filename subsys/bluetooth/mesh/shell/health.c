@@ -13,7 +13,7 @@
 #include "utils.h"
 #include <zephyr/bluetooth/mesh/shell.h>
 
-static struct bt_mesh_model *mod;
+static const struct bt_mesh_model *mod;
 
 static void show_faults(const struct shell *sh, uint8_t test_id, uint16_t cid, uint8_t *faults,
 			size_t fault_count)
@@ -40,7 +40,7 @@ static int cmd_fault_get(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t faults[32];
@@ -74,7 +74,7 @@ static int fault_clear(const struct shell *sh, size_t argc, char *argv[], bool a
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t test_id;
@@ -126,7 +126,7 @@ static int fault_test(const struct shell *sh, size_t argc, char *argv[], bool ac
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t test_id;
@@ -179,7 +179,7 @@ static int cmd_period_get(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t divisor;
@@ -201,7 +201,7 @@ static int period_set(const struct shell *sh, size_t argc, char *argv[], bool ac
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t divisor;
@@ -251,7 +251,7 @@ static int cmd_attention_get(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t attention;
@@ -273,7 +273,7 @@ static int attention_set(const struct shell *sh, size_t argc, char *argv[], bool
 		return -ENODEV;
 	}
 
-	struct bt_mesh_health_cli *cli = mod->user_data;
+	struct bt_mesh_health_cli *cli = mod->rt->user_data;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(bt_mesh_shell_target_ctx.app_idx,
 							      bt_mesh_shell_target_ctx.dst);
 	uint8_t attention;

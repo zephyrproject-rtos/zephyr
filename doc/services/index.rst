@@ -8,6 +8,7 @@ OS Services
 
 
    binary_descriptors/index.rst
+   console.rst
    crypto/index
    debugging/index.rst
    device_mgmt/index
@@ -28,6 +29,7 @@ OS Services
    portability/index.rst
    poweroff.rst
    shell/index.rst
+   serialization/index.rst
    settings/index.rst
    smf/index.rst
    storage/index.rst

@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/posix/fcntl.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/fdtable.h>
 
@@ -228,7 +228,7 @@ static struct spair *spair_new(void)
 	}
 
 #elif CONFIG_USERSPACE
-	struct z_object *zo = z_dynamic_object_create(sizeof(*spair));
+	struct k_object *zo = k_object_create_dynamic(sizeof(*spair));
 
 	if (zo == NULL) {
 		spair = NULL;
@@ -341,7 +341,7 @@ int z_vrfy_zsock_socketpair(int family, int type, int proto, int *sv)
 	int ret;
 	int tmp[2];
 
-	if (!sv || Z_SYSCALL_MEMORY_WRITE(sv, sizeof(tmp)) != 0) {
+	if (!sv || K_SYSCALL_MEMORY_WRITE(sv, sizeof(tmp)) != 0) {
 		/* not listed in normative spec, but mimics linux behaviour */
 		errno = EFAULT;
 		ret = -1;
@@ -350,7 +350,7 @@ int z_vrfy_zsock_socketpair(int family, int type, int proto, int *sv)
 
 	ret = z_impl_zsock_socketpair(family, type, proto, tmp);
 	if (ret == 0) {
-		Z_OOPS(z_user_to_copy(sv, tmp, sizeof(tmp)));
+		K_OOPS(k_usermode_to_copy(sv, tmp, sizeof(tmp)));
 	}
 
 out:

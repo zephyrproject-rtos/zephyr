@@ -398,7 +398,6 @@ int modbus_disable(const uint8_t iface)
 	k_work_cancel_sync(&ctx->server_work, &work_sync);
 	ctx->rxwait_to = 0;
 	ctx->unit_id = 0;
-	ctx->mode = MODBUS_MODE_RTU;
 	ctx->mbs_user_cb = NULL;
 	atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
 

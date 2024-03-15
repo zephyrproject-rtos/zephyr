@@ -25,7 +25,7 @@ static const uint8_t osdp_scbk_default[16] = {
 static void osdp_memzero(void *mem, size_t size)
 {
 	size_t i;
-	volatile uin8_t *p = mem;
+	volatile uint8_t *p = mem;
 
 	for (i = 0; i < size; i++) {
 		p[i] = 0;

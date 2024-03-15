@@ -246,25 +246,51 @@ Note that conditions from surrounding top-level ``if``\ s are propagated to
 symbol properties, so the above ``default`` is equivalent to
 ``default 32 if BOARD_MY_BOARD``.
 
+.. _multiple_symbol_definitions:
+
+Multiple symbol definitions
+---------------------------
+
+When a symbol is defined in multiple locations, each definition acts as an
+independent symbol that happens to share the same name. This means that
+properties are not appended to previous definitions. If the conditions
+for **ANY** definition result in the symbol resolving to ``y``, the symbol
+will be ``y``. It is therefore not possible to make the dependencies of a
+symbol more restrictive by defining it in multiple locations.
+
+For example, the dependencies of the symbol ``FOO`` below are satisfied if
+either ``DEP1`` **OR** ``DEP2`` are true, it does not require both:
+
+.. code-block:: none
+
+   config FOO
+      ...
+      depends on DEP1
+
+   config FOO
+      ...
+      depends on DEP2
+
 .. warning::
-
-   When defining a symbol in multiple locations, dependencies are ORed together
-   rather than ANDed together. It is not possible to make the dependencies of a
-   symbol more restrictive by defining it in multiple locations.
-
-   For example, the direct dependencies of the symbol below becomes
-   ``DEP1 || DEP2``:
+   Symbols without explicit dependencies still follow the above rule. A
+   symbol without any dependencies will result in the symbol always being
+   assignable. The definition below will result in ``FOO`` always being
+   enabled by default, regardless of the value of ``DEP1``.
 
    .. code-block:: kconfig
 
       config FOO
-      	...
-      	depends on DEP1
+         bool "FOO"
+         depends on DEP1
 
       config FOO
-      	...
-      	depends on DEP2
+         default y
 
+   This dependency weakening can be avoided with the :ref:`configdefault
+   <kconfig_extensions>` extension if the desire is only to add a new default
+   without modifying any other behaviour of the symbol.
+
+.. note::
    When making changes to :file:`Kconfig.defconfig` files, always check the
    symbol's direct dependencies in one of the :ref:`interactive configuration
    interfaces <menuconfig>` afterwards. It is often necessary to repeat
@@ -347,5 +373,4 @@ The :ref:`kconfig_tips_and_tricks` page has some tips for writing Kconfig
 files.
 
 The :zephyr_file:`kconfiglib.py <scripts/kconfig/kconfiglib.py>` docstring
-docstring (at the top of the file) goes over how symbol values are calculated
-in detail.
+(at the top of the file) goes over how symbol values are calculated in detail.

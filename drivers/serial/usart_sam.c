@@ -50,7 +50,7 @@ static int usart_sam_poll_in(const struct device *dev, unsigned char *c)
 	Usart * const usart = config->regs;
 
 	if (!(usart->US_CSR & US_CSR_RXRDY)) {
-		return -EBUSY;
+		return -1;
 	}
 
 	/* got a character */

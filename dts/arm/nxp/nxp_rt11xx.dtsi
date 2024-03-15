@@ -34,7 +34,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <16>;
 			};
 		};
 		cpu1: cpu@1 {
@@ -49,7 +48,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <16>;
 			};
 		};
 
@@ -97,6 +95,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0>;
 		};
 
 		flexspi2: spi@400d0000 {
@@ -106,6 +105,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI2_CLK 0x0 0>;
 		};
 
 		semc: semc0@400d4000 {
@@ -749,24 +749,22 @@
 		};
 
 		usb1: usbd@40430000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x40430000 0x200>;
 			interrupts = <136 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 
 		usb2: usbd@4042c000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x4042c000 0x200>;
 			interrupts = <135 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci1";
 			status = "disabled";
 		};
 
@@ -1129,6 +1127,72 @@
 			status = "disabled";
 		};
 
+		pit1: pit@400d8000 {
+			compatible = "nxp,pit";
+			reg = <0x400d8000 0x4000>;
+			clocks = <&ccm IMX_CCM_PIT_CLK 0x0 0>;
+			interrupts = <155 0>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit1_channel0: pit1_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit1_channel1: pit1_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit1_channel2: pit1_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit1_channel3: pit1_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
+		pit2: pit@40cb0000 {
+			compatible = "nxp,pit";
+			reg = <0x40cb0000 0x4000>;
+			clocks = <&ccm IMX_CCM_PIT1_CLK 0x0 0>;
+			interrupts = <156 0>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit2_channel0: pit2_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+				};
+			pit2_channel1: pit2_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+				};
+			pit2_channel2: pit2_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+			pit2_channel3: pit2_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
 	};
 };
 

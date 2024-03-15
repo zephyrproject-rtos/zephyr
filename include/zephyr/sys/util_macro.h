@@ -224,6 +224,30 @@ extern "C" {
 	COND_CODE_1(_flag, _code, ())
 
 /**
+ * @brief Insert code if @p _flag is not defined as 1.
+ *
+ * This expands to nothing if @p _flag is defined and equal to 1;
+ * it expands to @p _code otherwise.
+ *
+ * Example:
+ *
+ *     IF_DISABLED(CONFIG_FLAG, (uint32_t foo;))
+ *
+ * If @p CONFIG_FLAG isn't defined or different than 1, this expands to:
+ *
+ *     uint32_t foo;
+ *
+ * and to nothing otherwise.
+ *
+ * IF_DISABLED does the opposite of IF_ENABLED.
+ *
+ * @param _flag evaluated flag
+ * @param _code result if @p _flag does not expand to 1; must be in parentheses
+ */
+#define IF_DISABLED(_flag, _code) \
+	COND_CODE_1(_flag, (), _code)
+
+/**
  * @brief Check if a macro has a replacement expression
  *
  * If @p a is a macro defined to a nonempty value, this will return

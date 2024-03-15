@@ -254,7 +254,7 @@ static void hl_static_send(size_t payload_used)
 	 * It is responsibility of debugger to set this back to HL_NOADDRESS
 	 * after receiving the packet.
 	 * Please note that we don't wait here because some implementations
-	 * use hl_blockedPeek() function as a signal that we send a messege.
+	 * use hl_blockedPeek() function as a signal that we send a message.
 	 */
 	hl_write32(&__HOSTLINK__.hdr.target2host_addr, buf_addr);
 

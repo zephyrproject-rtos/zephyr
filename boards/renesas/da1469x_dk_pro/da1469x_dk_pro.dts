@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <renesas/smartbond/da14699.dtsi>
+#include "da1469x_dk_pro-pinctrl.dtsi"
+
+/ {
+	model = "DA1469x series Development Kit Pro";
+	compatible = "renesas,da1469x_dk_pro";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart;
+		zephyr,shell-uart = &uart;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<0 0 &gpio1 9 0>,	/* A0 */
+			<1 0 &gpio0 25 0>,	/* A1 */
+			<2 0 &gpio0 8 0>,	/* A2 */
+			<3 0 &gpio0 9 0>,	/* A3 */
+			<4 0 &gpio1 13 0>,	/* A4 */
+			<5 0 &gpio1 12 0>,	/* A5 */
+			<6 0 &gpio1 2 0>,	/* D0 */
+			<7 0 &gpio1 3 0>,	/* D1 */
+			<8 0 &gpio1 4 0>,	/* D2 */
+			<9 0 &gpio1 5 0>,	/* D3 */
+			<10 0 &gpio1 7 0>,	/* D4 */
+			<11 0 &gpio1 8 0>,	/* D5 */
+			<12 0 &gpio0 17 0>,	/* D6 */
+			<13 0 &gpio0 18 0>,	/* D7 */
+			<14 0 &gpio0 19 0>,	/* D8 */
+			<15 0 &gpio0 20 0>,	/* D9 */
+			<16 0 &gpio0 21 0>,	/* D10 */
+			<17 0 &gpio0 24 0>,	/* D11 */
+			<18 0 &gpio0 26 0>,	/* D12 */
+			<19 0 &gpio0 27 0>,	/* D13 */
+			<20 0 &gpio0 28 0>,	/* D14 */
+			<21 0 &gpio0 29 0>;	/* D15 */
+	};
+
+	aliases {
+		led0 = &red_led;
+		watchdog0 = &wdog;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <32000000>;
+		#clock-cells = <0>;
+	};
+};
+
+&flash0 {
+	reg = <0x16000000 DT_SIZE_M(1)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Flash area from 0x0000 to 0x2400 is reserved
+		 * for product header added by flasher.
+		 */
+
+		boot_partition: partition@2400 {
+			label = "mcuboot";
+			reg = <0x000002400 0x00009c00>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 0x00076000>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00082000 0x00076000>;
+		};
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	compatible = "renesas,smartbond-usbd";
+	status = "okay";
+};
+
+&rc32m {
+	status = "disabled";
+};
+
+&xtal32m {
+	status = "okay";
+};
+
+&xtal32k {
+	status = "okay";
+};
+
+&lp_clk {
+	clock-src = <&xtal32k>;
+};
+
+&sys_clk {
+	clock-src = <&xtal32m>;
+};
+
+&pll {
+	status = "okay";
+};
+&i2c {
+	status = "okay";
+	pinctrl-0 = <&i2c_default>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
+
+&spi {
+	status = "okay";
+	pinctrl-0 = <&spi_controller>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_controller>;
+	pinctrl-names = "default";
+};

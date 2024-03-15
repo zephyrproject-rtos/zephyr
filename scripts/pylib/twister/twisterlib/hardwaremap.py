@@ -287,7 +287,7 @@ class HardwareMap:
         serial_devices = list_ports.comports()
         logger.info("Scanning connected hardware...")
         for d in serial_devices:
-            if d.manufacturer in self.manufacturer:
+            if d.manufacturer and d.manufacturer.casefold() in [m.casefold() for m in self.manufacturer]:
 
                 # TI XDS110 can have multiple serial devices for a single board
                 # assume endpoint 0 is the serial, skip all others

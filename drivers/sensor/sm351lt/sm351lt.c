@@ -212,7 +212,7 @@ static int sm351lt_init(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_SM351LT_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sm351lt_thread, data, NULL,
+			sm351lt_thread, data, NULL,
 			NULL, K_PRIO_COOP(CONFIG_SM351LT_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 

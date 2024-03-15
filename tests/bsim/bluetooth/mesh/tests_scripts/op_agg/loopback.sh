@@ -12,11 +12,9 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 2. The device starts sending the sequence on loopback.
 # 3. The device verifies that the sequence is correctly received by the server model.
 # 4. The device confirms that the client model received all status messages.
-conf=prj_mesh1d1_conf
 RunTest mesh_op_agg_model_coex_loopback \
 	op_agg_dut_model_coex_loopback
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_op_agg_model_coex_loopback \
 	op_agg_dut_model_coex_loopback

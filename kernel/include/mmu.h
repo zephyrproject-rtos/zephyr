@@ -12,7 +12,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/linker/linker-defs.h>
 
 /*
@@ -186,7 +186,8 @@ static inline void *z_page_frame_to_virt(struct z_page_frame *pf)
 static inline bool z_is_page_frame(uintptr_t phys)
 {
 	z_assert_phys_aligned(phys);
-	return (phys >= Z_PHYS_RAM_START) && (phys < Z_PHYS_RAM_END);
+	return IN_RANGE(phys, (uintptr_t)Z_PHYS_RAM_START,
+			(uintptr_t)(Z_PHYS_RAM_END - 1));
 }
 
 static inline struct z_page_frame *z_phys_to_page_frame(uintptr_t phys)
@@ -206,7 +207,12 @@ static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
 		 "unaligned size %zu", size);
 	__ASSERT(!Z_DETECT_POINTER_OVERFLOW(addr, size),
 		 "region %p size %zu zero or wraps around", addr, size);
-	__ASSERT(addr >= Z_VIRT_RAM_START && addr + size < Z_VIRT_RAM_END,
+	__ASSERT(IN_RANGE((uintptr_t)addr,
+			  (uintptr_t)Z_VIRT_RAM_START,
+			  ((uintptr_t)Z_VIRT_RAM_END - 1)) &&
+		 IN_RANGE(((uintptr_t)addr + size - 1),
+			  (uintptr_t)Z_VIRT_RAM_START,
+			  ((uintptr_t)Z_VIRT_RAM_END - 1)),
 		 "invalid virtual address region %p (%zu)", addr, size);
 }
 
@@ -214,9 +220,6 @@ static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
  * concisely to printk.
  */
 void z_page_frames_dump(void);
-
-/* Number of free page frames. This information may go stale immediately */
-extern size_t z_free_page_count;
 
 /* Convenience macro for iterating over all page frames */
 #define Z_PAGE_FRAME_FOREACH(_phys, _pageframe) \

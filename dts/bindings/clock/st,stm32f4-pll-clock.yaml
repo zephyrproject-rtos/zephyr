@@ -61,3 +61,10 @@ properties:
         Main PLL (PLL) division factor for USB OTG FS, SDMMC and random number
         generator clocks.
         Valid range: 2 - 15
+
+  div-r:
+    type: int
+    description: |
+        Main PLL (PLL) division factor for I2S and DFSDM
+        generator clocks.
+        Valid range: 2 - 7

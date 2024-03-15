@@ -17,7 +17,7 @@
          * contains MULTIBOOT_EAX_MAGIC and EBX points to a valid 'struct
          * multiboot_info'; otherwise EBX is just junk. Check EAX early
 	 * before it's clobbered and leave a sentinel (0) in EBX if invalid.
-	 * The valid in EBX will be the argument to z_x86_prep_c(), so the
+	 * The valid in EBX will be the argument to z_prep_c(), so the
 	 * subsequent code must, of course, be sure to preserve it meanwhile.
 	 */
 

@@ -632,7 +632,7 @@ property, like the PWM controllers ``pwm1`` and ``pwm2`` in this example:
    };
 
    pwm2: pwm@deadbeef {
-       compatible = "foo,pwm";
+       compatible = "bar,pwm";
        #pwm-cells = <1>;
    };
 

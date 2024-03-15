@@ -9,7 +9,7 @@
  * @defgroup bt_mesh_dfu_srv Firmware Update Server model
  * @ingroup bt_mesh_dfu
  * @{
- * @brief API for the Bluetooth mesh Firmware Update Server model
+ * @brief API for the Bluetooth Mesh Firmware Update Server model
  */
 
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_SRV_H__
@@ -136,7 +136,7 @@ struct bt_mesh_dfu_srv_cb {
 	/** @brief Transfer recovery callback.
 	 *
 	 *  If the device reboots in the middle of a transfer, the Firmware Update Server
-	 *  calls this function when the Bluetooth mesh subsystem is started.
+	 *  calls this function when the Bluetooth Mesh subsystem is started.
 	 *
 	 *  This callback is optional, but transfers will not be recovered after
 	 *  a reboot without it.
@@ -184,7 +184,7 @@ struct bt_mesh_dfu_srv {
 	size_t img_count;
 
 	/* Runtime state */
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 	struct {
 		/* Effect of transfer, @see bt_mesh_dfu_effect. */
 		uint8_t effect;

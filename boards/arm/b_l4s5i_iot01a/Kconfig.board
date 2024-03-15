@@ -1,8 +1,0 @@
-# B_L4S5I_IOT01A discovery kit configuration
-
-# Copyright (c) 2020 STMicroelectronics
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_B_L4S5I_IOT01A
-	bool "STM32L4S5I IOT Discovery kit"
-	depends on SOC_STM32L4S5XX

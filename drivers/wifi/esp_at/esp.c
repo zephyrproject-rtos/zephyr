@@ -7,6 +7,9 @@
 
 #define DT_DRV_COMPAT espressif_esp_at
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
@@ -16,6 +19,7 @@ LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
@@ -25,6 +29,7 @@ LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 
 #include "esp.h"
 
@@ -199,8 +204,13 @@ MODEM_CMD_DEFINE(on_cmd_error)
 }
 
 /* RX thread */
-static void esp_rx(struct esp_data *data)
+static void esp_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct esp_data *data = p1;
+
 	while (true) {
 		/* wait for incoming data */
 		modem_iface_uart_rx_wait(&data->mctx.iface, K_FOREVER);
@@ -243,63 +253,163 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 	return 0;
 }
 
+static int esp_pull_quoted(char **str, char *str_end, char **unquoted)
+{
+	if (**str != '"') {
+		return -EBADMSG;
+	}
+
+	(*str)++;
+
+	*unquoted = *str;
+
+	while (*str < str_end) {
+		if (**str == '"') {
+			**str = '\0';
+			(*str)++;
+
+			if (**str == ',') {
+				(*str)++;
+			}
+
+			return 0;
+		}
+
+		(*str)++;
+	}
+
+	return -EAGAIN;
+}
+
+static int esp_pull(char **str, char *str_end)
+{
+	while (*str < str_end) {
+		if (**str == ',' || **str == '\r' || **str == '\n') {
+			char last_c = **str;
+
+			**str = '\0';
+
+			if (last_c == ',') {
+				(*str)++;
+			}
+
+			return 0;
+		}
+
+		(*str)++;
+	}
+
+	return -EAGAIN;
+}
+
+static int esp_pull_raw(char **str, char *str_end, char **raw)
+{
+	*raw = *str;
+
+	return esp_pull(str, str_end);
+}
+
 /* +CWLAP:(sec,ssid,rssi,channel) */
 /* with: CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS: +CWLAP:<ecn>,<ssid>,<rssi>,<mac>,<ch>*/
-MODEM_CMD_DEFINE(on_cmd_cwlap)
+MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	struct wifi_scan_result res = { 0 };
-	int i;
+	char cwlap_buf[sizeof("\"0\",\"\",-100,\"xx:xx:xx:xx:xx:xx\",12") +
+		       WIFI_SSID_MAX_LEN * 2 + 1];
+	char *ecn;
+	char *ssid;
+	char *mac;
+	char *channel;
+	char *rssi;
+	long ecn_id;
+	int err;
 
-	i = strtol(&argv[0][1], NULL, 10);
-	if (i == 0) {
+	len = net_buf_linearize(cwlap_buf, sizeof(cwlap_buf) - 1,
+				data->rx_buf, 0, sizeof(cwlap_buf) - 1);
+	cwlap_buf[len] = '\0';
+
+	char *str = &cwlap_buf[sizeof("+CWJAP:(") - 1];
+	char *str_end = cwlap_buf + len;
+
+	err = esp_pull_raw(&str, str_end, &ecn);
+	if (err) {
+		return err;
+	}
+
+	ecn_id = strtol(ecn, NULL, 10);
+	if (ecn_id == 0) {
 		res.security = WIFI_SECURITY_TYPE_NONE;
 	} else {
 		res.security = WIFI_SECURITY_TYPE_PSK;
 	}
 
-	argv[1] = str_unquote(argv[1]);
-	i = strlen(argv[1]);
-	if (i > sizeof(res.ssid)) {
-		i = sizeof(res.ssid);
+	err = esp_pull_quoted(&str, str_end, &ssid);
+	if (err) {
+		return err;
 	}
 
-	memcpy(res.ssid, argv[1], i);
-	res.ssid_length = i;
-	res.rssi = strtol(argv[2], NULL, 10);
+	err = esp_pull_raw(&str, str_end, &rssi);
+	if (err) {
+		return err;
+	}
+
+	if (strlen(ssid) > WIFI_SSID_MAX_LEN) {
+		return -EBADMSG;
+	}
+
+	strncpy(res.ssid, ssid, sizeof(res.ssid));
+	res.ssid_length = MIN(sizeof(res.ssid), strlen(ssid));
+
+	res.rssi = strtol(rssi, NULL, 10);
 
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)) {
-		argv[3] = str_unquote(argv[3]);
+		err = esp_pull_quoted(&str, str_end, &mac);
+		if (err) {
+			return err;
+		}
+
 		res.mac_length = WIFI_MAC_ADDR_LEN;
-		if (net_bytes_from_str(res.mac, sizeof(res.mac), argv[3]) < 0) {
+		if (net_bytes_from_str(res.mac, sizeof(res.mac), mac) < 0) {
 			LOG_ERR("Invalid MAC address");
 			res.mac_length = 0;
 		}
-		res.channel = (argc > 4) ? strtol(argv[4], NULL, 10) : -1;
-	} else {
-		res.channel = strtol(argv[3], NULL, 10);
+	}
+
+	err = esp_pull_raw(&str, str_end, &channel);
+	if (err) {
+		return err;
 	}
 
 	if (dev->scan_cb) {
 		dev->scan_cb(dev->net_iface, 0, &res);
 	}
 
-	return 0;
+	return str - cwlap_buf;
 }
 
 /* +CWJAP:(ssid,bssid,channel,rssi) */
-MODEM_CMD_DEFINE(on_cmd_cwjap)
+MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	struct wifi_iface_status *status = dev->wifi_status;
-	const char *ssid = str_unquote(argv[0]);
-	const char *bssid = str_unquote(argv[1]);
-	const char *channel = argv[2];
-	const char *rssi = argv[3];
+	char cwjap_buf[sizeof("\"\",\"xx:xx:xx:xx:xx:xx\",12,-100") +
+		       WIFI_SSID_MAX_LEN * 2 + 1];
 	uint8_t flags = dev->flags;
+	char *ssid;
+	char *bssid;
+	char *channel;
+	char *rssi;
 	int err;
+
+	len = net_buf_linearize(cwjap_buf, sizeof(cwjap_buf) - 1,
+				data->rx_buf, 0, sizeof(cwjap_buf) - 1);
+	cwjap_buf[len] = '\0';
+
+	char *str = &cwjap_buf[sizeof("+CWJAP:") - 1];
+	char *str_end = cwjap_buf + len;
 
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->iface_mode = WIFI_MODE_INFRA;
@@ -312,8 +422,28 @@ MODEM_CMD_DEFINE(on_cmd_cwjap)
 		status->state = WIFI_STATE_DISCONNECTED;
 	}
 
+	err = esp_pull_quoted(&str, str_end, &ssid);
+	if (err) {
+		return err;
+	}
+
+	err = esp_pull_quoted(&str, str_end, &bssid);
+	if (err) {
+		return err;
+	}
+
+	err = esp_pull_raw(&str, str_end, &channel);
+	if (err) {
+		return err;
+	}
+
+	err = esp_pull_raw(&str, str_end, &rssi);
+	if (err) {
+		return err;
+	}
+
 	strncpy(status->ssid, ssid, sizeof(status->ssid));
-	status->ssid_len = strlen(status->ssid);
+	status->ssid_len = strnlen(status->ssid, sizeof(status->ssid));
 
 	err = net_bytes_from_str(status->bssid, sizeof(status->bssid), bssid);
 	if (err) {
@@ -324,7 +454,7 @@ MODEM_CMD_DEFINE(on_cmd_cwjap)
 	status->channel = strtol(channel, NULL, 10);
 	status->rssi = strtol(rssi, NULL, 10);
 
-	return 0;
+	return str - cwjap_buf;
 }
 
 static void esp_dns_work(struct k_work *work)
@@ -438,8 +568,12 @@ static void esp_mgmt_disconnect_work(struct k_work *work)
 	esp_flags_clear(dev, EDF_STA_CONNECTED);
 	esp_mode_switch_submit_if_needed(dev);
 
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
-	net_if_dormant_on(dev->net_iface);
+#endif
+	if (!esp_flags_are_set(dev, EDF_AP_ENABLED)) {
+		net_if_dormant_on(dev->net_iface);
+	}
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 }
 
@@ -504,13 +638,15 @@ static void esp_ip_addr_work(struct k_work *work)
 		return;
 	}
 
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	/* update interface addresses */
-	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
-	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
 #if defined(CONFIG_WIFI_ESP_AT_IP_STATIC)
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_MANUAL, 0);
 #else
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
+#endif
+	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
+	net_if_ipv4_set_netmask_by_addr(dev->net_iface, &dev->ip, &dev->nm);
 #endif
 
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
@@ -756,7 +892,9 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	dev->flags = 0;
 	dev->mode = 0;
 
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
+#endif
 	k_work_submit_to_queue(&dev->workq, &dev->init_work);
 
 	return 0;
@@ -826,7 +964,7 @@ static void esp_mgmt_iface_status_work(struct k_work *work)
 	struct wifi_iface_status *status = data->wifi_status;
 	int ret;
 	static const struct modem_cmd cmds[] = {
-		MODEM_CMD("+CWJAP:", on_cmd_cwjap, 4U, ","),
+		MODEM_CMD_DIRECT("+CWJAP:", on_cmd_cwjap),
 	};
 
 	ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), "AT+CWJAP?",
@@ -873,11 +1011,7 @@ static void esp_mgmt_scan_work(struct k_work *work)
 	struct esp_data *dev;
 	int ret;
 	static const struct modem_cmd cmds[] = {
-#if defined(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)
-		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 5U, ","),
-#else
-		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 4U, ","),
-#endif
+		MODEM_CMD_DIRECT("+CWLAP:", on_cmd_cwlap),
 	};
 
 	dev = CONTAINER_OF(work, struct esp_data, scan_work);
@@ -978,11 +1112,71 @@ out:
 	esp_flags_clear(dev, EDF_STA_CONNECTING);
 }
 
+static int esp_conn_cmd_append(struct esp_data *data, size_t *off,
+			       const char *chunk, size_t chunk_len)
+{
+	char *str_end = &data->conn_cmd[sizeof(data->conn_cmd)];
+	char *str = &data->conn_cmd[*off];
+	const char *chunk_end = chunk + chunk_len;
+
+	for (; chunk < chunk_end; chunk++) {
+		if (str_end - str < 1) {
+			return -ENOSPC;
+		}
+
+		*str = *chunk;
+		str++;
+	}
+
+	*off = str - data->conn_cmd;
+
+	return 0;
+}
+
+#define esp_conn_cmd_append_literal(data, off, chunk)			\
+	esp_conn_cmd_append(data, off, chunk, sizeof(chunk) - 1)
+
+static int esp_conn_cmd_escape_and_append(struct esp_data *data, size_t *off,
+					  const char *chunk, size_t chunk_len)
+{
+	char *str_end = &data->conn_cmd[sizeof(data->conn_cmd)];
+	char *str = &data->conn_cmd[*off];
+	const char *chunk_end = chunk + chunk_len;
+
+	for (; chunk < chunk_end; chunk++) {
+		switch (*chunk) {
+		case ',':
+		case '\\':
+		case '"':
+			if (str_end - str < 2) {
+				return -ENOSPC;
+			}
+
+			*str = '\\';
+			str++;
+
+			break;
+		}
+
+		if (str_end - str < 1) {
+			return -ENOSPC;
+		}
+
+		*str = *chunk;
+		str++;
+	}
+
+	*off = str - data->conn_cmd;
+
+	return 0;
+}
+
 static int esp_mgmt_connect(const struct device *dev,
 			    struct wifi_connect_req_params *params)
 {
 	struct esp_data *data = dev->data;
-	int len;
+	size_t off = 0;
+	int err;
 
 	if (!net_if_is_carrier_ok(data->net_iface) ||
 	    !net_if_is_admin_up(data->net_iface)) {
@@ -995,21 +1189,34 @@ static int esp_mgmt_connect(const struct device *dev,
 
 	esp_flags_set(data, EDF_STA_CONNECTING);
 
-	len = snprintk(data->conn_cmd, sizeof(data->conn_cmd),
-		       "AT+"_CWJAP"=\"");
-	memcpy(&data->conn_cmd[len], params->ssid, params->ssid_length);
-	len += params->ssid_length;
-
-	len += snprintk(&data->conn_cmd[len],
-				sizeof(data->conn_cmd) - len, "\",\"");
-
-	if (params->security == WIFI_SECURITY_TYPE_PSK) {
-		memcpy(&data->conn_cmd[len], params->psk, params->psk_length);
-		len += params->psk_length;
+	err = esp_conn_cmd_append_literal(data, &off, "AT+"_CWJAP"=\"");
+	if (err) {
+		return err;
 	}
 
-	len += snprintk(&data->conn_cmd[len], sizeof(data->conn_cmd) - len,
-			"\"");
+	err = esp_conn_cmd_escape_and_append(data, &off,
+					     params->ssid, params->ssid_length);
+	if (err) {
+		return err;
+	}
+
+	err = esp_conn_cmd_append_literal(data, &off, "\",\"");
+	if (err) {
+		return err;
+	}
+
+	if (params->security == WIFI_SECURITY_TYPE_PSK) {
+		err = esp_conn_cmd_escape_and_append(data, &off,
+						     params->psk, params->psk_length);
+		if (err) {
+			return err;
+		}
+	}
+
+	err = esp_conn_cmd_append_literal(data, &off, "\"");
+	if (err) {
+		return err;
+	}
 
 	k_work_submit_to_queue(&data->workq, &data->connect_work);
 
@@ -1058,12 +1265,18 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 
 	ret = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
 
+	net_if_dormant_off(data->net_iface);
+
 	return ret;
 }
 
 static int esp_mgmt_ap_disable(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
+
+	if (!esp_flags_are_set(data, EDF_STA_CONNECTED)) {
+		net_if_dormant_on(data->net_iface);
+	}
 
 	return esp_mode_flags_clear(data, EDF_AP_ENABLED);
 }
@@ -1111,6 +1324,9 @@ static void esp_init_work(struct k_work *work)
 #endif
 #if defined(CONFIG_WIFI_ESP_AT_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
+#endif
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+		SETUP_CMD_NOHANDLE("AT+CIPDINFO=1"),
 #endif
 		SETUP_CMD("AT+"_CIPSTAMAC"?", "+"_CIPSTAMAC":",
 			  on_cmd_cipstamac, 1U, ""),
@@ -1273,6 +1489,8 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
 				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
 				  ESP_MTU);
 
+CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
+
 static int esp_init(const struct device *dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, power_gpios) || DT_INST_NODE_HAS_PROP(0, reset_gpios)
@@ -1366,7 +1584,7 @@ static int esp_init(const struct device *dev)
 	/* start RX thread */
 	k_thread_create(&esp_rx_thread, esp_rx_stack,
 			K_KERNEL_STACK_SIZEOF(esp_rx_stack),
-			(k_thread_entry_t)esp_rx,
+			esp_rx,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_ESP_AT_RX_THREAD_PRIORITY), 0,
 			K_NO_WAIT);

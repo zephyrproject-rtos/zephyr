@@ -20,7 +20,7 @@ is referenced by its memory address.
 
 A mutex has the following key properties:
 
-* A **lock count** that indicates the number of times the mutex has be locked
+* A **lock count** that indicates the number of times the mutex has been locked
   by the thread that has locked it. A count of zero indicates that the mutex
   is unlocked.
 

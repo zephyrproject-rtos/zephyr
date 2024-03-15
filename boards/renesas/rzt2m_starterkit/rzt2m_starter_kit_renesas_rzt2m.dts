@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <dt-bindings/pinctrl/renesas-rzt2m-pinctrl.h>
+#include <arm/renesas/rz/rzt2m.dtsi>
+
+/ {
+	model = "RZT/2M Starter Kit";
+	compatible = "renesas,rzt2m_starter_kit";
+
+	chosen {
+		zephyr,sram = &cpu0_atcm;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led0 {
+			gpios = <&gpio19 6 0>;
+			label = "led0";
+		};
+		led1: led1 {
+			gpios = <&gpio19 4 0>;
+			label = "led1";
+		};
+		led2: led2 {
+			gpios = <&gpio20 0 0>;
+			label = "led2";
+		};
+		led3: led3 {
+			gpios = <&gpio23 4 0>;
+			label = "led3";
+		};
+	};
+};
+
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P16_5>;
+		};
+		group2 {
+			pinmux = <UART0RX_P16_6>;
+			input-enable;
+		};
+	};
+	uart3_default: uart3_default {
+		group1 {
+			pinmux = <UART3TX_P18_0>;
+		};
+		group2 {
+			pinmux = <UART3RX_P17_7>;
+			input-enable;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart3 {
+	status = "okay";
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
+};

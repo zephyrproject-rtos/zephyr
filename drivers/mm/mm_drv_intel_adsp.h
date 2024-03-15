@@ -19,7 +19,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/mm/system_mm.h>
 #include <zephyr/sys/mem_blocks.h>

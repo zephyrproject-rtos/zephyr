@@ -11,7 +11,7 @@
  */
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/app_memory/app_memdomain.h>
 
 #include "footprint.h"
@@ -41,9 +41,9 @@ int z_impl_validation_overhead_syscall(void)
 
 static inline int z_vrfy_validation_overhead_syscall(void)
 {
-	bool status_0 = Z_SYSCALL_OBJ_INIT(&test_sema, K_OBJ_SEM);
+	bool status_0 = K_SYSCALL_OBJ_INIT(&test_sema, K_OBJ_SEM);
 
-	bool status_1 = Z_SYSCALL_OBJ(&test_sema, K_OBJ_SEM);
+	bool status_1 = K_SYSCALL_OBJ(&test_sema, K_OBJ_SEM);
 
 	return status_0 || status_1;
 }

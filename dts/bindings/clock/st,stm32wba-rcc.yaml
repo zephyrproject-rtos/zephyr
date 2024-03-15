@@ -49,7 +49,7 @@ description: |
            ...
   }
   In this example I2C1 device is assigned HSI as clock source.
-  It is device driver's responsibility to querry and use clock source information in
+  It is device driver's responsibility to query and use clock source information in
   accordance with clock_control API specifications.
 
 compatible: "st,stm32wba-rcc"

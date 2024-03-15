@@ -254,7 +254,6 @@ static void *test_modem_chat_setup(void)
 		.argv_size = ARRAY_SIZE(cmd_argv),
 		.unsol_matches = unsol_matches,
 		.unsol_matches_size = ARRAY_SIZE(unsol_matches),
-		.process_timeout = K_MSEC(2),
 	};
 
 	zassert(modem_chat_init(&cmd, &cmd_config) == 0, "Failed to init modem CMD");

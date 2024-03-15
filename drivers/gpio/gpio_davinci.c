@@ -17,10 +17,14 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/pinctrl.h>
+
+LOG_MODULE_REGISTER(gpio_davinci, CONFIG_GPIO_LOG_LEVEL);
 
 /* Helper Macros for GPIO */
 #define DEV_CFG(dev) \
-		((const struct gpio_davinci_config * const)((dev)->config))
+		((const struct gpio_davinci_config *)((dev)->config))
 #define DEV_DATA(dev) ((struct gpio_davinci_data *)(dev)->data)
 #define DEV_GPIO_CFG_BASE(dev) \
 	((struct gpio_davinci_regs *)DEVICE_MMIO_NAMED_GET(dev, port_base))
@@ -55,6 +59,7 @@ struct gpio_davinci_config {
 	DEVICE_MMIO_NAMED_ROM(port_base);
 
 	uint32_t port_num;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 static int gpio_davinci_configure(const struct device *dev, gpio_pin_t pin,
@@ -76,11 +81,9 @@ static int gpio_davinci_configure(const struct device *dev, gpio_pin_t pin,
 		} else {
 			regs->clr_data = BIT(pin);
 		}
-
-		regs->dir &= (~(BIT(pin)));
-
+		regs->dir &= ~(BIT(pin));
 	} else {
-		regs->dir |= (BIT(pin));
+		regs->dir |= BIT(pin);
 	}
 
 	return 0;
@@ -149,6 +152,7 @@ static int gpio_davinci_init(const struct device *dev)
 {
 	const struct gpio_davinci_config *config = DEV_CFG(dev);
 	volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev);
+	int ret;
 
 	DEVICE_MMIO_NAMED_MAP(dev, port_base, K_MEM_CACHE_NONE);
 
@@ -156,44 +160,43 @@ static int gpio_davinci_init(const struct device *dev)
 
 	config->bank_config(dev);
 
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("failed to apply pinctrl");
+		return ret;
+	}
 	return 0;
 }
 
-#define GPIO_DAVINCI_INIT_FUNC(n)	\
-	static void gpio_davinci_bank_##n##_config(const struct device *dev)	\
-	{	\
+#define GPIO_DAVINCI_INIT_FUNC(n)						  \
+	static void gpio_davinci_bank_##n##_config(const struct device *dev)	  \
+	{									  \
 		volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev); \
-		ARG_UNUSED(regs);	\
+		ARG_UNUSED(regs);						  \
 	}
 
-#define GPIO_DAVINCI_DEVICE_INIT(n)	\
-	DEVICE_DT_INST_DEFINE(n, &gpio_davinci_##n##_init,	\
-		NULL, &gpio_davinci_##n##_data,	\
-		&gpio_davinci_##n##_config,	\
-		POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,	\
-		&api_funcs)
-
-#define GPIO_DAVINCI_INIT(n)	\
-	\
-	GPIO_DAVINCI_INIT_FUNC(n)	\
-	static const struct gpio_davinci_config gpio_davinci_##n##_config = {	\
-		.bank_config = gpio_davinci_bank_##n##_config,	\
-		.common = {	\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},	\
-		DEVICE_MMIO_NAMED_ROM_INIT(port_base, DT_DRV_INST(n)),	\
-		.port_num = n	\
-	};	\
-	\
-	static struct gpio_davinci_data gpio_davinci_##n##_data;	\
-	\
-	DEVICE_DT_INST_DEFINE(n,	\
-		&gpio_davinci_init,	\
-		NULL,	\
-		&gpio_davinci_##n##_data,	\
-		&gpio_davinci_##n##_config,	\
-		PRE_KERNEL_2,	\
-		CONFIG_GPIO_INIT_PRIORITY,	\
+#define GPIO_DAVINCI_INIT(n)							  \
+	PINCTRL_DT_INST_DEFINE(n);						  \
+	GPIO_DAVINCI_INIT_FUNC(n);						  \
+	static const struct gpio_davinci_config gpio_davinci_##n##_config = {	  \
+		.bank_config = gpio_davinci_bank_##n##_config,			  \
+		.common = {							  \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	  \
+		},								  \
+		DEVICE_MMIO_NAMED_ROM_INIT(port_base, DT_DRV_INST(n)),		  \
+		.port_num = n,							  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			  \
+	};									  \
+										  \
+	static struct gpio_davinci_data gpio_davinci_##n##_data;		  \
+										  \
+	DEVICE_DT_INST_DEFINE(n,						  \
+		&gpio_davinci_init,						  \
+		NULL,								  \
+		&gpio_davinci_##n##_data,					  \
+		&gpio_davinci_##n##_config,					  \
+		PRE_KERNEL_2,							  \
+		CONFIG_GPIO_INIT_PRIORITY,					  \
 		&gpio_davinci_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DAVINCI_INIT)

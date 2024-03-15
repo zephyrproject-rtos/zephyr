@@ -6,8 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SELECT_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SELECT_H_
 
+#include <zephyr/net/socket_types.h>
 #include <zephyr/net/socket_select.h>
-#include <sys/_timeval.h>
 
 #ifdef __cplusplus
 extern "C" {

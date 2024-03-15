@@ -10,3 +10,4 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     platform_exclude:
       - mr_canhubk3
+      - arduino_uno_r4_minima

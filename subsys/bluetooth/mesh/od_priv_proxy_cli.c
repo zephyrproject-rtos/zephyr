@@ -20,7 +20,7 @@ static struct bt_mesh_od_priv_proxy_cli *cli;
 
 static int32_t msg_timeout;
 
-static int handle_proxy_status(struct bt_mesh_model *mod,
+static int handle_proxy_status(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -93,17 +93,17 @@ void bt_mesh_od_priv_proxy_cli_timeout_set(int32_t timeout)
 	msg_timeout = timeout;
 }
 
-static int on_demand_proxy_cli_init(struct bt_mesh_model *mod)
+static int on_demand_proxy_cli_init(const struct bt_mesh_model *mod)
 {
 	if (!bt_mesh_model_in_primary(mod)) {
 		LOG_ERR("On-Demand Private Proxy client not in primary element");
 		return -EINVAL;
 	}
 
-	cli = mod->user_data;
+	cli = mod->rt->user_data;
 	cli->model = mod;
 	mod->keys[0] = BT_MESH_KEY_DEV_ANY;
-	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 	msg_timeout = CONFIG_BT_MESH_OD_PRIV_PROXY_CLI_TIMEOUT;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);

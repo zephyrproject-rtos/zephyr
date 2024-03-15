@@ -59,7 +59,7 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.nodes import NodeMatcher, make_refnode
-from zephyr.vcs_link import vcs_link_get_url
+from zephyr.gh_utils import gh_link_get_url
 
 import json
 
@@ -128,7 +128,7 @@ class ConvertCodeSampleNode(SphinxTransform):
                     "name": node['name'],
                     "description": node.children[0].astext(),
                     "codeSampleType": "full",
-                    "codeRepository": vcs_link_get_url(self.app, self.env.docname)
+                    "codeRepository": gh_link_get_url(self.app, self.env.docname)
                 })}
                 </script>""",
                 format="html",
@@ -154,12 +154,15 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
             if len(code_samples) > 0:
                 admonition = nodes.admonition()
                 admonition += nodes.title(text="Related code samples")
-                admonition["collapsible"] = "" # used by sphinx-immaterial theme
                 admonition["classes"].append("related-code-samples")
                 admonition["classes"].append("dropdown") # used by sphinx-togglebutton extension
-                sample_ul = nodes.bullet_list()
+                admonition["classes"].append("toggle-shown") # show the content by default
+
+                sample_dl = nodes.definition_list()
+
                 for code_sample in sorted(code_samples, key=lambda x: x["name"]):
-                    sample_para = nodes.paragraph()
+                    term = nodes.term()
+
                     sample_xref = addnodes.pending_xref(
                         "",
                         refdomain="zephyr",
@@ -168,13 +171,14 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
                         refwarn=True,
                     )
                     sample_xref += nodes.inline(text=code_sample["name"])
-                    sample_para += sample_xref
-                    sample_para += nodes.inline(text=" - ")
-                    sample_para += nodes.inline(text=code_sample["description"].astext())
-                    sample_li = nodes.list_item()
-                    sample_li += sample_para
-                    sample_ul += sample_li
-                admonition += sample_ul
+                    term += sample_xref
+                    definition = nodes.definition()
+                    definition += nodes.paragraph(text=code_sample["description"].astext())
+                    sample_dli = nodes.definition_list_item()
+                    sample_dli += term
+                    sample_dli += definition
+                    sample_dl += sample_dli
+                admonition += sample_dl
 
                 # replace node with the newly created admonition
                 node.replace_self(admonition)
@@ -245,7 +249,7 @@ class ZephyrDomain(Domain):
     directives = {"code-sample": CodeSampleDirective}
 
     object_types: Dict[str, ObjType] = {
-        "code-sample": ObjType("code sample", "code-sample"),
+        "code-sample": ObjType("code-sample", "code-sample"),
     }
 
     initial_data: Dict[str, Any] = {"code-samples": {}}
@@ -263,9 +267,9 @@ class ZephyrDomain(Domain):
     def get_objects(self):
         for _, code_sample in self.data["code-samples"].items():
             yield (
+                code_sample["id"],
                 code_sample["name"],
-                code_sample["name"],
-                "code sample",
+                "code-sample",
                 code_sample["docname"],
                 code_sample["id"],
                 1,
@@ -304,10 +308,16 @@ class CustomDoxygenGroupDirective(DoxygenGroupDirective):
 
     def run(self) -> List[Node]:
         nodes = super().run()
-        return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+
+        if self.config.zephyr_breathe_insert_related_samples:
+            return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+        else:
+            return nodes
 
 
 def setup(app):
+    app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
+
     app.add_domain(ZephyrDomain)
 
     app.add_transform(ConvertCodeSampleNode)

@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/lldp.h>
 
 #include "eth_native_posix_priv.h"
+#include "nsi_host_trampolines.h"
 #include "eth.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -193,7 +194,7 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("Send pkt %p len %d", pkt, count);
 
-	ret = eth_write_data(ctx->dev_fd, ctx->send, count);
+	ret = nsi_host_write(ctx->dev_fd, ctx->send, count);
 	if (ret < 0) {
 		LOG_DBG("Cannot send pkt %p (%d)", pkt, ret);
 	}
@@ -321,7 +322,7 @@ static int read_data(struct eth_context *ctx, int fd)
 	int status;
 	int count;
 
-	count = eth_read_data(fd, ctx->recv, sizeof(ctx->recv));
+	count = nsi_host_read(fd, ctx->recv, sizeof(ctx->recv));
 	if (count <= 0) {
 		return 0;
 	}
@@ -364,8 +365,12 @@ static int read_data(struct eth_context *ctx, int fd)
 	return 0;
 }
 
-static void eth_rx(struct eth_context *ctx)
+static void eth_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct eth_context *ctx = p1;
 	LOG_DBG("Starting ZETH RX thread");
 
 	while (1) {
@@ -391,7 +396,7 @@ static void create_rx_handler(struct eth_context *ctx)
 	k_thread_create(ctx->rx_thread,
 			ctx->rx_stack,
 			ctx->rx_stack_size,
-			(k_thread_entry_t)eth_rx,
+			eth_rx,
 			ctx, NULL, NULL, K_PRIO_COOP(14),
 			0, K_NO_WAIT);
 

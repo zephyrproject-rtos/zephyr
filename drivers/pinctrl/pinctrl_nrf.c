@@ -13,19 +13,24 @@ BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_UP == NRF_GPIO_PIN_PULLUP)),
 	      "nRF pinctrl pull settings do not match HAL values");
 
-BUILD_ASSERT(((NRF_DRIVE_S0S1 == NRF_GPIO_PIN_S0S1) &&
-	      (NRF_DRIVE_H0S1 == NRF_GPIO_PIN_H0S1) &&
-	      (NRF_DRIVE_S0H1 == NRF_GPIO_PIN_S0H1) &&
-	      (NRF_DRIVE_H0H1 == NRF_GPIO_PIN_H0H1) &&
-	      (NRF_DRIVE_D0S1 == NRF_GPIO_PIN_D0S1) &&
-	      (NRF_DRIVE_D0H1 == NRF_GPIO_PIN_D0H1) &&
-	      (NRF_DRIVE_S0D1 == NRF_GPIO_PIN_S0D1) &&
-	      (NRF_DRIVE_H0D1 == NRF_GPIO_PIN_H0D1) &&
-#if defined(GPIO_PIN_CNF_DRIVE_E0E1)
-	      (NRF_DRIVE_E0E1 == NRF_GPIO_PIN_E0E1) &&
-#endif /* defined(GPIO_PIN_CNF_DRIVE_E0E1) */
-	      (1U)),
-	     "nRF pinctrl drive settings do not match HAL values");
+#if defined(GPIO_PIN_CNF_DRIVE_E0E1) || defined(GPIO_PIN_CNF_DRIVE0_E0)
+#define NRF_DRIVE_COUNT (NRF_DRIVE_E0E1 + 1)
+#else
+#define NRF_DRIVE_COUNT (NRF_DRIVE_H0D1 + 1)
+#endif
+static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
+	[NRF_DRIVE_S0S1] = NRF_GPIO_PIN_S0S1,
+	[NRF_DRIVE_H0S1] = NRF_GPIO_PIN_H0S1,
+	[NRF_DRIVE_S0H1] = NRF_GPIO_PIN_S0H1,
+	[NRF_DRIVE_H0H1] = NRF_GPIO_PIN_H0H1,
+	[NRF_DRIVE_D0S1] = NRF_GPIO_PIN_D0S1,
+	[NRF_DRIVE_D0H1] = NRF_GPIO_PIN_D0H1,
+	[NRF_DRIVE_S0D1] = NRF_GPIO_PIN_S0D1,
+	[NRF_DRIVE_H0D1] = NRF_GPIO_PIN_H0D1,
+#if defined(GPIO_PIN_CNF_DRIVE_E0E1) || defined(GPIO_PIN_CNF_DRIVE0_E0)
+	[NRF_DRIVE_E0E1] = NRF_GPIO_PIN_E0E1,
+#endif
+};
 
 /* value to indicate pin level doesn't need initialization */
 #define NO_WRITE UINT32_MAX
@@ -86,11 +91,18 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
-		nrf_gpio_pin_drive_t drive = NRF_GET_DRIVE(pins[i]);
+		nrf_gpio_pin_drive_t drive;
+		uint8_t drive_idx = NRF_GET_DRIVE(pins[i]);
 		uint32_t psel = NRF_GET_PIN(pins[i]);
 		uint32_t write = NO_WRITE;
 		nrf_gpio_pin_dir_t dir;
 		nrf_gpio_pin_input_t input;
+
+		if (drive_idx < ARRAY_SIZE(drive_modes)) {
+			drive = drive_modes[drive_idx];
+		} else {
+			return -EINVAL;
+		}
 
 		if (psel == NRF_PIN_DISCONNECTED) {
 			psel = PSEL_DISCONNECTED;
@@ -165,22 +177,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if defined(NRF_PSEL_TWIM)
 		case NRF_FUN_TWIM_SCL:
 			NRF_PSEL_TWIM(reg, SCL) = psel;
-			if (drive == NRF_DRIVE_S0S1) {
+			if (drive == NRF_GPIO_PIN_S0S1) {
 				/* Override the default drive setting with one
 				 * suitable for TWI/TWIM peripherals (S0D1).
 				 * This drive cannot be used always so that
 				 * users are able to select e.g. H0D1 or E0E1
 				 * in devicetree.
 				 */
-				drive = NRF_DRIVE_S0D1;
+				drive = NRF_GPIO_PIN_S0D1;
 			}
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
 		case NRF_FUN_TWIM_SDA:
 			NRF_PSEL_TWIM(reg, SDA) = psel;
-			if (drive == NRF_DRIVE_S0S1) {
-				drive = NRF_DRIVE_S0D1;
+			if (drive == NRF_GPIO_PIN_S0S1) {
+				drive = NRF_GPIO_PIN_S0D1;
 			}
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;

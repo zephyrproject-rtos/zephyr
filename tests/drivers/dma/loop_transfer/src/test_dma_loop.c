@@ -33,16 +33,8 @@
 
 #define TRANSFER_LOOPS (4)
 
-#if CONFIG_NOCACHE_MEMORY
-static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
-	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
-static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
-	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
-#else
-/* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
-static __aligned(16) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
-#endif
+static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
+static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
 
 volatile uint32_t transfer_count;
 volatile uint32_t done;
@@ -480,7 +472,7 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	return TC_PASS;
 }
 
-#define DMA_NAME(i, _)	test_dma ## i
+#define DMA_NAME(i, _)	tst_dma ## i
 #define DMA_LIST	LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
 
 #define TEST_LOOP(dma_name)                                                                        \

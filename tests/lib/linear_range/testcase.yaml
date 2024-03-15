@@ -4,4 +4,4 @@
 tests:
   libraries.linear_range:
     integration_platforms:
-      - native_posix
+      - native_sim

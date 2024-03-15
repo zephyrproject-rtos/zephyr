@@ -13,8 +13,8 @@ function display_help(){
   echo "  Testcases are searched for in \${SEARCH_PATH},"
   echo "  which by default is the folder the script is run from"
   echo "  You can instead also provide a space separated test list with \${TESTS_LIST}, "
-  echo "  or an input file including a list of tests \${TESTS_FILE} (w one line"
-  echo "  per test, you can comment lines with #)"
+  echo "  or an input file including a list of tests and/or tests search paths"
+  echo "  \${TESTS_FILE} (w one line per test/path, you can comment lines with #)"
   echo ""
   echo "  Examples (run from \${ZEPHYR_BASE}):"
   echo " * Run all tests found under one folder:"
@@ -44,13 +44,15 @@ i=0
 
 if [ -n "${TESTS_FILE}" ]; then
 	#remove comments and empty lines from file
-	all_cases=$(sed 's/#.*$//;/^$/d' "${TESTS_FILE}")
+	search_pattern=$(sed 's/#.*$//;/^$/d' "${TESTS_FILE}") || exit 1
+	all_cases=`find ${search_pattern} -name "*.sh" | \
+	         grep -Ev "(/_|run_parallel|compile|generate_coverage_report.sh)"`
 elif [ -n "${TESTS_LIST}" ]; then
 	all_cases=${TESTS_LIST}
 else
 	SEARCH_PATH="${SEARCH_PATH:-.}"
 	all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
-	         grep -Ev "(/_|run_parallel|compile.sh|generate_coverage_report.sh)"`
+	         grep -Ev "(/_|run_parallel|compile|generate_coverage_report.sh)"`
 	#we dont run ourselves
 fi
 

@@ -63,7 +63,7 @@ config BT_LLL_VENDOR_NORDIC
 
 config BT_LLL_VENDOR_OPENISA
 	bool "Use OpenISA LLL"
-	depends on SOC_OPENISA_RV32M1_RISCV32
+	depends on SOC_OPENISA_RV32M1
 	select BT_CTLR_PHY_UPDATE_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 	select BT_HAS_HCI_VS
@@ -240,11 +240,6 @@ config BT_CTLR_CONN_ISO_AVOID_SEGMENTATION
 	  interface, the config provides a way to force the Max_PDU to Max_SDU +
 	  5 (header + offset).
 
-config BT_CTLR_ADVANCED_FEATURES
-	bool "Show advanced features"
-	help
-	  Makes advanced features visible to controller developers.
-
 choice
 	prompt "CIS Creation Policy Selection"
 	default BT_CTLR_CONN_ISO_RELIABILITY_POLICY
@@ -271,6 +266,11 @@ config BT_CTLR_TEST
 	bool "Run in-system unit tests"
 	help
 	  Run in-system unit tests
+
+config BT_CTLR_ADVANCED_FEATURES
+	bool "Show advanced features"
+	help
+	  Makes advanced features visible to controller developers.
 
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
@@ -428,6 +428,7 @@ config BT_CTLR_ADV_ISO_RESERVE_MAX
 config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
 	depends on BT_CTLR_ADV_PERIODIC
+	range 0 4000000
 	default 0
 	help
 	  Define an offset between AUX_ADV_IND and AUX_SYNC_IND when using
@@ -439,6 +440,8 @@ config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	  PDUs are scheduled as periodic events of Extended Advertising
 	  Interval plus 10 milliseconds (Advertising Random Delay) as the
 	  periodic interval.
+	  The offset is in microseconds, limited to an experimental maximum
+	  value of 4 seconds.
 
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
@@ -469,6 +472,14 @@ config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	help
 	  Enable ADI field in AUX_SCAN_RSP PDU
+
+config BT_CTLR_SCAN_AUX_SET
+	int "LE Extended Scanning Auxiliary Sets"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	range 1 64
+	default 1
+	help
+	  Maximum supported auxiliary channel scan sets.
 
 config BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN
 	bool "Use minimal Scan Auxiliary and Periodic Sync PDU time reservation"
@@ -502,13 +513,14 @@ config BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
 	  round robin scheduling to skip the overlapping Periodic Advertising
 	  Sync event. This permits new Periodic Advertising peers be discovered.
 
-config BT_CTLR_SCAN_AUX_SET
-	int "LE Extended Scanning Auxiliary Sets"
-	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
-	range 1 64
-	default 1
+config BT_CTLR_SYNC_ISO_RESERVE_MAX
+	bool "Use maximum ISO Synchronized Receiver event time reservation"
+	depends on BT_CTLR_SYNC_ISO
+	default y
 	help
-	  Maximum supported auxiliary channel scan sets.
+	  Use maximum ISO Synchronized Receiver event time reservation. If
+	  disabled, then time reservation does not include the pre-transmissions
+	  and any Control subevents.
 
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
@@ -523,6 +535,16 @@ config BT_CTLR_SCAN_ENABLE_STRICT
 	help
 	  Enforce returning HCI Error Command Disallowed on enabling/disabling
 	  already enabled/disabled scanning.
+
+config BT_CTLR_CIS_ACCEPT_MIN_OFFSET_STRICT
+	bool "Enforce Strict CIS Minimum Offset Check"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	help
+	  Enforce strict check of CIS minimum offset accepted by the peripheral
+	  considering that there will be no overlap of ACL connection with the
+	  CIG events. Radio and CPU overheads for an ACL connection event is
+	  considered and checks the CIS minimum offset is greater than the time
+	  reservation for the ACL connection.
 
 config BT_CTLR_ISOAL_SN_STRICT
 	bool "Enforce Strict Tx ISO Data Sequence Number use"
@@ -559,6 +581,17 @@ config BT_CTLR_ZLI
 	  Enable support for use of Zero Latency IRQ feature. Note, applications
 	  shall not use Zero Latency IRQ themselves when this option is selected,
 	  else will impact controller stability.
+
+config BT_CTLR_DYNAMIC_INTERRUPTS
+	bool "Use Dynamic Interrupts allocation only"
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  Allocate all Controller required interrupts dynamically. This makes
+	  sure that interrupts are properly connected when the Controller is
+	  initialized and not only during the system startup. Thanks to that
+	  application is able to enable Controller and its ISR at runtime, and
+	  permit use of SoC's peripheral for custom use when Bluetooth is not
+	  enabled.
 
 config BT_CTLR_OPTIMIZE_FOR_SPEED
 	prompt "Optimize for Speed" if !(SOC_SERIES_NRF51X && BT_CTLR_LE_ENC)
@@ -961,6 +994,13 @@ config BT_CTLR_SCAN_UNRESERVED
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
 
+config BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE
+	bool "Early abort previous prepare"
+	default y
+	help
+	  Early abort previous prepare present before a short prepare is
+	  enqueued in the prepare pipeline.
+
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
 	default y
@@ -1179,7 +1219,7 @@ config BT_CTLR_PROFILE_ISR
 
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF52833DK_NRF52833 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
+	depends on BOARD_NRF51DK_NRF51822 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF52833DK_NRF52833 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of

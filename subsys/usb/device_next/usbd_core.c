@@ -84,6 +84,9 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 		case UDC_EVT_RESUME:
 			usbd_class_resumed(c_nd);
 			break;
+		case UDC_EVT_SOF:
+			usbd_class_sof(c_nd);
+			break;
 		default:
 			break;
 		}
@@ -163,8 +166,12 @@ static ALWAYS_INLINE int usbd_event_handler(struct usbd_contex *const uds_ctx,
 	return ret;
 }
 
-static void usbd_thread(void)
+static void usbd_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct udc_event event;
 
 	while (true) {
@@ -226,7 +233,7 @@ static int usbd_pre_init(void)
 {
 	k_thread_create(&usbd_thread_data, usbd_stack,
 			K_KERNEL_STACK_SIZEOF(usbd_stack),
-			(k_thread_entry_t)usbd_thread,
+			usbd_thread,
 			NULL, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
 

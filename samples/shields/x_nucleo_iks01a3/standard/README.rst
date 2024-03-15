@@ -41,6 +41,17 @@ References
 
 - X-NUCLEO-IKS01A3: https://www.st.com/en/ecosystems/x-nucleo-iks01a3.html
 
+DIL24 socket
+************
+
+In addition to sensors on board it is possible to place any other compatible
+sensor on DIL24 socket. The sample is written in such a way that, if sensor is
+not present, it will just be skipped.
+
+List of sensors currently supported on DIL24 by this sample:
+
+- LIS2DE12
+
 Building and Running
 ********************
 

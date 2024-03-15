@@ -1,0 +1,5 @@
+board:
+  name: gd32e103v_eval
+  vendor: gd
+  socs:
+    - name: gd32e103

@@ -24,6 +24,8 @@ There is a limited set of such conditions:
 
 - a semaphore becomes available
 - a kernel FIFO contains data ready to be retrieved
+- a kernel message queue contains data ready to be retrieved
+- a kernel pipe contains data ready to be retrieved
 - a poll signal is raised
 
 A thread that wants to wait on multiple conditions must define an array of
@@ -87,20 +89,26 @@ ignored, most likely temporarily, its type can be set to K_POLL_TYPE_IGNORE.
 
 .. code-block:: c
 
-    struct k_poll_event events[2] = {
+    struct k_poll_event events[4] = {
         K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
                                         K_POLL_MODE_NOTIFY_ONLY,
                                         &my_sem, 0),
         K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
                                         K_POLL_MODE_NOTIFY_ONLY,
                                         &my_fifo, 0),
+        K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                                        K_POLL_MODE_NOTIFY_ONLY,
+                                        &my_msgq, 0),
+        K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+                                        K_POLL_MODE_NOTIFY_ONLY,
+                                        &my_pipe, 0),
     };
 
 or at runtime
 
 .. code-block:: c
 
-    struct k_poll_event events[2];
+    struct k_poll_event events[4];
     void some_init(void)
     {
         k_poll_event_init(&events[0],
@@ -112,6 +120,16 @@ or at runtime
                           K_POLL_TYPE_FIFO_DATA_AVAILABLE,
                           K_POLL_MODE_NOTIFY_ONLY,
                           &my_fifo);
+
+        k_poll_event_init(&events[2],
+                          K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                          K_POLL_MODE_NOTIFY_ONLY,
+                          &my_msgq);
+
+        k_poll_event_init(&events[3],
+                          K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+                          K_POLL_MODE_NOTIFY_ONLY,
+                          &my_pipe);
 
         // tags are left uninitialized if unused
     }
@@ -145,6 +163,12 @@ In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
             } else if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
                 data = k_fifo_get(events[1].fifo, 0);
                 // handle data
+            } else if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+                ret = k_msgq_get(events[2].msgq, buf, K_NO_WAIT);
+                // handle data
+            } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
+                ret = k_pipe_get(events[3].pipe, buf, bytes_to_read, &bytes_read, min_xfer, K_NO_WAIT);
+                // handle data
             }
         } else {
             // handle timeout
@@ -165,9 +189,16 @@ to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
             } else if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
                 data = k_fifo_get(events[1].fifo, 0);
                 // handle data
-            }
+            } else if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+                ret = k_msgq_get(events[2].msgq, buf, K_NO_WAIT);
+                // handle data
+            } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
+                ret = k_pipe_get(events[3].pipe, buf, bytes_to_read, &bytes_read, min_xfer, K_NO_WAIT);
+                // handle data
             events[0].state = K_POLL_STATE_NOT_READY;
             events[1].state = K_POLL_STATE_NOT_READY;
+            events[2].state = K_POLL_STATE_NOT_READY;
+            events[3].state = K_POLL_STATE_NOT_READY;
         }
     }
 

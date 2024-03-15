@@ -114,3 +114,15 @@ properties:
     type: boolean
     description: |
       Disable automatic recharge.
+
+  dietemp-stop-millidegrees:
+    type: int
+    description: |
+      Die temperature halt threshold in milli-degrees.
+      When die temperature exceeds this threshold, charging will be inhibited.
+
+  dietemp-resume-millidegrees:
+    type: int
+    description: |
+      Die temperature resume threshold in milli-degrees.
+      When die temperature falls below this threshold, charging will be permitted.

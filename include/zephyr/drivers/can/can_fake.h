@@ -45,6 +45,8 @@ DECLARE_FAKE_VOID_FUNC(fake_can_set_state_change_callback, const struct device *
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bool);
 
+DECLARE_FAKE_VALUE_FUNC(int, fake_can_get_core_clock, const struct device *, uint32_t *);
+
 #ifdef __cplusplus
 }
 #endif

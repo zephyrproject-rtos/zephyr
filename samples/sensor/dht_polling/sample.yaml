@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2023 Ian Morris
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  description: Digital Humidity Temperature polling sample
+  name: DHT polling sample
+tests:
+  sample.sensor.dht_polling:
+    tags: sensors
+    filter: dt_alias_exists("dht0")
+    integration_platforms:
+      - nucleo_f401re
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]*: temp is (.*) °C humidity is (.*) %RH"

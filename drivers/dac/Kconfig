@@ -19,7 +19,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config DAC_SHELL
 	bool "DAC shell"
-	default y
 	depends on SHELL
 	help
 	  Enable DAC related shell commands.
@@ -53,5 +52,7 @@ source "drivers/dac/Kconfig.gd32"
 source "drivers/dac/Kconfig.esp32"
 
 source "drivers/dac/Kconfig.ad56xx"
+
+source "drivers/dac/Kconfig.ad5592"
 
 endif # DAC

@@ -14,6 +14,8 @@ config SOC_FLASH_STM32
 	select FLASH_PAGE_LAYOUT
 	select FLASH_HAS_PAGE_LAYOUT
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	select USE_STM32_HAL_FLASH if BT_STM32WBA
+	select USE_STM32_HAL_FLASH_EX if BT_STM32WBA
 	help
 	  Enable flash driver for STM32 series
 
@@ -38,7 +40,7 @@ config FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION
 
 config FLASH_STM32_READOUT_PROTECTION
 	bool "Extended operation for flash readout protection control"
-	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32L4X
+	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32G4X
 	select FLASH_HAS_EX_OP
 	default n
 	help

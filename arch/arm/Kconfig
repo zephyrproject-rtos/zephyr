@@ -16,23 +16,23 @@ config CPU_CORTEX
 
 config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	bool
-	depends on !CPU_CORTEX_M
 	help
 	  This option indicates that the ARM CPU is connected to a custom (i.e.
-	  non-GIC) interrupt controller.
+	  non-GIC or NVIC) interrupt controller.
 
 	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
 	  allow interfacing to a custom external interrupt controller and this
 	  option must be selected when such cores are connected to an interrupt
-	  controller that is not the ARM Generic Interrupt Controller (GIC).
+	  controller that is not the ARM Generic Interrupt Controller (GIC) or
+	  the Cortex-M ARM Nested Vectored Interrupt Controller (NVIC).
 
 	  When this option is selected, the architecture interrupt control
 	  functions are mapped to the SoC interrupt control interface, which is
 	  implemented at the SoC level.
 
-	  N.B. This option is only applicable to the Cortex-A and Cortex-R
-	       family cores. The Cortex-M family cores are always equipped with
-	       the ARM Nested Vectored Interrupt Controller (NVIC).
+	  N.B. Since all Cortex-M cores have a NVIC, if this option is selected it
+	  is assumed that the custom interrupt control interface implementation
+	  assumes responsibility for handling the NVIC.
 
 config CODE_DATA_RELOCATION_SRAM
 	bool "Relocate code/data sections to SRAM"
@@ -81,5 +81,48 @@ config ARM_ON_EXIT_CPU_IDLE
 
 rsource "core/Kconfig"
 rsource "core/Kconfig.vfp"
+
+# General options signifying CPU capabilities of ARM SoCs
+config CPU_HAS_ARM_MPU
+	bool
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in ARM flavor.
+
+config CPU_HAS_NXP_MPU
+	bool
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in NXP flavor.
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	bool "Custom fixed SoC MPU region definition"
+	help
+	  If enabled, this option signifies that the SoC will
+	  define and configure its own fixed MPU regions in the
+	  SoC definition. These fixed MPU regions are currently
+	  used to set Flash and SRAM default access policies and
+	  they are programmed at boot time.
+
+config CPU_HAS_ARM_SAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the ARM Security Attribution Unit (SAU).
+
+config CPU_HAS_NRF_IDAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the nRF (vendor-specific) Security Attribution Unit.
+	  (IDAU: "Implementation-Defined Attribution Unit", in accordance with
+	  ARM terminology).
+
+config HAS_SWO
+	bool
+	help
+	  When enabled, indicates that SoC has an SWO output
 
 endmenu

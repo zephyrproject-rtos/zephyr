@@ -805,8 +805,10 @@ static void isr_tx(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
+	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
+	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
+	       HAL_RADIO_TMR_START_DELAY_US;
 	hcto += radio_rx_chain_delay_get(0, 0);
 	hcto += addr_us_get(0);
 	hcto -= radio_tx_chain_delay_get(0, 0);
@@ -915,11 +917,11 @@ static void isr_window(void *param)
 	}
 	lll_chan_set(37 + lll->chan);
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CENTRAL)
 	bool is_sched_advanced = IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) &&
 				 lll->conn && lll->conn_win_offset_us;
 	uint32_t ticks_anchor_prev;
-	uint32_t ticks_at_start;
 
 	if (is_sched_advanced) {
 		/* Get the ticks_anchor when the offset to free time space for
@@ -932,14 +934,17 @@ static void isr_window(void *param)
 	} else {
 		ticks_anchor_prev = 0U;
 	}
+#endif /* CONFIG_BT_CENTRAL */
+
+	uint32_t ticks_at_start;
 
 	ticks_at_start = ticker_ticks_now_get() +
 			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
-#else /* !CONFIG_BT_CENTRAL */
+#else /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
 	remainder_us = radio_tmr_start_now(0);
-#endif /* !CONFIG_BT_CENTRAL */
+#endif /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
 	 * central event.

@@ -169,7 +169,17 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 		return 0;
 	}
 
-	return -EINVAL;
+	/**
+	 * ESP32 - S2,S3 and C3 variants have only 14 bits counter.
+	 * where as the plain ESP32 variant has 20 bits counter.
+	 * application failed to set low frequency(1Hz) in S2, S3 and C3 variants.
+	 * to get very low frequencies on these variants,
+	 * frequency needs to be tuned with 18 bits clock divider.
+	 * so select the slow clock source (1MHz) with highest counter resolution.
+	 * this can be handled on the func 'pwm_led_esp32_timer_set' with 'prescaler'.
+	 */
+	channel->resolution = SOC_LEDC_TIMER_BIT_WIDE_NUM;
+	return 0;
 }
 
 static int pwm_led_esp32_timer_set(const struct device *dev,
@@ -193,11 +203,12 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 		prescaler = ((uint64_t) REF_CLK_FREQ << 8) / channel->freq / precision;
 	break;
 	default:
-		LOG_ERR("Invalid clock source");
+		LOG_ERR("Invalid clock source (%d)", channel->clock_src);
 		return -EINVAL;
 	}
 
 	if (prescaler < 0x100 || prescaler > 0x3FFFF) {
+		LOG_ERR("Prescaler out of range: %#X", prescaler);
 		return -EINVAL;
 	}
 
@@ -251,7 +262,10 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 	}
 
 	/* Update PWM frequency according to period_cycles */
-	pwm_led_esp32_get_cycles_per_sec(dev, channel_idx, &clk_freq);
+	ret = pwm_led_esp32_get_cycles_per_sec(dev, channel_idx, &clk_freq);
+	if (ret < 0) {
+		return ret;
+	}
 
 	channel->freq = (uint32_t) (clk_freq/period_cycles);
 	if (!channel->freq) {

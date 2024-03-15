@@ -10,7 +10,7 @@ jobs:
   release:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -26,7 +26,7 @@ jobs:
           args: spdx -o zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
 
       - name: upload-results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
           name: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx

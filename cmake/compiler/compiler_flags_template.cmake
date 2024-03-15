@@ -133,3 +133,7 @@ set_compiler_property(PROPERTY no_global_merge)
 
 # Compiler flag for warning about shadow variables
 set_compiler_property(PROPERTY warning_shadow_variables)
+
+# Compiler flags to avoid recognizing built-in functions
+set_compiler_property(PROPERTY no_builtin)
+set_compiler_property(PROPERTY no_builtin_malloc)

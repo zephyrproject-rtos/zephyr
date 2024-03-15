@@ -23,20 +23,41 @@ CREATE_FLAG(flag_l2cap_connected);
 #define NUM_SEGMENTS    10
 #define RESCHEDULE_DELAY K_MSEC(100)
 
+static void sdu_destroy(struct net_buf *buf)
+{
+	LOG_DBG("%p", buf);
+
+	net_buf_destroy(buf);
+}
+
+static void segment_destroy(struct net_buf *buf)
+{
+	LOG_DBG("%p", buf);
+
+	net_buf_destroy(buf);
+}
+
+static void rx_destroy(struct net_buf *buf)
+{
+	LOG_DBG("%p", buf);
+
+	net_buf_destroy(buf);
+}
+
 /* Only one SDU per link will be transmitted at a time */
 NET_BUF_POOL_DEFINE(sdu_tx_pool,
 		    CONFIG_BT_MAX_CONN, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
-		    8, NULL);
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, sdu_destroy);
 
 NET_BUF_POOL_DEFINE(segment_pool,
 		    /* MTU + 4 l2cap hdr + 4 ACL hdr */
 		    NUM_SEGMENTS, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    8, NULL);
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, segment_destroy);
 
 /* Only one SDU per link will be received at a time */
 NET_BUF_POOL_DEFINE(sdu_rx_pool,
 		    CONFIG_BT_MAX_CONN, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
-		    8, NULL);
+		    8, rx_destroy);
 
 static uint8_t tx_data[SDU_LEN];
 static uint16_t rx_cnt;

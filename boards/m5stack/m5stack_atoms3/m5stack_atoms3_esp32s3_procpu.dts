@@ -1,0 +1,187 @@
+/*
+ * Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_fn8.dtsi>
+#include "m5stack_atoms3-pinctrl.dtsi"
+#include "grove_connectors.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "M5Stack AtomS3 PROCPU";
+	compatible = "m5stack,atoms3";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &st7789v;
+	};
+
+	aliases {
+		sw0 = &user_button_0;
+		watchdog0 = &wdt0;
+		accel0 = &mpu6886;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		/* This is the button that's underneath the LCD display  */
+		user_button_0: button_0 {
+			label = "User button 0";
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>; // G42
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* Regulators */
+	lcd_backlight_en {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_backlight_enable";
+		enable-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&cpu1 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	mpu6886: mpu6886@68 {
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+		status = "okay";
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+	st7789v: st7789v@0 {
+		compatible = "sitronix,st7789v";
+		reg = <0>;
+		spi-max-frequency = <27000000>;
+		cmd-data-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>; /* G33 */
+		reset-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;    /* G34 */
+
+		width = <128>;
+		height = <128>;
+		x-offset = <2>;
+		y-offset = <1>;
+
+		vcom = <0x28>;
+		gctrl = <0x35>;
+		vrhs = <0x10>;
+		vdvs = <0x20>;
+		mdac = <0x00>;
+		gamma = <0x01>;
+		colmod = <0x55>;
+		lcm = <0x0c>;
+		porch-param = [0c 0c 00 33 33];
+		cmd2en-param = [5a 69 02 00];
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+		nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+		ram-param = [00 E0];
+		rgb-param = [40 02 14];
+	};
+
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000F000>;
+			read-only;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		scratch_partition: partition@210000 {
+			label = "image-scratch";
+			reg = <0x00210000 0x00040000>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};

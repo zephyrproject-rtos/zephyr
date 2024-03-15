@@ -2015,7 +2015,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	test_failed = false;
 	test_complete = false;
@@ -2175,7 +2175,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_udp_loopback)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	test_failed = false;
 	test_complete = false;

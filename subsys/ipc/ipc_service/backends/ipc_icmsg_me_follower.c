@@ -260,71 +260,10 @@ static int send(const struct device *instance, void *token,
 			     user_len);
 }
 
-static int get_tx_buffer(const struct device *instance, void *token,
-			 void **data, uint32_t *user_len, k_timeout_t wait)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_get_tx_buffer(conf, &dev_data->icmsg_me_data, data,
-				      user_len, wait);
-}
-
-static int drop_tx_buffer(const struct device *instance, void *token,
-			  const void *data)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_drop_tx_buffer(conf, &dev_data->icmsg_me_data, data);
-}
-
-static int send_nocopy(const struct device *instance, void *token,
-			const void *data, size_t len)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-	icmsg_me_ept_id_t *id = token;
-
-	if (*id == INVALID_EPT_ID) {
-		return -ENOTCONN;
-	}
-
-	return icmsg_me_send_nocopy(conf, &dev_data->icmsg_me_data, *id,
-				    data, len);
-}
-
-#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
-int hold_rx_buffer(const struct device *instance, void *token, void *data)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_hold_rx_buffer(conf, &dev_data->icmsg_me_data, data);
-}
-
-int release_rx_buffer(const struct device *instance, void *token, void *data)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_release_rx_buffer(conf, &dev_data->icmsg_me_data, data);
-}
-#endif /* CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX */
-
 const static struct ipc_service_backend backend_ops = {
 	.open_instance = open,
 	.register_endpoint = register_ept,
 	.send = send,
-
-	.get_tx_buffer = get_tx_buffer,
-	.drop_tx_buffer = drop_tx_buffer,
-	.send_nocopy = send_nocopy,
-
-#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
-	.hold_rx_buffer = hold_rx_buffer,
-	.release_rx_buffer = release_rx_buffer,
-#endif
 };
 
 static int backend_init(const struct device *instance)
@@ -338,16 +277,28 @@ static int backend_init(const struct device *instance)
 }
 
 #define DEFINE_BACKEND_DEVICE(i)						\
-	static const struct icmsg_config_t backend_config_##i =			\
-	{									\
-		.tx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, tx_region)),	\
-		.tx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(i, tx_region)),	\
-		.rx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, rx_region)),	\
-		.rx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(i, rx_region)),	\
-		.mbox_tx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), tx),		\
-		.mbox_rx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), rx),		\
+	static const struct icmsg_config_t backend_config_##i = {		\
+		.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\
+		.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),			\
 	};									\
-	static struct backend_data_t backend_data_##i;				\
+										\
+	PBUF_DEFINE(tx_pb_##i,							\
+			DT_REG_ADDR(DT_INST_PHANDLE(i, tx_region)),		\
+			DT_REG_SIZE(DT_INST_PHANDLE(i, tx_region)),		\
+			DT_INST_PROP_OR(i, dcache_alignment, 0));		\
+	PBUF_DEFINE(rx_pb_##i,							\
+			DT_REG_ADDR(DT_INST_PHANDLE(i, rx_region)),		\
+			DT_REG_SIZE(DT_INST_PHANDLE(i, rx_region)),		\
+			DT_INST_PROP_OR(i, dcache_alignment, 0));		\
+										\
+	static struct backend_data_t backend_data_##i = {			\
+		.icmsg_me_data = {						\
+			.icmsg_data = {						\
+				.tx_pb = &tx_pb_##i,				\
+				.rx_pb = &rx_pb_##i,				\
+			}							\
+		}								\
+	};									\
 										\
 	DEVICE_DT_INST_DEFINE(i,						\
 			 &backend_init,						\

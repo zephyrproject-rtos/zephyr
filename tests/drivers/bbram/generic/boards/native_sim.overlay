@@ -1,0 +1,28 @@
+/*
+ * Copyright 2021 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	mcp7940n: mcp7940n@0 {
+		compatible = "microchip,mcp7940n";
+		reg = <0x0>;
+	};
+};
+
+/ {
+	ite8xxx2: ite8xxx2@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "ite,it8xxx2-bbram";
+		status = "okay";
+		reg = <0x0 0x40>;
+	};
+	npcx: npcx@40 {
+		compatible = "nuvoton,npcx-bbram";
+		reg = <0x40 0x40
+		       0x80 0x1>;
+		reg-names = "memory", "status";
+	};
+};

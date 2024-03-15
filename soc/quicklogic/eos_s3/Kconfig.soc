@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EOS_S3
+	bool
+	help
+	  QuickLogic EOS S3 SoC
+
+config SOC
+	default "quicklogic_eos_s3" if SOC_EOS_S3

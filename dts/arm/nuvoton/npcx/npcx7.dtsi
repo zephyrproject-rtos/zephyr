@@ -244,6 +244,22 @@
 		qspi_fiu0: quadspi@40020000 {
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
 		};
+
+		shi0: shi@4000f000 {
+			compatible = "nuvoton,npcx-shi";
+			reg = <0x4000f000 0x120>;
+			interrupts = <18 1>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 1>;
+			status = "disabled";
+			buffer-rx-size = <128>;
+			buffer-tx-size = <128>;
+			shi-cs-wui =<&wui_io53>;
+		};
+
+		espi0: espi@4000a000 {
+			rx-plsize = <64>;
+			tx-plsize = <16>;
+		};
 	};
 
 	soc-id {

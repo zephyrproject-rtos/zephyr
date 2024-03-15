@@ -127,14 +127,18 @@ static const struct gpio_dt_spec ulpi_reset =
 #define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
 #endif
 
-/* We need one RX FIFO and n TX-IN FIFOs */
-#define FIFO_NUM (1 + USB_NUM_BIDIR_ENDPOINTS)
+/* We need n TX IN FIFOs */
+#define TX_FIFO_NUM USB_NUM_BIDIR_ENDPOINTS
 
-/* 4-byte words FIFO */
-#define FIFO_WORDS (USB_RAM_SIZE / 4)
+/* We need a minimum size for RX FIFO */
+#define USB_FIFO_RX_MIN 160
 
-/* Allocate FIFO memory evenly between the FIFOs */
-#define FIFO_EP_WORDS (FIFO_WORDS / FIFO_NUM)
+/* 4-byte words TX FIFO */
+#define TX_FIFO_WORDS ((USB_RAM_SIZE - USB_FIFO_RX_MIN - 64) / 4)
+
+/* Allocate FIFO memory evenly between the TX FIFOs */
+/* except the first TX endpoint need only 64 bytes */
+#define TX_FIFO_EP_WORDS (TX_FIFO_WORDS / (TX_FIFO_NUM - 1))
 
 #endif /* USB */
 
@@ -213,10 +217,14 @@ static int usb_dc_stm32_clock_enable(void)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	/* VDDUSB independent USB supply (PWR clock is on) */
+#if defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
+
+	/*
+	 * VDDUSB independent USB supply (PWR clock is on)
+	 * with LL_PWR_EnableVDDUSB function (higher case)
+	 */
 	LL_PWR_EnableVDDUSB();
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#endif /* PWR_USBSCR_USB33SV or PWR_SVMCR_USV */
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		if (clock_control_configure(clk, (clock_control_subsys_t)&pclken[1],
@@ -436,11 +444,17 @@ static int usb_dc_stm32_init(void)
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #else /* USB_OTG_FS */
+
 	/* TODO: make this dynamic (depending usage) */
-	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, FIFO_EP_WORDS);
+	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, USB_FIFO_RX_MIN);
 	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
-		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
-				    FIFO_EP_WORDS);
+		if (i == 0) {
+			/* first endpoint need only 64 byte for EP_TYPE_CTRL */
+			HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,	16);
+		} else {
+			HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
+					TX_FIFO_EP_WORDS);
+		}
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #endif /* USB */
@@ -498,7 +512,7 @@ int usb_dc_attach(void)
 
 	/*
 	 * Required for at least STM32L4 devices as they electrically
-	 * isolate USB features from VDDUSB. It must be enabled before
+	 * isolate USB features from VddUSB. It must be enabled before
 	 * USB can function. Refer to section 5.1.3 in DM00083560 or
 	 * DM00310109.
 	 */
@@ -629,20 +643,39 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	LOG_DBG("ep 0x%02x, previous ep_mps %u, ep_mps %u, ep_type %u",
 		ep_cfg->ep_addr, ep_state->ep_mps, ep_cfg->ep_mps,
 		ep_cfg->ep_type);
-
 #if defined(USB) || defined(USB_DRD_FS)
 	if (ep_cfg->ep_mps > ep_state->ep_pma_buf_len) {
-		if (USB_RAM_SIZE <=
-		    (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps)) {
+		if (ep_cfg->ep_type == USB_DC_EP_ISOCHRONOUS) {
+			if (USB_RAM_SIZE <=
+			   (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps*2)) {
+				return -EINVAL;
+			}
+		} else if (USB_RAM_SIZE <=
+			  (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps)) {
 			return -EINVAL;
 		}
-		HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_SNG_BUF,
-				    usb_dc_stm32_state.pma_offset);
-		ep_state->ep_pma_buf_len = ep_cfg->ep_mps;
-		usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps;
+
+		if (ep_cfg->ep_type == USB_DC_EP_ISOCHRONOUS) {
+			HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_DBL_BUF,
+				usb_dc_stm32_state.pma_offset +
+				((usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps) << 16));
+			ep_state->ep_pma_buf_len = ep_cfg->ep_mps*2;
+			usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps*2;
+		} else {
+			HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_SNG_BUF,
+				usb_dc_stm32_state.pma_offset);
+			ep_state->ep_pma_buf_len = ep_cfg->ep_mps;
+			usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps;
+		}
 	}
-#endif
+	if (ep_cfg->ep_type == USB_DC_EP_ISOCHRONOUS) {
+		ep_state->ep_mps = ep_cfg->ep_mps*2;
+	} else {
+		ep_state->ep_mps = ep_cfg->ep_mps;
+	}
+#else
 	ep_state->ep_mps = ep_cfg->ep_mps;
+#endif
 
 	switch (ep_cfg->ep_type) {
 	case USB_DC_EP_CONTROL:
@@ -751,7 +784,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	if (USB_EP_DIR_IS_OUT(ep) && ep != EP0_OUT) {
 		return usb_dc_ep_start_read(ep,
 					  usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
-					  EP_MPS);
+					  ep_state->ep_mps);
 	}
 
 	return 0;
@@ -890,7 +923,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	 */
 	if (!ep_state->read_count) {
 		usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
-				     EP_MPS);
+				     ep_state->ep_mps);
 	}
 
 	return 0;

@@ -221,6 +221,24 @@ LinkServer is compatible with the following debug probes:
 - :ref:`mcu-link-cmsis-onboard-debug-probe`
 - :ref:`opensda-daplink-onboard-debug-probe`
 
+To use LinkServer with West commands, the install folder should be added to the
+:envvar:`PATH` :ref:`environment variable <env_vars>`.  The default installation
+path to add is:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: console
+
+         /usr/local/LinkServer
+
+   .. group-tab:: Windows
+
+      .. code-block:: console
+
+         c:\nxp\LinkServer_<version>
+
 Supported west commands:
 
 1. flash
@@ -321,6 +339,8 @@ Started Guide. pyOCD includes support for Zephyr RTOS-awareness.
 
 These debug host tools are compatible with the following debug probes:
 
+- :ref:`lpclink2-cmsis-onboard-debug-probe`
+- :ref:`mcu-link-cmsis-onboard-debug-probe`
 - :ref:`opensda-daplink-onboard-debug-probe`
 - :ref:`stlink-v21-onboard-debug-probe`
 
@@ -377,6 +397,68 @@ Zephyr RTOS Awareness
 To enable Zephyr RTOS awareness follow the steps described in
 `Lauterbach TRACE32 Zephyr OS Awareness Manual`_.
 
+.. _nxp-s32-debug-host-tools:
+
+NXP S32 Debug Probe Host Tools
+******************************
+
+:ref:`nxp-s32-debug-probe` is designed to work in conjunction with
+`NXP S32 Design Studio for S32 Platform`_.
+
+Download (registration required) NXP S32 Design Studio for S32 Platform and
+follow the `S32 Design Studio for S32 Platform Installation User Guide`_ to get
+the necessary debug host tools and associated USB device drivers.
+
+Note that Zephyr RTOS-awareness support for the NXP S32 GDB server depends on
+the target device. Consult the product release notes for more information.
+
+Supported west commands:
+
+1. debug
+#. debugserver
+#. attach
+
+Basic usage
+-----------
+
+Before starting, add NXP S32 Design Studio installation directory to the system
+:ref:`PATH environment variable <env_vars>`. Alternatively, it can be passed to
+the runner on each invocation via ``--s32ds-path`` as shown below:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: console
+
+         west debug --s32ds-path=/opt/NXP/S32DS.3.5
+
+   .. group-tab:: Windows
+
+      .. code-block:: console
+
+         west debug --s32ds-path=C:\NXP\S32DS.3.5
+
+If multiple S32 debug probes are connected to the host via USB, the runner will
+ask the user to select one via command line prompt before continuing. The
+connection string for the probe can be also specified when invoking the runner
+via ``--dev-id=<connection-string>``. Consult NXP S32 debug probe user manual
+for details on how to construct the connection string. For example, if using a
+probe with serial ID ``00:04:9f:00:ca:fe``:
+
+.. code-block:: console
+
+   west debug --dev-id='s32dbg:00:04:9f:00:ca:fe'
+
+It is possible to pass extra options to the debug host tools via ``--tool-opt``.
+When executing ``debug`` or ``attach`` commands, the tool options will be passed
+to the GDB client only. When executing ``debugserver``, the tool options will be
+passed to the GDB server. For example, to load a Zephyr application to SRAM and
+afterwards detach the debug session:
+
+.. code-block:: console
+
+   west debug --tool-opt='--batch'
 
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
@@ -415,4 +497,10 @@ To enable Zephyr RTOS awareness follow the steps described in
 	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
 
 .. _MCUXpresso Installer:
-	https://www.nxp.com/lgfiles/updates/mcuxpresso/MCUXpressoInstaller.exe
+	https://github.com/nxp-mcuxpresso/vscode-for-mcux/wiki/Dependency-Installation
+
+.. _NXP S32 Design Studio for S32 Platform:
+   https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-s32-platform:S32DS-S32PLATFORM
+
+.. _S32 Design Studio for S32 Platform Installation User Guide:
+   https://www.nxp.com/webapp/Download?colCode=S32DSIG

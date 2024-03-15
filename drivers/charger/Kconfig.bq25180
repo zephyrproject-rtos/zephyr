@@ -1,0 +1,11 @@
+# Copyright 2024 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_BQ25180
+	bool "BQ25180 Battery Charger"
+	default y
+	depends on DT_HAS_TI_BQ25180_ENABLED
+	select I2C
+	help
+	  Enable BQ25180 battery charger driver.

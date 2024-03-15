@@ -29,10 +29,6 @@ LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 #include "nbr.h"
 #include "route.h"
 
-#if !defined(NET_ROUTE_EXTRA_DATA_SIZE)
-#define NET_ROUTE_EXTRA_DATA_SIZE 0
-#endif
-
 /* We keep track of the routes in a separate list so that we can remove
  * the oldest routes (at tail) if needed.
  */
@@ -43,8 +39,6 @@ static sys_slist_t active_route_lifetime_timers;
 
 /* Timer that manages expired route entries. */
 static struct k_work_delayable route_lifetime_timer;
-
-static K_MUTEX_DEFINE(lock);
 
 static void net_route_nexthop_remove(struct net_nbr *nbr)
 {
@@ -57,8 +51,7 @@ static void net_route_nexthop_remove(struct net_nbr *nbr)
 NET_NBR_POOL_INIT(net_route_nexthop_pool,
 		  CONFIG_NET_MAX_NEXTHOPS,
 		  sizeof(struct net_route_nexthop),
-		  net_route_nexthop_remove,
-		  0);
+		  net_route_nexthop_remove);
 
 static inline struct net_route_nexthop *net_nexthop_data(struct net_nbr *nbr)
 {
@@ -117,8 +110,7 @@ static void net_route_entries_table_clear(struct net_nbr_table *table)
 NET_NBR_POOL_INIT(net_route_entries_pool,
 		  CONFIG_NET_MAX_ROUTES,
 		  sizeof(struct net_route_entry),
-		  net_route_entry_remove,
-		  NET_ROUTE_EXTRA_DATA_SIZE);
+		  net_route_entry_remove);
 
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, nbr_routes, net_route_entries_pool,
 		   net_route_entries_table_clear);
@@ -135,11 +127,12 @@ static inline struct net_route_entry *net_route_data(struct net_nbr *nbr)
 
 struct net_nbr *net_route_get_nbr(struct net_route_entry *route)
 {
+	struct net_nbr *ret = NULL;
 	int i;
 
 	NET_ASSERT(route);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
 		struct net_nbr *nbr = get_nbr(i);
@@ -150,24 +143,23 @@ struct net_nbr *net_route_get_nbr(struct net_route_entry *route)
 
 		if (nbr->data == (uint8_t *)route) {
 			if (!nbr->ref) {
-				k_mutex_unlock(&lock);
-				return NULL;
+				break;
 			}
 
-			k_mutex_unlock(&lock);
-			return nbr;
+			ret = nbr;
+			break;
 		}
 	}
 
-	k_mutex_unlock(&lock);
-	return NULL;
+	net_ipv6_nbr_unlock();
+	return ret;
 }
 
 void net_routes_print(void)
 {
 	int i;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
 		struct net_nbr *nbr = get_nbr(i);
@@ -188,7 +180,7 @@ void net_routes_print(void)
 				net_nbr_get_lladdr(nbr->idx)->len));
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 }
 
 static inline void nbr_free(struct net_nbr *nbr)
@@ -255,7 +247,6 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 	return 0;
 }
 
-
 #define net_route_info(str, route, dst)					\
 	do {								\
 	if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
@@ -283,7 +274,7 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 	uint8_t longest_match = 0U;
 	int i;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES && longest_match < 128; i++) {
 		struct net_nbr *nbr = get_nbr(i);
@@ -313,7 +304,7 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 		update_route_access(found);
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return found;
 }
 
@@ -354,7 +345,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		return NULL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
 	if (!nbr_nexthop) {
@@ -479,7 +470,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 #endif
 
 exit:
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return route;
 }
 
@@ -502,7 +493,7 @@ static void route_lifetime_timeout(struct k_work *work)
 
 	ARG_UNUSED(work);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_route_lifetime_timers,
 					  current, next, lifetime.node) {
@@ -524,7 +515,7 @@ static void route_lifetime_timeout(struct k_work *work)
 		k_work_reschedule(&route_lifetime_timer, K_MSEC(next_update));
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 }
 
 void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime)
@@ -537,7 +528,7 @@ void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime)
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	if (lifetime == NET_IPV6_ND_INFINITE_LIFETIME) {
 		route->is_infinite = true;
@@ -556,7 +547,7 @@ void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime)
 		k_work_reschedule(&route_lifetime_timer, K_NO_WAIT);
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 }
 
 int net_route_del(struct net_route_entry *route)
@@ -571,7 +562,7 @@ int net_route_del(struct net_route_entry *route)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 #if defined(CONFIG_NET_MGMT_EVENT_INFO)
 	net_ipaddr_copy(&info.addr, &route->addr);
@@ -599,7 +590,7 @@ int net_route_del(struct net_route_entry *route)
 
 	nbr = net_route_get_nbr(route);
 	if (!nbr) {
-		k_mutex_unlock(&lock);
+		net_ipv6_nbr_unlock();
 		return -ENOENT;
 	}
 
@@ -616,7 +607,7 @@ int net_route_del(struct net_route_entry *route)
 
 	nbr_free(nbr);
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return 0;
 }
 
@@ -630,7 +621,7 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 	NET_ASSERT(iface);
 	NET_ASSERT(nexthop);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
 
@@ -657,7 +648,7 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 
 	if (count) {
 		return count;
@@ -666,70 +657,6 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 	}
 
 	return 0;
-}
-
-int net_route_del_by_nexthop_data(struct net_if *iface,
-				  struct in6_addr *nexthop,
-				  void *data)
-{
-	int count = 0, status = 0;
-	struct net_nbr *nbr_nexthop;
-	struct net_route_nexthop *nexthop_route;
-	int i, ret;
-
-	NET_ASSERT(iface);
-	NET_ASSERT(nexthop);
-
-	k_mutex_lock(&lock, K_FOREVER);
-
-	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
-	if (!nbr_nexthop) {
-		k_mutex_unlock(&lock);
-		return -EINVAL;
-	}
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
-		struct net_nbr *nbr = get_nbr(i);
-		struct net_route_entry *route = net_route_data(nbr);
-
-		SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route,
-					     node) {
-			void *extra_data;
-
-			if (nexthop_route->nbr != nbr_nexthop) {
-				continue;
-			}
-
-			if (nbr->extra_data_size == 0U) {
-				continue;
-			}
-
-			/* Routing engine specific extra data needs
-			 * to match too.
-			 */
-			extra_data = net_nbr_extra_data(nbr_nexthop);
-			if (extra_data != data) {
-				continue;
-			}
-
-			ret = net_route_del(route);
-			if (!ret) {
-				count++;
-			} else {
-				status = ret;
-			}
-
-			break;
-		}
-	}
-
-	k_mutex_unlock(&lock);
-
-	if (count) {
-		return count;
-	}
-
-	return status;
 }
 
 struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
@@ -741,7 +668,7 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 		return NULL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		struct in6_addr *addr;
@@ -751,14 +678,14 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 			addr = &ipv6_nbr_data->addr;
 			NET_ASSERT(addr);
 
-			k_mutex_unlock(&lock);
+			net_ipv6_nbr_unlock();
 			return addr;
 		} else {
 			NET_ERR("could not get neighbor data from next hop");
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return NULL;
 }
 
@@ -766,7 +693,7 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 {
 	int i, ret = 0;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
 		struct net_route_entry *route;
@@ -791,7 +718,7 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 		ret++;
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return ret;
 }
 
@@ -876,13 +803,13 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
 {
 	int i;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	if ((!net_if_flag_is_set(iface, NET_IF_FORWARD_MULTICASTS)) ||
 			(!net_ipv6_is_addr_mcast(group)) ||
 			(net_ipv6_is_addr_mcast_iface(group)) ||
 			(net_ipv6_is_addr_mcast_link(group))) {
-		k_mutex_unlock(&lock);
+		net_ipv6_nbr_unlock();
 		return NULL;
 	}
 
@@ -896,12 +823,12 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
 			route->iface = iface;
 			route->is_used = true;
 
-			k_mutex_unlock(&lock);
+			net_ipv6_nbr_unlock();
 			return route;
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return NULL;
 }
 
@@ -952,7 +879,7 @@ bool net_route_get_info(struct net_if *iface,
 	struct net_if_router *router;
 	bool ret = false;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	/* Search in neighbor table first, if not search in routing table. */
 	if (net_ipv6_nbr_lookup(iface, dst)) {
@@ -989,7 +916,7 @@ bool net_route_get_info(struct net_if *iface,
 	}
 
 exit:
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return ret;
 }
 
@@ -999,7 +926,7 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	struct net_nbr *nbr;
 	int err;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	net_ipv6_nbr_lock();
 
 	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (!nbr) {
@@ -1066,11 +993,11 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 
 	net_pkt_set_iface(pkt, nbr->iface);
 
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return net_send_data(pkt);
 
 error:
-	k_mutex_unlock(&lock);
+	net_ipv6_nbr_unlock();
 	return err;
 }
 

@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+#define DT_DRAM_SIZE		DT_SIZE_M(2048)
+
+#include <intel/apollo_lake.dtsi>
+
+/ {
+	model = "up_squared";
+	compatible = "aaeon,up_squared";
+
+	aliases {
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+	};
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-uart = &uart1;
+		zephyr,uart-pipe = &uart1;
+		zephyr,bt-mon-uart = &uart1;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,apollo-lake";
+			d-cache-line-size = <64>;
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "intel,apollo-lake";
+			d-cache-line-size = <64>;
+			reg = <1>;
+		};
+	};
+};

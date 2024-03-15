@@ -262,8 +262,10 @@ static void test_inject(const struct device *dev, uint64_t addr, uint64_t mask,
 	zassert_equal(ret, 0, "Error setting ctrl");
 }
 
-static int check_values(void *p1, void *p2, void *p3)
+static void check_values(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p3);
+
 	intptr_t address = (intptr_t)p1;
 	intptr_t type = (intptr_t)p2;
 	intptr_t addr, errtype;
@@ -280,8 +282,6 @@ static int check_values(void *p1, void *p2, void *p3)
 	/* Verify page address and error type */
 	zassert_equal(addr, address, "Error address wrong");
 	zassert_equal(errtype, type, "Error type wrong");
-
-	return 0;
 }
 
 static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
@@ -299,7 +299,7 @@ static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 	test_inject(dev, addr, mask, type);
 
 #if defined(CONFIG_USERSPACE)
-	k_thread_user_mode_enter((k_thread_entry_t)check_values,
+	k_thread_user_mode_enter(check_values,
 				 (void *)addr,
 				 (void *)type,
 				 NULL);

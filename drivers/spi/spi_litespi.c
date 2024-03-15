@@ -160,7 +160,7 @@ static int spi_litespi_release(const struct device *dev,
 }
 
 /* Device Instantiation */
-static struct spi_driver_api spi_litespi_api = {
+static const struct spi_driver_api spi_litespi_api = {
 	.transceive = spi_litespi_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_litespi_transceive_async,

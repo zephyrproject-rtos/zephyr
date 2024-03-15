@@ -7,7 +7,7 @@
 #include <zephyr/ipc/ipc_static_vrings.h>
 #include <zephyr/cache.h>
 
-#define SHM_DEVICE_NAME		"sram0.shm"
+#define SHM_DEVICE_DEFAULT_NAME		"sram0.shm"
 
 #define RPMSG_VQ_0		(0) /* TX virtqueue queue index */
 #define RPMSG_VQ_1		(1) /* RX virtqueue queue index */
@@ -88,7 +88,7 @@ static int libmetal_setup(struct ipc_static_vrings *vr)
 		return err;
 	}
 
-	err = metal_device_open("generic", SHM_DEVICE_NAME, &device);
+	err = metal_device_open("generic", vr->shm_device.name, &device);
 	if (err != 0) {
 		return err;
 	}
@@ -166,7 +166,8 @@ int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
 		return -EINVAL;
 	}
 
-	vr->shm_device.name = SHM_DEVICE_NAME;
+	if (!vr->shm_device.name)
+		vr->shm_device.name = SHM_DEVICE_DEFAULT_NAME;
 	vr->shm_device.num_regions = 1;
 	vr->shm_physmap[0] = vr->shm_addr;
 

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arunmani Alagarsamy
+# Author: Arunmani Alagarsamy <arunmani27100@gmail.com>
+
+config RTC_DS1307
+	bool "MAXIM DS1307 RTC driver"
+	default y
+	depends on DT_HAS_MAXIM_DS1307_ENABLED
+	select I2C
+	help
+	  Enable the MAXIM DS1307 RTC driver.

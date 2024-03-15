@@ -80,7 +80,7 @@ struct gatt_sub {
  *              <=> (subscriptions[x].peer == BT_ADDR_LE_ANY).
  */
 static struct gatt_sub subscriptions[SUB_MAX];
-static sys_slist_t callback_list;
+static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
@@ -854,9 +854,7 @@ static void db_hash_gen(void)
 	atomic_set_bit(gatt_sc.flags, DB_HASH_VALID);
 }
 
-#if defined(CONFIG_BT_SETTINGS)
 static void sc_indicate(uint16_t start, uint16_t end);
-#endif
 
 static void do_db_hash(void)
 {
@@ -1464,8 +1462,6 @@ void bt_gatt_init(void)
 
 	bt_gatt_service_init();
 
-	sys_slist_init(&callback_list);
-
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_work_init_delayable(&db_hash.work, db_hash_process);
 
@@ -1517,10 +1513,10 @@ void bt_gatt_init(void)
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
-#if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
-    (defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
 static void sc_indicate(uint16_t start, uint16_t end)
 {
+#if defined(CONFIG_BT_GATT_DYNAMIC_DB) ||                                                          \
+	(defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
 	LOG_DBG("start 0x%04x end 0x%04x", start, end);
 
 	if (!atomic_test_and_set_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
@@ -1541,8 +1537,8 @@ submit:
 
 	/* Reschedule since the range has changed */
 	sc_work_submit(SC_TIMEOUT);
-}
 #endif /* BT_GATT_DYNAMIC_DB || (BT_GATT_CACHING && BT_SETTINGS) */
+}
 
 void bt_gatt_cb_register(struct bt_gatt_cb *cb)
 {
@@ -1762,7 +1758,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_uuid *uuid = attr->user_data;
+	const struct bt_uuid *uuid = attr->user_data;
 
 	if (uuid->type == BT_UUID_TYPE_16) {
 		uint16_t uuid16 = sys_cpu_to_le16(BT_UUID_16(uuid)->val);
@@ -2473,13 +2469,26 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 	return bt_att_send(conn, buf);
 }
 
-static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
+/* Converts error (negative errno) to ATT Error code */
+static uint8_t att_err_from_int(int err)
+{
+	LOG_DBG("%d", err);
+
+	/* ATT error codes are 1 byte values, so any value outside the range is unknown */
+	if (!IN_RANGE(err, 0, UINT8_MAX)) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	return err;
+}
+
+static void gatt_indicate_rsp(struct bt_conn *conn, int err,
 			      const void *pdu, uint16_t length, void *user_data)
 {
 	struct bt_gatt_indicate_params *params = user_data;
 
 	if (params->func) {
-		params->func(conn, params, err);
+		params->func(conn, params, att_err_from_int(err));
 	}
 
 	params->_ref--;
@@ -3104,7 +3113,8 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	 * the error code “Insufficient Encryption”.
 	 */
 
-	if (mask & (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK)) {
+	if (mask &
+	    (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK | BT_GATT_PERM_LESC_MASK)) {
 #if defined(CONFIG_BT_SMP)
 		if (!conn->encrypt) {
 			if (bt_conn_ltk_present(conn)) {
@@ -3628,12 +3638,12 @@ static void remove_subscriptions(struct bt_conn *conn)
 	}
 }
 
-static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+static void gatt_mtu_rsp(struct bt_conn *conn, int err, const void *pdu,
 			 uint16_t length, void *user_data)
 {
 	struct bt_gatt_exchange_params *params = user_data;
 
-	params->func(conn, err, params);
+	params->func(conn, att_err_from_int(err), params);
 }
 
 static int gatt_exchange_mtu_encode(struct net_buf *buf, size_t len,
@@ -3710,7 +3720,7 @@ done:
 	params->func(conn, NULL, params);
 }
 
-static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
+static void gatt_find_type_rsp(struct bt_conn *conn, int err,
 			       const void *pdu, uint16_t length,
 			       void *user_data)
 {
@@ -3719,7 +3729,7 @@ static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
 	uint8_t count;
 	uint16_t end_handle = 0U, start_handle;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	if (err || (length % sizeof(struct bt_att_handle_group) != 0)) {
 		goto done;
@@ -3824,7 +3834,7 @@ static int gatt_find_type(struct bt_conn *conn,
 			     len, BT_ATT_CHAN_OPT(params));
 }
 
-static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
+static void read_included_uuid_cb(struct bt_conn *conn, int err,
 				  const void *pdu, uint16_t length,
 				  void *user_data)
 {
@@ -3900,7 +3910,7 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			   struct bt_gatt_discover_params *params,
 			   uint16_t length)
 {
-	const struct bt_att_read_type_rsp *rsp = pdu;
+	const struct bt_att_read_type_rsp *rsp;
 	uint16_t handle = 0U;
 	struct bt_gatt_include value;
 	union {
@@ -3908,6 +3918,13 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		struct bt_uuid_16 u16;
 		struct bt_uuid_128 u128;
 	} u;
+
+	if (length < sizeof(*rsp)) {
+		LOG_WRN("Parse err");
+		goto done;
+	}
+
+	rsp = pdu;
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->len) {
@@ -3993,13 +4010,20 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 				  struct bt_gatt_discover_params *params,
 				  uint16_t length)
 {
-	const struct bt_att_read_type_rsp *rsp = pdu;
+	const struct bt_att_read_type_rsp *rsp;
 	uint16_t handle = 0U;
 	union {
 		struct bt_uuid uuid;
 		struct bt_uuid_16 u16;
 		struct bt_uuid_128 u128;
 	} u;
+
+	if (length < sizeof(*rsp)) {
+		LOG_WRN("Parse err");
+		goto done;
+	}
+
+	rsp = pdu;
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->len) {
@@ -4074,7 +4098,7 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 					 struct bt_gatt_discover_params *params,
 					 uint16_t length)
 {
-	const struct bt_att_read_type_rsp *rsp = pdu;
+	const struct bt_att_read_type_rsp *rsp;
 	uint16_t handle = 0U;
 	uint16_t uuid_val;
 
@@ -4083,6 +4107,13 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 	}
 
 	uuid_val = BT_UUID_16(params->uuid)->val;
+
+	if (length < sizeof(*rsp)) {
+		LOG_WRN("Parse err");
+		goto done;
+	}
+
+	rsp = pdu;
 
 	/* Parse characteristics found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
@@ -4093,8 +4124,15 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 			struct bt_gatt_cep cep;
 			struct bt_gatt_scc scc;
 		} value;
-		const struct bt_att_data *data = pdu;
+		const struct bt_att_data *data;
 		struct bt_gatt_attr attr;
+
+		if (length < sizeof(*data)) {
+			LOG_WRN("Parse err dat");
+			goto done;
+		}
+
+		data = pdu;
 
 		handle = sys_le16_to_cpu(data->handle);
 		/* Handle 0 is invalid */
@@ -4104,17 +4142,39 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 
 		switch (uuid_val) {
 		case BT_UUID_GATT_CEP_VAL:
+			if (length < sizeof(*data) + sizeof(uint16_t)) {
+				LOG_WRN("Parse err cep");
+				goto done;
+			}
+
 			value.cep.properties = sys_get_le16(data->value);
 			break;
 		case BT_UUID_GATT_CCC_VAL:
+			if (length < sizeof(*data) + sizeof(uint16_t)) {
+				LOG_WRN("Parse err ccc");
+				goto done;
+			}
+
 			value.ccc.flags = sys_get_le16(data->value);
 			break;
 		case BT_UUID_GATT_SCC_VAL:
+			if (length < sizeof(*data) + sizeof(uint16_t)) {
+				LOG_WRN("Parse err scc");
+				goto done;
+			}
+
 			value.scc.flags = sys_get_le16(data->value);
 			break;
 		case BT_UUID_GATT_CPF_VAL:
 		{
-			struct gatt_cpf *cpf = (struct gatt_cpf *)data->value;
+			struct gatt_cpf *cpf;
+
+			if (length < sizeof(*data) + sizeof(*cpf)) {
+				LOG_WRN("Parse err cpf");
+				goto done;
+			}
+
+			cpf = (void *)data->value;
 
 			value.cpf.format = cpf->format;
 			value.cpf.exponent = cpf->exponent;
@@ -4148,14 +4208,14 @@ done:
 	return 0;
 }
 
-static void gatt_read_type_rsp(struct bt_conn *conn, uint8_t err,
+static void gatt_read_type_rsp(struct bt_conn *conn, int err,
 			       const void *pdu, uint16_t length,
 			       void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
 	uint16_t handle;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	if (err) {
 		params->func(conn, NULL, params);
@@ -4217,13 +4277,20 @@ static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
 				  struct bt_gatt_discover_params *params,
 				  uint16_t length)
 {
-	const struct bt_att_read_group_rsp *rsp = pdu;
+	const struct bt_att_read_group_rsp *rsp;
 	uint16_t start_handle, end_handle = 0U;
 	union {
 		struct bt_uuid uuid;
 		struct bt_uuid_16 u16;
 		struct bt_uuid_128 u128;
 	} u;
+
+	if (length < sizeof(*rsp)) {
+		LOG_WRN("Parse err");
+		goto done;
+	}
+
+	rsp = pdu;
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->len) {
@@ -4298,14 +4365,14 @@ done:
 	return 0;
 }
 
-static void gatt_read_group_rsp(struct bt_conn *conn, uint8_t err,
+static void gatt_read_group_rsp(struct bt_conn *conn, int err,
 				const void *pdu, uint16_t length,
 				void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
 	uint16_t handle;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	if (err) {
 		params->func(conn, NULL, params);
@@ -4351,11 +4418,11 @@ static int gatt_read_group(struct bt_conn *conn,
 			     BT_ATT_CHAN_OPT(params));
 }
 
-static void gatt_find_info_rsp(struct bt_conn *conn, uint8_t err,
+static void gatt_find_info_rsp(struct bt_conn *conn, int err,
 			       const void *pdu, uint16_t length,
 			       void *user_data)
 {
-	const struct bt_att_find_info_rsp *rsp = pdu;
+	const struct bt_att_find_info_rsp *rsp;
 	struct bt_gatt_discover_params *params = user_data;
 	uint16_t handle = 0U;
 	uint16_t len;
@@ -4371,11 +4438,18 @@ static void gatt_find_info_rsp(struct bt_conn *conn, uint8_t err,
 	int i;
 	bool skip = false;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	if (err) {
 		goto done;
 	}
+
+	if (length < sizeof(*rsp)) {
+		LOG_WRN("Parse err");
+		goto done;
+	}
+
+	rsp = pdu;
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->format) {
@@ -4549,6 +4623,9 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
 
+	const uint16_t req_start_handle = params->by_uuid.start_handle;
+	const uint16_t req_end_handle = params->by_uuid.end_handle;
+
 	/* Parse values found */
 	for (length--, pdu = rsp->data; length;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4567,6 +4644,15 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 		len = rsp->len > length ? length - 2 : rsp->len - 2;
 
 		LOG_DBG("handle 0x%04x len %u value %u", handle, rsp->len, len);
+
+		if (!IN_RANGE(handle, req_start_handle, req_end_handle)) {
+			LOG_WRN("Bad peer: ATT read-by-uuid rsp: "
+				"Handle 0x%04x is outside requested range 0x%04x-0x%04x. "
+				"Aborting read.",
+				handle, req_start_handle, req_end_handle);
+			params->func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
+			return;
+		}
 
 		/* Update start_handle */
 		params->by_uuid.start_handle = handle;
@@ -4596,15 +4682,15 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 	}
 }
 
-static void gatt_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+static void gatt_read_rsp(struct bt_conn *conn, int err, const void *pdu,
 			  uint16_t length, void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	if (err || !length) {
-		params->func(conn, err, params, NULL, 0);
+		params->func(conn, att_err_from_int(err), params, NULL, 0);
 		return;
 	}
 
@@ -4695,15 +4781,15 @@ static int gatt_read_uuid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_GATT_READ_MULTIPLE)
-static void gatt_read_mult_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+static void gatt_read_mult_rsp(struct bt_conn *conn, int err, const void *pdu,
 			       uint16_t length, void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	if (err || !length) {
-		params->func(conn, err, params, NULL, 0);
+		params->func(conn, att_err_from_int(err), params, NULL, 0);
 		return;
 	}
 
@@ -4746,7 +4832,7 @@ static int gatt_read_mult(struct bt_conn *conn,
 #endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
 #if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
-static void gatt_read_mult_vl_rsp(struct bt_conn *conn, uint8_t err,
+static void gatt_read_mult_vl_rsp(struct bt_conn *conn, int err,
 				  const void *pdu, uint16_t length,
 				  void *user_data)
 {
@@ -4754,10 +4840,10 @@ static void gatt_read_mult_vl_rsp(struct bt_conn *conn, uint8_t err,
 	const struct bt_att_read_mult_vl_rsp *rsp;
 	struct net_buf_simple buf;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	if (err || !length) {
-		params->func(conn, err, params, NULL, 0);
+		params->func(conn, att_err_from_int(err), params, NULL, 0);
 		return;
 	}
 
@@ -4862,14 +4948,14 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 			     BT_ATT_CHAN_OPT(params));
 }
 
-static void gatt_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+static void gatt_write_rsp(struct bt_conn *conn, int err, const void *pdu,
 			   uint16_t length, void *user_data)
 {
 	struct bt_gatt_write_params *params = user_data;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
-	params->func(conn, err, params);
+	params->func(conn, att_err_from_int(err), params);
 }
 
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
@@ -4965,22 +5051,29 @@ static int gatt_cancel_all_writes(struct bt_conn *conn,
 			     BT_ATT_CHAN_OPT(params));
 }
 
-static void gatt_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
+static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 				   const void *pdu, uint16_t length,
 				   void *user_data)
 {
 	struct bt_gatt_write_params *params = user_data;
-	const struct bt_att_prepare_write_rsp *rsp = pdu;
+	const struct bt_att_prepare_write_rsp *rsp;
 	size_t len;
 	bool data_valid;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	/* Don't continue in case of error */
 	if (err) {
-		params->func(conn, err, params);
+		params->func(conn, att_err_from_int(err), params);
 		return;
 	}
+
+	if (length < sizeof(*rsp)) {
+		LOG_WRN("Parse err");
+		goto fail;
+	}
+
+	rsp = pdu;
 
 	len = length - sizeof(*rsp);
 	if (len > params->length) {
@@ -5108,13 +5201,14 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 			     BT_ATT_OP_WRITE_REQ, len, BT_ATT_CHAN_OPT(params));
 }
 
-static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
+static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			       const void *pdu, uint16_t length,
 			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
+	uint8_t att_err;
 
-	LOG_DBG("err 0x%02x", err);
+	LOG_DBG("err %d", err);
 
 	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 
@@ -5142,12 +5236,14 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 		params->notify(conn, params, NULL, 0);
 	}
 
+	att_err = att_err_from_int(err);
+
 	if (params->subscribe) {
-		params->subscribe(conn, err, params);
+		params->subscribe(conn, att_err, params);
 	} else if (params->write) {
 		/* TODO: Remove after deprecation */
 		LOG_WRN("write callback is deprecated, use subscribe cb instead");
-		params->write(conn, err, NULL);
+		params->write(conn, att_err, NULL);
 	}
 }
 
@@ -5167,7 +5263,8 @@ static int gatt_write_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
 }
 
 static int gatt_write_ccc(struct bt_conn *conn,
-			  struct bt_gatt_subscribe_params *params)
+			  struct bt_gatt_subscribe_params *params,
+			  bt_att_func_t rsp)
 {
 	size_t len = sizeof(struct bt_att_write_req) + sizeof(uint16_t);
 
@@ -5178,7 +5275,7 @@ static int gatt_write_ccc(struct bt_conn *conn,
 	 */
 	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_SENT);
 
-	return gatt_req_send(conn, gatt_write_ccc_rsp, params,
+	return gatt_req_send(conn, rsp, params,
 			     gatt_write_ccc_buf, BT_ATT_OP_WRITE_REQ, len,
 			     BT_ATT_CHAN_OPT(params));
 }
@@ -5269,6 +5366,13 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	if (params->disc_params != NULL && params->disc_params->func == gatt_ccc_discover_cb) {
+		/* Already in progress */
+		return -EBUSY;
+	}
+#endif
+
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
 		/* Fail if entry already exists */
@@ -5293,7 +5397,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 			return gatt_ccc_discover(conn, params);
 		}
 #endif
-		err = gatt_write_ccc(conn, params);
+		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp);
 		if (err) {
 			gatt_sub_remove(conn, sub, NULL, NULL);
 			return err;
@@ -5382,7 +5486,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		int err;
 
 		params->value = 0x0000;
-		err = gatt_write_ccc(conn, params);
+		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp);
 		if (err) {
 			return err;
 		}
@@ -5423,6 +5527,29 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 }
 
 #if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
+static void gatt_resub_ccc_rsp(struct bt_conn *conn, int err,
+			       const void *pdu, uint16_t length,
+			       void *user_data)
+{
+	LOG_DBG("err %d", err);
+
+	if (err == -ECONNRESET) {
+		/* The resubscriptions are implicit, thus in the case of ACL
+		 * disconnection during the CCC value ATT Write, there is no
+		 * need to notify the application.
+		 */
+		return;
+	}
+
+	gatt_write_ccc_rsp(conn, err, pdu, length, user_data);
+}
+
+static int gatt_resub_ccc(struct bt_conn *conn,
+			  struct bt_gatt_subscribe_params *params)
+{
+	return gatt_write_ccc(conn, params, gatt_resub_ccc_rsp);
+}
+
 static void add_subscriptions(struct bt_conn *conn)
 {
 	struct gatt_sub *sub;
@@ -5443,10 +5570,16 @@ static void add_subscriptions(struct bt_conn *conn)
 				     BT_GATT_SUBSCRIBE_FLAG_SENT) &&
 		    !atomic_test_bit(params->flags,
 				     BT_GATT_SUBSCRIBE_FLAG_NO_RESUB)) {
+			int err;
+
 			/* Force write to CCC to workaround devices that don't
 			 * track it properly.
 			 */
-			gatt_write_ccc(conn, params);
+			err = gatt_resub_ccc(conn, params);
+			if (err < 0) {
+				LOG_WRN("conn %p params %p resub failed (err %d)",
+					(void *)conn, params, err);
+			}
 		}
 	}
 }
@@ -5759,14 +5892,12 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 
-#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (!bt_gatt_change_aware(conn, false)) {
 		/* Send a Service Changed indication if the current peer is
 		 * marked as change-unaware.
 		 */
 		sc_indicate(0x0001, 0xffff);
 	}
-#endif	/* CONFIG_BT_SETTINGS && CONFIG_BT_GATT_SERVICE_CHANGED */
 }
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req)

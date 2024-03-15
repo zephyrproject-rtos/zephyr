@@ -22,7 +22,7 @@ config SPI_SAM_DMA
 
 if SPI_RTIO
 config SPI_SAM_RTIO_SQ_SIZE
-	int "Number of avialable submission queue entries"
+	int "Number of available submission queue entries"
 	default 8 # Sensible default that covers most common spi transactions
 	help
 	  When RTIO is use with SPI each driver holds a context with which blocking

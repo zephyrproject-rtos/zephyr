@@ -23,12 +23,13 @@ ZTEST(posix_headers, test_pthread_h)
 {
 	zassert_not_equal(-1, PTHREAD_BARRIER_SERIAL_THREAD);
 
-	/* zassert_not_equal(-1, PTHREAD_CANCEL_ASYNCHRONOUS); */ /* not implemented */
+	zassert_not_equal(-1, PTHREAD_CANCEL_ASYNCHRONOUS);
+	zassert_not_equal(-1, PTHREAD_CANCEL_DEFERRED);
+
 	zassert_not_equal(-1, PTHREAD_CANCEL_ENABLE);
-	/* zassert_not_equal(-1, PTHREAD_CANCEL_DEFERRED); */ /* not implemented */
 	zassert_not_equal(-1, PTHREAD_CANCEL_DISABLE);
 
-	/* zassert_not_equal(-1, PTHREAD_CANCELED); */ /* not implemented */
+	zassert_not_equal((void *)-42, PTHREAD_CANCELED);
 
 	zassert_not_equal(-1, PTHREAD_CREATE_DETACHED);
 	zassert_not_equal(-1, PTHREAD_CREATE_JOINABLE);
@@ -49,21 +50,21 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_equal(-1, PTHREAD_PRIO_NONE);
 	/* zassert_not_equal(-1, PTHREAD_PRIO_PROTECT); */ /* not implemented */
 
-	/* zassert_not_equal(-1, PTHREAD_PROCESS_SHARED); */ /* not implemented */
-	/* zassert_not_equal(-1, PTHREAD_PROCESS_PRIVATE); */ /* not implemented */
+	zassert_not_equal(-1, PTHREAD_PROCESS_SHARED);
+	zassert_not_equal(-1, PTHREAD_PROCESS_PRIVATE);
 
 	/* zassert_not_equal(-1, PTHREAD_SCOPE_PROCESS); */ /* not implemented */
 	/* zassert_not_equal(-1, PTHREAD_SCOPE_SYSTEM); */ /* not implemented */
 
-	/* pthread_cond_t cond = PTHREAD_COND_INITIALIZER; */ /* not implemented */
-	/* pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER; */ /* not implemented */
+	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
 	/* pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER; */ /* not implemented */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		/* zassert_not_null(pthread_atfork); */ /* not implemented */
+		zassert_not_null(pthread_atfork);
 		zassert_not_null(pthread_attr_destroy);
 		zassert_not_null(pthread_attr_getdetachstate);
-		/* zassert_not_null(pthread_attr_getguardsize); */ /* not implemented */
+		zassert_not_null(pthread_attr_getguardsize);
 		/* zassert_not_null(pthread_attr_getinheritsched); */ /* not implemented */
 		zassert_not_null(pthread_attr_getschedparam);
 		zassert_not_null(pthread_attr_getschedpolicy);
@@ -72,7 +73,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_attr_getstacksize);
 		zassert_not_null(pthread_attr_init);
 		zassert_not_null(pthread_attr_setdetachstate);
-		/* zassert_not_null(pthread_attr_setguardsize); */ /* not implemented */
+		zassert_not_null(pthread_attr_setguardsize);
 		/* zassert_not_null(pthread_attr_setinheritsched); */ /* not implemented */
 		zassert_not_null(pthread_attr_setschedparam);
 		zassert_not_null(pthread_attr_setschedpolicy);
@@ -94,16 +95,16 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_cond_timedwait);
 		zassert_not_null(pthread_cond_wait);
 		zassert_not_null(pthread_condattr_destroy);
-		/* zassert_not_null(pthread_condattr_getclock); */ /* not implemented */
+		zassert_not_null(pthread_condattr_getclock);
 		/* zassert_not_null(pthread_condattr_getpshared); */ /* not implemented */
 		zassert_not_null(pthread_condattr_init);
-		/* zassert_not_null(pthread_condattr_setclock); */ /* not implemented */
+		zassert_not_null(pthread_condattr_setclock);
 		/* zassert_not_null(pthread_condattr_setpshared); */ /* not implemented */
 		zassert_not_null(pthread_create);
 		zassert_not_null(pthread_detach);
 		zassert_not_null(pthread_equal);
 		zassert_not_null(pthread_exit);
-		/* zassert_not_null(pthread_getconcurrency); */ /* not implemented */
+		zassert_not_null(pthread_getconcurrency);
 		/* zassert_not_null(pthread_getcpuclockid); */ /* not implemented */
 		zassert_not_null(pthread_getschedparam);
 		zassert_not_null(pthread_getspecific);
@@ -146,17 +147,18 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_rwlockattr_init);
 		/* zassert_not_null(pthread_rwlockattr_setpshared); */ /* not implemented */
 		zassert_not_null(pthread_self);
-		/* zassert_not_null(pthread_setcancelstate); */ /* not implemented */
-		/* zassert_not_null(pthread_setcanceltype); */ /* not implemented */
-		/* zassert_not_null(pthread_setconcurrency); */ /* not implemented */
+		zassert_not_null(pthread_setcancelstate);
+		zassert_not_null(pthread_setcanceltype);
+		zassert_not_null(pthread_setconcurrency);
 		zassert_not_null(pthread_setschedparam);
 		/* zassert_not_null(pthread_setschedprio); */ /* not implemented */
 		zassert_not_null(pthread_setspecific);
-		/* zassert_not_null(pthread_spin_destroy); */ /* not implemented */
-		/* zassert_not_null(pthread_spin_init); */ /* not implemented */
-		/* zassert_not_null(pthread_spin_lock); */ /* not implemented */
-		/* zassert_not_null(pthread_spin_unlock); */ /* not implemented */
-		/* zassert_not_null(pthread_testcancel); */ /* not implemented */
+		zassert_not_null(pthread_spin_destroy);
+		zassert_not_null(pthread_spin_init);
+		zassert_not_null(pthread_spin_lock);
+		zassert_not_null(pthread_spin_trylock);
+		zassert_not_null(pthread_spin_unlock);
+		zassert_not_null(pthread_testcancel);
 	}
 }
 #pragma GCC diagnostic pop

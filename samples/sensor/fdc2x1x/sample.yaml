@@ -5,6 +5,6 @@ tests:
   sample.sensor.fdc2x1x:
     harness: sensor
     tags: sensors
-    platform_allow: nrf9160dk_nrf9160
+    platform_allow: nrf9160dk/nrf9160
     integration_platforms:
-      - nrf9160dk_nrf9160
+      - nrf9160dk/nrf9160

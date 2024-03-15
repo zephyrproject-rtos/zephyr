@@ -37,8 +37,10 @@ static uint8_t static_regions_num;
 /* Global MPU configuration at system initialization. */
 static void mpu_init(void)
 {
+#if defined(CONFIG_SOC_FAMILY_KINETIS)
 	/* Enable clock for the Memory Protection Unit (MPU). */
 	CLOCK_EnableClock(kCLOCK_Sysmpu0);
+#endif
 }
 
 /**

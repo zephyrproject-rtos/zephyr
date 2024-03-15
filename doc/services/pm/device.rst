@@ -146,7 +146,7 @@ support in a device driver.
     #define DT_DRV_COMPAT dummy_device
 
     static int dummy_driver_pm_action(const struct device *dev,
-                                      enum pm_device_action *action)
+                                      enum pm_device_action action)
     {
         switch (action) {
         case PM_DEVICE_ACTION_SUSPEND:

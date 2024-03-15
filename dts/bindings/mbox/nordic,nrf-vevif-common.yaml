@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+include: mailbox-controller.yaml
+
+properties:
+  nordic,tasks:
+    type: int
+    required: true
+    description: Number of tasks supported by the VEVIF instance.
+
+  nordic,tasks-mask:
+    type: int
+    required: true
+    description: Mask of tasks supported by the VEVIF instance.
+
+mbox-cells:
+  - channel

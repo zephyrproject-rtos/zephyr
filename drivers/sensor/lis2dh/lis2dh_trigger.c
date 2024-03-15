@@ -18,6 +18,14 @@
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
+static const gpio_flags_t gpio_int_cfg[5] = {
+			GPIO_INT_EDGE,
+			GPIO_INT_EDGE_RISING,
+			GPIO_INT_EDGE_FALLING,
+			GPIO_INT_LEVEL_HIGH,
+			GPIO_INT_LEVEL_LOW,
+			};
+
 static inline void setup_int1(const struct device *dev,
 			      bool enable)
 {
@@ -25,7 +33,7 @@ static inline void setup_int1(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					enable
-					? GPIO_INT_LEVEL_ACTIVE
+					? gpio_int_cfg[cfg->int1_mode]
 					: GPIO_INT_DISABLE);
 }
 
@@ -123,7 +131,7 @@ static inline void setup_int2(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					enable
-					? GPIO_INT_LEVEL_ACTIVE
+					? gpio_int_cfg[cfg->int2_mode]
 					: GPIO_INT_DISABLE);
 }
 
@@ -506,8 +514,13 @@ static void lis2dh_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER_OWN_THREAD
-static void lis2dh_thread(struct lis2dh_data *lis2dh)
+static void lis2dh_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lis2dh_data *lis2dh = p1;
+
 	while (1) {
 		k_sem_take(&lis2dh->gpio_sem, K_FOREVER);
 		lis2dh_thread_cb(lis2dh->dev);
@@ -538,7 +551,7 @@ int lis2dh_init_interrupt(const struct device *dev)
 	k_sem_init(&lis2dh->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lis2dh->thread, lis2dh->thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2dh_thread, lis2dh, NULL, NULL,
+			lis2dh_thread, lis2dh, NULL, NULL,
 			K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	lis2dh->work.handler = lis2dh_work_cb;

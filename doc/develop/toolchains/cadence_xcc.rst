@@ -68,7 +68,3 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
 
           # Linux
           export XCC_NO_G_FLAG=1
-
-   * Also note that setting :envvar:`XCC_USE_CLANG` to ``1`` and
-     :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc`` is deprecated.
-     Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xt-clang`` instead.

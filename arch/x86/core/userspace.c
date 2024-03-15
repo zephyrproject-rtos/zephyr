@@ -6,10 +6,17 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/speculation.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <kernel_arch_func.h>
 #include <ksched.h>
 #include <x86_mmu.h>
+
+BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
+	     (CONFIG_PRIVILEGED_STACK_SIZE % CONFIG_MMU_PAGE_SIZE) == 0);
+
+#ifdef CONFIG_DEMAND_PAGING
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
 
 #ifndef CONFIG_X86_KPTI
 /* Update the to the incoming thread's page table, and update the location of

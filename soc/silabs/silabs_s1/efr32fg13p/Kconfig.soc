@@ -1,0 +1,23 @@
+# EFR32FG13P (Flex Gecko) MCU line
+
+# Copyright (c) 2018 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32FG13P
+	bool
+	select SOC_FAMILY_SILABS_S1
+	help
+	  EFR32FG13P Series MCU
+
+config SOC_PART_NUMBER_EFR32FG13P233F512GM48
+	bool
+	select SOC_SERIES_EFR32FG13P
+
+config SOC_SERIES
+	default "efr32fg13p" if SOC_SERIES_EFR32FG13P
+
+config SOC
+	default "efr32fg13p233f512gm48" if SOC_PART_NUMBER_EFR32FG13P233F512GM48
+
+config SOC_PART_NUMBER
+	default "EFR32FG13P233F512GM48" if SOC_PART_NUMBER_EFR32FG13P233F512GM48

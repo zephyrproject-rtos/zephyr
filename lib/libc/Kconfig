@@ -10,6 +10,14 @@ config REQUIRES_FULL_LIBC
 	  Select a C library implementation that provides a complete C library
 	  implementation, rather than the subset provided by MINIMAL_LIBC.
 
+config REQUIRES_FLOAT_PRINTF
+	bool "Requires floating point support in printf"
+	select CBPRINTF_FP_SUPPORT if MINIMAL_LIBC
+	select NEWLIB_LIBC_FLOAT_PRINTF if NEWLIB_LIBC
+	help
+	  Select a printf implementation that provides a complete
+	  implementation including floating point support.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help
@@ -72,7 +80,7 @@ config MINIMAL_LIBC
 config PICOLIBC
 	bool "Picolibc library"
 	select COMMON_LIBC_ABORT
-	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	imply THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
 	select NEED_LIBC_MEM_PARTITION
 	imply COMMON_LIBC_MALLOC

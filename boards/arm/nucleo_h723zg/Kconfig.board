@@ -1,8 +1,0 @@
-# STM32H723ZG Nucleo board configuration
-
-# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_H723ZG
-	bool "NUCLEO-H723ZG Development Board"
-	depends on SOC_STM32H723XX

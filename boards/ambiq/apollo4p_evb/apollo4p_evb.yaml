@@ -1,0 +1,21 @@
+identifier: apollo4p_evb
+name: Apollo4P EVB
+type: mcu
+arch: arm
+ram: 2816
+flash: 1952
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - watchdog
+  - counter
+  - gpio
+  - spi
+  - i2c
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: ambiq

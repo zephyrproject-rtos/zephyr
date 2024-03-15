@@ -1,0 +1,268 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "nrf9161dk_nrf9161_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nordic nRF9161 DK NRF9161";
+	compatible = "nordic,nrf9161-dk-nrf9161";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 1";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 2";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 3";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 4";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		button2: button_2 {
+			gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 3";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+		button3: button_3 {
+			gpios = <&gpio0 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 4";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	nrf5340_reset: gpio-reset {
+		compatible = "nordic,nrf9161dk-nrf5340-reset";
+		status = "disabled";
+		gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 14 0>,	/* A0 */
+			   <1 0 &gpio0 15 0>,	/* A1 */
+			   <2 0 &gpio0 16 0>,	/* A2 */
+			   <3 0 &gpio0 17 0>,	/* A3 */
+			   <4 0 &gpio0 18 0>,	/* A4 */
+			   <5 0 &gpio0 19 0>,	/* A5 */
+			   <6 0 &gpio0 0 0>,	/* D0 */
+			   <7 0 &gpio0 1 0>,	/* D1 */
+			   <8 0 &gpio0 2 0>,	/* D2 */
+			   <9 0 &gpio0 3 0>,	/* D3 */
+			   <10 0 &gpio0 4 0>,	/* D4 */
+			   <11 0 &gpio0 5 0>,	/* D5 */
+			   <12 0 &gpio0 6 0>,	/* D6 */
+			   <13 0 &gpio0 7 0>,	/* D7 */
+			   <14 0 &gpio0 8 0>,	/* D8 */
+			   <15 0 &gpio0 9 0>,	/* D9 */
+			   <16 0 &gpio0 10 0>,	/* D10 */
+			   <17 0 &gpio0 11 0>,	/* D11 */
+			   <18 0 &gpio0 12 0>,	/* D12 */
+			   <19 0 &gpio0 13 0>,	/* D13 */
+			   <20 0 &gpio0 30 0>,	/* D14 */
+			   <21 0 &gpio0 31 0>;	/* D15 */
+	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc 1>,	/* A0 = P0.14 = AIN1 */
+				 <1 &adc 2>,	/* A1 = P0.15 = AIN2 */
+				 <2 &adc 3>,	/* A2 = P0.16 = AIN3 */
+				 <3 &adc 4>,	/* A3 = P0.17 = AIN4 */
+				 <4 &adc 5>,	/* A4 = P0.18 = AIN5 */
+				 <5 &adc 6>;	/* A5 = P0.19 = AIN6 */
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		pwm-led0 = &pwm_led0;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+		bootloader-led0 = &led0;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
+		watchdog0 = &wdt0;
+		spi-flash0 = &gd25wb256;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_serial: &uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_i2c: &i2c2 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pcal6408a: pcal6408a@21 {
+		compatible = "nxp,pcal6408a";
+		status = "disabled";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		int-gpios = <&gpio0 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_spi: &spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>, /* D10 */
+		   <&gpio0 20 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	gd25wb256: gd25wb256e3ir@1 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		size = <268435456>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <40000>;
+		sfdp-bfp = [
+			e5 20 f3 ff  ff ff ff 0f  44 eb 08 6b  08 3b 42 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  44 7a c9 fe  83 67 26 62  ec 82 18 44
+			7a 75 7a 75  04 c4 d5 5c  00 06 74 00  08 50 00 01
+			];
+		jedec-id = [c8 65 19];
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@85000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c5000 {
+			label = "image-1-nonsecure";
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "nrf9161dk_nrf9161_partition_conf.dtsi"

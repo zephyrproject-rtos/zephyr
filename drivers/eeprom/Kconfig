@@ -24,7 +24,6 @@ config EEPROM_INIT_PRIORITY
 
 config EEPROM_SHELL
 	bool "EEPROM shell"
-	default y
 	depends on SHELL
 	help
 	  Enable the EEPROM shell with EEPROM related commands.

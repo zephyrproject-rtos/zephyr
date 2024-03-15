@@ -299,8 +299,12 @@ static void process_config(struct net_pkt *pkt)
 	}
 }
 
-static void rx_thread(void)
+static void rx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	LOG_DBG("RX thread started");
 
 	while (true) {
@@ -386,8 +390,12 @@ static int try_write(uint8_t *data, uint16_t len)
 /**
  * TX - transmit to SLIP interface
  */
-static void tx_thread(void)
+static void tx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	LOG_DBG("TX thread started");
 
 	while (true) {
@@ -421,7 +429,7 @@ static void init_rx_queue(void)
 
 	k_thread_create(&rx_thread_data, rx_stack,
 			K_THREAD_STACK_SIZEOF(rx_stack),
-			(k_thread_entry_t)rx_thread,
+			rx_thread,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 }
 
@@ -431,7 +439,7 @@ static void init_tx_queue(void)
 
 	k_thread_create(&tx_thread_data, tx_stack,
 			K_THREAD_STACK_SIZEOF(tx_stack),
-			(k_thread_entry_t)tx_thread,
+			tx_thread,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 }
 

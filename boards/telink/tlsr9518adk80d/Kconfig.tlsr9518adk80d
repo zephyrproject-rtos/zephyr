@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TLSR9518ADK80D
+	select SOC_TLSR9518

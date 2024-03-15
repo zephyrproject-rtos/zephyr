@@ -17,36 +17,58 @@ Commands
    bap --help
    Subcommands:
       init
-      select_broadcast      :<stream>
-      create_broadcast      :[preset <preset_name>] [enc <broadcast_code>]
-      start_broadcast       :
-      stop_broadcast        :
-      delete_broadcast      :
-      broadcast_scan        :<on, off>
-      create_broadcast_sink :0x<broadcast_id>
-      sync_broadcast        :0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]
-      stop_broadcast_sink   :Stops broadcast sink
-      term_broadcast_sink   :
-      discover              :[dir: sink, source]
-      config                :<direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
-      stream_qos            :interval [framing] [latency] [pd] [sdu] [phy] [rtn]
-      qos                   :Send QoS configure for Unicast Group
-      enable                :[context]
+      select_broadcast       : <stream>
+      create_broadcast       : [preset <preset_name>] [enc <broadcast_code>]
+      start_broadcast        :
+      stop_broadcast         :
+      delete_broadcast       :
+      create_broadcast_sink  : 0x<broadcast_id>
+      sync_broadcast         : 0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]
+                              [bcode <broadcast code> || bcode_str <broadcast code
+                              as string>]
+      stop_broadcast_sink    : Stops broadcast sink
+      term_broadcast_sink    :
+      discover               : [dir: sink, source]
+      config                 : <direction: sink, source> <index> [loc <loc_bits>]
+                              [preset <preset_name>]
+      stream_qos             : interval [framing] [latency] [pd] [sdu] [phy] [rtn]
+      qos                    : Send QoS configure for Unicast Group
+      enable                 : [context]
       stop
-      print_ase_info        :Print ASE info for default connection
-      metadata              :[context]
+      list
+      print_ase_info         : Print ASE info for default connection
+      metadata               : [context]
       start
       disable
       release
-      list
-      select_unicast        :<stream>
-      preset                :<sink, source, broadcast> [preset]
-      send                  :Send to Audio Stream [data]
-      start_sine            :Start sending a LC3 encoded sine wave
-      stop_sine             :Stop sending a LC3 encoded sine wave
-      set_location          :<direction: sink, source> <location bitmask>
-      set_context           :<direction: sink, source><context bitmask> <type:
-                             supported, available>
+      select_unicast         : <stream>
+      preset                 : <sink, source, broadcast> [preset]
+                              [config
+                                    [freq <frequency>]
+                                    [dur <duration>]
+                                    [chan_alloc <location>]
+                                    [frame_len <frame length>]
+                                    [frame_blks <frame blocks>]]
+                              [meta
+                                    [pref_ctx <context>]
+                                    [stream_ctx <context>]
+                                    [program_info <program info>]
+                                    [stream_lang <ISO 639-3 lang>]
+                                    [ccid_list <ccids>]
+                                    [parental_rating <rating>]
+                                    [program_info_uri <URI>]
+                                    [audio_active_state <state>]
+                                    [bcast_flag]
+                                    [extended <meta>]
+                                    [vendor <meta>]]
+      send                   : Send to Audio Stream [data]
+      start_sine             : Start sending a LC3 encoded sine wave [all]
+      stop_sine              : Stop sending a LC3 encoded sine wave [all]
+      recv_stats             : Sets or gets the receive statistics reporting interval
+                              in # of packets
+      set_location           : <direction: sink, source> <location bitmask>
+      set_context            : <direction: sink, source><context bitmask> <type:
+                              supported, available>
 
 
 .. csv-table:: State Machine Transitions
@@ -142,55 +164,72 @@ Example Broadcast Sink
 **********************
 
 Scan for and establish a broadcast sink stream.
-The command :code:`bap create_broadcast_sink 0xEF6716` will either use existing periodic advertising
-sync (if exist) or start scanning and sync to the periodic advertising before syncing to the BIG.
+The command :code:`bap create_broadcast_sink` will either use existing periodic advertising
+sync (if exist) or start scanning and sync to the periodic advertising with the provided broadcast
+ID before syncing to the BIG.
 
 .. code-block:: console
 
    uart:~$ bap init
-   uart:~$ bap broadcast_scan on
-   Found broadcaster with ID 0xEF6716 and addr 3D:A5:F9:35:0B:19 (random) and sid 0x00
    uart:~$ bap create_broadcast_sink 0xEF6716
+   No PA sync available, starting scanning for broadcast_id
+   Found broadcaster with ID 0xEF6716 and addr 03:47:95:75:C0:08 (random) and sid 0x00
    Attempting to PA sync to the broadcaster
    PA synced to broadcast with broadcast ID 0xEF6716
    Attempting to sync to the BIG
-   Received BASE from sink 0x20031fac:
+   Received BASE from sink 0x20019080:
    Presentation delay: 40000
-   Subgroup count: 2
-   Subgroup[0]:
-   codec cfg id 0x06 cid 0x0000 vid 0x0000
-   data_count 4
-   data #0: type 0x01 len 1
-   00000000: 03                                               |.                |
-   data #1: type 0x02 len 1
-   00000000: 01                                               |.                |
-   data #2: type 0x03 len 4
-   00000000: 01 00 00 00                                      |....             |
-   data #3: type 0x04 len 2
-   00000000: 28 00                                            |(.               |
-   meta_count 4
-   meta #0: type 0x02 len 2
-   00000000: 01 00                                            |..               |
-      BIS[0] index 0x01
-   Subgroup[1]:
-   codec cfg id 0x06 cid 0x0000 vid 0x0000
-   data_count 4
-   data #0: type 0x01 len 1
-   00000000: 03                                               |.                |
-   data #1: type 0x02 len 1
-   00000000: 01                                               |.                |
-   data #2: type 0x03 len 4
-   00000000: 01 00 00 00                                      |....             |
-   data #3: type 0x04 len 2
-   00000000: 28 00                                            |(.               |
-   meta_count 4
-   meta #0: type 0x02 len 2
-   00000000: 01 00                                            |..               |
-      BIS[1] index 0x01
-   [0]: 0x01
-   [1]: 0x01
-   Possible indexes: 0x01 0x01
+   Subgroup count: 1
+   Subgroup 0x20024182:
+      Codec Format: 0x06
+      Company ID  : 0x0000
+      Vendor ID   : 0x0000
+      codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
+         Codec specific configuration:
+         Sampling frequency: 16000 Hz (3)
+         Frame duration: 10000 us (1)
+         Channel allocation:
+                  Front left (0x00000001)
+                  Front right (0x00000002)
+         Octets per codec frame: 40
+         Codec specific metadata:
+         Streaming audio contexts:
+            Unspecified (0x0001)
+         BIS index: 0x01
+            codec cfg id 0x06 cid 0x0000 vid 0x0000 count 6
+            Codec specific configuration:
+               Channel allocation:
+                  Front left (0x00000001)
+            Codec specific metadata:
+               None
+         BIS index: 0x02
+            codec cfg id 0x06 cid 0x0000 vid 0x0000 count 6
+            Codec specific configuration:
+               Channel allocation:
+                  Front right (0x00000002)
+            Codec specific metadata:
+               None
+   Possible indexes: 0x01 0x02
+   Sink 0x20019110 is ready to sync without encryption
    uart:~$ bap sync_broadcast 0x01
+
+Syncing to encrypted broadcast
+------------------------------
+
+If the broadcast is encrypted, the broadcast code can be entered with the :code:`bap sync_broadcast`
+command as such:
+
+.. code-block:: console
+
+   Sink 0x20019110 is ready to sync with encryption
+   uart:~$ bap sync_broadcast 0x01 bcode 0102030405060708090a0b0c0d0e0f
+
+The broadcast code can be 1-16 values, either as a string or a hexadecimal value.
+
+.. code-block:: console
+
+   Sink 0x20019110 is ready to sync with encryption
+   uart:~$ bap sync_broadcast 0x01 bcode_str thisismycode
 
 Stop and release a broadcast sink stream:
 
@@ -239,20 +278,35 @@ characteristics representing remote endpoints.
    Exchange successful
    uart:~$ bap discover [type: sink, source]
    uart:~$ bap discover sink
-   cap 0x8175940 type 0x01
-   codec 0x06 cid 0x0000 vid 0x0000 count 4
-   data #0: type 0x01 len 1
-   00000000: 3f                                             |?                |
-   data #1: type 0x02 len 1
-   00000000: 03                                             |.                |
-   data #2: type 0x03 len 1
-   00000000: 03                                             |.                |
-   data #3: type 0x04 len 4
-   00000000: 1e 00 f0 00                                    |....             |
-   meta #0: type 0x01 len 2
-   00000000: 06 00                                          |..               |
-   meta #1: type 0x02 len 2
-   00000000: ff 03                                          |..               |
+   conn 0x2000b168: codec_cap 0x2001f8ec dir 0x02
+   codec cap id 0x06 cid 0x0000 vid 0x0000
+      Codec specific capabilities:
+         Supported sampling frequencies:
+            8000 Hz (0x0001)
+            11025 Hz (0x0002)
+            16000 Hz (0x0004)
+            22050 Hz (0x0008)
+            24000 Hz (0x0010)
+            32000 Hz (0x0020)
+            44100 Hz (0x0040)
+            48000 Hz (0x0080)
+            88200 Hz (0x0100)
+            96000 Hz (0x0200)
+            176400 Hz (0x0400)
+            192000 Hz (0x0800)
+            384000 Hz (0x1000)
+         Supported frame durations:
+            10 ms (0x02)
+         Supported channel counts:
+            1 channel (0x01)
+         Supported octets per codec frame counts:
+            Min: 40
+            Max: 120
+         Supported max codec frames per SDU: 1
+      Codec capabilities metadata:
+         Preferred audio contexts:
+            Converstation (0x0002)
+            Media (0x0004)
    ep 0x81754e0
    ep 0x81755d4
    Discover complete: err 0
@@ -266,33 +320,113 @@ any stream previously configured.
 
 .. code-block:: console
 
-   uart:~$ bap preset <sink, source, broadcast> [preset]
+   uart:~$ bap preset
+   preset - <sink, source, broadcast> [preset]
+            [config
+                  [freq <frequency>]
+                  [dur <duration>]
+                  [chan_alloc <location>]
+                  [frame_len <frame length>]
+                  [frame_blks <frame blocks>]]
+            [meta
+                  [pref_ctx <context>]
+                  [stream_ctx <context>]
+                  [program_info <program info>]
+                  [stream_lang <ISO 639-3 lang>]
+                  [ccid_list <ccids>]
+                  [parental_rating <rating>]
+                  [program_info_uri <URI>]
+                  [audio_active_state <state>]
+                  [bcast_flag]
+                  [extended <meta>]
+                  [vendor <meta>]]
    uart:~$ bap preset sink
    16_2_1
-   codec 0x06 cid 0x0000 vid 0x0000 count 4
-   data #0: type 0x01 len 1
-   data #1: type 0x02 len 1
-   data #2: type 0x03 len 4
-   00000000: 01 00 00                                         |...              |
-   data #3: type 0x04 len 2
-   00000000: 28                                               |(                |
-   meta #0: type 0x02 len 2
-   00000000: 06                                               |.                |
+   codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
+      Codec specific configuration:
+         Sampling frequency: 16000 Hz (3)
+         Frame duration: 10000 us (1)
+         Channel allocation:
+                     Front left (0x00000001)
+                     Front right (0x00000002)
+         Octets per codec frame: 40
+      Codec specific metadata:
+         Streaming audio contexts:
+            Game (0x0008)
    QoS: interval 10000 framing 0x00 phy 0x02 sdu 40 rtn 2 latency 10 pd 40000
 
    uart:~$ bap preset sink 32_2_1
    32_2_1
-   codec 0x06 cid 0x0000 vid 0x0000 count 4
-   data #0: type 0x01 len 1
-   data #1: type 0x02 len 1
-   data #2: type 0x03 len 4
-   00000000: 01 00 00                                         |...              |
-   data #3: type 0x04 len 2
-   00000000: 50                                               |P                |
-   meta #0: type 0x02 len 2
+   codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
+      Codec specific configuration:
+         Sampling frequency: 32000 Hz (6)
+         Frame duration: 10000 us (1)
+         Channel allocation:
+                     Front left (0x00000001)
+                     Front right (0x00000002)
+         Octets per codec frame: 80
+      Codec specific metadata:
+         Streaming audio contexts:
+            Game (0x0008)
+      QoS: interval 10000 framing 0x00 phy 0x02 sdu 80 rtn 2 latency 10 pd 40000
+
+
+Configure preset
+****************
+
+The :code:`bap preset` command can also be used to configure the preset used for the subsequent
+commands. It is possible to add or set (or reset) any value. To reset the preset, the command can \
+simply be run without the :code:`config` or :code:`meta` parameter. The parameters are using the
+assigned numbers values.
+
+.. code-block:: console
+
+   uart:~$ bap preset sink 32_2_1
+   32_2_1
+   codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
+   data #0: type 0x01 value_len 1
    00000000: 06                                               |.                |
+   data #1: type 0x02 value_len 1
+   00000000: 01                                               |.                |
+   data #2: type 0x03 value_len 4
+   00000000: 03 00 00 00                                      |....             |
+   data #3: type 0x04 value_len 2
+   00000000: 50 00                                            |P.               |
+   meta #0: type 0x02 value_len 2
+   00000000: 08 00                                            |..               |
    QoS: interval 10000 framing 0x00 phy 0x02 sdu 80 rtn 2 latency 10 pd 40000
 
+   uart:~$ bap preset sink 32_2_1 config freq 10
+   32_2_1
+   codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
+   data #0: type 0x01 value_len 1
+   00000000: 0a                                               |.                |
+   data #1: type 0x02 value_len 1
+   00000000: 01                                               |.                |
+   data #2: type 0x03 value_len 4
+   00000000: 03 00 00 00                                      |....             |
+   data #3: type 0x04 value_len 2
+   00000000: 50 00                                            |P.               |
+   meta #0: type 0x02 value_len 2
+   00000000: 08 00                                            |..               |
+   QoS: interval 10000 framing 0x00 phy 0x02 sdu 80 rtn 2 latency 10 pd 40000
+
+   uart:~$ bap preset sink 32_2_1 config freq 10 meta stream_lang "eng" stream_ctx 4
+   32_2_1
+   codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
+   data #0: type 0x01 value_len 1
+   00000000: 0a                                               |.                |
+   data #1: type 0x02 value_len 1
+   00000000: 01                                               |.                |
+   data #2: type 0x03 value_len 4
+   00000000: 03 00 00 00                                      |....             |
+   data #3: type 0x04 value_len 2
+   00000000: 50 00                                            |P.               |
+   meta #0: type 0x02 value_len 2
+   00000000: 04 00                                            |..               |
+   meta #1: type 0x04 value_len 3
+   00000000: 65 6e 67                                         |eng              |
+   QoS: interval 10000 framing 0x00 phy 0x02 sdu 80 rtn 2 latency 10 pd 40000
 
 Configure Codec
 ***************
@@ -311,19 +445,9 @@ or in case it is omitted the default preset is used.
 
    uart:~$ bap config <direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
    uart:~$ bap config sink 0
-   ASE Codec Config: conn 0x8173800 ep 0x81754e0 cap 0x816a360
-   codec 0x06 cid 0x0000 vid 0x0000 count 3
-   data #0: type 0x01 len 1
-   00000000: 02                                             |.                |
-   data #1: type 0x02 len 1
-   00000000: 01                                             |.                |
-   data #2: type 0x04 len 2
-   00000000: 28 00                                          |(.               |
-   meta #0: type 0x02 len 2
-   00000000: 02 00                                          |..               |
-   ASE Codec Config stream 0x8179e60
-   Default ase: 1
+   Setting location to 0x00000000
    ASE config: preset 16_2_1
+   stream 0x2000df70 config operation rsp_code 0 reason 0
 
 Configure Stream QoS
 ********************

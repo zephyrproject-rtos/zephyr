@@ -9,14 +9,14 @@ tests:
     extra_configs:
       - CONFIG_CBPRINTF_COMPLETE=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_no_generic:
     extra_configs:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_COMPILER_OPT="-DZ_C_GENERIC=0"
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_fp:
     filter: CONFIG_CPU_HAS_FPU
@@ -25,7 +25,7 @@ tests:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_FPU=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_fp_align_offset:
     filter: CONFIG_CPU_HAS_FPU
@@ -35,7 +35,7 @@ tests:
       - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
       - CONFIG_FPU=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_long_double:
     filter: CONFIG_CPU_HAS_FPU
@@ -46,7 +46,7 @@ tests:
       - CONFIG_FPU=y
       - CONFIG_MINIMAL_LIBC=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_long_double_align_offset:
     filter: CONFIG_CPU_HAS_FPU
@@ -58,13 +58,15 @@ tests:
       - CONFIG_FPU=y
       - CONFIG_MINIMAL_LIBC=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_nano:
+    tags:
+      - nano
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   # Same test but with test compiled as C++
   libraries.cbprintf.package_cpp:
@@ -72,7 +74,7 @@ tests:
       - CONFIG_CPP=y
       - CONFIG_CBPRINTF_COMPLETE=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_no_generic_cpp:
     extra_configs:
@@ -80,7 +82,7 @@ tests:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_COMPILER_OPT="-DZ_C_GENERIC=0"
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_fp_cpp:
     filter: CONFIG_CPU_HAS_FPU
@@ -90,7 +92,7 @@ tests:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_FPU=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_fp_align_offset_cpp:
     filter: CONFIG_CPU_HAS_FPU
@@ -101,7 +103,7 @@ tests:
       - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
       - CONFIG_FPU=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_long_double_cpp:
     filter: CONFIG_CPU_HAS_FPU
@@ -113,7 +115,7 @@ tests:
       - CONFIG_FPU=y
       - CONFIG_MINIMAL_LIBC=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_long_double_align_offset_cpp:
     filter: CONFIG_CPU_HAS_FPU
@@ -126,14 +128,16 @@ tests:
       - CONFIG_FPU=y
       - CONFIG_MINIMAL_LIBC=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package_nano_cpp:
+    tags:
+      - nano
     extra_configs:
       - CONFIG_CPP=y
       - CONFIG_CBPRINTF_NANO=y
     integration_platforms:
-      - native_posix
+      - native_sim
 
   libraries.cbprintf.package.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED

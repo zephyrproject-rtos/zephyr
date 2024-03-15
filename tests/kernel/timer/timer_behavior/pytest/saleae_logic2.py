@@ -16,9 +16,9 @@ from saleae import automation
 from saleae.automation import (CaptureConfiguration, LogicDeviceConfiguration,
 DigitalTriggerCaptureMode, DigitalTriggerType)
 
-def do_collection(device_id, port, channel, sample_rate, threshold_volts,
+def do_collection(device_id, address, port, channel, sample_rate, threshold_volts,
                   seconds, output_dir):
-    with automation.Manager.connect(port=port) as manager:
+    with automation.Manager.connect(address=address, port=port) as manager:
 
         device_configuration = LogicDeviceConfiguration(
             enabled_digital_channels=[channel],
@@ -74,6 +74,7 @@ def run(seconds, options):
     options = dict(zip(options[::2], options[1::2]))
 
     device_id = options.get('device-id')
+    address = str(options.get('address'))
     port = int(options.get('port'))
     channel = int(options.get('channel'))
     sample_rate = int(options.get('sample-rate'))
@@ -82,7 +83,7 @@ def run(seconds, options):
     with tempfile.TemporaryDirectory() as output_dir:
         output_dir = tempfile.mkdtemp()
         # Add one second to ensure all data is captured
-        do_collection(device_id, port, channel, sample_rate, threshold_volts,
+        do_collection(device_id, address, port, channel, sample_rate, threshold_volts,
                       seconds + 1, output_dir)
 
     return do_analysis(output_dir)

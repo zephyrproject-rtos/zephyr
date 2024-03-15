@@ -110,10 +110,24 @@ config LWM2M_QUEUE_MODE_UPTIME
 	  defaults to 93 seconds, see RFC 7252), it does not forbid other
 	  values though.
 
+config LWM2M_QUEUE_MODE_NO_MSG_BUFFERING
+	bool "Disable buffering notifications and messages on queue mode"
+	select EXPERIMENTAL
+	help
+	  Messages are sent right away instead of waiting for next registration update.
+	  This might not be supported on all servers.
+
 config LWM2M_TLS_SESSION_CACHING
 	bool "TLS session caching"
 	help
 	  Enabling this only when feature is supported in TLS library.
+
+config LWM2M_DTLS_CID
+	bool "DTLS Connection Identifier support"
+	default y if MBEDTLS_SSL_DTLS_CONNECTION_ID
+	help
+	  Request TLS stack to enable DTLS Connection identifier. This requires stack that support it
+	  and actual effect depends on the target server as well.
 
 config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	bool "Bootstrap support"
@@ -384,6 +398,13 @@ config LWM2M_COMPOSITE_PATH_LIST_SIZE
 	default 6
 	help
 	  Define path list size for Composite Read and send operation.
+
+config LWM2M_DEVICE_ERROR_CODE_SETTINGS
+	bool "Use settings to store error codes across device resets"
+	depends on SETTINGS
+	help
+	  Store the device error code list in settings. Ensures error list can
+	  be transferred to LwM2M server even if the device is reset.
 
 config LWM2M_DEVICE_PWRSRC_MAX
 	int "Maximum # of device power source records"

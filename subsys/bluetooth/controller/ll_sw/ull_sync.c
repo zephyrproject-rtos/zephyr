@@ -671,8 +671,10 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	struct lll_sync *lll;
 	uint16_t sync_handle;
 	uint32_t interval_us;
+	uint32_t overhead_us;
 	struct pdu_adv *pdu;
 	uint16_t interval;
+	uint32_t slot_us;
 	uint8_t chm_last;
 	uint32_t ret;
 	uint8_t sca;
@@ -818,7 +820,32 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
 
+	/* Minimum prepare tick offset + minimum preempt tick offset are the
+	 * overheads before ULL scheduling can setup radio for reception
+	 */
+	overhead_us = HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN << 1);
+
+	/* CPU execution overhead to setup the radio for reception */
+	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
+
+	/* If not sufficient CPU processing time, skip to receiving next
+	 * event.
+	 */
+	if ((sync_offset_us - ftr->radio_end_us) < overhead_us) {
+		sync_offset_us += interval_us;
+		lll->event_counter++;
+	}
+
 	interval_us -= lll->window_widening_periodic_us;
+
+	/* Calculate event time reservation */
+	slot_us = PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy);
+	slot_us += ready_delay_us;
+
+	/* Add implementation defined radio event overheads */
+	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	}
 
 	/* TODO: active_to_start feature port */
 	sync->ull.ticks_active_to_start = 0U;
@@ -826,10 +853,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
-		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy) +
-		EVENT_OVERHEAD_END_US);
+	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
 				sync->ull.ticks_prepare_to_start);

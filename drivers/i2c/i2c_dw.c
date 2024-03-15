@@ -74,9 +74,10 @@ void cb_i2c_idma_transfer(const struct device *dma, void *user_data,
 			 uint32_t channel, int status)
 {
 	const struct device *dev = (const struct device *)user_data;
+	const struct i2c_dw_rom_config * const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 
-	dma_stop(dw->dma_dev, channel);
+	dma_stop(rom->dma_dev, channel);
 	i2c_dw_enable_idma(dev, false);
 
 	if (status) {
@@ -104,11 +105,12 @@ inline void *i2c_dw_dr_phy_addr(const struct device *dev)
 int32_t i2c_dw_idma_rx_transfer(const struct device *dev)
 {
 	struct i2c_dw_dev_config *const dw = dev->data;
+	const struct i2c_dw_rom_config * const rom = dev->config;
 
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
 
-	if (!device_is_ready(dw->dma_dev)) {
+	if (!device_is_ready(rom->dma_dev)) {
 		LOG_DBG("DMA device is not ready");
 		return  -ENODEV;
 	}
@@ -131,12 +133,12 @@ int32_t i2c_dw_idma_rx_transfer(const struct device *dev)
 	dma_block_cfg.source_address = (uint64_t)i2c_dw_dr_phy_addr(dev);
 	dw->xfr_status = false;
 
-	if (dma_config(dw->dma_dev, DMA_INTEL_LPSS_RX_CHAN, &dma_cfg)) {
+	if (dma_config(rom->dma_dev, DMA_INTEL_LPSS_RX_CHAN, &dma_cfg)) {
 		LOG_DBG("Error transfer");
 		return  -EIO;
 	}
 
-	if (dma_start(dw->dma_dev, DMA_INTEL_LPSS_RX_CHAN)) {
+	if (dma_start(rom->dma_dev, DMA_INTEL_LPSS_RX_CHAN)) {
 		LOG_DBG("Error transfer");
 		return  -EIO;
 	}
@@ -150,12 +152,13 @@ int32_t i2c_dw_idma_rx_transfer(const struct device *dev)
 int32_t i2c_dw_idma_tx_transfer(const struct device *dev,
 				uint64_t data)
 {
+	const struct i2c_dw_rom_config * const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
 
-	if (!device_is_ready(dw->dma_dev)) {
+	if (!device_is_ready(rom->dma_dev)) {
 		LOG_DBG("DMA device is not ready");
 		return  -ENODEV;
 	}
@@ -178,13 +181,13 @@ int32_t i2c_dw_idma_tx_transfer(const struct device *dev,
 	dma_block_cfg.dest_address = (uint64_t)i2c_dw_dr_phy_addr(dev);
 	dw->xfr_status = false;
 
-	if (dma_config(dw->dma_dev, DMA_INTEL_LPSS_TX_CHAN, &dma_cfg)) {
+	if (dma_config(rom->dma_dev, DMA_INTEL_LPSS_TX_CHAN, &dma_cfg)) {
 		LOG_DBG("Error transfer");
 		return  -EIO;
 	}
 
-	if (dma_start(dw->dma_dev, DMA_INTEL_LPSS_TX_CHAN)) {
-		LOG_DBG("Error trnasfer");
+	if (dma_start(rom->dma_dev, DMA_INTEL_LPSS_TX_CHAN)) {
+		LOG_DBG("Error transfer");
 		return  -EIO;
 	}
 	i2c_dw_enable_idma(dev, true);
@@ -198,10 +201,10 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t data;
-	uint8_t tx_empty;
-	int8_t rx_empty;
-	uint8_t cnt;
-	uint8_t rx_buffer_depth, tx_buffer_depth;
+	int tx_empty;
+	int rx_empty;
+	int cnt;
+	int rx_buffer_depth, tx_buffer_depth;
 	union ic_comp_param_1_register ic_comp_param_1;
 	uint32_t reg_base = get_regs(dev);
 
@@ -390,8 +393,9 @@ static void i2c_dw_isr(const struct device *port)
 		uint32_t stat = sys_read32(reg_base + IDMA_REG_INTR_STS);
 
 		if (stat & IDMA_TX_RX_CHAN_MASK) {
+			const struct i2c_dw_rom_config * const rom = port->config;
 			/* Handle the DMA interrupt */
-			dma_intel_lpss_isr(dw->dma_dev);
+			dma_intel_lpss_isr(rom->dma_dev);
 
 		}
 #endif
@@ -905,7 +909,7 @@ static int i2c_dw_set_slave_mode(const struct device *dev, uint8_t addr)
 	write_tx_tl(0, reg_base);
 	write_rx_tl(0, reg_base);
 
-	LOG_DBG("I2C: Host registed as Slave Device");
+	LOG_DBG("I2C: Host registered as Slave Device");
 
 	return 0;
 }
@@ -1049,11 +1053,11 @@ static int i2c_dw_initialize(const struct device *dev)
 		pcie_set_cmd(rom->pcie->bdf, PCIE_CONF_CMDSTAT_MASTER, true);
 
 #ifdef CONFIG_I2C_DW_LPSS_DMA
-		size_t nhdls = 0;
-		const device_handle_t *hdls;
+		uintptr_t base;
 
-		hdls = device_supported_handles_get(dev, &nhdls);
-		dw->dma_dev = device_from_handle(*hdls);
+		base = DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET;
+		dma_intel_lpss_set_base(rom->dma_dev, base);
+		dma_intel_lpss_setup(rom->dma_dev);
 
 		/* Assign physical & virtual address to dma instance */
 		dw->phy_addr = mbar.phys_addr;
@@ -1184,6 +1188,12 @@ static int i2c_dw_initialize(const struct device *dev)
 #define I2C_CONFIG_REG_INIT(n) \
 	_CONCAT(I2C_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
+#define I2C_CONFIG_DMA_INIT(n)						\
+	COND_CODE_1(CONFIG_I2C_DW_LPSS_DMA,				\
+	(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),			\
+	(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0)),),	\
+	())), ())
+
 #define I2C_DEVICE_INIT_DW(n)                                                 \
 	PINCTRL_DW_DEFINE(n);                                                 \
 	I2C_PCIE_DEFINE(n);                                                   \
@@ -1195,6 +1205,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		RESET_DW_CONFIG(n)                                            \
 		PINCTRL_DW_CONFIG(n)                                          \
 		I2C_DW_INIT_PCIE(n)                                           \
+		I2C_CONFIG_DMA_INIT(n)					      \
 	};                                                                    \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                    \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL,                 \

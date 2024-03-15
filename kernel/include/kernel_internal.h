@@ -24,6 +24,9 @@
 extern "C" {
 #endif
 
+/* Initialize per-CPU kernel data */
+void z_init_cpu(int id);
+
 /* Initialize a thread */
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
 			uint32_t initial_state, unsigned int options);
@@ -107,20 +110,6 @@ static inline void *z_thread_malloc(size_t size)
 	return z_thread_aligned_alloc(0, size);
 }
 
-/* set and clear essential thread flag */
-
-extern void z_thread_essential_set(void);
-extern void z_thread_essential_clear(void);
-
-/* clean up when a thread is aborted */
-
-#if defined(CONFIG_THREAD_MONITOR)
-extern void z_thread_monitor_exit(struct k_thread *thread);
-#else
-#define z_thread_monitor_exit(thread) \
-	do {/* nothing */    \
-	} while (false)
-#endif /* CONFIG_THREAD_MONITOR */
 
 #ifdef CONFIG_USE_SWITCH
 /* This is a arch function traditionally, but when the switch-based

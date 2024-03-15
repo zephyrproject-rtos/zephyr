@@ -35,9 +35,9 @@
 
 #include "hal/ccm.h"
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #include "hal/radio.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 #include "ll_sw/pdu_df.h"
 #include "lll/pdu_vendor.h"
@@ -80,6 +80,30 @@ static struct k_poll_signal hbuf_signal;
 static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
+
+#if !defined(CONFIG_BT_RECV_BLOCKING)
+/* Copied here from `hci_raw.c`, which would be used in
+ * conjunction with this driver when serializing HCI over wire.
+ * This serves as a converter from the more complicated
+ * `CONFIG_BT_RECV_BLOCKING` API to the normal single-receiver
+ * `bt_recv` API.
+ */
+int bt_recv_prio(struct net_buf *buf)
+{
+	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
+		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
+
+		if ((evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) &&
+		    (evt_flags & BT_HCI_EVT_FLAG_RECV)) {
+			/* Avoid queuing the event twice */
+			return 0;
+		}
+	}
+
+	return bt_recv(buf);
+}
+#endif /* CONFIG_BT_RECV_BLOCKING */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 
@@ -434,7 +458,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 			/* Check validity of the data path sink. FIXME: A channel disconnect race
 			 * may cause ISO data pending without valid data path.
 			 */
-			if (stream && stream->dp) {
+			if (stream && stream->dp &&
+			    (stream->dp->path_id == BT_HCI_DATAPATH_ID_HCI)) {
 				isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
 				isoal_rx.pdu = (void *)node_rx->pdu;
 				err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);

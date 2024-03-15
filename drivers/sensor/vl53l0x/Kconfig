@@ -7,6 +7,7 @@ menuconfig VL53L0X
 	bool "VL53L0X time of flight sensor"
 	default y
 	depends on DT_HAS_ST_VL53L0X_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C
 	select HAS_STLIB
 	help

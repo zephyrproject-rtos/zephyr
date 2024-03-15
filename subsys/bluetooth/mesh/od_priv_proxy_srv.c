@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(bt_mesh_od_priv_proxy_srv);
 
 
-static struct bt_mesh_model *od_priv_proxy_srv;
+static const struct bt_mesh_model *od_priv_proxy_srv;
 static uint8_t on_demand_state;
 
 static int od_priv_proxy_store(bool delete)
@@ -31,7 +31,7 @@ static int od_priv_proxy_store(bool delete)
 	return bt_mesh_model_data_store(od_priv_proxy_srv, false, "pp", data, len);
 }
 
-static int proxy_status_rsp(struct bt_mesh_model *mod,
+static int proxy_status_rsp(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx)
 {
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_OD_PRIV_PROXY_STATUS, 1);
@@ -44,7 +44,7 @@ static int proxy_status_rsp(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_proxy_get(struct bt_mesh_model *mod,
+static int handle_proxy_get(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -55,7 +55,7 @@ static int handle_proxy_get(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_proxy_set(struct bt_mesh_model *mod,
+static int handle_proxy_set(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -79,13 +79,13 @@ const struct bt_mesh_model_op _bt_mesh_od_priv_proxy_srv_op[] = {
 	BT_MESH_MODEL_OP_END
 };
 
-static int od_priv_proxy_srv_init(struct bt_mesh_model *mod)
+static int od_priv_proxy_srv_init(const struct bt_mesh_model *mod)
 {
 	od_priv_proxy_srv = mod;
 
-	struct bt_mesh_model *priv_beacon_srv = bt_mesh_model_find(
+	const struct bt_mesh_model *priv_beacon_srv = bt_mesh_model_find(
 		bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_PRIV_BEACON_SRV);
-	struct bt_mesh_model *sol_pdu_rpl_srv = bt_mesh_model_find(
+	const struct bt_mesh_model *sol_pdu_rpl_srv = bt_mesh_model_find(
 		bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV);
 
 	if (priv_beacon_srv == NULL) {
@@ -98,7 +98,7 @@ static int od_priv_proxy_srv_init(struct bt_mesh_model *mod)
 	}
 
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
 		bt_mesh_model_extend(mod, priv_beacon_srv);
@@ -108,14 +108,14 @@ static int od_priv_proxy_srv_init(struct bt_mesh_model *mod)
 	return 0;
 }
 
-static void od_priv_proxy_srv_reset(struct bt_mesh_model *model)
+static void od_priv_proxy_srv_reset(const struct bt_mesh_model *model)
 {
 	on_demand_state = 0;
 	od_priv_proxy_store(true);
 }
 
 #ifdef CONFIG_BT_SETTINGS
-static int od_priv_proxy_srv_settings_set(struct bt_mesh_model *model, const char *name,
+static int od_priv_proxy_srv_settings_set(const struct bt_mesh_model *model, const char *name,
 					  size_t len_rd, settings_read_cb read_cb, void *cb_data)
 {
 	int err;
@@ -135,7 +135,7 @@ static int od_priv_proxy_srv_settings_set(struct bt_mesh_model *model, const cha
 	return 0;
 }
 
-static void od_priv_proxy_srv_pending_store(struct bt_mesh_model *model)
+static void od_priv_proxy_srv_pending_store(const struct bt_mesh_model *model)
 {
 	on_demand_state = bt_mesh_od_priv_proxy_get();
 	od_priv_proxy_store(false);

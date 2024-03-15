@@ -1,6 +1,6 @@
 # Note: Re: slow vs fast
 #
-# Some platforms such as native_posix, qemu_riscv32, qemu_riscv64
+# Some platforms such as native_sim, qemu_riscv32, qemu_riscv64
 # complete these tests almost instantaneously because of qemu timer
 # quirks ("time warp") even though the test reports that it completes
 # in e.g. 14 s. We can take advantage of that for fast tests on each PR

@@ -3,7 +3,7 @@
 Opcodes Aggregator Client
 #########################
 
-The Opcodes Aggregator Client model is a foundation model defined by the Bluetooth mesh
+The Opcodes Aggregator Client model is a foundation model defined by the Bluetooth Mesh
 specification. It is an optional model, enabled with the :kconfig:option:`CONFIG_BT_MESH_OP_AGG_CLI`
 option.
 

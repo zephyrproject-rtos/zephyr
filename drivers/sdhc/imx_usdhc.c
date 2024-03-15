@@ -75,6 +75,7 @@ struct usdhc_config {
 };
 
 struct usdhc_data {
+	const struct device *dev;
 	struct sdhc_host_props props;
 	bool card_present;
 	struct k_sem transfer_sem;
@@ -82,6 +83,9 @@ struct usdhc_data {
 	usdhc_handle_t transfer_handle;
 	struct sdhc_io host_io;
 	struct k_mutex access_mutex;
+	sdhc_interrupt_cb_t sdhc_cb;
+	struct gpio_callback cd_callback;
+	void *sdhc_cb_user_data;
 	uint8_t usdhc_rx_dummy[128] __aligned(32);
 #ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
 	uint32_t *usdhc_dma_descriptor; /* ADMA descriptor table (noncachable) */
@@ -106,6 +110,55 @@ static void transfer_complete_cb(USDHC_Type *usdhc, usdhc_handle_t *handle,
 	}
 	k_sem_give(&data->transfer_sem);
 }
+
+
+static void sdio_interrupt_cb(USDHC_Type *usdhc, void *user_data)
+{
+	const struct device *dev = user_data;
+	struct usdhc_data *data = dev->data;
+
+	if (data->sdhc_cb) {
+		data->sdhc_cb(dev, SDHC_INT_SDIO, data->sdhc_cb_user_data);
+	}
+}
+
+static void card_inserted_cb(USDHC_Type *usdhc, void *user_data)
+{
+	const struct device *dev = user_data;
+	struct usdhc_data *data = dev->data;
+
+	if (data->sdhc_cb) {
+		data->sdhc_cb(dev, SDHC_INT_INSERTED, data->sdhc_cb_user_data);
+	}
+}
+
+static void card_removed_cb(USDHC_Type *usdhc, void *user_data)
+{
+	const struct device *dev = user_data;
+	struct usdhc_data *data = dev->data;
+
+	if (data->sdhc_cb) {
+		data->sdhc_cb(dev, SDHC_INT_REMOVED, data->sdhc_cb_user_data);
+	}
+}
+
+static void card_detect_gpio_cb(const struct device *port,
+				struct gpio_callback *cb,
+				gpio_port_pins_t pins)
+{
+	struct usdhc_data *data = CONTAINER_OF(cb, struct usdhc_data, cd_callback);
+	const struct device *dev = data->dev;
+	const struct usdhc_config *cfg = dev->config;
+
+	if (data->sdhc_cb) {
+		if (gpio_pin_get_dt(&cfg->detect_gpio)) {
+			data->sdhc_cb(dev, SDHC_INT_INSERTED, data->sdhc_cb_user_data);
+		} else {
+			data->sdhc_cb(dev, SDHC_INT_REMOVED, data->sdhc_cb_user_data);
+		}
+	}
+}
+
 
 static int imx_usdhc_dat3_pull(const struct usdhc_config *cfg, bool pullup)
 {
@@ -333,16 +386,10 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	/* Set card power */
 	if ((host_io->power_mode != ios->power_mode) && (cfg->pwr_gpio.port)) {
-		if (host_io->power_mode == SDHC_POWER_ON) {
-			/* Send 74 clock cycles if SD card is just powering on */
-			USDHC_SetCardActive(cfg->base, 0xFFFF);
-		}
-		if (cfg->pwr_gpio.port) {
-			if (ios->power_mode == SDHC_POWER_OFF) {
-				gpio_pin_set_dt(&cfg->pwr_gpio, 0);
-			} else if (ios->power_mode == SDHC_POWER_ON) {
-				gpio_pin_set_dt(&cfg->pwr_gpio, 1);
-			}
+		if (ios->power_mode == SDHC_POWER_OFF) {
+			gpio_pin_set_dt(&cfg->pwr_gpio, 0);
+		} else if (ios->power_mode == SDHC_POWER_ON) {
+			gpio_pin_set_dt(&cfg->pwr_gpio, 1);
 		}
 		host_io->power_mode = ios->power_mode;
 	}
@@ -353,6 +400,11 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		case SDHC_TIMING_LEGACY:
 		case SDHC_TIMING_HS:
 			break;
+		case SDHC_TIMING_DDR50:
+		case SDHC_TIMING_DDR52:
+			/* Enable DDR mode */
+			USDHC_EnableDDRMode(cfg->base, true, 0);
+			__fallthrough;
 		case SDHC_TIMING_SDR12:
 		case SDHC_TIMING_SDR25:
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_SLOW);
@@ -371,8 +423,6 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 			return -ENOTSUP;
 #endif
 		case SDHC_TIMING_SDR104:
-		case SDHC_TIMING_DDR50:
-		case SDHC_TIMING_DDR52:
 		case SDHC_TIMING_HS200:
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_FAST);
 			break;
@@ -591,6 +641,10 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 	int ret = 0;
 	int retries = (int)cmd->retries;
 
+	if (cmd->opcode == SD_GO_IDLE_STATE) {
+		USDHC_SetCardActive(cfg->base, 0xFFFF);
+	}
+
 	host_cmd.index = cmd->opcode;
 	host_cmd.argument = cmd->arg;
 	/* Mask out part of response type field used for SPI commands */
@@ -644,6 +698,14 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 		case SD_SWITCH:
 		case SD_APP_SEND_NUM_WRITTEN_BLK:
 			host_data.rxData = data->data;
+			break;
+		case SDIO_RW_EXTENDED:
+			/* Use R/W bit to determine data direction */
+			if (host_cmd.argument & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
+				host_data.txData = data->data;
+			} else {
+				host_data.rxData = data->data;
+			}
 			break;
 		default:
 			return -ENOTSUP;
@@ -757,8 +819,7 @@ static int imx_usdhc_get_card_present(const struct device *dev)
 	} else if (cfg->detect_gpio.port) {
 		data->card_present = gpio_pin_get_dt(&cfg->detect_gpio) > 0;
 	} else {
-		LOG_WRN("No card presence method configured, assuming card is present");
-		data->card_present = true;
+		data->card_present = USDHC_DetectCardInsert(cfg->base);
 	}
 	return ((int)data->card_present);
 }
@@ -772,6 +833,132 @@ static int imx_usdhc_get_host_props(const struct device *dev,
 	struct usdhc_data *data = dev->data;
 
 	memcpy(props, &data->props, sizeof(struct sdhc_host_props));
+	return 0;
+}
+
+/*
+ * Enable SDHC card interrupt
+ */
+static int imx_usdhc_enable_interrupt(const struct device *dev,
+				      sdhc_interrupt_cb_t callback,
+				      int sources, void *user_data)
+{
+	const struct usdhc_config *cfg = dev->config;
+	struct usdhc_data *data = dev->data;
+	int ret;
+
+	/* Record SDIO callback parameters */
+	data->sdhc_cb = callback;
+	data->sdhc_cb_user_data = user_data;
+
+	/* Disable interrupts, then enable what the user requested */
+	USDHC_DisableInterruptStatus(cfg->base, kUSDHC_CardInterruptFlag);
+	USDHC_DisableInterruptSignal(cfg->base, kUSDHC_CardInterruptFlag);
+	if (cfg->detect_gpio.port) {
+		ret = gpio_pin_interrupt_configure_dt(&cfg->detect_gpio,
+						      GPIO_INT_DISABLE);
+		if (ret) {
+			return ret;
+		}
+	} else {
+		USDHC_DisableInterruptSignal(cfg->base, kUSDHC_CardInsertionFlag);
+		USDHC_DisableInterruptStatus(cfg->base, kUSDHC_CardInsertionFlag);
+		USDHC_DisableInterruptSignal(cfg->base, kUSDHC_CardRemovalFlag);
+		USDHC_DisableInterruptStatus(cfg->base, kUSDHC_CardRemovalFlag);
+	}
+
+	if (sources & SDHC_INT_SDIO) {
+		/* Enable SDIO card interrupt */
+		USDHC_EnableInterruptStatus(cfg->base, kUSDHC_CardInterruptFlag);
+		USDHC_EnableInterruptSignal(cfg->base, kUSDHC_CardInterruptFlag);
+	}
+	if (sources & SDHC_INT_INSERTED) {
+		if (cfg->detect_gpio.port) {
+			/* Use GPIO interrupt */
+			ret = gpio_pin_interrupt_configure_dt(&cfg->detect_gpio,
+							      GPIO_INT_EDGE_TO_ACTIVE);
+			if (ret) {
+				return ret;
+			}
+		} else {
+			/* Enable card insertion interrupt */
+			USDHC_EnableInterruptStatus(cfg->base,
+						    kUSDHC_CardInsertionFlag);
+			USDHC_EnableInterruptSignal(cfg->base,
+						    kUSDHC_CardInsertionFlag);
+		}
+	}
+	if (sources & SDHC_INT_REMOVED) {
+		if (cfg->detect_gpio.port) {
+			/* Use GPIO interrupt */
+			ret = gpio_pin_interrupt_configure_dt(&cfg->detect_gpio,
+							      GPIO_INT_EDGE_TO_INACTIVE);
+			if (ret) {
+				return ret;
+			}
+		} else {
+			/* Enable card removal interrupt */
+			USDHC_EnableInterruptStatus(cfg->base,
+						    kUSDHC_CardRemovalFlag);
+			USDHC_EnableInterruptSignal(cfg->base,
+						    kUSDHC_CardRemovalFlag);
+		}
+	}
+
+	return 0;
+}
+
+static int imx_usdhc_disable_interrupt(const struct device *dev, int sources)
+{
+	const struct usdhc_config *cfg = dev->config;
+	struct usdhc_data *data = dev->data;
+	int ret;
+
+
+	if (sources & SDHC_INT_SDIO) {
+		/* Disable SDIO card interrupt */
+		USDHC_DisableInterruptStatus(cfg->base, kUSDHC_CardInterruptFlag);
+		USDHC_DisableInterruptSignal(cfg->base, kUSDHC_CardInterruptFlag);
+	}
+	if (sources & SDHC_INT_INSERTED) {
+		if (cfg->detect_gpio.port) {
+			ret = gpio_pin_interrupt_configure_dt(&cfg->detect_gpio,
+							      GPIO_INT_DISABLE);
+			if (ret) {
+				return ret;
+			}
+		} else {
+			/* Disable card insertion interrupt */
+			USDHC_DisableInterruptStatus(cfg->base,
+						     kUSDHC_CardInsertionFlag);
+			USDHC_DisableInterruptSignal(cfg->base,
+						     kUSDHC_CardInsertionFlag);
+		}
+	}
+	if (sources & SDHC_INT_REMOVED) {
+		if (cfg->detect_gpio.port) {
+			ret = gpio_pin_interrupt_configure_dt(&cfg->detect_gpio,
+							      GPIO_INT_DISABLE);
+			if (ret) {
+				return ret;
+			}
+		} else {
+			/* Disable card removal interrupt */
+			USDHC_DisableInterruptStatus(cfg->base,
+						     kUSDHC_CardRemovalFlag);
+			USDHC_DisableInterruptSignal(cfg->base,
+						     kUSDHC_CardRemovalFlag);
+		}
+	}
+
+	/* If all interrupt flags are disabled, remove callback */
+	if ((USDHC_GetEnabledInterruptStatusFlags(cfg->base) &
+	    (kUSDHC_CardInterruptFlag | kUSDHC_CardInsertionFlag |
+	     kUSDHC_CardRemovalFlag)) == 0) {
+		data->sdhc_cb = NULL;
+		data->sdhc_cb_user_data = NULL;
+	}
+
 	return 0;
 }
 
@@ -795,6 +982,9 @@ static int imx_usdhc_init(const struct device *dev)
 	int ret;
 	const usdhc_transfer_callback_t callbacks = {
 		.TransferComplete = transfer_complete_cb,
+		.SdioInterrupt = sdio_interrupt_cb,
+		.CardInserted = card_inserted_cb,
+		.CardRemoved = card_removed_cb,
 	};
 
 	if (!device_is_ready(cfg->clock_dev)) {
@@ -833,9 +1023,24 @@ static int imx_usdhc_init(const struct device *dev)
 		if (ret) {
 			return ret;
 		}
+		gpio_init_callback(&data->cd_callback, card_detect_gpio_cb,
+				   BIT(cfg->detect_gpio.pin));
+		ret = gpio_add_callback_dt(&cfg->detect_gpio, &data->cd_callback);
+		if (ret) {
+			return ret;
+		}
 	}
+	data->dev = dev;
 	k_mutex_init(&data->access_mutex);
-	memset(&data->host_io, 0, sizeof(data->host_io));
+	/* Setup initial host IO values */
+	data->host_io.clock = 0;
+	data->host_io.bus_mode = SDHC_BUSMODE_PUSHPULL;
+	data->host_io.power_mode = SDHC_POWER_OFF;
+	data->host_io.bus_width = SDHC_BUS_WIDTH1BIT;
+	data->host_io.timing = SDHC_TIMING_LEGACY;
+	data->host_io.driver_type = SD_DRIVER_TYPE_B;
+	data->host_io.signal_voltage = SD_VOL_3_3_V;
+
 	return k_sem_init(&data->transfer_sem, 0, 1);
 }
 
@@ -847,6 +1052,8 @@ static const struct sdhc_driver_api usdhc_api = {
 	.execute_tuning = imx_usdhc_execute_tuning,
 	.card_busy = imx_usdhc_card_busy,
 	.get_host_props = imx_usdhc_get_host_props,
+	.enable_interrupt = imx_usdhc_enable_interrupt,
+	.disable_interrupt = imx_usdhc_disable_interrupt,
 };
 
 #ifdef CONFIG_NOCACHE_MEMORY

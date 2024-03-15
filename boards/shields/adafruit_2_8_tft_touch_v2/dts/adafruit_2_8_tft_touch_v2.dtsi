@@ -8,7 +8,7 @@
 
 / {
 	chosen {
-		zephyr,display = &ili9340;
+		zephyr,display = &adafruit_2_8_tft_touch_v2_ili9340;
 	};
 
 	lvgl_pointer {
@@ -18,30 +18,37 @@
 		invert-x;
 		invert-y;
 	};
+
+	adafruit_2_8_tft_touch_v2_mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&arduino_spi>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		adafruit_2_8_tft_touch_v2_ili9340: ili9340@0 {
+			compatible = "ilitek,ili9340";
+			mipi-max-frequency = <15151515>;
+			reg = <0>;
+			width = <320>;
+			height = <240>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+			rotation = <90>;
+			frmctr1 = [00 18];
+			pwctrl1 = [23 00];
+			vmctrl1 = [3e 28];
+			vmctrl2 = [86];
+			pgamctrl = [0f 31 2b 0c 0e 08 4e f1 37 07 10 03 0e 09 00];
+			ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
+		};
+	};
 };
 
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,	/* D10 */
 		   <&arduino_header 10 GPIO_ACTIVE_LOW>;	/* D04 */
-
-
-	ili9340: ili9340@0 {
-		compatible = "ilitek,ili9340";
-		spi-max-frequency = <15151515>;
-		reg = <0>;
-		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
-		width = <320>;
-		height = <240>;
-		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
-		rotation = <90>;
-		frmctr1 = [00 18];
-		pwctrl1 = [23 00];
-		vmctrl1 = [3e 28];
-		vmctrl2 = [86];
-		pgamctrl = [0f 31 2b 0c 0e 08 4e f1 37 07 10 03 0e 09 00];
-		ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
-	};
 
 	adafruit_2_8_tft_touch_v2_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";

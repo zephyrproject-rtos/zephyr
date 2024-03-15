@@ -54,13 +54,13 @@ IRAM_ATTR static void esp32_ipm_isr(const struct device *dev)
 
 	/* clear interrupt flag */
 	if (core_id == 0) {
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
 #endif
 	} else {
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
@@ -95,7 +95,7 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 {
 	struct esp32_ipm_data *dev_data = (struct esp32_ipm_data *)dev->data;
 
-	if (data == NULL) {
+	if (size > 0 && data == NULL) {
 		LOG_ERR("Invalid data source");
 		return -EINVAL;
 	}
@@ -138,7 +138,7 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 		memcpy(dev_data->shm.app_cpu_shm, data, size);
 		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 1 from CPU 0");
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
@@ -148,7 +148,7 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 		memcpy(dev_data->shm.pro_cpu_shm, data, size);
 		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 0 from CPU 1");
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);

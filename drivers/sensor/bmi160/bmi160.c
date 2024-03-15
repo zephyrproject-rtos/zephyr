@@ -251,7 +251,7 @@ struct {
 			      * SENSOR_ATTR_SAMPLING_FREQUENCY attribute.
 			      */
 } bmi160_odr_map[] = {
-	{0,    0  }, {0,     780}, {1,     562}, {3,    120}, {6,   250},
+	{0,    0  }, {0,     781}, {1,     562}, {3,    125}, {6,   250},
 	{12,   500}, {25,    0  }, {50,    0  }, {100,  0  }, {200, 0  },
 	{400,  0  }, {800,   0  }, {1600,  0  }, {3200, 0  },
 };
@@ -281,19 +281,10 @@ static int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 static int bmi160_acc_odr_set(const struct device *dev, uint16_t freq_int,
 			      uint16_t freq_milli)
 {
-	struct bmi160_data *data = dev->data;
 	int odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
 
 	if (odr < 0) {
 		return odr;
-	}
-
-	/* some odr values cannot be set in certain power modes */
-	if ((data->pmu_sts.acc == BMI160_PMU_NORMAL &&
-	     odr < BMI160_ODR_25_2) ||
-	    (data->pmu_sts.acc == BMI160_PMU_LOW_POWER &&
-	    odr < BMI160_ODR_25_32) || odr > BMI160_ODR_1600) {
-		return -ENOTSUP;
 	}
 
 	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
@@ -312,11 +303,11 @@ static const struct bmi160_range bmi160_acc_range_map[] = {
 #define BMI160_ACC_RANGE_MAP_SIZE	ARRAY_SIZE(bmi160_acc_range_map)
 
 static const struct bmi160_range bmi160_gyr_range_map[] = {
-	{2000,	BMI160_GYR_RANGE_2000DPS},
-	{1000,	BMI160_GYR_RANGE_1000DPS},
-	{500,	BMI160_GYR_RANGE_500DPS},
-	{250,	BMI160_GYR_RANGE_250DPS},
 	{125,	BMI160_GYR_RANGE_125DPS},
+	{250,	BMI160_GYR_RANGE_250DPS},
+	{500,	BMI160_GYR_RANGE_500DPS},
+	{1000,	BMI160_GYR_RANGE_1000DPS},
+	{2000,	BMI160_GYR_RANGE_2000DPS},
 };
 #define BMI160_GYR_RANGE_MAP_SIZE	ARRAY_SIZE(bmi160_gyr_range_map)
 
@@ -381,10 +372,11 @@ static int bmi160_do_calibration(const struct device *dev, uint8_t foc_conf)
 }
 
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)
-static int bmi160_acc_range_set(const struct device *dev, int32_t range)
+static int bmi160_acc_range_set(const struct device *dev, const struct sensor_value *val)
 {
+	int32_t range_g = sensor_ms2_to_g(val);
 	struct bmi160_data *data = dev->data;
-	int32_t reg_val = bmi160_range_to_reg_val(range,
+	int32_t reg_val = bmi160_range_to_reg_val(range_g,
 						  bmi160_acc_range_map,
 						  BMI160_ACC_RANGE_MAP_SIZE);
 
@@ -392,12 +384,26 @@ static int bmi160_acc_range_set(const struct device *dev, int32_t range)
 		return reg_val;
 	}
 
+	switch (reg_val & 0xff) {
+	case BMI160_ACC_RANGE_2G:
+		range_g = 2;
+		break;
+	case BMI160_ACC_RANGE_4G:
+		range_g = 4;
+		break;
+	case BMI160_ACC_RANGE_8G:
+		range_g = 8;
+		break;
+	case BMI160_ACC_RANGE_16G:
+		range_g = 16;
+		break;
+	}
+
 	if (bmi160_byte_write(dev, BMI160_REG_ACC_RANGE, reg_val & 0xff) < 0) {
 		return -EIO;
 	}
 
-	data->scale.acc = BMI160_ACC_SCALE(range);
-
+	data->scale.acc_numerator = BMI160_ACC_SCALE_NUMERATOR(range_g);
 	return 0;
 }
 #endif
@@ -418,8 +424,7 @@ static int bmi160_acc_ofs_set(const struct device *dev,
 		BMI160_REG_OFFSET_ACC_Z
 	};
 	int i;
-	int32_t ofs_u;
-	int8_t reg_val;
+	int32_t reg_val;
 
 	/* we need the offsets for all axis */
 	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
@@ -428,8 +433,8 @@ static int bmi160_acc_ofs_set(const struct device *dev,
 
 	for (i = 0; i < BMI160_AXES; i++, ofs++) {
 		/* convert offset to micro m/s^2 */
-		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
-		reg_val = ofs_u / BMI160_ACC_OFS_LSB;
+		reg_val =
+			CLAMP(sensor_value_to_micro(ofs) / BMI160_ACC_OFS_LSB, INT8_MIN, INT8_MAX);
 
 		if (bmi160_byte_write(dev, reg_addr[i], reg_val) < 0) {
 			return -EIO;
@@ -502,7 +507,7 @@ static int bmi160_acc_config(const struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		return bmi160_acc_range_set(dev, sensor_ms2_to_g(val));
+		return bmi160_acc_range_set(dev, val);
 #endif
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -548,8 +553,9 @@ static int bmi160_gyr_odr_set(const struct device *dev, uint16_t freq_int,
 #endif
 
 #if defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
-static int bmi160_gyr_range_set(const struct device *dev, uint16_t range)
+static int bmi160_gyr_range_set(const struct device *dev, const struct sensor_value *val)
 {
+	uint16_t range = sensor_rad_to_degrees(val);
 	struct bmi160_data *data = dev->data;
 	int32_t reg_val = bmi160_range_to_reg_val(range,
 						bmi160_gyr_range_map,
@@ -558,12 +564,29 @@ static int bmi160_gyr_range_set(const struct device *dev, uint16_t range)
 	if (reg_val < 0) {
 		return reg_val;
 	}
+	switch (reg_val) {
+	case BMI160_GYR_RANGE_125DPS:
+		range = 125;
+		break;
+	case BMI160_GYR_RANGE_250DPS:
+		range = 250;
+		break;
+	case BMI160_GYR_RANGE_500DPS:
+		range = 500;
+		break;
+	case BMI160_GYR_RANGE_1000DPS:
+		range = 1000;
+		break;
+	case BMI160_GYR_RANGE_2000DPS:
+		range = 2000;
+		break;
+	}
 
 	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE, reg_val) < 0) {
 		return -EIO;
 	}
 
-	data->scale.gyr = BMI160_GYR_SCALE(range);
+	data->scale.gyr_numerator = BMI160_GYR_SCALE_NUMERATOR(range);
 
 	return 0;
 }
@@ -600,15 +623,7 @@ static int bmi160_gyr_ofs_set(const struct device *dev,
 		/* convert offset to micro rad/s */
 		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
 
-		val = ofs_u / BMI160_GYR_OFS_LSB;
-
-		/*
-		 * The gyro offset is a 10 bit two-complement value. Make sure
-		 * the passed value is within limits.
-		 */
-		if (val < -512 || val > 512) {
-			return -EINVAL;
-		}
+		val = CLAMP(ofs_u / BMI160_GYR_OFS_LSB, -512, 511);
 
 		/* write the LSB */
 		if (bmi160_byte_write(dev, ofs_desc[i].lsb_addr,
@@ -661,7 +676,7 @@ static int bmi160_gyr_config(const struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		return bmi160_gyr_range_set(dev, sensor_rad_to_degrees(val));
+		return bmi160_gyr_range_set(dev, val);
 #endif
 #if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -709,6 +724,128 @@ static int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static int bmi160_attr_get(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, struct sensor_value *val)
+{
+	int rc;
+
+	if (attr == SENSOR_ATTR_OFFSET) {
+		if (chan != SENSOR_CHAN_ACCEL_XYZ && chan != SENSOR_CHAN_GYRO_XYZ) {
+			return -EINVAL;
+		}
+
+		int8_t data[7];
+
+		rc = bmi160_read(dev, BMI160_REG_OFFSET_ACC_X, data, 7);
+		if (rc != 0) {
+			return rc;
+		}
+
+		if ((chan == SENSOR_CHAN_ACCEL_XYZ &&
+		     FIELD_GET(BIT(BMI160_ACC_OFS_EN_POS), data[6]) == 0) ||
+		    (chan == SENSOR_CHAN_GYRO_XYZ &&
+		     FIELD_GET(BIT(BMI160_GYR_OFS_EN_POS), data[6]) == 0)) {
+			for (int i = 0; i < 3; ++i) {
+				val[i].val1 = 0;
+				val[i].val2 = 0;
+			}
+		} else {
+			for (int i = 0; i < 3; ++i) {
+				if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+					int32_t ug = data[i] * INT32_C(3900);
+
+					sensor_ug_to_ms2(ug, &val[i]);
+				} else {
+					int32_t udeg =
+						(FIELD_GET(GENMASK((2 * i) + 1, 2 * i), data[6])
+						 << 8) |
+						data[3 + i];
+
+					udeg |= 0 - (udeg & 0x200);
+					udeg *= 61000;
+					sensor_10udegrees_to_rad(udeg / 10, &val[i]);
+				}
+			}
+		}
+		return 0;
+	}
+	if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+		if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+			int64_t rate_uhz;
+			uint8_t acc_odr;
+
+			if (IS_ENABLED(CONFIG_BMI160_ACCEL_ODR_RUNTIME)) {
+				/* Read the register */
+				rc = bmi160_byte_read(dev, BMI160_REG_ACC_CONF, &acc_odr);
+				if (rc != 0) {
+					return rc;
+				}
+				acc_odr = FIELD_GET(BMI160_ACC_CONF_ODR_MASK, acc_odr);
+			} else {
+				acc_odr = BMI160_DEFAULT_ODR_ACC;
+			}
+
+			rate_uhz = INT64_C(100000000) * BIT(acc_odr) / 256;
+			val->val1 = rate_uhz / 1000000;
+			val->val2 = rate_uhz - val->val1 * 1000000;
+			return 0;
+		} else if (chan == SENSOR_CHAN_GYRO_XYZ) {
+			int64_t rate_uhz;
+			uint8_t gyr_ord;
+
+			if (IS_ENABLED(CONFIG_BMI160_GYRO_ODR_RUNTIME)) {
+				/* Read the register */
+				rc = bmi160_byte_read(dev, BMI160_REG_GYR_CONF, &gyr_ord);
+				if (rc != 0) {
+					return rc;
+				}
+				gyr_ord = FIELD_GET(BMI160_GYR_CONF_ODR_MASK, gyr_ord);
+			} else {
+				gyr_ord = BMI160_DEFAULT_ODR_GYR;
+			}
+
+			rate_uhz = INT64_C(100000000) * BIT(gyr_ord) / 256;
+			val->val1 = rate_uhz / 1000000;
+			val->val2 = rate_uhz - val->val1 * 1000000;
+			return 0;
+
+		}
+		return -EINVAL;
+
+	}
+	if (attr == SENSOR_ATTR_FULL_SCALE) {
+		if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+			uint8_t acc_range;
+
+			if (IS_ENABLED(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)) {
+				rc = bmi160_byte_read(dev, BMI160_REG_ACC_RANGE, &acc_range);
+				if (rc != 0) {
+					return rc;
+				}
+			} else {
+				acc_range = BMI160_DEFAULT_RANGE_ACC;
+			}
+			sensor_g_to_ms2(bmi160_acc_reg_val_to_range(acc_range), val);
+			return 0;
+		} else if (chan == SENSOR_CHAN_GYRO_XYZ) {
+			uint8_t gyr_range;
+
+			if (IS_ENABLED(CONFIG_BMI160_GYRO_RANGE_RUNTIME)) {
+				rc = bmi160_byte_read(dev, BMI160_REG_GYR_RANGE, &gyr_range);
+				if (rc != 0) {
+					return rc;
+				}
+			} else {
+				gyr_range = BMI160_DEFAULT_RANGE_GYR;
+			}
+			sensor_degrees_to_rad(bmi160_gyr_reg_val_to_range(gyr_range), val);
+			return 0;
+		}
+		return -EINVAL;
+	}
+	return -EINVAL;
+}
+
 static int bmi160_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
@@ -723,6 +860,14 @@ static int bmi160_sample_fetch(const struct device *dev,
 		LOG_DBG("Device is suspended, fetch is unavailable");
 		ret = -EIO;
 		goto out;
+	}
+
+	if (chan == SENSOR_CHAN_DIE_TEMP) {
+		/* Die temperature is only valid when at least one measurement is active */
+		if (data->pmu_sts.raw == 0U) {
+			return -EINVAL;
+		}
+		return bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &data->sample.temperature);
 	}
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -754,24 +899,18 @@ out:
 	return ret;
 }
 
-static void bmi160_to_fixed_point(int16_t raw_val, uint16_t scale,
-				  struct sensor_value *val)
+static void bmi160_to_fixed_point(int16_t raw_val, int64_t scale_numerator,
+				  uint32_t scale_denominator, struct sensor_value *val)
 {
-	int32_t converted_val;
+	int64_t converted_val = (int64_t)raw_val * scale_numerator / scale_denominator;
 
-	/*
-	 * maximum converted value we can get is: max(raw_val) * max(scale)
-	 *	max(raw_val) = +/- 2^15
-	 *	max(scale) = 4785
-	 *	max(converted_val) = 156794880 which is less than 2^31
-	 */
-	converted_val = raw_val * scale;
 	val->val1 = converted_val / 1000000;
 	val->val2 = converted_val % 1000000;
 }
 
 static void bmi160_channel_convert(enum sensor_channel chan,
-				   uint16_t scale,
+				   int64_t scale_numerator,
+				   uint32_t scale_denominator,
 				   uint16_t *raw_xyz,
 				   struct sensor_value *val)
 {
@@ -797,7 +936,7 @@ static void bmi160_channel_convert(enum sensor_channel chan,
 	}
 
 	for (i = ofs_start; i <= ofs_stop ; i++, val++) {
-		bmi160_to_fixed_point(raw_xyz[i], scale, val);
+		bmi160_to_fixed_point(raw_xyz[i], scale_numerator, scale_denominator, val);
 	}
 }
 
@@ -808,7 +947,8 @@ static inline void bmi160_gyr_channel_get(const struct device *dev,
 {
 	struct bmi160_data *data = dev->data;
 
-	bmi160_channel_convert(chan, data->scale.gyr, data->sample.gyr, val);
+	bmi160_channel_convert(chan, data->scale.gyr_numerator, BMI160_GYR_SCALE_DENOMINATOR,
+			       data->sample.gyr, val);
 }
 #endif
 
@@ -819,27 +959,18 @@ static inline void bmi160_acc_channel_get(const struct device *dev,
 {
 	struct bmi160_data *data = dev->data;
 
-	bmi160_channel_convert(chan, data->scale.acc, data->sample.acc, val);
+	bmi160_channel_convert(chan, data->scale.acc_numerator, BMI160_ACC_SCALE_DENOMINATOR,
+			       data->sample.acc, val);
 }
 #endif
 
 static int bmi160_temp_channel_get(const struct device *dev,
 				   struct sensor_value *val)
 {
-	uint16_t temp_raw = 0U;
-	int32_t temp_micro = 0;
 	struct bmi160_data *data = dev->data;
 
-	if (data->pmu_sts.raw == 0U) {
-		return -EINVAL;
-	}
-
-	if (bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &temp_raw) < 0) {
-		return -EIO;
-	}
-
 	/* the scale is 1/2^9/LSB = 1953 micro degrees */
-	temp_micro = BMI160_TEMP_OFFSET * 1000000ULL + temp_raw * 1953ULL;
+	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000ULL + data->sample.temperature * 1953ULL;
 
 	val->val1 = temp_micro / 1000000ULL;
 	val->val2 = temp_micro % 1000000ULL;
@@ -880,6 +1011,7 @@ static int bmi160_channel_get(const struct device *dev,
 
 static const struct sensor_driver_api bmi160_api = {
 	.attr_set = bmi160_attr_set,
+	.attr_get = bmi160_attr_get,
 #ifdef CONFIG_BMI160_TRIGGER
 	.trigger_set = bmi160_trigger_set,
 #endif
@@ -994,7 +1126,7 @@ int bmi160_init(const struct device *dev)
 
 	acc_range = bmi160_acc_reg_val_to_range(BMI160_DEFAULT_RANGE_ACC);
 
-	data->scale.acc = BMI160_ACC_SCALE(acc_range);
+	data->scale.acc_numerator = BMI160_ACC_SCALE_NUMERATOR(acc_range);
 
 	/* set gyro default range */
 	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE,
@@ -1005,7 +1137,7 @@ int bmi160_init(const struct device *dev)
 
 	gyr_range = bmi160_gyr_reg_val_to_range(BMI160_DEFAULT_RANGE_GYR);
 
-	data->scale.gyr = BMI160_GYR_SCALE(gyr_range);
+	data->scale.gyr_numerator = BMI160_GYR_SCALE_NUMERATOR(gyr_range);
 
 	if (bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
 				    BMI160_ACC_CONF_ODR_POS,

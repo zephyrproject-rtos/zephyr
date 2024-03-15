@@ -21,26 +21,7 @@ extern "C" {
  * @{
  */
 
-/**
- * @brief Enum of sections for lookup tables
- */
-enum llext_section {
-	LLEXT_SECT_TEXT,
-	LLEXT_SECT_DATA,
-	LLEXT_SECT_RODATA,
-	LLEXT_SECT_BSS,
-
-	LLEXT_SECT_REL_TEXT,
-	LLEXT_SECT_REL_DATA,
-	LLEXT_SECT_REL_RODATA,
-	LLEXT_SECT_REL_BSS,
-
-	LLEXT_SECT_SYMTAB,
-	LLEXT_SECT_STRTAB,
-	LLEXT_SECT_SHSTRTAB,
-
-	LLEXT_SECT_COUNT,
-};
+#include <zephyr/llext/llext.h>
 
 /**
  * @brief Linkable loadable extension loader context
@@ -73,16 +54,46 @@ struct llext_loader {
 	 * @retval 0 Success
 	 * @retval -errno Error reading (any errno)
 	 */
-	int (*seek)(struct llext_loader *s, size_t pos);
+	int (*seek)(struct llext_loader *ldr, size_t pos);
+
+	/**
+	 * @brief Peek at an absolute location
+	 *
+	 * Return a pointer to the buffer at specified offset.
+	 *
+	 * @param[in] ldr Loader
+	 * @param[in] pos Position to obtain a pointer to
+	 *
+	 * @retval pointer into the buffer
+	 */
+	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
 	/** @cond ignore */
 	elf_ehdr_t hdr;
-	elf_shdr_t sects[LLEXT_SECT_COUNT];
-	uint32_t *sect_map;
+	elf_shdr_t sects[LLEXT_MEM_COUNT];
+	enum llext_mem *sect_map;
 	uint32_t sect_cnt;
-	uint32_t sym_cnt;
 	/** @endcond */
 };
+
+static inline int llext_read(struct llext_loader *l, void *buf, size_t len)
+{
+	return l->read(l, buf, len);
+}
+
+static inline int llext_seek(struct llext_loader *l, size_t pos)
+{
+	return l->seek(l, pos);
+}
+
+static inline void *llext_peek(struct llext_loader *l, size_t pos)
+{
+	if (l->peek) {
+		return l->peek(l, pos);
+	}
+
+	return NULL;
+}
 
 /**
  * @}

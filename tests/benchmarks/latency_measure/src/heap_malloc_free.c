@@ -25,6 +25,7 @@ void heap_malloc_free(void)
 
 	bool  failed = false;
 	char  error_string[80];
+	char  description[120];
 	const char *notes = "";
 
 	timing_start();
@@ -63,10 +64,15 @@ void heap_malloc_free(void)
 		notes = "Memory heap too small--increase it.";
 	}
 
-	PRINT_STATS_AVG("Average time for heap malloc", sum_malloc, count,
-			failed, notes);
-	PRINT_STATS_AVG("Average time for heap free", sum_free, count,
-			failed, notes);
+	snprintf(description, sizeof(description),
+		 "%-40s - Average time for heap malloc",
+		 "heap.malloc.immediate");
+	PRINT_STATS_AVG(description, sum_malloc, count, failed, notes);
+
+	snprintf(description, sizeof(description),
+		 "%-40s - Average time for heap free",
+		 "heap.free.immediate");
+	PRINT_STATS_AVG(description, sum_free, count, failed, notes);
 
 	timing_stop();
 }

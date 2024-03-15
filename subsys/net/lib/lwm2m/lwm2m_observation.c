@@ -37,6 +37,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
+#include "lwm2m_obj_server.h"
 
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
@@ -529,7 +530,7 @@ struct observe_node *engine_observe_node_discover(sys_slist_t *observe_node_list
 						  const uint8_t *token, uint8_t tkl)
 {
 	struct observe_node *obs;
-	int obs_list_size, path_list_size;
+	int obs_list_size, path_list_size = 0;
 
 	if (lwm2m_path_list) {
 		path_list_size = engine_path_list_size(lwm2m_path_list);

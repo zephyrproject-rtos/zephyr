@@ -53,7 +53,7 @@ static void send_data_cb(struct k_work *work)
 
 	net_buf_add_mem(buf, buf_data, len_to_send);
 
-	ret = bt_iso_chan_send(default_chan, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
+	ret = bt_iso_chan_send(default_chan, buf, seq_num++);
 	if (ret < 0) {
 		printk("Failed to send ISO data (%d)\n", ret);
 		net_buf_unref(buf);

@@ -513,32 +513,6 @@
 			interrupt-parent = <&ace_intc>;
 		};
 
-		watchdog0: watchdog@78300 {
-			compatible = "snps,designware-watchdog";
-			reg = <0x78300 0x100>;
-			interrupts = <8 0 0>;
-			interrupt-parent = <&core_intc>;
-			clock-frequency = <32768>;
-			reset-pulse-length = <2>;
-			status = "okay";
-		};
-
-		watchdog1: watchdog@78400 {
-			compatible = "snps,designware-watchdog";
-			reg = <0x78400 0x100>;
-			clock-frequency = <32768>;
-			reset-pulse-length = <2>;
-			status = "okay";
-		};
-
-		watchdog2: watchdog@78500 {
-			compatible = "snps,designware-watchdog";
-			reg = <0x78500 0x100>;
-			clock-frequency = <32768>;
-			reset-pulse-length = <2>;
-			status = "okay";
-		};
-
 		/* This is actually an array of per-core designware
 		 * controllers, but the special setup and extra
 		 * masking layer makes it easier for MTL to handle

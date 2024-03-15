@@ -1,17 +1,36 @@
 .. zephyr:code-sample:: lvgl
    :name: LVGL basic sample
-   :relevant-api: display_interface
+   :relevant-api: display_interface input_interface
 
-   Display "Hello World" and a dynamic counter using LVGL.
+   Display a "Hello World" and react to user input using LVGL.
 
 Overview
 ********
 
 This sample application displays "Hello World" in the center of the screen
-and a counter at the bottom which increments every second. If an input driver
-is supported, such as the touch panel controller on mimxrt10{50,60,64}_evk
-boards, "Hello World" is enclosed in a button that changes to the toggled state
-when touched.
+and a counter at the bottom which increments every second.
+Based on the available input devices on the board used to run the sample,
+additional widgets may be displayed and additional interactions enabled:
+
+* Pointer
+      If your board has a touch panel controller
+      (:dtcompatible:`zephyr,lvgl-pointer-input`), a button widget is displayed
+      in the center of the screen. Otherwise a label widget is displayed.
+* Button
+      The button pseudo device (:dtcompatible:`zephyr,lvgl-button-input`) maps
+      a press/release action to a specific coordinate on screen. In the case
+      of this sample, the coordinates are mapped to the center of the screen.
+* Encoder
+      The encoder pseudo device (:dtcompatible:`zephyr,lvgl-encoder-input`)
+      can be used to navigate between widgets and edit their values. If the
+      board contains an encoder, an arc widget is displayed, which can be
+      edited.
+* Keypad
+      The keypad pseudo device (:dtcompatible:`zephyr,lvgl-keypad-input`) can
+      be used for focus shifting and also entering characters inside editable
+      widgets such as text areas. If the board used with this sample has a
+      keypad device, a button matrix is displayed at the bottom of the screen
+      to showcase the focus shifting capabilities.
 
 Requirements
 ************
@@ -27,9 +46,9 @@ or a board with an integrated display:
 
 - :ref:`esp_wrover_kit`
 
-or a simulated display environment in a native Posix application:
+or a simulated display environment in a :ref:`native_sim <native_sim>` application:
 
-- :ref:`native_posix`
+- :ref:`native_sim`
 - `SDL2`_
 
 or
@@ -49,19 +68,19 @@ Example building for :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build flash
 
-Example building for :ref:`native_posix`:
+Example building for :ref:`native_sim <native_sim>`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: native_posix
+   :board: native_sim
    :goals: build run
 
 Alternatively, if building from a 64-bit host machine, the previous target
-board argument may also be replaced by ``native_posix_64``.
+board argument may also be replaced by ``native_sim_64``.
 
 References
 **********

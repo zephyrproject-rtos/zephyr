@@ -1,12 +1,76 @@
 sample:
   name: MBOX IPC sample
+common:
+  sysbuild: true
+  tags: mbox
 tests:
-  sample.drivers.mbox:
+  sample.drivers.mbox.real_hw:
     platform_allow:
-      - nrf5340dk_nrf5340_cpuapp
-      - adp_xc7k_ae350
-      - mimxrt595_evk_cm33
+      - nrf5340dk/nrf5340/cpuapp
+      - adp_xc7k/ae350
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - lpcxpresso55s69/lpc55s69/cpu0
     integration_platforms:
-      - nrf5340dk_nrf5340_cpuapp
-    tags: mbox
-    harness: remote
+      - nrf5340dk/nrf5340/cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 0\\)"
+        - "Pong \\(on channel 0\\)"
+        - "Ping \\(on channel 1\\)"
+        - "Pong \\(on channel 1\\)"
+
+  sample.drivers.mbox.nrf54h20_vevif:
+    platform_allow:
+      - nrf54h20pdk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20pdk/nrf54h20/cpuapp
+    extra_args:
+      mbox_SNIPPET=nordic-ppr
+      mbox_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_vevif.conf
+      mbox_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_vevif.overlay
+      remote_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_vevif.conf
+      remote_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_vevif.overlay
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 4\\)"
+
+  sample.drivers.mbox.nrf54h20_bellboard:
+    platform_allow:
+      - nrf54h20pdk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20pdk/nrf54h20/cpuapp
+    extra_args:
+      mbox_SNIPPET=nordic-ppr
+      mbox_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_bellboard.conf
+      mbox_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuapp_bellboard.overlay
+      remote_EXTRA_CONF_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_bellboard.conf
+      remote_DTC_OVERLAY_FILE=boards/nrf54h20pdk_nrf54h20_cpuppr_bellboard.overlay
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Pong \\(on channel 0\\)"
+
+  sample.drivers.mbox.simu:
+    platform_allow:
+      - nrf5340bsim_nrf5340_cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 0\\)"
+        - "Pong \\(on channel 0\\)"
+        - "Ping \\(on channel 1\\)"
+        - "Pong \\(on channel 1\\)"

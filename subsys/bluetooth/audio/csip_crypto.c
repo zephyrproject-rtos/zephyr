@@ -11,12 +11,10 @@
  */
 #include "csip_crypto.h"
 #include <zephyr/bluetooth/crypto.h>
-#include <tinycrypt/constants.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/aes.h>
-#include <tinycrypt/cmac_mode.h>
-#include <tinycrypt/ccm_mode.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include "crypto/bt_crypto.h"
 
 #include "common/bt_str.h"
 
@@ -27,39 +25,6 @@ LOG_MODULE_REGISTER(bt_csip_crypto, CONFIG_BT_CSIP_SET_MEMBER_CRYPTO_LOG_LEVEL);
 #define BT_CSIP_CRYPTO_PADDING_SIZE 13
 #define BT_CSIP_PADDED_RAND_SIZE    (BT_CSIP_CRYPTO_PADDING_SIZE + BT_CSIP_CRYPTO_PRAND_SIZE)
 #define BT_CSIP_R_MASK              BIT_MASK(24) /* r is 24 bit / 3 octet */
-
-static int aes_cmac(const uint8_t key[BT_CSIP_CRYPTO_KEY_SIZE],
-		    const uint8_t *in, size_t in_len, uint8_t *out)
-{
-	struct tc_aes_key_sched_struct sched;
-	struct tc_cmac_struct state;
-
-	/* TODO: Copy of the aes_cmac from smp.c: Can we merge them? */
-
-	if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	if (tc_cmac_update(&state, in, in_len) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	if (tc_cmac_final(out, &state) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static void xor_128(const uint8_t a[16], const uint8_t b[16], uint8_t out[16])
-{
-	size_t len = 16;
-	/* TODO: Identical to the xor_128 from smp.c: Move to util */
-
-	while (len--) {
-		*out++ = *a++ ^ *b++;
-	}
-}
 
 int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
 		uint8_t out[BT_CSIP_CRYPTO_HASH_SIZE])
@@ -139,7 +104,7 @@ static int k1(const uint8_t *n, size_t n_size,
 	LOG_DBG("BE: salt %s", bt_hex(salt, BT_CSIP_CRYPTO_SALT_SIZE));
 	LOG_DBG("BE: p %s", bt_hex(p, p_size));
 
-	err = aes_cmac(salt, n, n_size, t);
+	err = bt_crypto_aes_cmac(salt, n, n_size, t);
 
 	LOG_DBG("BE: t %s", bt_hex(t, sizeof(t)));
 
@@ -147,7 +112,7 @@ static int k1(const uint8_t *n, size_t n_size,
 		return err;
 	}
 
-	err = aes_cmac(t, p, p_size, out);
+	err = bt_crypto_aes_cmac(t, p, p_size, out);
 
 	LOG_DBG("BE: out %s", bt_hex(out, 16));
 
@@ -176,7 +141,7 @@ static int s1(const uint8_t *m, size_t m_size,
 
 	memset(zero, 0, sizeof(zero));
 
-	err = aes_cmac(zero, m, m_size, out);
+	err = bt_crypto_aes_cmac(zero, m, m_size, out);
 
 	LOG_DBG("BE: out %s", bt_hex(out, 16));
 
@@ -229,7 +194,7 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
 		sys_mem_swap(k1_out, sizeof(k1_out));
 	}
 
-	xor_128(k1_out, sirk, out_sirk);
+	mem_xor_128(out_sirk, k1_out, sirk);
 	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIP_SET_SIRK_SIZE));
 
 	return 0;

@@ -29,9 +29,10 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/rfcomm.h>
-#include <zephyr/bluetooth/sdp.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/ead.h>
 
 #include <zephyr/shell/shell.h>
 
@@ -52,9 +53,9 @@ struct bt_conn *default_conn;
 static struct bt_conn *pairing_conn;
 
 static struct bt_le_oob oob_local;
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static struct bt_le_oob oob_remote;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_SMP)
@@ -99,10 +100,14 @@ static const char *phy2str(uint8_t phy)
 {
 	switch (phy) {
 	case 0: return "No packets";
-	case BT_GAP_LE_PHY_1M: return "LE 1M";
-	case BT_GAP_LE_PHY_2M: return "LE 2M";
-	case BT_GAP_LE_PHY_CODED: return "LE Coded";
-	default: return "Unknown";
+	case BT_GAP_LE_PHY_1M:
+		return "LE 1M";
+	case BT_GAP_LE_PHY_2M:
+		return "LE 2M";
+	case BT_GAP_LE_PHY_CODED:
+		return "LE Coded";
+	default:
+		return "Unknown";
 	}
 }
 #endif
@@ -122,6 +127,67 @@ static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
 		    addr_desc);
 }
 #endif /* CONFIG_BT_CONN || (CONFIG_BT_BROADCASTER && CONFIG_BT_EXT_ADV) */
+
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+static const char *tx_power_flag2str(int8_t flag)
+{
+	switch (flag) {
+	case 0:
+		return "Neither Max nor Min Tx Power";
+	case 1:
+		return "Tx Power Level is at minimum";
+	case 2:
+		return "Tx Power Level is at maximum";
+	/* Current Tx Power Level is the only available one*/
+	case 3:
+		return "Tx Power Level is at minimum & maximum.";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *tx_power_report_reason2str(uint8_t reason)
+{
+	switch (reason) {
+	case BT_HCI_LE_TX_POWER_REPORT_REASON_LOCAL_CHANGED:
+		return "Local Tx Power changed";
+	case BT_HCI_LE_TX_POWER_REPORT_REASON_REMOTE_CHANGED:
+		return "Remote Tx Power changed";
+	case BT_HCI_LE_TX_POWER_REPORT_REASON_READ_REMOTE_COMPLETED:
+		return "Completed to read remote Tx Power";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *tx_pwr_ctrl_phy2str(enum bt_conn_le_tx_power_phy phy)
+{
+	switch (phy) {
+	case BT_CONN_LE_TX_POWER_PHY_NONE:
+		return "None";
+	case BT_CONN_LE_TX_POWER_PHY_1M:
+		return "LE 1M";
+	case BT_CONN_LE_TX_POWER_PHY_2M:
+		return "LE 2M";
+	case BT_CONN_LE_TX_POWER_PHY_CODED_S8:
+		return "LE Coded S8";
+	case BT_CONN_LE_TX_POWER_PHY_CODED_S2:
+		return "LE Coded S2";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *enabled2str(bool enabled)
+{
+	if (enabled) {
+		return "Enabled";
+	} else {
+		return "Disabled";
+	}
+}
+
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
 
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_scan_off(const struct shell *sh);
@@ -151,6 +217,30 @@ static struct bt_scan_filter {
 static const char scan_response_label[] = "[DEVICE]: ";
 static bool scan_verbose_output;
 
+#if defined(CONFIG_BT_EAD)
+static uint8_t bt_shell_ead_session_key[BT_EAD_KEY_SIZE] = {0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5,
+							    0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB,
+							    0xCC, 0xCD, 0xCE, 0xCF};
+static uint8_t bt_shell_ead_iv[BT_EAD_IV_SIZE] = {0xFB, 0x56, 0xE1, 0xDA, 0xDC, 0x7E, 0xAD, 0xF5};
+
+/* this is the number of ad struct allowed */
+#define BT_SHELL_EAD_MAX_AD 10
+static size_t bt_shell_ead_ad_len;
+
+#if defined(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX)
+/* this is the maximum total size of the ad data */
+#define BT_SHELL_EAD_DATA_MAX_SIZE CONFIG_BT_CTLR_ADV_DATA_LEN_MAX
+#else
+#define BT_SHELL_EAD_DATA_MAX_SIZE 31
+#endif
+static size_t bt_shell_ead_data_size;
+static uint8_t bt_shell_ead_data[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+
+int ead_update_ad(void);
+#endif
+
+static bool bt_shell_ead_decrypt_scan;
+
 /**
  * @brief Compares two strings without case sensitivy
  *
@@ -169,14 +259,12 @@ static bool is_substring(const char *substr, const char *str)
 	}
 
 	for (size_t pos = 0; pos < str_len; pos++) {
-		if (tolower(substr[pos]) == tolower(str[pos])) {
-			if (pos + sub_str_len > str_len) {
-				return false;
-			}
+		if (pos + sub_str_len > str_len) {
+			return false;
+		}
 
-			if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
-				return true;
-			}
+		if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
+			return true;
 		}
 	}
 
@@ -320,6 +408,36 @@ static bool data_verbose_cb(struct bt_data *data, void *user_data)
 	case BT_DATA_CSIS_RSI:
 		print_data_set(3, data->data, data->data_len);
 		break;
+	case BT_DATA_ENCRYPTED_AD_DATA:
+		shell_fprintf(ctx_shell, SHELL_INFO, "Encrypted Advertising Data: ");
+		print_data_set(1, data->data, data->data_len);
+
+		if (bt_shell_ead_decrypt_scan) {
+#if defined(CONFIG_BT_EAD)
+			shell_fprintf(ctx_shell, SHELL_INFO, "\n%*s[START DECRYPTED DATA]\n",
+				      strlen(scan_response_label), "");
+
+			int ead_err;
+			struct net_buf_simple decrypted_buf;
+			size_t decrypted_data_size = BT_EAD_DECRYPTED_PAYLOAD_SIZE(data->data_len);
+			uint8_t decrypted_data[decrypted_data_size];
+
+			ead_err = bt_ead_decrypt(bt_shell_ead_session_key, bt_shell_ead_iv,
+						 data->data, data->data_len, decrypted_data);
+			if (ead_err) {
+				shell_error(ctx_shell, "Error during decryption (err %d)", ead_err);
+			}
+
+			net_buf_simple_init_with_data(&decrypted_buf, &decrypted_data[0],
+						      decrypted_data_size);
+
+			bt_data_parse(&decrypted_buf, &data_verbose_cb, user_data);
+
+			shell_fprintf(ctx_shell, SHELL_INFO, "%*s[END DECRYPTED DATA]",
+				      strlen(scan_response_label), "");
+#endif
+		}
+		break;
 	default:
 		print_data_set(1, data->data, data->data_len);
 	}
@@ -430,22 +548,31 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 		shell_info(ctx_shell, "%*s[SCAN DATA END]", strlen(scan_response_label), "");
 	}
 
-	/* Store address for later use */
 #if defined(CONFIG_BT_CENTRAL)
-	auto_connect.addr_set = true;
-	bt_addr_le_copy(&auto_connect.addr, info->addr);
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U) {
+		struct bt_conn *conn = bt_conn_lookup_addr_le(selected_id, info->addr);
 
-	/* Use the above auto_connect.addr address to automatically connect */
-	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U && auto_connect.connect_name) {
-		auto_connect.connect_name = false;
+		/* Only store auto-connect address for devices we are not already connected to */
+		if (conn == NULL) {
+			/* Store address for later use */
+			auto_connect.addr_set = true;
+			bt_addr_le_copy(&auto_connect.addr, info->addr);
 
-		cmd_scan_off(ctx_shell);
+			/* Use the above auto_connect.addr address to automatically connect */
+			if (auto_connect.connect_name) {
+				auto_connect.connect_name = false;
 
-		/* "name" is what would be in argv[0] normally */
-		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+				cmd_scan_off(ctx_shell);
 
-		/* "connect" is what would be in argv[0] normally */
-		cmd_connect_le(ctx_shell, 1, (char *[]){ "connect" });
+				/* "name" is what would be in argv[0] normally */
+				cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){"name"});
+
+				/* "connect" is what would be in argv[0] normally */
+				cmd_connect_le(ctx_shell, 1, (char *[]){"connect"});
+			}
+		} else {
+			bt_conn_unref(conn);
+		}
 	}
 #endif /* CONFIG_BT_CENTRAL */
 }
@@ -509,6 +636,13 @@ static bool adv_rpa_expired(struct bt_le_ext_adv *adv)
 		    adv_index, adv,
 		    keep_rpa ? "not expired" : "expired");
 
+#if defined(CONFIG_BT_EAD)
+	/* EAD must be updated each time the RPA is updated */
+	if (!keep_rpa) {
+		ead_update_ad();
+	}
+#endif
+
 	return keep_rpa;
 }
 #endif /* defined(CONFIG_BT_PRIVACY) */
@@ -559,7 +693,7 @@ void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	}
 
 	switch (info.type) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, len);
 		break;
@@ -701,7 +835,7 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 }
 #endif
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static const char *security_err_str(enum bt_security_err err)
 {
 	switch (err) {
@@ -809,6 +943,19 @@ void le_phy_updated(struct bt_conn *conn,
 }
 #endif
 
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+void tx_power_report(struct bt_conn *conn,
+		    const struct bt_conn_le_tx_power_report *report)
+{
+	shell_print(ctx_shell, "Tx Power Report: Reason: %s, PHY: %s, Tx Power Level: %d",
+		    tx_power_report_reason2str(report->reason), tx_pwr_ctrl_phy2str(report->phy),
+		    report->tx_power_level);
+	shell_print(ctx_shell, "Tx Power Level Flag Info: %s, Delta: %d",
+		    tx_power_flag2str(report->tx_power_level_flag), report->delta);
+}
+#endif
+
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -817,7 +964,7 @@ static struct bt_conn_cb conn_callbacks = {
 #if defined(CONFIG_BT_SMP)
 	.identity_resolved = identity_resolved,
 #endif
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	.security_changed = security_changed,
 #endif
 #if defined(CONFIG_BT_REMOTE_INFO)
@@ -828,6 +975,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	.le_phy_updated = le_phy_updated,
+#endif
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	.tx_power_report = tx_power_report,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
@@ -973,6 +1123,8 @@ static void bt_ready(int err)
 #if defined(CONFIG_BT_CONN)
 	default_conn = NULL;
 
+	/* Unregister to avoid register repeatedly */
+	bt_conn_cb_unregister(&conn_callbacks);
 	bt_conn_cb_register(&conn_callbacks);
 #endif /* CONFIG_BT_CONN */
 
@@ -1115,17 +1267,21 @@ static int cmd_appearance(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	uint16_t app;
-	int err;
+	int err = 0;
 	const char *val;
 
 	val = argv[1];
-	if (strlen(val) != 6 || strncmp(val, "0x", 2) ||
-	    !hex2bin(&val[2], strlen(&val[2]), ((uint8_t *)&app), sizeof(app))) {
+
+	if (strlen(val) != 6 || strncmp(val, "0x", 2)) {
 		shell_error(sh, "Argument must be 0x followed by exactly 4 hex digits.");
 		return -EINVAL;
 	}
 
-	app = sys_be16_to_cpu(app);
+	app = shell_strtoul(val, 16, &err);
+	if (err) {
+		shell_error(sh, "Argument must be 0x followed by exactly 4 hex digits.");
+		return -EINVAL;
+	}
 
 	err = bt_set_appearance(app);
 	if (err) {
@@ -1542,7 +1698,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	size_t ad_len = 0;
 
 	/* Set BR/EDR Not Supported if LE-only device */
-	ad_flags = IS_ENABLED(CONFIG_BT_BREDR) ? 0 : BT_LE_AD_NO_BREDR;
+	ad_flags = IS_ENABLED(CONFIG_BT_CLASSIC) ? 0 : BT_LE_AD_NO_BREDR;
 
 	if (discoverable) {
 		/* A privacy-enabled Set Member should advertise RSI values only when in
@@ -1909,7 +2065,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	size_t hex_data_len;
 	size_t ad_len = 0;
 	size_t sd_len = 0;
-	size_t len = 0;
+	ssize_t len = 0;
 	bool discoverable = false;
 	size_t *data_len;
 	int err;
@@ -2608,6 +2764,102 @@ static int cmd_per_adv_set_info_transfer(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER && CONFIG_BT_PER_ADV */
 
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+static int cmd_read_remote_tx_power(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc < 3) {
+		int err = 0;
+		enum bt_conn_le_tx_power_phy phy = strtoul(argv[1], NULL, 16);
+
+		err = bt_conn_le_get_remote_tx_power_level(default_conn, phy);
+
+		if (!err) {
+			shell_print(sh, "Read Remote TX Power for PHY %s",
+				    tx_pwr_ctrl_phy2str(phy));
+		} else {
+			shell_print(sh, "error %d", err);
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+	return 0;
+}
+
+static int cmd_read_local_tx_power(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (argc < 3) {
+		struct bt_conn_le_tx_power tx_power_level;
+
+		tx_power_level.phy = strtoul(argv[1], NULL, 16);
+
+		int8_t unachievable_current_level = -100;
+		/* Arbitrary, these are output parameters.*/
+		tx_power_level.current_level = unachievable_current_level;
+		tx_power_level.max_level = 6;
+
+		if (default_conn == NULL) {
+			shell_error(sh, "Conn handle error, at least one connection is required.");
+			return -ENOEXEC;
+		}
+		err = bt_conn_le_get_tx_power_level(default_conn, &tx_power_level);
+		if (err) {
+			shell_print(sh, "Commad returned error error %d", err);
+			return err;
+		}
+		if (tx_power_level.current_level == unachievable_current_level) {
+			shell_print(sh, "We received no current tx power level.");
+			return -EIO;
+		}
+		shell_print(sh, "Read local TX Power: current level: %d, PHY: %s, Max Level: %d",
+			    tx_power_level.current_level,
+			    tx_pwr_ctrl_phy2str((enum bt_conn_le_tx_power_phy)tx_power_level.phy),
+			    tx_power_level.max_level);
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return err;
+}
+
+static int cmd_set_power_report_enable(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc < 4) {
+		int err = 0;
+		bool local_enable = 0;
+		bool remote_enable = 0;
+
+		if (*argv[1] == '1') {
+			local_enable = 1;
+		}
+		if (*argv[2] == '1') {
+			remote_enable = 1;
+		}
+		if (default_conn == NULL) {
+			shell_error(sh, "Conn handle error, at least one connection is required.");
+			return -ENOEXEC;
+		}
+		err = bt_conn_le_set_tx_power_report_enable(default_conn, local_enable,
+							     remote_enable);
+		if (!err) {
+			shell_print(sh, "Tx Power Report: local: %s, remote: %s",
+				    enabled2str(local_enable), enabled2str(remote_enable));
+		} else {
+			shell_print(sh, "error %d", err);
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+	return 0;
+}
+
+#endif
+
+
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
@@ -2906,14 +3158,14 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 #endif
 	}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (info.type == BT_CONN_TYPE_BR) {
 		char addr_str[BT_ADDR_STR_LEN];
 
 		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
 		shell_print(ctx_shell, "Peer address %s", addr_str);
 	}
-#endif /* defined(CONFIG_BT_BREDR) */
+#endif /* defined(CONFIG_BT_CLASSIC) */
 
 done:
 	bt_conn_unref(conn);
@@ -3056,7 +3308,7 @@ static int cmd_conn_phy_update(const struct shell *sh, size_t argc,
 }
 #endif
 
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_BROADCASTER)
 static int cmd_chan_map(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint8_t chan_map[5] = {};
@@ -3094,7 +3346,7 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static int cmd_oob_remote(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
@@ -3130,7 +3382,7 @@ static int cmd_oob_clear(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 
 static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -3151,7 +3403,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc < 3) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		addr.type = BT_ADDR_LE_PUBLIC;
 		err = bt_addr_from_str(argv[1], &addr.a);
 #else
@@ -3178,7 +3430,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static int cmd_security(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, sec;
@@ -3288,7 +3540,7 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	}
 
 	switch (info.type) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 		shell_print(ctx_shell, " #%u [BR][%s] %s", info.id, role_str(info.role), addr);
@@ -3487,7 +3739,7 @@ static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err err)
 		    security_err_str(err), err);
 }
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -3550,7 +3802,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #endif
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3565,7 +3817,7 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3580,7 +3832,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3592,7 +3844,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 };
 
 static struct bt_conn_auth_cb auth_cb_confirm = {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3607,7 +3859,7 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = auth_pairing_oob_data_request,
@@ -3622,7 +3874,7 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 	.passkey_display = NULL,
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = NULL,
 #endif
 	.oob_data_request = auth_pairing_oob_data_request,
@@ -3894,9 +4146,12 @@ static int cmd_auth_passkey_notify(const struct shell *sh,
 
 	err = 0;
 	type = shell_strtoul(argv[1], 0, &err);
-	if (err || !IN_RANGE(type, BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
-			     BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
-		shell_error(sh, "<type> must be a value in range of enum bt_conn_auth_keypress");
+	if (err ||
+	    (type != BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED &&
+	     type != BT_CONN_AUTH_KEYPRESS_DIGIT_ENTERED &&
+	     type != BT_CONN_AUTH_KEYPRESS_DIGIT_ERASED && type != BT_CONN_AUTH_KEYPRESS_CLEARED &&
+	     type != BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+		shell_error(sh, "<type> must be a value of enum bt_conn_auth_keypress");
 		return -EINVAL;
 	}
 
@@ -3932,7 +4187,268 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
-#endif /* CONFIG_BT_SMP) || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP) || CONFIG_BT_CLASSIC */
+
+#if defined(CONFIG_BT_EAD)
+static int cmd_encrypted_ad_set_keys(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+
+	const char *session_key = argv[1];
+	const char *iv = argv[2];
+
+	len = hex2bin(session_key, strlen(session_key), bt_shell_ead_session_key, BT_EAD_KEY_SIZE);
+	if (len != BT_EAD_KEY_SIZE) {
+		shell_error(sh, "Failed to set session key");
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(iv, strlen(iv), bt_shell_ead_iv, BT_EAD_IV_SIZE);
+	if (len != BT_EAD_IV_SIZE) {
+		shell_error(sh, "Failed to set initialisation vector");
+		return -ENOEXEC;
+	}
+
+	shell_info(sh, "session key set to:");
+	shell_hexdump(sh, bt_shell_ead_session_key, BT_EAD_KEY_SIZE);
+	shell_info(sh, "initialisation vector set to:");
+	shell_hexdump(sh, bt_shell_ead_iv, BT_EAD_IV_SIZE);
+
+	return 0;
+}
+
+int encrypted_ad_store_ad(const struct shell *sh, uint8_t type, const uint8_t *data,
+			  uint8_t data_len)
+{
+	/* data_len is the size of the data, add two bytes for the size of the type
+	 * and the length that will be stored with the data
+	 */
+	uint8_t new_data_size = data_len + 2;
+
+	if (bt_shell_ead_data_size + new_data_size > BT_SHELL_EAD_DATA_MAX_SIZE) {
+		shell_error(sh, "Failed to add data (trying to add %d but %d already used on %d)",
+			    new_data_size, bt_shell_ead_data_size, BT_SHELL_EAD_DATA_MAX_SIZE);
+		return -ENOEXEC;
+	}
+
+	/* the length is the size of the data + the size of the type */
+	bt_shell_ead_data[bt_shell_ead_data_size] = data_len + 1;
+	bt_shell_ead_data[bt_shell_ead_data_size + 1] = type;
+	memcpy(&bt_shell_ead_data[bt_shell_ead_data_size + 2], data, data_len);
+
+	bt_shell_ead_data_size += new_data_size;
+	bt_shell_ead_ad_len += 1;
+
+	return 0;
+}
+
+bool is_payload_valid_ad(uint8_t *payload, size_t payload_size)
+{
+	size_t idx = 0;
+	bool is_valid = true;
+
+	uint8_t ad_len;
+
+	while (idx < payload_size) {
+		ad_len = payload[idx];
+
+		if (payload_size <= ad_len) {
+			is_valid = false;
+			break;
+		}
+
+		idx += ad_len + 1;
+	}
+
+	if (idx != payload_size) {
+		is_valid = false;
+	}
+
+	return is_valid;
+}
+
+static int cmd_encrypted_ad_add_ead(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+
+	char *hex_payload = argv[1];
+	size_t hex_payload_size = strlen(hex_payload);
+
+	uint8_t payload[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+	uint8_t payload_size = hex_payload_size / 2 + hex_payload_size % 2;
+
+	uint8_t ead_size = BT_EAD_ENCRYPTED_PAYLOAD_SIZE(payload_size);
+
+	if (ead_size > BT_SHELL_EAD_DATA_MAX_SIZE) {
+		shell_error(sh,
+			    "Failed to add data. Maximum AD size is %d, passed data size after "
+			    "encryption is %d",
+			    BT_SHELL_EAD_DATA_MAX_SIZE, ead_size);
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(hex_payload, hex_payload_size, payload, BT_SHELL_EAD_DATA_MAX_SIZE);
+	if (len != payload_size) {
+		shell_error(sh, "Failed to add data");
+		return -ENOEXEC;
+	}
+
+	/* check that the given advertising data structures are valid before encrypting them */
+	if (!is_payload_valid_ad(payload, payload_size)) {
+		shell_error(sh, "Failed to add data. Advertising structure are malformed.");
+		return -ENOEXEC;
+	}
+
+	/* store not-yet encrypted AD but claim the expected size of encrypted AD */
+	return encrypted_ad_store_ad(sh, BT_DATA_ENCRYPTED_AD_DATA, payload, ead_size);
+}
+
+static int cmd_encrypted_ad_add_ad(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+	uint8_t ad_len;
+	uint8_t ad_type;
+
+	char *hex_payload = argv[1];
+	size_t hex_payload_size = strlen(hex_payload);
+
+	uint8_t payload[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+	uint8_t payload_size = hex_payload_size / 2 + hex_payload_size % 2;
+
+	len = hex2bin(hex_payload, hex_payload_size, payload, BT_SHELL_EAD_DATA_MAX_SIZE);
+	if (len != payload_size) {
+		shell_error(sh, "Failed to add data");
+		return -ENOEXEC;
+	}
+
+	/* the length received is the length of ad data + the length of the data
+	 * type but `bt_data` struct `data_len` field is only the size of the
+	 * data
+	 */
+	ad_len = payload[0] - 1;
+	ad_type = payload[1];
+
+	/* if the ad data is malformed or there is more than 1 ad data passed we
+	 * fail
+	 */
+	if (len != ad_len + 2) {
+		shell_error(sh,
+			    "Failed to add data. Data need to be formated as specified in the "
+			    "Core Spec. Only one non-encrypted AD payload can be added at a time.");
+		return -ENOEXEC;
+	}
+
+	return encrypted_ad_store_ad(sh, ad_type, payload, payload_size);
+}
+
+static int cmd_encrypted_ad_clear_ad(const struct shell *sh, size_t argc, char *argv[])
+{
+	memset(bt_shell_ead_data, 0, BT_SHELL_EAD_DATA_MAX_SIZE);
+
+	bt_shell_ead_ad_len = 0;
+	bt_shell_ead_data_size = 0;
+
+	shell_info(sh, "Advertising data has been cleared.");
+
+	return 0;
+}
+
+int ead_encrypt_ad(const uint8_t *payload, uint8_t payload_size, uint8_t *encrypted_payload)
+{
+	int err;
+
+	err = bt_ead_encrypt(bt_shell_ead_session_key, bt_shell_ead_iv, payload, payload_size,
+			     encrypted_payload);
+	if (err != 0) {
+		shell_error(ctx_shell, "Failed to encrypt AD.");
+		return -1;
+	}
+
+	return 0;
+}
+
+int ead_update_ad(void)
+{
+	int err;
+	size_t idx = 0;
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+
+	struct bt_data *ad;
+	size_t ad_structs_idx = 0;
+	struct bt_data ad_structs[BT_SHELL_EAD_MAX_AD] = {0};
+
+	size_t encrypted_data_buf_len = 0;
+	uint8_t encrypted_data_buf[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+
+	while (idx < bt_shell_ead_data_size && ad_structs_idx < BT_SHELL_EAD_MAX_AD) {
+		ad = &ad_structs[ad_structs_idx];
+
+		/* the data_len from bt_data struct doesn't include the size of the type */
+		ad->data_len = bt_shell_ead_data[idx] - 1;
+
+		if (ad->data_len < 0) {
+			/* if the len is less than 0 that mean there is not even a type field */
+			shell_error(ctx_shell, "Failed to update AD due to malformed AD.");
+			return -ENOEXEC;
+		}
+
+		ad->type = bt_shell_ead_data[idx + 1];
+
+		if (ad->data_len > 0) {
+			if (ad->type == BT_DATA_ENCRYPTED_AD_DATA) {
+				/* for EAD the size used to store the non-encrypted data
+				 * is the size of those data when encrypted
+				 */
+				ead_encrypt_ad(&bt_shell_ead_data[idx + 2],
+					       BT_EAD_DECRYPTED_PAYLOAD_SIZE(ad->data_len),
+					       &encrypted_data_buf[encrypted_data_buf_len]);
+
+				ad->data = &encrypted_data_buf[encrypted_data_buf_len];
+				encrypted_data_buf_len += ad->data_len;
+			} else {
+				ad->data = &bt_shell_ead_data[idx + 2];
+			}
+		}
+
+		ad_structs_idx += 1;
+		idx += ad->data_len + 2;
+	}
+
+	err = bt_le_ext_adv_set_data(adv, ad_structs, bt_shell_ead_ad_len, NULL, 0);
+	if (err != 0) {
+		shell_error(ctx_shell, "Failed to set advertising data (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_info(ctx_shell, "Advertising data for Advertiser[%d] %p updated.", selected_adv, adv);
+
+	return 0;
+}
+
+static int cmd_encrypted_ad_commit_ad(const struct shell *sh, size_t argc, char *argv[])
+{
+	return ead_update_ad();
+}
+
+static int cmd_encrypted_ad_decrypt_scan(const struct shell *sh, size_t argc, char *argv[])
+{
+	const char *action = argv[1];
+
+	if (strcmp(action, "on") == 0) {
+		bt_shell_ead_decrypt_scan = true;
+		shell_info(sh, "Received encrypted advertising data will now be decrypted using "
+			       "provided key materials.");
+	} else if (strcmp(action, "off") == 0) {
+		bt_shell_ead_decrypt_scan = false;
+		shell_info(sh, "Received encrypted advertising data will now longer be decrypted.");
+	} else {
+		shell_error(sh, "Invalid option.");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif
 
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
@@ -3981,6 +4497,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_clear_cmds,
 );
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_EAD)
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	bt_encrypted_ad_cmds,
+	SHELL_CMD_ARG(set-keys, NULL, "<session key> <init vector>", cmd_encrypted_ad_set_keys, 3,
+		      0),
+	SHELL_CMD_ARG(add-ead, NULL, "<advertising data>", cmd_encrypted_ad_add_ead, 2, 0),
+	SHELL_CMD_ARG(add-ad, NULL, "<advertising data>", cmd_encrypted_ad_add_ad, 2, 0),
+	SHELL_CMD(clear-ad, NULL, HELP_NONE, cmd_encrypted_ad_clear_ad),
+	SHELL_CMD(commit-ad, NULL, HELP_NONE, cmd_encrypted_ad_commit_ad),
+	SHELL_CMD_ARG(decrypt-scan, NULL, HELP_ONOFF, cmd_encrypted_ad_decrypt_scan, 2, 0),
+	SHELL_SUBCMD_SET_END);
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(init, NULL, "[no-settings-load], [sync]",
 		      cmd_init, 1, 2),
@@ -4015,6 +4544,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_default_handler),
 	SHELL_CMD_ARG(scan-verbose-output, NULL, "<value: on, off>", cmd_scan_verbose_output, 2, 0),
 #endif /* CONFIG_BT_OBSERVER */
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	SHELL_CMD_ARG(read-remote-tx-power, NULL, HELP_NONE, cmd_read_remote_tx_power, 2, 0),
+	SHELL_CMD_ARG(read-local-tx-power, NULL, HELP_NONE, cmd_read_local_tx_power, 2, 0),
+	SHELL_CMD_ARG(set-power-report-enable, NULL, HELP_NONE, cmd_set_power_report_enable, 3, 0),
+#endif
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
@@ -4064,6 +4598,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_per_adv_sync_delete, 1, 1),
 	SHELL_CMD_ARG(per-adv-sync-select, NULL, "[adv]", cmd_per_adv_sync_select, 1, 1),
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
+#if defined(CONFIG_BT_EAD)
+	SHELL_CMD(encrypted-ad, &bt_encrypted_ad_cmds, "Manage advertiser with encrypted data",
+		  cmd_default_handler),
+#endif /* CONFIG_BT_EAD */
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
 	SHELL_CMD_ARG(past-subscribe, NULL, "[conn] [skip <count>] "
@@ -4104,13 +4642,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(phy-update, NULL, "<tx_phy> [rx_phy] [s2] [s8]",
 		      cmd_conn_phy_update, 2, 3),
 #endif
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXX> (36-0)",
 		      cmd_chan_map, 2, 1),
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
 				      "LE: 1 - 4> [force-pair]",
 		      cmd_security, 1, 2),
@@ -4153,7 +4691,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
 		      1, 1),
 #endif
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	SHELL_CMD(mesh_adv, NULL, HELP_ONOFF, cmd_mesh_adv),

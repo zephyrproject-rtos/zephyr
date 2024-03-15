@@ -3,6 +3,7 @@
 
 menuconfig LLEXT
 	bool "Linkable loadable extensions"
+	select CACHE_MANAGEMENT if DCACHE
 	help
 	  Enable the linkable loadable extension subsystem
 
@@ -26,6 +27,12 @@ config LLEXT_SHELL_MAX_SIZE
 	default 8192
 	help
 	  When loading llext with shell it is stored in a temporary buffer of this size
+
+config LLEXT_STORAGE_WRITABLE
+	bool "llext storage is writable"
+	help
+	  Select if LLEXT storage is writable, i.e. if extensions are stored in
+	  RAM and can be modified in place
 
 module = LLEXT
 module-str = llext

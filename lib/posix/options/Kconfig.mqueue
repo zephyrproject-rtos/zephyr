@@ -1,0 +1,36 @@
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POSIX_MQUEUE
+	bool "Message queue support"
+	default y if POSIX_API
+	help
+	  This enabled POSIX message queue related APIs.
+
+if POSIX_MQUEUE
+
+config MSG_COUNT_MAX
+	int "Maximum number of messages in message queue"
+	default 16
+	help
+	  Mention maximum number of messages in message queue in POSIX compliant
+	  application.
+
+config MSG_SIZE_MAX
+	int "Maximum size of a message"
+	default 16
+	help
+	  Mention maximum size of message in bytes.
+
+config MQUEUE_NAMELEN_MAX
+	int "Maximum size of a name length"
+	default 16
+	range 2 255
+	help
+	  Mention length of message queue name in number of characters.
+
+config HEAP_MEM_POOL_ADD_SIZE_MQUEUE
+	def_int 1024
+
+endif

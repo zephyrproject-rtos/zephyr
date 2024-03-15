@@ -28,9 +28,12 @@ config MCUMGR_GRP_STAT_MAX_NAME_LEN
 	depends on MCUMGR_GRP_STAT
 	help
 	  Limits the maximum stat group name length in MCUmgr requests, in bytes.
-	  A buffer of this size gets allocated on the stack during handling of all
-	  stat read commands.  If a stat group's name exceeds this limit, it will
-	  be impossible to retrieve its values with a stat show command.
+	  For stat group names. a buffer of this size gets allocated on the stack
+	  during handling of all stat read commands. If a stat group's name
+	  exceeds this limit, it will be impossible to retrieve its values with
+	  a stat show command.
+	  For stat names s_name and snm_name, this is the maximum length when
+	  encoding the name to cbor.
 
 module = MCUMGR_GRP_STAT
 module-str = mcumgr_grp_stat

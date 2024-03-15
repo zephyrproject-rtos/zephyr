@@ -80,8 +80,9 @@ set_pid_exit:
 	return ret;
 }
 
-int usbd_device_set_class(struct usbd_contex *const uds_ctx,
-			   const uint8_t value)
+int usbd_device_set_code_triple(struct usbd_contex *const uds_ctx,
+				const uint8_t base_class,
+				const uint8_t subclass, const uint8_t protocol)
 {
 	struct usb_device_descriptor *desc = uds_ctx->desc;
 	int ret = 0;
@@ -90,52 +91,14 @@ int usbd_device_set_class(struct usbd_contex *const uds_ctx,
 
 	if (usbd_is_enabled(uds_ctx)) {
 		ret = -EALREADY;
-		goto set_class_exit;
+		goto set_code_triple_exit;
 	}
 
-	desc->bDeviceClass = value;
+	desc->bDeviceClass = base_class;
+	desc->bDeviceSubClass = subclass;
+	desc->bDeviceProtocol = protocol;
 
-set_class_exit:
-	usbd_device_unlock(uds_ctx);
-	return ret;
-}
-
-int usbd_device_set_subclass(struct usbd_contex *const uds_ctx,
-			     const uint8_t value)
-{
-	struct usb_device_descriptor *desc = uds_ctx->desc;
-	int ret = 0;
-
-	usbd_device_lock(uds_ctx);
-
-	if (usbd_is_enabled(uds_ctx)) {
-		ret = -EALREADY;
-		goto set_subclass_exit;
-	}
-
-	desc->bDeviceSubClass = value;
-
-set_subclass_exit:
-	usbd_device_unlock(uds_ctx);
-	return ret;
-}
-
-int usbd_device_set_proto(struct usbd_contex *const uds_ctx,
-			  const uint8_t value)
-{
-	struct usb_device_descriptor *desc = uds_ctx->desc;
-	int ret = 0;
-
-	usbd_device_lock(uds_ctx);
-
-	if (usbd_is_enabled(uds_ctx)) {
-		ret = -EALREADY;
-		goto set_proto_exit;
-	}
-
-	desc->bDeviceProtocol = value;
-
-set_proto_exit:
+set_code_triple_exit:
 	usbd_device_unlock(uds_ctx);
 	return ret;
 }

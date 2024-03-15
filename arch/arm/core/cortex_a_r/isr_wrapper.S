@@ -22,6 +22,7 @@
 #include <offsets_short.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sw_isr_table.h>
+#include "macro_priv.inc"
 
 
 _ASM_FILE_PROLOGUE
@@ -31,6 +32,7 @@ GDATA(_sw_isr_table)
 GTEXT(_isr_wrapper)
 GTEXT(z_arm_int_exit)
 
+#ifndef CONFIG_USE_SWITCH
 /**
  *
  * @brief Wrapper around ISRs when inserted in software ISR table
@@ -57,8 +59,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cmp r0, #MODE_USR
 	bne isr_system_thread
 
-	ldr r0, =_kernel
-	ldr r0, [r0, #_kernel_offset_to_current]
+	get_cpu r0
+	ldr r0, [r0, #___cpu_t_current_OFFSET]
 
 	/* Save away user stack pointer */
 	cps #MODE_SYS
@@ -108,10 +110,10 @@ _vfp_not_enabled:
 	 * Mark where to store the floating context for the undefined
 	 * instruction handler
 	 */
-	ldr r2, =_kernel
-	ldr r0, [r2, #_kernel_offset_to_fp_ctx]
+	get_cpu r2
+	ldr r0, [r2, #___cpu_t_fp_ctx_OFFSET]
 	cmp r0, #0
-	streq sp, [r2, #_kernel_offset_to_fp_ctx]
+	streq sp, [r2, #___cpu_t_fp_ctx_OFFSET]
 #endif /* CONFIG_FPU_SHARING */
 
 	/*
@@ -139,10 +141,10 @@ _vfp_not_enabled:
 	push {r2, r3}
 
 	/* Increment interrupt nesting count */
-	ldr r2, =_kernel
-	ldr r0, [r2, #_kernel_offset_to_nested]
+	get_cpu r2
+	ldr r0, [r2, #___cpu_t_nested_OFFSET]
 	add r0, r0, #1
-	str r0, [r2, #_kernel_offset_to_nested]
+	str r0, [r2, #___cpu_t_nested_OFFSET]
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
@@ -227,3 +229,145 @@ spurious_continue:
 	 * z_arm_int_exit() */
 	ldr r1, =z_arm_int_exit
 	bx r1
+
+#else
+/**
+ *
+ * @brief Wrapper around ISRs when inserted in software ISR table
+ *
+ * When inserted in the vector table, _isr_wrapper() demuxes the ISR table
+ * using the running interrupt number as the index, and invokes the registered
+ * ISR with its corresponding argument. When returning from the ISR, it
+ * determines if a context switch needs to happen and invoke the arch_switch
+ * function if so.
+ *
+ */
+SECTION_FUNC(TEXT, _isr_wrapper)
+	sub lr, #4
+	z_arm_cortex_ar_enter_exc
+
+	/* Increment interrupt nesting count */
+	get_cpu r2
+	ldr r0, [r2, #___cpu_t_nested_OFFSET]
+	add r0, #1
+	str r0, [r2, #___cpu_t_nested_OFFSET]
+
+	/* If not nested: switch to IRQ stack and save current sp on it. */
+	cmp r0, #1
+	bhi 1f
+	mov r0, sp
+	cps #MODE_IRQ
+	push {r0}
+1:
+#ifdef CONFIG_TRACING_ISR
+	bl sys_trace_isr_enter
+#endif /* CONFIG_TRACING_ISR */
+
+#ifdef CONFIG_PM
+	/*
+	 * All interrupts are disabled when handling idle wakeup.  For tickless
+	 * idle, this ensures that the calculation and programming of the
+	 * device for the next timer deadline is not interrupted.  For
+	 * non-tickless idle, this ensures that the clearing of the kernel idle
+	 * state is not interrupted.  In each case, z_pm_save_idle_exit
+	 * is called with interrupts disabled.
+	 */
+
+	/* is this a wakeup from idle ? */
+	ldr r2, =_kernel
+	/* requested idle duration, in ticks */
+	ldr r0, [r2, #_kernel_offset_to_idle]
+	cmp r0, #0
+
+	beq _idle_state_cleared
+	movs r1, #0
+	/* clear kernel idle state */
+	str r1, [r2, #_kernel_offset_to_idle]
+	bl z_pm_save_idle_exit
+_idle_state_cleared:
+#endif /* CONFIG_PM */
+
+	/* Get active IRQ number from the interrupt controller */
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	bl arm_gic_get_active
+#else
+	bl z_soc_irq_get_active
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
+	push {r0, r1}
+	lsl r0, r0, #3	/* table is 8-byte wide */
+
+	/*
+	 * Skip calling the isr if it is a spurious interrupt.
+	 */
+	mov r1, #CONFIG_NUM_IRQS
+	lsl r1, r1, #3
+	cmp r0, r1
+	bge spurious_continue
+
+	ldr r1, =_sw_isr_table
+	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
+			 * in thumb mode */
+	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
+
+	/*
+	 * Enable and disable interrupts again to allow nested in exception handlers.
+	 */
+	cpsie i
+	blx r3		/* call ISR */
+	cpsid i
+
+spurious_continue:
+	/* Signal end-of-interrupt */
+	pop {r0, r1}
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	bl arm_gic_eoi
+#else
+	bl z_soc_irq_eoi
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
+#ifdef CONFIG_TRACING_ISR
+	bl sys_trace_isr_exit
+#endif
+
+GTEXT(z_arm_cortex_ar_irq_done)
+z_arm_cortex_ar_irq_done:
+	/* Decrement interrupt nesting count */
+	get_cpu r2
+	ldr r0, [r2, #___cpu_t_nested_OFFSET]
+	sub r0, r0, #1
+	str r0, [r2, #___cpu_t_nested_OFFSET]
+	/* Do not context switch if exiting a nested interrupt */
+	cmp r0, #0
+	bhi __EXIT_INT
+
+	/* retrieve pointer to the current thread */
+	pop {r0}
+	cps #MODE_SYS
+	mov sp, r0
+
+	ldr r1, [r2, #___cpu_t_current_OFFSET]
+	push {r1}
+	mov r0, #0
+	bl z_get_next_switch_handle
+
+	pop {r1}
+	cmp r0, #0
+	beq __EXIT_INT
+
+	/*
+	 * Switch thread
+	 * r0: new thread
+	 * r1: old thread
+	 */
+	bl z_arm_context_switch
+
+__EXIT_INT:
+
+#ifdef CONFIG_STACK_SENTINEL
+	bl z_check_stack_sentinel
+#endif /* CONFIG_STACK_SENTINEL */
+
+	b z_arm_cortex_ar_exit_exc
+
+#endif

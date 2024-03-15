@@ -1,18 +1,13 @@
 # DesignWare SPI driver configuration options
 
 # Copyright (c) 2015-2016 Intel Corporation
+# Copyright (c) 2023 Meta Platforms
 # SPDX-License-Identifier: Apache-2.0
-
-config HAS_SPI_DW
-	bool
-	help
-	  Signifies whether DesignWare SPI compatible HW is available
 
 menuconfig SPI_DW
 	bool "Designware SPI controller driver"
 	default y
 	depends on DT_HAS_SNPS_DESIGNWARE_SPI_ENABLED
-	depends on HAS_SPI_DW
 	help
 	  Enable support for Designware's SPI controllers.
 

@@ -11,7 +11,7 @@
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 #define LMP_FEAT_PAGES_COUNT	3
 #else
 #define LMP_FEAT_PAGES_COUNT	1
@@ -49,11 +49,11 @@ enum {
 	BT_DEV_ID_PENDING,
 	BT_DEV_STORE_ID,
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_DEV_NUM_FLAGS,
@@ -277,7 +277,7 @@ struct bt_dev_le {
 #endif /* CONFIG_BT_SMP */
 };
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t         mtu;
@@ -355,7 +355,7 @@ struct bt_dev {
 	/* LE controller specific features */
 	struct bt_dev_le	le;
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	/* BR/EDR controller specific features */
 	struct bt_dev_br	br;
 #endif
@@ -381,8 +381,10 @@ struct bt_dev {
 	/* Local Identity Resolving Key */
 	uint8_t			irk[CONFIG_BT_ID_MAX][16];
 
+#if defined(CONFIG_BT_RPA_SHARING)
 	/* Only 1 RPA per identity */
 	bt_addr_t		rpa[CONFIG_BT_ID_MAX];
+#endif
 
 	/* Work used for RPA rotation */
 	struct k_work_delayable rpa_update;
@@ -402,11 +404,11 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.
@@ -432,7 +434,14 @@ int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_tim
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
 uint8_t bt_get_phy(uint8_t hci_phy);
-
+/**
+ * @brief Convert CTE type value from HCI format to @ref bt_df_cte_type format.
+ *
+ * @param hci_cte_type   CTE type in an HCI format.
+ *
+ * @return CTE type (@ref bt_df_cte_type).
+ */
+int bt_get_df_cte_type(uint8_t hci_cte_type);
 int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);

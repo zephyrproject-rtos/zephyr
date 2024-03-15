@@ -8,17 +8,135 @@ directory* with various files in it. Files in the board directory inherit
 support for at least one SoC and all of its features. Therefore, Zephyr must
 support your :term:`SoC` as well.
 
+.. _hw_model_v2:
+
+Transition to the current hardware model
+****************************************
+
+Shortly after Zephyr 3.6.0 was released, a new hardware model was introduced to
+Zephyr. This new model overhauls the way both SoCs and boards are named and
+defined, and adds support for features that had been identified as important
+over the years. Among them:
+
+- Support for multi-core, multi-arch AMP (Asymmetrical Multi Processing) SoCs
+- Support for multi-SoC boards
+- Support for reusing the SoC and board Kconfig trees outside of the Zephyr
+  build system
+- Support for advanced use cases with :ref:`sysbuild`
+- Removal of all existing arbitrary and inconsistent uses of Kconfig and folder
+  names
+
+All the documentation in this page refers to the current hardware model. Please
+refer to the documentation in Zephyr v3.6.0 (or earlier) for information on the
+previous, now obsolete, hardware model.
+
+More information about the rationale, development and concepts behind the new
+model can be found in the :github:`original issue <51831>`, the
+:github:`original Pull Request <50305>` and, for a complete set of changes
+introduced, the `hardware model v2 commit`_.
+
+Some non-critical features, enhancements and improvements of the new hardware
+model are still in development. Check the
+:github:`hardware model v2 enhancements issue <69546>` for a complete list.
+
+The transition from the previous hardware model to the current one (commonly
+referred to as "hardware model v2") requires modifications to all existing board
+and SoC definitions. A decision was made not to provide direct backwards
+compatibility for the previous model, which leaves users transitioning from a
+previous version of Zephyr to one including the new model (v3.7.0 and onwards)
+with two options if they have an out-of-tree board (or SoC):
+
+#. Convert the out-of-tree board to the current hardware model (recommended)
+#. Take the SoC definition from Zephyr v3.6.0 and copy it to your downstream
+   repository (ensuring that the build system can find it via a
+   :ref:`zephyr module <modules>` or ``SOC_ROOT``). This will allow your board,
+   defined in the previous hardware model, to continue to work
+
+When converting your board from the previous to the current hardware model, we
+recommend first reading through this page to understand the model in detail. You
+can then use the `example-application conversion Pull Request`_ as an example on
+how to port a simple board. Additionally, a `conversion script`_ is available
+and works reliably in many cases (though multi-core SoCs may not be handled
+entirely). Finally, the `hardware model v2 commit`_ contains the full conversion
+of all existing boards from the old to the current model, so you can use it as a
+complete conversion reference.
+
+.. _hardware model v2 commit: https://github.com/zephyrproject-rtos/zephyr/commit/8dc3f856229ce083c956aa301c31a23e65bd8cd8
+.. _example-application conversion Pull Request: https://github.com/zephyrproject-rtos/example-application/pull/58
+.. _conversion script: https://github.com/zephyrproject-rtos/zephyr/blob/main/scripts/utils/board_v1_to_v2.py
+
+.. _board_and_identifiers:
+
+Board and board identifiers
+***************************
+
+A board may be a physical piece of hardware or an emulated board.
+Furthermore a board may contain one or multiple SoCs. Also, each SoC may contain
+one or multiple CPU clusters. A CPU cluster refers to a group of CPU cores.
+Only CPU cores of same architecture can be in the same cluster. In the case
+where a physical SoC considers a CPU cluster to contain CPU cores of different
+architectures then those must be modelled as multiple clusters, where all CPU
+cores within a cluster is having the same architecture.
+It is possible to have only a single CPU core within a CPU cluster.
+
+It's possible to define variants for dedicated use-cases.
+Examples of such use-cases are:
+
+- Variant which enables non-secure builds for SoCs containing a security
+  processor.
+- Variant enabling / changing the type of RAM used in by the build.
+
+A ``/`` is used as separator between the board name and the following:
+SoC, CPU cluster, and variant identifiers.
+
+If a board contains only a single core SoC, then the SoC can be omitted when
+building.
+
+Let's say there is a board named ``plank`` with a single-core SoC ``soc1``.
+The board including the identifier is: ``plank/soc1``.
+
+As ``plank`` is a single SoC board, then the following is sufficient: ``plank``
+to use as board when building.
+
+If ``plank`` defines board variants, then those are identified by appending the
+``/<variant>`` name after the SoC, for example to build for the ``foo`` variant,
+use: ``plank/soc1/foo``, and if omitting the SoC use: ``plank//foo``.
+Here the double ``//`` indicates to the build system that the SoC has been
+omitted.
+
+So to build hello world for ``plank``, variant ``foo``, you can do:
+
+.. code-block:: console
+
+   west build -b plank//foo samples/hello_world
+
+When using multi-core SoCs, the CPU cluster is identified after the SoC
+identifier.
+
+If ``soc1`` above has two cores, ``first`` and ``second``, then those are
+identified as: ``plank/soc1/first`` and ``plank/soc1/second``.
+
+And similar to before, if the board has only a single SoC, the SoC can be
+omitted, that is ``plank//first`` and ``plank//second`` is an identical short
+form.
+
+.. _hw_support_hierarchy:
+
 Boards, SoCs, etc.
 ******************
 
 Zephyr's hardware support hierarchy has these layers, from most to least
 specific:
 
-- Board: a particular CPU instance and its peripherals in a concrete hardware
-  specification
+- Board: a specific board which usually corresponds to a physical board.
+         A board may contain multiple SoCs.
+         A build targets a specific CPU cluster on a board which has multiple
+         CPUs, be these in different SOCs or in a SOC with multiple AMP CPU
+         clusters.
 - SoC: the exact system on a chip the board's CPU is part of
 - SoC series: a smaller group of tightly related SoCs
 - SoC family: a wider group of SoCs with similar characteristics
+- CPU Cluster: a cluster of one or more CPU cores.
 - CPU core: a particular CPU in an architecture
 - Architecture: an instruction set architecture
 
@@ -34,39 +152,26 @@ You can visualize the hierarchy like this:
 Here are some examples. Notice how the SoC series and family levels are
 not always used.
 
-.. list-table::
-   :header-rows: 1
+.. table::
 
-   * - Board
-     - SoC
-     - SoC series
-     - SoC family
-     - CPU core
-     - Architecture
-   * - :ref:`nrf52dk_nrf52832 <nrf52dk_nrf52832>`
-     - nRF52832
-     - nRF52
-     - Nordic nRF5
-     - Arm Cortex-M4
-     - Arm
-   * - :ref:`frdm_k64f <frdm_k64f>`
-     - MK64F12
-     - Kinetis K6x
-     - NXP Kinetis
-     - Arm Cortex-M4
-     - Arm
-   * - :ref:`stm32h747i_disco <stm32h747i_disco_board>`
-     - STM32H747XI
-     - STM32H7
-     - STMicro STM32
-     - Arm Cortex-M7
-     - Arm
-   * - :ref:`rv32m1_vega_ri5cy <rv32m1_vega>`
-     - RV32M1
-     - (Not used)
-     - (Not used)
-     - RI5CY
-     - RISC-V
+   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
+   | Board                                      | Identifier            | SoC         | SoC Series    | SoC family    | CPU core       | Architecture |
+   +============================================+=======================+=============+===============+===============+================+==============+
+   | :ref:`nrf52dk <nrf52dk_nrf52832>`          | /nrf52832             | nRF52832    | nRF52         | Nordic nRF    | Arm Cortex-M4  | Arm          |
+   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`frdm_k64f <frdm_k64f>`               | /mk64f12              | MK64F12     | Kinetis K6x   | NXP Kinetis   | Arm Cortex-M4  | Arm          |
+   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`rv32m1_vega <rv32m1_vega>`           | /openisa_rv32m1/ri5cy | RV32M1      | (Not used)    | (Not used)    | RI5CY          | RISC-V       |
+   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`nrf5340dk <nrf5340dk_nrf5340>`       | /nrf5340/cpuapp       | nRF5340     | nRF53         | Nordic nRF    | Arm Cortex-M33 | Arm          |
+   |                                            +-----------------------+-------------+---------------+---------------+----------------+--------------+
+   |                                            | /nrf5340/cpunet       | nRF5340     | nRF53         | Nordic nRF    | Arm Cortex-M33 | Arm          |
+   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`mimx8mp_evk <imx8mp_evk>`            | /mimx8m/a53           | i.MX8M Plus | i.MXM8M A53   | NXP i.MX      | Arm Cortex-A53 | Arm64        |
+   |                                            +-----------------------+-------------+---------------+---------------+----------------+--------------+
+   |                                            | /mimx8m/m7            | i.MX8M Plus | i.MXM8MM M4   | NXP i.MX      | Arm Cortex-M7  | Arm          |
+   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
+
 
 Make sure your SoC is supported
 *******************************
@@ -78,7 +183,7 @@ Start by making sure your SoC is supported by Zephyr. If it is, it's time to
   board documentation to find out for sure.
 - asking your SoC vendor
 
-If you need to add SoC, CPU core, or even architecture support, this is the
+If you need to add a SoC, CPU cluster, or even architecture support, this is the
 wrong page, but here is some general advice.
 
 Architecture
@@ -107,7 +212,7 @@ Zephyr SoC support files are in architecture-specific subdirectories of
 When adding a new SoC family or series for a vendor that already has SoC
 support within Zephyr, please try to extract common functionality into shared
 files to avoid duplication. If there is no support for your vendor yet, you can
-add it in a new directory ``zephyr/soc/<YOUR-ARCH>/<YOUR-SOC>``; please use
+add it in a new directory ``zephyr/soc/<VENDOR>/<YOUR-SOC>``; please use
 self-explanatory directory names.
 
 .. _create-your-board-directory:
@@ -123,52 +228,72 @@ You need to give your board a unique name. Run ``west boards`` for a list of
 names that are already taken, and pick something new. Let's say your board is
 called ``plank`` (please don't actually use that name).
 
-Start by creating the board directory ``zephyr/boards/<ARCH>/plank``, where
-``<ARCH>`` is your SoC's architecture subdirectory. (You don't have to put your
+Start by creating the board directory ``zephyr/boards/<VENDOR>/plank``, where
+``<VENDOR>`` is your vendor subdirectory. (You don't have to put your
 board directory in the zephyr repository, but it's the easiest way to get
 started. See :ref:`custom_board_definition` for documentation on moving your
 board directory to a separate repository once it's working.)
 
 .. note::
+  A ``<VENDOR>`` subdirectory is mandatory if contributing your board
+  to Zephyr, but if your board is placed in a local repo, then any folder
+  structure under ``<your-repo>/boards`` is permitted.
+  If the vendor is defined in the list in
+  :zephyr_file:`dts/bindings/vendor-prefixes.txt` then you must use
+  that vendor prefix as ``<VENDOR>``. ``others`` may be used as vendor prefix if
+  the vendor is not defined.
+
+.. note::
 
   The board directory name does not need to match the name of the board.
   Multiple boards can even defined be in one directory.
-  For example, for boards with multi-core SoC, a logical board might be created
-  for each core following the naming scheme `<board>_<soc-core>`, with definitions
-  for all of these different boards defined inside the same directory. This and
-  similar schemes are common for upstream vendor boards.
 
 Your board directory should look like this:
 
 .. code-block:: none
 
-   boards/<ARCH>/plank
+   boards/<VENDOR>/plank
+   ├── board.yml
    ├── board.cmake
    ├── CMakeLists.txt
    ├── doc
    │   ├── plank.png
    │   └── index.rst
-   ├── Kconfig.board
+   ├── Kconfig.plank
    ├── Kconfig.defconfig
    ├── plank_defconfig
+   ├── plank_<identifier>_defconfig
    ├── plank.dts
+   ├── plank_<identifier>.dts
    └── plank.yaml
 
 Replace ``plank`` with your board's name, of course.
 
 The mandatory files are:
 
-#. :file:`plank.dts`: a hardware description in :ref:`devicetree
-   <dt-guide>` format. This declares your SoC, connectors, and any
-   other hardware components such as LEDs, buttons, sensors, or communication
-   peripherals (USB, BLE controller, etc).
+#. :file:`board.yml`: a YAML file describing the high-level meta data of the
+   boards such as the boards names, their SoCs, and variants.
+   CPU clusters for multi-core SoCs are not described in this file as they are
+   inherited from the SoC's YAML description.
 
-#. :file:`Kconfig.board`, :file:`Kconfig.defconfig`, :file:`plank_defconfig`:
-   software configuration in :ref:`kconfig` formats. This provides default
-   settings for software features and peripheral drivers.
+#. :file:`plank.dts` or :file:`plank_<identifier>.dts`: a hardware description
+   in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
+   and any other hardware components such as LEDs, buttons, sensors, or
+   communication peripherals (USB, BLE controller, etc).
+
+#. :file:`Kconfig.plank`: the base software configuration for selecting SoC and
+   other board and SoC related settings. Kconfig settings outside of the board
+   and SoC tree must not be selected. To select general Zephyr Kconfig settings
+   the :file:`Kconfig` file must be used.
+
 
 The optional files are:
 
+- :file:`Kconfig`, :file:`Kconfig.defconfig` software configuration in
+  :ref:`kconfig` formats. This provides default settings for software features
+  and peripheral drivers.
+- :file:`plank_defconfig` and :file:`plank_<identifier>_defconfig`: software
+  configuration in Kconfig ``.conf`` format.
 - :file:`board.cmake`: used for :ref:`flash-and-debug-support`
 - :file:`CMakeLists.txt`: if you need to add additional source files to
   your build.
@@ -178,12 +303,70 @@ The optional files are:
 - :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
   :ref:`twister_script`.
 
+Board identifiers of the form ``<soc>/<cpucluster>/<variant>`` are sanitized so
+that ``/`` is replaced with ``_`` when used for filenames, for example:
+``soc1/foo`` becomes ``soc1_foo`` when used in filenames.
+
+.. _board_description:
+
+Write your board YAML
+*********************
+
+The board YAML file describes the board at a high level.
+This includes the SoC, board variants, and board revisions.
+
+Detailed configurations, such as hardware description and configuration are done
+in devicetree and Kconfig.
+
+The skeleton of the board YAML file is:
+
+.. code-block:: yaml
+
+   board:
+     name: <board-name>
+     vendor: <board-vendor>
+     revision:
+       format: <major.minor.patch|letter|number|custom>
+       default: <default-revision-value>
+       exact: <true|false>
+       revisions:
+       - name: <revA>
+       - name: <revB>
+         ...
+     socs:
+     - name: <soc-1>
+       variants:
+       - name: <variant-1>
+       - name: <variant-2>
+         variants:
+         - name: <sub-variant-2-1>
+           ...
+     - name: <soc-2>
+       ...
+
+It is possible to have multiple boards located in the board folder.
+If multiple boards are placed in the same board folder, then the file
+:file:`board.yml` must describe those in a list as:
+
+.. code-block:: yaml
+
+   boards:
+   - name: <board-name-1>
+     vendor: <board-vendor>
+     ...
+   - name: <board-name-2>
+     vendor: <board-vendor>
+     ...
+   ...
+
+
 .. _default_board_configuration:
 
 Write your devicetree
 *********************
 
-The devicetree file :file:`boards/<ARCH>/plank/plank.dts` describes your board
+The devicetree file :file:`boards/<vendor>/plank/plank.dts` or
+:file:`boards/<vendor>/plank/plank_<identifier>.dts` describes your board
 hardware in the Devicetree Source (DTS) format (as usual, change ``plank`` to
 your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
 
@@ -195,47 +378,58 @@ In general, :file:`plank.dts` should look like this:
    #include <your_soc_vendor/your_soc.dtsi>
 
    / {
-   	model = "A human readable name";
-   	compatible = "yourcompany,plank";
+           model = "A human readable name";
+           compatible = "yourcompany,plank";
 
-   	chosen {
-   		zephyr,console = &your_uart_console;
-   		zephyr,sram = &your_memory_node;
-   		/* other chosen settings  for your hardware */
-   	};
+           chosen {
+                   zephyr,console = &your_uart_console;
+                   zephyr,sram = &your_memory_node;
+                   /* other chosen settings  for your hardware */
+           };
 
-   	/*
-   	 * Your board-specific hardware: buttons, LEDs, sensors, etc.
-   	 */
+           /*
+            * Your board-specific hardware: buttons, LEDs, sensors, etc.
+            */
 
-   	leds {
-   		compatible = "gpio-leds";
-   		led0: led_0 {
-   			gpios = < /* GPIO your LED is hooked up to */ >;
-   			label = "LED 0";
-   		};
-   		/* ... other LEDs ... */
-   	};
+           leds {
+                   compatible = "gpio-leds";
+                   led0: led_0 {
+                           gpios = < /* GPIO your LED is hooked up to */ >;
+                           label = "LED 0";
+                   };
+                   /* ... other LEDs ... */
+           };
 
-   	buttons {
-   		compatible = "gpio-keys";
-   		/* ... your button definitions ... */
-   	};
+           buttons {
+                   compatible = "gpio-keys";
+                   /* ... your button definitions ... */
+           };
 
-   	/* These aliases are provided for compatibility with samples */
-   	aliases {
-   		led0 = &led0; /* now you support the blinky sample! */
-   		/* other aliases go here */
-   	};
+           /* These aliases are provided for compatibility with samples */
+           aliases {
+                   led0 = &led0; /* now you support the blinky sample! */
+                   /* other aliases go here */
+           };
    };
 
    &some_peripheral_you_want_to_enable { /* like a GPIO or SPI controller */
-   	status = "okay";
+           status = "okay";
    };
 
    &another_peripheral_you_want {
-   	status = "okay";
+           status = "okay";
    };
+
+Only one ``.dts`` file will be used, and the most specific file which exists
+will be used.
+
+This means that if both :file:`plank.dts` and :file:`plank_soc1_foo.dts` exist,
+then when building for ``plank`` / ``plank/soc1``, then :file:`plank.dts` is
+used. When building for ``plank//foo`` / ``plank/soc1/foo`` the
+:file:`plank_soc1_foo.dts` is used.
+
+This allows board maintainers to write a base devicetree file for the board
+or write specific devicetree files for a given board's SoC or variant.
 
 If you're in a hurry, simple hardware can usually be supported by copy/paste
 followed by trial and error. If you want to understand details, you will need
@@ -273,9 +467,9 @@ follows (with unimportant parts skipped):
 .. code-block:: devicetree
 
    can0: can@40024000 {
-	...
-	status = "disabled";
-	...
+        ...
+        status = "disabled";
+        ...
    };
 
 It is up to the board :file:`.dts` or application overlay files to enable these
@@ -289,8 +483,8 @@ controller and sets the bus speed:
 .. code-block:: devicetree
 
    &can0 {
-	status = "okay";
-	bus-speed = <125000>;
+        status = "okay";
+        bus-speed = <125000>;
    };
 
 The ``&can0 { ... };`` syntax adds/overrides properties on the node with label
@@ -299,6 +493,8 @@ The ``&can0 { ... };`` syntax adds/overrides properties on the node with label
 Other examples of board-specific customization is pointing properties in
 ``aliases`` and ``chosen`` to the right nodes (see :ref:`dt-alias-chosen`), and
 making GPIO/pinmux assignments.
+
+.. _board_kconfig_files:
 
 Write Kconfig files
 *******************
@@ -310,32 +506,60 @@ application for it.
 Setting Kconfig configuration values is documented in detail in
 :ref:`setting_configuration_values`.
 
-There are three mandatory Kconfig files in the board directory for a board
-named ``plank``:
+There is one mandatory Kconfig file in the board directory, and several optional
+files for a board named ``plank``:
 
 .. code-block:: none
 
-   boards/<ARCH>/plank
-   ├── Kconfig.board
+   boards/<vendor>/plank
+   ├── Kconfig
+   ├── Kconfig.plank
    ├── Kconfig.defconfig
-   └── plank_defconfig
+   ├── plank_defconfig
+   └── plank_<identifier>_defconfig
 
-:file:`Kconfig.board`
-  Included by :zephyr_file:`boards/Kconfig` to include your board
-  in the list of options.
+:file:`Kconfig.plank`
+  A shared Kconfig file which can be sourced both in Zephyr Kconfig and sysbuild
+  Kconfig trees.
 
-  This should at least contain a definition for a ``BOARD_PLANK`` option,
-  which looks something like this:
+  This file selects the SoC in the Kconfig tree and potential other SoC related
+  Kconfig settings. This file must not select anything outside the re-usable
+  Kconfig board and SoC trees.
+
+  A :file:`Kconfig.plank` may look like this:
 
   .. code-block:: kconfig
 
      config BOARD_PLANK
-     	bool "Plank board"
-     	depends on SOC_SERIES_YOUR_SOC_SERIES_HERE
-     	select SOC_PART_NUMBER_ABCDEFGH
+             select SOC_SOC1
+
+  The Kconfig symbols :kconfig:option:`BOARD_<board>` and
+  :kconfig:option:`BOARD_<board_with_identifier>` are constructed by the build
+  system, therefore no type shall be defined in above code snippet.
+
+:file:`Kconfig`
+  Included by :zephyr_file:`boards/Kconfig`.
+
+  This file can add Kconfig settings which are specific to the current board.
+
+  Not all boards have a :file:`Kconfig` file.
+
+  A board specific setting should be defining a custom setting and usually with
+  a prompt, like this:
+
+  .. code-block:: kconfig
+
+     config BOARD_FEATURE
+             bool "Board specific feature"
+
+  If the setting name is identical to an existing Kconfig setting in Zephyr and
+  only modifies the default value of said setting, then
+  :file:`Kconfig.defconfig` should be used  instead.
 
 :file:`Kconfig.defconfig`
   Board-specific default values for Kconfig options.
+
+  Not all boards have a :file:`Kconfig.defconfig` file.
 
   The entire file should be inside an ``if BOARD_PLANK`` / ``endif`` pair of
   lines, like this:
@@ -347,35 +571,42 @@ named ``plank``:
      # Always set CONFIG_BOARD here. This isn't meant to be customized,
      # but is set as a "default" due to Kconfig language restrictions.
      config BOARD
-     	default "plank"
+             default "plank"
 
      # Other options you want enabled by default go next. Examples:
 
      config FOO
-     	default y
+             default y
 
      if NETWORKING
      config SOC_ETHERNET_DRIVER
-     	default y
+             default y
      endif # NETWORKING
 
      endif # BOARD_PLANK
 
-:file:`plank_defconfig`
+:file:`plank_defconfig` / :file:`plank_<identifier>_defconfig`
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board.
 
-  You should at least select your board's SOC and do any mandatory settings for
-  your system clock, console, etc. The results are architecture-specific, but
-  typically look something like this:
+  If both the common :file:`plank_defconfig` file and one or more board
+  identifier specific :file:`plank_<identifier>_defconfig` files exist, then
+  all matching files will be used.
+  This allows you to place configuration which is common for all board SoCs,
+  CPU clusters, and board variants in the base :file:`plank_defconfig` and only
+  place the adjustments specific for a given SoC or board variant in the
+  :file:`plank_<identifier>_defconfig`.
+
+  The ``_defconfig`` should contain mandatory settings for your system clock,
+  console, etc. The results are architecture-specific, but typically look
+  something like this:
 
   .. code-block:: cfg
 
-     CONFIG_SOC_${VENDOR_XYZ3000}=y                # select your SoC
      CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
      CONFIG_SERIAL=y
 
-:file:`plank_x_y_z.conf`
+:file:`plank_x_y_z_defconfig` / :file:`plank_<identifier>_x_y_z_defconfig`
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board revision
   ``x.y.z``.
@@ -523,90 +754,37 @@ Multiple board revisions
 See :ref:`application_board_version` for basics on this feature from the user
 perspective.
 
-To create a new board revision for the ``plank`` board, create these additional
-files in the board folder:
+Board revisions are described in the ``revision`` entry of the
+:file:`board.yml`.
 
-.. code-block:: none
+.. code-block:: yaml
 
-   boards/<ARCH>/plank
-   ├── plank_<revision>.conf     # optional
-   ├── plank_<revision>.overlay  # optional
-   └── revision.cmake
+   board:
+     revision:
+       format: <major.minor.patch|letter|number|custom>
+       default: <default-revision-value>
+       exact: <true|false>
+       revisions:
+       - name: <revA>
+       - name: <revB>
 
-When the user builds for board ``plank@<revision>``:
+Zephyr natively supports the following revision formats:
 
-- The optional Kconfig settings specified in the file
-  :file:`plank_<revision>.conf` will be merged into the board's default Kconfig
-  configuration.
+- ``major.minor.patch``: match a three digit revision, such as ``1.2.3``.
+- ``number``: matches integer revisions
+- ``letter``: matches single letter revisions from ``A`` to ``Z`` only
 
-- The optional devicetree overlay :file:`plank_<revision>.overlay` will be added
-  to the common :file:`plank.dts` devicetree file
-
-- The :file:`revision.cmake` file controls how the Zephyr build system matches
-  the ``<board>@<revision>`` string specified by the user when building an
-  application for the board.
-
-Currently, ``<revision>`` can be either a numeric ``MAJOR.MINOR.PATCH`` style
-revision like ``1.5.0``, an integer number like ``1``, or single letter like
-``A``, ``B``, etc. Zephyr provides a CMake board extension function,
-``board_check_revision()``, to make it easy to match either style from
-:file:`revision.cmake`.
-
-Valid board revisions may be specified as arguments to the
-``board_check_revision()`` function, like:
-
-.. code-block:: cmake
-
-   board_check_revision(FORMAT MAJOR.MINOR.PATCH
-                        VALID_REVISIONS 0.1.0 0.3.0 ...
-   )
-
-.. note::
-   ``VALID_REVISIONS`` can be omitted if all valid revisions have specific
-   Kconfig fragments, such as ``<board>_0_1_0.conf``, ``<board>_0_3_0.conf``.
-   This allows you to just place Kconfig revision fragments in the board
-   folder and not have to keep the corresponding ``VALID_REVISIONS`` in sync.
-
-The following sections describe how to support these styles of revision
-numbers.
-
-MAJOR.MINOR.PATCH revisions
-===========================
-
-Let's say you want to add support for revisions ``0.5.0``, ``1.0.0``, and
-``1.5.0`` of the ``plank`` board with both Kconfig fragments and devicetree
-overlays. Create :file:`revision.cmake` with
-``board_check_revision(FORMAT MAJOR.MINOR.PATCH)``, and create the following
-additional files in the board directory:
-
-.. code-block:: none
-
-   boards/<ARCH>/plank
-   ├── plank_0_5_0.conf
-   ├── plank_0_5_0.overlay
-   ├── plank_1_0_0.conf
-   ├── plank_1_0_0.overlay
-   ├── plank_1_5_0.conf
-   ├── plank_1_5_0.overlay
-   └── revision.cmake
-
-Notice how the board files have changed periods (".") in the revision number to
-underscores ("_").
+.. _board_fuzzy_revision_matching:
 
 Fuzzy revision matching
------------------------
+=======================
 
-To support "fuzzy" ``MAJOR.MINOR.PATCH`` revision matching for the ``plank``
-board, use the following code in :file:`revision.cmake`:
-
-.. code-block:: cmake
-
-   board_check_revision(FORMAT MAJOR.MINOR.PATCH)
+Fuzzy revision matching is enabled per default.
 
 If the user selects a revision between those available, the closest revision
 number that is not larger than the user's choice is used. For example, if the
-user builds for ``plank@0.7.0``, the build system will target revision
-``0.5.0``.
+board ``plank`` defines revisions ``0.5.0``, and ``1.5.0`` and the user builds
+for ``plank@0.7.0``, the build system will target revision ``0.5.0``.
 
 The build system will print this at CMake configuration time:
 
@@ -617,148 +795,106 @@ The build system will print this at CMake configuration time:
 This allows you to only create revision configuration files for board revision
 numbers that introduce incompatible changes.
 
-Any revision less than the minimum defined will be treated as an error.
-
-You may use ``0.0.0`` as a minimum revision to build for by creating the file
-:file:`plank_0_0_0.conf` in the board directory. This will be used for any
-revision lower than ``0.5.0``, for example if the user builds for
-``plank@0.1.0``.
+Similar for ``letter`` where revision ``A``, ``D``, and ``F`` could be defined
+and the user builds for ``plank@E``, the build system will target revision ``D``
+.
 
 Exact revision matching
------------------------
+=======================
 
-Alternatively, the ``EXACT`` keyword can be given to ``board_check_revision()``
-in :file:`revision.cmake` to allow exact matches only, like this:
+Exact revision matching is enabled when ``exact: true`` is specified in the
+revision section in :file:`board.yml`.
 
-.. code-block:: cmake
-
-   board_check_revision(FORMAT MAJOR.MINOR.PATCH EXACT)
-
-With this :file:`revision.cmake`, building for ``plank@0.7.0`` in the above
-example will result in the following error message:
+When exact is defined then building for ``plank@0.7.0`` in the above example
+will result in the following error message:
 
 .. code-block:: console
 
    Board revision `0.7.0` not found.  Please specify a valid board revision.
 
-Letter revision matching
-========================
+Board revision configuration adjustment
+=======================================
 
-Let's say instead that you need to support revisions ``A``, ``B``, and ``C`` of
-the ``plank`` board. Create the following additional files in the board
-directory:
+When the user builds for board ``plank@<revision>`` it is possible to make
+adjustments to the board's normal configuration.
+
+As described in the :ref:`default_board_configuration` and
+:ref:`board_kconfig_files` sections the board default configuration is created
+from the files :file:`<board>.dts` / :file:`<board>_<identifier>.dts` and
+:file:`<board>_defconfig` / :file:`<board>_<identifier>_defconfig`.
+When building for a specific board revision, the above files are used as a
+starting point and the following board files will be used in addition:
+
+- :file:`<board>_<identifier>_<revision>_defconfig`: a specific revision
+  defconfig which is only used for the board and SOC / variants identified by
+  ``<board>_<identifier>``.
+
+- :file:`<board>_<revision>_defconfig`: a specific revision defconfig which is
+  used for the board regardless of the SOC / variants.
+
+- :file:`<board>_<identifier>_<revision>.overlay`: a specific revision dts
+  overlay which is only used for the board and SOC / variants identified by
+  ``<board>_<identifier>``.
+
+- :file:`<board>_<revision>.overlay`: a specific revision dts overlay which is
+  used for the board regardless of the SOC / variants.
+
+This split allows boards with multiple SoCs, multi-core SoCs, or variants to
+place common revision adjustments which apply to all SoCs and variants in a
+single file, while still providing the ability to place SoC or variant specific
+adjustments in a dedicated revision file.
+
+Using the ``plank`` board from previous sections, then we could have the following
+revision adjustments:
 
 .. code-block:: none
 
-   boards/<ARCH>/plank
-   ├── plank_A.conf
-   ├── plank_A.overlay
-   ├── plank_B.conf
-   ├── plank_B.overlay
-   ├── plank_C.conf
-   ├── plank_C.overlay
-   └── revision.cmake
-
-And add the following to :file:`revision.cmake`:
-
-.. code-block:: cmake
-
-   board_check_revision(FORMAT LETTER)
-
-Number revision matching
-========================
-
-Let's say instead that you need to support revisions ``1``, ``2``, and ``3`` of
-the ``plank`` board. Create the following additional files in the board
-directory:
-
-.. code-block:: none
-
-   boards/<ARCH>/plank
-   ├── plank_1.conf
-   ├── plank_1.overlay
-   ├── plank_2.conf
-   ├── plank_2.overlay
-   ├── plank_3.conf
-   ├── plank_3.overlay
-   └── revision.cmake
-
-And add the following to :file:`revision.cmake`:
-
-.. code-block:: cmake
-
-   board_check_revision(FORMAT NUMBER)
-
-board_check_revision() details
-==============================
-
-.. code-block:: cmake
-
-   board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
-                        [OPTIONAL EXACT]
-                        [DEFAULT_REVISION <revision>]
-                        [HIGHEST_REVISION <revision>]
-                        [VALID_REVISIONS <revision> [<revision> ...]]
-   )
-
-This function supports the following arguments:
-
-* ``FORMAT LETTER``: matches single letter revisions from ``A`` to ``Z`` only
-* ``FORMAT NUMBER``: matches integer revisions
-* ``FORMAT MAJOR.MINOR.PATCH``: matches exactly three digits. The command line
-  allows for loose typing, that is ``-DBOARD=<board>@1`` and
-  ``-DBOARD=<board>@1.0`` will be handled as ``-DBOARD=<board>@1.0.0``.
-  Kconfig fragment and devicetree overlay files must use full numbering to avoid
-  ambiguity, so only :file:`<board>_1_0_0.conf` and
-  :file:`<board>_1_0_0.overlay` are allowed.
-
-* ``OPTIONAL``: if given, a revision is not required to be specified.
-  If the revision is not supplied, the base board is used with no overlays.
-  Can be combined with ``EXACT``, in which case providing the revision is
-  optional, but if given the ``EXACT`` rules apply. Mutually exclusive with
-  ``DEFAULT_REVISION``.
-
-* ``EXACT``: if given, the revision is required to be an exact match.
-  Otherwise, the closest matching revision not greater than the user's choice
-  will be selected.
-
-* ``DEFAULT_REVISION <revision>``: if given, ``<revision>`` is the default
-  revision to use when user has not selected a revision number. If not given,
-  the build system prints an error when the user does not specify a board
-  revision.
-
-* ``HIGHEST_REVISION``: if given, specifies the highest valid revision for a
-  board. This can be used to ensure that a newer board cannot be used with an
-  older Zephyr. For example, if the current board directory supports revisions
-  0.x.0-0.99.99 and 1.0.0-1.99.99, and it is expected that the implementation
-  will not work with board revision 2.0.0, then giving ``HIGHEST_REVISION
-  1.99.99`` causes an error if the user builds using ``<board>@2.0.0``.
-
-* ``VALID_REVISIONS``: if given, specifies a list of revisions that are valid
-  for this board. If this argument is not given, then each Kconfig fragment of
-  the form ``<board>_<revision>.conf`` in the board folder will be used as a
-  valid revision for the board.
-
-.. _porting_custom_board_revisions:
+   boards/zephyr/plank
+   ├── plank_0_5_0_defconfig          # Kconfig adjustment for all plank board identifiers on revision 0.5.0
+   ├── plank_0_5_0.overlay            # DTS overlay for all plank board identifiers on revision 0.5.0
+   └── plank_soc1_foo_1_5_0_defconfig # Kconfig adjustment for plank board when building for soc1 variant foo on revision 1.5.0
 
 Custom revision.cmake files
 ***************************
 
-Some boards may not use board revisions supported by
-``board_check_revision()``. To support revisions of any type, the file
-:file:`revision.cmake` can implement custom revision matching without calling
-``board_check_revision()``.
+Some boards may not use board revisions supported natively by Zephyr.
+For example string revisions.
+
+One reason why Zephyr doesn't support string revisions is that strings can take
+many forms and it's not always clear if the given strings are just strings, such
+as ``blue``, ``green``, ``red``, etc. or if they provide an order which can be
+matched against higher or lower revisions, such as ``alpha``, ``beta```,
+``gamma``.
+
+Due to the sheer number of possibilities with strings, including the possibility
+of doing regex matches internally, then string revisions must be done using
+``custom`` revision type.
+
+To indicate to the build system that ``custom`` revisions are used, the format
+field in the ``revision`` section of the :file:`board.yml` must be written as:
+
+.. code-block:: yaml
+
+   board:
+     revision:
+       format: custom
+
+When using custom revisions then a :file:`revision.cmake` must be created in the
+board directory.
+
+The :file:`revision.cmake` will be included by the build system when building
+for the board and it is the responsibility of the file to validate the revision
+specified by the user.
+
+The :makevar:`BOARD_REVISION` variable holds the revision value specified by the
+user.
 
 To signal to the build system that it should use a different revision than the
 one specified by the user, :file:`revision.cmake` can set the variable
 ``ACTIVE_BOARD_REVISION`` to the revision to use instead. The corresponding
 Kconfig files and devicetree overlays must be named
-:file:`<board>_<ACTIVE_BOARD_REVISION>.conf` and
+:file:`<board>_<ACTIVE_BOARD_REVISION>_defconfig` and
 :file:`<board>_<ACTIVE_BOARD_REVISION>.overlay`.
-
-For example, if the user builds for ``plank@zero``, :file:`revision.cmake` can
-set ``ACTIVE_BOARD_REVISION`` to ``one`` to use the files
-:file:`plank_one.conf` and :file:`plank_one.overlay`.
 
 .. _contributing-your-board:
 

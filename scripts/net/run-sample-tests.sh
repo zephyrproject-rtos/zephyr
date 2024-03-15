@@ -157,7 +157,7 @@ start_zephyr ()
     fi
 
     rm -rf build && mkdir build && \
-	cmake -GNinja -DBOARD=native_posix -B build "$@" . && \
+	cmake -GNinja -DBOARD=native_sim -B build "$@" . && \
 	ninja -C build
 
     # Run the binary directly so that ninja does not print errors that

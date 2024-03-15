@@ -1,0 +1,30 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	fake_input_device: fake-device {
+		compatible = "vnd,input-device";
+	};
+
+	longpress: longpress {
+		input = <&fake_input_device>;
+		compatible = "zephyr,input-longpress";
+		input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+		short-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
+		long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
+		long-delay-ms = <100>;
+        };
+
+	longpress_no_short: longpress-no-short {
+		input = <&fake_input_device>;
+		compatible = "zephyr,input-longpress";
+		input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+		long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
+		long-delay-ms = <100>;
+	};
+};

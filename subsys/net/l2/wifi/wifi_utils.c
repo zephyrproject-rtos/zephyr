@@ -5,7 +5,7 @@
  */
 
 /** @file
- * @brief Utility functions to be used by the Wi-Fi subsytem.
+ * @brief Utility functions to be used by the Wi-Fi subsystem.
  */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 /* Ensure 'strtok_r' is available even with -std=c99. */
 char *strtok_r(char *str, const char *delim, char **saveptr);
 
-static const uint16_t valid_5g_chans_20mhz[] = {32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 96, 100,
+static const uint8_t valid_5g_chans_20mhz[] = {32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 96, 100,
 	104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 159, 161,
 	163, 165, 167, 169, 171, 173, 175, 177};
 
@@ -44,7 +44,7 @@ static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char *band_str)
 }
 
 
-static bool wifi_utils_validate_chan_2g(uint16_t chan)
+bool wifi_utils_validate_chan_2g(uint16_t chan)
 {
 	if ((chan >= 1) && (chan <= 14)) {
 		return true;
@@ -54,7 +54,7 @@ static bool wifi_utils_validate_chan_2g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan_5g(uint16_t chan)
+bool wifi_utils_validate_chan_5g(uint16_t chan)
 {
 	uint16_t i;
 
@@ -68,9 +68,9 @@ static bool wifi_utils_validate_chan_5g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan_6g(uint16_t chan)
+bool wifi_utils_validate_chan_6g(uint16_t chan)
 {
-	if (((chan >= 1) && (chan <= 233) && (!((chan - 1)%4))) ||
+	if (((chan >= 1) && (chan <= 233) && (!((chan - 1) % 4))) ||
 	    (chan == 2)) {
 		return true;
 	}
@@ -79,8 +79,8 @@ static bool wifi_utils_validate_chan_6g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan(uint8_t band,
-				     uint16_t chan)
+bool wifi_utils_validate_chan(uint8_t band,
+			      uint16_t chan)
 {
 	bool result = false;
 
@@ -241,8 +241,8 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
 		return -EINVAL;
 	}
 
-	strncpy(parse_str, scan_bands_str, len);
-	parse_str[len] = '\0';
+	strncpy(parse_str, scan_bands_str, sizeof(parse_str) - 1);
+	parse_str[sizeof(parse_str) - 1] = '\0';
 
 	band_str = strtok_r(parse_str, ",", &ctx);
 
@@ -368,7 +368,7 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			memset(chan_str, 0, sizeof(chan_str));
 
 			if (chan_start) {
-				if ((chan_idx + (chan_val - chan_start)) >= max_channels) {
+				if ((chan_idx + (chan_val - chan_start)) > max_channels) {
 					NET_ERR("Too many channels specified (%d)", max_channels);
 					return -EINVAL;
 				}

@@ -28,7 +28,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cpu0: cpu@0 {
-			compatible = "ite,riscv-ite";
+			compatible = "ite,riscv-ite", "riscv";
 			riscv,isa = "rv32imafc_zifencei";
 			device_type = "cpu";
 			reg = <0>;
@@ -691,8 +691,8 @@
 			status = "disabled";
 		};
 
-		kscan0: kscan@f01d00 {
-			compatible = "ite,it8xxx2-kscan";
+		kbd: kbd@f01d00 {
+			compatible = "ite,it8xxx2-kbd";
 			reg = <0x00f01d00 0x29>;
 			interrupt-parent = <&intc>;
 			interrupts = <IT8XXX2_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;

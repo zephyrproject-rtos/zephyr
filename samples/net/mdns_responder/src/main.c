@@ -14,6 +14,15 @@ LOG_MODULE_REGISTER(net_mdns_responder_sample, LOG_LEVEL_DBG);
 
 extern void service(void);
 
+#if defined(CONFIG_NET_VLAN)
+int init_vlan(void);
+#else
+static inline int init_vlan(void)
+{
+	return 0;
+}
+#endif /* CONFIG_NET_VLAN */
+
 /*
  * Note that mDNS support requires no application interaction with zephyr,
  * beyond optional runtime hostname configuration calls and setting
@@ -26,6 +35,7 @@ extern void service(void);
 int main(void)
 {
 	LOG_INF("Waiting mDNS queries...");
+	init_vlan();
 	service();
 	return 0;
 }

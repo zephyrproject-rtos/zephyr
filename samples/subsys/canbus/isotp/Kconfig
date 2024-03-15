@@ -23,7 +23,7 @@ config SAMPLE_RX_THREAD_PRIORITY
 	  Priority used for the RX threads.
 
 config SAMPLE_CAN_FD_MODE
-	bool "Use CAN-FD"
+	bool "Use CAN FD"
 	select CAN_FD_MODE
 
 config ISOTP_RX_BUF_COUNT

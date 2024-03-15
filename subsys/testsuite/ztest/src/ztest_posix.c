@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "cmdline.h" /* native_posix command line options header */
@@ -95,6 +98,8 @@ const char *ztest_get_test_args(void)
 	return test_args;
 }
 
+
+
 /**
  * @brief Lists registered unit tests in this binary, one per line
  *
@@ -126,12 +131,12 @@ int z_ztest_list_tests(void)
  *
  * @param state The current state of the machine as it relates to the test executable.
  */
-void z_ztest_run_all(const void *state)
+void z_ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter)
 {
 	if (z_ztest_get_list_test()) {
 		z_ztest_list_tests();
 	} else {
-		ztest_run_test_suites(state);
+		ztest_run_test_suites(state, shuffle, suite_iter, case_iter);
 	}
 }
 

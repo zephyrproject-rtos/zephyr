@@ -17,9 +17,9 @@
 LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 
 /* GT911 used registers */
-#define DEVICE_ID           __bswap_16(0x8140U)
-#define REG_STATUS		    __bswap_16(0x814EU)
-#define REG_FIRST_POINT		__bswap_16(0x814FU)
+#define DEVICE_ID           BSWAP_16(0x8140U)
+#define REG_STATUS		    BSWAP_16(0x814EU)
+#define REG_FIRST_POINT		BSWAP_16(0x814FU)
 
 /* REG_TD_STATUS: Touch points. */
 #define TOUCH_POINTS_MSK	0x0FU
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 #define TOUCH_STATUS_MSK    (1 << 7U)
 
 /* The GT911's config */
-#define GT911_CONFIG_REG         __bswap_16(0x8047U)
+#define GT911_CONFIG_REG         BSWAP_16(0x8047U)
 #define REG_CONFIG_VERSION GT911_CONFIG_REG
 #define REG_CONFIG_SIZE (186U)
 #define GT911_PRODUCT_ID (0x00313139U)
@@ -230,7 +230,7 @@ static int gt911_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	r = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE);
+	r = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 	if (r < 0) {
 		LOG_ERR("Could not configure reset GPIO pin");
 		return r;
@@ -253,10 +253,10 @@ static int gt911_init(const struct device *dev)
 	/* Delay at least 10 ms after power on before we configure gt911 */
 	k_sleep(K_MSEC(20));
 	/* reset the device and confgiure the addr mode0 */
-	gpio_pin_set_dt(&config->rst_gpio, 0);
+	gpio_pin_set_dt(&config->rst_gpio, 1);
 	/* hold down at least 1us, 1ms here */
 	k_sleep(K_MSEC(1));
-	gpio_pin_set_dt(&config->rst_gpio, 1);
+	gpio_pin_set_dt(&config->rst_gpio, 0);
 	/* hold down at least 5ms. This is the point the INT pin must be low. */
 	k_sleep(K_MSEC(5));
 	/* hold down 50ms to make sure the address available */

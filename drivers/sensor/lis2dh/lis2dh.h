@@ -219,6 +219,8 @@ struct lis2dh_config {
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
 	const struct gpio_dt_spec gpio_int;
+	const uint8_t int1_mode;
+	const uint8_t int2_mode;
 #endif /* CONFIG_LIS2DH_TRIGGER */
 	struct {
 		bool is_lsm303agr_dev : 1;

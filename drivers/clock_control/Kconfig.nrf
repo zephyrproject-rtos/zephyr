@@ -25,7 +25,6 @@ if CLOCK_CONTROL_NRF
 config CLOCK_CONTROL_NRF_SHELL
 	bool "Shell commands"
 	depends on SHELL
-	default y if SHELL
 
 choice CLOCK_CONTROL_NRF_SOURCE
 	prompt "32KHz clock source"

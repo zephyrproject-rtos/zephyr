@@ -427,9 +427,9 @@ static const struct rtc_driver_api pcf8563_driver_api = {
 	.alarm_set_time = pcf8563_alarm_set_time,
 	.alarm_get_time = pcf8563_alarm_get_time,
 	.alarm_is_pending = pcf8563_alarm_is_pending,
-#endif
 #ifdef PCF8563_INT1_GPIOS_IN_USE
 	.alarm_set_callback = pcf8563_alarm_set_callback,
+#endif
 #endif
 };
 

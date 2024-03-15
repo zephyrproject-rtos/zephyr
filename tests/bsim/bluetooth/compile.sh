@@ -24,8 +24,12 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # On the other hand the audio compile script, only builds one image. So we parallelize it with
 # the rest to save a couple of seconds.
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh
+${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/mesh/compile.sh
+if [ ${BOARD} == "nrf52_bsim" ]; then
+	${ZEPHYR_BASE}/tests/bsim/bluetooth/hci_uart/compile.sh
+fi
 
 wait_for_background_jobs

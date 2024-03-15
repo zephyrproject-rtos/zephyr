@@ -59,6 +59,17 @@ ZTEST(expect, test_fail_expect_ok)
 	zexpect_ok(5);
 }
 
+ZTEST(expect, test_expect_not_ok)
+{
+	zexpect_not_ok(-EIO);
+}
+
+ZTEST_EXPECT_FAIL(expect, test_fail_expect_not_ok);
+ZTEST(expect, test_fail_expect_not_ok)
+{
+	zexpect_not_ok(0);
+}
+
 ZTEST(expect, test_expect_is_null)
 {
 	void *ptr = NULL;

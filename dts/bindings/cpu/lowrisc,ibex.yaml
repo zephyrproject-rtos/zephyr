@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: LowRISC Ibex RISC-V core
+
+compatible: "lowrisc,ibex"
+
+include: riscv,cpus.yaml

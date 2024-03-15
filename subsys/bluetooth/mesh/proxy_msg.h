@@ -51,7 +51,7 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_conn *conn,
 int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 			   struct net_buf_simple *msg,
 			   bt_gatt_complete_func_t end, void *user_data);
-int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct net_buf *buf);
+int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv);
 struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
 						    proxy_send_cb_t send,
 						    proxy_recv_cb_t recv);

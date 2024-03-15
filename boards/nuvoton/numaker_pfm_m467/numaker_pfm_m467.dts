@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2023 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/m46x.dtsi>
+#include "numaker_pfm_m467-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nuvoton PFM M467 board";
+	compatible = "nuvoton,pfm-m467", "nuvoton,m467";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+	};
+
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &canfd0;
+	};
+
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioh 4 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led: led_1 {
+			gpios = <&gpioh 6 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpioh 5 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_1 {
+			label = "User SW2";
+			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_2: button_2 {
+			label = "User SW3";
+			gpios = <&gpioh 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&scc {
+	/* For USB 1.1 Host/Device/OTG, configure to 192MHz, which can generate necessary 48MHz. */
+	/* For USB 2.0 Host/Device/OTG or no USB application, comment out to use default. */
+	core-clock = <192000000>;
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x00080000>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 0x0007e000>;
+		};
+		storage_partition: partition@fe000 {
+			label = "storage";
+			reg = <0x000fe000 0x00002000>;
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(512)>;
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&canfd0 {
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	pinctrl-0 = <&canfd0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&emac {
+	pinctrl-0 = <&emac_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* On enabled, 'core-clock', as above, is required to to be 192MHz. */
+zephyr_udc0: &usbd {
+	pinctrl-0 = <&usbd_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -1,37 +1,38 @@
 /*
  * Copyright (c) 2022 Linaro Limited
+ * Copyright (c) 2023 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_
 
+#include "stm32_common_clocks.h"
+
 /** Domain clocks */
 
 /* RM0468, Table 56 Kernel clock distribution summary */
 
-/** PLL outputs */
-#define STM32_SRC_PLL1_P	0x001
-#define STM32_SRC_PLL1_Q	0x002
-#define STM32_SRC_PLL1_R	0x003
-#define STM32_SRC_PLL2_P	0x004
-#define STM32_SRC_PLL2_Q	0x005
-#define STM32_SRC_PLL2_R	0x006
-#define STM32_SRC_PLL3_P	0x007
-#define STM32_SRC_PLL3_Q	0x008
-#define STM32_SRC_PLL3_R	0x009
+/** System clock */
+/* defined in stm32_common_clocks.h */
 /** Fixed clocks  */
-#define STM32_SRC_HSE		0x00A
-#define STM32_SRC_LSE		0x00B
-#define STM32_SRC_LSI		0x00C
-#define STM32_SRC_HSI16		0x00D
-#define STM32_SRC_HSI48		0x00E
-#define STM32_SRC_MSIS		0x00F
-#define STM32_SRC_MSIK		0x010
-/** Core clock */
-#define STM32_SRC_SYSCLK	0x011
+#define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
+#define STM32_SRC_HSI16		(STM32_SRC_HSE + 1)
+#define STM32_SRC_HSI48		(STM32_SRC_HSI16 + 1)
+#define STM32_SRC_MSIS		(STM32_SRC_HSI48 + 1)
+#define STM32_SRC_MSIK		(STM32_SRC_MSIS + 1)
+/** PLL outputs */
+#define STM32_SRC_PLL1_P	(STM32_SRC_MSIK + 1)
+#define STM32_SRC_PLL1_Q	(STM32_SRC_PLL1_P + 1)
+#define STM32_SRC_PLL1_R	(STM32_SRC_PLL1_Q + 1)
+#define STM32_SRC_PLL2_P	(STM32_SRC_PLL1_R + 1)
+#define STM32_SRC_PLL2_Q	(STM32_SRC_PLL2_P + 1)
+#define STM32_SRC_PLL2_R	(STM32_SRC_PLL2_Q + 1)
+#define STM32_SRC_PLL3_P	(STM32_SRC_PLL2_R + 1)
+#define STM32_SRC_PLL3_Q	(STM32_SRC_PLL3_P + 1)
+#define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
 /** Clock muxes */
-/* #define STM32_SRC_ICLK	0x012 */
+/* #define STM32_SRC_ICLK	TBD */
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB1    0x088
@@ -87,8 +88,8 @@
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR1_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR1_REG)
 #define USART3_SEL(val)		STM32_CLOCK(val, 3, 4, CCIPR1_REG)
-#define USART4_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR1_REG)
-#define USART5_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR1_REG)
+#define UART4_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR1_REG)
+#define UART5_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR1_REG)
 #define I2C1_SEL(val)		STM32_CLOCK(val, 3, 10, CCIPR1_REG)
 #define I2C2_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR1_REG)
 #define I2C4_SEL(val)		STM32_CLOCK(val, 3, 14, CCIPR1_REG)
@@ -106,7 +107,14 @@
 #define SAE_SEL(val)		STM32_CLOCK(val, 1, 11, CCIPR2_REG)
 #define RNG_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR2_REG)
 #define SDMMC_SEL(val)		STM32_CLOCK(val, 1, 14, CCIPR2_REG)
+#define DSIHOST_SEL(val)	STM32_CLOCK(val, 1, 15, CCIPR2_REG)
+#define USART6_SEL(val)		STM32_CLOCK(val, 1, 16, CCIPR2_REG)
+#define LTDC_SEL(val)		STM32_CLOCK(val, 1, 18, CCIPR2_REG)
 #define OCTOSPI_SEL(val)	STM32_CLOCK(val, 3, 20, CCIPR2_REG)
+#define HSPI_SEL(val)		STM32_CLOCK(val, 3, 22, CCIPR2_REG)
+#define I2C5_SEL(val)		STM32_CLOCK(val, 3, 24, CCIPR2_REG)
+#define I2C6_SEL(val)		STM32_CLOCK(val, 3, 26, CCIPR2_REG)
+#define USBPHYC_SEL(val)	STM32_CLOCK(val, 3, 30, CCIPR2_REG)
 /** CCIPR3 devices */
 #define LPUART1_SEL(val)	STM32_CLOCK(val, 7, 0, CCIPR3_REG)
 #define SPI3_SEL(val)		STM32_CLOCK(val, 3, 3, CCIPR3_REG)

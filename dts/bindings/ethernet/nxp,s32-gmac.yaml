@@ -16,13 +16,3 @@ properties:
 
   interrupt-names:
     required: true
-
-  phy-connection-type:
-    type: string
-    enum:
-      - "mii"
-      - "rmii"
-      - "rgmii"
-    description: |
-      Specifies interface type between the Ethernet device and a physical
-      layer (PHY) device.

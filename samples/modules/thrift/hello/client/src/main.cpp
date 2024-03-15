@@ -78,14 +78,17 @@ int main(int argc, char **argv)
 #ifdef __ZEPHYR__
 		static const char qemu_cert_pem[] = {
 #include "qemu_cert.pem.inc"
+			'\0'
 		};
 
 		static const char qemu_key_pem[] = {
 #include "qemu_key.pem.inc"
+			'\0'
 		};
 
 		static const char native_cert_pem[] = {
 #include "native_cert.pem.inc"
+			'\0'
 		};
 
 		socketFactory->loadCertificateFromBuffer(qemu_cert_pem);

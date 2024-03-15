@@ -8,8 +8,8 @@
 
 /* Either public functions or macros or invoked by public functions */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_GCC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_GCC_H_
 
 /*
  * The file must not be included directly
@@ -18,8 +18,9 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/exception.h>
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
@@ -68,7 +69,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	|| defined(CONFIG_ARMV7_A)
 	__asm__ volatile(
 		"mrs %0, cpsr;"
-		"and %0, #" TOSTR(I_BIT) ";"
+		"and %0, #" STRINGIFY(I_BIT) ";"
 		"cpsid i;"
 		: "=r" (key)
 		:
@@ -125,4 +126,4 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_GCC_H_ */

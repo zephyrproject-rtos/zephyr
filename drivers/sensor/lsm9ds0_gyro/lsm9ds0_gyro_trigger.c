@@ -80,8 +80,12 @@ static void lsm9ds0_gyro_gpio_drdy_callback(const struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void lsm9ds0_gyro_thread_main(const struct device *dev)
+static void lsm9ds0_gyro_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct lsm9ds0_gyro_data *data = dev->data;
 
 	while (1) {
@@ -106,7 +110,7 @@ int lsm9ds0_gyro_init_interrupt(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lsm9ds0_gyro_thread_main,
+			lsm9ds0_gyro_thread_main,
 			(void *)dev, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {

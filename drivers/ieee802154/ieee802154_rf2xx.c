@@ -291,9 +291,12 @@ static void rf2xx_process_trx_end(const struct device *dev)
 	}
 }
 
-static void rf2xx_thread_main(void *arg)
+static void rf2xx_thread_main(void *p1, void *p2, void *p3)
 {
-	struct rf2xx_context *ctx = arg;
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct rf2xx_context *ctx = p1;
 	uint8_t isr_status;
 
 	while (true) {
@@ -1036,7 +1039,7 @@ static int rf2xx_init(const struct device *dev)
 	k_thread_create(&ctx->trx_thread,
 			ctx->trx_stack,
 			CONFIG_IEEE802154_RF2XX_RX_STACK_SIZE,
-			(k_thread_entry_t) rf2xx_thread_main,
+			rf2xx_thread_main,
 			ctx, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
@@ -1081,7 +1084,7 @@ static void rf2xx_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-static struct ieee802154_radio_api rf2xx_radio_api = {
+static const struct ieee802154_radio_api rf2xx_radio_api = {
 	.iface_api.init		= rf2xx_iface_init,
 
 	.get_capabilities	= rf2xx_get_capabilities,

@@ -74,6 +74,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_DisableIT_TX(i2c);
@@ -81,7 +82,10 @@ static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 	LL_I2C_DisableIT_STOP(i2c);
 	LL_I2C_DisableIT_NACK(i2c);
 	LL_I2C_DisableIT_TC(i2c);
-	LL_I2C_DisableIT_ERR(i2c);
+
+	if (!data->smbalert_active) {
+		LL_I2C_DisableIT_ERR(i2c);
+	}
 }
 
 static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
@@ -109,11 +113,13 @@ static void stm32_i2c_master_mode_end(const struct device *dev)
 
 #if defined(CONFIG_I2C_TARGET)
 	data->master_active = false;
-	if (!data->slave_attached) {
+	if (!data->slave_attached && !data->smbalert_active) {
 		LL_I2C_Disable(i2c);
 	}
 #else
-	LL_I2C_Disable(i2c);
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+	}
 #endif
 	k_sem_give(&data->device_sync_sem);
 }
@@ -142,9 +148,19 @@ static void stm32_i2c_slave_event(const struct device *dev)
 			__ASSERT_NO_MSG(0);
 			return;
 		}
+	} else {
+		/* On STM32 the LL_I2C_GetAddressMatchCode & (ISR register) returns
+		 * only 7bits of address match so 10 bit dual addressing is broken.
+		 * Revert to assuming single address match.
+		 */
+		if (data->slave_cfg != NULL) {
+			slave_cfg = data->slave_cfg;
+		} else {
+			__ASSERT_NO_MSG(0);
+			return;
+		}
 	}
 
-	slave_cfg = data->slave_cfg;
 	slave_cb = slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
@@ -320,7 +336,9 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	LL_I2C_ClearFlag_STOP(i2c);
 	LL_I2C_ClearFlag_ADDR(i2c);
 
-	LL_I2C_Disable(i2c);
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+	}
 
 #if defined(CONFIG_PM_DEVICE_RUNTIME)
 	if (pm_device_wakeup_is_capable(dev)) {
@@ -426,6 +444,16 @@ static int stm32_i2c_error(const struct device *dev)
 		data->current.is_err = 1U;
 		goto end;
 	}
+
+#if defined(CONFIG_SMBUS_STM32_SMBALERT)
+	if (LL_I2C_IsActiveSMBusFlag_ALERT(i2c)) {
+		LL_I2C_ClearSMBusFlag_ALERT(i2c);
+		if (data->smbalert_cb_func != NULL) {
+			data->smbalert_cb_func(data->smbalert_cb_dev);
+		}
+		goto end;
+	}
+#endif
 
 	return 0;
 end:

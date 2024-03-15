@@ -28,7 +28,8 @@
 		reg = <8>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		/* Use a different acquisition time for test purposes */
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 80)>;
 		zephyr,resolution = <12>;
 	};
 };

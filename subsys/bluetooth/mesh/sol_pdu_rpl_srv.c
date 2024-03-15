@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_sol_pdu_rpl_srv);
 
-static void sol_rpl_status_rsp(struct bt_mesh_model *mod,
+static void sol_rpl_status_rsp(const struct bt_mesh_model *mod,
 			       struct bt_mesh_msg_ctx *ctx,
 			       uint16_t range,
 			       uint8_t len)
@@ -32,7 +32,7 @@ static void sol_rpl_status_rsp(struct bt_mesh_model *mod,
 	bt_mesh_model_send(mod, ctx, &buf, NULL, NULL);
 }
 
-static int item_clear(struct bt_mesh_model *mod,
+static int item_clear(const struct bt_mesh_model *mod,
 		      struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf,
 		      bool acked)
@@ -78,14 +78,14 @@ static int item_clear(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_item_clear(struct bt_mesh_model *mod,
+static int handle_item_clear(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
 	return item_clear(mod, ctx, buf, true);
 }
 
-static int handle_item_clear_unacked(struct bt_mesh_model *mod,
+static int handle_item_clear_unacked(const struct bt_mesh_model *mod,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
@@ -99,7 +99,7 @@ const struct bt_mesh_model_op _bt_mesh_sol_pdu_rpl_srv_op[] = {
 	BT_MESH_MODEL_OP_END
 };
 
-static int sol_pdu_rpl_srv_init(struct bt_mesh_model *mod)
+static int sol_pdu_rpl_srv_init(const struct bt_mesh_model *mod)
 {
 	if (!bt_mesh_model_in_primary(mod)) {
 		LOG_ERR("Solicitation PDU RPL Configuration server not in primary element");

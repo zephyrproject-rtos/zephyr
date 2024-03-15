@@ -1,0 +1,47 @@
+CONFIG_XIP=n
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Serial driver options
+CONFIG_SERIAL=y
+
+# GPIO driver options
+CONFIG_GPIO=y
+
+# Syscon driver options
+CONFIG_SYSCON=y
+
+# hwinfo driver options
+CONFIG_HWINFO=y
+CONFIG_HWINFO_ANDES=y
+
+# RV64 options
+#CONFIG_RV64I_CPU=y
+
+# FPU (single precision) options
+#CONFIG_FPU=y
+#CONFIG_FPU_SHARING=y
+#CONFIG_FLOAT_HARD=y
+#CONFIG_SINGLE_PRECISION_FPU=y
+
+# FPU (double precision) options
+#CONFIG_FPU=y
+#CONFIG_FPU_SHARING=y
+#CONFIG_FLOAT_HARD=y
+#CONFIG_DOUBLE_PRECISION_FPU=y
+
+# PMP granularity options
+CONFIG_PMP_GRANULARITY=8
+
+# HW DSP options
+#CONFIG_SOC_ANDES_V5_HWDSP=y
+
+# EXEC.IT options
+#CONFIG_SOC_ANDES_V5_EXECIT=y
+
+# Nocache memory options
+#CONFIG_SOC_ANDES_V5_PMA=y
+#CONFIG_NOCACHE_MEMORY=y
+
+# I/O Coherence Port options
+#CONFIG_SOC_ANDES_V5_IOCP=y

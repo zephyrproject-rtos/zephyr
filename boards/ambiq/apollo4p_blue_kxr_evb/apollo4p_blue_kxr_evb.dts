@@ -1,0 +1,144 @@
+/dts-v1/;
+#include <ambiq/ambiq_apollo4p_blue.dtsi>
+
+#include "apollo4p_blue_kxr_evb-pinctrl.dtsi"
+
+/ {
+	model = "Ambiq Apollo4 Blue Plus KXR evaluation board";
+	compatible = "ambiq,apollo4p_blue_kxr_evb";
+
+	chosen {
+		zephyr,itcm = &tcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+		zephyr,flash-controller = &flash;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio64_95 27 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0_31 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BTN0";
+		};
+		button1: button_1 {
+			gpios = <&gpio0_31 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BTN1";
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&counter0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&iom0 {
+	compatible = "ambiq,i2c";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&iom1 {
+	compatible = "ambiq,spi";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(1)>;
+	status = "okay";
+};
+
+&iom4 {
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mspi0 {
+	pinctrl-0 = <&mspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash0 {
+	erase-block-size = <2048>;
+	write-block-size = <16>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 16KB of storage at the end of the 1952KB of flash */
+		storage_partition: partition@1e4000 {
+			label = "storage";
+			reg = <0x001e4000 0x4000>;
+		};
+	};
+};
+
+&xo32m {
+	pinctrl-0 = <&xo32m_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&xo32k {
+	pinctrl-0 = <&xo32k_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&gpio64_95 {
+	status = "okay";
+};
+
+&gpio96_127 {
+	status = "okay";
+};

@@ -1,0 +1,97 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the accel-range, accel-odr, properties in a .dts or .dtsi
+    file you may include lis2du12.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lis2du12.h>
+
+    lis2du12: lis2du12@0 {
+      ...
+
+      accel-range = <LIS2DU12_DT_FS_16G>;
+      accel-odr = <LIS2DU12_DT_ODR_AT_50Hz>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      1 = drdy is generated from INT1
+      2 = drdy is generated from INT2
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+    enum: [1, 2]
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+
+      0 # LIS2DU12_DT_FS_2G  (0.061 mg/LSB)
+      1 # LIS2DU12_DT_FS_4G  (0.122 mg/LSB)
+      2 # LIS2DU12_DT_FS_8G  (0.244 mg/LSB)
+      3 # LIS2DU12_DT_FS_16G (0.488 mg/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  accel-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lis2du12_md_t enumerative in hal/st
+      module. Please note that this values will also enable/disable High performance mode.
+      Default is power-up configuration.
+
+      0x00 # LIS2DU12_DT_ODR_OFF
+      0x01 # LIS2DU12_DT_ODR_AT_1Hz6_ULP
+      0x02 # LIS2DU12_DT_ODR_AT_3Hz_ULP
+      0x03 # LIS2DU12_DT_ODR_AT_6Hz_ULP
+      0x04 # LIS2DU12_DT_ODR_AT_6Hz
+      0x05 # LIS2DU12_DT_ODR_AT_12Hz
+      0x06 # LIS2DU12_DT_ODR_AT_25Hz
+      0x07 # LIS2DU12_DT_ODR_AT_50Hz
+      0x08 # LIS2DU12_DT_ODR_AT_100Hz
+      0x09 # LIS2DU12_DT_ODR_AT_200Hz
+      0x0a # LIS2DU12_DT_ODR_AT_400Hz
+      0x0b # LIS2DU12_DT_ODR_AT_800Hz
+      0x0e # LIS2DU12_DT_ODR_TRIG_PIN
+      0x0f # LIS2DU12_DT_ODR_TRIG_SW
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0e, 0x0f]
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.

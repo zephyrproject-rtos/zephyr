@@ -1,0 +1,56 @@
+# Copyright (c) 2023 Jan Henke <Jan.Henke@taujhe.de>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SparkFun SerLCD Dot Character VFD Controller/Driver IC
+
+  Example:
+    &i2c1 {
+      serlcd@72 {
+        compatible = "sparkfun,serlcd";
+        reg = <0x72>;
+        columns = <16>;
+        rows = <2>;
+        command-delay = <10>;
+        special-command-delay = <50>;
+      };
+    };
+
+compatible: "sparkfun,serlcd"
+
+include: [auxdisplay-device.yaml, i2c-device.yaml]
+
+properties:
+  columns:
+    type: int
+    default: 16
+    enum:
+      - 16
+      - 20
+
+  rows:
+    type: int
+    default: 2
+    enum:
+      - 2
+      - 4
+
+  command-delay-ms:
+    type: int
+    default: 10
+    description: |
+      Delay in milliseconds (defaults to 10ms if not set) after a normal command was sent.
+      The default value is based on the original SparkFun SerLCD library
+      implementation which assumes 100 kbps I2C configuration. This value
+      might require tweaking if using I2C at a higher bitrare and/or relativily
+      high update frequency of the display.
+
+  special-command-delay-ms:
+    type: int
+    default: 50
+    description: |
+      Delay in milliseconds (defaults to 50ms if not set) after a special command was sent.
+      The default value is based on the original SparkFun SerLCD library
+      implementation which assumes 100 kbps I2C configuration. This value
+      might require tweaking if using I2C at a higher bitrare and/or relativily
+      high update frequency of the display.

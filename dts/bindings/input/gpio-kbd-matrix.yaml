@@ -1,0 +1,64 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO based keyboard matrix input device
+
+  Implement an input device for a GPIO based keyboard matrix.
+
+  Example configuration:
+
+  kbd-matrix {
+          compatible = "gpio-kbd-matrix";
+          row-gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+                      <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+          col-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>,
+                      <&gpio0 3 GPIO_ACTIVE_LOW>,
+                      <&gpio0 4 GPIO_ACTIVE_LOW>;
+          no-ghostkey-check;
+  };
+
+compatible: "gpio-kbd-matrix"
+
+include:
+  - name: kbd-matrix-common.yaml
+    property-blocklist:
+      - row-size
+      - col-size
+
+properties:
+  row-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for the keyboard matrix rows, up to 8 different GPIOs. All row GPIO
+      pins must have interrupt support if idle-mode is set to "interrupt"
+      (default).
+
+  col-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for the keyboard matrix columns, supports up to 32 different GPIOs.
+      When unselected, this pin will be either driven to inactive state or
+      configured to high impedance (input) depending on the col-drive-inactive
+      property.
+
+  col-drive-inactive:
+    type: boolean
+    description: |
+      If enabled, unselected column GPIOs will be driven to inactive state.
+      Default to configure unselected column GPIOs to high impedance.
+
+  idle-mode:
+    type: string
+    default: "interrupt"
+    enum:
+      - "interrupt"
+      - "poll"
+      - "scan"
+    description: |
+      Controls the driver behavior on idle, "interrupt" waits for a new key
+      press using GPIO interrupts on the row lines, "poll"  periodically polls
+      the row lines with all the columns selected, "scan" just keep scanning
+      the matrix continuously, requires "poll-timeout-ms" to be set to 0.

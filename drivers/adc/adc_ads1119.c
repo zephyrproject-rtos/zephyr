@@ -433,8 +433,12 @@ static int ads1119_read(const struct device *dev,
 #endif
 
 #if CONFIG_ADC_ASYNC
-static void ads1119_acquisition_thread(struct device *dev)
+static void ads1119_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	while (true) {
 		ads1119_adc_perform_read(dev);
 	}
@@ -466,7 +470,7 @@ static int ads1119_init(const struct device *dev)
 	k_tid_t tid =
 		k_thread_create(&data->thread, config->stack,
 				CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE,
-				(k_thread_entry_t)ads1119_acquisition_thread,
+				ads1119_acquisition_thread,
 				(void *)dev, NULL, NULL,
 				CONFIG_ADC_ADS1119_ASYNC_THREAD_INIT_PRIO,
 				0, K_NO_WAIT);

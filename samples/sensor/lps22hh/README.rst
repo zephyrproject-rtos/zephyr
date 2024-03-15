@@ -27,7 +27,7 @@ sensor, which is present on the X-NUCLEO-IKS01A3 shield.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lps22hh
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :shield: x_nucleo_iks01a3
    :goals: build
    :compact:

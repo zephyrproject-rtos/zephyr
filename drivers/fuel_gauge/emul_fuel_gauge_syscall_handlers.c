@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/emul_fuel_gauge.h>
 
 /* Emulator syscalls just need to exist as stubs as these are only called by tests. */

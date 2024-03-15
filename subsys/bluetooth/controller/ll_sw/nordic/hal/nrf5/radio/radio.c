@@ -671,9 +671,9 @@ void *radio_pkt_decrypt_get(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
 /* Dedicated Rx PDU Buffer for Control PDU independent of node_rx with BIS Data
- * PDU buffer
+ * PDU buffer. Note this buffer will be used to store whole PDUs, not just the BIG control payload.
  */
-static uint8_t pkt_big_ctrl[sizeof(struct pdu_big_ctrl)];
+static uint8_t pkt_big_ctrl[offsetof(struct pdu_bis, payload) + sizeof(struct pdu_big_ctrl)];
 
 void *radio_pkt_big_ctrl_get(void)
 {
@@ -874,8 +874,9 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	}
 
 	if (delay < SW_SWITCH_TIMER->CC[cc]) {
-		nrf_timer_cc_set(SW_SWITCH_TIMER, cc,
-				 (SW_SWITCH_TIMER->CC[cc] - delay));
+		nrf_timer_cc_set(SW_SWITCH_TIMER,
+				 cc,
+				 (SW_SWITCH_TIMER->CC[cc] - delay - HAL_RADIO_TMR_START_DELAY_US));
 	} else {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
 	}
@@ -1114,9 +1115,9 @@ void radio_tmr_status_reset(void)
 			BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
 			BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI) |
 			BIT(HAL_RADIO_END_TIME_CAPTURE_PPI) |
-#if defined(DPPI_PRESENT)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 			BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-#endif /* DPPI_PRESENT */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI) |
@@ -1152,9 +1153,9 @@ void radio_tmr_tx_status_reset(void)
 			BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
 			BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI) |
 			BIT(HAL_RADIO_END_TIME_CAPTURE_PPI) |
-#if defined(DPPI_PRESENT)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 			BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-#endif /* DPPI_PRESENT */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI) |
@@ -1190,9 +1191,9 @@ void radio_tmr_rx_status_reset(void)
 			BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
 			BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI) |
 			BIT(HAL_RADIO_END_TIME_CAPTURE_PPI) |
-#if defined(DPPI_PRESENT)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 			BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-#endif /* DPPI_PRESENT */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI) |

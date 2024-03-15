@@ -196,8 +196,9 @@ static int psoc6_bless_send(struct net_buf *buf)
 	return 0;
 }
 
-static int psoc6_bless_setup(void)
+static int psoc6_bless_setup(const struct bt_hci_setup_params *params)
 {
+	ARG_UNUSED(params);
 	struct net_buf *buf;
 	int err;
 	uint8_t *addr = (uint8_t *)&SFLASH_BLE_DEVICE_ADDRESS[0];

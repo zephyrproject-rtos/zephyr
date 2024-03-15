@@ -90,7 +90,10 @@ ZTEST(rand32_common, test_rand32)
 	printk("Generating bulk fill cryptographically secure random numbers\n");
 
 	memset(buf, 0, sizeof(buf));
-	sys_csrand_get(buf, sizeof(buf));
+
+	int err = sys_csrand_get(buf, sizeof(buf));
+
+	zassert_true(err == 0, "sys_csrand_get returned an error");
 
 	for (rnd_cnt = 0; rnd_cnt < (N_VALUES - 1); rnd_cnt++) {
 		gen = buf[rnd_cnt];

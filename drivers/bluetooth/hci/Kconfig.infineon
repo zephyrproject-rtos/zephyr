@@ -2,10 +2,10 @@
 # an affiliate of Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if BT_CYW43XXX
+if BT_AIROC
 
-choice  CYW43XXX_PART
-	prompt "Select CYW43XXX part"
+choice  AIROC_PART
+	prompt "Select AIROC part"
 
 config CYW4343W
 	bool "CYW4343W"
@@ -42,12 +42,12 @@ config CYW43439
 	  More information about CYW43439 device you can find on
 	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43439/
 
-config BT_CYW43XXX_CUSTOM
-	bool "Custom CYW43xx device/module"
+config BT_AIROC_CUSTOM
+	bool "Custom AIROC device/module"
 	help
-	  Select Custom CYW43xx device/module. For this option,
+	  Select Custom AIROC device/module. For this option,
 	  user must to provide path to BT firmware HCD file for
-	  custom or vendor CYW43xx modules in CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB.
+	  custom or vendor AIROC modules in AIROC_CUSTOM_FIRMWARE_HCD_BLOB.
 
 endchoice
 
@@ -117,8 +117,8 @@ config CYW43439_MURATA_1YN
 
 endchoice
 
-config CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB
-	depends on BT_CYW43XXX_CUSTOM
+config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
+	depends on BT_AIROC_CUSTOM
 	string  "Path to user BT firmware HCD file"
 	help
 	  Path to BT firmware HCD file for custom or vendor CYW43xx modules.
@@ -129,12 +129,7 @@ config CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB
 config BT_BUF_CMD_TX_SIZE
 	default 255
 
-# Disable ATT_ENFORCE_FLOW feature, CYW43XX informs about frees buffer
-# (HCL Number Of Completed Packets event) after second packet.
-config BT_ATT_ENFORCE_FLOW
-	default n
-
-endif # BT_CYW43XXX
+endif # BT_AIROC
 
 if BT_PSOC6_BLESS
 

@@ -31,10 +31,16 @@
   #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#if CONFIG_FLASH_LOAD_SIZE > 0
-  #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
 #else
-  #define ROM_SIZE (CONFIG_FLASH_SIZE * 1K - CONFIG_FLASH_LOAD_OFFSET)
+#define ROM_END_OFFSET 0
+#endif
+
+#if CONFIG_FLASH_LOAD_SIZE > 0
+  #define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
+#else
+  #define ROM_SIZE (CONFIG_FLASH_SIZE * 1K - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
 #endif
 
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
@@ -61,7 +67,7 @@ MEMORY
     FLASH     (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     RAM       (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+    IDT_LIST  (wx) : ORIGIN = 0xFFFF8000, LENGTH = 32K
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -105,8 +111,11 @@ SECTIONS
         KEEP(*(.exc_vector_table))
         KEEP(*(".exc_vector_table.*"))
 
+#if LINKER_ZEPHYR_FINAL && defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+        INCLUDE isr_tables_vt.ld
+#else
         KEEP(*(.vectors))
-
+#endif
         _vector_end = .;
 
         *(.text)

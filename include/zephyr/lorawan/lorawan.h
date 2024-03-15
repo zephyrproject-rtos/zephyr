@@ -26,63 +26,63 @@ extern "C" {
  * @brief LoRaWAN class types.
  */
 enum lorawan_class {
-	LORAWAN_CLASS_A = 0x00,
-	LORAWAN_CLASS_B = 0x01,
-	LORAWAN_CLASS_C = 0x02,
+	LORAWAN_CLASS_A = 0x00, /**< Class A device */
+	LORAWAN_CLASS_B = 0x01, /**< Class B device */
+	LORAWAN_CLASS_C = 0x02, /**< Class C device */
 };
 
 /**
  * @brief LoRaWAN activation types.
  */
 enum lorawan_act_type {
-	LORAWAN_ACT_OTAA = 0,
-	LORAWAN_ACT_ABP,
+	LORAWAN_ACT_OTAA = 0, /**< Over-the-Air Activation (OTAA) */
+	LORAWAN_ACT_ABP,      /**< Activation by Personalization (ABP) */
 };
 
 /**
  * @brief LoRaWAN datarate types.
  */
 enum lorawan_datarate {
-	LORAWAN_DR_0 = 0,
-	LORAWAN_DR_1,
-	LORAWAN_DR_2,
-	LORAWAN_DR_3,
-	LORAWAN_DR_4,
-	LORAWAN_DR_5,
-	LORAWAN_DR_6,
-	LORAWAN_DR_7,
-	LORAWAN_DR_8,
-	LORAWAN_DR_9,
-	LORAWAN_DR_10,
-	LORAWAN_DR_11,
-	LORAWAN_DR_12,
-	LORAWAN_DR_13,
-	LORAWAN_DR_14,
-	LORAWAN_DR_15,
+	LORAWAN_DR_0 = 0, /**< DR0 data rate */
+	LORAWAN_DR_1,     /**< DR1 data rate */
+	LORAWAN_DR_2,     /**< DR2 data rate */
+	LORAWAN_DR_3,     /**< DR3 data rate */
+	LORAWAN_DR_4,     /**< DR4 data rate */
+	LORAWAN_DR_5,     /**< DR5 data rate */
+	LORAWAN_DR_6,     /**< DR6 data rate */
+	LORAWAN_DR_7,     /**< DR7 data rate */
+	LORAWAN_DR_8,     /**< DR8 data rate */
+	LORAWAN_DR_9,     /**< DR9 data rate */
+	LORAWAN_DR_10,    /**< DR10 data rate */
+	LORAWAN_DR_11,    /**< DR11 data rate */
+	LORAWAN_DR_12,    /**< DR12 data rate */
+	LORAWAN_DR_13,    /**< DR13 data rate */
+	LORAWAN_DR_14,    /**< DR14 data rate */
+	LORAWAN_DR_15,    /**< DR15 data rate */
 };
 
 /**
  * @brief LoRaWAN region types.
  */
 enum lorawan_region {
-	LORAWAN_REGION_AS923,
-	LORAWAN_REGION_AU915,
-	LORAWAN_REGION_CN470,
-	LORAWAN_REGION_CN779,
-	LORAWAN_REGION_EU433,
-	LORAWAN_REGION_EU868,
-	LORAWAN_REGION_KR920,
-	LORAWAN_REGION_IN865,
-	LORAWAN_REGION_US915,
-	LORAWAN_REGION_RU864,
+	LORAWAN_REGION_AS923, /**< Asia 923 MHz frequency band */
+	LORAWAN_REGION_AU915, /**< Australia 915 MHz frequency band */
+	LORAWAN_REGION_CN470, /**< China 470 MHz frequency band */
+	LORAWAN_REGION_CN779, /**< China 779 MHz frequency band */
+	LORAWAN_REGION_EU433, /**< Europe 433 MHz frequency band */
+	LORAWAN_REGION_EU868, /**< Europe 868 MHz frequency band */
+	LORAWAN_REGION_KR920, /**< South Korea 920 MHz frequency band */
+	LORAWAN_REGION_IN865, /**< India 865 MHz frequency band */
+	LORAWAN_REGION_US915, /**< United States 915 MHz frequency band */
+	LORAWAN_REGION_RU864, /**< Russia 864 MHz frequency band */
 };
 
 /**
  * @brief LoRaWAN message types.
  */
 enum lorawan_message_type {
-	LORAWAN_MSG_UNCONFIRMED = 0,
-	LORAWAN_MSG_CONFIRMED,
+	LORAWAN_MSG_UNCONFIRMED = 0,  /**< Unconfirmed message */
+	LORAWAN_MSG_CONFIRMED,        /**< Confirmed message */
 };
 
 /**
@@ -128,9 +128,10 @@ struct lorawan_join_abp {
  * @brief LoRaWAN join parameters
  */
 struct lorawan_join_config {
+	/** Join parameters */
 	union {
-		struct lorawan_join_otaa otaa;
-		struct lorawan_join_abp abp;
+		struct lorawan_join_otaa otaa; /**< OTAA join parameters */
+		struct lorawan_join_abp abp;   /**< ABP join parameters */
 	};
 
 	/** Device EUI. Optional if a secure element is present. */
@@ -140,6 +141,7 @@ struct lorawan_join_config {
 	enum lorawan_act_type mode;
 };
 
+/** Flag to indicate receiving on any port */
 #define LW_RECV_PORT_ANY UINT16_MAX
 
 /**
@@ -175,22 +177,32 @@ struct lorawan_downlink_cb {
 };
 
 /**
- * @brief Add battery level callback function.
+ * @brief Defines the battery level callback handler function signature.
+ *
+ * @retval 0      if the node is connected to an external power source
+ * @retval 1..254 battery level, where 1 is the minimum and 254 is the maximum value
+ * @retval 255    if the node was not able to measure the battery level
+ */
+typedef uint8_t (*lorawan_battery_level_cb_t)(void);
+
+/**
+ * @brief Defines the datarate changed callback handler function signature.
+ *
+ * @param dr Updated datarate.
+ */
+typedef void (*lorawan_dr_changed_cb_t)(enum lorawan_datarate dr);
+
+/**
+ * @brief Register a battery level callback function.
  *
  * Provide the LoRaWAN stack with a function to be called whenever a battery
- * level needs to be read. As per LoRaWAN specification the callback needs to
- * return "0:      node is connected to an external power source,
- *         1..254: battery level, where 1 is the minimum and 254 is the maximum
- *                 value,
- *         255: the node was not able to measure the battery level"
+ * level needs to be read.
  *
  * Should no callback be provided the lorawan backend will report 255.
  *
- * @param battery_lvl_cb Pointer to the battery level function
- *
- * @return 0 if successful, negative errno code if failure
+ * @param cb Pointer to the battery level function
  */
-int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
+void lorawan_register_battery_level_callback(lorawan_battery_level_cb_t cb);
 
 /**
  * @brief Register a callback to be run on downlink packets
@@ -205,12 +217,9 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb);
  * The callback is called once upon successfully joining a network and again
  * each time the datarate changes due to ADR.
  *
- * The callback function takes one parameter:
- *	- dr - updated datarate
- *
- * @param dr_cb Pointer to datarate update callback
+ * @param cb Pointer to datarate update callback
  */
-void lorawan_register_dr_changed_callback(void (*dr_cb)(enum lorawan_datarate));
+void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb);
 
 /**
  * @brief Join the LoRaWAN network

@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2018-2019 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_QEMU_ICOUNT_SHIFT=6
+
+# Build a non-secure firmware image
+CONFIG_TRUSTED_EXECUTION_SECURE=n
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y

@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Configure pin control bias mode for uart2 pins */
+&p3_1_scb2_uart_tx {
+	drive-push-pull;
+};
+
+&p3_0_scb2_uart_rx {
+	input-enable;
+};
+
+&p3_2_scb2_uart_rts {
+	drive-push-pull;
+};
+
+&p3_3_scb2_uart_cts {
+	input-enable;
+};
+
+/* Configure pin control bias mode for uart5 pins */
+&p5_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p5_0_scb5_uart_rx {
+	input-enable;
+};
+
+/* Configure pin control bias mode for i2c3 pins */
+&p6_0_scb3_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p6_1_scb3_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
+
+&pinctrl {
+	/* Configure pin control bias mode for SDIO */
+	p2_5_sdio_clk: p2_5_sdio_clk {
+		pinmux = <DT_CAT1_PINMUX(2, 5, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_4_sdio_cmd: p2_4_sdio_cmd  {
+		pinmux = <DT_CAT1_PINMUX(2, 4, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_0_sdio_data0: p2_0_sdio_data0 {
+		pinmux = <DT_CAT1_PINMUX(2, 0, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_1_sdio_data1: p2_1_sdio_data1 {
+		pinmux = <DT_CAT1_PINMUX(2, 1, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_2_sdio_data2: p2_2_sdio_data2 {
+		pinmux = <DT_CAT1_PINMUX(2, 2, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_3_sdio_data3: p2_3_sdio_data3 {
+		pinmux = <DT_CAT1_PINMUX(2, 3, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+};

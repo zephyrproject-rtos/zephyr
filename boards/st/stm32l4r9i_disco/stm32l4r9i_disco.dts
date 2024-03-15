@@ -1,0 +1,273 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+#include <st/l4/stm32l4r9Xi.dtsi>
+#include <st/l4/stm32l4r9a(g-i)ix-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32L4R9I-DISCO board";
+	compatible = "st,stm32l4r9i-disco";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* N.B. LD1 (orange) is not wired to MCU */
+		green_led: led_2 {
+			gpios = <&gpioh 4 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		joy_sel: joystick_selection {
+			label = "joystick selection";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &joy_sel;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+		spi-flash0 = &mx25lm51245;
+	};
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_msi {
+	status = "okay";
+	msi-range = <6>;
+	msi-pll-mode;
+};
+
+&pll {
+	status = "okay";
+	div-m = <1>;
+	mul-n = <60>;
+	/*
+	 * WORKAROUND: stm32l4-pll-clock does not allow arbitrary PLLP dividers.
+	 * Disable PLLP completely since it only feeds SAI, which is not active either.
+	 */
+	/* div-p = <5>; */
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msi>;
+};
+
+&rcc {
+	clocks = <&pll>;
+	ahb-prescaler = <1>;
+	clock-frequency = <DT_FREQ_M(120)>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart1 {
+	status = "okay";
+	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&timers3 {
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		/*
+		 * N.B.: Datasheet indicates that ARD_D11 (wired to PB15) is connected to TIM3_CH2.
+		 * However, this is incorrect as PB15 cannot be muxed to TIM3 (see DS12023).
+		 * Moved ARD_D11 to TIM15_CH2 instead.
+		 */
+		pinctrl-0 = <&tim3_ch1_pb4>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers5 {
+	status = "okay";
+
+	pwm5: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim5_ch2_pa1 &tim5_ch4_pi0>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers8 {
+	status = "okay";
+
+	pwm8: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim8_ch1n_ph13>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	status = "okay";
+
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch2_pf10 &tim15_ch2_pb15>;
+		pinctrl-names = "default";
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pg13>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioi 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+				<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&sdmmc1 {
+	status = "okay";
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7 &adc1_in15_pb0
+			&adc1_in4_pc3 &adc1_in13_pc4>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <1>;
+};
+
+zephyr_udc0: &usbotg_fs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
+			&usb_otg_fs_id_pa10>;
+	pinctrl-names = "default";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&octospi2 {
+	status = "okay";
+	pinctrl-0 = <&octospim_p2_clk_pi6 &octospim_p2_ncs_pg12
+			&octospim_p2_io0_pi11 &octospim_p2_io1_pi10
+			&octospim_p2_io2_pi9 &octospim_p2_io3_ph8
+			&octospim_p2_io4_ph9 &octospim_p2_io5_ph10
+			&octospim_p2_io6_pg9 &octospim_p2_io7_pg10
+			&octospim_p2_dqs_pg15>;
+	pinctrl-names = "default";
+
+	mx25lm51245: ospi-nor-flash@90000000 {
+		status = "okay";
+		compatible = "st,stm32-ospi-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(25)>;
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_STR_TRANSFER>;
+		four-byte-opcodes;
+		sfdp-bfp = [
+			53 46 44 50 06 01 02 ff
+			00 06 01 10 30 00 00 ff
+			c2 00 01 04 10 01 00 ff
+			84 00 01 02 c0 00 00 ff
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			e5 20 fb ff ff ff ff 1f
+			44 eb 08 6b 08 3b 04 bb
+			fe ff ff ff ff ff 00 ff
+			ff ff 44 eb 0c 20 0f 52
+			10 d8 00 ff d6 49 c5 00
+			81 df 04 e3 44 03 67 38
+			30 b0 30 b0 f7 bd d5 5c
+			4a 9e 29 ff f0 50 f9 85
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			7f ef ff ff 21 5c dc ff
+		];
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
+		};
+	};
+};

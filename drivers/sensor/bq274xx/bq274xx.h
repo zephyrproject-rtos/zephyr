@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/sensor/bq274xx.h>
 
 /*** General Constant ***/
 #define BQ274XX_UNSEAL_KEY_A 0x8000 /* Unseal code one on BQ27441-G1A and similar */
@@ -58,6 +59,11 @@
 #define BQ274XX_CTRL_SOFT_RESET      0x0042
 #define BQ274XX_CTRL_EXIT_CFGUPDATE  0x0043
 #define BQ274XX_CTRL_EXIT_RESIM      0x0044
+
+/* BQ27427 */
+#define BQ27427_CTRL_CHEM_A 0x0030
+#define BQ27427_CTRL_CHEM_B 0x0031
+#define BQ27427_CTRL_CHEM_C 0x0032
 
 /*** Extended Data Commands ***/
 #define BQ274XX_EXT_OPCONFIG                   0x3A /* OpConfig() */
@@ -119,6 +125,7 @@ struct bq274xx_config {
 #if defined(CONFIG_BQ274XX_PM) || defined(CONFIG_BQ274XX_TRIGGER)
 	struct gpio_dt_spec int_gpios;
 #endif
+	uint16_t chemistry_id;
 	bool lazy_loading;
 };
 

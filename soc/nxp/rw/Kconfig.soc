@@ -1,0 +1,60 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_NXP_RW
+	bool
+
+config SOC_FAMILY
+	default "nxp_rw" if SOC_FAMILY_NXP_RW
+
+config SOC_SERIES_RW6XX
+	bool
+	select SOC_FAMILY_NXP_RW
+
+config SOC_SERIES
+	default "rw6xx" if SOC_SERIES_RW6XX
+
+config SOC_RW610
+	bool
+	select SOC_SERIES_RW6XX
+
+config SOC_RW612
+	bool
+	select SOC_SERIES_RW6XX
+
+config SOC
+	default "rw610" if SOC_RW610
+	default "rw612" if SOC_RW612
+
+config SOC_PART_NUMBER_RW612ETA1I
+	bool
+	select SOC_RW612
+
+config SOC_PART_NUMBER_RW612HNA1I
+	bool
+	select SOC_RW612
+
+config SOC_PART_NUMBER_RW612UKA1I
+	bool
+	select SOC_RW612
+
+config SOC_PART_NUMBER_RW610ETA1I
+	bool
+	select SOC_RW610
+
+config SOC_PART_NUMBER_RW610HNA1I
+	bool
+	select SOC_RW610
+
+config SOC_PART_NUMBER_RW610UKA1I
+	bool
+	select SOC_RW610
+
+config SOC_PART_NUMBER
+	string
+	default "RW612ETA1I" if SOC_PART_NUMBER_RW612ETA1I
+	default "RW612HNA1I" if SOC_PART_NUMBER_RW612HNA1I
+	default "RW612UKA1I" if SOC_PART_NUMBER_RW612UKA1I
+	default "RW610ETA1I" if SOC_PART_NUMBER_RW610ETA1I
+	default "RW610HNA1I" if SOC_PART_NUMBER_RW610HNA1I
+	default "RW610UKA1I" if SOC_PART_NUMBER_RW610UKA1I

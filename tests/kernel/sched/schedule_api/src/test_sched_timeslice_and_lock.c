@@ -189,6 +189,10 @@ ZTEST(threads_scheduling, test_sleep_wakeup_preemptible)
 static int executed;
 static void coop_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_take(&pend_sema, K_MSEC(100));
 	executed = 1;
 }
@@ -211,7 +215,7 @@ ZTEST(threads_scheduling, test_pending_thread_wakeup)
 
 	/* Create a thread which waits for semaphore */
 	k_tid_t tid = k_thread_create(&t, tstack, STACK_SIZE,
-				      (k_thread_entry_t)coop_thread,
+				      coop_thread,
 				      NULL, NULL, NULL,
 				      K_PRIO_COOP(1), 0, K_NO_WAIT);
 

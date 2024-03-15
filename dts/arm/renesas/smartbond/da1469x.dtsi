@@ -16,6 +16,10 @@
 		zephyr,flash-controller = &flash_controller;
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -85,6 +89,52 @@
 			compatible = "renesas,smartbond-lp-clk";
 			clock-src = <&rc32k>;
 			status = "okay";
+		};
+
+		regulators {
+			compatible = "renesas,smartbond-regulator";
+			vdd: VDD {
+				regulator-init-microvolt = <900000>;
+				regulator-boot-on;
+				renesas,regulator-sleep-ldo;
+				renesas,regulator-dcdc-vbat-high;
+				renesas,regulator-dcdc-vbat-low;
+			};
+			vdd_clamp: VDD_CLAMP {
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-init-microvolt = <706000>;
+			};
+			vdd_sleep: VDD_SLEEP {
+				regulator-boot-on;
+				regulator-init-microvolt = <750000>;
+			};
+			v14: V14 {
+				regulator-init-microvolt = <1400000>;
+				regulator-boot-on;
+				renesas,regulator-dcdc-vbat-high;
+				renesas,regulator-dcdc-vbat-low;
+			};
+			v18: V18 {
+				regulator-init-microvolt = <1800000>;
+				regulator-boot-on;
+				renesas,regulator-dcdc-vbat-high;
+			};
+			v18p: V18P {
+				regulator-init-microvolt = <1800000>;
+				regulator-boot-on;
+				renesas,regulator-sleep-ldo;
+				renesas,regulator-dcdc-vbat-high;
+			};
+			v30: V30 {
+				regulator-init-microvolt = <3000000>;
+				regulator-boot-on;
+				renesas,regulator-sleep-ldo;
+				renesas,regulator-v30-vbus;
+				renesas,regulator-v30-vbat;
+				renesas,regulator-v30-clamp;
+				renesas,regulator-v30-ref-bandgap;
+			};
 		};
 	};
 
@@ -231,7 +281,6 @@
 			#io-channel-cells = <1>;
 		};
 
-
 		sdadc: sdadc@50020800 {
 			compatible = "renesas,smartbond-sdadc";
 			reg = <0x50020800 0x1C>;
@@ -239,6 +288,13 @@
 			clock-freq = <2>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		crypto: crypto@30040000 {
+			compatible = "renesas,smartbond-crypto";
+			reg = <0x30040000 0x200>;
+			interrupts = <29 0>;
+			status = "disabled";
 		};
 
 		trng: trng@50040c00 {
@@ -265,6 +321,13 @@
 			reg = <0x50020700 0x100>;
 			periph-clock-config = <0x0800>;
 			interrupts = <9 0>;
+		};
+
+		lcdc: lcdc@30030000 {
+			compatible = "renesas,smartbond-display";
+			reg = <0x30030000 0x18C>;
+			interrupts = <32 0>;
+			status = "disabled";
 		};
 
 		spi: spi@50020300 {
@@ -296,6 +359,16 @@
 			ep-out-buf-size = <8 64 64 64>;
 			interrupts = <15 0>, <21 0>;
 			status = "disabled";
+		};
+
+		dma: dma@50040800 {
+			compatible = "renesas,smartbond-dma";
+			reg = <0x50040800 0x110>;
+			interrupts = <1 0>;
+			status = "disabled";
+			dma-channels = <8>;
+			block-count = <1>;
+			#dma-cells = <0>;
 		};
 	};
 };

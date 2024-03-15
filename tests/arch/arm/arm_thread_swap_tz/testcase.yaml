@@ -9,16 +9,16 @@ tests:
   arch.arm.swap.tz:
     # NOTE: this platform disables FPU access in TFM.
     platform_exclude:
-      - mps3_an547_ns
-      - nucleo_l552ze_q_ns
+      - mps3/an547/ns
+      - nucleo_l552ze_q/stm32l552xx/ns
     integration_platforms:
-      - mps2_an521_ns
+      - mps2/an521/cpu0/ns
   arch.arm.swap.tz_off:
     extra_configs:
       - CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS=n
     # NOTE: this platform disables FPU access in TFM.
     platform_exclude:
-      - mps3_an547_ns
-      - nucleo_l552ze_q_ns
+      - mps3/an547/ns
+      - nucleo_l552ze_q/stm32l552xx/ns
     integration_platforms:
-      - mps2_an521_ns
+      - mps2/an521/cpu0/ns

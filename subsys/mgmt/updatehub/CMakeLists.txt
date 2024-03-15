@@ -23,3 +23,5 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE updatehub_handlers.c)
 zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/mgmt/updatehub/include
 )
+
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

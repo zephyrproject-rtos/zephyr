@@ -12,6 +12,7 @@
 #include "icm42688.h"
 #include "icm42688_reg.h"
 #include "icm42688_spi.h"
+#include "icm42688_trigger.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM42688_LL, CONFIG_SENSOR_LOG_LEVEL);
@@ -59,6 +60,62 @@ int icm42688_reset(const struct device *dev)
 	}
 
 	return 0;
+}
+
+static uint16_t icm42688_compute_fifo_wm(const struct icm42688_cfg *cfg)
+{
+	const bool accel_enabled = cfg->accel_mode != ICM42688_ACCEL_OFF;
+	const bool gyro_enabled = cfg->gyro_mode != ICM42688_GYRO_OFF;
+	const int pkt_size = cfg->fifo_hires ? 20 : (accel_enabled && gyro_enabled ? 16 : 8);
+	int accel_modr = 0;
+	int gyro_modr = 0;
+	int64_t modr;
+
+	if (cfg->batch_ticks == 0 || (!accel_enabled && !gyro_enabled)) {
+		return 0;
+	}
+
+	if (accel_enabled) {
+		struct sensor_value val = {0};
+
+		icm42688_accel_reg_to_hz(cfg->accel_odr, &val);
+		accel_modr = sensor_value_to_micro(&val) / 1000;
+	}
+	if (gyro_enabled) {
+		struct sensor_value val = {0};
+
+		icm42688_gyro_reg_to_odr(cfg->gyro_odr, &val);
+		gyro_modr = sensor_value_to_micro(&val) / 1000;
+	}
+
+	if (accel_modr == 0) {
+		modr = gyro_modr;
+	} else if (gyro_modr == 0) {
+		modr = accel_modr;
+	} else {
+		/* Need to find the least common multiplier (LCM) */
+		int n1 = accel_modr;
+		int n2 = gyro_modr;
+
+		while (n1 != n2) {
+			if (n1 > n2) {
+				n1 -= n2;
+			} else {
+				n2 -= n1;
+			}
+		}
+		LOG_DBG("GCD=%d", n1);
+		modr = ((int64_t)accel_modr * (int64_t)gyro_modr) / n1;
+	}
+	/* At this point we have 'modr' as mHz which is 1 / msec. */
+
+	/* Convert 'modr' to bytes * batch_ticks / msec */
+	modr *= (int64_t)cfg->batch_ticks * pkt_size;
+
+	/* 'modr' = byte_ticks_per_msec / kticks_per_sec */
+	modr = DIV_ROUND_UP(modr, CONFIG_SYS_CLOCK_TICKS_PER_SEC * INT64_C(1000));
+
+	return (uint16_t)MIN(modr, 0x7ff);
 }
 
 int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
@@ -165,8 +222,12 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 	}
 
 	/* Pulse mode with async reset (resets interrupt line on int status read) */
-	res = icm42688_spi_single_write(&dev_cfg->spi, REG_INT_CONFIG,
-					BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
+	if (IS_ENABLED(CONFIG_ICM42688_TRIGGER)) {
+		res = icm42688_trigger_enable_interrupt(dev, cfg);
+	} else {
+		res = icm42688_spi_single_write(&dev_cfg->spi, REG_INT_CONFIG,
+						BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
+	}
 	if (res) {
 		LOG_ERR("Error writing to INT_CONFIG");
 		return res;
@@ -205,7 +266,8 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 		}
 
 		/* Set watermark and interrupt handling first */
-		uint8_t fifo_wml = (cfg->fifo_wm) & 0xFF;
+		uint16_t fifo_wm = icm42688_compute_fifo_wm(cfg);
+		uint8_t fifo_wml = fifo_wm & 0xFF;
 
 		LOG_DBG("FIFO_CONFIG2( (0x%x)) (WM Low) 0x%x", REG_FIFO_CONFIG2, fifo_wml);
 		res = icm42688_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG2, fifo_wml);
@@ -214,7 +276,7 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			return -EINVAL;
 		}
 
-		uint8_t fifo_wmh = (cfg->fifo_wm >> 8) & 0x0F;
+		uint8_t fifo_wmh = (fifo_wm >> 8) & 0x0F;
 
 		LOG_DBG("FIFO_CONFIG3 (0x%x) (WM High) 0x%x", REG_FIFO_CONFIG3, fifo_wmh);
 		res = icm42688_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG3, fifo_wmh);

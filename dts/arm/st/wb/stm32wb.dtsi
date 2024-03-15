@@ -547,6 +547,22 @@
 		clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00100000>,
 				<&rcc STM32_SRC_LSE RFWKP_SEL(1)>;
 	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
+	};
 };
 
 &nvic {

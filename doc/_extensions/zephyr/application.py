@@ -75,6 +75,10 @@ class ZephyrAppCommandsDirective(Directive):
       mostly useful for distinguishing builds for one application within a
       single page.
 
+    \:build-dir-fmt:
+      if set, assume that "west config build.dir-fmt" has been set to this
+      path. Exclusive with 'build-dir' and depends on 'tool=west'.
+
     \:goals:
       a whitespace-separated list of what to do with the app (in
       'build', 'flash', 'debug', 'debugserver', 'run'). Commands to accomplish
@@ -113,6 +117,7 @@ class ZephyrAppCommandsDirective(Directive):
         'gen-args': directives.unchanged,
         'build-args': directives.unchanged,
         'build-dir': directives.unchanged,
+        'build-dir-fmt': directives.unchanged,
         'goals': directives.unchanged_required,
         'maybe-skip-config': directives.flag,
         'compact': directives.flag,
@@ -143,6 +148,7 @@ class ZephyrAppCommandsDirective(Directive):
         gen_args = self.options.get('gen-args', None)
         build_args = self.options.get('build-args', None)
         build_dir_append = self.options.get('build-dir', '').strip('/')
+        build_dir_fmt = self.options.get('build-dir-fmt', None)
         goals = self.options.get('goals').split()
         skip_config = 'maybe-skip-config' in self.options
         compact = 'compact' in self.options
@@ -155,6 +161,12 @@ class ZephyrAppCommandsDirective(Directive):
 
         if app and zephyr_app:
             raise self.error('Both app and zephyr-app options were given.')
+
+        if build_dir_append != '' and build_dir_fmt:
+            raise self.error('Both build-dir and build-dir-fmt options were given.')
+
+        if build_dir_fmt and tool != 'west':
+            raise self.error('build-dir-fmt is only supported for the west build tool.')
 
         if generator not in self.GENERATORS:
             raise self.error('Unknown generator {}; choose from: {}'.format(
@@ -195,6 +207,7 @@ class ZephyrAppCommandsDirective(Directive):
             'gen_args': gen_args,
             'build_args': build_args,
             'build_dir': build_dir,
+            'build_dir_fmt': build_dir_fmt,
             'goals': goals,
             'compact': compact,
             'skip_config': skip_config,
@@ -248,6 +261,7 @@ class ZephyrAppCommandsDirective(Directive):
         goals = kwargs['goals']
         cd_into = kwargs['cd_into']
         build_dir = kwargs['build_dir']
+        build_dir_fmt = kwargs['build_dir_fmt']
         compact = kwargs['compact']
         west_args = kwargs['west_args']
         flash_args = kwargs['flash_args']
@@ -261,7 +275,15 @@ class ZephyrAppCommandsDirective(Directive):
         # ignore zephyr_app since west needs to run within
         # the installation. Instead rely on relative path.
         src = ' {}'.format(app) if app and not cd_into else ''
-        dst = ' -d {}'.format(build_dir) if build_dir != 'build' else ''
+
+        if build_dir_fmt is None:
+            dst = ' -d {}'.format(build_dir) if build_dir != 'build' else ''
+            build_dst = dst
+        else:
+            app_name = app.split('/')[-1]
+            build_dir_formatted = build_dir_fmt.format(app=app_name, board=board, source_dir=app)
+            dst = ' -d {}'.format(build_dir_formatted)
+            build_dst = ''
 
         if in_tree and not compact:
             content.append(in_tree)
@@ -280,7 +302,7 @@ class ZephyrAppCommandsDirective(Directive):
         #
         # For now, this keeps the resulting commands working.
         content.append('west build -b {}{}{}{}{}'.
-                       format(board, west_args, dst, src, cmake_args))
+                       format(board, west_args, build_dst, src, cmake_args))
 
         # If we're signing, we want to do that next, so that flashing
         # etc. commands can use the signed file which must be created
@@ -415,7 +437,7 @@ class ZephyrAppCommandsDirective(Directive):
                                               cmake_args, source_dir))
         if not compact:
             content.extend(['',
-                            '# Now run ninja on the generated build system:'])
+                            '# Now run the build tool on the generated build system:'])
 
         if 'build' in goals:
             content.append('{}{}{}'.format(generator, tool_build_dir,

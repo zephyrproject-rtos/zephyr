@@ -914,10 +914,13 @@ static int priv_clock_enable(void)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	/* VDDUSB independent USB supply (PWR clock is on) */
+#if defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
+	/*
+	 * VDDUSB independent USB supply (PWR clock is on)
+	 * with LL_PWR_EnableVDDUSB function (higher case)
+	 */
 	LL_PWR_EnableVDDUSB();
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#endif /* PWR_USBSCR_USB33SV or PWR_SVMCR_USV */
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_PWR_EnableUSBVoltageDetector();
 

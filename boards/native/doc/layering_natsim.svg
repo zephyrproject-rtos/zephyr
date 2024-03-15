@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="6.3138824in"
+   height="4.6508102in"
+   viewBox="0 0 454.59963 334.8581"
+   xml:space="preserve"
+   color-interpolation-filters="sRGB"
+   class="st9"
+   version="1.1"
+   id="svg152"
+   sodipodi:docname="layering_natsim.svg"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:v="http://schemas.microsoft.com/visio/2003/SVGExtensions/"><defs
+   id="defs156" /><sodipodi:namedview
+   id="namedview154"
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1.0"
+   inkscape:pageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:document-units="in"
+   showgrid="false"
+   inkscape:zoom="1.8759819"
+   inkscape:cx="453.09606"
+   inkscape:cy="251.8681"
+   inkscape:window-width="2399"
+   inkscape:window-height="1422"
+   inkscape:window-x="161"
+   inkscape:window-y="0"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="svg152"
+   showguides="false" />
+	<v:documentProperties
+   v:langID="1033"
+   v:metric="true"
+   v:viewMarkup="false">
+		<v:userDefs>
+			<v:ud
+   v:nameU="msvSubprocessMaster"
+   v:prompt=""
+   v:val="VT4(Rectangle)" />
+			<v:ud
+   v:nameU="msvNoAutoConnect"
+   v:val="VT0(1):26" />
+		</v:userDefs>
+	</v:documentProperties>
+
+	<style
+   type="text/css"
+   id="style2">
+	<![CDATA[
+		.st1 {fill:#fff2cc;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st2 {fill:#000000;font-family:Arial;font-size:0.916672em}
+		.st3 {fill:#ebf1df;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st4 {font-size:1em}
+		.st5 {fill:#fcebdd;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st6 {fill:#dbeef3;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st7 {fill:none;stroke:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st8 {fill:#000000;font-family:Arial;font-size:1.16666em}
+		.st9 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<g
+   id="shape1-1"
+   v:mID="1"
+   v:groupContext="shape"
+   transform="translate(0.375,-40.164514)">
+			<title
+   id="title6">Sheet.1</title>
+			<desc
+   id="desc8">CPU/SOC</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="42.5197"
+   cy="243.78"
+   width="85.04"
+   height="42.5197" />
+			<rect
+   x="0"
+   y="222.52"
+   width="85.039398"
+   height="42.519699"
+   class="st1"
+   id="rect10" />
+			<text
+   x="17.459999"
+   y="247.08"
+   class="st2"
+   v:langID="6153"
+   id="text12"><v:paragraph
+   v:horizAlign="1" /><v:tabList />CPU/SOC</text>		</g><g
+   id="shape2-4"
+   v:mID="2"
+   v:groupContext="shape"
+   transform="translate(88.249,-40.164514)">
+			<title
+   id="title15">Sheet.2</title>
+			<desc
+   id="desc17">HW peripherals</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="48.189"
+   cy="243.78"
+   width="96.38"
+   height="42.5197" />
+			<rect
+   x="0"
+   y="222.52"
+   width="96.377998"
+   height="42.519699"
+   class="st1"
+   id="rect19" />
+			<text
+   x="10.29"
+   y="247.08"
+   class="st2"
+   v:langID="6153"
+   id="text21"><v:paragraph
+   v:horizAlign="1" /><v:tabList />HW peripherals</text>		</g><g
+   id="shape3-7"
+   v:mID="3"
+   v:groupContext="shape"
+   transform="translate(99.5878,-85.518914)">
+			<title
+   id="title24">Sheet.3</title>
+			<desc
+   id="desc26">Drivers</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="42.5197"
+   cy="225.354"
+   width="85.04"
+   height="79.3701" />
+			<path
+   d="M 0,265.04 H 85.04 V 185.67 H 28.68 l -0.33,25.51 H 0 Z"
+   class="st3"
+   id="path28" />
+			<text
+   x="25.1"
+   y="228.64999"
+   class="st2"
+   v:langID="6153"
+   id="text30"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Drivers</text>		</g><g
+   id="shape4-10"
+   v:mID="4"
+   v:groupContext="shape"
+   transform="translate(0.375,-85.518914)">
+			<title
+   id="title33">Sheet.4</title>
+			<desc
+   id="desc35">Architecture/SOC dependent layer</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="48.189"
+   cy="248.031"
+   width="96.38"
+   height="34.0157" />
+			<rect
+   x="0"
+   y="231.024"
+   width="96.377998"
+   height="34.015701"
+   class="st3"
+   id="rect37" />
+			<text
+   x="5.4000001"
+   y="244.73"
+   class="st2"
+   v:langID="6153"
+   id="text41"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Architecture/SOC <tspan
+   x="8.7399998"
+   dy="1.2em"
+   class="st4"
+   id="tspan39">dependent layer</tspan></text>		</g><g
+   id="shape5-14"
+   v:mID="5"
+   v:groupContext="shape"
+   transform="translate(0.375,-122.36901)">
+			<title
+   id="title44">Sheet.5</title>
+			<desc
+   id="desc46">Zephyr Kernel</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="62.3622"
+   cy="243.78"
+   width="124.73"
+   height="42.5197" />
+			<path
+   d="M 0,265.04 H 96.38 V 245.2 h 28.34 V 222.52 H 85.04 0 Z"
+   class="st3"
+   id="path48" />
+			<text
+   x="45.240002"
+   y="240.48"
+   class="st2"
+   v:langID="6153"
+   id="text52"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Zephyr<v:lf /><tspan
+   x="46.459999"
+   dy="1.2em"
+   class="st4"
+   id="tspan50">Kernel</tspan></text>		</g><g
+   id="shape6-18"
+   v:mID="6"
+   v:groupContext="shape"
+   transform="translate(0.375,-167.72401)">
+			<title
+   id="title55">Sheet.6</title>
+			<desc
+   id="desc57">Application</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="92.126"
+   cy="248.031"
+   width="184.26"
+   height="34.0157" />
+			<rect
+   x="0"
+   y="231.024"
+   width="184.252"
+   height="34.015701"
+   class="st3"
+   id="rect59" />
+			<text
+   x="65.220001"
+   y="251.33"
+   class="st2"
+   v:langID="6153"
+   id="text61"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Application</text>		</g><g
+   id="shape7-21"
+   v:mID="7"
+   v:groupContext="shape"
+   transform="translate(235.32842,69.443566)">
+			<title
+   id="title64">Sheet.7</title>
+			<desc
+   id="desc66">Host OS Kernel (i.e. Linux)</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="92.126"
+   cy="243.78"
+   width="184.26"
+   height="42.5197" />
+			<rect
+   x="0"
+   y="222.52"
+   width="184.252"
+   height="42.519699"
+   class="st5"
+   id="rect68" />
+			<text
+   x="26.709999"
+   y="247.08"
+   class="st2"
+   v:langID="6153"
+   id="text70"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Host OS Kernel (i.e. Linux)</text>		</g><g
+   id="shape7-21-9"
+   v:mID="7"
+   v:groupContext="shape"
+   transform="translate(235.45556,12.948706)"><title
+     id="title64-1">Sheet.7</title><desc
+     id="desc66-9">Host OS Kernel (i.e. Linux)</desc><v:textBlock
+     v:margins="rect(4,4,4,4)"
+     v:tabSpace="42.5197" /><v:textRect
+     cx="92.126"
+     cy="243.78"
+     width="184.26"
+     height="42.5197" /><rect
+     x="-0.049123723"
+     y="222.47089"
+     width="184.35025"
+     height="32.092358"
+     class="st5"
+     id="rect68-6"
+     style="fill:#fff2cc;fill-opacity:1" /><text
+     x="18.341778"
+     y="241.86397"
+     class="st2"
+     v:langID="6153"
+     id="text70-9">Overall scheduler &amp; entry point<v:paragraph
+   v:horizAlign="1" /><v:tabList /></text></g><rect
+   x="333.7178"
+   y="186.94901"
+   width="84.767006"
+   height="42.519699"
+   class="st6"
+   id="rect77"
+   style="fill:#fff2cc;fill-opacity:1" /><rect
+   x="235.46994"
+   y="186.96338"
+   width="93.858994"
+   height="42.490963"
+   class="st6"
+   id="rect77-8"
+   style="fill:#fff2cc;fill-opacity:1;stroke:#000000;stroke-width:0.739883;stroke-linecap:round;stroke-linejoin:round" /><text
+   x="342.66565"
+   y="198.60941"
+   class="st2"
+   v:langID="6153"
+   id="text83"
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.0001px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000"><v:paragraph
+     v:horizAlign="1" /><v:tabList /><v:newlineChar /><tspan
+     sodipodi:role="line"
+     id="tspan78481"
+     x="342.66565"
+     y="198.60941" /></text><text
+   x="304.9386"
+   y="204.15433"
+   class="st2"
+   v:langID="6153"
+   id="text83-3"
+   style="font-size:11.0001px;font-family:Arial;fill:#000000"><tspan
+     sodipodi:role="line"
+     id="tspan13646"
+     x="281.68155"
+     y="204.15433"
+     style="text-align:center;text-anchor:middle"><v:paragraph
+       v:horizAlign="1" /><v:tabList /><v:newlineChar /><tspan
+       x="281.68155"
+       class="st4"
+       id="tspan79-1"
+       style="text-align:center;text-anchor:middle">CPU</tspan></tspan><tspan
+     sodipodi:role="line"
+     id="tspan13648"
+     x="281.68155"
+     y="217.90445"
+     style="text-align:center;text-anchor:middle"><tspan
+       x="281.68155"
+       class="st4"
+       id="tspan13650"
+       style="text-align:center;text-anchor:middle">emulation</tspan></tspan></text><g
+   id="shape8-24-8"
+   v:mID="8"
+   v:groupContext="shape"
+   transform="translate(234.2348,-77.446018)"><title
+     id="title73-4">Sheet.8</title><desc
+     id="desc75-7">HW models / host HW API adaptation</desc><v:textBlock
+     v:margins="rect(4,4,4,4)"
+     v:tabSpace="42.5197" /><v:textRect
+     cx="48.189"
+     cy="243.78"
+     width="96.38"
+     height="42.5197" /><rect
+     x="-0.040226944"
+     y="222.47978"
+     height="33.858395"
+     class="st6"
+     id="rect77-2"
+     width="96.488426" /><text
+     x="49.548149"
+     y="236.54758"
+     class="st2"
+     v:langID="6153"
+     id="text83-4"><tspan
+       sodipodi:role="line"
+       id="tspan3759"
+       x="49.548149"
+       y="236.54758"
+       style="text-align:center;text-anchor:middle">POSIX arch<v:paragraph
+   v:horizAlign="1" /><v:tabList /><v:newlineChar /></tspan><tspan
+       sodipodi:role="line"
+       id="tspan3761"
+       x="49.548149"
+       y="250.29765"
+       style="text-align:center;text-anchor:middle">and SOC</tspan></text></g><g
+   id="shape9-29"
+   v:mID="9"
+   v:groupContext="shape"
+   transform="translate(333.4458,-86.115614)">
+			<title
+   id="title86">Sheet.9</title>
+			<desc
+   id="desc88">Drivers</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="42.5197"
+   cy="225.354"
+   width="85.04"
+   height="79.3701" />
+			<path
+   d="M 0,265.04 H 85.04 V 185.67 H 28.68 l -0.33,25.51 H 0 Z"
+   class="st6"
+   id="path90" />
+			<text
+   x="25.1"
+   y="235.25"
+   class="st2"
+   v:langID="6153"
+   id="text92"><v:paragraph
+   v:horizAlign="1" /><v:tabList /><v:newlineChar />Drivers</text>		</g><g
+   id="shape11-36"
+   v:mID="11"
+   v:groupContext="shape"
+   transform="translate(234.2328,-122.96601)">
+			<title
+   id="title106">Sheet.11</title>
+			<desc
+   id="desc108">Zephyr Kernel</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="62.3622"
+   cy="243.78"
+   width="124.73"
+   height="42.5197" />
+			<path
+   d="M 0,265.04 H 96.38 V 245.2 h 28.34 V 222.52 H 85.04 0 Z"
+   class="st3"
+   id="path110" />
+			<text
+   x="45.240002"
+   y="240.48"
+   class="st2"
+   v:langID="6153"
+   id="text114"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Zephyr<v:lf /><tspan
+   x="46.459999"
+   dy="1.2em"
+   class="st4"
+   id="tspan112">Kernel</tspan></text>		</g><g
+   id="shape12-40"
+   v:mID="12"
+   v:groupContext="shape"
+   transform="translate(234.2328,-168.32001)">
+			<title
+   id="title117">Sheet.12</title>
+			<desc
+   id="desc119">Application</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="92.126"
+   cy="248.031"
+   width="184.26"
+   height="34.0157" />
+			<rect
+   x="0"
+   y="231.024"
+   width="184.252"
+   height="34.015701"
+   class="st3"
+   id="rect121" />
+			<text
+   x="65.220001"
+   y="251.33"
+   class="st2"
+   v:langID="6153"
+   id="text123"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Application</text>		</g><g
+   id="shape13-43"
+   v:mID="13"
+   v:groupContext="shape"
+   transform="translate(23.7608,-220.16501)">
+			<title
+   id="title126">Sheet.13</title>
+			<desc
+   id="desc128">Normal Zephyr layering</desc>
+			<v:textBlock
+   v:margins="rect(4,4,4,4)"
+   v:tabSpace="42.5197" />
+			<v:textRect
+   cx="67.3228"
+   cy="250.866"
+   width="134.65"
+   height="28.3465" />
+			<rect
+   x="0"
+   y="236.69299"
+   width="134.646"
+   height="28.3465"
+   class="st7"
+   id="rect130" />
+			<text
+   x="21.030001"
+   y="246.67"
+   class="st8"
+   v:langID="6153"
+   id="text134"><v:paragraph
+   v:horizAlign="1" /><v:tabList />Normal Zephyr <tspan
+   x="42.810001"
+   dy="1.2em"
+   class="st4"
+   id="tspan132">layering</tspan></text>		</g><rect
+   style="fill:none;fill-opacity:1;stroke:#8b0c0c;stroke-width:0.814956;stroke-linejoin:round;stroke-miterlimit:8;stroke-dasharray:2.44487, 2.44487;stroke-dashoffset:0;stroke-opacity:1"
+   id="rect27201"
+   width="232.53108"
+   height="102.18562"
+   x="221.62726"
+   y="184.2868"
+   ry="8.8151979" /><rect
+   style="fill:none;fill-opacity:1;stroke:#8b0c0c;stroke-width:0.947936;stroke-linejoin:round;stroke-miterlimit:8;stroke-dasharray:2.84381, 2.84381;stroke-dashoffset:0;stroke-opacity:1"
+   id="rect27201-3"
+   width="232.45898"
+   height="138.29732"
+   x="221.6633"
+   y="43.277798"
+   ry="11.93043" /><text
+   xml:space="preserve"
+   style="font-style:normal;font-weight:normal;font-size:10px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.75"
+   x="290.12436"
+   y="282.03317"
+   id="text40992"><tspan
+     sodipodi:role="line"
+     id="tspan40990"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#800000;stroke-width:0.75"
+     x="290.12436"
+     y="282.03317">native simulator runner context</tspan></text><text
+   xml:space="preserve"
+   style="font-style:normal;font-weight:normal;font-size:10px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.75"
+   x="264.2746"
+   y="56.450466"
+   id="text40992-8"><tspan
+     sodipodi:role="line"
+     id="tspan40990-0"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#800000;stroke-width:0.75"
+     x="264.2746"
+     y="56.450466">Embedded CPU SW (Zephyr) context</tspan></text>
+<text
+   xml:space="preserve"
+   style="font-style:normal;font-weight:normal;font-size:14px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.75"
+   x="327.66986"
+   y="12.855812"
+   id="text63528"><tspan
+     sodipodi:role="line"
+     id="tspan63526"
+     style="font-size:14px;text-align:center;text-anchor:middle;stroke-width:0.75"
+     x="327.66986"
+     y="12.855812">native_sim &amp; _bsim</tspan><tspan
+     sodipodi:role="line"
+     style="font-size:14px;text-align:center;text-anchor:middle;stroke-width:0.75"
+     x="327.66986"
+     y="30.355812"
+     id="tspan63530">boards Zephyr layering</tspan></text><text
+   xml:space="preserve"
+   style="font-style:normal;font-weight:normal;font-size:10px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.75"
+   x="376.02158"
+   y="198.70131"
+   id="text81644"><tspan
+     sodipodi:role="line"
+     id="tspan81642"
+     style="font-size:10px;text-align:center;text-anchor:middle;stroke-width:0.75"
+     x="376.02158"
+     y="198.70131">HW models /</tspan><tspan
+     sodipodi:role="line"
+     style="font-size:10px;text-align:center;text-anchor:middle;stroke-width:0.75"
+     x="376.02158"
+     y="211.20131"
+     id="tspan81646">Host API</tspan><tspan
+     sodipodi:role="line"
+     style="font-size:10px;text-align:center;text-anchor:middle;stroke-width:0.75"
+     x="376.02158"
+     y="223.70131"
+     id="tspan81648">adaptation</tspan></text></svg>

@@ -1,0 +1,5 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_WL55JC
+	select SOC_STM32WL55XX

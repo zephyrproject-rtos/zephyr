@@ -31,3 +31,7 @@
 	status = "okay";
 	zephyr,num-clients = <2>;
 };
+
+&sdmmc {
+	status = "okay";
+};

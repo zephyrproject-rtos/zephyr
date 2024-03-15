@@ -8,6 +8,9 @@
 #include <dt-bindings/usb-c/pd.h>
 
 / {
+	aliases {
+		usbc-port0 = &port1;
+	};
 
 	pwmleds {
 		compatible = "pwm-leds";

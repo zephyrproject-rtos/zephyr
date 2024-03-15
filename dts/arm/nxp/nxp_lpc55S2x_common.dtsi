@@ -34,7 +34,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <8>;
 			};
 		};
 	};
@@ -284,11 +283,10 @@
 	};
 
 	usbhs: usbhs@144000 {
-		compatible = "nxp,mcux-usbd";
+		compatible = "nxp,lpcip3511";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
 		num-bidir-endpoints = <6>;
-		usb-controller-index = "LpcIp3511Hs0";
 		status = "disabled";
 	};
 };

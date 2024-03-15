@@ -51,7 +51,7 @@ def pytest_addoption(parser: pytest.Parser):
     )
     twister_harness_group.addoption(
         '--platform',
-        help='Name of used platform (qemu_x86, nrf52840dk_nrf52840, etc.).'
+        help='Name of used platform (qemu_x86, nrf52840dk/nrf52840, etc.).'
     )
     twister_harness_group.addoption(
         '--device-serial',
@@ -99,6 +99,11 @@ def pytest_addoption(parser: pytest.Parser):
         '--post-script',
         metavar='PATH',
         help='Script executed after closing serial connection.'
+    )
+    twister_harness_group.addoption(
+        '--dut-scope',
+        choices=('function', 'class', 'module', 'package', 'session'),
+        help='The scope for which `dut` and `shell` fixtures are shared.'
     )
 
 

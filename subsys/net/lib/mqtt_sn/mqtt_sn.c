@@ -949,6 +949,8 @@ static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_
 	topic->topic_id = p->topic_id;
 	topic->type = MQTT_SN_TOPIC_TYPE_NORMAL;
 
+	sys_slist_append(&client->topic, &topic->next);
+
 	response.params.regack.ret_code = MQTT_SN_CODE_ACCEPTED;
 	response.params.regack.topic_id = p->topic_id;
 	response.params.regack.msg_id = p->msg_id;
@@ -1223,4 +1225,23 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 
 	/* Should be zero */
 	return -client->rx.len;
+}
+
+int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
+			   struct mqtt_sn_data *topic_name)
+{
+	struct mqtt_sn_topic *topic;
+
+	if (!client || !topic_name) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
+		if (topic->topic_id == id) {
+			topic_name->data = (const uint8_t *)topic->name;
+			topic_name->size = topic->namelen;
+			return 0;
+		}
+	}
+	return -ENOENT;
 }

@@ -62,9 +62,43 @@ config NRFX_EGU5
 	depends on $(dt_nodelabel_has_compat,egu5,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
+config NRFX_EGU020
+	bool "EGU020 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu020,$(DT_COMPAT_NORDIC_NRF_EGU))
+	select NRFX_EGU
+
 config NRFX_GPIOTE
-	bool "GPIOTE driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	bool
+
+config NRFX_GPIOTE0
+	bool "GPIOTE0 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote0,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE1
+	bool "GPIOTE1 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote1,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE20
+	bool "NRFX_GPIOTE20 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote20,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE30
+	bool "NRFX_GPIOTE30 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote30,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE130
+	bool "NRFX_GPIOTE130 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote130,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE131
+	bool "NRFX_GPIOTE131 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote131,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
 
 config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	int "Number of event handlers"
@@ -74,12 +108,21 @@ config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	  Specifies number of handlers that can be registered to nrfx_gpiote driver
 	  by the user.
 
+config NRFX_GRTC
+	bool "GRTC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GRTC))
+
 config NRFX_I2S
 	bool
 
 config NRFX_I2S0
 	bool "I2S0 driver instance"
 	depends on $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
+	select NRFX_I2S
+
+config NRFX_I2S20
+	bool "I2S20 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2s20,$(DT_COMPAT_NORDIC_NRF_I2S))
 	select NRFX_I2S
 
 config NRFX_IPC
@@ -154,6 +197,26 @@ config NRFX_QDEC1
 	depends on $(dt_nodelabel_has_compat,qdec1,$(DT_COMPAT_NORDIC_NRF_QDEC))
 	select NRFX_QDEC
 
+config NRFX_QDEC20
+	bool "QDEC20 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec20,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC21
+	bool "QDEC21 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec21,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC130
+	bool "QDEC130 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec130,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC131
+	bool "QDEC131 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec131,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
 config NRFX_QSPI
 	bool "QSPI driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QSPI))
@@ -178,6 +241,16 @@ config NRFX_RTC1
 config NRFX_RTC2
 	bool "RTC2 driver instance"
 	depends on $(dt_nodelabel_has_compat,rtc2,$(DT_COMPAT_NORDIC_NRF_RTC))
+	select NRFX_RTC
+
+config NRFX_RTC130
+	bool "RTC130 driver instance"
+	depends on $(dt_nodelabel_has_compat,rtc130,$(DT_COMPAT_NORDIC_NRF_RTC))
+	select NRFX_RTC
+
+config NRFX_RTC131
+	bool "RTC131 driver instance"
+	depends on $(dt_nodelabel_has_compat,rtc131,$(DT_COMPAT_NORDIC_NRF_RTC))
 	select NRFX_RTC
 
 config NRFX_SAADC
@@ -328,6 +401,76 @@ config NRFX_SPIS3
 	depends on $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	select NRFX_SPIS
 
+config NRFX_SPIS00
+	bool "SPIS00 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi00,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS20
+	bool "SPIS20 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi20,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS21
+	bool "SPIS21 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi21,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS22
+	bool "SPIS22 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi22,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS30
+	bool "SPIS30 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi30,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS120
+	bool "SPIS120 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi120,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS130
+	bool "SPIS130 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi130,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS131
+	bool "SPIS131 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi131,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS132
+	bool "SPIS132 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi132,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS133
+	bool "SPIS133 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi133,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS134
+	bool "SPIS134 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi134,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS135
+	bool "SPIS135 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi135,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS136
+	bool "SPIS136 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi136,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
+config NRFX_SPIS137
+	bool "SPIS137 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi137,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	select NRFX_SPIS
+
 config NRFX_SYSTICK
 	bool "SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
@@ -362,6 +505,106 @@ config NRFX_TIMER3
 config NRFX_TIMER4
 	bool "TIMER4 driver instance"
 	depends on $(dt_nodelabel_has_compat,timer4,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER00
+	bool "TIMER00 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer00,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER10
+	bool "TIMER10 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer10,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER20
+	bool "TIMER20 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer20,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER21
+	bool "TIMER21 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer21,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER22
+	bool "TIMER22 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer22,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER23
+	bool "TIMER23 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer23,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER24
+	bool "TIMER24 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer24,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER020
+	bool "TIMER020 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer020,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER021
+	bool "TIMER021 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer021,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER022
+	bool "TIMER022 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer022,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER120
+	bool "TIMER120 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer120,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER121
+	bool "TIMER121 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer121,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER130
+	bool "TIMER130 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer130,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER131
+	bool "TIMER131 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer131,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER132
+	bool "TIMER132 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer132,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER133
+	bool "TIMER133 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer133,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER134
+	bool "TIMER134 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer134,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER135
+	bool "TIMER135 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer135,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER136
+	bool "TIMER136 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer136,$(DT_COMPAT_NORDIC_NRF_TIMER))
+	select NRFX_TIMER
+
+config NRFX_TIMER137
+	bool "TIMER137 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer137,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
 config NRFX_TWI
@@ -519,18 +762,96 @@ config NRFX_UARTE3
 	depends on $(dt_nodelabel_has_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
 
-config NRFX_USBD
-	bool "USBD driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBD))
+config NRFX_UARTE00
+	bool "UARTE00 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart00,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
 
-config NRFX_USBD_ISO_IN_ZLP
-	bool "Send ZLP on ISO IN when not ready"
-	depends on NRFX_USBD
-	default y
+config NRFX_UARTE20
+	bool "UARTE20 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart20,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE21
+	bool "UARTE21 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart21,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE22
+	bool "UARTE22 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart22,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE30
+	bool "UARTE30 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart30,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE120
+	bool "UARTE120 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart120,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE130
+	bool "UARTE130 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart130,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE131
+	bool "UARTE131 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart131,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE132
+	bool "UARTE132 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart132,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE133
+	bool "UARTE133 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart133,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE134
+	bool "UARTE134 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart134,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE135
+	bool "UARTE135 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart135,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE136
+	bool "UARTE136 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart136,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE137
+	bool "UARTE137 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart137,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG
+	bool "UARTE GPIO configuration support"
+	depends on NRFX_UARTE
+
+config NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG
+	bool "UARTE PSEL configuration support"
+	depends on NRFX_UARTE
+
+config NRFX_UARTE_CONFIG_TX_LINK
+	bool "UARTE TX transfer linking support"
+	depends on NRFX_UARTE
+
+config NRFX_UARTE_CONFIG_RX_CACHE_ENABLED
+	bool "UARTE RX caching support"
+	default y if $(dt_nodelabel_has_compat,ram3x,$(DT_COMPAT_MMIO_SRAM))
+	depends on NRFX_UARTE
 	help
-	  Controls the response of the ISO IN endpoint to an IN token when no
-	  data is ready to be sent. When enabled, ZLP is sent when no data is
-	  ready. When disabled, no response is sent (bus timeout occurs).
+	  Feature might be enabled on platforms which has limitations regarding addresses
+	  to which receiver can write data. If enabled then internal driver buffers
+	  (cache buffers) are used for DMA transfers and data is copied to the user buffer.
 
 config NRFX_USBREG
 	bool "USBREG driver"
@@ -547,6 +868,31 @@ config NRFX_WDT0
 config NRFX_WDT1
 	bool "WDT1 driver instance"
 	depends on $(dt_nodelabel_has_compat,wdt1,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT30
+	bool "WDT30 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt30,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT31
+	bool "WDT31 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt31,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT130
+	bool "WDT130 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt130,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT131
+	bool "WDT131 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt131,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT132
+	bool "WDT132 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt132,$(DT_COMPAT_NORDIC_NRF_WDT))
 	select NRFX_WDT
 
 menu "Peripheral Resource Sharing module"

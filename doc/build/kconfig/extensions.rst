@@ -8,6 +8,42 @@ implementation of `Kconfig
 <https://docs.kernel.org/kbuild/kconfig-language.html>`__,
 which includes some Kconfig extensions:
 
+- Default values can be applied to existing symbols without
+  :ref:`weakening <multiple_symbol_definitions>` the symbols dependencies
+  through the use of ``configdefault``.
+
+  .. code-block:: none
+
+      config FOO
+          bool "FOO"
+          depends on BAR
+
+      configdefault FOO
+          default y if FIZZ
+
+  The statement above is equivalent to:
+
+  .. code-block:: none
+
+      config FOO
+          bool "Foo"
+          default y if FIZZ
+          depends on BAR
+
+  ``configdefault`` symbols cannot contain any fields other than ``default``,
+  however they can be wrapped in ``if`` statements. The two statements below
+  are equivalent:
+
+  .. code-block:: none
+
+      configdefault FOO
+          default y if BAR
+
+      if BAR
+      configdefault FOO
+          default y
+      endif # BAR
+
 - Environment variables in ``source`` statements are expanded directly, meaning
   no "bounce" symbols with ``option env="ENV_VAR"`` need to be defined.
 

@@ -4,7 +4,7 @@
 menuconfig SPI_NRFX
 	bool "nRF SPI nrfx drivers"
 	default y
-	depends on SOC_FAMILY_NRF
+	depends on SOC_FAMILY_NORDIC_NRF
 	depends on MULTITHREADING
 	select PINCTRL
 	help
@@ -51,9 +51,24 @@ config SPI_NRFX_SPIS
 	select NRFX_SPIS1 if HAS_HW_NRF_SPIS1
 	select NRFX_SPIS2 if HAS_HW_NRF_SPIS2
 	select NRFX_SPIS3 if HAS_HW_NRF_SPIS3
+	select NRFX_SPIS00 if HAS_HW_NRF_SPIS00
+	select NRFX_SPIS20 if HAS_HW_NRF_SPIS20
+	select NRFX_SPIS21 if HAS_HW_NRF_SPIS21
+	select NRFX_SPIS22 if HAS_HW_NRF_SPIS22
+	select NRFX_SPIS30 if HAS_HW_NRF_SPIS30
+	select NRFX_SPIS120 if HAS_HW_NRF_SPIS120
+	select NRFX_SPIS130 if HAS_HW_NRF_SPIS130
+	select NRFX_SPIS131 if HAS_HW_NRF_SPIS131
+	select NRFX_SPIS132 if HAS_HW_NRF_SPIS132
+	select NRFX_SPIS133 if HAS_HW_NRF_SPIS133
+	select NRFX_SPIS134 if HAS_HW_NRF_SPIS134
+	select NRFX_SPIS135 if HAS_HW_NRF_SPIS135
+	select NRFX_SPIS136 if HAS_HW_NRF_SPIS136
+	select NRFX_SPIS137 if HAS_HW_NRF_SPIS137
 
 config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	depends on SOC_NRF52832
+	select NRFX_PPI
 	bool "Allow enabling the SPIM driver despite PAN 58"
 	help
 	  Allow enabling the nRF SPI Master with EasyDMA, despite
@@ -74,14 +89,20 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	default 8
 	depends on SPI_NRFX_SPIM
 	help
-	  SPIM peripherals cannot transmit data directly from flash. Therefore,
-	  a buffer in RAM needs to be provided for each instance of SPI driver
-	  using SPIM peripheral, so that the driver can copy there a chunk of
-	  data from flash and transmit it.
-	  The size is specified in bytes. A size of 0 means that this feature
-	  should be disabled, and the application must then take care of not
-	  supplying buffers located in flash to the driver, otherwise such
-	  transfers will fail.
+	  Because of using EasyDMA, SPIM peripherals cannot use transmit and
+	  receive buffers from all memory locations. They are restricted to
+	  buffers located in certain RAM memories only. Therefore, each SPIM
+	  driver instance needs to use an intermediate local RAM buffer,
+	  to transfer data in chunks not exceeding the size of that buffer,
+	  and to copy those chunks between the local buffer and the one
+	  specified in the transfer request if the latter is not accessible
+	  by EasyDMA.
+
+	  This option specifies the size in bytes of such local RAM buffers
+	  for both TX and RX paths. A size of 0 means that this feature should
+	  be disabled and the driver user must take care of not making transfer
+	  requests with buffers not accessible by EasyDMA since such transfers
+	  will fail.
 
 config SPI_NRFX_WAKE_TIMEOUT_US
 	int "Maximum time to wait for SPI slave to wake up"

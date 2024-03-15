@@ -1,0 +1,37 @@
+# DA1469x series Development Kit Pro board configuration
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DA1469X_DK_PRO
+
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+# LCDC imposes display buffer's stride be word aligned
+config LV_Z_AREA_X_ALIGNMENT_WIDTH
+	default 2
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+# Use double buffering to avoid visual artifacts as long as
+# the DMA is copying data into driver's frame buffer.
+config LV_Z_DOUBLE_VDB
+	default y
+
+endif # LVGL
+
+if INPUT
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+config LV_Z_POINTER_INPUT_MSGQ_COUNT
+	default 70
+
+endif # INPUT
+
+endif # BOARD_DA1469X_DK_PRO

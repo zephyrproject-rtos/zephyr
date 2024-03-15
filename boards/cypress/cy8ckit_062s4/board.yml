@@ -1,0 +1,5 @@
+board:
+  name: cy8ckit_062s4
+  vendor: cypress
+  socs:
+  - name: cy8c6244lqi_s4d92

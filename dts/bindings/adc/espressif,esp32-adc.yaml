@@ -14,7 +14,7 @@ description: |
 
   Zephyr API is using gain unit to characterize ADC input.
   To achieve compatibility we choose to select those gain,
-  which coresponds to the ESP32 ADC attenuation feature.
+  which corresponds to the ESP32 ADC attenuation feature.
 
     ESP32,attenuation ~ zephyr,gain
     -----------------   -----------

@@ -1,0 +1,48 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file contains Kconfig options and defaults for configuring USB devices
+# using the new experimental USB device support. The scope of these options is
+# limited to USB samples in project tree, you cannot use them in your own
+# application.
+
+menu "USB sample options"
+	depends on USB_DEVICE_STACK_NEXT
+
+config SAMPLE_USBD_MANUFACTURER
+	string "USB device sample manufacturer string"
+	default "Zephyr Project"
+	help
+	  USB device sample manufacturer string.
+
+config SAMPLE_USBD_PRODUCT
+	string "USB device sample product string"
+	default "USBD sample"
+	help
+	  USB device sample product stringa.
+
+config SAMPLE_USBD_PID
+	hex "USB device sample Product ID"
+	default 0x0001
+	help
+	  USB device sample Product ID.
+
+config SAMPLE_USBD_SELF_POWERED
+	bool "USB device sample Self-powered attribute"
+	default y
+	help
+	  Set the Self-powered attribute in the sample configuration.
+
+config SAMPLE_USBD_REMOTE_WAKEUP
+	bool "USB device sample Remote Wakeup attribute"
+	help
+	  Set the Remote Wakeup attribute in the sample configuration.
+
+config SAMPLE_USBD_MAX_POWER
+	int "USB device sample bMaxPower value"
+	default 125
+	range 0 250
+	help
+	  bMaxPower value in the sample configuration in 2 mA units.
+
+endmenu

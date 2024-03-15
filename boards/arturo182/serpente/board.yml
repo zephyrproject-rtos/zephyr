@@ -1,0 +1,5 @@
+board:
+  name: serpente
+  vendor: solderparty
+  socs:
+    - name: samd21e18a

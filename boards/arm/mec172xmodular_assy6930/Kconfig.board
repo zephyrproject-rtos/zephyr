@@ -1,6 +1,0 @@
-# Copyright (c) 2022, Microchip Technology Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MEC172XMODULAR_ASSY6930
-	bool "Microchip MEC172X MODULAR ASSY 6930 Development board"
-	depends on SOC_MEC172X_NSZ

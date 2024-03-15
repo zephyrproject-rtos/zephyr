@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+TYPE = PTHREAD_RWLOCK
+type = pthread_rwlock_t
+type-function = pthread_rwlock_timedrdlock
+rsource "Kconfig.template.pooled_ipc_type"

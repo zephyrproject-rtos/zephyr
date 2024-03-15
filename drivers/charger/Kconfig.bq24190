@@ -1,7 +1,7 @@
 # Copyright 2023 Cirrus Logic, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config BQ24190
+config CHARGER_BQ24190
 	bool "BQ24190 Battery Charger"
 	default y
 	depends on DT_HAS_TI_BQ24190_ENABLED

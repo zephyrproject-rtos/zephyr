@@ -5,8 +5,10 @@ tests:
       - qemu_cortex_m3
       - native_posix
       - native_posix_64
+      - native_sim
+      - native_sim_64
     integration_platforms:
-      - native_posix
+      - native_sim
     tags:
       - bluetooth
       - hci

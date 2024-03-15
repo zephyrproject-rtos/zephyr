@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NRF_VEVIF_LOCAL
+	bool "nRF VEVIF local driver"
+	depends on DT_HAS_NORDIC_NRF_VEVIF_LOCAL_ENABLED
+	default y
+	help
+	  Mailbox driver for local Nordic nRF VEVIF (VPR Event Interface)
+
+config MBOX_NRF_VEVIF_REMOTE
+	bool "nRF VEVIF remote driver"
+	depends on DT_HAS_NORDIC_NRF_VEVIF_REMOTE_ENABLED
+	default y
+	help
+	  Mailbox driver for remote Nordic nRF VEVIF (VPR Event Interface)

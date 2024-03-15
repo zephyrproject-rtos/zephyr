@@ -1,0 +1,34 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_NXP_SOF_HOST_DMA
+	bool "NXP DMA driver used by SOF's host component"
+	default y
+	depends on DT_HAS_NXP_SOF_HOST_DMA_ENABLED
+	help
+		Enable NXP's DMA driver used by
+		SOF (Sound Open Firmware) host
+		component. Specifically, this driver
+		is used by the SOF host component to
+		perform transfers between the host
+		memory and firmware (local) memory, which
+		can be accessed without an actual
+		DMA engine.
+
+if DMA_NXP_SOF_HOST_DMA
+
+config DMA_NXP_SOF_HOST_DMA_ALIGN
+	int "Alignment (in bytes) required for memory regions passed to this driver"
+	default 8
+	help
+		Use this to set the alignment (in bytes)
+		which shall be used by entities employing
+		this driver to adjust a memory region's size
+		and base address. Since this driver doesn't
+		actually have any hardware to back it up this
+		configuration doesn't make much sense as there's
+		no alignment restrictions imposed by memcpy.
+		Nevertheless, this is needed because this driver
+		needs to act as if it controls a DMA engine.
+
+endif # DMA_NXP_SOF_HOST_DMA

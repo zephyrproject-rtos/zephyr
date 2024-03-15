@@ -12,8 +12,9 @@
 #include "lvgl_pointer_input.h"
 #include "lvgl_button_input.h"
 #include "lvgl_encoder_input.h"
+#include "lvgl_keypad_input.h"
 
-LOG_MODULE_DECLARE(lvgl);
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 lv_indev_t *lvgl_input_get_indev(const struct device *dev)
 {
@@ -89,6 +90,10 @@ int lvgl_init_input_devices(void)
 	DT_FOREACH_STATUS_OKAY_VARGS(zephyr_lvgl_encoder_input, LV_DEV_INIT,
 				     lvgl_encoder_input_init);
 #endif /* CONFIG_LV_Z_ENCODER_INPUT */
+
+#ifdef CONFIG_LV_Z_KEYPAD_INPUT
+	DT_FOREACH_STATUS_OKAY_VARGS(zephyr_lvgl_keypad_input, LV_DEV_INIT, lvgl_keypad_input_init);
+#endif /* CONFIG_LV_Z_KEYPAD_INPUT */
 
 	return 0;
 }

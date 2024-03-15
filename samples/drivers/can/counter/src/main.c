@@ -63,7 +63,7 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	const struct can_filter filter = {
-		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+		.flags = CAN_FILTER_IDE,
 		.id = COUNTER_MSG_ID,
 		.mask = CAN_EXT_ID_MASK
 	};
@@ -75,6 +75,10 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 
 	while (1) {
 		k_msgq_get(&counter_msgq, &frame, K_FOREVER);
+
+		if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) && (frame.flags & CAN_FRAME_RTR) != 0U) {
+			continue;
+		}
 
 		if (frame.dlc != 2U) {
 			printf("Wrong data length: %u\n", frame.dlc);
@@ -92,6 +96,10 @@ void change_led_work_handler(struct k_work *work)
 	int ret;
 
 	while (k_msgq_get(&change_led_msgq, &frame, K_NO_WAIT) == 0) {
+		if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) && (frame.flags & CAN_FRAME_RTR) != 0U) {
+			continue;
+		}
+
 		if (led.port == NULL) {
 			printf("LED %s\n", frame.data[0] == SET_LED ? "ON" : "OFF");
 		} else {
@@ -165,16 +173,6 @@ void state_change_work_handler(struct k_work *work)
 	       "tx error count: %d\n",
 		state_to_str(current_state),
 		current_err_cnt.rx_err_cnt, current_err_cnt.tx_err_cnt);
-
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	if (current_state == CAN_STATE_BUS_OFF) {
-		printf("Recover from bus-off\n");
-
-		if (can_recover(can_dev, K_MSEC(100)) != 0) {
-			printf("Recovery timed out\n");
-		}
-	}
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 }
 
 void state_change_callback(const struct device *dev, enum can_state state,
@@ -192,7 +190,7 @@ void state_change_callback(const struct device *dev, enum can_state state,
 int main(void)
 {
 	const struct can_filter change_led_filter = {
-		.flags = CAN_FILTER_DATA,
+		.flags = 0U,
 		.id = LED_MSG_ID,
 		.mask = CAN_STD_ID_MASK
 	};

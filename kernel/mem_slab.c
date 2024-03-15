@@ -151,7 +151,7 @@ static int init_mem_slab_obj_core_list(void)
 		if (rc < 0) {
 			goto out;
 		}
-		z_object_init(slab);
+		k_object_init(slab);
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 		k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
@@ -198,7 +198,7 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 #endif
 
 	z_waitq_init(&slab->wait_q);
-	z_object_init(slab);
+	k_object_init(slab);
 out:
 	SYS_PORT_TRACING_OBJ_INIT(k_mem_slab, slab, rc);
 

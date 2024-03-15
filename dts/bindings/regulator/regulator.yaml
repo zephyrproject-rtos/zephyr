@@ -31,6 +31,10 @@ properties:
     type: int
     description: Offset applied to voltages to compensate for voltage drops
 
+  regulator-init-microamp:
+    type: int
+    description: Current set during initialisation
+
   regulator-min-microamp:
     type: int
     description: smallest current consumers may set
@@ -56,6 +60,11 @@ properties:
       at boot but shouldn't prevent it from being turned off later.
       This property is intended to only be used for regulators where
       software cannot read the state of the regulator.
+
+  regulator-boot-off:
+    type: boolean
+    description: |
+      Regulator should be disabled on boot.
 
   regulator-allow-bypass:
     type: boolean
@@ -256,3 +265,11 @@ properties:
     description: |
       Maximum difference between current and target voltages that can be changed
       safely in a single step.
+
+  startup-delay-us:
+    type: int
+    description: Startup time, in microseconds
+
+  off-on-delay-us:
+    type: int
+    description: Off to on delay time, in microseconds

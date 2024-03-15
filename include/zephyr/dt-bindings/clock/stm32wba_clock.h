@@ -6,22 +6,22 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WBA_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WBA_CLOCK_H_
 
+#include "stm32_common_clocks.h"
+
 /** Peripheral clock sources */
 
 /* RM0493, Figure 30, clock tree */
 
-/** PLL outputs */
-#define STM32_SRC_PLL1_P	0x001
-#define STM32_SRC_PLL1_Q	0x002
-#define STM32_SRC_PLL1_R	0x003
+/** System clock */
+/* defined in stm32_common_clocks.h */
 /** Fixed clocks  */
-#define STM32_SRC_HSE		0x004
-#define STM32_SRC_LSE		0x005
-#define STM32_SRC_LSI		0x006
-#define STM32_SRC_HSI16		0x007
-/** Core clock */
-#define STM32_SRC_SYSCLK	0x08
-
+/* Low speed clocks defined in stm32_common_clocks.h */
+#define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
+#define STM32_SRC_HSI16		(STM32_SRC_HSE + 1)
+/** PLL outputs */
+#define STM32_SRC_PLL1_P	(STM32_SRC_HSI16 + 1)
+#define STM32_SRC_PLL1_Q	(STM32_SRC_PLL1_P + 1)
+#define STM32_SRC_PLL1_R	(STM32_SRC_PLL1_Q + 1)
 
 #define STM32_SRC_CLOCK_MIN	STM32_SRC_PLL1_P
 #define STM32_SRC_CLOCK_MAX	STM32_SRC_SYSCLK
@@ -72,6 +72,8 @@
 #define CCIPR1_REG		0xE0
 #define CCIPR2_REG		0xE4
 #define CCIPR3_REG		0xE8
+/** @brief RCC_BCDR1 register offset (RM0493.pdf) */
+#define BCDR1_REG		0xF0
 
 /** @brief Device clk sources selection helpers */
 /** CCIPR1 devices */
@@ -90,5 +92,7 @@
 #define I2C3_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR3_REG)
 #define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 10, CCIPR3_REG)
 #define ADC_SEL(val)		STM32_CLOCK(val, 7, 12, CCIPR3_REG)
+/** BCDR1 devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BCDR1_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WBA_CLOCK_H_ */

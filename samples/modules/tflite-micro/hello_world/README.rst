@@ -58,7 +58,7 @@ the `PATH` variable, then building and testing can be done with following
 commands.
 
 ```
-$ west build -p auto -b mps3_an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
+$ west build -p auto -b mps3/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
 $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
 ```
 
@@ -94,7 +94,7 @@ TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 .. code-block:: kconfig
 
     CONFIG_CPP=y
-    CONFIG_NEWLIB_LIBC=y
+    CONFIG_REQUIRES_FULL_LIBC=y
     CONFIG_TENSORFLOW_LITE_MICRO=y
 
 Note that the CMSIS-NN kernel sample demonstrates how to use CMSIS-NN optimized kernels with

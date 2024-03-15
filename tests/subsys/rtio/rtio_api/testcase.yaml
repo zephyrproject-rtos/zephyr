@@ -8,14 +8,14 @@ tests:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
     integration_platforms:
-      - native_posix
+      - native_sim
   rtio.api.submit_sem:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
     extra_configs:
       - CONFIG_RTIO_SUBMIT_SEM=y
     integration_platforms:
-      - native_posix
+      - native_sim
   rtio.api.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:

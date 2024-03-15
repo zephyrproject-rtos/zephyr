@@ -11,9 +11,9 @@ tests:
       - posix
     platform_exclude:
       - litex_vexriscv
-      - rv32m1_vega_zero_riscy
-      - rv32m1_vega_ri5cy
-      - nrf5340dk_nrf5340_cpunet
+      - rv32m1_vega/openisa_rv32m1/zero_riscy
+      - rv32m1_vega/openisa_rv32m1/ri5cy
+      - nrf5340dk/nrf5340/cpunet
     tags:
       - kernel
       - timer
@@ -25,19 +25,19 @@ tests:
       - timer
     platform_allow:
       - qemu_cortex_m3
-      - nsim_em
-      - nsim_em7d_v22
-      - nsim_hs
-      - nsim_hs_mpuv6
-      - nsim_hs5x
-      - nsim_hs6x
-      - qemu_arc_em
-      - qemu_arc_hs
-      - qemu_arc_hs6x
+      - nsim/nsim_em
+      - nsim/nsim_em7d_v22
+      - nsim/nsim_hs
+      - nsim/nsim_hs/mpuv6
+      - nsim/nsim_hs5x
+      - nsim/nsim_hs6x
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
+      - qemu_arc/qemu_arc_hs6x
       - qemu_leon3
     integration_platforms:
       - qemu_cortex_m3
-      - nsim_em
+      - nsim/nsim_em
     extra_configs:
       - CONFIG_MULTITHREADING=n
       - CONFIG_TEST_USERSPACE=n

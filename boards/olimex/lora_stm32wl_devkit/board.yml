@@ -1,0 +1,11 @@
+board:
+  name: olimex_lora_stm32wl_devkit
+  vendor: olimex
+  revision:
+    format: letter
+    default: "C"
+    revisions:
+      - name: "C"
+      - name: "D"
+  socs:
+    - name: stm32wle5xx

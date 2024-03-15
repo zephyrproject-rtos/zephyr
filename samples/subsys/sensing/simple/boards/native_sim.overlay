@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/sensing/sensing_sensor_types.h>
+
+&i2c0 {
+	bmi160_i2c: bmi@68 {
+		compatible = "bosch,bmi160";
+		reg = <0x68>;
+	};
+};
+
+&spi0 {
+	bmi160_spi: bmi@3 {
+		compatible = "bosch,bmi160";
+		spi-max-frequency = <50000000>;
+		reg = <0x3>;
+	};
+};
+
+/ {
+	sensing: sensing-node {
+		compatible = "zephyr,sensing";
+		status = "okay";
+
+		base_accel_gyro: base-accel-gyro {
+			compatible = "zephyr,sensing-phy-3d-sensor";
+			status = "okay";
+			sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
+			friendly-name = "Base Accel Gyro Sensor";
+			minimal-interval = <625>;
+			underlying-device = <&bmi160_i2c>;
+		};
+
+		lid_accel_gyro: lid-accel-gyro {
+			compatible = "zephyr,sensing-phy-3d-sensor";
+			status = "okay";
+			sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
+			friendly-name = "Lid Accel Gyro Sensor";
+			minimal-interval = <625>;
+			underlying-device = <&bmi160_spi>;
+		};
+
+		hinge_angle: hinge-angle {
+			compatible = "zephyr,sensing-hinge-angle";
+			status = "okay";
+			sensor-types = <SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE>;
+			friendly-name = "Hinge Angle Sensor";
+			reporters = <&base_accel_gyro &lid_accel_gyro>;
+			reporters-index = <0 0>;
+			minimal-interval = <100000>;
+			stream-mode;
+		};
+	};
+};

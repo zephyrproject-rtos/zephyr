@@ -127,7 +127,7 @@ static int ltrf216a_channel_get(const struct device *dev, enum sensor_channel ch
 	 * 0.45 -> 45 / 100, multiplied by 1000000 for millilux
 	 * gain 3 (default), integration time 100ms=1
 	 */
-	uint64_t microlux = (greendata * 45000 * LTRF216A_WIN_FAC * 10) / (3 * 1);
+	uint64_t microlux = ((uint64_t)greendata * 45000 * LTRF216A_WIN_FAC * 10) / (3 * 1);
 
 	val->val1 = microlux / 1000000;
 	val->val2 = microlux % 1000000;

@@ -1,0 +1,28 @@
+# Configuration options for the Zephyr GPIO 1-Wire Master driver
+
+# Copyright (c) 2023 Hudson C. Dalpra
+# SPDX-License-Identifier: Apache-2.0
+
+config W1_ZEPHYR_GPIO
+	bool "1-wire GPIO"
+	default y
+	depends on DT_HAS_ZEPHYR_W1_GPIO_ENABLED
+	help
+	  This option enables the Zephyr GPIO 1-Wire master driver.
+
+	  The bus reset, and bit read and write operations are executed
+	  via byte read and write operations on top of the Zephyr
+	  GPIO driver interface.
+
+if W1_ZEPHYR_GPIO
+
+config W1_ZEPHYR_GPIO_TIME_CRITICAL
+	bool "Force time critical operations"
+	default y
+	help
+	  This option forces the 1-Wire GPIO driver to use time critical
+	  operations for bus reset, and bit read and write operations.
+	  Time critical communications operations are not interrupted while
+	  being generated.
+
+endif # W1_ZEPHYR_GPIO

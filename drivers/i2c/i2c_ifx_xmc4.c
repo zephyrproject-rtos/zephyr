@@ -194,7 +194,7 @@ static int ifx_xmc4_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		XMC_I2C_CH_ClearStatusFlag(config->i2c, 0xFFFFFFFF);
 
 		if ((msg_index == 0) || (msg[msg_index].flags & I2C_MSG_RESTART)) {
-			/* Send START conditon */
+			/* Send START condition */
 			cmd_type = ((msg[msg_index].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) ?
 				XMC_I2C_CH_CMD_READ : XMC_I2C_CH_CMD_WRITE;
 
@@ -272,7 +272,7 @@ static int ifx_xmc4_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			}
 		}
 
-		/* Send STOP conditon */
+		/* Send STOP condition */
 		if (msg[msg_index].flags & I2C_MSG_STOP) {
 			XMC_I2C_CH_MasterStop(config->i2c);
 		}

@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #if !defined(STM32L4R5xx) && !defined(STM32L4R7xx) && !defined(STM32L4R9xx) && \
 	!defined(STM32L4S5xx) && !defined(STM32L4S7xx) && !defined(STM32L4S9xx) && \
-	!defined(STM32L4Q5xx)
+	!defined(STM32L4Q5xx) && !defined(STM32L4P5xx)
 #define STM32L4X_PAGE_SHIFT	11
 #else
 #define STM32L4X_PAGE_SHIFT	12
@@ -69,7 +69,7 @@ static unsigned int get_page(off_t offset)
 
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
-	volatile uint32_t *flash = (uint32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #ifdef CONTROL_DCACHE
 	bool dcache_enabled = false;

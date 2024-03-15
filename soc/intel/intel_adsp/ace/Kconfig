@@ -1,0 +1,23 @@
+# Copyright (c) 2022-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_INTEL_ADSP_ACE
+	select XTENSA
+	select XTENSA_HAL if (("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc") && ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang"))
+	select ATOMIC_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	select ARCH_HAS_COHERENCE
+	select SCHED_IPI_SUPPORTED
+	select DW_ICTL_ACE
+	select SOC_HAS_RUNTIME_NUM_CPUS
+	select HAS_PM
+	select XTENSA_CPU_HAS_HIFI3
+	select XTENSA_CPU_HAS_HIFI4
+
+config SOC_INTEL_COMM_WIDGET
+	bool "Intel Communication Widget driver"
+	default y
+	depends on DT_HAS_INTEL_ADSP_COMMUNICATION_WIDGET_ENABLED
+	help
+	  Select this to enable Intel Communication Widget driver.
+	  DSP Communication Widget is a device for generic sideband message transmit/receive.

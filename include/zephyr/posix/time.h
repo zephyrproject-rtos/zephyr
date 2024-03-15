@@ -69,6 +69,10 @@ extern "C" {
 #define CLOCK_REALTIME 1
 #endif
 
+#ifndef CLOCK_PROCESS_CPUTIME_ID
+#define CLOCK_PROCESS_CPUTIME_ID 2
+#endif
+
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 4
 #endif
@@ -82,12 +86,9 @@ static inline int32_t _ts_to_ms(const struct timespec *to)
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
 
-#if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
-#else
-__syscall int clock_gettime(clockid_t clock_id, struct timespec *ts);
-#endif /* CONFIG_ARCH_POSIX */
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
+int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
@@ -102,10 +103,6 @@ int clock_nanosleep(clockid_t clock_id, int flags,
 #ifdef __cplusplus
 }
 #endif
-
-#if !(defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC))
-#include <syscalls/time.h>
-#endif /* CONFIG_ARCH_POSIX */
 
 #else /* ZEPHYR_INCLUDE_POSIX_TIME_H_ */
 /* Read the toolchain header when <posix/time.h> finds itself on the

@@ -27,9 +27,9 @@ LOG_MODULE_REGISTER(wdt_nxp_fs26);
 #define FS26_INIT_FS_TIMEOUT_MS 1000U
 
 /* Helper macros to set register values from Kconfig options */
-#define WD_ERR_LIMIT(x)	CONCAT(WD_ERR_LIMIT_, x)
-#define WD_RFR_LIMIT(x)	CONCAT(WD_RFR_LIMIT_, x)
-#define WDW_PERIOD(x)	CONCAT(CONCAT(WDW_PERIOD_, x), MS)
+#define WD_ERR_LIMIT(x)	_CONCAT(WD_ERR_LIMIT_, x)
+#define WD_RFR_LIMIT(x)	_CONCAT(WD_RFR_LIMIT_, x)
+#define WDW_PERIOD(x)	_CONCAT(_CONCAT(WDW_PERIOD_, x), MS)
 
 #define BAD_WD_REFRESH_ERROR_STRING(x)					\
 	((((x) & BAD_WD_DATA) ? "error in the data" :			\
@@ -580,8 +580,12 @@ static int wdt_nxp_fs26_disable(const struct device *dev)
 	return 0;
 }
 
-static void wdt_nxp_fs26_int_thread(const struct device *dev)
+static void wdt_nxp_fs26_int_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	const struct wdt_nxp_fs26_config *config = dev->config;
 	struct wdt_nxp_fs26_data *data = dev->data;
 	struct fs26_spi_rx_frame rx_frame;
@@ -661,7 +665,7 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 
 	k_thread_create(&data->int_thread, data->int_thread_stack,
 			CONFIG_WDT_NXP_FS26_INT_THREAD_STACK_SIZE,
-			(k_thread_entry_t)wdt_nxp_fs26_int_thread,
+			wdt_nxp_fs26_int_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WDT_NXP_FS26_INT_THREAD_PRIO),
 			0, K_NO_WAIT);
@@ -822,7 +826,7 @@ static const struct wdt_driver_api wdt_nxp_fs26_api = {
 	static const struct wdt_nxp_fs26_config wdt_nxp_fs26_config_##n = {		\
 		.spi = SPI_DT_SPEC_INST_GET(n,						\
 			SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32), 0),	\
-		.wd_type = CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),	\
+		.wd_type = _CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),	\
 		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),			\
 	};										\
 											\

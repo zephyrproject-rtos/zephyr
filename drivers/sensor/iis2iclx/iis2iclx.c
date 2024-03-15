@@ -214,9 +214,10 @@ static int iis2iclx_sample_fetch_accel(const struct device *dev)
 static int iis2iclx_sample_fetch_temp(const struct device *dev)
 {
 	struct iis2iclx_data *data = dev->data;
+	const struct iis2iclx_config *cfg = dev->config;
 	int16_t buf;
 
-	if (iis2iclx_temperature_raw_get(&data->ctx, &buf) < 0) {
+	if (iis2iclx_temperature_raw_get((stmdev_ctx_t *)&cfg->ctx, &buf) < 0) {
 		LOG_ERR("Failed to read sample");
 		return -EIO;
 	}

@@ -52,7 +52,7 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat
 	}
 
 	va_start(param_list, aFormat);
-	log2_generic(level, aFormat, param_list);
+	log_generic(level, aFormat, param_list);
 	va_end(param_list);
 #else
 	ARG_UNUSED(aLogLevel);

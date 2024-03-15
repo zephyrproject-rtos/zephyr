@@ -429,6 +429,11 @@ should know about.
   See :ref:`set-devicetree-overlays` for examples and :ref:`devicetree-intro`
   for information about devicetree and Zephyr.
 
+* :makevar:`EXTRA_DTC_OVERLAY_FILE`: Additional devicetree overlay files to use.
+  Multiple files can be separated with semicolons. This can be useful to leave
+  :makevar:`DTC_OVERLAY_FILE` at its default value, but "mix in" some additional
+  overlay files.
+
 * :makevar:`SHIELD`: see :ref:`shields`
 
 * :makevar:`ZEPHYR_MODULES`: A `CMake list`_ containing absolute paths of
@@ -439,6 +444,10 @@ should know about.
 
 * :makevar:`EXTRA_ZEPHYR_MODULES`: Like :makevar:`ZEPHYR_MODULES`, except these
   will be added to the list of modules found via west, instead of replacing it.
+
+* :makevar:`FILE_SUFFIX`: Optional suffix for filenames that will be added to Kconfig
+  fragments and devicetree overlays (if these files exists, otherwise will fallback to
+  the name without the prefix). See :ref:`application-file-suffixes` for details.
 
 .. note::
 
@@ -521,6 +530,7 @@ Make sure to follow these steps in order.
    Structure your :file:`Kconfig` file like this:
 
    .. literalinclude:: application-kconfig.include
+      :language: kconfig
 
    .. note::
 
@@ -675,6 +685,51 @@ Devicetree Overlays
 
 See :ref:`set-devicetree-overlays`.
 
+.. _application-file-suffixes:
+
+File Suffixes
+=============
+
+Zephyr applications might want to have a single code base with multiple configurations for
+different build/product variants which would necessitate different Kconfig options and devicetree
+configuration. In order to better configure this, Zephyr provides a :makevar:`FILE_SUFFIX` option
+when configuring applications that can be automatically appended to filenames. This is applied to
+Kconfig fragments and board overlays but with a fallback so that if such files do not exist, the
+files without these suffixes will be used instead.
+
+Given the following example project layout:
+
+.. code-block:: none
+
+   <app>
+   ├── CMakeLists.txt
+   ├── prj.conf
+   ├── prj_mouse.conf
+   ├── boards
+   │   ├── native_posix.overlay
+   │   └── qemu_cortex_m3_mouse.overlay
+   └── src
+       └── main.c
+
+* If this is built normally without ``FILE_SUFFIX`` being defined for ``native_posix`` then
+  ``prj.conf`` and ``boards/native_posix.overlay`` will be used.
+
+* If this is build normally without ``FILE_SUFFIX`` being defined for ``qemu_cortex_m3`` then
+  ``prj.conf`` will be used, no application devicetree overlay will be used.
+
+* If this is built with ``FILE_SUFFIX`` set to ``mouse`` for ``native_posix`` then
+  ``prj_mouse.conf`` and ``boards/native_posix.overlay`` will be used (there is no
+  ``native_posix_mouse.overlay`` file so it falls back to ``native_posix.overlay``).
+
+* If this is build with ``FILE_SUFFIX`` set to ``mouse`` for ``qemu_cortex_m3`` then
+  ``prj_mouse.conf`` will be used and ``boards/qemu_cortex_m3_mouse.overlay`` will be used.
+
+.. note::
+
+   When ``CONF_FILE`` is set in the form of ``prj_X.conf`` then the ``X`` will be used as the
+   build type. If this is combined with ``FILE_SUFFIX`` then the file suffix option will take
+   priority over the build type.
+
 Application-Specific Code
 *************************
 
@@ -701,7 +756,7 @@ be useful for glue code to have access to Zephyr kernel header files.
 To make it easier to integrate third-party components, the Zephyr
 build system has defined CMake functions that give application build
 scripts access to the zephyr compiler options. The functions are
-documented and defined in :zephyr_file:`cmake/extensions.cmake`
+documented and defined in :zephyr_file:`cmake/modules/extensions.cmake`
 and follow the naming convention ``zephyr_get_<type>_<format>``.
 
 The following variables will often need to be exported to the
@@ -1005,10 +1060,13 @@ for additional information on how to flash your board.
 Running in an Emulator
 ======================
 
-The kernel has built-in emulator support for QEMU (on Linux/macOS only, this
-is not yet supported on Windows). It allows you to run and test an application
-virtually, before (or in lieu of) loading and running it on actual target
-hardware. Follow these instructions to run an application via QEMU:
+Zephyr has built-in emulator support for QEMU.
+It allows you to run and test an application virtually, before
+(or in lieu of) loading and running it on actual target hardware.
+
+Check out :ref:`beyond-GSG` for additional steps needed on Windows.
+
+Follow these instructions to run an application via QEMU:
 
 #. Build your application for one of the QEMU boards, as described in
    :ref:`build_an_application`.

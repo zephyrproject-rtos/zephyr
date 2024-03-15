@@ -33,6 +33,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/lldp.h>
 #include <zephyr/drivers/hwinfo.h>
 
+#if defined(CONFIG_NET_DSA)
+#include <zephyr/net/dsa.h>
+#endif
+
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 #include <zephyr/drivers/ptp_clock.h>
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
@@ -80,7 +84,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 #define __eth_stm32_desc __dtcm_noinit_section
 #define __eth_stm32_buf  __dtcm_noinit_section
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
 #elif defined(CONFIG_NOCACHE_MEMORY)
@@ -867,6 +871,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
+	struct net_if *iface;
 	struct net_pkt *pkt;
 	int res;
 	uint32_t status;
@@ -892,7 +897,11 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 							     vlan_tag));
 			}
 			while ((pkt = eth_rx(dev, &vlan_tag)) != NULL) {
-				res = net_recv_data(net_pkt_iface(pkt), pkt);
+				iface = net_pkt_iface(pkt);
+#if defined(CONFIG_NET_DSA)
+				iface = dsa_net_recv(iface, &pkt);
+#endif
+				res = net_recv_data(iface, pkt);
 				if (res < 0) {
 					eth_stats_update_errors_rx(
 							net_pkt_iface(pkt));
@@ -1516,6 +1525,10 @@ static void eth_iface_init(struct net_if *iface)
 			     sizeof(dev_data->mac_addr),
 			     NET_LINK_ETHERNET);
 
+#if defined(CONFIG_NET_DSA)
+	dsa_register_master_tx(iface, &eth_tx);
+#endif
+
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
@@ -1559,6 +1572,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
+#endif
+#if defined(CONFIG_NET_DSA)
+		| ETHERNET_DSA_MASTER_PORT
 #endif
 		;
 }
@@ -1638,7 +1654,11 @@ static const struct ethernet_api eth_api = {
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
+#if defined(CONFIG_NET_DSA)
+	.send = dsa_tx,
+#else
 	.send = eth_tx,
+#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_stm32_hal_get_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
@@ -1824,13 +1844,13 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	uint32_t addend_val;
 
 	/* No change needed */
-	if (ratio == 1.0f) {
+	if (ratio == 1.0L) {
 		return 0;
 	}
 
 	key = irq_lock();
 
-	ratio *= eth_dev_data->clk_ratio_adj;
+	ratio *= (double)eth_dev_data->clk_ratio_adj;
 
 	/* Limit possible ratio */
 	if (ratio * 100 < CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT ||
@@ -1843,7 +1863,7 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	eth_dev_data->clk_ratio_adj = ratio;
 
 	/* Update addend register */
-	addend_val = UINT32_MAX * eth_dev_data->clk_ratio * ratio;
+	addend_val = UINT32_MAX * (double)eth_dev_data->clk_ratio * ratio;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	heth->Instance->MACTSAR = addend_val;

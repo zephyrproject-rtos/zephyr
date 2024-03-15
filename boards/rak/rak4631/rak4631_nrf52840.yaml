@@ -1,0 +1,22 @@
+identifier: rak4631/nrf52840
+name: RAK4631-NRF52840
+type: mcu
+arch: arm
+flash: 1024
+ram: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - usb_cdc
+  - usb_device
+  - watchdog
+  - lora
+vendor: rak

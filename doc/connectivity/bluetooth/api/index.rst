@@ -35,6 +35,8 @@ Bluetooth APIs
    shell/cap.rst
    shell/ccp.rst
    shell/csip.rst
+   shell/gmap.rst
    shell/iso.rst
    shell/mcp.rst
    shell/tmap.rst
+   shell/pbp.rst

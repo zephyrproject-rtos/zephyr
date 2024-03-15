@@ -1,0 +1,60 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MPS2_AN385
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+config ZTEST_STACK_SIZE
+	default 4096 if ZTEST
+
+if COVERAGE_GCOV
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config PRIVILEGED_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACK_SIZE
+	default 4096
+
+endif # COVERAGE_GCOV
+
+endif
+
+if BOARD_MPS2_AN521_CPU0 || BOARD_MPS2_AN521_CPU0_NS || BOARD_MPS2_AN521_CPU1
+
+# MPU-based null-pointer dereferencing detection cannot
+# be applied as the (0x0 - 0x400) is unmapped but QEMU
+# will still permit bus access.
+choice NULL_POINTER_EXCEPTION_DETECTION
+	bool
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE if QEMU_TARGET
+
+endchoice
+
+# By default, if we build for a Non-Secure version of the board,
+# force building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+endif

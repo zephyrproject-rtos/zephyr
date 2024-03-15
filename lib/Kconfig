@@ -11,6 +11,10 @@ menu "Additional libraries"
 
 source "lib/hash/Kconfig"
 
+source "lib/heap/Kconfig"
+
+source "lib/mem_blocks/Kconfig"
+
 source "lib/os/Kconfig"
 
 source "lib/posix/Kconfig"
@@ -22,4 +26,6 @@ source "lib/smf/Kconfig"
 source "lib/acpi/Kconfig"
 
 source "lib/runtime/Kconfig"
+
+source "lib/utils/Kconfig"
 endmenu

@@ -34,8 +34,8 @@
 #define USBSERIAL_TX_FIFO_16_TO_31      (0x0B)    /* 1011 Room for 16 to 31 */
 #define USBSERIAL_TX_FIFO_8_TO_15       (0x0C)    /* 1100 Room for 8 to 15 */
 #define USBSERIAL_TX_FIFO_4_TO_7        (0x0D)    /* 1101 Room for 4 to 7 */
-#define USBSERIAL_TX_FIFO_GE_2          (0x0E)    /* 1110 Room for atleast 2 */
-#define USBSERIAL_TX_FIFO_GE_1          (0x0F)    /* 1111 Room for atleast 1 */
+#define USBSERIAL_TX_FIFO_GE_2          (0x0E)    /* 1110 Room for at least 2 */
+#define USBSERIAL_TX_FIFO_GE_1          (0x0F)    /* 1111 Room for at least 1 */
 
 struct fpga_usbserial_regs {
 	uint32_t device_id;

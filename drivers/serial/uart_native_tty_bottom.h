@@ -54,6 +54,17 @@ struct native_tty_bottom_cfg {
  */
 
 /**
+ * @brief Check for available input on tty file descriptor
+ *
+ * @param fd
+ *
+ * @retval 1 if data is available
+ * @retval 0 if data is not available
+ * @retval <0 on error
+ */
+int native_tty_poll_bottom(int fd);
+
+/**
  * @brief Opens tty port on the given pathname
  *
  * Returned file descriptor can be then passed to native_tty_configure_bottom to configure it.

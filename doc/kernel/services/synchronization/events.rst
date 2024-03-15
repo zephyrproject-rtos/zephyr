@@ -33,10 +33,10 @@ conditions of multiple threads waiting on the event object. All threads whose
 match conditions have been met are made active at the same time.
 
 Threads may wait on one or more events. They may either wait for all of the
-the requested events, or for any of them. Furthermore, threads making a wait
-request have the option of resetting the current set of events tracked by the
-event object prior to waiting. Care must be taken with this option when
-multiple threads wait on the same event object.
+requested events, or for any of them. Furthermore, threads making a wait request
+have the option of resetting the current set of events tracked by the event
+object prior to waiting. Care must be taken with this option when multiple
+threads wait on the same event object.
 
 .. note::
     The kernel does allow an ISR to query an event object, however the ISR must

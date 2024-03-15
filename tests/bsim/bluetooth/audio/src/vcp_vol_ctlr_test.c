@@ -659,14 +659,6 @@ static void test_vocs_location_set(void)
 		return;
 	}
 
-	invalid_location = BT_AUDIO_LOCATION_PROHIBITED;
-
-	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
-	if (err == 0) {
-		FAIL("bt_vocs_location_set with location 0x%08X did not fail", invalid_location);
-		return;
-	}
-
 	invalid_location = BT_AUDIO_LOCATION_ANY + 1;
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
@@ -818,6 +810,8 @@ static void test_cb_register(void)
 static void test_discover(void)
 {
 	int err;
+
+	g_discovery_complete = false;
 
 	/* Invalid behavior */
 	err = bt_vcp_vol_ctlr_discover(NULL, &vol_ctlr);
@@ -1167,6 +1161,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	test_discover();
+	test_discover(); /* test that we can discover twice */
 	test_included_get();
 	test_conn_get();
 	test_read_state();

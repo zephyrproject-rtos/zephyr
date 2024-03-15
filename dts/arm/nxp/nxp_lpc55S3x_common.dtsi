@@ -30,7 +30,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <8>;
 			};
 		};
 	};
@@ -326,6 +325,7 @@
 		compatible = "nxp,lpc-mcan";
 		reg = <0x4009d000 0x1000>;
 		interrupts = <43 0>, <44 0>;
+		interrupt-names = "int0", "int1";
 		clocks = <&syscon MCUX_MCAN_CLK>;
 		bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
 		sample-point = <875>;
@@ -443,12 +443,11 @@
 	};
 
 	usbfs: usbfs@84000 {
-		compatible = "nxp,mcux-usbd";
+		compatible = "nxp,lpcip3511";
 		reg = <0x84000 0x1000>;
 		interrupts = <28 0>;
 		num-bidir-endpoints = <5>;
 		maximum-speed = "full-speed";
-		usb-controller-index = "LpcIp3511Fs0";
 		status = "disabled";
 	};
 

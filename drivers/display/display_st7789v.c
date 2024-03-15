@@ -141,15 +141,6 @@ static int st7789v_blanking_off(const struct device *dev)
 	return 0;
 }
 
-static int st7789v_read(const struct device *dev,
-			const uint16_t x,
-			const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			void *buf)
-{
-	return -ENOTSUP;
-}
-
 static void st7789v_set_mem_area(const struct device *dev, const uint16_t x,
 				 const uint16_t y, const uint16_t w, const uint16_t h)
 {
@@ -202,23 +193,6 @@ static int st7789v_write(const struct device *dev,
 	}
 
 	return 0;
-}
-
-static void *st7789v_get_framebuffer(const struct device *dev)
-{
-	return NULL;
-}
-
-static int st7789v_set_brightness(const struct device *dev,
-			   const uint8_t brightness)
-{
-	return -ENOTSUP;
-}
-
-static int st7789v_set_contrast(const struct device *dev,
-			 const uint8_t contrast)
-{
-	return -ENOTSUP;
 }
 
 static void st7789v_get_capabilities(const struct device *dev,
@@ -413,10 +387,6 @@ static const struct display_driver_api st7789v_api = {
 	.blanking_on = st7789v_blanking_on,
 	.blanking_off = st7789v_blanking_off,
 	.write = st7789v_write,
-	.read = st7789v_read,
-	.get_framebuffer = st7789v_get_framebuffer,
-	.set_brightness = st7789v_set_brightness,
-	.set_contrast = st7789v_set_contrast,
 	.get_capabilities = st7789v_get_capabilities,
 	.set_pixel_format = st7789v_set_pixel_format,
 	.set_orientation = st7789v_set_orientation,

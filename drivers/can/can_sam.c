@@ -126,12 +126,11 @@ static const struct can_driver_api can_sam_driver_api = {
 	.add_rx_filter = can_mcan_add_rx_filter,
 	.remove_rx_filter = can_mcan_remove_rx_filter,
 	.get_state = can_mcan_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_mcan_recover,
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.get_core_clock = can_sam_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.set_state_change_callback =  can_mcan_set_state_change_callback,
 	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
 	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
@@ -154,14 +153,14 @@ static const struct can_mcan_ops can_sam_ops = {
 static void config_can_##inst##_irq(void)                                                      \
 {                                                                                              \
 	LOG_DBG("Enable CAN##inst## IRQ");                                                     \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, line_0, irq),                                    \
-		    DT_INST_IRQ_BY_NAME(inst, line_0, priority), can_mcan_line_0_isr,          \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                                      \
+		    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_mcan_line_0_isr,            \
 					DEVICE_DT_INST_GET(inst), 0);                          \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, line_0, irq));                                    \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, line_1, irq),                                    \
-		    DT_INST_IRQ_BY_NAME(inst, line_1, priority), can_mcan_line_1_isr,          \
+	irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                                      \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                                      \
+		    DT_INST_IRQ_BY_NAME(inst, int1, priority), can_mcan_line_1_isr,            \
 					DEVICE_DT_INST_GET(inst), 0);                          \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, line_1, irq));                                    \
+	irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                                      \
 }
 
 #define CAN_SAM_CFG_INST(inst)						\

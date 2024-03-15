@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_s32_spi
+
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include "spi_nxp_s32.h"
@@ -58,7 +60,8 @@ static int spi_nxp_s32_transfer_next_packet(const struct device *dev)
 	 * Keep CS signal asserted until the last package, there is no other way
 	 * than directly intervening to internal state of low level driver
 	 */
-	Spi_Ip_apxStateStructureArray[config->instance]->KeepCs = !spi_nxp_s32_last_packet(data);
+	Spi_Ip_apxStateStructureArray[config->spi_hw_cfg->Instance]->KeepCs =
+		!spi_nxp_s32_last_packet(data);
 
 	status = Spi_Ip_AsyncTransmit(&data->transfer_cfg, (uint8_t *)data->ctx.tx_buf,
 						data->ctx.rx_buf, data->transfer_len, data_cb);
@@ -72,11 +75,11 @@ static int spi_nxp_s32_transfer_next_packet(const struct device *dev)
 	return 0;
 #else
 
-	while (Spi_Ip_GetStatus(config->instance) == SPI_IP_BUSY) {
-		Spi_Ip_ManageBuffers(config->instance);
+	while (Spi_Ip_GetStatus(config->spi_hw_cfg->Instance) == SPI_IP_BUSY) {
+		Spi_Ip_ManageBuffers(config->spi_hw_cfg->Instance);
 	}
 
-	if (Spi_Ip_GetStatus(config->instance) == SPI_IP_FAULT) {
+	if (Spi_Ip_GetStatus(config->spi_hw_cfg->Instance) == SPI_IP_FAULT) {
 		return -EIO;
 	}
 
@@ -528,7 +531,7 @@ static int spi_nxp_s32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_NXP_S32_SPI_INTERRUPT
-	if (Spi_Ip_UpdateTransferMode(config->instance, SPI_IP_INTERRUPT)) {
+	if (Spi_Ip_UpdateTransferMode(config->spi_hw_cfg->Instance, SPI_IP_INTERRUPT)) {
 		return -EBUSY;
 	}
 
@@ -566,6 +569,13 @@ static int spi_nxp_s32_init(const struct device *dev)
 
 
 #ifdef CONFIG_NXP_S32_SPI_INTERRUPT
+void spi_nxp_s32_isr(const struct device *dev)
+{
+	const struct spi_nxp_s32_config *config = dev->config;
+
+	Spi_Ip_IrqHandler(config->spi_hw_cfg->Instance);
+}
+
 static void spi_nxp_s32_transfer_callback(const struct device *dev, Spi_Ip_EventType event)
 {
 	struct spi_nxp_s32_data *data = dev->data;
@@ -601,12 +611,17 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 	.release = spi_nxp_s32_release,
 };
 
-#define SPI_NXP_S32_NODE(n)		DT_NODELABEL(spi##n)
-#define SPI_NXP_S32_NUM_CS(n)		DT_PROP(SPI_NXP_S32_NODE(n), num_cs)
-#define SPI_NXP_S32_IS_MASTER(n)	!DT_PROP(SPI_NXP_S32_NODE(n), slave)
+#define SPI_NXP_S32_HW_INSTANCE_CHECK(i, n) \
+	((DT_INST_REG_ADDR(n) == IP_SPI_##i##_BASE) ? i : 0)
+
+#define SPI_NXP_S32_HW_INSTANCE(n) \
+	LISTIFY(__DEBRACKET SPI_INSTANCE_COUNT, SPI_NXP_S32_HW_INSTANCE_CHECK, (|), n)
+
+#define SPI_NXP_S32_NUM_CS(n)		DT_INST_PROP(n, num_cs)
+#define SPI_NXP_S32_IS_MASTER(n)	!DT_INST_PROP(n, slave)
 
 #ifdef CONFIG_SPI_SLAVE
-#define SPI_NXP_S32_SET_SLAVE(n)	.SlaveMode = DT_PROP(SPI_NXP_S32_NODE(n), slave),
+#define SPI_NXP_S32_SET_SLAVE(n)	.SlaveMode = DT_INST_PROP(n, slave),
 #else
 #define SPI_NXP_S32_SET_SLAVE(n)
 #endif
@@ -617,15 +632,12 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 	.irq_config_func = spi_nxp_s32_config_func_##n,
 
 #define SPI_NXP_S32_INTERRUPT_DEFINE(n)							\
-	extern void Spi_Ip_SPI_##n##_IRQHandler(void);					\
 	static void spi_nxp_s32_config_func_##n(const struct device *dev)		\
 	{										\
-		IRQ_CONNECT(DT_IRQN(SPI_NXP_S32_NODE(n)),				\
-			DT_IRQ(SPI_NXP_S32_NODE(n), priority),				\
-			Spi_Ip_SPI_##n##_IRQHandler,					\
-			DEVICE_DT_GET(SPI_NXP_S32_NODE(n)),				\
-			DT_IRQ(SPI_NXP_S32_NODE(n), flags));				\
-		irq_enable(DT_IRQN(SPI_NXP_S32_NODE(n)));				\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
+			spi_nxp_s32_isr, DEVICE_DT_INST_GET(n),		\
+			DT_INST_IRQ(n, flags));						\
+		irq_enable(DT_INST_IRQN(n));						\
 	}
 
 #define SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n)						\
@@ -635,7 +647,7 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 	static void spi_nxp_s32_##n##_callback(uint8 instance, Spi_Ip_EventType event)	\
 	{										\
 		ARG_UNUSED(instance);							\
-		const struct device *dev = DEVICE_DT_GET(SPI_NXP_S32_NODE(n));		\
+		const struct device *dev = DEVICE_DT_INST_GET(n);			\
 											\
 		spi_nxp_s32_transfer_callback(dev, event);				\
 	}
@@ -652,7 +664,7 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
  */
 #define SPI_NXP_S32_INSTANCE_CONFIG(n)							\
 	static const Spi_Ip_ConfigType spi_nxp_s32_default_config_##n = {		\
-		.Instance = n,								\
+		.Instance = SPI_NXP_S32_HW_INSTANCE(n),					\
 		.Mcr = (SPI_MCR_MSTR(SPI_NXP_S32_IS_MASTER(n)) |			\
 			SPI_MCR_CONT_SCKE(0U) |	SPI_MCR_FRZ(0U) |			\
 			SPI_MCR_MTFE(0U) | SPI_MCR_SMPL_PT(0U) |			\
@@ -665,26 +677,24 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 
 #define SPI_NXP_S32_TRANSFER_CONFIG(n)							\
 	.transfer_cfg = {								\
-		.Instance = n,								\
+		.Instance = SPI_NXP_S32_HW_INSTANCE(n),					\
 		.Ctare = SPI_CTARE_FMSZE(0U) | SPI_CTARE_DTCP(1U),			\
 	}
 
 #define SPI_NXP_S32_DEVICE(n)								\
-	PINCTRL_DT_DEFINE(SPI_NXP_S32_NODE(n));						\
+	PINCTRL_DT_INST_DEFINE(n);							\
 	SPI_NXP_S32_CALLBACK_DEFINE(n)							\
 	SPI_NXP_S32_INTERRUPT_DEFINE(n)							\
 	SPI_NXP_S32_INSTANCE_CONFIG(n);							\
 	static const struct spi_nxp_s32_config spi_nxp_s32_config_##n = {		\
-		.instance     = n,							\
 		.num_cs	      = SPI_NXP_S32_NUM_CS(n),					\
-		.clock_dev    = DEVICE_DT_GET(DT_CLOCKS_CTLR(SPI_NXP_S32_NODE(n))),	\
-		.clock_subsys = (clock_control_subsys_t)				\
-				DT_CLOCKS_CELL(SPI_NXP_S32_NODE(n), name),		\
-		.sck_cs_delay = DT_PROP_OR(SPI_NXP_S32_NODE(n), spi_sck_cs_delay, 0U),	\
-		.cs_sck_delay = DT_PROP_OR(SPI_NXP_S32_NODE(n), spi_cs_sck_delay, 0U),	\
-		.cs_cs_delay  = DT_PROP_OR(SPI_NXP_S32_NODE(n), spi_cs_cs_delay, 0U),	\
-		.spi_hw_cfg   = (Spi_Ip_ConfigType *)&spi_nxp_s32_default_config_##n,	\
-		.pincfg = PINCTRL_DT_DEV_CONFIG_GET(SPI_NXP_S32_NODE(n)),		\
+		.clock_dev    = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.sck_cs_delay = DT_INST_PROP_OR(n, spi_sck_cs_delay, 0U),		\
+		.cs_sck_delay = DT_INST_PROP_OR(n, spi_cs_sck_delay, 0U),		\
+		.cs_cs_delay  = DT_INST_PROP_OR(n, spi_cs_cs_delay, 0U),		\
+		.spi_hw_cfg = (Spi_Ip_ConfigType *)&spi_nxp_s32_default_config_##n,	\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n)					\
 		SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)					\
 	};										\
@@ -692,50 +702,12 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 		SPI_NXP_S32_TRANSFER_CONFIG(n),						\
 		SPI_CONTEXT_INIT_LOCK(spi_nxp_s32_data_##n, ctx),			\
 		SPI_CONTEXT_INIT_SYNC(spi_nxp_s32_data_##n, ctx),			\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPI_NXP_S32_NODE(n), ctx)		\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)			\
 	};										\
-	DEVICE_DT_DEFINE(SPI_NXP_S32_NODE(n),						\
+	DEVICE_DT_INST_DEFINE(n,							\
 			&spi_nxp_s32_init, NULL,					\
 			&spi_nxp_s32_data_##n, &spi_nxp_s32_config_##n,			\
 			POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,				\
 			&spi_nxp_s32_driver_api);
 
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(0), okay)
-SPI_NXP_S32_DEVICE(0);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(1), okay)
-SPI_NXP_S32_DEVICE(1);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(2), okay)
-SPI_NXP_S32_DEVICE(2);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(3), okay)
-SPI_NXP_S32_DEVICE(3);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(4), okay)
-SPI_NXP_S32_DEVICE(4);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(5), okay)
-SPI_NXP_S32_DEVICE(5);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(6), okay)
-SPI_NXP_S32_DEVICE(6);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(7), okay)
-SPI_NXP_S32_DEVICE(7);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(8), okay)
-SPI_NXP_S32_DEVICE(8);
-#endif
-
-#if DT_NODE_HAS_STATUS(SPI_NXP_S32_NODE(9), okay)
-SPI_NXP_S32_DEVICE(9);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SPI_NXP_S32_DEVICE)

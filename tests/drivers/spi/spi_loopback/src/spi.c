@@ -55,7 +55,7 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
 
@@ -527,16 +527,22 @@ static K_SEM_DEFINE(caller, 0, 1);
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 
-static void spi_async_call_cb(struct k_poll_event *evt,
-			      struct k_sem *caller_sem,
-			      void *unused)
+static void spi_async_call_cb(void *p1,
+			      void *p2,
+			      void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_poll_event *evt = p1;
+	struct k_sem *caller_sem = p2;
 	int ret;
 
 	LOG_DBG("Polling...");
 
 	while (1) {
-		ret = k_poll(evt, 1, K_MSEC(200));
+		ret = k_poll(evt, 1, K_MSEC(2000));
 		zassert_false(ret, "one or more events are not ready");
 
 		result = evt->signal->result;
@@ -555,11 +561,19 @@ static int spi_async_call(struct spi_dt_spec *spec)
 			.buf = buffer_tx,
 			.len = BUF_SIZE,
 		},
+		{
+			.buf = buffer2_tx,
+			.len = BUF2_SIZE,
+		},
 	};
 	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
 			.len = BUF_SIZE,
+		},
+		{
+			.buf = buffer2_rx,
+			.len = BUF2_SIZE,
 		},
 	};
 	const struct spi_buf_set tx = {
@@ -573,6 +587,8 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	int ret;
 
 	LOG_INF("Start async call");
+	memset(buffer_rx, 0, sizeof(buffer_rx));
+	memset(buffer2_rx, 0, sizeof(buffer2_rx));
 
 	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -591,6 +607,24 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	if (result) {
 		LOG_ERR("Call code %d", ret);
 		zassert_false(result, "SPI transceive failed");
+		return -1;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
+		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
+		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
+		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
+		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
+		LOG_ERR("                             vs: %s", buffer_print_rx2);
+		zassert_false(1, "Buffer 2 contents are different");
 		return -1;
 	}
 
@@ -636,7 +670,7 @@ ZTEST(spi_loopback, test_spi_loopback)
 #if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
 					  spi_async_stack, STACK_SIZE,
-					  (k_thread_entry_t)spi_async_call_cb,
+					  spi_async_call_cb,
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif

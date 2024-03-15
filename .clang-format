@@ -67,6 +67,7 @@ ForEachMacros:
   - 'Z_GENLIST_FOR_EACH_NODE_SAFE'
   - 'STRUCT_SECTION_FOREACH'
   - 'TYPE_SECTION_FOREACH'
+  - 'K_SPINLOCK'
 IfMacros:
   - 'CHECKIF'
 # Disabled for now, see bug https://github.com/zephyrproject-rtos/zephyr/issues/48520

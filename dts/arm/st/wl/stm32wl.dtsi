@@ -207,6 +207,18 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
 			status = "disabled";
+
+			/* In STM32WL, the backup registers are defined as part of the TAMP
+			 * peripheral. This peripheral is not implemented in Zephyr yet, however,
+			 * the reference manual states that tamp_pclk is connected to rtc_pclk.
+			 * It makes sense to have BBRAM instantiated as a child of RTC, so that
+			 * the driver can verify that its parent device (RTC) is ready.
+			 */
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <20>;
+				status = "disabled";
+			};
 		};
 
 		iwdg: watchdog@40003000 {
@@ -247,6 +259,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>;
 			resets = <&rctl STM32_RESET(APB1H, 0U)>;
 			interrupts = <38 0>;
+			wakeup-line = <28>;
 			status = "disabled";
 		};
 
@@ -508,6 +521,30 @@
 		compatible = "st,stm32-vbat";
 		ratio = <3>;
 		io-channels = <&adc1 14>;
+		status = "disabled";
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
 		status = "disabled";
 	};
 };

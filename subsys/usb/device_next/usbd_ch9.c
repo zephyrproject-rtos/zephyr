@@ -25,6 +25,9 @@ LOG_MODULE_REGISTER(usbd_ch9, CONFIG_USBD_LOG_LEVEL);
 #define CTRL_AWAIT_SETUP_DATA		0
 #define CTRL_AWAIT_STATUS_STAGE		1
 
+#define SF_TEST_MODE_SELECTOR(wIndex)		((uint8_t)((wIndex) >> 8))
+#define SF_TEST_LOWER_BYTE(wIndex)		((uint8_t)(wIndex))
+
 static bool reqtype_is_to_host(const struct usb_setup_packet *const setup)
 {
 	return setup->wLength && USB_REQTYPE_GET_DIR(setup->bmRequestType);
@@ -46,18 +49,29 @@ static int ch9_get_ctrl_type(struct usbd_contex *const uds_ctx)
 	return uds_ctx->ch9_data.ctrl_type;
 }
 
-static int set_address_after_status_stage(struct usbd_contex *const uds_ctx)
+static int post_status_stage(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	int ret;
+	int ret = 0;
 
-	ret = udc_set_address(uds_ctx->dev, setup->wValue);
-	if (ret) {
-		LOG_ERR("Failed to set device address 0x%x", setup->wValue);
-		return ret;
+	if (setup->bRequest == USB_SREQ_SET_ADDRESS) {
+		ret = udc_set_address(uds_ctx->dev, setup->wValue);
+		if (ret) {
+			LOG_ERR("Failed to set device address 0x%x", setup->wValue);
+		}
 	}
 
-	uds_ctx->ch9_data.new_address = false;
+	if (setup->bRequest == USB_SREQ_SET_FEATURE &&
+	    setup->wValue == USB_SFS_TEST_MODE) {
+		uint8_t mode = SF_TEST_MODE_SELECTOR(setup->wIndex);
+
+		ret = udc_test_mode(uds_ctx->dev, mode, false);
+		if (ret) {
+			LOG_ERR("Failed to enable TEST_MODE %u", mode);
+		}
+	}
+
+	uds_ctx->ch9_data.post_status = false;
 
 	return ret;
 }
@@ -65,6 +79,7 @@ static int set_address_after_status_stage(struct usbd_contex *const uds_ctx)
 static int sreq_set_address(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wValue > 127 || setup->wLength) {
@@ -82,7 +97,18 @@ static int sreq_set_address(struct usbd_contex *const uds_ctx)
 		return 0;
 	}
 
-	uds_ctx->ch9_data.new_address = true;
+	if (caps.addr_before_status) {
+		int ret;
+
+		ret = udc_set_address(uds_ctx->dev, setup->wValue);
+		if (ret) {
+			LOG_ERR("Failed to set device address 0x%x", setup->wValue);
+			return ret;
+		}
+	} else {
+		uds_ctx->ch9_data.post_status = true;
+	}
+
 	if (usbd_state_is_address(uds_ctx) && setup->wValue == 0) {
 		uds_ctx->ch9_data.state = USBD_STATE_DEFAULT;
 	} else {
@@ -244,6 +270,27 @@ static int sreq_clear_feature(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
+static int set_feature_test_mode(struct usbd_contex *const uds_ctx)
+{
+	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	uint8_t mode = SF_TEST_MODE_SELECTOR(setup->wIndex);
+
+	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE ||
+	    SF_TEST_LOWER_BYTE(setup->wIndex) != 0) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (udc_test_mode(uds_ctx->dev, mode, true) != 0) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	uds_ctx->ch9_data.post_status = true;
+
+	return 0;
+}
+
 static int sreq_set_feature(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -256,9 +303,13 @@ static int sreq_set_feature(struct usbd_contex *const uds_ctx)
 		return 0;
 	}
 
+	if (unlikely(setup->wValue == USB_SFS_TEST_MODE)) {
+		return set_feature_test_mode(uds_ctx);
+	}
+
 	/*
-	 * TEST_MODE is not supported yet, other are not specified
-	 * in default state, treat as error.
+	 * Other request behavior is not specified in the default state, treat
+	 * as an error.
 	 */
 	if (usbd_state_is_default(uds_ctx)) {
 		errno = -EPERM;
@@ -824,8 +875,8 @@ int usbd_handle_ctrl_xfer(struct usbd_contex *const uds_ctx,
 
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
 			LOG_INF("s-(out)-status finished");
-			if (unlikely(uds_ctx->ch9_data.new_address)) {
-				return set_address_after_status_stage(uds_ctx);
+			if (unlikely(uds_ctx->ch9_data.post_status)) {
+				ret = post_status_stage(uds_ctx);
 			}
 		} else {
 			LOG_WRN("Awaited s-(out)-status not finished");

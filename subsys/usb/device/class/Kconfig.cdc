@@ -37,6 +37,13 @@ config CDC_ACM_BULK_EP_MPS
 	help
 	  CDC ACM class bulk endpoints size
 
+config CDC_ACM_TX_DELAY_MS
+	int
+	default 100
+	help
+	  Time in milliseconds to wait before sending actual payload to host.
+	  This is needed to prevent tty ECHO on Linux.
+
 config CDC_ACM_IAD
 	bool "Force using Interface Association Descriptor"
 	default y

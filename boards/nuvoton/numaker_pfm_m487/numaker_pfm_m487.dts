@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2020 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nuvoton/m48x.dtsi>
+#include "numaker_pfm_m487-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nuvoton PFM M487 board";
+	compatible = "nuvoton,pfm-m487", "nuvoton,m487";
+
+	aliases {
+		led0 = &red_led;
+		led1 = &yellow_led;
+		led2 = &green_led;
+		sw0 = &sw2;
+		sw1 = &sw3;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioh 0 GPIO_ACTIVE_LOW>;
+			label = "User LED Red";
+		};
+		yellow_led: led_1 {
+			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;
+			label = "User LED Yellow";
+		};
+		green_led: led_2 {
+			gpios = <&gpioh 2 GPIO_ACTIVE_LOW>;
+			label = "User LED Green";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		sw2: button_0 {
+			gpios = <&gpiog 15 GPIO_ACTIVE_LOW>;
+			label = "User SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		sw3: button_1 {
+			gpios = <&gpiof 11 GPIO_ACTIVE_LOW>;
+			label = "User SW3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(512)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(160)>;
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};

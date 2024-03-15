@@ -1,0 +1,26 @@
+# Copyright (c) 2022, Rtone.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32f470i_eval
+name: GigaDevice GD32F470I-EVAL
+type: mcu
+arch: arm
+ram: 112
+flash: 3072
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - dac
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - watchdog
+  - dma
+  - spi
+vendor: gd

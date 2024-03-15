@@ -271,7 +271,7 @@ passed in.  This includes:
 * Any other arguments that have a limited range of valid values.
 
 Verification functions involve a great deal of boilerplate code which has been
-made simpler by some macros in :zephyr_file:`include/zephyr/syscall_handler.h`.
+made simpler by some macros in :zephyr_file:`include/zephyr/internal/syscall_handler.h`.
 Verification functions should be declared using these macros.
 
 Argument Validation
@@ -279,50 +279,50 @@ Argument Validation
 
 Several macros exist to validate arguments:
 
-* :c:macro:`Z_SYSCALL_OBJ()` Checks a memory address to assert that it is
+* :c:macro:`K_SYSCALL_OBJ()` Checks a memory address to assert that it is
   a valid kernel object of the expected type, that the calling thread
   has permissions on it, and that the object is initialized.
 
-* :c:macro:`Z_SYSCALL_OBJ_INIT()` is the same as
-  :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object may be
+* :c:macro:`K_SYSCALL_OBJ_INIT()` is the same as
+  :c:macro:`K_SYSCALL_OBJ()`, except that the provided object may be
   uninitialized. This is useful for verifiers of object init functions.
 
-* :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()` is the same as
-  :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object must be
+* :c:macro:`K_SYSCALL_OBJ_NEVER_INIT()` is the same as
+  :c:macro:`K_SYSCALL_OBJ()`, except that the provided object must be
   uninitialized. This is not used very often, currently only for
   :c:func:`k_thread_create()`.
 
-* :c:macro:`Z_SYSCALL_MEMORY_READ()` validates a memory buffer of a particular
+* :c:macro:`K_SYSCALL_MEMORY_READ()` validates a memory buffer of a particular
   size. The calling thread must have read permissions on the entire buffer.
 
-* :c:macro:`Z_SYSCALL_MEMORY_WRITE()` is the same as
-  :c:macro:`Z_SYSCALL_MEMORY_READ()` but the calling thread must additionally
+* :c:macro:`K_SYSCALL_MEMORY_WRITE()` is the same as
+  :c:macro:`K_SYSCALL_MEMORY_READ()` but the calling thread must additionally
   have write permissions.
 
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()` validates an array whose total size
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()` validates an array whose total size
   is expressed as separate arguments for the number of elements and the
   element size. This macro correctly accounts for multiplication overflow
   when computing the total size. The calling thread must have read permissions
   on the total size.
 
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_WRITE()` is the same as
-  :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()` but the calling thread must
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_WRITE()` is the same as
+  :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()` but the calling thread must
   additionally have write permissions.
 
-* :c:macro:`Z_SYSCALL_VERIFY_MSG()` does a runtime check of some boolean
+* :c:macro:`K_SYSCALL_VERIFY_MSG()` does a runtime check of some boolean
   expression which must evaluate to true otherwise the check will fail.
-  A variant :c:macro:`Z_SYSCALL_VERIFY` exists which does not take
+  A variant :c:macro:`K_SYSCALL_VERIFY` exists which does not take
   a message parameter, instead printing the expression tested if it
   fails. The latter should only be used for the most obvious of tests.
 
-* :c:macro:`Z_SYSCALL_DRIVER_OP()` checks at runtime if a driver
+* :c:macro:`K_SYSCALL_DRIVER_OP()` checks at runtime if a driver
   instance is capable of performing a particular operation.  While this
   macro can be used by itself, it's mostly a building block for macros
   that are automatically generated for every driver subsystem.  For
   instance, to validate the GPIO driver, one could use the
-  :c:macro:`Z_SYSCALL_DRIVER_GPIO()` macro.
+  :c:macro:`K_SYSCALL_DRIVER_GPIO()` macro.
 
-* :c:macro:`Z_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
+* :c:macro:`K_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
   a provided pointer is a valid instance of a specific device driver, that
   the calling thread has permissions on it, and that the driver has been
   initialized. It does this by checking the API structure pointer that
@@ -331,7 +331,7 @@ Several macros exist to validate arguments:
   API structure.
 
 If any check fails, the macros will return a nonzero value. The macro
-:c:macro:`Z_OOPS()` can be used to induce a kernel oops which will kill the
+:c:macro:`K_OOPS()` can be used to induce a kernel oops which will kill the
 calling thread. This is done instead of returning some error condition to
 keep the APIs the same when calling from supervisor mode.
 
@@ -357,7 +357,7 @@ For example:
 
     static int z_vrfy_k_sem_take(struct k_sem *sem, int32_t timeout)
     {
-        Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+        K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
         return z_impl_k_sem_take(sem, timeout);
     }
     #include <syscalls/k_sem_take_mrsh.c>
@@ -377,7 +377,7 @@ The proper procedure to mitigate these attacks is to make a copies in the
 verification function, and only perform parameter checks on the copies, which
 user threads will never have access to. The implementation functions get passed
 the copy and not the original data sent by the user. The
-:c:func:`z_user_to_copy()` and :c:func:`z_user_from_copy()` APIs exist for
+:c:func:`k_usermode_to_copy()` and :c:func:`k_usermode_from_copy()` APIs exist for
 this purpose.
 
 There is one exception in place, with respect to large data buffers which are
@@ -397,12 +397,12 @@ for some integral value:
         int ret;
 
         ret = z_impl_some_syscall(&local_out_param);
-        Z_OOPS(z_user_to_copy(out_param, &local_out_param, sizeof(*out_param)));
+        K_OOPS(k_usermode_to_copy(out_param, &local_out_param, sizeof(*out_param)));
         return ret;
     }
 
 Here we have allocated ``local_out_param`` on the stack, passed its address to
-the implementation function, and then used :c:func:`z_user_to_copy()` to fill
+the implementation function, and then used :c:func:`k_usermode_to_copy()` to fill
 in the memory passed in by the caller.
 
 It might be tempting to do something more concise:
@@ -411,7 +411,7 @@ It might be tempting to do something more concise:
 
     int z_vrfy_some_syscall(int *out_param)
     {
-        Z_OOPS(Z_SYSCALL_MEMORY_WRITE(out_param, sizeof(*out_param)));
+        K_OOPS(K_SYSCALL_MEMORY_WRITE(out_param, sizeof(*out_param)));
         return z_impl_some_syscall(out_param);
     }
 
@@ -433,9 +433,9 @@ bytes processed. This too should use a stack copy:
         size_t size;
         int ret;
 
-        Z_OOPS(z_user_from_copy(&size, size_ptr, sizeof(size));
+        K_OOPS(k_usermode_from_copy(&size, size_ptr, sizeof(size));
         ret = z_impl_in_out_syscall(&size);
-        Z_OOPS(z_user_to_copy(size_ptr, &size, sizeof(size)));
+        K_OOPS(k_usermode_to_copy(size_ptr, &size, sizeof(size)));
         return ret;
     }
 
@@ -461,11 +461,11 @@ be copied. Typically this is done by allocating copies on the stack:
         struct bar bar_right_copy;
         struct bar bar_left_copy;
 
-        Z_OOPS(z_user_from_copy(&foo_copy, foo, sizeof(*foo)));
-        Z_OOPS(z_user_from_copy(&bar_right_copy, foo_copy.bar_right,
+        K_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
+        K_OOPS(k_usermode_from_copy(&bar_right_copy, foo_copy.bar_right,
                                 sizeof(struct bar)));
         foo_copy.bar_right = &bar_right_copy;
-        Z_OOPS(z_user_from_copy(&bar_left_copy, foo_copy.bar_left,
+        K_OOPS(k_usermode_from_copy(&bar_left_copy, foo_copy.bar_left,
                                 sizeof(struct bar)));
         foo_copy.bar_left = &bar_left_copy;
 
@@ -478,7 +478,7 @@ memory from the caller's resource pool via :c:func:`z_thread_malloc()`. This
 should always be considered last resort. Functional safety programming
 guidelines heavily discourage usage of heap and the fact that a resource pool is
 used must be clearly documented. Any issues with allocation must be
-reported, to a caller, with returning the ``-ENOMEM`` . The ``Z_OOPS()``
+reported, to a caller, with returning the ``-ENOMEM`` . The ``K_OOPS()``
 should never be used to verify if resource allocation has been successful.
 
 .. code-block:: c
@@ -500,7 +500,7 @@ should never be used to verify if resource allocation has been successful.
         size_t bar_list_bytes;
 
         /* Safely copy foo into foo_copy */
-        Z_OOPS(z_user_from_copy(&foo_copy, foo, sizeof(*foo)));
+        K_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
 
         /* Bounds check the count member, in the copy we made */
         if (foo_copy.count > 32) {
@@ -514,7 +514,7 @@ should never be used to verify if resource allocation has been successful.
         if (bar_list_copy == NULL) {
             return -ENOMEM;
         }
-        Z_OOPS(z_user_from_copy(bar_list_copy, foo_copy.bar_list,
+        K_OOPS(k_usermode_from_copy(bar_list_copy, foo_copy.bar_list,
                                 bar_list_bytes));
         foo_copy.bar_list = bar_list_copy;
 
@@ -528,7 +528,7 @@ should never be used to verify if resource allocation has been successful.
 Finally, we must consider large data buffers. These represent areas of user
 memory which either have data copied out of, or copied into. It is permitted
 to pass these pointers to the implementation function directly. The caller's
-access to the buffer still must be validated with ``Z_SYSCALL_MEMORY`` APIs.
+access to the buffer still must be validated with ``K_SYSCALL_MEMORY`` APIs.
 The following constraints need to be met:
 
  * If the buffer is used by the implementation function to write data, such
@@ -549,7 +549,7 @@ The following constraints need to be met:
 
     int z_vrfy_get_data_from_kernel(void *buf, size_t size)
     {
-        Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, size));
+        K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, size));
         return z_impl_get_data_from_kernel(buf, size);
     }
 
@@ -558,25 +558,25 @@ Verification Return Value Policies
 
 When verifying system calls, it's important to note which kinds of verification
 failures should propagate a return value to the caller, and which should
-simply invoke :c:macro:`Z_OOPS()` which kills the calling thread. The current
+simply invoke :c:macro:`K_OOPS()` which kills the calling thread. The current
 conventions are as follows:
 
 #. For system calls that are defined but not compiled, invocations of these
    missing system calls are routed to :c:func:`handler_no_syscall()` which
-   invokes :c:macro:`Z_OOPS()`.
+   invokes :c:macro:`K_OOPS()`.
 
-#. Any invalid access to memory found by the set of ``Z_SYSCALL_MEMORY`` APIs,
-   :c:func:`z_user_from_copy()`, :c:func:`z_user_to_copy()`
-   should trigger a :c:macro:`Z_OOPS`. This happens when the caller doesn't have
+#. Any invalid access to memory found by the set of ``K_SYSCALL_MEMORY`` APIs,
+   :c:func:`k_usermode_from_copy()`, :c:func:`k_usermode_to_copy()`
+   should trigger a :c:macro:`K_OOPS`. This happens when the caller doesn't have
    appropriate permissions on the memory buffer or some size calculation
    overflowed.
 
 #. Most system calls take kernel object pointers as an argument, checked either
-   with one of the ``Z_SYSCALL_OBJ`` functions,  ``Z_SYSCALL_DRIVER_nnnnn``, or
-   manually using :c:func:`z_object_validate()`. These can fail for a variety
+   with one of the ``K_SYSCALL_OBJ`` functions,  ``K_SYSCALL_DRIVER_nnnnn``, or
+   manually using :c:func:`k_object_validate()`. These can fail for a variety
    of reasons: missing driver API, bad kernel object pointer, wrong kernel
    object type, or improper initialization state. These issues should always
-   invoke :c:macro:`Z_OOPS()`.
+   invoke :c:macro:`K_OOPS()`.
 
 #. Any error resulting from a failed memory heap allocation, often from
    invoking :c:func:`z_thread_malloc()`, should propagate ``-ENOMEM`` to the
@@ -594,7 +594,7 @@ conventions are as follows:
    be registered from user mode. APIs which simply install callbacks shall not
    be exposed as system calls. Some driver subsystem APIs may take optional
    function callback pointers. User mode verification functions for these APIs
-   must enforce that these are NULL and should invoke :c:macro:`Z_OOPS()` if
+   must enforce that these are NULL and should invoke :c:macro:`K_OOPS()` if
    not.
 
 #. Some parameter checks are enforced only from user mode. These should be
@@ -608,14 +608,14 @@ There are some known exceptions to these policies currently in Zephyr:
   initialization bit pulls double-duty to indicate whether a thread is
   running, cleared upon exit. See #23030.
 
-* :c:func:`k_thread_create()` invokes :c:macro:`Z_OOPS()` for parameter
+* :c:func:`k_thread_create()` invokes :c:macro:`K_OOPS()` for parameter
   checks, due to a great deal of existing code ignoring the return value.
   This will also be addressed by #23030.
 
-* :c:func:`k_thread_abort()` invokes :c:macro:`Z_OOPS()` if an essential
+* :c:func:`k_thread_abort()` invokes :c:macro:`K_OOPS()` if an essential
   thread is aborted, as the function has no return value.
 
-* Various system calls related to logging invoke :c:macro:`Z_OOPS()`
+* Various system calls related to logging invoke :c:macro:`K_OOPS()`
   when bad parameters are passed in as they do not propagate errors.
 
 Configuration Options
@@ -630,18 +630,18 @@ APIs
 ****
 
 Helper macros for creating system call verification functions are provided in
-:zephyr_file:`include/zephyr/syscall_handler.h`:
+:zephyr_file:`include/zephyr/internal/syscall_handler.h`:
 
-* :c:macro:`Z_SYSCALL_OBJ()`
-* :c:macro:`Z_SYSCALL_OBJ_INIT()`
-* :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()`
-* :c:macro:`Z_OOPS()`
-* :c:macro:`Z_SYSCALL_MEMORY_READ()`
-* :c:macro:`Z_SYSCALL_MEMORY_WRITE()`
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()`
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_WRITE()`
-* :c:macro:`Z_SYSCALL_VERIFY_MSG()`
-* :c:macro:`Z_SYSCALL_VERIFY`
+* :c:macro:`K_SYSCALL_OBJ()`
+* :c:macro:`K_SYSCALL_OBJ_INIT()`
+* :c:macro:`K_SYSCALL_OBJ_NEVER_INIT()`
+* :c:macro:`K_OOPS()`
+* :c:macro:`K_SYSCALL_MEMORY_READ()`
+* :c:macro:`K_SYSCALL_MEMORY_WRITE()`
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()`
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_WRITE()`
+* :c:macro:`K_SYSCALL_VERIFY_MSG()`
+* :c:macro:`K_SYSCALL_VERIFY`
 
 Functions for invoking system calls are defined in
 :zephyr_file:`include/zephyr/syscall.h`:

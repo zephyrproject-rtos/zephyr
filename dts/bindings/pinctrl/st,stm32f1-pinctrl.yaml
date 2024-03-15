@@ -41,7 +41,7 @@ properties:
 child-binding:
   description: |
       This binding gives a base representation of the STM32F1 pins
-      configration
+      configuration
 
   include:
     - name: pincfg-node.yaml
@@ -85,11 +85,11 @@ child-binding:
         This macro is available here:
           -include/zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h
         Some examples of macro usage:
-           GPIO A9 set as alernate with no remap
+           GPIO A9 set as alternate with no remap
         ... {
                  pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_NO)>;
         };
-           GPIO A9 set as alernate with full remap
+           GPIO A9 set as alternate with full remap
         ... {
                  pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_FULL)>;
         };

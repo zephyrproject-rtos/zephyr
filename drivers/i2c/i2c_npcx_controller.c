@@ -770,8 +770,15 @@ static void i2c_ctrl_target_isr(const struct device *dev, uint8_t status)
 		inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
 		inst->SMBCTL2 |= BIT(NPCX_SMBCTL2_ENABLE);
 
+		/*
+		 * Re-enable interrupts because they are turned off after the SMBus module
+		 * is reset above.
+		 */
+		inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
 		/* End of transaction */
 		data->oper_state = NPCX_I2C_IDLE;
+
+		LOG_DBG("target: Bus error on port%02x!", data->port);
 		return;
 	}
 
@@ -801,7 +808,7 @@ static void i2c_ctrl_target_isr(const struct device *dev, uint8_t status)
 		/* Clear NMATCH Bit */
 		inst->SMBST = BIT(NPCX_SMBST_NMATCH);
 
-		/* Distinguish tje direction of i2c target mode by reading XMIT bit */
+		/* Distinguish the direction of i2c target mode by reading XMIT bit */
 		if (IS_BIT_SET(inst->SMBST, NPCX_SMBST_XMIT)) {
 			/* Start transmitting data in i2c target mode */
 			data->oper_state = NPCX_I2C_WRITE_FIFO;

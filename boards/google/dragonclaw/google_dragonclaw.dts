@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2022 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/f4/stm32f412Xg.dtsi>
+#include <st/f4/stm32f412z(e-g)tx-pinctrl.dtsi>
+
+/ {
+	model = "Google Dragonclaw development board";
+	compatible = "google,dragonclaw-fpmcu";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash;
+	};
+};
+
+&clk_hsi {
+	/* HSI clock frequency is 16MHz */
+	status = "okay";
+};
+
+&clk_lsi {
+	/* LSI clock frequency is 32768kHz */
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <192>; /* 16MHz * 192/8 = 384MHz VCO clock */
+	div-p = <4>; /* 96MHz PLL general clock output */
+	div-q = <8>; /* 48MHz PLL output for USB, SDIO, RNG */
+	div-r = <7>; /* I2S - lowest possible frequency to save power */
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>; /* Select PLL as SYSCLK source (96MHz) */
+	ahb-prescaler = <1>; /* SYSCLK not divided */
+	clock-frequency = <DT_FREQ_M(96)>; /* AHB frequency */
+	apb1-prescaler = <2>; /* AHB clock divided by 2 */
+	apb2-prescaler = <2>; /* AHB clock divided by 2 */
+};
+
+/* USART1: AP UART (Host Commands and MKBP) */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* USART2: Servo UART (console) */
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* SPI1: communication with the AP */
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* SPI2: communication with the fingerprint sensor */
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};
+
+/*
+ * Set flags of unused pins as GPIO_ACTIVE_HIGH (0 << 0), which will be
+ * interpreted by GPIO driver as GPIO_DISCONNECTED, without setting the gpio as
+ * either input or output. The STM32 GPIO driver will set these pins as analog
+ * to reduce power consumption.
+ */
+&gpiob {
+	unused {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>, <5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioc {
+	unused {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>, <14 GPIO_ACTIVE_HIGH>,
+			<15 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioh {
+	unused {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>, <1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/*
+ * The board uses STM32F412CG in UFQFPN48 package in which gpio[d-g] is not
+ * exposed, so disable it.
+ */
+&gpiod {status = "disabled";};
+&gpioe {status = "disabled";};
+&gpiof {status = "disabled";};
+&gpiog {status = "disabled";};

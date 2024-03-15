@@ -17,7 +17,6 @@ if ADC
 
 config ADC_SHELL
 	bool "ADC Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable ADC Shell for testing.
@@ -32,6 +31,11 @@ config ADC_CONFIGURABLE_INPUTS
 # required to explicitly specify for the excitation current source the pin
 # which should be used.
 config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	bool
+
+# By selecting or not this option particular ADC drivers indicate if they
+# allow a configurable voltage bias pin.
+config ADC_CONFIGURABLE_VBIAS_PIN
 	bool
 
 config ADC_ASYNC
@@ -115,5 +119,13 @@ source "drivers/adc/Kconfig.nxp_s32"
 source "drivers/adc/Kconfig.max1125x"
 
 source "drivers/adc/Kconfig.max11102_17"
+
+source "drivers/adc/Kconfig.ad5592"
+
+source "drivers/adc/Kconfig.ltc2451"
+
+source "drivers/adc/Kconfig.numaker"
+
+source "drivers/adc/Kconfig.ene"
 
 endif # ADC

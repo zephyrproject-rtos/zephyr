@@ -106,6 +106,8 @@
 #define BAUDVALUE_MSB ((uint16_t)(0xFF00))
 #define BAUDVALUE_SHIFT ((uint8_t)(5))
 
+#define MIV_UART_0_LINECFG 0x1
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static struct k_thread rx_thread;
 static K_KERNEL_STACK_DEFINE(rx_stack, 512);

@@ -61,6 +61,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Stable
      - 1.14
 
+   * - :ref:`can_transceiver_api`
+     - Experimental
+     - 3.1
+
    * - :ref:`charger_api`
      - Experimental
      - 3.5
@@ -136,6 +140,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`flash_map_api`
      - Stable
      - 1.11
+
+   * - :ref:`gnss_api`
+     - Experimental
+     - 3.6
 
    * - :ref:`gpio_api`
      - Stable
@@ -225,9 +233,17 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Stable
      - 1.11
 
+   * - :ref:`modem`
+     - Experimental
+     - 3.5
+
    * - :ref:`mqtt_socket_interface`
      - Unstable
      - 1.14
+
+   * - :ref:`mipi_dbi_api`
+     - Experimental
+     - 3.6
 
    * - :ref:`mipi_dsi_api`
      - Experimental
@@ -278,7 +294,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 3.1
 
    * - :ref:`retained_mem_api`
-     - Experimental
+     - Unstable
      - 3.4
 
    * - :ref:`retention_api`

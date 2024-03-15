@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 int z_impl_zsock_gethostname(char *buf, size_t len)
 {
@@ -20,7 +20,7 @@ int z_impl_zsock_gethostname(char *buf, size_t len)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zsock_gethostname(char *buf, size_t len)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, len));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, len));
 	return z_impl_zsock_gethostname(buf, len);
 }
 #include <syscalls/zsock_gethostname_mrsh.c>

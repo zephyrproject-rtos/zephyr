@@ -956,7 +956,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_headroom)
 	net_pkt_unref(pkt);
 }
 
-NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_copy_pool, 2, 4, 4, NULL);
+NET_BUF_POOL_VAR_DEFINE(test_net_pkt_headroom_copy_pool, 2, 128, 4, NULL);
 
 ZTEST(net_pkt_test_suite, test_net_pkt_headroom_copy)
 {

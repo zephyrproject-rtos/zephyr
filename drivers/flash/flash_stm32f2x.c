@@ -76,7 +76,7 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 	/* flush the register write */
 	tmp = regs->CR;
 
-	*((uint8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
+	*((uint8_t *) offset + FLASH_STM32_BASE_ADDRESS) = val;
 
 	/* Wait until the BSY bit is cleared */
 	rc = flash_stm32_wait_flash_idle(dev);

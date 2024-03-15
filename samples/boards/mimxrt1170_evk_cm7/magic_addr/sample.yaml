@@ -1,0 +1,12 @@
+sample:
+  description: RT1170 FLEXRAM Magic Addr example
+  name: magic addr
+common:
+  integration_platforms:
+    - mimxrt1170_evk/mimxrt1176/cm7
+    - mimxrt1160_evk/mimxrt1166/cm7
+tests:
+  sample.boards.mimxrt1170_evk.magic_addr:
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1160_evk/mimxrt1166/cm7

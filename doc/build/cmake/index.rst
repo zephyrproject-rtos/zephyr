@@ -108,7 +108,7 @@ Devicetree
    :ref:`dt-guide`.
 
 Kconfig
-   :file:`Kconfig` files define available configuration options for for the
+   :file:`Kconfig` files define available configuration options for the
    target architecture, SoC, board, and application, as well as dependencies
    between options.
 

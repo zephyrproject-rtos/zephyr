@@ -6,13 +6,19 @@ common:
   tags: net
 tests:
   sample.net.sockets.sntp_client:
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
+      - native_sim
   sample.net.sockets.sntp_client.posix_names:
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
+      - native_sim
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=y
   sample.net.sockets.sntp_client.posix:
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
+      - native_sim
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y

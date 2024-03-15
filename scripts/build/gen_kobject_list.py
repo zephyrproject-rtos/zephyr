@@ -724,10 +724,10 @@ header = """%compare-lengths
 %{
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 %}
-struct z_object;
+struct k_object;
 """
 
 # Different versions of gperf have different prototypes for the lookup
@@ -735,7 +735,7 @@ struct z_object;
 # turned into a string, we told gperf to expect binary strings that are not
 # NULL-terminated.
 footer = """%%
-struct z_object *z_object_gperf_find(const void *obj)
+struct k_object *z_object_gperf_find(const void *obj)
 {
     return z_object_lookup((const char *)obj, sizeof(void *));
 }
@@ -752,10 +752,10 @@ void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 
 #ifndef CONFIG_DYNAMIC_OBJECTS
-struct z_object *z_object_find(const void *obj)
+struct k_object *k_object_find(const void *obj)
 	ALIAS_OF(z_object_gperf_find);
 
-void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 	ALIAS_OF(z_object_gperf_wordlist_foreach);
 #endif
 """
@@ -885,7 +885,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
 
 
 driver_macro_tpl = """
-#define Z_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) Z_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
+#define K_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) K_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
 """
 
 
@@ -893,9 +893,9 @@ def write_validation_output(fp):
     fp.write("#ifndef DRIVER_VALIDATION_GEN_H\n")
     fp.write("#define DRIVER_VALIDATION_GEN_H\n")
 
-    fp.write("""#define Z_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
-		(Z_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
-		 Z_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
+    fp.write("""#define K_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
+		(K_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
+		 K_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
                 """)
 
     for subsystem in subsystems:

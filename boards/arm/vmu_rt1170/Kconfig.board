@@ -1,7 +1,0 @@
-# Copyright 2023 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_VMU_RT1170
-	bool "NXP VMU_RT1170"
-	depends on SOC_MIMXRT1176_CM7
-	select SOC_PART_NUMBER_MIMXRT1176DVMAA

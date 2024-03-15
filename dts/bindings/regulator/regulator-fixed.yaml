@@ -13,6 +13,8 @@ include:
       - regulator-always-on
       - regulator-min-microvolt
       - regulator-max-microvolt
+      - startup-delay-us
+      - off-on-delay-us
 
 compatible: "regulator-fixed"
 
@@ -29,13 +31,3 @@ properties:
       provide the GPIO polarity and open-drain status in the phandle
       selector.  The Linux enable-active-high and gpio-open-drain
       properties are not valid for Zephyr devicetree files.
-
-  startup-delay-us:
-    type: int
-    default: 0
-    description: Startup time, in microseconds
-
-  off-on-delay-us:
-    type: int
-    default: 0
-    description: Off delay time, in microseconds

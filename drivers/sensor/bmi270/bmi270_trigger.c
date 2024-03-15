@@ -85,8 +85,13 @@ static void bmi270_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_BMI270_TRIGGER_OWN_THREAD
-static void bmi270_thread(struct bmi270_data *data)
+static void bmi270_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct bmi270_data *data = p1;
+
 	while (1) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		bmi270_thread_cb(data->dev);
@@ -173,7 +178,7 @@ int bmi270_init_interrupts(const struct device *dev)
 #if CONFIG_BMI270_TRIGGER_OWN_THREAD
 	k_sem_init(&data->trig_sem, 0, 1);
 	k_thread_create(&data->thread, data->thread_stack, CONFIG_BMI270_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bmi270_thread, data, NULL, NULL,
+			bmi270_thread, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BMI270_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
 	k_work_init(&data->trig_work, bmi270_trig_work_cb);

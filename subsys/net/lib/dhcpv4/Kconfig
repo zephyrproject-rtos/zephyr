@@ -1,0 +1,151 @@
+# DHCPv4 implementation for Zephyr
+
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_DHCPV4
+	bool "DHCPv4 client"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	depends on NET_IPV4 && NET_UDP
+
+if NET_DHCPV4
+
+module = NET_DHCPV4
+module-dep = NET_LOG
+module-str = Log level for DHCPv4 client
+module-help = Enable debug diagnostic from DHCPV4 client.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_DHCPV4_INITIAL_DELAY_MAX
+	int "Maximum time out for initial discover request"
+	depends on NET_DHCPV4
+	default 10
+	range 2 10
+	help
+	  As per RFC2131 4.1.1, we wait a random period between
+	  1 and 10 seconds before sending the initial discover.
+
+config NET_DHCPV4_OPTION_CALLBACKS
+	bool "Option callbacks"
+	depends on NET_DHCPV4
+	help
+	  If set, custom callbacks for arbitrary DHCP options
+	  can be added. These can be used to support otherwise
+	  DHCP options not used by the rest of the system.
+
+config NET_DHCPV4_MAX_REQUESTED_OPTIONS
+	int "Maximum number of requested options"
+	depends on NET_DHCPV4 && NET_DHCPV4_OPTION_CALLBACKS
+	default 10
+	range 3 255
+	help
+	  Maximum number of requested options that can be added to the
+	  DHCPv4 request message. The options are added using the
+	  net_dhcpv4_add_option_callback() API.
+
+config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+	bool "Encapsulated vendor specific option callbacks"
+	depends on NET_DHCPV4
+	select NET_DHCPV4_OPTION_CALLBACKS
+	help
+	  If set, custom callbacks for encapsulated vendor-specific
+	  information in DHCP option 43 can be added.
+
+config NET_DHCPV4_ACCEPT_UNICAST
+	bool "Accept unicast DHCPv4 traffic"
+	depends on NET_DHCPV4
+	default y
+	help
+	  If set, the network stack will accept unicast DHCPv4 responses from
+	  servers, before the assigned address is configured on the interface.
+
+config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
+	bool "Send vendor class identifier in DHCPv4 request"
+	depends on NET_DHCPV4
+	help
+	  If set, the network stack will include the specified string in the
+	  DHCPv4 vendor class identifier option in the DHCPv4 request.
+
+config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING
+	string "Vendor class identifier"
+	depends on NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
+	default ""
+	help
+	  The string to include in the DHCPv4 vendor class identifier option
+	  in the DHCPv4 request.
+
+config NET_DHCPV4_OPTION_NTP_SERVER
+	bool "Use NTP server from DHCPv4 option and save it in the net_if"
+	default y
+	depends on SNTP
+	help
+	  If this option is set, then the NTP server can be set from the
+	  DHCPv4 option.
+
+endif # NET_DHCPV4
+
+config NET_DHCPV4_SERVER
+	bool "DHCPv4 server"
+	depends on NET_IPV4 && NET_UDP
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
+
+if NET_DHCPV4_SERVER
+
+module = NET_DHCPV4_SERVER
+module-dep = NET_LOG
+module-str = Log level for DHCPv4 server
+module-help = Enables DHCPv4 server output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_DHCPV4_SERVER_INSTANCES
+	int "Maximum number of DHCPv4 server instances"
+	default 1
+	help
+	  Maximum number of DHCPv4 server instances supported by the system.
+	  Each network interface that wants to act as a DHCPv4 server requires
+	  a separate instance.
+
+config NET_DHCPV4_SERVER_ADDR_COUNT
+	int "Number of IPv4 addresses that can be assigned by the server"
+	default 4
+	help
+	  Maximum number of IPv4 addresses that can be assigned by the DHCPv4
+	  server instance. The base IPv4 address in the address pool is provided
+	  at runtime, during server initialization. Consecutive addresses in the
+	  pool have the lowest address octet incremented.
+
+config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
+	int "Lease time for IPv4 addresses assigned by the server (seconds)"
+	range 0 4294967295
+	default 86400
+	help
+	  Lease time in seconds for IPv4 addresses assigned by the server.
+	  The lease time determines when the IPv4 address lease expires if the
+	  client does not renew it.
+
+config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
+	int "The time IPv4 addresses remains blocked after conflict detection (seconds)"
+	range 0 4294967295
+	default 86400
+	help
+	  In case IPv4 address becomes blocked (either because of receiving
+	  Decline message or due to ICMP probe detecting conflict), the address
+	  can no longer be assigned. This timeout specifies how long the address
+	  remains in the Declined state.
+	  Note, that the server may try to reuse the oldest declined address in
+	  case it runs out of free addresses to assign.
+
+config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
+	int "Timeout for ICMP probes sent by the server (miliseconds)"
+	range 0 60000
+	default 1000
+	help
+	  DHCPv4 server will probe the offered IP address (send ICMP echo
+	  request) and wait for the time specific by this config before offering
+	  the address. If set to 0, ICMP probing will be disabled.
+
+endif # NET_DHCPV4_SERVER

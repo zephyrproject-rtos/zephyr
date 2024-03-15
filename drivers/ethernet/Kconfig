@@ -7,6 +7,7 @@ menuconfig ETH_DRIVER
 	bool "Ethernet drivers"
 	default y
 	depends on NET_L2_ETHERNET
+	depends on !NET_TEST
 
 if ETH_DRIVER
 
@@ -61,6 +62,10 @@ source "drivers/ethernet/Kconfig.nxp_s32_gmac"
 source "drivers/ethernet/Kconfig.smsc91x"
 source "drivers/ethernet/Kconfig.ivshmem"
 source "drivers/ethernet/Kconfig.adin2111"
+source "drivers/ethernet/Kconfig.numaker"
+source "drivers/ethernet/Kconfig.lan865x"
+source "drivers/ethernet/Kconfig.nxp_enet"
+source "drivers/ethernet/Kconfig.xmc4xxx"
 
 source "drivers/ethernet/phy/Kconfig"
 

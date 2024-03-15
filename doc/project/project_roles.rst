@@ -67,9 +67,9 @@ template <new?assignees=&labels=Role+Nomination&template=006_nomination.md&title
 
 Contributors granted the Triage permission level are permitted to add reviewers
 to a pull request and can be added as a reviewer by other GitHub users.
-Contributor votes on pull requests are not counted with respect to accepting and
-merging a pull request. However, Contributors comments and requested changes
-should still be considered by the pull request author.
+Contributor change requests or approval on pull requests are not counted with
+respect to accepting and merging a pull request. However, Contributors comments
+and requested changes should still be considered by the pull request author.
 
 Collaborator
 ++++++++++++
@@ -95,7 +95,14 @@ Contributors are promoted to the Collaborator role by adding the GitHub user
 name to one or more ``collaborators`` sections of the :ref:`maintainers_file` in
 the Zephyr repository.
 
-Collaborator votes on pull requests can block or approve the pull request.
+Collaborator change requests on pull requests should
+be addressed by the original submitter. In cases where the changes requested do
+not follow the :ref:`expectations <reviewer-expectations>` and the guidelines
+of the project or in cases of disagreement, it is the responsibility of the
+assignee to advance the review process and resolve any disagreements.
+
+Collaborator approval of pull requests are counted toward the minimum required
+approvals needed to merge a PR. Other criteria for merging may apply.
 
 Maintainer
 ++++++++++
@@ -116,12 +123,15 @@ in addition to those listed for Contributors and Collaborators:
 * Responsibility to ensure all contributions of the project have been reviewed
   within reasonable time.
 * Responsibility to enforce the code of conduct.
+* Responsibility to triage static analysis issues in their code area.
+  See :ref:`static_analysis`.
 
 Contributors or Collaborators are promoted to the Maintainer role by adding the
 GitHub user name to one or more ``maintainers`` sections of the
 :ref:`maintainers_file` in the Zephyr repository.
 
-Maintainer votes on pull requests can block or approve the pull request.
+Maintainer approval of pull requests are counted toward the minimum
+required approvals needed to merge a PR. Other criteria for merging may apply.
 
 Role Retirement
 ###############
@@ -149,14 +159,36 @@ Assignees are set either automatically based on the code being changed or set
 by the other Maintainers, the Release Engineering team can set an assignee when
 the latter is not possible.
 
-* Right to dismiss stale reviews and seek reviews from additional maintainers,
-  developers and contributors
-* Right to block pull requests from being merged
+* Right to dismiss stale and unrelated reviews or reviews not following
+  :ref:`expectations <reviewer-expectations>` from reviewers and seek reviews
+  from additional maintainers, developers and contributors
+* Right to block pull requests from being merged until issues or changes
+  requested are addressed
 * Responsibility to re-assign a pull request if they are the original submitter
   of the code
 * Responsibility to drive the pull request to a mergeable state
 * Solicit approvals from maintainers of the subsystems affected
 * Responsibility to drive the :ref:`pr_technical_escalation` process
+
+Static Analysis Audit Team
+++++++++++++++++++++++++++
+
+The Static Analysis Audit team works closely with the release engineering
+team to ensure that static analysis defects opened during a release
+cycle are properly addressed. The team has the following rights and
+responsibilities:
+
+* Right to revert any triage in a static analysis tool (e.g: Coverity)
+  that does not follow the project expectations.
+* Responsibility to inform code owners about improper classifications.
+* Responsibility to alert TSC if any issues are not adequately addressed by the
+  responsible code owners.
+
+Joining the Static Analysis Audit team
+
+* Contributors highly involved in the project with some expertise
+  in static analysis.
+
 
 .. _release-engineering-team:
 

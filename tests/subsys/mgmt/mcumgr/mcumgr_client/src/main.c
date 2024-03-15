@@ -225,12 +225,12 @@ ZTEST(mcumgr_client, test_os_echo)
 	smp_stub_set_rx_data_verify(NULL);
 	smp_client_send_status_stub(MGMT_ERR_EOK);
 	/* Test timeout */
-	rc = os_mgmt_client_echo(&os_client, os_echo_test);
+	rc = os_mgmt_client_echo(&os_client, os_echo_test, sizeof(os_echo_test));
 	zassert_equal(MGMT_ERR_ETIMEOUT, rc, "Expected to receive %d response %d",
 		      MGMT_ERR_ETIMEOUT, rc);
 	/* Test successfully operation */
 	smp_stub_set_rx_data_verify(os_echo_verify);
-	rc = os_mgmt_client_echo(&os_client, os_echo_test);
+	rc = os_mgmt_client_echo(&os_client, os_echo_test, sizeof(os_echo_test));
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 }
 

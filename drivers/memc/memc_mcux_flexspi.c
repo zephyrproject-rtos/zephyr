@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <soc.h>
 
@@ -60,6 +61,8 @@ struct memc_flexspi_data {
 	struct port_lut port_luts[kFLEXSPI_PortCount];
 	struct memc_flexspi_buf_cfg *buf_cfg;
 	uint8_t buf_cfg_cnt;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 void memc_flexspi_wait_bus_idle(const struct device *dev)
@@ -79,30 +82,56 @@ bool memc_flexspi_is_running_xip(const struct device *dev)
 
 int memc_flexspi_update_clock(const struct device *dev,
 		flexspi_device_config_t *device_config,
-		flexspi_port_t port, enum memc_flexspi_clock_t clock)
+		flexspi_port_t port, uint32_t freq_hz)
 {
-#if CONFIG_SOC_SERIES_IMX_RT10XX
 	struct memc_flexspi_data *data = dev->data;
+	uint32_t rate;
+	uint32_t key;
+	int ret;
 
+	/* To reclock the FlexSPI, we should:
+	 * - disable the module
+	 * - set the new clock
+	 * - reenable the module
+	 * - reset the module
+	 * We CANNOT XIP at any point during this process
+	 */
+	key = irq_lock();
 	memc_flexspi_wait_bus_idle(dev);
 
-	FLEXSPI_Enable(data->base, false);
+	ret = clock_control_set_rate(data->clock_dev, data->clock_subsys,
+				(clock_control_subsys_rate_t)freq_hz);
+	if (ret < 0) {
+		irq_unlock(key);
+		return ret;
+	}
 
-	flexspi_clock_set_div(clock == MEMC_FLEXSPI_CLOCK_166M ? 0 : 3);
-
-	FLEXSPI_Enable(data->base, true);
-
+	/*
+	 * We need to update the DLL value before we call clock_control_get_rate,
+	 * because this will cause XIP (flash reads) to occur. Although the
+	 * true flash clock is not known, assume the set_rate function programmed
+	 * a value close to what we requested.
+	 */
+	device_config->flexspiRootClk = freq_hz;
+	FLEXSPI_UpdateDllValue(data->base, device_config, port);
 	memc_flexspi_reset(dev);
 
-	device_config->flexspiRootClk = flexspi_clock_get_freq();
+	memc_flexspi_wait_bus_idle(dev);
+	ret = clock_control_get_rate(data->clock_dev, data->clock_subsys, &rate);
+	if (ret < 0) {
+		irq_unlock(key);
+		return ret;
+	}
+
+
+	device_config->flexspiRootClk = rate;
 	FLEXSPI_UpdateDllValue(data->base, device_config, port);
 
 	memc_flexspi_reset(dev);
 
+	irq_unlock(key);
+
 	return 0;
-#else
-	return -ENOTSUP;
-#endif
 }
 
 int memc_flexspi_set_device_config(const struct device *dev,
@@ -332,6 +361,9 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.buf_cfg_cnt = sizeof(buf_cfg_##n) /			\
 			sizeof(struct memc_flexspi_buf_cfg),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),     \
+		.clock_subsys = (clock_control_subsys_t)                \
+			DT_INST_CLOCKS_CELL(n, name),                   \
 	};								\
 									\
 	PM_DEVICE_DT_INST_DEFINE(n, memc_flexspi_pm_action);		\

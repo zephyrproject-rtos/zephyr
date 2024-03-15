@@ -1,0 +1,5 @@
+board:
+  name: nrf52840dongle
+  vendor: nordic
+  socs:
+  - name: nrf52840

@@ -1,4 +1,4 @@
-description: ST STM32 FDCAN CAN-FD controller
+description: ST STM32 FDCAN CAN FD controller
 
 compatible: "st,stm32-fdcan"
 
@@ -9,6 +9,9 @@ properties:
     required: true
 
   interrupts:
+    required: true
+
+  interrupt-names:
     required: true
 
   clocks:

@@ -272,6 +272,48 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 /* Value to shift out when no application data needs transmitting. */
 #define SPI_STM32_TX_NOP 0x00
 
+static void spi_stm32_send_next_frame(SPI_TypeDef *spi,
+		struct spi_stm32_data *data)
+{
+	const uint8_t frame_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
+	uint32_t tx_frame = SPI_STM32_TX_NOP;
+
+	if (frame_size == 8) {
+		if (spi_context_tx_buf_on(&data->ctx)) {
+			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+		}
+		LL_SPI_TransmitData8(spi, tx_frame);
+		spi_context_update_tx(&data->ctx, 1, 1);
+	} else {
+		if (spi_context_tx_buf_on(&data->ctx)) {
+			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
+		}
+		LL_SPI_TransmitData16(spi, tx_frame);
+		spi_context_update_tx(&data->ctx, 2, 1);
+	}
+}
+
+static void spi_stm32_read_next_frame(SPI_TypeDef *spi,
+		struct spi_stm32_data *data)
+{
+	const uint8_t frame_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
+	uint32_t rx_frame = 0;
+
+	if (frame_size == 8) {
+		rx_frame = LL_SPI_ReceiveData8(spi);
+		if (spi_context_rx_buf_on(&data->ctx)) {
+			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+		}
+		spi_context_update_rx(&data->ctx, 1, 1);
+	} else {
+		rx_frame = LL_SPI_ReceiveData16(spi);
+		if (spi_context_rx_buf_on(&data->ctx)) {
+			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+		}
+		spi_context_update_rx(&data->ctx, 2, 1);
+	}
+}
+
 static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 {
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
@@ -296,69 +338,42 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
-/* Shift a SPI frame as master. */
-static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static void spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	uint16_t tx_frame = SPI_STM32_TX_NOP;
-	uint16_t rx_frame;
-
-	while (!ll_func_tx_is_empty(spi)) {
-		/* NOP */
+	if (ll_func_rx_is_not_empty(spi)) {
+		spi_stm32_read_next_frame(spi, data);
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	/* With the STM32MP1, STM32U5 and the STM32H7,
-	 * if the device is the SPI master,
-	 * we need to enable the start of the transfer with
-	 * LL_SPI_StartMasterTransfer(spi)
-	 */
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		LL_SPI_StartMasterTransfer(spi);
-		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+	if (ll_func_tx_is_not_full(spi)) {
+		spi_stm32_send_next_frame(spi, data);
+	}
+}
+
+/* Shift a SPI frame as master. */
+static void spi_stm32_shift_m(const struct spi_stm32_config *cfg,
+			      struct spi_stm32_data *data)
+{
+	if (cfg->fifo_enabled) {
+		spi_stm32_shift_fifo(cfg->spi, data);
+	} else {
+		while (!ll_func_tx_is_not_full(cfg->spi)) {
 			/* NOP */
 		}
-	}
-#endif
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
-		}
-		LL_SPI_TransmitData8(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 1, 1);
-	} else {
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-		}
-		LL_SPI_TransmitData16(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 2, 1);
-	}
+		spi_stm32_send_next_frame(cfg->spi, data);
 
-	while (!ll_func_rx_is_not_empty(spi)) {
-		/* NOP */
-	}
+		while (!ll_func_rx_is_not_empty(cfg->spi)) {
+			/* NOP */
+		}
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		rx_frame = LL_SPI_ReceiveData8(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
-		}
-		spi_context_update_rx(&data->ctx, 1, 1);
-	} else {
-		rx_frame = LL_SPI_ReceiveData16(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
-		}
-		spi_context_update_rx(&data->ctx, 2, 1);
+		spi_stm32_read_next_frame(cfg->spi, data);
 	}
 }
 
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
+	if (ll_func_tx_is_not_full(spi) && spi_context_tx_on(&data->ctx)) {
 		uint16_t tx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
@@ -396,17 +411,18 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
  *
  * TODO: support 16-bit data frames.
  */
-static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
+	struct spi_stm32_data *data)
 {
 	uint16_t operation = data->ctx.config->operation;
 
 	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
-		spi_stm32_shift_m(spi, data);
+		spi_stm32_shift_m(cfg, data);
 	} else {
-		spi_stm32_shift_s(spi, data);
+		spi_stm32_shift_s(cfg->spi, data);
 	}
 
-	return spi_stm32_get_err(spi);
+	return spi_stm32_get_err(cfg->spi);
 }
 
 static void spi_stm32_cs_control(const struct device *dev, bool on)
@@ -438,9 +454,15 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	ll_func_disable_int_tx_empty(spi);
 	ll_func_disable_int_rx_not_empty(spi);
 	ll_func_disable_int_errors(spi);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_DisableIT_EOT(spi);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 #endif
 
-	spi_stm32_cs_control(dev, false);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
@@ -453,11 +475,23 @@ static void spi_stm32_complete(const struct device *dev, int status)
 		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
+
+		spi_stm32_cs_control(dev, false);
 	}
+
 	/* BSY flag is cleared when MODF flag is raised */
 	if (LL_SPI_IsActiveFlag_MODF(spi)) {
 		LL_SPI_ClearFlag_MODF(spi);
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_ClearFlag_TXTF(spi);
+		LL_SPI_ClearFlag_OVR(spi);
+		LL_SPI_ClearFlag_EOT(spi);
+		LL_SPI_SetTransferSize(spi, 0);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 	ll_func_disable_spi(spi);
 
@@ -474,6 +508,15 @@ static void spi_stm32_isr(const struct device *dev)
 	SPI_TypeDef *spi = cfg->spi;
 	int err;
 
+	/* Some spurious interrupts are triggered when SPI is not enabled; ignore them.
+	 * Do it only when fifo is enabled to leave non-fifo functionality untouched for now
+	 */
+	if (cfg->fifo_enabled) {
+		if (!LL_SPI_IsEnabled(spi)) {
+			return;
+		}
+	}
+
 	err = spi_stm32_get_err(spi);
 	if (err) {
 		spi_stm32_complete(dev, err);
@@ -481,7 +524,7 @@ static void spi_stm32_isr(const struct device *dev)
 	}
 
 	if (spi_stm32_transfer_ongoing(data)) {
-		err = spi_stm32_shift_frames(spi, data);
+		err = spi_stm32_shift_frames(cfg, data);
 	}
 
 	if (err || !spi_stm32_transfer_ongoing(data)) {
@@ -617,6 +660,11 @@ static int spi_stm32_configure(const struct device *dev,
 		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_16BIT);
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_SetMasterSSIdleness(spi, cfg->mssi_clocks);
+	LL_SPI_SetInterDataIdleness(spi, (cfg->midi_clocks << SPI_CFG2_MIDI_Pos));
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	ll_func_set_fifo_threshold_8bit(spi);
 #endif
@@ -644,6 +692,52 @@ static int spi_stm32_release(const struct device *dev,
 
 	return 0;
 }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
+					     const struct spi_buf_set *bufs)
+{
+	if (bufs == NULL) {
+		return 0;
+	}
+
+	uint32_t num_bytes = 0;
+
+	for (size_t i = 0; i < bufs->count; i++) {
+		num_bytes += bufs->buffers[i].len;
+	}
+
+	uint8_t bytes_per_frame = SPI_WORD_SIZE_GET(config->operation) / 8;
+
+	if ((num_bytes % bytes_per_frame) != 0) {
+		return -EINVAL;
+	}
+	return num_bytes / bytes_per_frame;
+}
+
+static int32_t spi_stm32_count_total_frames(const struct spi_config *config,
+					    const struct spi_buf_set *tx_bufs,
+					    const struct spi_buf_set *rx_bufs)
+{
+	int tx_frames = spi_stm32_count_bufset_frames(config, tx_bufs);
+
+	if (tx_frames < 0) {
+		return tx_frames;
+	}
+
+	int rx_frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+
+	if (rx_frames < 0) {
+		return rx_frames;
+	}
+
+	if (tx_frames > UINT16_MAX || rx_frames > UINT16_MAX) {
+		return -EMSGSIZE;
+	}
+
+	return MAX(rx_frames, tx_frames);
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 static int transceive(const struct device *dev,
 		      const struct spi_config *config,
@@ -682,6 +776,19 @@ static int transceive(const struct device *dev,
 		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		int total_frames = spi_stm32_count_total_frames(
+			config, tx_bufs, rx_bufs);
+		if (total_frames < 0) {
+			ret = total_frames;
+			goto end;
+		}
+		LL_SPI_SetTransferSize(spi, (uint32_t)total_frames);
+	}
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
 	while (ll_func_rx_is_not_empty(spi)) {
@@ -690,6 +797,20 @@ static int transceive(const struct device *dev,
 #endif
 
 	LL_SPI_Enable(spi);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	/* With the STM32MP1, STM32U5 and the STM32H7,
+	 * if the device is the SPI master,
+	 * we need to enable the start of the transfer with
+	 * LL_SPI_StartMasterTransfer(spi)
+	 */
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 #if CONFIG_SOC_SERIES_STM32H7X
 	/*
@@ -703,6 +824,13 @@ static int transceive(const struct device *dev,
 	spi_stm32_cs_control(dev, true);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_EnableIT_EOT(spi);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 	ll_func_enable_int_errors(spi);
 
 	if (rx_bufs) {
@@ -714,7 +842,7 @@ static int transceive(const struct device *dev,
 	ret = spi_context_wait_for_completion(&data->ctx);
 #else
 	do {
-		ret = spi_stm32_shift_frames(spi, data);
+		ret = spi_stm32_shift_frames(cfg, data);
 	} while (!ret && spi_stm32_transfer_ongoing(data));
 
 	spi_stm32_complete(dev, ret);
@@ -902,9 +1030,15 @@ static int transceive_dma(const struct device *dev,
 		}
 #endif
 
+#ifdef CONFIG_SPI_STM32_ERRATA_BUSY
+		WAIT_FOR(ll_func_spi_dma_busy(spi) != 0,
+			 CONFIG_SPI_STM32_BUSY_FLAG_TIMEOUT,
+			 k_yield());
+#else
 		/* wait until spi is no more busy (spi TX fifo is really empty) */
 		while (ll_func_spi_dma_busy(spi) == 0) {
 		}
+#endif
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		/* toggle the DMA transfer request */
@@ -1120,15 +1254,9 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define SPI_DMA_STATUS_SEM(id)
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-#define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
-	.use_subghzspi_nss = DT_INST_PROP_OR(				\
-			id, use_subghzspi_nss, false),
-#else
-#define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)
-#endif
-
-
+#define SPI_SUPPORTS_FIFO(id)	DT_INST_NODE_HAS_PROP(id, fifo_enable)
+#define SPI_GET_FIFO_PROP(id)	DT_INST_PROP(id, fifo_enable)
+#define SPI_FIFO_ENABLED(id)	COND_CODE_1(SPI_SUPPORTS_FIFO(id), (SPI_GET_FIFO_PROP(id)), (0))
 
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
@@ -1143,8 +1271,17 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pclken = pclken_##id,						\
 	.pclk_len = DT_INST_NUM_CLOCKS(id),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
+	.fifo_enabled = SPI_FIFO_ENABLED(id),				\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
-	STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
+		(.use_subghzspi_nss =					\
+			DT_INST_PROP_OR(id, use_subghzspi_nss, false),))\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi),		\
+		(.midi_clocks =						\
+			DT_INST_PROP(id, midi_clock),))			\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi),		\
+		(.mssi_clocks =						\
+			DT_INST_PROP(id, mssi_clock),))			\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\

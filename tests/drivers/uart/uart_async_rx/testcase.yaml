@@ -1,0 +1,17 @@
+tests:
+  drivers.uart.async_rx:
+    filter: CONFIG_SERIAL_HAS_DRIVER
+    tags: drivers uart
+    integration_platforms:
+      - native_sim
+  drivers.uart.async_rx.ztress:
+    tags: drivers uart
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000

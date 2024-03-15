@@ -1,0 +1,90 @@
+# Nordic Semiconductor nRF52 MCU line, Zephyr hw model v2 compliant
+
+# Copyright (c) 2022-2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF52X
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Enable support for NRF52 MCU series
+
+config SOC_NRF52805
+	bool
+	select SOC_SERIES_NRF52X
+
+config SOC_NRF52810
+	bool
+	select SOC_SERIES_NRF52X
+
+config SOC_NRF52811
+	bool
+	select SOC_SERIES_NRF52X
+
+config SOC_NRF52820
+	bool
+	select SOC_SERIES_NRF52X
+
+config SOC_NRF52832
+	bool
+	select SOC_SERIES_NRF52X
+
+config SOC_NRF52833
+	bool
+	select SOC_SERIES_NRF52X
+
+config SOC_NRF52840
+	bool
+	select SOC_SERIES_NRF52X
+
+config SOC_NRF52805_CAAA
+	bool
+	select SOC_NRF52805
+
+config SOC_NRF52810_QFAA
+	bool
+	select SOC_NRF52810
+
+config SOC_NRF52811_QFAA
+	bool
+	select SOC_NRF52811
+
+config SOC_NRF52820_QDAA
+	bool
+	select SOC_NRF52820
+
+config SOC_NRF52832_CIAA
+	bool
+	select SOC_NRF52832
+
+config SOC_NRF52832_QFAA
+	bool
+	select SOC_NRF52832
+
+config SOC_NRF52832_QFAB
+	bool
+	select SOC_NRF52832
+
+config SOC_NRF52833_QDAA
+	bool
+	select SOC_NRF52833
+
+config SOC_NRF52833_QIAA
+	bool
+	select SOC_NRF52833
+
+config SOC_NRF52840_QFAA
+	bool
+	select SOC_NRF52840
+
+config SOC_NRF52840_QIAA
+	bool
+	select SOC_NRF52840
+
+config SOC
+	default "nrf52805" if SOC_NRF52805_CAAA
+	default "nrf52810" if SOC_NRF52810_QFAA
+	default "nrf52811" if SOC_NRF52811_QFAA
+	default "nrf52820" if SOC_NRF52820_QDAA
+	default "nrf52832" if SOC_NRF52832_CIAA || SOC_NRF52832_QFAA || SOC_NRF52832_QFAB
+	default "nrf52833" if SOC_NRF52833_QDAA || SOC_NRF52833_QIAA
+	default "nrf52840" if SOC_NRF52840_QFAA || SOC_NRF52840_QIAA

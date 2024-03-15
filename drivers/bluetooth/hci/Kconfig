@@ -10,6 +10,7 @@ config BT_UART
 	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 
+
 choice BT_HCI_BUS_TYPE
 	prompt "Bluetooth HCI driver"
 
@@ -28,14 +29,21 @@ config BT_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+# Removed: Here only to give the user a warning about its removal
+# Remove after 3.7.0 is released
 config BT_RPMSG
-	bool "HCI using RPMsg"
+	bool "[REMOVED] HCI using RPMsg"
+	help
+	  Use BT_HCI_IPC instead
+
+config BT_HCI_IPC
+	bool "HCI using the IPC subsystem"
 	select BT_HAS_HCI_VS
 	select IPC_SERVICE
 	select MBOX
 	help
 	  Bluetooth HCI driver for communication with another CPU
-	  using RPMsg framework.
+	  using the IPC subsystem.
 
 config BT_SPI
 	bool "SPI HCI"
@@ -53,6 +61,12 @@ config BT_STM32_IPM
 	select HAS_STM32LIB
 	help
 	  TODO
+
+config BT_STM32WBA
+	bool "STM32WBA HCI driver"
+	select HAS_STM32LIB
+	help
+	  ST STM32WBA HCI Bluetooth interface
 
 config BT_SILABS_HCI
 	bool "Silicon Labs Bluetooth interface"
@@ -102,6 +116,16 @@ config BT_NO_DRIVER
 	  This is intended for unit tests where no internal driver
 	  should be selected.
 
+config BT_AMBIQ_HCI
+	bool "AMBIQ BT HCI driver"
+	select SPI
+	select GPIO
+	select CLOCK_CONTROL
+	select BT_HCI_SETUP
+	help
+	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transfers.
+
 endchoice
 
 if BT_SPI
@@ -112,27 +136,34 @@ config BT_SPI_INIT_PRIORITY
 
 config BT_BLUENRG_ACI
 	bool "ACI message with with BlueNRG-based devices"
-	help
-	  Enable support for devices compatible with the BlueNRG Bluetooth
-	  Stack. Current driver supports: ST BLUENRG-MS.
-
-config BT_SPI_BLUENRG
-	bool "Compatibility with BlueNRG-based devices"
+	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
 endif # BT_SPI
 
+if BT_AMBIQ_HCI
+
+config BT_HCI_INIT_PRIORITY
+	int "BT HCI init priority"
+	default 75
+	help
+	  The priority of BT HCI driver initialization needs to be lower than
+	  the SPI, GPIO, clock controller drivers initialization priorities.
+
+endif # BT_AMBIQ_HCI
+
 config BT_STM32_IPM_RX_STACK_SIZE
 	int "STM32 IPM stack size for RX thread"
 	depends on BT_STM32_IPM
 	default 512
 
-menuconfig BT_CYW43XXX
-	bool "CYW43XXX BT connectivity"
+menuconfig BT_AIROC
+	bool "AIROC BT connectivity"
 	default y
 	select BT_HCI_SETUP
+	select UART_USE_RUNTIME_CONFIGURE
 	depends on GPIO
 	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
 	depends on BT_H4
@@ -145,7 +176,7 @@ source "drivers/bluetooth/hci/Kconfig.infineon"
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
-	default y if BT_RPMSG || BT_ESP32
+	default y if BT_HCI_IPC || BT_ESP32
 	help
 	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
 	  Update procedure for new connections for controllers that do not
@@ -154,6 +185,19 @@ config BT_DRIVER_QUIRK_NO_AUTO_DLE
 
 	  This has to be enabled when the BLE controller connected is Zephyr
 	  open source controller.
+
+config BT_HCI_SET_PUBLIC_ADDR
+	bool
+	select BT_HCI_SETUP
+	help
+	  Pass the controller's public address to the HCI driver in setup()
+
+	  This option should be enabled by drivers for controllers that support setting the
+	  public identity through vendor-specific commands. They can then implement the
+	  setup() HCI driver API function and get the address to set from the public_addr field.
+
+	  From the application side, the public address is set using the first call to
+	  bt_id_create(), before calling bt_enable().
 
 config BT_HCI_SETUP
 	bool
@@ -176,7 +220,7 @@ config BT_DRV_TX_STACK_SIZE
 
 config BT_DRV_RX_STACK_SIZE
 	int
-	default 512 if BT_SPI
+	default 640 if (BT_SPI || BT_AMBIQ_HCI)
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default 256

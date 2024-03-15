@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Nuvoton Technology Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton NuMaker CAN-FD controller, using Bosch M_CAN IP
+description: Nuvoton NuMaker CAN FD controller, using Bosch M_CAN IP
 
 compatible: "nuvoton,numaker-canfd"
 
@@ -12,6 +12,9 @@ properties:
     required: true
 
   interrupts:
+    required: true
+
+  interrupt-names:
     required: true
 
   resets:

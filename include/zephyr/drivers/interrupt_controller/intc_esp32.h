@@ -249,7 +249,7 @@ int esp_intr_get_intno(struct intr_handle_data_t *handle);
  * @brief Disable the interrupt associated with the handle
  *
  * @note
- * 1. For local interrupts (ESP_INTERNAL_* sources), this function has to be called on the
+ * 1. For local interrupts (``ESP_INTERNAL_*`` sources), this function has to be called on the
  * CPU the interrupt is allocated on. Other interrupts have no such restriction.
  * 2. When several handlers sharing a same interrupt source, interrupt status bits, which are
  * handled in the handler to be disabled, should be masked before the disabling, or handled
@@ -266,7 +266,7 @@ int esp_intr_disable(struct intr_handle_data_t *handle);
 /**
  * @brief Enable the interrupt associated with the handle
  *
- * @note For local interrupts (ESP_INTERNAL_* sources), this function has to be called on the
+ * @note For local interrupts (``ESP_INTERNAL_*`` sources), this function has to be called on the
  *       CPU the interrupt is allocated on. Other interrupts have no such restriction.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus

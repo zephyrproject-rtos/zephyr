@@ -3,7 +3,7 @@
 
 menuconfig BINDESC
 	bool "Binary Descriptors"
-	depends on ARCH_SUPPORTS_ROM_START || BOARD_NATIVE_POSIX
+	depends on ARCH_SUPPORTS_ROM_START || ARCH_POSIX
 	help
 	  Binary Descriptors - constant data accessible outside of the executable image
 

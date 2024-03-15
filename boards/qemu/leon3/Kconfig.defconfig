@@ -1,0 +1,10 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_LEON3
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif

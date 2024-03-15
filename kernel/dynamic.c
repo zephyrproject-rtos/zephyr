@@ -7,11 +7,12 @@
 #include "kernel_internal.h"
 
 #include <zephyr/kernel.h>
+#include <ksched.h>
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/kobject.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -120,20 +121,14 @@ static void dyn_cb(const struct k_thread *thread, void *user_data)
 
 int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 {
-	char state_buf[16] = {0};
 	struct dyn_cb_data data = {.stack = stack};
 
 	/* Get a possible tid associated with stack */
 	k_thread_foreach(dyn_cb, &data);
 
 	if (data.tid != NULL) {
-		/* Check if thread is in use */
-		if (k_thread_state_str(data.tid, state_buf, sizeof(state_buf)) != state_buf) {
-			LOG_ERR("tid %p is invalid!", data.tid);
-			return -EINVAL;
-		}
-
-		if (!(strcmp("dummy", state_buf) == 0) || (strcmp("dead", state_buf) == 0)) {
+		if (!(z_is_thread_state_set(data.tid, _THREAD_DUMMY) ||
+		      z_is_thread_state_set(data.tid, _THREAD_DEAD))) {
 			LOG_ERR("tid %p is in use!", data.tid);
 			return -EBUSY;
 		}
@@ -152,7 +147,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
 #ifdef CONFIG_USERSPACE
-		if (z_object_find(stack)) {
+		if (k_object_find(stack)) {
 			k_object_free(stack);
 		} else {
 			k_free(stack);
@@ -161,7 +156,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 		k_free(stack);
 #endif
 	} else {
-		LOG_ERR("Invalid stack %p", stack);
+		LOG_DBG("Invalid stack %p", stack);
 		return -EINVAL;
 	}
 

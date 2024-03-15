@@ -1,0 +1,14 @@
+identifier: stm32wb5mm_dk
+name: ST STM32WB5MM-DK Discovery Development Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024
+supported:
+  - gpio
+  - uart
+vendor: st

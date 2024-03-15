@@ -44,7 +44,7 @@ properties:
     description: |
       Reference frequency of the used clock source in KHz.
       The internal clock oscillates at around 43360 KHz (43.36 MHz)
-      at 20 degrees Celcius.
+      at 20 degrees Celsius.
       Recommended external clock source frequency is 40000 KHz (40 MHz).
 
   rr-sequence:

@@ -390,7 +390,7 @@ uint8_t ll_rl_remove(bt_addr_le_t *id_addr)
 			/* Swap with last item */
 			uint8_t pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
 
-			if (pj && pi != pj) {
+			if (pj && (pj < ARRAY_SIZE(peer_irks)) && (pi != pj)) {
 				(void)memcpy(peer_irks[pi], peer_irks[pj],
 					     IRK_SIZE);
 				for (k = 0U;

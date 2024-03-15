@@ -157,7 +157,7 @@ static void flash_stm32_flush_caches(const struct device *dev,
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(CONFIG_FLASH_BASE_ADDRESS
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS
 						  + offset), len);
 #endif
 }
@@ -178,7 +178,7 @@ static int flash_stm32_read(const struct device *dev, off_t offset,
 
 	LOG_DBG("Read offset: %ld, len: %zu", (long int) offset, len);
 
-	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *) FLASH_STM32_BASE_ADDRESS + offset, len);
 
 	return 0;
 }
@@ -562,7 +562,8 @@ static int stm32_flash_init(const struct device *dev)
 
 	flash_stm32_sem_init(dev);
 
-	LOG_DBG("Flash initialized. BS: %zu",
+	LOG_DBG("Flash @0x%x initialized. BS: %zu",
+		FLASH_STM32_BASE_ADDRESS,
 		flash_stm32_parameters.write_block_size);
 
 	/* Check Flash configuration */

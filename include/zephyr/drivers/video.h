@@ -611,6 +611,9 @@ void video_buffer_release(struct video_buffer *buf);
 /** RGB565 pixel format */
 #define VIDEO_PIX_FMT_RGB565 video_fourcc('R', 'G', 'B', 'P') /* 16  RGB-5-6-5 */
 
+/** XRGB32 pixel format */
+#define VIDEO_PIX_FMT_XRGB32 video_fourcc('B', 'X', '2', '4') /* 32  XRGB-8-8-8-8 */
+
 /**
  * @}
  */

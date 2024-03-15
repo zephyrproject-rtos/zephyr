@@ -1,0 +1,24 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET MAC/L2 Device
+
+compatible: "nxp,enet-mac"
+
+include: ["ethernet-controller.yaml", "ethernet,fixed-link.yaml", "pinctrl-device.yaml"]
+
+properties:
+  interrupts:
+    required: true
+
+  nxp,mdio:
+    type: phandle
+    required: true
+    description: |
+      Corresponding mdio device
+
+  nxp,ptp-clock:
+    type: phandle
+    required: true
+    description: |
+      Corresponding ptp clock device

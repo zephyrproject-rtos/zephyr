@@ -6,7 +6,7 @@ Mesh models
 Foundation models
 *****************
 
-The Bluetooth mesh specification defines foundation models that can be
+The Bluetooth Mesh specification defines foundation models that can be
 used by network administrators to configure and diagnose mesh nodes.
 
 .. toctree::
@@ -34,7 +34,7 @@ used by network administrators to configure and diagnose mesh nodes.
 Model specification models
 **************************
 
-In addition to the foundation models defined in the Bluetooth mesh specification, the Bluetooth Mesh
+In addition to the foundation models defined in the Bluetooth Mesh specification, the Bluetooth Mesh
 Model Specification defines several models, some of which are implemented in Zephyr:
 
 .. toctree::

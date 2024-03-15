@@ -7,7 +7,7 @@
 #include <zephyr/modem/backend/tty.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(modem_backend_tty);
+LOG_MODULE_REGISTER(modem_backend_tty, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -73,8 +73,11 @@ static int modem_backend_tty_open(void *data)
 static int modem_backend_tty_transmit(void *data, const uint8_t *buf, size_t size)
 {
 	struct modem_backend_tty *backend = (struct modem_backend_tty *)data;
+	int ret;
 
-	return write(backend->tty_fd, buf, size);
+	ret = write(backend->tty_fd, buf, size);
+	modem_pipe_notify_transmit_idle(&backend->pipe);
+	return ret;
 }
 
 static int modem_backend_tty_receive(void *data, uint8_t *buf, size_t size)

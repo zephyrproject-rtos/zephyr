@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	cs-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>;	/* A1 */
+
+	bluenrg-2@0 {
+		compatible = "st,hci-spi-v2";
+		reg = <0>;
+		reset-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;  /* D7 */
+		irq-gpios = <&arduino_header 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;  /* A0 */
+		spi-cpha; /* CPHA=1 */
+		spi-hold-cs;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-assert-duration-ms = <6>;
+	};
+};

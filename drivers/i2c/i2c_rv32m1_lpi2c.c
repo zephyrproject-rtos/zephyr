@@ -15,6 +15,7 @@
 #include <zephyr/irq.h>
 #include <fsl_lpi2c.h>
 #include <zephyr/logging/log.h>
+#include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 
 LOG_MODULE_REGISTER(rv32m1_lpi2c);

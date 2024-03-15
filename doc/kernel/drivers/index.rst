@@ -235,11 +235,11 @@ implementation of both the subsystem API and the specific APIs:
 
    #ifdef CONFIG_USERSPACE
 
-   #include <zephyr/syscall_handler.h>
+   #include <zephyr/internal/syscall_handler.h>
 
    int z_vrfy_specific_from_user(const struct device *dev, int bar)
    {
-       Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
+       K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
        return z_impl_specific_do_that(dev, bar)
    }
 
@@ -343,13 +343,6 @@ allow the user to specify at what time during the boot sequence the init
 function will be executed. Any driver will specify one of four
 initialization levels:
 
-``EARLY``
-        Used very early in the boot process, right after entering the C domain
-        (``z_cstart()``). This can be used in architectures and SoCs that extend
-        or implement architecture code and use drivers or system services that
-        have to be initialized before the Kernel calls any architecture specific
-        initialization code.
-
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
         solely on hardware present in the processor/SOC. These devices cannot
@@ -367,12 +360,6 @@ initialization levels:
 ``POST_KERNEL``
         Used for devices that require kernel services during configuration.
         Init functions at this level run in context of the kernel main task.
-
-``APPLICATION``
-        Used for application components (i.e. non-kernel components) that need
-        automatic configuration. These devices can use all services provided by
-        the kernel during configuration. Init functions at this level run on
-        the kernel main task.
 
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified
@@ -393,6 +380,18 @@ In some cases you may just need to run a function at boot. For such cases, the
 :c:macro:`SYS_INIT` can be used. This macro does not take any config or runtime
 data structures and there isn't a way to later get a device pointer by name. The
 same device policies for initialization level and priority apply.
+
+Inspecting the initialization sequence
+**************************************
+
+Device drivers declared with :c:macro:`DEVICE_DEFINE` (or any variations of it)
+and :c:macro:`SYS_INIT` are processed at boot time and the corresponding
+initialization functions are called sequentially according to their specified
+level and priority.
+
+Sometimes it's useful to inspect the final sequence of initialization function
+call as produced by the linker. To do that, use the ``initlevels`` CMake
+target, for example ``west build -t initlevels``.
 
 Error handling
 **************

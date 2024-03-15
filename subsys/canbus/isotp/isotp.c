@@ -54,9 +54,7 @@ static inline void prepare_filter(struct can_filter *filter, struct isotp_msg_id
 {
 	filter->id = addr->ext_id;
 	filter->mask = mask;
-	filter->flags = CAN_FILTER_DATA |
-			((addr->flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0) |
-			((addr->flags & ISOTP_MSG_FDF) != 0 ? CAN_FILTER_FDF : 0);
+	filter->flags = (addr->flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0;
 }
 
 /*
@@ -126,7 +124,7 @@ static inline uint32_t receive_get_sf_length(struct net_buf *buf, bool fdf)
 {
 	uint8_t len = net_buf_pull_u8(buf) & ISOTP_PCI_SF_DL_MASK;
 
-	/* Single frames > 8 bytes (CAN-FD only) */
+	/* Single frames > 8 bytes (CAN FD only) */
 	if (IS_ENABLED(CONFIG_CAN_FD_MODE) && fdf && !len) {
 		len = net_buf_pull_u8(buf);
 	}
@@ -433,7 +431,7 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 #endif
 		sf_len = frame->data[index] & ISOTP_PCI_SF_DL_MASK;
 
-		/* Single frames > 8 bytes (CAN-FD only) */
+		/* Single frames > 8 bytes (CAN FD only) */
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE) && (rctx->rx_addr.flags & ISOTP_MSG_FDF) != 0 &&
 		    can_dl > ISOTP_4BIT_SF_MAX_CAN_DL) {
 			if (sf_len != 0) {
@@ -558,6 +556,10 @@ static void receive_can_rx(const struct device *dev, struct can_frame *frame, vo
 	struct isotp_recv_ctx *rctx = (struct isotp_recv_ctx *)arg;
 
 	ARG_UNUSED(dev);
+
+	if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) && (frame->flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
 
 	switch (rctx->state) {
 	case ISOTP_RX_STATE_WAIT_FF_SF:
@@ -849,6 +851,10 @@ static void send_can_rx_cb(const struct device *dev, struct can_frame *frame, vo
 
 	ARG_UNUSED(dev);
 
+	if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) && (frame->flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
+
 	if (sctx->state == ISOTP_TX_WAIT_FC) {
 		k_timer_stop(&sctx->timer);
 		send_process_fc(sctx, frame);
@@ -920,7 +926,7 @@ static inline int send_sf(struct isotp_send_ctx *sctx)
 	    (IS_ENABLED(CONFIG_CAN_FD_MODE) && (sctx->tx_addr.flags & ISOTP_MSG_FDF) != 0 &&
 	     len + index > ISOTP_PADDED_FRAME_DL_MIN)) {
 		/* AUTOSAR requirements SWS_CanTp_00348 / SWS_CanTp_00351.
-		 * Mandatory for ISO-TP CAN-FD frames > 8 bytes.
+		 * Mandatory for ISO-TP CAN FD frames > 8 bytes.
 		 */
 		frame.dlc = can_bytes_to_dlc(
 			MAX(ISOTP_PADDED_FRAME_DL_MIN, len + index));
@@ -1003,7 +1009,7 @@ static inline int send_cf(struct isotp_send_ctx *sctx)
 	    (IS_ENABLED(CONFIG_CAN_FD_MODE) && (sctx->tx_addr.flags & ISOTP_MSG_FDF) != 0 &&
 	     len + index > ISOTP_PADDED_FRAME_DL_MIN)) {
 		/* AUTOSAR requirements SWS_CanTp_00348 / SWS_CanTp_00351.
-		 * Mandatory for ISO-TP CAN-FD frames > 8 bytes.
+		 * Mandatory for ISO-TP CAN FD frames > 8 bytes.
 		 */
 		frame.dlc = can_bytes_to_dlc(
 			MAX(ISOTP_PADDED_FRAME_DL_MIN, len + index));
@@ -1243,7 +1249,7 @@ static int send(struct isotp_send_ctx *sctx, const struct device *can_dev,
 	len = get_send_ctx_data_len(sctx);
 	LOG_DBG("Send %zu bytes to addr 0x%x and listen on 0x%x", len,
 		sctx->tx_addr.ext_id, sctx->rx_addr.ext_id);
-	/* Single frames > 8 bytes use an additional byte for length (CAN-FD only) */
+	/* Single frames > 8 bytes use an additional byte for length (CAN FD only) */
 	if (len > sctx->tx_addr.dl - (((tx_addr->flags & ISOTP_MSG_EXT_ADDR) != 0) ? 2 : 1) -
 			  ((sctx->tx_addr.dl > ISOTP_4BIT_SF_MAX_CAN_DL) ? 1 : 0)) {
 		ret = add_fc_filter(sctx);

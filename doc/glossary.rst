@@ -51,7 +51,7 @@ Glossary of Terms
 
    device runtime power management
       Device Runtime Power Management (PM) refers the capability of devices to
-      save energy independently of the the system power state. Devices will keep
+      save energy independently of the system power state. Devices will keep
       reference of their usage and will automatically be suspended or resumed.
       This feature is enabled via the :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
       Kconfig option.
@@ -89,7 +89,7 @@ Glossary of Terms
 
    system power state
       System power states describe the power consumption of the system as a
-      whole. System power states are are represented by :c:enum:`pm_state`.
+      whole. System power states are represented by :c:enum:`pm_state`.
 
    west
       A multi-repo meta-tool developed for the Zephyr project. See :ref:`west`.

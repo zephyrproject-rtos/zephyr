@@ -181,7 +181,7 @@ The following backends are currently supported:
 
 * UART
 * USB
-* File (Using native posix port)
+* File (Using the native port with POSIX architecture based targets)
 * RTT (With SystemView)
 * RAM (buffer to be retrieved by a debugger)
 
@@ -191,14 +191,14 @@ Using Tracing
 The sample :zephyr_file:`samples/subsys/tracing` demonstrates tracing with
 different formats and backends.
 
-To get started, the simplest way is to use the CTF format with the ``native_posix``
+To get started, the simplest way is to use the CTF format with the :ref:`native_sim <native_sim>`
 port, build the sample as follows:
 
 .. zephyr-app-commands::
    :tool: all
    :app: samples/subsys/tracing
-   :board: native_posix
-   :gen-args: -DCONF_FILE=prj_native_posix_ctf.conf
+   :board: native_sim
+   :gen-args: -DCONF_FILE=prj_native_ctf.conf
    :goals: build
 
 You can then run the resulting binary with the option ``-trace-file`` to generate
@@ -343,14 +343,14 @@ Locking may not be needed if multiple independent channels are available.
         ``emit(a,thread_id); emit(b,thread_id); emit(c,thread_id);``
 
   - The system has atomic write     but one shared channel
-        E.g. ``native_posix`` or board with DMA. May or may not need locking.
+        E.g. ``native_sim`` or board with DMA. May or may not need locking.
 
         ``emit(a ## b ## c); /* Concat to buffer */``
 
         ``lock(); emit(a); emit(b); emit(c); release(); /* No extra mem */``
 
   - The system has atomic write     and many channels
-        E.g. native_posix or board with multi-channel DMA. Lock-free.
+        E.g. native_sim or board with multi-channel DMA. Lock-free.
 
         ``emit(a ## b ## c, thread_id);``
 

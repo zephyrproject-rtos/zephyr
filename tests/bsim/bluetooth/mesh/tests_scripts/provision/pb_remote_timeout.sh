@@ -24,13 +24,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 11. 3rd device opens provisioning link.
 # 12. 2nd device stops communicating with either devices.
 # 13. After 60s RPR timeout is reached on 1st device. RPR Client closes provisioning link.
-conf=prj_mesh1d1_conf
 RunTest mesh_prov_pb_remote_provisioning_timeout \
 	prov_provisioner_pb_remote_client_provision_timeout \
 	prov_device_pb_remote_server_unproved_unresponsive \
 	prov_device_unresponsive
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_provisioning_timeout_psa \
 	prov_provisioner_pb_remote_client_provision_timeout \

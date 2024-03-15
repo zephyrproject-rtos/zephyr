@@ -1,0 +1,51 @@
+/*
+ * Copyright 2023 Daniel DeGrasse
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_k2x.dtsi>
+
+/ {
+	soc {
+		i2c2: i2c@400e6000 {
+			compatible = "nxp,kinetis-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400e6000 0x1000>;
+			interrupts = <74 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 6>;
+			status = "disabled";
+		};
+
+		spi2: spi@400ac000 {
+			reg = <0x400ac000 0x88>;
+			interrupts = <65 3>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1030 12>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uart4: uart@400ea000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x400ea000 0x1000>;
+			interrupts = <66 0>, <67 0>;
+			interrupt-names = "status", "error";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 10>;
+
+			status = "disabled";
+		};
+
+		uart5: uart@400eb000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x400eb000 0x1000>;
+			interrupts = <68 0>, <69 0>;
+			interrupt-names = "status", "error";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 11>;
+
+			status = "disabled";
+		};
+	};
+};

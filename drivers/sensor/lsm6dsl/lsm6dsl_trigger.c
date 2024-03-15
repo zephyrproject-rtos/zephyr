@@ -97,8 +97,12 @@ static void lsm6dsl_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
-static void lsm6dsl_thread(const struct device *dev)
+static void lsm6dsl_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct lsm6dsl_data *drv_data = dev->data;
 
 	while (1) {
@@ -156,7 +160,7 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LSM6DSL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lsm6dsl_thread, (void *)dev,
+			lsm6dsl_thread, (void *)dev,
 			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSL_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)

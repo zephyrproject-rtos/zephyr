@@ -1,0 +1,27 @@
+family:
+- name: lpc
+  series:
+  - name: lpc11u6x
+    socs:
+    - name: lpc11u66
+    - name: lpc11u67
+    - name: lpc11u68
+  - name: lpc51u68
+    socs:
+    - name: lpc51u68
+  - name: lpc54xxx
+    socs:
+    - name: lpc54114
+      cpuclusters:
+      - name: m4
+      - name: m0
+  - name: lpc55xxx
+    socs:
+    - name: lpc55s06
+    - name: lpc55s16
+    - name: lpc55s28
+    - name: lpc55s36
+    - name: lpc55s69
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1

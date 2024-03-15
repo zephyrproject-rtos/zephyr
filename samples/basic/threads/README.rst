@@ -47,8 +47,8 @@ For example, to build this sample for :ref:`96b_carbon_board`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/threads
-   :board: 96b_carbon
+   :board: 96b_carbon/stm32f401xe
    :goals: build flash
    :compact:
 
-Change ``96b_carbon`` appropriately for other supported boards.
+Change ``96b_carbon/stm32f401xe`` appropriately for other supported boards.

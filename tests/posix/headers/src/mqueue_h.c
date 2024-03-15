@@ -29,7 +29,7 @@ ZTEST(posix_headers, test_mqueue_h)
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
 		zassert_not_null(mq_close);
 		zassert_not_null(mq_getattr);
-		/* zassert_not_null(mq_notify); */ /* not implemented */
+		zassert_not_null(mq_notify);
 		zassert_not_null(mq_open);
 		zassert_not_null(mq_receive);
 		zassert_not_null(mq_send);

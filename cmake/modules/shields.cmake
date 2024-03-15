@@ -79,40 +79,52 @@ foreach(root ${BOARD_ROOT})
 
       list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
 
-      # Add <shield>.overlay to the shield_dts_files output variable.
-      list(APPEND
-        shield_dts_files
-        ${SHIELD_DIR_${s}}/${s}.overlay
-        )
-
-      # Add the shield's directory to the SHIELD_DIRS output variable.
-      list(APPEND
-        SHIELD_DIRS
-        ${SHIELD_DIR_${s}}
-        )
+      # Add <shield>.overlay to a temporary variable
+      set(shield_${s}_dts_file ${SHIELD_DIR_${s}}/${s}.overlay)
 
       # Search for shield/shield.conf file
       if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
-        # Add <shield>.conf to the shield_conf_files output variable.
-        list(APPEND
-          shield_conf_files
-          ${SHIELD_DIR_${s}}/${s}.conf
-          )
+        # Add <shield>.conf to a temporary variable
+        set(shield_${s}_conf_file ${SHIELD_DIR_${s}}/${s}.conf)
       endif()
-
-      # Add board-specific .conf and .overlay files to their
-      # respective output variables.
-      zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
-                  DTS   shield_dts_files
-                  KCONF shield_conf_files
-      )
-      zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
-                  DTS   shield_dts_files
-                  KCONF shield_conf_files
-      )
     endforeach()
   endif()
 endforeach()
+
+# Process shields in-order
+if(DEFINED SHIELD)
+  foreach(s ${SHIELD_AS_LIST})
+    # Add <shield>.overlay to the shield_dts_files output variable.
+    list(APPEND
+      shield_dts_files
+      ${shield_${s}_dts_file}
+      )
+
+    # Add the shield's directory to the SHIELD_DIRS output variable.
+    list(APPEND
+      SHIELD_DIRS
+      ${SHIELD_DIR_${s}}
+      )
+
+    if(DEFINED shield_${s}_conf_file)
+      list(APPEND
+        shield_conf_files
+        ${shield_${s}_conf_file}
+        )
+    endif()
+
+    # Add board-specific .conf and .overlay files to their
+    # respective output variables.
+    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
+                DTS   shield_dts_files
+                KCONF shield_conf_files
+    )
+    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
+                DTS   shield_dts_files
+                KCONF shield_conf_files
+    )
+  endforeach()
+endif()
 
 # Prepare shield usage command printing.
 # This command prints all shields in the system in the following cases:

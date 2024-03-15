@@ -6,7 +6,7 @@ tests:
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   drivers.uart.basic_api.wide:
     extra_configs:
       - CONFIG_UART_WIDE_DATA=y
@@ -26,7 +26,7 @@ tests:
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   drivers.uart.basic_api.shell:
     extra_args: CONF_FILE=prj_shell.conf
     min_flash: 64
@@ -36,7 +36,7 @@ tests:
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   drivers.uart.basic_api.cdc_acm:
     extra_args:
       - OVERLAY_CONFIG="overlay-usb.conf"

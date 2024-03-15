@@ -11,6 +11,7 @@
 #include <zephyr/sys/util.h>
 
 /* nPM6001 registers */
+#define NPM6001_SWREADY          0x01U
 #define NPM6001_BUCK3SELDAC      0x44U
 #define NPM6001_BUCKMODEPADCONF  0x4EU
 #define NPM6001_PADDRIVESTRENGTH 0x53U
@@ -60,6 +61,12 @@ static int mfd_npm6001_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Enable switching to hysteresis mode */
+	ret = i2c_reg_write_byte_dt(&config->i2c, NPM6001_SWREADY, 1U);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -87,6 +94,6 @@ static int mfd_npm6001_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mfd_npm6001_init, NULL, NULL, &config##inst, POST_KERNEL,      \
-			      CONFIG_MFD_INIT_PRIORITY, NULL);
+			      CONFIG_MFD_NPM6001_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM6001_DEFINE)

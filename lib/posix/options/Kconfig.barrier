@@ -1,0 +1,24 @@
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+TYPE = PTHREAD_BARRIER
+type = pthread_barrier_t
+type-function = pthread_barrier_wait
+rsource "Kconfig.template.pooled_ipc_type"
+
+if PTHREAD_BARRIER
+
+config PTHREAD_CREATE_BARRIER
+	bool "Use a pthread_barrier_t to serialize pthread_create()"
+	help
+	  When running several SMP applications in parallel instances of Qemu,
+	  e.g. via twister, explicit serialization may be required between
+	  pthread_create() and zephyr_thread_wrapper() when spawning and joining
+	  many pthreads concurrently.
+
+	  On such systems, say Y here to introduce explicit serialization
+	  via pthread_barrier_wait().
+
+endif

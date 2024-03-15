@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/sys/sem.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #ifdef CONFIG_USERSPACE
 #define SYS_SEM_MINIMUM      0

@@ -5,7 +5,9 @@
 
 config ESPI_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) ESPI driver"
+	default y
 	depends on SOC_FAMILY_NPCX
+	depends on DT_HAS_NUVOTON_NPCX_ESPI_ENABLED
 	help
 	  This option enables the Intel Enhanced Serial Peripheral Interface
 	  (eSPI) for NPCX family of processors.
@@ -55,6 +57,36 @@ config ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_RING_BUF_SIZE
 	help
 	  The size of the ring buffer in byte used by the Port80 ISR to store
 	  Postcodes from Host.
+
+config ESPI_TAF_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) ESPI TAF driver"
+	depends on SOC_SERIES_NPCX4
+	help
+	  This option enables the Intel Enhanced Serial Peripheral Interface
+	  Target Attached Flash (eSPI TAF) for NPCX4 family of processors.
+
+choice ESPI_TAF_ACCESS_MODE_CHOICE
+	prompt "eSPI TAF Read Access Mode"
+	default ESPI_TAF_AUTO_MODE
+
+config ESPI_TAF_AUTO_MODE
+	bool "eSPI TAF Automatic Mode"
+	help
+	  This is the setting to use auto mode for eSPI TAF read.
+
+config ESPI_TAF_MANUAL_MODE
+	bool "eSPI TAF Manual Mode"
+	help
+	  This is the setting to use manual mode for eSPI TAF read.
+
+endchoice
+
+config ESPI_TAF_PR_NUM
+	int "Sets of protection region settings"
+	default 16
+	help
+	  This size is display how many group of slave attached flash protection
+	  region.
 
 # The default value 'y' for the existing options if ESPI_NPCX is selected.
 if ESPI_NPCX

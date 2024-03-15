@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_KERNEL_THREAD_H_
 
 #ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 #endif
 
 #include <zephyr/kernel/stats.h>
@@ -349,6 +349,11 @@ struct k_thread {
 
 #ifdef CONFIG_OBJ_CORE_THREAD
 	struct k_obj_core  obj_core;
+#endif
+
+#ifdef CONFIG_SMP
+	/** threads waiting in k_thread_suspend() */
+	_wait_q_t  halt_queue;
 #endif
 
 	/** arch-specifics: must always be at the end */

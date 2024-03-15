@@ -49,6 +49,7 @@
 #define LWM2M_OBJECT_PORTFOLIO_ID               16 /**< Portfolio object */
 #define LWM2M_OBJECT_BINARYAPPDATACONTAINER_ID  19 /**< Binary App Data Container object */
 #define LWM2M_OBJECT_EVENT_LOG_ID               20 /**< Event Log object */
+#define LWM2M_OBJECT_OSCORE_ID                  21 /**< OSCORE object */
 #define LWM2M_OBJECT_GATEWAY_ID                 25 /**< Gateway object */
 /* clang-format on */
 
@@ -132,6 +133,22 @@ enum lwm2m_rd_client_event;
 typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
 				     enum lwm2m_rd_client_event event);
 
+
+/**
+ * @brief Different traffic states of the LwM2M socket.
+ *
+ * This information can be used to give hints for the network interface
+ * that can decide what kind of power management should be used.
+ *
+ * These hints are given from CoAP layer messages, so usage of DTLS might affect the
+ * actual number of expected datagrams.
+ */
+enum lwm2m_socket_states {
+	LWM2M_SOCKET_STATE_ONGOING,	 /**< Ongoing traffic is expected. */
+	LWM2M_SOCKET_STATE_ONE_RESPONSE, /**< One response is expected for the next message. */
+	LWM2M_SOCKET_STATE_LAST,	 /**< Next message is the last one. */
+	LWM2M_SOCKET_STATE_NO_DATA,	 /**< No more data is expected. */
+};
 
 /**
  * @brief LwM2M context structure to maintain information for a single
@@ -248,6 +265,14 @@ struct lwm2m_ctx {
 	 *  copied into the actual resource buffer.
 	 */
 	uint8_t validate_buf[CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE];
+
+	/**
+	 * Callback to indicate transmission states.
+	 * Client application may request LwM2M engine to indicate hints about
+	 * transmission states and use that information to control various power
+	 * saving modes.
+	 */
+	void (*set_socket_state)(int fd, enum lwm2m_socket_states state);
 };
 
 /**
@@ -550,7 +575,6 @@ void lwm2m_firmware_set_cancel_cb_inst(uint16_t obj_inst_id, lwm2m_engine_user_c
  */
 lwm2m_engine_user_cb_t lwm2m_firmware_get_cancel_cb_inst(uint16_t obj_inst_id);
 
-#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT) || defined(__DOXYGEN__)
 /**
  * @brief Set data callback to handle firmware update execute events.
  *
@@ -587,8 +611,6 @@ void lwm2m_firmware_set_update_cb_inst(uint16_t obj_inst_id, lwm2m_engine_execut
  */
 lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id);
 #endif
-#endif
-
 
 #if defined(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT) || defined(__DOXYGEN__)
 
@@ -987,11 +1009,16 @@ int lwm2m_engine_set_u64(const char *pathstr, uint64_t value);
 /**
  * @brief Set resource (instance) value (u64)
  *
+ * @deprecated Unsigned 64bit value type does not exits.
+ *             This is internally handled as a int64_t.
+ *             Use lwm2m_set_s64() instead.
+ *
  * @param[in] path LwM2M path as a struct
  * @param[in] value u64 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_set_u64(const struct lwm2m_obj_path *path, uint64_t value);
 
 /**
@@ -1179,6 +1206,52 @@ int lwm2m_engine_set_time(const char *pathstr, time_t value);
 int lwm2m_set_time(const struct lwm2m_obj_path *path, time_t value);
 
 /**
+ * @brief LwM2M resource item structure
+ *
+ * Value type must match the target resource as no type conversion are
+ * done and the value is just memcopied.
+ *
+ * Following C types are used for resource types:
+ * * BOOL is uint8_t
+ * * U8 is uint8_t
+ * * S8 is int8_t
+ * * U16 is uint16_t
+ * * S16 is int16_t
+ * * U32 is uint32_t
+ * * S32 is int32_t
+ * * S64 is int64_t
+ * * TIME is time_t
+ * * FLOAT is double
+ * * OBJLNK is struct lwm2m_objlnk
+ * * STRING is char * and the null-terminator should be included in the size.
+ * * OPAQUE is any binary data. When null-terminated string is written in OPAQUE
+ *   resource, the terminator should not be included in size.
+ *
+ */
+struct lwm2m_res_item {
+	/** Pointer to LwM2M path as a struct */
+	struct lwm2m_obj_path *path;
+	/** Pointer to resource value */
+	void *value;
+	/** Size of the value. For string resources, it should contain the null-terminator. */
+	uint16_t size;
+};
+
+/**
+ * @brief Set multiple resource (instance) values
+ *
+ * NOTE: Value type must match the target resource as this function
+ * does not do any type conversion.
+ * See struct @ref lwm2m_res_item for list of resource types.
+ *
+ * @param[in] res_list LwM2M resource item list
+ * @param[in] res_list_size Length of resource list
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_bulk(const struct lwm2m_res_item res_list[], size_t res_list_size);
+
+/**
  * @brief Get resource (instance) value (opaque buffer)
  *
  * @deprecated Use lwm2m_get_opaque() instead.
@@ -1313,11 +1386,16 @@ int lwm2m_engine_get_u64(const char *pathstr, uint64_t *value);
 /**
  * @brief Get resource (instance) value (u64)
  *
+ * @deprecated Unsigned 64bit value type does not exits.
+ *             This is internally handled as a int64_t.
+ *             Use lwm2m_get_s64() instead.
+
  * @param[in] path LwM2M path as a struct
  * @param[out] value u64 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_get_u64(const struct lwm2m_obj_path *path, uint64_t *value);
 
 /**
@@ -2074,6 +2152,7 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE,
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER,
+	LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED,
 };
 
 /**

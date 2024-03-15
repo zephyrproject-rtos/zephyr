@@ -17,6 +17,10 @@
 #include <metal/device.h>
 #include <resource_table.h>
 
+#ifdef CONFIG_SHELL_BACKEND_RPMSG
+#include <zephyr/shell/shell_rpmsg.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
@@ -276,6 +280,7 @@ void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned int msg_cnt = 0;
 	int ret = 0;
 
@@ -290,6 +295,8 @@ void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 	while (msg_cnt < 100) {
 		k_sem_take(&data_sc_sem,  K_FOREVER);
 		msg_cnt++;
+		printk("[Linux sample client] incoming msg %d: %.*s\n", msg_cnt, sc_msg.len,
+		       (char *)sc_msg.data);
 		rpmsg_send(&sc_ept, sc_msg.data, sc_msg.len);
 	}
 	rpmsg_destroy_ept(&sc_ept);
@@ -302,12 +309,13 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned char tx_buff[512];
 	int ret = 0;
 
 	k_sem_take(&data_tty_sem,  K_FOREVER);
 
-	printk("\r\nOpenAMP[remote] Linux tty responder started\r\n");
+	printk("\r\nOpenAMP[remote] Linux TTY responder started\r\n");
 
 	tty_ept.priv = &tty_msg;
 	ret = rpmsg_create_ept(&tty_ept, rpdev, "rpmsg-tty",
@@ -317,9 +325,10 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 	while (tty_ept.addr !=  RPMSG_ADDR_ANY) {
 		k_sem_take(&data_tty_sem,  K_FOREVER);
 		if (tty_msg.len) {
+			printk("[Linux TTY] incoming msg: %.*s", tty_msg.len, (char *)tty_msg.data);
 			snprintf(tx_buff, 13, "TTY 0x%04x: ", tty_ept.addr);
 			memcpy(&tx_buff[12], tty_msg.data, tty_msg.len);
-			rpmsg_send(&tty_ept, tx_buff, tty_msg.len + 13);
+			rpmsg_send(&tty_ept, tx_buff, tty_msg.len + 12);
 			rpmsg_release_rx_buffer(&tty_ept, tty_msg.data);
 		}
 		tty_msg.len = 0;
@@ -335,11 +344,12 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned char *msg;
 	unsigned int len;
 	int ret = 0;
 
-	printk("\r\nOpenAMP[remote]  linux responder demo started\r\n");
+	printk("\r\nOpenAMP[remote] Linux responder demo started\r\n");
 
 	/* Initialize platform */
 	ret = platform_init();
@@ -356,6 +366,10 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 		ret = -1;
 		goto task_end;
 	}
+
+#ifdef CONFIG_SHELL_BACKEND_RPMSG
+	(void)shell_backend_rpmsg_init_transport(rpdev);
+#endif
 
 	/* start the rpmsg clients */
 	k_sem_give(&data_sc_sem);
@@ -375,13 +389,13 @@ int main(void)
 {
 	printk("Starting application threads!\n");
 	k_thread_create(&thread_mng_data, thread_mng_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)rpmsg_mng_task,
+			rpmsg_mng_task,
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 	k_thread_create(&thread_rp__client_data, thread_rp__client_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_rpmsg_client_sample,
+			app_rpmsg_client_sample,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_create(&thread_tty_data, thread_tty_stack, APP_TTY_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_rpmsg_tty,
+			app_rpmsg_tty,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	return 0;
 }

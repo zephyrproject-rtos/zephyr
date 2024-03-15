@@ -4,7 +4,7 @@ sample:
 tests:
   sample.board.esp32:
     platform_allow:
-      - esp32_devkitc_wroom
-      - esp32_devkitc_wrover
-      - yd_esp32
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc_wrover/esp32/procpu
+      - yd_esp32/esp32/procpu
     tags: esp32

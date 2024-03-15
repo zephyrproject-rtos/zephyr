@@ -72,7 +72,7 @@ static int mcux_igpio_configure(const struct device *dev,
 		(volatile uint32_t *)config->pin_muxes[cfg_idx].config_register;
 	uint32_t reg = *gpio_cfg_reg;
 
-#ifdef CONFIG_SOC_SERIES_IMX_RT10XX
+#ifdef CONFIG_SOC_SERIES_IMXRT10XX
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		/* Set ODE bit */
 		reg |= IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
@@ -92,7 +92,7 @@ static int mcux_igpio_configure(const struct device *dev,
 		/* Set pin to keeper */
 		reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 	}
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	if (config->pin_muxes[pin].pue_mux) {
 		/* PUE type register layout (GPIO_AD pins) */
 		if ((flags & GPIO_SINGLE_ENDED) != 0) {
@@ -152,7 +152,7 @@ static int mcux_igpio_configure(const struct device *dev,
 
 
 	}
-#elif defined(CONFIG_SOC_SERIES_IMX8MQ_M4)
+#elif defined(CONFIG_SOC_MIMX8MQ6_M4)
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		/* Set ODE bit */
 		reg |= (0x1 << MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
@@ -184,7 +184,7 @@ static int mcux_igpio_configure(const struct device *dev,
 		/* Set pin to highz */
 		reg &= ~(0x1 << MCUX_IMX_BIAS_PULL_ENABLE_SHIFT);
 	}
-#endif /* CONFIG_SOC_SERIES_IMX_RT10XX */
+#endif /* CONFIG_SOC_SERIES_IMXRT10XX */
 
 	memcpy(&pin_cfg.pinmux, &config->pin_muxes[cfg_idx], sizeof(pin_cfg.pinmux));
 	/* cfg register will be set by pinctrl_configure_pins */

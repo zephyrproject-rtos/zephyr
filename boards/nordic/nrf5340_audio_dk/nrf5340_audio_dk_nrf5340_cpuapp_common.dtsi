@@ -1,0 +1,307 @@
+/*
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "nrf5340_audio_dk_nrf5340_cpuapp_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/sensor/ina230.h>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,bt-hci-ipc = &ipc0;
+		watchdog0 = &wdt0;
+	};
+
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		uart {
+			gpios = <&gpio1 9 0>, <&gpio1 8 0>, <&gpio1 11 0>, <&gpio1 10 0>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 4 0>,	/* A0 */
+			   <1 0 &gpio0 5 0>,	/* A1 */
+			   <2 0 &gpio0 6 0>,	/* A2 */
+			   <3 0 &gpio0 7 0>,	/* A3 */
+			   <4 0 &gpio0 25 0>,	/* A4 */
+			   <5 0 &gpio0 26 0>,	/* A5 */
+			   <6 0 &gpio1 9 0>,	/* D0 */
+			   <7 0 &gpio1 8 0>,	/* D1 */
+			   <8 0 &gpio0 31 0>,	/* D2 */
+			   <9 0 &gpio1 0 0>,	/* D3 */
+			   <10 0 &gpio1 1 0>,	/* D4 */
+			   <11 0 &gpio1 14 0>,	/* D5 */
+			   <12 0 &gpio1 7 0>,	/* D6 */
+			   <13 0 &gpio1 11 0>,	/* D7 */
+			   <14 0 &gpio1 10 0>,	/* D8 */
+			   <15 0 &gpio1 13 0>,	/* D9 */
+			   <16 0 &gpio1 12 0>,	/* D10 */
+			   <17 0 &gpio0 9 0>,	/* D11 */
+			   <18 0 &gpio0 10 0>,	/* D12 */
+			   <19 0 &gpio0 8 0>,	/* D13 */
+			   <20 0 &gpio1 2 0>,	/* D14 */
+			   <21 0 &gpio1 3 0>;	/* D15 */
+	};
+
+	pmic {
+		compatible = "nordic,npm1100";
+		nordic,iset-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+	};
+
+	board_id: board_id {
+		compatible = "voltage-divider";
+		io-channels = <&adc 0>;
+		output-ohms = <20000>;
+		full-ohms = <47000>;
+		power-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		rgb1_red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+		rgb1_green_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+		rgb1_blue_pwm_led: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &rgb1_red_pwm_led;
+		pwm-led1 = &rgb1_green_pwm_led;
+		pwm-led2 = &rgb1_blue_pwm_led;
+		red-pwm-led = &rgb1_red_pwm_led;
+		green-pwm-led = &rgb1_green_pwm_led;
+		blue-pwm-led = &rgb1_blue_pwm_led;
+	};
+};
+
+&adc {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_VDD_1_4";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+		zephyr,input-positive = <NRF_SAADC_AIN6>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+
+	codec-interface {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		/* low output to select on-board codec control */
+		output-low;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2s0 {
+	compatible = "nordic,nrf-i2s";
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-1 = <&i2s0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_serial: &uart1 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	vbat_sensor: ina231@44 {
+		compatible = "ti,ina230";
+		reg = <0x44>;
+		adc-mode = "Bus and shunt voltage continuous";
+		vbus-conversion-time-us = <4156>;
+		vshunt-conversion-time-us = <4156>;
+		avg-count = <1024>;
+		current-lsb-microamps = <1>;
+		rshunt-micro-ohms = <510000>;
+	};
+
+	vdd1_codec_sensor: ina231@45 {
+		compatible = "ti,ina230";
+		reg = <0x45>;
+		adc-mode = "Bus and shunt voltage continuous";
+		vbus-conversion-time-us = <4156>;
+		vshunt-conversion-time-us = <4156>;
+		avg-count = <1024>;
+		current-lsb-microamps = <1>;
+		rshunt-micro-ohms = <2200000>;
+	};
+
+	vdd2_codec_sensor: ina231@41 {
+		compatible = "ti,ina230";
+		reg = <0x41>;
+		adc-mode = "Bus and shunt voltage continuous";
+		vbus-conversion-time-us = <4156>;
+		vshunt-conversion-time-us = <4156>;
+		avg-count = <1024>;
+		current-lsb-microamps = <1>;
+		rshunt-micro-ohms = <2200000>;
+	};
+
+	vdd2_nrf_sensor: ina231@40 {
+		compatible = "ti,ina230";
+		reg = <0x40>;
+		adc-mode = "Bus and shunt voltage continuous";
+		vbus-conversion-time-us = <4156>;
+		vshunt-conversion-time-us = <4156>;
+		avg-count = <1024>;
+		current-lsb-microamps = <1>;
+		rshunt-micro-ohms = <1000000>;
+	};
+};
+
+&spi4 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 17 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+
+		spi-max-frequency = <8000000>;
+	};
+
+	cs47l63: cs47l63@1 {
+		compatible = "cirrus,cs47l63";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		irq-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		gpio9-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c0000 {
+			label = "image-1-nonsecure";
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+
+	hs_0: hs_0 {
+		compatible = "usb-audio-hs";
+		mic-feature-mute;
+		mic-channel-l;
+		mic-channel-r;
+
+		hp-feature-mute;
+		hp-channel-l;
+		hp-channel-r;
+	};
+};
+
+/* Include partition configuration file */
+#include "nrf5340_audio_dk_nrf5340_cpuapp_partition_conf.dtsi"
+#include "nrf5340_audio_dk_nrf5340_shared.dtsi"

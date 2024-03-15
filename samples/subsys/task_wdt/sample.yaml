@@ -1,8 +1,9 @@
 sample:
   name: Task Watchdog Subsytem Sample
 common:
-  tags: subsys
   harness: console
+  tags:
+    - task_wdt
   harness_config:
     type: multi_line
     ordered: true
@@ -16,13 +17,15 @@ common:
       - "Task watchdog sample application."
   depends_on: watchdog
   platform_exclude:
-    - s32z270dc2_rtu0_r52
-    - s32z270dc2_rtu1_r52
+    - s32z2xxdc2/s32z270/rtu0
+    - s32z2xxdc2/s32z270/rtu1
+    - s32z2xxdc2@D/s32z270/rtu0
+    - s32z2xxdc2@D/s32z270/rtu1
 tests:
-  sample.subsys.task_wdt:
+  sample.task_wdt:
     integration_platforms:
       - nucleo_g474re
-  sample.subsys.task_wdt.no_hw_fallback:
+  sample.task_wdt.no_hw_fallback:
     extra_args: CONF_FILE="prj_no_hw_fallback.conf"
     platform_allow:
       - mr_canhubk3

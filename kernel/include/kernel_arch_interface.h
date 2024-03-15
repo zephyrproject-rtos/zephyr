@@ -192,7 +192,7 @@ int arch_float_disable(struct k_thread *thread);
  *
  * The function is used to enable the preservation of floating
  * point context information for a particular thread.
- * This API depends on each architecture implimentation. If the architecture
+ * This API depends on each architecture implementation. If the architecture
  * does not support enabling, this API will always be failed.
  *
  * The @a options parameter indicates which floating point register sets will
@@ -560,7 +560,7 @@ int arch_printk_char_out(int c);
 /**
  * Architecture-specific kernel initialization hook
  *
- * This function is invoked near the top of _Cstart, for additional
+ * This function is invoked near the top of z_cstart, for additional
  * architecture-specific setup before the rest of the kernel is brought up.
  */
 static inline void arch_kernel_init(void);

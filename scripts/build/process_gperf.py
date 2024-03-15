@@ -83,7 +83,7 @@ def process_line(line, fp):
         return
 
     # Set the lookup function to static inline so it gets rolled into
-    # z_object_find(), nothing else will use it
+    # k_object_find(), nothing else will use it
     if re.search(args.pattern + " [*]$", line):
         fp.write("static inline " + line)
         return

@@ -1,0 +1,14 @@
+identifier: thingy53/nrf5340/cpunet
+name: Thingy53-NRF5340-network-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - gpio
+  - watchdog
+vendor: nordic

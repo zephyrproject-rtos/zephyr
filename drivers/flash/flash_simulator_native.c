@@ -9,6 +9,12 @@
  * native simulator runner/host context, and not in Zephyr/embedded context.
  */
 
+#undef _POSIX_C_SOURCE
+/* Note: This is used only for interaction with the host C library, and is therefore exempt of
+ * coding guidelines rule A.4&5 which applies to the embedded code using embedded libraries
+ */
+#define _POSIX_C_SOURCE 200809L
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

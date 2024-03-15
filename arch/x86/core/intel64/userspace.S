@@ -8,7 +8,7 @@
 #include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
 #include <zephyr/syscall.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 #ifdef CONFIG_X86_KPTI
 /* Copy interrupt return stack context to the trampoline stack, switch back

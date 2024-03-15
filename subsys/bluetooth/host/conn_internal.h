@@ -86,7 +86,7 @@ struct bt_conn_le {
 #endif
 };
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 /* For now reserve space for 2 pages of LMP remote features */
 #define LMP_MAX_PAGES 2
 
@@ -146,6 +146,17 @@ struct bt_conn_tx {
 	uint32_t pending_no_cb;
 };
 
+struct acl_data {
+	/* Extend the bt_buf user data */
+	struct bt_buf_data buf_data;
+
+	/* Index into the bt_conn storage array */
+	uint8_t  index;
+
+	/** ACL connection handle */
+	uint16_t handle;
+};
+
 struct bt_conn {
 	uint16_t			handle;
 	enum bt_conn_type	type;
@@ -156,11 +167,11 @@ struct bt_conn {
 	/* Which local identity address this connection uses */
 	uint8_t                    id;
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
 	uint8_t			encrypt;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
 	/**
@@ -206,7 +217,7 @@ struct bt_conn {
 
 	union {
 		struct bt_conn_le	le;
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		struct bt_conn_br	br;
 		struct bt_conn_sco	sco;
 #endif
@@ -353,6 +364,9 @@ void notify_le_phy_updated(struct bt_conn *conn);
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
+void notify_tx_power_report(struct bt_conn *conn,
+			    struct bt_conn_le_tx_power_report report);
+
 #if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */
 bool bt_conn_ltk_present(const struct bt_conn *conn);
@@ -365,11 +379,11 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 void bt_conn_identity_resolved(struct bt_conn *conn);
 #endif /* CONFIG_BT_SMP */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err);
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)

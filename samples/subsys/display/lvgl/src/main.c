@@ -42,6 +42,11 @@ static const struct device *lvgl_encoder =
 	DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_lvgl_encoder_input));
 #endif /* CONFIG_LV_Z_ENCODER_INPUT */
 
+#ifdef CONFIG_LV_Z_KEYPAD_INPUT
+static const struct device *lvgl_keypad =
+	DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_lvgl_keypad_input));
+#endif /* CONFIG_LV_Z_KEYPAD_INPUT */
+
 static void lv_btn_click_callback(lv_event_t *e)
 {
 	ARG_UNUSED(e);
@@ -95,7 +100,7 @@ int main(void)
 	lv_group_t *arc_group;
 
 	arc = lv_arc_create(lv_scr_act());
-	lv_obj_align(arc, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_align(arc, LV_ALIGN_CENTER, 0, -15);
 	lv_obj_set_size(arc, 150, 150);
 
 	arc_group = lv_group_create();
@@ -103,13 +108,28 @@ int main(void)
 	lv_indev_set_group(lvgl_input_get_indev(lvgl_encoder), arc_group);
 #endif /* CONFIG_LV_Z_ENCODER_INPUT */
 
+#ifdef CONFIG_LV_Z_KEYPAD_INPUT
+	lv_obj_t *btn_matrix;
+	lv_group_t *btn_matrix_group;
+	static const char *const btnm_map[] = {"1", "2", "3", "4", ""};
+
+	btn_matrix = lv_btnmatrix_create(lv_scr_act());
+	lv_obj_align(btn_matrix, LV_ALIGN_CENTER, 0, 70);
+	lv_btnmatrix_set_map(btn_matrix, (const char **)btnm_map);
+	lv_obj_set_size(btn_matrix, 100, 50);
+
+	btn_matrix_group = lv_group_create();
+	lv_group_add_obj(btn_matrix_group, btn_matrix);
+	lv_indev_set_group(lvgl_input_get_indev(lvgl_keypad), btn_matrix_group);
+#endif /* CONFIG_LV_Z_KEYPAD_INPUT */
+
 	if (IS_ENABLED(CONFIG_LV_Z_POINTER_KSCAN) || IS_ENABLED(CONFIG_LV_Z_POINTER_INPUT)) {
 		lv_obj_t *hello_world_button;
 
 		hello_world_button = lv_btn_create(lv_scr_act());
-		lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, -15);
 		lv_obj_add_event_cb(hello_world_button, lv_btn_click_callback, LV_EVENT_CLICKED,
-						NULL);
+				    NULL);
 		hello_world_label = lv_label_create(hello_world_button);
 	} else {
 		hello_world_label = lv_label_create(lv_scr_act());

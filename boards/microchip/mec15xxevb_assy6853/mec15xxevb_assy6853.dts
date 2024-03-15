@@ -1,0 +1,209 @@
+/*
+ * Copyright (c) 2018, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mec15xxevb_assy6853-pinctrl.dtsi"
+
+/ {
+	model = "Microchip MEC15XXEVB_ASSY6853 evaluation board";
+	compatible = "microchip,mec15xxevb_assy6853", "microchip,mec1501hsz";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart2;
+		zephyr,flash = &flash0;
+		zephyr,keyboard-scan = &kscan_input;
+	};
+
+	aliases {
+		led0 = &led2;
+		led1 = &led3;
+		led2 = &led4;
+		pwm-0 = &pwm0;
+		peci-0 = &peci0;
+		i2c0 = &i2c_smb_0;
+		i2c-0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_1;
+		i2c7 = &i2c_smb_2;
+		kscan0 = &kscan_input;
+		watchdog0 = &wdog;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led2: led_0 {
+			/* GPIO156/LED0 on schematic,
+			 * LED2 on silkscreen.
+			 */
+			gpios = <MCHP_GPIO_DECODE_156 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+		led3: led_1 {
+			/* GPIO157/LED1 on schematic,
+			 * LED3 on silkscreen.
+			 */
+			gpios = <MCHP_GPIO_DECODE_157 GPIO_ACTIVE_LOW>;
+			label = "LED 3";
+		};
+		led4: led_2 {
+			/* GPIO153/LED2 on schematic,
+			 * LED4 on silkscreen.
+			 */
+			gpios = <MCHP_GPIO_DECODE_153 GPIO_ACTIVE_LOW>;
+			label = "LED 4";
+		};
+	};
+};
+
+&pcr {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_tx_gpio146 &uart2_rx_gpio145>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc04_gpio204 &adc05_gpio205
+		     &adc06_gpio206 &adc07_gpio207
+		     &vref2_adc_gpio067 >;
+	pinctrl-names = "default";
+};
+
+&i2c_smb_0 {
+	status = "okay";
+	port_sel = <0>;
+	sda-gpios = <MCHP_GPIO_DECODE_003 0>;
+	scl-gpios = <MCHP_GPIO_DECODE_004 0>;
+	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
+	pinctrl-names = "default";
+};
+
+&i2c_smb_1 {
+	status = "okay";
+	port_sel = <1>;
+	sda-gpios = <MCHP_GPIO_DECODE_130 0>;
+	scl-gpios = <MCHP_GPIO_DECODE_131 0>;
+	pinctrl-0 = < &i2c01_scl_gpio131 &i2c01_sda_gpio130 >;
+	pinctrl-names = "default";
+
+	pca9555@26 {
+		compatible = "nxp,pca95xx";
+
+		/* Depends on JP53 for device address.
+		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
+		 * Address is: 0100<A2><A1><A0>b.
+		 *
+		 * Default has pin 1-2 on JP53 connected,
+		 * resulting in device address 0x26.
+		 */
+		reg = <0x26>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&i2c_smb_2 {
+	status = "okay";
+	port_sel = <7>;
+	sda-gpios = <MCHP_GPIO_DECODE_012 0>;
+	scl-gpios = <MCHP_GPIO_DECODE_013 0>;
+	pinctrl-0 = < &i2c07_scl_gpio013 &i2c07_sda_gpio012 >;
+	pinctrl-names = "default";
+};
+
+&espi0 {
+	status = "okay";
+	io_girq = <19>;
+	vw_girqs = <24 25>;
+	pc_girq = <15>;
+	pinctrl-0 = < &espi_reset_n_gpio061 &espi_cs_n_gpio066
+		  &espi_alert_n_gpio063 &espi_clk_gpio065
+		  &espi_io0_gpio070 &espi_io1_gpio071
+		  &espi_io2_gpio072 &espi_io3_gpio073 >;
+	pinctrl-names = "default";
+};
+
+&timer5 {
+	status = "okay";
+};
+
+&ps2_0 {
+	status = "okay";
+	pinctrl-0 = <&ps2_clk0b_gpio007 &ps2_dat0b_gpio010>;
+	pinctrl-1 = <&ps2_clk0b_gpio007_sleep &ps2_dat0b_gpio010_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&ps2_1 {
+	status = "okay";
+	pinctrl-0 = <&ps2_clk1b_gpio154 &ps2_dat1b_gpio155>;
+	pinctrl-1 = <&ps2_clk1b_gpio154_sleep &ps2_dat1b_gpio155_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_gpio053>;
+	pinctrl-names = "default";
+};
+
+&kbd0 {
+	status = "okay";
+
+	pinctrl-0 = < &kso00_gpio040 &kso01_gpio045 &kso02_gpio046 &kso12_gpio125
+		      &kso13_gpio126 &kso03_gpio047 &kso04_gpio107 &kso05_gpio112
+		      &kso06_gpio113 &kso14_gpio152 &kso15_gpio151 &kso07_gpio120
+		      &kso08_gpio121 &kso09_gpio122 &kso10_gpio123 &kso11_gpio124
+		      &ksi0_gpio017  &ksi1_gpio020  &ksi2_gpio021  &ksi3_gpio026
+		      &ksi4_gpio027  &ksi5_gpio030  &ksi6_gpio031  &ksi7_gpio032 >;
+	pinctrl-1 = < &kso00_gpio040_sleep &kso01_gpio045_sleep &kso02_gpio046_sleep
+		      &kso12_gpio125_sleep &kso13_gpio126_sleep &kso03_gpio047_sleep
+		      &kso04_gpio107_sleep &kso05_gpio112_sleep &kso06_gpio113_sleep
+		      &kso14_gpio152_sleep &kso15_gpio151_sleep &kso07_gpio120_sleep
+		      &kso08_gpio121_sleep &kso09_gpio122_sleep &kso10_gpio123_sleep
+		      &kso11_gpio124_sleep &ksi0_gpio017_sleep  &ksi1_gpio020_sleep
+		      &ksi2_gpio021_sleep  &ksi3_gpio026_sleep  &ksi4_gpio027_sleep
+		      &ksi5_gpio030_sleep  &ksi6_gpio031_sleep  &ksi7_gpio032_sleep >;
+	pinctrl-names = "default", "sleep";
+	row-size = <8>;
+	col-size = <16>;
+
+	kscan_input: kscan-input {
+		compatible = "zephyr,kscan-input";
+	};
+};
+
+&peci0 {
+	status = "okay";
+	pinctrl-0 = <&peci_dat_gpio042 &vref_vtt_gpio044>;
+	pinctrl-1 = <&peci_dat_gpio042_sleep &vref_vtt_gpio044_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi0 {
+	status = "okay";
+	port_sel = <0>;
+	chip_select = <0>;
+	lines = <1>;
+	pinctrl-0 = < &shd_cs0_n_gpio055
+		      &shd_clk_gpio056
+		      &shd_io0_gpio223
+		      &shd_io1_gpio224 >;
+	pinctrl-names = "default";
+};
+
+&tach0 {
+	status = "okay";
+	pinctrl-0 = <&ict0_tach0_gpio050>;
+	pinctrl-names = "default";
+};

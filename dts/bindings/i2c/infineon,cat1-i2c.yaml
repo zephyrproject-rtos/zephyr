@@ -3,7 +3,42 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon CAT1 I2C
+description: |
+  Infineon CAT1 I2C driver
+
+  This driver configures the SCB as an I2C device.
+
+  Example devicetree configuration with vl53l0x Time-of-Flight (ToF)
+  ranging sensor connected on the bus:
+
+  i2c3: &scb3 {
+      compatible = "infineon,cat1-i2c";
+      status = "okay";
+
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;
+      pinctrl-names = "default";
+
+      vl53l0x@29 {
+        compatible = "st,vl53l0x";
+        reg = <0x29>;
+      };
+  };
+
+  The pinctrl nodes need to be configured as open-drain and
+  input-enable:
+
+  &p6_0_scb3_i2c_scl {
+    drive-open-drain;
+    input-enable;
+  };
+
+  &p6_1_scb3_i2c_sda {
+    drive-open-drain;
+    input-enable;
+  };
 
 compatible: "infineon,cat1-i2c"
 

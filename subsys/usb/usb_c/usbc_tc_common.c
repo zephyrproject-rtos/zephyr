@@ -11,6 +11,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_tc_snk_states_internal.h"
 #include "usbc_tc_src_states_internal.h"
 #include "usbc_tc_common_internal.h"
+#include <zephyr/drivers/usb_c/usbc_ppc.h>
 
 static const struct smf_state tc_states[TC_STATE_COUNT];
 static int tc_init(const struct device *dev);
@@ -150,6 +151,11 @@ static int tc_init(const struct device *dev)
 	if (ret != 0) {
 		LOG_ERR("Couldn't disable vbus sourcing: %d", ret);
 		return ret;
+	}
+
+	/* Disable VBUS sourcing by the PPC */
+	if (data->ppc != NULL) {
+		ppc_set_src_ctrl(data->ppc, false);
 	}
 
 	/* Stop sourcing VCONN */

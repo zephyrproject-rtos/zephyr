@@ -380,11 +380,14 @@ struct icm42688_cfg {
 	/* TODO timestamp options */
 
 	bool fifo_en;
-	uint16_t fifo_wm;
+	int32_t batch_ticks;
 	bool fifo_hires;
 	/* TODO additional FIFO options */
 
 	/* TODO interrupt options */
+	bool interrupt1_drdy;
+	bool interrupt1_fifo_ths;
+	bool interrupt1_fifo_full;
 };
 
 struct icm42688_trigger_entry {
@@ -405,6 +408,15 @@ struct icm42688_dev_data {
 #elif defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
+#ifdef CONFIG_ICM42688_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	struct rtio *r;
+	struct rtio_iodev *spi_iodev;
+	uint8_t int_status;
+	uint16_t fifo_count;
+	uint64_t timestamp;
+	atomic_t reading_fifo;
+#endif /* CONFIG_ICM42688_STREAM */
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t data_ready_handler;

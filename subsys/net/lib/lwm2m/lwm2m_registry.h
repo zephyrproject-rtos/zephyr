@@ -242,7 +242,6 @@ struct lwm2m_cache_read_info {
 };
 #endif
 
-int lwm2m_engine_data_cache_init(void);
 struct lwm2m_time_series_resource *
 lwm2m_cache_entry_get_by_object(const struct lwm2m_obj_path *obj_path);
 bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,

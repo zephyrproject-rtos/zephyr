@@ -8,6 +8,7 @@
 #define ZEPHYR_LLEXT_SYMBOL_H
 
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -44,7 +45,7 @@ struct llext_const_symbol {
  */
 struct llext_symbol {
 	/** Name of symbol */
-	char *name;
+	const char *name;
 
 	/** Address of symbol */
 	void *addr;
@@ -75,8 +76,22 @@ struct llext_symtable {
  */
 #define EXPORT_SYMBOL(x)							\
 	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
-		.name = STRINGIFY(x), .addr = x,				\
+		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
+
+#define LL_EXTENSION_SYMBOL(x)							\
+	struct llext_symbol Z_GENERIC_SECTION(".exported_sym") __used		\
+		symbol_##x = {STRINGIFY(x), (void *)&x}
+
+/**
+ * @brief Export a system call to a table of symbols
+ *
+ * Takes a system call name and uses @a EXPORT_SYMBOL() to export the respective
+ * function.
+ *
+ * @param x System call to export
+ */
+#define EXPORT_SYSCALL(x) EXPORT_SYMBOL(z_impl_ ## x)
 
 /**
  * @}

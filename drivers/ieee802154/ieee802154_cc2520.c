@@ -591,9 +591,12 @@ static inline bool verify_rxfifo_validity(const struct device *dev,
 	return true;
 }
 
-static void cc2520_rx(void *arg)
+static void cc2520_rx(void *p1, void *p2, void *p3)
 {
-	const struct device *dev = arg;
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct cc2520_context *cc2520 = dev->data;
 	struct net_pkt *pkt;
 	uint8_t pkt_len;
@@ -1020,7 +1023,7 @@ static int cc2520_init(const struct device *dev)
 
 	k_thread_create(&cc2520->cc2520_rx_thread, cc2520->cc2520_rx_stack,
 			CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
-			(k_thread_entry_t)cc2520_rx,
+			cc2520_rx,
 			(void *)dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&cc2520->cc2520_rx_thread, "cc2520_rx");
 
@@ -1054,7 +1057,7 @@ static const struct cc2520_config cc2520_config = {
 
 static struct cc2520_context cc2520_context_data;
 
-static struct ieee802154_radio_api cc2520_radio_api = {
+static const struct ieee802154_radio_api cc2520_radio_api = {
 	.iface_api.init	= cc2520_iface_init,
 
 	.get_capabilities	= cc2520_get_capabilities,

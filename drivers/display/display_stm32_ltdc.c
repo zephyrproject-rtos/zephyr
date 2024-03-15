@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
  * Copyright 2023 NXP
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
@@ -54,27 +56,15 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #error "Invalid LTDC pixel format chosen"
 #endif
 
-#if defined(CONFIG_HAS_CMSIS_CORE_M)
-#include <cmsis_core.h>
-
-#if __DCACHE_PRESENT == 1
-#define CACHE_INVALIDATE(addr, size)	SCB_InvalidateDCache_by_Addr((addr), (size))
-#define CACHE_CLEAN(addr, size)		SCB_CleanDCache_by_Addr((addr), (size))
-#else
-#define CACHE_INVALIDATE(addr, size)
-#define CACHE_CLEAN(addr, size)		barrier_dsync_fence_full();
-#endif /* __DCACHE_PRESENT == 1 */
-
-#else
-#define CACHE_INVALIDATE(addr, size)
-#define CACHE_CLEAN(addr, size)
-#endif /* CONFIG_HAS_CMSIS_CORE_M */
-
 struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
 	enum display_pixel_format current_pixel_format;
 	uint8_t current_pixel_size;
 	uint8_t *frame_buffer;
+	uint32_t frame_buffer_len;
+	const uint8_t *pend_buf;
+	const uint8_t *front_buf;
+	struct k_sem sem;
 };
 
 struct display_stm32_ltdc_config {
@@ -84,35 +74,27 @@ struct display_stm32_ltdc_config {
 	struct gpio_dt_spec bl_ctrl_gpio;
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pctrl;
+	void (*irq_config_func)(const struct device *dev);
+	const struct device *display_controller;
 };
 
-static int stm32_ltdc_blanking_on(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
-static int stm32_ltdc_blanking_off(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
-static void *stm32_ltdc_get_framebuffer(const struct device *dev)
+static void stm32_ltdc_global_isr(const struct device *dev)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 
-	return (void *) data->frame_buffer;
-}
+	if (__HAL_LTDC_GET_FLAG(&data->hltdc, LTDC_FLAG_LI) &&
+	    __HAL_LTDC_GET_IT_SOURCE(&data->hltdc, LTDC_IT_LI)) {
+		if (data->front_buf != data->pend_buf) {
+			data->front_buf = data->pend_buf;
 
-static int stm32_ltdc_set_brightness(const struct device *dev,
-				const uint8_t brightness)
-{
-	return -ENOTSUP;
-}
+			LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->CFBAR = (uint32_t)data->front_buf;
+			__HAL_LTDC_RELOAD_CONFIG(&data->hltdc);
 
-static int stm32_ltdc_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	return -ENOTSUP;
+			k_sem_give(&data->sem);
+		}
+
+		__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+	}
 }
 
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
@@ -183,20 +165,59 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
-	uint8_t *dst = data->frame_buffer;
+	uint8_t *dst = NULL;
+	const uint8_t *pend_buf = NULL;
 	const uint8_t *src = buf;
 	uint16_t row;
 
-	/* dst = pointer to upper left pixel of the rectangle to be updated in frame buffer */
-	dst += (x * data->current_pixel_size);
-	dst += (y * config->width * data->current_pixel_size);
+	if ((x == 0) && (y == 0) &&
+	    (desc->width == config->width) &&
+	    (desc->height ==  config->height) &&
+	    (desc->pitch == desc->width)) {
+		/* Use buf as ltdc frame buffer directly if it length same as ltdc frame buffer. */
+		pend_buf = buf;
+	} else {
+		if (CONFIG_STM32_LTDC_FB_NUM == 0)  {
+			LOG_ERR("Partial write requires internal frame buffer");
+			return -ENOTSUP;
+		}
 
-	for (row = 0; row < desc->height; row++) {
-		(void) memcpy(dst, src, desc->width * data->current_pixel_size);
-		CACHE_CLEAN(dst, desc->width * data->current_pixel_size);
-		dst += (config->width * data->current_pixel_size);
-		src += (desc->pitch * data->current_pixel_size);
+		dst = data->frame_buffer;
+
+		if (CONFIG_STM32_LTDC_FB_NUM == 2) {
+			if (data->front_buf == data->frame_buffer) {
+				dst = data->frame_buffer + data->frame_buffer_len;
+			}
+
+			memcpy(dst, data->front_buf, data->frame_buffer_len);
+		}
+
+		pend_buf = dst;
+
+		/* dst = pointer to upper left pixel of the rectangle
+		 *       to be updated in frame buffer.
+		 */
+		dst += (x * data->current_pixel_size);
+		dst += (y * config->width * data->current_pixel_size);
+
+		for (row = 0; row < desc->height; row++) {
+			(void) memcpy(dst, src, desc->width * data->current_pixel_size);
+			sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
+			dst += (config->width * data->current_pixel_size);
+			src += (desc->pitch * data->current_pixel_size);
+		}
+
 	}
+
+	if (data->front_buf == pend_buf) {
+		return 0;
+	}
+
+	k_sem_reset(&data->sem);
+
+	data->pend_buf = pend_buf;
+
+	k_sem_take(&data->sem, K_FOREVER);
 
 	return 0;
 }
@@ -209,7 +230,7 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
 	uint8_t *dst = buf;
-	const uint8_t *src = data->frame_buffer;
+	const uint8_t *src = data->front_buf;
 	uint16_t row;
 
 	/* src = pointer to upper left pixel of the rectangle to be read from frame buffer */
@@ -218,12 +239,46 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 
 	for (row = 0; row < desc->height; row++) {
 		(void) memcpy(dst, src, desc->width * data->current_pixel_size);
-		CACHE_CLEAN(dst, desc->width * data->current_pixel_size);
+		sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
 		src += (config->width * data->current_pixel_size);
 		dst += (desc->pitch * data->current_pixel_size);
 	}
 
 	return 0;
+}
+
+static int stm32_ltdc_display_blanking_off(const struct device *dev)
+{
+	const struct display_stm32_ltdc_config *config = dev->config;
+	const struct device *display_dev = config->display_controller;
+
+	if (display_dev == NULL) {
+		return 0;
+	}
+
+	if (!device_is_ready(display_dev)) {
+		LOG_ERR("Display device %s not ready", display_dev->name);
+		return -ENODEV;
+	}
+
+	return display_blanking_off(display_dev);
+}
+
+static int stm32_ltdc_display_blanking_on(const struct device *dev)
+{
+	const struct display_stm32_ltdc_config *config = dev->config;
+	const struct device *display_dev = config->display_controller;
+
+	if (display_dev == NULL) {
+		return 0;
+	}
+
+	if (!device_is_ready(config->display_controller)) {
+		LOG_ERR("Display device %s not ready", display_dev->name);
+		return -ENODEV;
+	}
+
+	return display_blanking_on(display_dev);
 }
 
 static int stm32_ltdc_init(const struct device *dev)
@@ -305,18 +360,40 @@ static int stm32_ltdc_init(const struct device *dev)
 	data->current_pixel_format = DISPLAY_INIT_PIXEL_FORMAT;
 	data->current_pixel_size = STM32_LTDC_INIT_PIXEL_SIZE;
 
+	k_sem_init(&data->sem, 0, 1);
+
+	config->irq_config_func(dev);
+
+#ifdef CONFIG_STM32_LTDC_DISABLE_FMC_BANK1
+	/* Clear MBKEN and MTYP[1:0] bits. */
+#ifdef CONFIG_SOC_SERIES_STM32F7X
+	FMC_Bank1->BTCR[0] &= ~(0x0000000D);
+#else /* CONFIG_SOC_SERIES_STM32H7X */
+	FMC_Bank1_R->BTCR[0] &= ~(0x0000000D);
+#endif
+#endif /* CONFIG_STM32_LTDC_DISABLE_FMC_BANK1 */
+
 	/* Initialise the LTDC peripheral */
 	err = HAL_LTDC_Init(&data->hltdc);
 	if (err != HAL_OK) {
 		return err;
 	}
 
-	/* Configure layer 0 (only one layer is used) */
+	/* Configure layer 1 (only one layer is used) */
 	/* LTDC starts fetching pixels and sending them to display after this call */
-	err = HAL_LTDC_ConfigLayer(&data->hltdc, &data->hltdc.LayerCfg[0], 0);
+	err = HAL_LTDC_ConfigLayer(&data->hltdc, &data->hltdc.LayerCfg[0], LTDC_LAYER_1);
 	if (err != HAL_OK) {
 		return err;
 	}
+
+	/* Disable layer 2, since it not used */
+	__HAL_LTDC_LAYER_DISABLE(&data->hltdc, LTDC_LAYER_2);
+
+	/* Set the line interrupt position */
+	LTDC->LIPCR = 0U;
+
+	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
@@ -379,16 +456,13 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 static const struct display_driver_api stm32_ltdc_display_api = {
-	.blanking_on = stm32_ltdc_blanking_on,
-	.blanking_off = stm32_ltdc_blanking_off,
 	.write = stm32_ltdc_write,
 	.read = stm32_ltdc_read,
-	.get_framebuffer = stm32_ltdc_get_framebuffer,
-	.set_brightness = stm32_ltdc_set_brightness,
-	.set_contrast = stm32_ltdc_set_contrast,
 	.get_capabilities = stm32_ltdc_get_capabilities,
 	.set_pixel_format = stm32_ltdc_set_pixel_format,
-	.set_orientation = stm32_ltdc_set_orientation
+	.set_orientation = stm32_ltdc_set_orientation,
+	.blanking_off = stm32_ltdc_display_blanking_off,
+	.blanking_on = stm32_ltdc_display_blanking_on,
 };
 
 #if DT_INST_NODE_HAS_PROP(0, ext_sdram)
@@ -414,16 +488,30 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 #define STM32_LTDC_DEVICE_PINCTRL_GET(n) PINCTRL_DT_INST_DEV_CONFIG_GET(n)
 #endif
 
+#define STM32_LTDC_FRAME_BUFFER_LEN(inst)							\
+	(STM32_LTDC_INIT_PIXEL_SIZE * DT_INST_PROP(inst, height) * DT_INST_PROP(inst, width))	\
+
 #define STM32_LTDC_DEVICE(inst)									\
 	STM32_LTDC_DEVICE_PINCTRL_INIT(inst);							\
 	PM_DEVICE_DT_INST_DEFINE(inst, stm32_ltdc_pm_action);					\
+	static void stm32_ltdc_irq_config_func_##inst(const struct device *dev)			\
+	{											\
+		IRQ_CONNECT(DT_INST_IRQN(inst),							\
+			    DT_INST_IRQ(inst, priority),					\
+			    stm32_ltdc_global_isr,						\
+			    DEVICE_DT_INST_GET(inst),						\
+			    0);									\
+		irq_enable(DT_INST_IRQN(inst));							\
+	}											\
 	/* frame buffer aligned to cache line width for optimal cache flushing */		\
 	FRAME_BUFFER_SECTION static uint8_t __aligned(32)					\
-				frame_buffer_##inst[STM32_LTDC_INIT_PIXEL_SIZE *		\
-						DT_INST_PROP(inst, height) *			\
-						DT_INST_PROP(inst, width)];			\
+				frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM *			\
+							STM32_LTDC_FRAME_BUFFER_LEN(inst)];	\
 	static struct display_stm32_ltdc_data stm32_ltdc_data_##inst = {			\
 		.frame_buffer = frame_buffer_##inst,						\
+		.frame_buffer_len = STM32_LTDC_FRAME_BUFFER_LEN(inst),				\
+		.front_buf = frame_buffer_##inst,						\
+		.pend_buf = frame_buffer_##inst,						\
 		.hltdc = {									\
 			.Instance = (LTDC_TypeDef *) DT_INST_REG_ADDR(inst),			\
 			.Init = {								\
@@ -518,6 +606,9 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 			.bus = DT_INST_CLOCKS_CELL(inst, bus)					\
 		},										\
 		.pctrl = STM32_LTDC_DEVICE_PINCTRL_GET(inst),					\
+		.irq_config_func = stm32_ltdc_irq_config_func_##inst,				\
+		.display_controller = DEVICE_DT_GET_OR_NULL(					\
+			DT_INST_PHANDLE(inst, display_controller)),				\
 	};											\
 	DEVICE_DT_INST_DEFINE(inst,								\
 			&stm32_ltdc_init,							\

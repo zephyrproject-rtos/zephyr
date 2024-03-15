@@ -20,6 +20,22 @@ static char sample_packet[PACKET_SIZE_MAX];
 
 static struct zperf_async_upload_context tcp_async_upload_ctx;
 
+static ssize_t sendall(int sock, const void *buf, size_t len)
+{
+	while (len) {
+		ssize_t out_len = zsock_send(sock, buf, len, 0);
+
+		if (out_len < 0) {
+			return out_len;
+		}
+
+		buf = (const char *)buf + out_len;
+		len -= out_len;
+	}
+
+	return 0;
+}
+
 static int tcp_upload(int sock,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
@@ -50,7 +66,7 @@ static int tcp_upload(int sock,
 
 	do {
 		/* Send the packet */
-		ret = zsock_send(sock, sample_packet, packet_size, 0);
+		ret = sendall(sock, sample_packet, packet_size);
 		if (ret < 0) {
 			if (nb_errors == 0 && ret != -ENOMEM) {
 				NET_ERR("Failed to send the packet (%d)", errno);
@@ -86,7 +102,7 @@ static int tcp_upload(int sock,
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;
 	results->client_time_in_us =
-				k_ticks_to_us_ceil32(end_time - start_time);
+				k_ticks_to_us_ceil64(end_time - start_time);
 	results->packet_size = packet_size;
 	results->nb_packets_errors = nb_errors;
 

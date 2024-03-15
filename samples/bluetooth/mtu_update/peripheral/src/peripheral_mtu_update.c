@@ -16,9 +16,9 @@
 
 #define MTU_TEST_SERVICE_TYPE BT_UUID_128_ENCODE(0x2e2b8dc3, 0x06e0, 0x4f93, 0x9bb2, 0x734091c356f0)
 
-static struct bt_uuid_128 mtu_test_service = BT_UUID_INIT_128(MTU_TEST_SERVICE_TYPE);
+static const struct bt_uuid_128 mtu_test_service = BT_UUID_INIT_128(MTU_TEST_SERVICE_TYPE);
 
-static struct bt_uuid_128 notify_characteristic_uuid =
+static const struct bt_uuid_128 notify_characteristic_uuid =
 	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x2e2b8dc3, 0x06e0, 0x4f93, 0x9bb2, 0x734091c356f3));
 
 static const struct bt_data adv_ad_data[] = {

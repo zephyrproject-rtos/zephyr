@@ -194,7 +194,12 @@ struct net_pkt {
 	uint8_t l2_processed : 1; /* Set to 1 if this packet has already been
 				   * processed by the L2
 				   */
-
+	uint8_t chksum_done : 1; /* Checksum has already been computed for
+				  * the packet.
+				  */
+#if defined(CONFIG_NET_IP_FRAGMENT)
+	uint8_t ip_reassembled : 1; /* Packet is a reassembled IP packet. */
+#endif
 	/* bitfield byte alignment boundary */
 
 #if defined(CONFIG_NET_IP)
@@ -219,7 +224,7 @@ struct net_pkt {
 #endif
 	};
 
-#if defined(CONFIG_NET_IPV4_FRAGMENT) || defined(CONFIG_NET_IPV6_FRAGMENT)
+#if defined(CONFIG_NET_IP_FRAGMENT)
 	union {
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 		struct {
@@ -235,7 +240,7 @@ struct net_pkt {
 		} ipv6_fragment;
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 	};
-#endif /* CONFIG_NET_IPV4_FRAGMENT || CONFIG_NET_IPV6_FRAGMENT */
+#endif /* CONFIG_NET_IP_FRAGMENT */
 
 #if defined(CONFIG_NET_IPV6)
 	/* Where is the start of the last header before payload data
@@ -284,6 +289,13 @@ struct net_pkt {
 	 * is not prioritised.
 	 */
 	uint8_t priority;
+
+#if defined(CONFIG_NET_OFFLOAD)
+	/* Remote address of the recived packet. This is only used by
+	 * network interfaces with an offloaded TCP/IP stack.
+	 */
+	struct sockaddr remote;
+#endif /* CONFIG_NET_OFFLOAD */
 
 	/* @endcond */
 };
@@ -396,6 +408,17 @@ static inline void net_pkt_set_l2_processed(struct net_pkt *pkt,
 					    bool is_l2_processed)
 {
 	pkt->l2_processed = is_l2_processed;
+}
+
+static inline bool net_pkt_is_chksum_done(struct net_pkt *pkt)
+{
+	return !!(pkt->chksum_done);
+}
+
+static inline void net_pkt_set_chksum_done(struct net_pkt *pkt,
+					   bool is_chksum_done)
+{
+	pkt->chksum_done = is_chksum_done;
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
@@ -821,6 +844,33 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 	ARG_UNUSED(id);
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
+
+#if defined(CONFIG_NET_IP_FRAGMENT)
+static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
+{
+	return !!(pkt->ip_reassembled);
+}
+
+static inline void net_pkt_set_ip_reassembled(struct net_pkt *pkt,
+					      bool reassembled)
+{
+	pkt->ip_reassembled = reassembled;
+}
+#else /* CONFIG_NET_IP_FRAGMENT */
+static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline void net_pkt_set_ip_reassembled(struct net_pkt *pkt,
+					      bool reassembled)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(reassembled);
+}
+#endif /* CONFIG_NET_IP_FRAGMENT */
 
 static inline uint8_t net_pkt_priority(struct net_pkt *pkt)
 {
@@ -1664,6 +1714,13 @@ int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 	net_pkt_alloc_buffer_debug(_pkt, _size, _proto, _timeout,	\
 				   __func__, __LINE__)
 
+int net_pkt_alloc_buffer_raw_debug(struct net_pkt *pkt, size_t size,
+				   k_timeout_t timeout,
+				   const char *caller, int line);
+#define net_pkt_alloc_buffer_raw(_pkt, _size, _timeout)	\
+	net_pkt_alloc_buffer_raw_debug(_pkt, _size, _timeout,	\
+				       __func__, __LINE__)
+
 struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 						size_t size,
 						sa_family_t family,
@@ -1776,6 +1833,24 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 size_t size,
 			 enum net_ip_protocol proto,
 			 k_timeout_t timeout);
+#endif
+
+/**
+ * @brief Allocate buffer for a net_pkt, of specified size, w/o any additional
+ *        preconditions
+ *
+ * @details: The actual buffer size may be larger than requested one if fixed
+ *           size buffers are in use.
+ *
+ * @param pkt     The network packet requiring buffer to be allocated.
+ * @param size    The size of buffer being requested.
+ * @param timeout Maximum time to wait for an allocation.
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+#if !defined(NET_PKT_DEBUG_ENABLED)
+int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
+			     k_timeout_t timeout);
 #endif
 
 /**

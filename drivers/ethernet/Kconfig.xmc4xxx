@@ -1,0 +1,56 @@
+# ETH_XMC4XXX Ethernet driver configuration options
+
+# Copyright (c) 2023 SLB
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_XMC4XXX
+	bool "XMC4XXX Ethernet driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_ETHERNET_ENABLED
+	help
+	  Enable XMC4XXX Ethernet driver.
+
+if ETH_XMC4XXX
+
+config ETH_XMC4XXX_TX_FRAME_POOL_SIZE
+	int "Number of TX frames in the pool size"
+	default 4
+	help
+	  Number of TX frames which can be buffered in the driver.
+
+config ETH_XMC4XXX_NUM_TX_DMA_DESCRIPTORS
+	int "Number of TX DMA descriptors"
+	default 32
+	help
+	  Number of TX DMA descriptors. Each descriptor stores the memory address of a
+	  data fragment and its size.
+
+config ETH_XMC4XXX_NUM_RX_DMA_DESCRIPTORS
+	int "Number of RX DMA descriptors"
+	default 12
+	help
+	  Number of RX DMA descriptors. Each descriptor stores the memory address of a
+	  data fragment and its size. The data fragments are pre-allocated from the rx
+	  network buffers (CONFIG_NET_BUF_RX_COUNT). When a frame is received, it is
+	  forwarded to the network stack without copying the data. The buffers
+	  in the descriptors are replaced by new pre-allocated buffers.
+
+config ETH_XMC4XXX_VLAN_HW_FILTER
+	bool "Hardware filter VLAN frames"
+	default y if NET_VLAN_COUNT=1
+	depends on NET_VLAN
+	help
+	  Hardware filter VLAN frames in hardware. Only ethernet frames with
+	  a tag configured using vlan_setup() call will be received.
+	  The filtering can only be done on one vlan tag. If vlan_setup() is
+	  called multiple times, the filtering will be done on the latest
+	  tag.
+
+config PTP_CLOCK_XMC4XXX
+	bool "XMC4XXX PTP clock driver support"
+	default y
+	depends on PTP_CLOCK
+	help
+	  Enable XMC4XXX PTP Clock support.
+
+endif # ETH_XMC4XXX

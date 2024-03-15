@@ -28,8 +28,10 @@ static void sensor_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 
 	if (api->submit != NULL) {
 		api->submit(dev, iodev_sqe);
-	} else {
+	} else if (!cfg->is_streaming) {
 		sensor_submit_fallback(dev, iodev_sqe);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
 
@@ -235,7 +237,7 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 		}
 		sample_idx += num_samples;
 	}
-	LOG_DBG("Total channels in header: %u", header->num_channels);
+	LOG_DBG("Total channels in header: %" PRIu32, header->num_channels);
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 

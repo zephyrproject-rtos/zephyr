@@ -17,7 +17,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config USBH_SHELL
 	bool "USB host shell"
-	default y
 	depends on SHELL
 	help
 	  Shell commands for USB host support.

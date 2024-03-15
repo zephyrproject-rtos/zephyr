@@ -13,11 +13,15 @@ config DMA_TRANSFER_CHANNEL_NR_1
 	int "second DMA channel to use"
 	default 1
 
-config DMA_LOOP_TRANSFER_SRAM_SECTION
+config DMA_LOOP_TRANSFER_RELOCATE_SECTION
 	string "the section to place the memory buffers."
-	depends on NOCACHE_MEMORY
-	default ".nocache"
+	depends on CODE_DATA_RELOCATION
+	default "RAM"
 
 config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 	int "Number of DMAs to test"
 	default 1
+
+config DMA_TRANSFER_BURST16
+	bool "Enable loop transfers of 16-beat bursts"
+	default y

@@ -454,7 +454,7 @@ static struct bt_mesh_dfu_srv dfu_srv =
 #define AUTH_METHOD_INPUT 0x03
 
 static struct model_data {
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 	uint16_t addr;
 	uint16_t appkey_idx;
 } model_bound[MODEL_BOUNDS_MAX];
@@ -587,7 +587,7 @@ static void get_faults(uint8_t *faults, uint8_t faults_size, uint8_t *dst, uint8
 	}
 }
 
-static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
+static int fault_get_cur(const struct bt_mesh_model *model, uint8_t *test_id,
 			 uint16_t *company_id, uint8_t *faults, uint8_t *fault_count)
 {
 	LOG_DBG("");
@@ -600,7 +600,7 @@ static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
 	return 0;
 }
 
-static int fault_get_reg(struct bt_mesh_model *model, uint16_t company_id,
+static int fault_get_reg(const struct bt_mesh_model *model, uint16_t company_id,
 			 uint8_t *test_id, uint8_t *faults, uint8_t *fault_count)
 {
 	LOG_DBG("company_id 0x%04x", company_id);
@@ -616,7 +616,7 @@ static int fault_get_reg(struct bt_mesh_model *model, uint16_t company_id,
 	return 0;
 }
 
-static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
+static int fault_clear(const struct bt_mesh_model *model, uint16_t company_id)
 {
 	LOG_DBG("company_id 0x%04x", company_id);
 
@@ -629,7 +629,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
 	return 0;
 }
 
-static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
+static int fault_test(const struct bt_mesh_model *model, uint8_t test_id,
 		      uint16_t company_id)
 {
 	LOG_DBG("test_id 0x%02x company_id 0x%04x", test_id, company_id);
@@ -691,9 +691,9 @@ static uint8_t health_tests[] = {
 	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_NORDIC_SEMI, 3, 0x01, 0x02, 0x03),
 };
 
-static uint8_t zero_metadata[100];
+static const uint8_t zero_metadata[100];
 
-static struct bt_mesh_models_metadata_entry health_srv_meta[] = {
+static const struct bt_mesh_models_metadata_entry health_srv_meta[] = {
 	BT_MESH_HEALTH_TEST_INFO_METADATA(health_tests),
 	{
 		.len = ARRAY_SIZE(zero_metadata),
@@ -703,13 +703,13 @@ static struct bt_mesh_models_metadata_entry health_srv_meta[] = {
 	BT_MESH_MODELS_METADATA_END,
 };
 
-static uint8_t health_tests_alt[] = {
+static const uint8_t health_tests_alt[] = {
 	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_LF, 6, 0x11, 0x22, 0x33, 0x44, 0x55,
 				 0x66),
 	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_NORDIC_SEMI, 3, 0x11, 0x22, 0x33),
 };
 
-static struct bt_mesh_models_metadata_entry health_srv_meta_alt[] = {
+static const struct bt_mesh_models_metadata_entry health_srv_meta_alt[] = {
 	BT_MESH_HEALTH_TEST_INFO_METADATA(health_tests_alt),
 	{
 		.len = ARRAY_SIZE(zero_metadata),
@@ -820,7 +820,7 @@ static uint8_t priv_beacon_set(const void *cmd, uint16_t cmd_len,
 	val.enabled = cp->enabled;
 	val.rand_interval = cp->rand_interval;
 
-	err = bt_mesh_priv_beacon_cli_set(net.net_idx, cp->dst, &val);
+	err = bt_mesh_priv_beacon_cli_set(net.net_idx, cp->dst, &val, &val);
 	if (err) {
 		LOG_ERR("Failed to send Private Beacon Set (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -857,7 +857,7 @@ static uint8_t priv_gatt_proxy_set(const void *cmd, uint16_t cmd_len,
 
 	state = cp->state;
 
-	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(net.net_idx, cp->dst, &state);
+	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(net.net_idx, cp->dst, state, &state);
 	if (err) {
 		LOG_ERR("Failed to send Private GATT Proxy Set (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -896,7 +896,7 @@ static uint8_t priv_node_id_set(const void *cmd, uint16_t cmd_len,
 	val.net_idx = cp->net_idx;
 	val.state = cp->state;
 
-	err = bt_mesh_priv_beacon_cli_node_id_set(net.net_idx, cp->dst, &val);
+	err = bt_mesh_priv_beacon_cli_node_id_set(net.net_idx, cp->dst, &val, &val);
 	if (err) {
 		LOG_ERR("Failed to send Private Node Identity Set (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -1024,7 +1024,7 @@ static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
 }
 #endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
 
-static struct bt_mesh_model root_models[] = {
+static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
@@ -1091,12 +1091,12 @@ struct model_data *lookup_model_bound(uint16_t id)
 
 	return NULL;
 }
-static struct bt_mesh_model vnd_models[] = {
+static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(CID_LOCAL, VND_MODEL_ID_1, BT_MESH_MODEL_NO_OPS, NULL,
 			  NULL),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
 };
 
@@ -1715,7 +1715,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_mesh_model_send_cmd *cp = cmd;
 	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
-	struct bt_mesh_model *model = NULL;
+	const struct bt_mesh_model *model = NULL;
 	uint16_t src;
 	int err;
 
@@ -1739,7 +1739,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 
 	/* Lookup source address */
 	for (int i = 0; i < ARRAY_SIZE(model_bound); i++) {
-		if (bt_mesh_model_elem(model_bound[i].model)->addr == src) {
+		if (bt_mesh_model_elem(model_bound[i].model)->rt->addr == src) {
 			model = model_bound[i].model;
 			ctx.app_idx = model_bound[i].appkey_idx;
 
@@ -5228,7 +5228,7 @@ void model_recv_ev(uint16_t src, uint16_t dst, const void *payload,
 	tester_event(BTP_SERVICE_ID_MESH, BTP_MESH_EV_MODEL_RECV, buf.data, buf.len);
 }
 
-static void model_bound_cb(uint16_t addr, struct bt_mesh_model *model,
+static void model_bound_cb(uint16_t addr, const struct bt_mesh_model *model,
 			   uint16_t key_idx)
 {
 	int i;
@@ -5249,7 +5249,7 @@ static void model_bound_cb(uint16_t addr, struct bt_mesh_model *model,
 	LOG_ERR("model_bound is full");
 }
 
-static void model_unbound_cb(uint16_t addr, struct bt_mesh_model *model,
+static void model_unbound_cb(uint16_t addr, const struct bt_mesh_model *model,
 			     uint16_t key_idx)
 {
 	int i;

@@ -160,3 +160,10 @@ child-binding:
         interpretation depends on the driver. This is used only for drivers
         which select the ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
         Kconfig option.
+
+    zephyr,vbias-pins:
+      type: int
+      description: |
+        Output pin selection for the bias voltage. The actual interpretation
+        depends on the driver. This is used only for drivers which select
+        the ADC_CONFIGURABLE_VBIAS_PIN Kconfig option.

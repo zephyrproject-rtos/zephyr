@@ -8,6 +8,10 @@
 #include <stdio.h>
 #define USER_STACKSIZE	2048
 
+#ifndef CONFIG_USERSPACE
+#error This sample requires CONFIG_USERSPACE.
+#endif
+
 struct k_thread user_thread;
 K_THREAD_STACK_DEFINE(user_stack, USER_STACKSIZE);
 

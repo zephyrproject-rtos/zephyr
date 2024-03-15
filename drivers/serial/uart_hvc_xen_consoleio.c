@@ -17,6 +17,8 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
+#define DT_DRV_COMPAT xen_hvc_consoleio
+
 static int xen_consoleio_poll_in(const struct device *dev,
 			unsigned char *c)
 {
@@ -44,12 +46,12 @@ static const struct uart_driver_api xen_consoleio_hvc_api = {
 	.poll_out = xen_consoleio_poll_out,
 };
 
-int xen_consoleio_init(const struct device *dev)
+static int xen_consoleio_init(const struct device *dev)
 {
 	/* Nothing to do, but still needed for device API */
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_NODELABEL(xen_consoleio_hvc), xen_consoleio_init, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, xen_consoleio_init, NULL, NULL,
 		NULL, PRE_KERNEL_1, CONFIG_XEN_HVC_INIT_PRIORITY,
 		&xen_consoleio_hvc_api);

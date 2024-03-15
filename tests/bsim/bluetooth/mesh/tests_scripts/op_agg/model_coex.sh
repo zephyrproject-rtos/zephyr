@@ -21,11 +21,9 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    aggregated sequence from the DUT device is correctly received.
 # 5. Finally, the DUT device waits and confirms that it received all status messages
 #    related to its own aggregated sequence from the cli device.
-conf=prj_mesh1d1_conf
 RunTest mesh_op_agg_model_coex \
 	op_agg_tester_model_coex op_agg_dut_model_coex
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_op_agg_model_coex \
 	op_agg_tester_model_coex op_agg_dut_model_coex

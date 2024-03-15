@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Nordic Semiconductor ASA
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,8 +67,14 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_QTMR
 	DEVS_FOR_DT_COMPAT(nxp_imx_tmr)
 #endif
-#ifdef CONFIG_COUNTER_MCUX_LPC_RTC
+#ifdef CONFIG_COUNTER_NXP_MRT
+	DEVS_FOR_DT_COMPAT(nxp_mrt_channel)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_LPC_RTC_1HZ
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_LPC_RTC_HIGHRES
+	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc_highres)
 #endif
 #ifdef CONFIG_COUNTER_GECKO_RTCC
 	DEVS_FOR_DT_COMPAT(silabs_gecko_rtcc)
@@ -78,8 +85,8 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_GECKO_STIMER
 	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
 #endif
-#ifdef CONFIG_COUNTER_MCUX_PIT
-	DEVS_FOR_DT_COMPAT(nxp_kinetis_pit)
+#ifdef CONFIG_COUNTER_NXP_PIT
+	DEVS_FOR_DT_COMPAT(nxp_pit_channel)
 #endif
 #ifdef CONFIG_COUNTER_XLNX_AXI_TIMER
 	DEVS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)
@@ -95,6 +102,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_TIMER_RPI_PICO
 	DEVS_FOR_DT_COMPAT(raspberrypi_pico_timer)
+#endif
+#ifdef CONFIG_COUNTER_AMBIQ
+	DEVS_FOR_DT_COMPAT(ambiq_counter)
 #endif
 };
 

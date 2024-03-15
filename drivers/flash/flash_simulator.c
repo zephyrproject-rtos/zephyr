@@ -481,12 +481,12 @@ void *z_impl_flash_simulator_get_memory(const struct device *dev,
 
 #ifdef CONFIG_USERSPACE
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 				      size_t *mock_size)
 {
-	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
 
 	return z_impl_flash_simulator_get_memory(dev, mock_size);
 }

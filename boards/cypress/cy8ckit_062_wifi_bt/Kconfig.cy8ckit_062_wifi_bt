@@ -1,0 +1,10 @@
+# PSoC6 WiFi-BT Pioneer Kit configuration
+
+# Copyright (c) 2018 Cypress
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CKIT_062_WIFI_BT
+	select SOC_PART_NUMBER_CY8C6247BZI_D54
+	select SOC_CY8C6247_M0 if BOARD_CY8CKIT_062_WIFI_BT_CY8C6247_M0
+	select SOC_CY8C6247_M4 if BOARD_CY8CKIT_062_WIFI_BT_CY8C6247_M4

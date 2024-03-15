@@ -338,7 +338,7 @@ static void check_mod_pub_params(const struct bt_mesh_cfg_cli_mod_pub *expected,
 	ASSERT_EQUAL(expected->transmit, got->transmit);
 }
 
-int test_model_settings_set(struct bt_mesh_model *model,
+int test_model_settings_set(const struct bt_mesh_model *model,
 			    const char *name, size_t len_rd,
 			    settings_read_cb read_cb, void *cb_arg)
 {
@@ -364,12 +364,12 @@ int test_model_settings_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-void test_model_reset(struct bt_mesh_model *model)
+void test_model_reset(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_data_store(test_model, false, TEST_MOD_DATA_NAME, NULL, 0));
 }
 
-int test_vnd_model_settings_set(struct bt_mesh_model *model,
+int test_vnd_model_settings_set(const struct bt_mesh_model *model,
 				const char *name, size_t len_rd,
 				settings_read_cb read_cb, void *cb_arg)
 {
@@ -395,7 +395,7 @@ int test_vnd_model_settings_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-void test_vnd_model_reset(struct bt_mesh_model *model)
+void test_vnd_model_reset(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_data_store(test_vnd_model, true, TEST_VND_MOD_DATA_NAME, NULL, 0));
 }
@@ -549,7 +549,7 @@ static void node_configure(void)
 	 */
 	uint8_t net_transmit;
 
-	net_transmit = BT_MESH_TRANSMIT(3, 20);
+	net_transmit = BT_MESH_TRANSMIT(3, 50);
 	err = bt_mesh_cfg_cli_net_transmit_set(test_netkey_idx, TEST_ADDR, net_transmit, &status);
 	if (err || status != net_transmit) {
 		FAIL("Net transmit set failed (err %d, transmit %x)", err, status);
@@ -953,14 +953,16 @@ static void test_cfg_save(void)
 		.rand_interval = current_stack_cfg->priv_beacon_int,
 	};
 
-	err = bt_mesh_priv_beacon_cli_set(test_netkey_idx, TEST_ADDR, &priv_beacon_state);
+	err = bt_mesh_priv_beacon_cli_set(test_netkey_idx, TEST_ADDR, &priv_beacon_state,
+					  &priv_beacon_state);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err %d)", err);
 	}
 
 	uint8_t priv_beacon_gatt = current_stack_cfg->priv_beacon_gatt;
 
-	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(test_netkey_idx, TEST_ADDR, &priv_beacon_gatt);
+	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(test_netkey_idx, TEST_ADDR, priv_beacon_gatt,
+						     &priv_beacon_gatt);
 	if (err) {
 		FAIL("Failed to enable Private Beacon GATT proxy (err %d)", err);
 	}

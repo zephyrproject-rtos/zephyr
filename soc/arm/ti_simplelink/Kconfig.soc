@@ -1,5 +1,0 @@
-# Texas Instruments SimpleLink Family
-
-# SPDX-License-Identifier: Apache-2.0
-
-source "soc/arm/ti_simplelink/*/Kconfig.series"

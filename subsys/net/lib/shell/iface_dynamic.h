@@ -32,9 +32,9 @@ static char *set_iface_index_buffer(size_t idx)
 		return NULL;
 	}
 
-	snprintk(iface_index_buffer[idx], MAX_IFACE_STR_LEN, "%d", (uint8_t)idx);
+	snprintk(iface_index_buffer[idx - 1], MAX_IFACE_STR_LEN, "%d", (uint8_t)idx);
 
-	return iface_index_buffer[idx];
+	return iface_index_buffer[idx - 1];
 }
 
 static char *set_iface_index_help(size_t idx)
@@ -56,14 +56,14 @@ static char *set_iface_index_help(size_t idx)
 	net_if_get_name(iface, name, CONFIG_NET_INTERFACE_NAME_LEN);
 	name[CONFIG_NET_INTERFACE_NAME_LEN] = '\0';
 
-	snprintk(iface_help_buffer[idx], MAX_IFACE_HELP_STR_LEN,
+	snprintk(iface_help_buffer[idx - 1], MAX_IFACE_HELP_STR_LEN,
 		 "%s [%s] (%p)", name, iface2str(iface, NULL), iface);
 #else
-	snprintk(iface_help_buffer[idx], MAX_IFACE_HELP_STR_LEN,
+	snprintk(iface_help_buffer[idx - 1], MAX_IFACE_HELP_STR_LEN,
 		 "[%s] (%p)", iface2str(iface, NULL), iface);
 #endif
 
-	return iface_help_buffer[idx];
+	return iface_help_buffer[idx - 1];
 }
 
 static void iface_index_get(size_t idx, struct shell_static_entry *entry)

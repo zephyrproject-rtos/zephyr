@@ -1,0 +1,22 @@
+common:
+  tags:
+    - thrift
+    - cpp
+  modules:
+    - thrift
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  # qemu_x86 exluded due to missing long double functions in SDK
+  # See https://github.com/zephyrproject-rtos/sdk-ng/issues/603
+  platform_allow:
+    - mps2/an385
+    - qemu_cortex_a53
+    - qemu_riscv32
+    - qemu_riscv64
+    - qemu_x86_64
+tests:
+  thrift.ThriftTest.newlib.binaryProtocol: {}
+  thrift.ThriftTest.newlib.compactProtocol:
+    extra_configs:
+      - CONFIG_THRIFT_COMPACT_PROTOCOL=y
+  thrift.ThriftTest.newlib.tlsTransport:
+    extra_args: OVERLAY_CONFIG="overlay-tls.conf"

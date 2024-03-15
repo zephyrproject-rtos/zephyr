@@ -10,23 +10,9 @@ config ARCH
 	default "xtensa"
 
 config SIMULATOR_XTENSA
-	bool "Simulator Configuration"
+	bool "Simulator Target"
 	help
-	  Specify if the board configuration should be treated as a simulator.
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	prompt "Hardware clock cycles per second, 2000000 for ISS"
-	default 2000000
-	range 1000000 1000000000
-	help
-	  This option specifies hardware clock.
-
-config XTENSA_NO_IPC
-	bool "Core has no IPC support"
-	select ATOMIC_OPERATIONS_C
-	help
-	  Uncheck this if your core does not implement "SCOMPARE1" register and "s32c1i"
-	  instruction.
+	  Enable if building to run on simulator.
 
 config XTENSA_RESET_VECTOR
 	bool "Build reset vector code"
@@ -49,18 +35,6 @@ config XTENSA_ENABLE_BACKTRACE
 	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP || SOC_XTENSA_DC233C
 	help
 	  Enable this config option to print backtrace on panic exception
-
-config XTENSA_CPU_IDLE_SPIN
-	bool "Use busy loop for k_cpu_idle"
-	help
-	  Use a spin loop instead of WAITI for the CPU idle state.
-
-config XTENSA_WAITI_BUG
-	bool "Workaround sequence for WAITI bug on LX6"
-	help
-	  SOF traditionally contains this workaround on its ADSP
-	  platforms which prefixes a WAITI entry with 128 NOP
-	  instructions followed by an ISYNC and EXTW.
 
 config XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	bool "Workaround for small vector table entries"
@@ -119,57 +93,138 @@ config XTENSA_NUM_SPIN_RELAX_NOPS
 	  Specify the number of NOPs in Xtensa specific
 	  arch_spin_relax().
 
+menu "Xtensa HiFi Options"
+
+config XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI3
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI4
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+# Selected when at least one XTENSA_HIFIn version has been configured
+config XTENSA_HIFI
+	bool
+
+if XTENSA_CPU_HAS_HIFI
+
+config XTENSA_HIFI3
+	bool "HiFi3 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI3
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 3 instruction support.
+
+config XTENSA_HIFI4
+	bool "HiFi4 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI4
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 4 instruction support.
+
+config XTENSA_HIFI_SHARING
+	bool "HiFi register sharing"
+	depends on XTENSA_HIFI
+	help
+	  This option enables preservation of the hardware HiFi registers
+	  across context switches to allow multiple threads to perform
+	  concurrent HiFi operations.
+
+endif    # XTENSA_CPU_HAS_HIFI
+
+endmenu  # Xtensa HiFi Options
+
 if CPU_HAS_MMU
 
 config XTENSA_MMU
 	bool "Xtensa MMU Support"
-	default n
 	select MMU
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	select KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK if XTENSA_RPO_CACHE
+	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
 	help
 	  Enable support for Xtensa Memory Management Unit.
 
 if XTENSA_MMU
 
-	choice
-		prompt "PageTable virtual adddress"
-		default XTENSA_MMU_PTEVADDR_20000000
+choice
+	prompt "PageTable virtual address"
+	default XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The virtual address for Xtensa page table (PTEVADDR).
+
+config XTENSA_MMU_PTEVADDR_20000000
+	bool "0x20000000"
+
+endchoice
+
+config XTENSA_MMU_PTEVADDR
+	hex
+	default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The virtual address for Xtensa page table (PTEVADDR).
+
+config XTENSA_MMU_PTEVADDR_SHIFT
+	int
+	default 29 if XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The bit shift number for the virtual address for Xtensa
+	  page table (PTEVADDR).
+
+config XTENSA_MMU_NUM_L1_TABLES
+	int "Number of L1 page tables"
+	default 1 if !USERSPACE
+	default 4
+	help
+	  This option specifies the maximum number of traslation tables.
+	  Translation tables are directly related to the number of
+	  memory domains in the target, considering the kernel itself requires one.
+
+config XTENSA_MMU_NUM_L2_TABLES
+	int "Number of L2 page tables"
+	default 20 if USERSPACE
+	default 10
+	help
+	  Each table can address up to 4MB memory address.
+
+config XTENSA_MMU_DOUBLE_MAP
+	bool "Map memory in cached and uncached region"
+	help
+	  This option specifies that the memory is mapped in two
+	  distinct region, cached and uncached.
+
+	config XTENSA_INVALIDATE_MEM_DOMAIN_TLB_ON_SWAP
+		bool
 		help
-		  The virtual address for Xtensa page table (PTEVADDR).
+		  This invalidates all TLBs referred by the incoming thread's
+		  memory domain when swapping page tables.
 
-	config XTENSA_MMU_PTEVADDR_20000000
-		bool "0x20000000"
-
-	endchoice
-
-	config XTENSA_MMU_PTEVADDR
-		hex
-		default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
-		help
-		  The virtual address for Xtensa page table (PTEVADDR).
-
-	config XTENSA_MMU_PTEVADDR_SHIFT
-		int
-		default 29 if XTENSA_MMU_PTEVADDR_20000000
-		help
-		  The bit shift number for the virtual address for Xtensa
-		  page table (PTEVADDR).
-
-	config XTENSA_MMU_NUM_L2_TABLES
-		int "Number of L2 page tables"
-		default 10
-		help
-		  Each table can address up to 4MB memory address.
-
-	config XTENSA_MMU_DOUBLE_MAP
-		bool "Map memory in cached and uncached region"
-		default n
-		help
-			This option specifies that the memory is mapped in two
-			distinct region, cached and uncached.
+config PRIVILEGED_STACK_SIZE
+	# Must be multiple of CONFIG_MMU_PAGE_SIZE
+	default 4096
 
 endif # XTENSA_MMU
+
+config XTENSA_SYSCALL_USE_HELPER
+	bool "Use userspace syscall helper"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
+	depends on USERSPACE
+	help
+	  Use syscall helpers for passing more then 3 arguments.
+	  This is a workaround for toolchains where they have
+	  issue modeling register usage.
+
+config XTENSA_INSECURE_USERSPACE
+	bool
+	default y if USERSPACE
+	depends on XTENSA_MMU
 
 endif # CPU_HAS_MMU
 

@@ -78,12 +78,12 @@ static void test_k_work_user_submit_to_queue_fail(void)
 	zassert_false(k_work_user_is_pending(&work[0]));
 
 	/* use up the memory in resource pool */
-	for (int i = 0; i < 100; i++) {
+	do {
 		ret = k_queue_alloc_append(&user_workq.queue, &work[1]);
 		if (ret == -ENOMEM) {
 			break;
 		}
-	}
+	} while (true);
 
 	k_work_user_submit_to_queue(&user_workq, &work[0]);
 	/* if memory is used up, the work cannot be append into the workqueue */

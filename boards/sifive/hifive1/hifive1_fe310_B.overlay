@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	model = "SiFive HiFive 1 Rev. B";
+	compatible = "sifive,hifive1_revb";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi1_cs2_default
+		     &spi1_mosi_default
+		     &spi1_miso_default
+		     &spi1_sck_default>;
+	pinctrl-names = "default";
+};

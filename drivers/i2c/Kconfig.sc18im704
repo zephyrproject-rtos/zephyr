@@ -5,6 +5,7 @@ config I2C_SC18IM704
 	bool "NXP SC18IM704 I2C controller driver"
 	default y
 	depends on DT_HAS_NXP_SC18IM704_I2C_ENABLED
+	select UART_USE_RUNTIME_CONFIGURE
 	help
 	  Enables NXP SC18IM704 I2C controller driver
 

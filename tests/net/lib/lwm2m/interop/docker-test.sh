@@ -13,7 +13,7 @@ FWD="-p 8080:8080 -p 8081:8081 -p 5683:5683/udp"
 start_configuration "$IP $FWD" || return $?
 start_docker "/net-tools/start-leshan.sh" || return $?
 
-twister -p native_posix -T ./ --enable-slow -vv
+twister -p native_sim -T ./ --enable-slow -vv
 
 result=$?
 

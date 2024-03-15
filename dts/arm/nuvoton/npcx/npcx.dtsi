@@ -376,16 +376,6 @@
 			status = "disabled";
 		};
 
-		shi0: shi@4000f000 {
-			compatible = "nuvoton,npcx-shi";
-			reg = <0x4000f000 0x120>;
-			interrupts = <18 1>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 1>;
-			status = "disabled";
-			buffer-rx-size = <128>;
-			buffer-tx-size = <128>;
-		};
-
 		host_sub: lpc@400c1000 {
 			compatible = "nuvoton,npcx-host-sub";
 			/* host sub-module register address & size */
@@ -555,6 +545,17 @@
 			wui-maps = <&wui_io31 &wui_io30 &wui_io27 &wui_io26
 				    &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
 			status = "disabled";
+		};
+
+		spip0: spi@400d2000 {
+			compatible = "nuvoton,npcx-spip";
+			reg = <0x400d2000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <57 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL4 7>;
+			status = "disabled";
+
 		};
 	};
 

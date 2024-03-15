@@ -23,6 +23,7 @@ ZTEST_USER(can_stats, test_can_stats_accessors)
 {
 	uint32_t val;
 
+	val = can_stats_get_bit_errors(can_dev);
 	val = can_stats_get_bit0_errors(can_dev);
 	val = can_stats_get_bit1_errors(can_dev);
 	val = can_stats_get_stuff_errors(can_dev);

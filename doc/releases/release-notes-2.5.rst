@@ -453,7 +453,7 @@ Drivers and Sensors
 
 * I2C
 
-  * Added driver support for lmx6x, it8xxx2, and npcx7 plaforms.
+  * Added driver support for lmx6x, it8xxx2, and npcx7 platforms.
   * Added Atmel SAM4L TWIM driver.
   * Added I2C slave support in the microchip i2c driver.
   * Reversed 2.4 decision to downgrade I2C eeprom slave driver to a
@@ -900,7 +900,7 @@ MCUBoot
   * Renamed single-image mode to single-slot mode,
     see ``CONFIG_SINGLE_APPLICATION_SLOT``.
   * Added patch for turning off cache for Cortex M7 before chain-loading.
-  * Fixed boostrapping in swap-move mode.
+  * Fixed bootstrapping in swap-move mode.
   * Fixed issue causing that interrupted swap-move operation might brick device
     if the primary image was padded.
   * Fixed issue causing that HW stack protection catches the chain-loaded

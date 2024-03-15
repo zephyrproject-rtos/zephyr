@@ -8,7 +8,6 @@
 #include <zephyr/bluetooth/conn.h>
 #include "net.h"
 #include "proxy.h"
-#include "adv.h"
 #include "prov.h"
 #include "pb_gatt.h"
 #include "proxy_msg.h"

@@ -125,6 +125,29 @@ config UART_PIPE
 	  data (as contrary to console UART driver) and all aspects of received
 	  protocol data are handled by application provided callback.
 
+config UART_ASYNC_RX_HELPER
+	bool "Helper for UART asynchronous reception"
+	help
+	  Module implements handling of reception of variable length data using
+	  Asynchronous UART API. It can be used in cases where received data processing
+	  is delayed. Module implements zero-copy approach with multiple reception
+	  buffers.
+
+config UART_ASYNC_TO_INT_DRIVEN_API
+	bool
+	select UART_ASYNC_RX_HELPER
+	help
+	  Asynchronous to Interrupt driven adaptation layer. When enabled device
+	  which implements only asynchronous API can be used with interrupt driven
+	  API implemented by the generic adaptation layer.
+
+config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
+	int "Receiver timeout (in bauds)"
+	depends on UART_ASYNC_TO_INT_DRIVEN_API
+	default 100
+	help
+	  Receiver inactivity timeout. It is used to calculate timeout in microseconds.
+
 comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.b91"
@@ -244,5 +267,11 @@ source "drivers/serial/Kconfig.sedi"
 source "drivers/serial/Kconfig.bcm2711"
 
 source "drivers/serial/Kconfig.intel_lw"
+
+source "drivers/serial/Kconfig.renesas_ra"
+
+source "drivers/serial/Kconfig.ene"
+
+source "drivers/serial/Kconfig.rzt2m"
 
 endif # SERIAL

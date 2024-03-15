@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/i2s.h>
 
 
@@ -16,17 +16,17 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 	struct i2s_config config;
 	int ret = -EINVAL;
 
-	if (Z_SYSCALL_DRIVER_I2S(dev, configure)) {
+	if (K_SYSCALL_DRIVER_I2S(dev, configure)) {
 		goto out;
 	}
 
-	Z_OOPS(z_user_from_copy(&config, (const void *)cfg_ptr,
+	K_OOPS(k_usermode_from_copy(&config, (const void *)cfg_ptr,
 				sizeof(struct i2s_config)));
 
 	/* Check that the k_mem_slab provided is a valid pointer and that
 	 * the caller has permission on it
 	 */
-	if (Z_SYSCALL_OBJ(config.mem_slab, K_OBJ_MEM_SLAB)) {
+	if (K_SYSCALL_OBJ(config.mem_slab, K_OBJ_MEM_SLAB)) {
 		goto out;
 	}
 
@@ -50,7 +50,7 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 	size_t data_size;
 	int ret;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_I2S(dev, read));
+	K_OOPS(K_SYSCALL_DRIVER_I2S(dev, read));
 
 	ret = i2s_read((const struct device *)dev, &mem_block, &data_size);
 
@@ -63,12 +63,12 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 		 */
 		rx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_RX);
 
-		copy_success = z_user_to_copy((void *)buf, mem_block,
+		copy_success = k_usermode_to_copy((void *)buf, mem_block,
 					      data_size);
 
 		k_mem_slab_free(rx_cfg->mem_slab, mem_block);
-		Z_OOPS(copy_success);
-		Z_OOPS(z_user_to_copy((void *)size, &data_size,
+		K_OOPS(copy_success);
+		K_OOPS(k_usermode_to_copy((void *)size, &data_size,
 				      sizeof(data_size)));
 	}
 
@@ -83,7 +83,7 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 	const struct i2s_config *tx_cfg;
 	void *mem_block;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_I2S(dev, write));
+	K_OOPS(K_SYSCALL_DRIVER_I2S(dev, write));
 	tx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_TX);
 	if (!tx_cfg) {
 		return -EIO;
@@ -98,10 +98,10 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	ret = z_user_from_copy(mem_block, (void *)buf, size);
+	ret = k_usermode_from_copy(mem_block, (void *)buf, size);
 	if (ret) {
 		k_mem_slab_free(tx_cfg->mem_slab, mem_block);
-		Z_OOPS(ret);
+		K_OOPS(ret);
 	}
 
 	ret = i2s_write((const struct device *)dev, mem_block, size);
@@ -117,7 +117,7 @@ static inline int z_vrfy_i2s_trigger(const struct device *dev,
 				     enum i2s_dir dir,
 				     enum i2s_trigger_cmd cmd)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_I2S(dev, trigger));
+	K_OOPS(K_SYSCALL_DRIVER_I2S(dev, trigger));
 
 	return z_impl_i2s_trigger((const struct device *)dev, dir, cmd);
 }

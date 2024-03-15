@@ -26,7 +26,6 @@ config W1_INIT_PRIORITY
 config W1_SHELL
 	bool "1-Wire Shell"
 	depends on SHELL
-	default y if !SHELL_MINIMAL
 	help
 	  Enable 1-Wire Shell for testing.
 
@@ -45,6 +44,7 @@ rsource "Kconfig.ds2484"
 rsource "Kconfig.ds2477_85"
 rsource "Kconfig.ds2485"
 rsource "Kconfig.test"
+rsource "Kconfig.zephyr_gpio"
 rsource "Kconfig.zephyr_serial"
 
 config W1_NET

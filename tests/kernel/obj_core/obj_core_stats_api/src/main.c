@@ -10,7 +10,8 @@
 K_SEM_DEFINE(test_sem, 0, 1);
 
 static void test_thread_entry(void *, void *, void *);
-K_THREAD_DEFINE(test_thread, 512, test_thread_entry, NULL, NULL, NULL,
+K_THREAD_DEFINE(test_thread, 512 + CONFIG_TEST_EXTRA_STACK_SIZE,
+		test_thread_entry, NULL, NULL, NULL,
 		K_HIGHEST_THREAD_PRIO, 0, 0);
 
 /*

@@ -1,0 +1,294 @@
+/*
+ * Copyright (c) 2021 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "bt610-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Laird BT610 Sensor";
+	compatible = "lairdconnect,bt610";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			label = "Red LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 2";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		led1pwm: led_1_pwm {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED 1";
+		};
+
+		led2pwm: led_2_pwm {
+			pwms = <&pwm1 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button_1 {
+			gpios = <&gpio0 24 GPIO_PULL_UP>;
+			label = "Boot button switch 1 (SW1)";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button2: button_2 {
+			gpios = <&gpio1 1 GPIO_PULL_UP>;
+			label = "Tamper switch 2 (SW2)";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led0pwm = &led1pwm;
+		led1pwm = &led2pwm;
+		sw0 = &button1;
+		sw1 = &button2;
+		sw2 = &mag1;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &led1;
+		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r64;
+	};
+
+	mag1: mag_1 {
+		compatible = "honeywell,sm351lt";
+		gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	dinenable1: din_enable_1 {
+		compatible = "regulator-fixed";
+		regulator-name = "din_enable_1";
+		enable-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	};
+
+	dinenable2: din_enable_2 {
+		compatible = "regulator-fixed";
+		regulator-name = "din_enable_2";
+		enable-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	};
+
+	thermenable: therm_enable {
+		compatible = "regulator-fixed";
+		regulator-name = "therm_enable";
+		enable-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	};
+
+	analogenable: analog_enable {
+		compatible = "regulator-fixed";
+		regulator-name = "analog_enable";
+		enable-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+	};
+
+	highsupplyenable: high_supply_enable {
+		compatible = "regulator-fixed";
+		regulator-name = "high_supply_enable";
+		enable-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+	};
+
+	batteryoutputenable: battery_output_enable {
+		compatible = "regulator-fixed";
+		regulator-name = "battery_output_enable";
+		enable-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&uicr {
+	nfct-pins-as-gpios;
+	gpio-as-nreset;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	gpio_exp0: tca9538@70 {
+		compatible = "ti,tca9538";
+		reg = <0x70>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		nint-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	cs-gpios = <&gpio0 25 0>,
+		<&gpio0 31 0>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+	mx25r64: mx25r6435f@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4io";
+		readoc = "read4io";
+		sck-frequency = <8000000>;
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
+			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 96K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00018000>;
+		};
+		/* 896K */
+		slot0_partition: partition@18000 {
+			label = "image-0";
+			reg = <0x00018000 0x000E0000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/NVS
+		 * if enabled. 32K
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 896K */
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x00000000 0x000E0000>;
+		};
+		/* 16K */
+		scratch_partition: partition@E0000 {
+			label = "image-scratch";
+			reg = <0x000E0000 0x00004000>;
+		};
+		/* 112K */
+		customer_partition: partition@E4000 {
+			label = "customer-storage";
+			reg = <0x000E4000 0x0001C000>;
+		};
+		/* 7MB */
+		lfs_partition: partition@100000 {
+			label = "lfs_storage";
+			reg = <0x00100000 0x00700000>;
+		};
+	};
+};

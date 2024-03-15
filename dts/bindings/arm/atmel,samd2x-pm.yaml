@@ -1,7 +1,7 @@
 # Copyright (c) 2020, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmel SAMD2x Power Manger (PM)
+description: Atmel SAMD2x Power Manager (PM)
 
 compatible: "atmel,samd2x-pm"
 

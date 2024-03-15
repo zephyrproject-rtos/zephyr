@@ -184,6 +184,14 @@
 			ngpios = <22>;   /* 32..53 */
 		};
 
+		touch: touch@3f40885c {
+			compatible = "espressif,esp32-touch";
+			reg = <0x3f40885c 0xc0 0x3f408104 0x18>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		i2c0: i2c@3f413000 {
 			compatible = "espressif,esp32-i2c";
 			#address-cells = <1>;

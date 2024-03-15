@@ -7,9 +7,12 @@
 #include <stdlib.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include "gatt.h"
+#include "conn.h"
 
 #define LOG_LEVEL CONFIG_BT_GATT_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -60,12 +63,38 @@ void mock_bt_gatt_init(void)
 	mock_bt_gatt_is_subscribed_fake.return_val = true;
 }
 
-static void notify_params_deep_copy_destroy(void)
+static void notify_params_deep_copy_destroy(struct bt_gatt_notify_params *params)
 {
 	struct bt_gatt_notify_params *copy;
 
 	for (unsigned int i = 0; i < mock_bt_gatt_notify_cb_fake.call_count; i++) {
 		copy = mock_bt_gatt_notify_cb_fake.arg1_history[i];
+		if (copy != params) {
+			continue;
+		}
+
+		/* Free UUID deep copy */
+		if (copy->uuid) {
+			free((void *)copy->uuid);
+		}
+
+		free(copy);
+
+		mock_bt_gatt_notify_cb_fake.arg1_history[i] = NULL;
+
+		break;
+	}
+}
+
+static void notify_params_deep_copy_destroy_all(void)
+{
+	struct bt_gatt_notify_params *copy;
+
+	for (unsigned int i = 0; i < mock_bt_gatt_notify_cb_fake.call_count; i++) {
+		copy = mock_bt_gatt_notify_cb_fake.arg1_history[i];
+		if (copy == NULL) {
+			continue;
+		}
 
 		/* Free UUID deep copy */
 		if (copy->uuid) {
@@ -78,7 +107,7 @@ static void notify_params_deep_copy_destroy(void)
 
 void mock_bt_gatt_cleanup(void)
 {
-	notify_params_deep_copy_destroy();
+	notify_params_deep_copy_destroy_all();
 }
 
 static struct bt_uuid *uuid_deep_copy(const struct bt_uuid *uuid)
@@ -126,6 +155,9 @@ static struct bt_gatt_notify_params *notify_params_deep_copy(struct bt_gatt_noti
 
 int bt_gatt_notify_cb(struct bt_conn *conn, struct bt_gatt_notify_params *params)
 {
+	struct bt_gatt_notify_params *copy;
+	int err;
+
 	zassert_not_null(params, "'%s()' was called with incorrect '%s' value", __func__, "params");
 
 	/* Either params->uuid, params->attr, or both has to be provided */
@@ -133,12 +165,19 @@ int bt_gatt_notify_cb(struct bt_conn *conn, struct bt_gatt_notify_params *params
 		     "'%s()' was called with incorrect '%s' value", __func__,
 		     "params->uuid or params->attr");
 
-	return mock_bt_gatt_notify_cb(conn, notify_params_deep_copy(params));
+	copy = notify_params_deep_copy(params);
+
+	err = mock_bt_gatt_notify_cb(conn, copy);
+	if (err != 0) {
+		notify_params_deep_copy_destroy(copy);
+	}
+
+	return err;
 }
 
 void bt_gatt_notify_cb_reset(void)
 {
-	notify_params_deep_copy_destroy();
+	notify_params_deep_copy_destroy_all();
 
 	RESET_FAKE(mock_bt_gatt_notify_cb);
 }
@@ -245,6 +284,63 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	memcpy(buf, (uint8_t *)value + offset, len);
 
 	return len;
+}
+
+int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *params)
+{
+	zassert_not_null(conn, "'%s()' was called with incorrect '%s' value", __func__, "conn");
+	zassert_not_null(params, "'%s()' was called with incorrect '%s' value", __func__, "params");
+	zassert_not_null(params->func, "'%s()' was called with incorrect '%s' value", __func__,
+			 "params->func");
+	zassert_between_inclusive(
+		params->start_handle, BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
+		"'%s()' was called with incorrect '%s' value", __func__, "params->start_handle");
+	zassert_between_inclusive(
+		params->end_handle, BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
+		"'%s()' was called with incorrect '%s' value", __func__, "params->end_handle");
+	zassert_true(params->start_handle <= params->end_handle,
+		     "'%s()' was called with incorrect '%s' value", __func__, "params->end_handle");
+
+	struct bt_gatt_service_val value;
+	struct bt_uuid_16 uuid;
+	struct bt_gatt_attr attr;
+	uint16_t start_handle;
+	uint16_t end_handle;
+
+	if (conn->info.state != BT_CONN_STATE_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	switch (params->type) {
+	case BT_GATT_DISCOVER_PRIMARY:
+	case BT_GATT_DISCOVER_SECONDARY:
+	case BT_GATT_DISCOVER_STD_CHAR_DESC:
+	case BT_GATT_DISCOVER_INCLUDE:
+	case BT_GATT_DISCOVER_CHARACTERISTIC:
+	case BT_GATT_DISCOVER_DESCRIPTOR:
+	case BT_GATT_DISCOVER_ATTRIBUTE:
+		break;
+	default:
+		LOG_ERR("Invalid discovery type: %u", params->type);
+		return -EINVAL;
+	}
+
+	uuid.uuid.type = BT_UUID_TYPE_16;
+	uuid.val = params->type;
+	start_handle = params->start_handle;
+	end_handle = params->end_handle;
+	value.end_handle = end_handle;
+	value.uuid = params->uuid;
+
+	attr = (struct bt_gatt_attr){
+		.uuid = &uuid.uuid,
+		.user_data = &value,
+		.handle = start_handle,
+	};
+
+	params->func(conn, &attr, params);
+
+	return 0;
 }
 
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn)

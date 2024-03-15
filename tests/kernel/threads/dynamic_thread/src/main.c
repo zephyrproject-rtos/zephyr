@@ -20,12 +20,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
 	if (reason != K_ERR_KERNEL_OOPS) {
 		printk("wrong error reason\n");
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 	if (k_current_get() != dyn_thread) {
 		printk("wrong thread crashed\n");
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 }
@@ -159,7 +159,7 @@ ZTEST(thread_dynamic, test_thread_index_management)
 	#include <otype-to-size.h>
 	/** @endcond */
 	}
-	blob = z_dynamic_object_aligned_create(16, ret);
+	blob = k_object_create_dynamic_aligned(16, ret);
 	zassert_true(blob != NULL, "out of heap memory");
 
 	/* Free one of the threads... */

@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 
 #include <zephyr/net/ethernet.h>
 #include <net_private.h>
@@ -676,8 +677,8 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 
 	/* Set IP Address */
 	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (ipv4->unicast[i].is_used) {
-			unicast = &ipv4->unicast[i];
+		if (ipv4->unicast[i].ipv4.is_used) {
+			unicast = &ipv4->unicast[i].ipv4;
 			break;
 		}
 	}
@@ -806,3 +807,5 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, eswifi_init, NULL,
 				  CONFIG_WIFI_INIT_PRIORITY,
 				  &eswifi_offload_api,
 				  1500);
+
+CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));

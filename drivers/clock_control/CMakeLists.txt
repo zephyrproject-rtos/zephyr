@@ -26,6 +26,10 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SAM                 clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SMARTBOND           clock_control_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NUMAKER_SCC         clock_control_numaker_scc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NXP_S32             clock_control_nxp_s32.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RA          clock_control_renesas_ra.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AMBIQ               clock_control_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_PWM                 clock_control_pwm.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RPI_PICO            clock_control_rpi_pico.c)
 
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
@@ -68,6 +72,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX5 clock_control_agilex5.
 if(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR)
   zephyr_library_sources(clock_control_renesas_cpg_mssr.c)
   zephyr_library_sources_ifdef(CONFIG_DT_HAS_RENESAS_R8A7795_CPG_MSSR_ENABLED clock_control_r8a7795_cpg_mssr.c)
+  zephyr_library_sources_ifdef(CONFIG_DT_HAS_RENESAS_R8A779F0_CPG_MSSR_ENABLED clock_control_r8a779f0_cpg_mssr.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AST10X0 clock_control_ast10x0.c)

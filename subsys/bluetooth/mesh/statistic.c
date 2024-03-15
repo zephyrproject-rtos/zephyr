@@ -6,7 +6,6 @@
 
 #include <zephyr/bluetooth/mesh.h>
 
-#include "adv.h"
 #include "net.h"
 #include "statistic.h"
 
@@ -22,24 +21,24 @@ void bt_mesh_stat_reset(void)
 	memset(&stat, 0, sizeof(struct bt_mesh_statistic));
 }
 
-void bt_mesh_stat_planned_count(struct bt_mesh_adv *adv)
+void bt_mesh_stat_planned_count(struct bt_mesh_adv_ctx *ctx)
 {
-	if (adv->tag == BT_MESH_ADV_TAG_LOCAL) {
+	if (ctx->tag == BT_MESH_ADV_TAG_LOCAL) {
 		stat.tx_local_planned++;
-	} else if (adv->tag == BT_MESH_ADV_TAG_RELAY) {
+	} else if (ctx->tag == BT_MESH_ADV_TAG_RELAY) {
 		stat.tx_adv_relay_planned++;
-	} else if (adv->tag == BT_MESH_ADV_TAG_FRIEND) {
+	} else if (ctx->tag == BT_MESH_ADV_TAG_FRIEND) {
 		stat.tx_friend_planned++;
 	}
 }
 
-void bt_mesh_stat_succeeded_count(struct bt_mesh_adv *adv)
+void bt_mesh_stat_succeeded_count(struct bt_mesh_adv_ctx *ctx)
 {
-	if (adv->tag == BT_MESH_ADV_TAG_LOCAL) {
+	if (ctx->tag == BT_MESH_ADV_TAG_LOCAL) {
 		stat.tx_local_succeeded++;
-	} else if (adv->tag == BT_MESH_ADV_TAG_RELAY) {
+	} else if (ctx->tag == BT_MESH_ADV_TAG_RELAY) {
 		stat.tx_adv_relay_succeeded++;
-	} else if (adv->tag == BT_MESH_ADV_TAG_FRIEND) {
+	} else if (ctx->tag == BT_MESH_ADV_TAG_FRIEND) {
 		stat.tx_friend_succeeded++;
 	}
 }

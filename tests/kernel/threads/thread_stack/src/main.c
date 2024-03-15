@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 
 #include "test_syscall.h"
@@ -41,8 +41,8 @@ void z_impl_stack_info_get(char **start_addr, size_t *size)
 static inline void z_vrfy_stack_info_get(char **start_addr,
 					 size_t *size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
 
 	z_impl_stack_info_get(start_addr, size);
 }
@@ -333,9 +333,9 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
 	size_t metadata_size;
 
 #ifdef CONFIG_USERSPACE
-	struct z_object *zo;
+	struct k_object *zo;
 
-	zo = z_object_find(stack_obj);
+	zo = k_object_find(stack_obj);
 	if (zo != NULL) {
 		is_user = true;
 #ifdef CONFIG_GEN_PRIV_STACKS

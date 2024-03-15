@@ -11,6 +11,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 
 
 /* Driver dts compatibility: telink,b91_uart */

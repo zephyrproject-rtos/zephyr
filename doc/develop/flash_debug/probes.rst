@@ -33,21 +33,23 @@ host tools, or with J-Link firmware to communicate with J-Link debug host
 tools.
 
 
-+---------------------------------------+---------------------------------------------------------------+
-|| *Debug Probes & Host Tools*          |                          Host Tools                           |
-+| *Compatibility Chart*                +--------------------+--------------------+---------------------+
-|                                       |  **J-Link Debug**  |    **OpenOCD**     |      **pyOCD**      |
-+----------------+----------------------+--------------------+--------------------+---------------------+
-|                | **LPC-Link2 J-Link** |           ✓        |                    |                     |
-|                +----------------------+--------------------+--------------------+---------------------+
-|                | **OpenSDA DAPLink**  |                    |          ✓         |          ✓          |
-|                +----------------------+--------------------+--------------------+---------------------+
-|  Debug Probes  | **OpenSDA J-Link**   |           ✓        |                    |                     |
-|                +----------------------+--------------------+--------------------+---------------------+
-|                | **J-Link External**  |           ✓        |          ✓         |                     |
-|                +----------------------+--------------------+--------------------+---------------------+
-|                | **ST-LINK/V2-1**     |           ✓        |          ✓         | *some STM32 boards* |
-+----------------+----------------------+--------------------+--------------------+---------------------+
++------------------------------------------+------------------------------------------------------------------------------------+
+|| *Debug Probes & Host Tools*             |                                     Host Tools                                     |
++| *Compatibility Chart*                   +--------------------+--------------------+---------------------+--------------------+
+|                                          |  **J-Link Debug**  |    **OpenOCD**     |      **pyOCD**      |   **NXP S32DS**    |
++----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **LPC-Link2 J-Link**    |           ✓        |                    |                     |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **OpenSDA DAPLink**     |                    |          ✓         |          ✓          |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|  Debug Probes  | **OpenSDA J-Link**      |           ✓        |                    |                     |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **J-Link External**     |           ✓        |          ✓         |                     |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **ST-LINK/V2-1**        |           ✓        |          ✓         | *some STM32 boards* |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **NXP S32 Debug Probe** |                    |                    |                     |          ✓         |
++----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+
 
 
 Some supported boards in Zephyr do not include an onboard debug probe and
@@ -373,6 +375,20 @@ Where board_uid can be obtained using twister's generate-hardware-map
 option. For more information about twister and available options, see
 :ref:`twister_script`.
 
+.. _nxp-s32-debug-probe:
+
+NXP S32 Debug Probe
+*******************
+
+`NXP S32 Debug Probe`_ enables NXP S32 target system debugging via a standard
+debug port while connected to a developer's workstation via USB or remotely via
+Ethernet.
+
+NXP S32 Debug Probe is designed to work in conjunction with NXP S32 Design Studio
+(S32DS) and NXP Automotive microcontrollers and processors. Install the debug
+host tools as in indicated in :ref:`nxp-s32-debug-host-tools` before you program
+the firmware.
+
 .. _LPCScrypt:
    https://www.nxp.com/lpcscrypt
 
@@ -402,3 +418,6 @@ option. For more information about twister and available options, see
 
 .. _MCUXpresso Installer:
 	https://www.nxp.com/lgfiles/updates/mcuxpresso/MCUXpressoInstaller.exe
+
+.. _NXP S32 Debug Probe:
+   https://www.nxp.com/design/software/automotive-software-and-tools/s32-debug-probe:S32-DP

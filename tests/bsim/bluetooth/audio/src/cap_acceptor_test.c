@@ -10,9 +10,11 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/audio/micp.h>
+#include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
-#include "bap_unicast_common.h"
+#include "bap_common.h"
 
 extern enum bst_result_t bst_result;
 
@@ -33,11 +35,11 @@ static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
-static struct bt_cap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-	BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_ANY,
-	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
+	BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 static const struct bt_audio_codec_qos_pref unicast_qos_pref =
@@ -62,44 +64,6 @@ static struct bt_cap_stream unicast_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT +
 
 CREATE_FLAG(flag_unicast_stream_configured);
 
-static bool valid_metadata_type(uint8_t type, uint8_t len)
-{
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR:   /* 2 - 255 octets */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO:     /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
-		return false;
-	}
-}
-
 static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 {
 	bool *stream_context_found = (bool *)user_data;
@@ -122,16 +86,20 @@ static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static bool valid_subgroup_metadata(const struct bt_bap_base_subgroup *subgroup)
+static bool valid_subgroup_metadata_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	bool stream_context_found = false;
-	int err;
+	uint8_t *meta;
+	int ret;
 
-	printk("meta %p len %zu", subgroup->codec_cfg.meta, subgroup->codec_cfg.meta_len);
+	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
+	if (ret < 0) {
+		FAIL("Could not get subgroup meta: %d\n", ret);
+		return false;
+	}
 
-	err = bt_audio_data_parse(subgroup->codec_cfg.meta, subgroup->codec_cfg.meta_len,
-				  subgroup_data_func_cb, &stream_context_found);
-	if (err != 0 && err != -ECANCELED) {
+	ret = bt_audio_data_parse(meta, (size_t)ret, subgroup_data_func_cb, &stream_context_found);
+	if (ret != 0 && ret != -ECANCELED) {
 		return false;
 	}
 
@@ -139,39 +107,43 @@ static bool valid_subgroup_metadata(const struct bt_bap_base_subgroup *subgroup)
 		printk("Subgroup did not have streaming context\n");
 	}
 
+	/* if this is false, the iterater will return early with an error */
 	return stream_context_found;
 }
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
+			 size_t base_size)
 {
 	uint32_t base_bis_index_bitfield = 0U;
+	int ret;
 
 	if (TEST_FLAG(flag_base_received)) {
 		return;
 	}
 
-	printk("Received BASE with %u subgroups from broadcast sink %p\n",
-	       base->subgroup_count, sink);
-
-	if (base->subgroup_count == 0) {
-		FAIL("base->subgroup_count was 0");
+	ret = bt_bap_base_get_subgroup_count(base);
+	if (ret < 0) {
+		FAIL("Failed to get subgroup count: %d\n", ret);
 		return;
 	}
 
+	printk("Received BASE with %d subgroups from broadcast sink %p\n", ret, sink);
 
-	for (size_t i = 0U; i < base->subgroup_count; i++) {
-		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
+	if (ret == 0) {
+		FAIL("subgroup_count was 0");
+		return;
+	}
 
-		for (size_t j = 0U; j < subgroup->bis_count; j++) {
-			const uint8_t index = subgroup->bis_data[j].index;
+	ret = bt_bap_base_foreach_subgroup(base, valid_subgroup_metadata_cb, NULL);
+	if (ret != 0) {
+		FAIL("Failed to parse subgroups: %d\n", ret);
+		return;
+	}
 
-			base_bis_index_bitfield |= BIT(index);
-		}
-
-		if (!valid_subgroup_metadata(subgroup)) {
-			FAIL("Subgroup[%zu] has invalid metadata\n", i);
-			return;
-		}
+	ret = bt_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
+	if (ret != 0) {
+		FAIL("Failed to BIS indexes: %d\n", ret);
+		return;
 	}
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
@@ -179,10 +151,10 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	SET_FLAG(flag_base_received);
 }
 
-static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	printk("Broadcast sink %p syncable with%s encryption\n",
-	       sink, encrypted ? "" : "out");
+	       sink, biginfo->encryption ? "" : "out");
 	SET_FLAG(flag_syncable);
 }
 
@@ -290,7 +262,47 @@ static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 static void recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 		    struct net_buf *buf)
 {
-	SET_FLAG(flag_received);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	if ((test_stream->rx_cnt % 100U) == 0U) {
+		printk("[%zu]: Incoming audio on stream %p len %u and ts %u\n", test_stream->rx_cnt,
+		       stream, buf->len, info->ts);
+	}
+
+	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
+		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
+		return;
+	}
+
+	if (test_stream->rx_cnt > 0U && info->seq_num == test_stream->last_info.seq_num) {
+		FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
+		return;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_ERROR) {
+		/* Fail the test if we have not received what we expected */
+		if (!TEST_FLAG(flag_received)) {
+			FAIL("ISO receive error\n");
+		}
+
+		return;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_LOST) {
+		FAIL("ISO receive lost\n");
+		return;
+	}
+
+	if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
+		test_stream->rx_cnt++;
+
+		if (test_stream->rx_cnt >= MIN_SEND_COUNT) {
+			/* We set the flag is just one stream has received the expected */
+			SET_FLAG(flag_received);
+		}
+	} else {
+		FAIL("Unexpected data received\n");
+	}
 }
 
 static struct bt_bap_stream_ops broadcast_stream_ops = {
@@ -634,14 +646,82 @@ static void init(void)
 		UNSET_FLAG(flag_pa_synced);
 
 		for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
-			bt_cap_stream_ops_register(&broadcast_sink_streams[i],
-						   &broadcast_stream_ops);
+			bt_cap_stream_ops_register(
+				cap_stream_from_audio_test_stream(&broadcast_sink_streams[i]),
+				&broadcast_stream_ops);
 		}
 	}
 
-	set_supported_contexts();
-	set_available_contexts();
-	set_location();
+	if (IS_ENABLED(CONFIG_BT_PACS)) {
+		set_supported_contexts();
+		set_available_contexts();
+		set_location();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND)) {
+		char output_desc[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT][16];
+		char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT][16];
+		struct bt_vcp_vol_rend_register_param vcp_param = {0};
+
+		for (size_t i = 0U; i < ARRAY_SIZE(vcp_param.vocs_param); i++) {
+			vcp_param.vocs_param[i].location_writable = true;
+			vcp_param.vocs_param[i].desc_writable = true;
+			snprintf(output_desc[i], sizeof(output_desc[i]), "Output %d", i + 1);
+			vcp_param.vocs_param[i].output_desc = output_desc[i];
+			vcp_param.vocs_param[i].cb = NULL;
+		}
+
+		for (size_t i = 0U; i < ARRAY_SIZE(vcp_param.aics_param); i++) {
+			vcp_param.aics_param[i].desc_writable = true;
+			snprintf(input_desc[i], sizeof(input_desc[i]), "VCP Input %d", i + 1);
+			vcp_param.aics_param[i].description = input_desc[i];
+			vcp_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
+			vcp_param.aics_param[i].status = true;
+			vcp_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+			vcp_param.aics_param[i].units = 1;
+			vcp_param.aics_param[i].min_gain = 0;
+			vcp_param.aics_param[i].max_gain = 100;
+			vcp_param.aics_param[i].cb = NULL;
+		}
+
+		vcp_param.step = 1;
+		vcp_param.mute = BT_VCP_STATE_UNMUTED;
+		vcp_param.volume = 100;
+		vcp_param.cb = NULL;
+		err = bt_vcp_vol_rend_register(&vcp_param);
+		if (err != 0) {
+			FAIL("Failed to register VCS (err %d)\n", err);
+
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MICP_MIC_DEV)) {
+		struct bt_micp_mic_dev_register_param micp_param = {0};
+
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+		char input_desc[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT][16];
+
+		for (int i = 0; i < ARRAY_SIZE(micp_param.aics_param); i++) {
+			micp_param.aics_param[i].desc_writable = true;
+			snprintf(input_desc[i], sizeof(input_desc[i]), "MICP Input %d", i + 1);
+			micp_param.aics_param[i].description = input_desc[i];
+			micp_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
+			micp_param.aics_param[i].status = true;
+			micp_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+			micp_param.aics_param[i].units = 1;
+			micp_param.aics_param[i].min_gain = 0;
+			micp_param.aics_param[i].max_gain = 100;
+			micp_param.aics_param[i].cb = NULL;
+		}
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
+
+		err = bt_micp_mic_dev_register(&micp_param);
+		if (err != 0) {
+			FAIL("Failed to register MICS (err %d)\n", err);
+			return;
+		}
+	}
 }
 
 static void test_cap_acceptor_unicast(void)
@@ -708,6 +788,7 @@ static int pa_sync_create(void)
 static void test_cap_acceptor_broadcast(void)
 {
 	static struct bt_bap_stream *bap_streams[ARRAY_SIZE(broadcast_sink_streams)];
+	size_t stream_count;
 	int err;
 
 	init();
@@ -754,10 +835,17 @@ static void test_cap_acceptor_broadcast(void)
 	WAIT_FOR_FLAG(flag_syncable);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
-		bap_streams[i] = &broadcast_sink_streams[i].bap_stream;
+		bap_streams[i] = bap_stream_from_audio_test_stream(&broadcast_sink_streams[i]);
 	}
 
 	printk("Syncing the sink\n");
+	stream_count = 0;
+	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
+		if ((bis_index_bitfield & BIT(i)) != 0) {
+			stream_count++;
+		}
+	}
+
 	err = bt_bap_broadcast_sink_sync(g_broadcast_sink, bis_index_bitfield, bap_streams, NULL);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);
@@ -765,13 +853,14 @@ static void test_cap_acceptor_broadcast(void)
 	}
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_sink_streams to be started\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
+	printk("Waiting for %zu streams to be started\n", stream_count);
+	for (size_t i = 0U; i < stream_count; i++) {
 		k_sem_take(&sem_broadcast_started, K_FOREVER);
 	}
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
 	 * and depend on timeout parameters. We just wait for PA first, but
@@ -780,12 +869,21 @@ static void test_cap_acceptor_broadcast(void)
 	printk("Waiting for PA disconnected\n");
 	WAIT_FOR_FLAG(flag_pa_sync_lost);
 
-	printk("Waiting for streams to be stopped\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
+	printk("Waiting for %zu streams to be stopped\n", stream_count);
+	for (size_t i = 0U; i < stream_count; i++) {
 		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
 	}
 
 	PASS("CAP acceptor broadcast passed\n");
+}
+
+static void test_cap_acceptor_capture_and_render(void)
+{
+	init();
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	PASS("CAP acceptor unicast passed\n");
 }
 
 static const struct bst_test_instance test_cap_acceptor[] = {
@@ -806,6 +904,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_broadcast,
+	},
+	{
+		.test_id = "cap_acceptor_capture_and_render",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_capture_and_render,
 	},
 	BSTEST_END_MARKER,
 };

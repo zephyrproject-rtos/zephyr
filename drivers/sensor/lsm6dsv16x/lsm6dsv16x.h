@@ -57,7 +57,8 @@ struct lsm6dsv16x_config {
 	uint8_t gyro_range;
 	uint8_t drdy_pulsed;
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
-	const struct gpio_dt_spec gpio_drdy;
+	const struct gpio_dt_spec int1_gpio;
+	const struct gpio_dt_spec int2_gpio;
 	uint8_t drdy_pin;
 	bool trig_enabled;
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
@@ -102,6 +103,8 @@ struct lsm6dsv16x_data {
 	uint8_t gyro_fs;
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
+	struct gpio_dt_spec *drdy_gpio;
+
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
 	const struct sensor_trigger *trig_drdy_acc;

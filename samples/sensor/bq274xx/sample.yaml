@@ -4,16 +4,16 @@ sample:
 tests:
   sample.sensor.bq274xx:
     harness: sensor
-    platform_allow: nrf9160_innblue22
+    platform_allow: innblue22/nrf9160
     integration_platforms:
-      - nrf9160_innblue22
+      - innblue22/nrf9160
     tags: sensors
     depends_on: i2c
   sample.sensor.bq274xx_without_int_gpios:
     harness: sensor
-    platform_allow: nrf9160_innblue22
+    platform_allow: innblue22/nrf9160
     integration_platforms:
-      - nrf9160_innblue22
+      - innblue22/nrf9160
     tags: sensors
     depends_on: i2c
     extra_configs:

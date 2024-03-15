@@ -730,9 +730,12 @@ static inline bool irqsts3_event(const struct device *dev,
 	return retval;
 }
 
-static void mcr20a_thread_main(void *arg)
+static void mcr20a_thread_main(void *p1, void *p2, void *p3)
 {
-	const struct device *dev = arg;
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t dregs[MCR20A_PHY_CTRL4 + 1];
 	bool set_new_seq;
@@ -1419,7 +1422,7 @@ static int mcr20a_init(const struct device *dev)
 
 	k_thread_create(&mcr20a->mcr20a_rx_thread, mcr20a->mcr20a_rx_stack,
 			CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
-			(k_thread_entry_t)mcr20a_thread_main,
+			mcr20a_thread_main,
 			(void *)dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&mcr20a->mcr20a_rx_thread, "mcr20a_rx");
 
@@ -1449,7 +1452,7 @@ static const struct mcr20a_config mcr20a_config = {
 
 static struct mcr20a_context mcr20a_context_data;
 
-static struct ieee802154_radio_api mcr20a_radio_api = {
+static const struct ieee802154_radio_api mcr20a_radio_api = {
 	.iface_api.init	= mcr20a_iface_init,
 
 	.get_capabilities	= mcr20a_get_capabilities,

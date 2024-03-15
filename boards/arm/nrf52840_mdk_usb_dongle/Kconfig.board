@@ -1,9 +1,0 @@
-# nRF52840 MDK USB Dongle board configuration
-
-# Copyright (c) 2022 Nikola Trifunovic
-# Copyright (c) 2018 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NRF52840_MDK_USB_DONGLE
-	bool "nRF52840 MDK USB DONGLE"
-	depends on SOC_NRF52840_QIAA

@@ -87,8 +87,13 @@ static void lis3mdl_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_LIS3MDL_TRIGGER_OWN_THREAD
-static void lis3mdl_thread(struct lis3mdl_data *drv_data)
+static void lis3mdl_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lis3mdl_data *drv_data = p1;
+
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		lis3mdl_thread_cb(drv_data->dev);
@@ -140,7 +145,7 @@ int lis3mdl_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LIS3MDL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis3mdl_thread, drv_data,
+			lis3mdl_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_LIS3MDL_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)

@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(uart_emul, CONFIG_UART_LOG_LEVEL);
 
 struct uart_emul_config {
 	bool loopback;
+	size_t latch_buffer_size;
 };
 
 struct uart_emul_work {
@@ -48,6 +49,28 @@ struct uart_emul_data {
 	void *irq_cb_udata;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
+
+/*
+ * Define local thread to emulate different thread priorities.
+ *
+ * A UART driver may call back from within a thread with higher or lower priority
+ * than the thread calling the UART API. This can hide potential concurrency issues,
+ * especially if the thread priorities are the same, or even using the same thread
+ * in case the system work queue.
+ */
+K_THREAD_STACK_DEFINE(uart_emul_stack_area, CONFIG_UART_EMUL_WORK_Q_STACK_SIZE);
+struct k_work_q uart_emul_work_q;
+
+int uart_emul_init_work_q(void)
+{
+	k_work_queue_init(&uart_emul_work_q);
+	k_work_queue_start(&uart_emul_work_q, uart_emul_stack_area,
+			   K_THREAD_STACK_SIZEOF(uart_emul_stack_area),
+			   CONFIG_UART_EMUL_WORK_Q_PRIORITY, NULL);
+	return 0;
+}
+
+SYS_INIT(uart_emul_init_work_q, POST_KERNEL, 0);
 
 static int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
 {
@@ -125,13 +148,14 @@ static int uart_emul_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 	int ret;
 	struct uart_emul_data *data = dev->data;
 	const struct uart_emul_config *config = dev->config;
+	uint32_t put_size = MIN(config->latch_buffer_size, size);
 
 	K_SPINLOCK(&data->tx_lock) {
-		ret = ring_buf_put(data->tx_rb, tx_data, size);
+		ret = ring_buf_put(data->tx_rb, tx_data, put_size);
 	}
 
 	if (config->loopback) {
-		uart_emul_put_rx_data(dev, (uint8_t *)tx_data, ret);
+		uart_emul_put_rx_data(dev, (uint8_t *)tx_data, put_size);
 	}
 	if (data->tx_data_ready_cb) {
 		data->tx_data_ready_cb(dev, ring_buf_size_get(data->tx_rb), data->user_data);
@@ -142,19 +166,17 @@ static int uart_emul_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 
 static int uart_emul_fifo_read(const struct device *dev, uint8_t *rx_data, int size)
 {
-	int ret;
 	struct uart_emul_data *data = dev->data;
+	const struct uart_emul_config *config = dev->config;
+	uint32_t bytes_to_read;
 
 	K_SPINLOCK(&data->rx_lock) {
-		ret = MIN(size, ring_buf_size_get(data->rx_rb));
-		size = ret;
-
-		for (int n = 0; size > 0; size -= n, rx_data += n) {
-			n = ring_buf_get(data->rx_rb, rx_data, size);
-		}
+		bytes_to_read = MIN(config->latch_buffer_size, ring_buf_size_get(data->rx_rb));
+		bytes_to_read = MIN(bytes_to_read, size);
+		ring_buf_get(data->rx_rb, rx_data, bytes_to_read);
 	}
 
-	return ret;
+	return bytes_to_read;
 }
 
 static int uart_emul_irq_tx_ready(const struct device *dev)
@@ -245,7 +267,7 @@ static void uart_emul_irq_tx_enable(const struct device *dev)
 	}
 
 	if (submit_irq_work) {
-		(void)k_work_submit(&data->irq_work.work);
+		(void)k_work_submit_to_queue(&uart_emul_work_q, &data->irq_work.work);
 	}
 }
 
@@ -260,7 +282,7 @@ static void uart_emul_irq_rx_enable(const struct device *dev)
 	}
 
 	if (submit_irq_work) {
-		(void)k_work_submit(&data->irq_work.work);
+		(void)k_work_submit_to_queue(&uart_emul_work_q, &data->irq_work.work);
 	}
 }
 
@@ -361,7 +383,7 @@ uint32_t uart_emul_put_rx_data(const struct device *dev, uint8_t *data, size_t s
 
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
 		if (count > 0 && irq_en && !empty) {
-			(void)k_work_submit(&drv_data->irq_work.work);
+			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->irq_work.work);
 		}
 	))
 
@@ -428,6 +450,7 @@ void uart_emul_set_errors(const struct device *dev, int errors)
                                                                                                    \
 	static struct uart_emul_config uart_emul_cfg_##inst = {                                    \
 		.loopback = DT_INST_PROP(inst, loopback),                                          \
+		.latch_buffer_size = DT_INST_PROP(inst, latch_buffer_size),                        \
 	};                                                                                         \
 	static struct uart_emul_data uart_emul_data_##inst = {                                     \
 		.rx_rb = &uart_emul_##inst##_rx_rb,                                                \

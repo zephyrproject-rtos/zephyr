@@ -7,6 +7,7 @@
 #include <adsp_shim.h>
 #include <intel_adsp_ipc.h>
 #include <mem_window.h>
+#include <zephyr/cache.h>
 
 /* Matches SOF_IPC_MSG_MAX_SIZE, though in practice nothing anywhere
  * near that big is ever sent.  Should maybe consider making this a
@@ -49,8 +50,9 @@ static int send(const struct device *dev, int wait, uint32_t id,
 		return -ENODEV;
 	}
 	const struct mem_win_config *mw0_config = mw0->config;
-	uint32_t *buf = (uint32_t *)arch_xtensa_uncached_ptr((void *)((uint32_t)mw0_config->mem_base
-		+ CONFIG_IPM_CAVS_HOST_OUTBOX_OFFSET));
+	uint32_t *buf = (uint32_t *)sys_cache_uncached_ptr_get(
+			(void *)((uint32_t)mw0_config->mem_base
+			+ CONFIG_IPM_CAVS_HOST_OUTBOX_OFFSET));
 
 	if (!intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV)) {
 		return -EBUSY;
@@ -108,7 +110,7 @@ static bool ipc_handler(const struct device *dev, void *arg,
 		return -ENODEV;
 	}
 	const struct mem_win_config *mw1_config = mw1->config;
-	uint32_t *msg = arch_xtensa_uncached_ptr((void *)mw1_config->mem_base);
+	uint32_t *msg = sys_cache_uncached_ptr_get((void *)mw1_config->mem_base);
 
 	/* We play tricks to leave one word available before the
 	 * beginning of the SRAM window, this way the host can see the

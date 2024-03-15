@@ -26,7 +26,7 @@
 #include <kernel_arch_data.h>
 #include <gen_offset.h>
 #include <kernel_offsets.h>
-#ifdef CONFIG_ARC_DSP_SHARING
+#ifdef CONFIG_DSP_SHARING
 #include "../dsp/dsp_offsets.c"
 #endif
 

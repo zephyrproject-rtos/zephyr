@@ -1,0 +1,30 @@
+# NXP S32K1XX MCU series
+
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_S32K1
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 80000000
+
+config NUM_IRQS
+	default 239 if CPU_CORTEX_M4
+	default 47 if CPU_CORTEX_M0PLUS
+
+config FPU
+	default y if CPU_HAS_FPU
+
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
+# The S32K1xx have 8 MPU regions, which is not enough for both HW stack protection
+# and userspace. Only enable HW stack protection if userspace is not enabled.
+config HW_STACK_PROTECTION
+	default y if !USERSPACE
+
+endif # SOC_SERIES_S32K1

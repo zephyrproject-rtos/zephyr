@@ -567,6 +567,11 @@ static void set_up_fixed_clock_sources(void)
 		while (LL_RCC_HSE_IsReady() != 1) {
 		/* Wait for HSE ready */
 		}
+		/* Check if we need to enable HSE clock security system or not */
+#if STM32_HSE_CSS
+		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
+		LL_RCC_HSE_EnableCSS();
+#endif /* STM32_HSE_CSS */
 	}
 
 	if (IS_ENABLED(STM32_HSI_ENABLED)) {
@@ -816,6 +821,16 @@ int stm32_clock_control_init(const struct device *dev)
 
 	return 0;
 }
+
+#if defined(STM32_HSE_CSS)
+void __weak stm32_hse_css_callback(void) {}
+
+/* Called by the HAL in response to an HSE CSS interrupt */
+void HAL_RCC_CSSCallback(void)
+{
+	stm32_hse_css_callback();
+}
+#endif
 
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so

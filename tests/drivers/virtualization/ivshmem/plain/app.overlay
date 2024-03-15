@@ -7,11 +7,6 @@
 
 / {
 	pcie0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "intel,pcie";
-		ranges;
-
 		ivshmem0: ivshmem0 {
 			compatible = "qemu,ivshmem";
 

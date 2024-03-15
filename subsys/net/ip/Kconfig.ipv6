@@ -39,11 +39,36 @@ config NET_IF_IPV6_PREFIX_COUNT
 
 if NET_NATIVE_IPV6
 
-config NET_INITIAL_HOP_LIMIT
-	int "Initial hop limit for a connection"
-	default 64
+config NET_IPV6_MTU
+	int "Initial IPv6 MTU value"
+	default 1280
+	range 1280 1500
 	help
-	  The value should be > 0
+	  The value should normally be 1280 which is the minimum IPv6 packet
+	  size that implementations need to support without fragmentation.
+
+config NET_INITIAL_HOP_LIMIT
+	int "Initial IPv6 hop limit value for unicast packets"
+	default 64
+	range 0 255
+	help
+	  The value should normally be > 0. The device receiving the IPv6
+	  packet will decrement the value and will drop the packet if the hop
+	  limit value is 0. When sending, the packet is dropped before
+	  transmitting to network if hop limit is 0.
+
+config NET_INITIAL_MCAST_HOP_LIMIT
+	int "Initial IPv6 hop limit value for multicast packets"
+	default 1
+	range 0 255
+	help
+	  The value should normally be > 0. The device receiving the IPv6
+	  packet will decrement the value and will drop the packet if the hop
+	  limit value is 0. When sending, the packet is dropped before
+	  transmitting to network if hop limit is 0.
+	  The default is 1 (same as in IPv4) which means that multicast packets
+	  don't leave the local network unless the application explicitly
+	  requests it.
 
 config NET_IPV6_MAX_NEIGHBORS
 	int "How many IPv6 neighbors are supported"
@@ -118,6 +143,7 @@ config NET_IPV6_NBR_CACHE
 config NET_IPV6_ND
 	bool "Activate neighbor discovery"
 	depends on NET_IPV6_NBR_CACHE
+	select NET_IPV6_MLD if !NET_TEST
 	default y
 	help
 	  The value depends on your network needs. ND should normally
@@ -166,12 +192,6 @@ config NET_MAX_6LO_CONTEXTS
 	  6lowpan context options table size. The value depends on your
 	  network and memory consumption. More 6CO options uses more memory.
 
-config NET_DHCPV6
-	bool "DHCPv6 client"
-	select NET_MGMT
-	select NET_MGMT_EVENT
-	depends on NET_UDP
-
 if NET_6LO
 module = NET_6LO
 module-dep = NET_LOG
@@ -197,14 +217,6 @@ module-dep = NET_LOG
 module-str = Log level for IPv6 neighbor cache
 module-help = Enables IPv6 Neighbor Cache code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
-
-if NET_DHCPV6
-module = NET_DHCPV6
-module-dep = NET_LOG
-module-str = Log level for DHCPv6 client
-module-help = Enables DHCPv6 client code to output debug messages.
-source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_DHCPV6
 
 endif # NET_NATIVE_IPV6
 endif # NET_IPV6

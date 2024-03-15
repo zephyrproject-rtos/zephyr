@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cy8cproto_062_4343w
+name: CY8CPROTO-062-4343W PSoC 6 Wi-Fi BT Prototyping Kit
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - wifi
+  - airoc
+  - cyw4343w
+  - counter
+  - gpio
+  - uart
+  - i2c
+vendor: cypress

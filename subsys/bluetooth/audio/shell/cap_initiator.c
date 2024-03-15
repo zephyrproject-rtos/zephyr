@@ -36,8 +36,7 @@ static void cap_discover_cb(struct bt_conn *conn, int err,
 		    csis_inst == NULL ? "" : " with CSIS");
 }
 
-static void cap_unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_group,
-					  int err, struct bt_conn *conn)
+static void cap_unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err == -ECANCELED) {
 		shell_print(ctx_shell, "Unicast start was cancelled for conn %p", conn);
@@ -60,31 +59,23 @@ static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 	}
 }
 
-static void unicast_stop_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
-				     struct bt_conn *conn)
+static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 {
-	if (default_unicast_group != unicast_group) {
-		/* ignore */
-		return;
-	}
-
 	if (err == -ECANCELED) {
 		shell_print(ctx_shell, "Unicast stop was cancelled for conn %p", conn);
 	} else if (err != 0) {
-		shell_error(ctx_shell,
-			    "Unicast stop failed for group %p and conn %p (%d)",
-			    unicast_group, conn, err);
+		shell_error(ctx_shell, "Unicast stop failed for conn %p (%d)", conn, err);
 	} else {
-		shell_print(ctx_shell,
-			    "Unicast stopped for group %p completed",
-			    default_unicast_group);
+		shell_print(ctx_shell, "Unicast stop completed");
 
-		err = bt_bap_unicast_group_delete(unicast_group);
-		if (err != 0) {
-			shell_error(ctx_shell, "Failed to delete unicast group %p: %d",
-				    unicast_group, err);
-		} else {
-			default_unicast_group = NULL;
+		if (default_unicast_group != NULL) {
+			err = bt_bap_unicast_group_delete(default_unicast_group);
+			if (err != 0) {
+				shell_error(ctx_shell, "Failed to delete unicast group %p: %d",
+					    default_unicast_group, err);
+			} else {
+				default_unicast_group = NULL;
+			}
 		}
 	}
 }
@@ -251,7 +242,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].member.member = conn;
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = snk_ep;
-			copy_unicast_stream_preset(uni_stream, default_sink_preset);
+			copy_unicast_stream_preset(uni_stream, &default_sink_preset);
 			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 
 			group_stream_params[start_param.count].stream =
@@ -282,7 +273,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].member.member = conn;
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = src_ep;
-			copy_unicast_stream_preset(uni_stream, default_source_preset);
+			copy_unicast_stream_preset(uni_stream, &default_source_preset);
 			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
@@ -320,7 +311,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 	shell_print(sh, "Starting %zu streams", start_param.count);
 
-	err = bt_cap_initiator_unicast_audio_start(&start_param, default_unicast_group);
+	err = bt_cap_initiator_unicast_audio_start(&start_param);
 	if (err != 0) {
 		shell_print(sh, "Failed to start unicast audio: %d", err);
 
@@ -346,16 +337,15 @@ static int cmd_cap_initiator_unicast_list(const struct shell *sh, size_t argc,
 static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	struct bt_cap_unicast_audio_update_param params[CAP_UNICAST_CLIENT_STREAM_COUNT];
-	size_t count;
+	struct bt_cap_unicast_audio_update_stream_param
+		stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
+	struct bt_cap_unicast_audio_update_param param = {0};
 	int err = 0;
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
-
-	count = 0;
 
 	if (argc == 2 && strcmp(argv[1], "all") == 0) {
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
@@ -375,19 +365,18 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 				return -ENOEXEC;
 			}
 
-			params[count].stream = stream;
-
+			stream_params[param.count].stream = stream;
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
-				copy_unicast_stream_preset(uni_stream, default_sink_preset);
+				copy_unicast_stream_preset(uni_stream, &default_sink_preset);
 			} else {
-				copy_unicast_stream_preset(uni_stream, default_source_preset);
+				copy_unicast_stream_preset(uni_stream, &default_source_preset);
 			}
 
-			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_len = uni_stream->codec_cfg.meta_len;
+			stream_params[param.count].meta = uni_stream->codec_cfg.meta;
+			stream_params[param.count].meta_len = uni_stream->codec_cfg.meta_len;
 
-			count++;
+			param.count++;
 		}
 
 	} else {
@@ -418,30 +407,33 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 				return -ENOEXEC;
 			}
 
-			params[count].stream = stream;
+			stream_params[param.count].stream = stream;
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
-				copy_unicast_stream_preset(uni_stream, default_sink_preset);
+				copy_unicast_stream_preset(uni_stream, &default_sink_preset);
 			} else {
-				copy_unicast_stream_preset(uni_stream, default_source_preset);
+				copy_unicast_stream_preset(uni_stream, &default_source_preset);
 			}
 
-			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_len = uni_stream->codec_cfg.meta_len;
+			stream_params[param.count].meta = uni_stream->codec_cfg.meta;
+			stream_params[param.count].meta_len = uni_stream->codec_cfg.meta_len;
 
-			count++;
+			param.count++;
 		}
 	}
 
-	if (count == 0) {
+	if (param.count == 0) {
 		shell_error(sh, "No streams to update");
 
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "Updating %zu streams", count);
+	param.stream_params = stream_params;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	err = bt_cap_initiator_unicast_audio_update(params, count);
+	shell_print(sh, "Updating %zu streams", param.count);
+
+	err = bt_cap_initiator_unicast_audio_update(&param);
 	if (err != 0) {
 		shell_print(sh, "Failed to update unicast audio: %d", err);
 	}
@@ -452,17 +444,75 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
+	struct bt_cap_stream *streams[CAP_UNICAST_CLIENT_STREAM_COUNT];
+	struct bt_cap_unicast_audio_stop_param param = {0};
 	int err = 0;
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	} else if (default_unicast_group == NULL) {
-		shell_error(sh, "No unicast group started");
+	}
+
+	if (argc == 2 && strcmp(argv[1], "all") == 0) {
+		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
+			struct bt_cap_stream *stream = &unicast_streams[i].stream;
+			struct bt_bap_ep_info ep_info;
+
+			if (stream->bap_stream.conn == NULL) {
+				break;
+			}
+
+			err = bt_bap_ep_get_info(stream->bap_stream.ep, &ep_info);
+			if (err != 0) {
+				shell_error(sh, "Failed to get endpoint info: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			streams[param.count] = stream;
+			param.count++;
+		}
+
+	} else {
+		for (size_t i = 1U; i < argc; i++) {
+			struct bt_cap_stream *stream = (void *)shell_strtoul(argv[i], 16, &err);
+			struct bt_bap_ep_info ep_info;
+
+			if (err != 0) {
+				shell_error(sh, "Failed to parse stream argument %s: %d", argv[i],
+					    err);
+
+				return err;
+			}
+
+			if (!PART_OF_ARRAY(unicast_streams, stream)) {
+				shell_error(sh, "Pointer %p is not a CAP stream pointer", stream);
+
+				return -ENOEXEC;
+			}
+
+			err = bt_bap_ep_get_info(stream->bap_stream.ep, &ep_info);
+			if (err != 0) {
+				shell_error(sh, "Failed to get endpoint info: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			streams[param.count] = stream;
+			param.count++;
+		}
+	}
+
+	if (param.count == 0) {
+		shell_error(sh, "No streams to update");
+
 		return -ENOEXEC;
 	}
 
-	err = bt_cap_initiator_unicast_audio_stop(default_unicast_group);
+	param.streams = streams;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
+
+	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
 		shell_print(sh, "Failed to update unicast audio: %d", err);
 	}
@@ -572,7 +622,10 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			snk_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->snk_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
@@ -599,7 +652,10 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			src_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->src_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
@@ -619,7 +675,7 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	start_param.count = stream_cnt;
 	start_param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	return bt_cap_initiator_unicast_audio_start(&start_param, default_unicast_group);
+	return bt_cap_initiator_unicast_audio_start(&start_param);
 }
 
 int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
@@ -689,7 +745,7 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 	}
 
 	if (snk_cnt > 0U) {
-		snk_named_preset = bap_get_named_preset(true, argv[1]);
+		snk_named_preset = bap_get_named_preset(true, BT_AUDIO_DIR_SINK, argv[1]);
 		if (snk_named_preset == NULL) {
 			shell_error(sh, "Unable to parse snk_named_preset %s", argv[1]);
 			return -ENOEXEC;
@@ -699,7 +755,7 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 	if (src_cnt > 0U) {
 		const char *preset_arg = argc > 2 ? argv[2] : argv[1];
 
-		src_named_preset = bap_get_named_preset(true, preset_arg);
+		src_named_preset = bap_get_named_preset(true, BT_AUDIO_DIR_SOURCE, preset_arg);
 		if (src_named_preset == NULL) {
 			shell_error(sh, "Unable to parse src_named_preset %s", argv[1]);
 			return -ENOEXEC;
@@ -1030,25 +1086,130 @@ static int cmd_cap_ac_11_ii(const struct shell *sh, size_t argc, char **argv)
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
+static int cmd_broadcast_start(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	int err;
+
+	if (adv == NULL) {
+		shell_info(sh, "Extended advertising set is NULL");
+
+		return -ENOEXEC;
+	}
+
+	if (default_source.cap_source == NULL || !default_source.is_cap) {
+		shell_info(sh, "CAP Broadcast source not created");
+
+		return -ENOEXEC;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_start(default_source.cap_source,
+						     adv_sets[selected_adv]);
+	if (err != 0) {
+		shell_error(sh, "Unable to start broadcast source: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_broadcast_update(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t meta[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
+	size_t len;
+	int err;
+
+	if (default_source.cap_source == NULL || !default_source.is_cap) {
+		shell_info(sh, "CAP Broadcast source not created");
+
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(argv[1], strlen(argv[1]), meta, sizeof(meta));
+	if (len == 0) {
+		shell_print(sh, "Unable to parse metadata (len was %zu, max len is %d)",
+			    strlen(argv[1]) / 2U + strlen(argv[1]) % 2U,
+			    CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_update(default_source.cap_source, meta, len);
+	if (err != 0) {
+		shell_error(sh, "Unable to update broadcast source: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "CAP Broadcast source updated with new metadata. Update the advertised "
+			"base via `bt per-adv-data`");
+
+	return 0;
+}
+
+static int cmd_broadcast_stop(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_source.cap_source == NULL || !default_source.is_cap) {
+		shell_info(sh, "CAP Broadcast source not created");
+
+		return -ENOEXEC;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_stop(default_source.cap_source);
+	if (err != 0) {
+		shell_error(sh, "Unable to stop broadcast source: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_broadcast_delete(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_source.cap_source == NULL || !default_source.is_cap) {
+		shell_info(sh, "CAP Broadcast source not created");
+
+		return -ENOEXEC;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_delete(default_source.cap_source);
+	if (err != 0) {
+		shell_error(sh, "Unable to stop broadcast source: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	default_source.cap_source = NULL;
+	default_source.is_cap = false;
+
+	return 0;
+}
+
+int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 			    const struct bap_broadcast_ac_param *param)
 {
 	/* TODO: Use CAP API when the CAP shell has broadcast support */
-	struct bt_bap_broadcast_source_stream_param stream_params[BAP_UNICAST_AC_MAX_SRC] = {0};
+	struct bt_cap_initiator_broadcast_stream_param stream_params[BAP_UNICAST_AC_MAX_SRC] = {0};
 	uint8_t stereo_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
-	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
-	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
-	struct bt_bap_broadcast_source_subgroup_param subgroup_param = {0};
-	struct bt_bap_broadcast_source_param create_param = {0};
+	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
+	struct bt_cap_initiator_broadcast_create_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
 	struct bt_le_ext_adv *adv;
 	int err;
 
-	if (default_source.bap_source != NULL) {
+	if (default_source.cap_source != NULL) {
 		shell_error(sh, "Broadcast Source already created, please delete first");
 		return -ENOEXEC;
 	}
@@ -1059,7 +1220,7 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		return -ENOEXEC;
 	}
 
-	named_preset = bap_get_named_preset(false, argv[1]);
+	named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SOURCE, argv[1]);
 	if (named_preset == NULL) {
 		shell_error(sh, "Unable to parse named_preset %s", argv[1]);
 		return -ENOEXEC;
@@ -1069,7 +1230,7 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	default_source.qos.sdu *= param->chan_cnt;
 
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
-		stream_params[i].stream = &broadcast_source_streams[i].stream.bap_stream;
+		stream_params[i].stream = &broadcast_source_streams[i].stream;
 
 		if (param->stream_cnt == 1U) {
 			stream_params[i].data_len = ARRAY_SIZE(stereo_data);
@@ -1083,14 +1244,14 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		}
 	}
 
-	subgroup_param.params_count = param->stream_cnt;
-	subgroup_param.params = stream_params;
+	subgroup_param.stream_count = param->stream_cnt;
+	subgroup_param.stream_params = stream_params;
 	subgroup_param.codec_cfg = &default_source.codec_cfg;
-	create_param.params_count = 1U;
-	create_param.params = &subgroup_param;
+	create_param.subgroup_count = 1U;
+	create_param.subgroup_params = &subgroup_param;
 	create_param.qos = &default_source.qos;
 
-	err = bt_bap_broadcast_source_create(&create_param, &default_source.bap_source);
+	err = bt_cap_initiator_broadcast_audio_create(&create_param, &default_source.cap_source);
 	if (err != 0) {
 		shell_error(sh, "Failed to create broadcast source: %d", err);
 		return -ENOEXEC;
@@ -1100,9 +1261,11 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	 * periodic advertising data, the broadcast source needs to be created but not started.
 	 */
 	shell_print(sh,
-		    "Broadcast source for %s created. Start via `bap start_broadcast`, and "
-		    "update/set the base via `bt per-adv data`",
+		    "CAP Broadcast source for %s created. "
+		    "Start via `cap_initiator broadcast_start`, "
+		    "and update / set the base via `bt per-adv data`",
 		    param->name);
+	default_source.is_cap = true;
 
 	return 0;
 }
@@ -1134,8 +1297,8 @@ static int cmd_cap_ac_13(const struct shell *sh, size_t argc, char **argv)
 static int cmd_cap_ac_14(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct bap_broadcast_ac_param param = {
-		.name = "AC_13",
-		.stream_cnt = 1U,
+		.name = "AC_14",
+		.stream_cnt = 2U,
 		.chan_cnt = 2U,
 	};
 
@@ -1159,18 +1322,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	cap_initiator_cmds,
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	SHELL_CMD_ARG(discover, NULL, "Discover CAS", cmd_cap_initiator_discover, 1, 0),
-	SHELL_CMD_ARG(unicast-start, NULL,
+	SHELL_CMD_ARG(unicast_start, NULL,
 		      "Unicast Start [csip] [sinks <cnt> (default 1)] "
 		      "[sources <cnt> (default 1)] "
 		      "[conns (<cnt> | all) (default 1)]",
 		      cmd_cap_initiator_unicast_start, 1, 7),
-	SHELL_CMD_ARG(unicast-list, NULL, "Unicast list streams", cmd_cap_initiator_unicast_list,
-		      1, 0),
-	SHELL_CMD_ARG(unicast-update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
+	SHELL_CMD_ARG(unicast_list, NULL, "Unicast list streams", cmd_cap_initiator_unicast_list, 1,
+		      0),
+	SHELL_CMD_ARG(unicast_update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
 		      cmd_cap_initiator_unicast_update, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
-	SHELL_CMD_ARG(unicast-stop, NULL, "Unicast stop all streams",
-		      cmd_cap_initiator_unicast_stop, 1, 0),
-	SHELL_CMD_ARG(unicast-cancel, NULL, "Unicast cancel current procedure",
+	SHELL_CMD_ARG(unicast_stop, NULL,
+		      "Unicast stop streams <all | stream [stream [stream...]]>",
+		      cmd_cap_initiator_unicast_stop, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
+	SHELL_CMD_ARG(unicast_cancel, NULL, "Unicast cancel current procedure",
 		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #if UNICAST_SINK_SUPPORTED
 	SHELL_CMD_ARG(ac_1, NULL, "<sink preset>", cmd_cap_ac_1, 2, 0),
@@ -1226,6 +1390,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	SHELL_CMD_ARG(broadcast_start, NULL, "", cmd_broadcast_start, 1, 0),
+	SHELL_CMD_ARG(broadcast_update, NULL, "<meta>", cmd_broadcast_update, 2, 0),
+	SHELL_CMD_ARG(broadcast_stop, NULL, "", cmd_broadcast_stop, 1, 0),
+	SHELL_CMD_ARG(broadcast_delete, NULL, "", cmd_broadcast_delete, 1, 0),
 	SHELL_CMD_ARG(ac_12, NULL, "<preset>", cmd_cap_ac_12, 2, 0),
 #if CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT > 1
 	SHELL_CMD_ARG(ac_13, NULL, "<preset>", cmd_cap_ac_13, 2, 0),
@@ -1237,3 +1405,74 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
 		       "Bluetooth CAP initiator shell commands",
 		       cmd_cap_initiator, 1, 1);
+
+static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
+{
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	if (default_source.cap_source != NULL && default_source.is_cap) {
+		static uint8_t ad_cap_broadcast_announcement[5] = {
+			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
+		};
+		uint32_t broadcast_id;
+		int err;
+
+		err = bt_cap_initiator_broadcast_get_id(default_source.cap_source, &broadcast_id);
+		if (err != 0) {
+			printk("Unable to get broadcast ID: %d\n", err);
+
+			return -1;
+		}
+
+		sys_put_le24(broadcast_id, &ad_cap_broadcast_announcement[2]);
+		data_array[0].type = BT_DATA_SVC_DATA16;
+		data_array[0].data_len = ARRAY_SIZE(ad_cap_broadcast_announcement);
+		data_array[0].data = ad_cap_broadcast_announcement;
+
+		return 1;
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+	return 0;
+}
+
+ssize_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+				  const bool discoverable, const bool connectable)
+{
+	if (!discoverable) {
+		return 0;
+	}
+
+	if (!connectable) {
+		return nonconnectable_ad_data_add(data_array, data_array_size);
+	}
+
+	return 0;
+}
+
+ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
+{
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	if (default_source.cap_source != NULL && default_source.is_cap) {
+		/* Required size of the buffer depends on what has been
+		 * configured. We just use the maximum size possible.
+		 */
+		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
+		int err;
+
+		err = bt_cap_initiator_broadcast_get_base(default_source.cap_source, &base_buf);
+		if (err != 0) {
+			printk("Unable to get BASE: %d\n", err);
+
+			return -1;
+		}
+
+		data_array[0].type = BT_DATA_SVC_DATA16;
+		data_array[0].data_len = base_buf.len;
+		data_array[0].data = base_buf.data;
+
+		return 1;
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+	return 0;
+}

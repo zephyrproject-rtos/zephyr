@@ -21,7 +21,7 @@
 #include "nsi_hw_scheduler.h"
 #include "nsi_hws_models_if.h"
 
-static uint64_t simu_time; /* The actual time as known by the HW models */
+uint64_t nsi_simu_time; /* The actual time as known by the HW models */
 static uint64_t end_of_time = NSI_NEVER; /* When will this device stop */
 
 extern struct nsi_hw_event_st __nsi_hw_events_start[];
@@ -55,7 +55,7 @@ static void nsi_hws_signal_end_handler(int sig)
  * Therefore we set SA_RESETHAND: This way, the 2nd time the signal is received
  * the default handler would be called to terminate the program no matter what.
  *
- * Note that SA_RESETHAND requires either _POSIX_C_SOURCE>=200809 or
+ * Note that SA_RESETHAND requires either _POSIX_C_SOURCE>=200809L or
  * _XOPEN_SOURCE>=500
  */
 static void nsi_hws_set_sig_handler(void)
@@ -74,21 +74,21 @@ static void nsi_hws_set_sig_handler(void)
 
 static void nsi_hws_sleep_until_next_event(void)
 {
-	if (next_timer_time >= simu_time) { /* LCOV_EXCL_BR_LINE */
-		simu_time = next_timer_time;
+	if (next_timer_time >= nsi_simu_time) { /* LCOV_EXCL_BR_LINE */
+		nsi_simu_time = next_timer_time;
 	} else {
 		/* LCOV_EXCL_START */
 		nsi_print_warning("next_timer_time corrupted (%"PRIu64"<= %"
 				PRIu64", timer idx=%i)\n",
 				(uint64_t)next_timer_time,
-				(uint64_t)simu_time,
+				(uint64_t)nsi_simu_time,
 				next_timer_index);
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (signaled_end || (simu_time > end_of_time)) {
+	if (signaled_end || (nsi_simu_time > end_of_time)) {
 		nsi_print_trace("\nStopped at %.3Lfs\n",
-				((long double)simu_time)/1.0e6L);
+				((long double)nsi_simu_time)/1.0e6L);
 		nsi_exit(0);
 	}
 }
@@ -139,14 +139,6 @@ void nsi_hws_one_event(void)
 void nsi_hws_set_end_of_time(uint64_t new_end_of_time)
 {
 	end_of_time = new_end_of_time;
-}
-
-/**
- * Return the current simulated time as known by the device
- */
-uint64_t nsi_hws_get_time(void)
-{
-	return simu_time;
 }
 
 /**

@@ -31,7 +31,7 @@ struct hx8394_config {
 #define HX8394_MIPI_LP_CD_DIS BIT(5)
 #define HX8394_MIPI_TA_6TL 0x3
 #define HX8394_MIPI_DPHYCMD_LPRX_8NS 0x40
-#define HX8394_MIPI_DPHYCMD_LPRX_66mV 0x10
+#define HX8394_MIPI_DPHYCMD_LPRX_66mV 0x20
 #define HX8394_MIPI_DPHYCMD_LPTX_SRLIM 0x8
 #define HX8394_MIPI_DPHYCMD_LDO_1_55V 0x60
 #define HX8394_MIPI_DPHYCMD_HSRX_7X 0x8
@@ -404,7 +404,7 @@ const uint8_t hx8394_bank0[] = {
 
 const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
 
-const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK | 0x3};
+const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
 
 static int hx8394_write(const struct device *dev, const uint16_t x,
 			 const uint16_t y,
@@ -413,21 +413,6 @@ static int hx8394_write(const struct device *dev, const uint16_t x,
 {
 	LOG_WRN("Write not supported, use LCD controller display driver");
 	return 0;
-}
-
-static int hx8394_read(const struct device *dev, const uint16_t x,
-			const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			void *buf)
-{
-	LOG_WRN("Read not implemented");
-	return -ENOTSUP;
-}
-
-static void *hx8394_get_framebuffer(const struct device *dev)
-{
-	LOG_WRN("Direct framebuffer access not implemented");
-	return NULL;
 }
 
 static int hx8394_blanking_off(const struct device *dev)
@@ -450,20 +435,6 @@ static int hx8394_blanking_on(const struct device *dev)
 	} else {
 		return -ENOTSUP;
 	}
-}
-
-static int hx8394_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	LOG_WRN("Set brightness not implemented");
-	return -ENOTSUP;
-}
-
-static int hx8394_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	LOG_WRN("Set contrast not implemented");
-	return -ENOTSUP;
 }
 
 static int hx8394_set_pixel_format(const struct device *dev,
@@ -526,10 +497,6 @@ static const struct display_driver_api hx8394_api = {
 	.blanking_on = hx8394_blanking_on,
 	.blanking_off = hx8394_blanking_off,
 	.write = hx8394_write,
-	.read = hx8394_read,
-	.get_framebuffer = hx8394_get_framebuffer,
-	.set_brightness = hx8394_set_brightness,
-	.set_contrast = hx8394_set_contrast,
 	.get_capabilities = hx8394_get_capabilities,
 	.set_pixel_format = hx8394_set_pixel_format,
 	.set_orientation = hx8394_set_orientation,

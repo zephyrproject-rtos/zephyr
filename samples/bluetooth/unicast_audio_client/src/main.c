@@ -19,6 +19,8 @@
 
 static void start_scan(void);
 
+uint64_t unicast_audio_recv_ctr; /* This value is exposed to test code */
+
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
@@ -104,7 +106,6 @@ static int frame_duration_100us;
 static int frames_per_sdu;
 static int octets_per_frame;
 
-
 /**
  * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
  *
@@ -120,7 +121,7 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 	const float step = 2 * 3.1415f / sine_period_samples;
 
 	for (unsigned int i = 0; i < num_samples; i++) {
-		const float sample = sin(i * step);
+		const float sample = sinf(i * step);
 
 		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
 	}
@@ -205,9 +206,7 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 				buf_to_send = net_buf_clone(buf, K_FOREVER);
 			}
 
-			ret = bt_bap_stream_send(stream, buf_to_send,
-						   get_and_incr_seq_num(stream),
-						   BT_ISO_TIMESTAMP_NONE);
+			ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
 			if (ret < 0) {
 				printk("  Failed to send LC3 audio data on streams[%zu] (%d)\n",
 				       i, ret);
@@ -245,17 +244,17 @@ static int init_lc3(void)
 
 	if (freq_hz < 0) {
 		printk("Error: Codec frequency not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	if (frame_duration_us < 0) {
 		printk("Error: Frame duration not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	if (octets_per_frame < 0) {
 		printk("Error: Octets per frame not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	frame_duration_100us = frame_duration_us / 100;
@@ -277,7 +276,9 @@ static int init_lc3(void)
 
 	if (lc3_encoder == NULL) {
 		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+		return -1;
 	}
+	return 0;
 }
 
 #else
@@ -334,9 +335,7 @@ static void audio_timer_timeout(struct k_work *work)
 			buf_to_send = net_buf_clone(buf, K_FOREVER);
 		}
 
-		ret = bt_bap_stream_send(stream, buf_to_send,
-					   get_and_incr_seq_num(stream),
-					   BT_ISO_TIMESTAMP_NONE);
+		ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu]: (%d)\n",
 			       i, ret);
@@ -398,7 +397,7 @@ static bool check_audio_support_and_connect(struct bt_data *data,
 	bt_addr_le_t *addr = user_data;
 	uint8_t announcement_type;
 	uint32_t audio_contexts;
-	struct bt_uuid *uuid;
+	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
 	uint8_t meta_len;
 	size_t min_size;
@@ -476,7 +475,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 
 	/* connect only to devices in close proximity */
-	if (rssi < -70) {
+	if (rssi < -50) {
 		return;
 	}
 
@@ -562,7 +561,9 @@ static void stream_recv(struct bt_bap_stream *stream,
 			struct net_buf *buf)
 {
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+		unicast_audio_recv_ctr++;
+		printk("Incoming audio on stream %p len %u (%"PRIu64")\n", stream, buf->len,
+			unicast_audio_recv_ctr);
 	}
 }
 

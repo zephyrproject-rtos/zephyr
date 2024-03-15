@@ -13,6 +13,6 @@ config GPIO_NPM6001
 config GPIO_NPM6001_INIT_PRIORITY
 	int "nPM6001 GPIO driver initialization priority"
 	depends on GPIO_NPM6001
-	default 65
+	default 85
 	help
 	  Initialization priority for the nPM6001 GPIO driver.

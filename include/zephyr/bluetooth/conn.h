@@ -479,6 +479,42 @@ struct bt_conn_le_tx_power {
 	int8_t max_level;
 };
 
+
+/** LE Transmit Power Reporting Structure */
+struct bt_conn_le_tx_power_report {
+
+	/** Reason for Transmit power reporting,
+	 * as documented in Core Spec. Version 5.4 Vol. 4, Part E, 7.7.65.33.
+	 */
+	uint8_t reason;
+
+	/** Phy of Transmit power reporting. */
+	enum bt_conn_le_tx_power_phy phy;
+
+	/** Transmit power level
+	 * - 0xXX - Transmit power level
+	 *  + Range: -127 to 20
+	 *  + Units: dBm
+	 *
+	 * - 0x7E - Remote device is not managing power levels on this PHY.
+	 * - 0x7F - Transmit power level is not available
+	 */
+	int8_t tx_power_level;
+
+	/** Bit 0: Transmit power level is at minimum level.
+	 *  Bit 1: Transmit power level is at maximum level.
+	 */
+	uint8_t tx_power_level_flag;
+
+	/** Change in transmit power level
+	 * - 0xXX - Change in transmit power level (positive indicates increased
+	 *   power, negative indicates decreased power, zero indicates unchanged)
+	 *   Units: dB
+	 * - 0x7F - Change is not available or is out of range.
+	 */
+	int8_t delta;
+};
+
 /** @brief Passkey Keypress Notification type
  *
  *  The numeric values are the same as in the Core specification for Pairing
@@ -529,6 +565,41 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
  */
 int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 				  struct bt_conn_le_tx_power *tx_power_level);
+
+/** @brief Get local enhanced connection transmit power level.
+ *
+ *  @param conn           Connection object.
+ *  @param tx_power       Transmit power level descriptor.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @retval -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
+					   struct bt_conn_le_tx_power *tx_power);
+
+/** @brief Get remote (peer) transmit power level.
+ *
+ *  @param conn           Connection object.
+ *  @param phy            PHY information.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @retval -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
+					 enum bt_conn_le_tx_power_phy phy);
+
+/** @brief Enable transmit power reporting.
+ *
+ *  @param conn           Connection object.
+ *  @param local_enable   Enable/disable reporting for local.
+ *  @param remote_enable  Enable/disable reporting for remote.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @retval -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
+					  bool local_enable,
+					  bool remote_enable);
 
 /** @brief Update the connection parameters.
  *
@@ -800,11 +871,12 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  the device has bond information or is already paired and the keys are too
  *  weak then the pairing procedure will be initiated.
  *
- *  This function may return error if required level of security is not possible
- *  to achieve due to local or remote device limitation (e.g., input output
- *  capabilities), or if the maximum number of paired devices has been reached.
+ *  This function may return an error if the required level of security defined using
+ *  @p sec is not possible to achieve due to local or remote device limitation
+ *  (e.g., input output capabilities), or if the maximum number of paired devices
+ *  has been reached.
  *
- *  This function may return error if the pairing procedure has already been
+ *  This function may return an error if the pairing procedure has already been
  *  initiated by the local device or the peer device.
  *
  *  @note When @kconfig{CONFIG_BT_SMP_SC_ONLY} is enabled then the security
@@ -817,7 +889,7 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *        procedure will always be initiated.
  *
  *  @param conn Connection object.
- *  @param sec Requested security level.
+ *  @param sec Requested minimum security level.
  *
  *  @return 0 on success or negative error
  */
@@ -928,6 +1000,20 @@ struct bt_conn_cb {
 	 */
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 
+	/** @brief A connection object has been returned to the pool.
+	 *
+	 * This callback notifies the application that it might be able to
+	 * allocate a connection object. No guarantee, first come, first serve.
+	 *
+	 * Use this to e.g. re-start connectable advertising or scanning.
+	 *
+	 * Treat this callback as an ISR, as it originates from
+	 * @ref bt_conn_unref which is used by the BT stack. Making
+	 * Bluetooth API calls in this context is error-prone and strongly
+	 * discouraged.
+	 */
+	void (*recycled)(void);
+
 	/** @brief LE connection parameter update request.
 	 *
 	 *  This callback notifies the application that a remote device
@@ -981,7 +1067,7 @@ struct bt_conn_cb {
 				  const bt_addr_le_t *rpa,
 				  const bt_addr_le_t *identity);
 #endif /* CONFIG_BT_SMP */
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	/** @brief The security level of a connection has changed.
 	 *
 	 *  This callback notifies the application that the security of a
@@ -1000,7 +1086,7 @@ struct bt_conn_cb {
 	 */
 	void (*security_changed)(struct bt_conn *conn, bt_security_t level,
 				 enum bt_security_err err);
-#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
+#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC) */
 
 #if defined(CONFIG_BT_REMOTE_INFO)
 	/** @brief Remote information procedures has completed.
@@ -1052,6 +1138,22 @@ struct bt_conn_cb {
 			      const struct bt_df_conn_iq_samples_report *iq_report);
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	/** @brief LE Read Remote Transmit Power Level procedure has completed or LE
+	 *  Transmit Power Reporting event.
+	 *
+	 *  This callback notifies the application that either the remote transmit power level
+	 *  has been read from the peer or transmit power level has changed for the local or
+	 *  remote controller when transmit power reporting is enabled for the respective side
+	 *  using @ref bt_conn_le_set_tx_power_report_enable.
+	 *
+	 *  @param conn Connection object.
+	 *  @param report Transmit power report.
+	 */
+	void (*tx_power_report)(struct bt_conn *conn,
+				const struct bt_conn_le_tx_power_report *report);
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+
 	struct bt_conn_cb *_next;
 };
 
@@ -1062,6 +1164,19 @@ struct bt_conn_cb {
  *  @param cb Callback struct. Must point to memory that remains valid.
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
+
+/**
+ * @brief Unregister connection callbacks.
+ *
+ * Unregister the state of connections callbacks.
+ *
+ * @param cb Callback struct point to memory that remains valid.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL If @p cb is NULL
+ * @retval -ENOENT if @p cb was not registered
+ */
+int bt_conn_cb_unregister(struct bt_conn_cb *cb);
 
 /**
  *  @brief Register a callback structure for connection events.
@@ -1436,7 +1551,7 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pairing_confirm)(struct bt_conn *conn);
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	/** @brief Request the user to enter a passkey.
 	 *
 	 *  This callback will be called for a BR/EDR (Bluetooth Classic)

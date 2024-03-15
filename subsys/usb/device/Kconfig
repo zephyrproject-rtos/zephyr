@@ -97,7 +97,7 @@ config USB_NUMOF_EP_WRITE_RETRIES
 
 config USB_DEVICE_SOF
 	bool "Start of Frame processing in events"
-	default y if (USB_DEVICE_AUDIO && NRFX_USBD)
+	default y if (USB_DEVICE_AUDIO && NRF_USBD_COMMON)
 
 config USB_DEVICE_BOS
 	bool "USB Binary Device Object Store (BOS)"

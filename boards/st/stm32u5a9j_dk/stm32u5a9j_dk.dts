@@ -1,0 +1,299 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/u5/stm32u5a9Xj.dtsi>
+#include <st/u5/stm32u5a9njhxq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32U5A9J DISCOVERY KIT board";
+	compatible = "st,stm32u5a9j-dk";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_3 {
+			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		red_led_0: led_4 {
+			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpioe 8 0>,	/* TOUCH_INT */
+			<22 0 &gpiod 8 0>,	/* SPI chip SEL */
+			<24 0 &gpiob 13 0>,	/* SPI CLK */
+			<26 0 &gpiod 4 0>,	/* SPI MOSI */
+			<28 0 &gpiod 11 0>,	/* SPI DCX */
+			<35 0 &gpioe 5 0>,	/* SCLK/MCLK */
+			<37 0 &gpioe 4 0>,	/* LRCLK */
+			<40 0 &gpioh 4 0>,	/* I2C5_SDA */
+			<43 0 &gpioi 7 0>,	/* SWIRE */
+			<44 0 &gpioh 5 0>,	/* I2C5_SCL */
+			<49 0 &gpiof 11 0>,	/* DSI_TE */
+			<53 0 &gpioi 6 0>,	/* LCD_BL_CTRL */
+			<57 0 &gpiod 5 0>;	/* DSI_RESET */
+	};
+
+	aliases {
+		led0 = &green_led_0;
+		led1 = &red_led_0;
+		sw0 = &user_button;
+		sdhc0 = &sdmmc1;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>; /* 4MHz (reset value) */
+	msi-pll-mode;
+};
+
+&pll1 {
+	div-m = <1>;
+	mul-n = <80>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msis>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+uart0: &usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
+	pinctrl-names = "default";
+	current-speed = <9600>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c6 {
+	pinctrl-0 = <&i2c6_scl_pd1 &i2c6_sda_pd0>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pd3 &spi2_mosi_pd4>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pg10 &spi3_mosi_pg11>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiog 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <1>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch2_pe11>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers2 {
+	st,prescaler = <1>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-names = "default";
+	};
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		&sdmmc1_d4_pb8 &sdmmc1_d5_pb9
+		&sdmmc1_d6_pc6 &sdmmc1_d7_pc7
+		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdmmc2 {
+	pinctrl-0 = <&sdmmc2_d0_pb14 &sdmmc2_d1_pb15
+		&sdmmc2_d2_pb3 &sdmmc2_d3_pb4
+		&sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in5_pa0 &adc1_in14_pc5>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <1>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@5 {
+		reg = <0x5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@e {
+		reg = <0xe>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in5_pf14>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <1>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@5 {
+		reg = <0x5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is dedicated to the use of bootloader
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(1952)>;
+		};
+		slot1_partition: partition@1f8000 {
+			label = "image-1";
+			reg = <0x001f8000 DT_SIZE_K(1960)>;
+		};
+		storage_partition: partition@3e2000 {
+			label = "storage";
+			reg = <0x003e2000 DT_SIZE_K(120)>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
+	status = "okay";
+};

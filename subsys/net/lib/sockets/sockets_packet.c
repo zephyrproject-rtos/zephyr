@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 
 #include "../../ip/net_stats.h"
@@ -144,6 +144,10 @@ static void zpacket_set_eth_pkttype(struct net_if *iface,
 				    struct sockaddr_ll *addr,
 				    struct net_linkaddr *lladdr)
 {
+	if (lladdr == NULL || lladdr->addr == NULL) {
+		return;
+	}
+
 	if (net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr)) {
 		addr->sll_pkttype = PACKET_BROADCAST;
 	} else if (net_eth_is_addr_multicast(

@@ -316,7 +316,7 @@ Pull Requests and Issues
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Discord
+conversation on the `Zephyr devel mailing list`_ (or the `Zephyr Discord
 Server`_) to see what others think of your issue (and proposed solution).  You
 may find others that have encountered the issue you're finding, or that have
 similar ideas for changes or additions.  Send a message to the `Zephyr devel
@@ -360,7 +360,7 @@ gitlint
 
 When you submit a pull request to the project, a series of checks are
 performed to verify your commit messages meet the requirements. The same step
-done during the CI process can be performed locally using the the ``gitlint``
+done during the CI process can be performed locally using the ``gitlint``
 command.
 
 Run ``gitlint`` locally in your tree and branch where your patches have been
@@ -532,9 +532,18 @@ results you have to create an account yourself.  From the Zephyr project page,
 you may select "Add me to project" to be added to the project. New members must
 be approved by an admin.
 
-Coverity scans the Zephyr codebase weekly. GitHub issues are automatically
-created for any problems found and assigned to the maintainers of the affected
-areas.
+Static analysis of the Zephyr codebase is conducted on a bi-weekly basis. GitHub
+issues are automatically created for any issues detected by static analysis
+tools. These issues will have the same (or equivalent) priority initially
+defined by the tool.
+
+To ensure accountability and efficient issue resolution, they are assigned to
+the respective maintainer who is responsible for the affected code.
+
+A dedicated team comprising members with expertise in static analysis, code
+quality, and software security ensures the effectiveness of the static
+analysis process and verifies that identified issues are properly
+triaged and resolved in a timely manner.
 
 Workflow
 ========
@@ -651,8 +660,8 @@ workflow here:
    request for the ``main`` branch. The title and message from your commit
    message should appear as well.
 
-#. GitHub will assign one or more suggested reviewers (based on the
-   CODEOWNERS file in the repo). If you are a project member, you can
+#. A bot will assign one or more suggested reviewers (based on the
+   MAINTAINERS file in the repo). If you are a project member, you can
    select additional reviewers now too.
 
 #. Click on the submit button and your pull request is sent and awaits
@@ -1028,7 +1037,7 @@ support for the old one is not a treewide change. Deprecation and removal of
 such APIs, however, are treewide changes.
 
 Specialized driver requirements
-===============================
+*******************************
 
 Drivers for standalone devices should use the Zephyr bus APIs (SPI, I2C...)
 whenever possible so that the device can be used with any SoC from any vendor

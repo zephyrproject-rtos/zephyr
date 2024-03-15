@@ -112,8 +112,10 @@ static int i2c_sedi_api_full_io(const struct device *dev, struct i2c_msg *msgs, 
 	return ret;
 }
 
-static const struct i2c_driver_api i2c_sedi_apis = {.configure = i2c_sedi_api_configure,
-						    .transfer = i2c_sedi_api_full_io};
+static const struct i2c_driver_api i2c_sedi_apis = {
+	.configure = i2c_sedi_api_configure,
+	.transfer = i2c_sedi_api_full_io
+};
 
 #ifdef CONFIG_PM_DEVICE
 

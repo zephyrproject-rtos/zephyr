@@ -1,0 +1,55 @@
+common:
+  tags:
+    - clib
+  integration_platforms:
+    - qemu_x86
+tests:
+  libraries.libc.strerror.minimal.strerror_table:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: minimal_libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=y
+      - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
+  libraries.libc.strerror.minimal.no_strerror_table:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: minimal_libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=n
+      - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
+  libraries.libc.strerror.newlib:
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED
+    min_ram: 32
+    tags: newlib
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  libraries.libc.strerror.newlib_nano:
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED and CONFIG_HAS_NEWLIB_LIBC_NANO
+    tags: newlib
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+  libraries.libc.strerror.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  libraries.libc.strerror.picolibc.module:
+    filter: CONFIG_ZEPHYR_PICOLIBC_MODULE
+    tags: picolibc
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
+  libraries.libc.strerror.picolibc.notls:
+    filter: CONFIG_ZEPHYR_PICOLIBC_MODULE
+    tags: picolibc
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
+      - CONFIG_THREAD_LOCAL_STORAGE=n

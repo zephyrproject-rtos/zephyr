@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+if SOC_SERIES_M48X
+
+rsource "Kconfig.defconfig.m48*"
+
+endif # SOC_SERIES_M48X

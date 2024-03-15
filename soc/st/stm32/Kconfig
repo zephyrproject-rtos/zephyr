@@ -1,0 +1,84 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_STM32
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select STM32_ENABLE_DEBUG_SLEEP_STOP if DEBUG || ZTEST
+	select BUILD_OUTPUT_HEX
+
+if SOC_FAMILY_STM32
+
+rsource "*/Kconfig"
+
+# STM32 wide symbols definitions
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CCM := zephyr,ccm
+
+config STM32_CCM
+	def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_CCM))
+
+config USE_STM32_ASSERT
+	depends on ASSERT
+	bool "STM32Cube HAL and LL drivers asserts"
+	help
+	  Enable asserts in STM32Cube HAL and LL drivers.
+
+config STM32_BACKUP_SRAM
+	bool "STM32 Backup SRAM"
+	depends on DT_HAS_ST_STM32_BACKUP_SRAM_ENABLED
+	help
+	  Enable support for STM32 backup SRAM.
+
+config STM32_ENABLE_DEBUG_SLEEP_STOP
+	bool "Allow debugger attach in stop/sleep Mode"
+	help
+	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
+	  of power consumption. As a side-effects this prevents
+	  debuggers from attaching w/o resetting the target. This
+	  effectivly destroys the use-case of `west attach`. Also
+	  SEGGER RTT and similar technologies need this.
+
+choice POWER_SUPPLY_CHOICE
+	prompt "STM32 power supply configuration"
+	default POWER_SUPPLY_LDO
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32U5X || \
+		   SOC_STM32WBA55XX
+
+config POWER_SUPPLY_LDO
+	bool "LDO supply"
+
+config POWER_SUPPLY_DIRECT_SMPS
+	bool "Direct SMPS supply"
+
+config POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO
+	bool "SMPS 1.8V supplies LDO (no external supply)"
+	depends on SOC_SERIES_STM32H7X
+
+config POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO
+	bool "SMPS 2.5V supplies LDO (no external supply)"
+	depends on SOC_SERIES_STM32H7X
+
+config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO
+	bool "External SMPS 1.8V supply, supplies LDO"
+	depends on SOC_SERIES_STM32H7X
+
+config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO
+	bool "External SMPS 2.5V supply, supplies LDO"
+	depends on SOC_SERIES_STM32H7X
+
+config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT
+	bool "External SMPS 1.8V supply and bypass"
+	depends on SOC_SERIES_STM32H7X
+
+config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT
+	bool "External SMPS 2.5V supply and bypass"
+	depends on SOC_SERIES_STM32H7X
+
+config POWER_SUPPLY_EXTERNAL_SOURCE
+	bool "Bypass"
+	depends on SOC_SERIES_STM32H7X
+
+endchoice
+
+endif # SOC_FAMILY_STM32

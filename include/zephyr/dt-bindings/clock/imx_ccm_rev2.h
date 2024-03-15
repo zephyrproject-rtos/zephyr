@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,8 @@
 #define IMX_CCM_LPI2C4_CLK		0x403UL
 #define IMX_CCM_LPI2C5_CLK		0x404UL
 #define IMX_CCM_LPI2C6_CLK		0x405UL
+#define IMX_CCM_LPI2C7_CLK		0x406UL
+#define IMX_CCM_LPI2C8_CLK		0x407UL
 
 /* LPSPI */
 #define IMX_CCM_LPSPI_CLK		0x500UL
@@ -51,6 +53,8 @@
 #define IMX_CCM_LPSPI4_CLK		0x503UL
 #define IMX_CCM_LPSPI5_CLK		0x504UL
 #define IMX_CCM_LPSPI6_CLK		0x505UL
+#define IMX_CCM_LPSPI7_CLK		0x506UL
+#define IMX_CCM_LPSPI8_CLK		0x507UL
 
 /* USDHC */
 #define IMX_CCM_USDHC1_CLK		0x600UL
@@ -84,5 +88,15 @@
 #define IMX_CCM_SAI3_CLK        0x2002UL
 #define IMX_CCM_SAI4_CLK        0x2003UL
 
+/* ENET */
+#define IMX_CCM_ENET_CLK	0x3000UL
+#define IMX_CCM_ENET_PLL	0x3001UL
+
+/* FLEXSPI */
+#define IMX_CCM_FLEXSPI_CLK	0x4000UL
+#define IMX_CCM_FLEXSPI2_CLK	0x4001UL
+/* PIT */
+#define IMX_CCM_PIT_CLK                 0x5000UL
+#define IMX_CCM_PIT1_CLK                0x5001UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */

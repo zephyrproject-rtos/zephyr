@@ -38,11 +38,17 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
 
 #if defined(CONFIG_NET_IPV4)
-static struct net_context *ipv4;
+#define MAX_IPV4_IFACE_COUNT CONFIG_NET_IF_MAX_IPV4_COUNT
+static struct net_context *ipv4[MAX_IPV4_IFACE_COUNT];
 static struct sockaddr_in local_addr4;
+#else
+#define MAX_IPV4_IFACE_COUNT 0
 #endif
 #if defined(CONFIG_NET_IPV6)
-static struct net_context *ipv6;
+#define MAX_IPV6_IFACE_COUNT CONFIG_NET_IF_MAX_IPV6_COUNT
+static struct net_context *ipv6[MAX_IPV6_IFACE_COUNT];
+#else
+#define MAX_IPV6_IFACE_COUNT 0
 #endif
 
 static struct net_mgmt_event_callback mgmt_cb;
@@ -88,7 +94,7 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)
-		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr);
+		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
 
 		if (ret < 0) {
 			NET_DBG("Cannot add IPv4 multicast address to iface %p",
@@ -104,11 +110,11 @@ int setup_dst_addr(struct net_context *ctx, sa_family_t family,
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		create_ipv4_addr(net_sin(dst));
 		*dst_len = sizeof(struct sockaddr_in);
-		net_context_set_ipv4_ttl(ctx, 255);
+		net_context_set_ipv4_mcast_ttl(ctx, 255);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		create_ipv6_addr(net_sin6(dst));
 		*dst_len = sizeof(struct sockaddr_in6);
-		net_context_set_ipv6_hop_limit(ctx, 255);
+		net_context_set_ipv6_mcast_hop_limit(ctx, 255);
 	} else {
 		return -EPFNOSUPPORT;
 	}
@@ -628,7 +634,7 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	struct in_addr *addr = user_data;
 	int ret;
 
-	ret = net_ipv4_igmp_join(iface, addr);
+	ret = net_ipv4_igmp_join(iface, addr, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);
@@ -645,55 +651,103 @@ static void setup_ipv4_addr(struct sockaddr_in *local_addr)
 
 static int init_listener(void)
 {
-	int ret, ok = 0;
+	int ret, ok = 0, i;
+	struct net_if *iface;
+	int iface_count;
+
+	NET_IFACE_COUNT(&iface_count);
+	NET_DBG("Setting mDNS listener to %d interface%s", iface_count,
+		iface_count > 1 ? "s" : "");
+
+	if ((iface_count > MAX_IPV6_IFACE_COUNT && MAX_IPV6_IFACE_COUNT > 0) ||
+	    (iface_count > MAX_IPV4_IFACE_COUNT && MAX_IPV4_IFACE_COUNT > 0)) {
+		NET_WARN("You have %d interfaces configured but there "
+			 "are %d network interfaces in the system.",
+			 MAX(MAX_IPV4_IFACE_COUNT,
+			     MAX_IPV6_IFACE_COUNT), iface_count);
+	}
 
 #if defined(CONFIG_NET_IPV6)
-	do {
-		static struct sockaddr_in6 local_addr;
+	struct sockaddr_in6 local_addr6;
+	struct net_context *v6;
 
-		setup_ipv6_addr(&local_addr);
+	setup_ipv6_addr(&local_addr6);
 
-		ipv6 = get_ctx(AF_INET6);
+	for (i = 0; i < MAX_IPV6_IFACE_COUNT; i++) {
+		v6 = get_ctx(AF_INET6);
+		if (v6 == NULL) {
+			NET_ERR("Cannot get %s context out of %d. Max contexts is %d",
+				"IPv6", MAX_IPV6_IFACE_COUNT, CONFIG_NET_MAX_CONTEXTS);
+			continue;
+		}
 
-		ret = bind_ctx(ipv6, (struct sockaddr *)&local_addr,
-			       sizeof(local_addr));
+		iface = net_if_get_by_index(i + 1);
+		if (iface == NULL) {
+			net_context_unref(v6);
+			continue;
+		}
+
+		net_context_bind_iface(v6, iface);
+
+		ret = bind_ctx(v6, (struct sockaddr *)&local_addr6,
+			       sizeof(local_addr6));
 		if (ret < 0) {
-			net_context_put(ipv6);
+			net_context_put(v6);
 			goto ipv6_out;
 		}
 
-		ret = net_context_recv(ipv6, recv_cb, K_NO_WAIT, ipv6);
+		ret = net_context_recv(v6, recv_cb, K_NO_WAIT, v6);
 		if (ret < 0) {
-			NET_WARN("Cannot receive IPv6 mDNS data (%d)", ret);
-			net_context_put(ipv6);
+			NET_WARN("Cannot receive %s mDNS data (%d)", "IPv6", ret);
+			net_context_put(v6);
 		} else {
+			ipv6[i] = v6;
 			ok++;
 		}
-	} while (0);
+	}
 ipv6_out:
+	; /* Added ";" to avoid clang compile error because of
+	   * the "struct net_context *v4" after it.
+	   */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	do {
-		setup_ipv4_addr(&local_addr4);
+	struct net_context *v4;
 
-		ipv4 = get_ctx(AF_INET);
+	setup_ipv4_addr(&local_addr4);
 
-		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr4,
+	for (i = 0; i < MAX_IPV4_IFACE_COUNT; i++) {
+		v4 = get_ctx(AF_INET);
+		if (v4 == NULL) {
+			NET_ERR("Cannot get %s context out of %d. Max contexts is %d",
+				"IPv4", MAX_IPV4_IFACE_COUNT, CONFIG_NET_MAX_CONTEXTS);
+			continue;
+		}
+
+		iface = net_if_get_by_index(i + 1);
+		if (iface == NULL) {
+			net_context_unref(v4);
+			continue;
+		}
+
+		net_context_bind_iface(v4, iface);
+
+		ret = bind_ctx(v4, (struct sockaddr *)&local_addr4,
 			       sizeof(local_addr4));
 		if (ret < 0) {
-			net_context_put(ipv4);
+			net_context_put(v4);
 			goto ipv4_out;
 		}
 
-		ret = net_context_recv(ipv4, recv_cb, K_NO_WAIT, ipv4);
+		ret = net_context_recv(v4, recv_cb, K_NO_WAIT, v4);
 		if (ret < 0) {
-			NET_WARN("Cannot receive IPv4 mDNS data (%d)", ret);
-			net_context_put(ipv4);
+			NET_WARN("Cannot receive %s mDNS data (%d)", "IPv4", ret);
+			net_context_put(v4);
 		} else {
+			ipv4[i] = v4;
 			ok++;
 		}
-	} while (0);
+	}
 ipv4_out:
 #endif /* CONFIG_NET_IPV4 */
 

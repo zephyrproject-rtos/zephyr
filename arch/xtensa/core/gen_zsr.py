@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2022 Intel corporation
 # SPDX-License-Identifier: Apache-2.0
-import sys
+import argparse
 import re
 
 # Scratch register allocator.  Zephyr uses multiple Xtensa SRs as
@@ -11,10 +11,30 @@ import re
 # -dM") core-isa.h file for the current architecture and assigns
 # registers to usages.
 
-NEEDED = ("ALLOCA", "CPU", "FLUSH")
+def parse_args():
+    parser = argparse.ArgumentParser(allow_abbrev=False)
 
-coreisa = sys.argv[1]
-outfile = sys.argv[2]
+    parser.add_argument("--coherence", action="store_true",
+                        help="Enable scratch registers for CONFIG_KERNEL_COHERENCE")
+    parser.add_argument("--mmu", action="store_true",
+                        help="Enable scratch registers for MMU usage")
+    parser.add_argument("coreisa",
+                        help="Path to preprocessed core-isa.h")
+    parser.add_argument("outfile",
+                        help="Output file")
+
+    return parser.parse_args()
+
+args = parse_args()
+
+NEEDED = ["A0SAVE", "CPU"]
+if args.mmu:
+    NEEDED += ["MMU_0", "MMU_1", "DBLEXC"]
+if args.coherence:
+    NEEDED += ["FLUSH"]
+
+coreisa = args.coreisa
+outfile = args.outfile
 
 syms = {}
 

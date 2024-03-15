@@ -26,6 +26,7 @@ choice LV_Z_MEMORY_POOL
 
 	config LV_Z_MEM_POOL_SYS_HEAP
 		bool "User space lvgl pool"
+		select SYS_HEAP_INFO
 		help
 		  Use a dedicated memory pool from a private sys heap.
 
@@ -40,6 +41,7 @@ config LV_Z_MEM_POOL_SIZE
 
 config LV_Z_VDB_SIZE
 	int "Rendering buffer size"
+	default 100 if LV_Z_FULL_REFRESH
 	default 10
 	range 1 100
 	help

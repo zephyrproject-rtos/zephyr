@@ -13,8 +13,8 @@
  * arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_
 
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
@@ -75,14 +75,6 @@ extern void z_arm_int_exit(void);
 
 extern void z_arm_interrupt_init(void);
 
-/* macros convert value of its argument to a string */
-#define DO_TOSTR(s) #s
-#define TOSTR(s) DO_TOSTR(s)
-
-/* concatenate the values of the arguments into one */
-#define DO_CONCAT(x, y) x ## y
-#define CONCAT(x, y) DO_CONCAT(x, y)
-
 /* Flags for use with IRQ_CONNECT() */
 /**
  * Set this interrupt up as a zero-latency IRQ. If CONFIG_ZERO_LATENCY_LEVELS
@@ -135,7 +127,7 @@ extern void z_arm_interrupt_init(void);
 	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
 			"ZLI interrupt registered but feature is disabled"); \
 	_CHECK_PRIO(priority_p, flags_p) \
-	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+	Z_ISR_DECLARE_DIRECT(irq_p, ISR_FLAG_DIRECT, isr_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
@@ -241,7 +233,7 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
  */
 #define ARM_IRQ_DIRECT_DYNAMIC_CONNECT(irq_p, priority_p, flags_p, resch) \
 	IRQ_DIRECT_CONNECT(irq_p, priority_p, \
-		CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
+		_CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
 
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
@@ -262,4 +254,4 @@ typedef enum {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_ */

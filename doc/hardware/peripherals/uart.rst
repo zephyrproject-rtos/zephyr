@@ -31,11 +31,11 @@ than the other methods.
 .. warning::
 
    Interrupt-driven API and the Asynchronous API should NOT be used at
-   the same time, since both APIs require hardware interrupts to function
-   properly, using the callbacks for both APIs would result in interference
-   between each other. :kconfig:option:`CONFIG_UART_EXCLUSIVE_API_CALLBACKS`
-   is enabled by default so that only the callbacks associated with one API
-   is active at a time.
+   the same time for the same hardware peripheral, since both APIs require
+   hardware interrupts to function properly. Using the callbacks for both
+   APIs would result in interference between each other.
+   :kconfig:option:`CONFIG_UART_EXCLUSIVE_API_CALLBACKS` is enabled by default
+   so that only the callbacks associated with one API is active at a time.
 
 
 Configuration Options

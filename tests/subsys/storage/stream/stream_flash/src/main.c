@@ -419,14 +419,14 @@ ZTEST(lib_stream_flash, test_stream_flash_erase_page)
 
 	init_target();
 
-	/* Write out one buf */
-	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN, false);
+	/* Write something to make page dirty */
+	rc = flash_write(ctx.fdev, FLASH_BASE, write_buf, BUF_LEN);
 	zassert_equal(rc, 0, "expected success");
 
 	rc = stream_flash_erase_page(&ctx, FLASH_BASE);
 	zassert_equal(rc, 0, "expected success");
 
-	VERIFY_ERASED(FLASH_BASE, page_size);
+	VERIFY_ERASED(0, page_size);
 
 	/*
 	 * Test failure in erase does not change context.

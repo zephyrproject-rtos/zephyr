@@ -17,7 +17,6 @@
 #include "rpl.h"
 #include "settings.h"
 #include "crypto.h"
-#include "adv.h"
 #include "proxy.h"
 #include "friend.h"
 #include "foundation.h"
@@ -556,7 +555,7 @@ uint16_t bt_mesh_app_key_find(bool dev_key, uint8_t aid,
 			}
 		}
 
-		/** Bluetooth Mesh Specification v1.0.1, section 3.4.3:
+		/** MshPRTv1.1: 3.4.3:
 		 *  The Device key is only valid for unicast addresses.
 		 */
 		if (BT_MESH_ADDR_IS_UNICAST(rx->ctx.recv_dst)) {
@@ -569,7 +568,7 @@ uint16_t bt_mesh_app_key_find(bool dev_key, uint8_t aid,
 			if (atomic_test_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND)) {
 				err = cb(rx, &bt_mesh.dev_key_cand, cb_data);
 				if (!err) {
-					/* Bluetooth Mesh Specification v1.1.0, section 3.6.4.2:
+					/* MshPRTv1.1: 3.6.4.2:
 					 * If a message is successfully decrypted using the device
 					 * key candidate, the device key candidate should
 					 * permanently replace the original devkey.

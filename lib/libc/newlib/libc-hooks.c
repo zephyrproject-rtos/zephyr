@@ -15,12 +15,12 @@
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/sys/heap_listener.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/sys/mutex.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
@@ -181,7 +181,7 @@ int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zephyr_read_stdin(char *buf, int nbytes)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, nbytes));
 	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
 #include <syscalls/zephyr_read_stdin_mrsh.c>
@@ -204,7 +204,7 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
+	K_OOPS(K_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
 #include <syscalls/zephyr_write_stdout_mrsh.c>
@@ -369,6 +369,9 @@ void __retarget_lock_init(_LOCK_T *lock)
 	__ASSERT(*lock != NULL, "non-recursive lock allocation failed");
 
 	k_sem_init((struct k_sem *)*lock, 1, 1);
+#ifdef CONFIG_USERSPACE
+	k_object_access_all_grant(*lock);
+#endif /* CONFIG_USERSPACE */
 }
 
 /* Create a new dynamic recursive lock */
@@ -385,6 +388,9 @@ void __retarget_lock_init_recursive(_LOCK_T *lock)
 	__ASSERT(*lock != NULL, "recursive lock allocation failed");
 
 	k_mutex_init((struct k_mutex *)*lock);
+#ifdef CONFIG_USERSPACE
+	k_object_access_all_grant(*lock);
+#endif /* CONFIG_USERSPACE */
 }
 
 /* Close dynamic non-recursive lock */

@@ -13,7 +13,7 @@
 #include "mesh/access.h"
 #include "utils.h"
 
-bool bt_mesh_shell_mdl_first_get(uint16_t id, struct bt_mesh_model **mod)
+bool bt_mesh_shell_mdl_first_get(uint16_t id, const struct bt_mesh_model **mod)
 {
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
 
@@ -27,10 +27,10 @@ bool bt_mesh_shell_mdl_first_get(uint16_t id, struct bt_mesh_model **mod)
 	return false;
 }
 
-int bt_mesh_shell_mdl_instance_set(const struct shell *sh, struct bt_mesh_model **mod,
+int bt_mesh_shell_mdl_instance_set(const struct shell *sh, const struct bt_mesh_model **mod,
 				 uint16_t mod_id, uint8_t elem_idx)
 {
-	struct bt_mesh_model *mod_temp;
+	const struct bt_mesh_model *mod_temp;
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
 
 	if (elem_idx >= comp->elem_count) {
@@ -53,14 +53,14 @@ int bt_mesh_shell_mdl_instance_set(const struct shell *sh, struct bt_mesh_model 
 int bt_mesh_shell_mdl_print_all(const struct shell *sh, uint16_t mod_id)
 {
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 
 	for (int i = 0; i < comp->elem_count; i++) {
 		mod = bt_mesh_model_find(&comp->elem[i], mod_id);
 		if (mod) {
 			shell_print(sh,
 				    "Client model instance found at addr 0x%.4X. Element index: %d",
-				    comp->elem[i].addr, mod->elem_idx);
+				    comp->elem[i].rt->addr, mod->rt->elem_idx);
 		}
 	}
 

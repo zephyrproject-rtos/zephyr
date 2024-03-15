@@ -350,8 +350,8 @@ struct shell_static_entry {
 			SHELL_EXPR_CMD_ARG(1, _syntax, _subcmd, _help, \
 					   _handler, _mand, _opt)\
 		), \
-		(static shell_cmd_handler dummy_##syntax##_handler __unused = _handler;\
-		 static const union shell_cmd_entry dummy_subcmd_##syntax __unused = { \
+		(static shell_cmd_handler dummy_handler_##_syntax __unused = _handler;\
+		 static const union shell_cmd_entry dummy_subcmd_##_syntax __unused = { \
 			.entry = (const struct shell_static_entry *)_subcmd\
 		 } \
 		) \
@@ -743,6 +743,7 @@ struct shell_backend_ctx_flags {
 	uint32_t cmd_ctx      :1; /*!< Shell is executing command */
 	uint32_t print_noinit :1; /*!< Print request from not initialized shell */
 	uint32_t sync_mode    :1; /*!< Shell in synchronous mode */
+	uint32_t handle_log   :1; /*!< Shell is handling logger backend */
 };
 
 BUILD_ASSERT((sizeof(struct shell_backend_ctx_flags) == sizeof(uint32_t)),
@@ -797,6 +798,9 @@ struct shell_ctx {
 
 	/** When bypass is set, all incoming data is passed to the callback. */
 	shell_bypass_cb_t bypass;
+
+	/*!< Logging level for a backend. */
+	uint32_t log_level;
 
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
@@ -863,7 +867,7 @@ struct shell {
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 
-	const char *thread_name;
+	const char *name;
 	struct k_thread *thread;
 	k_thread_stack_t *stack;
 };
@@ -910,7 +914,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 		.stats = Z_SHELL_STATS_PTR(_name),			      \
 		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.thread_name = STRINGIFY(_name),			      \
+		.name = STRINGIFY(_name),				      \
 		.thread = &_name##_thread,				      \
 		.stack = _name##_stack					      \
 	}

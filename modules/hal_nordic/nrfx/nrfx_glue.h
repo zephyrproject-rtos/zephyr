@@ -7,6 +7,13 @@
 #ifndef NRFX_GLUE_H__
 #define NRFX_GLUE_H__
 
+#if defined(CONFIG_CPU_CORTEX_M)
+/* Workaround for missing __ICACHE_PRESENT and __DCACHE_PRESENT symbols in MDK
+ * SoC definitions. To be removed when this is fixed.
+ */
+#include <cmsis_core_m_defaults.h>
+#endif
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/irq.h>
@@ -33,6 +40,11 @@ extern "C" {
  */
 #ifndef NRFX_ASSERT
 #define NRFX_ASSERT(expression)  __ASSERT_NO_MSG(expression)
+#endif
+
+#if defined(CONFIG_RISCV)
+/* included here due to dependency on NRFX_ASSERT definition */
+#include <hal/nrf_vpr_clic.h>
 #endif
 
 /**
@@ -84,14 +96,22 @@ extern "C" {
  *
  * @param irq_number IRQ number.
  */
-#define NRFX_IRQ_PENDING_SET(irq_number)  NVIC_SetPendingIRQ(irq_number)
+#if defined(CONFIG_RISCV)
+#define NRFX_IRQ_PENDING_SET(irq_number) nrf_vpr_clic_int_pending_set(NRF_VPRCLIC, irq_number)
+#else
+#define NRFX_IRQ_PENDING_SET(irq_number) NVIC_SetPendingIRQ(irq_number)
+#endif
 
 /**
  * @brief Macro for clearing the pending status of a specific IRQ.
  *
  * @param irq_number IRQ number.
  */
-#define NRFX_IRQ_PENDING_CLEAR(irq_number)  NVIC_ClearPendingIRQ(irq_number)
+#if defined(CONFIG_RISCV)
+#define NRFX_IRQ_PENDING_CLEAR(irq_number) nrf_vpr_clic_int_pending_clear(NRF_VPRCLIC, irq_number)
+#else
+#define NRFX_IRQ_PENDING_CLEAR(irq_number) NVIC_ClearPendingIRQ(irq_number)
+#endif
 
 /**
  * @brief Macro for checking the pending status of a specific IRQ.
@@ -99,7 +119,11 @@ extern "C" {
  * @retval true  If the IRQ is pending.
  * @retval false Otherwise.
  */
-#define NRFX_IRQ_IS_PENDING(irq_number)  (NVIC_GetPendingIRQ(irq_number) == 1)
+#if defined(CONFIG_RISCV)
+#define NRFX_IRQ_IS_PENDING(irq_number) nrf_vpr_clic_int_pending_check(NRF_VPRCLIC, irq_number)
+#else
+#define NRFX_IRQ_IS_PENDING(irq_number) (NVIC_GetPendingIRQ(irq_number) == 1)
+#endif
 
 /** @brief Macro for entering into a critical section. */
 #define NRFX_CRITICAL_SECTION_ENTER()  { unsigned int irq_lock_key = irq_lock();
@@ -340,6 +364,10 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #include <../src/nrf_802154_peripherals_nrf53.h>
 #define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
+#elif defined(NRF54L_SERIES)
+#include <../src/nrf_802154_peripherals_nrf54l.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
 #else
 #error Unsupported chip family
 #endif
@@ -357,7 +385,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #endif
 
-#if NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL
+#if defined(NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL)
 BUILD_ASSERT(
 	(NRFX_PPI_CHANNELS_USED_BY_802154_DRV & NRFX_PPI_CHANNELS_USED_BY_MPSL) == 0,
 	"PPI channels used by the IEEE802.15.4 radio driver overlap with those "

@@ -208,8 +208,8 @@ static void spi_pw_rx_thld_set(const struct device *dev,
 
 	/* Rx threshold */
 	reg_data = spi_pw_reg_read(dev, PW_SPI_REG_SIRF);
-	reg_data = (uint32_t) ~(PW_SPI_WM_MASK);
-	reg_data = PW_SPI_SIRF_WM_DFLT;
+	reg_data &= (uint32_t) ~(PW_SPI_WM_MASK);
+	reg_data |= PW_SPI_SIRF_WM_DFLT;
 	if (spi->ctx.rx_len && spi->ctx.rx_len < spi->fifo_depth) {
 		reg_data = spi->ctx.rx_len - 1;
 	}

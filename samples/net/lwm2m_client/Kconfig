@@ -29,8 +29,9 @@ endif
 
 config LWM2M_APP_SERVER
 	string "LwM2M server address"
-	default "coaps://192.0.2.2:5684" if LWM2M_DTLS_SUPPORT
 	default "coap://192.0.2.2:5683" if !LWM2M_DTLS_SUPPORT
+	default "coaps://192.0.2.2:5684" if (LWM2M_DTLS_SUPPORT && !LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	default "coaps://192.0.2.2:5784" if (LWM2M_DTLS_SUPPORT && LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	help
 	  LwM2M server address. Write as a full URI including optional port number.
 	  Only accepted protocols are "coap://" and "coaps://"

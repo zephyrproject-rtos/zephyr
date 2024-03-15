@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2022 Schlumberger
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/xmc4500_F100x1024-pinctrl.dtsi>
+
+&uart_tx_p0_1_u1c1 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&uart_rx_p0_0_u1c1 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&pwm_out_p1_0_ccu40_ch3 {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&pwm_out_p1_1_ccu40_ch2 {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&eth_p2_0_mdo {
+	drive-strength = "strong-sharp-edge";
+	output-low;
+};
+
+&eth_p2_7_mdc {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	output-low;
+	hwctrl = "disabled";
+};
+
+&eth_p2_5_tx_en {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	output-low;
+	hwctrl = "disabled";
+};
+
+&eth_p2_8_txd0 {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	output-low;
+	hwctrl = "disabled";
+};
+
+&eth_p2_9_txd1 {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	output-low;
+	hwctrl = "disabled";
+};
+
+&eth_p2_4_rxer {
+	drive-strength = "strong-medium-edge";
+	hwctrl = "disabled";
+};
+
+&eth_p2_2_rxd0{
+	drive-strength = "strong-medium-edge";
+	hwctrl = "disabled";
+};
+
+&eth_p2_3_rxd1 {
+	drive-strength = "strong-medium-edge";
+	hwctrl = "disabled";
+};
+
+&eth_p15_8_clk_rmii {
+	drive-strength = "strong-medium-edge";
+	hwctrl = "disabled";
+};
+
+&eth_p15_9_crs_dv {
+	drive-strength = "strong-medium-edge";
+	hwctrl = "disabled";
+};

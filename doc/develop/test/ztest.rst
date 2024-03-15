@@ -197,15 +197,15 @@ function can be written as follows:
 
         /* Only suites that use a predicate checking for phase == PWR_PHASE_0 will run. */
         state.phase = PWR_PHASE_0;
-        ztest_run_all(&state);
+        ztest_run_all(&state, false, 1, 1);
 
         /* Only suites that use a predicate checking for phase == PWR_PHASE_1 will run. */
         state.phase = PWR_PHASE_1;
-        ztest_run_all(&state);
+        ztest_run_all(&state, false, 1, 1);
 
         /* Only suites that use a predicate checking for phase == PWR_PHASE_2 will run. */
         state.phase = PWR_PHASE_2;
-        ztest_run_all(&state);
+        ztest_run_all(&state, false, 1, 1);
 
         /* Check that all the suites in this binary ran at least once. */
         ztest_verify_all_test_suites_ran();
@@ -339,6 +339,8 @@ it needs to report either a pass or fail.  For example:
    }
 
    ZTEST_SUITE(common, NULL, NULL, NULL, NULL, NULL);
+
+.. _ztest_unit_testing:
 
 Quick start - Unit testing
 **************************
@@ -551,9 +553,6 @@ See :ref:`FFF Extensions <fff-extensions>`.
 
 Customizing Test Output
 ***********************
-The way output is presented when running tests can be customized.
-An example can be found in :zephyr_file:`tests/ztest/custom_output`.
-
 Customization is enabled by setting :kconfig:option:`CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE` to "y"
 and adding a file :file:`tc_util_user_override.h` with your overrides.
 

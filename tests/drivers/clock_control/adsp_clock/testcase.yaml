@@ -2,7 +2,7 @@ tests:
   drivers.clock.adsp_clock_control:
     tags:
       - drivers
-      - clock
-    platform_allow: intel_adsp_cavs25
+      - clock_control
+    platform_allow: intel_adsp/cavs25
     integration_platforms:
-      - intel_adsp_cavs25
+      - intel_adsp/cavs25

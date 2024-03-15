@@ -1,0 +1,13 @@
+# Copyright (C) 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog AD5592 ADC/DAC/GPIO chip
+
+compatible: "adi,ad5592"
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: RESET pin

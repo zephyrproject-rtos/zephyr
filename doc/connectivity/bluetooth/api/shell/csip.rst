@@ -14,7 +14,7 @@ or a laptop. The client is able to lock and release members of a coordinated
 set. While the coordinated set is locked, no other clients may lock the set.
 
 To lock a set, the client must connect to each of the set members it wants to
-lock. This implementation will always try to to connect to all the members of
+lock. This implementation will always try to connect to all the members of
 the set, and at the same time. Thus if the set size is 3, then
 :code:`BT_MAX_CONN` shall be at least 3.
 
@@ -146,10 +146,10 @@ Using the Set Member
    Subcommands:
       register      :Initialize the service and register callbacks [size <int>]
                      [rank <int>] [not-lockable] [sirk <data>]
-      update_psri   :Update the advertised PSRI
       lock          :Lock the set
       release       :Release the set [force]
-      print_sirk    :Print the currently used SIRK
+      set_sirk      :Set the currently used SIRK <sirk>
+      get_sirk      :Get the currently used SIRK
       set_sirk_rsp  :Set the response used in SIRK requests <accept, accept_enc,
                      reject, oob>
 
@@ -163,3 +163,29 @@ Setup
 
    uart:~$ bt init
    uart:~$ csip_set_member register
+
+
+Setting a new SIRK
+------------------
+
+This command can modify the currently used SIRK. To get the new RSI to advertise on air,
+:code:`bt adv-data`` or :code:`bt advertise` must be called again to set the new advertising data.
+If :code:`CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE` is enabled, this will also notify connected
+clients.
+
+.. code-block:: console
+
+   uart:~$ csip_set_member set_sirk 00112233445566778899aabbccddeeff
+   Set SIRK updated
+
+Getting the current SIRK
+------------------------
+
+This command can get the currently used SIRK.
+
+.. code-block:: console
+
+   uart:~$ csip_set_member get_sirk
+   Set SIRK
+   36 04 9a dc 66 3a a1 a1 |6...f:..
+   1d 9a 2f 41 01 73 3e 01 |../A.s>.

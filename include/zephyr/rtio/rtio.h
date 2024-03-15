@@ -193,17 +193,17 @@ extern "C" {
 /**
  * @brief Equivalent to the I2C_MSG_STOP flag
  */
-#define RTIO_IODEV_I2C_STOP BIT(0)
+#define RTIO_IODEV_I2C_STOP BIT(1)
 
 /**
  * @brief Equivalent to the I2C_MSG_RESTART flag
  */
-#define RTIO_IODEV_I2C_RESTART BIT(1)
+#define RTIO_IODEV_I2C_RESTART BIT(2)
 
 /**
  * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
  */
-#define RTIO_IODEV_I2C_10_BITS BIT(2)
+#define RTIO_IODEV_I2C_10_BITS BIT(3)
 
 /** @cond ignore */
 struct rtio;
@@ -276,6 +276,8 @@ struct rtio_sqe {
 			uint8_t *rx_buf;
 		};
 
+		/** OP_I2C_CONFIGURE */
+		uint32_t i2c_config;
 	};
 };
 
@@ -470,6 +472,11 @@ struct rtio_iodev {
 /** An operation that transceives (reads and writes simultaneously) */
 #define RTIO_OP_TXRX (RTIO_OP_CALLBACK+1)
 
+/** An operation to recover I2C buses */
+#define RTIO_OP_I2C_RECOVER (RTIO_OP_TXRX+1)
+
+/** An operation to configure I2C buses */
+#define RTIO_OP_I2C_CONFIGURE (RTIO_OP_I2C_RECOVER+1)
 
 /**
  * @brief Prepare a nop (no op) submission
@@ -674,6 +681,13 @@ static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 	const uint32_t block_size = rtio_mempool_block_size(r);
 	uint32_t bytes = max_sz;
 
+	/* Not every context has a block pool and the block size may return 0 in
+	 * that case
+	 */
+	if (block_size == 0) {
+		return -ENOMEM;
+	}
+
 	do {
 		size_t num_blks = DIV_ROUND_UP(bytes, block_size);
 		int rc = sys_mem_blocks_alloc_contiguous(r->block_pool, num_blks, (void **)buf);
@@ -692,7 +706,11 @@ static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 
 static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_len)
 {
-#ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
+#ifndef CONFIG_RTIO_SYS_MEM_BLOCKS
+	ARG_UNUSED(r);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(buf_len);
+#else
 	size_t num_blks = buf_len >> r->block_pool->info.blk_sz_shift;
 
 	sys_mem_blocks_free_contiguous(r->block_pool, buf, num_blks);

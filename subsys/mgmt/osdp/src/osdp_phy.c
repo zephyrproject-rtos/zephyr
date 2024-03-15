@@ -191,10 +191,9 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t *data;
-	int i, data_len;
+	int data_len;
 
-	if (sc_is_active(pd) &&
-	    (pkt->control & PKT_CONTROL_SCB) && pkt->data[1] >= SCS_15)
+	if (sc_is_active(pd) && (pkt->control & PKT_CONTROL_SCB) && pkt->data[1] >= SCS_15) {
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
 			 * Only the data portion of message (after id byte)

@@ -42,6 +42,8 @@ config NET_SOCKETS_POSIX_NAMES
 
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
+	default 6 if WIFI_NM_WPA_SUPPLICANT
+	default 4 if SHELL_BACKEND_TELNET
 	default 3
 	help
 	  Maximum number of entries supported for poll() call.
@@ -63,7 +65,27 @@ config NET_SOCKETS_DNS_TIMEOUT
 	help
 	  This variable specifies time in milliseconds after which DNS
 	  query is considered timeout. Minimum timeout is 1 second and
-	  maximum timeout is 5 min.
+	  maximum timeout is 5 min. If the value is higher than
+	  CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL, then we try multiple
+	  times with exponential backoff until the timeout is reached.
+
+config NET_SOCKETS_DNS_BACKOFF_INTERVAL
+	int "Backoff interval for the DNS timeout"
+	default 5000
+	range 1000 300000
+	depends on DNS_RESOLVER
+	help
+	  This variable is related to the DNS timeout. If the DNS timeout is
+	  smaller than this value, then this value is ignored. If the timeout
+	  is larger, then this variable specifies time in milliseconds after
+	  which DNS query is re-tried. If there is no reply, the backoff
+	  interval is doubled and query is retried.
+	  Example:
+	     The CONFIG_NET_SOCKETS_DNS_TIMEOUT is set to 17000 (17 secs).
+	     This value is 5000 (5 sec). If there is no reply from DNS server
+	     within 5 secs, a 2nd query is done with timeout set to 10 sec (5 * 2).
+	     If no reply is received, a 3rd query is done after 15 sec (5 + 5 * 2),
+	     and the timeout is set to 2 sec so that the total timeout is 17 seconds.
 
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
@@ -71,6 +93,53 @@ config NET_SOCKET_MAX_SEND_WAIT
 	help
 	  The maximum time a socket is waiting for a blocked connection before
 	  returning an ENOBUFS error.
+
+config NET_SOCKETS_SERVICE
+	bool "Socket service support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select EVENTFD
+	help
+	  The socket service can monitor multiple sockets and save memory
+	  by only having one thread listening socket data. If data is received
+	  in the monitored socket, a user supplied work is called.
+	  Note that you need to set CONFIG_NET_SOCKETS_POLL_MAX high enough
+	  so that enough sockets entries can be serviced. This depends on
+	  system needs as multiple services can be activated at the same time
+	  depending on network configuration.
+
+config NET_SOCKETS_SERVICE_THREAD_PRIO
+	int "Priority of the socket service dispatcher thread"
+	default NUM_PREEMPT_PRIORITIES
+	depends on NET_SOCKETS_SERVICE
+	help
+	  Set the priority of the socket service dispatcher thread. This handler
+	  polls the sockets and either places the triggered socket to work queue
+	  for asynchronous handlers, or calls the user supplied callback directly
+	  for synchronous handlers.
+	  The value should be selected carefully because if this thread priority
+	  is too high, the work queue handlers might not be able to run if using
+	  asynchronous handlers that are called via a work queue.
+
+	  Note that >= 0 value means preemptive thread priority, the lowest
+	  value is NUM_PREEMPT_PRIORITIES.
+	  Highest preemptive thread priority is 0.
+	  Lowest cooperative thread priority is -1.
+	  Highest cooperative thread priority is -NUM_COOP_PRIORITIES.
+	  Make sure the priority is lower than workqueue priority so that
+	  we never block the workqueue handler.
+
+config NET_SOCKETS_SERVICE_STACK_SIZE
+	int "Stack size for the thread handling socket services"
+	default 2400 if NET_DHCPV4_SERVER
+	default 1200
+	depends on NET_SOCKETS_SERVICE
+	help
+	  Set the internal stack size for the thread that polls sockets.
+
+config NET_SOCKETS_SERVICE_INIT_PRIO
+	int "Startup priority for the network socket service"
+	default 90
+	depends on NET_SOCKETS_SERVICE
 
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support [EXPERIMENTAL]"
@@ -99,7 +168,8 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	  Maximum Fragment Length (MFL) value is automatically chosen based on
 	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
 	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
-	  case of default mbed TLS config).
+	  case of default mbed TLS config). With DTLS, MFL value may be further
+	  limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
 
 	  This is mostly useful for TLS client side to tell TLS server what is
 	  the maximum supported receive record length.
@@ -124,6 +194,34 @@ config NET_SOCKETS_DTLS_TIMEOUT
 	  from connecting. Value of 0 indicates no timeout - resources will be
 	  freed only when connection is gracefully closed by peer sending TLS
 	  notification or socket is closed.
+
+config NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH
+	int "Maximum DTLS fragment size in bytes"
+	default 1024
+	range 512 4096
+	depends on NET_SOCKETS_ENABLE_DTLS
+	depends on NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
+	help
+	  This variable specifies the Maximum Fragment Length (MFL) value to
+	  be used with DTLS connection when MBEDTLS_SSL_OUT_CONTENT_LEN and
+	  MBEDTLS_SSL_IN_CONTENT_LEN are set to larger values (for TLS).
+
+	  With DTLS the MFL should be kept under the network MTU, to avoid
+	  IP fragmentation.
+
+config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
+	int "Intermediate buffer size for DTLS sendmsg()"
+	depends on NET_SOCKETS_ENABLE_DTLS
+	range 0 65535
+	default 0
+	help
+	  Size of the intermediate buffer for DTLS sendmsg() function. The
+	  intermediate buffer is needed, as sendmsg() for DGRAM is expected to
+	  send all of the data in a single datagram, therefore all data provided
+	  in msghdr strucure need to be linearized before passing to mbed TLS.
+	  The buffer size can be set to 0, in that case data linearizing for
+	  DTLS sockets is disabled. In result, sendmsg() will only accept msghdr
+	  with a single non-empty iov buffer.
 
 config NET_SOCKETS_TLS_MAX_CONTEXTS
 	int "Maximum number of TLS/DTLS contexts"
@@ -261,6 +359,7 @@ if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
+	default 4096 if WIFI_NM_WPA_SUPPLICANT
 	default 64
 	range 1 4096
 	help

@@ -620,7 +620,7 @@ Networking
   * Added a
     :kconfig:option:`CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE`
     option, which allows to forward frames with unrecognised EtherType to the
-    netowrk stack.
+    network stack.
 
 * HTTP:
 
@@ -1721,7 +1721,7 @@ Addressed issues
 * :github:`43344` - intel_adsp_cavs25: samples/subsys/logging/syst is failing with a timeout when the sample is enabled to run on intel_adsp_cavs25
 * :github:`43333` - RFC: Bring zcbor as CBOR decoder/encoder in replacement for TinyCBOR
 * :github:`43326` - Unstable SD Card performance on Teensy 4.1
-* :github:`43319` - Hardware reset cause api sets reset pin bit everytime the api is called
+* :github:`43319` - Hardware reset cause api sets reset pin bit every time the api is called
 * :github:`43316` - stm32wl55 cannot enable PLL source as MSI
 * :github:`43314` - LE Audio: BAP ``sent`` callback missing
 * :github:`43310` - disco_l475_iot1: BLE not working

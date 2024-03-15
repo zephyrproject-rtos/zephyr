@@ -153,7 +153,7 @@ An example of selectively denying file access:
         if (event == MGMT_EVT_OP_FS_MGMT_FILE_ACCESS && prev_status == MGMT_CB_OK) {
             struct fs_mgmt_file_access *fs_data = (struct fs_mgmt_file_access *)data;
 
-            /* Check if this is an upload and deny access if it is, otherwise check the
+            /* Check if this is an upload and deny access if it is, otherwise check
              * the path and deny if is matches a name
              */
             if (fs_data->access == FS_MGMT_FILE_ACCESS_WRITE) {

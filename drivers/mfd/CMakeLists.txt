@@ -3,7 +3,11 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_MFD_MAX20335 mfd_max20335.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_NCT38XX mfd_nct38xx.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_NPM1300 mfd_npm1300.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_NPM6001 mfd_npm6001.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AXP192 mfd_axp192.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_AD5592 mfd_ad5592.c)
+zephyr_library_sources_ifdef(CONFIG_NXP_LP_FLEXCOMM mfd_nxp_lp_flexcomm.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_BD8LB600FS mfd_bd8lb600fs.c)

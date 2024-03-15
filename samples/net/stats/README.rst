@@ -21,7 +21,7 @@ Requirements
 Building and Running
 ********************
 
-A good way to run this sample application is with QEMU or native_posix board
+A good way to run this sample application is with QEMU or native_sim board
 as described in :ref:`networking_with_host`.
 
 Follow these steps to build the network statistics sample application:

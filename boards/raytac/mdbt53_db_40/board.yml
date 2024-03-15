@@ -1,0 +1,8 @@
+board:
+  name: raytac_mdbt53_db_40
+  vendor: raytac
+  socs:
+  - name: 'nrf5340'
+    variants:
+    - name: 'ns'
+      cpucluster: 'cpuapp'

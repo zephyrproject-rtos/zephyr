@@ -65,7 +65,6 @@
 #define LOAPIC_SSPND_BITS_PER_IRQ  1  /* Just the one for enable disable*/
 #define LOAPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOAPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_PM_DEVICE
-#include <zephyr/pm/device.h>
 __pinned_bss
 uint32_t loapic_suspend_buf[LOAPIC_SUSPEND_BITS_REQD / 32] = {0};
 #endif

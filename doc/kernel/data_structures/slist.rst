@@ -108,7 +108,7 @@ ways identically to the slist API.
 
 It adds the ability to associate exactly two bits of user defined
 "flags" with each list node.  These can be accessed and modified with
-:c:func:`sys_sfnode_flags_get` and :c:func:`sys_sfnode_flags_get`.
+:c:func:`sys_sfnode_flags_get` and :c:func:`sys_sfnode_flags_set`.
 Internally, the flags are stored unioned with the bottom bits of the
 next pointer and incur no SRAM storage overhead when compared with the
 simpler slist code.

@@ -68,6 +68,7 @@ void test_conn_init(struct bt_conn *conn)
 	conn->info.security.level = BT_SECURITY_L2;
 	conn->info.security.enc_key_size = BT_ENC_KEY_SIZE_MAX;
 	conn->info.security.flags = BT_SECURITY_FLAG_OOB | BT_SECURITY_FLAG_SC;
+	conn->info.le.interval = BT_GAP_INIT_CONN_INT_MIN;
 }
 
 const struct bt_gatt_attr *test_ase_control_point_get(void)
@@ -228,7 +229,7 @@ void test_ase_control_client_release(struct bt_conn *conn, uint8_t ase_id)
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x08,                   /* Opcode = Disable */
+		0x08,                   /* Opcode = Release */
 		0x01,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
@@ -345,4 +346,24 @@ void test_preamble_state_disabling(struct bt_conn *conn, uint8_t ase_id,
 	test_ase_control_client_disable(conn, ase_id);
 
 	test_mocks_reset();
+}
+
+void test_preamble_state_releasing(struct bt_conn *conn, uint8_t ase_id,
+				   struct bt_bap_stream *stream, struct bt_iso_chan **chan,
+				   bool source)
+{
+	test_preamble_state_streaming(conn, ase_id, stream, chan, source);
+	test_ase_control_client_release(conn, ase_id);
+
+	/* Reset the mocks espacially the function call count */
+	mock_bap_unicast_server_cleanup();
+	mock_bt_iso_cleanup();
+	mock_bap_stream_cleanup();
+	mock_bt_gatt_cleanup();
+	mock_bap_unicast_server_init();
+	mock_bt_iso_init();
+	mock_bap_stream_init();
+	mock_bt_gatt_init();
+
+	/* At this point, ISO is still connected, thus ASE is in releasing state */
 }

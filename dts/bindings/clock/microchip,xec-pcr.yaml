@@ -59,7 +59,7 @@ properties:
     type: int
     required: true
     description: |
-      Mininum number of consecutive 32KHz pulses that pass all monitor tests
+      Minimum number of consecutive 32KHz pulses that pass all monitor tests
 
   xtal-enable-delay-ms:
     type: int
@@ -86,12 +86,6 @@ properties:
       If the internal silicon 32KHz oscillator is not chosen as the source
       for PLL and Periheral devices then disable the internal 32KHz
       oscillator to save power.
-
-  pinctrl-0:
-    required: true
-
-  pinctrl-names:
-    required: true
 
   "#clock-cells":
     const: 3

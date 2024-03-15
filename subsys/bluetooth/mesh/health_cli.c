@@ -36,11 +36,11 @@ struct health_fault_param {
 	size_t *fault_count;
 };
 
-static int health_fault_status(struct bt_mesh_model *model,
+static int health_fault_status(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	struct bt_mesh_health_cli *cli = model->user_data;
+	struct bt_mesh_health_cli *cli = model->rt->user_data;
 	struct health_fault_param *param;
 	uint8_t test_id;
 	uint16_t cid;
@@ -89,11 +89,11 @@ done:
 	return 0;
 }
 
-static int health_current_status(struct bt_mesh_model *model,
+static int health_current_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	struct bt_mesh_health_cli *cli = model->user_data;
+	struct bt_mesh_health_cli *cli = model->rt->user_data;
 	uint8_t test_id;
 	uint16_t cid;
 
@@ -117,11 +117,11 @@ struct health_period_param {
 	uint8_t *divisor;
 };
 
-static int health_period_status(struct bt_mesh_model *model,
+static int health_period_status(const struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	struct bt_mesh_health_cli *cli = model->user_data;
+	struct bt_mesh_health_cli *cli = model->rt->user_data;
 	struct health_period_param *param;
 	uint8_t divisor;
 
@@ -151,11 +151,11 @@ struct health_attention_param {
 	uint8_t *attention;
 };
 
-static int health_attention_status(struct bt_mesh_model *model,
+static int health_attention_status(const struct bt_mesh_model *model,
 				   struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
-	struct bt_mesh_health_cli *cli = model->user_data;
+	struct bt_mesh_health_cli *cli = model->rt->user_data;
 	struct health_attention_param *param;
 	uint8_t attention;
 
@@ -402,9 +402,9 @@ void bt_mesh_health_cli_timeout_set(int32_t timeout)
 	msg_timeout = timeout;
 }
 
-static int health_cli_init(struct bt_mesh_model *model)
+static int health_cli_init(const struct bt_mesh_model *model)
 {
-	struct bt_mesh_health_cli *cli = model->user_data;
+	struct bt_mesh_health_cli *cli = model->rt->user_data;
 
 	LOG_DBG("primary %u", bt_mesh_model_in_primary(model));
 
@@ -423,9 +423,9 @@ static int health_cli_init(struct bt_mesh_model *model)
 	return 0;
 }
 
-static void health_cli_reset(struct bt_mesh_model *model)
+static void health_cli_reset(const struct bt_mesh_model *model)
 {
-	struct bt_mesh_health_cli *cli = model->user_data;
+	struct bt_mesh_health_cli *cli = model->rt->user_data;
 
 	net_buf_simple_reset(cli->pub.msg);
 }

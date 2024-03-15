@@ -1,7 +1,7 @@
 common:
   integration_platforms:
     - qemu_x86
-    - mps2_an385
+    - mps2/an385
 tests:
   drivers.sensor.generic:
     tags:

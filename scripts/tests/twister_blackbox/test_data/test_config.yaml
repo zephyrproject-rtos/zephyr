@@ -1,0 +1,14 @@
+platforms:
+  override_default_platforms: false
+  increased_platform_scope: true
+levels:
+  - name: smoke
+    description: >
+      A plan to be used verifying basic features
+    adds:
+      - dummy.agnostic.*
+  - name: acceptance
+    description: >
+      More coverage
+    adds:
+      - dummy.*

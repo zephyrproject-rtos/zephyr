@@ -1,0 +1,51 @@
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "POSIX Options"
+
+config POSIX_API
+	depends on !NATIVE_APPLICATION
+	bool "POSIX APIs"
+	help
+	  Enable mostly-standards-compliant implementations of
+	  various POSIX (IEEE 1003.1) APIs.
+
+if POSIX_CLOCK
+
+config PTHREAD_IPC
+	bool "POSIX pthread IPC API"
+	default y if POSIX_API
+	help
+	  This enables a mostly-standards-compliant implementation of
+	  the pthread mutex, condition variable and barrier IPC
+	  mechanisms.
+
+endif # POSIX_CLOCK
+
+rsource "Kconfig.barrier"
+rsource "Kconfig.clock"
+rsource "Kconfig.cond"
+rsource "Kconfig.env"
+rsource "Kconfig.eventfd"
+rsource "Kconfig.fdtable"
+rsource "Kconfig.fnmatch"
+rsource "Kconfig.fs"
+rsource "Kconfig.getopt"
+rsource "Kconfig.key"
+rsource "Kconfig.mqueue"
+rsource "Kconfig.mutex"
+rsource "Kconfig.pthread"
+rsource "Kconfig.rwlock"
+rsource "Kconfig.sched"
+rsource "Kconfig.semaphore"
+rsource "Kconfig.signal"
+rsource "Kconfig.spinlock"
+rsource "Kconfig.stropts"
+rsource "Kconfig.sysconf"
+rsource "Kconfig.syslog"
+rsource "Kconfig.timer"
+rsource "Kconfig.uname"
+
+endmenu # "POSIX Options"

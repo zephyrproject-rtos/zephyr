@@ -3,7 +3,7 @@
 SAR Configuration Client
 ########################
 
-The SAR Configuration Client model is a foundation model defined by the Bluetooth mesh
+The SAR Configuration Client model is a foundation model defined by the Bluetooth Mesh
 specification. It is an optional model, enabled with the
 :kconfig:option:`CONFIG_BT_MESH_SAR_CFG_CLI` configuration option.
 

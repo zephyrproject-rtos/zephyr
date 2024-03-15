@@ -10,3 +10,10 @@ config MEM_ATTR
 	  time an array of the memory regions defined in the DT that can be
 	  probed at run-time using several helper functions. Set to `N` if
 	  unsure to save RODATA space.
+
+config MEM_ATTR_HEAP
+	bool "Memory Attributes heap allocator"
+	depends on MEM_ATTR
+	help
+	  Enable an heap allocator based on memory attributes to dynamically
+	  allocate memory from DeviceTree defined memory regions.

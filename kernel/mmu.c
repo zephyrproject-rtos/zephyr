@@ -12,13 +12,17 @@
 #include <mmu.h>
 #include <zephyr/init.h>
 #include <kernel_internal.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#ifdef CONFIG_DEMAND_PAGING
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
 
 /*
  * General terminology:
@@ -238,7 +242,7 @@ static void virt_region_free(void *vaddr, size_t size)
 	}
 
 #ifndef CONFIG_KERNEL_DIRECT_MAP
-	/* Without the need to support K_DIRECT_MAP, the region must be
+	/* Without the need to support K_MEM_DIRECT_MAP, the region must be
 	 * able to be represented in the bitmap. So this case is
 	 * simple.
 	 */
@@ -255,7 +259,7 @@ static void virt_region_free(void *vaddr, size_t size)
 	num_bits = size / CONFIG_MMU_PAGE_SIZE;
 	(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
 #else /* !CONFIG_KERNEL_DIRECT_MAP */
-	/* With K_DIRECT_MAP, the region can be outside of the virtual
+	/* With K_MEM_DIRECT_MAP, the region can be outside of the virtual
 	 * memory space, wholly within it, or overlap partially.
 	 * So additional processing is needed to make sure we only
 	 * mark the pages within the bitmap.
@@ -377,8 +381,10 @@ static void *virt_region_alloc(size_t size, size_t align)
  */
 static sys_slist_t free_page_frame_list;
 
-/* Number of unused and available free page frames */
-size_t z_free_page_count;
+/* Number of unused and available free page frames.
+ * This information may go stale immediately.
+ */
+static size_t z_free_page_count;
 
 #define PF_ASSERT(pf, expr, fmt, ...) \
 	__ASSERT(expr, "page frame 0x%lx: " fmt, z_page_frame_to_phys(pf), \
@@ -469,7 +475,9 @@ static int virt_to_page_frame(void *virt, uintptr_t *phys)
 		if (z_page_frame_is_mapped(pf)) {
 			if (virt == pf->addr) {
 				ret = 0;
-				*phys = z_page_frame_to_phys(pf);
+				if (phys != NULL) {
+					*phys = z_page_frame_to_phys(pf);
+				}
 				break;
 			}
 		}
@@ -775,10 +783,13 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 		 * Basically if either end of region is within
 		 * virtual memory space, we need to mark the bits.
 		 */
-		if (((dest_addr >= Z_VIRT_RAM_START) &&
-		     (dest_addr < Z_VIRT_RAM_END)) ||
-		    (((dest_addr + aligned_size) >= Z_VIRT_RAM_START) &&
-		     ((dest_addr + aligned_size) < Z_VIRT_RAM_END))) {
+
+		if (IN_RANGE(aligned_phys,
+			      (uintptr_t)Z_VIRT_RAM_START,
+			      (uintptr_t)(Z_VIRT_RAM_END - 1)) ||
+		    IN_RANGE(aligned_phys + aligned_size - 1,
+			      (uintptr_t)Z_VIRT_RAM_START,
+			      (uintptr_t)(Z_VIRT_RAM_END - 1))) {
 			uint8_t *adjusted_start = MAX(dest_addr, Z_VIRT_RAM_START);
 			uint8_t *adjusted_end = MIN(dest_addr + aligned_size,
 						    Z_VIRT_RAM_END);

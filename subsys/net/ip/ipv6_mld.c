@@ -321,6 +321,13 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 	uint16_t length = net_pkt_get_len(pkt);
 	struct net_icmpv6_mld_query *mld_query;
 	uint16_t pkt_len;
+	int ret = -EIO;
+
+	if (net_pkt_remaining_data(pkt) < sizeof(struct net_icmpv6_mld_query)) {
+		/* MLDv1 query, drop. */
+		ret = 0;
+		goto drop;
+	}
 
 	mld_query = (struct net_icmpv6_mld_query *)
 				net_pkt_get_data(pkt, &mld_access);
@@ -361,7 +368,7 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 drop:
 	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return ret;
 }
 
 void net_ipv6_mld_init(void)

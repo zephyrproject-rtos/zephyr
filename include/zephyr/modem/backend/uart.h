@@ -31,7 +31,8 @@ struct modem_backend_uart_isr {
 struct modem_backend_uart_async {
 	uint8_t *receive_bufs[2];
 	uint32_t receive_buf_size;
-	struct ring_buf receive_rdb[2];
+	struct ring_buf receive_rb;
+	struct k_spinlock receive_rb_lock;
 	uint8_t *transmit_buf;
 	uint32_t transmit_buf_size;
 	struct k_work rx_disabled_work;
@@ -42,6 +43,7 @@ struct modem_backend_uart {
 	const struct device *uart;
 	struct modem_pipe pipe;
 	struct k_work receive_ready_work;
+	struct k_work transmit_idle_work;
 
 	union {
 		struct modem_backend_uart_isr isr;

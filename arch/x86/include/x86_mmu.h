@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/x86/mmustructs.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 #if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
 #define XD_SUPPORTED

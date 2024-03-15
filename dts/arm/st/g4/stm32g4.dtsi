@@ -28,7 +28,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
@@ -387,7 +387,7 @@
 			reg = <0x40006400 0x400>, <0x4000a400 0x350>;
 			reg-names = "m_can", "message_ram";
 			interrupts = <21 0>, <22 0>;
-			interrupt-names = "LINE_0", "LINE_1";
+			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
 			sample-point = <875>;
@@ -690,6 +690,30 @@
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
 	};
 };
 

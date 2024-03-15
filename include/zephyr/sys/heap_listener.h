@@ -195,7 +195,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
  * @code
  * void on_heap_alloc(uintptr_t heap_id, void *mem, size_t bytes)
  * {
- *   LOG_INF("Memory allocated at %p, size %ld", heap_id, mem, bytes);
+ *   LOG_INF("Memory allocated at %p, size %ld", mem, bytes);
  * }
  *
  * HEAP_LISTENER_ALLOC_DEFINE(my_listener, HEAP_ID_LIBC, on_heap_alloc);
@@ -221,7 +221,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
  * @code
  * void on_heap_free(uintptr_t heap_id, void *mem, size_t bytes)
  * {
- *   LOG_INF("Memory freed at %p, size %ld", heap_id, mem, bytes);
+ *   LOG_INF("Memory freed at %p, size %ld", mem, bytes);
  * }
  *
  * HEAP_LISTENER_FREE_DEFINE(my_listener, HEAP_ID_LIBC, on_heap_free);

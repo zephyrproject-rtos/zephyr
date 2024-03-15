@@ -15,6 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
 
+#include <zephyr/sys/util_macro.h>
+
 #define _ARC_V2_LP_START 0x002
 #define _ARC_V2_LP_END 0x003
 #define _ARC_V2_IDENTITY 0x004
@@ -173,6 +175,11 @@
 #define _ARC_V2_AGU_MOD21 0x5f5
 #define _ARC_V2_AGU_MOD22 0x5f6
 #define _ARC_V2_AGU_MOD23 0x5f7
+#define _ARC_HW_PF_BUILD 0xf70
+#define _ARC_HW_PF_CTRL 0x4f
+
+/* _ARC_HW_PF_CTRL bits */
+#define _ARC_HW_PF_CTRL_ENABLE BIT(0)
 
 /* STATUS32/STATUS32_P0 bits */
 #define _ARC_V2_STATUS32_H (1 << 0)

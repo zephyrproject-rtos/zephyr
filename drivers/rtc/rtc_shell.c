@@ -16,8 +16,6 @@ static const char format_iso8601[] = "%FT%T";
 static const char format_time[] = "%T";  /* hh:mm:ss */
 static const char format_date[] = " %F"; /* yyyy-mm-dd */
 
-#if !defined CONFIG_BOARD_NATIVE_POSIX
-
 static const char *consume_chars(const char *s, char *dest, unsigned int cnt)
 {
 	if (strlen(s) < cnt) {
@@ -147,8 +145,6 @@ static char *strptime(const char *s, const char *format, struct tm *tm_time)
 		return NULL;
 	}
 }
-
-#endif
 
 static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 {

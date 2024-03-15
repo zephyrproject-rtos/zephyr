@@ -158,7 +158,7 @@ static void run_generic_test(const struct device *dev)
 			enum sensor_channel ch = iodev_all_channels[i];
 
 			rv = emul_sensor_backend_set_channel(
-				emul, ch, channel_table[ch].expected_values[iteration],
+				emul, ch, &channel_table[ch].expected_values[iteration],
 				channel_table[ch].expected_value_shift);
 			zassert_ok(
 				rv,
@@ -282,6 +282,7 @@ static void run_generic_test(const struct device *dev)
 
 /* Iterate through each of the emulated buses and create a test for each device. */
 DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(test_i2c), DECLARE_ZTEST_PER_DEVICE)
+DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(test_i3c), DECLARE_ZTEST_PER_DEVICE)
 DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(test_spi), DECLARE_ZTEST_PER_DEVICE)
 
 ZTEST_SUITE(generic, NULL, NULL, before, NULL, NULL);

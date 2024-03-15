@@ -306,7 +306,7 @@ void z_mem_domain_init_thread(struct k_thread *thread)
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
-/* Called when thread aborts during teardown tasks. sched_spinlock is held */
+/* Called when thread aborts during teardown tasks. _sched_spinlock is held */
 void z_mem_domain_exit_thread(struct k_thread *thread)
 {
 	int ret;

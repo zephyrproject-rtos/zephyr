@@ -8,3 +8,10 @@ config MFD_NPM6001
 	select I2C
 	help
 	  Enable the Nordic nPM6001 PMIC multi-function device driver
+
+config MFD_NPM6001_INIT_PRIORITY
+	int "nPM6001 MFD initialization priority"
+	default MFD_INIT_PRIORITY
+	depends on MFD_NPM6001
+	help
+	  Multi-function device initialization priority for nPM6001.

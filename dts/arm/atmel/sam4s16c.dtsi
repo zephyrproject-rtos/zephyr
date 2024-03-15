@@ -12,6 +12,7 @@
 		flash-controller@400e0a00 {
 			flash0: flash@400000 {
 				reg = <0x00400000 DT_SIZE_K(1024)>;
+				erase-blocks = <&eefc 8 2048>, <&eefc 252 4096>;
 			};
 		};
 

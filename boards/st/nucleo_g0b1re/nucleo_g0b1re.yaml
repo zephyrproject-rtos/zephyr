@@ -1,0 +1,26 @@
+identifier: nucleo_g0b1re
+name: ST Nucleo G0B1RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 144
+flash: 512
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - arduino_serial
+  - can
+  - uart
+  - gpio
+  - i2c
+  - spi
+  - nvs
+  - dma
+  - usb_device
+  - lptim
+vendor: st

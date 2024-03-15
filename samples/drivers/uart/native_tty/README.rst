@@ -12,10 +12,10 @@ UART to USB bridge dongles that are wired together, writing demo data to one
 dongle and reading it from the other."
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/drivers/uart/native-tty`.
+:zephyr_file:`samples/drivers/uart/native_tty`.
 
 You can learn more about the Native TTY UART driver in the
-:ref:`TTY UART <native_tty_uart>` section of the Native posix board
+:ref:`TTY UART <native_tty_uart>` section of the native_sim board
 documentation.
 
 Requirements
@@ -28,18 +28,18 @@ Requirements
    ``/dev/ttyUSB0`` and ``/dev/ttyUSB1`` in the system. You can check what they
    are in your system by running the command ``ls -l /dev/tty*``. If that is not
    the case on your machine you can either change the ``serial-port`` properties
-   in the ``boards/native_posix.overlay`` file or using the command line options
+   in the ``boards/native_sim.overlay`` file or using the command line options
    ``-uart_port`` and ``-uart_port2``.
 
 Building and Running
 ********************
 
-This application can be built and executed on Native Posix as follows:
+This application can be built and executed on :ref:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/uart/native_tty
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
    :compact:
 

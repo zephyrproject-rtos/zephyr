@@ -29,6 +29,9 @@
 #define STM32_QSPI_USE_QUAD_IO 0
 #endif
 
+/* Get the base address of the flash from the DTS node */
+#define STM32_QSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
+
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 #define STM32_QSPI_RESET_CMD DT_INST_NODE_HAS_PROP(0, reset_cmd)
 
@@ -336,7 +339,12 @@ static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 			  size_t size)
 {
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+	HAL_StatusTypeDef hal_ret;
+
 	__ASSERT(data != NULL, "null destination");
+
+	LOG_INF("Reading SFDP");
 
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = JESD216_CMD_READ_SFDP,
@@ -346,9 +354,26 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 		.AddressMode = QSPI_ADDRESS_1_LINE,
 		.DataMode = QSPI_DATA_1_LINE,
+		.NbData = size,
 	};
 
-	return qspi_read_access(dev, &cmd, (uint8_t *)data, size);
+	hal_ret = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
+				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("%d: Failed to send SFDP instruction", hal_ret);
+		return -EIO;
+	}
+
+	hal_ret = HAL_QSPI_Receive(&dev_data->hqspi, (uint8_t *)data,
+				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("%d: Failed to read SFDP", hal_ret);
+		return -EIO;
+	}
+
+	dev_data->cmd_status = 0;
+
+	return 0;
 }
 
 static bool qspi_address_is_valid(const struct device *dev, off_t addr,
@@ -614,6 +639,11 @@ static void qspi_dma_callback(const struct device *dev, void *arg,
 	HAL_DMA_IRQHandler(hdma);
 }
 #endif
+
+__weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
+{
+	return HAL_OK;
+}
 
 __weak HAL_StatusTypeDef HAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
 {
@@ -1337,6 +1367,10 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+	LOG_INF("NOR quad-flash at 0x%lx (0x%x bytes)",
+		(long)(STM32_QSPI_BASE_ADDRESS),
+		dev_cfg->flash_size);
+
 	return 0;
 }
 
@@ -1393,7 +1427,7 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 		.bus = DT_CLOCKS_CELL(STM32_QSPI_NODE, bus)
 	},
 	.irq_config = flash_stm32_qspi_irq_config_func,
-	.flash_size = DT_INST_PROP(0, size) / 8U,
+	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 #if STM32_QSPI_RESET_GPIO

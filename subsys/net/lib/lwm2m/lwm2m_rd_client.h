@@ -56,4 +56,14 @@ int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx);
 void engine_update_tx_time(void);
 struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void);
 
+/**
+ * @brief Notify RD client that this server is disabled.
+ *
+ * This may return error -EPERM, if RD client is not registered on that server.
+ *
+ * @param inst_id server instance id
+ * @return int 0 on success, negative errno on failure.
+ */
+int lwm2m_rd_client_server_disabled(uint16_t inst_id);
+
 #endif /* LWM2M_RD_CLIENT_H */

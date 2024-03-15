@@ -132,7 +132,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Write setting request
@@ -220,7 +220,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Delete setting command
@@ -310,7 +310,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Commit settings command
@@ -333,7 +333,7 @@ Commit settings request header fields:
     | ``2``  | ``3``        | ``2``          |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+The command sends an empty CBOR map as data.
 
 Commit settings response
 ========================
@@ -386,7 +386,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Load/Save settings command
@@ -409,7 +409,7 @@ Load settings request header fields:
     | ``0``  | ``3``        | ``3``          |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+The command sends an empty CBOR map as data.
 
 Load settings response
 ======================
@@ -462,7 +462,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Save settings request
@@ -479,7 +479,7 @@ Save settings request header fields:
     | ``2``  | ``3``        | ``3``          |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+The command sends an empty CBOR map as data.
 
 Save settings response
 ======================
@@ -532,7 +532,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                   |
     +------------------+------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when |
-    |                  | using SMP version 1.                                                   |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.        |
     +------------------+------------------------------------------------------------------------+
 
 Settings access callback

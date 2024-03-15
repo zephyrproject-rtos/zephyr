@@ -26,6 +26,13 @@ Requirements
 Building and Running
 ********************
 
+First, ensure the optional CANopenNode module is enabled and available:
+
+   .. code-block:: console
+
+      west config manifest.project-filter +canopennode
+      west update canopennode
+
 Building and Running for TWR-KE18F
 ==================================
 The :ref:`twr_ke18f` board is equipped with an onboard CAN

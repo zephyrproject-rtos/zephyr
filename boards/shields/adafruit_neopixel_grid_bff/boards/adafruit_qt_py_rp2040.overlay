@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024, Ian Wakely
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	pinctrl_bff_ws2812: pinctrl_bff_ws2812 {
+		ws2812 {
+			pinmux = <PIO0_P26>;
+		};
+	};
+};
+
+&pio0 {
+	status = "okay";
+
+	bff-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+		pinctrl-0 = <&pinctrl_bff_ws2812>;
+		pinctrl-names = "default";
+		bit-waveform = <3>, <3>, <4>;
+
+		bff_led_strip: bff_led_strip {
+			status = "okay";
+			gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;
+			chain-length = <25>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
+			reset-delay = <280>;
+			frequency = <800000>;
+		};
+	};
+};

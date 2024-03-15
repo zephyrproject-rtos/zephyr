@@ -6,7 +6,6 @@
  */
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	aliases {

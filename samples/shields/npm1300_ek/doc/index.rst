@@ -28,7 +28,7 @@ building for the nRF52 DK, the following command can be used:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/npm1300_ek
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :goals: build
    :compact:
 

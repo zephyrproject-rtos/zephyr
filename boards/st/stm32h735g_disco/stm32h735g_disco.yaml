@@ -1,0 +1,19 @@
+identifier: stm32h735g_disco
+name: ST STM32H735G Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 368
+flash: 1024
+supported:
+  - arduino_gpio
+  - gpio
+  - netif:eth
+  - memc
+  - adc
+  - counter
+  - can
+vendor: st

@@ -121,8 +121,12 @@ static void isl29035_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_ISL29035_TRIGGER_OWN_THREAD
-static void isl29035_thread(const struct device *dev)
+static void isl29035_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct isl29035_driver_data *drv_data = dev->data;
 
 	while (1) {
@@ -205,7 +209,7 @@ int isl29035_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ISL29035_THREAD_STACK_SIZE,
-			(k_thread_entry_t)isl29035_thread,
+			isl29035_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ISL29035_THREAD_PRIORITY),
 			0, K_NO_WAIT);

@@ -56,4 +56,9 @@ zephyr_linker_sources_ifdef(
 	SECTIONS class/usbd_msc.ld
 )
 
+zephyr_library_sources_ifdef(
+	CONFIG_USBD_AUDIO2_CLASS
+	class/usbd_uac2.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbd_data.ld)

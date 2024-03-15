@@ -1,0 +1,142 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_AIROC
+	bool "Infineon AIROC SoC Wi-Fi support"
+	select THREAD_CUSTOM_DATA
+	select WIFI_OFFLOAD
+	select NET_L2_WIFI_MGMT
+	select SDIO_STACK
+	select SDHC
+	select WIFI_USE_NATIVE_NETWORKING
+	select USE_INFINEON_ABSTRACTION_RTOS
+	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
+	help
+	  Enable Infineon AIROC SoC Wi-Fi support.
+
+if WIFI_AIROC
+
+config AIROC_WIFI_EVENT_TASK_STACK_SIZE
+	int "Event Task Stack Size"
+	default 4096
+
+config AIROC_WIFI_EVENT_TASK_PRIO
+	int "Event Task Priority"
+	default 4
+
+config AIROC_WLAN_MFG_FIRMWARE
+	bool "WLAN Manufacturing Firmware"
+	help
+	  Enable WLAN Manufacturing Firmware.
+
+config AIROC_WIFI_CUSTOM
+	bool "Custom CYW43xx device/module"
+	help
+	  Select Custom CYW43xx device/module. For this option,
+	  user must to provide path to FW, CLM and NVRAM for
+	  custom or vendor CYW43xx modules.
+
+choice  AIROC_PART
+	prompt "Select AIROC part"
+	depends on !AIROC_WIFI_CUSTOM
+
+config CYW4343W
+	bool "CYW4343W"
+	help
+	  Enable Infineon AIROC CYW4343W Wi-Fi connectivity,
+	  More information about CYW4343W device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw4343w/
+
+config CYW4373
+	bool "CYW4373"
+	help
+	  Enable Infineon AIROC CYW4373 Wi-Fi connectivity,
+	  More information about CYW4373 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw4373/
+
+config CYW43012
+	bool "CYW43012"
+	help
+	  Enable Infineon AIROC CYW43012 Wi-Fi connectivity,
+	  More information about CYW43012 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43012/
+
+config CYW43438
+	bool "CYW43438"
+	help
+	  Enable Infineon AIROC CYW43438 Wi-Fi connectivity,
+	  More information about CYW43438 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43438/
+
+config CYW43439
+	bool "CYW43439"
+	help
+	  Enable Infineon AIROC CYW43439 Wi-Fi connectivity,
+	  More information about CYW43439 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43439/
+endchoice
+
+choice CYW43012_MODULE
+	prompt "Select CYW43012 module"
+	depends on CYW43012 && !AIROC_WIFI_CUSTOM
+
+config CYW43012_MURATA_1LV
+	bool "MURATA-1LV"
+	help
+	  Murata Type 1LV module based on Infineon CYW43012 combo chipset
+	  which supports Wi-Fi® 802.11a/b/g/n + Bluetooth® 5.0 BR/EDR/LE
+	  up to 72.2Mbps PHY data rate on Wi-fi® and 3Mbps PHY data rate
+	  on Bluetooth®. 2Mbps LE PHY is also supported.
+
+	  Detailed information about Murata Type 1LV module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1lv
+endchoice
+
+choice CYW4343W_MODULE
+	prompt "Select CYW4343W module"
+	depends on CYW4343W && !AIROC_WIFI_CUSTOM
+
+config CYW4343W_MURATA_1DX
+	bool "MURATA-1DX"
+	help
+	  Murata Type 1DX modules based on Infineon CYW4343W combo chipset
+	  which supports Wi-Fi® 802.11b/g/n + Bluetooth® 5.1 BR/EDR/LE
+	  up to 65Mbps PHY data rate on Wi-fi® and 3Mbps PHY data rate
+	  on Bluetooth®.
+
+	  Detailed information about Type 1DX module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1dx
+endchoice
+
+choice CYW4373_MODULE
+	prompt "Select CYW4373 module"
+	depends on CYW4373 && !AIROC_WIFI_CUSTOM
+
+config CYW4373_STERLING_LWB5PLUS
+	bool "STERLING-LWB5plus"
+	help
+	  Laird Sterling LWB5+ 802.11ac / Bluetooth 5.0 M.2 Carrier Board
+	  (E-Type Key w/ SDIO/UART)
+
+	  Detailed information about Type Sterling LWB5+ module you can find on
+	  https://www.lairdconnect.com/wireless-modules/wifi-modules-bluetooth/sterling-lwb5-plus-wifi-5-bluetooth-5-module
+endchoice
+
+choice CYW43439_MODULE
+	prompt "Select CYW43439 module"
+	depends on CYW43439 && !AIROC_WIFI_CUSTOM
+
+config CYW43439_MURATA_1YN
+	bool "MURATA_1YN"
+	help
+	  Murata Type 1YN module based on Infineon CYW43439 combo chipset
+	  which supports Wi-Fi® 802.11b/g/n + Bluetooth® 5.2 BR/EDR/LE
+	  up to 65Mbps PHY data rate on Wi-fi® and 3Mbps PHY data rate on
+	  Bluetooth®.
+
+	  Detailed information about Murata Type 1YN module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1yn
+endchoice
+
+endif # AIROC_WIFI

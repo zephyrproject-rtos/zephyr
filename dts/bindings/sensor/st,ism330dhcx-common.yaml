@@ -1,6 +1,20 @@
 # Copyright (c) 2021 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+description: |
+    When setting the accel-odr and gyro-odr properties in a .dts or .dtsi file you may include
+    ism330dhcx.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
+
+    ism330dhcx: ism330dhcx@0 {
+      ...
+
+      accel-odr = <ISM330DHCX_DT_ODR_104Hz>;
+      gyro-odr = <ISM330DHCX_DT_ODR_104Hz>;
+    };
+
 include: sensor-device.yaml
 
 properties:
@@ -27,9 +41,7 @@ properties:
       (INT1 or INT2) the drdy line is attached to. This property is not
       mandatory and if not present it defaults to 1 which is the
       configuration at power-up.
-    enum:
-      - 1
-      - 2
+    enum: [1, 2]
 
   accel-odr:
     type: int
@@ -38,30 +50,20 @@ properties:
       Specify the default accelerometer output data rate expressed in samples per second (Hz).
       Default is power-up configuration.
 
-        Selection
-          0   Power-Down
-          1   12.5Hz
-          2   26Hz
-          3   52Hz
-          4   104Hz
-          5   208Hz
-          6   416Hz
-          7   833Hz
-          8   1660Hz
-          9   3330Hz
-          10  6660Hz
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
+      - 0 # ISM330DHCX_DT_ODR_OFF
+      - 1 # ISM330DHCX_DT_ODR_12Hz5
+      - 2 # ISM330DHCX_DT_ODR_26H
+      - 3 # ISM330DHCX_DT_ODR_52Hz
+      - 4 # ISM330DHCX_DT_ODR_104Hz
+      - 5 # ISM330DHCX_DT_ODR_208Hz
+      - 6 # ISM330DHCX_DT_ODR_416Hz
+      - 7 # ISM330DHCX_DT_ODR_833Hz
+      - 8 # ISM330DHCX_DT_ODR_1666Hz
+      - 9 # ISM330DHCX_DT_ODR_3332Hz
+      - 10 # ISM330DHCX_DT_ODR_6667Hz
+      - 11 # ISM330DHCX_DT_ODR_1Hz6
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
   accel-range:
     type: int
@@ -69,16 +71,12 @@ properties:
     description: |
       Range in g. Default is power-up configuration.
 
-        Selection
-          16  16g (0.488 mg/LSB)
-           8   8g (0.244 mg/LSB)
-           4   4g (0.122 mg/LSB)
-           2   2g (0.061 mg/LSB)
-    enum:
-      - 16
-      - 8
-      - 4
-      - 2
+      - 16 # 16g (0.488 mg/LSB)
+      - 8  # 8g (0.244 mg/LSB)
+      - 4  # 4g (0.122 mg/LSB)
+      - 2  # 2g (0.061 mg/LSB)
+
+    enum: [16, 8, 4, 2]
 
   gyro-odr:
     type: int
@@ -87,30 +85,19 @@ properties:
       Specify the default gyro output data rate expressed in samples per second (Hz).
       Default is power-up configuration.
 
-        Selection
-          0   Power-Down
-          1   12.5Hz
-          2   26Hz
-          3   52Hz
-          4   104Hz
-          5   208Hz
-          6   416Hz
-          7   833Hz
-          8   1660Hz
-          9   3330Hz
-          10  6660Hz
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
+      - 0 # ISM330DHCX_DT_ODR_OFF
+      - 1 # ISM330DHCX_DT_ODR_12Hz5
+      - 2 # ISM330DHCX_DT_ODR_26H
+      - 3 # ISM330DHCX_DT_ODR_52Hz
+      - 4 # ISM330DHCX_DT_ODR_104Hz
+      - 5 # ISM330DHCX_DT_ODR_208Hz
+      - 6 # ISM330DHCX_DT_ODR_416Hz
+      - 7 # ISM330DHCX_DT_ODR_833Hz
+      - 8 # ISM330DHCX_DT_ODR_1666Hz
+      - 9 # ISM330DHCX_DT_ODR_3332Hz
+      - 10 # ISM330DHCX_DT_ODR_6667Hz
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
   gyro-range:
     type: int
@@ -118,15 +105,10 @@ properties:
     description: |
       Range in dps. Default is power-up configuration.
 
-        Selection
-          125    +/- 125dps
-          250    +/- 250dps
-          500    +/- 500dps
-          1000   +/- 1000dps
-          2000   +/- 2000dps
-    enum:
-      - 125
-      - 250
-      - 500
-      - 1000
-      - 2000
+      - 125  # +/- 125dps
+      - 250  # +/- 250dps
+      - 500  # +/- 500dps
+      - 1000 # +/- 1000dps
+      - 2000 # +/- 2000dps
+
+    enum: [125, 250, 500, 1000, 2000]

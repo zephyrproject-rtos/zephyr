@@ -1,0 +1,206 @@
+/*
+ * Copyright 2021,2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1170_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		sw0 = &user_button;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+		sdhc0 = &usdhc1;
+		pwm-led0 = &green_pwm_led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio9 3 GPIO_ACTIVE_HIGH>;
+			label = "User LED D6";
+		};
+
+		red_led: led-2 {
+			gpios = <&gpio9 25 GPIO_ACTIVE_LOW>;
+			label = "User LED D34";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW7";
+			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&flexpwm1_pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&lpi2c5 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+
+	fxos8700: fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+
+		/* Two zero ohm resistors (R256 and R270) isolate sensor
+		 * interrupt gpios from the soc and are unpopulated by default.
+		 * Note that if you populate them, they conflict with camera and
+		 * ethernet PHY reset signals.
+		 */
+		int1-gpios = <&gpio11 14 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio11 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+};
+
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&user_button {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&flexpwm1_pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm1>;
+	pinctrl-names = "default";
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	ptp {
+		pinctrl-0 = <&pinmux_ptp>;
+		pinctrl-names = "default";
+	};
+};
+
+&csi {
+	pinctrl-0 = <&pinmux_csi>;
+	pinctrl-names = "default";
+};
+
+&flexcan3 {
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+};
+
+&lcdif {
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&lpadc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "nopull";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	is25wp128: is25wp128@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <134217728>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x301000>;
+			};
+			slot1_partition: partition@321000 {
+				label = "image-1";
+				reg = <0x00321000 0x300000>;
+			};
+			storage_partition: partition@621000 {
+				label = "storage";
+				reg = <0x00621000 DT_SIZE_K(1984)>;
+			};
+		};
+	};
+};
+
+&pxp {
+	status = "okay";
+};

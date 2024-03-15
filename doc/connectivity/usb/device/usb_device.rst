@@ -175,6 +175,37 @@ CDC ACM UART as backend for a subsystem or application:
   for example see :zephyr_file:`samples/subsys/shell/shell_module`
 * ``zephyr,uart-mcumgr`` used by :zephyr:code-sample:`smp-svr` sample
 
+POSIX default tty ECHO mitigation
+---------------------------------
+
+POSIX systems, like Linux, default to enabling ECHO on tty devices. Host side
+application can disable ECHO by calling ``open()`` on the tty device and issuing
+``ioctl()`` (preferably via ``tcsetattr()``) to disable echo if it is not desired.
+Unfortunately, there is an inherent race between the ``open()`` and ``ioctl()``
+where the ECHO is enabled and any characters received (even if host application
+does not call ``read()``) will be echoed back. This issue is especially visible
+when the CDC ACM port is used without any real UART on the other side because
+there is no arbitrary delay due to baud rate.
+
+To mitigate the issue, Zephyr CDC ACM implementation arms IN endpoint with ZLP
+after device is configured. When the host reads the ZLP, which is pretty much
+the best indication that host application has opened the tty device, Zephyr will
+force :kconfig:option:`CONFIG_CDC_ACM_TX_DELAY_MS` millisecond delay before real
+payload is sent. This should allow sufficient time for first, and only first,
+application that opens the tty device to disable ECHO if ECHO is not desired.
+If ECHO is not desired at all from CDC ACM device it is best to set up udev rule
+to disable ECHO as soon as device is connected.
+
+ECHO is particurarly unwanted when CDC ACM instance is used for Zephyr shell,
+because the control characters to set color sent back to shell are interpreted
+as (invalid) command and user will see garbage as a result. While minicom does
+disable ECHO by default, on exit with reset it will restore the termios settings
+to whatever was set on entry. Therefore, if minicom is the first application to
+open the tty device, the exit with reset will enable ECHO back and thus set up
+a problem for the next application (which cannot be mitigated at Zephyr side).
+To prevent the issue it is recommended either to leave minicom without reset or
+to disable ECHO before minicom is started.
+
 DFU
 ===
 
@@ -414,14 +445,78 @@ the vendor requests:
 The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
 before transmitting any data.
 
-.. _testing_USB_native_posix:
+.. _testing_USB_native_sim:
 
-Testing over USPIP in native_posix
-***********************************
+Interface number and endpoint address assignment
+************************************************
+
+In USB terminology, a ``function`` is a device that provides a capability to the
+host, such as a HID class device that implements a keyboard. A function
+constains a collection of ``interfaces``; at least one interface is required. An
+interface may contain device ``endpoints``; for example, at least one input
+endpoint is required to implement a HID class device, and no endpoints are
+required to implement a USB DFU class. A USB device that combines functions is
+a multifunction USB device, for example, a combination of a HID class device
+and a CDC ACM device.
+
+With Zephyr RTOS USB support, various combinations are possible with built-in USB
+classes/functions or custom user implementations. The limitation is the number
+of available device endpoints. Each device endpoint is uniquely addressable.
+The endpoint address is a combination of endpoint direction and endpoint
+number, a four-bit value. Endpoint number zero is used for the default control
+method to initialize and configure a USB device. By specification, a maximum of
+``15 IN`` and ``15 OUT`` device endpoints are also available for use in functions.
+The actual number depends on the device controller used. Not all controllers
+support the maximum number of endpoints and all endpoint types. For example, a
+device controller might support one IN and one OUT isochronous endpoint, but
+only for endpoint number 8, resulting in endpoint addresses 0x88 and 0x08.
+Also, one controller may be able to have IN/OUT endpoints on the same endpoint
+number, interrupt IN endpoint 0x81 and bulk OUT endpoint 0x01, while the other
+may only be able to handle one endpoint per endpoint number. Information about
+the number of interfaces, interface associations, endpoint types, and addresses
+is provided to the host by the interface, interface specifiec, and endpoint
+descriptors.
+
+Host driver for specific function, uses interface and endpoint descriptor to
+obtain endpoint addresses, types, and other properties. This allows function
+host drivers to be generic, for example, a multi-function device consisting of
+one or more CDC ACM and one or more CDC ECM class implementations is possible
+and no specific drivers are required.
+
+Interface and endpoint descriptors of built-in USB class/function
+implementations in Zephyr RTOS typically have default interface numbers and
+endpoint addresses assigned in ascending order. During initialization,
+default interface numbers may be reassigned based on the number of interfaces in
+a given configuration. Endpoint addresses are reassigned based on controller
+capabilities, since certain endpoint combinations are not possible with every
+controller, and the number of interfaces in a given configuration. This also
+means that the device side class/function in the Zephyr RTOS must check the
+actual interface and endpoint descriptor values at runtime.
+This mechanism also allows as to provide generic samples and generic
+multifunction samples that are limited only by the resources provided by the
+controller, such as the number of endpoints and the size of the endpoint FIFOs.
+
+There may be host drivers for a specific function, for example in the Linux
+Kernel, where the function driver does not read interface and endpoint
+descriptors to check interface numbers or endpoint addresses, but instead uses
+hardcoded values. Therefore, the host driver cannot be used in a generic way,
+meaning it cannot be used with different device controllers and different
+device configurations in combination with other functions. This may also be
+because the driver is designed for a specific hardware and is not intended to
+be used with a clone of this specific hardware. On the contrary, if the driver
+is generic in nature and should work with different hardware variants, then it
+must not use hardcoded interface numbers and endpoint addresses.
+It is not possible to disable endpoint reassignment in Zephyr RTOS, which may
+prevent you from implementing a hardware-clone firmware. Instead, if possible,
+the host driver implementation should be fixed to use values from the interface
+and endpoint descriptor.
+
+Testing over USPIP in native_sim
+********************************
 
 A virtual USB controller implemented through USBIP might be used to test the USB
 device stack. Follow the general build procedure to build the USB sample for
-the native_posix configuration.
+the :ref:`native_sim <native_sim>` configuration.
 
 Run built sample with:
 
@@ -488,7 +583,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-cdc-acm-console`          | 0x0004 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-dfu`                      | 0x0005 |
+| :zephyr:code-sample:`usb-dfu` (Run-Time)           | 0x0005 |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-hid`                      | 0x0006 |
 +----------------------------------------------------+--------+
@@ -505,6 +600,10 @@ The following Product IDs are currently used:
 | :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`wpan-usb`                     | 0x000D |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
 +----------------------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents

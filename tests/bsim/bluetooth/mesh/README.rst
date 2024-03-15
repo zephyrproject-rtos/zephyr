@@ -1,7 +1,7 @@
-Bluetooth mesh BabbleSim tests
+Bluetooth Mesh BabbleSim tests
 ##############################
 
-This directory contains a set of high level system tests for the Bluetooth mesh
+This directory contains a set of high level system tests for the Bluetooth Mesh
 subsystem. The tests run on the BabbleSim simulator, using the BabbleSim test
 framework.
 
@@ -10,7 +10,7 @@ subfolder of test_scripts contains tests for a specific module in the Bluetooth
 mesh subsystem, and each folder has a corresponding test_<subfolder>.c under the
 src/ directory containing the necessary test harnesses to execute the tests.
 
-There's only a single test application for all the Bluetooth mesh BabbleSim
+There's only a single test application for all the Bluetooth Mesh BabbleSim
 tests. The test application is built from this directory, and includes all test
 harnesses in every build. The overlying bsim test framework selects the harness
 to use at runtime, using the test identifiers passed in the test scripts.
@@ -18,7 +18,7 @@ to use at runtime, using the test identifiers passed in the test scripts.
 Running the tests
 *****************
 
-The Bluetooth mesh tests have no extra requirements, and can be run using the
+The Bluetooth Mesh tests have no extra requirements, and can be run using the
 procedure described in the parent folder.
 
 To only run the mesh tests, set ``SEARCH_PATH`` to point to this folder before
@@ -57,13 +57,13 @@ Then separately, call
 Framework
 *********
 
-The Bluetooth mesh BabbleSim tests mainly operate on the test framework for the
+The Bluetooth Mesh BabbleSim tests mainly operate on the test framework for the
 BabbleSim platform, but with some mesh specific additions:
 
 mesh_test.sh
 =============
 
-All test scripts in the Bluetooth mesh BabbleSim test suite follow a common
+All test scripts in the Bluetooth Mesh BabbleSim test suite follow a common
 pattern for running a single test across N devices with different test
 harnesses. ``mesh_test.sh`` is sourced in each test script, and its ``RunTest``
 function is called once in each script with the following parameters:
@@ -113,6 +113,6 @@ has been called - otherwise, it will fail.
    The Bluetooth stack must be initialized in the ``test_main_f`` function of
    the harness, as the previous callbacks are all executed in hardware threads.
 
-The Bluetooth mesh tests include the entire Bluetooth host and controller
+The Bluetooth Mesh tests include the entire Bluetooth host and controller
 subsystems, so timing requirements should generally be kept fairly liberal to
 avoid regressions on changes in the underlying layers.

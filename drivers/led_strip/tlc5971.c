@@ -112,7 +112,7 @@ static inline uint8_t tlc5971_data_byte27(uint8_t control_data)
 static inline uint8_t tlc5971_data_byte26(uint8_t control_data, uint8_t gbc_color_1)
 {
 	return FIELD_PREP(TLC5971_BYTE26_CTRL_MASK, control_data) |
-	       FIELD_PREP(TLC5971_BYTE26_GBC1_MASK, gbc_color_1 >> 2);
+	       FIELD_PREP(TLC5971_BYTE26_GBC1_MASK, (gbc_color_1 >> 2));
 }
 
 /**
@@ -124,8 +124,8 @@ static inline uint8_t tlc5971_data_byte26(uint8_t control_data, uint8_t gbc_colo
  */
 static inline uint8_t tlc5971_data_byte25(uint8_t gbc_color_1, uint8_t gbc_color_2)
 {
-	return FIELD_PREP(TLC5971_BYTE25_GBC1_MASK, gbc_color_1 << 6) |
-	       FIELD_PREP(TLC5971_BYTE25_GBC2_MASK, gbc_color_2 >> 1);
+	return FIELD_PREP(TLC5971_BYTE25_GBC1_MASK, gbc_color_1) |
+	       FIELD_PREP(TLC5971_BYTE25_GBC2_MASK, (gbc_color_2 >> 1));
 }
 
 /**
@@ -137,7 +137,7 @@ static inline uint8_t tlc5971_data_byte25(uint8_t gbc_color_1, uint8_t gbc_color
  */
 static inline uint8_t tlc5971_data_byte24(uint8_t gbc_color_2, uint8_t gbc_color_3)
 {
-	return FIELD_PREP(TLC5971_BYTE24_GBC2_MASK, gbc_color_2 << 7) |
+	return FIELD_PREP(TLC5971_BYTE24_GBC2_MASK, gbc_color_2) |
 	       FIELD_PREP(TLC5971_BYTE24_GBC3_MASK, gbc_color_3);
 }
 

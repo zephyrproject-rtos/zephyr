@@ -19,7 +19,7 @@ extern "C" {
 /**
  * @brief Multi producer, single consumer packet buffer API
  * @defgroup mpsc_buf MPSC (Multi producer, single consumer) packet buffer API
- * @ingroup kernel_apis
+ * @ingroup datastructure_apis
  * @{
  */
 

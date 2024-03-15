@@ -18,7 +18,7 @@ a LP5569 LED controller on the bus I2C0 at the address 0x32.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_lp5569
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 

@@ -2064,7 +2064,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 		response = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response));
 		info.tx_power = response->tx_power;
 		info.rssi = response->rssi;
-		info.cte_type = BIT(response->cte_type);
+		info.cte_type = bt_get_df_cte_type(response->cte_type);
 		info.response_slot = response->response_slot;
 
 		if (buf->len < response->data_length) {
@@ -2185,11 +2185,10 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 
 	if (evt->status && IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
-		/* Only set status for legacy advertising API.
-		 * This will call connected callback for high duty cycle
+		/* This will call connected callback for high duty cycle
 		 * directed advertiser timeout.
 		 */
-		le_adv_stop_free_conn(adv, adv == bt_dev.adv ? evt->status : 0);
+		le_adv_stop_free_conn(adv, evt->status);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) && !evt->status) {

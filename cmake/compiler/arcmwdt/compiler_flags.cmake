@@ -33,6 +33,9 @@ set_compiler_property(PROPERTY warning_base
                       -Wno-typedef-redefinition
 )
 
+# C implicit promotion rules will want to make floats into doubles very easily
+check_set_compiler_property(APPEND PROPERTY warning_base -Wdouble-promotion)
+
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 
 # Prohibit void pointer arithmetic. Illegal in C99
@@ -206,3 +209,6 @@ endif()
 
 # Remove after testing that -Wshadow works
 set_compiler_property(PROPERTY warning_shadow_variables)
+
+set_compiler_property(PROPERTY no_builtin -fno-builtin)
+set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)

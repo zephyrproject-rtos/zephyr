@@ -6,7 +6,6 @@
 #include "mesh_test.h"
 #include "mesh/dfd_srv_internal.h"
 #include "mesh/dfu_slot.h"
-#include "mesh/adv.h"
 #include "mesh/dfu.h"
 #include "mesh/blob.h"
 #include "argparse.h"
@@ -23,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define TARGET_ADDR 0x0100
 #define IMPOSTER_MODEL_ID 0xe000
 #define TEST_BLOB_ID 0xaabbccdd
+#define SEMAPHORE_TIMEOUT 250 /* seconds */
 
 struct bind_params {
 	uint16_t model_id;
@@ -289,7 +289,7 @@ static struct bt_mesh_dfu_srv dfu_srv = BT_MESH_DFU_SRV_INIT(&dfu_handlers, dfu_
 
 static const struct bt_mesh_comp dist_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -303,7 +303,7 @@ static const struct bt_mesh_comp dist_comp = {
 
 static const struct bt_mesh_comp dist_comp_self_update = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -324,7 +324,7 @@ static const struct bt_mesh_model_op model_dummy_op[] = {
 
 static const struct bt_mesh_comp target_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -940,7 +940,7 @@ static struct bt_mesh_dfu_cli dfu_cli = BT_MESH_DFU_CLI_INIT(&dfu_cli_cb);
 
 static const struct bt_mesh_comp cli_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1016,7 +1016,7 @@ static void test_cli_fail_on_persistency(void)
 		FAIL("DFU Client send failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware transfer failed");
 	}
 
@@ -1050,7 +1050,7 @@ static void test_cli_fail_on_persistency(void)
 		FAIL("DFU Client apply failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Failed to apply firmware");
 	}
 
@@ -1063,7 +1063,7 @@ static void test_cli_fail_on_persistency(void)
 		FAIL("DFU Client confirm failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_cli_confirmed_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_cli_confirmed_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Failed to confirm firmware");
 	}
 
@@ -1096,7 +1096,7 @@ static void test_cli_all_targets_lost_common(void)
 		FAIL("DFU Client send failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware transfer failed");
 	}
 }
@@ -1187,7 +1187,7 @@ static void test_cli_all_targets_lost_on_apply(void)
 		FAIL("DFU Client apply failed (err: %d)", err);
 	}
 
-	if (!k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+	if (!k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Apply should not be successful on any target");
 	}
 
@@ -1218,7 +1218,7 @@ static void test_cli_stop(void)
 			FAIL("DFU Client send failed (err: %d)", err);
 		}
 
-		if (k_sem_take(&dfu_started, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_started, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 
@@ -1234,7 +1234,7 @@ static void test_cli_stop(void)
 			FAIL("DFU Client resume failed (err: %d)", err);
 		}
 
-		if (k_sem_take(&dfu_verifying, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_verifying, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
@@ -1253,7 +1253,7 @@ static void test_cli_stop(void)
 			FAIL("DFU Client send failed (err: %d)", err);
 		}
 
-		if (k_sem_take(&dfu_verify_failed, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_verify_failed, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 
@@ -1269,12 +1269,12 @@ static void test_cli_stop(void)
 		if (err) {
 			FAIL("DFU Client send failed (err: %d)", err);
 		}
-		if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 
 		bt_mesh_dfu_cli_apply(&dfu_cli);
-		if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			/* This will time out as target will reboot before applying */
 		}
 		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
@@ -1308,7 +1308,7 @@ static void test_cli_stop(void)
 
 static struct k_sem caps_get_sem;
 
-static int mock_handle_caps_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_caps_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting BLOB Information Get message");
@@ -1325,7 +1325,7 @@ static const struct bt_mesh_model_op model_caps_op1[] = {
 
 static const struct bt_mesh_comp srv_caps_broken_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1339,7 +1339,7 @@ static const struct bt_mesh_comp srv_caps_broken_comp = {
 	.elem_count = 1,
 };
 
-static int mock_handle_chunks(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_chunks(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	LOG_WRN("Skipping receiving block");
@@ -1356,7 +1356,7 @@ static const struct bt_mesh_model_op model_caps_op2[] = {
 
 static const struct bt_mesh_comp broken_target_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1372,7 +1372,7 @@ static const struct bt_mesh_comp broken_target_comp = {
 
 static struct k_sem update_get_sem;
 
-static int mock_handle_update_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_update_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting Firmware Update Get message");
@@ -1388,7 +1388,7 @@ static const struct bt_mesh_model_op model_update_get_op1[] = {
 
 static const struct bt_mesh_comp srv_update_get_broken_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1405,7 +1405,7 @@ static const struct bt_mesh_comp srv_update_get_broken_comp = {
 
 static struct k_sem update_apply_sem;
 
-static int mock_handle_update_apply(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_update_apply(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting Firmware Update Apply message");
@@ -1421,7 +1421,7 @@ static const struct bt_mesh_model_op model_update_apply_op1[] = {
 
 static const struct bt_mesh_comp srv_update_apply_broken_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1464,7 +1464,7 @@ static void test_target_fail_on_metadata(void)
 	common_fail_on_target_init(&target_comp);
 	target_prov_and_conf_default();
 
-	if (k_sem_take(&dfu_metadata_check_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_metadata_check_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Metadata check CB wasn't called");
 	}
 
@@ -1478,7 +1478,7 @@ static void test_target_fail_on_caps_get(void)
 	common_fail_on_target_init(&srv_caps_broken_comp);
 	target_prov_and_conf_with_imposer();
 
-	if (k_sem_take(&caps_get_sem, K_SECONDS(200))) {
+	if (k_sem_take(&caps_get_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("BLOB Info Get msg handler wasn't called");
 	}
 
@@ -1492,11 +1492,11 @@ static void test_target_fail_on_update_get(void)
 	common_fail_on_target_init(&srv_update_get_broken_comp);
 	target_prov_and_conf_with_imposer();
 
-	if (k_sem_take(&dfu_verify_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_verify_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Transfer end CB wasn't triggered");
 	}
 
-	if (k_sem_take(&update_get_sem, K_SECONDS(200))) {
+	if (k_sem_take(&update_get_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware Update Get msg handler wasn't called");
 	}
 
@@ -1511,7 +1511,7 @@ static void test_target_fail_on_verify(void)
 	common_fail_on_target_init(&target_comp);
 	target_prov_and_conf_default();
 
-	if (k_sem_take(&dfu_verify_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_verify_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Transfer end CB wasn't triggered");
 	}
 
@@ -1525,7 +1525,7 @@ static void test_target_fail_on_apply(void)
 	common_fail_on_target_init(&srv_update_apply_broken_comp);
 	target_prov_and_conf_with_imposer();
 
-	if (k_sem_take(&update_apply_sem, K_SECONDS(200))) {
+	if (k_sem_take(&update_apply_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware Update Apply msg handler wasn't called");
 	}
 
@@ -1537,7 +1537,7 @@ static void test_target_fail_on_nothing(void)
 	common_fail_on_target_init(&target_comp);
 	target_prov_and_conf_default();
 
-	if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("DFU failed");
 	}
 

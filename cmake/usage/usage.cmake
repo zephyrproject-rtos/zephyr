@@ -27,6 +27,7 @@ message("  debugserver  - Run \"west debugserver\" (or start GDB server on port 
 message("  attach       - Run \"west attach\"")
 message("  ram_report   - Build and create RAM usage report")
 message("  rom_report   - Build and create ROM usage report")
+message("  initlevels   - Display the initialization sequence")
 message("  boards       - Display supported boards")
 message("  shields      - Display supported shields")
 message("  usage        - Display this text")

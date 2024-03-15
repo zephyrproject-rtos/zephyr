@@ -66,7 +66,7 @@ static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *fra
 
 	assert_frame_equal(frame, &test_std_fdf_frame_1, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
-	zassert_equal_ptr(filter, &test_std_fdf_filter_1, "filter does not match");
+	zassert_equal_ptr(filter, &test_std_filter_1, "filter does not match");
 
 	k_sem_give(&rx_callback_sem);
 }
@@ -78,7 +78,7 @@ static void rx_std_callback_fd_2(const struct device *dev, struct can_frame *fra
 
 	assert_frame_equal(frame, &test_std_fdf_frame_2, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
-	zassert_equal_ptr(filter, &test_std_fdf_filter_2, "filter does not match");
+	zassert_equal_ptr(filter, &test_std_filter_2, "filter does not match");
 
 	k_sem_give(&rx_callback_sem);
 }
@@ -227,7 +227,7 @@ static void send_receive(const struct can_filter *filter1,
 /**
  * @brief Test getting the CAN controller capabilities.
  */
-ZTEST(canfd, test_get_capabilities)
+ZTEST(canfd, test_canfd_get_capabilities)
 {
 	can_mode_t cap;
 	int err;
@@ -235,7 +235,7 @@ ZTEST(canfd, test_get_capabilities)
 	err = can_get_capabilities(can_dev, &cap);
 	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
 	zassert_not_equal(cap & (CAN_MODE_LOOPBACK | CAN_MODE_FD), 0,
-			  "CAN-FD loopback mode not supported");
+			  "CAN FD loopback mode not supported");
 }
 
 /**
@@ -248,20 +248,20 @@ ZTEST(canfd, test_send_receive_classic)
 }
 
 /**
- * @brief Test send/receive with standard (11-bit) CAN IDs and CAN-FD frames.
+ * @brief Test send/receive with standard (11-bit) CAN IDs and CAN FD frames.
  */
 ZTEST(canfd, test_send_receive_fd)
 {
-	send_receive(&test_std_fdf_filter_1, &test_std_fdf_filter_2,
+	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_fdf_frame_1, &test_std_fdf_frame_2);
 }
 
 /**
- * @brief Test send/receive with (11-bit) CAN IDs, mixed classic and CAN-FD frames.
+ * @brief Test send/receive with (11-bit) CAN IDs, mixed classic and CAN FD frames.
  */
 ZTEST(canfd, test_send_receive_mixed)
 {
-	send_receive(&test_std_fdf_filter_1, &test_std_filter_2,
+	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_fdf_frame_1, &test_std_frame_2);
 }
 
@@ -286,13 +286,14 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 	err = can_set_mode(can_dev, first | CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set first loopback mode (err %d)", err);
+	zassert_equal(first | CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 
-	/* Add classic CAN and CAN-FD filter */
+	/* Add classic CAN and CAN FD filter */
 	filter_id_1 = add_rx_msgq(can_dev, &test_std_filter_1);
-	filter_id_2 = add_rx_msgq(can_dev, &test_std_fdf_filter_2);
+	filter_id_2 = add_rx_msgq(can_dev, &test_std_filter_2);
 
 	/* Verify classic filter in first mode */
 	send_test_frame(can_dev, &test_std_frame_1);
@@ -301,7 +302,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
 	if ((first & CAN_MODE_FD) != 0) {
-		/* Verify CAN-FD filter in first mode */
+		/* Verify CAN FD filter in first mode */
 		send_test_frame(can_dev, &test_std_fdf_frame_2);
 		err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
 		zassert_equal(err, 0, "receive timeout");
@@ -318,6 +319,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 	err = can_set_mode(can_dev, second | CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set second loopback mode (err %d)", err);
+	zassert_equal(second | CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -329,14 +331,14 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
 	if ((second & CAN_MODE_FD) != 0) {
-		/* Verify CAN-FD filter in second mode */
+		/* Verify CAN FD filter in second mode */
 		send_test_frame(can_dev, &test_std_fdf_frame_2);
 		err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
 		zassert_equal(err, 0, "receive timeout");
 		assert_frame_equal(&frame, &test_std_fdf_frame_2, 0);
 	}
 
-	/* Stop controller and restore CAN-FD loopback mode */
+	/* Stop controller and restore CAN FD loopback mode */
 	err = can_stop(can_dev);
 	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
 
@@ -346,6 +348,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 	err = can_set_mode(can_dev, CAN_MODE_FD | CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+	zassert_equal(CAN_MODE_FD | CAN_MODE_LOOPBACK, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -356,7 +359,7 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 
 /**
  * @brief Test that CAN RX filters are preserved through CAN controller mode changes between classic
- * CAN and CAN-FD.
+ * CAN and CAN FD.
  */
 ZTEST_USER(canfd, test_filters_preserved_through_classic_to_fd_mode_change)
 {
@@ -364,7 +367,7 @@ ZTEST_USER(canfd, test_filters_preserved_through_classic_to_fd_mode_change)
 }
 
 /**
- * @brief Test that CAN RX filters are preserved through CAN controller mode changes between CAN-FD
+ * @brief Test that CAN RX filters are preserved through CAN controller mode changes between CAN FD
  * and classic CAN.
  */
 ZTEST_USER(canfd, test_filters_preserved_through_fd_to_classic_mode_change)
@@ -432,7 +435,8 @@ void *canfd_setup(void)
 	(void)can_stop(can_dev);
 
 	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
-	zassert_equal(err, 0, "failed to set CAN-FD loopback mode (err %d)", err);
+	zassert_equal(err, 0, "failed to set CAN FD loopback mode (err %d)", err);
+	zassert_equal(CAN_MODE_LOOPBACK | CAN_MODE_FD, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);

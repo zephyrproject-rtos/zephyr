@@ -110,7 +110,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 			Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_ISR_STACK_SIZE),
 		.stack_size =
 			Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_ISR_STACK_SIZE),
-		.fn = z_x86_prep_c,
+		.fn = z_prep_c,
 		.arg = &x86_cpu_boot_arg,
 	},
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -141,17 +141,18 @@ struct x86_cpuboot x86_cpuboot[] = {
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
 	uint8_t apic_id;
 
-#ifdef CONFIG_ACPI
-	struct acpi_madt_local_apic *lapic = acpi_local_apic_get(cpu_num);
+	IF_ENABLED(CONFIG_ACPI, ({
+		ACPI_MADT_LOCAL_APIC *lapic = acpi_local_apic_get(cpu_num);
 
-	if (lapic != NULL) {
-		/* We update the apic_id, __start will need it. */
-		x86_cpu_loapics[cpu_num] = lapic->Id;
-	}
-#endif
+		if (lapic != NULL) {
+			/* We update the apic_id, __start will need it. */
+			x86_cpu_loapics[cpu_num] = lapic->Id;
+		}
+	}));
 
 	apic_id = x86_cpu_loapics[cpu_num];
 
@@ -166,9 +167,16 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	while (x86_cpuboot[cpu_num].ready == 0) {
 	}
+#else
+	ARG_UNUSED(cpu_num);
+	ARG_UNUSED(stack);
+	ARG_UNUSED(sz);
+	ARG_UNUSED(fn);
+	ARG_UNUSED(arg);
+#endif
 }
 
-/* Per-CPU initialization, C domain. On the first CPU, z_x86_prep_c is the
+/* Per-CPU initialization, C domain. On the first CPU, z_prep_c is the
  * next step. For other CPUs it is probably smp_init_top().
  */
 FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
@@ -200,4 +208,6 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 	/* Enter kernel, never return */
 	cpuboot->ready++;
 	cpuboot->fn(cpuboot->arg);
+
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

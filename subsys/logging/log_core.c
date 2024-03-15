@@ -18,10 +18,14 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <ctype.h>
 #include <zephyr/logging/log_frontend.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_output_custom.h>
 #include <zephyr/linker/utils.h>
+
+#ifdef CONFIG_LOG_TIMESTAMP_USE_REALTIME
+#include <zephyr/posix/time.h>
+#endif
 
 LOG_MODULE_REGISTER(log);
 
@@ -65,9 +69,11 @@ LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_ALWAYS_RUNTIME
 BUILD_ASSERT(!IS_ENABLED(CONFIG_NO_OPTIMIZATIONS),
-	     "Option must be enabled when CONFIG_NO_OPTIMIZATIONS is set");
+	     "CONFIG_LOG_ALWAYS_RUNTIME must be enabled when "
+	     "CONFIG_NO_OPTIMIZATIONS is set");
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
-	     "Option must be enabled when CONFIG_LOG_MODE_IMMEDIATE is set");
+	     "CONFIG_LOG_ALWAYS_RUNTIME must be enabled when "
+	     "CONFIG_LOG_MODE_IMMEDIATE is set");
 #endif
 
 static const log_format_func_t format_table[] = {
@@ -163,19 +169,30 @@ static void z_log_msg_post_finalize(void)
 
 		k_spin_unlock(&process_lock, key);
 	} else if (proc_tid != NULL) {
-		if (cnt == 0) {
-			k_timer_start(&log_process_thread_timer,
-				      K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS),
-				      K_NO_WAIT);
-		} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
-			   (cnt + 1) == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-			k_timer_stop(&log_process_thread_timer);
-			k_sem_give(&log_process_thread_sem);
+		/*
+		 * If CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD == 1,
+		 * timer is never needed. We release the processing
+		 * thread after every message is posted.
+		 */
+		if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD == 1) {
+			if (cnt == 0) {
+				k_sem_give(&log_process_thread_sem);
+			}
 		} else {
-			/* No action needed. Message processing will be triggered by the
-			 * timeout or when number of upcoming messages exceeds the
-			 * threshold.
-			 */
+			if (cnt == 0) {
+				k_timer_start(&log_process_thread_timer,
+					      K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS),
+					      K_NO_WAIT);
+			} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+				   (cnt + 1) == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+				k_timer_stop(&log_process_thread_timer);
+				k_sem_give(&log_process_thread_sem);
+			} else {
+				/* No action needed. Message processing will be triggered by the
+				 * timeout or when number of upcoming messages exceeds the
+				 * threshold.
+				 */
+			}
 		}
 	}
 }
@@ -208,6 +225,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 				   fmt, ap);
 }
 
+#ifndef CONFIG_LOG_TIMESTAMP_USE_REALTIME
 static log_timestamp_t default_get_timestamp(void)
 {
 	return IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
@@ -219,6 +237,16 @@ static log_timestamp_t default_lf_get_timestamp(void)
 	return IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
 		k_uptime_get() : k_uptime_get_32();
 }
+#else
+static log_timestamp_t default_rt_get_timestamp(void)
+{
+	struct timespec tspec;
+
+	clock_gettime(CLOCK_REALTIME, &tspec);
+
+	return ((uint64_t)tspec.tv_sec * MSEC_PER_SEC) + (tspec.tv_nsec / NSEC_PER_MSEC);
+}
+#endif /* CONFIG_LOG_TIMESTAMP_USE_REALTIME */
 
 void log_core_init(void)
 {
@@ -228,12 +256,20 @@ void log_core_init(void)
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_init();
+
+		for (uint16_t s = 0; s < log_src_cnt_get(0); s++) {
+			log_frontend_filter_set(s, CONFIG_LOG_MAX_LEVEL);
+		}
+
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
 			return;
 		}
 	}
 
 	/* Set default timestamp. */
+#ifdef CONFIG_LOG_TIMESTAMP_USE_REALTIME
+	log_set_timestamp_func(default_rt_get_timestamp, 1000U);
+#else
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
 		log_set_timestamp_func(default_lf_get_timestamp, 1000U);
 	} else {
@@ -241,6 +277,7 @@ void log_core_init(void)
 			CONFIG_SYS_CLOCK_TICKS_PER_SEC : sys_clock_hw_cycles_per_sec();
 		log_set_timestamp_func(default_get_timestamp, freq);
 	}
+#endif /* CONFIG_LOG_TIMESTAMP_USE_REALTIME */
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
 		z_log_msg_init();
@@ -279,7 +316,7 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
+	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_MAX_BACKENDS);
 
 	if (atomic_inc(&initialized) != 0) {
 		return 0;

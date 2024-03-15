@@ -40,7 +40,7 @@ static void dma_mcux_pxp_irq_handler(const struct device *dev)
 
 	PXP_ClearStatusFlags(config->base, kPXP_CompleteFlag);
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) data->out_buf_addr, data->out_buf_size);
+	DCACHE_InvalidateByRange((uint32_t)data->out_buf_addr, data->out_buf_size);
 #endif
 	if (data->dma_callback) {
 		data->dma_callback(dev, data->user_data, 0, 0);
@@ -49,7 +49,7 @@ static void dma_mcux_pxp_irq_handler(const struct device *dev)
 
 /* Configure a channel */
 static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
-				   struct dma_config *config)
+				  struct dma_config *config)
 {
 	const struct dma_mcux_pxp_config *dev_config = dev->config;
 	struct dma_mcux_pxp_data *dev_data = dev->data;
@@ -99,11 +99,16 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 		output_buffer_cfg.pixelFormat = kPXP_OutputPixelFormatRGB888;
 		bytes_per_pixel = 3;
 		break;
+	case DMA_MCUX_PXP_FMT_ARGB8888:
+		ps_buffer_cfg.pixelFormat = kPXP_PsPixelFormatARGB8888;
+		output_buffer_cfg.pixelFormat = kPXP_OutputPixelFormatARGB8888;
+		bytes_per_pixel = 4;
+		break;
 	default:
 		return -ENOTSUP;
 	}
-	DCACHE_CleanByRange((uint32_t) config->head_block->source_address,
-				config->head_block->block_size);
+	DCACHE_CleanByRange((uint32_t)config->head_block->source_address,
+			    config->head_block->block_size);
 
 	/*
 	 * Some notes on how specific fields of the DMA config are used by
@@ -127,15 +132,14 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 	output_buffer_cfg.buffer0Addr = config->head_block->dest_address;
 	output_buffer_cfg.buffer1Addr = 0U;
 	output_buffer_cfg.pitchBytes = config->dest_data_size;
-	output_buffer_cfg.width = (config->dest_data_size  / bytes_per_pixel);
+	output_buffer_cfg.width = (config->dest_data_size / bytes_per_pixel);
 	output_buffer_cfg.height = config->dest_burst_length;
 	PXP_SetOutputBufferConfig(dev_config->base, &output_buffer_cfg);
 	/* We only support a process surface that covers the full buffer */
-	PXP_SetProcessSurfacePosition(dev_config->base, 0U, 0U,
-			output_buffer_cfg.width, output_buffer_cfg.height);
+	PXP_SetProcessSurfacePosition(dev_config->base, 0U, 0U, output_buffer_cfg.width,
+				      output_buffer_cfg.height);
 	/* Setup rotation */
-	PXP_SetRotateConfig(dev_config->base, kPXP_RotateProcessSurface,
-				rotate, kPXP_FlipDisable);
+	PXP_SetRotateConfig(dev_config->base, kPXP_RotateProcessSurface, rotate, kPXP_FlipDisable);
 
 	dev_data->ps_buf_addr = config->head_block->source_address;
 	dev_data->ps_buf_size = config->head_block->block_size;
@@ -151,7 +155,7 @@ static int dma_mcux_pxp_start(const struct device *dev, uint32_t channel)
 	const struct dma_mcux_pxp_config *config = dev->config;
 	struct dma_mcux_pxp_data *data = dev->data;
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_CleanByRange((uint32_t) data->ps_buf_addr, data->ps_buf_size);
+	DCACHE_CleanByRange((uint32_t)data->ps_buf_addr, data->ps_buf_size);
 #endif
 
 	ARG_UNUSED(channel);
@@ -178,29 +182,23 @@ static int dma_mcux_pxp_init(const struct device *dev)
 	return 0;
 }
 
-#define DMA_INIT(n)						       \
-	static void dma_pxp_config_func##n(const struct device *dev)   \
-	{							       \
-		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (		       \
-			   IRQ_CONNECT(DT_INST_IRQN(n),		       \
-				       DT_INST_IRQ(n, priority),       \
-				       dma_mcux_pxp_irq_handler,       \
-				       DEVICE_DT_INST_GET(n), 0);      \
-			   irq_enable(DT_INST_IRQ(n, irq));	       \
-			   ))					       \
-	}							       \
-								       \
-	static const struct dma_mcux_pxp_config dma_config_##n = {     \
-		.base = (PXP_Type *)DT_INST_REG_ADDR(n),	       \
-		.irq_config_func = dma_pxp_config_func##n,	       \
-	};							       \
-								       \
-	static struct dma_mcux_pxp_data dma_data_##n;		       \
-								       \
-	DEVICE_DT_INST_DEFINE(n,				       \
-			      &dma_mcux_pxp_init, NULL,		       \
-			      &dma_data_##n, &dma_config_##n,	       \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,  \
-			      &dma_mcux_pxp_api);
+#define DMA_INIT(n)                                                                                \
+	static void dma_pxp_config_func##n(const struct device *dev)                               \
+	{                                                                                          \
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),                                              \
+			   (IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                 \
+					dma_mcux_pxp_irq_handler, DEVICE_DT_INST_GET(n), 0);       \
+			    irq_enable(DT_INST_IRQ(n, irq));))                                     \
+	}                                                                                          \
+                                                                                                   \
+	static const struct dma_mcux_pxp_config dma_config_##n = {                                 \
+		.base = (PXP_Type *)DT_INST_REG_ADDR(n),                                           \
+		.irq_config_func = dma_pxp_config_func##n,                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct dma_mcux_pxp_data dma_data_##n;                                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &dma_mcux_pxp_init, NULL, &dma_data_##n, &dma_config_##n,         \
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_mcux_pxp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)

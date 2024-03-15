@@ -11,8 +11,10 @@
 #
 # Outputs with examples::
 #
-#   PROJECT_VERSION           1.14.99.07
-#   KERNEL_VERSION_STRING    "1.14.99-extraver"
+#   PROJECT_VERSION                    1.14.99.07
+#   KERNEL_VERSION_STRING             "1.14.99-extraver"
+#   KERNEL_VERSION_EXTENDED_STRING    "1.14.99-extraver+7"
+#   KERNEL_VERSION_TWEAK_STRING       "1.14.99+7"
 #
 #   KERNEL_VERSION_MAJOR      1
 #   KERNEL_VERSION_MINOR        14
@@ -32,8 +34,6 @@
 # package to load.
 # Therefore `version.cmake` should not use include_guard(GLOBAL).
 # The final load of `version.cmake` will setup correct build version values.
-
-include(${ZEPHYR_BASE}/cmake/hex.cmake)
 
 if(NOT DEFINED VERSION_FILE AND NOT DEFINED VERSION_TYPE)
   set(VERSION_FILE ${ZEPHYR_BASE}/VERSION ${APPLICATION_SOURCE_DIR}/VERSION)
@@ -62,9 +62,9 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   string(REGEX MATCH "EXTRAVERSION = ([a-z0-9]*)" _ ${ver})
   set(${type}_VERSION_EXTRA ${CMAKE_MATCH_1})
 
-  # Temporary convenience variable
+  # Temporary convenience variables
   set(${type}_VERSION_WITHOUT_TWEAK ${${type}_VERSION_MAJOR}.${${type}_VERSION_MINOR}.${${type}_PATCHLEVEL})
-
+  set(${type}_VERSION_WITH_TWEAK ${${type}_VERSION_MAJOR}.${${type}_VERSION_MINOR}.${${type}_PATCHLEVEL}+${${type}_VERSION_TWEAK})
 
   set(MAJOR ${${type}_VERSION_MAJOR}) # Temporary convenience variable
   set(MINOR ${${type}_VERSION_MINOR}) # Temporary convenience variable
@@ -74,14 +74,16 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   math(EXPR ${type}_VERSION_NUMBER_INT "(${MAJOR} << 16) + (${MINOR} << 8)  + (${PATCH})")
   math(EXPR ${type}VERSION_INT         "(${MAJOR} << 24) + (${MINOR} << 16) + (${PATCH} << 8) + (${TWEAK})")
 
-  to_hex(${${type}_VERSION_NUMBER_INT} ${type}_VERSION_NUMBER)
-  to_hex(${${type}VERSION_INT}         ${type}VERSION)
+  math(EXPR ${type}_VERSION_NUMBER "${${type}_VERSION_NUMBER_INT}"  OUTPUT_FORMAT HEXADECIMAL)
+  math(EXPR ${type}VERSION         "${${type}VERSION_INT}"          OUTPUT_FORMAT HEXADECIMAL)
 
   if(${type}_VERSION_EXTRA)
     set(${type}_VERSION_STRING     "${${type}_VERSION_WITHOUT_TWEAK}-${${type}_VERSION_EXTRA}")
   else()
     set(${type}_VERSION_STRING     "${${type}_VERSION_WITHOUT_TWEAK}")
   endif()
+  set(${type}_VERSION_TWEAK_STRING    "${${type}_VERSION_WITH_TWEAK}")
+  set(${type}_VERSION_EXTENDED_STRING "${${type}_VERSION_STRING}+${${type}_VERSION_TWEAK}")
 
   if(type STREQUAL KERNEL)
     set(PROJECT_VERSION_MAJOR      ${${type}_VERSION_MAJOR})
@@ -118,5 +120,7 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   unset(MAJOR)
   unset(MINOR)
   unset(PATCH)
+  unset(TWEAK)
   unset(${type}_VERSION_WITHOUT_TWEAK)
+  unset(${type}_VERSION_WITH_TWEAK)
 endforeach()

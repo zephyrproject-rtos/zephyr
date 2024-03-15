@@ -34,6 +34,9 @@ zephyr_library_sources_ifdef(CONFIG_SLIP_TAP		eth_slip_tap.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_SMSC91X		eth_smsc91x.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_IVSHMEM 	eth_ivshmem.c eth_ivshmem_queue.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111	eth_adin2111.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_LAN865X	        eth_lan865x.c oa_tc6.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_NXP_ENET	eth_nxp_enet.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_XMC4XXX     eth_xmc4xxx.c)
 
 if(CONFIG_ETH_NXP_S32_NETC)
   zephyr_library_sources(eth_nxp_s32_netc.c)
@@ -42,14 +45,15 @@ if(CONFIG_ETH_NXP_S32_NETC)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_ETH_NXP_S32_GMAC	eth_nxp_s32_gmac.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_NUMAKER		eth_numaker.c)
 
 if(CONFIG_ETH_NATIVE_POSIX)
-  set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
-  set_source_files_properties(${native_posix_source_files}
-    PROPERTIES COMPILE_DEFINITIONS
-    "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
-    )
   if (CONFIG_NATIVE_APPLICATION)
+    set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
+    set_source_files_properties(${native_posix_source_files}
+      PROPERTIES COMPILE_DEFINITIONS
+      "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
+    )
     zephyr_library_sources(${native_posix_source_files})
   else()
     zephyr_library_sources(eth_native_posix.c)

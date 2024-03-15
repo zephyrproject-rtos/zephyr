@@ -783,6 +783,8 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_HIGH = GPIO_INT_HIGH_1,
 	/* Trigger detection on pin rising or falling edge. */
 	GPIO_INT_TRIG_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1,
+	/* Trigger a system wakup. */
+	GPIO_INT_TRIG_WAKE = GPIO_INT_WAKEUP,
 };
 
 __subsystem struct gpio_driver_api {
@@ -909,7 +911,7 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		flags ^= (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1);
 	}
 
-	trig = (enum gpio_int_trig)(flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1));
+	trig = (enum gpio_int_trig)(flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP));
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	mode = (enum gpio_int_mode)(flags & (GPIO_INT_EDGE | GPIO_INT_DISABLE | GPIO_INT_ENABLE |
 					     GPIO_INT_ENABLE_DISABLE_ONLY));

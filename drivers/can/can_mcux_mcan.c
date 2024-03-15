@@ -132,14 +132,13 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	.send = can_mcan_send,
 	.add_rx_filter = can_mcan_add_rx_filter,
 	.remove_rx_filter = can_mcan_remove_rx_filter,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_mcan_recover,
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.get_state = can_mcan_get_state,
 	.set_state_change_callback = can_mcan_set_state_change_callback,
 	.get_core_clock = mcux_mcan_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	/*
 	 * MCUX MCAN timing limits are specified in the "Nominal bit timing and
 	 * prescaler register (NBTP)" table in the SoC reference manual.
@@ -217,17 +216,17 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 									\
 	static void mcux_mcan_irq_config_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),		\
-			    DT_INST_IRQ_BY_IDX(n, 0, priority),		\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),		\
+			    DT_INST_IRQ_BY_NAME(n, int0, priority),	\
 			    can_mcan_line_0_isr,			\
 			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));		\
 									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq),		\
-			    DT_INST_IRQ_BY_IDX(n, 1, priority),		\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),		\
+			    DT_INST_IRQ_BY_NAME(n, int1, priority),	\
 			    can_mcan_line_1_isr,			\
 			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));		\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MCAN_INIT)

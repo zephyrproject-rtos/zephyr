@@ -82,6 +82,13 @@ config COAP_MAX_RETRANSMIT
 	default 4
 	range 1 10
 
+config COAP_BACKOFF_PERCENT
+	int "Retransmission backoff factor for ACK timeout described as percentage"
+	default 200
+	help
+	  Factor described as percentage to extend CoAP ACK timeout for retransmissions.
+	  A value of 200 means a factor of 2.0.
+
 config COAP_URI_WILDCARD
 	bool "Wildcards in CoAP resource path"
 	default y
@@ -146,6 +153,99 @@ config COAP_CLIENT_MAX_REQUESTS
 	  Maximum number of CoAP requests a single client can handle at a time
 
 endif # COAP_CLIENT
+
+config COAP_SERVER
+	bool "CoAP server support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_SOCKETS
+	select NET_SOCKETPAIR
+	help
+	  This option enables the API for CoAP-services to register resources.
+
+if COAP_SERVER
+
+config COAP_SERVER_STACK_SIZE
+	int "CoAP server thread stack size"
+	default 4096
+	help
+	  CoAP server thread stack size for processing RX/TX events.
+
+config COAP_SERVER_BLOCK_SIZE
+	int "CoAP server block-wise transfer size"
+	default 256
+	range 64 1024
+	help
+	  CoAP block size used by CoAP server resources when performing block-wise
+	  transfers. Possible values: 64, 128, 256, 512 and 1024.
+
+config COAP_SERVER_MESSAGE_SIZE
+	int "CoAP server message payload size"
+	default COAP_SERVER_BLOCK_SIZE
+	help
+	  CoAP server message payload size. Can't be smaller than COAP_SERVER_BLOCK_SIZE.
+
+config COAP_SERVER_MESSAGE_OPTIONS
+	int "CoAP server message options"
+	default 16
+	help
+	  CoAP server message maximum number of options to parse.
+
+config COAP_SERVER_WELL_KNOWN_CORE
+	bool "CoAP server support ./well-known/core service"
+	default y
+	help
+	  Enable responding to the ./well-known/core service resource.
+
+config COAP_SERVICE_PENDING_MESSAGES
+	int "CoAP service pending messages"
+	default 10
+	help
+	  Maximum number of pending CoAP messages to retransmit per active service.
+
+config COAP_SERVICE_OBSERVERS
+	int "CoAP service observers"
+	default 3
+	help
+	  Maximum number of CoAP observers per active service.
+
+choice COAP_SERVER_PENDING_ALLOCATOR
+	prompt "Pending data allocator"
+	default COAP_SERVER_PENDING_ALLOCATOR_STATIC
+
+config COAP_SERVER_PENDING_ALLOCATOR_NONE
+	bool "No pending packets"
+	help
+	  Never allocate data for pending requests, this disables retransmits for confirmable
+	  packets.
+
+config COAP_SERVER_PENDING_ALLOCATOR_STATIC
+	bool "Static reserved memory"
+	help
+	  Static memory will be reserved for pending messages. The total size is equal to
+	  COAP_SERVER_PENDING_ALLOCATOR_STATIC_BLOCKS * COAP_SERVER_MESSAGE_SIZE.
+
+config COAP_SERVER_PENDING_ALLOCATOR_SYSTEM_HEAP
+	bool "System heap allocator"
+	depends on HEAP_MEM_POOL_SIZE > 0
+	help
+	  Use k_malloc/k_free for pending data.
+
+endchoice
+
+config COAP_SERVER_PENDING_ALLOCATOR_STATIC_BLOCKS
+	int "Number of pending data blocks"
+	default COAP_SERVICE_PENDING_MESSAGES
+	depends on COAP_SERVER_PENDING_ALLOCATOR_STATIC
+	help
+	  The number of data blocks to reserve for pending messages to retransmit.
+
+config COAP_SERVER_SHELL
+	bool "CoAP service shell commands"
+	depends on SHELL
+	help
+	  Enable CoAP service shell commands.
+
+endif
 
 module = COAP
 module-dep = NET_LOG

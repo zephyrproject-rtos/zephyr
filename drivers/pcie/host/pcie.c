@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT pcie_controller
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
@@ -26,6 +28,11 @@ LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
 #ifdef CONFIG_PCIE_CONTROLLER
 #include <zephyr/drivers/pcie/controller.h>
+#endif
+
+#ifdef CONFIG_PCIE_PRT
+/* platform interrupt are hardwired or can be dynamically allocated. */
+static bool prt_en;
 #endif
 
 /* functions documented in drivers/pcie/pcie.h */
@@ -126,6 +133,8 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 			 bool io)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
+	uint32_t cmd_reg;
+	bool ret = false;
 #ifdef CONFIG_PCIE_CONTROLLER
 	const struct device *dev;
 #endif
@@ -156,6 +165,12 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
+	cmd_reg = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+
+	/* IO/memory decode should be disabled before sizing/update BAR. */
+	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT,
+			cmd_reg & (~(PCIE_CONF_CMDSTAT_IO | PCIE_CONF_CMDSTAT_MEM)));
+
 	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
 	size = pcie_conf_read(bdf, reg);
 	pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
@@ -167,7 +182,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64 ||
 		    PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
 			/* Discard on invalid address */
-			return false;
+			goto err_exit;
 		}
 
 		pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
@@ -176,20 +191,20 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 	} else if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL ||
 		   PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
 		/* Discard on invalid address */
-		return false;
+		goto err_exit;
 	}
 
 	if (PCIE_CONF_BAR_IO(phys_addr)) {
 		size = PCIE_CONF_BAR_IO_ADDR(size);
 		if (size == 0) {
 			/* Discard on invalid size */
-			return false;
+			goto err_exit;
 		}
 	} else {
 		size = PCIE_CONF_BAR_ADDR(size);
 		if (size == 0) {
 			/* Discard on invalid size */
-			return false;
+			goto err_exit;
 		}
 	}
 
@@ -201,14 +216,18 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 						PCIE_CONF_BAR_ADDR(phys_addr)
 						: PCIE_CONF_BAR_IO_ADDR(phys_addr),
 					&bar->phys_addr)) {
-		return false;
+		goto err_exit;
 	}
 #else
 	bar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
 #endif /* CONFIG_PCIE_CONTROLLER */
 	bar->size = size & ~(size-1);
 
-	return true;
+	ret = true;
+err_exit:
+	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_reg);
+
+	return ret;
 }
 
 /**
@@ -291,8 +310,16 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	    irq >= CONFIG_MAX_IRQ_LINES ||
 	    arch_irq_is_used(irq)) {
 
+		/* In some platforms, PCI interrupts are hardwired to specific interrupt inputs
+		 * on the interrupt controller and are not configurable. Hence we need to retrieve
+		 * IRQ from acpi. But if it is configurable then we allocate irq dynamically.
+		 */
 #ifdef CONFIG_PCIE_PRT
-		irq = acpi_legacy_irq_get(bdf);
+		if (prt_en) {
+			irq = acpi_legacy_irq_get(bdf);
+		} else {
+			irq = arch_irq_allocate();
+		}
 #else
 		irq = arch_irq_allocate();
 #endif
@@ -533,6 +560,21 @@ static int pcie_init(void)
 		.flags = PCIE_SCAN_RECURSIVE,
 	};
 
+#ifdef CONFIG_PCIE_PRT
+	const char *hid, *uid = ACPI_DT_UID(DT_DRV_INST(0));
+	int ret;
+
+	BUILD_ASSERT(ACPI_DT_HAS_HID(DT_DRV_INST(0)),
+		 "No HID property for PCIe devicetree node");
+	hid = ACPI_DT_HID(DT_DRV_INST(0));
+
+	ret = acpi_legacy_irq_init(hid, uid);
+	if (!ret) {
+		prt_en = true;
+	} else {
+		__ASSERT(ret == -ENOENT, "Error retrieve interrupt routing table!");
+	}
+#endif
 
 	STRUCT_SECTION_COUNT(pcie_dev, &data.max_dev);
 	/* Don't bother calling pcie_scan() if there are no devices to look for */

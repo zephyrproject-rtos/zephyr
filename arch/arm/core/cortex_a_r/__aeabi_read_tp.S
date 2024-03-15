@@ -11,5 +11,8 @@ _ASM_FILE_PROLOGUE
 GTEXT(__aeabi_read_tp)
 
 SECTION_FUNC(text, __aeabi_read_tp)
-	mrc 15, 0, r0, c13, c0, 3
+	/*
+	 * TPIDRURW will be used as a base pointer point to TLS aera.
+	 */
+	mrc 15, 0, r0, c13, c0, 2
 	bx lr

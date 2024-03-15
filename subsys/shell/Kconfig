@@ -40,9 +40,8 @@ endif
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
-	default 3168 if OPENTHREAD_SHELL && OPENTHREAD_JOINER
+	default 3168 if OPENTHREAD_SHELL
 	default 3072 if 64BIT
-	default 2616 if OPENTHREAD_SHELL
 	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
 	help
@@ -119,6 +118,18 @@ config SHELL_WILDCARD
 	default y if !SHELL_MINIMAL
 	help
 	  Enables using wildcards: * and ? in the shell.
+
+config SHELL_MSG_CMD_NOT_FOUND
+	bool "': command not found' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
+
+config SHELL_MSG_SPECIFY_SUBCOMMAND
+	bool "'Please specify a subcommand.' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
 
 config SHELL_ECHO_STATUS
 	bool "Echo on shell"

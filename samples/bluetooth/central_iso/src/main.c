@@ -64,7 +64,7 @@ static void iso_timer_timeout(struct k_work *work)
 
 	net_buf_add_mem(buf, buf_data, len_to_send);
 
-	ret = bt_iso_chan_send(&iso_chan, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
+	ret = bt_iso_chan_send(&iso_chan, buf, seq_num++);
 
 	if (ret < 0) {
 		printk("Failed to send ISO data (%d)\n", ret);
@@ -99,7 +99,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 
 	/* connect only to devices in close proximity */
-	if (rssi < -70) {
+	if (rssi < -50) {
 		return;
 	}
 

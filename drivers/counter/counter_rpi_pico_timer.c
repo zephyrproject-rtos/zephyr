@@ -7,6 +7,8 @@
 #include <hardware/timer.h>
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/irq.h>
 #include <cmsis_core.h>
@@ -32,6 +34,9 @@ struct counter_rpi_pico_timer_config {
 	struct counter_config_info info;
 	timer_hw_t *timer;
 	void (*irq_config)();
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_id;
+	const struct reset_dt_spec reset;
 };
 
 static int counter_rpi_pico_timer_start(const struct device *dev)
@@ -106,6 +111,11 @@ static int counter_rpi_pico_timer_set_alarm(const struct device *dev, uint8_t id
 
 static int counter_rpi_pico_timer_cancel_alarm(const struct device *dev, uint8_t id)
 {
+	struct counter_rpi_pico_timer_data *data = dev->data;
+	struct counter_rpi_pico_timer_ch_data *chdata = &data->ch_data[id];
+
+	chdata->callback = NULL;
+	chdata->user_data = NULL;
 	hardware_alarm_cancel(id);
 
 	return 0;
@@ -161,6 +171,17 @@ static void counter_rpi_pico_irq_handle(uint32_t ch, void *arg)
 static int counter_rpi_pico_timer_init(const struct device *dev)
 {
 	const struct counter_rpi_pico_timer_config *config = dev->config;
+	int ret;
+
+	ret = clock_control_on(config->clk_dev, config->clk_id);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = reset_line_toggle_dt(&config->reset);
+	if (ret < 0) {
+		return ret;
+	}
 
 	config->irq_config();
 
@@ -209,6 +230,9 @@ static const struct counter_driver_api counter_rpi_pico_driver_api = {
 				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
 				.channels = ARRAY_SIZE(ch_data##inst),                             \
 			},                                                                         \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                               \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id),     \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, counter_rpi_pico_timer_init, NULL, &counter_##inst##_data,     \
 			      &counter_##inst##_config, PRE_KERNEL_1,                              \

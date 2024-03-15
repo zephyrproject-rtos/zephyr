@@ -137,6 +137,7 @@
 #define HCR_FMO_BIT		BIT(3)
 #define HCR_IMO_BIT		BIT(4)
 #define HCR_AMO_BIT		BIT(5)
+#define HCR_TGE_BIT		BIT(27)
 #define HCR_RW_BIT		BIT(31)
 
 /* System register interface to GICv3 */

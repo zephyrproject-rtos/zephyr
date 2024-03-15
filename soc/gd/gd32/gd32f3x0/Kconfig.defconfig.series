@@ -1,0 +1,11 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_GD32F3X0
+
+config SOC_SERIES
+	default "gd32f3x0"
+
+rsource "Kconfig.defconfig.gd32*"
+
+endif # SOC_SERIES_GD32F3X0

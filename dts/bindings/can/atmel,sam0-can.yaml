@@ -1,4 +1,4 @@
-description: Specialization of Bosch m_can CAN-FD controller for Atmel SAM0
+description: Specialization of Bosch m_can CAN FD controller for Atmel SAM0
 
 compatible: "atmel,sam0-can"
 
@@ -11,6 +11,9 @@ properties:
     required: true
 
   interrupts:
+    required: true
+
+  interrupt-names:
     required: true
 
   clocks:

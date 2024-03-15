@@ -1,8 +1,0 @@
-# STM32L412RB Nucleo board configuration
-
-# Copyright (c) 2021 Guðni Már Gilbert
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_L412RB_P
-	bool "Nucleo L412RB-P Development Board"
-	depends on SOC_STM32L412XX

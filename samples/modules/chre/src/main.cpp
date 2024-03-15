@@ -37,12 +37,12 @@ int main(void)
 		k_msleep(100);
 	}
 	printk("Starting EchoApp... %s\n", boolToString(eventLoop.startNanoapp(echo_app)));
-	printk("Nanoapp count=%u\n", eventLoop.getNanoappCount());
+	printk("Nanoapp count=%zu\n", eventLoop.getNanoappCount());
 	printk("Finding instance ID... %s\n", boolToString(eventLoop.findNanoappInstanceIdByAppId(1, &instanceId)));
-	printk("Nanoapp count=%u\n", eventLoop.getNanoappCount());
+	printk("Nanoapp count=%zu\n", eventLoop.getNanoappCount());
 	printk("Instance ID: %u\n", instanceId);
 
-	printk("Sending event %u...\n", eventLoop.getNanoappCount());
+	printk("Sending event %zu...\n", eventLoop.getNanoappCount());
 	eventLoop.postEventOrDie(CHRE_EVENT_MESSAGE_FROM_HOST, nullptr, [](uint16_t eventType, void *eventData) {
 		printk("Event (%u) complete!\n", eventType);
 	});

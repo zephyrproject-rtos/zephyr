@@ -43,7 +43,7 @@ Set ``-DSHIELD=arceli_eth_w5500`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dhcpv4_client
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: arceli_eth_w5500
    :goals: build
 
