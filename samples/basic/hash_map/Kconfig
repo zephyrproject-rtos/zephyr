@@ -18,9 +18,6 @@ config TEST_LIB_HASH_MAP_MAX_ENTRIES
 
 	  CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
 
-	  For native_sim, the number of entries can be configured
-	  independently of the arena size since the native libc is used.
-
 config TEST_LIB_HASH_MAP_DURATION_S
 	int "Duration of test (in seconds)"
 	default 3
