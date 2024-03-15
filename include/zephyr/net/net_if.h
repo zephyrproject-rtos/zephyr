@@ -249,25 +249,25 @@ struct net_offload;
 
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_NATIVE_IPV6)
-#define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
-#define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
-#define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IF_IPV6_PREFIX_COUNT
+#define NET_IF_MAX_IPV6_ADDR2 CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_MADDR2 CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_PREFIX2 CONFIG_NET_IF_IPV6_PREFIX_COUNT
 #else
-#define NET_IF_MAX_IPV6_ADDR 0
-#define NET_IF_MAX_IPV6_MADDR 0
-#define NET_IF_MAX_IPV6_PREFIX 0
+#define NET_IF_MAX_IPV6_ADDR2 0
+#define NET_IF_MAX_IPV6_MADDR2 0
+#define NET_IF_MAX_IPV6_PREFIX2 0
 #endif
 /* @endcond */
 
 struct net_if_ipv6 {
 	/** Unicast IP addresses */
-	struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
+	struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR2];
 
 	/** Multicast IP addresses */
-	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR];
+	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR2];
 
 	/** Prefixes */
-	struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
+	struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX2];
 
 	/** Default reachable time (RFC 4861, page 52) */
 	uint32_t base_reachable_time;
@@ -360,11 +360,11 @@ struct net_if_dhcpv6 {
 
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-#define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
-#define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
+#define NET_IF_MAX_IPV4_ADDR2 CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
+#define NET_IF_MAX_IPV4_MADDR2 CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
 #else
-#define NET_IF_MAX_IPV4_ADDR 0
-#define NET_IF_MAX_IPV4_MADDR 0
+#define NET_IF_MAX_IPV4_ADDR2 0
+#define NET_IF_MAX_IPV4_MADDR2 0
 #endif
 /** @endcond */
 
@@ -382,10 +382,10 @@ struct net_if_addr_ipv4 {
 
 struct net_if_ipv4 {
 	/** Unicast IP addresses */
-	struct net_if_addr_ipv4 unicast[NET_IF_MAX_IPV4_ADDR];
+	struct net_if_addr_ipv4 unicast[NET_IF_MAX_IPV4_ADDR2];
 
 	/** Multicast IP addresses */
-	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
+	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR2];
 
 	/** Gateway */
 	struct in_addr gw;
@@ -652,6 +652,61 @@ struct net_if {
 	struct k_mutex lock;
 	struct k_mutex tx_lock;
 };
+
+
+#define NET_IF_MAX_IPV6_ADDR ARRAY_SIZE(((struct net_if_ipv6 *)0)->unicast)
+#define NET_IF_MAX_IPV6_MADDR ARRAY_SIZE(((struct net_if_ipv6 *)0)->mcast)
+#define NET_IF_MAX_IPV6_PREFIX ARRAY_SIZE(((struct net_if_ipv6 *)0)->prefix)
+
+#define NET_IF_IPV6_CONFIG(iface)				\
+	(net_if_check_iface(iface) != NULL ?			\
+	 net_if_check_iface(iface)->config.ip.ipv6 : NULL)
+
+#define NET_IF_IPV6_UNICAST_ADDRESSES(iface) NET_IF_IPV6_CONFIG(iface)->unicast
+#define NET_IF_IPV6_MULTICAST_ADDRESSES(iface) NET_IF_IPV6_CONFIG(iface)->mcast
+#define NET_IF_IPV6_PREFIXES(iface) NET_IF_IPV6_CONFIG(iface)->prefix
+
+#define NET_IF_IPV6_UNICAST_ADDRESS(iface, idx)				\
+	(IS_ARRAY_ELEMENT(NET_IF_IPV6_UNICAST_ADDRESSES(iface),		\
+			  &NET_IF_IPV6_UNICAST_ADDRESSES(iface)[idx]) ?	\
+	 &NET_IF_IPV6_UNICAST_ADDRESSES(iface)[idx] : NULL)
+
+#define NET_IF_IPV6_MULTICAST_ADDRESS(iface, idx)			  \
+	(IS_ARRAY_ELEMENT(NET_IF_IPV6_MULTICAST_ADDRESSES(iface),	\
+			  &NET_IF_IPV6_MULTICAST_ADDRESSES(iface)[idx]) ? \
+	 &NET_IF_IPV6_MULTICAST_ADDRESSES(iface)[idx] : NULL)
+
+#define NET_IF_IPV6_PREFIX_ADDRESS(iface, idx)			\
+	(IS_ARRAY_ELEMENT(NET_IF_IPV6_PREFIXES(iface),		\
+			  &NET_IF_IPV6_PREFIXES(iface)[idx]) ?	\
+	 &NET_IF_IPV6_PREFIXES(iface)[idx] : NULL)
+
+#define NET_IF_MAX_IPV4_ADDR ARRAY_SIZE(((struct net_if_ipv4 *)0)->unicast)
+#define NET_IF_MAX_IPV4_MADDR ARRAY_SIZE(((struct net_if_ipv4 *)0)->mcast)
+
+#define NET_IF_IPV4_CONFIG(iface)				\
+	(net_if_check_iface(iface) != NULL ?			\
+	 net_if_check_iface(iface)->config.ip.ipv4 : NULL)
+
+#define NET_IF_IPV4_UNICAST_ADDRESSES(iface) NET_IF_IPV4_CONFIG(iface)->unicast
+#define NET_IF_IPV4_MULTICAST_ADDRESSES(iface) NET_IF_IPV4_CONFIG(iface)->mcast
+
+#define NET_IF_IPV4_UNICAST_ADDRESS(iface, idx)				\
+	(IS_ARRAY_ELEMENT(NET_IF_IPV4_UNICAST_ADDRESSES(iface),		\
+			  &NET_IF_IPV4_UNICAST_ADDRESSES(iface)[idx]) ? \
+	 &(NET_IF_IPV4_UNICAST_ADDRESSES(iface)[idx].ipv4) : NULL)
+
+#define NET_IF_IPV4_NETMASK(iface, idx)					\
+	(IS_ARRAY_ELEMENT(NET_IF_IPV4_UNICAST_ADDRESSES(iface),		\
+			  &NET_IF_IPV4_UNICAST_ADDRESSES(iface)[idx]) ? \
+	 &(NET_IF_IPV4_UNICAST_ADDRESSES(iface)[idx].netmask) : NULL)
+
+#define NET_IF_IPV4_MULTICAST_ADDRESS(iface, idx)			  \
+	(IS_ARRAY_ELEMENT(NET_IF_IPV4_MULTICAST_ADDRESSES(iface),	  \
+			  &NET_IF_IPV4_MULTICAST_ADDRESSES(iface)[idx]) ? \
+	 &NET_IF_IPV4_MULTICAST_ADDRESSES(iface)[idx] : NULL)
+
+#define NET_IF_DHCPV4_CONFIG(iface) net_if_check_iface(iface)->config.dhcpv4
 
 static inline void net_if_lock(struct net_if *iface)
 {
@@ -2553,6 +2608,16 @@ __syscall struct net_if *net_if_get_by_index(int index);
  * @return Interface index
  */
 int net_if_get_by_iface(struct net_if *iface);
+
+/**
+ * @brief Check if network interface pointer is a valid one.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return NULL if the interface is not a valid pointer
+ * and the interface pointer if the pointer is a valid one.
+ */
+struct net_if *net_if_check_iface(struct net_if *iface);
 
 /**
  * @typedef net_if_cb_t
