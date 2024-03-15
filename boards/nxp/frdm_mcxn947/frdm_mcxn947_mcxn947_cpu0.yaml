@@ -15,6 +15,5 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - arduino_serial
   - gpio
 vendor: nxp
