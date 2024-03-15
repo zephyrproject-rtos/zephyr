@@ -152,6 +152,7 @@ static void lptim_irq_handler(const struct device *unused)
 				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 				/ lptim_clock_freq;
 
+		autoreload_ready = false;
 		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
 	}
