@@ -81,7 +81,8 @@
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
 #elif defined CONFIG_BOARD_MIMXRT685_EVK
 #define DEFAULT_PWM_PORT 7 /* D3 on Arduino connector J27 */
-#elif defined CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0
+#elif defined(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS) ||                                    \
+	defined(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0)
 #define DEFAULT_PWM_PORT 2 /* D2 on Arduino connector P18 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 /* Default port should be adapted per board to fit the channel
