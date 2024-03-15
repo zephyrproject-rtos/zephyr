@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ene-kb1200-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&pinctrl {
+	/omit-if-no-ref/ uart0_tx_gpio03: uart0_tx_gpio03 {
+		pinmux = <ENE_KB1200_PINMUX(0x03, PINMUX_FUNC_B)>;
+		output-enable;
+	};
+	/omit-if-no-ref/ uart0_rx_gpio01: uart0_rx_gpio01 {
+		pinmux = <ENE_KB1200_PINMUX(0x01, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ uart1_tx_gpio36: uart1_tx_gpio36 {
+		pinmux = <ENE_KB1200_PINMUX(0x36, PINMUX_FUNC_C)>;
+		output-enable;
+	};
+	/omit-if-no-ref/ uart1_rx_gpio28: uart1_rx_gpio28 {
+		pinmux = <ENE_KB1200_PINMUX(0x28, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ uart2_tx_gpio04: uart2_tx_gpio04 {
+		pinmux = <ENE_KB1200_PINMUX(0x04, PINMUX_FUNC_B)>;
+		output-enable;
+	};
+	/omit-if-no-ref/ uart2_rx_gpio55: uart2_rx_gpio55 {
+		pinmux = <ENE_KB1200_PINMUX(0x55, PINMUX_FUNC_A)>;
+	};
+};
