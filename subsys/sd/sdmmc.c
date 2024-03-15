@@ -18,8 +18,7 @@
 
 LOG_MODULE_DECLARE(sd, CONFIG_SD_LOG_LEVEL);
 
-static inline void sdmmc_decode_scr(struct sd_scr *scr,
-	uint32_t *raw_scr, uint8_t *version)
+static inline void sdmmc_decode_scr(struct sd_scr *scr, uint32_t *raw_scr, uint8_t *version)
 {
 	uint32_t tmp_version = 0;
 
@@ -173,7 +172,7 @@ static int sdmmc_read_scr(struct sd_card *card)
 
 	cmd.opcode = SD_APP_SEND_SCR;
 	cmd.arg = 0;
-	cmd.response_type =  (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 
@@ -214,7 +213,7 @@ static int sdmmc_set_blocklen(struct sd_card *card, uint32_t block_len)
 
 	cmd.opcode = SD_SET_BLOCK_SIZE;
 	cmd.arg = block_len;
-	cmd.response_type =  (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 
@@ -283,8 +282,8 @@ static int sdmmc_set_bus_width(struct sd_card *card, enum sdhc_bus_width width)
  * argument corresponding to that function to "value", and all other 4 bit
  * blocks should be left as 0xF (no effect on current function)
  */
-static int sdmmc_switch(struct sd_card *card, enum sd_switch_arg mode,
-	enum sd_group_num group, uint8_t value, uint8_t *response)
+static int sdmmc_switch(struct sd_card *card, enum sd_switch_arg mode, enum sd_group_num group,
+			uint8_t value, uint8_t *response)
 {
 	struct sdhc_command cmd = {0};
 	struct sdhc_data data = {0};
@@ -351,20 +350,20 @@ static inline void sdmmc_select_bus_speed(struct sd_card *card)
 	 * selection is defined using values 0x0-0xF.
 	 */
 	if (card->host_props.host_caps.sdr104_support &&
-		(card->switch_caps.bus_speed & UHS_SDR104_BUS_SPEED) &&
-		(card->host_props.f_max >= SD_CLOCK_208MHZ)) {
+	    (card->switch_caps.bus_speed & UHS_SDR104_BUS_SPEED) &&
+	    (card->host_props.f_max >= SD_CLOCK_208MHZ)) {
 		card->card_speed = SD_TIMING_SDR104;
 	} else if (card->host_props.host_caps.ddr50_support &&
-		(card->switch_caps.bus_speed & UHS_DDR50_BUS_SPEED) &&
-		(card->host_props.f_max >= SD_CLOCK_50MHZ)) {
+		   (card->switch_caps.bus_speed & UHS_DDR50_BUS_SPEED) &&
+		   (card->host_props.f_max >= SD_CLOCK_50MHZ)) {
 		card->card_speed = SD_TIMING_DDR50;
 	} else if (card->host_props.host_caps.sdr50_support &&
-		(card->switch_caps.bus_speed & UHS_SDR50_BUS_SPEED) &&
-		(card->host_props.f_max >= SD_CLOCK_100MHZ)) {
+		   (card->switch_caps.bus_speed & UHS_SDR50_BUS_SPEED) &&
+		   (card->host_props.f_max >= SD_CLOCK_100MHZ)) {
 		card->card_speed = SD_TIMING_SDR50;
 	} else if (card->host_props.host_caps.high_spd_support &&
-		(card->switch_caps.bus_speed & UHS_SDR12_BUS_SPEED) &&
-		(card->host_props.f_max >= SD_CLOCK_25MHZ)) {
+		   (card->switch_caps.bus_speed & UHS_SDR12_BUS_SPEED) &&
+		   (card->host_props.f_max >= SD_CLOCK_25MHZ)) {
 		card->card_speed = SD_TIMING_SDR12;
 	}
 }
@@ -380,12 +379,11 @@ static int sdmmc_select_driver_type(struct sd_card *card)
 	 * since it should result in lower current consumption if supported.
 	 */
 	if (card->host_props.host_caps.drv_type_c_support &&
-		(card->switch_caps.sd_drv_type & SD_DRIVER_TYPE_C)) {
+	    (card->switch_caps.sd_drv_type & SD_DRIVER_TYPE_C)) {
 		card->bus_io.driver_type = SD_DRIVER_TYPE_C;
 		/* Change drive strength */
-		ret = sdmmc_switch(card, SD_SWITCH_SET,
-			SD_GRP_DRIVER_STRENGTH_MODE,
-			(find_msb_set(SD_DRIVER_TYPE_C) - 1), status);
+		ret = sdmmc_switch(card, SD_SWITCH_SET, SD_GRP_DRIVER_STRENGTH_MODE,
+				   (find_msb_set(SD_DRIVER_TYPE_C) - 1), status);
 	}
 	return ret;
 }
@@ -397,28 +395,27 @@ static int sdmmc_set_current_limit(struct sd_card *card)
 	int max_current = -1;
 	uint8_t *status = card->card_buffer;
 
-	if ((card->card_speed != SD_TIMING_SDR50) &&
-		(card->card_speed != SD_TIMING_SDR104) &&
-		(card->card_speed != SD_TIMING_DDR50)) {
+	if ((card->card_speed != SD_TIMING_SDR50) && (card->card_speed != SD_TIMING_SDR104) &&
+	    (card->card_speed != SD_TIMING_DDR50)) {
 		return 0; /* Cannot set current limit */
 	} else if (card->host_props.max_current_180 >= 800 &&
-		(card->switch_caps.sd_current_limit & SD_MAX_CURRENT_800MA)) {
+		   (card->switch_caps.sd_current_limit & SD_MAX_CURRENT_800MA)) {
 		max_current = SD_SET_CURRENT_800MA;
 	} else if (card->host_props.max_current_180 >= 600 &&
-		(card->switch_caps.sd_current_limit & SD_MAX_CURRENT_600MA)) {
+		   (card->switch_caps.sd_current_limit & SD_MAX_CURRENT_600MA)) {
 		max_current = SD_SET_CURRENT_600MA;
 	} else if (card->host_props.max_current_180 >= 400 &&
-		(card->switch_caps.sd_current_limit & SD_MAX_CURRENT_400MA)) {
+		   (card->switch_caps.sd_current_limit & SD_MAX_CURRENT_400MA)) {
 		max_current = SD_SET_CURRENT_400MA;
 	} else if (card->host_props.max_current_180 >= 200 &&
-		(card->switch_caps.sd_current_limit & SD_MAX_CURRENT_200MA)) {
+		   (card->switch_caps.sd_current_limit & SD_MAX_CURRENT_200MA)) {
 		max_current = SD_SET_CURRENT_200MA;
 	}
 	if (max_current != -1) {
 		LOG_DBG("Changing SD current limit: %d", max_current);
 		/* Switch SD current */
-		ret = sdmmc_switch(card, SD_SWITCH_SET, SD_GRP_CURRENT_LIMIT_MODE,
-			max_current, status);
+		ret = sdmmc_switch(card, SD_SWITCH_SET, SD_GRP_CURRENT_LIMIT_MODE, max_current,
+				   status);
 		if (ret) {
 			LOG_DBG("Failed to set SD current limit");
 			return ret;
@@ -466,8 +463,7 @@ static int sdmmc_set_bus_speed(struct sd_card *card)
 	}
 
 	/* Switch bus speed */
-	ret = sdmmc_switch(card, SD_SWITCH_SET, SD_GRP_TIMING_MODE,
-		card->card_speed, status);
+	ret = sdmmc_switch(card, SD_SWITCH_SET, SD_GRP_TIMING_MODE, card->card_speed, status);
 	if (ret) {
 		LOG_DBG("Failed to switch SD card speed");
 		return ret;
@@ -521,9 +517,8 @@ static int sdmmc_init_uhs(struct sd_card *card)
 		LOG_DBG("Failed to set card bus speed");
 		return ret;
 	}
-	if (card->card_speed == SD_TIMING_SDR50 ||
-		card->card_speed == SD_TIMING_SDR104 ||
-		card->card_speed == SD_TIMING_DDR50) {
+	if (card->card_speed == SD_TIMING_SDR50 || card->card_speed == SD_TIMING_SDR104 ||
+	    card->card_speed == SD_TIMING_DDR50) {
 		/* SDR104, SDR50, and DDR50 mode need tuning */
 		ret = sdhc_execute_tuning(card->sdhc);
 		if (ret) {
@@ -538,9 +533,8 @@ static int sdmmc_init_hs(struct sd_card *card)
 {
 	int ret;
 
-	if ((!card->host_props.host_caps.high_spd_support) ||
-		(card->sd_version < SD_SPEC_VER1_1) ||
-		(card->switch_caps.hs_max_dtr == 0)) {
+	if ((!card->host_props.host_caps.high_spd_support) || (card->sd_version < SD_SPEC_VER1_1) ||
+	    (card->switch_caps.hs_max_dtr == 0)) {
 		/* No high speed support. Leave card untouched */
 		return 0;
 	}
@@ -638,10 +632,8 @@ int sdmmc_card_init(struct sd_card *card)
 	 * switch to new signal voltage using "signal voltage switch procedure"
 	 * described in SD specification
 	 */
-	if ((card->flags & SD_1800MV_FLAG) &&
-		(card->host_props.host_caps.vol_180_support) &&
-		(!card->host_props.is_spi) &&
-		IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+	if ((card->flags & SD_1800MV_FLAG) && (card->host_props.host_caps.vol_180_support) &&
+	    (!card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
 		ret = sdmmc_switch_voltage(card);
 		if (ret) {
 			/* Disable host support for 1.8 V */
@@ -713,10 +705,8 @@ int sdmmc_card_init(struct sd_card *card)
 			return ret;
 		}
 	}
-	if ((card->flags & SD_1800MV_FLAG) &&
-		sdmmc_host_uhs(&card->host_props) &&
-		!(card->host_props.is_spi) &&
-		IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+	if ((card->flags & SD_1800MV_FLAG) && sdmmc_host_uhs(&card->host_props) &&
+	    !(card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
 		ret = sdmmc_init_uhs(card);
 		if (ret) {
 			LOG_ERR("UHS card init failed");
@@ -745,14 +735,14 @@ int sdmmc_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 	return card_ioctl(card, cmd, buf);
 }
 
-int sdmmc_read_blocks(struct sd_card *card, uint8_t *rbuf,
-	uint32_t start_block, uint32_t num_blocks)
+int sdmmc_read_blocks(struct sd_card *card, uint8_t *rbuf, uint32_t start_block,
+		      uint32_t num_blocks)
 {
 	return card_read_blocks(card, rbuf, start_block, num_blocks);
 }
 
-int sdmmc_write_blocks(struct sd_card *card, const uint8_t *wbuf,
-	uint32_t start_block, uint32_t num_blocks)
+int sdmmc_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_block,
+		       uint32_t num_blocks)
 {
 	return card_write_blocks(card, wbuf, start_block, num_blocks);
 }
