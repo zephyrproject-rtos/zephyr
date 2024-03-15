@@ -137,7 +137,7 @@ def create_tss_entry(base, limit, dpl):
     gran = 0
 
     flags = (gran << 7) | limit_hi
-    type_byte = ((present << 7) | (dpl << 5) | type_code)
+    type_byte = (present << 7) | (dpl << 5) | type_code
 
     return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid,
                        type_byte, flags, base_hi)
