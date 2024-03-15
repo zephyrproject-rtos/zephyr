@@ -678,15 +678,12 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	return bt_cap_initiator_unicast_audio_start(&start_param);
 }
 
-int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
-		   const struct bap_unicast_ac_param *param)
+int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *param)
 {
 	/* Allocate params large enough for any params, but only use what is required */
 	struct bt_conn *connected_conns[BAP_UNICAST_AC_MAX_CONN] = {0};
 	struct shell_stream *snk_uni_streams[BAP_UNICAST_AC_MAX_SNK];
 	struct shell_stream *src_uni_streams[BAP_UNICAST_AC_MAX_SRC];
-	const struct named_lc3_preset *snk_named_preset = NULL;
-	const struct named_lc3_preset *src_named_preset = NULL;
 	size_t conn_avail_cnt;
 	size_t snk_cnt = 0;
 	size_t src_cnt = 0;
@@ -744,24 +741,6 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 		}
 	}
 
-	if (snk_cnt > 0U) {
-		snk_named_preset = bap_get_named_preset(true, BT_AUDIO_DIR_SINK, argv[1]);
-		if (snk_named_preset == NULL) {
-			shell_error(sh, "Unable to parse snk_named_preset %s", argv[1]);
-			return -ENOEXEC;
-		}
-	}
-
-	if (src_cnt > 0U) {
-		const char *preset_arg = argc > 2 ? argv[2] : argv[1];
-
-		src_named_preset = bap_get_named_preset(true, BT_AUDIO_DIR_SOURCE, preset_arg);
-		if (src_named_preset == NULL) {
-			shell_error(sh, "Unable to parse src_named_preset %s", argv[1]);
-			return -ENOEXEC;
-		}
-	}
-
 	if (!ctx_shell) {
 		ctx_shell = sh;
 	}
@@ -777,7 +756,7 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 			return -ENOEXEC;
 		}
 
-		copy_unicast_stream_preset(snk_uni_stream, snk_named_preset);
+		copy_unicast_stream_preset(snk_uni_stream, &default_sink_preset);
 
 		/* Some audio configuration requires multiple sink channels,
 		 * so multiply the SDU based on the channel count
@@ -794,7 +773,7 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 			return -ENOEXEC;
 		}
 
-		copy_unicast_stream_preset(src_uni_stream, src_named_preset);
+		copy_unicast_stream_preset(src_uni_stream, &default_source_preset);
 	}
 
 	err = bap_ac_create_unicast_group(param, snk_uni_streams, snk_cnt, src_uni_streams,
@@ -836,7 +815,7 @@ static int cmd_cap_ac_1(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 0U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SINK_SUPPORTED */
 
@@ -852,7 +831,7 @@ static int cmd_cap_ac_2(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SRC_SUPPORTED */
 
@@ -868,7 +847,7 @@ static int cmd_cap_ac_3(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 
@@ -884,7 +863,7 @@ static int cmd_cap_ac_4(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 0U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SINK_SUPPORTED */
 
@@ -900,7 +879,7 @@ static int cmd_cap_ac_5(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 
@@ -917,7 +896,7 @@ static int cmd_cap_ac_6_i(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 0U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 */
 
@@ -933,7 +912,7 @@ static int cmd_cap_ac_6_ii(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 0U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #endif /* UNICAST_SINK_SUPPORTED */
@@ -950,7 +929,7 @@ static int cmd_cap_ac_7_i(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 
 #if CONFIG_BT_MAX_CONN >= 2
@@ -965,7 +944,7 @@ static int cmd_cap_ac_7_ii(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 
@@ -981,7 +960,7 @@ static int cmd_cap_ac_8_i(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 */
 
@@ -997,7 +976,7 @@ static int cmd_cap_ac_8_ii(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 
@@ -1013,7 +992,7 @@ static int cmd_cap_ac_9_i(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1 */
 
@@ -1029,7 +1008,7 @@ static int cmd_cap_ac_9_ii(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_MAX_CONN >= 2 && CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1 */
 
@@ -1045,7 +1024,7 @@ static int cmd_cap_ac_10(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 2U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1 */
 
@@ -1061,7 +1040,7 @@ static int cmd_cap_ac_11_i(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 &&                                        \
 	* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1                                           \
@@ -1079,7 +1058,7 @@ static int cmd_cap_ac_11_ii(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
-	return cap_ac_unicast(sh, argc, argv, &param);
+	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
@@ -1205,7 +1184,6 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
-	const struct named_lc3_preset *named_preset;
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -1220,13 +1198,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		return -ENOEXEC;
 	}
 
-	named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SOURCE, argv[1]);
-	if (named_preset == NULL) {
-		shell_error(sh, "Unable to parse named_preset %s", argv[1]);
-		return -ENOEXEC;
-	}
-
-	copy_broadcast_source_preset(&default_source, named_preset);
+	copy_broadcast_source_preset(&default_source, &default_broadcast_source_preset);
 	default_source.qos.sdu *= param->chan_cnt;
 
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
@@ -1337,55 +1309,55 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(unicast_cancel, NULL, "Unicast cancel current procedure",
 		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #if UNICAST_SINK_SUPPORTED
-	SHELL_CMD_ARG(ac_1, NULL, "<sink preset>", cmd_cap_ac_1, 2, 0),
+	SHELL_CMD_ARG(ac_1, NULL, "Unicast audio configuration 1", cmd_cap_ac_1, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED */
 #if UNICAST_SRC_SUPPORTED
-	SHELL_CMD_ARG(ac_2, NULL, "<source preset>", cmd_cap_ac_2, 2, 0),
+	SHELL_CMD_ARG(ac_2, NULL, "Unicast audio configuration 2", cmd_cap_ac_2, 1, 0),
 #endif /* UNICAST_SRC_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
-	SHELL_CMD_ARG(ac_3, NULL, "<sink preset> <source preset>", cmd_cap_ac_3, 3, 0),
+	SHELL_CMD_ARG(ac_3, NULL, "Unicast audio configuration 3", cmd_cap_ac_3, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED
-	SHELL_CMD_ARG(ac_4, NULL, "<sink preset>", cmd_cap_ac_4, 2, 0),
+	SHELL_CMD_ARG(ac_4, NULL, "Unicast audio configuration 4", cmd_cap_ac_4, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
-	SHELL_CMD_ARG(ac_5, NULL, "<sink preset> <source preset>", cmd_cap_ac_5, 3, 0),
+	SHELL_CMD_ARG(ac_5, NULL, "Unicast audio configuration 5", cmd_cap_ac_5, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
-	SHELL_CMD_ARG(ac_6_i, NULL, "<sink preset>", cmd_cap_ac_6_i, 2, 0),
+	SHELL_CMD_ARG(ac_6_i, NULL, "Unicast audio configuration 6(i)", cmd_cap_ac_6_i, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 */
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_6_ii, NULL, "<sink preset>", cmd_cap_ac_6_ii, 2, 0),
+	SHELL_CMD_ARG(ac_6_ii, NULL, "Unicast audio configuration 6(ii)", cmd_cap_ac_6_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #endif /* UNICAST_SINK_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
-	SHELL_CMD_ARG(ac_7_i, NULL, "<sink preset> <source preset>", cmd_cap_ac_7_i, 3, 0),
+	SHELL_CMD_ARG(ac_7_i, NULL, "Unicast audio configuration 7(i)", cmd_cap_ac_7_i, 1, 0),
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_7_ii, NULL, "<sink preset> <source preset>", cmd_cap_ac_7_ii, 3, 0),
+	SHELL_CMD_ARG(ac_7_ii, NULL, "Unicast audio configuration 7(ii)", cmd_cap_ac_7_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
-	SHELL_CMD_ARG(ac_8_i, NULL, "<sink preset> <source preset>", cmd_cap_ac_8_i, 3, 0),
+	SHELL_CMD_ARG(ac_8_i, NULL, "Unicast audio configuration 8(i)", cmd_cap_ac_8_i, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 */
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_8_ii, NULL, "<sink preset> <source preset>", cmd_cap_ac_8_ii, 3, 0),
+	SHELL_CMD_ARG(ac_8_ii, NULL, "Unicast audio configuration 8(ii)", cmd_cap_ac_8_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #if UNICAST_SRC_SUPPORTED
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
-	SHELL_CMD_ARG(ac_9_i, NULL, "<source preset>", cmd_cap_ac_9_i, 2, 0),
+	SHELL_CMD_ARG(ac_9_i, NULL, "Unicast audio configuration 9(i)", cmd_cap_ac_9_i, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1 */
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_9_ii, NULL, "<source preset>", cmd_cap_ac_9_ii, 2, 0),
+	SHELL_CMD_ARG(ac_9_ii, NULL, "Unicast audio configuration 9(ii)", cmd_cap_ac_9_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
-	SHELL_CMD_ARG(ac_10, NULL, "<source preset>", cmd_cap_ac_10, 2, 0),
+	SHELL_CMD_ARG(ac_10, NULL, "Unicast audio configuration 10", cmd_cap_ac_10, 1, 0),
 #endif /* UNICAST_SRC_SUPPORTED */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 && CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
-	SHELL_CMD_ARG(ac_11_i, NULL, "<sink preset> <source preset>", cmd_cap_ac_11_i, 3, 0),
+	SHELL_CMD_ARG(ac_11_i, NULL, "Unicast audio configuration 11(i)", cmd_cap_ac_11_i, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 &&                                        \
 	* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1                                           \
 	*/
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_11_ii, NULL, "<sink preset> <source preset>", cmd_cap_ac_11_ii, 3, 0),
+	SHELL_CMD_ARG(ac_11_ii, NULL, "Unicast audio configuration 11(ii)", cmd_cap_ac_11_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
@@ -1394,11 +1366,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(broadcast_update, NULL, "<meta>", cmd_broadcast_update, 2, 0),
 	SHELL_CMD_ARG(broadcast_stop, NULL, "", cmd_broadcast_stop, 1, 0),
 	SHELL_CMD_ARG(broadcast_delete, NULL, "", cmd_broadcast_delete, 1, 0),
-	SHELL_CMD_ARG(ac_12, NULL, "<preset>", cmd_cap_ac_12, 2, 0),
+	SHELL_CMD_ARG(ac_12, NULL, "Broadcast audio configuration 12", cmd_cap_ac_12, 1, 0),
 #if CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT > 1
-	SHELL_CMD_ARG(ac_13, NULL, "<preset>", cmd_cap_ac_13, 2, 0),
+	SHELL_CMD_ARG(ac_13, NULL, "Broadcast audio configuration 13", cmd_cap_ac_13, 1, 0),
 #endif /* CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT > 1 */
-	SHELL_CMD_ARG(ac_14, NULL, "<preset>", cmd_cap_ac_14, 2, 0),
+	SHELL_CMD_ARG(ac_14, NULL, "Broadcast audio configuration 14", cmd_cap_ac_14, 1, 0),
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 	SHELL_SUBCMD_SET_END);
 

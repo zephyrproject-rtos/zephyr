@@ -78,7 +78,7 @@ struct named_lc3_preset default_sink_preset = {"16_2_1",
 					       BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
 struct named_lc3_preset default_source_preset = {
 	"16_2_1", BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
-static struct named_lc3_preset default_broadcast_source_preset = {
+struct named_lc3_preset default_broadcast_source_preset = {
 	"16_2_1", BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT)};
 #endif /* IS_BAP_INITIATOR */
 

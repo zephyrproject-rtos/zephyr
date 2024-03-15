@@ -78,16 +78,39 @@ The CAP initiator also supports broadcast audio as a source.
 
 .. code-block:: console
 
-   cap_initiator --help
+   uart:~$ cap_initiator --help
    cap_initiator - Bluetooth CAP initiator shell commands
    Subcommands:
-     discover        :Discover CAS
-     unicast_start   :Unicast Start [csip] [sinks <cnt> (default 1)] [sources <cnt>
-                      (default 1)] [conns (<cnt> | all) (default 1)]
-     unicast_list    :Unicast list streams
-     unicast_update  :Unicast Update <all | stream [stream [stream...]]>
-     unicast_stop    :Unicast stop streams [stream [stream [stream...]]] (all by default)
-     unicast_cancel  :Unicast cancel current procedure
+     discover          : Discover CAS
+     unicast_start     : Unicast Start [csip] [sinks <cnt> (default 1)] [sources
+                        <cnt> (default 1)] [conns (<cnt> | all) (default 1)]
+     unicast_list      : Unicast list streams
+     unicast_update    : Unicast Update <all | stream [stream [stream...]]>
+     unicast_stop      :Unicast stop streams [stream [stream [stream...]]] (all by default)
+     unicast_cancel    : Unicast cancel current procedure
+     ac_1              : Unicast audio configuration 1
+     ac_2              : Unicast audio configuration 2
+     ac_3              : Unicast audio configuration 3
+     ac_4              : Unicast audio configuration 4
+     ac_5              : Unicast audio configuration 5
+     ac_6_i            : Unicast audio configuration 6(i)
+     ac_6_ii           : Unicast audio configuration 6(ii)
+     ac_7_i            : Unicast audio configuration 7(i)
+     ac_7_ii           : Unicast audio configuration 7(ii)
+     ac_8_i            : Unicast audio configuration 8(i)
+     ac_8_ii           : Unicast audio configuration 8(ii)
+     ac_9_i            : Unicast audio configuration 9(i)
+     ac_9_ii           : Unicast audio configuration 9(ii)
+     ac_10             : Unicast audio configuration 10
+     ac_11_i           : Unicast audio configuration 11(i)
+     ac_11_ii          : Unicast audio configuration 11(ii)
+     broadcast_start   :
+     broadcast_update  : <meta>
+     broadcast_stop    :
+     broadcast_delete  :
+     ac_12             : Broadcast audio configuration 12
+     ac_13             : Broadcast audio configuration 13
+     ac_14             : Broadcast audio configuration 14
 
 Before being able to perform any stream operation, the device must also perform the
 :code:`bap discover` operation to discover the ASEs and PAC records. The :code:`bap init`
@@ -183,7 +206,8 @@ The following commands will setup a CAP broadcast source using the 16_2_1 preset
    bap init
    bt adv-create nconn-nscan ext-adv name
    bt per-adv-param
-   cap_initiator ac_12 16_2_1
+   bap preset broadcast 16_2_1
+   cap_initiator ac_12
    bt adv-data discov
    bt per-adv-data
    cap_initiator broadcast_start
