@@ -245,6 +245,96 @@
 			interrupts = <0 0>;
 			status = "disabled";
 		};
+
+		i2c0: i2c@40340000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40340000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40341000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40341000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40342000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40342000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@40343000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40343000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@40344000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40344000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@40345000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40345000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@40346000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40346000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c7: i2c@40347000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40347000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c8: i2c@40348000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40348000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c9: i2c@40349000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40349000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
