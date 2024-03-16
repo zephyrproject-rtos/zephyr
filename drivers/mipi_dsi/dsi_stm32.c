@@ -245,7 +245,6 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 
 	vcfg->VirtualChannelID = channel;
 	vcfg->ColorCoding = STM32_DSI_INIT_PIXEL_FORMAT;
-	vcfg->LooselyPacked = DSI_LOOSELY_PACKED_DISABLE;
 
 	if (mdev->mode_flags & MIPI_DSI_MODE_VIDEO_BURST) {
 		vcfg->Mode = DSI_VID_MODE_BURST;
@@ -277,16 +276,12 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 		vcfg->LPCommandEnable = DSI_LP_COMMAND_DISABLE;
 	}
 
-	vcfg->LPLargestPacketSize = 4;
-	vcfg->LPVACTLargestPacketSize = 4;
-
 	vcfg->LPHorizontalFrontPorchEnable = DSI_LP_HFP_ENABLE;
 	vcfg->LPHorizontalBackPorchEnable = DSI_LP_HBP_ENABLE;
 	vcfg->LPVerticalActiveEnable = DSI_LP_VACT_ENABLE;
 	vcfg->LPVerticalFrontPorchEnable = DSI_LP_VFP_ENABLE;
 	vcfg->LPVerticalBackPorchEnable = DSI_LP_VBP_ENABLE;
 	vcfg->LPVerticalSyncActiveEnable = DSI_LP_VSYNC_ENABLE;
-	vcfg->FrameBTAAcknowledgeEnable = DSI_FBTAA_ENABLE;
 
 	ret = HAL_DSI_ConfigVideoMode(&data->hdsi, vcfg);
 	if (ret != HAL_OK) {
@@ -496,7 +491,13 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 			.VSPolarity = DT_INST_PROP(inst, vs_active_high) ?			\
 				      DSI_VSYNC_ACTIVE_HIGH : DSI_VSYNC_ACTIVE_LOW,		\
 			.DEPolarity = DT_INST_PROP(inst, de_active_high) ?			\
-				      DSI_DATA_ENABLE_ACTIVE_HIGH : DSI_DATA_ENABLE_ACTIVE_LOW,	\
+				      DSI_DATA_ENABLE_ACTIVE_HIGH : DSI_DATA_ENABLE_ACTIVE_LOW, \
+			.LooselyPacked = DT_INST_PROP(inst, loosely_packed) ? \
+				      DSI_LOOSELY_PACKED_ENABLE : DSI_LOOSELY_PACKED_DISABLE,	\
+			.LPLargestPacketSize =  DT_INST_PROP_OR(inst, largest_packet_size, 4), \
+			.LPVACTLargestPacketSize = DT_INST_PROP_OR(inst, largest_packet_size, 4), \
+			.FrameBTAAcknowledgeEnable = DT_INST_PROP(inst, bta_ack_disable) ?	\
+					  DSI_FBTAA_DISABLE : DSI_FBTAA_ENABLE,	\
 		},										\
 		.pll_init = {									\
 			.PLLNDIV = DT_INST_PROP(inst, pll_ndiv),				\
