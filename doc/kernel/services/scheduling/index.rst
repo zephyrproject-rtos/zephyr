@@ -91,8 +91,7 @@ runtime overhead and performance scaling when many threads are added.
   O(1) time in almost all circumstances with very low constant factor.  But it
   requires a fairly large RAM budget to store those list heads, and the limited
   features make it incompatible with features like deadline scheduling that
-  need to sort threads more finely, and SMP affinity which need to traverse the
-  list of threads.
+  need to sort threads more finely.
 
   Typical applications with small numbers of runnable threads probably want the
   DUMB scheduler.
