@@ -24,13 +24,6 @@
 #define _priq_run_best		z_priq_rb_best
  /* Multi Queue Scheduling */
 #elif defined(CONFIG_SCHED_MULTIQ)
-
-# if defined(CONFIG_64BIT)
-#  define NBITS 64
-# else
-#  define NBITS 32
-# endif
-
 #define _priq_run_add		z_priq_mq_add
 #define _priq_run_remove	z_priq_mq_remove
 # if defined(CONFIG_SCHED_CPU_MASK)
@@ -83,8 +76,8 @@ static ALWAYS_INLINE struct prio_info get_prio_info(int8_t old_prio)
 	struct prio_info ret;
 
 	ret.offset_prio = old_prio - K_HIGHEST_THREAD_PRIO;
-	ret.idx = ret.offset_prio / NBITS;
-	ret.bit = ret.offset_prio % NBITS;
+	ret.idx = ret.offset_prio / ARCH_NBITS;
+	ret.bit = ret.offset_prio % ARCH_NBITS;
 
 	return ret;
 }

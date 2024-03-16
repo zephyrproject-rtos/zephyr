@@ -175,15 +175,8 @@ struct k_thread *_priq_mq_mask_best_idx(struct _priq_mq *pq, uint32_t bitmask_id
 #endif
 
 	for (; mask != 0; mask &= ~BIT(bit)) {
-
-#ifdef CONFIG_64BIT
-		bit = u64_count_trailing_zeros(pq->bitmask[bitmask_idx] & mask);
-		q_idx = bitmask_idx * 64 + bit;
-#else
-		bit = u32_count_trailing_zeros(pq->bitmask[bitmask_idx] & mask);
-		q_idx = bitmask_idx * 32 + bit;
-#endif
-
+		bit = arch_count_trailing_zeros(pq->bitmask[bitmask_idx] & mask);
+		q_idx = bitmask_idx * ARCH_NBITS + bit;
 		l = &pq->queues[q_idx];
 		thread = _priq_dumb_mask_best(l);
 
