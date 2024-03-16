@@ -8,6 +8,7 @@ on:
       - "west.yml"
       - "subsys/bluetooth/**"
       - "tests/bsim/**"
+      - "tests/bluetooth/common/testlib/**"
       - "samples/bluetooth/**"
       - "boards/posix/**"
       - "soc/posix/**"
