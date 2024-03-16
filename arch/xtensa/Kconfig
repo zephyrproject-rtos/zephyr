@@ -214,6 +214,34 @@ endif # XTENSA_MMU
 
 endif # CPU_HAS_MMU
 
+if CPU_HAS_MPU
+
+menuconfig XTENSA_MPU
+	bool "Xtensa MPU Support"
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select EXPERIMENTAL
+	# TODO: the target the MPU code developed on (basically sample_controller
+	#       plus MPU minus s32c1i) does not have cache or SMP capability.
+	#       Need to verify functionalities with targets supporting these.
+	depends on !CACHE && !SMP
+	help
+	  Enable support for Xtensa Memory Protection Unit.
+
+if XTENSA_MPU
+
+config XTENSA_MPU_DEFAULT_MEM_TYPE
+	hex "Default Memory Type"
+	default 0x18
+	help
+	  Default memory type for memory regions: non-cacheable memory,
+	  non-shareable, non-bufferable and interruptible.
+
+endif # XTENSA_MPU
+
+endif # CPU_HAS_MPU
+
 config XTENSA_SYSCALL_USE_HELPER
 	bool "Use userspace syscall helper"
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"

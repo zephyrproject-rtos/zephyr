@@ -35,7 +35,13 @@
 
 #include <zephyr/drivers/timer/system_timer.h>
 
+#ifdef CONFIG_XTENSA_MMU
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
+#endif
+
+#ifdef CONFIG_XTENSA_MPU
+#include <zephyr/arch/xtensa/mpu.h>
+#endif
 
 /**
  * @defgroup xtensa_apis Xtensa APIs
