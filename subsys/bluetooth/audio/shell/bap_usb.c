@@ -24,13 +24,17 @@
 
 LOG_MODULE_REGISTER(bap_usb, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 
-#define USB_ENQUEUE_COUNT     10U
+#define USB_ENQUEUE_COUNT     20U
 #define USB_FRAME_DURATION_US 1000U
-#define USB_MONO_SAMPLE_SIZE                                                                       \
-	((USB_FRAME_DURATION_US * USB_SAMPLE_RATE * sizeof(int16_t)) / USEC_PER_SEC)
-#define USB_STEREO_SAMPLE_SIZE (USB_MONO_SAMPLE_SIZE * 2U)
-#define USB_RING_BUF_SIZE      (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
+#define USB_SAMPLE_CNT         ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE) / USEC_PER_SEC)
+#define USB_BYTES_PER_SAMPLE   sizeof(int16_t)
+#define USB_MONO_FRAME_SIZE    (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
+#define USB_CHANNELS           2U
+#define USB_STEREO_FRAME_SIZE  (USB_MONO_FRAME_SIZE * USB_CHANNELS)
+#define USB_OUT_RING_BUF_SIZE  (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
+#define USB_IN_RING_BUF_SIZE   (CONFIG_BT_ISO_TX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
 
+#if defined CONFIG_BT_AUDIO_RX
 struct decoded_sdu {
 	int16_t right_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
 	int16_t left_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
@@ -40,13 +44,13 @@ struct decoded_sdu {
 	uint32_t ts;
 } decoded_sdu;
 
-RING_BUF_DECLARE(usb_out_ring_buf, USB_RING_BUF_SIZE);
-NET_BUF_POOL_DEFINE(usb_tx_buf_pool, USB_ENQUEUE_COUNT, USB_STEREO_SAMPLE_SIZE, 0, net_buf_destroy);
+RING_BUF_DECLARE(usb_out_ring_buf, USB_OUT_RING_BUF_SIZE);
+NET_BUF_POOL_DEFINE(usb_out_buf_pool, USB_ENQUEUE_COUNT, USB_STEREO_FRAME_SIZE, 0, net_buf_destroy);
 
 /* USB consumer callback, called every 1ms, consumes data from ring-buffer */
 static void usb_data_request_cb(const struct device *dev)
 {
-	uint8_t usb_audio_data[USB_STEREO_SAMPLE_SIZE] = {0};
+	uint8_t usb_audio_data[USB_STEREO_FRAME_SIZE] = {0};
 	struct net_buf *pcm_buf;
 	uint32_t size;
 	int err;
@@ -56,7 +60,7 @@ static void usb_data_request_cb(const struct device *dev)
 		return;
 	}
 
-	pcm_buf = net_buf_alloc(&usb_tx_buf_pool, K_NO_WAIT);
+	pcm_buf = net_buf_alloc(&usb_out_buf_pool, K_NO_WAIT);
 	if (pcm_buf == NULL) {
 		LOG_WRN("Could not allocate pcm_buf");
 		return;
@@ -246,7 +250,7 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 			send = true;
 		}
 
-		if (send) {
+		if (true || send) {
 			bap_usb_send_frames_to_usb();
 		}
 	}
@@ -295,13 +299,206 @@ void bap_usb_clear_frames_to_usb(void)
 	decoded_sdu.left_frames_cnt = 0U;
 	decoded_sdu.ts = 0U;
 }
+#endif /* CONFIG_BT_AUDIO_RX */
+
+#if defined(CONFIG_BT_AUDIO_TX)
+
+static void store_data_in_stream(struct shell_stream *sh_stream, int16_t left_data[USB_SAMPLE_CNT],
+				 int16_t right_data[USB_SAMPLE_CNT])
+{
+	const bool has_right =
+		(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
+	const bool has_left = (sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
+
+	if (!has_right && !has_left) {
+		/* Not suited for USB stereo data */
+		return;
+	}
+
+	if (has_left) {
+		const uint32_t size_put = ring_buf_put(&sh_stream->tx.tx_left_ring_buf,
+						       (uint8_t *)left_data, USB_MONO_FRAME_SIZE);
+		if (size_put != USB_MONO_FRAME_SIZE) {
+			if ((sh_stream->tx.left_ring_buf_fail_cnt %
+			     bap_get_recv_stats_interval()) == 0U) {
+				LOG_ERR("[%zu]: %p Failed to put left data on ring buffer "
+					"(%u != %u) - %u / %u used",
+					sh_stream->tx.left_ring_buf_fail_cnt, sh_stream, size_put,
+					USB_MONO_FRAME_SIZE,
+					ring_buf_size_get(&sh_stream->tx.tx_left_ring_buf),
+					ring_buf_capacity_get(&sh_stream->tx.tx_left_ring_buf));
+			}
+
+			sh_stream->tx.left_ring_buf_fail_cnt++;
+		} else {
+			sh_stream->tx.left_ring_buf_fail_cnt = 0U;
+		}
+	}
+
+	if (has_right) {
+		const uint32_t size_put = ring_buf_put(&sh_stream->tx.tx_right_ring_buf,
+						       (uint8_t *)right_data, USB_MONO_FRAME_SIZE);
+		if (size_put != USB_MONO_FRAME_SIZE) {
+			if ((sh_stream->tx.right_ring_buf_fail_cnt %
+			     bap_get_recv_stats_interval()) == 0U) {
+				LOG_ERR("[%zu]: %p Failed to put right data on ring buffer "
+					"(%u != %u) - %u / %u used",
+					sh_stream->tx.right_ring_buf_fail_cnt, sh_stream, size_put,
+					USB_MONO_FRAME_SIZE,
+					ring_buf_size_get(&sh_stream->tx.tx_right_ring_buf),
+					ring_buf_capacity_get(&sh_stream->tx.tx_right_ring_buf));
+			}
+
+			sh_stream->tx.right_ring_buf_fail_cnt++;
+		} else {
+			sh_stream->tx.right_ring_buf_fail_cnt = 0U;
+		}
+	}
+
+	/* Schedule the send work ASAP if not already scheduled */
+	if (!sh_stream->tx.tx_active) {
+		int err;
+
+		/* TODO: Only trigger when we have store enough data for an entire SDU */
+
+		sh_stream->tx.tx_active = true;
+		sh_stream->tx.seq_num = get_next_seq_num(bap_stream_from_shell_stream(sh_stream));
+		err = k_work_schedule(&sh_stream->tx.audio_send_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to trigger send work for stream %p: %d", sh_stream, err);
+		}
+	}
+}
+
+static void usb_data_received_cb(const struct device *dev, struct net_buf *buf, size_t size)
+{
+	int16_t right_data[USB_SAMPLE_CNT];
+	int16_t left_data[USB_SAMPLE_CNT];
+	static size_t cnt;
+	int16_t *pcm;
+
+	if (buf == NULL) {
+		return;
+	}
+
+	if (size != USB_STEREO_FRAME_SIZE) {
+		net_buf_unref(buf);
+
+		return;
+	}
+
+	pcm = (int16_t *)buf->data;
+
+	/* Split the data into left and right as LC3 uses LLLLRRRR instead of LRLRLRLR as USB */
+	for (size_t i = 0U; i < USB_SAMPLE_CNT; i++) {
+		left_data[i] = pcm[i];
+		right_data[i] = pcm[i + 1];
+	}
+
+	/* Store the data from USB for each stream that supports TX. Since frames for USB are
+	 *generally smaller than the frames sent over ISO, we need to store multiple USB frames
+	 *before we can send over air
+	 */
+#if defined(CONFIG_BT_BAP_UNICAST)
+	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+		struct shell_stream *sh_stream = &unicast_streams[i];
+
+		if (sh_stream->is_tx) {
+			store_data_in_stream(sh_stream, left_data, right_data);
+		}
+	}
+#endif /* CONFIG_BT_BAP_UNICAST */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_source_streams); i++) {
+		struct shell_stream *sh_stream = &broadcast_source_streams[i];
+
+		if (sh_stream->is_tx) {
+			store_data_in_stream(sh_stream, left_data, right_data);
+		}
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+	if ((++cnt % bap_get_recv_stats_interval()) == 0U) {
+		printk("USB Data received (count = %d)\n", cnt);
+	}
+
+	net_buf_unref(buf);
+}
+
+size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream)
+{
+	return (sizeof(int16_t) * sh_stream->lc3_frame_duration_us * sh_stream->lc3_freq_hz) /
+	       USEC_PER_SEC;
+}
+
+bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream)
+{
+	const bool has_left = (sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
+	const bool has_right =
+		(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
+	const bool has_stereo = has_right && has_left;
+	const uint32_t frame_size = bap_usb_get_frame_size(sh_stream);
+	const uint32_t frame_block_size = frame_size * (has_stereo ? 2U : 1U);
+	const uint32_t retrieve_size = frame_block_size * sh_stream->lc3_frame_blocks_per_sdu;
+	const uint32_t rb_size = ring_buf_size_get(&sh_stream->tx.tx_left_ring_buf);
+
+	if (rb_size < retrieve_size) {
+		/* Not enough for a frame yet */
+		LOG_WRN("Ring buffer (%u) does not contain enough for an entire SDU %u", rb_size,
+			retrieve_size);
+
+		return false;
+	}
+
+	return true;
+}
+
+bool bap_usb_get_full_frame(struct shell_stream *sh_stream, uint8_t index, uint8_t buffer[])
+{
+	const bool has_left = (sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
+	const bool has_right =
+		(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
+	const bool is_left = index == 0U && has_left;
+	const bool is_right = has_right && (index == 0U || (index == 1U && has_left));
+	const uint32_t frame_size = bap_usb_get_frame_size(sh_stream);
+	uint32_t rb_size = 0;
+
+	if (is_left) {
+		rb_size = ring_buf_get(&sh_stream->tx.tx_left_ring_buf, buffer, frame_size);
+		if (rb_size != frame_size) {
+			shell_error(ctx_shell, "Failed to get left frame of size %u, got %u",
+				    frame_size, rb_size);
+
+			/* What to do here? Pad? Memset? Nothing */
+			rb_size = 0;
+		}
+	} else if (is_right) {
+		rb_size = ring_buf_get(&sh_stream->tx.tx_right_ring_buf, buffer, frame_size);
+		if (rb_size != frame_size) {
+			shell_error(ctx_shell, "Failed to get right frame of size %u, got %u",
+				    frame_size, rb_size);
+
+			/* What to do here? Pad? Memset? Nothing */
+			rb_size = 0;
+		}
+	}
+
+	return rb_size != 0;
+}
+#endif /* CONFIG_BT_AUDIO_TX */
 
 int bap_usb_init(void)
 {
 	const struct device *hs_dev = DEVICE_DT_GET(DT_NODELABEL(hs_0));
 	static const struct usb_audio_ops usb_ops = {
+#if defined(CONFIG_BT_AUDIO_RX)
 		.data_request_cb = usb_data_request_cb,
 		.data_written_cb = usb_data_written_cb,
+#endif /* CONFIG_BT_AUDIO_RX */
+#if defined(CONFIG_BT_AUDIO_TX)
+		.data_received_cb = usb_data_received_cb,
+#endif /* CONFIG_BT_AUDIO_TX */
 	};
 	int err;
 

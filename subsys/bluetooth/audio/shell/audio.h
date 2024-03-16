@@ -74,17 +74,6 @@ struct named_lc3_preset {
 	struct bt_bap_lc3_preset preset;
 };
 
-const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
-						    const char *preset_arg);
-
-size_t bap_get_rx_streaming_cnt(void);
-size_t bap_get_tx_streaming_cnt(void);
-
-int bap_usb_init(void);
-int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
-			     size_t frame_size, uint32_t ts);
-void bap_usb_clear_frames_to_usb(void);
-
 struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
@@ -114,6 +103,16 @@ struct shell_stream {
 			size_t lc3_sdu_cnt;
 			lc3_encoder_mem_48k_t lc3_encoder_mem;
 			lc3_encoder_t lc3_encoder;
+#if defined(CONFIG_USB_DEVICE_AUDIO)
+			struct ring_buf tx_left_ring_buf;
+			uint8_t _tx_left_ring_buf_mem[LC3_MAX_NUM_SAMPLES_MONO * sizeof(int16_t) *
+						      2];
+			size_t left_ring_buf_fail_cnt;
+			struct ring_buf tx_right_ring_buf;
+			uint8_t _tx_right_ring_buf_mem[LC3_MAX_NUM_SAMPLES_MONO * sizeof(int16_t) *
+						       2];
+			size_t right_ring_buf_fail_cnt;
+#endif /* CONFIG_USB_DEVICE_AUDIO */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
 #endif /* CONFIG_BT_AUDIO_TX */
@@ -136,6 +135,24 @@ struct shell_stream {
 #endif /* CONFIG_BT_AUDIO_RX */
 	};
 };
+
+const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
+						    const char *preset_arg);
+
+size_t bap_get_rx_streaming_cnt(void);
+size_t bap_get_tx_streaming_cnt(void);
+
+int bap_usb_init(void);
+
+int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
+			     size_t frame_size, uint32_t ts);
+void bap_usb_clear_frames_to_usb(void);
+uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream);
+struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream);
+struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream);
+size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
+bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream);
+bool bap_usb_get_full_frame(struct shell_stream *sh_stream, uint8_t index, uint8_t buffer[]);
 
 struct broadcast_source {
 	bool is_cap;

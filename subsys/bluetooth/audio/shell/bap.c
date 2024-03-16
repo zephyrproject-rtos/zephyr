@@ -166,7 +166,7 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 
 static bool initialized;
 
-static struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
+struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
 {
 	struct bt_cap_stream *cap_stream =
 		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
@@ -175,7 +175,7 @@ static struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *b
 	return sh_stream;
 }
 
-static struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream)
+struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream)
 {
 	return &sh_stream->stream.bap_stream;
 }
@@ -188,7 +188,7 @@ size_t bap_get_tx_streaming_cnt(void)
 	return tx_streaming_cnt;
 }
 
-static uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
+uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(bap_stream);
 	const uint32_t interval_us = bap_stream->qos->interval;
@@ -218,7 +218,7 @@ static uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
  * controller ISO buffer to handle jitter.
  */
 #define PRIME_COUNT 2U
-#define SINE_TX_POOL_SIZE BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU)
+#define SINE_TX_POOL_SIZE (BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU) * 4)
 NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, SINE_TX_POOL_SIZE,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
@@ -228,10 +228,48 @@ NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, SINE_TX_POOL
 #define AUDIO_TONE_FREQUENCY_HZ   400
 
 static int16_t lc3_tx_buf[LC3_MAX_NUM_SAMPLES_MONO];
-static lc3_encoder_t lc3_encoder;
-static lc3_encoder_mem_48k_t lc3_encoder_mem;
-static int lc3_encoder_freq_hz;
-static int lc3_encoder_frame_duration_us;
+
+static int init_lc3_encoder(struct shell_stream *sh_stream)
+{
+	if (sh_stream == NULL) {
+		shell_error(ctx_shell, "NULL stream to init LC3");
+		return -EINVAL;
+	}
+
+	if (!sh_stream->is_tx) {
+		shell_error(ctx_shell, "Invalid stream to init LC3 encoder");
+		return -EINVAL;
+	}
+
+	if (sh_stream->tx.lc3_encoder != NULL) {
+		shell_error(ctx_shell, "Already initialized");
+		return -EALREADY;
+	}
+
+	if (sh_stream->lc3_freq_hz == 0 || sh_stream->lc3_frame_duration_us == 0) {
+		shell_error(ctx_shell, "Invalid freq (%u) or frame duration (%u)",
+			    sh_stream->lc3_freq_hz, sh_stream->lc3_frame_duration_us);
+
+		return -EINVAL;
+	}
+
+	shell_print(ctx_shell,
+		    "Initializing LC3 encoder for BAP stream %p with %u us duration and %u Hz "
+		    "frequency",
+		    bap_stream_from_shell_stream(sh_stream), sh_stream->lc3_frame_duration_us,
+		    sh_stream->lc3_freq_hz);
+
+	sh_stream->tx.lc3_encoder =
+		lc3_setup_encoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
+				  IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) ? USB_SAMPLE_RATE : 0,
+				  &sh_stream->tx.lc3_encoder_mem);
+	if (sh_stream->tx.lc3_encoder == NULL) {
+		shell_error(ctx_shell, "Failed to setup LC3 encoder - wrong parameters?\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 static void clear_lc3_sine_data(struct bt_bap_stream *bap_stream)
 {
@@ -264,46 +302,46 @@ static void fill_lc3_tx_buf_sin(int16_t *buf, int length_us, int frequency_hz, i
 	}
 }
 
-static int init_lc3_encoder(const struct shell_stream *sh_stream)
-{
-	size_t num_samples;
+// static int init_lc3_encoder(const struct shell_stream *sh_stream)
+// {
+// 	size_t num_samples;
 
-	if (sh_stream == NULL) {
-		shell_error(ctx_shell, "invalid stream to init LC3");
-		return -EINVAL;
-	}
+// 	if (sh_stream == NULL) {
+// 		shell_error(ctx_shell, "invalid stream to init LC3");
+// 		return -EINVAL;
+// 	}
 
-	if (sh_stream->lc3_freq_hz == 0 || sh_stream->lc3_frame_duration_us == 0) {
-		shell_error(ctx_shell, "Invalid freq (%u) or frame duration (%u)",
-			    sh_stream->lc3_freq_hz, sh_stream->lc3_frame_duration_us);
+// 	if (sh_stream->lc3_freq_hz == 0 || sh_stream->lc3_frame_duration_us == 0) {
+// 		shell_error(ctx_shell, "Invalid freq (%u) or frame duration (%u)",
+// 			    sh_stream->lc3_freq_hz, sh_stream->lc3_frame_duration_us);
 
-		return -EINVAL;
-	}
+// 		return -EINVAL;
+// 	}
 
-	/* Create the encoder instance. This shall complete before stream_started() is called. */
-	lc3_encoder = lc3_setup_encoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
-					0, /* No resampling */
-					&lc3_encoder_mem);
+// 	/* Create the encoder instance. This shall complete before stream_started() is called. */
+// 	lc3_encoder = lc3_setup_encoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
+// 					0, /* No resampling */
+// 					&lc3_encoder_mem);
 
-	if (lc3_encoder == NULL) {
-		shell_error(ctx_shell, "Failed to setup LC3 encoder - wrong parameters?\n");
-		return -EINVAL;
-	}
+// 	if (lc3_encoder == NULL) {
+// 		shell_error(ctx_shell, "Failed to setup LC3 encoder - wrong parameters?\n");
+// 		return -EINVAL;
+// 	}
 
-	lc3_encoder_freq_hz = sh_stream->lc3_freq_hz;
-	lc3_encoder_frame_duration_us = sh_stream->lc3_frame_duration_us;
+// 	lc3_encoder_freq_hz = sh_stream->lc3_freq_hz;
+// 	lc3_encoder_frame_duration_us = sh_stream->lc3_frame_duration_us;
 
-	/* Fill audio buffer with Sine wave only once and repeat encoding the same tone frame */
-	fill_lc3_tx_buf_sin(lc3_tx_buf, lc3_encoder_frame_duration_us, AUDIO_TONE_FREQUENCY_HZ,
-			    lc3_encoder_freq_hz);
+// 	/* Fill audio buffer with Sine wave only once and repeat encoding the same tone frame */
+// 	fill_lc3_tx_buf_sin(lc3_tx_buf, lc3_encoder_frame_duration_us, AUDIO_TONE_FREQUENCY_HZ,
+// 			    lc3_encoder_freq_hz);
 
-	num_samples = ((lc3_encoder_frame_duration_us * lc3_encoder_freq_hz) / USEC_PER_SEC);
-	for (size_t i = 0; i < num_samples; i++) {
-		printk("%zu: %6i\n", i, lc3_tx_buf[i]);
-	}
+// 	num_samples = ((lc3_encoder_frame_duration_us * lc3_encoder_freq_hz) / USEC_PER_SEC);
+// 	for (size_t i = 0; i < num_samples; i++) {
+// 		printk("%zu: %6i\n", i, lc3_tx_buf[i]);
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 static void lc3_audio_send_data(struct k_work *work)
 {
@@ -319,10 +357,11 @@ static void lc3_audio_send_data(struct k_work *work)
 
 	if (!sh_stream->is_tx || !sh_stream->tx.tx_active) {
 		/* TX has been aborted */
+		shell_info(ctx_shell, "TX aborted for stream %p", bap_stream);
 		return;
 	}
 
-	if (lc3_encoder == NULL) {
+	if (sh_stream->tx.lc3_encoder == NULL) {
 		shell_error(ctx_shell, "LC3 encoder not setup, cannot encode data");
 		return;
 	}
@@ -355,15 +394,46 @@ static void lc3_audio_send_data(struct k_work *work)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 	net_buffer = net_buf_tail(buf);
-	buf->len += tx_sdu_len;
+
+#if defined(CONFIG_USB_DEVICE_AUDIO)
+	const size_t frame_size = bap_usb_get_frame_size(sh_stream);
+	if (frame_size > sizeof(lc3_tx_buf)) {
+		shell_error(ctx_shell, "Cannot put %u octets in lc3_tx_buf of size %zu", frame_size,
+			    sizeof(lc3_tx_buf));
+
+		net_buf_unref(buf);
+		return;
+	}
+
+	if (!bap_usb_can_get_full_sdu(sh_stream)) {
+		/* Not enough for a frame yet */
+
+		/* Reschedule for next interval */
+		k_work_reschedule(k_work_delayable_from_work(work),
+				  K_USEC(bap_stream->qos->interval));
+		return;
+	}
+
+	memset(lc3_tx_buf, 0, sizeof(lc3_tx_buf));
+#endif /* CONFIG_USB_DEVICE_AUDIO */
 
 	for (uint8_t i = 0U; i < sh_stream->lc3_frame_blocks_per_sdu; i++) {
 		for (uint8_t j = 0U; j < sh_stream->lc3_chan_cnt; j++) {
 			int lc3_ret;
 
-			lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, lc3_tx_buf, 1,
-					     sh_stream->lc3_octets_per_frame, net_buffer + offset);
+			/* TODO: If we are getting data from USB we should not encode beyond LEFT
+			 * and RIGHT
+			 */
+#if defined(CONFIG_USB_DEVICE_AUDIO)
+			/* TODO: Move the following to a function in bap_usb.c*/
+			bap_usb_get_full_frame(sh_stream, j, (uint8_t *)lc3_tx_buf);
+#endif /* CONFIG_USB_DEVICE_AUDIO */
+
+			lc3_ret = lc3_encode(sh_stream->tx.lc3_encoder, LC3_PCM_FORMAT_S16,
+					     lc3_tx_buf, 1, sh_stream->lc3_octets_per_frame,
+					     net_buffer + offset);
 			offset += sh_stream->lc3_octets_per_frame;
+			buf->len += sh_stream->lc3_octets_per_frame;
 
 			if (lc3_ret == -1) {
 				shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
@@ -2391,12 +2461,12 @@ static K_FIFO_DEFINE(lc3_in_fifo);
 static int init_lc3_decoder(struct shell_stream *sh_stream)
 {
 	if (sh_stream == NULL) {
-		shell_error(ctx_shell, "NULL stream to init LC3");
+		shell_error(ctx_shell, "NULL stream to init LC3 decoder");
 		return -EINVAL;
 	}
 
 	if (!sh_stream->is_rx) {
-		shell_error(ctx_shell, "Invalid stream to init LC3");
+		shell_error(ctx_shell, "Invalid stream to init LC3 decoder");
 		return -EINVAL;
 	}
 
@@ -2423,7 +2493,7 @@ static int init_lc3_decoder(struct shell_stream *sh_stream)
 				  IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) ? USB_SAMPLE_RATE : 0,
 				  &sh_stream->rx.lc3_decoder_mem);
 	if (sh_stream->rx.lc3_decoder == NULL) {
-		shell_error(ctx_shell, "Failed to setup LC3 encoder - wrong parameters?\n");
+		shell_error(ctx_shell, "Failed to setup LC3 decoder - wrong parameters?\n");
 		return -EINVAL;
 	}
 
@@ -2810,13 +2880,36 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 			sh_stream->lc3_octets_per_frame = 0U;
 		}
 
+#if defined(CONFIG_BT_AUDIO_TX)
+		if (sh_stream->is_tx && sh_stream->tx.lc3_encoder == NULL) {
+			const int err = init_lc3_encoder(sh_stream);
+
+			if (err != 0) {
+				shell_error(ctx_shell, "Failed to init LC3 encoder: %d", err);
+
+				return;
+			}
+
+#if defined(CONFIG_USB_DEVICE_AUDIO)
+			ring_buf_init(&sh_stream->tx.tx_left_ring_buf,
+				      sizeof(sh_stream->tx._tx_left_ring_buf_mem),
+				      sh_stream->tx._tx_left_ring_buf_mem);
+			ring_buf_init(&sh_stream->tx.tx_right_ring_buf,
+				      sizeof(sh_stream->tx._tx_right_ring_buf_mem),
+				      sh_stream->tx._tx_right_ring_buf_mem);
+
+			k_work_init_delayable(&sh_stream->tx.audio_send_work, lc3_audio_send_data);
+#endif /* CONFIG_USB_DEVICE_AUDIO */
+		}
+#endif /* CONFIG_BT_AUDIO_TX */
+
 #if defined(CONFIG_BT_AUDIO_RX)
 		if (sh_stream->is_rx) {
 			if (sh_stream->rx.lc3_decoder == NULL) {
 				const int err = init_lc3_decoder(sh_stream);
 
 				if (err != 0) {
-					shell_error(ctx_shell, "Failed to init the LC3 decoder: %d",
+					shell_error(ctx_shell, "Failed to init LC3 decoder: %d",
 						    err);
 
 					return;
@@ -3555,6 +3648,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_AUDIO_TX)
+
 #define DATA_MTU CONFIG_BT_ISO_TX_MTU
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
@@ -3611,33 +3705,33 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_LIBLC3)
 static bool stream_start_sine_verify(const struct shell_stream *sh_stream)
 {
-	const struct bt_bap_stream *bap_stream;
-	struct bt_bap_ep_info info;
-	int err;
+	// const struct bt_bap_stream *bap_stream;
+	// struct bt_bap_ep_info info;
+	// int err;
 
-	if (sh_stream == NULL) {
-		return false;
-	}
+	// if (sh_stream == NULL) {
+	// 	return false;
+	// }
 
-	bap_stream = &sh_stream->stream.bap_stream;
+	// bap_stream = &sh_stream->stream.bap_stream;
 
-	if (bap_stream->qos == NULL) {
-		return false;
-	}
+	// if (bap_stream->qos == NULL) {
+	// 	return false;
+	// }
 
-	err = bt_bap_ep_get_info(bap_stream->ep, &info);
-	if (err != 0) {
-		return false;
-	}
+	// err = bt_bap_ep_get_info(bap_stream->ep, &info);
+	// if (err != 0) {
+	// 	return false;
+	// }
 
-	if (info.state != BT_BAP_EP_STATE_STREAMING) {
-		return false;
-	}
+	// if (info.state != BT_BAP_EP_STATE_STREAMING) {
+	// 	return false;
+	// }
 
-	if (sh_stream->lc3_freq_hz != lc3_encoder_freq_hz ||
-	    sh_stream->lc3_frame_duration_us != lc3_encoder_frame_duration_us) {
-		return false;
-	}
+	// if (sh_stream->lc3_freq_hz != lc3_encoder_freq_hz ||
+	//     sh_stream->lc3_frame_duration_us != lc3_encoder_frame_duration_us) {
+	// 	return false;
+	// }
 
 	return true;
 }
