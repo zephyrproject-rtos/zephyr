@@ -7,5 +7,7 @@ tests:
     tags:
       - drivers
       - w1
+    depends_on:
+      - gpio
     integration_platforms:
       - native_posix
