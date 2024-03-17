@@ -239,7 +239,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	uint8_t hdr_len = sizeof(struct net_eth_hdr);
 	uint16_t type;
 	struct net_linkaddr *lladdr;
-	sa_family_t family;
+	sa_family_t family = AF_UNSPEC;
+	bool is_vlan_pkt = false;
 
 	/* This expects that the Ethernet header is in the first net_buf
 	 * fragment. This is a safe expectation here as it would not make
@@ -265,15 +266,33 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	type = ntohs(hdr->type);
 
-	if (net_eth_is_vlan_enabled(ctx, iface) &&
-	    type == NET_ETH_PTYPE_VLAN &&
-	    !eth_is_vlan_tag_stripped(iface)) {
-		struct net_eth_vlan_hdr *hdr_vlan =
-			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+	if (IS_ENABLED(CONFIG_NET_VLAN) && type == NET_ETH_PTYPE_VLAN) {
+		if (net_eth_is_vlan_enabled(ctx, iface) &&
+		    !eth_is_vlan_tag_stripped(iface)) {
+			struct net_eth_vlan_hdr *hdr_vlan =
+				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+			enum net_verdict verdict;
 
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		type = ntohs(hdr_vlan->type);
-		hdr_len = sizeof(struct net_eth_vlan_hdr);
+			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+			type = ntohs(hdr_vlan->type);
+			hdr_len = sizeof(struct net_eth_vlan_hdr);
+			is_vlan_pkt = true;
+
+			net_pkt_set_iface(pkt,
+					  net_eth_get_vlan_iface(iface,
+						       net_pkt_vlan_tag(pkt)));
+
+			/* We could call VLAN interface directly but then the
+			 * interface statistics would not get updated so route
+			 * the call via Virtual L2 layer.
+			 */
+			if (net_if_l2(net_pkt_iface(pkt))->recv != NULL) {
+				verdict = net_if_l2(net_pkt_iface(pkt))->recv(iface, pkt);
+				if (verdict == NET_DROP) {
+					goto drop;
+				}
+			}
+		}
 	}
 
 	switch (type) {
@@ -326,20 +345,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	net_pkt_set_ll_proto_type(pkt, type);
 
-	if (net_eth_is_vlan_enabled(ctx, iface)) {
-		if (type == NET_ETH_PTYPE_VLAN ||
-		    (eth_is_vlan_tag_stripped(iface) &&
-		     net_pkt_vlan_tci(pkt))) {
-			print_vlan_ll_addrs(pkt, type, net_pkt_vlan_tci(pkt),
-					    net_pkt_get_len(pkt),
-					    net_pkt_lladdr_src(pkt),
-					    net_pkt_lladdr_dst(pkt),
-					    eth_is_vlan_tag_stripped(iface));
-		} else {
-			print_ll_addrs(pkt, type, net_pkt_get_len(pkt),
-				       net_pkt_lladdr_src(pkt),
-				       net_pkt_lladdr_dst(pkt));
-		}
+	if (is_vlan_pkt) {
+		print_vlan_ll_addrs(pkt, type, net_pkt_vlan_tci(pkt),
+				    net_pkt_get_len(pkt),
+				    net_pkt_lladdr_src(pkt),
+				    net_pkt_lladdr_dst(pkt),
+				    eth_is_vlan_tag_stripped(iface));
 	} else {
 		print_ll_addrs(pkt, type, net_pkt_get_len(pkt),
 			       net_pkt_lladdr_src(pkt),
@@ -426,6 +437,16 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 						   struct net_pkt *pkt)
 {
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+
+	if (IS_ENABLED(CONFIG_NET_VLAN) &&
+	    net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC &&
+	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
+		iface = net_eth_get_vlan_iface(iface,
+					       net_pkt_vlan_tag(pkt));
+		net_pkt_set_iface(pkt, iface);
+	}
+
 	if (ethernet_ipv4_dst_is_broadcast_or_mcast(pkt)) {
 		return pkt;
 	}
@@ -478,79 +499,8 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 #define ethernet_fill_in_dst_on_ipv6_mcast(...) false
 #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_VLAN)
-static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
-				     struct net_if *iface,
-				     struct net_pkt *pkt)
-{
-	int i;
-
-	if (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC) {
-		return NET_OK;
-	}
-
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		struct net_if *target;
-
-		if (net_if_ipv6_addr_lookup((struct in6_addr *)NET_IPV6_HDR(pkt)->src,
-					    &target)) {
-			if (target != iface) {
-				NET_DBG("Iface %p should be %p", iface,
-					target);
-
-				iface = target;
-			}
-		}
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
-		struct net_if *target;
-
-		if (net_if_ipv4_addr_lookup((struct in_addr *)NET_IPV4_HDR(pkt)->src,
-					    &target)) {
-			if (target != iface) {
-				NET_DBG("Iface %p should be %p", iface,
-					target);
-				iface = target;
-			}
-		}
-	}
-#endif
-
-	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
-		if (ctx->vlan[i].tag == NET_VLAN_TAG_UNSPEC ||
-		    ctx->vlan[i].iface != iface) {
-			continue;
-		}
-
-		/* Depending on source address, use the proper network
-		 * interface when sending.
-		 */
-		net_pkt_set_vlan_tag(pkt, ctx->vlan[i].tag);
-
-		return NET_OK;
-	}
-
-	return NET_DROP;
-}
-
-static void set_vlan_priority(struct ethernet_context *ctx,
-			      struct net_pkt *pkt)
-{
-	uint8_t vlan_priority;
-
-	vlan_priority = net_priority2vlan(net_pkt_priority(pkt));
-	net_pkt_set_vlan_priority(pkt, vlan_priority);
-}
-#else
-#define set_vlan_tag(...) NET_DROP
-#define set_vlan_priority(...)
-#endif /* CONFIG_NET_VLAN */
-
 static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
+					    struct net_if *iface,
 					    struct net_pkt *pkt,
 					    uint32_t ptype)
 {
@@ -566,7 +516,8 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) &&
-	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt)) &&
+	    net_eth_is_vlan_enabled(ctx, iface) &&
+	    net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC &&
 	    (IS_ENABLED(CONFIG_NET_GPTP_VLAN) || ptype != htons(NET_ETH_PTYPE_PTP))) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
@@ -743,20 +694,11 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_VLAN) &&
-	    net_eth_is_vlan_enabled(ctx, iface) &&
-	    (IS_ENABLED(CONFIG_NET_GPTP_VLAN) || ptype != htons(NET_ETH_PTYPE_PTP))) {
-		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
-			ret = -EINVAL;
-			goto arp_error;
-		}
-
-		set_vlan_priority(ctx, pkt);
-	}
-
-	/* Then set the ethernet header.
+	/* Then set the ethernet header. Note that the iface parameter tells
+	 * where we are actually sending the packet. The interface in net_pkt
+	 * is used to determine if the VLAN header is added to Ethernet frame.
 	 */
-	if (!ethernet_fill_header(ctx, pkt, ptype)) {
+	if (!ethernet_fill_header(ctx, iface, pkt, ptype)) {
 		ret = -ENOMEM;
 		goto arp_error;
 	}
@@ -829,287 +771,6 @@ enum net_l2_flags ethernet_flags(struct net_if *iface)
 
 	return ctx->ethernet_l2_flags;
 }
-
-#if defined(CONFIG_NET_VLAN)
-struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	struct net_if *first_non_vlan_iface = NULL;
-	int i;
-
-	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
-		if (ctx->vlan[i].tag == NET_VLAN_TAG_UNSPEC) {
-			if (!first_non_vlan_iface) {
-				first_non_vlan_iface = ctx->vlan[i].iface;
-			}
-
-			continue;
-		}
-
-		if (ctx->vlan[i].tag != tag) {
-			continue;
-		}
-
-		NET_DBG("[%d] vlan tag %d -> iface %p", i, tag,
-			ctx->vlan[i].iface);
-
-		return ctx->vlan[i].iface;
-	}
-
-	return first_non_vlan_iface;
-}
-
-static bool enable_vlan_iface(struct ethernet_context *ctx,
-			      struct net_if *iface)
-{
-	int iface_idx = net_if_get_by_iface(iface);
-
-	if (iface_idx < 0) {
-		return false;
-	}
-
-	atomic_set_bit(ctx->interfaces, iface_idx);
-
-	return true;
-}
-
-static bool disable_vlan_iface(struct ethernet_context *ctx,
-			       struct net_if *iface)
-{
-	int iface_idx = net_if_get_by_iface(iface);
-
-	if (iface_idx < 0) {
-		return false;
-	}
-
-	atomic_clear_bit(ctx->interfaces, iface_idx);
-
-	return true;
-}
-
-static bool is_vlan_enabled_for_iface(struct ethernet_context *ctx,
-				      struct net_if *iface)
-{
-	int iface_idx = net_if_get_by_iface(iface);
-
-	if (iface_idx < 0) {
-		return false;
-	}
-
-	return !!atomic_test_bit(ctx->interfaces, iface_idx);
-}
-
-bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
-			     struct net_if *iface)
-{
-	if (ctx->vlan_enabled) {
-		if (ctx->vlan_enabled == NET_VLAN_MAX_COUNT) {
-			/* All network interface are using VLAN, no need
-			 * to check further.
-			 */
-			return true;
-		}
-
-		if (is_vlan_enabled_for_iface(ctx, iface)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-uint16_t net_eth_get_vlan_tag(struct net_if *iface)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	int i;
-
-	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
-		if (ctx->vlan[i].iface == iface) {
-			return ctx->vlan[i].tag;
-		}
-	}
-
-	return NET_VLAN_TAG_UNSPEC;
-}
-
-bool net_eth_get_vlan_status(struct net_if *iface)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-
-	if (ctx->vlan_enabled &&
-	    net_eth_get_vlan_tag(iface) != NET_VLAN_TAG_UNSPEC) {
-		return true;
-	}
-
-	return false;
-}
-
-static struct ethernet_vlan *get_vlan(struct ethernet_context *ctx,
-				      struct net_if *iface,
-				      uint16_t vlan_tag)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
-		if (ctx->vlan[i].iface == iface &&
-		    ctx->vlan[i].tag == vlan_tag) {
-			return &ctx->vlan[i];
-		}
-	}
-
-	return NULL;
-}
-
-static void setup_ipv6_link_local_addr(struct net_if *iface)
-{
-	struct net_linkaddr link_addr;
-	struct net_if_addr *ifaddr;
-	struct in6_addr addr;
-	uint32_t entropy;
-	uint8_t mac_addr[6];
-
-	entropy = sys_rand32_get();
-	mac_addr[0] = entropy >> 0;
-	mac_addr[1] = entropy >> 8;
-	mac_addr[2] = entropy >> 16;
-
-	entropy = sys_rand32_get();
-	mac_addr[3] = entropy >> 0;
-	mac_addr[4] = entropy >> 8;
-	mac_addr[5] = entropy >> 16;
-
-	mac_addr[0] |= 0x02; /* force LAA bit */
-
-	link_addr.len = sizeof(mac_addr);
-	link_addr.type = NET_LINK_ETHERNET;
-	link_addr.addr = mac_addr;
-
-	net_ipv6_addr_create_iid(&addr, &link_addr);
-
-	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
-	if (!ifaddr) {
-		NET_DBG("Cannot add %s address to VLAN interface %p",
-			net_sprint_ipv6_addr(&addr), iface);
-	}
-}
-
-int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	const struct ethernet_api *eth =
-		net_if_get_device(iface)->api;
-	struct ethernet_vlan *vlan;
-	int i;
-
-	if (!eth) {
-		return -ENOENT;
-	}
-
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return -EINVAL;
-	}
-
-	if (!ctx->is_init) {
-		return -EPERM;
-	}
-
-	if (tag >= NET_VLAN_TAG_UNSPEC) {
-		return -EBADF;
-	}
-
-	vlan = get_vlan(ctx, iface, tag);
-	if (vlan) {
-		return -EALREADY;
-	}
-
-	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
-		if (ctx->vlan[i].iface != iface) {
-			continue;
-		}
-
-		if (ctx->vlan[i].tag != NET_VLAN_TAG_UNSPEC) {
-			continue;
-		}
-
-		NET_DBG("[%d] Adding vlan tag %d to iface %p", i, tag, iface);
-
-		ctx->vlan[i].tag = tag;
-
-		/* Add a link local IPv6 address to VLAN interface here.
-		 * Each network interface needs LL address, but as there is
-		 * only one link (MAC) address defined for all the master and
-		 * slave interfaces, the VLAN interface might be left without
-		 * a LL address. In order to solve this issue, we create a
-		 * random LL address and set it to the VLAN network interface.
-		 */
-		if (IS_ENABLED(CONFIG_NET_IPV6)) {
-			setup_ipv6_link_local_addr(iface);
-		}
-
-		enable_vlan_iface(ctx, iface);
-
-		if (eth->vlan_setup) {
-			eth->vlan_setup(net_if_get_device(iface),
-					iface, tag, true);
-		}
-
-		ctx->vlan_enabled++;
-		if (ctx->vlan_enabled > NET_VLAN_MAX_COUNT) {
-			ctx->vlan_enabled = NET_VLAN_MAX_COUNT;
-		}
-
-		ethernet_mgmt_raise_vlan_enabled_event(iface, tag);
-
-		return 0;
-	}
-
-	return -ENOSPC;
-}
-
-int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	const struct ethernet_api *eth =
-		net_if_get_device(iface)->api;
-	struct ethernet_vlan *vlan;
-
-	if (!eth) {
-		return -ENOENT;
-	}
-
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return -EINVAL;
-	}
-
-	if (tag == NET_VLAN_TAG_UNSPEC) {
-		return -EBADF;
-	}
-
-	vlan = get_vlan(ctx, iface, tag);
-	if (!vlan) {
-		return -ESRCH;
-	}
-
-	NET_DBG("Removing vlan tag %d from iface %p", vlan->tag, vlan->iface);
-
-	vlan->tag = NET_VLAN_TAG_UNSPEC;
-
-	disable_vlan_iface(ctx, iface);
-
-	if (eth->vlan_setup) {
-		eth->vlan_setup(net_if_get_device(iface), iface, tag, false);
-	}
-
-	ethernet_mgmt_raise_vlan_disabled_event(iface, tag);
-
-	ctx->vlan_enabled--;
-	if (ctx->vlan_enabled < 0) {
-		ctx->vlan_enabled = 0;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_NET_VLAN */
 
 NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_enable,
 	    ethernet_flags);
@@ -1293,10 +954,6 @@ void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
-#if defined(CONFIG_NET_VLAN)
-	int i;
-#endif
-
 	NET_DBG("Initializing Ethernet L2 %p for iface %p", ctx, iface);
 
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
@@ -1310,26 +967,6 @@ void ethernet_init(struct net_if *iface)
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
 	if (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING) {
 		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
-	}
-#endif
-
-#if defined(CONFIG_NET_VLAN)
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
-		return;
-	}
-
-	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
-		if (!ctx->vlan[i].iface) {
-			NET_DBG("[%d] alloc ctx %p iface %p", i, ctx, iface);
-			ctx->vlan[i].tag = NET_VLAN_TAG_UNSPEC;
-			ctx->vlan[i].iface = iface;
-
-			if (!ctx->is_init) {
-				atomic_clear(ctx->interfaces);
-			}
-
-			break;
-		}
 	}
 #endif
 
