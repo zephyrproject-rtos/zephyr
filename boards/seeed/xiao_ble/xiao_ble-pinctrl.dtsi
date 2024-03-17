@@ -52,6 +52,21 @@
 		};
 	};
 
+	pdm0_default: pdm0_default {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 1, 00)>,
+				<NRF_PSEL(PDM_DIN, 0, 16)>;
+		};
+	};
+
+	pdm0_sleep: pdm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 1, 00)>,
+				<NRF_PSEL(PDM_DIN, 0, 16)>;
+				low-power-enable;
+		};
+	};
+
 	pwm0_default: pwm0_default {
 		group1 {
 			psels = <NRF_PSEL(PWM_OUT0, 0, 17)>;
