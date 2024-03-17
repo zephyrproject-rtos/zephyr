@@ -5302,25 +5302,6 @@ void net_if_init(void)
 	k_thread_name_set(&tx_thread_ts, "tx_tstamp");
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
-#if defined(CONFIG_NET_VLAN)
-	/* Make sure that we do not have too many network interfaces
-	 * compared to the number of VLAN interfaces.
-	 */
-	if_count = 0;
-
-	STRUCT_SECTION_FOREACH(net_if, iface) {
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-			if_count++;
-		}
-	}
-
-	if (if_count > CONFIG_NET_VLAN_COUNT) {
-		NET_WARN("You have configured only %d VLAN interfaces"
-			 " but you have %d network interfaces.",
-			 CONFIG_NET_VLAN_COUNT, if_count);
-	}
-#endif
-
 out:
 	k_mutex_unlock(&lock);
 }
