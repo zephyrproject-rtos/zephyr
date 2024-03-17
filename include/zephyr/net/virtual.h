@@ -293,6 +293,14 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
 	Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
 			  config, prio, api, VIRTUAL_L2,		\
 			  NET_L2_GET_CTX_TYPE(VIRTUAL_L2), mtu)
+
+#define Z_NET_VIRTUAL_INTERFACE_INIT_INSTANCE(node_id, dev_id, name,	\
+					      inst, init_fn, pm, data,	\
+					      config, prio, api, mtu)	\
+	Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, inst,		\
+				   init_fn, pm, data,			\
+				   config, prio, api, VIRTUAL_L2,	\
+				   NET_L2_GET_CTX_TYPE(VIRTUAL_L2), mtu)
 /** @endcond */
 
 /**
@@ -321,6 +329,36 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
 	Z_NET_VIRTUAL_INTERFACE_INIT(DT_INVALID_NODE, dev_id, name,	\
 				     init_fn, pm, data, config, prio,	\
 				     api, mtu)
+
+/**
+ * @brief Create a virtual network interface. Binding to another interface
+ *        is done at runtime by calling net_virtual_interface_attach().
+ *        The attaching is done automatically when setting up tunneling
+ *        when peer IP address is set in IP tunneling driver.
+ *
+ * @param dev_id Network device id.
+ * @param name The name this instance of the driver exposes to
+ * the system.
+ * @param inst instance number
+ * @param init_fn Address to the init function of the driver.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param prio The initialization level at which configuration occurs.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ * This is the default value and its value can be tweaked at runtime.
+ */
+#define NET_VIRTUAL_INTERFACE_INIT_INSTANCE(dev_id, name, inst,		 \
+					    init_fn, pm, data,		 \
+					    config, prio, api, mtu)	 \
+	Z_NET_VIRTUAL_INTERFACE_INIT_INSTANCE(DT_INVALID_NODE, dev_id,	 \
+					      name, inst,		 \
+					      init_fn, pm, data, config, \
+					      prio, api, mtu)
 
 /**
  * @}
