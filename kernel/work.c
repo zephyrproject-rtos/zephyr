@@ -761,6 +761,10 @@ void k_work_queue_start(struct k_work_q *queue,
 		k_thread_name_set(&queue->thread, cfg->name);
 	}
 
+	if ((cfg != NULL) && (cfg->essential)) {
+		queue->thread.base.user_options |= K_ESSENTIAL;
+	}
+
 	k_thread_start(&queue->thread);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);

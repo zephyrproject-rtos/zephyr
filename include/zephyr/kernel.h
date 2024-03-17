@@ -4002,6 +4002,11 @@ struct k_work_queue_config {
 	 * control.
 	 */
 	bool no_yield;
+
+	/** Control whether the work queue thread should be marked as
+	 * essential thread.
+	 */
+	bool essential;
 };
 
 /** @brief A structure used to hold work until it can be processed. */
