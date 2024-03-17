@@ -514,6 +514,11 @@ class DeviceHandler(Handler):
                         command_extra_args.append("cmsis_dap_serial %s" % board_id)
                     elif runner == "jlink":
                         command.append("--tool-opt=-SelectEmuBySN  %s" % board_id)
+                    elif runner == "linkserver":
+                        # for linkserver
+                        # --probe=#<number> select by probe index
+                        # --probe=<serial number> select by probe serial number
+                        command.append("--probe=%s" % board_id)
                     elif runner == "stm32cubeprogrammer":
                         command.append("--tool-opt=sn=%s" % board_id)
 
