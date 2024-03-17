@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Bjarki Arge Andreasen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		test-intd0 = &spi1;
+		test-intd1 = &spi2;
+	};
+
+	soc
+};
+
+&spi1 {
+	status = "reserved";
+};
+
+&spi2 {
+	status = "reserved";
+};
+
+&nvic {
+	interrupt-lines = <128>;
+};

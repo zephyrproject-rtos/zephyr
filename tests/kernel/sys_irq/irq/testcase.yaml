@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  sys_irq.irq:
+    harness: ztest
+    platform_allow:
+      - b_u585i_iot02a
