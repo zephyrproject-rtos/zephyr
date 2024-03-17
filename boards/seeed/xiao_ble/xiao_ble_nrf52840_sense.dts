@@ -13,6 +13,12 @@
 	model = "Seeed XIAO BLE Sense";
 	compatible = "seeed,xiao-ble", "seeed,xiao-ble-sense";
 
+	msm261d3526hicpm-c-en {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpio1 10 (NRF_GPIO_DRIVE_S0H1 | GPIO_ACTIVE_HIGH)>;
+		regulator-name = "MSM261D3526HICPM-C-EN";
+	};
+
 	lsm6ds3tr-c-en {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
 		enable-gpios = <&gpio1 8 (NRF_GPIO_DRIVE_S0H1 | GPIO_ACTIVE_HIGH)>;
@@ -37,4 +43,11 @@
 		irq-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
+};
+
+&pdm0 {
+	pinctrl-0 = <&pdm0_default>;
+	pinctrl-1 = <&pdm0_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-source = "PCLK32M";
 };
