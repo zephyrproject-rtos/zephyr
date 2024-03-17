@@ -15,3 +15,8 @@ properties:
     type: boolean
     description: |
       Access registers using 32-bit instructions on a 64-bit CPU.
+
+  mtime-use-csr:
+    type: boolean
+    description: |
+      Use CSR time register to access the mtime value.

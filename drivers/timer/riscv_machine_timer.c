@@ -41,7 +41,11 @@
 #if DT_INST_PROP(0, use_32bit)
 #undef CONFIG_64BIT
 #endif
+#if DT_INST_PROP(0, mtime_use_csr)
+#define MTIME_USE_CSR
+#else
 #define MTIME_REG	(DT_INST_REG_ADDR(0) + 0xbff8U)
+#endif
 #define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
 #define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
 /* telink,machine-timer */
@@ -125,7 +129,9 @@ static void set_divider(void)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#if defined(MTIME_USE_CSR)
+	return csr_read(time);
+#elif defined(CONFIG_64BIT)
 	return *(volatile uint64_t *)MTIME_REG;
 #else
 	volatile uint32_t *r = (uint32_t *)MTIME_REG;
