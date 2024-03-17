@@ -1,0 +1,4 @@
+tests:
+  kernel.sys_irq.shared_irq:
+    platform_allow:
+      - rak5010/nrf52840
