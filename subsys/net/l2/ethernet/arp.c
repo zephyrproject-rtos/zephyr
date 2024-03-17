@@ -266,9 +266,11 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		if (IS_ENABLED(CONFIG_NET_CAPTURE) && pending) {
 			net_pkt_set_captured(pkt, net_pkt_is_captured(pending));
 		}
-	}
 
-	net_pkt_set_vlan_tag(pkt, net_eth_get_vlan_tag(iface));
+		if (IS_ENABLED(CONFIG_NET_VLAN) && pending) {
+			net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(pending));
+		}
+	}
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
@@ -570,7 +572,9 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	hdr = NET_ARP_HDR(pkt);
 	query = NET_ARP_HDR(req);
 
-	net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(req));
+	if (IS_ENABLED(CONFIG_NET_VLAN)) {
+		net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(req));
+	}
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
