@@ -10,3 +10,8 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  use-32bit:
+    type: boolean
+    description: |
+      Access registers using 32-bit instructions on a 64-bit CPU.

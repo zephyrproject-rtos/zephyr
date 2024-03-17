@@ -38,6 +38,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clint0)
 #define DT_DRV_COMPAT sifive_clint0
 
+#if DT_INST_PROP(0, use_32bit)
+#undef CONFIG_64BIT
+#endif
 #define MTIME_REG	(DT_INST_REG_ADDR(0) + 0xbff8U)
 #define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
 #define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
