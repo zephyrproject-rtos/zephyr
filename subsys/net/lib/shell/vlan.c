@@ -44,39 +44,25 @@ static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
 
 static void iface_vlan_cb(struct net_if *iface, void *user_data)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
-	int i;
 
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return;
+	}
+
+	if (!(net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VLAN)) {
 		return;
 	}
 
 	if (*count == 0) {
-		PR("    Interface  Type     Tag\n");
+		PR("    Interface  Type\tTag\tAttached\n");
 	}
 
-	if (!ctx->vlan_enabled) {
-		PR_WARNING("VLAN tag(s) not set\n");
-		return;
-	}
-
-	for (i = 0; i < NET_VLAN_MAX_COUNT; i++) {
-		if (!ctx->vlan[i].iface || ctx->vlan[i].iface != iface) {
-			continue;
-		}
-
-		if (ctx->vlan[i].tag == NET_VLAN_TAG_UNSPEC) {
-			continue;
-		}
-
-		PR("[%d] %p %s %d\n", net_if_get_by_iface(iface), iface,
-		   iface2str(iface, NULL), ctx->vlan[i].tag);
-
-		break;
-	}
+	PR("[%d] %p %8s\t%d\t%d\n", net_if_get_by_iface(iface), iface,
+	   iface2str(iface, NULL), net_eth_get_vlan_tag(iface),
+	   net_if_get_by_iface(net_eth_get_vlan_main(iface)));
 
 	(*count)++;
 }
@@ -155,6 +141,8 @@ static int cmd_net_vlan_add(const struct shell *sh, size_t argc, char *argv[])
 
 		return -ENOEXEC;
 	}
+
+	iface = net_eth_get_vlan_iface(iface, tag);
 
 	PR("VLAN tag %d set to interface %d (%p)\n", tag,
 	   net_if_get_by_iface(iface), iface);
