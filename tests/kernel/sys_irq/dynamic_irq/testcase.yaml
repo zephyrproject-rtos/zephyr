@@ -6,3 +6,5 @@ tests:
     harness: ztest
     platform_allow:
       - b_u585i_iot02a
+      - nrf9160dk_nrf9160
+
