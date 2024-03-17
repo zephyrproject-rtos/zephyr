@@ -26,24 +26,8 @@
 &ltdc {
 	status = "okay";
 	ext-sdram = <&sdram2>;
-
-	/* orisetech, otm8009a */
 	width = <800>;
 	height = <480>;
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-active = <0>;
-		vsync-active = <0>;
-		de-active = <0>;
-		pixelclk-active = <0>;
-		hsync-len = <2>;
-		vsync-len = <1>;
-		hback-porch = <34>;
-		vback-porch = <15>;
-		hfront-porch = <34>;
-		vfront-porch = <16>;
-	};
-
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
@@ -76,12 +60,6 @@
 	vs-active-high;
 	hs-active-high;
 	de-active-high;
-};
-
-&otm8009a {
-	data-lanes = <2>;
-	pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
-	rotation = <90>;
 };
 
 &i2c4 {
