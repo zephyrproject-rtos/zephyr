@@ -33,11 +33,11 @@ extern "C" {
 #define SPI_DATA(dev) ((struct spi_shakti_data *) ((dev)->data))
 
 
-struct spi_sifive_data {
+struct spi_shakti_data {
 	struct spi_context ctx;
 };
 
-struct spi_sifive_cfg {
+struct spi_shakti_cfg {
 	uint32_t base;
 	uint32_t f_sys;
 	const struct pinctrl_dev_config *pcfg;
