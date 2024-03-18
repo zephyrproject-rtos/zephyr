@@ -123,10 +123,10 @@ static sys_slist_t timestamp_callbacks;
 #define debug_check_packet(pkt)						\
 	do {								\
 		NET_DBG("Processing (pkt %p, prio %d) network packet "	\
-			"iface %p/%d",					\
+			"iface %d (%p)",				\
 			pkt, net_pkt_priority(pkt),			\
-			net_pkt_iface(pkt),				\
-			net_if_get_by_iface(net_pkt_iface(pkt)));	\
+			net_if_get_by_iface(net_pkt_iface(pkt)),	\
+			net_pkt_iface(pkt));				\
 									\
 		NET_ASSERT(pkt->frags);					\
 	} while (0)
@@ -1775,8 +1775,9 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		net_if_addr_init(&ipv6->unicast[i], addr, addr_type,
 				 vlifetime);
 
-		NET_DBG("[%zu] interface %p address %s type %s added", i,
-			iface, net_sprint_ipv6_addr(addr),
+		NET_DBG("[%zu] interface %d (%p) address %s type %s added", i,
+			net_if_get_by_iface(iface), iface,
+			net_sprint_ipv6_addr(addr),
 			net_addr_type2str(addr_type));
 
 		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
@@ -1896,8 +1897,9 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 			net_if_ipv6_maddr_rm(iface, &maddr);
 		}
 
-		NET_DBG("[%d] interface %p address %s type %s removed",
-			found, iface, net_sprint_ipv6_addr(addr),
+		NET_DBG("[%d] interface %d (%p) address %s type %s removed",
+			found, net_if_get_by_iface(iface), iface,
+			net_sprint_ipv6_addr(addr),
 			net_addr_type2str(ipv6->unicast[found].addr_type));
 
 		/* Using the IPv6 address pointer here can give false
@@ -2057,7 +2059,8 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		ipv6->mcast[i].address.family = AF_INET6;
 		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
 
-		NET_DBG("[%zu] interface %p address %s added", i, iface,
+		NET_DBG("[%zu] interface %d (%p) address %s added", i,
+			net_if_get_by_iface(iface), iface,
 			net_sprint_ipv6_addr(addr));
 
 		net_mgmt_event_notify_with_info(
@@ -2099,8 +2102,9 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 		ipv6->mcast[i].is_used = false;
 
-		NET_DBG("[%zu] interface %p address %s removed",
-			i, iface, net_sprint_ipv6_addr(addr));
+		NET_DBG("[%zu] interface %d (%p) address %s removed",
+			i, net_if_get_by_iface(iface), iface,
+			net_sprint_ipv6_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV6_MADDR_DEL, iface,
@@ -4047,8 +4051,9 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		 */
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
 
-		NET_DBG("[%d] interface %p address %s type %s added",
-			idx, iface, net_sprint_ipv4_addr(addr),
+		NET_DBG("[%d] interface %d (%p) address %s type %s added",
+			idx, net_if_get_by_iface(iface), iface,
+			net_sprint_ipv4_addr(addr),
 			net_addr_type2str(addr_type));
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_ADD, iface,
@@ -4087,8 +4092,9 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 
 		ipv4->unicast[i].ipv4.is_used = false;
 
-		NET_DBG("[%zu] interface %p address %s removed",
-			i, iface, net_sprint_ipv4_addr(addr));
+		NET_DBG("[%zu] interface %d (%p) address %s removed",
+			i, net_if_get_by_iface(iface), iface,
+			net_sprint_ipv4_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV4_ADDR_DEL, iface,
@@ -4261,7 +4267,8 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		maddr->address.family = AF_INET;
 		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
 
-		NET_DBG("interface %p address %s added", iface,
+		NET_DBG("interface %d (%p) address %s added",
+			net_if_get_by_iface(iface), iface,
 			net_sprint_ipv4_addr(addr));
 
 		net_mgmt_event_notify_with_info(
@@ -4287,8 +4294,9 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 	if (maddr) {
 		maddr->is_used = false;
 
-		NET_DBG("interface %p address %s removed",
-			iface, net_sprint_ipv4_addr(addr));
+		NET_DBG("interface %d (%p) address %s removed",
+			net_if_get_by_iface(iface), iface,
+			net_sprint_ipv4_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV4_MADDR_DEL, iface,
@@ -4689,8 +4697,9 @@ exit:
 		return;
 	}
 
-	NET_DBG("iface %p, oper state %s admin %s carrier %s dormant %s",
-		iface, net_if_oper_state2str(net_if_oper_state(iface)),
+	NET_DBG("iface %d (%p), oper state %s admin %s carrier %s dormant %s",
+		net_if_get_by_iface(iface), iface,
+		net_if_oper_state2str(net_if_oper_state(iface)),
 		net_if_is_admin_up(iface) ? "UP" : "DOWN",
 		net_if_is_carrier_ok(iface) ? "ON" : "OFF",
 		net_if_is_dormant(iface) ? "ON" : "OFF");
@@ -4725,7 +4734,7 @@ int net_if_up(struct net_if *iface)
 {
 	int status = 0;
 
-	NET_DBG("iface %p", iface);
+	NET_DBG("iface %d (%p)", net_if_get_by_iface(iface), iface);
 
 	net_if_lock(iface);
 
