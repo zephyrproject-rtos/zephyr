@@ -48,42 +48,27 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
 
-#define ANY_INST_HAS_MXICY_MX25R_POWER_MODE DT_ANY_INST_HAS_PROP_STATUS_OKAY(mxicy_mx25r_power_mode)
 
-/* boolean prop, don't use DT_INST_HAS_PROP */
-#define INST_HAS_DPD_OR(idx) (DT_INST_PROP(idx, has_dpd)) ||
-#define ANY_INST_HAS_DPD DT_INST_FOREACH_STATUS_OKAY(INST_HAS_DPD_OR) 0
-#if (ANY_INST_HAS_DPD) == 1
-#define HAS_DPD_FLAG 1
-#endif
+#define ANY_INST_HAS_TRUE_(idx, bool_prop)	\
+	COND_CODE_1(DT_INST_PROP(idx, bool_prop), (1,), ())
 
-#define ANY_INST_HAS_T_EXIT_DPD DT_ANY_INST_HAS_PROP_STATUS_OKAY(t_exit_dpd)
-/* workaround because DT_ANY_INST_HAS_PROP_STATUS_OKAY doesn't expand to a literal 1 or 0
- * This breaks IF_ENABLED() macro used in static configuration generation
- */
-#if (ANY_INST_HAS_T_EXIT_DPD) == 1
-#define HAS_T_EXIT_DPD_FLAG 1
-#endif
+#define ANY_INST_HAS_TRUE(bool_prop)	\
+	COND_CODE_1(IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(ANY_INST_HAS_TRUE_, bool_prop)), \
+			     (0), (1))
 
-#define ANY_INST_HAS_DPD_WAKEUP_SEQUENCE DT_ANY_INST_HAS_PROP_STATUS_OKAY(dpd_wakeup_sequence)
-#if (ANY_INST_HAS_DPD_WAKEUP_SEQUENCE) == 1
-#define HAS_DPD_WAKEUP_SEQUENCE_FLAG 1
-#endif
+#define ANY_INST_HAS_PROP_(idx, prop_name)	\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, prop_name), (1,), ())
+#define ANY_INST_HAS_PROP(prop_name)		\
+	COND_CODE_1(IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(ANY_INST_HAS_PROP_, prop_name)), \
+			     (0), (1))
 
-#define ANY_INST_HAS_RESET_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#if (ANY_INST_HAS_RESET_GPIOS) == 1
-#define HAS_RESET_GPIOS_FLAG 1
-#endif
-
-#define ANY_INST_HAS_WP_GPIOS (DT_ANY_INST_HAS_PROP_STATUS_OKAY(wp_gpios))
-#if (ANY_INST_HAS_WP_GPIOS) == 1
-#define HAS_WP_GPIOS_FLAG 1
-#endif
-
-#define ANY_INST_HAS_HOLD_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(hold_gpios)
-#if (ANY_INST_HAS_HOLD_GPIOS) == 1
-#define HAS_HOLD_GPIOS_FLAG 1
-#endif
+#define ANY_INST_HAS_MXICY_MX25R_POWER_MODE ANY_INST_HAS_PROP(mxicy_mx25r_power_mode)
+#define ANY_INST_HAS_DPD ANY_INST_HAS_TRUE(has_dpd)
+#define ANY_INST_HAS_T_EXIT_DPD ANY_INST_HAS_PROP(t_exit_dpd)
+#define ANY_INST_HAS_DPD_WAKEUP_SEQUENCE ANY_INST_HAS_PROP(dpd_wakeup_sequence)
+#define ANY_INST_HAS_RESET_GPIOS ANY_INST_HAS_PROP(reset_gpios)
+#define ANY_INST_HAS_WP_GPIOS ANY_INST_HAS_PROP(wp_gpios)
+#define ANY_INST_HAS_HOLD_GPIOS ANY_INST_HAS_PROP(hold_gpios)
 
 #define DEV_CFG(_dev_) ((const struct spi_nor_config * const) (_dev_)->config)
 
@@ -152,7 +137,9 @@ struct spi_nor_config {
 #if ANY_INST_HAS_DPD
 	uint16_t t_enter_dpd; /* in microseconds */
 	uint16_t t_dpdd_ms;   /* in microseconds */
-	uint16_t t_exit_dpd; /* in microseconds */
+#if ANY_INST_HAS_T_EXIT_DPD
+	uint16_t t_exit_dpd;  /* in microseconds */
+#endif
 #endif
 
 #if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
@@ -551,13 +538,14 @@ static int exit_dpd(const struct device *const dev)
 			k_sleep(K_MSEC(cfg->t_rdp_ms));
 		} else {
 			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDPD);
-			if (ret == 0) {
+
 #if ANY_INST_HAS_T_EXIT_DPD
+			if (ret == 0) {
 				if (cfg->dpd_exist) {
 					k_sleep(K_MSEC(cfg->t_exit_dpd));
 				}
-#endif /* T_EXIT_DPD */
 			}
+#endif /* T_EXIT_DPD */
 		}
 #endif /* DPD_WAKEUP_SEQUENCE */
 	}
@@ -1635,11 +1623,13 @@ static const struct flash_driver_api spi_nor_api = {
 			DIV_ROUND_UP(DT_INST_PROP(idx, t_enter_dpd), NSEC_PER_MSEC)),\
 		(.t_enter_dpd = 0))
 
+#if ANY_INST_HAS_T_EXIT_DPD
 #define INIT_T_EXIT_DPD(idx)								\
 	COND_CODE_1(									\
 		DT_INST_NODE_HAS_PROP(idx, t_exit_dpd),					\
 		(.t_exit_dpd = DIV_ROUND_UP(DT_INST_PROP(idx, t_exit_dpd), NSEC_PER_MSEC)),\
 		(.t_exit_dpd = 0))
+#endif
 
 #define INIT_WP_GPIOS(idx) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, wp_gpios), \
@@ -1688,12 +1678,12 @@ static const struct flash_driver_api spi_nor_api = {
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_DEVICETREE,						\
 		(.bfp_len = sizeof(bfp_##idx##_data) / 4,					\
 		 .bfp = (const struct jesd216_bfp *)bfp_##idx##_data,))				\
-	IF_ENABLED(HAS_DPD_FLAG, (INIT_T_ENTER_DPD(idx),))					\
-	IF_ENABLED(HAS_T_EXIT_DPD_FLAG, (INIT_T_EXIT_DPD(idx),))				\
-	IF_ENABLED(HAS_DPD_WAKEUP_SEQUENCE_FLAG, (INIT_WAKEUP_SEQ_PARAMS(idx),))		\
-	IF_ENABLED(HAS_MXICY_MX25R_POWER_MODE_FLAG, (INIT_MXICY_MX25R_POWER_MODE(idx),))	\
-	IF_ENABLED(HAS_RESET_GPIOS_FLAG, (INIT_RESET_GPIOS(idx),))				\
-	IF_ENABLED(HAS_WP_GPIOS_FLAG, (INIT_WP_GPIOS(idx),))
+	IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))					\
+	IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD), (INIT_T_EXIT_DPD(idx),))\
+	IF_ENABLED(ANY_INST_HAS_DPD_WAKEUP_SEQUENCE, (INIT_WAKEUP_SEQ_PARAMS(idx),))		\
+	IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE, (INIT_MXICY_MX25R_POWER_MODE(idx),))	\
+	IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))				\
+	IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))
 
 #define GENERATE_CONFIG_STRUCT(idx)								\
 	static const struct spi_nor_config spi_nor_##idx##_config = {				\
