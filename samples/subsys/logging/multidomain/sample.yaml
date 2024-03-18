@@ -12,9 +12,9 @@ tests:
     build_only: true
   sample.logging.multidomain.ipc_static_vrings.simu:
     platform_allow:
-      - nrf5340bsim_nrf5340_cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     integration_platforms:
-      - nrf5340bsim_nrf5340_cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     harness: console
     harness_config:
       type: multi_line
