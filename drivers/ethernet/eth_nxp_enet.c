@@ -1,6 +1,6 @@
 /* NXP ENET MAC Driver
  *
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * Inspiration from eth_mcux.c, which was:
  *  Copyright (c) 2016-2017 ARM Ltd
@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/kernel/thread_stack.h>
 
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
@@ -73,10 +74,8 @@ struct nxp_enet_mac_data {
 	uint8_t mac_addr[6];
 	enet_handle_t enet_handle;
 	struct k_sem tx_buf_sem;
-
-	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
-
-	struct k_thread rx_thread;
+	struct k_work rx_work;
+	const struct device *dev;
 	struct k_sem rx_thread_sem;
 	struct k_mutex tx_frame_buf_mutex;
 	struct k_mutex rx_frame_buf_mutex;
@@ -87,6 +86,24 @@ struct nxp_enet_mac_data {
 	uint8_t *tx_frame_buf;
 	uint8_t *rx_frame_buf;
 };
+
+static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
+static struct k_work_q rx_work_queue;
+
+static int rx_queue_init(void)
+{
+	struct k_work_queue_config cfg = {.name = "ENET_RX"};
+
+	k_work_queue_init(&rx_work_queue);
+	k_work_queue_start(&rx_work_queue, enet_rx_stack,
+			   K_THREAD_STACK_SIZEOF(enet_rx_stack),
+			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY),
+			   &cfg);
+
+	return 0;
+}
+
+SYS_INIT(rx_queue_init, POST_KERNEL, 0);
 
 static inline struct net_if *get_iface(struct nxp_enet_mac_data *data)
 {
@@ -387,22 +404,23 @@ error:
 	return -EIO;
 }
 
-static void eth_nxp_enet_rx_thread(void *arg1, void *unused1, void *unused2)
+static void eth_nxp_enet_rx_thread(struct k_work *work)
 {
-	const struct device *dev = arg1;
+	struct nxp_enet_mac_data *data =
+		CONTAINER_OF(work, struct nxp_enet_mac_data, rx_work);
+	const struct device *dev = data->dev;
 	const struct nxp_enet_mac_config *config = dev->config;
-	struct nxp_enet_mac_data *data = dev->data;
+	int ret;
 
-	while (1) {
-		if (k_sem_take(&data->rx_thread_sem, K_FOREVER) == 0) {
-			while (eth_nxp_enet_rx(dev) == 1) {
-				;
-			}
-			/* enable the IRQ for RX */
-			ENET_EnableInterrupts(config->base,
-			  kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
-		}
+	if (k_sem_take(&data->rx_thread_sem, K_FOREVER)) {
+		return;
 	}
+
+	do {
+		ret = eth_nxp_enet_rx(dev);
+	} while (ret == 1);
+
+	ENET_EnableInterrupts(config->base, kENET_RxFrameInterrupt);
 }
 
 static int nxp_enet_phy_reset_and_configure(const struct device *phy)
@@ -514,10 +532,10 @@ static void eth_nxp_enet_isr(const struct device *dev)
 
 	uint32_t eir = ENET_GetInterruptStatus(config->base);
 
-	if (eir & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt)) {
+	if (eir & (kENET_RxFrameInterrupt)) {
 		ENET_ReceiveIRQHandler(ENET_IRQ_HANDLER_ARGS(config->base, &data->enet_handle));
-		ENET_DisableInterrupts(config->base,
-				kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
+		ENET_DisableInterrupts(config->base, kENET_RxFrameInterrupt);
+		k_work_submit_to_queue(&rx_work_queue, &data->rx_work);
 	}
 
 	if (eir & kENET_TxFrameInterrupt) {
@@ -552,18 +570,11 @@ static int eth_nxp_enet_init(const struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_sem_init(&data->ptp_ts_sem, 0, 1);
 #endif
+	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
 
 	if (config->generate_mac) {
 		config->generate_mac(data->mac_addr);
 	}
-
-	/* Start interruption-poll thread */
-	k_thread_create(&data->rx_thread, data->rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(data->rx_thread_stack),
-			eth_nxp_enet_rx_thread, (void *) dev, NULL, NULL,
-			K_PRIO_COOP(2),
-			0, K_NO_WAIT);
-	k_thread_name_set(&data->rx_thread, "eth_nxp_enet_rx");
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys,
 			&enet_module_clock_rate);
@@ -888,6 +899,7 @@ static const struct ethernet_api api_funcs = {
 			NXP_ENET_DECIDE_MAC_ADDR(n)					\
 			.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,			\
 			.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,			\
+			.dev = DEVICE_DT_INST_GET(n),					\
 		};									\
 											\
 		ETH_NXP_ENET_PM_DEVICE_INIT(n)						\
