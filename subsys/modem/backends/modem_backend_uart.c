@@ -9,9 +9,6 @@
 
 #include <zephyr/modem/backend/uart.h>
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(modem_backend_uart, CONFIG_MODEM_MODULES_LOG_LEVEL);
-
 #include <string.h>
 
 static void modem_backend_uart_receive_ready_handler(struct k_work *item)
