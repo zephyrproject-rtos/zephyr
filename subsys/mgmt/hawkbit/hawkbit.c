@@ -1147,7 +1147,7 @@ enum hawkbit_response hawkbit_probe(void)
 
 	flash_img_init(&hb_context.flash_ctx);
 
-	if (send_request(HTTP_GET, HAWKBIT_DOWNLOAD, HAWKBIT_STATUS_FINISHED_NONE,
+	if (!send_request(HTTP_GET, HAWKBIT_DOWNLOAD, HAWKBIT_STATUS_FINISHED_NONE,
 			 HAWKBIT_STATUS_EXEC_NONE)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_DOWNLOAD");
 		hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
