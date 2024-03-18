@@ -32,8 +32,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                                     args.dev_id, erase=args.erase,
                                     reset=args.reset,
                                     tool_opt=args.tool_opt, force=args.force,
-                                    recover=args.recover,
-                                    erase_all_uicrs=args.erase_all_uicrs)
+                                    recover=args.recover)
 
     def do_get_boards(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
