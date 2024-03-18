@@ -168,6 +168,11 @@
 				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>,
 					     <65 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
+
+			cpuapp_ieee802154: ieee802154 {
+				compatible = "nordic,nrf-ieee802154";
+				status = "disabled";
+			};
 		};
 
 		cpurad_peripherals: peripheral@53000000 {
