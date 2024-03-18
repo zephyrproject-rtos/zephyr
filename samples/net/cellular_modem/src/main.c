@@ -144,6 +144,15 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 		return -1;
 	}
 
+	{
+		const struct timeval tv = { .tv_sec = 10 };
+
+		if (zsock_setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+			printk("Failed to set socket receive timeout (%d)\n", errno);
+			return -1;
+		}
+	}
+
 	printk("Socket opened\n");
 
 	*port = htons(SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT);
@@ -163,7 +172,11 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 		printk("Receiving echoed packet\n");
 		ret = zsock_recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
 		if (ret != sizeof(sample_test_packet)) {
-			printk("Echoed sample test packet has incorrect size\n");
+			if (ret == -1) {
+				printk("Failed to receive echoed sample test packet (%d)\n", errno);
+			} else {
+				printk("Echoed sample test packet has incorrect size (%d)\n", ret);
+			}
 			continue;
 		}
 
@@ -245,7 +258,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 
 	packets_received = sample_recv_buffer[0];
 	packets_dropped = sample_recv_buffer[1];
-	printk("Server received %u packets\n", packets_received);
+	printk("Server received %u/%u packets\n", packets_received, packets_sent);
 	printk("Server dropped %u packets\n", packets_dropped);
 	printk("Time elapsed sending packets %ums\n", send_end_ms - send_start_ms);
 	printk("Throughput %u bytes/s\n",
