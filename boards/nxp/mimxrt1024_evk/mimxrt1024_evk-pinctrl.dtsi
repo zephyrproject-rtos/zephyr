@@ -20,7 +20,6 @@
 		};
 	};
 
-	/* Note: USER_LED conflicts with ENET_RST */
 	pinmux_enet: pinmux_enet {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_08_enet_ref_clk>;
@@ -31,21 +30,29 @@
 			input-enable;
 		};
 		group1 {
-			pinmux = <&iomuxc_gpio_ad_b0_04_gpio1_io04>;
-			drive-strength = "r0-5";
-			bias-pull-up;
-			bias-pull-up-value = "100k";
-			slew-rate = "fast";
-			nxp,speed = "100-mhz";
-		};
-		group2 {
 			pinmux = <&iomuxc_gpio_ad_b0_09_enet_rx_data1>,
 				<&iomuxc_gpio_ad_b0_11_enet_rx_en>,
 				<&iomuxc_gpio_ad_b0_14_enet_tx_data0>,
 				<&iomuxc_gpio_ad_b0_15_enet_tx_data1>,
 				<&iomuxc_gpio_ad_b0_13_enet_tx_en>,
-				<&iomuxc_gpio_ad_b0_12_enet_rx_er>,
-				<&iomuxc_gpio_emc_40_enet_mdio>,
+				<&iomuxc_gpio_ad_b0_12_enet_rx_er>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "fast";
+			nxp,speed = "200-mhz";
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_b0_10_enet_rx_data0>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_40_enet_mdio>,
 				<&iomuxc_gpio_emc_41_enet_mdc>;
 			drive-strength = "r0-5";
 			bias-pull-up;
@@ -53,7 +60,7 @@
 			slew-rate = "fast";
 			nxp,speed = "200-mhz";
 		};
-		group3 {
+		group1 {
 			pinmux = <&iomuxc_gpio_ad_b1_06_gpio1_io22>;
 			drive-strength = "r0-5";
 			bias-pull-up;
@@ -61,12 +68,18 @@
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
 		};
-		group4 {
-			pinmux = <&iomuxc_gpio_ad_b0_10_enet_rx_data0>;
-			drive-strength = "r0-6";
-			slew-rate = "slow";
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_b0_04_gpio1_io04>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "fast";
 			nxp,speed = "100-mhz";
 		};
+	};
+
+	pinmux_ptp: pinmux_ptp {
+		/* Intentionally empty */
 	};
 
 	pinmux_flexcan1: pinmux_flexcan1 {
@@ -171,10 +184,6 @@
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
 		};
-	};
-
-	/* intentionally left empty */
-	pinmux_ptp: pinmux_ptp {
 	};
 
 	pinmux_sai3: pinmux_sai3 {

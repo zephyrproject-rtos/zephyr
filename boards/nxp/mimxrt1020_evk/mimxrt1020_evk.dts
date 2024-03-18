@@ -160,19 +160,6 @@ arduino_serial: &lpuart2 {
 	pinctrl-names = "default";
 };
 
-&enet {
-	status = "okay";
-	pinctrl-0 = <&pinmux_enet>;
-	pinctrl-names = "default";
-	int-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
-	reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
-	ptp {
-		status = "okay";
-		pinctrl-0 = <&pinmux_ptp>;
-		pinctrl-names = "default";
-	};
-};
-
 zephyr_udc0: &usb1 {
 	status = "okay";
 };

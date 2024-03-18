@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&enet {
+&enet_mac {
 	local-mac-address = [00 00 12 13 00 10];
 };
 
