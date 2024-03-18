@@ -5,6 +5,7 @@
 
 import argparse
 import functools
+import io
 import os
 from pathlib import Path
 import shlex
@@ -523,14 +524,16 @@ def check_expected(tool, test_case, check_fn, get_snr, tmpdir, runner_config):
         tmpfile = nrfutil_args[nrfutil_args.index('--batch-path') + 1]
         cmds = (['nrfutil', '--json', 'device', 'x-execute-batch', '--batch-path',
                  tmpfile, '--serial-number', expected[0]],)
+        call_args = [call(nrfutil_args)]
     else:
         cmds = expected
+        call_args = check_fn.call_args_list
 
     if callable(cmds):
-        assert (check_fn.call_args_list ==
+        assert (call_args ==
                 [call(x) for x in cmds(tmpdir, runner_config.hex_file)])
     else:
-        assert check_fn.call_args_list == [call(x) for x in cmds]
+        assert call_args == [call(x) for x in cmds]
 
     if not test_case.snr:
         get_snr.assert_called_once_with('*')
@@ -542,10 +545,11 @@ def check_expected(tool, test_case, check_fn, get_snr, tmpdir, runner_config):
 @patch('runners.core.ZephyrBinaryRunner.require')
 @patch('runners.nrfjprog.NrfBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
-@patch('runners.nrfjprog.NrfBinaryRunner.check_output')
+@patch('runners.nrfutil.subprocess.Popen')
 @patch('runners.nrfjprog.NrfBinaryRunner.check_call')
-def test_init(check_call, check_output, get_snr, require, tool, test_case,
+def test_init(check_call, popen, get_snr, require, tool, test_case,
               runner_config, tmpdir):
+    popen.return_value.__enter__.return_value.stdout = io.BytesIO(b'')
 
     require.side_effect = functools.partial(require_patch, tool)
     runner_config = fix_up_runner_config(test_case, runner_config, tmpdir)
@@ -564,7 +568,7 @@ def test_init(check_call, check_output, get_snr, require, tool, test_case,
         runner.run('flash')
     assert require.called
 
-    CHECK_FN_MAP = {'nrfjprog': check_call, 'nrfutil': check_output}
+    CHECK_FN_MAP = {'nrfjprog': check_call, 'nrfutil': popen}
     check_expected(tool, test_case, CHECK_FN_MAP[tool], get_snr, tmpdir,
                    runner_config)
 
@@ -573,10 +577,11 @@ def test_init(check_call, check_output, get_snr, require, tool, test_case,
 @patch('runners.core.ZephyrBinaryRunner.require')
 @patch('runners.nrfjprog.NrfBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
-@patch('runners.nrfjprog.NrfBinaryRunner.check_output')
+@patch('runners.nrfutil.subprocess.Popen')
 @patch('runners.nrfjprog.NrfBinaryRunner.check_call')
-def test_create(check_call, check_output, get_snr, require, tool, test_case,
+def test_create(check_call, popen, get_snr, require, tool, test_case,
                 runner_config, tmpdir):
+    popen.return_value.__enter__.return_value.stdout = io.BytesIO(b'')
 
     require.side_effect = functools.partial(require_patch, tool)
     runner_config = fix_up_runner_config(test_case, runner_config, tmpdir)
@@ -603,6 +608,6 @@ def test_create(check_call, check_output, get_snr, require, tool, test_case,
 
     assert require.called
 
-    CHECK_FN_MAP = {'nrfjprog': check_call, 'nrfutil': check_output}
+    CHECK_FN_MAP = {'nrfjprog': check_call, 'nrfutil': popen}
     check_expected(tool, test_case, CHECK_FN_MAP[tool], get_snr, tmpdir,
                    runner_config)
