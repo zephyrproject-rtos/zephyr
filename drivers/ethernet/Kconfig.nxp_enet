@@ -38,6 +38,13 @@ config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	help
 	  ENET RX thread stack size in bytes.
 
+config ETH_NXP_ENET_RX_THREAD_PRIORITY
+	int "NXP ENET driver RX cooperative thread priority"
+	default 2
+	help
+	  ENET MAC Driver handles RX in cooperative workqueue thread.
+	  This options sets the priority of that thread.
+
 config ETH_NXP_ENET_RX_BUFFERS
 	int "Number of RX buffers for ethernet driver"
 	default 6
