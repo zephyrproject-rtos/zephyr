@@ -4766,9 +4766,14 @@ int net_if_up(struct net_if *iface)
 		}
 	}
 
-	/* Notify L2 to enable the interface */
+	/* Notify L2 to enable the interface. Note that the interface is still down
+	 * at this point from network interface point of view i.e., the NET_IF_UP
+	 * flag has not been set yet.
+	 */
 	status = net_if_l2(iface)->enable(iface, true);
 	if (status < 0) {
+		NET_DBG("Cannot take interface %d up (%d)",
+			net_if_get_by_iface(iface), status);
 		goto out;
 	}
 
