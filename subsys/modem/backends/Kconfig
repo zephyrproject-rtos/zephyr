@@ -26,7 +26,7 @@ if MODEM_BACKEND_UART_ASYNC
 
 config MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS
 	int "Modem UART async transmit timeout in milliseconds"
-	default 100
+	default 1000
 
 config MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS
 	int "Modem UART async receive idle timeout in milliseconds"
