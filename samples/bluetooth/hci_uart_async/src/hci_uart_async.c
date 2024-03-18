@@ -254,7 +254,9 @@ static void h2c_h4_transport(void)
 
 		LOG_DBG("h2c: payload_size %u", payload_size);
 
-		if (payload_size <= net_buf_tailroom(buf)) {
+		if (payload_size == 0) {
+			/* Done, dont rx zero bytes */
+		} else if (payload_size <= net_buf_tailroom(buf)) {
 			uint8_t *payload_dst = net_buf_add(buf, payload_size);
 
 			err = uart_h2c_rx(payload_dst, payload_size);
