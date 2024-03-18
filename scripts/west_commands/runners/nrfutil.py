@@ -97,7 +97,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         self._ops = []
         self._op_id = 1
         self.logger.debug(f'Executing batch in: {json_file}')
-        self._exec(['execute-batch', '--batch-path', f'{json_file}',
+        self._exec(['x-execute-batch', '--batch-path', f'{json_file}',
                     '--serial-number', f'{self.dev_id}'])
 
     def do_exec_op(self, op, force=False):
