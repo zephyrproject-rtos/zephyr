@@ -72,7 +72,7 @@ static struct in_addr in4addr_dst = { { { 192, 0, 2, 2 } } };
 static struct in_addr in4addr_my2 = { { { 192, 0, 42, 1 } } };
 static struct in_addr in4addr_dst2 = { { { 192, 0, 42, 2 } } };
 
-/* Keep track of all ethernet interfaces. For native_posix board, we need
+/* Keep track of all ethernet interfaces. For native_sim board, we need
  * to increase the count as it has one extra network interface defined in
  * eth_native_posix driver.
  */
