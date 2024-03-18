@@ -7,4 +7,4 @@ tests:
     build_only: true
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet

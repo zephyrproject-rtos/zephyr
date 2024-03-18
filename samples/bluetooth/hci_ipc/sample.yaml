@@ -8,7 +8,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
@@ -19,7 +19,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
@@ -30,7 +30,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.bis.bt_ll_sw_split:
@@ -40,7 +40,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso_central.bt_ll_sw_split:
@@ -50,7 +50,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso_peripheral.bt_ll_sw_split:
@@ -60,7 +60,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.cis.bt_ll_sw_split:
@@ -70,7 +70,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.iso.bt_ll_sw_split:
@@ -79,7 +79,7 @@ tests:
     extra_args: CONF_FILE="nrf5340_cpunet_iso-bt_ll_sw_split.conf"
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
   sample.bluetooth.hci_ipc.df.bt_ll_sw_split:
