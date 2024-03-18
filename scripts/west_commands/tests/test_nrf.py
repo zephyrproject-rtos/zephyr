@@ -521,7 +521,7 @@ def check_expected(tool, test_case, check_fn, get_snr, tmpdir, runner_config):
         # Extract filename
         nrfutil_args = check_fn.call_args_list[0].args[0]
         tmpfile = nrfutil_args[nrfutil_args.index('--batch-path') + 1]
-        cmds = (['nrfutil', '--json', 'device', 'execute-batch', '--batch-path',
+        cmds = (['nrfutil', '--json', 'device', 'x-execute-batch', '--batch-path',
                  tmpfile, '--serial-number', expected[0]],)
     else:
         cmds = expected
