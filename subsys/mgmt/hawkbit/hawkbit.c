@@ -81,7 +81,6 @@ static struct hawkbit_context {
 	uint8_t *response_data;
 	int32_t json_action_id;
 	size_t url_buffer_size;
-	size_t status_buffer_size;
 	struct hawkbit_download dl;
 	struct http_request http_req;
 	struct flash_img_context flash_ctx;
@@ -853,7 +852,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 
 		ret = json_obj_encode_buf(json_cfg_descr, ARRAY_SIZE(json_cfg_descr), &cfg,
 					  hb_context.status_buffer,
-					  hb_context.status_buffer_size - 1);
+					  sizeof(hb_context.status_buffer));
 		if (ret) {
 			LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CONFIG_DEVICE",
 				ret);
@@ -885,7 +884,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 
 		ret = json_obj_encode_buf(json_close_descr, ARRAY_SIZE(json_close_descr), &close,
 					  hb_context.status_buffer,
-					  hb_context.status_buffer_size - 1);
+					  sizeof(hb_context.status_buffer));
 		if (ret) {
 			LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CLOSE", ret);
 			return false;
@@ -932,7 +931,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 
 		ret = json_obj_encode_buf(json_dep_fbk_descr, ARRAY_SIZE(json_dep_fbk_descr),
 					  &feedback, hb_context.status_buffer,
-					  hb_context.status_buffer_size - 1);
+					  sizeof(hb_context.status_buffer));
 		if (ret) {
 			LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_REPORT", ret);
 			return ret;
