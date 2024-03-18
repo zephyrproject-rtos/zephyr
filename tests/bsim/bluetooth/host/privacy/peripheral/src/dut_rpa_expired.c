@@ -34,11 +34,25 @@ static struct bt_le_ext_adv *adv_set[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 	BT_DATA_BYTES(BT_DATA_MANUFACTURER_DATA, ADV_SET_INDEX_4),
 };
 
-bool rpa_expired_cb_returns_true(struct bt_le_ext_adv *adv)
+bool rpa_expired_cb(struct bt_le_ext_adv *adv)
 {
-	/* Return true to rotate the current RPA */
-	int err;
-	struct bt_le_ext_adv_info info;
+	/*	Return true to rotate the current RPA.
+	 *	Return false to continue with old RPA.
+	 */
+	int	err;
+	struct	bt_le_ext_adv_info info;
+	static int rpa_count = -1;
+	static int64_t	old_time;
+	static int64_t	rpa_timeout_ms;
+	int64_t	diff_ms;
+
+	diff_ms = k_uptime_get() - old_time;
+	rpa_timeout_ms = CONFIG_BT_RPA_TIMEOUT * MSEC_PER_SEC;
+
+	if (diff_ms >= rpa_timeout_ms) {
+		rpa_count++;
+		old_time = k_uptime_get();
+	}
 
 	err = bt_le_ext_adv_get_info(adv, &info);
 	if (err) {
@@ -46,33 +60,25 @@ bool rpa_expired_cb_returns_true(struct bt_le_ext_adv *adv)
 	}
 	printk("%s advertiser[%d] RPA %s\n", __func__, info.id, bt_addr_le_str(info.addr));
 
+	/* Every rpa rotation one of the adv set returns false based on adv index */
+	if (rpa_count == bt_le_ext_adv_get_index(adv)) {
+		printk("adv index %d returns false\n", bt_le_ext_adv_get_index(adv));
+		if (rpa_count == CONFIG_BT_EXT_ADV_MAX_ADV_SET - 1) {
+			/* Reset RPA counter */
+			rpa_count = -1;
+		}
+		return false;
+	}
 	return true;
 }
 
-bool rpa_expired_cb_returns_false(struct bt_le_ext_adv *adv)
-{
-	/* Return false not to rotate the current RPA */
-	int err;
-	struct bt_le_ext_adv_info info;
-
-	err = bt_le_ext_adv_get_info(adv, &info);
-	if (err) {
-		return false;
-	}
-	printk("%s advertiser[%d] RPA %s\n", __func__, info.id, bt_addr_le_str(info.addr));
-
-	return false;
-}
-
-static void create_adv(struct bt_le_ext_adv **adv, int id, bool expired_return)
+static void create_adv(struct bt_le_ext_adv **adv, int id)
 {
 	int err;
 	struct bt_le_adv_param params;
-	static struct bt_le_ext_adv_cb cb_adv[] = {
-		{.rpa_expired = rpa_expired_cb_returns_true},
-		{.rpa_expired = rpa_expired_cb_returns_false}
-	};
+	static struct bt_le_ext_adv_cb cb_adv;
 
+	cb_adv.rpa_expired = rpa_expired_cb;
 	memset(&params, 0, sizeof(struct bt_le_adv_param));
 
 	params.options |= BT_LE_ADV_OPT_EXT_ADV;
@@ -81,7 +87,7 @@ static void create_adv(struct bt_le_ext_adv **adv, int id, bool expired_return)
 	params.interval_min = BT_GAP_ADV_FAST_INT_MIN_1;
 	params.interval_max = BT_GAP_ADV_FAST_INT_MAX_1;
 
-	err = bt_le_ext_adv_create(&params, expired_return ? &cb_adv[0] : &cb_adv[1], adv);
+	err = bt_le_ext_adv_create(&params, &cb_adv, adv);
 	if (err) {
 		FAIL("Failed to create advertiser (%d)\n", err);
 	}
@@ -130,32 +136,14 @@ void start_rpa_advertising(void)
 	}
 
 	for (int i = 0; i < CONFIG_BT_EXT_ADV_MAX_ADV_SET; i++) {
-		/* Create first 2 advertising sets with one id and for both sets,rpa_expied_cb
-		 * returns true.
-		 * Create remaining 2 sets with different id and last adv set's rpa_expired cb
-		 * returns false.
-		 *
-		 * So for first two adv sets with same id new rpa's will be generated every
-		 * rotation and for last two adv sets with same id, rpa will continue with
-		 * only one rpa through out the rotations since one of the adv set returned
-		 * false.
+		/* Create first 2 advertising sets with one id and last 2 advertising sets with
+		 * different id.
 		 */
-		switch (i)  {
-		case ADV_SET_INDEX_1:
-		case ADV_SET_INDEX_2:
-			create_adv(&adv_set[i], ID_1, true);
-			break;
-		case ADV_SET_INDEX_3:
-			create_adv(&adv_set[i], ID_2, true);
-			break;
-		case ADV_SET_INDEX_4:
-			create_adv(&adv_set[i], ID_2, false);
-			break;
-		default:
-			printk("Shouldn't be here\n");
-			break;
+		if (i < 2) {
+			create_adv(&adv_set[i], ID_1);
+		} else {
+			create_adv(&adv_set[i], ID_2);
 		}
-
 		/* Set extended advertising data */
 		err = bt_le_ext_adv_set_data(adv_set[i], &ad_id[i], 1, NULL, 0);
 		if (err) {
