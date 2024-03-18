@@ -7,7 +7,7 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - nrf5340bsim_nrf5340_cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
       - nrf5340dk/nrf5340/cpuapp
       - native_sim
     tags: bluetooth

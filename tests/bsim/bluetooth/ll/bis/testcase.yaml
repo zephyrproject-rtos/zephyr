@@ -9,12 +9,12 @@ tests:
     sysbuild: true
     platform_allow:
       - nrf52_bsim
-      - nrf5340bsim_nrf5340_cpuapp
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf52_bsim
-      - nrf5340bsim_nrf5340_cpuapp
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpunet
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_ll_bis_prj_conf
@@ -22,10 +22,10 @@ tests:
     extra_args: OVERLAY_CONFIG=overlay-ticker_expire_info.conf
     platform_allow:
       - nrf52_bsim
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf52_bsim
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_ll_bis_prj_conf_overlay-ticker_expire_info_conf
@@ -33,10 +33,10 @@ tests:
     extra_args: CONF_FILE=prj_vs_dp.conf
     platform_allow:
       - nrf52_bsim
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf52_bsim
-      - nrf5340bsim_nrf5340_cpunet
+      - nrf5340bsim/nrf5340/cpunet
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_ll_bis_prj_vs_dp_conf

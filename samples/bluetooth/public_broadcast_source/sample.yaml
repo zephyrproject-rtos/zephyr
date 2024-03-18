@@ -8,7 +8,7 @@ tests:
       - qemu_cortex_m3
       - qemu_x86
       - nrf5340dk/nrf5340/cpuapp
-      - nrf5340bsim_nrf5340_cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     integration_platforms:
       - qemu_x86
       - nrf5340dk/nrf5340/cpuapp
