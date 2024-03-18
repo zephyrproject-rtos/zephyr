@@ -181,6 +181,13 @@ static struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *s
 }
 
 #if defined(CONFIG_BT_AUDIO_TX)
+static size_t tx_streaming_cnt;
+
+size_t bap_get_tx_streaming_cnt(void)
+{
+	return tx_streaming_cnt;
+}
+
 static uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(bap_stream);
@@ -2176,6 +2183,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 static struct broadcast_sink_auto_scan {
 	struct broadcast_sink *broadcast_sink;
 	uint32_t broadcast_id;
+	struct bt_le_per_adv_sync **out_sync;
 } auto_scan = {
 	.broadcast_id = INVALID_BROADCAST_ID,
 };
@@ -2230,8 +2238,10 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X",
-		    broadcast_id, le_addr, info->sid);
+	shell_print(ctx_shell,
+		    "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X (looking for "
+		    "0x%06X)",
+		    broadcast_id, le_addr, info->sid, auto_scan.broadcast_id);
 
 	if (auto_scan.broadcast_id == broadcast_id && auto_scan.broadcast_sink != NULL &&
 	    auto_scan.broadcast_sink->pa_sync == NULL) {
@@ -2250,7 +2260,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		create_params.timeout = interval_to_sync_timeout(info->interval);
 
 		shell_print(ctx_shell, "Attempting to PA sync to the broadcaster");
-		err = bt_le_per_adv_sync_create(&create_params, &auto_scan.broadcast_sink->pa_sync);
+		err = bt_le_per_adv_sync_create(&create_params, auto_scan.out_sync);
 		if (err != 0) {
 			shell_error(ctx_shell, "Could not create Broadcast PA sync: %d", err);
 		}
@@ -2297,12 +2307,13 @@ static void syncable(struct bt_bap_broadcast_sink *sink, const struct bt_iso_big
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
-	if (auto_scan.broadcast_sink != NULL && sync == auto_scan.broadcast_sink->pa_sync) {
+	if (auto_scan.broadcast_sink != NULL && auto_scan.out_sync != NULL &&
+	    sync == *auto_scan.out_sync) {
 		shell_print(ctx_shell, "PA synced to broadcast with broadcast ID 0x%06x",
 			    auto_scan.broadcast_id);
 
 		if (auto_scan.broadcast_sink->bap_sink == NULL) {
-			shell_print(ctx_shell, "Attempting to sync to the BIG");
+			shell_print(ctx_shell, "Attempting to create the sink");
 			int err;
 
 			err = bt_bap_broadcast_sink_create(sync, auto_scan.broadcast_id,
@@ -2311,7 +2322,7 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				shell_error(ctx_shell, "Could not create broadcast sink: %d", err);
 			}
 		} else {
-			shell_print(ctx_shell, "BIG is already synced");
+			shell_print(ctx_shell, "Sink is already created");
 		}
 	}
 
@@ -2355,6 +2366,12 @@ static struct bt_le_scan_cb bap_scan_cb = {
 
 #if defined(CONFIG_BT_AUDIO_RX)
 static unsigned long recv_stats_interval = 1000U;
+static size_t rx_streaming_cnt;
+
+size_t bap_get_rx_streaming_cnt(void)
+{
+	return rx_streaming_cnt;
+}
 
 #if defined(CONFIG_LIBLC3)
 struct lc3_data {
@@ -2440,7 +2457,7 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 
 		if ((sh_stream->rx.decoded_cnt % recv_stats_interval) == 0) {
 			shell_print(ctx_shell, "[%zu]: Decoding frame of size %u (%u/%u)",
-				    sh_stream->rx.decoded_cnt, octets_per_frame, frame_cnt,
+				    sh_stream->rx.decoded_cnt, octets_per_frame, frame_cnt + 1,
 				    frame_blocks_per_sdu);
 		}
 	}
@@ -2582,13 +2599,19 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 	sh_stream->rx.rx_cnt++;
 
-	if (info->ts == sh_stream->rx.last_info.ts && (info->flags & BT_ISO_FLAGS_VALID) != 0) {
-		sh_stream->rx.dup_ts++;
-	}
+	if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
+		/* For valid ISO packets we check if they are invalid in other ways */
+		if (info->ts == sh_stream->rx.last_info.ts) {
+			sh_stream->rx.dup_ts++;
+		}
 
-	if (info->seq_num == sh_stream->rx.last_info.seq_num &&
-	    (info->flags & BT_ISO_FLAGS_VALID) != 0) {
-		sh_stream->rx.dup_psn++;
+		if (info->seq_num == sh_stream->rx.last_info.seq_num) {
+			sh_stream->rx.dup_psn++;
+		}
+
+		if (buf->len == 0) {
+			sh_stream->rx.empty_sdu_pkts++;
+		}
 	}
 
 	if (info->flags & BT_ISO_FLAGS_ERROR) {
@@ -2600,12 +2623,14 @@ static void audio_recv(struct bt_bap_stream *stream,
 	}
 
 	if ((sh_stream->rx.rx_cnt % recv_stats_interval) == 0) {
-		shell_print(ctx_shell,
-			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
-			    "(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu)",
-			    sh_stream->rx.rx_cnt, stream, buf->len, info->ts, info->seq_num,
-			    info->flags, sh_stream->rx.dup_ts, sh_stream->rx.dup_psn,
-			    sh_stream->rx.err_pkts, sh_stream->rx.lost_pkts);
+		shell_print(
+			ctx_shell,
+			"[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
+			"(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu, empty SDUs %zu)",
+			sh_stream->rx.rx_cnt, stream, buf->len, info->ts, info->seq_num,
+			info->flags, sh_stream->rx.dup_ts, sh_stream->rx.dup_psn,
+			sh_stream->rx.err_pkts, sh_stream->rx.lost_pkts,
+			sh_stream->rx.empty_sdu_pkts);
 	}
 
 	(void)memcpy(&sh_stream->rx.last_info, info, sizeof(sh_stream->rx.last_info));
@@ -2627,13 +2652,20 @@ static void audio_recv(struct bt_bap_stream *stream,
 			return;
 		}
 
+		memset(data, 0, sizeof(*data));
+
 		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
 			data->do_plc = true;
 		} else if (buf->len != (octets_per_frame * chan_cnt * frame_blocks_per_sdu)) {
-			shell_error(ctx_shell,
-				    "Expected %u frame blocks with %u channels of size %u, but "
-				    "length is %u",
-				    frame_blocks_per_sdu, chan_cnt, octets_per_frame, buf->len);
+			/* Silently ignore empty SDUs */
+			if (buf->len != 0) {
+				shell_error(
+					ctx_shell,
+					"Expected %u frame blocks with %u channels of size %u, but "
+					"length is %u",
+					frame_blocks_per_sdu, chan_cnt, octets_per_frame, buf->len);
+			}
+
 			data->do_plc = true;
 		}
 
@@ -2739,7 +2771,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 		}
 
 		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
-		if (ret > 0) {
+		if (ret >= 0) {
 			ret = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
 			if (ret > 0) {
 				sh_stream->lc3_frame_duration_us = (uint32_t)ret;
@@ -2800,23 +2832,37 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 #if defined(CONFIG_BT_AUDIO_TX)
 	if (sh_stream->is_tx) {
 		sh_stream->tx.connected_at_ticks = k_uptime_ticks();
+
+		tx_streaming_cnt++;
 	}
 #endif /* CONFIG_BT_AUDIO_TX */
 
 #if defined(CONFIG_BT_AUDIO_RX)
 	if (sh_stream->is_rx) {
+		sh_stream->rx.empty_sdu_pkts = 0U;
 		sh_stream->rx.lost_pkts = 0U;
 		sh_stream->rx.err_pkts = 0U;
 		sh_stream->rx.dup_psn = 0U;
 		sh_stream->rx.rx_cnt = 0U;
 		sh_stream->rx.dup_ts = 0U;
+
+		rx_streaming_cnt++;
 	}
 #endif
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
+	struct bt_bap_ep_info info = {0};
+	int ret;
+
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+
+	ret = bt_bap_ep_get_info(stream->ep, &info);
+	if (ret != 0) {
+		shell_error(ctx_shell, "Failed to get EP info: %d", ret);
+		return;
+	}
 
 #if defined(CONFIG_LIBLC3)
 	lc3_clear_stream(shell_stream_from_bap_stream(stream));
@@ -2840,6 +2886,18 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 		}
 	}
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
+
+#if defined(CONFIG_BT_AUDIO_TX)
+	if (info.can_send) {
+		tx_streaming_cnt--;
+	}
+#endif /* CONFIG_BT_AUDIO_TX */
+
+#if defined(CONFIG_BT_AUDIO_RX)
+	if (info.can_recv) {
+		rx_streaming_cnt--;
+	}
+#endif
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST)
@@ -3142,6 +3200,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 
 		auto_scan.broadcast_sink = &default_broadcast_sink;
 		auto_scan.broadcast_id = broadcast_id;
+		auto_scan.out_sync = &per_adv_syncs[selected_per_adv_sync];
 	} else {
 		shell_print(sh, "Creating broadcast sink with broadcast ID 0x%06X",
 			    (uint32_t)broadcast_id);

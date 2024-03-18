@@ -77,6 +77,9 @@ struct named_lc3_preset {
 const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						    const char *preset_arg);
 
+size_t bap_get_rx_streaming_cnt(void);
+size_t bap_get_tx_streaming_cnt(void);
+
 int bap_usb_init(void);
 int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
 			     size_t frame_size, uint32_t ts);
@@ -118,6 +121,7 @@ struct shell_stream {
 #if defined(CONFIG_BT_AUDIO_RX)
 		struct {
 			struct bt_iso_recv_info last_info;
+			size_t empty_sdu_pkts;
 			size_t lost_pkts;
 			size_t err_pkts;
 			size_t dup_psn;
@@ -839,13 +843,18 @@ static inline void print_codec_cfg_chan_allocation(const struct shell *sh, size_
 	shell_print(sh, "%*sChannel allocation:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
-	/* There can be up to 32 bits set in the field */
-	for (size_t i = 0; i < 32; i++) {
-		const uint8_t bit_val = BIT(i);
 
-		if (chan_allocation & bit_val) {
-			shell_print(sh, "%*s%s (0x%08X)", indent, "",
-				    chan_location_bit_to_str(bit_val), bit_val);
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		shell_print(sh, "%*s Mono", indent, "");
+	} else {
+		/* There can be up to 32 bits set in the field */
+		for (size_t i = 0; i < 32; i++) {
+			const uint8_t bit_val = BIT(i);
+
+			if (chan_allocation & bit_val) {
+				shell_print(sh, "%*s%s (0x%08X)", indent, "",
+					    chan_location_bit_to_str(bit_val), bit_val);
+			}
 		}
 	}
 }

@@ -186,6 +186,9 @@ void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 	(void)memset(client, 0, sizeof(*client));
 
+	/* Should only clear this if the current connect is disconnected */
+	discover_cb_func = NULL;
+
 	if (bt_cap_common_conn_in_active_proc(conn)) {
 		bt_cap_common_abort_proc(conn, -ENOTCONN);
 	}
@@ -389,6 +392,7 @@ int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t f
 	int err;
 
 	if (discover_cb_func != NULL) {
+		LOG_DBG("Busy");
 		return -EBUSY;
 	}
 
