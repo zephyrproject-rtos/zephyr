@@ -48,10 +48,6 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 	k_stack_push(&async_msg_free, (stack_data_t)async);
 }
 
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
-
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
-
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
@@ -60,7 +56,6 @@ static int init_mbox_module(void)
 	/* array of asynchronous message descriptors */
 	static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
 
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 	/*
 	 * Create pool of asynchronous message descriptors.
 	 *
@@ -79,7 +74,6 @@ static int init_mbox_module(void)
 		z_init_thread_base(&async_msg[i].thread, 0, _THREAD_DUMMY, 0);
 		k_stack_push(&async_msg_free, (stack_data_t)&async_msg[i]);
 	}
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
 	/* Complete initialization of statically defined mailboxes. */
 
@@ -88,7 +82,7 @@ static int init_mbox_module(void)
 
 SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
 void k_mbox_init(struct k_mbox *mbox)
 {
