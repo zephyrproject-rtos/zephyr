@@ -87,10 +87,11 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 			 net_sprint_ll_addr((src)->addr,		   \
 					    sizeof(struct net_eth_addr))); \
 									   \
-		NET_DBG("iface %p src %s dst %s type 0x%x len %zu",	   \
-			net_pkt_iface(pkt), out,		   \
-			net_sprint_ll_addr((dst)->addr,	   \
-					    sizeof(struct net_eth_addr)), \
+		NET_DBG("iface %d (%p) src %s dst %s type 0x%x len %zu",   \
+			net_if_get_by_iface(net_pkt_iface(pkt)),	   \
+			net_pkt_iface(pkt), out,			   \
+			net_sprint_ll_addr((dst)->addr,			   \
+					    sizeof(struct net_eth_addr)),  \
 			type, (size_t)len);				   \
 	}
 
@@ -103,10 +104,11 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 			 net_sprint_ll_addr((src)->addr,		   \
 					    sizeof(struct net_eth_addr))); \
 									   \
-		NET_DBG("iface %p src %s dst %s type 0x%x "		   \
+		NET_DBG("iface %d (%p) src %s dst %s type 0x%x "	   \
 			"tag %d %spri %d len %zu",			   \
-			net_pkt_iface(pkt), out,		   \
-			net_sprint_ll_addr((dst)->addr,	   \
+			net_if_get_by_iface(net_pkt_iface(pkt)),	   \
+			net_pkt_iface(pkt), out,			   \
+			net_sprint_ll_addr((dst)->addr,			   \
 				   sizeof(struct net_eth_addr)),	   \
 			type, net_eth_vlan_get_vid(tci),		   \
 			tagstrip ? "(stripped) " : "",			   \
@@ -327,7 +329,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			break;
 		}
 
-		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
+		NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
+			net_if_get_by_iface(iface), iface);
 		eth_stats_update_unknown_protocol(iface);
 		return NET_DROP;
 	}
@@ -460,14 +463,14 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 		}
 
 		if (pkt != arp_pkt) {
-			NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
-				arp_pkt, pkt, iface);
+			NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
+				arp_pkt, pkt, net_if_get_by_iface(iface), iface);
 			net_pkt_unref(pkt);
 			return arp_pkt;
 		}
 
-		NET_DBG("Found ARP entry, sending pkt %p to iface %p",
-			pkt, iface);
+		NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
+			pkt, net_if_get_by_iface(iface), iface);
 	}
 
 	return pkt;
@@ -954,7 +957,8 @@ void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
-	NET_DBG("Initializing Ethernet L2 %p for iface %p", ctx, iface);
+	NET_DBG("Initializing Ethernet L2 %p for iface %d (%p)", ctx,
+		net_if_get_by_iface(iface), iface);
 
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 	ctx->iface = iface;
