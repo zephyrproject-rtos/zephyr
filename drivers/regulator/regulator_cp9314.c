@@ -155,6 +155,7 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 #define CP9314_STS_ADDR_LVL      GENMASK(3, 0)
 
 #define CP9314_SOFT_RESET_DELAY_MSEC 200
+#define CP9314_EN_DEBOUNCE_USEC      3000
 
 #define CP9314_DEVICE_MODE_HOST_4GANG_0x78      0x0
 #define CP9314_DEVICE_MODE_HOST_4GANG_0x72      0x1
@@ -410,6 +411,23 @@ static int regulator_cp9314_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+	if (config->en_pin.port != NULL) {
+		if (!gpio_is_ready_dt(&config->en_pin)) {
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->en_pin, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+
+#ifdef CONFIG_MULTITHREADING
+		k_usleep(CP9314_EN_DEBOUNCE_USEC);
+#else
+		k_busy_wait(CP9314_EN_DEBOUNCE_USEC);
+#endif
+	}
+
 	ret = cp9314_do_soft_reset(dev);
 	if (ret < 0) {
 		return ret;
@@ -438,17 +456,6 @@ static int regulator_cp9314_init(const struct device *dev)
 	ret = regulator_cp9314_otp_init(dev);
 	if (ret < 0) {
 		return ret;
-	}
-
-	if (config->en_pin.port != NULL) {
-		if (!gpio_is_ready_dt(&config->en_pin)) {
-			return -ENODEV;
-		}
-
-		ret = gpio_pin_configure_dt(&config->en_pin, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
 	}
 
 	ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_CTRL4, CP9314_FRC_OP_MODE,
