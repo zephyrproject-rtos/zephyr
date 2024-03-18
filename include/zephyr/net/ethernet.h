@@ -49,10 +49,12 @@ extern "C" {
  * @{
  */
 
+#define NET_ETH_ADDR_LEN		6U
+
 /** @cond INTERNAL_HIDDEN */
 
 struct net_eth_addr {
-	uint8_t addr[6];
+	uint8_t addr[NET_ETH_ADDR_LEN];
 };
 
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
