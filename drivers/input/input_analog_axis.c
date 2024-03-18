@@ -101,6 +101,48 @@ int analog_axis_calibration_set(const struct device *dev,
 	return 0;
 }
 
+static int32_t analog_axis_out_deadzone(const struct device *dev,
+					int channel,
+					int32_t raw_val)
+{
+	const struct analog_axis_config *cfg = dev->config;
+	const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[channel];
+	struct analog_axis_calibration *cal = &cfg->calibration[channel];
+
+	int16_t in_range = cal->in_max - cal->in_min;
+	int16_t out_range = axis_cfg->out_max - axis_cfg->out_min;
+	int16_t in_mid = DIV_ROUND_CLOSEST(cal->in_min + cal->in_max, 2);
+	int16_t in_min = cal->in_min;
+
+	if (abs(raw_val - in_mid) < cal->in_deadzone) {
+		return DIV_ROUND_CLOSEST(axis_cfg->out_max + axis_cfg->out_min, 2);
+	}
+
+	in_range -= cal->in_deadzone * 2;
+	in_min += cal->in_deadzone;
+	if (raw_val < in_mid) {
+		raw_val += cal->in_deadzone;
+	} else {
+		raw_val -= cal->in_deadzone;
+	}
+
+	return DIV_ROUND_CLOSEST((raw_val - in_min) * out_range, in_range) + axis_cfg->out_min;
+}
+
+static int32_t analog_axis_out_linear(const struct device *dev,
+				      int channel,
+				      int32_t raw_val)
+{
+	const struct analog_axis_config *cfg = dev->config;
+	const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[channel];
+	struct analog_axis_calibration *cal = &cfg->calibration[channel];
+
+	int16_t in_range = cal->in_max - cal->in_min;
+	int16_t out_range = axis_cfg->out_max - axis_cfg->out_min;
+
+	return DIV_ROUND_CLOSEST((raw_val - cal->in_min) * out_range, in_range) + axis_cfg->out_min;
+}
+
 static void analog_axis_loop(const struct device *dev)
 {
 	const struct analog_axis_config *cfg = dev->config;
@@ -135,8 +177,6 @@ static void analog_axis_loop(const struct device *dev)
 		const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[i];
 		struct analog_axis_channel_data *axis_data = &cfg->channel_data[i];
 		struct analog_axis_calibration *cal = &cfg->calibration[i];
-		int16_t in_range = cal->in_max - cal->in_min;
-		int16_t out_range = axis_cfg->out_max - axis_cfg->out_min;
 		int32_t raw_val = bufs[i];
 
 		if (axis_cfg->invert) {
@@ -149,16 +189,13 @@ static void analog_axis_loop(const struct device *dev)
 
 		LOG_DBG("%s: ch %d: raw_val: %d", dev->name, i, raw_val);
 
-		out = CLAMP((raw_val - cal->in_min) * out_range / in_range + axis_cfg->out_min,
-			    axis_cfg->out_min, axis_cfg->out_max);
-
-		if (cal->out_deadzone > 0) {
-			int16_t center = DIV_ROUND_CLOSEST(
-					axis_cfg->out_max  + axis_cfg->out_min, 2);
-			if (abs(out - center) < cal->out_deadzone) {
-				out = center;
-			}
+		if (cal->in_deadzone > 0) {
+			out = analog_axis_out_deadzone(dev, i, raw_val);
+		} else {
+			out = analog_axis_out_linear(dev, i, raw_val);
 		}
+
+		out = CLAMP(out, axis_cfg->out_min, axis_cfg->out_max);
 
 		if (axis_data->last_out != out) {
 			input_report_abs(dev, axis_cfg->axis, out, true, K_FOREVER);
@@ -237,7 +274,7 @@ static int analog_axis_init(const struct device *dev)
 	{ \
 		.in_min = (int16_t)DT_PROP(node_id, in_min), \
 		.in_max = (int16_t)DT_PROP(node_id, in_max), \
-		.out_deadzone = DT_PROP(node_id, out_deadzone), \
+		.in_deadzone = DT_PROP(node_id, in_deadzone), \
 	}
 
 #define ANALOG_AXIS_INIT(inst)									\
