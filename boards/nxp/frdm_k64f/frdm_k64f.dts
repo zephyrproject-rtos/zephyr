@@ -252,16 +252,32 @@ zephyr_udc0: &usbotg {
 	};
 };
 
-&enet {
+&enet_mac {
 	status = "okay";
-	pinctrl-0 = <&enet_default>;
+	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	ptp {
-		/* Be aware that PTC16 and PTC17 are also used for uart3 */
-		status = "disabled";
-		pinctrl-0 = <&ptp_default>;
-		pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0>;
+		status = "okay";
+		mc,interface-type = "rmii-25MHz";
 	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_ptp>;
+	pinctrl-names = "default";
 };
 
 &flexcan0 {

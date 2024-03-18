@@ -76,9 +76,23 @@ zephyr_udc0: &usb1 {
 };
 
 /* Pinmux settings */
-&enet {
+&enet_mac {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
 };
 
 &flexcan1 {

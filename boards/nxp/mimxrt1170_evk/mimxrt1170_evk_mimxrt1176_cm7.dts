@@ -128,14 +128,6 @@ nxp_mipi_i2c: &lpi2c5 {
 	status = "okay";
 };
 
-&enet {
-	status = "okay";
-	int-gpios = <&gpio9 11 GPIO_ACTIVE_HIGH>;
-	reset-gpios = <&gpio12 12 GPIO_ACTIVE_HIGH>;
-	ptp {
-		status = "okay";
-	};
-};
 
 &sai1 {
 	status = "okay";

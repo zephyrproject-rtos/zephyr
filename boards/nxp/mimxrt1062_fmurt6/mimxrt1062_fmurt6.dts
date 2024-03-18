@@ -386,11 +386,23 @@
 	nxp,prescaler = <64>;
 };
 
-&enet2 {
+&enet2_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&enet2_mdio {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	phy-addr = <0>;
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
 };
 
 zephyr_udc0: &usb1 {
