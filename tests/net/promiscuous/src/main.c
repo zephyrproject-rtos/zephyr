@@ -178,7 +178,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		const struct ethernet_api *api =
 			net_if_get_device(iface)->api;
 
-		/* As native_posix board will introduce another ethernet
+		/* As native_sim board will introduce another ethernet
 		 * interface, make sure that we only use our own in this test.
 		 */
 		if (api->get_capabilities ==
