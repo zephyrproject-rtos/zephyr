@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/pm/device.h>
 #endif
 
-#include "eth.h"
+#include "../eth.h"
 #include <zephyr/drivers/ethernet/eth_nxp_enet.h>
 #include <zephyr/dt-bindings/ethernet/nxp_enet.h>
 #include <fsl_enet.h>

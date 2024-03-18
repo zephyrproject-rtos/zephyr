@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#include "eth.h"
+#include "../eth.h"
 
 #define PHY_OMS_OVERRIDE_REG 0x16U      /* The PHY Operation Mode Strap Override register. */
 #define PHY_OMS_STATUS_REG 0x17U        /* The PHY Operation Mode Strap Status register. */

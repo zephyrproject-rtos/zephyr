@@ -52,7 +52,6 @@ config ETH_QEMU_EXTRA_ARGS
 source "drivers/ethernet/Kconfig.enc28j60"
 source "drivers/ethernet/Kconfig.enc424j600"
 source "drivers/ethernet/Kconfig.esp32"
-source "drivers/ethernet/Kconfig.mcux"
 source "drivers/ethernet/Kconfig.e1000"
 source "drivers/ethernet/Kconfig.sam_gmac"
 source "drivers/ethernet/Kconfig.stm32_hal"
@@ -73,12 +72,13 @@ source "drivers/ethernet/Kconfig.ivshmem"
 source "drivers/ethernet/Kconfig.adin2111"
 source "drivers/ethernet/Kconfig.numaker"
 source "drivers/ethernet/Kconfig.lan865x"
-source "drivers/ethernet/Kconfig.nxp_enet"
 source "drivers/ethernet/Kconfig.xmc4xxx"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 
 source "drivers/ethernet/phy/Kconfig"
+
+source "drivers/ethernet/nxp_enet/Kconfig"
 
 endif # "Ethernet Drivers"
 
