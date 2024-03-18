@@ -4192,7 +4192,7 @@
  * @endcode
  */
 #define DT_ANY_INST_HAS_PROP_STATUS_OKAY(prop) \
-	(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_INST_NODE_HAS_PROP_AND_OR, prop) 0)
+	COND_CODE_1(IS_EMPTY(DT_ANY_INST_HAS_PROP_STATUS_OKAY_(prop)), (0), (1))
 
 /**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
@@ -4426,6 +4426,34 @@
  */
 
 /** @cond INTERNAL_HIDDEN */
+
+/** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY_
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p idx, if instance has property @p prop.
+ *
+ * @param idx instance number
+ * @param prop property to check for
+ *
+ * @return Macro evaluates to `1,` if instance has the property,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY__(idx, prop)	\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, prop), (1,), ())
+/** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY
+ *
+ * This macro uses DT_ANY_INST_HAS_PROP_STATUS_OKAY_ with
+ * DT_INST_FOREACH_STATUS_OKAY_VARG to generate comma separated list of 1,
+ * where each 1 on the list represents instance that has a property
+ * @p prop; the list may be empty, and the upper bound on number of
+ * list elements is number of device instances.
+ *
+ * @param prop property to check
+ *
+ * @return Evaluates to list of 1s (e.g: 1,1,1,) or nothing.
+ */
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(prop)	\
+	DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_PROP_STATUS_OKAY__, prop)
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
