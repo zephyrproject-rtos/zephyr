@@ -7,7 +7,7 @@
 #include "modem_backend_uart_isr.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(modem_backend_uart, CONFIG_MODEM_MODULES_LOG_LEVEL);
+LOG_MODULE_REGISTER(modem_backend_uart_isr, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <string.h>
 
