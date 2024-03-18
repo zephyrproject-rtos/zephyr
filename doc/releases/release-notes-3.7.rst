@@ -126,6 +126,11 @@ Drivers and Sensors
 
 * Ethernet
 
+  * Deperecated eth_mcux driver in favor of the reworked nxp_enet driver.
+  * Driver nxp_enet is no longer experimental.
+  * All boards and SOCs with :dtcompatible:`nxp,kinetis-ethernet` compatible nodes
+    reworked to use the new :dtcompatible:`nxp,enet` binding.
+
 * Flash
 
 * GNSS
