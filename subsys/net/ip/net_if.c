@@ -1105,8 +1105,9 @@ static void join_mcast_allnodes(struct net_if *iface)
 
 	ret = net_ipv6_mld_join(iface, &addr);
 	if (ret < 0 && ret != -EALREADY) {
-		NET_ERR("Cannot join all nodes address %s (%d)",
-			net_sprint_ipv6_addr(&addr), ret);
+		NET_ERR("Cannot join all nodes address %s for %d (%d)",
+			net_sprint_ipv6_addr(&addr),
+			net_if_get_by_iface(iface), ret);
 	}
 }
 
@@ -1121,8 +1122,13 @@ static void join_mcast_solicit_node(struct net_if *iface,
 
 	ret = net_ipv6_mld_join(iface, &addr);
 	if (ret < 0 && ret != -EALREADY) {
-		NET_ERR("Cannot join solicit node address %s (%d)",
-			net_sprint_ipv6_addr(&addr), ret);
+		NET_ERR("Cannot join solicit node address %s for %d (%d)",
+			net_sprint_ipv6_addr(&addr),
+			net_if_get_by_iface(iface), ret);
+	} else {
+		NET_DBG("Join solicit node address %s (ifindex %d)",
+			net_sprint_ipv6_addr(&addr),
+			net_if_get_by_iface(iface));
 	}
 }
 
@@ -1206,7 +1212,6 @@ static void dad_timeout(struct k_work *work)
 	k_mutex_unlock(&lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&expired_list, ifaddr, dad_node) {
-		struct net_if_addr *tmp;
 		struct net_if *iface;
 
 		NET_DBG("DAD succeeded for %s at interface %d",
@@ -1615,6 +1620,52 @@ static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
 }
 #include <syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
 #endif
+
+/* To be called when interface comes up so that all the non-joined multicast
+ * groups are joined.
+ */
+static void rejoin_ipv6_mcast_groups(struct net_if *iface)
+{
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		struct net_if_mcast_addr *maddr;
+		struct in6_addr addr;
+		int ret;
+
+		if (!ipv6->unicast[i].is_used) {
+			continue;
+		}
+
+		net_ipv6_addr_create_solicited_node(
+			&ipv6->unicast[i].address.in6_addr,
+			&addr);
+
+		maddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+		if (!maddr) {
+			continue;
+		}
+
+		if (net_if_ipv4_maddr_is_joined(maddr)) {
+			continue;
+		}
+
+		ret = net_ipv6_mld_join(iface, &addr);
+		if (ret < 0 && ret != EALREADY) {
+			NET_DBG("Cannot rejoin multicast group %s (%d)",
+				net_sprint_ipv6_addr(&addr), ret);
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+}
 
 static void address_expired(struct net_if_addr *ifaddr)
 {
@@ -4727,6 +4778,13 @@ static void init_igmp(struct net_if *iface)
 #endif
 }
 
+static void rejoin_multicast_groups(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	rejoin_ipv6_mcast_groups(iface);
+#endif
+}
+
 int net_if_up(struct net_if *iface)
 {
 	int status = 0;
@@ -4784,7 +4842,10 @@ done:
 	net_mgmt_event_notify(NET_EVENT_IF_ADMIN_UP, iface);
 	update_operational_state(iface);
 
-	/* Make sure that we update the IPv6 addresses */
+	/* Make sure that we update the IPv6 addresses and join the
+	 * multicast groups.
+	 */
+	rejoin_multicast_groups(iface);
 	net_if_start_dad(iface);
 
 out:
