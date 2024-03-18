@@ -168,6 +168,8 @@ static void random_linkaddr(uint8_t *linkaddr, size_t len)
 	for (i = 0; i < len; i++) {
 		linkaddr[i] = sys_rand32_get();
 	}
+
+	linkaddr[0] |= 0x02; /* force LAA bit */
 }
 
 int net_virtual_interface_attach(struct net_if *virtual_iface,
