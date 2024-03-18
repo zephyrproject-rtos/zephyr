@@ -1036,17 +1036,18 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->empty = 0;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		conn_lll->phy_flags = 0;
 		if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
 			conn_lll->phy_tx = lll->phy_s;
 			conn_lll->phy_tx_time = lll->phy_s;
+			conn_lll->phy_flags = lll->phy_flags;
 			conn_lll->phy_rx = lll->phy_s;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		} else {
 			conn_lll->phy_tx = PHY_1M;
 			conn_lll->phy_tx_time = PHY_1M;
+			conn_lll->phy_flags = PHY_FLAGS_S8;
 			conn_lll->phy_rx = PHY_1M;
 		}
 #endif /* CONFIG_BT_CTLR_PHY */

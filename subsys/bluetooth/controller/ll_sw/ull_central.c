@@ -215,11 +215,12 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	/* Use the default 1M PHY, extended connection initiation in LLL will
-	 * update this with the correct PHY.
+	 * update this with the correct PHY and defaults using the coding on
+	 * which the connection is established.
 	 */
 	conn_lll->phy_tx = PHY_1M;
-	conn_lll->phy_flags = 0;
 	conn_lll->phy_tx_time = PHY_1M;
+	conn_lll->phy_flags = PHY_FLAGS_S8;
 	conn_lll->phy_rx = PHY_1M;
 #endif /* CONFIG_BT_CTLR_PHY */
 
