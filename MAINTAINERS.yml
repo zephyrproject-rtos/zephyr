@@ -1510,6 +1510,21 @@ Release Notes:
   tests:
     - drivers.mipi_dsi
 
+"Drivers: MSPI":
+  status: maintained
+  maintainers:
+    - swift-tk
+  files:
+    - drivers/mspi/
+    - include/zephyr/drivers/mspi.h
+    - include/zephyr/drivers/mspi/
+    - tests/drivers/mspi/
+    - doc/hardware/peripherals/mspi.rst
+  labels:
+    - "area: MSPI"
+  tests:
+    - drivers.mspi
+
 "Drivers: Reset":
   status: odd fixes
   collaborators:
