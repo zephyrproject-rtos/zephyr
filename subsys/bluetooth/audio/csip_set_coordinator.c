@@ -1358,6 +1358,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	if (inst->conn == conn) {
 		csip_set_coordinator_reset(inst);
 	}
+
+	/* May need to clear busy as well */
+	busy = false;
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {

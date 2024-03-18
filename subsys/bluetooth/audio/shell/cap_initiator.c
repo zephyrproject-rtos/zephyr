@@ -453,7 +453,7 @@ static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (argc == 2 && strcmp(argv[1], "all") == 0) {
+	if (argc == 1 || (argc == 2 && strcmp(argv[1], "all") == 0)) {
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 			struct bt_cap_stream *stream = &unicast_streams[i].stream;
 			struct bt_bap_ep_info ep_info;
@@ -876,7 +876,7 @@ static int cmd_cap_ac_5(const struct shell *sh, size_t argc, char **argv)
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
 		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
+		.snk_chan_cnt = 2U,
 		.src_chan_cnt = 1U,
 	};
 
@@ -1305,7 +1305,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(unicast_update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
 		      cmd_cap_initiator_unicast_update, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast_stop, NULL,
-		      "Unicast stop streams <all | stream [stream [stream...]]>",
+		      "Unicast stop streams [<all | stream [stream [stream...]]>]",
 		      cmd_cap_initiator_unicast_stop, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast_cancel, NULL, "Unicast cancel current procedure",
 		      cmd_cap_initiator_unicast_cancel, 1, 0),
@@ -1431,6 +1431,8 @@ ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_
 		 */
 		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
 		int err;
+
+		net_buf_simple_reset(&base_buf);
 
 		err = bt_cap_initiator_broadcast_get_base(default_source.cap_source, &base_buf);
 		if (err != 0) {

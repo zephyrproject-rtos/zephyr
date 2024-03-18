@@ -1234,7 +1234,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		    conn->type == BT_CONN_TYPE_LE &&
 		    bt_dev.create_param.timeout != 0) {
 			k_work_schedule(&conn->deferred_work,
-					K_MSEC(10 * bt_dev.create_param.timeout));
+					K_MSEC(100 * bt_dev.create_param.timeout));
 		}
 
 		break;

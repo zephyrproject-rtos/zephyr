@@ -51,6 +51,11 @@ static void usb_data_request_cb(const struct device *dev)
 	uint32_t size;
 	int err;
 
+	if (bap_get_rx_streaming_cnt() == 0) {
+		/* no-op */
+		return;
+	}
+
 	pcm_buf = net_buf_alloc(&usb_tx_buf_pool, K_NO_WAIT);
 	if (pcm_buf == NULL) {
 		LOG_WRN("Could not allocate pcm_buf");
