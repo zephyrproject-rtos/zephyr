@@ -249,7 +249,7 @@ static int analog_axis_init(const struct device *dev)
 		analog_axis_channel_data_##inst[ARRAY_SIZE(analog_axis_channel_cfg_##inst)];	\
 												\
 	static struct analog_axis_calibration							\
-		analog_axis_calibration##inst[ARRAY_SIZE(analog_axis_channel_cfg_##inst)] = {	\
+		analog_axis_calibration_##inst[ARRAY_SIZE(analog_axis_channel_cfg_##inst)] = {	\
 			DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(					\
 				inst, ANALOG_AXIS_CHANNEL_CAL_DEF, (,))				\
 		};										\
@@ -258,7 +258,7 @@ static int analog_axis_init(const struct device *dev)
 		.poll_period_ms = DT_INST_PROP(inst, poll_period_ms),				\
 		.channel_cfg = analog_axis_channel_cfg_##inst,					\
 		.channel_data = analog_axis_channel_data_##inst,				\
-		.calibration = analog_axis_calibration##inst,					\
+		.calibration = analog_axis_calibration_##inst,					\
 		.num_channels = ARRAY_SIZE(analog_axis_channel_cfg_##inst),			\
 	};											\
 												\
