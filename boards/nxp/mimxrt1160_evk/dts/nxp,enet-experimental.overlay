@@ -43,6 +43,7 @@
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
 	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
 };
 
 &enet_mdio {

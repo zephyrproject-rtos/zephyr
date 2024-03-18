@@ -42,6 +42,7 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
+	zephyr,random-mac-address;
 };
 
 

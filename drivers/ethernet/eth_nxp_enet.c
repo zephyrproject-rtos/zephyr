@@ -47,9 +47,25 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/pm/device.h>
 #endif
 
+#include "eth.h"
 #include <zephyr/drivers/ethernet/eth_nxp_enet.h>
 #include <zephyr/dt-bindings/ethernet/nxp_enet.h>
 #include <fsl_enet.h>
+
+#define FREESCALE_OUI_B0 0x00
+#define FREESCALE_OUI_B1 0x04
+#define FREESCALE_OUI_B2 0x9f
+
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
+#define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
+#elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
+#define ETH_NXP_ENET_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
+#else
+#define ETH_NXP_ENET_UNIQUE_ID 0xFFFFFF
+#error "Unsupported SOC"
+#endif
 
 #define RING_ID 0
 
@@ -57,7 +73,8 @@ struct nxp_enet_mac_config {
 	ENET_Type *base;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	void (*generate_mac)(uint8_t *mac_addr);
+	bool generate_mac;
+	bool unique_mac;
 	const struct pinctrl_dev_config *pincfg;
 	enet_buffer_config_t buffer_config;
 	uint8_t phy_mode;
@@ -549,6 +566,18 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	irq_unlock(irq_lock_key);
 }
 
+static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
+{
+	uint32_t id = ETH_NXP_ENET_UNIQUE_ID;
+
+	mac_addr[0] = FREESCALE_OUI_B0;
+	mac_addr[1] = FREESCALE_OUI_B1;
+	mac_addr[2] = FREESCALE_OUI_B2;
+	mac_addr[3] = FIELD_GET(0xFF0000, id);
+	mac_addr[4] = FIELD_GET(0x00FF00, id);
+	mac_addr[5] = FIELD_GET(0x0000FF, id);
+}
+
 static int eth_nxp_enet_init(const struct device *dev)
 {
 	struct nxp_enet_mac_data *data = dev->data;
@@ -572,8 +601,13 @@ static int eth_nxp_enet_init(const struct device *dev)
 #endif
 	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
 
+	if (config->unique_mac) {
+		nxp_enet_unique_mac(data->mac_addr);
+	}
+
 	if (config->generate_mac) {
-		config->generate_mac(data->mac_addr);
+		gen_random_mac(data->mac_addr,
+			FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -714,71 +748,6 @@ static const struct ethernet_api api_funcs = {
 		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));			\
 	} while (false);
 
-#define FREESCALE_OUI_B0 0x00
-#define FREESCALE_OUI_B1 0x04
-#define FREESCALE_OUI_B2 0x9f
-
-#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
-#define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
-#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
-#define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
-#elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
-#define ETH_NXP_ENET_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
-#else
-#error "Unsupported SOC"
-#endif
-
-#define NXP_ENET_GENERATE_MAC_RANDOM(n)						\
-	static void generate_eth_##n##_mac(uint8_t *mac_addr)			\
-	{									\
-		gen_random_mac(mac_addr,					\
-			       FREESCALE_OUI_B0,				\
-			       FREESCALE_OUI_B1,				\
-			       FREESCALE_OUI_B2);				\
-	}
-
-#define NXP_ENET_GENERATE_MAC_UNIQUE(n)						\
-	static void generate_eth_##n##_mac(uint8_t *mac_addr)			\
-	{									\
-		uint32_t id = ETH_NXP_ENET_UNIQUE_ID;				\
-										\
-		mac_addr[0] = FREESCALE_OUI_B0;					\
-		mac_addr[0] |= 0x02; /* force LAA bit */			\
-		mac_addr[1] = FREESCALE_OUI_B1;					\
-		mac_addr[2] = FREESCALE_OUI_B2;					\
-		mac_addr[3] = id >> 8;						\
-		mac_addr[4] = id >> 16;						\
-		mac_addr[5] = id >> 0;						\
-		mac_addr[5] += n;						\
-	}
-
-#define NXP_ENET_GENERATE_MAC(n)						\
-	COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),			\
-		    (NXP_ENET_GENERATE_MAC_RANDOM(n)),				\
-		    (NXP_ENET_GENERATE_MAC_UNIQUE(n)))
-
-#define NXP_ENET_DECIDE_MAC_ADDR(n)						\
-	COND_CODE_1(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)),			\
-			(NXP_ENET_MAC_ADDR_LOCAL(n)),				\
-			(NXP_ENET_MAC_ADDR_GENERATED(n)))
-
-#define NXP_ENET_DECIDE_MAC_GEN_FUNC(n)						\
-	COND_CODE_1(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)),			\
-			(NXP_ENET_GEN_MAC_FUNCTION_NO(n)),			\
-			(NXP_ENET_GEN_MAC_FUNCTION_YES(n)))
-
-#define NXP_ENET_MAC_ADDR_LOCAL(n)						\
-	.mac_addr = DT_INST_PROP(n, local_mac_address),
-
-#define NXP_ENET_MAC_ADDR_GENERATED(n)						\
-	.mac_addr = {0},
-
-#define NXP_ENET_GEN_MAC_FUNCTION_NO(n)						\
-	.generate_mac = NULL,
-
-#define NXP_ENET_GEN_MAC_FUNCTION_YES(n)					\
-	.generate_mac = generate_eth_##n##_mac,
-
 #define NXP_ENET_DT_PHY_DEV(node_id, phy_phandle, idx)						\
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, phy_phandle, idx))
 
@@ -830,8 +799,14 @@ static const struct ethernet_api api_funcs = {
 	.txFrameInfo = NULL
 #endif
 
+#define NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)						\
+	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||				\
+			DT_INST_PROP(n, zephyr_random_mac_address) ||			\
+			DT_INST_PROP(n, nxp_unique_mac),				\
+			"MAC address not specified on ENET DT node");
+
 #define NXP_ENET_MAC_INIT(n)								\
-		NXP_ENET_GENERATE_MAC(n)						\
+		NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)					\
 											\
 		PINCTRL_DT_INST_DEFINE(n);						\
 											\
@@ -887,7 +862,9 @@ static const struct ethernet_api api_funcs = {
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
 			.mdio = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_mdio)),		\
 			NXP_ENET_PTP_DEV(n)						\
-			NXP_ENET_DECIDE_MAC_GEN_FUNC(n)					\
+			.generate_mac = DT_INST_PROP(n,					\
+						zephyr_random_mac_address),		\
+			.unique_mac = DT_INST_PROP(n, nxp_unique_mac),			\
 		};									\
 											\
 		static _nxp_enet_driver_buffer_section uint8_t				\
@@ -896,10 +873,10 @@ static const struct ethernet_api api_funcs = {
 			nxp_enet_##n##_rx_frame_buf[NET_ETH_MAX_FRAME_SIZE];		\
 											\
 		struct nxp_enet_mac_data nxp_enet_##n##_data = {			\
-			NXP_ENET_DECIDE_MAC_ADDR(n)					\
 			.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,			\
 			.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,			\
 			.dev = DEVICE_DT_INST_GET(n),					\
+			.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
 		};									\
 											\
 		ETH_NXP_ENET_PM_DEVICE_INIT(n)						\
