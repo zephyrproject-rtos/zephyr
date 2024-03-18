@@ -120,6 +120,12 @@ General Purpose I/O (GPIO)
 Input
 =====
 
+* The ``analog-axis`` deadzone calibration value has been changed to be
+  relative to the raw ADC values, similarly to min and max. The data structures
+  and properties have been renamed to reflect that (from ``out-deadzone`` to
+  ``in-deadzone``) and when migrating to the new definition the value should be
+  scaled accordingly.
+
 Interrupt Controller
 ====================
 
