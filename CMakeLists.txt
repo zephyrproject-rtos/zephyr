@@ -1812,12 +1812,13 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   )
 
   if(CONFIG_CHECK_INIT_PRIORITIES)
-    add_custom_target(
-      check_init_priorities
-      ALL
-      COMMAND ${check_init_priorities_command}
-      DEPENDS ${check_init_priorities_dependencies}
-    )
+    if(TARGET native_runner_executable)
+      add_custom_command(TARGET native_runner_executable POST_BUILD
+                         COMMAND ${check_init_priorities_command}
+      )
+    else()
+      list(APPEND post_build_commands COMMAND ${check_init_priorities_command})
+    endif()
   endif()
 
   add_custom_target(
