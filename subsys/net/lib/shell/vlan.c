@@ -13,6 +13,7 @@ LOG_MODULE_DECLARE(net_shell);
 #endif
 #include <zephyr/net/ethernet.h>
 
+#include <zephyr/net/socket.h>
 #include <stdlib.h>
 
 #include "net_shell_private.h"
@@ -47,6 +48,7 @@ static void iface_vlan_cb(struct net_if *iface, void *user_data)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
+	char name[IFNAMSIZ];
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
 		return;
@@ -57,11 +59,13 @@ static void iface_vlan_cb(struct net_if *iface, void *user_data)
 	}
 
 	if (*count == 0) {
-		PR("    Interface  Type\tTag\tAttached\n");
+		PR("    Interface  Name        \tTag\tAttached\n");
 	}
 
-	PR("[%d] %p %8s\t%d\t%d\n", net_if_get_by_iface(iface), iface,
-	   iface2str(iface, NULL), net_eth_get_vlan_tag(iface),
+	(void)net_if_get_name(iface, name, sizeof(name));
+
+	PR("[%d] %p  %-12s\t%d\t%d\n", net_if_get_by_iface(iface), iface,
+	   name, net_eth_get_vlan_tag(iface),
 	   net_if_get_by_iface(net_eth_get_vlan_main(iface)));
 
 	(*count)++;
