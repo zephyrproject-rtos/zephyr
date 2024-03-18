@@ -71,6 +71,8 @@ struct net_if_addr {
 #if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** How many times we have done DAD */
 	uint8_t dad_count;
+	/* What interface the DAD is running */
+	uint8_t ifindex;
 #endif
 
 	/** Is the IP address valid forever */

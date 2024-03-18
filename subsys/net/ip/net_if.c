@@ -1209,28 +1209,22 @@ static void dad_timeout(struct k_work *work)
 		struct net_if_addr *tmp;
 		struct net_if *iface;
 
-		NET_DBG("DAD succeeded for %s",
-			net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+		NET_DBG("DAD succeeded for %s at interface %d",
+			net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
+			ifaddr->ifindex);
 
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
+		iface = net_if_get_by_index(ifaddr->ifindex);
 
-		/* Because we do not know the interface at this point,
-		 * we need to lookup for it.
+		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_SUCCEED,
+						iface,
+						&ifaddr->address.in6_addr,
+						sizeof(struct in6_addr));
+
+		/* The address gets added to neighbor cache which is not
+		 * needed in this case as the address is our own one.
 		 */
-		iface = NULL;
-		tmp = net_if_ipv6_addr_lookup(&ifaddr->address.in6_addr,
-					      &iface);
-		if (tmp == ifaddr) {
-			net_mgmt_event_notify_with_info(
-					NET_EVENT_IPV6_DAD_SUCCEED,
-					iface, &ifaddr->address.in6_addr,
-					sizeof(struct in6_addr));
-
-			/* The address gets added to neighbor cache which is not
-			 * needed in this case as the address is our own one.
-			 */
-			net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
-		}
+		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
 	}
 }
 
@@ -1251,8 +1245,11 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 
 		if (!net_ipv6_start_dad(iface, ifaddr)) {
 			ifaddr->dad_start = k_uptime_get_32();
+			ifaddr->ifindex = net_if_get_by_iface(iface);
 
 			k_mutex_lock(&lock, K_FOREVER);
+			sys_slist_find_and_remove(&active_dad_timers,
+						  &ifaddr->dad_node);
 			sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
 			k_mutex_unlock(&lock);
 
@@ -4781,6 +4778,9 @@ done:
 	net_if_flag_set(iface, NET_IF_UP);
 	net_mgmt_event_notify(NET_EVENT_IF_ADMIN_UP, iface);
 	update_operational_state(iface);
+
+	/* Make sure that we update the IPv6 addresses */
+	net_if_start_dad(iface);
 
 out:
 	net_if_unlock(iface);
