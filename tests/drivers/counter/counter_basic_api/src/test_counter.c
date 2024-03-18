@@ -35,6 +35,14 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_NRF_RTC
 	DEVS_FOR_DT_COMPAT(nordic_nrf_rtc)
 #endif
+#ifdef CONFIG_COUNTER_TIMER_MAX32
+#define ADI_MAX32_COUNTER_DEV(idx) \
+	DEVICE_DT_GET(DT_INST(idx, adi_max32_counter)),
+#define DT_DRV_COMPAT adi_max32_counter
+	DT_INST_FOREACH_STATUS_OKAY(ADI_MAX32_COUNTER_DEV)
+#undef DT_DRV_COMPAT
+#undef ADI_MAX32_COUNTER_DEV
+#endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
 #define STM32_COUNTER_DEV(idx) \
 	DEVICE_DT_GET(DT_INST(idx, st_stm32_counter)),
@@ -962,6 +970,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	return true;
 #endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_TIMER_MAX32
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
