@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
+
 if(CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP OR CONFIG_BOARD_NRF54H20DK_NRF54H20_CPURAD)
   if(CONFIG_BOARD_NRF54H20DK_NRF54H20_CPURAD)
     set(
