@@ -376,7 +376,7 @@ int main(void)
 	printk("L4 connected\n");
 
 	/* Wait a bit to avoid (unsuccessfully) trying to send the first echo packet too quickly. */
-	k_sleep(K_SECONDS(1));
+	k_sleep(K_SECONDS(5));
 
 	ret = sample_echo_packet(&sample_test_dns_addrinfo.ai_addr,
 				 sample_test_dns_addrinfo.ai_addrlen, port);
