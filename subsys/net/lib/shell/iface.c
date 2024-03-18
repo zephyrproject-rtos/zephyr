@@ -344,7 +344,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("\t%s\n", net_sprint_ipv6_addr(&mcast->address.in6_addr));
+		PR("\t%s%s\n", net_sprint_ipv6_addr(&mcast->address.in6_addr),
+		   net_if_ipv6_maddr_is_joined(mcast) ? "" : "  <not joined>");
 
 		count++;
 	}
@@ -455,7 +456,8 @@ skip_ipv6:
 			continue;
 		}
 
-		PR("\t%s\n", net_sprint_ipv4_addr(&mcast->address.in_addr));
+		PR("\t%s%s\n", net_sprint_ipv4_addr(&mcast->address.in_addr),
+		   net_if_ipv4_maddr_is_joined(mcast) ? "" : "  <not joined>");
 
 		count++;
 	}
