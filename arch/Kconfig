@@ -654,6 +654,11 @@ config ARCH_HAS_SUSPEND_TO_RAM
 config ARCH_HAS_STACK_CANARIES_TLS
 	bool
 
+config ARCH_SUPPORTS_MEM_MAPPED_STACKS
+	bool
+	help
+	  Select when the architecture supports memory mapped stacks.
+
 #
 # Other architecture related options
 #

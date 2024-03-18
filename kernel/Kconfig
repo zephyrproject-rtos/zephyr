@@ -192,6 +192,16 @@ config THREAD_STACK_INFO
 	  This option allows each thread to store the thread stack info into
 	  the k_thread data structure.
 
+config THREAD_STACK_MEM_MAPPED
+	bool "Stack to be memory mapped at runtime"
+	depends on MMU && ARCH_SUPPORTS_MEM_MAPPED_STACKS
+	select THREAD_STACK_INFO
+	select THREAD_ABORT_NEED_CLEANUP
+	help
+	  This option changes behavior where the thread stack is memory
+	  mapped with guard pages on both ends to catch undesired
+	  accesses.
+
 config THREAD_ABORT_HOOK
 	bool
 	help
