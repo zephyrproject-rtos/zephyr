@@ -5,3 +5,8 @@
  */
 
 #include "esp32s3_common.dtsi"
+
+&sram0 {
+	reg = <0x3fc88000 DT_SIZE_K(10)>;
+	status = "okay";
+};
