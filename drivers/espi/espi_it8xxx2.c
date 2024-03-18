@@ -597,10 +597,10 @@ static const struct vw_channel_t vw_channel_list[] = {
 	VW_CHAN(ESPI_VWIRE_SIGNAL_PME,           0x04, BIT(3), BIT(7)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_WAKE,          0x04, BIT(2), BIT(6)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_OOB_RST_ACK,   0x04, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,  0x05, BIT(3), BIT(7)),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,  0x05, BIT(3), BIT(7)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, 0x05, BIT(2), BIT(6)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_FATAL,     0x05, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 0x05, BIT(0), BIT(4)),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 0x05, BIT(0), BIT(4)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_RST_ACK,  0x06, BIT(3), BIT(7)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_RST_CPU_INIT,  0x06, BIT(2), BIT(6)),
 	VW_CHAN(ESPI_VWIRE_SIGNAL_SMI,           0x06, BIT(1), BIT(5)),
@@ -1598,9 +1598,9 @@ static void espi_it8xxx2_oob_ch_en_isr(const struct device *dev, bool enable)
 static void espi_it8xxx2_flash_ch_en_isr(const struct device *dev, bool enable)
 {
 	if (enable) {
-		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
+		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
 		espi_it8xxx2_send_vwire(dev,
-					ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+					ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
 	}
 
 	espi_it8xxx2_ch_notify_system_state(dev, ESPI_CHANNEL_FLASH, enable);
