@@ -123,17 +123,33 @@ arduino_serial: &lpuart2 {
 	};
 };
 
-&enet {
+&enet_mac {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	int-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
-	reset-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
-	ptp {
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0>;
 		status = "okay";
-		pinctrl-0 = <&pinmux_ptp>;
-		pinctrl-names = "default";
+		mc,reset-gpio = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		mc,interrupt-gpio = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+		mc,interface-type = "rmii";
 	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_ptp>;
+	pinctrl-names = "default";
 };
 
 &lpuart1 {

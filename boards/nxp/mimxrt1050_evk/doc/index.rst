@@ -486,13 +486,3 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _Enable QSPI flash support in SEGGER JLink:
    https://wiki.segger.com/i.MXRT1050#QSPI_flash
-
-Experimental ENET Driver
-========================
-
-Current default ethernet driver is eth_mcux, with binding `nxp,kinetis-ethernet`. There is a new
-driver with binding `nxp,enet`, which is experimental and undergoing development, but will have
-enhanced capability, such as not hardcoding code for only one phy in the driver like eth_mcux.
-
-To build for this EVK with the new driver, include the experimental overlay to west build with
-the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet-experimental.overlay`.

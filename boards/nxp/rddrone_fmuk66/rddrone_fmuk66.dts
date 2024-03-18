@@ -263,10 +263,24 @@ zephyr_udc0: &usbotg {
 	};
 };
 
-&enet {
+&enet_mac {
 	status = "okay";
 	pinctrl-0 = <&enet_default>;
 	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
 };
 
 &flexcan0 {
