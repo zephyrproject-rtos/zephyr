@@ -675,7 +675,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	err = send_friend_poll();
 	if (err) {
-		/* Will retry sending later */
+		LOG_WRN("LPN didn't succeed poll sending (err %d)", err);
 		for (int i = 0; i < ARRAY_SIZE(lpn->cred); i++) {
 			if (lpn->sub->keys[i].valid) {
 				bt_mesh_friend_cred_destroy(&lpn->cred[i]);
@@ -686,7 +686,6 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 		lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
 		lpn->recv_win = 0U;
 		lpn->queue_size = 0U;
-		return err;
 	}
 
 	return 0;
