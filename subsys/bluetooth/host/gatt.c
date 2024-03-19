@@ -466,10 +466,15 @@ done:
 	}
 }
 
+static inline void sc_work_flush(void);
+
 static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
+
+	/* Finish processing the current SC state before messing with it. */
+	sc_work_flush();
 
 	if (value == BT_GATT_CCC_INDICATE) {
 		/* Create a new SC configuration entry if subscribed */
@@ -1239,6 +1244,18 @@ static inline void sc_work_submit(k_timeout_t timeout)
 {
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	k_work_reschedule(&gatt_sc.work, timeout);
+#endif
+}
+
+static inline void sc_work_flush(void)
+{
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	struct k_work_sync sync = {};
+
+	if (k_work_delayable_is_pending(&gatt_sc.work)) {
+		LOG_DBG("Flushing SC work");
+		k_work_flush_delayable(&gatt_sc.work, &sync);
+	}
 #endif
 }
 
