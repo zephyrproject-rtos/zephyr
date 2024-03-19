@@ -15,14 +15,14 @@
 extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 
-/* Extra byte to ensure we're always NULL-terminated */
-char ram_console[CONFIG_RAM_CONSOLE_BUFFER_SIZE + 1];
+char ram_console[CONFIG_RAM_CONSOLE_BUFFER_SIZE];
 static int pos;
 
 static int ram_console_out(int character)
 {
 	ram_console[pos] = (char)character;
-	pos = (pos + 1) % CONFIG_RAM_CONSOLE_BUFFER_SIZE;
+	/* Leave one byte to ensure we're always NULL-terminated */
+	pos = (pos + 1) % (CONFIG_RAM_CONSOLE_BUFFER_SIZE - 1);
 	return character;
 }
 
