@@ -5,6 +5,14 @@ common:
     - mps2/an385
     - qemu_cortex_a53
 
+  # As of commit 8f4ac0d4ab45, CONFIG_PM breaks efr32xg24_dk2601b, see
+  # issue #70466. efr32_radio/efr32mg24b220f1536im48 has similar problems.
+  #
+  # These are generic C++ tests so we don't care about specific boards.
+  platform_exclude:
+    - efr32xg24_dk2601b
+  filter: CONFIG_BOARD != "efr32_radio"
+
 tests:
   cpp.main.minimal:
     extra_configs:
