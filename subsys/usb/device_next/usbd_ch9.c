@@ -209,10 +209,10 @@ static int sreq_set_interface(struct usbd_contex *const uds_ctx)
 static void sreq_feature_halt_notify(struct usbd_contex *const uds_ctx,
 				     const uint8_t ep, const bool halted)
 {
-	struct usbd_class_iter *iter = usbd_class_get_by_ep(uds_ctx, ep);
+	struct usbd_class_node *c_nd = usbd_class_get_by_ep(uds_ctx, ep);
 
-	if (iter != NULL) {
-		usbd_class_feature_halt(iter->c_data, ep, halted);
+	if (c_nd != NULL) {
+		usbd_class_feature_halt(c_nd->c_data, ep, halted);
 	}
 }
 
@@ -456,7 +456,7 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 	struct usb_cfg_descriptor *cfg_desc;
 	struct usbd_config_node *cfg_nd;
 	enum usbd_speed get_desc_speed;
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 	uint16_t len;
 
 	/*
@@ -496,10 +496,10 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 
 	net_buf_add_mem(buf, cfg_desc, MIN(net_buf_tailroom(buf), cfg_desc->bLength));
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
 		struct usb_desc_header **dhp;
 
-		dhp = usbd_class_get_desc(iter->c_data, get_desc_speed);
+		dhp = usbd_class_get_desc(c_nd->c_data, get_desc_speed);
 		if (dhp == NULL) {
 			continue;
 		}
@@ -728,28 +728,28 @@ static int nonstd_request(struct usbd_contex *const uds_ctx,
 			  struct net_buf *const dbuf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	struct usbd_class_iter *iter = NULL;
+	struct usbd_class_node *c_nd = NULL;
 	int ret = 0;
 
 	switch (setup->RequestType.recipient) {
 	case USB_REQTYPE_RECIPIENT_ENDPOINT:
-		iter = usbd_class_get_by_ep(uds_ctx, setup->wIndex);
+		c_nd = usbd_class_get_by_ep(uds_ctx, setup->wIndex);
 		break;
 	case USB_REQTYPE_RECIPIENT_INTERFACE:
-		iter = usbd_class_get_by_iface(uds_ctx, setup->wIndex);
+		c_nd = usbd_class_get_by_iface(uds_ctx, setup->wIndex);
 		break;
 	case USB_REQTYPE_RECIPIENT_DEVICE:
-		iter = usbd_class_get_by_req(uds_ctx, setup->bRequest);
+		c_nd = usbd_class_get_by_req(uds_ctx, setup->bRequest);
 		break;
 	default:
 		break;
 	}
 
-	if (iter != NULL) {
+	if (c_nd != NULL) {
 		if (reqtype_is_to_device(setup)) {
-			ret = usbd_class_control_to_dev(iter->c_data, setup, dbuf);
+			ret = usbd_class_control_to_dev(c_nd->c_data, setup, dbuf);
 		} else {
-			ret = usbd_class_control_to_host(iter->c_data, setup, dbuf);
+			ret = usbd_class_control_to_host(c_nd->c_data, setup, dbuf);
 		}
 	} else {
 		errno = -ENOTSUP;

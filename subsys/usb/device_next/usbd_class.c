@@ -43,13 +43,13 @@ size_t usbd_class_desc_len(struct usbd_class_data *const c_data,
 	return len;
 }
 
-struct usbd_class_iter *
+struct usbd_class_node *
 usbd_class_get_by_config(struct usbd_contex *const uds_ctx,
 			 const enum usbd_speed speed,
 			 const uint8_t cnum,
 			 const uint8_t inum)
 {
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 	struct usbd_config_node *cfg_nd;
 
 	cfg_nd = usbd_config_get(uds_ctx, speed, cnum);
@@ -57,20 +57,20 @@ usbd_class_get_by_config(struct usbd_contex *const uds_ctx,
 		return NULL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
-		if (iter->iface_bm & BIT(inum)) {
-			return iter;
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+		if (c_nd->iface_bm & BIT(inum)) {
+			return c_nd;
 		}
 	}
 
 	return NULL;
 }
 
-struct usbd_class_iter *
+struct usbd_class_node *
 usbd_class_get_by_iface(struct usbd_contex *const uds_ctx,
 			const uint8_t inum)
 {
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 	struct usbd_config_node *cfg_nd;
 
 	cfg_nd = usbd_config_get_current(uds_ctx);
@@ -78,9 +78,9 @@ usbd_class_get_by_iface(struct usbd_contex *const uds_ctx,
 		return NULL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
-		if (iter->iface_bm & BIT(inum)) {
-			return iter;
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+		if (c_nd->iface_bm & BIT(inum)) {
+			return c_nd;
 		}
 	}
 
@@ -92,12 +92,12 @@ static bool xfer_owner_exist(struct usbd_contex *const uds_ctx,
 			     struct net_buf *const buf)
 {
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
-		if (bi->owner == iter->c_data) {
-			uint32_t ep_active = iter->ep_active;
-			uint32_t ep_assigned = iter->ep_assigned;
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+		if (bi->owner == c_nd->c_data) {
+			uint32_t ep_active = c_nd->ep_active;
+			uint32_t ep_assigned = c_nd->ep_assigned;
 
 			if (!usbd_ep_bm_is_set(&ep_active, bi->ep)) {
 				LOG_DBG("ep 0x%02x is not active", bi->ep);
@@ -136,11 +136,11 @@ int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
 	return usbd_class_request(bi->owner, buf, err);
 }
 
-struct usbd_class_iter *
+struct usbd_class_node *
 usbd_class_get_by_ep(struct usbd_contex *const uds_ctx,
 		     const uint8_t ep)
 {
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 	struct usbd_config_node *cfg_nd;
 	enum usbd_speed speed;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
@@ -165,39 +165,39 @@ usbd_class_get_by_ep(struct usbd_contex *const uds_ctx,
 		return NULL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
-		if (iter->ep_assigned & ep_bm) {
-			return iter;
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+		if (c_nd->ep_assigned & ep_bm) {
+			return c_nd;
 		}
 	}
 
 	return NULL;
 }
 
-struct usbd_class_iter *
+struct usbd_class_node *
 usbd_class_get_by_req(struct usbd_contex *const uds_ctx,
 		      const uint8_t request)
 {
 	struct usbd_config_node *cfg_nd;
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 
 	cfg_nd = usbd_config_get_current(uds_ctx);
 	if (cfg_nd == NULL) {
 		return NULL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
-		if (iter->c_data->v_reqs == NULL) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+		if (c_nd->c_data->v_reqs == NULL) {
 			continue;
 		}
 
-		for (int i = 0; i < iter->c_data->v_reqs->len; i++) {
+		for (int i = 0; i < c_nd->c_data->v_reqs->len; i++) {
 			/*
 			 * First instance always wins.
 			 * There is no other way to determine the recipient.
 			 */
-			if (iter->c_data->v_reqs->reqs[i] == request) {
-				return iter;
+			if (c_nd->c_data->v_reqs->reqs[i] == request) {
+				return c_nd;
 			}
 		}
 	}
@@ -205,21 +205,21 @@ usbd_class_get_by_req(struct usbd_contex *const uds_ctx,
 	return NULL;
 }
 
-static struct usbd_class_iter *
-usbd_class_iter_get(const char *name, const enum usbd_speed speed)
+static struct usbd_class_node *
+usbd_class_node_get(const char *name, const enum usbd_speed speed)
 {
 	if (speed == USBD_SPEED_FS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs,
-						 usbd_class_iter, iter) {
-			if (strcmp(name, iter->c_data->name) == 0) {
-				return iter;
+						 usbd_class_node, c_nd) {
+			if (strcmp(name, c_nd->c_data->name) == 0) {
+				return c_nd;
 			}
 		}
 	} else if (speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
-						 usbd_class_iter, iter) {
-			if (strcmp(name, iter->c_data->name) == 0) {
-				return iter;
+						 usbd_class_node, c_nd) {
+			if (strcmp(name, c_nd->c_data->name) == 0) {
+				return c_nd;
 			}
 		}
 	}
@@ -230,7 +230,7 @@ usbd_class_iter_get(const char *name, const enum usbd_speed speed)
 }
 
 static int usbd_class_append(struct usbd_contex *const uds_ctx,
-			     struct usbd_class_iter *const iter,
+			     struct usbd_class_node *const c_nd,
 			     const enum usbd_speed speed,
 			     const uint8_t cfg)
 {
@@ -241,13 +241,13 @@ static int usbd_class_append(struct usbd_contex *const uds_ctx,
 		return -ENODATA;
 	}
 
-	sys_slist_append(&cfg_nd->class_list, &iter->node);
+	sys_slist_append(&cfg_nd->class_list, &c_nd->node);
 
 	return 0;
 }
 
 static int usbd_class_remove(struct usbd_contex *const uds_ctx,
-			     struct usbd_class_iter *const iter,
+			     struct usbd_class_node *const c_nd,
 			     const enum usbd_speed speed,
 			     const uint8_t cfg)
 {
@@ -258,7 +258,7 @@ static int usbd_class_remove(struct usbd_contex *const uds_ctx,
 		return -ENODATA;
 	}
 
-	if (!sys_slist_find_and_remove(&cfg_nd->class_list, &iter->node)) {
+	if (!sys_slist_find_and_remove(&cfg_nd->class_list, &c_nd->node)) {
 		return -ENODATA;
 	}
 
@@ -270,7 +270,7 @@ int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
 			  const uint8_t cfg)
 {
 	struct usbd_config_node *cfg_nd;
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 	sys_snode_t *node;
 
 	cfg_nd = usbd_config_get(uds_ctx, speed, cfg);
@@ -279,10 +279,10 @@ int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
 	}
 
 	while ((node = sys_slist_get(&cfg_nd->class_list))) {
-		iter = CONTAINER_OF(node, struct usbd_class_iter, node);
-		atomic_clear_bit(&iter->state, USBD_CCTX_REGISTERED);
-		usbd_class_shutdown(iter->c_data);
-		LOG_DBG("Remove class node %p from configuration %u", iter, cfg);
+		c_nd = CONTAINER_OF(node, struct usbd_class_node, node);
+		atomic_clear_bit(&c_nd->state, USBD_CCTX_REGISTERED);
+		usbd_class_shutdown(c_nd->c_data);
+		LOG_DBG("Remove class node %p from configuration %u", c_nd, cfg);
 	}
 
 	return 0;
@@ -296,12 +296,12 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 			const char *name,
 			const enum usbd_speed speed, const uint8_t cfg)
 {
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 	struct usbd_class_data *c_data;
 	int ret;
 
-	iter = usbd_class_iter_get(name, speed);
-	if (iter == NULL) {
+	c_nd = usbd_class_node_get(name, speed);
+	if (c_nd == NULL) {
 		return -ENODEV;
 	}
 
@@ -313,10 +313,10 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 		goto register_class_error;
 	}
 
-	c_data = iter->c_data;
+	c_data = c_nd->c_data;
 
 	/* TODO: does it still need to be atomic ? */
-	if (atomic_test_bit(&iter->state, USBD_CCTX_REGISTERED)) {
+	if (atomic_test_bit(&c_nd->state, USBD_CCTX_REGISTERED)) {
 		LOG_WRN("Class instance already registered");
 		ret = -EBUSY;
 		goto register_class_error;
@@ -328,10 +328,10 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 		goto register_class_error;
 	}
 
-	ret = usbd_class_append(uds_ctx, iter, speed, cfg);
+	ret = usbd_class_append(uds_ctx, c_nd, speed, cfg);
 	if (ret == 0) {
 		/* Initialize pointer back to the device struct */
-		atomic_set_bit(&iter->state, USBD_CCTX_REGISTERED);
+		atomic_set_bit(&c_nd->state, USBD_CCTX_REGISTERED);
 		c_data->uds_ctx = uds_ctx;
 	}
 
@@ -344,13 +344,13 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 			  const char *name,
 			  const enum usbd_speed speed, const uint8_t cfg)
 {
-	struct usbd_class_iter *iter;
+	struct usbd_class_node *c_nd;
 	struct usbd_class_data *c_data;
 	bool can_release_data = true;
 	int ret;
 
-	iter = usbd_class_iter_get(name, speed);
-	if (iter == NULL) {
+	c_nd = usbd_class_node_get(name, speed);
+	if (c_nd == NULL) {
 		return -ENODEV;
 	}
 
@@ -362,9 +362,9 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 		goto unregister_class_error;
 	}
 
-	c_data = iter->c_data;
+	c_data = c_nd->c_data;
 	/* TODO: does it still need to be atomic ? */
-	if (!atomic_test_bit(&iter->state, USBD_CCTX_REGISTERED)) {
+	if (!atomic_test_bit(&c_nd->state, USBD_CCTX_REGISTERED)) {
 		LOG_WRN("Class instance not registered");
 		ret = -EBUSY;
 		goto unregister_class_error;
@@ -375,8 +375,8 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 	 */
 	if (speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs,
-						 usbd_class_iter, i) {
-			if ((i->c_data == iter->c_data) &&
+						 usbd_class_node, i) {
+			if ((i->c_data == c_nd->c_data) &&
 			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
 				can_release_data = false;
 				break;
@@ -384,8 +384,8 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 		}
 	} else {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
-						 usbd_class_iter, i) {
-			if ((i->c_data == iter->c_data) &&
+						 usbd_class_node, i) {
+			if ((i->c_data == c_nd->c_data) &&
 			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
 				can_release_data = false;
 				break;
@@ -393,10 +393,10 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 		}
 	}
 
-	ret = usbd_class_remove(uds_ctx, iter, speed, cfg);
+	ret = usbd_class_remove(uds_ctx, c_nd, speed, cfg);
 	if (ret == 0) {
-		atomic_clear_bit(&iter->state, USBD_CCTX_REGISTERED);
-		usbd_class_shutdown(iter->c_data);
+		atomic_clear_bit(&c_nd->state, USBD_CCTX_REGISTERED);
+		usbd_class_shutdown(c_nd->c_data);
 
 		if (can_release_data) {
 			c_data->uds_ctx = NULL;
