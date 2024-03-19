@@ -136,3 +136,9 @@ arduino_i2c: &flexcomm2 {
 &ctimer0 {
 	status = "okay";
 };
+
+&pmu {
+	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
+			  <PMU_RESET_ITRC>,
+			  <PMU_RESET_AP_RESET>;
+};
