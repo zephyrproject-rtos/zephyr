@@ -30,6 +30,11 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 	receive_rb = &backend->isr.receive_rdb[backend->isr.receive_rdb_used];
 	size = ring_buf_put_claim(receive_rb, &buffer, UINT32_MAX);
 	if (size == 0) {
+		/* This can be caused by
+		 * - a too long CONFIG_MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS
+		 * - or a too small receive_buf_size
+		 * relatively to the (too high) baud rate and amount of incoming data.
+		 */
 		LOG_WRN("Receive buffer overrun");
 		ring_buf_put_finish(receive_rb, 0);
 		ring_buf_reset(receive_rb);
@@ -37,14 +42,23 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 	}
 
 	ret = uart_fifo_read(backend->uart, buffer, size);
-	if (ret < 0) {
+	if (ret <= 0) {
 		ring_buf_put_finish(receive_rb, 0);
-	} else {
-		ring_buf_put_finish(receive_rb, (uint32_t)ret);
+		return;
 	}
+	ring_buf_put_finish(receive_rb, (uint32_t)ret);
 
-	if (ret > 0) {
-		k_work_submit(&backend->receive_ready_work);
+	if (ring_buf_space_get(receive_rb) > ring_buf_capacity_get(receive_rb) / 20) {
+		/*
+		 * Avoid having the receiver call modem_pipe_receive() too often (e.g. every byte).
+		 * It temporarily disables the UART RX IRQ when swapping buffers
+		 * which can cause byte loss at higher baud rates.
+		 */
+		k_work_schedule(&backend->receive_ready_work,
+			K_MSEC(CONFIG_MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS));
+	} else {
+		/* The buffer is getting full. Run the work item immediately to free up space. */
+		k_work_reschedule(&backend->receive_ready_work, K_NO_WAIT);
 	}
 }
 
