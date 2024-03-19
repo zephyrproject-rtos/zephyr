@@ -1,0 +1,22 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic clock multiplexor
+
+compatible: "clock-mux"
+
+include: [clock-node.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  input-sources:
+    type: phandles
+    required: true
+    description: |
+      List of all input sources provided to the mux. These sources should
+      be references to other clock nodes within the clock tree.
+
+clock-cells:
+  - selector

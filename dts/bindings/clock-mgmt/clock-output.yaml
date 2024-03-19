@@ -1,0 +1,12 @@
+# Copyright 2024
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic clock output
+
+compatible: "clock-output"
+
+include: [clock-node.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
