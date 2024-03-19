@@ -84,7 +84,7 @@ Building the application for the simulated nrf5340bsim
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/nrf53_sync_rtc
    :host-os: unix
-   :board: nrf5340bsim_nrf5340_cpuapp
+   :board: nrf5340bsim/nrf5340/cpuapp
    :goals: build
    :west-args: --sysbuild
 
