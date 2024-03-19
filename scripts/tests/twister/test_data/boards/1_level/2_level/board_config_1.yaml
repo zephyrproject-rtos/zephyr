@@ -1,7 +1,7 @@
 identifier: demo_board_1
 name: DEMO_Board_1
 type: mcu
-arch: arm_demo
+arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
