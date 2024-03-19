@@ -29,6 +29,7 @@ BOARD_YML = 'board.yml'
 # 'ninja boards' in a build directory without west installed.)
 #
 
+
 @dataclass
 class Revision:
     name: str
@@ -40,7 +41,6 @@ class Revision:
         for r in revision.get('revisions', []):
             revisions.append(Revision.from_dict(r))
         return Revision(revision['name'], revisions)
-
 
 
 @dataclass
@@ -100,14 +100,17 @@ class Board:
 def board_key(board):
     return board.name
 
+
 def find_arch2boards(args):
     arch2board_set = find_arch2board_set(args)
     return {arch: sorted(arch2board_set[arch], key=board_key)
             for arch in arch2board_set}
 
+
 def find_boards(args):
     return sorted(itertools.chain(*find_arch2board_set(args).values()),
                   key=board_key)
+
 
 def find_arch2board_set(args):
     arches = sorted(find_arches(args))
@@ -122,6 +125,7 @@ def find_arch2board_set(args):
 
     return ret
 
+
 def find_arches(args):
     arch_set = set()
 
@@ -129,6 +133,7 @@ def find_arches(args):
         arch_set |= find_arches_in(root)
 
     return arch_set
+
 
 def find_arches_in(root):
     ret = set()
@@ -144,6 +149,7 @@ def find_arches_in(root):
         ret.add(maybe_arch.name)
 
     return ret
+
 
 def find_arch2board_set_in(root, arches, board_dir):
     ret = defaultdict(set)
@@ -184,7 +190,7 @@ def load_v2_boards(board_name, board_yml, systems):
             sys.exit(f'ERROR: Malformed content in file: {board_yml.as_posix()}\n'
                      f'{mutual_exclusive} are mutual exclusive at this level.')
 
-        board_array = b.get('boards', [ b.get('board', None) ])
+        board_array = b.get('boards', [b.get('board', None)])
         for board in board_array:
             if board_name is not None:
                 if board['name'] != board_name:
@@ -269,40 +275,40 @@ def add_args_formatting(parser):
                         help='''CMake Format string to use to list each board''')
 
 
-def variant_v2_identifiers(variant, identifier):
-    identifiers = [identifier + '/' + variant.name]
+def variant_v2_qualifiers(variant, qualifiers):
+    qualifiers_list = [qualifiers + '/' + variant.name]
     for v in variant.variants:
-        identifiers.extend(variant_v2_identifiers(v, identifier + '/' + variant.name))
-    return identifiers
+        qualifiers_list.extend(variant_v2_qualifiers(v, qualifiers + '/' + variant.name))
+    return qualifiers_list
 
 
-def board_v2_identifiers(board):
-    identifiers = []
+def board_v2_qualifiers(board):
+    qualifiers_list = []
 
     for s in board.socs:
         if s.cpuclusters:
             for c in s.cpuclusters:
                 id_str = board.name + '/' + s.name + '/' + c.name
-                identifiers.append(id_str)
+                qualifiers_list.append(id_str)
                 for v in c.variants:
-                    identifiers.extend(variant_v2_identifiers(v, id_str))
+                    qualifiers_list.extend(variant_v2_qualifiers(v, id_str))
         else:
             id_str = board.name + '/' + s.name
-            identifiers.append(id_str)
+            qualifiers_list.append(id_str)
             for v in s.variants:
-                identifiers.extend(variant_v2_identifiers(v, id_str))
+                qualifiers_list.extend(variant_v2_qualifiers(v, id_str))
 
     if not board.socs:
-        identifiers.append(board.name)
+        qualifiers_list.append(board.name)
 
     for v in board.variants:
-        identifiers.extend(variant_v2_identifiers(v, board.name))
-    return identifiers
+        qualifiers_list.extend(variant_v2_qualifiers(v, board.name))
+    return qualifiers_list
 
 
-def board_v2_identifiers_csv(board):
+def board_v2_qualifiers_csv(board):
     # Return in csv (comma separated value) format
-    return ",".join(board_v2_identifiers(board))
+    return ",".join(board_v2_qualifiers(board))
 
 
 def dump_v2_boards(args):
@@ -314,7 +320,7 @@ def dump_v2_boards(args):
         boards = find_v2_boards(args)
 
     for b in boards:
-        identifiers = board_v2_identifiers(b)
+        qualifiers_list = board_v2_qualifiers(b)
         if args.cmakeformat is not None:
             notfound = lambda x: x or 'NOTFOUND'
             info = args.cmakeformat.format(
@@ -328,7 +334,7 @@ def dump_v2_boards(args):
                 REVISIONS='REVISIONS;' + ';'.join(
                           [x.name for x in b.revisions]),
                 SOCS='SOCS;' + ';'.join([s.name for s in b.socs]),
-                IDENTIFIERS='IDENTIFIERS;' + ';'.join(identifiers)
+                QUALIFIERS='QUALIFIERS;' + ';'.join(qualifiers_list)
             )
             print(info)
         else:
@@ -353,7 +359,7 @@ def dump_boards(args):
                     REVISIONS='REVISIONS;NOTFOUND',
                     VARIANT_DEFAULT='VARIANT_DEFAULT;NOTFOUND',
                     SOCS='SOCS;',
-                    IDENTIFIERS='IDENTIFIERS;'
+                    QUALIFIERS='QUALIFIERS;'
                 )
                 print(info)
             else:
