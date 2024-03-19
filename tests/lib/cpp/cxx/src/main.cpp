@@ -136,3 +136,11 @@ ZTEST(cxx_tests, test_new_delete)
 	delete test_foo;
 }
 ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
+
+/*
+ * Unused macros are parsed but not really compiled. Even with all the
+ * NULL arguments this line adds a lot of additional C++ coverage.
+ *
+ * DEVICE_DEFINE(dev_id, name, * init_fn, pm, data, config, level, prio, api)
+ */
+DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_0), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
