@@ -36,7 +36,7 @@ static struct k_mutex arp_mutex;
 
 static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 {
-	NET_DBG("%p", entry);
+	NET_DBG("entry %p", entry);
 
 	if (pending) {
 		struct net_pkt *pkt;
@@ -64,8 +64,9 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 	struct arp_entry *entry;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, entry, node) {
-		NET_DBG("iface %p dst %s",
-			iface, net_sprint_ipv4_addr(&entry->ip));
+		NET_DBG("iface %d (%p) dst %s",
+			net_if_get_by_iface(iface), iface,
+			net_sprint_ipv4_addr(&entry->ip));
 
 		if (entry->iface == iface &&
 		    net_ipv4_addr_cmp(&entry->ip, dst)) {
@@ -474,7 +475,8 @@ void net_arp_update(struct net_if *iface,
 	struct arp_entry *entry;
 	struct net_pkt *pkt;
 
-	NET_DBG("src %s", net_sprint_ipv4_addr(src));
+	NET_DBG("iface %d (%p) src %s", net_if_get_by_iface(iface), iface,
+		net_sprint_ipv4_addr(src));
 	net_if_tx_lock(iface);
 	k_mutex_lock(&arp_mutex, K_FOREVER);
 
@@ -532,7 +534,8 @@ void net_arp_update(struct net_if *iface,
 		net_pkt_lladdr_dst(pkt)->addr =
 			(uint8_t *) &NET_ETH_HDR(pkt)->dst.addr;
 
-		NET_DBG("dst %s pending %p frag %p",
+		NET_DBG("iface %d (%p) dst %s pending %p frag %p",
+			net_if_get_by_iface(iface), iface,
 			net_sprint_ipv4_addr(&entry->ip),
 			pkt, pkt->frags);
 
@@ -694,10 +697,11 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		 * and the target IP address is our address.
 		 */
 		if (net_eth_is_addr_unspecified(&arp_hdr->dst_hwaddr)) {
-			NET_DBG("Updating ARP cache for %s [%s]",
+			NET_DBG("Updating ARP cache for %s [%s] iface %d",
 				net_sprint_ipv4_addr(&arp_hdr->src_ipaddr),
 				net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
-						   arp_hdr->hwlen));
+						   arp_hdr->hwlen),
+				net_if_get_by_iface(net_pkt_iface(pkt)));
 
 			net_arp_update(net_pkt_iface(pkt),
 				       (struct in_addr *)arp_hdr->src_ipaddr,
