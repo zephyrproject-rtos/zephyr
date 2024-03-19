@@ -1,0 +1,83 @@
+-----------------------------------------------------------------------------
+Commit cdb5a294600a ("boards: deprecated: Update PHYTEC phyBOARD-Lyra AM62x")
+-----------------------------------------------------------------------------
+cdb5a294600aa5cbd088677832f18883d6e1d36d total: 0 errors, 0 warnings, 16 lines checked
+
+Commit cdb5a294600a ("boards: deprecated: Update PHYTEC phyBOARD-Lyra AM62x") has no obvious style problems and is ready for submission.
+-----------------------------------------------------------------------------
+Commit 91fdf590d23a ("MAINTAINERS: Add boards/phytec/phyboard_lyra to TI K3")
+-----------------------------------------------------------------------------
+91fdf590d23a6d342ce47cdf85fea7b8bce2572d total: 0 errors, 0 warnings, 8 lines checked
+
+Commit 91fdf590d23a ("MAINTAINERS: Add boards/phytec/phyboard_lyra to TI K3") has no obvious style problems and is ready for submission.
+--------------------------------------------------------------------------------
+Commit b4eac67b8b2e ("Bluetooth: BAP: Shell: Add support for decoding LC3 data")
+--------------------------------------------------------------------------------
+b4eac67b8b2eee5381d58671fddb8ae9bf2a3989 total: 0 errors, 0 warnings, 612 lines checked
+
+Commit b4eac67b8b2e ("Bluetooth: BAP: Shell: Add support for decoding LC3 data") has no obvious style problems and is ready for submission.
+--------------------------------------------------------------------------------
+Commit 189541396c31 ("west: west.yml pointed to in-flight PR for MSPM0 support")
+--------------------------------------------------------------------------------
+189541396c3105977a5fc1caa670f72a34205833 total: 0 errors, 0 warnings, 8 lines checked
+
+Commit 189541396c31 ("west: west.yml pointed to in-flight PR for MSPM0 support") has no obvious style problems and is ready for submission.
+--------------------------------------------------
+Commit a957c92a5fba ("soc: added TI MSPM0 family")
+--------------------------------------------------
+a957c92a5fba223a8c26586e346d09997fb292ea total: 0 errors, 0 warnings, 264 lines checked
+
+Commit a957c92a5fba ("soc: added TI MSPM0 family") has no obvious style problems and is ready for submission.
+---------------------------------------------------------------
+Commit b1ee543f2e19 ("dts: add MSPM0 family to the devicetree")
+---------------------------------------------------------------
+b1ee543f2e1949763e6b1966dba027a42f5867dc total: 0 errors, 0 warnings, 110 lines checked
+
+Commit b1ee543f2e19 ("dts: add MSPM0 family to the devicetree") has no obvious style problems and is ready for submission.
+---------------------------------------------------------------
+Commit b1e6204db9b6 ("drivers: added pinctrl driver for MSPM0")
+---------------------------------------------------------------
+b1e6204db9b6db0096930813346a6304cf612332 total: 0 errors, 0 warnings, 209 lines checked
+
+Commit b1e6204db9b6 ("drivers: added pinctrl driver for MSPM0") has no obvious style problems and is ready for submission.
+-------------------------------------------------------------------
+Commit 442d526cfe3b ("drivers: added gpio driver for MSPM0 family")
+-------------------------------------------------------------------
+442d526cfe3b699ce74d6efbea51c3991a12ae90 total: 0 errors, 0 warnings, 398 lines checked
+
+Commit 442d526cfe3b ("drivers: added gpio driver for MSPM0 family") has no obvious style problems and is ready for submission.
+--------------------------------------------------------------
+Commit 2199c34e593b ("drivers: added serial driver for MSPM0")
+--------------------------------------------------------------
+2199c34e593b308cb0fdf29ac1ea814267241127:330: ERROR:CODE_INDENT: code indent should use tabs where possible
+#330: FILE: drivers/serial/uart_mspm0.c:263:
++ ^IMSP_UART_IRQ_REGISTER(index)^I\$
+
+2199c34e593b308cb0fdf29ac1ea814267241127:330: WARNING:SPACE_BEFORE_TAB: please, no space before tabs
+#330: FILE: drivers/serial/uart_mspm0.c:263:
++ ^IMSP_UART_IRQ_REGISTER(index)^I\$
+
+2199c34e593b308cb0fdf29ac1ea814267241127:330: WARNING:LEADING_SPACE: please, no spaces at the start of a line
+#330: FILE: drivers/serial/uart_mspm0.c:263:
++ ^IMSP_UART_IRQ_REGISTER(index)^I\$
+
+2199c34e593b308cb0fdf29ac1ea814267241127 total: 1 errors, 2 warnings, 339 lines checked
+
+NOTE: For some of the reported defects, checkpatch may be able to
+      mechanically convert to the typical style using --fix or --fix-inplace.
+
+NOTE: Whitespace errors detected.
+      You may wish to use scripts/cleanpatch or scripts/cleanfile
+
+Commit 2199c34e593b ("drivers: added serial driver for MSPM0") has style problems, please review.
+-------------------------------------------------
+Commit 5c43afa78d9e ("boards: add lp_mspm0g3507")
+-------------------------------------------------
+5c43afa78d9e6e6086981ef887b656fb1daa2275 total: 0 errors, 0 warnings, 262 lines checked
+
+Commit 5c43afa78d9e ("boards: add lp_mspm0g3507") has no obvious style problems and is ready for submission.
+
+NOTE: Ignored message types: AVOID_EXTERNS BRACES C99_COMMENT_TOLERANCE COMPLEX_MACRO CONFIG_EXPERIMENTAL CONST_STRUCT DATE_TIME DT_SCHEMA_BINDING_PATCH DT_SPLIT_BINDING_PATCH ENOSYS EXPORT_SYMBOL FILE_PATH_CHANGES IS_ENABLED_CONFIG MINMAX MULTISTATEMENT_MACRO_USE_DO_WHILE NETWORKING_BLOCK_COMMENT_STYLE PREFER_KERNEL_TYPES PREFER_SECTION PRINTK_WITHOUT_KERN_LEVEL REPEATED_WORD SPDX_LICENSE_TAG SPLIT_STRING TRAILING_SEMICOLON UNDOCUMENTED_DT_STRING VOLATILE
+
+NOTE: If any of the errors are false positives, please report
+      them to the maintainers.
