@@ -202,6 +202,8 @@ rsource "Kconfig.msp432p4xx"
 
 rsource "Kconfig.numicro"
 
+rsource "Kconfig.mspm0"
+
 rsource "Kconfig.sam0"
 
 rsource "Kconfig.psoc6"
