@@ -71,7 +71,7 @@ struct usbd_cdc_acm_desc {
 
 struct cdc_acm_uart_data {
 	/* Pointer to the associated USBD class node */
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
 	/* Pointer to the class interface descriptors */
 	struct usbd_cdc_acm_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
@@ -133,10 +133,10 @@ static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
 	return k_current_get() == k_work_queue_thread_get(&cdc_acm_work_q);
 }
 
-static uint8_t cdc_acm_get_int_in(struct usbd_class_node *const c_nd)
+static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
 
@@ -147,10 +147,10 @@ static uint8_t cdc_acm_get_int_in(struct usbd_class_node *const c_nd)
 	return desc->if0_int_ep.bEndpointAddress;
 }
 
-static uint8_t cdc_acm_get_bulk_in(struct usbd_class_node *const c_nd)
+static uint8_t cdc_acm_get_bulk_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
 
@@ -161,10 +161,10 @@ static uint8_t cdc_acm_get_bulk_in(struct usbd_class_node *const c_nd)
 	return desc->if1_in_ep.bEndpointAddress;
 }
 
-static uint8_t cdc_acm_get_bulk_out(struct usbd_class_node *const c_nd)
+static uint8_t cdc_acm_get_bulk_out(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
 
@@ -175,9 +175,9 @@ static uint8_t cdc_acm_get_bulk_out(struct usbd_class_node *const c_nd)
 	return desc->if1_out_ep.bEndpointAddress;
 }
 
-static size_t cdc_acm_get_bulk_mps(struct usbd_class_node *const c_nd)
+static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return 512U;
@@ -186,11 +186,11 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_node *const c_nd)
 	return 64U;
 }
 
-static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
+static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 				struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct udc_buf_info *bi;
 
@@ -204,14 +204,14 @@ static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
 				bi->ep, buf->len);
 		}
 
-		if (bi->ep == cdc_acm_get_bulk_out(c_nd)) {
+		if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
 			atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 		}
 
 		goto ep_request_error;
 	}
 
-	if (bi->ep == cdc_acm_get_bulk_out(c_nd)) {
+	if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
 		/* RX transfer completion */
 		size_t done;
 
@@ -225,14 +225,14 @@ static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
 
-	if (bi->ep == cdc_acm_get_bulk_in(c_nd)) {
+	if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 		/* TX transfer completion */
 		if (data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
 	}
 
-	if (bi->ep == cdc_acm_get_int_in(c_nd)) {
+	if (bi->ep == cdc_acm_get_int_in(c_data)) {
 		k_sem_give(&data->notif_sem);
 	}
 
@@ -240,16 +240,16 @@ ep_request_error:
 	return usbd_ep_buf_free(uds_ctx, buf);
 }
 
-static void usbd_cdc_acm_update(struct usbd_class_node *const c_nd,
+static void usbd_cdc_acm_update(struct usbd_class_data *const c_data,
 				uint8_t iface, uint8_t alternate)
 {
 	LOG_DBG("New configuration, interface %u alternate %u",
 		iface, alternate);
 }
 
-static void usbd_cdc_acm_enable(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_ACM_CLASS_ENABLED);
@@ -264,9 +264,9 @@ static void usbd_cdc_acm_enable(struct usbd_class_node *const c_nd)
 	}
 }
 
-static void usbd_cdc_acm_disable(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
@@ -274,27 +274,27 @@ static void usbd_cdc_acm_disable(struct usbd_class_node *const c_nd)
 	LOG_INF("Configuration disabled");
 }
 
-static void usbd_cdc_acm_suspended(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_suspended(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	/* FIXME: filter stray suspended events earlier */
 	atomic_set_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
 }
 
-static void usbd_cdc_acm_resumed(struct usbd_class_node *const c_nd)
+static void usbd_cdc_acm_resumed(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
 }
 
-static void *usbd_cdc_acm_get_desc(struct usbd_class_node *const c_nd,
+static void *usbd_cdc_acm_get_desc(struct usbd_class_data *const c_data,
 				   const enum usbd_speed speed)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	if (speed == USBD_SPEED_HS) {
@@ -376,11 +376,11 @@ static void cdc_acm_update_linestate(struct cdc_acm_uart_data *const data)
 	}
 }
 
-static int usbd_cdc_acm_cth(struct usbd_class_node *const c_nd,
+static int usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    struct net_buf *const buf)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t min_len;
 
@@ -403,12 +403,12 @@ static int usbd_cdc_acm_cth(struct usbd_class_node *const c_nd,
 	return 0;
 }
 
-static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
+static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t len;
 
@@ -442,9 +442,9 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 	return 0;
 }
 
-static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
+static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
 
@@ -467,7 +467,7 @@ static int cdc_acm_send_notification(const struct device *dev,
 		.data = sys_cpu_to_le16(serial_state),
 	};
 	struct cdc_acm_uart_data *data = dev->data;
-	struct usbd_class_node *c_nd = data->c_nd;
+	struct usbd_class_data *c_data = data->c_data;
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
@@ -482,14 +482,14 @@ static int cdc_acm_send_notification(const struct device *dev,
 		return -EACCES;
 	}
 
-	ep = cdc_acm_get_int_in(c_nd);
-	buf = usbd_ep_buf_alloc(c_nd, ep, sizeof(struct cdc_acm_notification));
+	ep = cdc_acm_get_int_in(c_data);
+	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_acm_notification));
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
 	net_buf_add_mem(buf, &notification, sizeof(struct cdc_acm_notification));
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	/* FIXME: support for sync transfers */
 	k_sem_take(&data->notif_sem, K_FOREVER);
 
@@ -502,13 +502,13 @@ static int cdc_acm_send_notification(const struct device *dev,
 static void cdc_acm_tx_fifo_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	size_t len;
 	int ret;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, tx_fifo_work);
-	c_nd = data->c_nd;
+	c_data = data->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
 		LOG_DBG("USB configuration is not enabled");
@@ -525,7 +525,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_nd));
+	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_data));
 	if (buf == NULL) {
 		cdc_acm_work_submit(&data->tx_fifo_work);
 		goto tx_fifo_handler_exit;
@@ -534,7 +534,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
 	net_buf_add(buf, len);
 
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue");
 		net_buf_unref(buf);
@@ -555,13 +555,13 @@ tx_fifo_handler_exit:
 static void cdc_acm_rx_fifo_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
-	c_nd = data->c_nd;
+	c_data = data->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
@@ -569,7 +569,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_nd)) {
+	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
 		LOG_INF("RX buffer to small, throttle");
 		return;
 	}
@@ -579,13 +579,13 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	ep = cdc_acm_get_bulk_out(c_nd);
+	ep = cdc_acm_get_bulk_out(c_data);
 	buf = cdc_acm_buf_alloc(ep);
 	if (buf == NULL) {
 		return;
 	}
 
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -775,10 +775,10 @@ static int cdc_acm_irq_update(const struct device *dev)
 static void cdc_acm_irq_cb_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
-	struct usbd_class_node *c_nd;
+	struct usbd_class_data *c_data;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, irq_cb_work);
-	c_nd = data->c_nd;
+	c_data = data->c_data;
 
 	if (data->cb == NULL) {
 		LOG_ERR("IRQ callback is not set");
@@ -798,7 +798,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		data->cb(usbd_class_get_private(c_nd), data->cb_data);
+		data->cb(usbd_class_get_private(c_data), data->cb_data);
 	}
 
 	if (data->rx_fifo.altered) {
@@ -1219,7 +1219,7 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 										\
 	static struct cdc_acm_uart_data uart_data_##n = {			\
 		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
-		.c_nd = &cdc_acm_##n,						\
+		.c_data = &cdc_acm_##n,						\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\

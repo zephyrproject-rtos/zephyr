@@ -29,12 +29,12 @@ int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
  * Calculated length does not include any string descriptors that may be
  * used by the class instance.
  *
- * @param[in] node Pointer to a class node
+ * @param[in] c_data Pointer to a class data
  * @param[in] speed Speed-dependent descriptor selector
  *
  * @return Length of the class descriptor
  */
-size_t usbd_class_desc_len(struct usbd_class_node *const c_nd,
+size_t usbd_class_desc_len(struct usbd_class_data *const c_data,
 			   const enum usbd_speed speed);
 
 /**

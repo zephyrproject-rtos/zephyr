@@ -55,14 +55,14 @@ struct lb_data {
 	atomic_t state;
 };
 
-static void lb_update(struct usbd_class_node *c_nd,
+static void lb_update(struct usbd_class_data *c_data,
 		      uint8_t iface, uint8_t alternate)
 {
 	LOG_DBG("Instance %p, interface %u alternate %u changed",
-		c_nd, iface, alternate);
+		c_data, iface, alternate);
 }
 
-static int lb_control_to_host(struct usbd_class_node *c_nd,
+static int lb_control_to_host(struct usbd_class_data *c_data,
 			      const struct usb_setup_packet *const setup,
 			      struct net_buf *const buf)
 {
@@ -87,7 +87,7 @@ static int lb_control_to_host(struct usbd_class_node *c_nd,
 	return 0;
 }
 
-static int lb_control_to_dev(struct usbd_class_node *c_nd,
+static int lb_control_to_dev(struct usbd_class_data *c_data,
 			     const struct usb_setup_packet *const setup,
 			     const struct net_buf *const buf)
 {
@@ -109,22 +109,22 @@ static int lb_control_to_dev(struct usbd_class_node *c_nd,
 	return 0;
 }
 
-static int lb_request_handler(struct usbd_class_node *c_nd,
+static int lb_request_handler(struct usbd_class_data *c_data,
 			      struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi = NULL;
 
 	bi = (struct udc_buf_info *)net_buf_user_data(buf);
-	LOG_DBG("%p -> ep 0x%02x, len %u, err %d", c_nd, bi->ep, buf->len, err);
+	LOG_DBG("%p -> ep 0x%02x, len %u, err %d", c_data, bi->ep, buf->len, err);
 
 	return usbd_ep_buf_free(uds_ctx, buf);
 }
 
-static void *lb_get_desc(struct usbd_class_node *const c_nd,
+static void *lb_get_desc(struct usbd_class_data *const c_data,
 			 const enum usbd_speed speed)
 {
-	struct lb_data *data = usbd_class_get_private(c_nd);
+	struct lb_data *data = usbd_class_get_private(c_data);
 
 	if (speed == USBD_SPEED_HS) {
 		return data->hs_desc;
@@ -133,14 +133,14 @@ static void *lb_get_desc(struct usbd_class_node *const c_nd,
 	return data->fs_desc;
 }
 
-static int lb_init(struct usbd_class_node *c_nd)
+static int lb_init(struct usbd_class_data *c_data)
 {
-	struct lb_data *data = usbd_class_get_private(c_nd);
+	struct lb_data *data = usbd_class_get_private(c_data);
 	struct loopback_desc *desc = data->desc;
 
 	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
 
-	LOG_DBG("Init class instance %p", c_nd);
+	LOG_DBG("Init class instance %p", c_data);
 
 	return 0;
 }

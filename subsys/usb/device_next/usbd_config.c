@@ -63,9 +63,9 @@ static void usbd_config_classes_enable(struct usbd_config_node *const cfg_nd,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
 		if (enable) {
-			usbd_class_enable(iter->c_nd);
+			usbd_class_enable(iter->c_data);
 		} else {
-			usbd_class_disable(iter->c_nd);
+			usbd_class_disable(iter->c_data);
 		}
 	}
 }
