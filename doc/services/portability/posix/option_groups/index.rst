@@ -163,7 +163,7 @@ process applications.
    :header: API, Supported
    :widths: 50,10
 
-    confstr(),
+    confstr(),yes
     environ,yes
     errno,yes
     getenv(),yes
