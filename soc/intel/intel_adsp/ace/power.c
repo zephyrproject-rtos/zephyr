@@ -150,7 +150,13 @@ static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 	core_desc[core_id].thread_ptr = XTENSA_RUR("THREADPTR");
 	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
 	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
+
+#if CONFIG_MP_MAX_NUM_CPUS == 1
+	/* With one core only, the memory is mapped in cache and we need to flush
+	 * it.
+	 */
 	sys_cache_data_flush_range(&core_desc[core_id], sizeof(struct core_state));
+#endif
 }
 
 static ALWAYS_INLINE void _restore_core_context(void)
