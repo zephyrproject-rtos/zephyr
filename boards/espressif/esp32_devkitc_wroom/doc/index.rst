@@ -115,7 +115,91 @@ below to retrieve those files.
    It is recommended running the command above after :file:`west update`.
 
 Building & Flashing
--------------------
+*******************
+
+Simple boot
+===========
+
+The board could be loaded using the single binary image, without 2nd stage bootloader.
+It is the default option when building the application without additional configuration.
+
+.. note::
+
+   Simple boot does not provide any security features nor OTA updates.
+
+MCUboot bootloader
+==================
+
+User may choose to use MCUboot bootloader instead. In that case the bootloader
+must be build (and flash) at least once.
+
+There are two options to be used when building an application:
+
+1. Sysbuild
+2. Manual build
+
+.. note::
+
+   User can select the MCUboot bootloader by adding the following line
+   to the board default configuration file.
+   ```
+   CONFIG_BOOTLOADER_MCUBOOT=y
+   ```
+
+Sysbuild
+========
+
+The sysbuild makes possible to build and flash all necessary images needed to
+bootstrap the board with the ESP32 SoC.
+
+To build the sample application using sysbuild use the command:
+
+.. zephyr-app-commands::
+   :tool: west
+   :app: samples/hello_world
+   :board: esp_wrover_kit
+   :goals: build
+   :west-args: --sysbuild
+   :compact:
+
+By default, the ESP32 sysbuild creates bootloader (MCUboot) and application
+images. But it can be configured to create other kind of images.
+
+Build directory structure created by sysbuild is different from traditional
+Zephyr build. Output is structured by the domain subdirectories:
+
+.. code-block::
+
+  build/
+  ├── hello_world
+  │   └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
+  ├── mcuboot
+  │    └── zephyr
+  │       ├── zephyr.elf
+  │       └── zephyr.bin
+  └── domains.yaml
+
+.. note::
+
+   With ``--sysbuild`` option the bootloader will be re-build and re-flash
+   every time the pristine build is used.
+
+For more information about the system build please read the :ref:`sysbuild` documentation.
+
+Manual build
+============
+
+During the development cycle, it is intended to build & flash as quickly possible.
+For that reason, images can be build one at a time using traditional build.
+
+The instructions following are relevant for both manual build and sysbuild.
+The only difference is the structure of the build directory.
+
+.. note::
+
+   Remember that bootloader (MCUboot) needs to be flash at least once.
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -149,7 +233,7 @@ message in the monitor:
    Hello World! esp32_devkitc_wroom
 
 Debugging
----------
+*********
 
 ESP32-DEVKITC-WROOM support on OpenOCD is available upstream as of version 0.12.0.
 Download and install OpenOCD from `OpenOCD`_.
