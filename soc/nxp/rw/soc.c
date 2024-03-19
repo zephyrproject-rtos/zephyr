@@ -10,6 +10,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/sys/util_macro.h>
 
 #include <cortex_m/exception.h>
 #include <fsl_power.h>
@@ -245,6 +246,17 @@ static int nxp_rw600_init(void)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
 	POWER_EnableResetSource(kPOWER_ResetSourceWdt);
 #endif
+
+#define PMU_RESET_CAUSES_ \
+	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(pmu), reset_causes_en, DT_PROP_BY_IDX, (|))
+#define PMU_RESET_CAUSES \
+	COND_CODE_0(IS_EMPTY(PMU_RESET_CAUSES_), (PMU_RESET_CAUSES_), (0))
+#define WDT_RESET \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(wwdt), (kPOWER_ResetSourceWdt), (0))
+#define RESET_CAUSES \
+	(PMU_RESET_CAUSES | WDT_RESET)
+
+	POWER_EnableResetSource(RESET_CAUSES);
 
 	/* Initialize clock */
 	clock_init();
