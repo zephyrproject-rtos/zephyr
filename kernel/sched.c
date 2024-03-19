@@ -651,23 +651,23 @@ void z_sched_start(struct k_thread *thread)
 
 /* Spins in ISR context, waiting for a thread known to be running on
  * another CPU to catch the IPI we sent and halt.  Note that we check
- * for ourselves being asynchronously halted first to prevent simple
- * deadlocks (but not complex ones involving cycles of 3+ threads!).
+ * for ourselves being halted from inside the loop to prevent
+ * deadlock.  Finally note that we release the scheduler lock before
+ * returning.
  */
-static k_spinlock_key_t thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
+static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 {
-	if (is_halting(_current)) {
-		halt_thread(_current,
-			    is_aborting(_current) ? _THREAD_DEAD
-						  : _THREAD_SUSPENDED);
-	}
-
-	k_spin_unlock(&_sched_spinlock, key);
 	while (is_halting(thread)) {
+		if (is_halting(_current)) {
+			halt_thread(_current,
+				    is_aborting(_current) ? _THREAD_DEAD : _THREAD_SUSPENDED);
+		}
+		k_spin_unlock(&_sched_spinlock, key);
+		arch_spin_relax();
+		key = k_spin_lock(&_sched_spinlock);
 	}
-	key = k_spin_lock(&_sched_spinlock);
+	k_spin_unlock(&_sched_spinlock, key);
 	z_sched_switch_spin(thread);
-	return key;
 }
 
 /* Shared handler for k_thread_{suspend,abort}().  Called with the
@@ -699,8 +699,7 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 #endif
 
 		if (arch_is_in_isr()) {
-			key = thread_halt_spin(thread, key);
-			k_spin_unlock(&_sched_spinlock, key);
+			thread_halt_spin(thread, key);
 		} else  {
 			add_to_waitq_locked(_current, wq);
 			z_swap(&_sched_spinlock, key);
@@ -1573,7 +1572,7 @@ extern void thread_abort_hook(struct k_thread *thread);
 static void halt_thread(struct k_thread *thread, uint8_t new_state)
 {
 	/* We hold the lock, and the thread is known not to be running
-	 * anywhere.
+	 * anywhere (or to have been preempted by the ISR we're executing).
 	 */
 	if ((thread->base.thread_state & new_state) == 0U) {
 		thread->base.thread_state |= new_state;
