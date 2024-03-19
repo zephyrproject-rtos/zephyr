@@ -21,6 +21,10 @@ struct posix_rwlock {
 	k_tid_t wr_owner;
 };
 
+struct posix_rwlockattr {
+	bool initialized: 1;
+};
+
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 static uint32_t read_lock_acquire(struct posix_rwlock *rwl, int32_t timeout);
 static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout);
@@ -383,4 +387,32 @@ static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
 		ret = EBUSY;
 	}
 	return ret;
+}
+
+int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
+{
+	struct posix_rwlockattr *const a = (struct posix_rwlockattr *)attr;
+
+	if (a == NULL) {
+		return EINVAL;
+	}
+
+	*a = (struct posix_rwlockattr){
+		.initialized = true,
+	};
+
+	return 0;
+}
+
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
+{
+	struct posix_rwlockattr *const a = (struct posix_rwlockattr *)attr;
+
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	*a = (struct posix_rwlockattr){0};
+
+	return 0;
 }
