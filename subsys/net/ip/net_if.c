@@ -4842,11 +4842,13 @@ done:
 	net_mgmt_event_notify(NET_EVENT_IF_ADMIN_UP, iface);
 	update_operational_state(iface);
 
-	/* Make sure that we update the IPv6 addresses and join the
-	 * multicast groups.
-	 */
-	rejoin_multicast_groups(iface);
-	net_if_start_dad(iface);
+	if (!net_if_is_offloaded(iface)) {
+		/* Make sure that we update the IPv6 addresses and join the
+		 * multicast groups.
+		 */
+		rejoin_multicast_groups(iface);
+		net_if_start_dad(iface);
+	}
 
 out:
 	net_if_unlock(iface);
