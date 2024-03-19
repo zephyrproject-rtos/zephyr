@@ -401,10 +401,10 @@ static void class_node_name_lookup(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = NULL;
 
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_iter, iter) {
-		if ((iter->c_nd->name != NULL) &&
-		    (strlen(iter->c_nd->name) != 0)) {
+		if ((iter->c_data->name != NULL) &&
+		    (strlen(iter->c_data->name) != 0)) {
 			if (match_idx == idx) {
-				entry->syntax = iter->c_nd->name;
+				entry->syntax = iter->c_data->name;
 				break;
 			}
 

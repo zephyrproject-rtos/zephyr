@@ -213,64 +213,64 @@ struct usbd_cctx_vendor_req {
 /** USB Class instance registered flag */
 #define USBD_CCTX_REGISTERED		0
 
-struct usbd_class_node;
+struct usbd_class_data;
 
 /**
  * @brief USB device support class instance API
  */
 struct usbd_class_api {
 	/** Feature halt state update handler */
-	void (*feature_halt)(struct usbd_class_node *const node,
+	void (*feature_halt)(struct usbd_class_data *const c_data,
 			     uint8_t ep, bool halted);
 
 	/** Configuration update handler */
-	void (*update)(struct usbd_class_node *const node,
+	void (*update)(struct usbd_class_data *const c_data,
 		       uint8_t iface, uint8_t alternate);
 
 	/** USB control request handler to device */
-	int (*control_to_dev)(struct usbd_class_node *const node,
+	int (*control_to_dev)(struct usbd_class_data *const c_data,
 			      const struct usb_setup_packet *const setup,
 			      const struct net_buf *const buf);
 
 	/** USB control request handler to host */
-	int (*control_to_host)(struct usbd_class_node *const node,
+	int (*control_to_host)(struct usbd_class_data *const c_data,
 			       const struct usb_setup_packet *const setup,
 			       struct net_buf *const buf);
 
 	/** Endpoint request completion event handler */
-	int (*request)(struct usbd_class_node *const node,
+	int (*request)(struct usbd_class_data *const c_data,
 		       struct net_buf *buf, int err);
 
 	/** USB power management handler suspended */
-	void (*suspended)(struct usbd_class_node *const node);
+	void (*suspended)(struct usbd_class_data *const c_data);
 
 	/** USB power management handler resumed */
-	void (*resumed)(struct usbd_class_node *const node);
+	void (*resumed)(struct usbd_class_data *const c_data);
 
 	/** Start of Frame */
-	void (*sof)(struct usbd_class_node *const node);
+	void (*sof)(struct usbd_class_data *const c_data);
 
 	/** Class associated configuration is selected */
-	void (*enable)(struct usbd_class_node *const node);
+	void (*enable)(struct usbd_class_data *const c_data);
 
 	/** Class associated configuration is disabled */
-	void (*disable)(struct usbd_class_node *const node);
+	void (*disable)(struct usbd_class_data *const c_data);
 
 	/** Initialization of the class implementation */
-	int (*init)(struct usbd_class_node *const node);
+	int (*init)(struct usbd_class_data *const c_data);
 
 	/** Shutdown of the class implementation */
-	void (*shutdown)(struct usbd_class_node *const node);
+	void (*shutdown)(struct usbd_class_data *const c_data);
 
 	/** Get function descriptor based on speed parameter */
-	void *(*get_desc)(struct usbd_class_node *const node,
+	void *(*get_desc)(struct usbd_class_data *const c_data,
 			  const enum usbd_speed speed);
 };
 
 /**
  * @brief USB device support class data
  */
-struct usbd_class_node {
+struct usbd_class_data {
 	/** Name of the USB device class instance */
 	const char *name;
 	/** Pointer to USB device stack context structure */
@@ -288,14 +288,14 @@ struct usbd_class_node {
  *
  * Variables necessary for per speed class management. For each speed (Full,
  * High) there is separate `struct usbd_class_iter` pointing to the same
- * `struct usbd_class_node` (because the class can only operate at one speed
+ * `struct usbd_class_data` (because the class can only operate at one speed
  * at a time).
  */
 struct usbd_class_iter {
 	/** Node information for the slist. */
 	sys_snode_t node;
 	/** Pointer to public class node instance. */
-	struct usbd_class_node *const c_nd;
+	struct usbd_class_data *const c_data;
 	/** Bitmap of all endpoints assigned to the instance.
 	 *  The IN endpoints are mapped in the upper halfword.
 	 */
@@ -318,13 +318,13 @@ struct usbd_class_iter {
  * The class implementation must use this function and not access the members
  * of the struct directly.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  *
  * @return Pointer to USB device runtime context
  */
-static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_node *const c_nd)
+static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_data *const c_data)
 {
-	return c_nd->uds_ctx;
+	return c_data->uds_ctx;
 }
 
 /**
@@ -333,13 +333,13 @@ static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_nod
  * The class implementation must use this function and not access the members
  * of the struct directly.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  *
  * @return Pointer to class implementation private data
  */
-static inline void *usbd_class_get_private(const struct usbd_class_node *const c_nd)
+static inline void *usbd_class_get_private(const struct usbd_class_data *const c_data)
 {
-	return c_nd->priv;
+	return c_data->priv;
 }
 
 #define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
@@ -488,7 +488,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_node *const c
 	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_SERIAL_NUMBER)
 
 #define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
-	static struct usbd_class_node class_name = {				\
+	static struct usbd_class_data class_name = {				\
 		.name = STRINGIFY(class_name),					\
 		.api = class_api,						\
 		.v_reqs = class_v_reqs,						\
@@ -496,11 +496,11 @@ static inline void *usbd_class_get_private(const struct usbd_class_node *const c
 	};									\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
 		usbd_class_fs, usbd_class_iter, class_name##_fs) = {		\
-		.c_nd = &class_name,						\
+		.c_data = &class_name,						\
 	};									\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
 		usbd_class_hs, usbd_class_iter, class_name##_hs) = {		\
-		.c_nd = &class_name,						\
+		.c_data = &class_name,						\
 	}
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req
@@ -700,13 +700,13 @@ struct net_buf *usbd_ep_ctrl_buf_alloc(struct usbd_contex *const uds_ctx,
  *
  * Allocate a new buffer from controller's driver buffer pool.
  *
- * @param[in] c_nd   Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] ep     Endpoint address
  * @param[in] size   Size of the request buffer
  *
  * @return pointer to allocated request or NULL on error.
  */
-struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_node *const c_nd,
+struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 				  const uint8_t ep, const size_t size);
 
 /**
@@ -727,12 +727,12 @@ int usbd_ep_ctrl_enqueue(struct usbd_contex *const uds_ctx,
  *
  * Add request to the queue.
  *
- * @param[in] c_nd   Pointer to USB device class node
+ * @param[in] c_data   Pointer to USB device class data
  * @param[in] buf    Pointer to UDC request buffer
  *
  * @return 0 on success, or error from udc_ep_enqueue()
  */
-int usbd_ep_enqueue(const struct usbd_class_node *const c_nd,
+int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 		    struct net_buf *const buf);
 
 /**

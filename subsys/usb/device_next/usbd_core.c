@@ -78,13 +78,13 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
 		switch (event->type) {
 		case UDC_EVT_SUSPEND:
-			usbd_class_suspended(iter->c_nd);
+			usbd_class_suspended(iter->c_data);
 			break;
 		case UDC_EVT_RESUME:
-			usbd_class_resumed(iter->c_nd);
+			usbd_class_resumed(iter->c_data);
 			break;
 		case UDC_EVT_SOF:
-			usbd_class_sof(iter->c_nd);
+			usbd_class_sof(iter->c_data);
 			break;
 		default:
 			break;
@@ -265,11 +265,11 @@ static int usbd_pre_init(void)
 	LOG_DBG("Available USB class iterators:");
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_iter, iter) {
 		atomic_set(&iter->state, 0);
-		LOG_DBG("\t%p->%p, name %s", iter, iter->c_nd, iter->c_nd->name);
+		LOG_DBG("\t%p->%p, name %s", iter, iter->c_data, iter->c_data->name);
 	}
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_iter, iter) {
 		atomic_set(&iter->state, 0);
-		LOG_DBG("\t%p->%p, name %s", iter, iter->c_nd, iter->c_nd->name);
+		LOG_DBG("\t%p->%p, name %s", iter, iter->c_data, iter->c_data->name);
 	}
 
 	return 0;

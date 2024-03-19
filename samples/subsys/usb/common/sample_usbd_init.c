@@ -43,15 +43,15 @@ static int register_fs_classes(struct usbd_contex *uds_ctx)
 
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_iter, iter) {
 		/* Pull everything that is enabled in our configuration. */
-		err = usbd_register_class(uds_ctx, iter->c_nd->name,
+		err = usbd_register_class(uds_ctx, iter->c_data->name,
 					  USBD_SPEED_FS, 1);
 		if (err) {
 			LOG_ERR("Failed to register FS %s (%d)",
-				iter->c_nd->name, err);
+				iter->c_data->name, err);
 			return err;
 		}
 
-		LOG_DBG("Register FS %s", iter->c_nd->name);
+		LOG_DBG("Register FS %s", iter->c_data->name);
 	}
 
 	return err;
@@ -63,15 +63,15 @@ static int register_hs_classes(struct usbd_contex *uds_ctx)
 
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_iter, iter) {
 		/* Pull everything that is enabled in our configuration. */
-		err = usbd_register_class(uds_ctx, iter->c_nd->name,
+		err = usbd_register_class(uds_ctx, iter->c_data->name,
 					  USBD_SPEED_HS, 1);
 		if (err) {
 			LOG_ERR("Failed to register HS %s (%d)",
-				iter->c_nd->name, err);
+				iter->c_data->name, err);
 			return err;
 		}
 
-		LOG_DBG("Register HS %s", iter->c_nd->name);
+		LOG_DBG("Register HS %s", iter->c_data->name);
 	}
 
 	return err;
