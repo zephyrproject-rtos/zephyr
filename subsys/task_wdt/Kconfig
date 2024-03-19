@@ -58,4 +58,10 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	  kernel timer. This is especially important if the hardware watchdog
 	  is clocked by an inaccurate low-speed RC oscillator.
 
+config TASK_WDT_SHELL
+	bool "Task watchdog shell utilities"
+	depends on SHELL
+	help
+	  Activate shell module that provides Task watchdog commands.
+
 endif
