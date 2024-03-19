@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/power/nxp_rw_pmu.h>
 
 / {
 	chosen {
@@ -67,6 +68,11 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x21000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	pmu: pmu@31000 {
+		reg = <0x31000 0x130>;
+		compatible = "nxp,rw-pmu";
 	};
 
 	trng: random@14000 {
