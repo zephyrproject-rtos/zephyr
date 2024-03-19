@@ -15,6 +15,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/crc.h>
@@ -147,3 +148,7 @@ ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
 DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
 
 DEVICE_DT_DEFINE(DT_NODELABEL(test_dev1_dfr), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
+
+static int fake_pm_action(const struct device *dev,
+		enum pm_device_action pm_action) { return -1; }
+PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), fake_pm_action);
