@@ -366,7 +366,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 
 		if (chan_list) {
-			if (!wpa_cli_cmd_v("set_network %d freq_list%s", resp.network_id,
+			if (!wpa_cli_cmd_v("set_network %d scan_freq%s", resp.network_id,
 					   chan_list)) {
 				k_free(chan_list);
 				goto out;
