@@ -187,16 +187,16 @@ usbd_class_get_by_req(struct usbd_contex *const uds_ctx,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
-		if (iter->c_nd->data->v_reqs == NULL) {
+		if (iter->c_nd->v_reqs == NULL) {
 			continue;
 		}
 
-		for (int i = 0; i < iter->c_nd->data->v_reqs->len; i++) {
+		for (int i = 0; i < iter->c_nd->v_reqs->len; i++) {
 			/*
 			 * First instance always wins.
 			 * There is no other way to determine the recipient.
 			 */
-			if (iter->c_nd->data->v_reqs->reqs[i] == request) {
+			if (iter->c_nd->v_reqs->reqs[i] == request) {
 				return iter;
 			}
 		}
@@ -297,7 +297,7 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 			const enum usbd_speed speed, const uint8_t cfg)
 {
 	struct usbd_class_iter *iter;
-	struct usbd_class_data *data;
+	struct usbd_class_node *c_nd;
 	int ret;
 
 	iter = usbd_class_iter_get(name, speed);
@@ -313,7 +313,7 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 		goto register_class_error;
 	}
 
-	data = iter->c_nd->data;
+	c_nd = iter->c_nd;
 
 	/* TODO: does it still need to be atomic ? */
 	if (atomic_test_bit(&iter->state, USBD_CCTX_REGISTERED)) {
@@ -322,7 +322,7 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 		goto register_class_error;
 	}
 
-	if ((data->uds_ctx != NULL) && (data->uds_ctx != uds_ctx)) {
+	if ((c_nd->uds_ctx != NULL) && (c_nd->uds_ctx != uds_ctx)) {
 		LOG_ERR("Class registered to other context at different speed");
 		ret = -EBUSY;
 		goto register_class_error;
@@ -332,7 +332,7 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 	if (ret == 0) {
 		/* Initialize pointer back to the device struct */
 		atomic_set_bit(&iter->state, USBD_CCTX_REGISTERED);
-		data->uds_ctx = uds_ctx;
+		c_nd->uds_ctx = uds_ctx;
 	}
 
 register_class_error:
@@ -345,7 +345,7 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 			  const enum usbd_speed speed, const uint8_t cfg)
 {
 	struct usbd_class_iter *iter;
-	struct usbd_class_data *data;
+	struct usbd_class_node *c_nd;
 	bool can_release_data = true;
 	int ret;
 
@@ -362,7 +362,7 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 		goto unregister_class_error;
 	}
 
-	data = iter->c_nd->data;
+	c_nd = iter->c_nd;
 	/* TODO: does it still need to be atomic ? */
 	if (!atomic_test_bit(&iter->state, USBD_CCTX_REGISTERED)) {
 		LOG_WRN("Class instance not registered");
@@ -399,7 +399,7 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 		usbd_class_shutdown(iter->c_nd);
 
 		if (can_release_data) {
-			data->uds_ctx = NULL;
+			c_nd->uds_ctx = NULL;
 		}
 	}
 

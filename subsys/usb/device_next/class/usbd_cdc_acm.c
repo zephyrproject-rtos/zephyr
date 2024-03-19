@@ -1210,11 +1210,9 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 										\
 	CDC_ACM_DEFINE_DESCRIPTOR(n);						\
 										\
-	static struct usbd_class_data usbd_cdc_acm_data_##n;			\
-										\
 	USBD_DEFINE_CLASS(cdc_acm_##n,						\
 			  &usbd_cdc_acm_api,					\
-			  &usbd_cdc_acm_data_##n);				\
+			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
 	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
@@ -1228,10 +1226,6 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 		.desc = &cdc_acm_desc_##n,					\
 		.fs_desc = cdc_acm_fs_desc_##n,					\
 		.hs_desc = cdc_acm_hs_desc_##n,					\
-	};									\
-										\
-	static struct usbd_class_data usbd_cdc_acm_data_##n = {			\
-		.priv = (void *)DEVICE_DT_GET(DT_DRV_INST(n)),			\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, usbd_cdc_acm_preinit, NULL,			\
