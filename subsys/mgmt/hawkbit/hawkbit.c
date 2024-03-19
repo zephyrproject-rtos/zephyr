@@ -645,6 +645,16 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 
 	type = enum_for_http_req_string(userdata);
 
+	if (rsp->http_status_code != 200) {
+		LOG_ERR("HTTP request denied (%s): %d", (char *)userdata, rsp->http_status_code);
+		if (rsp->http_status_code == 401 || rsp->http_status_code == 403) {
+			hb_context.code_status = HAWKBIT_PERMISSION_ERROR;
+		} else {
+			hb_context.code_status = HAWKBIT_METADATA_ERROR;
+		}
+		return;
+	}
+
 	switch (type) {
 	case HAWKBIT_PROBE:
 		if (hb_context.dl.http_content_size == 0) {
@@ -680,12 +690,6 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 				break;
 			}
 
-			if (rsp->http_status_code / 100 == 4) {
-				LOG_ERR("HTTP request denied: %d", rsp->http_status_code);
-				hb_context.code_status = HAWKBIT_PERMISSION_ERROR;
-				break;
-			}
-
 			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
 			ret = json_obj_parse(hb_context.response_data,
 					     hb_context.dl.downloaded_size, json_ctl_res_descr,
@@ -701,10 +705,6 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 	case HAWKBIT_CLOSE:
 	case HAWKBIT_REPORT:
 	case HAWKBIT_CONFIG_DEVICE:
-		if (strcmp(rsp->http_status, "OK") < 0) {
-			LOG_ERR("Failed to cancel the update");
-		}
-
 		break;
 
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
@@ -1025,7 +1025,8 @@ enum hawkbit_response hawkbit_probe(void)
 		goto cleanup;
 	}
 
-	if (hb_context.code_status == HAWKBIT_METADATA_ERROR) {
+	if (hb_context.code_status == HAWKBIT_METADATA_ERROR ||
+	    hb_context.code_status == HAWKBIT_PERMISSION_ERROR) {
 		goto cleanup;
 	}
 
