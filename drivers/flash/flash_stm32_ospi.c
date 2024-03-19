@@ -1108,11 +1108,11 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 							? SPI_NOR_CMD_SE_4B
 							: SPI_NOR_CMD_SE;
 					}
-					/* Avoid using wrong erase type,
-					 * if zero entries are found in erase_types
-					 */
-					bet = NULL;
 				}
+				/* Avoid using wrong erase type,
+				 * if zero entries are found in erase_types
+				 */
+				bet = NULL;
 			}
 			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
 				cmd_erase.Address, cmd_erase.AddressSize,
