@@ -108,8 +108,10 @@ config RAM_CONSOLE_BUFFER_SIZE
 	default 1024
 	depends on RAM_CONSOLE
 	help
-	  Size of the RAM console buffer. Messages will wrap around if the
-	  length is exceeded.
+	  Total size of the RAM console buffer, to ensure it's always
+	  NULL-terminated leave one byte unused, the actual length is
+	  one byte less. Messages will wrap around if the actual length
+	  is exceeded.
 
 config RTT_CONSOLE
 	bool "Use RTT console"
