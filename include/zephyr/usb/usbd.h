@@ -270,22 +270,17 @@ struct usbd_class_api {
 /**
  * @brief USB device support class data
  */
-struct usbd_class_data {
+struct usbd_class_node {
+	/** Name of the USB device class instance */
+	const char *name;
 	/** Pointer to USB device stack context structure */
 	struct usbd_contex *uds_ctx;
+	/** Pointer to device support class API */
+	const struct usbd_class_api *api;
 	/** Supported vendor request table, can be NULL */
 	const struct usbd_cctx_vendor_req *v_reqs;
 	/** Pointer to private data */
 	void *priv;
-};
-
-struct usbd_class_node {
-	/** Name of the USB device class instance */
-	const char *name;
-	/** Pointer to device support class API */
-	const struct usbd_class_api *api;
-	/** Pointer to USB device support class data */
-	struct usbd_class_data *data;
 };
 
 /**
@@ -329,9 +324,7 @@ struct usbd_class_iter {
  */
 static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_node *const c_nd)
 {
-	struct usbd_class_data *const c_data = c_nd->data;
-
-	return c_data->uds_ctx;
+	return c_nd->uds_ctx;
 }
 
 /**
@@ -346,9 +339,7 @@ static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_nod
  */
 static inline void *usbd_class_get_private(const struct usbd_class_node *const c_nd)
 {
-	struct usbd_class_data *const c_data = c_nd->data;
-
-	return c_data->priv;
+	return c_nd->priv;
 }
 
 #define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
@@ -496,19 +487,20 @@ static inline void *usbd_class_get_private(const struct usbd_class_node *const c
 #define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name, d_string)		\
 	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_SERIAL_NUMBER)
 
-#define USBD_DEFINE_CLASS(class_name, class_api, class_data)		\
-	static struct usbd_class_node class_name = {			\
-		.name = STRINGIFY(class_name),				\
-		.api = class_api,					\
-		.data = class_data,					\
-	};								\
-	static STRUCT_SECTION_ITERABLE_ALTERNATE(			\
-		usbd_class_fs, usbd_class_iter, class_name##_fs) = {	\
-		.c_nd = &class_name,					\
-	};								\
-	static STRUCT_SECTION_ITERABLE_ALTERNATE(			\
-		usbd_class_hs, usbd_class_iter, class_name##_hs) = {	\
-		.c_nd = &class_name,					\
+#define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
+	static struct usbd_class_node class_name = {				\
+		.name = STRINGIFY(class_name),					\
+		.api = class_api,						\
+		.v_reqs = class_v_reqs,						\
+		.priv = class_priv,						\
+	};									\
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
+		usbd_class_fs, usbd_class_iter, class_name##_fs) = {		\
+		.c_nd = &class_name,						\
+	};									\
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
+		usbd_class_hs, usbd_class_iter, class_name##_hs) = {		\
+		.c_nd = &class_name,						\
 	}
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req

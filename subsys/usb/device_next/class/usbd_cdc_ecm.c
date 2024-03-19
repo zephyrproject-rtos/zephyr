@@ -809,11 +809,9 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 				DT_INST_PROP(n, remote_mac_address),		\
 				USBD_DUT_STRING_INTERFACE);			\
 										\
-	static struct usbd_class_data usbd_cdc_ecm_data_##n;			\
-										\
 	USBD_DEFINE_CLASS(cdc_ecm_##n,						\
 			  &usbd_cdc_ecm_api,					\
-			  &usbd_cdc_ecm_data_##n);				\
+			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
 	static struct cdc_ecm_eth_data eth_data_##n = {				\
 		.c_nd = &cdc_ecm_##n,						\
@@ -824,10 +822,6 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 		.desc = &cdc_ecm_desc_##n,					\
 		.fs_desc = cdc_ecm_fs_desc_##n,					\
 		.hs_desc = cdc_ecm_hs_desc_##n,					\
-	};									\
-										\
-	static struct usbd_class_data usbd_cdc_ecm_data_##n = {			\
-		.priv = (void *)DEVICE_DT_GET(DT_DRV_INST(n)),			\
 	};									\
 										\
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, usbd_cdc_ecm_preinit, NULL,		\

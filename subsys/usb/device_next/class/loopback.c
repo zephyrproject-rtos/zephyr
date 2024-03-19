@@ -362,12 +362,7 @@ const static struct usb_desc_header *lb_hs_desc_##x[] = {			\
 		.hs_desc = lb_hs_desc_##x,					\
 	};									\
 										\
-	static struct usbd_class_data lb_class_##x = {				\
-		.priv = &lb_data_##x,						\
-		.v_reqs = &lb_vregs,						\
-	};									\
-										\
-	USBD_DEFINE_CLASS(loopback_##x, &lb_api, &lb_class_##x);
+	USBD_DEFINE_CLASS(loopback_##x, &lb_api, &lb_data_##x, &lb_vregs);
 
 LISTIFY(CONFIG_USBD_LOOPBACK_INSTANCES_COUNT, DEFINE_LOOPBACK_DESCRIPTOR, ())
 LISTIFY(CONFIG_USBD_LOOPBACK_INSTANCES_COUNT, DEFINE_LOOPBACK_CLASS_DATA, ())
