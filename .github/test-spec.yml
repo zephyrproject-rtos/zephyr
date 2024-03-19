@@ -68,6 +68,20 @@
       - "!include/zephyr/bluetooth/mesh/**/*"
   - "samples/bluetooth/hci_rpc/**/*"
 
+"CI-ble-samples-test":
+  - any:
+      - "drivers/bluetooth/**/*"
+  - any:
+      - "dts/arm/nordic/nrf5*"
+  - any:
+      - "subsys/bluetooth/**/*"
+      - "!subsys/bluetooth/mesh/**/*"
+      - "!subsys/bluetooth/audio/**/*"
+  - any:
+      - "include/zephyr/bluetooth/**/*"
+      - "!include/zephyr/bluetooth/mesh/**/*"
+  - "samples/bluetooth/**/*"
+
 "CI-mesh-test":
   - "subsys/bluetooth/mesh/**/*"
   - "include/zephyr/bluetooth/mesh/**/*"
