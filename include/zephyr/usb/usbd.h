@@ -287,11 +287,11 @@ struct usbd_class_data {
  * @cond INTERNAL_HIDDEN
  *
  * Variables necessary for per speed class management. For each speed (Full,
- * High) there is separate `struct usbd_class_iter` pointing to the same
+ * High) there is separate `struct usbd_class_node` pointing to the same
  * `struct usbd_class_data` (because the class can only operate at one speed
  * at a time).
  */
-struct usbd_class_iter {
+struct usbd_class_node {
 	/** Node information for the slist. */
 	sys_snode_t node;
 	/** Pointer to public class node instance. */
@@ -495,11 +495,11 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.priv = class_priv,						\
 	};									\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
-		usbd_class_fs, usbd_class_iter, class_name##_fs) = {		\
+		usbd_class_fs, usbd_class_node, class_name##_fs) = {		\
 		.c_data = &class_name,						\
 	};									\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
-		usbd_class_hs, usbd_class_iter, class_name##_hs) = {		\
+		usbd_class_hs, usbd_class_node, class_name##_hs) = {		\
 		.c_data = &class_name,						\
 	}
 
