@@ -1151,7 +1151,7 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 			} else {
 				dhcpv4_send_nak(ctx, msg, &client_id);
 			}
-		} else if (IS_ENABLED()) {
+		} else if (IS_ENABLED(CONFIG_NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS)) {
 			dhcpv4_send_nak(ctx, msg, &client_id);
 		}
 
