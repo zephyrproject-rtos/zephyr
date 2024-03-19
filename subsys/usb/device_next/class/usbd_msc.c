@@ -870,12 +870,8 @@ struct usbd_class_api msc_bot_api = {
 		.hs_desc = msc_bot_hs_desc_##x,				\
 	};								\
 									\
-	static struct usbd_class_data msc_bot_class_##x = {		\
-		.v_reqs = &msc_bot_vregs,				\
-		.priv = &msc_bot_ctx_##x,				\
-	};								\
-									\
-	USBD_DEFINE_CLASS(msc_##x, &msc_bot_api, &msc_bot_class_##x);
+	USBD_DEFINE_CLASS(msc_##x, &msc_bot_api, &msc_bot_ctx_##x,	\
+			  &msc_bot_vregs);
 
 LISTIFY(MSC_NUM_INSTANCES, DEFINE_MSC_BOT_DESCRIPTOR, ())
 LISTIFY(MSC_NUM_INSTANCES, DEFINE_MSC_BOT_CLASS_DATA, ())
