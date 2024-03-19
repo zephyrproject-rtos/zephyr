@@ -123,7 +123,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 		}
 
 		k_spin_unlock(&backend->async.receive_rb_lock, key);
-		k_work_submit(&backend->receive_ready_work);
+		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 		break;
 
 	case UART_RX_DISABLED:
@@ -215,7 +215,7 @@ static int modem_backend_uart_async_receive(void *data, uint8_t *buf, size_t siz
 	k_spin_unlock(&backend->async.receive_rb_lock, key);
 
 	if (!empty) {
-		k_work_submit(&backend->receive_ready_work);
+		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 	}
 
 	return (int)received;

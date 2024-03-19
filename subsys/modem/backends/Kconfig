@@ -22,14 +22,30 @@ config MODEM_BACKEND_UART_ASYNC
 	bool "Modem UART backend module async implementation"
 	default y if UART_ASYNC_API
 
+if MODEM_BACKEND_UART_ISR
+
+config MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS
+	int "Modem ISR UART delay between first byte received and RECEIVE_READY pipe event"
+	default 20
+	help
+	  This defines the delay, in milliseconds, that the backend waits
+	  when receiving a byte before sending the RECEIVE_READY pipe event.
+	  The backend will anyway send the event before this delay if buffer space runs out.
+	  A good value is ~90% the time it takes to fill half the receive buffer.
+	  It can be calculated as follows:
+	  (<UART receive_buf_size> / 2) / (<UART baud rate> / <UART bits per byte>) * <ms per sec>
+	  By default (for the modem_cellular driver): (512 / 2) / (115200 / 10) * 1000 = 22,222 => 20
+
+endif
+
 if MODEM_BACKEND_UART_ASYNC
 
 config MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS
-	int "Modem UART async transmit timeout in milliseconds"
+	int "Modem async UART transmit timeout in milliseconds"
 	default 1000
 
 config MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS
-	int "Modem UART async receive idle timeout in milliseconds"
+	int "Modem async UART receive idle timeout in milliseconds"
 	default 30
 
 endif
