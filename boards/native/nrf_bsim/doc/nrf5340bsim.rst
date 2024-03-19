@@ -13,7 +13,7 @@ Overview
 ********
 
 To allow simulating nrf5340 SOCs two Zephyr target boards are provided: the
-``nrf5340bsim_nrf5340_cpuapp`` and ``nrf5340bsim_nrf5340_cpunet``.
+``nrf5340bsim/nrf5340/cpuapp`` and ``nrf5340bsim/nrf5340/cpunet``.
 
 These use `BabbleSim`_ to simulate the radio activity, and the
 :ref:`POSIX architecture<Posix arch>` and the `native simulator`_ to
@@ -22,8 +22,8 @@ providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
 
 Just like for the nrf5340dk targets,
-the nrf5340bsim_nrf5340_cpuapp build target provides support for the application core,
-and the nrf5340bsim_nrf5340_cpunet build target provides support for the network
+the nrf5340bsim/nrf5340/cpuapp build target provides support for the application core,
+and the nrf5340bsim/nrf5340/cpunet build target provides support for the network
 core on the simulated nRF5340 SOC.
 
 These boards include models of some of the nRF5340 SOC peripherals:
@@ -65,7 +65,7 @@ Building for, and using these boards
 ************************************
 
 If you are interested in developing on only one of the MCUs in this SOC, you
-can use the corresponding simulated target, nrf5340bsim_nrf5340_cpuapp or nrf5340bsim_nrf5340_cpunet
+can use the corresponding simulated target, nrf5340bsim/nrf5340/cpuapp or nrf5340bsim/nrf5340/cpunet
 following the instructions from the :ref:`nrf52_bsim board <nrf52bsim_build_and_run>`.
 Simply change the board/target appropriately when building.
 
@@ -83,8 +83,8 @@ Simply change the board/target appropriately when building.
 Assembling both MCUs images into a single executable
 ****************************************************
 
-By default, when you build targeting either nrf5340bsim_nrf5340_cpuapp or
-nrf5340bsim_nrf5340_cpunet you will end up with a library (``zephyr/zephyr.elf``) that corresponds
+By default, when you build targeting either nrf5340bsim/nrf5340/cpuapp or
+nrf5340bsim/nrf5340/cpunet you will end up with a library (``zephyr/zephyr.elf``) that corresponds
 to that MCU code image, and an executable (``zephyr/zephyr.exe``) that includes the native simulator
 runner, SOC HW models, that image, and an empty image for the other MCU.
 
@@ -112,7 +112,7 @@ ARM's TrustZone is not modelled in these boards. This means that:
 * There is no differentiation between secure and non secure execution states or bus accesses.
 * All RAM, flash and peripherals are in principle accessible from all SW. Peripherals with their
   own interconnect master ports can, in principle, access any other peripheral or RAM area.
-* There is no nrf5340bsim_nrf5340_cpuapp_ns board/build target, or posibility of mixing secure
+* There is no nrf5340bsim/nrf5340/cpuapp/ns board/build target, or posibility of mixing secure
   and non-secure images.
 * Currently there is no model of the SPU, and therefore neither flash, RAM areas or peripherals
   can be labelled as restricted for secure or non secure access.
