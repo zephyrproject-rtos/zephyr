@@ -1247,6 +1247,16 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		break;
 #endif /* CONFIG_BT_CONN */
 	case BT_CONN_DISCONNECT_COMPLETE:
+		if (conn->err == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
+			/* No ACK or data was ever received. The peripheral may be
+			 * unaware of the connection attempt.
+			 *
+			 * Beware of confusing higher layer errors. Anything that looks
+			 * like it's from the remote is synthetic.
+			 */
+			LOG_WRN("conn %p failed to establish. RF noise?", conn);
+		}
+
 		process_unack_tx(conn);
 		break;
 	default:
