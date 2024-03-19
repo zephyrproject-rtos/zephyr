@@ -42,6 +42,15 @@ struct gdb_mem_region {
 };
 
 /**
+ * State of the packet processing loop
+ */
+enum gdb_loop_state {
+	GDB_LOOP_RECEIVING,
+	GDB_LOOP_CONTINUE,
+	GDB_LOOP_ERROR,
+};
+
+/**
  * Memory region descriptions used for GDB memory access.
  *
  * This array specifies which region of memory GDB can access
