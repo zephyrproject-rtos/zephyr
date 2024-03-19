@@ -269,7 +269,6 @@ static void signal_pending_ipi(void)
 #endif
 }
 
-#ifdef CONFIG_SMP
 /* Called out of z_swap() when CONFIG_SMP.  The current thread can
  * never live in the run queue until we are inexorably on the context
  * switch path on SMP, otherwise there is a deadlock condition where a
@@ -296,7 +295,6 @@ static inline bool is_halting(struct k_thread *thread)
 	return (thread->base.thread_state &
 		(_THREAD_ABORTING | _THREAD_SUSPENDING)) != 0U;
 }
-#endif
 
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
 static inline void clear_halting(struct k_thread *thread)
@@ -651,81 +649,70 @@ void z_sched_start(struct k_thread *thread)
 	z_reschedule(&_sched_spinlock, key);
 }
 
-/**
- * @brief Halt a thread
- *
- * If the target thread is running on another CPU, flag it as needing to
- * abort and send an IPI (if supported) to force a schedule point and wait
- * until the target thread is switched out (ISRs will spin to wait and threads
- * will block to wait). If the target thread is not running on another CPU,
- * then it is safe to act immediately.
- *
- * Upon entry to this routine, the scheduler lock is already held. It is
- * released before this routine returns.
- *
- * @param thread Thread to suspend or abort
- * @param key Current key for _sched_spinlock
- * @param terminate True if aborting thread, false if suspending thread
+/* Spins in ISR context, waiting for a thread known to be running on
+ * another CPU to catch the IPI we sent and halt.  Note that we check
+ * for ourselves being asynchronously halted first to prevent simple
+ * deadlocks (but not complex ones involving cycles of 3+ threads!).
  */
-static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
-			  bool terminate)
+static k_spinlock_key_t thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 {
-#ifdef CONFIG_SMP
-	if (is_halting(_current) && arch_is_in_isr()) {
-		/* Another CPU (in an ISR) or thread is waiting for the
-		 * current thread to halt. Halt it now to help avoid a
-		 * potential deadlock.
-		 */
+	if (is_halting(_current)) {
 		halt_thread(_current,
 			    is_aborting(_current) ? _THREAD_DEAD
 						  : _THREAD_SUSPENDED);
 	}
 
-	bool active = thread_active_elsewhere(thread);
+	k_spin_unlock(&_sched_spinlock, key);
+	while (is_halting(thread)) {
+	}
+	key = k_spin_lock(&_sched_spinlock);
+	z_sched_switch_spin(thread);
+	return key;
+}
 
-	if (active) {
-		/* It's running somewhere else, flag and poke */
+/* Shared handler for k_thread_{suspend,abort}().  Called with the
+ * scheduler lock held and the key passed (which it may
+ * release/reacquire!) which will be released before a possible return
+ * (aborting _current will not return, obviously), which may be after
+ * a context switch.
+ */
+static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
+			  bool terminate)
+{
+	_wait_q_t *wq = &thread->join_queue;
+
+#ifdef CONFIG_SMP
+	wq = terminate ? wq : &thread->halt_queue;
+#endif
+
+	/* If the target is a thread running on another CPU, flag and
+	 * poke (note that we might spin to wait, so a true
+	 * synchronous IPI is needed here, not deferred!), it will
+	 * halt itself in the IPI.  Otherwise it's unscheduled, so we
+	 * can clean it up directly.
+	 */
+	if (thread_active_elsewhere(thread)) {
 		thread->base.thread_state |= (terminate ? _THREAD_ABORTING
-							: _THREAD_SUSPENDING);
-
-		/* We might spin to wait, so a true synchronous IPI is needed
-		 * here, not deferred!
-		 */
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
+					      : _THREAD_SUSPENDING);
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
 		arch_sched_ipi();
 #endif
-	}
 
-	if (is_halting(thread) && (thread != _current)) {
 		if (arch_is_in_isr()) {
-			/* ISRs can only spin waiting another CPU */
+			key = thread_halt_spin(thread, key);
 			k_spin_unlock(&_sched_spinlock, key);
-			while (is_halting(thread)) {
-			}
-
-			/* Now we know it's halting, but not necessarily
-			 * halted (suspended or aborted). Wait for the switch
-			 * to happen!
-			 */
-			key = k_spin_lock(&_sched_spinlock);
-			z_sched_switch_spin(thread);
-			k_spin_unlock(&_sched_spinlock, key);
-		} else if (active) {
-			/* Threads can wait on a queue */
-			add_to_waitq_locked(_current, terminate ?
-						      &thread->join_queue :
-						      &thread->halt_queue);
+		} else  {
+			add_to_waitq_locked(_current, wq);
 			z_swap(&_sched_spinlock, key);
 		}
-		return; /* lock has been released */
-	}
-#endif
-	halt_thread(thread, terminate ? _THREAD_DEAD : _THREAD_SUSPENDED);
-	if ((thread == _current) && !arch_is_in_isr()) {
-		z_swap(&_sched_spinlock, key);
-		__ASSERT(!terminate, "aborted _current back from dead");
 	} else {
-		k_spin_unlock(&_sched_spinlock, key);
+		halt_thread(thread, terminate ? _THREAD_DEAD : _THREAD_SUSPENDED);
+		if ((thread == _current) && !arch_is_in_isr()) {
+			z_swap(&_sched_spinlock, key);
+			__ASSERT(!terminate, "aborted _current back from dead");
+		} else {
+			k_spin_unlock(&_sched_spinlock, key);
+		}
 	}
 }
 
