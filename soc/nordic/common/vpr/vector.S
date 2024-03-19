@@ -20,9 +20,5 @@ SECTION_FUNC(vectors, __start)
 	la t0, _irq_vector_table
 	csrw 0x307, t0
 
-	/* Enable mstatus.mie */
-	li t0, 0x1888
-	csrw mstatus, t0
-
 	/* Call into Zephyr initialization. */
 	tail __initialize
