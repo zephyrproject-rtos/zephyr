@@ -475,6 +475,7 @@
 			interrupts = <2 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>;
 			prescaler = <32768>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 

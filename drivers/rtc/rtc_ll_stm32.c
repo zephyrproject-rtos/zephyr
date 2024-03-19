@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023 Prevas A/S
  * Copyright (c) 2023 Syslinbit
+ * Copyright (c) 2024 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -39,7 +40,7 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 /* RTC start time: 1st, Jan, 2000 */
 #define RTC_YEAR_REF 2000
 /* struct tm start time:   1st, Jan, 1900 */
-#define TM_YEAR_REF 1900
+#define TM_YEAR_REF  1900
 
 /* Convert part per billion calibration value to a number of clock pulses added or removed each
  * 2^20 clock cycles so it is suitable for the CALR register fields
@@ -67,6 +68,13 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 /* Timeout in microseconds used to wait for flags */
 #define RTC_TIMEOUT 1000000
 
+#if defined(CONFIG_RTC_ALARM)
+#define RTC_ALARMS_COUNT DT_PROP(DT_NODELABEL(rtc), alarms_count)
+#define RTC_STM32_SUPPORTED_ALARM_FIELD                                                            \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
+	 RTC_ALARM_TIME_MASK_WEEKDAY)
+#endif
+
 struct rtc_stm32_config {
 	uint32_t async_prescaler;
 	uint32_t sync_prescaler;
@@ -78,7 +86,67 @@ struct rtc_stm32_config {
 
 struct rtc_stm32_data {
 	struct k_mutex lock;
+#if defined(CONFIG_RTC_ALARM)
+	volatile bool is_alarm_pending[RTC_ALARMS_COUNT];
+	rtc_alarm_callback alarm_cb[RTC_ALARMS_COUNT];
+	void *alarm_user_data[RTC_ALARMS_COUNT];
+#endif
 };
+
+#if defined(CONFIG_RTC_ALARM)
+static void stm32_rtc_isr(const struct device *dev)
+{
+	struct rtc_stm32_data *data = dev->data;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	LL_RTC_DisableWriteProtection(RTC);
+
+	/* disable alarms */
+	LL_RTC_ALMA_Disable(RTC);
+	if (RTC_ALARMS_COUNT > 1) {
+		LL_RTC_ALMB_Disable(RTC);
+	}
+
+	/* check alarm A interrupt flag */
+	if (LL_RTC_IsActiveFlag_ALRA(RTC)) {
+		LL_PWR_EnableBkUpAccess();
+		LL_RTC_ClearFlag_ALRA(RTC);
+		LL_PWR_DisableBkUpAccess();
+		if (data->alarm_cb[0]) {
+			data->alarm_cb[0](dev, 0, data->alarm_user_data[0]);
+			data->is_alarm_pending[0] = false;
+		} else {
+			data->is_alarm_pending[0] = true;
+		}
+
+	}
+	/* check if alarm B exists and check its interrupt flag */
+	if (RTC_ALARMS_COUNT > 1) {
+		if (LL_RTC_IsActiveFlag_ALRB(RTC)) {
+			LL_PWR_EnableBkUpAccess();
+			LL_RTC_ClearFlag_ALRB(RTC);
+			LL_PWR_DisableBkUpAccess();
+			if (data->alarm_cb[1]) {
+				data->alarm_cb[1](dev, 1, data->alarm_user_data[1]);
+				data->is_alarm_pending[1] = false;
+			} else {
+				data->is_alarm_pending[1] = true;
+			}
+		}
+	}
+
+	/* re-enable alarms */
+	LL_RTC_ALMA_Enable(RTC);
+	if (RTC_ALARMS_COUNT > 1) {
+		LL_RTC_ALMB_Enable(RTC);
+	}
+
+	LL_RTC_EnableWriteProtection(RTC);
+
+	k_mutex_unlock(&data->lock);
+}
+#endif
 
 static int rtc_stm32_configure(const struct device *dev)
 {
@@ -86,7 +154,7 @@ static int rtc_stm32_configure(const struct device *dev)
 
 	int err = 0;
 
-	uint32_t hour_format     = LL_RTC_GetHourFormat(RTC);
+	uint32_t hour_format 	 = LL_RTC_GetHourFormat(RTC);
 	uint32_t sync_prescaler  = LL_RTC_GetSynchPrescaler(RTC);
 	uint32_t async_prescaler = LL_RTC_GetAsynchPrescaler(RTC);
 
@@ -120,6 +188,17 @@ static int rtc_stm32_configure(const struct device *dev)
 #ifdef RTC_CR_BYPSHAD
 	LL_RTC_EnableShadowRegBypass(RTC);
 #endif /* RTC_CR_BYPSHAD */
+
+#if defined(CONFIG_RTC_ALARM)
+	/* enable and set alarm A interrupt */
+	LL_RTC_ALMA_Enable(RTC);
+	LL_RTC_EnableIT_ALRA(RTC);
+	/* check if alarm B exists and set its interrupt flag */
+	if (RTC_ALARMS_COUNT > 1) {
+		LL_RTC_ALMB_Enable(RTC);
+		LL_RTC_EnableIT_ALRB(RTC);
+	}
+#endif /* CONFIG_RTC_ALARM */
 
 	LL_RTC_EnableWriteProtection(RTC);
 
@@ -170,6 +249,11 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_PWR_DisableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
+#if defined(CONFIG_RTC_ALARM)
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), stm32_rtc_isr,
+		    DEVICE_DT_GET(DT_NODELABEL(rtc)), 0);
+ 	irq_enable(DT_INST_IRQN(0));
+#endif
 	return err;
 }
 
@@ -225,7 +309,6 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 		/* all the other values are consistent with what is expected by hardware */
 		LL_RTC_DATE_SetWeekDay(RTC, timeptr->tm_wday);
 	}
-
 
 	LL_RTC_TIME_SetHour(RTC, bin2bcd(timeptr->tm_hour));
 	LL_RTC_TIME_SetMinute(RTC, bin2bcd(timeptr->tm_min));
@@ -290,7 +373,7 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	timeptr->tm_year = bcd2bin(__LL_RTC_GET_YEAR(rtc_date)) + RTC_YEAR_REF - TM_YEAR_REF;
 	/* tm_mon allowed values are 0-11 */
-	timeptr->tm_mon = bcd2bin(__LL_RTC_GET_MONTH(rtc_date)) - 1;
+	timeptr->tm_mon  = bcd2bin(__LL_RTC_GET_MONTH(rtc_date)) - 1;
 	timeptr->tm_mday = bcd2bin(__LL_RTC_GET_DAY(rtc_date));
 
 	int hw_wday = __LL_RTC_GET_WEEKDAY(rtc_date);
@@ -304,8 +387,8 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	}
 
 	timeptr->tm_hour = bcd2bin(__LL_RTC_GET_HOUR(rtc_time));
-	timeptr->tm_min = bcd2bin(__LL_RTC_GET_MINUTE(rtc_time));
-	timeptr->tm_sec = bcd2bin(__LL_RTC_GET_SECOND(rtc_time));
+	timeptr->tm_min  = bcd2bin(__LL_RTC_GET_MINUTE(rtc_time));
+	timeptr->tm_sec  = bcd2bin(__LL_RTC_GET_SECOND(rtc_time));
 
 #if HW_SUBSECOND_SUPPORT
 	uint64_t temp = ((uint64_t)(cfg->sync_prescaler - rtc_subsecond)) * 1000000000L;
@@ -321,6 +404,222 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	return 0;
 }
+
+#ifdef CONFIG_RTC_ALARM
+int rtc_stm32_alarm_get_supported_fields(const struct device *dev, uint16_t id, uint16_t *mask)
+{
+	ARG_UNUSED(dev);
+
+	if (id >= RTC_ALARMS_COUNT) {
+		LOG_ERR("Alarm ID is out of range");
+		return -EINVAL;
+	}
+
+	if (mask == NULL) {
+		LOG_ERR("Mask pointer points to NULL");
+		return -EINVAL;
+	}
+
+	*mask = RTC_STM32_SUPPORTED_ALARM_FIELD;
+
+	return 0;
+}
+
+static uint32_t tm_to_rtc_alarm_mask(uint16_t mask)
+{
+	uint32_t rtc_alarm_enable_reg = 0;
+
+	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
+		rtc_alarm_enable_reg |= LL_RTC_ALMA_MASK_SECONDS;
+	}
+	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
+		rtc_alarm_enable_reg |= LL_RTC_ALMA_MASK_MINUTES;
+	}
+	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
+		rtc_alarm_enable_reg |= LL_RTC_ALMA_MASK_HOURS;
+	}
+	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+		rtc_alarm_enable_reg |= LL_RTC_ALMA_MASK_DATEWEEKDAY;
+	}
+
+	return rtc_alarm_enable_reg;
+}
+
+static uint16_t rtc_to_tm_alarm_mask(uint32_t rtc_alarm_enable_reg)
+{
+	uint16_t mask = 0;
+
+	if (rtc_alarm_enable_reg & LL_RTC_ALMA_MASK_SECONDS) {
+		mask |= RTC_ALARM_TIME_MASK_SECOND;
+	}
+	if (rtc_alarm_enable_reg & LL_RTC_ALMA_MASK_MINUTES) {
+		mask |= RTC_ALARM_TIME_MASK_MINUTE;
+	}
+	if (rtc_alarm_enable_reg & LL_RTC_ALMA_MASK_HOURS) {
+		mask |= RTC_ALARM_TIME_MASK_HOUR;
+	}
+	if (rtc_alarm_enable_reg & LL_RTC_ALMA_MASK_DATEWEEKDAY) {
+		mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
+	}
+
+	return mask;
+}
+
+static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
+				    const struct rtc_time *timeptr)
+{
+	struct rtc_stm32_data *data = dev->data;
+	uint32_t rtc_mask;
+
+	if (id >= RTC_ALARMS_COUNT) {
+		LOG_ERR("Alarm ID is out of range");
+		return -EINVAL;
+	}
+
+	if (mask & ~RTC_STM32_SUPPORTED_ALARM_FIELD) {
+		LOG_ERR("Invalid alarm mask");
+		return -EINVAL;
+	}
+
+	if ((timeptr == NULL) && (mask != 0)) {
+		LOG_ERR("Timeptr points to NULL");
+		return -EINVAL;
+	}
+
+	rtc_mask = tm_to_rtc_alarm_mask(mask);
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+	LL_RTC_DisableWriteProtection(RTC);
+
+	if (id == 0) {
+		LL_RTC_ALMA_Disable(RTC);
+
+		LL_RTC_ALMA_SetMask(RTC, rtc_mask);
+
+		LL_RTC_ALMA_SetHour(RTC, bin2bcd(timeptr->tm_hour));
+		LL_RTC_ALMA_SetMinute(RTC, bin2bcd(timeptr->tm_min));
+		LL_RTC_ALMA_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
+		LL_RTC_ALMA_SetDay(RTC, bin2bcd(timeptr->tm_mday));
+
+		if (timeptr->tm_wday == 0) {
+			/* sunday (tm_wday = 0) is not represented by the same value in hardware */
+			LL_RTC_ALMA_SetWeekDay(RTC, LL_RTC_WEEKDAY_SUNDAY);
+		} else {
+			/* all the other values are consistent with what is expected by hardware */
+			LL_RTC_ALMA_SetWeekDay(RTC, timeptr->tm_wday);
+		}
+
+		LL_RTC_ALMA_Enable(RTC);
+	}
+	if (id == 1) {
+		LL_RTC_ALMB_Disable(RTC);
+
+		LL_RTC_ALMB_SetMask(RTC, rtc_mask);
+
+		LL_RTC_ALMB_SetHour(RTC, bin2bcd(timeptr->tm_hour));
+		LL_RTC_ALMB_SetMinute(RTC, bin2bcd(timeptr->tm_min));
+		LL_RTC_ALMB_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
+
+		LL_RTC_ALMB_SetDay(RTC, bin2bcd(timeptr->tm_mday));
+
+		if (timeptr->tm_wday == 0) {
+			/* sunday (tm_wday = 0) is not represented by the same value in hardware */
+			LL_RTC_ALMB_SetWeekDay(RTC, LL_RTC_WEEKDAY_SUNDAY);
+		} else {
+			/* all the other values are consistent with what is expected by hardware */
+			LL_RTC_ALMB_SetWeekDay(RTC, timeptr->tm_wday);
+		}
+		LL_RTC_ALMB_Enable(RTC);
+	}
+	LL_RTC_EnableWriteProtection(RTC);
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+	k_mutex_unlock(&data->lock);
+	return 0;
+}
+
+static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
+				    struct rtc_time *timeptr)
+{
+	struct rtc_stm32_data *data = dev->data;
+	uint32_t rtc_time, rtc_day;
+	uint32_t rtc_mask;
+
+	if (id >= RTC_ALARMS_COUNT) {
+		LOG_ERR("Alarm ID is out of range");
+		return -EINVAL;
+	}
+
+	if ((timeptr == NULL) || (mask == NULL)) {
+		LOG_ERR("Timeptr points to NULL or mask is NULL");
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (id == 0) {
+		rtc_mask = LL_RTC_ALMA_GetMask(RTC);
+		rtc_time = LL_RTC_ALMA_GetTime(RTC);
+		rtc_day  = LL_RTC_ALMA_GetDay(RTC);
+	}
+	if (id == 1) {
+		rtc_mask = LL_RTC_ALMB_GetMask(RTC);
+		rtc_time = LL_RTC_ALMB_GetTime(RTC);
+		rtc_day  = LL_RTC_ALMB_GetDay(RTC);
+	}
+	k_mutex_unlock(&data->lock);
+
+	timeptr->tm_hour = bcd2bin(__LL_RTC_GET_HOUR(rtc_time));
+	timeptr->tm_min  = bcd2bin(__LL_RTC_GET_MINUTE(rtc_time));
+	timeptr->tm_sec  = bcd2bin(__LL_RTC_GET_SECOND(rtc_time));
+	timeptr->tm_mday = __LL_RTC_CONVERT_BCD2BIN(rtc_day);
+
+	*mask = rtc_to_tm_alarm_mask(rtc_mask);
+
+	return 0;
+}
+
+static int rtc_stm32_alarm_is_pending(const struct device *dev, uint16_t id)
+{
+	int status;
+	struct rtc_stm32_data *data = dev->data;
+
+	if (id >= RTC_ALARMS_COUNT) {
+		LOG_ERR("Alarm ID is out of range");
+		return -EINVAL;
+	}
+
+	__disable_irq();
+	status = data->is_alarm_pending[id];
+	data->is_alarm_pending[id] = 0;
+	__enable_irq();
+
+	return status;
+}
+
+static int rtc_stm32_alarm_set_callback(const struct device *dev, uint16_t id,
+					rtc_alarm_callback callback, void *user_data)
+{
+	struct rtc_stm32_data *data = dev->data;
+
+	if (id >= RTC_ALARMS_COUNT) {
+		LOG_ERR("Alarm ID is out of range");
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	data->alarm_cb[id] = callback;
+	data->alarm_user_data[id] = user_data;
+
+	k_mutex_unlock(&data->lock);
+	return 0;
+}
+#endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
@@ -403,7 +702,13 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 static const struct rtc_driver_api rtc_stm32_driver_api = {
 	.set_time = rtc_stm32_set_time,
 	.get_time = rtc_stm32_get_time,
-	/* RTC_ALARM not supported */
+#ifdef CONFIG_RTC_ALARM
+	.alarm_get_supported_fields = rtc_stm32_alarm_get_supported_fields,
+	.alarm_set_time = rtc_stm32_alarm_set_time,
+	.alarm_get_time = rtc_stm32_alarm_get_time,
+	.alarm_is_pending = rtc_stm32_alarm_is_pending,
+	.alarm_set_callback = rtc_stm32_alarm_set_callback,
+#endif
 	/* RTC_UPDATE not supported */
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \

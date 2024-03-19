@@ -18,3 +18,8 @@ properties:
     enum:
       - 1
       - 512
+
+  alarms-count:
+    type: int
+    description: |
+      Alarm count

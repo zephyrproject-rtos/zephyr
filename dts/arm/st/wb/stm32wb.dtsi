@@ -285,6 +285,7 @@
 			interrupts = <41 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
+			alarms-count = <2>;
 			status = "disabled";
 
 			bbram: backup_regs {
