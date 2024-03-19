@@ -399,6 +399,10 @@ int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
  */
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
 
+int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
+				  int *ZRESTRICT pshared);
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
+
 int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT attr, size_t *ZRESTRICT guardsize);
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);

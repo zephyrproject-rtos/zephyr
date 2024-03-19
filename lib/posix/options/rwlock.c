@@ -23,6 +23,7 @@ struct posix_rwlock {
 
 struct posix_rwlockattr {
 	bool initialized: 1;
+	bool pshared: 1;
 };
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
@@ -389,6 +390,37 @@ static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout)
 	return ret;
 }
 
+int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
+				  int *ZRESTRICT pshared)
+{
+	struct posix_rwlockattr *const a = (struct posix_rwlockattr *)attr;
+
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	*pshared = a->pshared;
+
+	return 0;
+}
+
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared)
+{
+	struct posix_rwlockattr *const a = (struct posix_rwlockattr *)attr;
+
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	if (!(pshared == PTHREAD_PROCESS_PRIVATE || pshared == PTHREAD_PROCESS_SHARED)) {
+		return EINVAL;
+	}
+
+	a->pshared = pshared;
+
+	return 0;
+}
+
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
 {
 	struct posix_rwlockattr *const a = (struct posix_rwlockattr *)attr;
@@ -399,6 +431,7 @@ int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
 
 	*a = (struct posix_rwlockattr){
 		.initialized = true,
+		.pshared = PTHREAD_PROCESS_PRIVATE,
 	};
 
 	return 0;
