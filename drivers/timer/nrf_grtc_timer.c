@@ -123,19 +123,18 @@ static inline uint64_t counter(void)
 	return now;
 }
 
-static inline uint64_t get_comparator(uint32_t chan)
+static inline int get_comparator(uint32_t chan, uint64_t *cc)
 {
-	uint64_t cc;
 	nrfx_err_t result;
 
-	result = nrfx_grtc_syscounter_cc_value_read(chan, &cc);
+	result = nrfx_grtc_syscounter_cc_value_read(chan, cc);
 	if (result != NRFX_SUCCESS) {
 		if (result != NRFX_ERROR_INVALID_PARAM) {
 			return -EAGAIN;
 		}
 		return -EPERM;
 	}
-	return cc;
+	return 0;
 }
 
 static void system_timeout_set(uint64_t value)
@@ -260,11 +259,11 @@ void z_nrf_grtc_timer_compare_int_unlock(int32_t chan, bool key)
 	compare_int_unlock(chan, key);
 }
 
-uint64_t z_nrf_grtc_timer_compare_read(int32_t chan)
+int z_nrf_grtc_timer_compare_read(int32_t chan, uint64_t *val)
 {
 	IS_CHANNEL_ALLOWED_ASSERT(chan);
 
-	return get_comparator(chan);
+	return get_comparator(chan, val);
 }
 
 static int compare_set_nolocks(int32_t chan, uint64_t target_time,
