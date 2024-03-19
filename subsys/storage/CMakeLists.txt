@@ -2,3 +2,4 @@
 
 add_subdirectory_ifdef(CONFIG_FLASH_MAP  flash_map)
 add_subdirectory_ifdef(CONFIG_STREAM_FLASH stream)
+add_subdirectory_ifdef(CONFIG_NVCB  nvcb)

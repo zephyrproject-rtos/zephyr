@@ -1,0 +1,5 @@
+common:
+  tags: nvcb
+tests:
+  filesystem.nvcb:
+    platform_allow: qemu_x86
