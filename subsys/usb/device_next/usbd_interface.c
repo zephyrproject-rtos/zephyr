@@ -60,7 +60,7 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 	bool found_iface = false;
 	int ret;
 
-	dhp = usbd_class_get_desc(iter->c_nd, usbd_bus_speed(uds_ctx));
+	dhp = usbd_class_get_desc(iter->c_data, usbd_bus_speed(uds_ctx));
 	if (dhp == NULL) {
 		return -EINVAL;
 	}
@@ -207,7 +207,7 @@ int usbd_interface_set(struct usbd_contex *const uds_ctx,
 		return ret;
 	}
 
-	usbd_class_update(class->c_nd, iface, alt);
+	usbd_class_update(class->c_data, iface, alt);
 	usbd_set_alt_value(uds_ctx, iface, alt);
 
 	return 0;

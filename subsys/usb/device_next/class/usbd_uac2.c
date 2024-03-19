@@ -68,7 +68,7 @@ typedef enum {
 	ENTITY_TYPE_OUTPUT_TERMINAL,
 } entity_type_t;
 
-static size_t clock_frequencies(struct usbd_class_node *const node,
+static size_t clock_frequencies(struct usbd_class_data *const c_data,
 				const uint8_t id, const uint32_t **frequencies);
 
 /* UAC2 device runtime data */
@@ -85,7 +85,7 @@ struct uac2_ctx {
 
 /* UAC2 device constant data */
 struct uac2_cfg {
-	struct usbd_class_node *const node;
+	struct usbd_class_data *const c_data;
 	const struct usb_desc_header **descriptors;
 	/* Entity 1 type is at entity_types[0] */
 	const entity_type_t *entity_types;
@@ -104,9 +104,9 @@ struct uac2_cfg {
 	uint8_t num_entities;
 };
 
-static entity_type_t id_type(struct usbd_class_node *const node, uint8_t id)
+static entity_type_t id_type(struct usbd_class_data *const c_data, uint8_t id)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 
 	if ((id - 1) < cfg->num_entities) {
@@ -117,9 +117,9 @@ static entity_type_t id_type(struct usbd_class_node *const node, uint8_t id)
 }
 
 static const struct usb_ep_descriptor *
-get_as_data_ep(struct usbd_class_node *const node, int as_idx)
+get_as_data_ep(struct usbd_class_data *const c_data, int as_idx)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
 
@@ -131,9 +131,9 @@ get_as_data_ep(struct usbd_class_node *const node, int as_idx)
 }
 
 static const struct usb_ep_descriptor *
-get_as_feedback_ep(struct usbd_class_node *const node, int as_idx)
+get_as_feedback_ep(struct usbd_class_data *const c_data, int as_idx)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
 
@@ -157,13 +157,13 @@ static int ep_to_as_interface(const struct device *dev, uint8_t ep, bool *fb)
 			continue;
 		}
 
-		desc = get_as_data_ep(cfg->node, i);
+		desc = get_as_data_ep(cfg->c_data, i);
 		if (desc && (ep == desc->bEndpointAddress)) {
 			*fb = false;
 			return i;
 		}
 
-		desc = get_as_feedback_ep(cfg->node, i);
+		desc = get_as_feedback_ep(cfg->c_data, i);
 		if (desc && (ep == desc->bEndpointAddress)) {
 			*fb = true;
 			return i;
@@ -232,7 +232,7 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 	int as_idx = terminal_to_as_interface(dev, terminal);
 	int ret;
 
-	desc = get_as_data_ep(cfg->node, as_idx);
+	desc = get_as_data_ep(cfg->c_data, as_idx);
 	if (desc) {
 		ep = desc->bEndpointAddress;
 	}
@@ -264,7 +264,7 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		return -ENOMEM;
 	}
 
-	ret = usbd_ep_enqueue(cfg->node, buf);
+	ret = usbd_ep_enqueue(cfg->c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -275,10 +275,10 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 	return ret;
 }
 
-static void schedule_iso_out_read(struct usbd_class_node *const node,
+static void schedule_iso_out_read(struct usbd_class_data *const c_data,
 				  uint8_t ep, uint16_t mps, uint8_t terminal)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
@@ -324,7 +324,7 @@ static void schedule_iso_out_read(struct usbd_class_node *const node,
 		return;
 	}
 
-	ret = usbd_ep_enqueue(node, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -332,11 +332,11 @@ static void schedule_iso_out_read(struct usbd_class_node *const node,
 	}
 }
 
-static void write_explicit_feedback(struct usbd_class_node *const node,
+static void write_explicit_feedback(struct usbd_class_data *const c_data,
 				    uint8_t ep, uint8_t terminal)
 {
-	const struct device *dev = usbd_class_get_private(node);
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
 	struct udc_buf_info *bi;
@@ -366,7 +366,7 @@ static void write_explicit_feedback(struct usbd_class_node *const node,
 		net_buf_add_le32(buf, fb_value);
 	}
 
-	ret = usbd_ep_enqueue(node, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -375,11 +375,11 @@ static void write_explicit_feedback(struct usbd_class_node *const node,
 	}
 }
 
-void uac2_update(struct usbd_class_node *const node,
+void uac2_update(struct usbd_class_data *const c_data,
 		 uint8_t iface, uint8_t alternate)
 {
-	const struct device *dev = usbd_class_get_private(node);
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 	const struct usb_association_descriptor *iad;
@@ -421,20 +421,20 @@ void uac2_update(struct usbd_class_node *const node,
 
 	atomic_set_bit(&ctx->as_active, as_idx);
 
-	data_ep = get_as_data_ep(node, as_idx);
+	data_ep = get_as_data_ep(c_data, as_idx);
 	/* External interfaces (i.e. NULL data_ep) do not have alternate
 	 * configuration and therefore data_ep must be valid here.
 	 */
 	__ASSERT_NO_MSG(data_ep);
 
 	if (USB_EP_DIR_IS_OUT(data_ep->bEndpointAddress)) {
-		schedule_iso_out_read(node, data_ep->bEndpointAddress,
+		schedule_iso_out_read(c_data, data_ep->bEndpointAddress,
 				      sys_le16_to_cpu(data_ep->wMaxPacketSize),
 				      cfg->as_terminals[as_idx]);
 
-		fb_ep = get_as_feedback_ep(node, as_idx);
+		fb_ep = get_as_feedback_ep(c_data, as_idx);
 		if (fb_ep) {
-			write_explicit_feedback(node, fb_ep->bEndpointAddress,
+			write_explicit_feedback(c_data, fb_ep->bEndpointAddress,
 						cfg->as_terminals[as_idx]);
 		}
 	}
@@ -494,7 +494,7 @@ static void layout3_range_response(struct net_buf *const buf, uint16_t length,
 	}
 }
 
-static int get_clock_source_request(struct usbd_class_node *const node,
+static int get_clock_source_request(struct usbd_class_data *const c_data,
 				    const struct usb_setup_packet *const setup,
 				    struct net_buf *const buf)
 {
@@ -509,7 +509,7 @@ static int get_clock_source_request(struct usbd_class_node *const node,
 		return 0;
 	}
 
-	count = clock_frequencies(node, CONTROL_ENTITY_ID(setup), &frequencies);
+	count = clock_frequencies(c_data, CONTROL_ENTITY_ID(setup), &frequencies);
 
 	if (CONTROL_SELECTOR(setup) == CS_SAM_FREQ_CONTROL) {
 		if (CONTROL_ATTRIBUTE(setup) == CUR) {
@@ -536,7 +536,7 @@ static int get_clock_source_request(struct usbd_class_node *const node,
 	return 0;
 }
 
-static int uac2_control_to_host(struct usbd_class_node *const node,
+static int uac2_control_to_host(struct usbd_class_data *const c_data,
 				const struct usb_setup_packet *const setup,
 				struct net_buf *const buf)
 {
@@ -549,9 +549,9 @@ static int uac2_control_to_host(struct usbd_class_node *const node,
 	}
 
 	if (setup->bmRequestType == GET_CLASS_REQUEST_TYPE) {
-		entity_type = id_type(node, CONTROL_ENTITY_ID(setup));
+		entity_type = id_type(c_data, CONTROL_ENTITY_ID(setup));
 		if (entity_type == ENTITY_TYPE_CLOCK_SOURCE) {
-			return get_clock_source_request(node, setup, buf);
+			return get_clock_source_request(c_data, setup, buf);
 		}
 	}
 
@@ -559,13 +559,13 @@ static int uac2_control_to_host(struct usbd_class_node *const node,
 	return 0;
 }
 
-static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
+static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *buf,
 			int err)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi;
 	uint8_t ep, terminal;
 	uint16_t mps;
@@ -609,15 +609,15 @@ static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
 
 	/* Reschedule the read or explicit feedback write */
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		schedule_iso_out_read(node, ep, mps, terminal);
+		schedule_iso_out_read(c_data, ep, mps, terminal);
 	}
 
 	return 0;
 }
 
-static void uac2_sof(struct usbd_class_node *const node)
+static void uac2_sof(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct usb_ep_descriptor *data_ep;
 	const struct usb_ep_descriptor *feedback_ep;
 	const struct uac2_cfg *cfg = dev->config;
@@ -631,15 +631,15 @@ static void uac2_sof(struct usbd_class_node *const node)
 		 * won't be pending only if there was buffer underrun, i.e. the
 		 * application failed to supply receive buffer.
 		 */
-		data_ep = get_as_data_ep(node, as_idx);
+		data_ep = get_as_data_ep(c_data, as_idx);
 		if (data_ep && USB_EP_DIR_IS_OUT(data_ep->bEndpointAddress)) {
-			schedule_iso_out_read(node, data_ep->bEndpointAddress,
+			schedule_iso_out_read(c_data, data_ep->bEndpointAddress,
 				sys_le16_to_cpu(data_ep->wMaxPacketSize),
 				cfg->as_terminals[as_idx]);
 		}
 
 		/* Skip interfaces without explicit feedback endpoint */
-		feedback_ep = get_as_feedback_ep(node, as_idx);
+		feedback_ep = get_as_feedback_ep(c_data, as_idx);
 		if (feedback_ep == NULL) {
 			continue;
 		}
@@ -661,15 +661,15 @@ static void uac2_sof(struct usbd_class_node *const node)
 		 * previous SOF is "gone" even if USB host did not attempt to
 		 * read it).
 		 */
-		write_explicit_feedback(node, feedback_ep->bEndpointAddress,
+		write_explicit_feedback(c_data, feedback_ep->bEndpointAddress,
 					cfg->as_terminals[as_idx]);
 	}
 }
 
-static void *uac2_get_desc(struct usbd_class_node *const node,
+static void *uac2_get_desc(struct usbd_class_data *const c_data,
 			   const enum usbd_speed speed)
 {
-	struct device *dev = usbd_class_get_private(node);
+	struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 
 	if (speed == USBD_SPEED_FS) {
@@ -679,9 +679,9 @@ static void *uac2_get_desc(struct usbd_class_node *const node,
 	return NULL;
 }
 
-static int uac2_init(struct usbd_class_node *const node)
+static int uac2_init(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct uac2_ctx *ctx = dev->data;
 
 	if (ctx->ops == NULL) {
@@ -764,7 +764,7 @@ struct usbd_class_api uac2_api = {
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(inst)), NULL);	\
 	DEFINE_LOOKUP_TABLES(inst)						\
 	static const struct uac2_cfg uac2_cfg_##inst = {			\
-		.node = &uac2_##inst,						\
+		.c_data = &uac2_##inst,						\
 		.descriptors = uac2_descriptors_##inst,				\
 		.entity_types = entity_types_##inst,				\
 		.ep_indexes = ep_indexes_##inst,				\
@@ -783,10 +783,10 @@ struct usbd_class_api uac2_api = {
 		NULL);
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_UAC2_CLASS_DATA)
 
-static size_t clock_frequencies(struct usbd_class_node *const node,
+static size_t clock_frequencies(struct usbd_class_data *const c_data,
 				const uint8_t id, const uint32_t **frequencies)
 {
-	const struct device *dev = usbd_class_get_private(node);
+	const struct device *dev = usbd_class_get_private(c_data);
 	size_t count;
 
 #define GET_FREQUENCY_TABLE(node, i)						\
