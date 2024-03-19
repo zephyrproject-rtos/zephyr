@@ -21,7 +21,9 @@ extern "C" {
 
 /* Defines */
 
+#ifndef PERMILLE_MAX
 #define PERMILLE_MAX                         1000
+#endif /* PERMILLE_MAX */
 
 /* Data types */
 
