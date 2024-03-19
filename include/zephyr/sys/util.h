@@ -422,6 +422,16 @@ static inline bool is_power_of_two(unsigned int x)
 }
 
 /**
+ * @brief Is @p p equal to ``NULL``?
+ * @param p Pointer to check
+ * @return true if @p p is equal to ``NULL``, false otherwise
+ */
+static ALWAYS_INLINE bool is_null(void *p)
+{
+	return p == NULL;
+}
+
+/**
  * @brief Arithmetic shift right
  * @param value value to shift
  * @param shift number of bits to shift
