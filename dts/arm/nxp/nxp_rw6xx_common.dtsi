@@ -58,7 +58,7 @@
 	};
 
 	pinctrl: mci_iomux@4000 {
-		compatible = "nxp,rw-iomux-pinctrl";
+		compatible = "nxp,mci-io-mux";
 		reg = <0x4000 0x1000>;
 		status = "okay";
 	};
