@@ -147,10 +147,18 @@ static void bap_broadcast_assistant_recv_state_cb(
 		struct bt_le_ext_adv *ext_adv = NULL;
 
 		/* Lookup matching PA sync */
+		shell_error(ctx_shell, "Looking for matching PA syncs or local advertises");
 		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
-			if (per_adv_syncs[i] &&
+			shell_error(ctx_shell, "[%d] %p", i, per_adv_syncs[i]);
+			if (per_adv_syncs[i] != NULL) {
+				shell_error(ctx_shell, "%u %u", per_adv_syncs[i]->addr.a.val[0],
+					    state->addr.a.val[0]);
+			}
+
+			if (per_adv_syncs[i] != NULL &&
 			    bt_addr_le_eq(&per_adv_syncs[i]->addr, &state->addr)) {
 				per_adv_sync = per_adv_syncs[i];
+				shell_print(ctx_shell, "Found matching PA sync [%d]", i);
 				break;
 			}
 		}
@@ -650,6 +658,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 		}
 	}
 
+	/* TODO: Do not scan if we have a PA sync to this address */
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err) {
 		shell_print(sh, "Fail to start scanning: %d", err);
@@ -696,22 +705,26 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 	if (argc > 3) {
 		unsigned long pa_interval;
 
-		pa_interval = shell_strtoul(argv[3], 0, &result);
-		if (result) {
-			shell_error(sh, "Could not parse pa_interval: %d", result);
+		if (strcmp(argv[3], "unknown") == 0) {
+			param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
+		} else {
 
-			return -ENOEXEC;
+			pa_interval = shell_strtoul(argv[3], 0, &result);
+			if (result) {
+				shell_error(sh, "Could not parse pa_interval: %d", result);
+
+				return -ENOEXEC;
+			}
+
+			if (!IN_RANGE(pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+				      BT_GAP_PER_ADV_MAX_INTERVAL)) {
+				shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
+
+				return -ENOEXEC;
+			}
+
+			param.pa_interval = pa_interval;
 		}
-
-		if (!IN_RANGE(pa_interval,
-			      BT_GAP_PER_ADV_MIN_INTERVAL,
-			      BT_GAP_PER_ADV_MAX_INTERVAL)) {
-			shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
-
-			return -ENOEXEC;
-		}
-
-		param.pa_interval = pa_interval;
 	} else {
 		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
@@ -1038,11 +1051,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[bis_index [bis_index [bix_index [...]]]]>",
 		      cmd_bap_broadcast_assistant_add_pa_sync, 3, BT_ISO_MAX_GROUP_ISO_COUNT),
 	SHELL_CMD_ARG(mod_src, NULL,
-		      "Set sync <src_id> <sync_pa> [<pa_interval>] "
+		      "Set sync <src_id> <sync_pa> [<pa_interval> | \"unknown\"] "
 		      "[<sync_bis>] [<metadata>]",
 		      cmd_bap_broadcast_assistant_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
-		      "Send a space separated broadcast code of up to 16 bytes "
+		      "Send a string-based broadcast code of up to 16 bytes "
 		      "<src_id> <broadcast code>",
 		      cmd_bap_broadcast_assistant_broadcast_code, 3, 0),
 	SHELL_CMD_ARG(rem_src, NULL, "Remove a source <src_id>",
