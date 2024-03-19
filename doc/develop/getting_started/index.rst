@@ -568,7 +568,7 @@ another sample.
    cluster for which the sample must be built.
    For example to build :zephyr:code-sample:`blinky` for the ``cpuapp`` core on
    the :ref:`nRF5340DK <nrf5340dk_nrf5340>` the board must be provided as:
-   ``nrf5340dk/nrf5340/cpuapp``. Also read :ref:`board_and_identifiers` for more
+   ``nrf5340dk/nrf5340/cpuapp``. See also :ref:`board_terminology` for more
    details.
 
 Flash the Sample
