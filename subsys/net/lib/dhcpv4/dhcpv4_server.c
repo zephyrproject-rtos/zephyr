@@ -1048,7 +1048,8 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 			    slot->client_id.len == client_id.len &&
 			    memcmp(slot->client_id.buf, client_id.buf,
 				   client_id.len) == 0 &&
-			    slot->state == DHCPV4_SERVER_ADDR_RESERVED) {
+			    (slot->state == DHCPV4_SERVER_ADDR_RESERVED ||
+			     slot->state == DHCPV4_SERVER_ADDR_ALLOCATED)) {
 				selected = slot;
 				break;
 			}
