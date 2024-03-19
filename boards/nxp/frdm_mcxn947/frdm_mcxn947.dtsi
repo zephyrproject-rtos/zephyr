@@ -88,3 +88,41 @@
 		};
 	};
 };
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-bufferable;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	combination-mode;
+	rx-clock-source = <1>;
+
+	/* WINBOND flash memory*/
+	w25q64jvssiq: w25q64jvssiq@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		status = "disabled";
+		size = <67108864>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		jedec-id = [ef 40 17];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <2>;
+		column-space = <0>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(8)>;
+			};
+		};
+	};
+};
