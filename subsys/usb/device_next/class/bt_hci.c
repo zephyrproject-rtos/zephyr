@@ -651,12 +651,8 @@ const static struct usb_desc_header *bt_hci_hs_desc_##n[] = {			\
 		.hs_desc = bt_hci_hs_desc_##n,					\
 	};									\
 										\
-	static struct usbd_class_data bt_hci_class_##n = {			\
-		.priv = &bt_hci_data_##n,					\
-		.v_reqs = &bt_hci_vregs,					\
-	};									\
-										\
-	USBD_DEFINE_CLASS(bt_hci_##n, &bt_hci_api, &bt_hci_class_##n);
+	USBD_DEFINE_CLASS(bt_hci_##n, &bt_hci_api,				\
+			  &bt_hci_data_##n, &bt_hci_vregs);
 
 /*
  * Bluetooth subsystem does not support multiple HCI instances,
