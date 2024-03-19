@@ -439,8 +439,6 @@ static int can_loopback_init(const struct device *dev)
 		return -1;
 	}
 
-	LOG_INF("Init of %s done", dev->name);
-
 	return 0;
 }
 
