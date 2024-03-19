@@ -248,3 +248,37 @@ class TestFilter:
             assert re.search(line, err)
 
         assert str(sys_exit.value) == '0'
+
+    @pytest.mark.parametrize(
+        'flag, expected_test_count',
+        [
+            (['--ignore-platform-key'], 2),
+            ([], 1)
+        ],
+        ids=['ignore_platform_key', 'without ignore_platform_key']
+    )
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    def test_ignore_platform_key(self, out_path, flag, expected_test_count):
+        test_platforms = ['qemu_x86', 'qemu_x86_64']
+        path = os.path.join(TEST_DATA, 'tests', 'platform_key')
+        args = ['-i', '--outdir', out_path, '-T', path] + \
+               flag + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+            pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        with open(os.path.join(out_path, 'testplan.json')) as f:
+            j = json.load(f)
+        filtered_j = [
+            (ts['platform'], ts['name'], tc['identifier']) \
+               for ts in j['testsuites'] \
+               for tc in ts['testcases'] if 'reason' not in tc
+        ]
+
+        assert str(sys_exit.value) == '0'
+
+        assert len(filtered_j) == expected_test_count
