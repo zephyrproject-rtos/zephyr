@@ -123,7 +123,7 @@ set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
 if(NOT DEFINED DTS_SOURCE)
-  zephyr_build_string(dts_board_string BOARD ${BOARD} BOARD_IDENTIFIER ${BOARD_IDENTIFIER} MERGE)
+  zephyr_build_string(dts_board_string BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS} MERGE)
   foreach(str ${dts_board_string})
     if(EXISTS ${BOARD_DIR}/${str}.dts)
       set(DTS_SOURCE ${BOARD_DIR}/${str}.dts)
@@ -140,7 +140,7 @@ if(EXISTS ${DTS_SOURCE})
     CONF_FILES ${BOARD_DIR}
     DTS no_rev_suffix_dts_board_overlays
     BOARD ${BOARD}
-    BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+    BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
   )
 
   # ...but remove the ones that do not include the revision suffix
