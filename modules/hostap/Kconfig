@@ -360,4 +360,27 @@ config RRM
 config WMM_AC
 	bool
 
+config NW_SEL_RELIABILITY
+	bool
+	default y
+	depends on WIFI_NM_WPA_SUPPLICANT_NW_SEL_RELIABILITY
+
+choice WIFI_NM_WPA_SUPPLICANT_NW_SEL
+	prompt "WPA supplicant Network selection criterion"
+	default WIFI_NM_WPA_SUPPLICANT_NW_SEL_THROUGHPUT
+	help
+	  Select the network selection method for the supplicant.
+
+config WIFI_NM_WPA_SUPPLICANT_NW_SEL_THROUGHPUT
+	bool "Throughput based network selection"
+	help
+	  Select the network based on throughput.
+
+config WIFI_NM_WPA_SUPPLICANT_NW_SEL_RELIABILITY
+	bool "Reliability based network selection"
+	help
+	  Select the network based on reliability.
+
+endchoice
+
 endif # WIFI_NM_WPA_SUPPLICANT
