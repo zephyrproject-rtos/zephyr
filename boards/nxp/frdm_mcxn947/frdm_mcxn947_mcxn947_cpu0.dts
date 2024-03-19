@@ -72,3 +72,11 @@
 &flexcomm4_lpuart4 {
 	status = "okay";
 };
+
+&flexspi {
+	status = "okay";
+};
+
+&w25q64jvssiq {
+	status = "okay";
+};

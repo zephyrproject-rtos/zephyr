@@ -63,6 +63,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
