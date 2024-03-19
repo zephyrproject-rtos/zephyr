@@ -271,23 +271,8 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_vlan_hdr *hdr_vlan;
-	struct ethernet_context *eth_ctx;
-
-	eth_ctx = net_if_l2_data(iface);
-	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
-		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
-			return false;
-		}
-	} else
-#endif
-	{
-		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
-			return false;
-		}
+	if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+		return false;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
@@ -590,26 +575,12 @@ error:
 	return res;
 }
 
-static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx,
-				uint16_t vlan_tag)
+static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
-static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
+static struct net_pkt *eth_rx(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
@@ -740,7 +711,7 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data, *vlan_tag),
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data),
 					   total_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
@@ -810,29 +781,8 @@ release_desc:
 		goto out;
 	}
 
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-		struct net_eth_vlan_hdr *hdr_vlan =
-			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		*vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-		enum net_priority prio;
-
-		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-		net_pkt_set_priority(pkt, prio);
-#endif
-	} else {
-		net_pkt_set_iface(pkt, dev_data->iface);
-	}
-#endif /* CONFIG_NET_VLAN */
-
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	if (eth_is_ptp_pkt(get_iface(dev_data, *vlan_tag), pkt)) {
+	if (eth_is_ptp_pkt(get_iface(dev_data), pkt)) {
 		pkt->timestamp.second = timestamp.second;
 		pkt->timestamp.nanosecond = timestamp.nanosecond;
 	} else {
@@ -844,7 +794,7 @@ release_desc:
 
 out:
 	if (!pkt) {
-		eth_stats_update_errors_rx(get_iface(dev_data, *vlan_tag));
+		eth_stats_update_errors_rx(get_iface(dev_data));
 	}
 
 	return pkt;
@@ -852,7 +802,6 @@ out:
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	struct net_if *iface;
@@ -877,10 +826,9 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			/* semaphore taken, update link status and receive packets */
 			if (dev_data->link_up != true) {
 				dev_data->link_up = true;
-				net_eth_carrier_on(get_iface(dev_data,
-							     vlan_tag));
+				net_eth_carrier_on(get_iface(dev_data));
 			}
-			while ((pkt = eth_rx(dev, &vlan_tag)) != NULL) {
+			while ((pkt = eth_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
 #if defined(CONFIG_NET_DSA)
 				iface = dsa_net_recv(iface, &pkt);
@@ -903,15 +851,13 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 					if (dev_data->link_up != true) {
 						dev_data->link_up = true;
 						net_eth_carrier_on(
-							get_iface(dev_data,
-								  vlan_tag));
+							get_iface(dev_data));
 					}
 				} else {
 					if (dev_data->link_up != false) {
 						dev_data->link_up = false;
 						net_eth_carrier_off(
-							get_iface(dev_data,
-								  vlan_tag));
+							get_iface(dev_data));
 					}
 				}
 			}
@@ -1366,10 +1312,6 @@ static void eth_iface_init(struct net_if *iface)
 	dev_data = dev->data;
 	__ASSERT_NO_MSG(dev_data != NULL);
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
 		is_first_init = true;
