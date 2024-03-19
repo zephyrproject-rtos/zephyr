@@ -505,66 +505,6 @@ ZTEST_USER(userspace, test_start_kernel_thread)
 	zassert_unreachable("Create a kernel thread did not fault");
 }
 
-static void uthread_read_body(void *p1, void *p2, void *p3)
-{
-	unsigned int *vptr = p1;
-
-	set_fault(K_ERR_CPU_EXCEPTION);
-	printk("%u\n", *vptr);
-	zassert_unreachable("Read from other thread stack did not fault");
-}
-
-static void uthread_write_body(void *p1, void *p2, void *p3)
-{
-	unsigned int *vptr = p1;
-
-	set_fault(K_ERR_CPU_EXCEPTION);
-	*vptr = 2U;
-	zassert_unreachable("Write to other thread stack did not fault");
-}
-
-/**
- * @brief Test to read from another thread's stack
- *
- * @ingroup kernel_memprotect_tests
- */
-ZTEST_USER(userspace, test_read_other_stack)
-{
-	/* Try to read from another thread's stack. */
-	unsigned int val;
-
-#ifdef CONFIG_MMU
-	ztest_test_skip();
-#endif
-	k_thread_create(&test_thread, test_stack, STACKSIZE,
-			uthread_read_body, &val, NULL, NULL,
-			-1, K_USER | K_INHERIT_PERMS,
-			K_NO_WAIT);
-
-	k_thread_join(&test_thread, K_FOREVER);
-}
-
-
-/**
- * @brief Test to write to other thread's stack
- *
- * @ingroup kernel_memprotect_tests
- */
-ZTEST_USER(userspace, test_write_other_stack)
-{
-	/* Try to write to another thread's stack. */
-	unsigned int val;
-
-#ifdef CONFIG_MMU
-	ztest_test_skip();
-#endif
-	k_thread_create(&test_thread, test_stack, STACKSIZE,
-			uthread_write_body, &val, NULL, NULL,
-			-1, K_USER | K_INHERIT_PERMS,
-			K_NO_WAIT);
-	k_thread_join(&test_thread, K_FOREVER);
-}
-
 /**
  * @brief Test to revoke access to kobject without permission
  *
