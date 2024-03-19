@@ -35,11 +35,14 @@
 #define K_NUM_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + CONFIG_NUM_COOP_PRIORITIES + 1)
 
 #if defined(CONFIG_64BIT)
-#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint64_t)))
+#  define ARCH_NBITS 64
+#  define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint64_t)))
+#  define arch_count_trailing_zeros u64_count_trailing_zeros
 #else
-#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint32_t)))
+#  define ARCH_NBITS 32
+#  define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint32_t)))
+#  define arch_count_trailing_zeros u32_count_trailing_zeros
 #endif
-
 
 #ifdef __cplusplus
 extern "C" {

@@ -102,11 +102,8 @@ struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 			continue;
 		}
 
-#ifdef CONFIG_64BIT
-		sys_dlist_t *l = &pq->queues[i * 64 + u64_count_trailing_zeros(pq->bitmask[i])];
-#else
-		sys_dlist_t *l = &pq->queues[i * 32 + u32_count_trailing_zeros(pq->bitmask[i])];
-#endif
+		sys_dlist_t *l =
+			&pq->queues[i * ARCH_NBITS + arch_count_trailing_zeros(pq->bitmask[i])];
 		sys_dnode_t *n = sys_dlist_peek_head(l);
 
 		if (n != NULL) {
