@@ -79,7 +79,7 @@ zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 if(NOT DEFINED DTC_OVERLAY_FILE)
   zephyr_build_string(board_overlay_strings
                       BOARD ${BOARD}
-                      BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+                      BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
                       MERGE
   )
   list(TRANSFORM board_overlay_strings APPEND ".overlay")

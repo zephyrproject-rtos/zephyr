@@ -842,12 +842,12 @@ def dt_gpio_hogs_enabled(kconf, _):
     return "n"
 
 
-def sanitize_upper(kconf, _, string):
+def normalize_upper(kconf, _, string):
     """
-    Sanitize the string, so that the string only contains alpha-numeric
+    Normalize the string, so that the string only contains alpha-numeric
     characters or underscores. All non-alpha-numeric characters are replaced
     with an underscore, '_'.
-    When string has been sanitized it will be converted into upper case.
+    When string has been normalized it will be converted into upper case.
     """
     return re.sub(r'[^a-zA-Z0-9_]', '_', string).upper()
 
@@ -919,6 +919,6 @@ functions = {
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
         "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
-        "sanitize_upper": (sanitize_upper, 1, 1),
+        "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
