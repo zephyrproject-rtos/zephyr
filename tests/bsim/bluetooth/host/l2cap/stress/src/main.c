@@ -11,7 +11,7 @@
 
 #define LOG_MODULE_NAME main
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 CREATE_FLAG(is_connected);
 CREATE_FLAG(flag_l2cap_connected);
