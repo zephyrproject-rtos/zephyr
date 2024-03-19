@@ -122,7 +122,7 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
 	int ret;
 
 	LOG_DBG("Initializing configuration for %u speed", speed);
-	dhp = usbd_class_get_desc(iter->c_nd, speed);
+	dhp = usbd_class_get_desc(iter->c_data, speed);
 	if (dhp == NULL) {
 		return 0;
 	}
@@ -211,15 +211,15 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 			return ret;
 		}
 
-		ret = usbd_class_init(iter->c_nd);
+		ret = usbd_class_init(iter->c_data);
 		if (ret != 0) {
 			LOG_ERR("Failed to initialize class instance");
 			return ret;
 		}
 
 		LOG_INF("Init class node %p, descriptor length %zu",
-			iter->c_nd, usbd_class_desc_len(iter->c_nd, speed));
-		cfg_len += usbd_class_desc_len(iter->c_nd, speed);
+			iter->c_data, usbd_class_desc_len(iter->c_data, speed));
+		cfg_len += usbd_class_desc_len(iter->c_data, speed);
 	}
 
 	/* Update wTotalLength and bNumInterfaces of configuration descriptor */

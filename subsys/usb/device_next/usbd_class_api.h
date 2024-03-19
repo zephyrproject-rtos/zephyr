@@ -22,18 +22,18 @@
  * This is the event handler for all endpoint accommodated
  * by a class instance.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] buf Control Request Data buffer
  * @param[in] err Result of the transfer. 0 if the transfer was successful.
  */
-static inline int usbd_class_request(struct usbd_class_node *const node,
+static inline int usbd_class_request(struct usbd_class_data *const c_data,
 				     struct net_buf *const buf,
 				     int err)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->request != NULL) {
-		return api->request(node, buf, err);
+		return api->request(c_data, buf, err);
 	}
 
 	return -ENOTSUP;
@@ -53,20 +53,20 @@ static inline int usbd_class_request(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] setup Pointer to USB Setup Packet
  * @param[in] buf Control Request Data buffer
  *
  * @return 0 on success, other values on fail.
  */
-static inline int usbd_class_control_to_host(struct usbd_class_node *const node,
+static inline int usbd_class_control_to_host(struct usbd_class_data *const c_data,
 					     struct usb_setup_packet *const setup,
 					     struct net_buf *const buf)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->control_to_host != NULL) {
-		return api->control_to_host(node, setup, buf);
+		return api->control_to_host(c_data, setup, buf);
 	}
 
 	errno = -ENOTSUP;
@@ -86,20 +86,20 @@ static inline int usbd_class_control_to_host(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] setup Pointer to USB Setup Packet
  * @param[in] buf Control Request Data buffer
  *
  * @return 0 on success, other values on fail.
  */
-static inline int usbd_class_control_to_dev(struct usbd_class_node *const node,
+static inline int usbd_class_control_to_dev(struct usbd_class_data *const c_data,
 					    struct usb_setup_packet *const setup,
 					    struct net_buf *const buf)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->control_to_dev != NULL) {
-		return api->control_to_dev(node, setup, buf);
+		return api->control_to_dev(c_data, setup, buf);
 	}
 
 	errno = -ENOTSUP;
@@ -115,19 +115,19 @@ static inline int usbd_class_control_to_dev(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] ep Endpoint
  * @param[in] halted True if the endpoint has been halted and false if
  *                   the endpoint halt has been cleared by a Feature request.
  */
-static inline void usbd_class_feature_halt(struct usbd_class_node *const node,
+static inline void usbd_class_feature_halt(struct usbd_class_data *const c_data,
 					   const uint8_t ep,
 					   const bool halted)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->feature_halt != NULL) {
-		api->feature_halt(node, ep, halted);
+		api->feature_halt(c_data, ep, halted);
 	}
 }
 
@@ -140,18 +140,18 @@ static inline void usbd_class_feature_halt(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] iface Interface
  * @param[in] alternate Alternate setting
  */
-static inline void usbd_class_update(struct usbd_class_node *const node,
+static inline void usbd_class_update(struct usbd_class_data *const c_data,
 				     const uint8_t iface,
 				     const uint8_t alternate)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->update != NULL) {
-		api->update(node, iface, alternate);
+		api->update(c_data, iface, alternate);
 	}
 }
 
@@ -159,14 +159,14 @@ static inline void usbd_class_update(struct usbd_class_node *const node,
 /**
  * @brief USB suspended handler
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  */
-static inline void usbd_class_suspended(struct usbd_class_node *const node)
+static inline void usbd_class_suspended(struct usbd_class_data *const c_data)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->suspended != NULL) {
-		api->suspended(node);
+		api->suspended(c_data);
 	}
 }
 
@@ -174,14 +174,14 @@ static inline void usbd_class_suspended(struct usbd_class_node *const node)
 /**
  * @brief USB resumed handler
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  */
-static inline void usbd_class_resumed(struct usbd_class_node *const node)
+static inline void usbd_class_resumed(struct usbd_class_data *const c_data)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->resumed != NULL) {
-		api->resumed(node);
+		api->resumed(c_data);
 	}
 }
 
@@ -190,14 +190,14 @@ static inline void usbd_class_resumed(struct usbd_class_node *const node)
  *
  * @note The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  */
-static inline void usbd_class_sof(struct usbd_class_node *const node)
+static inline void usbd_class_sof(struct usbd_class_data *const c_data)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->sof != NULL) {
-		api->sof(node);
+		api->sof(c_data);
 	}
 }
 
@@ -206,14 +206,14 @@ static inline void usbd_class_sof(struct usbd_class_node *const node)
  *
  * @note The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  */
-static inline void usbd_class_enable(struct usbd_class_node *const node)
+static inline void usbd_class_enable(struct usbd_class_data *const c_data)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->enable != NULL) {
-		api->enable(node);
+		api->enable(c_data);
 	}
 }
 
@@ -222,14 +222,14 @@ static inline void usbd_class_enable(struct usbd_class_node *const node)
  *
  * @note The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  */
-static inline void usbd_class_disable(struct usbd_class_node *const node)
+static inline void usbd_class_disable(struct usbd_class_data *const c_data)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->disable != NULL) {
-		api->disable(node);
+		api->disable(c_data);
 	}
 }
 
@@ -244,16 +244,16 @@ static inline void usbd_class_disable(struct usbd_class_node *const node)
  *
  * @note If this call fails the core will terminate stack initialization.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  *
  * @return 0 on success, other values on fail.
  */
-static inline int usbd_class_init(struct usbd_class_node *const node)
+static inline int usbd_class_init(struct usbd_class_data *const c_data)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->init != NULL) {
-		return api->init(node);
+		return api->init(c_data);
 	}
 
 	return -ENOTSUP;
@@ -266,33 +266,33 @@ static inline int usbd_class_init(struct usbd_class_node *const node)
  *
  * @note The execution of the handler must not block.
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  */
-static inline void usbd_class_shutdown(struct usbd_class_node *const node)
+static inline void usbd_class_shutdown(struct usbd_class_data *const c_data)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->shutdown != NULL) {
-		api->shutdown(node);
+		api->shutdown(c_data);
 	}
 }
 
 /**
  * @brief Get function descriptor
  *
- * @param[in] node Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] speed For which speed descriptor is requested.
  *
  * @return Array of struct usb_desc_header pointers with a last element
  *         pointing to a nil descriptor on success, NULL if not available.
  */
-static inline void *usbd_class_get_desc(struct usbd_class_node *const node,
+static inline void *usbd_class_get_desc(struct usbd_class_data *const c_data,
 					const enum usbd_speed speed)
 {
-	const struct usbd_class_api *api = node->api;
+	const struct usbd_class_api *api = c_data->api;
 
 	if (api->get_desc != NULL) {
-		return api->get_desc(node, speed);
+		return api->get_desc(c_data, speed);
 	}
 
 	return NULL;

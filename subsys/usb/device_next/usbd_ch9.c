@@ -212,7 +212,7 @@ static void sreq_feature_halt_notify(struct usbd_contex *const uds_ctx,
 	struct usbd_class_iter *iter = usbd_class_get_by_ep(uds_ctx, ep);
 
 	if (iter != NULL) {
-		usbd_class_feature_halt(iter->c_nd, ep, halted);
+		usbd_class_feature_halt(iter->c_data, ep, halted);
 	}
 }
 
@@ -499,7 +499,7 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, iter, node) {
 		struct usb_desc_header **dhp;
 
-		dhp = usbd_class_get_desc(iter->c_nd, get_desc_speed);
+		dhp = usbd_class_get_desc(iter->c_data, get_desc_speed);
 		if (dhp == NULL) {
 			continue;
 		}
@@ -747,9 +747,9 @@ static int nonstd_request(struct usbd_contex *const uds_ctx,
 
 	if (iter != NULL) {
 		if (reqtype_is_to_device(setup)) {
-			ret = usbd_class_control_to_dev(iter->c_nd, setup, dbuf);
+			ret = usbd_class_control_to_dev(iter->c_data, setup, dbuf);
 		} else {
-			ret = usbd_class_control_to_host(iter->c_nd, setup, dbuf);
+			ret = usbd_class_control_to_host(iter->c_data, setup, dbuf);
 		}
 	} else {
 		errno = -ENOTSUP;

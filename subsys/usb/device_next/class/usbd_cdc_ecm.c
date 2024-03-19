@@ -79,8 +79,8 @@ struct usbd_cdc_ecm_desc {
 };
 
 struct cdc_ecm_eth_data {
-	struct usbd_class_node *c_nd;
-	struct usbd_desc_node *const mac_desc_nd;
+	struct usbd_class_data *c_data;
+	struct usbd_desc_node *const mac_desc_data;
 	struct usbd_cdc_ecm_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
 	const struct usb_desc_header **const hs_desc;
@@ -100,10 +100,10 @@ static uint8_t cdc_ecm_get_ctrl_if(struct cdc_ecm_eth_data *const data)
 	return desc->if0.bInterfaceNumber;
 }
 
-static uint8_t cdc_ecm_get_int_in(struct usbd_class_node *const c_nd)
+static uint8_t cdc_ecm_get_int_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
@@ -114,10 +114,10 @@ static uint8_t cdc_ecm_get_int_in(struct usbd_class_node *const c_nd)
 	return desc->if0_int_ep.bEndpointAddress;
 }
 
-static uint8_t cdc_ecm_get_bulk_in(struct usbd_class_node *const c_nd)
+static uint8_t cdc_ecm_get_bulk_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
@@ -128,9 +128,9 @@ static uint8_t cdc_ecm_get_bulk_in(struct usbd_class_node *const c_nd)
 	return desc->if1_1_in_ep.bEndpointAddress;
 }
 
-static uint16_t cdc_ecm_get_bulk_in_mps(struct usbd_class_node *const c_nd)
+static uint16_t cdc_ecm_get_bulk_in_mps(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return 512U;
@@ -139,10 +139,10 @@ static uint16_t cdc_ecm_get_bulk_in_mps(struct usbd_class_node *const c_nd)
 	return 64U;
 }
 
-static uint8_t cdc_ecm_get_bulk_out(struct usbd_class_node *const c_nd)
+static uint8_t cdc_ecm_get_bulk_out(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
@@ -199,9 +199,9 @@ static size_t ecm_eth_size(void *const ecm_pkt, const size_t len)
 	return sizeof(struct net_eth_hdr) + ip_len;
 }
 
-static int cdc_ecm_out_start(struct usbd_class_node *const c_nd)
+static int cdc_ecm_out_start(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct net_buf *buf;
 	uint8_t ep;
@@ -215,13 +215,13 @@ static int cdc_ecm_out_start(struct usbd_class_node *const c_nd)
 		return -EBUSY;
 	}
 
-	ep = cdc_ecm_get_bulk_out(c_nd);
+	ep = cdc_ecm_get_bulk_out(c_data);
 	buf = cdc_ecm_buf_alloc(ep);
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -230,10 +230,10 @@ static int cdc_ecm_out_start(struct usbd_class_node *const c_nd)
 	return  ret;
 }
 
-static int cdc_ecm_acl_out_cb(struct usbd_class_node *const c_nd,
+static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 			      struct net_buf *const buf, const int err)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct net_pkt *pkt;
 
@@ -277,30 +277,30 @@ restart_out_transfer:
 	net_buf_unref(buf);
 	atomic_clear_bit(&data->state, CDC_ECM_OUT_ENGAGED);
 
-	return cdc_ecm_out_start(c_nd);
+	return cdc_ecm_out_start(c_data);
 }
 
-static int usbd_cdc_ecm_request(struct usbd_class_node *const c_nd,
+static int usbd_cdc_ecm_request(struct usbd_class_data *const c_data,
 				struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct udc_buf_info *bi;
 
 	bi = udc_get_buf_info(buf);
 
-	if (bi->ep == cdc_ecm_get_bulk_out(c_nd)) {
-		return cdc_ecm_acl_out_cb(c_nd, buf, err);
+	if (bi->ep == cdc_ecm_get_bulk_out(c_data)) {
+		return cdc_ecm_acl_out_cb(c_data, buf, err);
 	}
 
-	if (bi->ep == cdc_ecm_get_bulk_in(c_nd)) {
+	if (bi->ep == cdc_ecm_get_bulk_in(c_data)) {
 		k_sem_give(&data->sync_sem);
 
 		return 0;
 	}
 
-	if (bi->ep == cdc_ecm_get_int_in(c_nd)) {
+	if (bi->ep == cdc_ecm_get_int_in(c_data)) {
 		k_sem_give(&data->notif_sem);
 
 		return 0;
@@ -313,7 +313,7 @@ static int cdc_ecm_send_notification(const struct device *dev,
 				     const bool connected)
 {
 	struct cdc_ecm_eth_data *data = dev->data;
-	struct usbd_class_node *c_nd = data->c_nd;
+	struct usbd_class_data *c_data = data->c_data;
 	struct cdc_ecm_notification notification = {
 		.RequestType = {
 			.direction = USB_REQTYPE_DIR_TO_HOST,
@@ -339,14 +339,14 @@ static int cdc_ecm_send_notification(const struct device *dev,
 		return 0;
 	}
 
-	ep = cdc_ecm_get_int_in(c_nd);
-	buf = usbd_ep_buf_alloc(c_nd, ep, sizeof(struct cdc_ecm_notification));
+	ep = cdc_ecm_get_int_in(c_data);
+	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_ecm_notification));
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
 	net_buf_add_mem(buf, &notification, sizeof(struct cdc_ecm_notification));
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -359,10 +359,10 @@ static int cdc_ecm_send_notification(const struct device *dev,
 	return 0;
 }
 
-static void usbd_cdc_ecm_update(struct usbd_class_node *const c_nd,
+static void usbd_cdc_ecm_update(struct usbd_class_data *const c_data,
 				const uint8_t iface, const uint8_t alternate)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 	const uint8_t data_iface = desc->if1_1.bInterfaceNumber;
@@ -376,25 +376,25 @@ static void usbd_cdc_ecm_update(struct usbd_class_node *const c_nd,
 
 	if (data_iface == iface && alternate == 1) {
 		net_if_carrier_on(data->iface);
-		if (cdc_ecm_out_start(c_nd)) {
+		if (cdc_ecm_out_start(c_data)) {
 			LOG_ERR("Failed to start OUT transfer");
 		}
 
 	}
 }
 
-static void usbd_cdc_ecm_enable(struct usbd_class_node *const c_nd)
+static void usbd_cdc_ecm_enable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_ECM_CLASS_ENABLED);
 	LOG_DBG("Configuration enabled");
 }
 
-static void usbd_cdc_ecm_disable(struct usbd_class_node *const c_nd)
+static void usbd_cdc_ecm_disable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	if (atomic_test_and_clear_bit(&data->state, CDC_ECM_CLASS_ENABLED)) {
@@ -405,23 +405,23 @@ static void usbd_cdc_ecm_disable(struct usbd_class_node *const c_nd)
 	LOG_INF("Configuration disabled");
 }
 
-static void usbd_cdc_ecm_suspended(struct usbd_class_node *const c_nd)
+static void usbd_cdc_ecm_suspended(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
 }
 
-static void usbd_cdc_ecm_resumed(struct usbd_class_node *const c_nd)
+static void usbd_cdc_ecm_resumed(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
 }
 
-static int usbd_cdc_ecm_ctd(struct usbd_class_node *const c_nd,
+static int usbd_cdc_ecm_ctd(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
@@ -440,10 +440,10 @@ static int usbd_cdc_ecm_ctd(struct usbd_class_node *const c_nd,
 	return 0;
 }
 
-static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
+static int usbd_cdc_ecm_init(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	const struct device *dev = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *const data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 	const uint8_t if_num = desc->if0.bInterfaceNumber;
@@ -454,29 +454,29 @@ static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
 	desc->if0_union.bSubordinateInterface0 = if_num + 1;
 	LOG_DBG("CDC ECM class initialized");
 
-	if (usbd_add_descriptor(uds_ctx, data->mac_desc_nd)) {
+	if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
 		LOG_ERR("Failed to add iMACAddress string descriptor");
 	} else {
-		desc->if0_ecm.iMACAddress = data->mac_desc_nd->idx;
+		desc->if0_ecm.iMACAddress = data->mac_desc_data->idx;
 	}
 
 	return 0;
 }
 
-static void usbd_cdc_ecm_shutdown(struct usbd_class_node *const c_nd)
+static void usbd_cdc_ecm_shutdown(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *const data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
 	desc->if0_ecm.iMACAddress = 0;
-	sys_dlist_remove(&data->mac_desc_nd->node);
+	sys_dlist_remove(&data->mac_desc_data->node);
 }
 
-static void *usbd_cdc_ecm_get_desc(struct usbd_class_node *const c_nd,
+static void *usbd_cdc_ecm_get_desc(struct usbd_class_data *const c_data,
 				   const enum usbd_speed speed)
 {
-	const struct device *dev = usbd_class_get_private(c_nd);
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *const data = dev->data;
 
 	if (speed == USBD_SPEED_HS) {
@@ -489,7 +489,7 @@ static void *usbd_cdc_ecm_get_desc(struct usbd_class_node *const c_nd,
 static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 {
 	struct cdc_ecm_eth_data *const data = dev->data;
-	struct usbd_class_node *c_nd = data->c_nd;
+	struct usbd_class_data *c_data = data->c_data;
 	size_t len = net_pkt_get_len(pkt);
 	struct net_buf *buf;
 
@@ -504,7 +504,7 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 		return -EACCES;
 	}
 
-	buf = cdc_ecm_buf_alloc(cdc_ecm_get_bulk_in(c_nd));
+	buf = cdc_ecm_buf_alloc(cdc_ecm_get_bulk_in(c_data));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		return -ENOMEM;
@@ -519,11 +519,11 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 
 	net_buf_add(buf, len);
 
-	if (!(buf->len % cdc_ecm_get_bulk_in_mps(c_nd))) {
+	if (!(buf->len % cdc_ecm_get_bulk_in_mps(c_data))) {
 		udc_ep_buf_set_zlp(buf);
 	}
 
-	usbd_ep_enqueue(c_nd, buf);
+	usbd_ep_enqueue(c_data, buf);
 	k_sem_take(&data->sync_sem, K_FOREVER);
 	net_buf_unref(buf);
 
@@ -805,7 +805,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 
 #define USBD_CDC_ECM_DT_DEVICE_DEFINE(n)					\
 	CDC_ECM_DEFINE_DESCRIPTOR(n);						\
-	USBD_DESC_STRING_DEFINE(mac_desc_nd_##n,				\
+	USBD_DESC_STRING_DEFINE(mac_desc_data_##n,				\
 				DT_INST_PROP(n, remote_mac_address),		\
 				USBD_DUT_STRING_INTERFACE);			\
 										\
@@ -814,11 +814,11 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
 	static struct cdc_ecm_eth_data eth_data_##n = {				\
-		.c_nd = &cdc_ecm_##n,						\
+		.c_data = &cdc_ecm_##n,						\
 		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
 		.sync_sem = Z_SEM_INITIALIZER(eth_data_##n.sync_sem, 0, 1),	\
 		.notif_sem = Z_SEM_INITIALIZER(eth_data_##n.notif_sem, 0, 1),	\
-		.mac_desc_nd = &mac_desc_nd_##n,				\
+		.mac_desc_data = &mac_desc_data_##n,				\
 		.desc = &cdc_ecm_desc_##n,					\
 		.fs_desc = cdc_ecm_fs_desc_##n,					\
 		.hs_desc = cdc_ecm_hs_desc_##n,					\

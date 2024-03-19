@@ -124,18 +124,18 @@ struct bt_hci_data {
 static const struct usbd_cctx_vendor_req bt_hci_vregs =
 	USBD_VENDOR_REQ(0x00, 0xe0);
 
-static uint8_t bt_hci_get_int_in(struct usbd_class_node *const c_nd)
+static uint8_t bt_hci_get_int_in(struct usbd_class_data *const c_data)
 {
-	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
 	return desc->if0_int_ep.bEndpointAddress;
 }
 
-static uint8_t bt_hci_get_bulk_in(struct usbd_class_node *const c_nd)
+static uint8_t bt_hci_get_bulk_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
@@ -145,10 +145,10 @@ static uint8_t bt_hci_get_bulk_in(struct usbd_class_node *const c_nd)
 	return desc->if0_in_ep.bEndpointAddress;
 }
 
-static uint8_t bt_hci_get_bulk_out(struct usbd_class_node *const c_nd)
+static uint8_t bt_hci_get_bulk_out(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
@@ -175,10 +175,10 @@ struct net_buf *bt_hci_buf_alloc(const uint8_t ep)
 	return buf;
 }
 
-static void bt_hci_tx_sync_in(struct usbd_class_node *const c_nd,
+static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
 			      struct net_buf *const bt_buf, const uint8_t ep)
 {
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 	struct net_buf *buf;
 
 	buf = bt_hci_buf_alloc(ep);
@@ -188,14 +188,14 @@ static void bt_hci_tx_sync_in(struct usbd_class_node *const c_nd,
 	}
 
 	net_buf_add_mem(buf, bt_buf->data, bt_buf->len);
-	usbd_ep_enqueue(c_nd, buf);
+	usbd_ep_enqueue(c_data, buf);
 	k_sem_take(&hci_data->sync_sem, K_FOREVER);
 	net_buf_unref(buf);
 }
 
 static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 {
-	struct usbd_class_node *const c_nd = p1;
+	struct usbd_class_data *const c_data = p1;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -208,10 +208,10 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 
 		switch (bt_buf_get_type(bt_buf)) {
 		case BT_BUF_EVT:
-			ep = bt_hci_get_int_in(c_nd);
+			ep = bt_hci_get_int_in(c_data);
 			break;
 		case BT_BUF_ACL_IN:
-			ep = bt_hci_get_bulk_in(c_nd);
+			ep = bt_hci_get_bulk_in(c_data);
 			break;
 		default:
 			LOG_ERR("Unknown type %u", bt_buf_get_type(bt_buf));
@@ -219,7 +219,7 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 		}
 
 
-		bt_hci_tx_sync_in(c_nd, bt_buf, ep);
+		bt_hci_tx_sync_in(c_data, bt_buf, ep);
 		net_buf_unref(bt_buf);
 	}
 }
@@ -241,9 +241,9 @@ static void bt_hci_rx_thread(void *a, void *b, void *c)
 	}
 }
 
-static int bt_hci_acl_out_start(struct usbd_class_node *const c_nd)
+static int bt_hci_acl_out_start(struct usbd_class_data *const c_data)
 {
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
@@ -256,13 +256,13 @@ static int bt_hci_acl_out_start(struct usbd_class_node *const c_nd)
 		return -EBUSY;
 	}
 
-	ep = bt_hci_get_bulk_out(c_nd);
+	ep = bt_hci_get_bulk_out(c_data);
 	buf = bt_hci_buf_alloc(ep);
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
-	ret = usbd_ep_enqueue(c_nd, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -310,10 +310,10 @@ static uint16_t hci_pkt_get_len(struct net_buf *const buf,
 	return (size < hdr_len) ? 0 : len;
 }
 
-static int bt_hci_acl_out_cb(struct usbd_class_node *const c_nd,
+static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 			     struct net_buf *const buf, const int err)
 {
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 
 	if (err) {
 		goto restart_out_transfer;
@@ -364,24 +364,24 @@ restart_out_transfer:
 	net_buf_unref(buf);
 	atomic_clear_bit(&hci_data->state, BT_HCI_ACL_RX_ENGAGED);
 
-	return bt_hci_acl_out_start(c_nd);
+	return bt_hci_acl_out_start(c_data);
 }
 
-static int bt_hci_request(struct usbd_class_node *const c_nd,
+static int bt_hci_request(struct usbd_class_data *const c_data,
 			  struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 	struct udc_buf_info *bi;
 
 	bi = udc_get_buf_info(buf);
 
-	if (bi->ep == bt_hci_get_bulk_out(c_nd)) {
-		return bt_hci_acl_out_cb(c_nd, buf, err);
+	if (bi->ep == bt_hci_get_bulk_out(c_data)) {
+		return bt_hci_acl_out_cb(c_data, buf, err);
 	}
 
-	if (bi->ep == bt_hci_get_bulk_in(c_nd) ||
-	    bi->ep == bt_hci_get_int_in(c_nd)) {
+	if (bi->ep == bt_hci_get_bulk_in(c_data) ||
+	    bi->ep == bt_hci_get_int_in(c_data)) {
 		k_sem_give(&hci_data->sync_sem);
 
 		return 0;
@@ -390,34 +390,34 @@ static int bt_hci_request(struct usbd_class_node *const c_nd,
 	return usbd_ep_buf_free(uds_ctx, buf);
 }
 
-static void bt_hci_update(struct usbd_class_node *const c_nd,
+static void bt_hci_update(struct usbd_class_data *const c_data,
 			  uint8_t iface, uint8_t alternate)
 {
 	LOG_DBG("New configuration, interface %u alternate %u",
 		iface, alternate);
 }
 
-static void bt_hci_enable(struct usbd_class_node *const c_nd)
+static void bt_hci_enable(struct usbd_class_data *const c_data)
 {
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 
 	atomic_set_bit(&hci_data->state, BT_HCI_CLASS_ENABLED);
 	LOG_INF("Configuration enabled");
 
-	if (bt_hci_acl_out_start(c_nd)) {
+	if (bt_hci_acl_out_start(c_data)) {
 		LOG_ERR("Failed to start ACL OUT transfer");
 	}
 }
 
-static void bt_hci_disable(struct usbd_class_node *const c_nd)
+static void bt_hci_disable(struct usbd_class_data *const c_data)
 {
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 
 	atomic_clear_bit(&hci_data->state, BT_HCI_CLASS_ENABLED);
 	LOG_INF("Configuration disabled");
 }
 
-static int bt_hci_ctd(struct usbd_class_node *const c_nd,
+static int bt_hci_ctd(struct usbd_class_data *const c_data,
 		      const struct usb_setup_packet *const setup,
 		      const struct net_buf *const buf)
 {
@@ -445,10 +445,10 @@ static int bt_hci_ctd(struct usbd_class_node *const c_nd,
 	return 0;
 }
 
-static void *bt_hci_get_desc(struct usbd_class_node *const c_nd,
+static void *bt_hci_get_desc(struct usbd_class_data *const c_data,
 			     const enum usbd_speed speed)
 {
-	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
 
 	if (speed == USBD_SPEED_HS) {
 		return data->hs_desc;
@@ -457,10 +457,10 @@ static void *bt_hci_get_desc(struct usbd_class_node *const c_nd,
 	return data->fs_desc;
 }
 
-static int bt_hci_init(struct usbd_class_node *const c_nd)
+static int bt_hci_init(struct usbd_class_data *const c_data)
 {
 
-	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
 	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
