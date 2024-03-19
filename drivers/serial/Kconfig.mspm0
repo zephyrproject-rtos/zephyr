@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Texas Instruments
+
+config UART_MSPM0
+	bool "MSPM0 UART driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the TI MSPM0 UART driver.
