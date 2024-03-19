@@ -321,6 +321,7 @@ isee	ISEE 2007 S.L.
 isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
+ist	Innovative Sensor Technology IST AG
 ite	ITE Tech. Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
