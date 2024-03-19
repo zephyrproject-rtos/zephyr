@@ -1,8 +1,8 @@
-# Copyright 2022, NXP
+# Copyright 2022, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  RW61x pin control node. This node defines pin configurations in pin
+  MCI IO MUX pin control node. This node defines pin configurations in pin
   groups, and has the 'pinctrl' node identifier in the SOC's devicetree. Each
   group within the pin configuration defines a peripheral's pin configuration.
   Each numbered subgroup represents pins with shared configuration for that
@@ -30,16 +30,16 @@ description: |
   bias-pull-up: PAD_PU_PD_ENx= (0x1 << pin_index)
   bias-pull-down: PAD_PU_PD_ENx= (0x10 << pin_index)
 
-compatible: "nxp,rw-iomux-pinctrl"
+compatible: "nxp,mci-io-mux"
 
 include:
   - name: base.yaml
 
 child-binding:
-  description: iMX RW IOMUX pin controller pin group
+  description: MCI IO MUX pin controller pin group
   child-binding:
     description: |
-      iMX RW IOMUX pin controller pin configuration node
+      MCI IO MUX pin controller pin configuration node
     include:
       - name: pincfg-node.yaml
         property-allowlist:
