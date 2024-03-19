@@ -206,6 +206,12 @@ module-str = Log level for core IPv6
 module-help = Enables core IPv6 code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+module = NET_IPV6_ND
+module-dep = NET_LOG
+module-str = Log level for IPv6 Neighbor Discovery
+module-help = Enables IPv6 Neighbor Discovery code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
 module = NET_ICMPV6
 module-dep = NET_LOG
 module-str = Log level for ICMPv6

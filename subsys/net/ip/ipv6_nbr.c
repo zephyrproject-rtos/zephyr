@@ -14,7 +14,7 @@
 #define NET_DEBUG_NBR 0
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>
