@@ -401,9 +401,9 @@ _POSIX_READER_WRITER_LOCKS
     pthread_rwlock_unlock(),yes
     pthread_rwlock_wrlock(),yes
     pthread_rwlockattr_destroy(),yes
-    pthread_rwlockattr_getpshared(),
+    pthread_rwlockattr_getpshared(),yes
     pthread_rwlockattr_init(),yes
-    pthread_rwlockattr_setpshared(),
+    pthread_rwlockattr_setpshared(),yes
 
 .. _posix_option_thread_attr_stackaddr:
 
