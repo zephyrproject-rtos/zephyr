@@ -101,7 +101,7 @@ TESTDATA_PART1 = [
     ("platform_allow", ['demo_board_1'], None, None, "Not in testsuite platform allow list"),
     ("toolchain_exclude", ['zephyr'], None, None, "In test case toolchain exclude"),
     ("platform_exclude", ['demo_board_2'], None, None, "In test case platform exclude"),
-    ("arch_exclude", ['x86_demo'], None, None, "In test case arch exclude"),
+    ("arch_exclude", ['x86'], None, None, "In test case arch exclude"),
     ("arch_allow", ['arm'], None, None, "Not in test case arch allow list"),
     ("skip", True, None, None, "Skip filter"),
     ("tags", set(['sensor', 'bluetooth']), "ignore_tags", ['bluetooth'], "Excluded tags per platform (exclude_tags)"),
@@ -1088,7 +1088,7 @@ def test_testplan_add_configurations(
 ):
     # tmp_path
     # └ boards  <- board root
-    #   ├ arch1
+    #   ├ x86
     #   │ ├ p1
     #   │ | ├ p1e1.yaml
     #   │ | └ p1e2.yaml
@@ -1096,7 +1096,7 @@ def test_testplan_add_configurations(
     #   │   ├ p2.yaml
     #   │   └ p2-1.yaml <- duplicate
     #   │   └ p2-2.yaml <- load error
-    #   └ arch2
+    #   └ arm
     #     └ p3
     #       ├ p3.yaml
     #       └ p3_B.conf
@@ -1104,7 +1104,7 @@ def test_testplan_add_configurations(
     tmp_board_root_dir = tmp_path / 'boards'
     tmp_board_root_dir.mkdir()
 
-    tmp_arch1_dir = tmp_board_root_dir / 'arch1'
+    tmp_arch1_dir = tmp_board_root_dir / 'x86'
     tmp_arch1_dir.mkdir()
 
     tmp_p1_dir = tmp_arch1_dir / 'p1'
@@ -1129,7 +1129,7 @@ boards:
 identifier: p1e1
 name: Platform 1 Edition 1
 type: native
-arch: arch1
+arch: x86
 vendor: vendor1
 toolchain:
   - zephyr
@@ -1142,7 +1142,7 @@ twister: False
 identifier: p1e2
 name: Platform 1 Edition 2
 type: native
-arch: arch1
+arch: x86
 vendor: vendor1
 toolchain:
   - zephyr
@@ -1172,7 +1172,7 @@ boards:
 identifier: p2
 name: Platform 2
 type: sim
-arch: arch1
+arch: x86
 vendor: vendor2
 toolchain:
   - zephyr
@@ -1192,7 +1192,7 @@ testing:
 identifier: p2_2
 name: Platform 2 2
 type: sim
-arch: arch1
+arch: x86
 vendor: vendor2
 toolchain:
   - zephyr
@@ -1200,7 +1200,7 @@ toolchain:
     p2_2_yamlfile = tmp_p2_dir / 'p2-2.yaml'
     p2_2_yamlfile.write_text(p2_2_yaml)
 
-    tmp_arch2_dir = tmp_board_root_dir / 'arch2'
+    tmp_arch2_dir = tmp_board_root_dir / 'arm'
     tmp_arch2_dir.mkdir()
 
     tmp_p3_dir = tmp_arch2_dir / 'p3'
@@ -1221,7 +1221,7 @@ boards:
 identifier: p3
 name: Platform 3
 type: unit
-arch: arch2
+arch: arm
 vendor: vendor3
 toolchain:
   - zephyr
