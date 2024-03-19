@@ -136,3 +136,14 @@ ZTEST(cxx_tests, test_new_delete)
 	delete test_foo;
 }
 ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
+
+/*
+ * Unused macros are parsed but not actually compiled. So, even with all their NULL
+ * arguments these one-liners add significant C++ coverage. For instance this actually
+ * compiles some of the macros in zephyr/device.h in C++.
+ *
+ * DEVICE_DEFINE(dev_id, name, * init_fn, pm, data, config, level, prio, api)
+ */
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
+
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev1_dfr), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
