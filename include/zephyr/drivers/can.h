@@ -734,7 +734,7 @@ struct can_device_state {
 		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 8,	\
 			   STATS_NAME_INIT_PARMS(can));			\
 		stats_register(dev->name, &(state->stats.s_hdr));	\
-		if (init_fn != NULL) {					\
+		if (!is_null_no_warn(init_fn)) {			\
 			return init_fn(dev);				\
 		}							\
 									\
