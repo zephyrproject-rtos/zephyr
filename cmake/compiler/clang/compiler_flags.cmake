@@ -30,6 +30,9 @@ set_compiler_property(PROPERTY save_temps -save-temps)
 # clang doesn't handle the -T flag
 set_compiler_property(PROPERTY linker_script -Wl,-T)
 
+# clang's best size optimization is -Oz not -Os
+set_compiler_property(PROPERTY optimization_size  -Oz)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
