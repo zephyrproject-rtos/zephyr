@@ -8,6 +8,10 @@ description: |
   linux/Documentation/devicetree/bindings/power/supply/battery.yaml
 
 properties:
+  re-charge-voltage-microvolt:
+    type: int
+    description: limit to automatically start charging again
+
   precharge-current-microamp:
     type: int
     description: current for pre-charge phase
