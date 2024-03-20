@@ -109,12 +109,31 @@ static const struct clock_control_driver_api mcux_pcc_api = {
 	.get_rate = mcux_pcc_get_rate,
 };
 
+static int mcux_pcc_init(const struct device *dev)
+{
+#ifdef CONFIG_SOC_MIMX8UD7
+	/* 8ULP's XTAL is set to 24MHz on EVK9. We keep
+	 * this as SOC level because this should also be
+	 * the case for the EVK board.
+	 */
+	CLOCK_SetXtal0Freq(24000000);
+#endif /* CONFIG_SOC_MIMX8UD7 */
+	return 0;
+}
+
+#ifdef CONFIG_SOC_MIMX8UD7
+static uint32_t clocks[] = {
+	/* clocks managed through PCC4 */
+	kCLOCK_Lpuart7,
+};
+#else
 /* this is empty for SOCs which don't need a translation from
  * the clock ID passed through the DTS and the clock ID encoding
  * from the HAL. For these SOCs, the clock ID will be built based
  * on the value passed from the DTS and the PCC base.
  */
 static uint32_t clocks[] = {};
+#endif /* CONFIG_SOC_MIMX8UD7 */
 
 #define MCUX_PCC_INIT(inst)						\
 	static const struct mcux_pcc_config mcux_pcc##inst##_config = {	\
@@ -124,7 +143,7 @@ static uint32_t clocks[] = {};
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			    NULL,					\
+			    &mcux_pcc_init,				\
 			    NULL,					\
 			    NULL, &mcux_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\
