@@ -3,20 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
-bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
-
-source "${bash_source_dir}/_env.sh"
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
 simulation_id="rpa_expired"
-EXECUTE_TIMEOUT=30
-
-cd ${BSIM_OUT_PATH}/bin
 
 central_exe_rpa_expired="\
-${bsim_bin}/bs_${BOARD}_tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_expired_conf"
+${BSIM_OUT_PATH}/bin/bs_${BOARD}_$(guess_test_long_name)_prj_rpa_expired_conf"
 peripheral_exe_rpa_expired="${central_exe_rpa_expired}"
+
+cd ${BSIM_OUT_PATH}/bin
 
 Execute "$central_exe_rpa_expired" \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central_rpa_check \

@@ -3,13 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
-bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-# Read variable definitions output by _env.sh
-source "${bash_source_dir}/_env.sh"
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
 
-# terminate running simulations (if any)
-${BSIM_COMPONENTS_PATH}/common/stop_bsim.sh
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
+INCR_BUILD=1
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-west build -b nrf52_bsim && \
-    cp build/zephyr/zephyr.exe $central_exe
+app="$(guess_test_relpath)" _compile

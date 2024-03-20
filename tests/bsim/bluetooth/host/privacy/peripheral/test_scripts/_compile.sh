@@ -3,10 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
-bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-# Read variable definitions output by _env.sh
-source "${bash_source_dir}/_env.sh"
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
 
-west build -b nrf52_bsim && \
-    cp build/zephyr/zephyr.exe $central_exe
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
+INCR_BUILD=1
+
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
+
+app="$(guess_test_relpath)" compile
+app="$(guess_test_relpath)" conf_file=prj_rpa_expired.conf compile
+app="$(guess_test_relpath)" conf_file=prj_rpa_sharing.conf compile
+
+wait_for_background_jobs
