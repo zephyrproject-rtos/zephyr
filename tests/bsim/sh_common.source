@@ -48,3 +48,20 @@ function Execute() {
   check_program_exists $1
   run_in_background timeout --kill-after=5 -v ${EXECUTE_TIMEOUT} $@
 }
+
+function _guess_test_relpath(){
+  local PA="$(realpath --relative-to "${ZEPHYR_BASE}" $(dirname "${BASH_SOURCE[2]}"))"
+  echo $PA | sed -E 's/\/tests?_scripts//'
+}
+
+# For a caller running from a tests_script/ folder, get the path of its parent
+# relative to $ZEPHYR_BASE
+function guess_test_relpath(){
+  echo $(_guess_test_relpath)
+}
+
+# For a caller running from a tests_script/ folder, get the path of its parent
+# relative to $ZEPHYR_BASE, replacing "/" with "_"
+function guess_test_long_name(){
+  echo $(_guess_test_relpath) | tr / _
+}
