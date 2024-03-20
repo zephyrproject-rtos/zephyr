@@ -2,16 +2,13 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-BOARD="${BOARD:-nrf52_bsim}"
-dut_exe="bs_${BOARD}_tests_bsim_bluetooth_host_l2cap_split_dut_prj_conf"
-tester_exe="bs_${BOARD}_tests_bsim_bluetooth_host_l2cap_split_tester_prj_conf"
-
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-test_name="l2cap_split"
-simulation_id="${test_name}"
+dut_exe="bs_${BOARD}_$(guess_test_long_name)_dut_prj_conf"
+tester_exe="bs_${BOARD}_$(guess_test_long_name)_tester_prj_conf"
+
+simulation_id="l2cap_split"
 verbosity_level=2
-EXECUTE_TIMEOUT=30
 sim_length_us=30e6
 
 cd ${BSIM_OUT_PATH}/bin
