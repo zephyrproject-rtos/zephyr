@@ -16,19 +16,19 @@ cd ${BSIM_OUT_PATH}/bin
 
 SIMULATION_ID="csip_new_sirk"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator_new_sirk \
   -RealEncryption=1 -rs=1 -D=4
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip_set_member_new_sirk \
   -RealEncryption=1 -rs=2 -D=4 -argstest rank 1
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip_set_member_new_sirk \
   -RealEncryption=1 -rs=3 -D=4 -argstest rank 2
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_set_member_new_sirk \
   -RealEncryption=1 -rs=4 -D=4 -argstest rank 3
 

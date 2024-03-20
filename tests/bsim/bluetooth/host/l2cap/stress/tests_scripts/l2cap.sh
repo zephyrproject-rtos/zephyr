@@ -9,7 +9,7 @@ simulation_id="l2cap_stress"
 verbosity_level=2
 EXECUTE_TIMEOUT=240
 
-bsim_exe=./bs_${BOARD}_tests_bsim_bluetooth_host_l2cap_stress_prj_conf
+bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_stress_prj_conf
 
 cd ${BSIM_OUT_PATH}/bin
 

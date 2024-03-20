@@ -4,8 +4,8 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-dut_exe="bs_${BOARD}_tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf"
-tester_exe="bs_${BOARD}_tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf"
+dut_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf"
+tester_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf"
 
 simulation_id="att_pipeline"
 verbosity_level=2

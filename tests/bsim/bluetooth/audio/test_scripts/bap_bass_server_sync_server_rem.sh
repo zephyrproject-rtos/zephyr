@@ -11,15 +11,15 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Running BASS Server Sync Server Remove =========\n\n"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 \
   -testid=bap_scan_delegator_server_sync_server_rem -rs=24 -D=3
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
   -testid=bap_broadcast_assistant_server_sync_server_rem -rs=46 -D=3
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=bass_broadcaster -rs=69 -D=3
 
 # Simulation time should be larger than the WAIT_TIME in common.h

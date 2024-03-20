@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 simulation_id="security_bond_overwrite_allowed"
 verbosity_level=2
 
-central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD}_$(guess_test_long_name)_prj_conf"
+central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
 peripheral_exe="${central_exe}"
 
 cd ${BSIM_OUT_PATH}/bin

@@ -7,8 +7,8 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 simulation_id="retry_on_sec_err_seq_request"
 verbosity_level=2
-test_exe_d0="./bs_${BOARD}_$(guess_test_long_name)_client_prj_conf"
-test_exe_d1="./bs_${BOARD}_$(guess_test_long_name)_server_prj_conf"
+test_exe_d0="./bs_${BOARD_TS}_$(guess_test_long_name)_client_prj_conf"
+test_exe_d1="./bs_${BOARD_TS}_$(guess_test_long_name)_server_prj_conf"
 
 cd ${BSIM_OUT_PATH}/bin
 

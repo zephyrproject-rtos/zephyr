@@ -4,8 +4,8 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-dut_exe="bs_${BOARD}_$(guess_test_long_name)_dut_prj_conf"
-tester_exe="bs_${BOARD}_$(guess_test_long_name)_tester_prj_conf"
+dut_exe="bs_${BOARD_TS}_$(guess_test_long_name)_dut_prj_conf"
+tester_exe="bs_${BOARD_TS}_$(guess_test_long_name)_tester_prj_conf"
 
 simulation_id="l2cap_split"
 verbosity_level=2
