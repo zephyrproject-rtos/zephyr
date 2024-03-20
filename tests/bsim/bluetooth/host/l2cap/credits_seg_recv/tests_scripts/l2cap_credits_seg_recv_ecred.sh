@@ -5,8 +5,8 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
-simulation_id=$(guess_test_long_name)
-bsim_exe=./bs_${BOARD}_$(guess_test_long_name)_prj_conf
+simulation_id=$(guess_test_long_name)_ecred
+bsim_exe=./bs_${BOARD}_$(guess_test_long_name)_prj_ecred_conf
 
 cd ${BSIM_OUT_PATH}/bin
 
