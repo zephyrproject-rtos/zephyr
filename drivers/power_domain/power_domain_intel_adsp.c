@@ -36,10 +36,10 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 		}
 	} else {
 #if CONFIG_SOC_INTEL_ACE15_MTPM
-		extern uint32_t g_key_read_holder;
+		extern uint32_t adsp_pending_buffer;
 
 		if (bits->SPA_bit == INTEL_ADSP_HST_DOMAIN_BIT) {
-			volatile uint32_t *key_read_ptr = &g_key_read_holder;
+			volatile uint32_t *key_read_ptr = &adsp_pending_buffer;
 			uint32_t key_value = *key_read_ptr;
 
 			if (key_value != INTEL_ADSP_ACE15_MAGIC_KEY)
