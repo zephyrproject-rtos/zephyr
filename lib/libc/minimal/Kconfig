@@ -63,7 +63,7 @@ config MINIMAL_LIBC_LL_PRINTF
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	bool "Use size optimized string functions"
-	default y if SIZE_OPTIMIZATIONS
+	default y if SIZE_OPTIMIZATIONS || SIZE_OPTIMIZATIONS_AGGRESSIVE
 	help
 	  Enable smaller but potentially slower implementations of memcpy and
 	  memset. On the Cortex-M0+ this reduces the total code size by 120 bytes.
