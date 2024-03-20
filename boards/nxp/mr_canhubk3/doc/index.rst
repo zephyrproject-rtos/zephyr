@@ -195,7 +195,7 @@ flexcan5         | 8 bytes   | 32 MBs          | 32 MBs
 ===============  ==========  ================  ================
 
 .. note::
-   A CAN bus usually requires 60 Ohm termination at both ends of the bus. This may be
+   A CAN bus usually requires 120 Ohm termination at both ends of the bus. This may be
    accomplished using one of the included CAN termination boards. For more details, refer
    to the section ``6.3 CAN Connectors`` in the Hardware User Manual of `NXP MR-CANHUBK3`_.
 
