@@ -19,7 +19,7 @@ mkdir -p ${WORK_DIR}
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-if [ "${BOARD}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
+if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
   app=samples/bluetooth/unicast_audio_server sysbuild=1 compile
   app=samples/bluetooth/broadcast_audio_source sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/unicast_audio_client sysbuild=1 compile
