@@ -92,8 +92,8 @@ void z_isr_install(unsigned int irq, void (*routine)(const void *),
 	for (i = 0; i < shared_entry->client_num; i++) {
 		client = &shared_entry->clients[i];
 
-		__ASSERT(client->isr != routine && client->arg != param,
-			 "trying to register duplicate ISR/arg pair");
+		__ASSERT((client->isr == routine && client->arg == param) == false,
+			 "ISR/arg combination is already registered");
 	}
 
 	shared_entry->clients[shared_entry->client_num].isr = routine;
