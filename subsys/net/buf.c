@@ -542,6 +542,24 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 	return clone;
 }
 
+int net_buf_user_data_copy(struct net_buf *dst, const struct net_buf *src)
+{
+	__ASSERT_NO_MSG(dst);
+	__ASSERT_NO_MSG(src);
+
+	if (dst == src) {
+		return 0;
+	}
+
+	if (dst->user_data_size < src->user_data_size) {
+		return -EINVAL;
+	}
+
+	memcpy(dst->user_data, src->user_data, src->user_data_size);
+
+	return 0;
+}
+
 struct net_buf *net_buf_frag_last(struct net_buf *buf)
 {
 	__ASSERT_NO_MSG(buf);

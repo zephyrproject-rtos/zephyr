@@ -756,6 +756,39 @@ ZTEST(net_buf_tests, test_net_buf_user_data)
 	net_buf_unref(buf);
 }
 
+ZTEST(net_buf_tests, test_net_buf_user_data_copy)
+{
+	struct net_buf *buf_user_data_small, *buf_user_data_big;
+	uint32_t *src_user_data, *dst_user_data;
+
+	buf_user_data_small = net_buf_alloc_len(&bufs_pool, 1, K_NO_WAIT);
+	zassert_not_null(buf_user_data_small, "Failed to get buffer");
+	src_user_data = net_buf_user_data(buf_user_data_small);
+	*src_user_data = 0xAABBCCDD;
+
+	/* Happy case: Size of user data in destination buf is bigger than the source buf one */
+	buf_user_data_big = net_buf_alloc_len(&var_pool, 1, K_NO_WAIT);
+	zassert_not_null(buf_user_data_big, "Failed to get buffer");
+	dst_user_data = net_buf_user_data(buf_user_data_big);
+	*dst_user_data = 0x11223344;
+
+	zassert_ok(net_buf_user_data_copy(buf_user_data_big, buf_user_data_small));
+	zassert_equal(*src_user_data, 0xAABBCCDD);
+
+	/* Error case: User data size of destination buffer is too small */
+	zassert_not_ok(net_buf_user_data_copy(buf_user_data_small, buf_user_data_big),
+		       "User data size in destination buffer too small");
+
+	net_buf_unref(buf_user_data_big);
+
+	/* Corner case: Same buffer used as source and target */
+	zassert_ok(net_buf_user_data_copy(buf_user_data_small, buf_user_data_small),
+		   "No-op is tolerated");
+	zassert_equal(*src_user_data, 0xAABBCCDD, "User data remains the same");
+
+	net_buf_unref(buf_user_data_small);
+}
+
 ZTEST(net_buf_tests, test_net_buf_comparison)
 {
 	struct net_buf *buf;
