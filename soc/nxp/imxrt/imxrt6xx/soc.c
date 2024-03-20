@@ -30,7 +30,7 @@
 #include "flash_clock_setup.h"
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_USB_UDC_NXP_IP3511
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -124,17 +124,19 @@ __imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
 };
 #endif /* CONFIG_NXP_IMXRT_BOOT_HEADER */
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_USB_UDC_NXP_IP3511
 
 static void usb_device_clock_init(void)
 {
 	uint8_t usbClockDiv = 1;
 	uint32_t usbClockFreq;
+#if CONFIG_USB_DC_NXP_LPCIP3511
 	usb_phy_config_struct_t phyConfig = {
 		BOARD_USB_PHY_D_CAL,
 		BOARD_USB_PHY_TXCAL45DP,
 		BOARD_USB_PHY_TXCAL45DM,
 	};
+#endif
 
 	/* enable USB IP clock */
 	CLOCK_SetClkDiv(kCLOCK_DivPfc1Clk, 5);
@@ -160,7 +162,9 @@ static void usb_device_clock_init(void)
 		((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS)[i] = 0x00U;
 	}
 #endif
+#if CONFIG_USB_DC_NXP_LPCIP3511
 	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, CLK_XTAL_OSC_CLK, &phyConfig);
+#endif
 
 	/* the following code should run after phy initialization and
 	 * should wait some microseconds to make sure utmi clock valid
@@ -244,7 +248,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM0);
 #endif
 
-#if CONFIG_USB_DC_NXP_LPCIP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_USB_UDC_NXP_IP3511
 	usb_device_clock_init();
 #endif
 

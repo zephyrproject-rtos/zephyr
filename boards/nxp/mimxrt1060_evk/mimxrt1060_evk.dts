@@ -185,6 +185,26 @@ arduino_i2c: &lpi2c1 {
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+zephyr_udc1: &usb2 {
+	status = "okay";
+	phy_handle = <&usbphy2>;
+};
+
+&usbphy1 {
+	status = "okay";
+	d-cal = <12>;
+	txcal45dp = <6>;
+	txcal45dm = <6>;
+};
+
+&usbphy2 {
+	status = "okay";
+	d-cal = <12>;
+	txcal45dp = <6>;
+	txcal45dm = <6>;
 };
 
 &flexpwm2_pwm3 {
