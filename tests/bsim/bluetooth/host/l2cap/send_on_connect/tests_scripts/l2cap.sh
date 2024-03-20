@@ -22,8 +22,6 @@ Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
 wait_for_background_jobs
 
 simulation_id="l2cap_send_on_connect_ecred"
-verbosity_level=2
-EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 

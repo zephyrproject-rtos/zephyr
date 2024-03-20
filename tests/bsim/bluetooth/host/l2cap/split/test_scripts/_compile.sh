@@ -9,6 +9,7 @@ WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
 INCR_BUILD=1
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-app="$(guess_test_relpath)" compile
+app="$(guess_test_relpath)"/dut compile
+app="$(guess_test_relpath)"/tester compile
 
 wait_for_background_jobs
