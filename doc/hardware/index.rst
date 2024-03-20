@@ -9,6 +9,7 @@ Hardware Support
    arch/index.rst
    barriers/index.rst
    cache/index.rst
+   clock_mgmt/index.rst
    emulator/index.rst
    emulator/bus_emulators.rst
    peripherals/index.rst
