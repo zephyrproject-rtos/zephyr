@@ -4,4 +4,15 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# file is empty and kept as a place holder if/when Kconfig is needed
+config NXP_FSL_OSA
+	bool
+
+if NXP_FSL_OSA
+
+config NXP_FSL_OSA_HEAP
+	bool
+
+config NXP_FSL_OSA_HEAP_CACHEABLE
+	bool
+
+endif # NXP_FSL_OSA
