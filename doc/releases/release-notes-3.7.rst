@@ -101,7 +101,7 @@ Build system and Infrastructure
     devicetree overlays that should apply to any board target using a particular SoC and board
     qualifier.
 
-* Compiler
+  * :ref:`Board/SoC flashing configuration<flashing-soc-board-config>` settings have been added.
 
   * Deprecated the global CSTD cmake property in favor of the :kconfig:option:`CONFIG_STD_C`
     choice to select the C Standard version. Additionally subsystems can select a minimum
