@@ -996,8 +996,8 @@ static int adin2111_filter_multicast(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
 	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
-	uint8_t mm[6] = {BIT(0), 0U, 0U, 0U, 0U, 0U};
-	uint8_t mmask[6] = {0xFFU, 0U, 0U, 0U, 0U, 0U};
+	uint8_t mm[NET_ETH_ADDR_LEN] = {BIT(0), 0U, 0U, 0U, 0U, 0U};
+	uint8_t mmask[NET_ETH_ADDR_LEN] = {0xFFU, 0U, 0U, 0U, 0U, 0U};
 	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
 			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
 			 ADIN2111_ADDR_TO_HOST |
@@ -1011,7 +1011,7 @@ static int adin2111_filter_broadcast(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
 	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
-	uint8_t mac[] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
+	uint8_t mac[NET_ETH_ADDR_LEN] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
 	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
 			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
 			 ADIN2111_ADDR_TO_HOST |
