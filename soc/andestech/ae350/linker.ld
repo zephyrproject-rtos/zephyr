@@ -400,10 +400,6 @@ GROUP_END(DTCM)
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()
 
-/* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
- * to set __rom_region_end symbol at the end of linker script and
- * doesn't mistakenly contain the RAMABLE_REGION in it.
- */
 #ifdef CONFIG_XIP
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,,)
@@ -415,17 +411,27 @@ SECTION_PROLOGUE(.last_section,,)
 #endif
 } GROUP_LINK_IN(ROMABLE_REGION)
 
+/* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
+ * to set __rom_region_end symbol at the end of linker script and
+ * doesn't mistakenly contain the RAMABLE_REGION in it.
+ */
 #ifndef CONFIG_RISCV_PMP
-/* To provide the image size as a const expression,
- * calculate this value here. */
 __rom_region_end = LOADADDR(.last_section) + SIZEOF(.last_section);
 #else
+/* Padding __rom_region_end to matches the requirement of the MPU region.
+ * __rom_region_size is used to configure the MPU region, but the actual rom
+ * region data usage is ends at .last_section.
+ */
 SECTION_PROLOGUE(rom_mpu_padding,(NOLOAD),)
 {
 	MPU_ALIGN(__rom_region_size);
 } GROUP_LINK_IN(ROMABLE_REGION)
 __rom_region_end = LOADADDR(rom_mpu_padding) + SIZEOF(rom_mpu_padding);
 #endif /* !CONFIG_RISCV_PMP */
+
+/* To provide the rom region size as a const expression,
+ * calculate this value here.
+ */
 __rom_region_size = __rom_region_end - __rom_region_start;
 #endif
 
