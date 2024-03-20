@@ -6,6 +6,7 @@
 
 #include <xtensa/xtensa.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/clock/imx8ulp_clock.h>
 
 / {
 	cpus {
@@ -29,5 +30,11 @@
 		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x8e800000 DT_SIZE_K(512)>;
+	};
+
+	pcc4: clock-controller@29800000 {
+		compatible = "nxp,kinetis-pcc";
+		reg = <0x29800000 DT_SIZE_K(64)>;
+		#clock-cells = <2>;
 	};
 };
