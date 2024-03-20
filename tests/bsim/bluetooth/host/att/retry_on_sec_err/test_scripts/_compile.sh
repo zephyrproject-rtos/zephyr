@@ -1,18 +1,16 @@
-#!/bin/env bash
-# Copyright 2023 Codecoup
+#!/usr/bin/env bash
+# Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
-bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
 
-source "${bash_source_dir}/_env.sh"
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
+INCR_BUILD=1
 
-pushd client
-west build -b nrf52_bsim && \
-	cp -v build/zephyr/zephyr.exe "${test_exe_d0}"
-popd
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-pushd server
-west build -b nrf52_bsim && \
-	cp -v build/zephyr/zephyr.exe "${test_exe_d1}"
-popd
+app="$(guess_test_relpath)"/client compile
+app="$(guess_test_relpath)"/server  compile
+
+wait_for_background_jobs
