@@ -3439,6 +3439,15 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 			return;
 		}
+
+		if ((cmd->prim_adv_phy > BT_HCI_LE_PHY_CODED) ||
+		    (cmd->sec_adv_phy > BT_HCI_LE_PHY_CODED) ||
+		    (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+		     ((cmd->prim_adv_phy == BT_HCI_LE_PHY_CODED) ||
+		      (cmd->sec_adv_phy == BT_HCI_LE_PHY_CODED)))) {
+			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+			return;
+		}
 	}
 
 	status = ll_adv_set_by_hci_handle_get_or_new(cmd->handle, &handle);

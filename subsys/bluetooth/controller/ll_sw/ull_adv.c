@@ -315,6 +315,17 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			adv_type = 0x05; /* index of PDU_ADV_TYPE_EXT_IND in */
 					 /* pdu_adv_type[] */
 
+			/* Fallback to 1M if upper layer did not check HCI
+			 * parameters for Coded PHY support.
+			 * This fallback allows *testing* extended advertising
+			 * using 1M using a upper layer that is requesting Coded
+			 * PHY on Controllers without Coded PHY support.
+			 */
+			if (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+			    (phy_p == PHY_CODED)) {
+				phy_p = PHY_1M;
+			}
+
 			adv->lll.phy_p = phy_p;
 			adv->lll.phy_flags = PHY_FLAGS_S8;
 		}
@@ -581,15 +592,28 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* No SyncInfo in primary channel PDU */
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+		/* Fallback to 1M if upper layer did not check HCI
+		 * parameters for Coded PHY support.
+		 * This fallback allows *testing* extended advertising
+		 * using 1M using a upper layer that is requesting Coded
+		 * PHY on Controllers without Coded PHY support.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+		    (phy_s == PHY_CODED)) {
+			phy_s = PHY_1M;
+		}
+
+		adv->lll.phy_s = phy_s;
+
 		/* AuxPtr */
 		if (pri_hdr_prev.aux_ptr) {
 			pri_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
 		}
 		if (pri_hdr->aux_ptr) {
 			pri_dptr -= sizeof(struct pdu_adv_aux_ptr);
-			ull_adv_aux_ptr_fill((void *)pri_dptr, 0U, phy_s);
+			ull_adv_aux_ptr_fill((void *)pri_dptr, 0U,
+					     adv->lll.phy_s);
 		}
-		adv->lll.phy_s = phy_s;
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 		/* ADI */
