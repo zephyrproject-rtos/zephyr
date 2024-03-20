@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/power/nxp_rw_pmu.h>
+#include <dt-bindings/adc/nxp,gau-adc.h>
 
 / {
 	chosen {
@@ -361,6 +362,36 @@
 		};
 	};
 
+
+	gau {
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		adc0: gau_adc0@38000 {
+			compatible = "nxp,gau-adc";
+			reg = <0x38000 0x100>;
+			interrupts = <112 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: gau_adc1@38100 {
+			compatible = "nxp,gau-adc";
+			reg = <0x38100 0x100>;
+			interrupts = <111 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		dac0: dac@38200 {
+			compatible = "nxp,gau-dac";
+			reg = <0x38200 0x30>;
+			interrupts = <108 0>;
+			status = "disabled";
+			#io-channel-cells = <0>;
+		};
+	};
 };
 
 &flexspi {
