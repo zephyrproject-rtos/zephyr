@@ -607,6 +607,11 @@ static void gdb_q_packet(uint8_t *buf, size_t len, enum gdb_loop_state *next_sta
 	gdb_send_packet(NULL, 0);
 }
 
+static void gdb_v_packet(uint8_t *buf, size_t len, enum gdb_loop_state *next_state)
+{
+	gdb_send_packet(NULL, 0);
+}
+
 /**
  * Synchronously communicate with gdb on the host
  */
@@ -836,6 +841,11 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 			__fallthrough;
 		case 'Q':
 			gdb_q_packet(buf, sizeof(buf), &state);
+			break;
+
+		/* v packets */
+		case 'v':
+			gdb_v_packet(buf, sizeof(buf), &state);
 			break;
 
 		/*
