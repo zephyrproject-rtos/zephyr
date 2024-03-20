@@ -52,6 +52,7 @@ class Boards(WestCommand):
             - identifiers: board identifiers
             - arch: board architecture
             - dir: directory that contains the board definition
+            - vendor: board vendor
             '''))
 
         # Remember to update west-completion.bash if you add or remove
@@ -92,5 +93,12 @@ class Boards(WestCommand):
         for board in list_boards.find_v2_boards(args):
             if name_re is not None and not name_re.search(board.name):
                 continue
-            log.inf(args.format.format(name=board.name, dir=board.dir, hwm=board.hwm,
-                                       identifiers=list_boards.board_v2_identifiers_csv(board)))
+            log.inf(
+                args.format.format(
+                    name=board.name,
+                    dir=board.dir,
+                    hwm=board.hwm,
+                    vendor=board.vendor,
+                    identifiers=list_boards.board_v2_identifiers_csv(board),
+                )
+            )

@@ -196,21 +196,52 @@ function __zephyr_west_complete_help
 end
 
 function __zephyr_west_complete_board
-    # HWMv1
-    set -l boards (west 2>/dev/null boards --format="{name} {arch}")
-    for board in $boards
-        set -l b (string split " " $board)
-        printf "%s\n" $b[1]\t"$b[2]"
-    end
+    set -l one_week_in_s 604800
+    set -l is_cache_valid 0
 
-    # HWMv2
-    set -l boards (west 2>/dev/null boards --format="{identifiers}")
-    for board in $boards
-        set -l b (string split "," $board)
-        for variant in $b
-            printf "%s\n" $variant[1]
+    set -l cache_folder $HOME/.cache/west
+    set -l cache_file $cache_folder/fish_boards_completion.cache
+
+    if test ! -f $cache_file
+        mkdir -p $cache_folder
+        touch $cache_file
+
+        set is_cache_valid 0
+    else
+        set -l now (date +%s)
+        set -l cache_file_date (date -r $cache_file +%s)
+        set -l cache_last_update (math $now - $cache_file_date)
+
+        if test $cache_last_update -gt $one_week_in_s
+            set is_cache_valid 0
+        else
+            set is_cache_valid 1
         end
     end
+
+    if test $is_cache_valid -eq 0
+        echo "" > $cache_file
+
+        set -l boards (west boards --format="{identifiers},{vendor}" 2>/dev/null)
+
+        for board in $boards
+            set -l split_b (string split "," $board)
+            set -l vendor $split_b[(count $split_b)]
+            set -e split_b[-1]
+
+            if test $vendor != "None"
+                for variant in $split_b
+                    printf "%s\t%s\n" $variant $vendor >> $cache_file
+                end
+            else
+                for variant in $split_b
+                    printf "%s\n" $variant >> $cache_file
+                end
+            end
+        end
+    end
+
+    cat $cache_file
 end
 
 # disable file completion, if an option need it, it should use '--force-files'
@@ -303,6 +334,8 @@ complete -c west -n "__zephyr_west_seen_subcommand_from boards" -o n -l name -d 
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l arch-root -xa "(__zephyr_west_complete_directories)" -d "add an arch root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
 complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l soc-root -xa "(__zephyr_west_complete_directories)" -d "add a soc root"
+complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board -xa "(__zephyr_west_complete_board)" -d "lookup the specific board"
+complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l board-dir -xa "(__zephyr_west_complete_directories)" -d "only look for boards in this directory"
 
 # build
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra build -d "compile a Zephyr application"
