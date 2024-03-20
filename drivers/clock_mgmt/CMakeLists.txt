@@ -13,6 +13,7 @@ macro(zephyr_clock_mgmt_driver_ifdef toggle driver)
   endif()
 endmacro()
 
+zephyr_clock_mgmt_driver_ifdef(CONFIG_CLOCK_MGMT_NXP_LPC55XXX clock_mgmt_lpc55xxx.c)
 
 # Force the build system to run again if the SOC clock management code
 # is edited, so we can regenerate the clock code

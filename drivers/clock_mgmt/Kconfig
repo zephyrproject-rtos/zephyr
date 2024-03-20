@@ -6,5 +6,6 @@ menuconfig CLOCK_MGMT
 
 if CLOCK_MGMT
 
+source "drivers/clock_mgmt/Kconfig.nxp_lpc55xxx"
 
 endif # CLOCK_MGMT
