@@ -31,86 +31,104 @@ manifest:
   projects:
     - name: canopennode
       revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
+      remote: zedblox
       path: modules/lib/canopennode
     - name: chre
       revision: 0edfe2c2ec656afb910cfab8ed59a5ffd59b87c8
+      remote: zedblox
       path: modules/lib/chre
     - name: civetweb
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
+      remote: zedblox
       path: modules/lib/civetweb
     - name: cmsis
       revision: 5f86244bad4ad5a590e084f0e72ba7a1416c2edf
+      remote: zedblox
       path: modules/hal/cmsis
       groups:
         - hal
     - name: edtt
       revision: 1ea61a390d2bfcf3b2ecdba8f8b0b98dfdffbd11
+      remote: zedblox
       path: tools/edtt
       groups:
         - tools
     - name: fatfs
       revision: a30531af3a95a9a3ea7d771ea8a578ebfed45514
+      remote: zedblox
       path: modules/fs/fatfs
       groups:
         - fs
     - name: fff
       revision: 6ce5ba26486e93d5b7696a3e23f0585932c14b16
+      remote: zedblox
       path: modules/lib/fff
       groups:
         - ci
     - name: hal_altera
       revision: 0d225ddd314379b32355a00fb669eacf911e750d
+      remote: zedblox
       path: modules/hal/altera
       groups:
         - hal
     - name: hal_atmel
       revision: 78c5567c05b6b434dd7d98f49156319df4217bac
+      remote: zedblox
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_espressif
       revision: df85671c5d0405c0747c2939c8dfe808b7e4cf38
+      remote: zedblox
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_gigadevice
       revision: 63a72ca90b7e0d7257211ddc5c79e8c0b940371b
+      remote: zedblox
       path: modules/hal/gigadevice
       groups:
         - hal
     - name: hal_infineon
       revision: 4af06965f57ba1e7d170e6a97d24c33785543a8c
+      remote: zedblox
       path: modules/hal/infineon
       groups:
         - hal
     - name: hal_microchip
       revision: 5d079f1683a00b801373bbbbf5d181d4e33b30d5
+      remote: zedblox
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
       revision: a85bb3676d61d1ae202088e0d3fec556056b2c9e
+      remote: zedblox
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
       revision: b4d31f33238713a568e23618845702fadd67386f
+      remote: zedblox
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
       revision: 2302a1e94f5bc00ce59db4e249b688ad2e959f58
+      remote: zedblox
       path: modules/hal/nxp
       groups:
         - hal
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
+      remote: zedblox
       path: modules/hal/openisa
       groups:
         - hal
     - name: hal_quicklogic
       revision: b3a66fe6d04d87fd1533a5c8de51d0599fcd08d0
+      remote: zedblox
       path: modules/hal/quicklogic
       repo-path: hal_quicklogic
       groups:
@@ -118,136 +136,168 @@ manifest:
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
       revision: 191f5ba46fda49523cdaaef27583d1c875ba2c36
+      remote: zedblox
       groups:
         - hal
     - name: hal_silabs
       revision: be39d4eebeddac6e18e9c0c3ba1b31ad1e82eaed
+      remote: zedblox
       path: modules/hal/silabs
       groups:
         - hal
     - name: hal_st
       revision: 52a522ca4a8a9ec1e9bb5bb514e1ab6f102863fe
+      remote: zedblox
       path: modules/hal/st
       groups:
         - hal
     - name: hal_stm32
       revision: 8a109ecde13d37b0b646d25fba04b8022cdbdd4e
+      remote: origin
       path: modules/hal/stm32
       groups:
         - hal
     - name: hal_telink
       revision: ffcfd6282aa213f1dc0848dbca6279b098f6b143
+      remote: zedblox
       path: modules/hal/telink
       groups:
         - hal
     - name: hal_ti
       revision: 905a5d4134899630071f9383aadaaf266e8f8cd2
+      remote: zedblox
       path: modules/hal/ti
       groups:
         - hal
     - name: hal_xtensa
       revision: 0e577021bb66e644afd067cd9f7c71ab11b62b3d
+      remote: zedblox
       path: modules/hal/xtensa
       groups:
         - hal
     - name: libmetal
       revision: 850a3c3fd5bc655987021dc9106d8e8cd0f7e061
+      remote: zedblox
       path: modules/hal/libmetal
       groups:
         - hal
     - name: liblc3codec
       revision: 3951cf1b71ff3be086c9b9b595e473e12301337c
+      remote: zedblox
       path: modules/lib/liblc3codec
     - name: littlefs
       path: modules/fs/littlefs
       groups:
         - fs
       revision: 652f2c5646e79b881e6f3099686ad3b7af9e216c
+      remote: zedblox
     - name: loramac-node
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
+      remote: zedblox
       path: modules/lib/loramac-node
     - name: lvgl
       revision: df717ac87a9fd80246cc8df24554475e59bda21f
+      remote: zedblox
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
+      remote: zedblox
       path: modules/lib/lz4
     - name: mbedtls
       revision: 7fed49c9b9f983ad6416986661ef637459723bcb
+      remote: zedblox
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
       revision: c1c4936c89347d447c8f2353b9dbb374df0a5e16
+      remote: origin
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
         - debug
       revision: a5163c1800a5243f8b05d84c942da008df4cb666
+      remote: zedblox
     - name: nanopb
       revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
+      remote: zedblox
       path: modules/lib/nanopb
     - name: net-tools
       revision: f49bd1354616fae4093bf36e5eaee43c51a55127
+      remote: zedblox
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
       revision: b8cea37dbdc8fc58cc14b4e19fa850877a9da520
+      remote: zedblox
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
+      remote: zedblox
       path: modules/lib/open-amp
     - name: openthread
       revision: e2a765599aa0379d0f72f0149a9cbafec070c12d
+      remote: zedblox
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
+      remote: zedblox
       path: modules/debug/segger
       groups:
         - debug
     - name: sof
       revision: 2efc3ea41c0074c6dab5f376fafaa26f52c25c75
+      remote: zedblox
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6
+      remote: zedblox
       path: modules/lib/tflite-micro
       repo-path: tflite-micro
     - name: tinycbor
       revision: 9e1f34bc08123aaad7666d3652aaa839e8178b3b
+      remote: zedblox
       path: modules/lib/tinycbor
     - name: tinycrypt
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
+      remote: zedblox
       path: modules/crypto/tinycrypt
       groups:
         - crypto
     - name: TraceRecorderSource
       revision: e8ca3b6a83d19b2fc4738a0d9607190436e5e452
+      remote: zedblox
       path: modules/debug/TraceRecorder
       groups:
         - debug
     - name: trusted-firmware-m
       revision: 7c53a6e76130a85303f83b15d868a92fdcd5f5be
+      remote: zedblox
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
     - name: tf-m-tests
       revision: c99a86b295c4887520da9d8402566d7f225c974e
+      remote: zedblox
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - tee
     - name: psa-arch-tests
       revision: a81f9da287569f169d60026916952641b233faa8
+      remote: zedblox
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
     - name: zcbor
       revision: 882c489a7d9fdfff31d27666914a78a9eb6976d7
+      remote: zedblox
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
       revision: fc979a8dcb74169c69b02835927bff8f070d6325
+      remote: zedblox
 
   group-filter:
     - -ci
