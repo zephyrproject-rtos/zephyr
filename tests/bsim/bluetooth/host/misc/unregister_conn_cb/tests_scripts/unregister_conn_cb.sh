@@ -12,11 +12,10 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 #neither flag change can be found, callback function was unregistered as expected
 simulation_id="unregister_conn_cb"
 verbosity_level=2
-EXECUTE_TIMEOUT=20
+
+bsim_exe=./bs_${BOARD}_tests_bsim_bluetooth_host_misc_unregister_conn_cb_prj_conf
 
 cd ${BSIM_OUT_PATH}/bin
-
-bsim_exe=./bs_nrf52_bsim_tests_bsim_bluetooth_host_misc_unregister_conn_cb_prj_conf
 
 Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -rs=420
 Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -rs=100
