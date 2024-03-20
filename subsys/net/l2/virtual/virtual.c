@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_virtual, CONFIG_NET_L2_VIRTUAL_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include "net_private.h"
+#include "net_stats.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
@@ -50,6 +51,21 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 			continue;
 		}
 
+		if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+			size_t pkt_len;
+
+			pkt_len = net_pkt_get_len(pkt);
+
+			NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
+
+			net_stats_update_bytes_recv(ctx->virtual_iface,
+						    pkt_len);
+		}
+
+		if (verdict == NET_DROP) {
+			net_stats_update_processing_error(ctx->virtual_iface);
+		}
+
 		return verdict;
 	}
 
@@ -61,15 +77,27 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct virtual_interface_api *api = net_if_get_device(iface)->api;
+	size_t pkt_len;
+	int ret;
 
 	if (!api) {
 		return -ENOENT;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		pkt_len = net_pkt_get_len(pkt);
+	}
+
 	/* As we are just passing data through, the net_pkt is not freed here.
 	 */
+	ret = api->send(iface, pkt);
 
-	return api->send(iface, pkt);
+	if (IS_ENABLED(CONFIG_NET_STATISTICS) && ret == 0) {
+		NET_DBG("Sent pkt %p len %zu", pkt, pkt_len);
+		net_stats_update_bytes_sent(iface, pkt_len);
+	}
+
+	return ret;
 }
 
 static int virtual_enable(struct net_if *iface, bool state)
@@ -386,6 +414,17 @@ enum net_verdict net_virtual_input(struct net_if *input_iface,
 				      remote_addr, pkt);
 		if (verdict == NET_OK) {
 			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+			size_t pkt_len;
+
+			pkt_len = net_pkt_get_len(pkt);
+
+			NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
+
+			net_stats_update_bytes_recv(ctx->virtual_iface,
+						    pkt_len);
 		}
 
 		return verdict;
