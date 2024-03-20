@@ -183,6 +183,9 @@ mikrobus_spi: &hs_lspi {
 &flexcomm0 {
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	/* Select FROHF as input clock */
+	clock-state-0 = <&fcclksel0 3>;
+	clock-state-names = "default";
 };
 
 &flexcomm2 {
