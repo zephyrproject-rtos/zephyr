@@ -12,9 +12,11 @@ tests:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
+      - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
   sample.mcumgr.smp_svr.bt_static_svc:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     extra_configs:
