@@ -1536,7 +1536,7 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
 /**
  * @brief Clone buffer
  *
- * Duplicate given buffer including any data and headers currently stored.
+ * Duplicate given buffer including any (user) data and headers currently stored.
  *
  * @param buf A valid pointer on a buffer
  * @param timeout Affects the action taken should the pool be empty.
