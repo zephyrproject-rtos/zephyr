@@ -97,6 +97,28 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 	return 0;
 }
 
+int clock_getres(clockid_t clock_id, struct timespec *res)
+{
+	BUILD_ASSERT(CONFIG_SYS_CLOCK_TICKS_PER_SEC > 0 &&
+			     CONFIG_SYS_CLOCK_TICKS_PER_SEC <= NSEC_PER_SEC,
+		     "CONFIG_SYS_CLOCK_TICKS_PER_SEC must be > 0 and <= NSEC_PER_SEC");
+
+	if (!(clock_id == CLOCK_MONOTONIC || clock_id == CLOCK_REALTIME ||
+	      clock_id == CLOCK_PROCESS_CPUTIME_ID)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (res != NULL) {
+		*res = (struct timespec){
+			.tv_sec = 0,
+			.tv_nsec = NSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+		};
+	}
+
+	return 0;
+}
+
 /**
  * @brief Set the time of the specified clock.
  *
