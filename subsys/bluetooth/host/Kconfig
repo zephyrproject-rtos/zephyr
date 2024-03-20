@@ -95,7 +95,7 @@ config BT_HCI_RESERVE
 
 choice BT_RECV_CONTEXT
 	prompt "BT RX Thread Selection"
-	default BT_RECV_BLOCKING if BT_LL_SW_SPLIT || BT_H4
+	default BT_RECV_WORKQ_SYS if SOC_SERIES_NRF51X
 	default BT_RECV_WORKQ_BT
 	help
 	  Selects in which context incoming low priority HCI packets are processed.
@@ -103,13 +103,6 @@ choice BT_RECV_CONTEXT
 	  High priority events are always processed in the context of the caller of bt_recv()
 	  or bt_recv_prio(). The choice will influence RAM usage and how fast incoming HCI
 	  packets are processed.
-
-config BT_RECV_BLOCKING
-	bool "Process HCI packets in the context of bt_recv() and bt_recv_prio()"
-	help
-	  When this option is selected, the host will not have its own RX thread.
-	  With this option it is the responsibility of the HCI driver to call
-	  bt_recv_prio from a higher priority context than bt_recv() in order to avoid deadlocks.
 
 config BT_RECV_WORKQ_SYS
 	bool "Process low priority HCI packets in the system work queue"
