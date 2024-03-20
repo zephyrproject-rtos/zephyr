@@ -43,6 +43,9 @@ canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 installed_packages = [pkg.project_name for pkg in pkg_resources.working_set]  # pylint: disable=not-an-iterable
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 
+def norm_path(astring):
+    newstring = os.path.normpath(astring).replace(os.sep, '/')
+    return newstring
 
 def add_parse_arguments(parser = None):
     if parser is None:
@@ -96,7 +99,7 @@ Artificially long but functional example:
         help="Load a list of tests and platforms to be run from file.")
 
     case_select.add_argument(
-        "-T", "--testsuite-root", action="append", default=[],
+        "-T", "--testsuite-root", action="append", default=[], type = norm_path,
         help="Base directory to recursively search for test cases. All "
              "testcase.yaml files under here will be processed. May be "
              "called multiple times. Defaults to the 'samples/' and "
@@ -209,7 +212,7 @@ Artificially long but functional example:
         and global timeout multiplier (this parameter)""")
 
     test_xor_subtest.add_argument(
-        "-s", "--test", "--scenario", action="append",
+        "-s", "--test", "--scenario", action="append", type = norm_path,
         help="Run only the specified testsuite scenario. These are named by "
              "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
