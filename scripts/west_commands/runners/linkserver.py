@@ -25,7 +25,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, core,
                  linkserver=DEFAULT_LINKSERVER_EXE,
                  dt_flash=True, erase=True,
-                 probe=1,
+                 probe='#1',
                  gdb_host='',
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
                  semihost_port=DEFAULT_LINKSERVER_SEMIHOST_PORT,
@@ -71,8 +71,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
         parser.add_argument('--core', required=False, help='core of the device')
 
-        parser.add_argument('--probe', default=1,
-                            help='interface to use (index, no serial number), default is 1')
+        parser.add_argument('--probe', default='#1',
+                            help='interface to use (index, or serial number, default is #1')
 
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
@@ -169,7 +169,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         else:
             _cmd_core = ""
 
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", "#"+str(self.probe)] +
+        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] +
                           [self.device+_cmd_core] + ["erase"])
         self.logger.debug("flash erase command = " + str(linkserver_cmd))
         self.check_call(linkserver_cmd)
@@ -191,7 +191,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         else:
             _cmd_core = ""
 
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", "#"+str(self.probe)] + self.override_cli + [self.device+_cmd_core])
+        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device+_cmd_core])
         self.logger.debug(f'LinkServer cmd:  + {linkserver_cmd}')
 
         if self.erase:
