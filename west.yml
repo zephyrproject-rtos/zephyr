@@ -131,7 +131,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 51b373cd3455b8c2b9babbf6ff41918116a442ac
+      revision: 8a109ecde13d37b0b646d25fba04b8022cdbdd4e
       path: modules/hal/stm32
       groups:
         - hal
@@ -178,7 +178,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: e58ea98aec6e5539c5f872a98059e461d0155bbb
+      revision: c1c4936c89347d447c8f2353b9dbb374df0a5e16
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
