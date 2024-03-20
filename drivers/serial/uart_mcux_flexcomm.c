@@ -120,22 +120,22 @@ static int mcux_flexcomm_err_check(const struct device *dev)
 	uint32_t flags = USART_GetStatusFlags(config->base);
 	int err = 0;
 
-	if (flags & kStatus_USART_RxRingBufferOverrun) {
+	if (flags & kUSART_RxError) {
 		err |= UART_ERROR_OVERRUN;
 	}
 
-	if (flags & kStatus_USART_ParityError) {
+	if (flags & kUSART_ParityErrorFlag) {
 		err |= UART_ERROR_PARITY;
 	}
 
-	if (flags & kStatus_USART_FramingError) {
+	if (flags & kUSART_FramingErrorFlag) {
 		err |= UART_ERROR_FRAMING;
 	}
 
 	USART_ClearStatusFlags(config->base,
-			       kStatus_USART_RxRingBufferOverrun |
-			       kStatus_USART_ParityError |
-			       kStatus_USART_FramingError);
+			       kUSART_RxError |
+			       kUSART_ParityErrorFlag |
+			       kUSART_FramingErrorFlag);
 
 	return err;
 }
@@ -243,9 +243,9 @@ static int mcux_flexcomm_irq_rx_pending(const struct device *dev)
 static void mcux_flexcomm_irq_err_enable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint32_t mask = kStatus_USART_NoiseError |
-			kStatus_USART_FramingError |
-			kStatus_USART_ParityError;
+	uint32_t mask = kUSART_NoiseErrorInterruptEnable |
+			kUSART_FramingErrorInterruptEnable |
+			kUSART_ParityErrorInterruptEnable;
 
 	USART_EnableInterrupts(config->base, mask);
 }
@@ -253,9 +253,9 @@ static void mcux_flexcomm_irq_err_enable(const struct device *dev)
 static void mcux_flexcomm_irq_err_disable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint32_t mask = kStatus_USART_NoiseError |
-			kStatus_USART_FramingError |
-			kStatus_USART_ParityError;
+	uint32_t mask = kUSART_NoiseErrorInterruptEnable |
+			kUSART_FramingErrorInterruptEnable |
+			kUSART_ParityErrorInterruptEnable;
 
 	USART_DisableInterrupts(config->base, mask);
 }
