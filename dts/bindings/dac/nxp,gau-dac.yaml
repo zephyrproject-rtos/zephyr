@@ -1,0 +1,39 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP GAU DAC
+
+compatible: "nxp,gau-dac"
+
+include: dac-controller.yaml
+
+properties:
+  nxp,dac-reference:
+    type: string
+    enum:
+      - "internal"
+      - "external"
+    default: "internal"
+    description: DAC reference select, default reset value
+
+  nxp,output-voltage-range:
+    type: string
+    enum:
+      - "small"
+      - "medium"
+      - "large"
+    default: "large"
+    description: See RM for equations, default reset value
+
+  nxp,conversion-rate:
+    type: string
+    enum:
+      - "62.5K"
+      - "125K"
+      - "250K"
+      - "500K"
+    default: "62.5K"
+    description: DAC conversion rate, default reset value
+
+  "#io-channel-cells":
+    const: 0
