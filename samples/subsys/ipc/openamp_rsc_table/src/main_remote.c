@@ -14,7 +14,8 @@
 #include <zephyr/drivers/ipm.h>
 
 #include <openamp/open_amp.h>
-#include <metal/device.h>
+#include <metal/sys.h>
+#include <metal/io.h>
 #include <resource_table.h>
 
 #ifdef CONFIG_SHELL_BACKEND_RPMSG
@@ -53,26 +54,17 @@ static const struct device *const ipm_handle =
 
 static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
 
-struct metal_device shm_device = {
-	.name = SHM_DEVICE_NAME,
-	.num_regions = 2,
-	.regions = {
-		{.virt = NULL}, /* shared memory */
-		{.virt = NULL}, /* rsc_table memory */
-	},
-	.node = { NULL },
-	.irq_num = 0,
-	.irq_info = NULL
-};
+static struct metal_io_region shm_io_data; /* shared memory */
+static struct metal_io_region rsc_io_data; /* rsc_table memory */
 
 struct rpmsg_rcv_msg {
 	void *data;
 	size_t len;
 };
 
-static struct metal_io_region *shm_io;
+static struct metal_io_region *shm_io = &shm_io_data;
 
-static struct metal_io_region *rsc_io;
+static struct metal_io_region *rsc_io = &rsc_io_data;
 static struct rpmsg_virtio_device rvdev;
 
 static void *rsc_table;
@@ -149,7 +141,6 @@ int platform_init(void)
 {
 	void *rsc_tab_addr;
 	int rsc_size;
-	struct metal_device *device;
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 	int status;
 
@@ -159,40 +150,16 @@ int platform_init(void)
 		return -1;
 	}
 
-	status = metal_register_generic_device(&shm_device);
-	if (status) {
-		LOG_ERR("Couldn't register shared memory: %d\n", status);
-		return -1;
-	}
-
-	status = metal_device_open("generic", SHM_DEVICE_NAME, &device);
-	if (status) {
-		LOG_ERR("metal_device_open failed: %d\n", status);
-		return -1;
-	}
-
 	/* declare shared memory region */
-	metal_io_init(&device->regions[0], (void *)SHM_START_ADDR, &shm_physmap,
+	metal_io_init(shm_io, (void *)SHM_START_ADDR, &shm_physmap,
 		      SHM_SIZE, -1, 0, NULL);
-
-	shm_io = metal_device_io_region(device, 0);
-	if (!shm_io) {
-		LOG_ERR("Failed to get shm_io region\n");
-		return -1;
-	}
 
 	/* declare resource table region */
 	rsc_table_get(&rsc_tab_addr, &rsc_size);
 	rsc_table = (struct st_resource_table *)rsc_tab_addr;
 
-	metal_io_init(&device->regions[1], rsc_table,
+	metal_io_init(rsc_io, rsc_table,
 		      (metal_phys_addr_t *)rsc_table, rsc_size, -1, 0, NULL);
-
-	rsc_io = metal_device_io_region(device, 1);
-	if (!rsc_io) {
-		LOG_ERR("Failed to get rsc_io region\n");
-		return -1;
-	}
 
 	/* setup IPM */
 	if (!device_is_ready(ipm_handle)) {
