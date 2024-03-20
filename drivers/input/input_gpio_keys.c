@@ -106,6 +106,14 @@ static __maybe_unused void gpio_keys_change_deferred(struct k_work *work)
 	const struct gpio_keys_config *cfg = dev->config;
 	int key_index = pin_data - (struct gpio_keys_pin_data *)cfg->pin_data;
 
+#ifdef CONFIG_PM_DEVICE
+	struct gpio_keys_data *data = dev->data;
+
+	if (atomic_get(&data->suspended) == 1) {
+		return;
+	}
+#endif
+
 	gpio_keys_poll_pin(dev, key_index);
 }
 
