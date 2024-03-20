@@ -3383,6 +3383,7 @@ NXP Platforms (MPU):
     - decsny
     - yvanderv
   files:
+    - dts/arm64/nxp/
     - soc/nxp/imx/
     - soc/nxp/layerscape/
   files-regex:
