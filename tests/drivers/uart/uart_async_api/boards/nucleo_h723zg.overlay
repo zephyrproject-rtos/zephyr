@@ -1,11 +1,18 @@
 /*
+ * Copyright (c) 2024 STMicroelectronics
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-dut: &usart2 {
-	dmas = <&dmamux1 2 44 STM32_DMA_PERIPH_TX>,
-		<&dmamux1 3 43 STM32_DMA_PERIPH_RX>;
+/* Arduino Header pins: Tx:D9, Rx:D10 */
+dut: &uart9 {
+	pinctrl-0 = <&uart9_tx_pd15 &uart9_rx_pd14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	dmas = <&dmamux1 2 117 STM32_DMA_PERIPH_TX>,
+		<&dmamux1 3 116 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma1 {
