@@ -7,12 +7,11 @@ cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-if(("${BOARD}" STREQUAL "nrf5340dk") OR
-	("${BOARD}${BOARD_QUALIFIERS}" STREQUAL "nrf5340bsim/nrf5340/cpuapp") OR
-	("${BOARD}" STREQUAL "nrf5340bsim_nrf5340_cpuapp"))
-	message(INFO " ${BOARD}${BOARD_QUALIFIERS} used for Application Core")
+if(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP OR
+   CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP)
+  message(INFO " ${BOARD}${BOARD_QUALIFIERS} used for Application Core")
 else()
-	message(FATAL_ERROR "${BOARD} is not supported for this sample")
+  message(FATAL_ERROR "${BOARD}${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
 project(sync_rtc)
