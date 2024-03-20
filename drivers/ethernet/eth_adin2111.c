@@ -247,10 +247,10 @@ static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t re
 	return 0;
 }
 
-int eth_adin2111_oa_data_read(const struct device *dev, int port)
+int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 {
 	struct adin2111_data *ctx = dev->data;
-	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port]->data)->iface;
+	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
 	struct net_pkt *pkt;
 	uint32_t hdr, ftr;
 	int i, len, rx_pos, ret, rca, swo;
@@ -330,7 +330,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, int port)
 			if (ret < 0) {
 				net_pkt_unref(pkt);
 				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-					port, ret);
+					port_idx, ret);
 				return ret;
 			}
 		}
@@ -344,7 +344,8 @@ update_pos:
 /*
  * Setting up for a single dma transfer.
  */
-static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *pkt, int port)
+static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *pkt,
+				      const uint16_t port_idx)
 {
 	struct adin2111_data *ctx = dev->data;
 	uint16_t clen, len = net_pkt_get_len(pkt);
@@ -373,7 +374,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 	for (i = 1, cur = 0; i <= chunks; i++) {
 		hdr = ADIN2111_OA_DATA_HDR_DNC | ADIN2111_OA_DATA_HDR_DV |
 			ADIN2111_OA_DATA_HDR_NORX;
-		hdr |= (!!port << ADIN2111_OA_DATA_HDR_VS);
+		hdr |= (!!port_idx << ADIN2111_OA_DATA_HDR_VS);
 		if (i == 1) {
 			hdr |= ADIN2111_OA_DATA_HDR_SV;
 		}
@@ -526,14 +527,14 @@ int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg,
 	return rval;
 }
 
-static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
+static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 {
 	const struct adin2111_config *cfg = dev->config;
 	struct adin2111_data *ctx = dev->data;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	uint16_t fsize_reg = ((port == 0U) ? ADIN2111_P1_RX_FSIZE : ADIN2111_P2_RX_FSIZE);
-	uint16_t rx_reg = ((port == 0U) ? ADIN2111_P1_RX : ADIN2111_P2_RX);
+	uint16_t fsize_reg = ((port_idx == 0U) ? ADIN2111_P1_RX_FSIZE : ADIN2111_P2_RX_FSIZE);
+	uint16_t rx_reg = ((port_idx == 0U) ? ADIN2111_P1_RX : ADIN2111_P2_RX);
 	uint32_t fsize;
 	uint32_t fsize_real;
 	uint32_t padding_len;
@@ -544,13 +545,13 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 	int ret;
 
-	iface = ((struct adin2111_port_data *)ctx->port[port]->data)->iface;
+	iface = ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
 
 	/* get received frame size in bytes */
 	ret = eth_adin2111_reg_read(dev, fsize_reg, &fsize);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to read RX FSIZE, %d", port, ret);
+		LOG_ERR("Port %u failed to read RX FSIZE, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -585,7 +586,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to read RX FIFO, %d", port, ret);
+		LOG_ERR("Port %u failed to read RX FIFO, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -594,7 +595,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	if (!pkt) {
 		eth_stats_update_errors_rx(iface);
 		LOG_ERR("Port %u failed to alloc frame RX buffer, %u bytes",
-			port, fsize_real);
+			port_idx, fsize_real);
 		return -ENOMEM;
 	}
 
@@ -602,7 +603,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
 		net_pkt_unref(pkt);
-		LOG_ERR("Port %u failed to fill RX frame, %d", port, ret);
+		LOG_ERR("Port %u failed to fill RX frame, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -611,7 +612,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 		eth_stats_update_errors_rx(iface);
 		net_pkt_unref(pkt);
 		LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-			port, ret);
+			port_idx, ret);
 		return ret;
 	}
 
@@ -1021,7 +1022,7 @@ static int adin2111_filter_broadcast(const struct device *dev)
 }
 
 static int adin2111_filter_unicast(const struct device *dev, uint8_t *addr,
-				   uint8_t port_idx)
+				   const uint16_t port_idx)
 {
 	uint32_t rules = (port_idx == 0 ? ADIN2111_ADDR_APPLY2PORT1
 					: ADIN2111_ADDR_APPLY2PORT2)
