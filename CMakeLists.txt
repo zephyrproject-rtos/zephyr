@@ -192,6 +192,7 @@ get_property(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET compiler PROPERTY no_opti
 get_property(OPTIMIZE_FOR_DEBUG_FLAG TARGET compiler PROPERTY optimization_debug)
 get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY optimization_speed)
 get_property(OPTIMIZE_FOR_SIZE_FLAG  TARGET compiler PROPERTY optimization_size)
+get_property(OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET compiler PROPERTY optimization_size_aggressive)
 
 # From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
 # Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
@@ -203,6 +204,8 @@ elseif(CONFIG_SPEED_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SPEED_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
+elseif(CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE)
+  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
 else()
   message(FATAL_ERROR
     "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
