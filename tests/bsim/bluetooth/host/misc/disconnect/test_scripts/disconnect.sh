@@ -2,16 +2,13 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-BOARD="${BOARD:-nrf52_bsim}"
-dut_exe="bs_${BOARD}_tests_bsim_bluetooth_host_misc_disconnect_dut_prj_conf"
-tester_exe="bs_${BOARD}_tests_bsim_bluetooth_host_misc_disconnect_tester_prj_conf"
-
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-test_name="misc_disconnect"
-simulation_id="${test_name}"
+dut_exe="bs_${BOARD}_$(guess_test_long_name)_dut_prj_conf"
+tester_exe="bs_${BOARD}_$(guess_test_long_name)_tester_prj_conf"
+
+simulation_id="misc_disconnect"
 verbosity_level=2
-EXECUTE_TIMEOUT=30
 sim_length_us=10e6
 
 cd ${BSIM_OUT_PATH}/bin
@@ -46,3 +43,5 @@ for j in {0..1}; do
     echo "${BSIM_OUT_PATH}/results/${simulation_id}/Trace_$i.Tx.pcap"
     echo "${BSIM_OUT_PATH}/results/${simulation_id}/Trace_$i.Rx.pcap"
 done
+
+exit $exit_code
