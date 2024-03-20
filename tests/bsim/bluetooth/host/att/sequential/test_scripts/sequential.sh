@@ -7,8 +7,8 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 simulation_id="att_sequential"
 verbosity_level=2
 
-dut_exe="bs_${BOARD}_$(guess_test_long_name)_dut_prj_conf"
-tester_exe="bs_${BOARD}_$(guess_test_long_name)_tester_prj_conf"
+dut_exe="bs_${BOARD_TS}_$(guess_test_long_name)_dut_prj_conf"
+tester_exe="bs_${BOARD_TS}_$(guess_test_long_name)_tester_prj_conf"
 
 cd ${BSIM_OUT_PATH}/bin
 

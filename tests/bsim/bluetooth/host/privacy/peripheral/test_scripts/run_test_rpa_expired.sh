@@ -9,7 +9,7 @@ verbosity_level=2
 simulation_id="rpa_expired"
 
 central_exe_rpa_expired="\
-${BSIM_OUT_PATH}/bin/bs_${BOARD}_$(guess_test_long_name)_prj_rpa_expired_conf"
+${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_rpa_expired_conf"
 peripheral_exe_rpa_expired="${central_exe_rpa_expired}"
 
 cd ${BSIM_OUT_PATH}/bin

@@ -8,8 +8,8 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
 simulation_id="read_fill_buf"
-test_exe_d0="${BSIM_OUT_PATH}/bin/bs_${BOARD}_$(guess_test_long_name)_client_prj_conf"
-test_exe_d1="${BSIM_OUT_PATH}/bin/bs_${BOARD}_$(guess_test_long_name)_server_prj_conf"
+test_exe_d0="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_client_prj_conf"
+test_exe_d1="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_server_prj_conf"
 
 cd ${BSIM_OUT_PATH}/bin
 

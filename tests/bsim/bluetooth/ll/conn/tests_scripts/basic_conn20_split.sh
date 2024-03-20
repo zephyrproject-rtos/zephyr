@@ -11,11 +11,11 @@ EXECUTE_TIMEOUT=60
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_conn_prj_split_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_conn_prj_split_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=0 \
   -testid=peripheral_repeat20 -rs=23
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_conn_prj_split_conf\
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_conn_prj_split_conf\
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=0 \
   -testid=central_repeat20 -rs=6
 

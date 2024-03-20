@@ -10,7 +10,7 @@ EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 
-bsim_exe=./bs_${BOARD}_tests_bsim_bluetooth_host_misc_hfc_prj_conf
+bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_misc_hfc_prj_conf
 
 Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=dut -rs=420
 Execute "${bsim_exe}" -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peer -rs=69

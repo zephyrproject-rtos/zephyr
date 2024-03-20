@@ -10,10 +10,10 @@ EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_host_att_eatt_prj_autoconnect_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_eatt_prj_autoconnect_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central_lowres
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_host_att_eatt_prj_lowres_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_eatt_prj_lowres_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral_lowres
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

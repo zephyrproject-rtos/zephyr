@@ -5,7 +5,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_name='ccc_update'
-test_exe="bs_${BOARD}_tests_bsim_bluetooth_host_security_${test_name}_prj_2_conf"
+test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_security_${test_name}_prj_2_conf"
 simulation_id="${test_name}_2"
 verbosity_level=2
 
