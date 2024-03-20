@@ -81,13 +81,46 @@ static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
 
+#define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
+#define BT_HCI_EVT_FLAG_RECV      BIT(1)
+
+/** @brief Get HCI event flags.
+ *
+ * Helper for the HCI driver to get HCI event flags that describes rules that.
+ * must be followed.
+ *
+ * @param evt HCI event code.
+ *
+ * @return HCI event flags for the specified event.
+ */
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
+{
+	switch (evt) {
+	case BT_HCI_EVT_DISCONN_COMPLETE:
+		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
+		/* fallthrough */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+#if defined(CONFIG_BT_CONN)
+	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
+		__fallthrough;
+#endif /* defined(CONFIG_BT_CONN) */
+#endif /* CONFIG_BT_CONN ||  CONFIG_BT_ISO */
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		return BT_HCI_EVT_FLAG_RECV_PRIO;
+	default:
+		return BT_HCI_EVT_FLAG_RECV;
+	}
+}
+
 /* Copied here from `hci_raw.c`, which would be used in
  * conjunction with this driver when serializing HCI over wire.
  * This serves as a converter from the historical (removed from
  * tree) 'recv blocking' API to the normal single-receiver
  * `bt_recv` API.
  */
-int bt_recv_prio(struct net_buf *buf)
+static int bt_recv_prio(struct net_buf *buf)
 {
 	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
 		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
