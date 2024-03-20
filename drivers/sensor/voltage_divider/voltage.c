@@ -81,16 +81,10 @@ static const struct sensor_driver_api voltage_api = {
 	.channel_get = get,
 };
 
-#ifdef CONFIG_PM_DEVICE
-static int pm_action(const struct device *dev, enum pm_device_action action)
+static int __maybe_unused pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct voltage_config *config = dev->config;
 	int ret;
-
-	if (config->gpio_power.port == NULL) {
-		LOG_ERR("PM not supported");
-		return -ENOTSUP;
-	}
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -111,7 +105,6 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 
 	return ret;
 }
-#endif
 
 static int voltage_init(const struct device *dev)
 {
@@ -155,6 +148,8 @@ static int voltage_init(const struct device *dev)
 	return 0;
 }
 
+#define VOLTAGE_HAS_POWER_GPIO(inst) DT_INST_PROP_HAS_IDX(inst, power_gpios, 0)
+
 #define VOLTAGE_INIT(inst)                                                                         \
 	static struct voltage_data voltage_##inst##_data;                                          \
                                                                                                    \
@@ -163,10 +158,12 @@ static int voltage_init(const struct device *dev)
 		.gpio_power = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {0}),                    \
 	};                                                                                         \
                                                                                                    \
-	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
+	IF_ENABLED(VOLTAGE_HAS_POWER_GPIO(inst), (PM_DEVICE_DT_INST_DEFINE(inst, pm_action);))     \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &voltage_init, PM_DEVICE_DT_INST_GET(inst),             \
-			      &voltage_##inst##_data, &voltage_##inst##_config, POST_KERNEL,       \
-			      CONFIG_SENSOR_INIT_PRIORITY, &voltage_api);
+	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
+		inst, &voltage_init,                                                               \
+		COND_CODE_1(VOLTAGE_HAS_POWER_GPIO(inst), (PM_DEVICE_DT_INST_GET(inst)), (NULL)),  \
+		&voltage_##inst##_data, &voltage_##inst##_config, POST_KERNEL,                     \
+		CONFIG_SENSOR_INIT_PRIORITY, &voltage_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VOLTAGE_INIT)
