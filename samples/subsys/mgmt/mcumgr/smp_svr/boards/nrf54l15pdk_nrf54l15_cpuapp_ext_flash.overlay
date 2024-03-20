@@ -1,9 +1,0 @@
-/ {
-	chosen {
-		nordic,pm-ext-flash = &mx25r64;
-	};
-};
-
-&mx25r64 {
-	status = "okay";
-};
