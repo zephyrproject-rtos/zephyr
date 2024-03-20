@@ -408,18 +408,43 @@ ZTEST(net_buf_tests, test_net_buf_multi_frags)
 		      "Incorrect frag destroy callback count");
 }
 
-ZTEST(net_buf_tests, test_net_buf_clone)
+ZTEST(net_buf_tests, test_net_buf_clone_ref_count)
 {
 	struct net_buf *buf, *clone;
 
 	destroy_called = 0;
 
+	/* Heap pool supports reference counting */
 	buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
 	zassert_not_null(buf, "Failed to get buffer");
 
 	clone = net_buf_clone(buf, K_NO_WAIT);
 	zassert_not_null(clone, "Failed to get clone buffer");
 	zassert_equal(buf->data, clone->data, "Incorrect clone data pointer");
+
+	net_buf_unref(buf);
+	net_buf_unref(clone);
+
+	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+}
+
+ZTEST(net_buf_tests, test_net_buf_clone_no_ref_count)
+{
+	struct net_buf *buf, *clone;
+	const uint8_t data[3] = {0x11, 0x22, 0x33};
+
+	destroy_called = 0;
+
+	/* Fixed pool does not support reference counting */
+	buf = net_buf_alloc_len(&fixed_pool, 3, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+	net_buf_add_mem(buf, data, sizeof(data));
+
+	clone = net_buf_clone(buf, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to get clone buffer");
+	zassert_not_equal(buf->data, clone->data,
+			  "No reference counting support, different pointers expected");
+	zassert_mem_equal(clone->data, data, sizeof(data));
 
 	net_buf_unref(buf);
 	net_buf_unref(clone);
