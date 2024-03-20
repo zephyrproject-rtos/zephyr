@@ -17,6 +17,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,sram = &sram0;
+		zephyr,canbus = &flexcan2;
 	};
 
 	cpus {
@@ -64,6 +65,14 @@
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	flexcan2_phy: can-phy-tja1057 {
+		compatible = "nxp,tja1057", "can-transceiver-gpio";
+		max-bitrate = <8000000>;
+		standby-gpios = <&gpio_exp0 8 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &lpuart1 {
@@ -83,18 +92,40 @@
 };
 
 
-&lpi2c1{
+&lpi2c1 {
 	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 };
 
-&lpi2c2{
-	status = "disabled";
+&lpi2c2 {
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
+
+	mfd0:adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+
+		gpio_exp0: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <10>;
+			gpio-reserved-ranges = <5 3>;
+		};
+	};
+};
+
+&gpio_exp0 {
+	gpiohog_exp_sel: exp-sel-hog {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		line-name = "exp_sel";
+		output-low;
+	};
 };
 
 &lpspi3 {
@@ -118,4 +149,18 @@
 
 &gpio4{
 	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	sample-point = <875>;
+	sample-point-data = <875>;
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	phys = <&flexcan2_phy>;
+	status = "disabled";
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
 };
