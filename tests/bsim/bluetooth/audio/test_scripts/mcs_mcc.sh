@@ -14,10 +14,10 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Running MCS  and MCC test =========\n\n"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=mcc -rs=46 -D=2
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=mcs -rs=23 -D=2
 
 # Simulation time should be larger than the WAIT_TIME in common.h

@@ -16,11 +16,11 @@ verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=0 \
   -testid=ext_adv_conn_advertiser -rs=23
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=0 \
   -testid=ext_adv_conn_scanner -rs=6
 

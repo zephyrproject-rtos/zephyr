@@ -9,7 +9,7 @@ verbosity_level=2
 simulation_id="$(guess_test_long_name)_rpa_sharing"
 
 central_exe_rpa_sharing="\
-${BSIM_OUT_PATH}/bin/bs_${BOARD}_$(guess_test_long_name)_prj_rpa_sharing_conf"
+${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_rpa_sharing_conf"
 peripheral_exe_rpa_sharing="${central_exe_rpa_sharing}"
 
 cd ${BSIM_OUT_PATH}/bin

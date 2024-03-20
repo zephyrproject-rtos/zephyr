@@ -9,8 +9,8 @@ verbosity_level=2
 simulation_id="id_addr_update"
 
 test_path="$(guess_test_long_name)"
-central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD}_${test_path}_central_prj_conf"
-peripheral_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD}_${test_path}_peripheral_prj_conf"
+central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_${test_path}_central_prj_conf"
+peripheral_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_${test_path}_peripheral_prj_conf"
 
 cd ${BSIM_OUT_PATH}/bin
 

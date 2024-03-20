@@ -14,15 +14,15 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Running CAP commander capture and rendering test =========\n\n"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_commander_capture_and_render \
   -rs=46 -D=3
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_acceptor_capture_and_render \
   -rs=23 -D=3
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=cap_acceptor_capture_and_render \
   -rs=69 -D=3
 

@@ -14,15 +14,15 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Running BAP Broadcast Audio Assistant =========\n\n"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 \
   -testid=broadcast_sink_with_assistant -rs=24 -D=3
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
   -testid=bap_broadcast_assistant_client_sync -rs=46 -D=3
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 \
   -testid=broadcast_source -rs=69 -D=3
 

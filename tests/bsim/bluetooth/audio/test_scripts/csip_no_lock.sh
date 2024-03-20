@@ -15,19 +15,19 @@ cd ${BSIM_OUT_PATH}/bin
 
 SIMULATION_ID="csip_no_lock"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
   -RealEncryption=1 -rs=1 -D=4 -argstest no-lock
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip_set_member \
   -RealEncryption=1 -rs=2 -D=4 -argstest rank 1 not-lockable
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip_set_member \
   -RealEncryption=1 -rs=3 -D=4 -argstest rank 2 not-lockable
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_set_member \
   -RealEncryption=1 -rs=4 -D=4 -argstest rank 3 not-lockable
 
