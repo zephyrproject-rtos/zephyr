@@ -11,7 +11,6 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 simulation_id="ext_adv"
 verbosity_level=2
-EXECUTE_TIMEOUT=10
 
 cd ${BSIM_OUT_PATH}/bin
 
