@@ -13,7 +13,7 @@ set -ue
 WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
 
 BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
-BOARD="${BOARD:-nrf5340bsim_nrf5340_cpuapp}"
+export BOARD="${BOARD:-nrf5340bsim/nrf5340/cpuapp}"
 
 mkdir -p ${WORK_DIR}
 
