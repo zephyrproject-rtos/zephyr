@@ -66,14 +66,12 @@ LOG_MODULE_REGISTER(bt_hci_core);
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
 /* Stacks for the threads */
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 static void rx_work_handler(struct k_work *work);
 static K_WORK_DEFINE(rx_work, rx_work_handler);
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
-#endif /* !CONFIG_BT_RECV_BLOCKING */
 static struct k_thread tx_thread_data;
 static K_KERNEL_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 
@@ -3854,7 +3852,6 @@ void hci_event_prio(struct net_buf *buf)
 	}
 }
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 static void rx_queue_put(struct net_buf *buf)
 {
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
@@ -3868,7 +3865,6 @@ static void rx_queue_put(struct net_buf *buf)
 		LOG_ERR("Could not submit rx_work: %d", err);
 	}
 }
-#endif /* !CONFIG_BT_RECV_BLOCKING */
 
 int bt_recv(struct net_buf *buf)
 {
@@ -3879,18 +3875,11 @@ int bt_recv(struct net_buf *buf)
 	switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BT_CONN)
 	case BT_BUF_ACL_IN:
-#if defined(CONFIG_BT_RECV_BLOCKING)
-		hci_acl(buf);
-#else
 		rx_queue_put(buf);
-#endif
 		return 0;
 #endif /* BT_CONN */
 	case BT_BUF_EVT:
 	{
-#if defined(CONFIG_BT_RECV_BLOCKING)
-		hci_event(buf);
-#else
 		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 
@@ -3901,17 +3890,12 @@ int bt_recv(struct net_buf *buf)
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
 			rx_queue_put(buf);
 		}
-#endif
-		return 0;
 
+		return 0;
 	}
 #if defined(CONFIG_BT_ISO)
 	case BT_BUF_ISO_IN:
-#if defined(CONFIG_BT_RECV_BLOCKING)
-		hci_iso(buf);
-#else
 		rx_queue_put(buf);
-#endif
 		return 0;
 #endif /* CONFIG_BT_ISO */
 	default:
@@ -3920,19 +3904,6 @@ int bt_recv(struct net_buf *buf)
 		return -EINVAL;
 	}
 }
-
-#if defined(CONFIG_BT_RECV_BLOCKING)
-int bt_recv_prio(struct net_buf *buf)
-{
-	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
-
-	BT_ASSERT(bt_buf_get_type(buf) == BT_BUF_EVT);
-
-	hci_event_prio(buf);
-
-	return 0;
-}
-#endif /* CONFIG_BT_RECV_BLOCKING */
 
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
@@ -4011,7 +3982,6 @@ static void init_work(struct k_work *work)
 	}
 }
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 static void rx_work_handler(struct k_work *work)
 {
 	int err;
@@ -4063,7 +4033,6 @@ static void rx_work_handler(struct k_work *work)
 		}
 	}
 }
-#endif /* !CONFIG_BT_RECV_BLOCKING */
 
 #if defined(CONFIG_BT_TESTING)
 k_tid_t bt_testing_tx_tid_get(void)
