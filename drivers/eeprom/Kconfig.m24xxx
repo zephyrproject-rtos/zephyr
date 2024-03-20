@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Arunmani Alagarsamy
+# Author: Arunmani Alagarsamy <arunmani.a@capgemini.com>
+
+config EEPROM_M24XXX
+	bool "ST m24xxx i2c eeprom"
+	default y
+	depends on DT_HAS_ST_M24XXX_ENABLED
+	select I2C
+	help
+	 Enable ST m24xxx i2c eeprom
