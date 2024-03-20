@@ -227,6 +227,9 @@
 			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+			dmas = <&edma0 0 71>, <&edma0 1 72>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 		flexcomm1_lpi2c1: lpi2c@93800 {
@@ -509,6 +512,36 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+	};
+
+	edma0: dma-controller@80000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma-v4";
+		dma-channels = <16>;
+		dma-requests = <120>;
+
+		reg = <0x80000 0x1000>;
+		interrupts = <1 0>, <2 0>, <3 0>, <4 0>,
+			<5 0>, <6 0>, <7 0>, <8 0>,
+			<9 0>, <10 0>, <11 0>, <12 0>,
+			<13 0>, <14 0>, <15 0>, <16 0>;
+		no-error-irq;
+		status = "disabled";
+	};
+
+	edma1: dma-controller@a0000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma-v4";
+		dma-channels = <16>;
+		dma-requests = <120>;
+
+		reg = <0xa0000 0x1000>;
+		interrupts = <77 0>, <78 0>, <79 0>, <80 0>,
+			<81 0>, <82 0>, <83 0>, <84 0>,
+			<85 0>, <86 0>, <87 0>, <88 0>,
+			<89 0>, <90 0>, <91 0>, <92 0>;
+		no-error-irq;
+		status = "disabled";
 	};
 
 	fmu: flash-controller@43000 {
