@@ -132,7 +132,8 @@ static int voltage_init(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(&config->gpio_power, GPIO_OUTPUT_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("failed to initialize GPIO for reset");
+			LOG_ERR("failed to initialize GPIO for power");
+			return ret;
 		}
 	}
 
