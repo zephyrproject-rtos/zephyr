@@ -73,7 +73,7 @@ struct k_thread prio_recv_thread_data;
 static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
 			     CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 struct k_thread recv_thread_data;
-static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static struct k_poll_signal hbuf_signal;
@@ -81,11 +81,10 @@ static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 /* Copied here from `hci_raw.c`, which would be used in
  * conjunction with this driver when serializing HCI over wire.
- * This serves as a converter from the more complicated
- * `CONFIG_BT_RECV_BLOCKING` API to the normal single-receiver
+ * This serves as a converter from the historical (removed from
+ * tree) 'recv blocking' API to the normal single-receiver
  * `bt_recv` API.
  */
 int bt_recv_prio(struct net_buf *buf)
@@ -103,7 +102,6 @@ int bt_recv_prio(struct net_buf *buf)
 
 	return bt_recv(buf);
 }
-#endif /* CONFIG_BT_RECV_BLOCKING */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 
