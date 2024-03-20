@@ -147,6 +147,14 @@ __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
 
+#if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
+	/* Attack clock for GAU and reset */
+	CLOCK_AttachClk(kMAIN_CLK_to_GAU_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 1U);
+	CLOCK_EnableClock(kCLOCK_Gau);
+	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
+#endif /* GAU */
+
 /* Any flexcomm can be USART */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)) && CONFIG_SERIAL
 	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){0, kCLOCK_FrgPllDiv, 255, 0});
@@ -289,6 +297,10 @@ static int nxp_rw600_init(void)
 
 	/* Initialize clock */
 	clock_init();
+
+#if defined(CONFIG_ADC_MCUX_GAU) ||  defined(CONFIG_DAC_MCUX_GAU)
+	POWER_PowerOnGau();
+#endif
 
 	return 0;
 }
