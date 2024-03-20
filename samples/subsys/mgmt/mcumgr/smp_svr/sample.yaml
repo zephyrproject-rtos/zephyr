@@ -14,9 +14,12 @@ tests:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
     integration_platforms:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
   sample.mcumgr.smp_svr.bt_static_svc:
     harness: bluetooth
     tags: bluetooth
@@ -170,6 +173,33 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.bt.nrf54l15dk.ext_flash:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-bt.conf"
+      - DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_ext_flash.overlay"
+      - mcuboot_CONF_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_ext_flash.conf"
+      - mcuboot_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_ext_flash.overlay"
+      - SB_CONFIG_PM_OVERRIDE_EXTERNAL_DRIVER_CHECK=y
+      - SB_CONFIG_PM_EXTERNAL_FLASH_MCUBOOT_SECONDARY=y
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+      - nrf54l15dk/nrf54l05/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+  sample.mcumgr.smp_svr.bt.nrf54l15dk.ext_flash.pure_dts:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-bt.conf"
+      - DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_ext_flash.overlay"
+      - mcuboot_CONF_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_ext_flash.conf"
+      - mcuboot_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_ext_flash.overlay"
+      - SB_CONFIG_PARTITION_MANAGER=n
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+      - nrf54l15dk/nrf54l05/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
   sample.mcumgr.smp_svr.ram_load:
     extra_args: FILE_SUFFIX="ram_load"
     platform_allow:
