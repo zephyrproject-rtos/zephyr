@@ -332,7 +332,7 @@ POSIX_TIMERS
    :header: API, Supported
    :widths: 50,10
 
-    clock_getres(),
+    clock_getres(),yes
     clock_gettime(),yes
     clock_settime(),yes
     nanosleep(),yes
