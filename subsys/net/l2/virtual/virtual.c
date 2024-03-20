@@ -22,10 +22,40 @@ LOG_MODULE_REGISTER(net_virtual, CONFIG_NET_L2_VIRTUAL_LOG_LEVEL);
 static enum net_verdict virtual_recv(struct net_if *iface,
 				     struct net_pkt *pkt)
 {
-	ARG_UNUSED(iface);
-	ARG_UNUSED(pkt);
+	struct virtual_interface_context *ctx, *tmp;
+	const struct virtual_interface_api *api;
+	enum net_verdict verdict;
+	sys_slist_t *interfaces;
 
-	return NET_CONTINUE;
+	interfaces = &iface->config.virtual_interfaces;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx, tmp, node) {
+		if (ctx->virtual_iface == NULL) {
+			continue;
+		}
+
+		api = net_if_get_device(ctx->virtual_iface)->api;
+		if (!api || api->recv == NULL) {
+			continue;
+		}
+
+		if (!net_if_is_up(ctx->virtual_iface)) {
+			NET_DBG("Interface %d is down.",
+				net_if_get_by_iface(ctx->virtual_iface));
+			continue;
+		}
+
+		verdict = api->recv(ctx->virtual_iface, pkt);
+		if (verdict == NET_CONTINUE) {
+			continue;
+		}
+
+		return verdict;
+	}
+
+	NET_DBG("No handler, dropping pkt %p len %zu", pkt, net_pkt_get_len(pkt));
+
+	return NET_DROP;
 }
 
 static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
