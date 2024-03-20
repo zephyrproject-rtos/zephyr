@@ -1,0 +1,809 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Generated from NXP MCUX clock data */
+&syscon_mgmt {
+
+	/* Root clock sources */
+	no_clock: no-clock {
+		clock-id = "NO_CLOCK";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+	};
+
+	fro_12m: fro-12m {
+		clock-id = "FRO_12M";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+
+		pluglitch12mhzclk: pluglitch12mhzclk {
+			clock-id = "PLUGLITCH12MHZCLK";
+			compatible = "clock-gate";
+			#clock-cells = <1>;
+
+			plu_glitch_12mhz_clock: plu-glitch-12mhz-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "PLU_GLITCH_12MHZ_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	xtal32m: xtal32m {
+		clock-id = "XTAL32M";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+
+		clk_in_en: clk-in-en {
+			clock-id = "CLK_IN_EN";
+			compatible = "clock-gate";
+			#clock-cells = <1>;
+		};
+
+		clk_usb_en: clk-usb-en {
+			clock-id = "CLK_USB_EN";
+			compatible = "clock-gate";
+			#clock-cells = <1>;
+
+			usb1_phy_clock: usb1-phy-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "USB1_PHY_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	fro_1m: fro-1m {
+		clock-id = "FRO_1M";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+
+		wdtclkdiv: wdtclkdiv {
+			clock-id = "WDTCLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			wdt_clock: wdt-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "WDT_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+
+		utickclk: utickclk {
+			clock-id = "UTICKCLK";
+			compatible = "clock-gate";
+			#clock-cells = <1>;
+
+			utick_clock: utick-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "UTICK_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+
+		pluglitch1mhzclk: pluglitch1mhzclk {
+			clock-id = "PLUGLITCH1MHZCLK";
+			compatible = "clock-gate";
+			#clock-cells = <1>;
+
+			plu_glitch_1mhz_clock: plu-glitch-1mhz-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "PLU_GLITCH_1MHZ_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	fro_hf: fro-hf {
+		clock-id = "FRO_HF";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+
+		frohfdiv: frohfdiv {
+			clock-id = "FROHFDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+		};
+	};
+
+	fro_32k: fro-32k {
+		clock-id = "FRO_32K";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+	};
+
+	xtal32k: xtal32k {
+		clock-id = "XTAL32K";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+	};
+
+	mclk_in: mclk-in {
+		clock-id = "MCLK_IN";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+	};
+
+	plu_clkin: plu-clkin {
+		clock-id = "PLU_CLKIN";
+		compatible = "clock-source";
+		#clock-cells = <1>;
+
+		pluclkin_clock: pluclkin-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "PLUCLKIN_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	/* Clock muxes */
+	mainclksela: mainclksela {
+		clock-id = "MAINCLKSELA";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&fro_12m &clk_in_en &fro_1m &fro_hf>;
+	};
+
+	rtcosc32ksel: rtcosc32ksel {
+		clock-id = "RTCOSC32KSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&fro_32k &xtal32k>;
+
+		ostimer32khzclk: ostimer32khzclk {
+			clock-id = "OSTIMER32KHZCLK";
+			compatible = "clock-gate";
+			#clock-cells = <1>;
+
+			ostimer32khz_clock: ostimer32khz-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "OSTIMER32KHZ_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+
+		osc32khz_clock: osc32khz-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "OSC32KHZ_CLOCK";
+			#clock-cells = <0>;
+		};
+
+		rtcclk1hzdiv: rtcclk1hzdiv {
+			clock-id = "RTCCLK1HZDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			rtc_1hz_clk: rtc-1hz-clk {
+				clock-id = "RTC_1HZ_CLK";
+				compatible = "clock-gate";
+				#clock-cells = <1>;
+
+				rtc1hz_clock: rtc1hz-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "RTC1HZ_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+
+		rtcclk1khzdiv: rtcclk1khzdiv {
+			clock-id = "RTCCLK1KHZDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			rtc_1khz_clk: rtc-1khz-clk {
+				clock-id = "RTC_1KHZ_CLK";
+				compatible = "clock-gate";
+				#clock-cells = <1>;
+
+				rtc1khz_clock: rtc1khz-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "RTC1KHZ_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	pll0clksel: pll0clksel {
+		clock-id = "PLL0CLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&fro_12m &clk_in_en &fro_1m &rtcosc32ksel
+				&no_clock &no_clock &no_clock &no_clock>;
+
+		pll0: pll0 {
+			clock-id = "PLL0";
+			compatible = "nxp,lpc55xxx-pll";
+			#clock-cells = <6>;
+
+			pll0_pdec: pll0-pdec {
+				clock-id = "PLL0_PDEC";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+			};
+		};
+	};
+
+	pll0_directo: pll0-directo {
+		clock-id = "PLL0_DIRECTO";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&pll0_pdec &pll0>;
+	};
+
+	pll0_bypass: pll0-bypass {
+		clock-id = "PLL0_BYPASS";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&pll0_directo &pll0clksel>;
+
+		pll0div: pll0div {
+			clock-id = "PLL0DIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+		};
+	};
+
+	pll1clksel: pll1clksel {
+		clock-id = "PLL1CLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&fro_12m &clk_in_en &fro_1m &rtcosc32ksel
+				&no_clock &no_clock &no_clock &no_clock>;
+
+		pll1: pll1 {
+			clock-id = "PLL1";
+			compatible = "nxp,lpc55xxx-pll";
+			#clock-cells = <6>;
+
+			pll1_pdec: pll1-pdec {
+				clock-id = "PLL1_PDEC";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+			};
+		};
+	};
+
+	pll1_directo: pll1-directo {
+		clock-id = "PLL1_DIRECTO";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&pll1_pdec &pll1>;
+	};
+
+	pll1_bypass: pll1-bypass {
+		clock-id = "PLL1_BYPASS";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&pll1_directo &pll1clksel>;
+	};
+
+	mainclkselb: mainclkselb {
+		clock-id = "MAINCLKSELB";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclksela &pll0_bypass &pll1_bypass &rtcosc32ksel>;
+
+		traceclkdiv: traceclkdiv {
+			clock-id = "TRACECLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+		};
+
+		systickclkdiv0: systickclkdiv0 {
+			clock-id = "SYSTICKCLKDIV0";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+		};
+
+		systickclkdiv1: systickclkdiv1 {
+			clock-id = "SYSTICKCLKDIV1";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+		};
+
+		ahbclkdiv: ahbclkdiv {
+			clock-id = "AHBCLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			system_clock: system-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "SYSTEM_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	traceclksel: traceclksel {
+		clock-id = "TRACECLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&traceclkdiv &fro_1m &rtcosc32ksel &no_clock
+				&no_clock &no_clock &no_clock &no_clock>;
+
+		trace_clock: trace-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "TRACE_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	systickclksel0: systickclksel0 {
+		clock-id = "SYSTICKCLKSEL0";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&systickclkdiv0 &fro_1m &rtcosc32ksel &no_clock
+				&no_clock &no_clock &no_clock &no_clock>;
+
+		systick0_clock: systick0-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "SYSTICK0_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	systickclksel1: systickclksel1 {
+		clock-id = "SYSTICKCLKSEL1";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&systickclkdiv1 &fro_1m &rtcosc32ksel &no_clock
+				&no_clock &no_clock &no_clock &no_clock>;
+
+		systick1_clock: systick1-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "SYSTICK1_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	adcclksel: adcclksel {
+		clock-id = "ADCCLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &fro_hf &no_clock
+				&no_clock &no_clock &no_clock &no_clock>;
+
+		adcclkdiv: adcclkdiv {
+			clock-id = "ADCCLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			asyncadc_clock: asyncadc-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "ASYNCADC_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	usb0clksel: usb0clksel {
+		clock-id = "USB0CLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &no_clock &fro_hf
+				&no_clock &pll1_bypass &no_clock &no_clock>;
+
+		usb0clkdiv: usb0clkdiv {
+			clock-id = "USB0CLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			usb0_clock: usb0-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "USB0_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	mclkclksel: mclkclksel {
+		clock-id = "MCLKCLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&fro_hf &pll0_bypass &no_clock &no_clock &no_clock
+				&no_clock &no_clock &no_clock>;
+
+		mclkdiv: mclkdiv {
+			clock-id = "MCLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			mclk_clock: mclk-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "MCLK_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	sctclksel: sctclksel {
+		clock-id = "SCTCLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &clk_in_en &fro_hf
+				&no_clock &mclk_in &no_clock &no_clock>;
+
+		sctclkdiv: sctclkdiv {
+			clock-id = "SCTCLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			sct_clock: sct-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "SCT_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	clkoutsel: clkoutsel {
+		clock-id = "CLKOUTSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &clk_in_en &fro_hf
+				&fro_1m &pll1_bypass &rtcosc32ksel &no_clock>;
+
+		clkoutdiv: clkoutdiv {
+			clock-id = "CLKOUTDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			clkout_clock: clkout-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "CLKOUT_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	sdioclksel: sdioclksel {
+		clock-id = "SDIOCLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &no_clock &fro_hf
+				&no_clock &pll1_bypass &no_clock &no_clock>;
+
+		sdioclkdiv: sdioclkdiv {
+			clock-id = "SDIOCLKDIV";
+			compatible = "clock-div";
+			#clock-cells = <1>;
+
+			sdio_clock: sdio-clock {
+				compatible = "clock-output";
+				clock-output;
+				clock-id = "SDIO_CLOCK";
+				#clock-cells = <0>;
+			};
+		};
+	};
+
+	ctimerclksel0: ctimerclksel0 {
+		clock-id = "CTIMERCLKSEL0";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &no_clock &fro_hf
+				&fro_1m &mclk_in &rtcosc32ksel &no_clock>;
+
+		ctimer0_clock: ctimer0-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "CTIMER0_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	ctimerclksel1: ctimerclksel1 {
+		clock-id = "CTIMERCLKSEL1";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &no_clock &fro_hf
+				&fro_1m &mclk_in &rtcosc32ksel &no_clock>;
+
+		ctimer1_clock: ctimer1-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "CTIMER1_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	ctimerclksel2: ctimerclksel2 {
+		clock-id = "CTIMERCLKSEL2";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &no_clock &fro_hf
+				&fro_1m &mclk_in &rtcosc32ksel &no_clock>;
+
+		ctimer2_clock: ctimer2-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "CTIMER2_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	ctimerclksel3: ctimerclksel3 {
+		clock-id = "CTIMERCLKSEL3";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &no_clock &fro_hf
+				&fro_1m &mclk_in &rtcosc32ksel &no_clock>;
+
+		ctimer3_clock: ctimer3-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "CTIMER3_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	ctimerclksel4: ctimerclksel4 {
+		clock-id = "CTIMERCLKSEL4";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0_bypass &no_clock &fro_hf
+				&fro_1m &mclk_in &rtcosc32ksel &no_clock>;
+
+		ctimer4_clock: ctimer4-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "CTIMER4_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+
+	fcclksel0: fcclksel0 {
+		clock-id = "FCCLKSEL0";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl0_mul: frgctrl0-mul {
+			clock-id = "FRGCTRL0_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl0_div: frgctrl0-div {
+				clock-id = "FRGCTRL0_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom0_clock: fxcom0-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM0_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	fcclksel1: fcclksel1 {
+		clock-id = "FCCLKSEL1";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl1_mul: frgctrl1-mul {
+			clock-id = "FRGCTRL1_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl1_div: frgctrl1-div {
+				clock-id = "FRGCTRL1_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom1_clock: fxcom1-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM1_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	fcclksel2: fcclksel2 {
+		clock-id = "FCCLKSEL2";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl2_mul: frgctrl2-mul {
+			clock-id = "FRGCTRL2_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl2_div: frgctrl2-div {
+				clock-id = "FRGCTRL2_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom2_clock: fxcom2-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM2_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	fcclksel3: fcclksel3 {
+		clock-id = "FCCLKSEL3";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl3_mul: frgctrl3-mul {
+			clock-id = "FRGCTRL3_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl3_div: frgctrl3-div {
+				clock-id = "FRGCTRL3_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom3_clock: fxcom3-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM3_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	fcclksel4: fcclksel4 {
+		clock-id = "FCCLKSEL4";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl4_mul: frgctrl4-mul {
+			clock-id = "FRGCTRL4_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl4_div: frgctrl4-div {
+				clock-id = "FRGCTRL4_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom4_clock: fxcom4-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM4_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	fcclksel5: fcclksel5 {
+		clock-id = "FCCLKSEL5";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl5_mul: frgctrl5-mul {
+			clock-id = "FRGCTRL5_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl5_div: frgctrl5-div {
+				clock-id = "FRGCTRL5_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom5_clock: fxcom5-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM5_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	fcclksel6: fcclksel6 {
+		clock-id = "FCCLKSEL6";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl6_mul: frgctrl6-mul {
+			clock-id = "FRGCTRL6_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl6_div: frgctrl6-div {
+				clock-id = "FRGCTRL6_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom6_clock: fxcom6-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM6_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	fcclksel7: fcclksel7 {
+		clock-id = "FCCLKSEL7";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&mclk_in &rtcosc32ksel &no_clock>;
+
+		frgctrl7_mul: frgctrl7-mul {
+			clock-id = "FRGCTRL7_MUL";
+			compatible = "clock-multiplier";
+			#clock-cells = <1>;
+
+			frgctrl7_div: frgctrl7-div {
+				clock-id = "FRGCTRL7_DIV";
+				compatible = "clock-div";
+				#clock-cells = <1>;
+
+				fxcom7_clock: fxcom7-clock {
+					compatible = "clock-output";
+					clock-output;
+					clock-id = "FXCOM7_CLOCK";
+					#clock-cells = <0>;
+				};
+			};
+		};
+	};
+
+	hslspiclksel: hslspiclksel {
+		clock-id = "HSLSPICLKSEL";
+		compatible = "clock-mux";
+		#clock-cells = <1>;
+		input-sources = <&mainclkselb &pll0div &fro_12m &frohfdiv &fro_1m
+				&no_clock &rtcosc32ksel &no_clock>;
+
+		hslspi_clock: hslspi-clock {
+			compatible = "clock-output";
+			clock-output;
+			clock-id = "HSLSPI_CLOCK";
+			#clock-cells = <0>;
+		};
+	};
+};

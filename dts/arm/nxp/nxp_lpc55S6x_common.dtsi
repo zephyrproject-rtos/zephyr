@@ -104,6 +104,12 @@
 		#clock-cells = <1>;
 	};
 
+	syscon_mgmt: syscon-mgmt@0 {
+		compatible = "nxp,lpc55xxx-syscon";
+		reg = <0x0 0x1000>;
+		#clock-cells = <0>;
+	};
+
 	iap: flash-controller@34000 {
 		compatible = "nxp,iap-fmc55";
 		reg = <0x34000 0x1000>;
