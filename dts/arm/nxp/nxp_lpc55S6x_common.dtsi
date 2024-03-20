@@ -216,7 +216,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x86000 0x1000>;
 		interrupts = <14 0>;
-		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+		clocks = <&fxcom0_clock>;
 		status = "disabled";
 	};
 
@@ -224,7 +224,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x87000 0x1000>;
 		interrupts = <15 0>;
-		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+		clocks = <&fxcom1_clock>;
 		status = "disabled";
 	};
 
@@ -232,7 +232,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x88000 0x1000>;
 		interrupts = <16 0>;
-		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+		clocks = <&fxcom2_clock>;
 		status = "disabled";
 	};
 
@@ -240,7 +240,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x89000 0x1000>;
 		interrupts = <17 0>;
-		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+		clocks = <&fxcom3_clock>;
 		status = "disabled";
 	};
 
@@ -248,7 +248,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x8a000 0x1000>;
 		interrupts = <18 0>;
-		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+		clocks = <&fxcom4_clock>;
 		status = "disabled";
 	};
 
@@ -256,7 +256,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x96000 0x1000>;
 		interrupts = <19 0>;
-		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+		clocks = <&fxcom5_clock>;
 		status = "disabled";
 	};
 
@@ -264,7 +264,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x97000 0x1000>;
 		interrupts = <20 0>;
-		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+		clocks = <&fxcom6_clock>;
 		status = "disabled";
 	};
 
@@ -272,7 +272,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x98000 0x1000>;
 		interrupts = <21 0>;
-		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+		clocks = <&fxcom7_clock>;
 		status = "disabled";
 	};
 
@@ -294,7 +294,7 @@
 			<&gpio1 26 GPIO_ACTIVE_LOW>; */
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
-		clocks = <&syscon MCUX_HS_SPI_CLK>;
+		clocks = <&hslspi_clock>;
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
