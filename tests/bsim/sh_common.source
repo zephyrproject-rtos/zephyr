@@ -9,6 +9,9 @@ _process_ids="";
 #Give a default value to BOARD if it does not have one yet:
 BOARD="${BOARD:-nrf52_bsim}"
 
+#The board target full string (with qualifiers):
+BOARD_TS="${BOARD//\//_}"
+
 function run_in_background(){
   $@ & _process_ids="$_process_ids $!"
 }
