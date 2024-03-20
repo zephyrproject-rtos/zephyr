@@ -72,6 +72,11 @@ Drivers and Sensors
 
 * Audio
 
+* Battery
+
+  * Added ``re-charge-voltage-microvolt`` property to the ``battery`` binding. This allows to set
+    limit to automatically start charging again.
+
 * Battery backed up RAM
 
 * CAN
