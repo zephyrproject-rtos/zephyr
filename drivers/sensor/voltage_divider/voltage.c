@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(voltage, CONFIG_SENSOR_LOG_LEVEL);
@@ -35,9 +36,20 @@ static int fetch(const struct device *dev, enum sensor_channel chan)
 		return -ENOTSUP;
 	}
 
+	if (config->gpio_power.port) {
+		ret = pm_device_runtime_get(dev);
+		if (ret) {
+			return ret;
+		}
+	}
+
 	ret = adc_read(config->voltage.port.dev, &data->sequence);
 	if (ret != 0) {
 		LOG_ERR("adc_read: %d", ret);
+	}
+
+	if (config->gpio_power.port) {
+		(void)pm_device_runtime_put(dev);
 	}
 
 	return ret;
@@ -144,6 +156,10 @@ static int voltage_init(const struct device *dev)
 
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
+
+	if (config->gpio_power.port) {
+		return pm_device_runtime_enable(dev);
+	}
 
 	return 0;
 }
