@@ -1,0 +1,30 @@
+# Copyright  2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP USB High Speed Phy
+
+compatible: "nxp,usbphy"
+
+include: base.yaml
+
+properties:
+  d-cal:
+    type: int
+    required: true
+    description: |
+      It is board level's value that is used to trim the nominal 17.78mA
+      current source for the High Speed TX drivers on USB_DP and USB_DM.
+
+  txcal45dp:
+    type: int
+    required: true
+    description: |
+      It is board level's value that is used to trim the nominal 17.78mA
+      current source for the High Speed TX drivers on USB_DP and USB_DM.
+
+  txcal45dm:
+    type: int
+    required: true
+    description: |
+      It is board level's value that is used to trim the nominal 17.78mA
+      current source for the High Speed TX drivers on USB_DP and USB_DM.
