@@ -32,7 +32,7 @@ Minimal Realtime System Profile (PSE51)
     POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
     POSIX_SINGLE_PROCESS,, :ref:`†<posix_undefined_behaviour>`
     POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes, :ref:`†<posix_undefined_behaviour>`
+    XSI_THREADS_EXT, yes,
 
 .. csv-table:: PSE51 Option Requirements
    :header: Symbol, Support, Remarks
