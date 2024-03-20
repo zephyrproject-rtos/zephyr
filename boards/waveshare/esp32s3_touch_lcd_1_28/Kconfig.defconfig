@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32S3_TOUCH_LCD_1_28_ESP32S3_PROCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 65535 if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice
+
+endif # BOARD_ESP32S3_TOUCH_LCD_1_28_ESP32S3_PROCPU
+
+if BOARD_ESP32S3_TOUCH_LCD_1_28_ESP32S3_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_ESP32S3_TOUCH_LCD_1_28_ESP32S3_APPCPU
+
+config ENTROPY_GENERATOR
+	default y
+
+config KERNEL_MEM_POOL
+	default y
+
+config PWM
+	default y if DISPLAY
+
+config LV_COLOR_16_SWAP
+	default y if LVGL
