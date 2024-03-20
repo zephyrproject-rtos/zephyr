@@ -187,6 +187,30 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
+zephyr_uhc0: &uhc1 {
+	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+zephyr_uhc1: &uhc2 {
+	status = "okay";
+	phy_handle = <&usbphy2>;
+};
+
+&usbphy1 {
+	status = "okay";
+	d-cal = <12>;
+	txcal45dp = <6>;
+	txcal45dm = <6>;
+};
+
+&usbphy2 {
+	status = "okay";
+	d-cal = <12>;
+	txcal45dp = <6>;
+	txcal45dm = <6>;
+};
+
 &flexpwm2_pwm3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm2_3>;
