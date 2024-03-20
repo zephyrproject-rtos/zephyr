@@ -1530,8 +1530,14 @@ endfunction()
 # Usage:
 #   zephyr_build_string(<out-variable>
 #                       BOARD <board>
-#                       [BOARD_IDENTIFIER <identifier>]
+#                       [QUALIFIERS <qualifiers>]
 #                       [BOARD_REVISION <revision>]
+#                       [BUILD <type>]
+#                       [MERGE [REVERSE]]
+#   )
+#   zephyr_build_string(<out-variable>
+#                       SOC
+#                       [QUALIFIERS <qualifiers>]
 #                       [BUILD <type>]
 #                       [MERGE [REVERSE]]
 #   )
@@ -1562,14 +1568,21 @@ endfunction()
 # `alpha_soc_bar_1_0_0;alpha_soc_bar;alpha_soc_1_0_0;alpha_soc;alpha_1_0_0;alpha` in `build_string` parameter.
 #
 function(zephyr_build_string outvar)
-  set(options MERGE REVERSE)
-  set(single_args BOARD BOARD_IDENTIFIER BOARD_REVISION BUILD)
+  set(options SOC MERGE REVERSE)
+  set(single_args BOARD QUALIFIERS BOARD_REVISION BUILD)
 
   cmake_parse_arguments(BUILD_STR "${options}" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "zephyr_build_string(${ARGV0} <val> ...) given unknown arguments:"
       " ${BUILD_STR_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  if(DEFINED BUILD_STR_BOARD AND BUILD_STR_SOC)
+    message(FATAL_ERROR
+      "zephyr_build_string(${ARGV0} <list> ...) given BOARD and SOC:"
+      " only one of these can be provided"
     )
   endif()
 
@@ -1580,14 +1593,21 @@ function(zephyr_build_string outvar)
     )
   endif()
 
-  if(DEFINED BUILD_STR_BOARD_IDENTIFIER AND NOT BUILD_STR_BOARD)
+  if(DEFINED BUILD_STR_BOARD_REVISION AND BUILD_STR_SOC)
     message(FATAL_ERROR
-      "zephyr_build_string(${ARGV0} <list> BOARD_IDENTIFIER ${BUILD_STR_BOARD_IDENTIFIER} ...)"
-      " given without BOARD argument, please specify BOARD"
+      "zephyr_build_string(${ARGV0} <list> BOARD_REVISION ${BUILD_STR_BOARD_REVISION} ...)"
+      " given with SOC argument, these cannot be used together"
     )
   endif()
 
-  string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD}${BUILD_STR_BOARD_IDENTIFIER}")
+  if(DEFINED BUILD_STR_QUALIFIERS AND NOT BUILD_STR_BOARD AND NOT BUILD_STR_SOC)
+    message(FATAL_ERROR
+      "zephyr_build_string(${ARGV0} <list> QUALIFIERS ${BUILD_STR_QUALIFIERS} ...)"
+      " given without BOARD or SOC argument, please specify BOARD or SOC"
+    )
+  endif()
+
+  string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD}${BUILD_STR_QUALIFIERS}")
   string(REPLACE "." "_" revision_string "${BUILD_STR_BOARD_REVISION}")
 
   string(JOIN "_" ${outvar} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
@@ -2530,7 +2550,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
-    set(options REQUIRED)
+    set(options REQUIRED SOC)
     set(single_args BOARD BOARD_REVISION BOARD_IDENTIFIER DTS KCONF DEFCONFIG BUILD SUFFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
@@ -2599,13 +2619,22 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       set(dts_filename_list ${FILE_NAMES})
       set(kconf_filename_list ${FILE_NAMES})
     else()
-      zephyr_build_string(filename_list
-                          BOARD ${FILE_BOARD}
-                          BOARD_REVISION ${FILE_BOARD_REVISION}
-                          BOARD_IDENTIFIER ${FILE_BOARD_IDENTIFIER}
-                          BUILD ${FILE_BUILD}
-                          MERGE REVERSE
-      )
+      if(NOT FILE_SOC)
+        zephyr_build_string(filename_list
+                            BOARD ${FILE_BOARD}
+                            BOARD_REVISION ${FILE_BOARD_REVISION}
+                            QUALIFIERS ${FILE_BOARD_IDENTIFIER}
+                            BUILD ${FILE_BUILD}
+                            MERGE REVERSE
+        )
+      else()
+        zephyr_build_string(filename_list
+                            SOC
+                            QUALIFIERS ${FILE_BOARD_IDENTIFIER}
+                            BUILD ${FILE_BUILD}
+                            MERGE REVERSE
+        )
+      endif()
       list(REMOVE_DUPLICATES filename_list)
       set(dts_filename_list ${filename_list})
       list(TRANSFORM dts_filename_list APPEND ".overlay")

@@ -45,6 +45,7 @@ endif()
 zephyr_get(CONF_FILE SYSBUILD LOCAL)
 if(NOT DEFINED CONF_FILE)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF CONF_FILE NAMES "prj.conf" SUFFIX ${FILE_SUFFIX} REQUIRED)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs KCONF CONF_FILE SOC)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE)
 else()
   string(CONFIGURE "${CONF_FILE}" CONF_FILE_EXPANDED)
@@ -79,7 +80,7 @@ zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 if(NOT DEFINED DTC_OVERLAY_FILE)
   zephyr_build_string(board_overlay_strings
                       BOARD ${BOARD}
-                      BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+                      QUALIFIERS ${BOARD_IDENTIFIER}
                       MERGE
   )
   list(TRANSFORM board_overlay_strings APPEND ".overlay")

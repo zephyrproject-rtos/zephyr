@@ -81,7 +81,7 @@ endif()
 if(DEFINED BOARD_REVISION)
   zephyr_build_string(config_board_string
                       BOARD ${BOARD}
-                      BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+                      QUALIFIERS ${BOARD_IDENTIFIER}
                       BOARD_REVISION ${BOARD_REVISION}
   )
   set(board_rev_file ${config_board_string})
