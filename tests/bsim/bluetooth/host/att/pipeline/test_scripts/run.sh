@@ -2,16 +2,13 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-BOARD="${BOARD:-nrf52_bsim}"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 dut_exe="bs_${BOARD}_tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf"
 tester_exe="bs_${BOARD}_tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf"
 
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
-
-test_name="att_pipeline"
-simulation_id="${test_name}"
+simulation_id="att_pipeline"
 verbosity_level=2
-EXECUTE_TIMEOUT=30
 sim_length_us=100e6
 
 cd ${BSIM_OUT_PATH}/bin
