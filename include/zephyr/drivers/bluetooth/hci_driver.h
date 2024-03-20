@@ -39,9 +39,7 @@ enum {
 
 #define IS_BT_QUIRK_NO_AUTO_DLE(bt_dev) ((bt_dev)->drv->quirks & BT_QUIRK_NO_AUTO_DLE)
 
-/* @brief The HCI event shall be given to bt_recv_prio */
 #define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
-/* @brief  The HCI event shall be given to bt_recv. */
 #define BT_HCI_EVT_FLAG_RECV      BIT(1)
 
 /** @brief Get HCI event flags.
@@ -88,25 +86,6 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
  * @return 0 on success or negative error number on failure.
  */
 int bt_recv(struct net_buf *buf);
-
-/**
- * @brief Receive high priority data from the controller/HCI driver.
- *
- * This is the same as bt_recv(), except that it should be used for
- * so-called high priority HCI events. There's a separate
- * bt_hci_evt_get_flags() helper that can be used to identify which events
- * have the BT_HCI_EVT_FLAG_RECV_PRIO flag set.
- *
- * As with bt_recv(), the buffer needs to have its type set with the help of
- * bt_buf_set_type() before calling this API. The only exception is so called
- * high priority HCI events which should be delivered to the host stack through
- * bt_recv_prio() instead.
- *
- * @param buf Network buffer containing data from the controller.
- *
- * @return 0 on success or negative error number on failure.
- */
-int bt_recv_prio(struct net_buf *buf);
 
 /** @brief Read static addresses from the controller.
  *
