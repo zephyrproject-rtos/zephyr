@@ -12,9 +12,11 @@ tests:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
+      - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
   sample.mcumgr.smp_svr.udp:
     extra_args: OVERLAY_CONFIG="overlay-udp.conf"
     platform_allow: frdm_k64f
