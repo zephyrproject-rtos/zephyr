@@ -490,6 +490,12 @@ config SIZE_OPTIMIZATIONS
 	  Compiler optimizations will be set to -Os independently of other
 	  options.
 
+config SIZE_OPTIMIZATIONS_AGGRESSIVE
+	bool "Aggressively optimize for size"
+	help
+	  Compiler optimizations wil be set to -Oz independently of other
+	  options.
+
 config SPEED_OPTIMIZATIONS
 	bool "Optimize for speed"
 	help
