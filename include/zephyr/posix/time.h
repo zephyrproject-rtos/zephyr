@@ -87,6 +87,7 @@ static inline int32_t _ts_to_ms(const struct timespec *to)
 }
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
+int clock_getres(clockid_t clock_id, struct timespec *ts);
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
 int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
 /* Timer APIs */
