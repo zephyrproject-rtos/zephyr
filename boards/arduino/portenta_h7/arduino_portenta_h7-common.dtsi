@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
+
 / {
 	leds {
 		compatible = "gpio-leds";
@@ -163,6 +165,46 @@ zephyr_udc0: &usbotg_fs {
 					     STM32_FMC_SDRAM_RBURST_ENABLE
 					     STM32_FMC_SDRAM_RPIPE_0 >;
 			st,sdram-timing = < 2 7 5 7 2 3 3 >;
+		};
+	};
+};
+
+&quadspi {
+	pinctrl-0 = < &quadspi_bk1_io0_pd11
+			&quadspi_bk1_io1_pd12
+			&quadspi_bk1_io2_pf7
+			&quadspi_bk1_io3_pd13
+			&quadspi_bk1_ncs_pg6
+			&quadspi_clk_pf10 >;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25l12833f: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = < 0x90000000 DT_SIZE_M(16) >; /* 128 MBits */
+		qspi-max-frequency = < 40000000 >;
+		sfdp-bfp = [ e5 20 f1 ff  ff ff ff 07  44 eb 08 6b  08 3b 04 bb
+			     fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
+			     10 d8 00 ff  82 41 bd 00  81 e5 7b c6  44 03 67 38
+			     30 b0 30 b0  f7 bd d5 5c  4a be 29 ff  e1 d0 ff ff ];
+		jedec-id = [ 66 66 20 ];
+		spi-bus-width = <4>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = < 1 >;
+			#size-cells = < 1 >;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg=< 0x0 DT_SIZE_K(15872) >;
+			};
+
+			wifi_firmware: partition@f80000 {
+				label = "wifi-firmware";
+				reg = < 0xf80000 DT_SIZE_K(512) >;
+			};
 		};
 	};
 };
