@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/init.h>
@@ -887,9 +886,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
-	if (!strncasecmp(argv[1], "on", 2)) {
+	if (!strncmp(argv[1], "on", 2)) {
 		params.enabled = WIFI_PS_ENABLED;
-	} else if (!strncasecmp(argv[1], "off", 3)) {
+	} else if (!strncmp(argv[1], "off", 3)) {
 		params.enabled = WIFI_PS_DISABLED;
 	} else {
 		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
@@ -918,9 +917,9 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 
 	context.sh = sh;
 
-	if (!strncasecmp(argv[1], "legacy", 6)) {
+	if (!strncmp(argv[1], "legacy", 6)) {
 		params.mode = WIFI_PS_MODE_LEGACY;
-	} else if (!strncasecmp(argv[1], "WMM", 4)) {
+	} else if (!strncmp(argv[1], "wmm", 3)) {
 		params.mode = WIFI_PS_MODE_WMM;
 	} else {
 		shell_fprintf(sh, SHELL_WARNING, "Invalid PS mode\n");
@@ -1406,9 +1405,9 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 
 	context.sh = sh;
 
-	if (!strncasecmp(argv[1], "dtim", 4)) {
+	if (!strncmp(argv[1], "dtim", 4)) {
 		params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
-	} else if (!strncasecmp(argv[1], "listen_interval", 15)) {
+	} else if (!strncmp(argv[1], "listen_interval", 15)) {
 		params.wakeup_mode = WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL;
 	} else {
 		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
