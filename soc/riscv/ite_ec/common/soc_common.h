@@ -14,6 +14,11 @@
 
 #include "chip_chipregs.h"
 
+/* SOC-specific MCAUSE bitfields */
+
+/* Exception code Mask */
+#define SOC_MCAUSE_EXP_MASK          0x7FFFFFFF
+
 #ifndef _ASMLANGUAGE
 
 #ifdef CONFIG_HAS_ITE_INTC
