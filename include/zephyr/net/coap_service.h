@@ -57,9 +57,7 @@ struct coap_service {
 };
 
 #define __z_coap_service_define(_name, _host, _port, _flags, _res_begin, _res_end)		\
-	static struct coap_service_data coap_service_data_##_name = {				\
-		.sock_fd = -1,									\
-	};											\
+	static struct coap_service_data coap_service_data_##_name;				\
 	const STRUCT_SECTION_ITERABLE(coap_service, _name) = {					\
 		.name = STRINGIFY(_name),							\
 		.host = _host,									\
