@@ -37,4 +37,12 @@
 		reg = <0x29800000 DT_SIZE_K(64)>;
 		#clock-cells = <2>;
 	};
+
+	iomuxc1: pinctrl@298c0000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x298c0000 DT_SIZE_K(64)>;
+		pinctrl: pinctrl {
+			compatible = "nxp,imx8ulp-pinctrl";
+		};
+	};
 };
