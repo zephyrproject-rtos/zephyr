@@ -25,12 +25,6 @@
 
 	chosen {
 		zephyr,flash-controller = &rram_controller;
-		zephyr,entropy = &psa_rng;
-	};
-
-	psa_rng: psa-rng {
-		compatible = "zephyr,psa-crypto-rng";
-		status = "okay";
 	};
 
 	sw_pwm: sw-pwm {
