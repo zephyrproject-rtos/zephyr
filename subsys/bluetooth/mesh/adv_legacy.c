@@ -214,11 +214,9 @@ void bt_mesh_adv_gatt_update(void)
 	bt_mesh_adv_get_cancel();
 }
 
-int bt_mesh_adv_terminate(struct bt_mesh_adv *adv)
+void bt_mesh_adv_terminate(struct bt_mesh_adv *adv)
 {
 	ARG_UNUSED(adv);
-
-	return 0;
 }
 
 void bt_mesh_adv_init(void)
