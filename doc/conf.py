@@ -302,10 +302,6 @@ external_content_keep = [
     "build/dts/api/compatibles/**/*",
 ]
 
-# -- Options for zephyr.domain --------------------------------------------
-
-zephyr_domain_apply_transforms = True
-
 # -- Options for sphinx.ext.graphviz --------------------------------------
 
 graphviz_dot = os.environ.get("DOT_EXECUTABLE", "dot")
