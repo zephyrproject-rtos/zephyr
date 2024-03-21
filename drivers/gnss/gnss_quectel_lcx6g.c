@@ -195,6 +195,8 @@ static int quectel_lcx6g_resume(const struct device *dev)
 		return ret;
 	}
 
+	k_msleep(1000);
+
 	ret = quectel_lcx6g_configure_pps(dev);
 	if (ret < 0) {
 		modem_pipe_close(data->uart_pipe);
