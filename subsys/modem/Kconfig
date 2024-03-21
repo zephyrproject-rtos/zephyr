@@ -14,8 +14,8 @@ config MODEM_CHAT
 
 if MODEM_CHAT
 
-config MODEM_CHAT_LOG_BUFFER
-	int "Modem chat log buffer size"
+config MODEM_CHAT_LOG_BUFFER_SIZE
+	int "Modem chat log buffer size in bytes"
 	default 128
 
 endif
@@ -28,6 +28,11 @@ config MODEM_CMUX
 	select CRC
 
 if MODEM_CMUX
+
+config MODEM_CMUX_WORK_BUFFER_SIZE
+	int "CMUX module work buffer size in bytes"
+	range 16 1500
+	default 64
 
 module = MODEM_CMUX
 module-str = modem_cmux

@@ -842,11 +842,10 @@ static void modem_cmux_receive_handler(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, receive_work);
-	uint8_t buf[16];
 	int ret;
 
 	/* Receive data from pipe */
-	ret = modem_pipe_receive(cmux->pipe, buf, sizeof(buf));
+	ret = modem_pipe_receive(cmux->pipe, cmux->work_buf, sizeof(cmux->work_buf));
 	if (ret < 1) {
 		if (ret < 0) {
 			LOG_ERR("Pipe receiving error: %d", ret);
@@ -855,8 +854,8 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	}
 
 	/* Process received data */
-	for (uint16_t i = 0; i < (uint16_t)ret; i++) {
-		modem_cmux_process_received_byte(cmux, buf[i]);
+	for (int i = 0; i < ret; i++) {
+		modem_cmux_process_received_byte(cmux, cmux->work_buf[i]);
 	}
 
 	/* Reschedule received work */
