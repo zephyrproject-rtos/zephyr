@@ -48,7 +48,7 @@ endif()
 
 if (TFM_PARTITION_PLATFORM)
 install(FILES       include/tfm_ioctl_api.h
-        DESTINATION ${INSTALL_INTERFACE_INC_DIR})
+        DESTINATION ${TFM_INSTALL_PATH}/interface/include)
 endif()
 
 #========================= tfm_spm ============================================#

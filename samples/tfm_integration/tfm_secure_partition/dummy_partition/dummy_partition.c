@@ -7,6 +7,7 @@
 #include <psa/crypto.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "tfm_api.h"
 
 #include "psa/service.h"
 #include "psa_manifest/tfm_dummy_partition.h"
