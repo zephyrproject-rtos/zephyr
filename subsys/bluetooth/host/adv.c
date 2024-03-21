@@ -2185,10 +2185,11 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 
 	if (evt->status && IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
-		/* This will call connected callback for high duty cycle
+		/* Only set status for legacy advertising API.
+		 * This will call connected callback for high duty cycle
 		 * directed advertiser timeout.
 		 */
-		le_adv_stop_free_conn(adv, evt->status);
+		le_adv_stop_free_conn(adv, adv == bt_dev.adv ? evt->status : 0);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) && !evt->status) {
