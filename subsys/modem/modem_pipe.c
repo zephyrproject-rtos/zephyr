@@ -21,7 +21,6 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api 
 	pipe->user_data = NULL;
 	pipe->state = MODEM_PIPE_STATE_CLOSED;
 	pipe->receive_ready_pending = false;
-	pipe->transmit_idle_pending = true;
 
 	k_mutex_init(&pipe->lock);
 	k_condvar_init(&pipe->condvar);
@@ -83,10 +82,6 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
 		pipe->callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY, pipe->user_data);
 	}
 
-	if (pipe->transmit_idle_pending && (pipe->callback != NULL)) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE, pipe->user_data);
-	}
-
 	k_mutex_unlock(&pipe->lock);
 }
 
@@ -102,7 +97,6 @@ int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size
 	}
 
 	ret = pipe->api->transmit(pipe->data, buf, size);
-	pipe->transmit_idle_pending = false;
 	k_mutex_unlock(&pipe->lock);
 	return ret;
 }
@@ -185,7 +179,6 @@ void modem_pipe_notify_opened(struct modem_pipe *pipe)
 
 	if (pipe->callback != NULL) {
 		pipe->callback(pipe, MODEM_PIPE_EVENT_OPENED, pipe->user_data);
-		pipe->callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE, pipe->user_data);
 	}
 
 	k_condvar_signal(&pipe->condvar);
@@ -197,7 +190,6 @@ void modem_pipe_notify_closed(struct modem_pipe *pipe)
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 	pipe->state = MODEM_PIPE_STATE_CLOSED;
 	pipe->receive_ready_pending = false;
-	pipe->transmit_idle_pending = true;
 
 	if (pipe->callback != NULL) {
 		pipe->callback(pipe, MODEM_PIPE_EVENT_CLOSED, pipe->user_data);
@@ -215,19 +207,6 @@ void modem_pipe_notify_receive_ready(struct modem_pipe *pipe)
 
 	if (pipe->callback != NULL) {
 		pipe->callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY, pipe->user_data);
-	}
-
-	k_mutex_unlock(&pipe->lock);
-}
-
-void modem_pipe_notify_transmit_idle(struct modem_pipe *pipe)
-{
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
-	pipe->transmit_idle_pending = true;
-
-	if (pipe->callback != NULL) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE, pipe->user_data);
 	}
 
 	k_mutex_unlock(&pipe->lock);

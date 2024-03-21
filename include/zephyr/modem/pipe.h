@@ -25,7 +25,6 @@ extern "C" {
 enum modem_pipe_event {
 	MODEM_PIPE_EVENT_OPENED = 0,
 	MODEM_PIPE_EVENT_RECEIVE_READY,
-	MODEM_PIPE_EVENT_TRANSMIT_IDLE,
 	MODEM_PIPE_EVENT_CLOSED,
 };
 
@@ -74,8 +73,7 @@ struct modem_pipe {
 	enum modem_pipe_state state;
 	struct k_mutex lock;
 	struct k_condvar condvar;
-	uint8_t receive_ready_pending : 1;
-	uint8_t transmit_idle_pending : 1;
+	bool receive_ready_pending;
 };
 
 /**
@@ -214,15 +212,6 @@ void modem_pipe_notify_closed(struct modem_pipe *pipe);
  * @note Invoked from instance which initialized the pipe instance
  */
 void modem_pipe_notify_receive_ready(struct modem_pipe *pipe);
-
-/**
- * @brief Notify user of pipe that pipe has no more data to transmit
- *
- * @param pipe Pipe instance
- *
- * @note Invoked from instance which initialized the pipe instance
- */
-void modem_pipe_notify_transmit_idle(struct modem_pipe *pipe);
 
 /**
  * @endcond
