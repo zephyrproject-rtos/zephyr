@@ -40,7 +40,4 @@ config GPIO
 	default y
 	depends on SPI
 
-config UART_USE_RUNTIME_CONFIGURE
-	default n
-
 endif # SOC_FAMILY_NRF

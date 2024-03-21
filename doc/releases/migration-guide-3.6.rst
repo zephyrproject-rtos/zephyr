@@ -55,10 +55,6 @@ Device Drivers and Device Tree
 
   (:github:`62994`)
 
-* Runtime configuration is now disabled by default for Nordic UART drivers. The motivation for the
-  change is that this feature is rarely used and disabling it significantly reduces the memory
-  footprint.
-
 Power Management
 ================
 
