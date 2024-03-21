@@ -75,6 +75,7 @@ struct i2c_enhance_config {
 	uint32_t clock_gate_offset;
 	bool target_enable;
 	bool target_pio_mode;
+	bool push_pull_recovery;
 };
 
 enum i2c_pin_fun {
@@ -1267,10 +1268,12 @@ static int i2c_enhance_recover_bus(const struct device *dev)
 	const struct i2c_enhance_config *config = dev->config;
 	int i, status;
 
+	/* Output type selection */
+	gpio_flags_t flags = GPIO_OUTPUT | (config->push_pull_recovery ? 0 : GPIO_OPEN_DRAIN);
 	/* Set SCL of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+	gpio_pin_configure_dt(&config->scl_gpios, flags);
 	/* Set SDA of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+	gpio_pin_configure_dt(&config->sda_gpios, flags);
 
 	/*
 	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c
@@ -1492,6 +1495,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.target_enable = DT_INST_PROP(inst, target_enable),             \
 		.target_pio_mode = DT_INST_PROP(inst, target_pio_mode),         \
+		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),   \
 	};                                                                      \
 										\
 	static struct i2c_enhance_data i2c_enhance_data_##inst;                 \
