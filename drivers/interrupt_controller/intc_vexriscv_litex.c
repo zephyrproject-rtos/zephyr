@@ -11,7 +11,6 @@
 #include <zephyr/irq.h>
 #include <zephyr/device.h>
 #include <zephyr/types.h>
-#include <zephyr/arch/riscv/irq.h>
 
 #define IRQ_MASK		DT_INST_REG_ADDR_BY_NAME(0, irq_mask)
 #define IRQ_PENDING		DT_INST_REG_ADDR_BY_NAME(0, irq_pending)
@@ -123,9 +122,9 @@ int arch_irq_is_enabled(unsigned int irq)
 static int vexriscv_litex_irq_init(const struct device *dev)
 {
 	__asm__ volatile ("csrrs x0, mie, %0"
-			:: "r"(1 << RISCV_IRQ_MEXT));
+			:: "r"(1 << RISCV_MACHINE_EXT_IRQ));
 	vexriscv_litex_irq_setie(1);
-	IRQ_CONNECT(RISCV_IRQ_MEXT, 0, vexriscv_litex_irq_handler,
+	IRQ_CONNECT(RISCV_MACHINE_EXT_IRQ, 0, vexriscv_litex_irq_handler,
 			NULL, 0);
 
 	return 0;
