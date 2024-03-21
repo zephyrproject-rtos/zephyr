@@ -17,6 +17,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/logging/log.h>
+#include <soc.h>
 #include <nrfx_uarte.h>
 #include <helpers/nrfx_gppi.h>
 #include <haly/nrfy_uarte.h>
