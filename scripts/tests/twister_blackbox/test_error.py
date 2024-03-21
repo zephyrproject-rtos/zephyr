@@ -11,6 +11,7 @@ import mock
 import os
 import pytest
 import sys
+import re
 
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
@@ -35,6 +36,16 @@ class TestError:
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             'dummy.agnostic.group1.subgroup1',
             SystemExit
+        )
+    ]
+    TESTDATA_2 = [
+        (
+            '',
+            r'always_overflow.dummy SKIPPED \(RAM overflow\)'
+        ),
+        (
+            '--overflow-as-errors',
+            r'always_overflow.dummy  ERROR Build failure \(build\)'
         )
     ]
 
@@ -72,3 +83,40 @@ class TestError:
         if expected_exception == SystemExit:
             assert str(exc.value) == '0'
         assert True
+
+    @pytest.mark.parametrize(
+        'switch, expected',
+        TESTDATA_2,
+        ids=[
+            'overflow skip',
+            'overflow error',
+        ],
+    )
+
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    def test_overflow_as_errors(self, capfd, out_path, switch, expected):
+        path = os.path.join(TEST_DATA, 'tests', 'qemu_overflow')
+        test_platforms = ['qemu_x86']
+        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+               ['--build-only'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+        if switch:
+            args += [switch]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+            pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        print(args)
+        if switch:
+            assert str(sys_exit.value) == '1'
+        else:
+            assert str(sys_exit.value) == '0'
+
+        assert re.search(expected, err)
