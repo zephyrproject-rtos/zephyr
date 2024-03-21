@@ -45,4 +45,15 @@
 			compatible = "nxp,imx8ulp-pinctrl";
 		};
 	};
+
+	/* note: this was intentionally left without an interrupt
+	 * property because HIFI4 DSP doesn't receive interrupts
+	 * from LPUART7.
+	 */
+	lpuart7: serial@29870000 {
+		compatible = "nxp,kinetis-lpuart";
+		reg = <0x29870000 DT_SIZE_K(4)>;
+		clocks = <&pcc4 IMX8ULP_CLOCK_LPUART7 0x0>;
+		status = "disabled";
+	};
 };
