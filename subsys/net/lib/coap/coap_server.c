@@ -215,7 +215,7 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
+		ret = coap_service_send(service, &response, &client_addr, client_addr_len);
 	} else {
 		ret = coap_handle_request_len(&request, service->res_begin,
 					      COAP_SERVICE_RESOURCE_COUNT(service),
@@ -246,7 +246,7 @@ static int coap_server_process(int sock_fd)
 				goto unlock;
 			}
 
-			ret = coap_service_send(service, &ack, &client_addr, client_addr_len, NULL);
+			ret = coap_service_send(service, &ack, &client_addr, client_addr_len);
 		}
 	}
 
@@ -521,8 +521,7 @@ int coap_service_is_running(const struct coap_service *service)
 }
 
 int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
-		      const struct sockaddr *addr, socklen_t addr_len,
-		      const struct coap_transmission_parameters *params)
+		      const struct sockaddr *addr, socklen_t addr_len)
 {
 	int ret;
 
@@ -543,6 +542,8 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 	 * try to send.
 	 */
 	if (coap_header_get_type(cpkt) == COAP_TYPE_CON) {
+		struct coap_transmission_parameters params;
+
 		struct coap_pending *pending = coap_pending_next_unused(service->data->pending,
 									MAX_PENDINGS);
 
@@ -551,7 +552,9 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 			goto send;
 		}
 
-		ret = coap_pending_init(pending, cpkt, addr, params);
+		params = coap_get_transmission_parameters();
+		params.max_retransmission = CONFIG_COAP_SERVICE_PENDING_RETRANSMITS;
+		ret = coap_pending_init(pending, cpkt, addr, &params);
 		if (ret < 0) {
 			LOG_WRN("Failed to init pending message for %s (%d)", service->name, ret);
 			goto send;
@@ -586,13 +589,12 @@ send:
 }
 
 int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
-		       const struct sockaddr *addr, socklen_t addr_len,
-		       const struct coap_transmission_parameters *params)
+		       const struct sockaddr *addr, socklen_t addr_len)
 {
 	/* Find owning service */
 	COAP_SERVICE_FOREACH(svc) {
 		if (COAP_SERVICE_HAS_RESOURCE(svc, resource)) {
-			return coap_service_send(svc, cpkt, addr, addr_len, params);
+			return coap_service_send(svc, cpkt, addr, addr_len);
 		}
 	}
 

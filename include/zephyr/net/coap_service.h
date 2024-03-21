@@ -235,12 +235,10 @@ int coap_service_is_running(const struct coap_service *service);
  * @param cpkt CoAP Packet to send
  * @param addr Peer address
  * @param addr_len Peer address length
- * @param params Pointer to transmission parameters structure or NULL to use default values.
  * @return 0 in case of success or negative in case of error.
  */
 int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
-		      const struct sockaddr *addr, socklen_t addr_len,
-		      const struct coap_transmission_parameters *params);
+		      const struct sockaddr *addr, socklen_t addr_len);
 
 /**
  * @brief Send a CoAP message from the provided @p resource .
@@ -251,12 +249,10 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
  * @param cpkt CoAP Packet to send
  * @param addr Peer address
  * @param addr_len Peer address length
- * @param params Pointer to transmission parameters structure or NULL to use default values.
  * @return 0 in case of success or negative in case of error.
  */
 int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
-		       const struct sockaddr *addr, socklen_t addr_len,
-		       const struct coap_transmission_parameters *params);
+		       const struct sockaddr *addr, socklen_t addr_len);
 
 /**
  * @brief Parse a CoAP observe request for the provided @p resource .

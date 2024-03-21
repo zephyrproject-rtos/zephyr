@@ -43,7 +43,7 @@ static int separate_get(struct coap_resource *resource,
 		return r;
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+	r = coap_resource_send(resource, &response, addr, addr_len);
 	if (r < 0) {
 		return r;
 	}
@@ -86,7 +86,7 @@ static int separate_get(struct coap_resource *resource,
 		return r;
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+	r = coap_resource_send(resource, &response, addr, addr_len);
 
 	return r;
 }

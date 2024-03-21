@@ -45,7 +45,7 @@ static int core_get(struct coap_resource *resource,
 		return r;
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+	r = coap_resource_send(resource, &response, addr, addr_len);
 
 	return r;
 }
