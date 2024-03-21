@@ -975,8 +975,6 @@ static void svc_reg_work_handler(struct k_work *work)
 
 int bt_mesh_proxy_gatt_enable(void)
 {
-	int err;
-
 	LOG_DBG("");
 
 	if (!bt_mesh_is_provisioned()) {
@@ -988,13 +986,7 @@ int bt_mesh_proxy_gatt_enable(void)
 	}
 
 	svc_reg_attempts = PROXY_SVC_REG_ATTEMPTS;
-	err = k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
-	if (err < 0) {
-		LOG_ERR("Enabling GATT proxy failed (err %d)", err);
-		return err;
-	}
-
-	return 0;
+	return k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
 }
 
 void bt_mesh_proxy_gatt_disconnect(void)
