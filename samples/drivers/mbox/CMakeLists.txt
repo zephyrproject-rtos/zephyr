@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
-# Copyright 2023-2024 NXP
+# Copyright 2023 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -17,8 +17,7 @@ if(("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpuapp") OR
    ("${BOARD}" STREQUAL "mimxrt1170_evkb_cm7") OR
    ("${BOARD}" STREQUAL "mimxrt1170_evk_cm7") OR
    ("${BOARD}" STREQUAL "mimxrt1160_evk_cm7") OR
-   ("${BOARD}" STREQUAL "mimxrt595_evk_cm33") OR
-   ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu0"))
+   ("${BOARD}" STREQUAL "mimxrt595_evk_cm33"))
   message(STATUS "${BOARD} compile as Main in this sample")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")
