@@ -12,5 +12,9 @@ common:
 tests:
   logging.backend.uart.single:
     extra_args: DTC_OVERLAY_FILE="./single.overlay"
+    extra_configs:
+      - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
   logging.backend.uart.multi:
     extra_args: DTC_OVERLAY_FILE="./multi.overlay"
+    extra_configs:
+      - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y

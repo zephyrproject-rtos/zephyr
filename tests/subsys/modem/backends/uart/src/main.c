@@ -28,7 +28,7 @@
 /*************************************************************************************************/
 /*                                          Mock pipe                                            */
 /*************************************************************************************************/
-static const struct device *uart = DEVICE_DT_GET(DT_ALIAS(test_uart));
+static const struct device *uart = DEVICE_DT_GET(DT_NODELABEL(dut));
 static struct modem_backend_uart uart_backend;
 static struct modem_pipe *pipe;
 K_SEM_DEFINE(receive_ready_sem, 0, 1);

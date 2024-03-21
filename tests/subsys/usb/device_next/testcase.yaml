@@ -3,7 +3,7 @@ tests:
     depends_on: usb_device
     tags: usb
     platform_allow:
-      - native_posix
+      - native_sim
       - qemu_cortex_m3
     integration_platforms:
-      - native_posix
+      - native_sim

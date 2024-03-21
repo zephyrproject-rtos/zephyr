@@ -1,10 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_sources(
-  soc.c
-  esp32-mp.c
-  loader.c
-  )
+if (CONFIG_SOC_ESP32_APPCPU)
+  zephyr_sources(soc_appcpu.c)
+else()
+  zephyr_sources(
+    soc.c
+    loader.c
+    esp32-mp.c
+    )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_NEWLIB_LIBC newlib_fix.c)
 
@@ -12,14 +16,6 @@ zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 
 zephyr_library_sources_ifdef(CONFIG_PM power.c)
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
-
-# get code-partition slot0 address
-dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
-dt_reg_addr(img_0_off PATH ${dts_partition_path})
-
-# get code-partition boot address
-dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
-dt_reg_addr(boot_off PATH ${dts_partition_path})
 
 # get flash size to use in esptool as string
 math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
@@ -92,12 +88,36 @@ if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF)
 
 endif()
 
-board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
+## When building for APPCPU
+if (CONFIG_SOC_ESP32_APPCPU)
 
-board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/esp_bin2c_array.py
+      ARGS -i ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
+      -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.c
+      -a "esp32_appcpu_fw_array")
+  endif()
+
+else()
+  set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
+
+  # get code-partition slot0 address
+  dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
+  dt_reg_addr(img_0_off PATH ${dts_partition_path})
+
+  # get code-partition boot address
+  dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
+  dt_reg_addr(boot_off PATH ${dts_partition_path})
+
+  board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
+  board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.ld CACHE INTERNAL "")
+elseif(CONFIG_SOC_ESP32_APPCPU)
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default_appcpu.ld CACHE INTERNAL "")
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default.ld CACHE INTERNAL "")
 endif()

@@ -10,8 +10,7 @@
 
 #include <soc.h>
 #include <hal/nrf_reset.h>
-
-#include <nrfx_gpiote.h>
+#include <hal/nrf_gpiote.h>
 
 LOG_MODULE_REGISTER(nrf5340_audio_dk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -25,11 +24,11 @@ static int core_config(void)
 {
 	nrf_gpiote_latency_t latency;
 
-	latency = nrfx_gpiote_latency_get();
+	latency = nrf_gpiote_latency_get(NRF_GPIOTE);
 
 	if (latency != NRF_GPIOTE_LATENCY_LOWPOWER) {
 		LOG_DBG("Setting gpiote latency to low power");
-		nrfx_gpiote_latency_set(NRF_GPIOTE_LATENCY_LOWPOWER);
+		nrf_gpiote_latency_set(NRF_GPIOTE, NRF_GPIOTE_LATENCY_LOWPOWER);
 	}
 
 	return 0;

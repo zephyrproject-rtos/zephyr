@@ -11,6 +11,7 @@
 #include <math.h>
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/max31865.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>

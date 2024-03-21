@@ -11,6 +11,7 @@ toolchain:
 supported:
   - can
   - counter
+  - dma
   - eeprom
   - netif:eth
   - usb_device

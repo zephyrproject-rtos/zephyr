@@ -19,6 +19,6 @@ include_guard(GLOBAL)
 # Optional environment variables:
 # None
 
-set(BINARY_DIR_INCLUDE ${PROJECT_BINARY_DIR}/include/generated)
-set(BINARY_DIR_INCLUDE_GENERATED ${PROJECT_BINARY_DIR}/include/generated)
+set(BINARY_DIR_INCLUDE ${PROJECT_BINARY_DIR}/include)
+set(BINARY_DIR_INCLUDE_GENERATED ${BINARY_DIR_INCLUDE}/generated)
 file(MAKE_DIRECTORY ${BINARY_DIR_INCLUDE_GENERATED})

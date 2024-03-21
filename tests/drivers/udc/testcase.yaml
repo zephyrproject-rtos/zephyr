@@ -5,4 +5,4 @@ tests:
       - drivers
     platform_allow:
       - nrf52840dk_nrf52840
-      - native_posix_64
+      - native_sim_64

@@ -28,6 +28,9 @@ config BT_CAP_ACCEPTOR_SET_MEMBER
 	  Enabling will take one of the allocated CSIS instances
 	  (BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT).
 
+config BT_CAP_INITIATOR_UNICAST
+	def_bool BT_CAP_INITIATOR && BT_BAP_UNICAST_CLIENT
+
 config BT_CAP_INITIATOR
 	bool "Common Audio Profile Initiator Role Support [EXPERIMENTAL]"
 	depends on (BT_BAP_UNICAST_CLIENT && BT_CSIP_SET_COORDINATOR) || BT_BAP_BROADCAST_SOURCE

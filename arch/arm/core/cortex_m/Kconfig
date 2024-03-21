@@ -78,8 +78,6 @@ config CPU_CORTEX_M7
 	select CPU_CORTEX_M
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a Cortex-M7 CPU
 
@@ -283,7 +281,20 @@ config ARMV8_1_M_MVEF
 	  supporting the M-Profile Vector Extension (MVE) floating-point
 	  instruction set.
 
-menu "ARM Cortex-M0/M0+/M1/M3/M4/M7/M23/M33 options"
+config ARMV8_1_M_PMU
+	bool
+	help
+	  This option is enabled when the CPU implements ARMv8-M Performance
+	  Monitoring Unit (PMU).
+
+config ARMV8_M_PMU_EVENTCNT
+	int "Number of event counters in the Performance Monitoring Unit"
+	depends on ARMV8_1_M_PMU
+	range 2 8
+	help
+	  The number of event counters implemented.
+
+menu "ARM Cortex-M0/M0+/M1/M3/M4/M7/M23/M33/M55 options"
     depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
 
 config GEN_ISR_TABLES

@@ -1,0 +1,9 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RENESAS_RA
+	bool "Renesas RA series clock generation circuit driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_CLOCK_GENERATION_CIRCUIT_ENABLED
+	help
+	  Enable Renesas RA series clock generation circuit driver.

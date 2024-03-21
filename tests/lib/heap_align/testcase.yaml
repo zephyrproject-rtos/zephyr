@@ -4,5 +4,5 @@ tests:
       - heap
       - heap_align
     integration_platforms:
-      - native_posix
+      - native_sim
       - mps2_an521

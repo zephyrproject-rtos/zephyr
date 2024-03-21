@@ -12,7 +12,7 @@
  */
 
 #include <zephyr/kernel.h>
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#ifdef CONFIG_CURRENT_THREAD_USE_TLS
 #include <zephyr/random/random.h>
 
 __thread k_tid_t z_tls_current;
@@ -35,7 +35,7 @@ extern __thread volatile uintptr_t __stack_chk_guard;
 FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 				 void *p1, void *p2, void *p3)
 {
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#ifdef CONFIG_CURRENT_THREAD_USE_TLS
 	z_tls_current = k_sched_current_thread_query();
 #endif
 #ifdef CONFIG_STACK_CANARIES_TLS

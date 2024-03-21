@@ -26,7 +26,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m3";
 			reg = <0>;
@@ -480,6 +480,22 @@
 		vrefint-cal-addr = <0x1FF800F8>;
 		vrefint-cal-mv = <3000>;
 		io-channels = <&adc1 17>;
+		status = "disabled";
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
 		status = "disabled";
 	};
 };

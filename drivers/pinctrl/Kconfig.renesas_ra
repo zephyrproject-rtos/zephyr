@@ -1,0 +1,9 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_RENESAS_RA
+	bool "Renesas RA series pin controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_PINCTRL_ENABLED
+	help
+	  Enable Renesas RA series pin controller driver.

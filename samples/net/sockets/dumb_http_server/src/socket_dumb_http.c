@@ -40,6 +40,21 @@ static const char content[] = {
 #endif
 };
 
+/* If accept returns an error, then we are probably running
+ * out of resource. Sleep a small amount of time in order the
+ * system to cool down.
+ */
+#define ACCEPT_ERROR_WAIT 100 /* in ms */
+
+static void sleep_after_error(unsigned int amount)
+{
+#if defined(__ZEPHYR__)
+	k_msleep(amount);
+#else
+	usleep(amount * 1000U);
+#endif
+}
+
 int main(void)
 {
 	int serv;
@@ -72,6 +87,7 @@ int main(void)
 				    &client_addr_len);
 		if (client < 0) {
 			printf("Error in accept: %d - continuing\n", errno);
+			sleep_after_error(ACCEPT_ERROR_WAIT);
 			continue;
 		}
 

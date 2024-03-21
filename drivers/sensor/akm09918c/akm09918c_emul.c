@@ -134,7 +134,7 @@ static int akm09918c_emul_init(const struct emul *target, const struct device *p
 }
 
 static int akm09918c_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
-					      q31_t value, int8_t shift)
+					      const q31_t *value, int8_t shift)
 {
 	if (!target || !target->data) {
 		return -EINVAL;
@@ -162,8 +162,9 @@ static int akm09918c_emul_backend_set_channel(const struct emul *target, enum se
 	data->reg[AKM09918C_REG_ST1] |= AKM09918C_ST1_DRDY;
 
 	/* Convert fixed-point Gauss values into microgauss and then into its bit representation */
-	int32_t microgauss = (shift < 0 ? ((int64_t)value >> -shift) : ((int64_t)value << shift)) *
-			     1000000 / ((int64_t)INT32_MAX + 1);
+	int32_t microgauss =
+		(shift < 0 ? ((int64_t)*value >> -shift) : ((int64_t)*value << shift)) * 1000000 /
+		((int64_t)INT32_MAX + 1);
 
 	int16_t reg_val =
 		CLAMP(microgauss, AKM09918C_MAGN_MIN_MICRO_GAUSS, AKM09918C_MAGN_MAX_MICRO_GAUSS) /

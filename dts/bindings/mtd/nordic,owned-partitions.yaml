@@ -1,0 +1,89 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic Owned Partitions
+
+  Memory partition table with permission attributes common to its partitions.
+  This is a special case of the Nordic Owned Memory binding.
+
+  Every compatible node is expected to be a child of a memory node, where the
+  listed partitions belong.
+
+  A single memory node can contain multiple partition tables, each with a
+  different set of permissions. For each such table, the smallest memory region
+  spanning the contained partitions will be recorded in the UICR. These regions
+  are allowed to contain gaps between the partitions, but this is discouraged.
+
+  Example:
+
+    mram1x: mram@e000000 {
+        compatible = "nordic,mram";
+        reg = <0xe000000 0x200000>;
+        ...
+
+        rx-partitions {
+            compatible = "nordic,owned-partitions";
+            perm-read;
+            perm-execute;
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            slot0_partition: partition@c0000 {
+                label = "image-0";
+                reg = <0xc0000 0x40000>;
+            };
+        };
+
+        rw-partitions {
+            compatible = "nordic,owned-partitions";
+            perm-read;
+            perm-write;
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            slot1_partition: partition@100000 {
+                label = "image-1";
+                reg = <0x100000 0x50000>;
+            };
+            storage_partition: partition@150000 {
+                label = "storage";
+                reg = <0x150000 0x6000>;
+            };
+        };
+    };
+
+  From this example, two memory regions will be inferred:
+
+    - 0x0E0C0000--0x0E100000, with read & execute permissions, containing the
+      partition labeled "image-0".
+    - 0x0E100000--0x0E156000, with read & write permissions, containing the
+      partitions labeled "image-1" and "storage".
+
+compatible: "nordic,owned-partitions"
+
+include:
+  - name: nordic,owned-memory.yaml
+    property-blocklist:
+      - reg
+
+properties:
+  "#address-cells":
+    required: true
+
+  "#size-cells":
+    required: true
+
+child-binding:
+  description: |
+    Partitions in the table are defined as subnodes. Each partition must have a
+    size and an offset relative to the base address of the parent memory node.
+
+  include:
+    - name: base.yaml
+      property-blocklist:
+        - compatible
+
+  properties:
+    reg:
+      required: true

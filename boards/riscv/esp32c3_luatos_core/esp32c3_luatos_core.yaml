@@ -1,7 +1,7 @@
 identifier: esp32c3_luatos_core
 name: ESP32C3 LuatOS Core
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 supported:

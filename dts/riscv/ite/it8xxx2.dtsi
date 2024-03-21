@@ -28,7 +28,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cpu0: cpu@0 {
-			compatible = "ite,riscv-ite";
+			compatible = "ite,riscv-ite", "riscv";
 			riscv,isa = "rv32imafc_zifencei";
 			device_type = "cpu";
 			reg = <0>;

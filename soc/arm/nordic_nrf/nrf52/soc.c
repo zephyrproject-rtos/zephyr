@@ -23,19 +23,6 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-#ifdef CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET
-/* Overrides the weak ARM implementation:
- * Set general purpose retention register and reboot
- * This is deprecated and has been replaced with the boot mode retention
- * subsystem
- */
-void sys_arch_reboot(int type)
-{
-	nrf_power_gpregret_set(NRF_POWER, 0, (uint8_t)type);
-	NVIC_SystemReset();
-}
-#endif
-
 static int nordicsemi_nrf52_init(void)
 {
 #ifdef CONFIG_NRF_ENABLE_ICACHE

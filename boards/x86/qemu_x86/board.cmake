@@ -56,6 +56,9 @@ endif()
 if(CONFIG_X86_SSE4A)
   string(JOIN "," QEMU_CPU_FLAGS "${QEMU_CPU_FLAGS}" "sse4a")
 endif()
+if(NOT CONFIG_X86_64 AND CONFIG_CACHE_MANAGEMENT)
+  string(JOIN "," QEMU_CPU_FLAGS "${QEMU_CPU_FLAGS}" "clflush")
+endif()
 
 set(QEMU_FLAGS_${ARCH}
   -m ${QEMU_MEMORY_SIZE_MB}

@@ -84,6 +84,9 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 		case UDC_EVT_RESUME:
 			usbd_class_resumed(c_nd);
 			break;
+		case UDC_EVT_SOF:
+			usbd_class_sof(c_nd);
+			break;
 		default:
 			break;
 		}

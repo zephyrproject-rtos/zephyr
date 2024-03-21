@@ -79,9 +79,11 @@ config BT_HCI_RESERVE
 	default 1 if BT_HCI_IPC
 	default 1 if BT_SPI
 	default 1 if BT_STM32_IPM
+	default 1 if BT_STM32WBA
 	default 1 if BT_USERCHAN
 	default 1 if BT_ESP32
 	default 0 if BT_B91
+	default 1 if BT_AMBIQ_HCI
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
@@ -1086,6 +1088,14 @@ config BT_PAGE_TIMEOUT
 	help
 	  This option sets the page timeout value. Value is selected as
 	  (N * 0.625) ms.
+
+config BT_COD
+	hex "Bluetooth Class of Device(CoD)"
+	default 0
+	help
+	  This option sets the class of device.For the list of possible values please
+	  consult the following link:
+	  https://www.bluetooth.com/specifications/assigned-numbers
 
 endif # BT_BREDR
 

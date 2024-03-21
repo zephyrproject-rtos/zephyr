@@ -123,6 +123,8 @@ in addition to those listed for Contributors and Collaborators:
 * Responsibility to ensure all contributions of the project have been reviewed
   within reasonable time.
 * Responsibility to enforce the code of conduct.
+* Responsibility to triage static analysis issues in their code area.
+  See :ref:`static_analysis`.
 
 Contributors or Collaborators are promoted to the Maintainer role by adding the
 GitHub user name to one or more ``maintainers`` sections of the
@@ -167,6 +169,26 @@ the latter is not possible.
 * Responsibility to drive the pull request to a mergeable state
 * Solicit approvals from maintainers of the subsystems affected
 * Responsibility to drive the :ref:`pr_technical_escalation` process
+
+Static Analysis Audit Team
+++++++++++++++++++++++++++
+
+The Static Analysis Audit team works closely with the release engineering
+team to ensure that static analysis defects opened during a release
+cycle are properly addressed. The team has the following rights and
+responsibilities:
+
+* Right to revert any triage in a static analysis tool (e.g: Coverity)
+  that does not follow the project expectations.
+* Responsibility to inform code owners about improper classifications.
+* Responsibility to alert TSC if any issues are not adequately addressed by the
+  responsible code owners.
+
+Joining the Static Analysis Audit team
+
+* Contributors highly involved in the project with some expertise
+  in static analysis.
+
 
 .. _release-engineering-team:
 

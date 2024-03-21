@@ -1204,7 +1204,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
 		.rx_ringbuf = &cdc_acm_rx_rb_##x,			\
 		.tx_ringbuf = &cdc_acm_tx_rb_##x,			\
-		.flow_ctrl = DT_INST_PROP_OR(x, hw_flow_control, false),\
+		.flow_ctrl = DT_INST_PROP(x, hw_flow_control),		\
 	};
 
 #define DT_DRV_COMPAT zephyr_cdc_acm_uart

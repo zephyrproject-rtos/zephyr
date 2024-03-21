@@ -58,6 +58,7 @@ static int hs300x_sample_fetch(const struct device *dev, enum sensor_channel cha
 	struct hs300x_data *data = dev->data;
 	const struct hs300x_config *cfg = dev->config;
 	int rc;
+	uint8_t df_dummy = 0x0;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP &&
 	    chan != SENSOR_CHAN_HUMIDITY) {
@@ -65,10 +66,14 @@ static int hs300x_sample_fetch(const struct device *dev, enum sensor_channel cha
 	}
 
 	/*
-	 * Initiate a measurement simply by sending 7-bit address followed
-	 * by an eighth bit set to 0 (write) and NO data.
+	 * By default, the sensor should be factory-programmed to operate in Sleep Mode.
+	 * A Measurement Request (MR) command is required to exit the sensor
+	 * from its sleep state. An MR command should consist of the 7-bit address followed
+	 * by an eighth bit set to 0 (write). However, many I2C controllers cannot generate
+	 * merely the address byte with no data. To overcome this limitation the MR command
+	 * should be followed by a dummy byte (zero value).
 	 */
-	rc = i2c_write_dt(&cfg->bus, NULL, 0);
+	rc = i2c_write_dt(&cfg->bus, (const uint8_t *)&df_dummy, 1);
 	if (rc < 0) {
 		LOG_ERR("Failed to start measurement.");
 		return rc;

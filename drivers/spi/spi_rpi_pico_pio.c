@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(spi_pico_pio);
 
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include "spi_context.h"
@@ -30,7 +31,8 @@ struct spi_pico_pio_config {
 	struct gpio_dt_spec clk_gpio;
 	struct gpio_dt_spec mosi_gpio;
 	struct gpio_dt_spec miso_gpio;
-	const uint32_t clock_freq;
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_id;
 };
 
 struct spi_pico_pio_data {
@@ -57,20 +59,19 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_cpol_1_cpha_1, 0, 2,
 		/*     .wrap */
 );
 
-static float spi_pico_pio_clock_divisor(const struct spi_pico_pio_config *dev_cfg,
-	uint32_t spi_frequency)
+static float spi_pico_pio_clock_divisor(const uint32_t clock_freq, uint32_t spi_frequency)
 {
-	return (float)dev_cfg->clock_freq / (float)(PIO_CYCLES * spi_frequency);
+	return (float)clock_freq / (float)(PIO_CYCLES * spi_frequency);
 }
 
-static uint32_t spi_pico_pio_maximum_clock_frequency(const struct spi_pico_pio_config *dev_cfg)
+static uint32_t spi_pico_pio_maximum_clock_frequency(const uint32_t clock_freq)
 {
-	return dev_cfg->clock_freq / PIO_CYCLES;
+	return clock_freq / PIO_CYCLES;
 }
 
-static uint32_t spi_pico_pio_minimum_clock_frequency(const struct spi_pico_pio_config *dev_cfg)
+static uint32_t spi_pico_pio_minimum_clock_frequency(const uint32_t clock_freq)
 {
-	return dev_cfg->clock_freq / (PIO_CYCLES * 65536);
+	return clock_freq / (PIO_CYCLES * 65536);
 }
 
 static inline bool spi_pico_pio_transfer_ongoing(struct spi_pico_pio_data *data)
@@ -109,9 +110,22 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	uint32_t cpol = 0;
 	uint32_t cpha = 0;
 	uint32_t bits;
+	uint32_t clock_freq;
 	float clock_div;
 	const pio_program_t *program;
 	int rc;
+
+	rc = clock_control_on(dev_cfg->clk_dev, dev_cfg->clk_id);
+	if (rc < 0) {
+		LOG_ERR("Failed to enable the clock");
+		return rc;
+	}
+
+	rc = clock_control_get_rate(dev_cfg->clk_dev, dev_cfg->clk_id, &clock_freq);
+	if (rc < 0) {
+		LOG_ERR("Failed to get clock frequency");
+		return rc;
+	}
 
 	if (spi_context_configured(&data->spi_ctx, spi_cfg)) {
 		return 0;
@@ -143,13 +157,13 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 
 	data->dfs = DIV_ROUND_UP(bits, 8);
 
-	if ((spi_cfg->frequency < spi_pico_pio_minimum_clock_frequency(dev_cfg)) ||
-	    (spi_cfg->frequency > spi_pico_pio_maximum_clock_frequency(dev_cfg))) {
+	if ((spi_cfg->frequency < spi_pico_pio_minimum_clock_frequency(clock_freq)) ||
+	    (spi_cfg->frequency > spi_pico_pio_maximum_clock_frequency(clock_freq))) {
 		LOG_ERR("clock-frequency out of range");
 		return -EINVAL;
 	}
 
-	clock_div = spi_pico_pio_clock_divisor(dev_cfg, spi_cfg->frequency);
+	clock_div = spi_pico_pio_clock_divisor(clock_freq, spi_cfg->frequency);
 
 	/* Half-duplex mode has not been implemented */
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
@@ -316,7 +330,7 @@ int spi_pico_pio_release(const struct device *dev, const struct spi_config *spi_
 	return 0;
 }
 
-static struct spi_driver_api spi_pico_pio_api = {
+static const struct spi_driver_api spi_pico_pio_api = {
 	.transceive = spi_pico_pio_transceive,
 	.release = spi_pico_pio_release,
 };
@@ -352,7 +366,8 @@ int spi_pico_pio_init(const struct device *dev)
 		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios), \
 		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}), \
 		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}), \
-		.clock_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency), \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)), \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id), \
 	}; \
 	static struct spi_pico_pio_data spi_pico_pio_data_##inst = { \
 		SPI_CONTEXT_INIT_LOCK(spi_pico_pio_data_##inst, spi_ctx), \

@@ -1,0 +1,194 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ * Copyright (c) 2023 Ian Wakely
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+
+#include <rpi_pico/rp2040.dtsi>
+#include "w5500_evb_pico-pinctrl.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	pico_header: connector {
+		compatible = "raspberrypi,pico-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 0 0>,	/* GP0 */
+			<1 0 &gpio0 1 0>,	/* GP1 */
+			<2 0 &gpio0 2 0>,	/* GP2 */
+			<3 0 &gpio0 3 0>,	/* GP3 */
+			<4 0 &gpio0 4 0>,	/* GP4 */
+			<5 0 &gpio0 5 0>,	/* GP5 */
+			<6 0 &gpio0 6 0>,	/* GP6 */
+			<7 0 &gpio0 7 0>,	/* GP7 */
+			<8 0 &gpio0 8 0>,	/* GP8 */
+			<9 0 &gpio0 9 0>,	/* GP9 */
+			<10 0 &gpio0 10 0>,	/* GP10 */
+			<11 0 &gpio0 11 0>,	/* GP11 */
+			<12 0 &gpio0 12 0>,	/* GP12 */
+			<13 0 &gpio0 13 0>,	/* GP13 */
+			<14 0 &gpio0 14 0>,	/* GP14 */
+			<15 0 &gpio0 15 0>,	/* GP15 */
+			<16 0 &gpio0 16 0>,	/* GP16 */
+			<17 0 &gpio0 17 0>,	/* GP17 */
+			<18 0 &gpio0 18 0>,	/* GP18 */
+			<19 0 &gpio0 19 0>,	/* GP19 */
+			<20 0 &gpio0 20 0>,	/* GP20 */
+			<21 0 &gpio0 21 0>,	/* GP21 */
+			<22 0 &gpio0 22 0>,	/* GP22 */
+			<26 0 &gpio0 26 0>,	/* GP26 */
+			<27 0 &gpio0 27 0>,	/* GP27 */
+			<28 0 &gpio0 28 0>;	/* GP28 */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			label = "LED";
+		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		watchdog0 = &wdt0;
+	};
+};
+
+&flash0 {
+	/* 16MB of flash minus the 0x100 used for
+	 * the second stage bootloader
+	 */
+	reg = <0x10000000 DT_SIZE_M(16)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for the second stage bootloader */
+		second_stage_bootloader: partition@0 {
+			label = "second_stage_bootloader";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the bootloader. The partition
+		 * size is 16MB minus the 0x100 bytes taken by the bootloader.
+		 */
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(16) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&clocks {
+	pinctrl-0 = <&clocks_default>;
+	pinctrl-names = "default";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi0 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+
+	ethernet: w5500@0 {
+		compatible = "wiznet,w5500";
+		reg = <0x0>;
+		spi-max-frequency = <50000000>;
+		int-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		local-mac-address = [00 00 00 01 02 03];
+		status = "okay";
+	};
+};
+
+&timer {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch4b_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};
+
+pico_spi: &spi0 {};
+pico_i2c0: &i2c0 {};
+pico_i2c1: &i2c1 {};

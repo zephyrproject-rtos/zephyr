@@ -38,3 +38,7 @@
 	d2ppre2 = <2>;
 	d3ppre = <2>;
 };
+
+&mailbox {
+	status = "okay";
+};

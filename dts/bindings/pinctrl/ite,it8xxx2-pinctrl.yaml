@@ -46,7 +46,7 @@ description: |
 
     The 'uart1_rx_pb0_default' child node encodes the pin configurations
     for a particular state of a device; in this case, the default
-    (that is, active) sate.
+    (that is, active) state.
 
     To link pin configurations with a device, use a pinctrl-N property for some
     number N, like this example you could place in your board's DTS file:
@@ -65,7 +65,7 @@ include: base.yaml
 
 child-binding:
   description: |
-      This binding gives a base representation of the ITE IT8XXX2 pins configration.
+      This binding gives a base representation of the ITE IT8XXX2 pins configuration.
 
   include:
     - name: pincfg-node.yaml

@@ -41,6 +41,22 @@ tests:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
       - CONFIG_LOG_FRONTEND_DICT_UART=y
+  sample.logger.basic.dictionary.uart_frontend_rt:
+    build_only: true
+    tags: logging
+    platform_allow: nrf5340dk_nrf5340_cpuapp
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpuapp
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG_CMDS=y
+      - CONFIG_LOG_BACKEND_RTT=n
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_DICT_UART=y
   sample.logger.basic.dictionary.uart_int_frontend:
     build_only: true
     tags: logging

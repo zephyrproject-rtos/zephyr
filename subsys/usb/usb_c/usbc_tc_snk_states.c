@@ -10,6 +10,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_stack.h"
 #include "usbc_tc_snk_states_internal.h"
 #include "usbc_tc_common_internal.h"
+#include <zephyr/drivers/usb_c/usbc_ppc.h>
 
 /**
  * @brief Sink power sub states. Only called if a PD contract is not in place
@@ -214,6 +215,14 @@ void tc_attached_snk_entry(void *obj)
 
 	/* Enable PD */
 	tc_pd_enable(dev, true);
+
+	/* Enable sink path for the PPC */
+	if (data->ppc != NULL) {
+		ret = ppc_set_snk_ctrl(data->ppc, true);
+		if (ret != 0 && ret != -ENOTSUP) {
+			LOG_ERR("Couldn't enable PPC sink path: %d", ret);
+		}
+	}
 }
 
 /**
@@ -245,9 +254,19 @@ void tc_attached_snk_exit(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	int ret;
 
 	/* Disable PD */
 	tc_pd_enable(dev, false);
+
+	/* Disable sink path for the PPC */
+	if (data->ppc != NULL) {
+		ret = ppc_set_snk_ctrl(data->ppc, false);
+		if (ret != 0 && ret != -ENOTSUP) {
+			LOG_ERR("Couldn't disable PPC sink path: %d", ret);
+		}
+	}
 }
 
 /**

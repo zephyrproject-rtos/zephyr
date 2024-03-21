@@ -197,6 +197,31 @@ config USB_DC_IT82XX2
 	help
 	  ITE IT82XX2 USB Device Controller Driver
 
+config USB_DC_NUMAKER
+	bool "Nuvoton NuMaker USB 1.1 device controller"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	help
+	  Enable Nuvoton NuMaker USB 1.1 device controller driver
+
+if USB_DC_NUMAKER
+
+config USB_DC_NUMAKER_MSG_QUEUE_SIZE
+	int "USB DC message queue size"
+	default 32
+	help
+	  Maximum number of messages the driver can queue for interrupt bottom half processing
+
+config USB_DC_NUMAKER_MSG_HANDLER_THREAD_STACK_SIZE
+	int "USB DC message handler thread stack size"
+	default 1536
+	help
+	  Size of the stack for the message handler thread that is used in the driver
+	  for handling messages from the USB DC ISR, i.e. interrupt bottom half processing,
+	  including callbacks to the USB device stack.
+
+endif # USB_DC_NUMAKER
+
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
 	depends on ARCH_POSIX && EXTERNAL_LIBC

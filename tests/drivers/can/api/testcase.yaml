@@ -1,14 +1,18 @@
+common:
+  tags:
+    - drivers
+    - can
+  depends_on: can
 tests:
   drivers.can.api:
-    tags:
-      - drivers
-      - can
-    depends_on: can
     filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+      and not dt_compat_enabled("infineon,xmc4xxx-can-node")
+  drivers.can.api.rtr:
+    filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+      and not dt_compat_enabled("infineon,xmc4xxx-can-node")
+    extra_configs:
+      - CONFIG_CAN_ACCEPT_RTR=y
   drivers.can.api.twai:
-    tags:
-      - drivers
-      - can
     extra_args: DTC_OVERLAY_FILE=twai-enable.overlay
     filter: dt_compat_enabled("espressif,esp32-twai")
     platform_allow:
@@ -18,3 +22,7 @@ tests:
       - esp32s2_saola
       - esp32s3_devkitm
       - xiao_esp32s3
+  drivers.can.api.nxp_s32_canxl.non_rx_fifo:
+    extra_configs:
+      - CONFIG_CAN_NXP_S32_RX_FIFO=n
+    filter: dt_compat_enabled("nxp,s32-canxl")

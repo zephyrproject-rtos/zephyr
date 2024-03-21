@@ -178,7 +178,7 @@ by calling :c:func:`rtio_sqe_rx_buf` like so:
   }
 
 Finally, the consumer will be able to access the allocated buffer via
-c:func:`rtio_cqe_get_mempool_buffer`.
+:c:func:`rtio_cqe_get_mempool_buffer`.
 
 .. code-block:: C
 

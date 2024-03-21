@@ -7,4 +7,6 @@ tests:
       - drivers
       - charger
     build_only: true
-    platform_allow: native_posix
+    platform_allow:
+      - native_posix
+      - native_sim

@@ -1,0 +1,48 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &ocram;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+
+		/* Delete ipc chosen property where old IPM mailbox driver bellow is
+		 * configured.
+		 */
+		/delete-property/ zephyr,ipc;
+	};
+
+	soc {
+		/delete-node/ gpt@400f0000;
+
+		/* Replace GPT2 with another GPT kernel timer */
+		gpt2_hw_timer:gpt@400f0000 {
+			compatible = "nxp,gpt-hw-timer";
+			reg = <0x400f0000 0x4000>;
+			interrupts = <120 0>;
+			status = "okay";
+		};
+
+		/* Delete IPM Driver node nxp,imx-mu */
+		/delete-node/ mailbox@40c4c000;
+
+		/* Attach MBOX driver to MU Unit */
+		mbox:mbox@40c4c000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x40c4c000 0x4000>;
+			interrupts = <118 0>;
+			rx-channels = <4>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	};
+};
+
+/* Disable primary GPT timer */
+&gpt_hw_timer {
+	status = "disabled";
+};

@@ -6,7 +6,7 @@ Bluetooth: Mesh Provisioner
 Overview
 ********
 
-This sample demonstrates how to use the Bluetooth mesh APIs related to
+This sample demonstrates how to use the Bluetooth Mesh APIs related to
 provisioning and using the Configuration Database (CDB). It is intended
 to be tested together with a device capable of being provisioned. For
 example, one could use the sample in

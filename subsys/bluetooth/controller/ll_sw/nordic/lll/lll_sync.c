@@ -328,7 +328,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 #else
 	} else {
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-		if (IS_ENABLED(CONFIG_BT_CTLR_DF_SUPPORT)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF)) {
 			/* Disable CTE reception and sampling in Radio */
 			radio_df_cte_inline_set_enabled(false);
 		}

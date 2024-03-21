@@ -28,6 +28,7 @@
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
 		pwm-0 = &sc_timer;
+		dmic-dev = &dmic0;
 	};
 
 	chosen {
@@ -238,7 +239,8 @@ arduino_serial: &flexcomm12 {
 			regulator-boot-on;
 			nxp,mode0-microvolt = <1100000>;
 			nxp,mode1-microvolt = <600000>;
-			nxp,mode2-microvolt = <0>;
+			nxp,mode2-microvolt = <900000>;
+			nxp,mode3-microvolt = <800000>;
 		};
 
 		pca9420_sw2: BUCK2 {
@@ -246,7 +248,7 @@ arduino_serial: &flexcomm12 {
 			nxp,mode0-microvolt = <1800000>;
 			nxp,mode1-microvolt = <1800000>;
 			nxp,mode2-microvolt = <1800000>;
-
+			nxp,mode3-microvolt = <1800000>;
 		};
 
 		pca9420_ldo1: LDO1 {
@@ -254,6 +256,7 @@ arduino_serial: &flexcomm12 {
 			nxp,mode0-microvolt = <1800000>;
 			nxp,mode1-microvolt = <1800000>;
 			nxp,mode2-microvolt = <1800000>;
+			nxp,mode3-microvolt = <1800000>;
 		};
 
 		pca9420_ldo2: LDO2 {
@@ -261,6 +264,7 @@ arduino_serial: &flexcomm12 {
 			nxp,mode0-microvolt = <3300000>;
 			nxp,mode1-microvolt = <3300000>;
 			nxp,mode2-microvolt = <3300000>;
+			nxp,mode3-microvolt = <3300000>;
 		};
 	};
 };
@@ -477,6 +481,30 @@ zephyr_udc0: &usbhs {
 &mipi_dsi {
 	dmas = <&smartdma>;
 	dma-names = "smartdma";
+};
+
+&dmic0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dmic0>;
+	pinctrl-names = "default";
+	use2fs;
+};
+
+/* Configure pdm channels 0 and 1 with gain, and cutoff settings
+ * appropriate for the attached MEMS microphones.
+ */
+&pdmc0 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
+};
+
+&pdmc1 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
 };
 
 &mrt_channel0 {

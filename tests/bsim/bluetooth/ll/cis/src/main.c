@@ -106,7 +106,8 @@ static bt_addr_le_t peer_addr;
 
 #define BUF_ALLOC_TIMEOUT   (50) /* milliseconds */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static bool data_cb(struct bt_data *data, void *user_data)
 {
@@ -552,8 +553,7 @@ static void test_cis_central(void)
 				}
 
 				printk("ISO send: seq_num %u, chan %d\n", seq_num, chan);
-				ret = bt_iso_chan_send(&iso_chan[chan], buf,
-						       seq_num, BT_ISO_TIMESTAMP_NONE);
+				ret = bt_iso_chan_send(&iso_chan[chan], buf, seq_num);
 				if (ret < 0) {
 					FAIL("Unable to send data on channel %d : %d\n", chan, ret);
 					net_buf_unref(buf);
@@ -780,8 +780,7 @@ static void test_cis_peripheral(void)
 				}
 
 				printk("ISO send: seq_num %u, chan %d\n", seq_num, chan);
-				ret = bt_iso_chan_send(&iso_chan_p[chan], buf, seq_num,
-						       BT_ISO_TIMESTAMP_NONE);
+				ret = bt_iso_chan_send(&iso_chan_p[chan], buf, seq_num);
 				if (ret < 0) {
 					FAIL("Unable to send data on channel %d : %d\n", chan, ret);
 					net_buf_unref(buf);

@@ -58,22 +58,56 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (reason & NRFX_RESET_REASON_DIF_MASK) {
 		flags |= RESET_DEBUG;
 	}
-
-#if !NRF_POWER_HAS_RESETREAS
-	if (reason & NRFX_RESET_REASON_CTRLAP_MASK) {
-		flags |= RESET_DEBUG;
-	}
-	if (reason & NRFX_RESET_REASON_DOG0_MASK) {
-		flags |= RESET_WATCHDOG;
-	}
-	if (reason & NRFX_RESET_REASON_DOG1_MASK) {
-		flags |= RESET_WATCHDOG;
-	}
-	if (reason & NRFX_RESETREAS_SREQ_MASK) {
+	if (reason & NRFX_RESET_REASON_SREQ_MASK) {
 		flags |= RESET_SOFTWARE;
 	}
 
-#if NRF_RESET_HAS_NETWORK
+#if NRFX_RESET_REASON_HAS_CTRLAP
+	if (reason & NRFX_RESET_REASON_CTRLAP_MASK) {
+		flags |= RESET_DEBUG;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_LPCOMP
+	if (reason & NRFX_RESET_REASON_LPCOMP_MASK) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_NFC
+	if (reason & NRFX_RESET_REASON_NFC_MASK) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_VBUS
+	if (reason & NRFX_RESET_REASON_VBUS_MASK) {
+		flags |= RESET_POR;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_CTRLAPSOFT
+	if (reason & NRFX_RESET_REASON_CTRLAPSOFT_MASK) {
+		flags |= RESET_DEBUG;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_CTRLAPHARD
+	if (reason & NRFX_RESET_REASON_CTRLAPHARD_MASK) {
+		flags |= RESET_DEBUG;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_CTRLAPPIN
+	if (reason & NRFX_RESET_REASON_CTRLAPPIN_MASK) {
+		flags |= RESET_DEBUG;
+	}
+#endif
+#if !NRF_POWER_HAS_RESETREAS
+	if (reason & NRFX_RESET_REASON_DOG1_MASK) {
+		flags |= RESET_WATCHDOG;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_GRTC
+	if (reason & NRFX_RESET_REASON_GRTC_MASK) {
+		flags |= RESET_CLOCK;
+	}
+#endif
+#if NRFX_RESET_REASON_HAS_NETWORK
 	if (reason & NRFX_RESET_REASON_LSREQ_MASK) {
 		flags |= RESET_SOFTWARE;
 	}
@@ -87,10 +121,14 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_DEBUG;
 	}
 #endif
-
-#else
-	if (reason & NRFX_RESET_REASON_SREQ_MASK) {
-		flags |= RESET_SOFTWARE;
+#if defined(NRFX_RESET_REASON_TAMPC_MASK)
+	if (reason & NRFX_RESET_REASON_TAMPC_MASK) {
+		flags |= RESET_SECURITY;
+	}
+#endif
+#if defined(NRFX_RESET_REASON_SECTAMPER_MASK)
+	if (reason & NRFX_RESET_REASON_SECTAMPER_MASK) {
+		flags |= RESET_SECURITY;
 	}
 #endif
 

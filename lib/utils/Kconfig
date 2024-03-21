@@ -1,0 +1,60 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Utility Library"
+
+config JSON_LIBRARY
+	bool "Build JSON library"
+	help
+	  Build a minimal JSON parsing/encoding library. Used by sample
+	  applications such as the NATS client.
+
+config RING_BUFFER
+	bool "Ring buffers"
+	help
+	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
+	  buffers manage their own buffer memory and can store arbitrary data.
+	  For optimal performance, use buffer sizes that are a power of 2.
+
+config NOTIFY
+	bool "Asynchronous Notifications"
+	help
+	  Use this API to support async transactions.
+
+config BASE64
+	bool "Base64 encoding and decoding"
+	help
+	  Enable base64 encoding and decoding functionality
+
+config ONOFF
+	bool "On-Off Manager"
+	select NOTIFY
+	help
+	  An on-off manager supports an arbitrary number of clients of a
+	  service which has a binary state.  Example applications are power
+	  rails, clocks, and binary device power management.
+
+config WINSTREAM
+	bool "Lockless shared memory window byte stream"
+	help
+	  Winstream is a byte stream IPC for use in shared memory
+	  "windows", generally for transmit to non-Zephyr contexts that
+	  can't share Zephyr APIs or data structures.
+
+if WINSTREAM
+config WINSTREAM_STDLIB_MEMCOPY
+	bool "Use standard memcpy() in winstream"
+	help
+	  The sys_winstream utility is sometimes used in early boot
+	  environments before the standard library is usable.  By
+	  default it uses a simple internal bytewise memcpy().  Set
+	  this to use the one from the standard library.
+endif
+
+config UTF8
+	bool "UTF-8 string operation supported"
+	help
+	  Enable the utf8 API. The API implements functions to specifically
+	  handle UTF-8 encoded strings.
+
+endmenu

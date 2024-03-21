@@ -9,7 +9,7 @@ common:
     - arch
     - simulation
   integration_platforms:
-    - native_posix
+    - native_sim
   min_ram: 32
 tests:
   logging.deferred.api.overflow_rt_filter:
@@ -59,6 +59,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_OVERRIDE_LEVEL=4
@@ -93,10 +94,23 @@ tests:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
+  logging.frontend.dbg.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
   logging.frontend:
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_DEFERRED=y
+
+  logging.frontend.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.frontend.immediate:
     extra_configs:
@@ -110,6 +124,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -122,6 +137,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
@@ -131,6 +147,12 @@ tests:
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
+
+  logging.frontend.only.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.frontend.no_backends:
     extra_configs:
@@ -243,6 +265,13 @@ tests:
       - CONFIG_LOG_FRONTEND_ONLY=y
       - CONFIG_CPP=y
 
+  logging.frontend.only_cpp.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
   logging.frontend.no_backends_cpp:
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
@@ -315,6 +344,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -328,6 +358,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y

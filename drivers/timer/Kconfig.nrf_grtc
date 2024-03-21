@@ -1,0 +1,48 @@
+# Timer driver configuration options
+# Copyright (c) 2024 Nordic Semiconductor ASA
+
+menuconfig NRF_GRTC_TIMER
+	bool "nRF GRTC Timer"
+	default y if DT_HAS_NORDIC_NRF_GRTC_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select NRFX_GRTC
+	help
+	  This module implements a kernel device driver for the nRF Global Real
+	  Time Counter NRF_GRTC and provides the standard "system clock driver"
+	  interfaces.
+
+if NRF_GRTC_TIMER
+
+config NRF_GRTC_SLEEP_ALLOWED
+	def_bool y
+	depends on POWEROFF
+	help
+	  This feature allows GRTC SYSCOUNTER to go to sleep state.
+
+config NRF_GRTC_TIMER_APP_DEFINED_INIT
+	bool "Application defines GRTC initialization"
+	help
+	  Application defines the initialization procedure and time of the GRTC
+	  drivers, rather than leaving it up to SYS_INIT.
+
+config NRF_GRTC_START_SYSCOUNTER
+	bool "Start SYSCOUNTER on driver init"
+	select NRF_GRTC_TIMER_CLOCK_MANAGEMENT
+	help
+	  Start the SYSCOUNTER when initializing the GRTC. This should only be
+	  handled by one processor in the system.
+
+config NRF_GRTC_TIMER_CLOCK_MANAGEMENT
+	bool
+	help
+	  Compile additional driver code for enabling management functionality of
+	  the GRTC. Usually this is only needed by the processor that is starting
+	  the SYSCOUNTER, but can be shared by multiple processors in the system.
+
+config NRF_GRTC_SLEEP_MINIMUM_LATENCY
+	int
+	default 1000
+	depends on NRF_GRTC_SLEEP_ALLOWED
+
+endif # NRF_GRTC_TIMER

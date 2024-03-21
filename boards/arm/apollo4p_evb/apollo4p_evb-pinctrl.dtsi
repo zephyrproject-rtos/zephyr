@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+#include "apollo4p_evb_connector.dtsi"
 
 &pinctrl {
 	uart0_default: uart0_default {
@@ -97,6 +98,7 @@
 		};
 		group2 {
 			pinmux = <NCE11_P11>;
+			drive-strength = "0.5";
 			drive-push-pull;
 			ambiq,iom-nce-module = <4>;
 		};

@@ -455,7 +455,12 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 	    net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
 				   (struct in_addr *)ip_hdr->dst)) {
 		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						  (struct in_addr *)ip_hdr->dst);
+						  (struct in_addr *)ip_hdr->src);
+
+		if (net_ipv4_is_addr_unspecified(src)) {
+			NET_DBG("DROP: No src address match");
+			goto drop;
+		}
 	} else {
 		src = (struct in_addr *)ip_hdr->dst;
 	}
@@ -634,7 +639,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	ret = net_icmp_call_ipv4_handlers(pkt, ip_hdr, icmp_hdr);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOENT) {
 		NET_ERR("ICMPv4 handling failure (%d)", ret);
 	}
 

@@ -1116,7 +1116,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 #define MCUX_LPUART_IRQ_INSTALL(n, i)					\
 	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, i),			\
 			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
 			    mcux_lpuart_isr, DEVICE_DT_INST_GET(n), 0);	\
 									\

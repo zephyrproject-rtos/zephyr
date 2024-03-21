@@ -219,7 +219,7 @@ static int spi_ambiq_release(const struct device *dev, const struct spi_config *
 	return 0;
 }
 
-static struct spi_driver_api spi_ambiq_driver_api = {
+static const struct spi_driver_api spi_ambiq_driver_api = {
 	.transceive = spi_ambiq_transceive,
 	.release = spi_ambiq_release,
 };

@@ -29,7 +29,6 @@
 		mpu: mpu@e000ed90 {
 			compatible = "arm,armv7m-mpu";
 			reg = <0xe000ed90 0x40>;
-			arm,num-mpu-regions = <16>;
 		};
 	};
 
@@ -631,6 +630,16 @@
 			compatible = "nxp,s32-gmac";
 			interrupts = <105 0>, <106 0>, <107 0>, <108 0>;
 			interrupt-names = "common", "tx", "rx", "safety";
+			status = "disabled";
+		};
+
+		mdio0: mdio@40480200 {
+			reg = <0x40480200 0x8>;
+			compatible = "nxp,s32-gmac-mdio";
+			clocks = <&clock NXP_S32_AIPS_PLAT_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		edma0: dma-controller@4020c000 {
@@ -817,6 +826,24 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		lcu0: lcu@40098000 {
+			compatible = "nxp,s32-lcu";
+			reg = <0x40098000 0x4000>;
+			status = "disabled";
+		};
+
+		lcu1: lcu@4009c000 {
+			compatible = "nxp,s32-lcu";
+			reg = <0x4009c000 0x4000>;
+			status = "disabled";
+		};
+
+		trgmux: trgmux@40080000 {
+			compatible = "nxp,s32-trgmux";
+			reg = <0x40080000 0x4000>;
+			status = "disabled";
 		};
 	};
 };

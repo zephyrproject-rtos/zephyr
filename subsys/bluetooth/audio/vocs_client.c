@@ -411,9 +411,15 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			 */
 			sub_params->ccc_handle = attr->handle + 2;
 			sub_params->notify = vocs_client_notify_handler;
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
 			err = bt_gatt_subscribe(conn, sub_params);
-			if (err) {
+			if (err != 0 && err != -EALREADY) {
 				LOG_WRN("Could not subscribe to handle %u", sub_params->ccc_handle);
+
+				inst->cb->discover(&inst->vocs, err);
+
+				return BT_GATT_ITER_STOP;
 			}
 		}
 	}
@@ -470,7 +476,7 @@ int bt_vocs_client_location_set(struct bt_vocs_client *inst, uint32_t location)
 		return -EINVAL;
 	}
 
-	CHECKIF(location == BT_AUDIO_LOCATION_PROHIBITED || location > BT_AUDIO_LOCATION_ANY) {
+	CHECKIF(location > BT_AUDIO_LOCATION_ANY) {
 		LOG_DBG("Invalid location 0x%08X", location);
 		return -EINVAL;
 	}
@@ -686,16 +692,6 @@ static void vocs_client_reset(struct bt_vocs_client *inst)
 
 	if (inst->conn != NULL) {
 		struct bt_conn *conn = inst->conn;
-
-		/* It's okay if these fail. In case of disconnect, we can't
-		 * unsubscribe and they will just fail.
-		 * In case that we reset due to another call of the discover
-		 * function, we will unsubscribe (regardless of bonding state)
-		 * to accommodate the new discovery values.
-		 */
-		(void)bt_gatt_unsubscribe(conn, &inst->state_sub_params);
-		(void)bt_gatt_unsubscribe(conn, &inst->location_sub_params);
-		(void)bt_gatt_unsubscribe(conn, &inst->desc_sub_params);
 
 		bt_conn_unref(conn);
 		inst->conn = NULL;

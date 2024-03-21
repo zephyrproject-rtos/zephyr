@@ -126,3 +126,24 @@ be printed to the console.
 .. note::
 
     The tests take up to 30 seconds each if they are testing real hardware.
+
+.. _rtc_api_emul_dev:
+
+RTC emulated device
+*******************
+
+The emulated RTC device fully implements the RTC API, and will behave like a real
+RTC device, with the following limitations:
+
+* RTC time is not persistent across application initialization.
+* RTC alarms are not persistent across application initialization.
+* RTC time will drift over time.
+
+Every time an application is initialized, the RTC's time and alarms are reset. Reading
+the time using :c:func:`rtc_get_time` will return ``-ENODATA``, until the time is
+set using :c:func:`rtc_set_time`. The RTC will then behave as a real RTC, until the
+application is reset.
+
+The emulated RTC device driver is built for the compatible
+:dtcompatible:`zephyr,rtc-emul` and will be included if :kconfig:option:`CONFIG_RTC`
+is selected.

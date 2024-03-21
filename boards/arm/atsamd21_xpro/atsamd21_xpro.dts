@@ -75,7 +75,7 @@
 	compatible = "atmel,sam0-uart";
 	current-speed = <9600>;
 	rxpo = <3>;
-	txpo = <2>;
+	txpo = <1>;
 
 	pinctrl-0 = <&sercom0_uart_default>;
 	pinctrl-names = "default";

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Andreas Kilian
+ * Copyright (c) 2024 Jeff Welder (Ellenby Technologies, Inc.)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +88,7 @@ struct veml7700_data {
 	uint16_t thresh_low;
 	uint16_t als_counts;
 	uint32_t als_lux;
+	uint16_t white_counts;
 	uint32_t int_flags;
 };
 
@@ -293,6 +295,23 @@ static int veml7700_fetch_als(const struct device *dev)
 	return 0;
 }
 
+static int veml7700_fetch_white(const struct device *dev)
+{
+	struct veml7700_data *data = dev->data;
+	uint16_t counts;
+	int ret;
+
+	ret = veml7700_read(dev, VEML7700_CMDCODE_WHITE, &counts);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->white_counts = counts;
+	LOG_DBG("Read White Light measurement: counts=%d", data->white_counts);
+
+	return 0;
+}
+
 static int veml7700_fetch_int_flags(const struct device *dev)
 {
 	struct veml7700_data *data = dev->data;
@@ -428,6 +447,8 @@ static int veml7700_sample_fetch(const struct device *dev,
 		} else {
 			return -ENOTSUP;
 		}
+	} else if ((enum sensor_channel_veml7700)chan == SENSOR_CHAN_VEML7700_WHITE_RAW_COUNTS) {
+		return veml7700_fetch_white(dev);
 	} else if (chan == SENSOR_CHAN_ALL) {
 		data = dev->data;
 		if (data->int_mode != VEML7700_INT_DISABLED) {
@@ -436,7 +457,10 @@ static int veml7700_sample_fetch(const struct device *dev,
 				return ret;
 			}
 		}
-
+		ret = veml7700_fetch_white(dev);
+		if (ret < 0) {
+			return ret;
+		}
 		return veml7700_fetch_als(dev);
 	} else {
 		return -ENOTSUP;
@@ -453,6 +477,8 @@ static int veml7700_channel_get(const struct device *dev,
 		val->val1 = data->als_lux;
 	} else if ((enum sensor_channel_veml7700)chan == SENSOR_CHAN_VEML7700_RAW_COUNTS) {
 		val->val1 = data->als_counts;
+	} else if ((enum sensor_channel_veml7700)chan == SENSOR_CHAN_VEML7700_WHITE_RAW_COUNTS) {
+		val->val1 = data->white_counts;
 	} else if ((enum sensor_channel_veml7700)chan == SENSOR_CHAN_VEML7700_INTERRUPT) {
 		val->val1 = data->int_flags;
 	} else {
@@ -514,6 +540,7 @@ static int veml7700_init(const struct device *dev)
 	data->int_mode = VEML7700_INT_DISABLED;
 	data->als_counts = 0;
 	data->als_lux = 0;
+	data->white_counts = 0;
 	data->shut_down = (conf->psm != VEML7700_PSM_DISABLED) ? 0 : 1;
 
 	/* Initialize sensor configuration */

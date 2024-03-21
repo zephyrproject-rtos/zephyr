@@ -63,6 +63,7 @@
 #include "isoal.h"
 #include "ll_feat_internal.h"
 #include "ull_internal.h"
+#include "ull_chan_internal.h"
 #include "ull_iso_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
@@ -938,17 +939,18 @@ ll_rx_get_again:
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
-		cmplt = tx_cmplt_get(handle, &mfifo_tx_ack.f, rx->ack_last);
+		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f,
+				     rx->ack_last);
 		if (!cmplt) {
 			uint8_t f, cmplt_prev, cmplt_curr;
 			uint16_t h;
 
 			cmplt_curr = 0U;
-			f = mfifo_tx_ack.f;
+			f = mfifo_fifo_tx_ack.f;
 			do {
 				cmplt_prev = cmplt_curr;
 				cmplt_curr = tx_cmplt_get(&h, &f,
-							  mfifo_tx_ack.l);
+							  mfifo_fifo_tx_ack.l);
 			} while ((cmplt_prev != 0U) ||
 				 (cmplt_prev != cmplt_curr));
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
@@ -1015,7 +1017,8 @@ ll_rx_get_again:
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 		}
 	} else {
-		cmplt = tx_cmplt_get(handle, &mfifo_tx_ack.f, mfifo_tx_ack.l);
+		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f,
+				     mfifo_fifo_tx_ack.l);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 	}
 
@@ -1713,7 +1716,7 @@ void ll_rx_put(memq_link_t *link, void *rx)
 	/* Serialize Tx ack with Rx enqueue by storing reference to
 	 * last element index in Tx ack FIFO.
 	 */
-	rx_hdr->ack_last = mfifo_tx_ack.l;
+	rx_hdr->ack_last = mfifo_fifo_tx_ack.l;
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 	/* Enqueue the Rx object */
@@ -2065,6 +2068,8 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
+	void *param_normal_head = NULL;
+	void *param_normal_next = NULL;
 	void *param_resume_head = NULL;
 	void *param_resume_next = NULL;
 	struct lll_event *next;
@@ -2105,31 +2110,41 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			/* The prepare element was not a resume event, it would
 			 * use the radio or was enqueued back into prepare
 			 * pipeline with a preempt timeout being set.
+			 *
+			 * Remember the first encountered and the next element
+			 * in the prepare pipeline so that we do not infinitely
+			 * loop through the resume events in prepare pipeline.
 			 */
 			if (!is_resume) {
-				break;
-			}
-
-			/* Remember the first encountered resume and the next
-			 * resume element in the prepare pipeline so that we do
-			 * not infinitely loop through the resume events in
-			 * prepare pipeline.
-			 */
-			if (!param_resume_head) {
-				param_resume_head = param;
-			} else if (!param_resume_next) {
-				param_resume_next = param;
+				if (!param_normal_head) {
+					param_normal_head = param;
+				} else if (!param_normal_next) {
+					param_normal_next = param;
+				}
+			} else {
+				if (!param_resume_head) {
+					param_resume_head = param;
+				} else if (!param_resume_next) {
+					param_resume_next = param;
+				}
 			}
 
 			/* Stop traversing the prepare pipeline when we reach
-			 * back to the first or next resume event where we
+			 * back to the first or next event where we
 			 * initially started processing the prepare pipeline.
 			 */
-			if (next->is_resume &&
-			    ((next->prepare_param.param ==
-			      param_resume_head) ||
-			     (next->prepare_param.param ==
-			      param_resume_next))) {
+			if (!next->is_aborted &&
+			    ((!next->is_resume &&
+			      ((next->prepare_param.param ==
+				param_normal_head) ||
+			       (next->prepare_param.param ==
+				param_normal_next))) ||
+			     (next->is_resume &&
+			      !param_normal_next &&
+			      ((next->prepare_param.param ==
+				param_resume_head) ||
+			       (next->prepare_param.param ==
+				param_resume_next))))) {
 				break;
 			}
 		}
@@ -2272,6 +2287,18 @@ static inline int init_reset(void)
 	/* Allocate rx free buffers */
 	mem_link_rx.quota_pdu = RX_CNT;
 	rx_replenish_all();
+
+#if (defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_CTLR_ADV_EXT)) || \
+	defined(CONFIG_BT_CTLR_ADV_PERIODIC) || \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC) || \
+	defined(CONFIG_BT_CONN)
+	/* Initialize channel map */
+	ull_chan_reset();
+#endif /* (CONFIG_BT_BROADCASTER && CONFIG_BT_CTLR_ADV_EXT) ||
+	* CONFIG_BT_CTLR_ADV_PERIODIC ||
+	* CONFIG_BT_CTLR_SYNC_PERIODIC ||
+	* CONFIG_BT_CONN
+	*/
 
 	return 0;
 }
@@ -2535,8 +2562,8 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 	uint8_t next;
 
 	next = *first;
-	tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
-				    mfifo_tx_ack.n, mfifo_tx_ack.f, last,
+	tx = mfifo_dequeue_iter_get(mfifo_fifo_tx_ack.m, mfifo_tx_ack.s,
+				    mfifo_tx_ack.n, mfifo_fifo_tx_ack.f, last,
 				    &next);
 	if (!tx) {
 		return 0;
@@ -2651,8 +2678,8 @@ next_ack:
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 		*first = next;
-		tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
-					    mfifo_tx_ack.n, mfifo_tx_ack.f,
+		tx = mfifo_dequeue_iter_get(mfifo_fifo_tx_ack.m, mfifo_tx_ack.s,
+					    mfifo_tx_ack.n, mfifo_fifo_tx_ack.f,
 					    last, &next);
 	} while (tx && tx->handle == *handle);
 

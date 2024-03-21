@@ -13,9 +13,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sha_npcx, CONFIG_CRYPTO_LOG_LEVEL);
 
-#define NPCX_HASH_CAPS_SUPPORT	(CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+#define NPCX_HASH_CAPS_SUPPORT  (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
 #define NPCX_SHA256_HANDLE_SIZE DT_INST_PROP(0, context_buffer_size)
-#define NPCX_SHA_MAX_SESSION	1
+#define NPCX_SHA_MAX_SESSION    1
 
 /* The status code returns from Nuvoton Cryptographic Library ROM APIs */
 enum ncl_status {
@@ -204,13 +204,27 @@ static int npcx_query_caps(const struct device *dev)
 	return NPCX_HASH_CAPS_SUPPORT;
 }
 
+static int npcx_hash_init(const struct device *dev)
+{
+	uint32_t handle_size_required;
+
+	handle_size_required = NPCX_NCL_SHA->get_context_size();
+	if (handle_size_required != NPCX_SHA256_HANDLE_SIZE) {
+		LOG_ERR("Pre-alloc buf size doesn't match required buf size (%d)",
+			handle_size_required);
+		return -ENOSR;
+	}
+
+	return 0;
+}
+
 static struct crypto_driver_api npcx_crypto_api = {
 	.hash_begin_session = npcx_hash_session_setup,
 	.hash_free_session = npcx_hash_session_free,
 	.query_hw_caps = npcx_query_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, npcx_hash_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		      &npcx_crypto_api);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one 'nuvoton,npcx-sha' compatible node can be supported");

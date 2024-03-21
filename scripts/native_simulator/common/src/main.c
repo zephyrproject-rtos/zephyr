@@ -44,13 +44,13 @@ int nsi_exit_inner(int exit_code)
 	return max_exit_code;
 }
 
-void nsi_exit(int exit_code)
+NSI_FUNC_NORETURN void nsi_exit(int exit_code)
 {
 	exit(nsi_exit_inner(exit_code));
 }
 
 /**
- * Run all early native_posix initialization steps, including command
+ * Run all early native simulator initialization steps, including command
  * line parsing and CPU start, until we are ready to let the HW models
  * run via hwm_one_event()
  */

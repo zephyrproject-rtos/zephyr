@@ -684,7 +684,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
 
 	zassert_equal(0, setup_dst_addr(ctx_v4, AF_INET, &dst, &dst_len), "");
-	zassert_equal(255, ctx_v4->ipv4_ttl, "");
+	zassert_equal(255, ctx_v4->ipv4_mcast_ttl, "");
 	zassert_true(net_ipv4_addr_cmp(&addr_v4_expect,
 				       &net_sin(&dst)->sin_addr), "");
 	zassert_equal(8, dst_len, "");
@@ -701,7 +701,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
 
 	zassert_equal(0, setup_dst_addr(ctx_v6, AF_INET6, &dst, &dst_len), "");
-	zassert_equal(255, ctx_v6->ipv6_hop_limit, "");
+	zassert_equal(255, ctx_v6->ipv6_mcast_hop_limit, "");
 	zassert_true(net_ipv6_addr_cmp(&addr_v6_expect,
 				       &net_sin6(&dst)->sin6_addr), "");
 	zassert_equal(24, dst_len, "");

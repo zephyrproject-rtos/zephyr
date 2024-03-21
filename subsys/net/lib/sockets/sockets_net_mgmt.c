@@ -313,7 +313,8 @@ static ssize_t net_mgmt_sock_write(void *obj, const void *buffer,
 static int net_mgmt_sock_ioctl(void *obj, unsigned int request,
 			       va_list args)
 {
-	return 0;
+	errno = EOPNOTSUPP;
+	return -1;
 }
 
 static int net_mgmt_sock_bind(void *obj, const struct sockaddr *addr,

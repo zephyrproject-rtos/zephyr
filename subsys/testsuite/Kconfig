@@ -143,7 +143,7 @@ config TEST_ENABLE_USERSPACE
 config TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
 	bool "Run User Mode tests without additionally enabling stack protection"
 	depends on TEST_ENABLE_USERSPACE
-	default y if SOC_SERIES_KINETIS_KE1XF
+	default y if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_S32K1XX
 	help
 	  A HW platform might not have sufficient MPU/MMU capabilities to support
 	  running all test cases with User Mode and HW Stack Protection features

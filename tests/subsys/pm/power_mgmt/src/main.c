@@ -27,7 +27,9 @@ static bool idle_entered;
 static bool testing_device_runtime;
 static bool testing_device_order;
 static bool testing_device_lock;
+static bool testing_force_state;
 
+enum pm_state forced_state;
 static const struct device *device_dummy;
 static struct dummy_driver_api *api;
 
@@ -180,6 +182,12 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		return;
 	}
 
+	if (testing_force_state) {
+		/* if forced to given power state was called */
+		set_pm = true;
+		zassert_equal(state, forced_state, NULL);
+		testing_force_state = false;
+	}
 
 	/* at this point, notify_pm_state_entry() implemented in
 	 * this file has been called and set_pm should have been set
@@ -442,6 +450,25 @@ ZTEST(power_management_1cpu, test_device_state_lock)
 	pm_device_state_unlock(device_a);
 
 	testing_device_lock = false;
+}
+
+ZTEST(power_management_1cpu, test_empty_states)
+{
+	const struct pm_state_info *cpu_states;
+	uint8_t state = pm_state_cpu_get_all(1u, &cpu_states);
+
+	zassert_equal(state, 0, NULL);
+}
+
+ZTEST(power_management_1cpu, test_force_state)
+{
+	forced_state = PM_STATE_STANDBY;
+	bool ret = pm_state_force(0, &(struct pm_state_info) {forced_state, 0, 0});
+
+	zassert_equal(ret, true, "Error in force state");
+
+	testing_force_state = true;
+	k_sleep(K_SECONDS(1U));
 }
 
 void power_management_1cpu_teardown(void *data)

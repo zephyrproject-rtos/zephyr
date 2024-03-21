@@ -116,6 +116,15 @@
 #define UTIL_EXPAND(...) __VA_ARGS__
 #define UTIL_REPEAT(...) UTIL_LISTIFY(__VA_ARGS__)
 
+#define _CONCAT_0(arg, ...) arg
+#define _CONCAT_1(arg, ...) UTIL_CAT(arg, _CONCAT_0(__VA_ARGS__))
+#define _CONCAT_2(arg, ...) UTIL_CAT(arg, _CONCAT_1(__VA_ARGS__))
+#define _CONCAT_3(arg, ...) UTIL_CAT(arg, _CONCAT_2(__VA_ARGS__))
+#define _CONCAT_4(arg, ...) UTIL_CAT(arg, _CONCAT_3(__VA_ARGS__))
+#define _CONCAT_5(arg, ...) UTIL_CAT(arg, _CONCAT_4(__VA_ARGS__))
+#define _CONCAT_6(arg, ...) UTIL_CAT(arg, _CONCAT_5(__VA_ARGS__))
+#define _CONCAT_7(arg, ...) UTIL_CAT(arg, _CONCAT_6(__VA_ARGS__))
+
 /* Implementation details for NUM_VA_ARGS_LESS_1 */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\
 	_ignored,						\

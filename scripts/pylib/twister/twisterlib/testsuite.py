@@ -401,6 +401,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.source_dir_rel = os.path.relpath(os.path.realpath(suite_path), start=canonical_zephyr_base)
         self.yamlfile = suite_path
         self.testcases = []
+        self.integration_platforms = []
 
         self.ztest_suite_names = []
 

@@ -17,6 +17,9 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #endif
 
+/* Get the base address of the flash from the DTS node */
+#define FLASH_STM32_BASE_ADDRESS DT_REG_ADDR(DT_INST(0, st_stm32_nv_flash))
+
 struct flash_stm32_priv {
 	FLASH_TypeDef *regs;
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \

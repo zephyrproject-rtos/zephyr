@@ -376,8 +376,6 @@ static bool nrf_usbd_common_feeder(nrf_usbd_common_ep_transfer_t *p_next,
 				   nrf_usbd_common_transfer_t *p_transfer,
 				   size_t ep_size)
 {
-	__ASSERT_NO_MSG(nrfx_is_in_ram(p_transfer->p_data.tx));
-
 	size_t tx_size = p_transfer->size;
 
 	if (tx_size > ep_size) {

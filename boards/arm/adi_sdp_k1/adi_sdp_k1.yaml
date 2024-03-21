@@ -1,0 +1,13 @@
+identifier: adi_sdp_k1
+name: ADI SDP-K1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 384
+flash: 2048
+supported:
+  - gpio
+vendor: adi

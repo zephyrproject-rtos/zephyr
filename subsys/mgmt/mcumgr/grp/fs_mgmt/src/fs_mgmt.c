@@ -255,6 +255,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
+				k_sem_give(&fs_mgmt_ctxt.lock_sem);
 				return err_rc;
 			}
 
@@ -404,6 +405,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
+				k_sem_give(&fs_mgmt_ctxt.lock_sem);
 				return err_rc;
 			}
 
@@ -783,7 +785,7 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	}
 
 	ok &= zcbor_tstr_put_lit(zse, "type")	&&
-	      zcbor_tstr_put_term(zse, type_arr);
+	      zcbor_tstr_put_term(zse, type_arr, sizeof(type_arr));
 
 	if (off != 0) {
 		ok &= zcbor_tstr_put_lit(zse, "off")	&&

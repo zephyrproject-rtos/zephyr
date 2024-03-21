@@ -1,0 +1,62 @@
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+TYPE = PTHREAD
+type = pthread_t
+type-function = pthread_create
+rsource "Kconfig.template.pooled_ipc_type"
+
+if PTHREAD
+
+config PTHREAD_RECYCLER_DELAY_MS
+	int "Delay for reclaiming dynamic pthread stacks (ms)"
+	default 100
+	help
+	  Prior to a POSIX thread terminating via k_thread_abort(), scheduled
+	  work is added to the system workqueue (SWQ) so that any resources
+	  allocated by the thread (e.g. thread stack from a pool or the heap)
+	  can be released back to the system. Because resources are also freed
+	  on calls to pthread_create() there is no need to worry about resource
+	  starvation.
+
+	  This option sets the number of milliseconds by which to defer
+	  scheduled work.
+
+	  Note: this option should be considered temporary and will likely be
+	  removed once a more synchronous solution is available.
+
+config POSIX_PTHREAD_ATTR_STACKSIZE_BITS
+	int "Significant bits for pthread_attr_t stacksize"
+	range 8 31
+	default 23
+	help
+	  This value plays a part in determining the maximum supported
+	  pthread_attr_t stacksize. Valid stacksizes are in the range
+	  [1, N], where N = 1 << M, and M is this configuration value.
+
+config POSIX_PTHREAD_ATTR_GUARDSIZE_BITS
+	int "Significant bits for pthread_attr_t guardsize"
+	range 1 31
+	default 9
+	help
+	  This value plays a part in determining the maximum supported
+	  pthread_attr_t guardsize. Valid guardsizes are in the range
+	  [0, N-1], where N = 1 << M, and M is this configuration value.
+
+	  Actual guardsize values may be rounded-up.
+
+config POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT
+	int "Default size of stack guard area"
+	default 0
+	help
+	  This is the default amount of space to reserve at the overflow end of a
+	  pthread stack. Since Zephyr already supports both software-based stack
+	  protection (canaries) and hardware-based stack protection (MMU or MPU),
+	  this is set to 0 by default. However, a conforming application would be
+	  required to set this to PAGESIZE. Eventually, this option might
+	  facilitate a more dynamic approach to guard areas (via software or
+	  hardware) but for now it simply increases the size of thread stacks.
+
+endif

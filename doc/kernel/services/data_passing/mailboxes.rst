@@ -420,7 +420,7 @@ The receiving thread must then respond as follows:
   the data into the message buffer and deletes the message.
 
 * If the message descriptor size is non-zero and the receiving thread does *not*
-  want to retrieve the data, the thread must call :c:func:`k_mbox_data_get`.
+  want to retrieve the data, the thread must call :c:func:`k_mbox_data_get`
   and specify a message buffer of ``NULL``. The mailbox deletes
   the message without copying the data.
 

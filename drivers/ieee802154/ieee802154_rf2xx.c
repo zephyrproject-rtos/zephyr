@@ -1084,7 +1084,7 @@ static void rf2xx_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-static struct ieee802154_radio_api rf2xx_radio_api = {
+static const struct ieee802154_radio_api rf2xx_radio_api = {
 	.iface_api.init		= rf2xx_iface_init,
 
 	.get_capabilities	= rf2xx_get_capabilities,

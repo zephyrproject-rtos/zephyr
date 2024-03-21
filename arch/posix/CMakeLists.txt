@@ -22,6 +22,11 @@ endif()
 #  RUNNER_LINK_LIBRARIES:
 #      Extra libraries to link with the runner
 #      For ex. set_property(TARGET native_simulator APPEND PROPERTY RUNNER_LINK_LIBRARIES "mylib.a")
+#  LOCALIZE_EXTRA_OPTIONS:
+#      Extra options to be passed to objcopy when localizing each Zephyr MCU image symbols
+#      This can be used to hide symbols a library may have set as visible outside of
+#      itself once the MCU image has been assembled.
+#      For ex. set_property(TARGET native_simulator APPEND PROPERTY LOCALIZE_EXTRA_OPTIONS "--localize-symbol=spinel*")
 #  Note: target_link_libraries() cannot be used on this library at this point.
 #        target_link_libraries() updates INTERFACE_LINK_LIBRARIES but wrapping it with extra
 #        information. This means we cannot directly pass it to the native_simulator runner build.
@@ -30,6 +35,7 @@ endif()
 #        We use target_link_options() instead
 add_library(native_simulator INTERFACE)
 set_property(TARGET native_simulator PROPERTY RUNNER_LINK_LIBRARIES "")
+set_property(TARGET native_simulator PROPERTY LOCALIZE_EXTRA_OPTIONS "")
 
 set(NSI_DIR ${ZEPHYR_BASE}/scripts/native_simulator CACHE PATH "Path to the native simulator")
 
@@ -102,6 +108,10 @@ elseif (CONFIG_NATIVE_LIBRARY)
       $<TARGET_PROPERTY:compiler,no_builtin>
     )
   endif()
+
+  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+    target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
+  endif()
 endif()
 
 if(CONFIG_EXTERNAL_LIBC)
@@ -126,8 +136,6 @@ if (CONFIG_GPROF)
 
   target_link_options(native_simulator INTERFACE "-pg")
 endif()
-
-zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
 
 if (CONFIG_NATIVE_APPLICATION)
   zephyr_ld_options(

@@ -158,10 +158,10 @@ executable.
 You can find more information on how to run simulations with one or several
 devices in either of :ref:`these boards's documentation <nrf52bsim_build_and_run>`.
 
-With the :ref:`nrf52_bsim <nrf52_bsim>`, only :ref:`Combined builds
-<bluetooth-build-types>` are possible, as this board does not yet have
-any models of a UART, or USB which could be used for an HCI interface towards
-another real or simulated device.
+With the :ref:`nrf52_bsim <nrf52_bsim>`, typically you do :ref:`Combined builds
+<bluetooth-build-types>`, but it is also possible to build the controller with one of the
+:ref:`HCI UART <bluetooth-hci-uart-sample>` samples in one simulated device, and the host with
+the H4 driver instead of the integrated controller in another simulated device.
 
 With the :ref:`nrf5340bsim <nrf5340bsim>`, you can build with either, both controller and host
 on its network core, or, with the network core running only the controller, the application

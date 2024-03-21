@@ -250,7 +250,7 @@ static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint
 			 * so flush the fpu context to its owner, and then set no fpu trap to avoid
 			 * a new nested exception triggered by FPU accessing (var_args).
 			 */
-			z_arm64_flush_local_fpu();
+			arch_flush_local_fpu();
 			write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
 #endif
 			arch_curr_cpu()->arch.corrupted_sp = 0UL;

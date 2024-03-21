@@ -10,13 +10,6 @@ RunTest mesh_heartbeat_sub_cb_api_all \
 	heartbeat_publish_all \
 	heartbeat_subscribe_all
 
-conf=prj_mesh1d1_conf
-RunTest mesh_heartbeat_sub_cb_api_all_1d1 \
-	heartbeat_publish_all \
-	heartbeat_publish_all \
-	heartbeat_subscribe_all
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_heartbeat_sub_cb_api_all_psa \
 	heartbeat_publish_all \

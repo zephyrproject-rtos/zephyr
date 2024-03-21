@@ -16,7 +16,6 @@
 #include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <gen_offset.h>
-#include <kernel_offsets.h>
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 #include <soc_context.h>
@@ -24,6 +23,8 @@
 #ifdef CONFIG_RISCV_SOC_OFFSETS
 #include <soc_offsets.h>
 #endif
+
+#include <kernel_offsets.h>
 
 /* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);

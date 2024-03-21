@@ -38,6 +38,7 @@ static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel
 	struct stm32_vbat_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
+	uint32_t path;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
@@ -52,13 +53,18 @@ static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel
 		goto unlock;
 	}
 
+	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base));
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
-				       LL_ADC_PATH_INTERNAL_VBAT);
+				       LL_ADC_PATH_INTERNAL_VBAT | path);
 
 	rc = adc_read(data->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
+
+	path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base));
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
+				       path &= ~LL_ADC_PATH_INTERNAL_VBAT);
 
 unlock:
 	k_mutex_unlock(&data->mutex);

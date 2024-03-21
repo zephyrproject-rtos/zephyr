@@ -29,7 +29,7 @@ description: |
   Andes DMA controller
   channel: a phandle to the DMA controller plus the following four integer cells:
     1. channel: the dma channel
-    2. slot: DMA peripherial request ID
+    2. slot: DMA peripheral request ID
     3. channel-config: A 32bit mask specifying the DMA channel configuration
     which is device dependent:
         -bit 0-1 : Direction  (see dma.h)

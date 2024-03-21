@@ -257,7 +257,7 @@ static inline void hal_trigger_aar_ppi_config(void)
 /*******************************************************************************
  * Trigger Radio Rate override upon Rateboost event.
  */
-#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
+#if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 static inline void hal_trigger_rateoverride_ppi_config(void)
 {
 	nrf_ppi_channel_endpoint_setup(
@@ -266,7 +266,7 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 		(uint32_t)&(NRF_RADIO->EVENTS_RATEBOOST),
 		(uint32_t)&(NRF_CCM->TASKS_RATEOVERRIDE));
 }
-#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
+#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 /******************************************************************************/
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)

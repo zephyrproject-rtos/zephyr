@@ -10,21 +10,11 @@
 #include <soc.h>
 
 /* Exports */
-GTEXT(__soc_is_irq)
 GTEXT(__soc_handle_irq)
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif
-
-/*
- * Whether we're in an IRQ is bog-standard RISC-V on this SoC:
- * yes if the top mcause bit is set, otherwise no.
- */
-SECTION_FUNC(exception.other, __soc_is_irq)
-	csrr a0, mcause
-	srli a0, a0, 31
-	ret
 
 /*
  * With a0 == irq_num, this is equivalent to:

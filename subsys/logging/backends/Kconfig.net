@@ -6,7 +6,6 @@
 config LOG_BACKEND_NET
 	bool "Networking backend"
 	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
-	select NET_CONTEXT_NET_PKT_POOL
 	select LOG_OUTPUT
 	help
 	  Send syslog messages to network server.
@@ -26,15 +25,6 @@ config LOG_BACKEND_NET_SERVER
 	  [2001:db8::1]:514
 	  [2001:db8::2]
 	  2001:db::42
-
-config LOG_BACKEND_NET_MAX_BUF
-	int "How many network buffers to allocate for sending messages"
-	range 3 256
-	default 3
-	help
-	  Each syslog message should fit into a network packet that will be
-	  sent to server. This number tells how many syslog messages can be
-	  in transit to the server.
 
 config LOG_BACKEND_NET_MAX_BUF_SIZE
 	int "Max syslog message size"

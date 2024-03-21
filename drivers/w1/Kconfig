@@ -44,6 +44,7 @@ rsource "Kconfig.ds2484"
 rsource "Kconfig.ds2477_85"
 rsource "Kconfig.ds2485"
 rsource "Kconfig.test"
+rsource "Kconfig.zephyr_gpio"
 rsource "Kconfig.zephyr_serial"
 
 config W1_NET

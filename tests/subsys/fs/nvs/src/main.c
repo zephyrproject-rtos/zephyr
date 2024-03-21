@@ -8,11 +8,11 @@
  * This test is designed to be run using flash-simulator which provide
  * functionality for flash property customization and emulating errors in
  * flash operation in parallel to regular flash API.
- * Test should be run on qemu_x86 or native_posix target.
+ * Test should be run on qemu_x86 or native_sim target.
  */
 
-#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_BOARD_NATIVE_POSIX)
-#error "Run on qemu_x86 or native_posix only"
+#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_ARCH_POSIX)
+#error "Run only on qemu_x86 or a posix architecture based target (for ex. native_sim)"
 #endif
 
 #include <stdio.h>
@@ -844,7 +844,8 @@ ZTEST_F(nvs, test_nvs_cache_gc)
 
 	/* Fill the first sector with writes of ID 1 */
 
-	while (fixture->fs.data_wra + sizeof(data) <= fixture->fs.ate_wra) {
+	while (fixture->fs.data_wra + sizeof(data) + sizeof(struct nvs_ate)
+	       <= fixture->fs.ate_wra) {
 		++data;
 		err = nvs_write(&fixture->fs, 1, &data, sizeof(data));
 		zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);

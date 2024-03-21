@@ -104,12 +104,12 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d", req.tv_nsec, 0);
 }
 
-ZTEST(posix_apis, test_nanosleep_errors_errno)
+ZTEST(nanosleep, test_nanosleep_errors_errno)
 {
 	common_errors(SELECT_NANOSLEEP, CLOCK_REALTIME, 0);
 }
 
-ZTEST(posix_apis, test_clock_nanosleep_errors_errno)
+ZTEST(nanosleep, test_clock_nanosleep_errors_errno)
 {
 	struct timespec rem = {};
 	struct timespec req = {};
@@ -130,7 +130,7 @@ ZTEST(posix_apis, test_clock_nanosleep_errors_errno)
 }
 
 /**
- * @brief Check that a call to nanosleep has yielded executiuon for some minimum time.
+ * @brief Check that a call to nanosleep has yielded execution for some minimum time.
  *
  * Check that the actual time slept is >= the total time specified by @p s (in seconds) and
  * @p ns (in nanoseconds).
@@ -200,7 +200,7 @@ static void common_lower_bound_check(int selection, clockid_t clock_id, int flag
 	/* TODO: Upper bounds check when hr timers are available */
 }
 
-ZTEST(posix_apis, test_nanosleep_execution)
+ZTEST(nanosleep, test_nanosleep_execution)
 {
 	/* sleep for 1ns */
 	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 0, 1);
@@ -221,7 +221,7 @@ ZTEST(posix_apis, test_nanosleep_execution)
 	common_lower_bound_check(SELECT_NANOSLEEP, 0, 0, 1, 1001);
 }
 
-ZTEST(posix_apis, test_clock_nanosleep_execution)
+ZTEST(nanosleep, test_clock_nanosleep_execution)
 {
 	struct timespec ts;
 
@@ -281,3 +281,5 @@ ZTEST(posix_apis, test_clock_nanosleep_execution)
 	common_lower_bound_check(SELECT_CLOCK_NANOSLEEP, CLOCK_REALTIME, TIMER_ABSTIME,
 				 ts.tv_sec + 2, 1001);
 }
+
+ZTEST_SUITE(nanosleep, NULL, NULL, NULL, NULL, NULL);

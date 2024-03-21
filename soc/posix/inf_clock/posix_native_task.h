@@ -16,8 +16,8 @@ extern "C" {
 /**
  * NATIVE_TASK
  *
- * For native_posix, register a function to be called at particular moments
- * during the native_posix execution.
+ * For native targets (POSIX arch based), register a function to be called at particular moments
+ * during the native target execution.
  *
  * There is 5 choices for when the function will be called (level):
  * * PRE_BOOT_1: Will be called before the command line parameters are parsed,

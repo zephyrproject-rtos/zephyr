@@ -8,6 +8,8 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/sys/util.h>
+
 /**
  * DfPMCCH
  * Power Management / Clock Control (HST) Registers
@@ -138,6 +140,15 @@ struct ace_dfpmccu {
 
 #define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
 
+#define ADSP_SHIM_TSCTRL_NTK       BIT(31)
+#define ADSP_SHIM_TSCTRL_IONTE     BIT(30)
+#define ADSP_SHIM_TSCTRL_DMATS     GENMASK(13, 12)
+#define ADSP_SHIM_TSCTRL_CLNKS     GENMASK(11, 10)
+#define ADSP_SHIM_TSCTRL_HHTSE     BIT(7)
+#define ADSP_SHIM_TSCTRL_LWCS      BIT(6)
+#define ADSP_SHIM_TSCTRL_ODTS      BIT(5)
+#define ADSP_SHIM_TSCTRL_CDMAS     GENMASK(4, 0)
+
 #endif /* _ASMLANGUAGE */
 
 #define ACE_CLKCTL_WOVCRO    BIT(4)	  /* Request WOVCRO clock */
@@ -169,5 +180,7 @@ struct ace_dfpmccu {
 #define DSP_INIT_GENO   ADSP_GENO_ADDRESS
 #define GENO_MDIVOSEL           BIT(1)
 #define GENO_DIOPTOSEL          BIT(2)
+
+#define ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT BIT(1)
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_SHIM_H_ */

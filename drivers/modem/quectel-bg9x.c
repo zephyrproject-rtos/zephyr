@@ -457,7 +457,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	snprintk(send_buf, sizeof(send_buf), "AT+QISEND=%d,%ld", sock->id, (long) buf_len);
 
 	/* Setup the locks correctly. */
-	k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
+	(void)k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
 	k_sem_reset(&mdata.sem_tx_ready);
 
 	/* Send the Modem command. */

@@ -200,7 +200,7 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 	uint32_t nbtp = 0U;
 	int err;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -229,7 +229,7 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 	uint32_t dbtp = 0U;
 	int err;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -271,12 +271,12 @@ int can_mcan_start(const struct device *dev)
 	struct can_mcan_data *data = dev->data;
 	int err;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EALREADY;
 	}
 
-	if (config->phy != NULL) {
-		err = can_transceiver_enable(config->phy);
+	if (config->common.phy != NULL) {
+		err = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (err != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
 			return err;
@@ -290,15 +290,15 @@ int can_mcan_start(const struct device *dev)
 	if (err != 0) {
 		LOG_ERR("failed to leave init mode");
 
-		if (config->phy != NULL) {
+		if (config->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
-			(void)can_transceiver_disable(config->phy);
+			(void)can_transceiver_disable(config->common.phy);
 		}
 
 		return -EIO;
 	}
 
-	data->started = true;
+	data->common.started = true;
 
 	return 0;
 }
@@ -312,7 +312,7 @@ int can_mcan_stop(const struct device *dev)
 	uint32_t tx_idx;
 	int err;
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -EALREADY;
 	}
 
@@ -323,8 +323,8 @@ int can_mcan_stop(const struct device *dev)
 		return -EIO;
 	}
 
-	if (config->phy != NULL) {
-		err = can_transceiver_disable(config->phy);
+	if (config->common.phy != NULL) {
+		err = can_transceiver_disable(config->common.phy);
 		if (err != 0) {
 			LOG_ERR("failed to disable CAN transceiver (err %d)", err);
 			return err;
@@ -333,7 +333,7 @@ int can_mcan_stop(const struct device *dev)
 
 	can_mcan_enable_configuration_change(dev);
 
-	data->started = false;
+	data->common.started = false;
 
 	for (tx_idx = 0U; tx_idx < cbs->num_tx; tx_idx++) {
 		tx_cb = cbs->tx[tx_idx].function;
@@ -367,7 +367,7 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -401,10 +401,8 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 #ifdef CONFIG_CAN_FD_MODE
 	if ((mode & CAN_MODE_FD) != 0) {
 		cccr |= CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE;
-		data->fd = true;
 	} else {
 		cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE);
-		data->fd = false;
 	}
 #endif /* CONFIG_CAN_FD_MODE */
 
@@ -418,6 +416,8 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 		goto unlock;
 	}
 
+	data->common.mode = mode;
+
 unlock:
 	k_mutex_unlock(&data->lock);
 
@@ -426,16 +426,59 @@ unlock:
 
 static void can_mcan_state_change_handler(const struct device *dev)
 {
+	const struct can_mcan_config *config = dev->config;
 	struct can_mcan_data *data = dev->data;
-	const can_state_change_callback_t cb = data->state_change_cb;
-	void *cb_data = data->state_change_cb_data;
+	const can_state_change_callback_t state_cb = data->common.state_change_cb;
+	void *state_cb_data = data->common.state_change_cb_user_data;
+	const struct can_mcan_callbacks *cbs = config->callbacks;
+	can_tx_callback_t tx_cb;
+	uint32_t tx_idx;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
+	uint32_t cccr;
+	int err;
 
 	(void)can_mcan_get_state(dev, &state, &err_cnt);
 
-	if (cb != NULL) {
-		cb(dev, state, err_cnt, cb_data);
+	if (state_cb != NULL) {
+		state_cb(dev, state, err_cnt, state_cb_data);
+	}
+
+	if (state == CAN_STATE_BUS_OFF) {
+		/* Request all TX buffers to be cancelled */
+		err = can_mcan_write_reg(dev, CAN_MCAN_TXBCR, CAN_MCAN_TXBCR_CR);
+		if (err != 0) {
+			return;
+		}
+
+		/* Call all TX queue callbacks with -ENETUNREACH */
+		for (tx_idx = 0U; tx_idx < cbs->num_tx; tx_idx++) {
+			tx_cb = cbs->tx[tx_idx].function;
+
+			if (tx_cb != NULL) {
+				cbs->tx[tx_idx].function = NULL;
+				tx_cb(dev, -ENETUNREACH, cbs->tx[tx_idx].user_data);
+				k_sem_give(&data->tx_sem);
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY)) {
+			/*
+			 * Request leaving init mode, but do not take the lock (as we are in ISR
+			 * context), nor wait for the result.
+			 */
+			err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &cccr);
+			if (err != 0) {
+				return;
+			}
+
+			cccr &= ~CAN_MCAN_CCCR_INIT;
+
+			err = can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
+			if (err != 0) {
+				return;
+			}
+		}
 	}
 }
 
@@ -477,7 +520,7 @@ static void can_mcan_tx_event_handler(const struct device *dev)
 			return;
 		}
 
-		__ASSERT_NO_MSG(tx_idx <= cbs->num_tx);
+		__ASSERT_NO_MSG(tx_idx < cbs->num_tx);
 		tx_cb = cbs->tx[tx_idx].function;
 		user_data = cbs->tx[tx_idx].user_data;
 		cbs->tx[tx_idx].function = NULL;
@@ -615,7 +658,6 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 	struct can_frame frame = {0};
 	can_rx_callback_t cb;
 	void *user_data;
-	uint8_t flags;
 	uint32_t get_idx;
 	uint32_t filt_idx;
 	int data_length;
@@ -666,30 +708,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 		if (hdr.xtd != 0) {
 			frame.id = hdr.ext_id;
 			frame.flags |= CAN_FRAME_IDE;
-			flags = cbs->ext[filt_idx].flags;
 		} else {
 			frame.id = hdr.std_id;
-			flags = cbs->std[filt_idx].flags;
-		}
-
-		if (((frame.flags & CAN_FRAME_RTR) == 0U && (flags & CAN_FILTER_DATA) == 0U) ||
-		    ((frame.flags & CAN_FRAME_RTR) != 0U && (flags & CAN_FILTER_RTR) == 0U)) {
-			/* RTR bit does not match filter, drop frame */
-			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
-			if (err != 0) {
-				return;
-			}
-			goto ack;
-		}
-
-		if (((frame.flags & CAN_FRAME_FDF) != 0U && (flags & CAN_FILTER_FDF) == 0U) ||
-		    ((frame.flags & CAN_FRAME_FDF) == 0U && (flags & CAN_FILTER_FDF) != 0U)) {
-			/* FDF bit does not match filter, drop frame */
-			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
-			if (err != 0) {
-				return;
-			}
-			goto ack;
 		}
 
 		data_length = can_dlc_to_bytes(frame.dlc);
@@ -709,12 +729,12 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			if ((frame.flags & CAN_FRAME_IDE) != 0) {
 				LOG_DBG("Frame on filter %d, ID: 0x%x",
 					filt_idx + cbs->num_std, frame.id);
-				__ASSERT_NO_MSG(filt_idx <= cbs->num_ext);
+				__ASSERT_NO_MSG(filt_idx < cbs->num_ext);
 				cb = cbs->ext[filt_idx].function;
 				user_data = cbs->ext[filt_idx].user_data;
 			} else {
 				LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx, frame.id);
-				__ASSERT_NO_MSG(filt_idx <= cbs->num_std);
+				__ASSERT_NO_MSG(filt_idx < cbs->num_std);
 				cb = cbs->std[filt_idx].function;
 				user_data = cbs->std[filt_idx].user_data;
 			}
@@ -728,7 +748,6 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			LOG_ERR("Frame is too big");
 		}
 
-ack:
 		err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
 		if (err != 0) {
 			return;
@@ -802,7 +821,7 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 			return err;
 		}
 
-		if (!data->started) {
+		if (!data->common.started) {
 			*state = CAN_STATE_STOPPED;
 		} else if ((reg & CAN_MCAN_PSR_BO) != 0U) {
 			*state = CAN_STATE_BUS_OFF;
@@ -833,7 +852,7 @@ int can_mcan_recover(const struct device *dev, k_timeout_t timeout)
 {
 	struct can_mcan_data *data = dev->data;
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -881,7 +900,8 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		return -ENOTSUP;
 	}
 
-	if (!data->fd && ((frame->flags & (CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0U)) {
+	if ((data->common.mode & CAN_MODE_FD) == 0U &&
+	    ((frame->flags & (CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0U)) {
 		LOG_ERR("CAN FD format not supported in non-FD mode");
 		return -ENOTSUP;
 	}
@@ -910,7 +930,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		}
 	}
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -1048,10 +1068,9 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 
 	LOG_DBG("Attached std filter at %d", filter_id);
 
-	__ASSERT_NO_MSG(filter_id <= cbs->num_std);
+	__ASSERT_NO_MSG(filter_id < cbs->num_std);
 	cbs->std[filter_id].function = callback;
 	cbs->std[filter_id].user_data = user_data;
-	cbs->std[filter_id].flags = filter->flags;
 
 	return filter_id;
 }
@@ -1101,10 +1120,9 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 
 	LOG_DBG("Attached ext filter at %d", filter_id);
 
-	__ASSERT_NO_MSG(filter_id <= cbs->num_ext);
+	__ASSERT_NO_MSG(filter_id < cbs->num_ext);
 	cbs->ext[filter_id].function = callback;
 	cbs->ext[filter_id].user_data = user_data;
-	cbs->ext[filter_id].flags = filter->flags;
 
 	return filter_id;
 }
@@ -1120,12 +1138,7 @@ int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_CAN_FD_MODE
-	if ((filter->flags &
-	     ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0U) {
-#else  /* CONFIG_CAN_FD_MODE */
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0U) {
-#endif /* !CONFIG_CAN_FD_MODE */
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0U) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
@@ -1193,17 +1206,8 @@ void can_mcan_set_state_change_callback(const struct device *dev,
 {
 	struct can_mcan_data *data = dev->data;
 
-	data->state_change_cb = callback;
-	data->state_change_cb_data = user_data;
-}
-
-int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct can_mcan_config *config = dev->config;
-
-	*max_bitrate = config->max_bitrate;
-
-	return 0;
+	data->common.state_change_cb = callback;
+	data->common.state_change_cb_user_data = user_data;
 }
 
 /* helper function allowing mcan drivers without access to private mcan
@@ -1354,8 +1358,8 @@ int can_mcan_init(const struct device *dev)
 	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, cbs->num_tx, cbs->num_tx);
 
-	if (config->phy != NULL) {
-		if (!device_is_ready(config->phy)) {
+	if (config->common.phy != NULL) {
+		if (!device_is_ready(config->common.phy)) {
 			LOG_ERR("CAN transceiver not ready");
 			return -ENODEV;
 		}
@@ -1444,51 +1448,34 @@ int can_mcan_init(const struct device *dev)
 	}
 
 	reg |= FIELD_PREP(CAN_MCAN_GFC_ANFE, 0x2) | FIELD_PREP(CAN_MCAN_GFC_ANFS, 0x2);
+	if (!IS_ENABLED(CONFIG_CAN_ACCEPT_RTR)) {
+		reg |= CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE;
+	}
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_GFC, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	if (config->sample_point) {
-		err = can_calc_timing(dev, &timing, config->bus_speed, config->sample_point);
-		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
-			return -EIO;
-		}
-		LOG_DBG("Presc: %d, TS1: %d, TS2: %d", timing.prescaler, timing.phase_seg1,
-			timing.phase_seg2);
-		LOG_DBG("Sample-point err : %d", err);
-	} else if (config->prop_ts1) {
-		timing.sjw = config->sjw;
-		timing.prop_seg = 0U;
-		timing.phase_seg1 = config->prop_ts1;
-		timing.phase_seg2 = config->ts2;
-		err = can_calc_prescaler(dev, &timing, config->bus_speed);
-		if (err != 0) {
-			LOG_WRN("Bitrate error: %d", err);
-		}
+	err = can_calc_timing(dev, &timing, config->common.bus_speed,
+			      config->common.sample_point);
+	if (err == -EINVAL) {
+		LOG_ERR("Can't find timing for given param");
+		return -EIO;
 	}
-#ifdef CONFIG_CAN_FD_MODE
-	if (config->sample_point_data) {
-		err = can_calc_timing_data(dev, &timing_data, config->bus_speed_data,
-					   config->sample_point_data);
-		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing for given dataphase param");
-			return -EIO;
-		}
 
-		LOG_DBG("Sample-point err data phase: %d", err);
-	} else if (config->prop_ts1_data) {
-		timing_data.sjw = config->sjw_data;
-		timing_data.prop_seg = 0U;
-		timing_data.phase_seg1 = config->prop_ts1_data;
-		timing_data.phase_seg2 = config->ts2_data;
-		err = can_calc_prescaler(dev, &timing_data, config->bus_speed_data);
-		if (err != 0) {
-			LOG_WRN("Dataphase bitrate error: %d", err);
-		}
+	LOG_DBG("Presc: %d, TS1: %d, TS2: %d", timing.prescaler, timing.phase_seg1,
+		timing.phase_seg2);
+	LOG_DBG("Sample-point err : %d", err);
+#ifdef CONFIG_CAN_FD_MODE
+	err = can_calc_timing_data(dev, &timing_data, config->common.bus_speed_data,
+				   config->common.sample_point_data);
+	if (err == -EINVAL) {
+		LOG_ERR("Can't find timing for given dataphase param");
+		return -EIO;
 	}
+
+	LOG_DBG("Sample-point err data phase: %d", err);
 #endif /* CONFIG_CAN_FD_MODE */
 
 	err = can_set_timing(dev, &timing);
@@ -1532,7 +1519,7 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-	/* Interrupt on every TX fifo element*/
+	/* Interrupt on every TX buffer transmission event */
 	reg = CAN_MCAN_TXBTIE_TIE;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBTIE, reg);
 	if (err != 0) {

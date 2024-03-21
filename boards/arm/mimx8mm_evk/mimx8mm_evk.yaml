@@ -8,8 +8,8 @@ identifier: mimx8mm_evk
 name: NXP i.MX8M Mini EVK
 type: mcu
 arch: arm
-ram: 32
-flash: 32
+ram: 128
+flash: 128
 toolchain:
   - zephyr
   - gnuarmemb

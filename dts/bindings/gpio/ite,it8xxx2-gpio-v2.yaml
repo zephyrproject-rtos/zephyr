@@ -27,6 +27,20 @@ properties:
   wuc-mask:
     type: array
 
+  keyboard-controller:
+    type: boolean
+    description: |
+      When set, this GPIO controller has pins associated with the
+      keyboard controller. In this case the reg_gpcr property is
+      overloaded and used to write the keyboard GCTRL register.
+      This setting will be found in the gpio_ite_configure function
+      when the judgment of gpio_config->ksb_ctrl is true.
+      The GPIO control register that will be set for these three
+      nodes is as follows:
+      gpioksi:  0xf01d40-0xf01d47
+      gpioksol: 0xf01d48-0xf01d4f
+      gpioksoh: 0xf01d50-0xf01d57
+
 gpio-cells:
   - pin
   - flags

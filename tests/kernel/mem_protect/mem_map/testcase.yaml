@@ -7,7 +7,9 @@ tests:
   kernel.memory_protection.mem_map:
     filter: CONFIG_MMU and not CONFIG_X86_64
     extra_sections: _TRANSPLANTED_FUNC
-    extra_args: CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
+      - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
     platform_exclude: qemu_x86_64
     integration_platforms:
       - qemu_x86

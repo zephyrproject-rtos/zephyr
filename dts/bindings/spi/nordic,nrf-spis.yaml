@@ -5,7 +5,7 @@ description: Nordic nRF family SPIS (SPI slave with EasyDMA)
 
 compatible: "nordic,nrf-spis"
 
-include: nordic,nrf-spi-common.yaml
+include: ["nordic,nrf-spi-common.yaml", "memory-region.yaml"]
 
 properties:
   def-char:

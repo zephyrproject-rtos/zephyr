@@ -43,7 +43,7 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	struct bap_broadcast_source_test_suite_fixture *fixture)
 {
 	const uint8_t bis_cfg_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT),
 	};
 	const size_t streams_per_subgroup = CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT /
@@ -95,8 +95,9 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	memset(bis_data, 0, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
 
 	/* Initialize default values*/
-	*codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG_16_2(loc, ctx);
-	*codec_qos = BT_AUDIO_CODEC_LC3_QOS_10_UNFRAMED(sdu, rtn, latency, pd);
+	*codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_16KHZ,
+					       BT_AUDIO_CODEC_CFG_DURATION_10, loc, 40U, 1, ctx);
+	*codec_qos = BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, sdu, rtn, latency, pd);
 	memcpy(bis_data, bis_cfg_data, sizeof(bis_cfg_data));
 
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT; i++) {
@@ -218,6 +219,8 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 	err = bt_bap_broadcast_source_start(fixture->source, &ext_adv);
 	zassert_equal(0, err, "Unable to start broadcast source: err %d", err);
 
+	zexpect_call_count("bt_bap_stream_ops.connected", fixture->stream_cnt,
+			   mock_bap_stream_connected_cb_fake.call_count);
 	zexpect_call_count("bt_bap_stream_ops.started", fixture->stream_cnt,
 			   mock_bap_stream_started_cb_fake.call_count);
 
@@ -226,7 +229,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 			struct bt_bap_stream *bap_stream = create_param->params[i].params[j].stream;
 
 			/* Since BAP doesn't care about the `buf` we can just provide NULL */
-			err = bt_bap_stream_send(bap_stream, NULL, 0, BT_ISO_TIMESTAMP_NONE);
+			err = bt_bap_stream_send(bap_stream, NULL, 0);
 			zassert_equal(0, err,
 				      "Unable to send on broadcast stream[%zu][%zu]: err %d", i, j,
 				      err);
@@ -239,6 +242,8 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 	err = bt_bap_broadcast_source_stop(fixture->source);
 	zassert_equal(0, err, "Unable to stop broadcast source: err %d", err);
 
+	zexpect_call_count("bt_bap_stream_ops.disconnected", fixture->stream_cnt,
+			   mock_bap_stream_disconnected_cb_fake.call_count);
 	zexpect_call_count("bt_bap_stream_ops.stopped", fixture->stream_cnt,
 			   mock_bap_stream_stopped_cb_fake.call_count);
 

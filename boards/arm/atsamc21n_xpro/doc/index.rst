@@ -86,7 +86,7 @@ Pin Mapping
 The SAM C21N Xplained Pro evaluation kit has 4 GPIO controllers. These
 controllers are responsible for pin muxing, input/output, pull-up, etc.
 
-For mode details please refer to `SAM C21 Family Datasheet`_ and the `SAM C21N
+For more details please refer to `SAM C21 Family Datasheet`_ and the `SAM C21N
 Xplained Pro Schematic`_.
 
 Default Zephyr Peripheral Mapping:

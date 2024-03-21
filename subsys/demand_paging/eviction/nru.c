@@ -10,6 +10,8 @@
 #include <kernel_arch_interface.h>
 #include <zephyr/init.h>
 
+#include <zephyr/kernel/mm/demand_paging.h>
+
 /* The accessed and dirty states of each page frame are used to create
  * a hierarchy with a numerical value. When evicting a page, try to evict
  * page with the highest value (we prefer clean, not accessed pages).

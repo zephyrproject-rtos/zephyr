@@ -151,47 +151,6 @@ extern "C" {
 	DT_GPIO_CTLR_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
 
 /**
- * @deprecated If used to obtain a device instance with device_get_binding,
- * consider using @c DEVICE_DT_GET(DT_SPI_DEV_CS_GPIOS_CTLR(node)).
- *
- * @brief Get a SPI device's chip select GPIO controller's label property
- *
- * Example devicetree fragment:
- *
- *     gpio1: gpio@... {
- *             label = "GPIO_1";
- *     };
- *
- *     gpio2: gpio@... {
- *             label = "GPIO_2";
- *     };
- *
- *     spi1: spi@... {
- *             compatible = "vnd,spi";
- *             cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
- *                        <&gpio2 20 GPIO_ACTIVE_LOW>;
- *
- *             a: spi-dev-a@0 {
- *                     reg = <0>;
- *             };
- *
- *             b: spi-dev-b@1 {
- *                     reg = <1>;
- *             };
- *     };
- *
- * Example usage:
- *
- *     DT_SPI_DEV_CS_GPIOS_LABEL(DT_NODELABEL(a)) // "GPIO_1"
- *     DT_SPI_DEV_CS_GPIOS_LABEL(DT_NODELABEL(b)) // "GPIO_2"
- *
- * @param spi_dev a SPI device node identifier
- * @return label property of spi_dev's chip select GPIO controller
- */
-#define DT_SPI_DEV_CS_GPIOS_LABEL(spi_dev) \
-	DT_GPIO_LABEL_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev)) __DEPRECATED_MACRO
-
-/**
  * @brief Get a SPI device's chip select GPIO pin number
  *
  * It's an error if the GPIO specifier for spi_dev's entry in its
@@ -271,19 +230,6 @@ extern "C" {
  */
 #define DT_INST_SPI_DEV_CS_GPIOS_CTLR(inst) \
 	DT_SPI_DEV_CS_GPIOS_CTLR(DT_DRV_INST(inst))
-
-/**
- * @deprecated If used to obtain a device instance with device_get_binding,
- * consider using @c DEVICE_DT_GET(DT_INST_SPI_DEV_CS_GPIOS_CTLR(node)).
- *
- * @brief Get GPIO controller name for a SPI device instance
- * This is equivalent to DT_SPI_DEV_CS_GPIOS_LABEL(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
- * @return label property of the instance's chip select GPIO controller
- * @see DT_SPI_DEV_CS_GPIOS_LABEL()
- */
-#define DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst) \
-	DT_SPI_DEV_CS_GPIOS_LABEL(DT_DRV_INST(inst)) __DEPRECATED_MACRO
 
 /**
  * @brief Equivalent to DT_SPI_DEV_CS_GPIOS_PIN(DT_DRV_INST(inst)).

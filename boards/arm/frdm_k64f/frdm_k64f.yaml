@@ -2,7 +2,7 @@ identifier: frdm_k64f
 name: NXP FRDM-K64F
 type: mcu
 arch: arm
-ram: 256
+ram: 192
 flash: 1024
 toolchain:
   - zephyr

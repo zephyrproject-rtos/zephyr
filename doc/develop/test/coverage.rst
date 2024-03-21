@@ -142,7 +142,11 @@ or::
 
     $ twister --coverage -p native_sim -T tests/bluetooth
 
-which will produce ``twister-out/coverage/index.html`` with the report.
+which will produce ``twister-out/coverage/index.html`` report as well as
+the coverage data collected by ``gcovr`` tool in ``twister-out/coverage.json``.
+
+Other reports might be chosen with ``--coverage-tool`` and ``--coverage-formats``
+command line options.
 
 The process differs for unit tests, which are built with the host
 toolchain and require a different board::

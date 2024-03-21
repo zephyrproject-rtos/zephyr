@@ -14,12 +14,12 @@ LOG_MODULE_DECLARE(sensing, CONFIG_SENSING_LOG_LEVEL);
 
 /* sensing_open_sensor is normally called by applications: hid, chre, zephyr main, etc */
 int sensing_open_sensor(const struct sensing_sensor_info *sensor_info,
-			const struct sensing_callback_list *cb_list,
+			struct sensing_callback_list *cb_list,
 			sensing_sensor_handle_t *handle)
 {
 	int ret = 0;
 
-	if (handle == NULL) {
+	if (sensor_info == NULL || handle == NULL) {
 		return -ENODEV;
 	}
 
@@ -37,7 +37,7 @@ int sensing_open_sensor(const struct sensing_sensor_info *sensor_info,
 }
 
 int sensing_open_sensor_by_dt(const struct device *dev,
-			      const struct sensing_callback_list *cb_list,
+			      struct sensing_callback_list *cb_list,
 			      sensing_sensor_handle_t *handle)
 {
 	int ret = 0;
@@ -64,6 +64,10 @@ int sensing_open_sensor_by_dt(const struct device *dev,
 /* sensing_close_sensor is normally called by applications: hid, chre, zephyr main, etc */
 int sensing_close_sensor(sensing_sensor_handle_t *handle)
 {
+	if (handle == NULL) {
+		return -ENODEV;
+	}
+
 	return close_sensor((struct sensing_connection **)handle);
 }
 
@@ -73,6 +77,10 @@ int sensing_set_config(sensing_sensor_handle_t handle,
 {
 	struct sensing_sensor_config *cfg;
 	int i, ret = 0;
+
+	if (handle == NULL || configs == NULL) {
+		return -ENODEV;
+	}
 
 	if (count <= 0 || count > SENSING_SENSOR_ATTRIBUTE_MAX) {
 		LOG_ERR("invalid config count:%d", count);
@@ -109,6 +117,10 @@ int sensing_get_config(sensing_sensor_handle_t handle,
 {
 	struct sensing_sensor_config *cfg;
 	int i, ret = 0;
+
+	if (handle == NULL || configs == NULL) {
+		return -ENODEV;
+	}
 
 	if (count <= 0 || count > SENSING_SENSOR_ATTRIBUTE_MAX) {
 		LOG_ERR("invalid config count:%d", count);

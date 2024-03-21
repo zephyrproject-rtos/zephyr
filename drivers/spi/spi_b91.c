@@ -228,7 +228,7 @@ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 		BM_SET(reg_spi_fifo_state(cfg->peripheral_id), FLD_SPI_RXF_CLR);
 	}
 
-	/* wait fot SPI is ready */
+	/* wait for SPI is ready */
 	while (spi_is_busy(cfg->peripheral_id)) {
 	};
 
@@ -452,7 +452,7 @@ static int spi_b91_release(const struct device *dev,
 }
 
 /* SPI driver APIs structure */
-static struct spi_driver_api spi_b91_api = {
+static const struct spi_driver_api spi_b91_api = {
 	.transceive = spi_b91_transceive,
 	.release = spi_b91_release,
 #ifdef CONFIG_SPI_ASYNC

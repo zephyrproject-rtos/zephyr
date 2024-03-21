@@ -13,7 +13,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>
 #include <zephyr/irq_multilevel.h>
-#include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
@@ -88,10 +87,8 @@ struct CLICCTRL {
 /** ECLIC Mode mask for MTVT CSR Register */
 #define ECLIC_MODE_MTVEC_Msk   3U
 
-/** CLIC INTATTR: TRIG Position */
-#define CLIC_INTATTR_TRIG_Pos  1U
 /** CLIC INTATTR: TRIG Mask */
-#define CLIC_INTATTR_TRIG_Msk  (0x3UL << CLIC_INTATTR_TRIG_Pos)
+#define CLIC_INTATTR_TRIG_Msk  0x3U
 
 #define ECLIC_CFG       (*((volatile union CLICCFG  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 0))))
 #define ECLIC_INFO      (*((volatile union CLICINFO *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 1))))
@@ -158,8 +155,27 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 
 	ECLIC_CTRL[irq].INTCTRL = intctrl;
 
-	ECLIC_CTRL[irq].INTATTR.b.shv = 0;
-	ECLIC_CTRL[irq].INTATTR.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
+	union CLICINTATTR intattr = {.w = 0};
+#if defined(CONFIG_RISCV_VECTORED_MODE) && !defined(CONFIG_LEGACY_CLIC)
+	/*
+	 * Set Selective Hardware Vectoring.
+	 * Legacy SiFive does not implement smclicshv extension and vectoring is
+	 * enabled in the mode bits of mtvec.
+	 */
+	intattr.b.shv = 1;
+#else
+	intattr.b.shv = 0;
+#endif
+	intattr.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
+	ECLIC_CTRL[irq].INTATTR = intattr;
+}
+
+/**
+ * @brief Set pending bit of an interrupt
+ */
+void riscv_clic_irq_set_pending(uint32_t irq)
+{
+	ECLIC_CTRL[irq].INTIP.b.IP = 1;
 }
 
 static int nuclei_eclic_init(const struct device *dev)

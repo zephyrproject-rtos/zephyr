@@ -55,14 +55,14 @@ properties:
     type: int
     description: |
       Delay in QMSPI main clocks from CS# assertion to first clock edge.
-      If not present use hardware default value. Refer to chip documention
+      If not present use hardware default value. Refer to chip documentation
       for QMSPI input clock frequency.
 
   dckcsoff:
     type: int
     description: |
       Delay in QMSPI main clocks from last clock edge to CS# de-assertion.
-      If not present use hardware default value. Refer to chip documention
+      If not present use hardware default value. Refer to chip documentation
       for QMSPI input clock frequency.
 
   dldh:
@@ -76,7 +76,7 @@ properties:
     type: int
     description: |
       Delay in QMSPI main clocks from CS# de-assertion to CS# assertion.
-      If not present use hardware default value. Refer to chip documention
+      If not present use hardware default value. Refer to chip documentation
       for QMSPI input clock frequency.
 
   cs1-freq:

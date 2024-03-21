@@ -23,7 +23,6 @@ config CPU_ATOM
 	select X86_CPU_HAS_SSE2
 	select X86_CPU_HAS_SSE3
 	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
@@ -41,7 +40,6 @@ config CPU_APOLLO_LAKE
 	select X86_CPU_HAS_SSE41
 	select X86_CPU_HAS_SSE42
 	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
@@ -56,7 +54,6 @@ config CPU_LAKEMONT
 	select X86_CPU_HAS_SSE3
 	select X86_CPU_HAS_SSSE3
 	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a CPU from the Lakemont family.
 
@@ -295,16 +292,6 @@ config MULTIBOOT_MEMMAP
 
 endif # MULTIBOOT
 
-config EXCEPTION_DEBUG
-	bool "Unhandled exception debugging"
-	default y
-	depends on LOG
-	help
-	  Install handlers for various CPU exception/trap vectors to
-	  make debugging them easier, at a small expense in code size.
-	  This prints out the specific exception vector and any associated
-	  error codes.
-
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
 	depends on PRINTK
@@ -472,7 +459,7 @@ config X86_EFI_CONSOLE
 	bool
 	depends on X86_EFI && X86_64 && !X86_VERY_EARLY_CONSOLE
 	select EFI_CONSOLE
-	default y
+	default y if !UART_CONSOLE
 	help
 	  This enables the use of the UEFI console device as the
 	  Zephyr printk handler.  It requires that no interferences

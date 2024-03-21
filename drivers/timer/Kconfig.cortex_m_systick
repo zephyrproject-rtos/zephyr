@@ -48,6 +48,7 @@ config CORTEX_M_SYSTICK_IDLE_TIMER
 	default $(dt_chosen_enabled,$(DT_CHOSEN_IDLE_TIMER))
 	depends on COUNTER
 	depends on TICKLESS_KERNEL
+	depends on PM
 	help
 	  There are chips e.g. STMFX family that use SysTick as a system timer,
 	  but SysTick is not clocked in low power mode. These chips usually have

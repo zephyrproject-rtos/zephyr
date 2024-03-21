@@ -1,0 +1,8 @@
+# STM32WB5MM-DK Discovery Development board configuration
+
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32WB5MM_DK
+	bool "stm32wb5mm-dk Discovery Development Board"
+	depends on SOC_STM32WB55XX

@@ -11,6 +11,11 @@ properties:
   reg:
     required: true
 
+  gpiote-instance:
+    type: phandle
+    description: |
+      GPIOTE instance that can be used with this GPIO port.
+
   "#gpio-cells":
     const: 2
 

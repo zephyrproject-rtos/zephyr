@@ -418,7 +418,7 @@ typedef int (*sensor_channel_get_t)(const struct device *dev,
  * @brief Decodes a single raw data buffer
  *
  * Data buffers are provided on the @ref rtio context that's supplied to
- * c:func:`sensor_read`.
+ * @ref sensor_read.
  */
 struct sensor_decoder_api {
 	/**
@@ -1351,6 +1351,46 @@ static inline int64_t sensor_value_to_milli(const struct sensor_value *val)
 static inline int64_t sensor_value_to_micro(const struct sensor_value *val)
 {
 	return ((int64_t)val->val1 * 1000000) + val->val2;
+}
+
+/**
+ * @brief Helper function for converting integer milli units to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param milli The converted value.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_from_milli(struct sensor_value *val, int64_t milli)
+{
+	if (milli < ((int64_t)INT32_MIN - 1) * 1000LL ||
+			milli > ((int64_t)INT32_MAX + 1) * 1000LL) {
+		return -ERANGE;
+	}
+
+	val->val1 = (int32_t)(milli / 1000);
+	val->val2 = (int32_t)(milli % 1000) * 1000;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for converting integer micro units to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param micro The converted value.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micro)
+{
+	if (micro < ((int64_t)INT32_MIN - 1) * 1000000LL ||
+			micro > ((int64_t)INT32_MAX + 1) * 1000000LL) {
+		return -ERANGE;
+	}
+
+	val->val1 = (int32_t)(micro / 1000000LL);
+	val->val2 = (int32_t)(micro % 1000000LL);
+
+	return 0;
 }
 
 /**

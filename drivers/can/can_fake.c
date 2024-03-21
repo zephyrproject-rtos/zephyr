@@ -15,6 +15,14 @@
 
 #define DT_DRV_COMPAT zephyr_fake_can
 
+struct fake_can_config {
+	const struct can_driver_config common;
+};
+
+struct fake_can_data {
+	struct can_driver_data common;
+};
+
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_start, const struct device *);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_stop, const struct device *);
@@ -46,6 +54,17 @@ DEFINE_FAKE_VOID_FUNC(fake_can_set_state_change_callback, const struct device *,
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bool);
 
+DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_core_clock, const struct device *, uint32_t *);
+
+static int fake_can_get_core_clock_delegate(const struct device *dev, uint32_t *rate)
+{
+	ARG_UNUSED(dev);
+
+	*rate = 16000000;
+
+	return 0;
+}
+
 #ifdef CONFIG_ZTEST
 static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
@@ -65,28 +84,14 @@ static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void 
 	RESET_FAKE(fake_can_recover);
 	RESET_FAKE(fake_can_set_state_change_callback);
 	RESET_FAKE(fake_can_get_max_filters);
+	RESET_FAKE(fake_can_get_core_clock);
+
+	/* Re-install default delegate for reporting the core clock */
+	fake_can_get_core_clock_fake.custom_fake = fake_can_get_core_clock_delegate;
 }
 
 ZTEST_RULE(fake_can_reset_rule, fake_can_reset_rule_before, NULL);
 #endif /* CONFIG_ZTEST */
-
-static int fake_can_get_core_clock(const struct device *dev, uint32_t *rate)
-{
-	ARG_UNUSED(dev);
-
-	*rate = 16000000;
-
-	return 0;
-}
-
-static int fake_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	ARG_UNUSED(dev);
-
-	*max_bitrate = 5000000;
-
-	return 0;
-}
 
 static const struct can_driver_api fake_can_driver_api = {
 	.start = fake_can_start,
@@ -104,7 +109,6 @@ static const struct can_driver_api fake_can_driver_api = {
 	.set_state_change_callback = fake_can_set_state_change_callback,
 	.get_core_clock = fake_can_get_core_clock,
 	.get_max_filters = fake_can_get_max_filters,
-	.get_max_bitrate = fake_can_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x01,
 		.prop_seg = 0x01,
@@ -139,7 +143,14 @@ static const struct can_driver_api fake_can_driver_api = {
 };
 
 #define FAKE_CAN_INIT(inst)						     \
-	CAN_DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL, \
+	static const struct fake_can_config fake_can_config_##inst = {	     \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0U),	     \
+	};								     \
+									     \
+	static struct fake_can_data fake_can_data_##inst;		     \
+									     \
+	CAN_DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &fake_can_data_##inst,   \
+				  &fake_can_config_##inst, POST_KERNEL,	     \
 				  CONFIG_CAN_INIT_PRIORITY,                  \
 				  &fake_can_driver_api);
 

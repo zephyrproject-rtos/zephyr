@@ -12,9 +12,10 @@ The following management operations are available:
 * Image management
 * File System management
 * OS management
+* Settings (config) management
 * Shell management
 * Statistic management
-* Zephyr-basic management
+* Zephyr management
 
 over the following transports:
 
@@ -33,6 +34,85 @@ the Zephyr tree.
 Additionally, there is a :zephyr:code-sample:`sample <smp-svr>` sample that provides
 management functionality over BLE and serial.
 
+.. _mcumgr_tools_libraries:
+
+Tools/libraries
+***************
+
+There are various tools and libraries available which enable usage of MCUmgr functionality on a
+device which are listed below. Note that these tools are not part of or related to the Zephyr
+project.
+
+.. only:: html
+
+    .. table:: Tools and Libraries for MCUmgr
+        :align: center
+
+        +--------------------------------------------------------------------------------+-------------------------------------------+--------------------------+--------------------------------------------------+---------------+------------+---------+
+        | Name                                                                           | OS support                                | Transports               | Groups                                           | Type          | Language   | License |
+        |                                                                                +---------+-------+-----+--------+----------+--------+-----------+-----+----+-----+------+----------+----+-------+--------+               |            |         |
+        |                                                                                | Windows | Linux | mac | Mobile | Embedded | Serial | Bluetooth | UDP | OS | IMG | Stat | Settings | FS | Shell | Zephyr |               |            |         |
+        +================================================================================+=========+=======+=====+========+==========+========+===========+=====+====+=====+======+==========+====+=======+========+===============+============+=========+
+        | `AuTerm <https://github.com/thedjnK/AuTerm/>`_                                 | ✓       | ✓     | ✓   | ✕      | ✕        | ✓      | ✓         | ✓   | ✓  | ✓   | ✓    | ✓        | ✓  | ✓     | ✓      | Application   | C++ (Qt)   | GPLv3   |
+        +--------------------------------------------------------------------------------+---------+-------+-----+--------+----------+--------+-----------+-----+----+-----+------+----------+----+-------+--------+---------------+------------+---------+
+        | `mcumgr-client <https://github.com/vouch-opensource/mcumgr-client/>`_          | ✓       | ✓     | ✓   | ✕      | ✕        | ✓      | ✕         | ✕   | ✕  | ✓   | ✕    | ✕        | ✕  | ✕     | ✕      | Application   | Rust       | BSD     |
+        +--------------------------------------------------------------------------------+---------+-------+-----+--------+----------+--------+-----------+-----+----+-----+------+----------+----+-------+--------+---------------+------------+---------+
+        | `mcumgr-web <https://github.com/boogie/mcumgr-web/>`_                          | ✓       | ✓     | ✓   | ✕      | ✕        | ✕      | ✓         | ✕   | ✕  | ✓   | ✕    | ✕        | ✕  | ✕     | ✕      | Web page      | Javascript | MIT     |
+        |                                                                                |         |       |     |        |          |        |           |     |    |     |      |          |    |       |        | (chrome only) |            |         |
+        +--------------------------------------------------------------------------------+---------+-------+-----+--------+----------+--------+-----------+-----+----+-----+------+----------+----+-------+--------+---------------+------------+---------+
+        | nRF Connect Device Manager: |br|                                               |         |       |     |        |          |        |           |     |    |     |      |          |    |       |        |               |            |         |
+        | `Android                                                                       | ✕       | ✕     | ✕   | ✓      | ✕        | ✕      | ✓         | ✕   | ✓  | ✓   | ✓    | ✓        | ✓  | ✓     | ✓      | Library and   | Java,      | Apache  |
+        | <https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager/>`_ |         |       |     |        |          |        |           |     |    |     |      |          |    |       |        | application   | Kotlin,    |         |
+        | and `iOS                                                                       |         |       |     |        |          |        |           |     |    |     |      |          |    |       |        |               | Swift      |         |
+        | <https://github.com/NordicSemiconductor/IOS-nRF-Connect-Device-Manager>`_      |         |       |     |        |          |        |           |     |    |     |      |          |    |       |        |               |            |         |
+        +--------------------------------------------------------------------------------+---------+-------+-----+--------+----------+--------+-----------+-----+----+-----+------+----------+----+-------+--------+---------------+------------+---------+
+        | Zephyr MCUmgr client (in-tree)                                                 | ✕       | ✓     | ✕   | ✕      | ✓        | ✓      | ✓         | ✓   | ✓  | ✓   | ✕    | ✕        | ✕  | ✕     | ✕      | Library       | C          | Apache  |
+        +--------------------------------------------------------------------------------+---------+-------+-----+--------+----------+--------+-----------+-----+----+-----+------+----------+----+-------+--------+---------------+------------+---------+
+
+.. only:: latex
+
+    .. raw:: latex
+
+       \begin{landscape}
+
+    .. table:: Tools and Libraries for MCUmgr
+        :align: center
+
+        +--------------------------------------------------------------------------------+---------------+-----------------+--------------------------------------------------+---------------+------------+
+        | Name                                                                           | OS support    | Transports      | Groups                                           | Type          | Language   |
+        |                                                                                |               |                 +----+-----+------+----------+----+-------+--------+               |            |
+        |                                                                                |               |                 | OS | IMG | Stat | Settings | FS | Shell | Zephyr |               |            |
+        +================================================================================+===============+=================+====+=====+======+==========+====+=======+========+===============+============+
+        | `AuTerm <https://github.com/thedjnK/AuTerm/>`_                                 | Windows, |br| | Serial, |br|    | ✓  | ✓   | ✓    | ✓        | ✓  | ✓     | ✓      | App           | C++ (Qt)   |
+        |                                                                                | Linux, |br|   | Bluetooth, |br| |    |     |      |          |    |       |        |               |            |
+        |                                                                                | macOS         | UDP             |    |     |      |          |    |       |        |               |            |
+        +--------------------------------------------------------------------------------+---------------+-----------------+----+-----+------+----------+----+-------+--------+---------------+------------+
+        | `mcumgr-client <https://github.com/vouch-opensource/mcumgr-client/>`_          | Windows, |br| | Serial          | ✕  | ✓   | ✕    | ✕        | ✕  | ✕     | ✕      | App           | Rust       |
+        |                                                                                | Linux, |br|   |                 |    |     |      |          |    |       |        |               |            |
+        |                                                                                | macOS         |                 |    |     |      |          |    |       |        |               |            |
+        +--------------------------------------------------------------------------------+---------------+-----------------+----+-----+------+----------+----+-------+--------+---------------+------------+
+        | `mcumgr-web <https://github.com/boogie/mcumgr-web/>`_                          | Windows, |br| | Bluetooth       | ✕  | ✓   | ✕    | ✕        | ✕  | ✕     | ✕      | Web (chrome   | Javascript |
+        |                                                                                | Linux, |br|   |                 |    |     |      |          |    |       |        | only)         |            |
+        |                                                                                | macOS         |                 |    |     |      |          |    |       |        |               |            |
+        +--------------------------------------------------------------------------------+---------------+-----------------+----+-----+------+----------+----+-------+--------+---------------+------------+
+        | nRF Connect Device Manager: |br|                                               | iOS, |br|     | Bluetooth       | ✓  | ✓   | ✓    | ✓        | ✓  | ✓     | ✓      | Library, App  | Java,      |
+        | `Android                                                                       | Android       |                 |    |     |      |          |    |       |        |               | Kotlin,    |
+        | <https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager/>`_ |               |                 |    |     |      |          |    |       |        |               | Swift      |
+        | and `iOS                                                                       |               |                 |    |     |      |          |    |       |        |               |            |
+        | <https://github.com/NordicSemiconductor/IOS-nRF-Connect-Device-Manager>`_      |               |                 |    |     |      |          |    |       |        |               |            |
+        +--------------------------------------------------------------------------------+---------------+-----------------+----+-----+------+----------+----+-------+--------+---------------+------------+
+        | Zephyr MCUmgr client (in-tree)                                                 | Linux, |br|   | Serial, |br|    | ✓  | ✓   | ✕    | ✕        | ✕  | ✕     | ✕      | Library       | C          |
+        |                                                                                | Zephyr        | Bluetooth, |br| |    |     |      |          |    |       |        |               |            |
+        |                                                                                |               | UDP             |    |     |      |          |    |       |        |               |            |
+        +--------------------------------------------------------------------------------+---------------+-----------------+----+-----+------+----------+----+-------+--------+---------------+------------+
+
+    .. raw:: latex
+
+        \end{landscape}
+
+Note that a tick for a particular group indicates basic support for that group in the code, it is
+possible that not all commands/features of a group are supported by the implementation.
+
 .. _mcumgr_cli:
 
 Command-line Tool
@@ -48,7 +128,8 @@ The tool is written in the Go programming language.
     aborting will, in some circumstances, sit in an endless loop of sending the
     same command over and over again. A universal replacement for this tool is
     currently in development and once released, support for the go tool will be
-    dropped entirely.
+    dropped entirely. It is recommended that usage of tools listed above in the
+    :ref:`mcumgr_tools_libraries` section are used instead of the go client.
 
 To install the tool:
 

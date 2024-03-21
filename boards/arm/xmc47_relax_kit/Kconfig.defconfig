@@ -7,4 +7,15 @@ if BOARD_XMC47_RELAX_KIT
 config BOARD
 	default "xmc47_relax_kit"
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+config MDIO
+	default y
+config TEST_RANDOM_GENERATOR
+	default y
+
+endif # NETWORKING
+
 endif

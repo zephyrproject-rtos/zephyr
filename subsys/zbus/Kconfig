@@ -3,6 +3,7 @@
 
 menuconfig ZBUS
 	bool "Zbus support"
+	depends on MULTITHREADING
 	help
 	  Enables support for Zephyr message bus.
 
@@ -24,13 +25,14 @@ config ZBUS_MSG_SUBSCRIBER
 
 if ZBUS_MSG_SUBSCRIBER
 
-choice
+choice ZBUS_MSG_SUBSCRIBER_BUF_ALLOC
 	prompt "ZBus msg_subscribers buffer allocation"
+	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
 
-config ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC
+config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
 	bool "Use heap to allocate msg_subscriber buffers data"
 
-config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 	bool "Use fixed data size for msg_subscriber buffers pool"
 
 endchoice
@@ -39,18 +41,24 @@ config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
 	default 16
 	int "The count of net_buf available to be used simutaneously."
 
-if ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 
 config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE
 	int "The size of the biggest message used with ZBus."
 
-endif # ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+endif # ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 
 endif # ZBUS_MSG_SUBSCRIBER
 
 config ZBUS_RUNTIME_OBSERVERS
 	bool "Runtime observers support."
-	default n
+
+config ZBUS_PRIORITY_BOOST
+	bool "ZBus priority boost algorithm"
+	default y
+	help
+	  ZBus implements the Highest Locker Protocol that relies on the observers’ thread priority
+	  to determine a temporary publisher priority.
 
 config ZBUS_ASSERT_MOCK
 	bool "Zbus assert mock for test purposes."

@@ -10,8 +10,7 @@ properties:
     description: Data Ready Bar
 
   "#io-channel-cells":
-    const: 2
+    const: 1
 
 io-channel-cells:
-  - positive
-  - negative
+  - input

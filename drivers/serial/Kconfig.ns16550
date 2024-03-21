@@ -30,6 +30,13 @@ config UART_NS16550_DRV_CMD
 
 	  Says n if not sure.
 
+config UART_NS16550_INTEL_LPSS_DMA
+	bool "INTEL LPSS support for NS16550"
+	select SERIAL_SUPPORT_ASYNC
+	select DMA if UART_ASYNC_API
+	help
+	  This enables the usage of INTEL LPSS internal DMA for Async operations.
+
 choice UART_NS16550_VARIANT
 	prompt "UART variant"
 	default UART_NS16550_VARIANT_NS16550
@@ -59,16 +66,6 @@ config UART_NS16550_ACCESS_WORD_ONLY
 	  In some case, e.g. ARC HS Development kit, the peripheral space of ns
 	  16550 (DesignWare UART) only allows word access, byte access will raise
 	  exception.
-
-config UART_NS16550_PARENT_INIT_LEVEL
-	bool "Boot level based on parent node"
-	default y if ACPI
-	help
-	  Boot level based on parent node (PCI or no PCI device). Some platforms the
-	  PCI bus driver depends on ACPI sub system to retrieve platform information
-	  such as interrupt routing information. But ACPI sub system currently support
-	  only post kernel and hence such platforms the UART driver instance init
-	  should be invoked only post kernel in case parent node is PCI.
 
 config UART_NS16550_TI_K3
 	bool "Add support for NS16550 variant specific to TI K3 SoCs"

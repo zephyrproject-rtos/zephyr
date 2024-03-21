@@ -3,4 +3,4 @@
 
 config BOARD_OPENTITAN_EARLGREY
 	bool "OpenTitan Earl Grey Target"
-	depends on SOC_RISCV_OPENTITAN
+	depends on SOC_OPENTITAN

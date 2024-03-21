@@ -197,7 +197,8 @@ struct tcp_mss_option {
 };
 
 enum tcp_state {
-	TCP_LISTEN = 1,
+	TCP_UNUSED = 0,
+	TCP_LISTEN,
 	TCP_SYN_SENT,
 	TCP_SYN_RECEIVED,
 	TCP_ESTABLISHED,
@@ -249,6 +250,9 @@ struct tcp_collision_avoidance_reno {
 };
 #endif
 
+struct tcp;
+typedef void (*net_tcp_closed_cb_t)(struct tcp *conn, void *user_data);
+
 struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
@@ -262,6 +266,10 @@ struct tcp { /* TCP connection */
 		struct tcp *accepted_conn;
 	};
 	net_context_connect_cb_t connect_cb;
+#if defined(CONFIG_NET_TEST)
+	net_tcp_closed_cb_t test_closed_cb;
+	void *test_user_data;
+#endif
 	struct k_mutex lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct k_sem tx_sem; /* Semaphore indicating if transfers are blocked . */
@@ -274,6 +282,10 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable timewait_timer;
 	struct k_work_delayable persist_timer;
 	struct k_work_delayable ack_timer;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	struct k_work_delayable keepalive_timer;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
+	struct k_work conn_release;
 
 	union {
 		/* Because FIN and establish timers are never happening
@@ -285,6 +297,9 @@ struct tcp { /* TCP connection */
 	};
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
+#if defined(CONFIG_NET_TCP_IPV6_ND_REACHABILITY_HINT)
+	int64_t last_nd_hint_time;
+#endif
 	size_t send_data_total;
 	size_t send_retries;
 	int unacked_len;
@@ -293,6 +308,12 @@ struct tcp { /* TCP connection */
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
 	uint32_t ack;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	uint32_t keep_idle;
+	uint32_t keep_intvl;
+	uint32_t keep_cnt;
+	uint32_t keep_cur;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 	uint16_t recv_win_max;
 	uint16_t recv_win;
 	uint16_t send_win_max;
@@ -311,6 +332,9 @@ struct tcp { /* TCP connection */
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	bool keep_alive : 1;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 	bool tcp_nodelay : 1;
 };
 
@@ -331,3 +355,9 @@ struct tcp { /* TCP connection */
 	_flags(_fl, _op, _mask, sizeof(#_args) > 1 ? _args : true)
 
 typedef void (*net_tcp_cb_t)(struct tcp *conn, void *user_data);
+
+#if defined(CONFIG_NET_TEST)
+void tcp_install_close_cb(struct net_context *ctx,
+			  net_tcp_closed_cb_t cb,
+			  void *user_data);
+#endif

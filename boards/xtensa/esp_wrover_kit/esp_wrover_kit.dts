@@ -32,6 +32,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ili9341;
 	};
 
@@ -67,6 +68,26 @@
 		pwm_led_blue: pwm_led_2 {
 			label = "Blue PWM LED";
 			pwms = <&ledc0 2 PWM_HZ(100) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		spi-dev = <&spi3>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9341: ili9341@0 {
+			compatible = "ilitek,ili9341";
+			mipi-max-frequency = <25000000>;
+			reg = <0>;
+			pixel-format = <0>;
+			rotation = <0>;
+			width = <240>;
+			height = <320>;
 		};
 	};
 };
@@ -124,18 +145,6 @@
 	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
-
-	ili9341: ili9341@0 {
-		compatible = "ilitek,ili9341";
-		spi-max-frequency = <25000000>;
-		reg = <0>;
-		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
-		pixel-format = <0>;
-		rotation = <0>;
-		width = <240>;
-		height = <320>;
-	};
 };
 
 &ledc0 {

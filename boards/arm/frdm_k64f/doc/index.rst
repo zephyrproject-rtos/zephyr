@@ -246,11 +246,23 @@ instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
 
    .. group-tab:: OpenSDA DAPLink Onboard (Recommended)
 
-        Install the :ref:`pyocd-debug-host-tools` and make sure they are in your search
-        path.
+	Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+	search path.  LinkServer works with the default CMSIS-DAP firmware included in
+	the on-board debugger.
 
-        Follow the instructions in :ref:`opensda-daplink-onboard-debug-probe` to program
-        the `OpenSDA DAPLink FRDM-K64F Firmware`_.
+        Linkserver is the default for this board, ``west flash`` and ``west debug`` will
+        call the linkserver runner.
+
+	.. code-block:: console
+
+	   west flash
+
+	Alternatively, pyOCD can be used to flash and debug the board by using the
+	``-r pyocd`` option with West. pyOCD is installed when you complete the
+	:ref:`gs_python_deps` step in the Getting Started Guide. The runners supported
+	by NXP are LinkServer and JLink. pyOCD is another potential option, but NXP
+	does not test or support the pyOCD runner.
+
 
    .. group-tab:: OpenSDA JLink Onboard
 
@@ -269,7 +281,7 @@ instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
 
         Add the arguments ``-DBOARD_FLASH_RUNNER=jlink`` and
         ``-DBOARD_DEBUG_RUNNER=jlink`` when you invoke ``west build`` to override the
-        default runner from pyOCD to J-Link:
+        default runner to J-Link:
 
         .. zephyr-app-commands::
            :zephyr-app: samples/hello_world
@@ -378,3 +390,13 @@ of pyocd commands:
 
 .. _OpenSDA Serial and Debug Adapter:
    https://www.nxp.com/design/microcontrollers-developer-resources/ides-for-kinetis-mcus/opensda-serial-and-debug-adapter:OPENSDA#FRDM-K64F
+
+Experimental ENET Driver
+========================
+
+Current default ethernet driver is eth_mcux, with binding `nxp,kinetis-ethernet`. There is a new
+driver with binding `nxp,enet`, which is experimental and undergoing development, but will have
+enhanced capability, such as not hardcoding code for only one phy in the driver like eth_mcux.
+
+To build for this EVK with the new driver, include the experimental overlay to west build with
+the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet-experimental.overlay`.

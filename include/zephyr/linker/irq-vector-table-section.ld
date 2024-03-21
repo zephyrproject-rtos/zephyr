@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#if !(LINKER_ZEPHYR_FINAL && CONFIG_ISR_TABLES_LOCAL_DECLARATION)
 . = ALIGN(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN);
 KEEP(*(_IRQ_VECTOR_TABLE_SECTION_SYMS))
+#endif
 
 /*
  * Some ARM platforms require this symbol to be placed after the IRQ vector

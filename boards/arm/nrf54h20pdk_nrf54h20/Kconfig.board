@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF54H20PDK_NRF54H20_CPUAPP
+	bool "nRF54H20 PDK nRF54H20 Application MCU"
+	depends on SOC_NRF54H20_ENGA_CPUAPP
+
+config BOARD_NRF54H20PDK_NRF54H20_CPURAD
+	bool "nRF54H20 PDK nRF54H20 Radio MCU"
+	depends on SOC_NRF54H20_ENGA_CPURAD

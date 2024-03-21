@@ -1,0 +1,21 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&spip0 {
+	status = "okay";
+	pinctrl-0 = <&spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_sl
+		     &spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_no_spip_inv>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <15000000>;
+	};
+};

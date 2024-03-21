@@ -147,11 +147,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@0 {
+	n25q128a1: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
-		size = <DT_SIZE_M(16*8)>;
 		status = "okay";
 	};
 };

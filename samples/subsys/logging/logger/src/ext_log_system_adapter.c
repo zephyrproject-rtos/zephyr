@@ -27,7 +27,7 @@ static void log_handler(enum ext_log_level level, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	log2_generic(log_level_lut[level], fmt, ap);
+	log_generic(log_level_lut[level], fmt, ap);
 	va_end(ap);
 }
 

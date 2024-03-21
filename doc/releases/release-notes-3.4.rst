@@ -776,7 +776,7 @@ Drivers and Sensors
     channel(s) to link a software channel configuration to.
   * MCUX LPADC driver ``voltage-ref`` and ``power-level`` devicetree properties
     were shifted to match the hardware as described in reference manual instead
-    of matching the NXP SDK enum identifers.
+    of matching the NXP SDK enum identifiers.
   * Added support for STM32C0 and STM32H5.
   * Added DMA support for STM32H7.
   * STM32: Resolutions are now listed in the device tree for each ADC instance

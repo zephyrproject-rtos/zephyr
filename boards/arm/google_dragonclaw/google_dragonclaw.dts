@@ -37,6 +37,7 @@
 	mul-n = <192>; /* 16MHz * 192/8 = 384MHz VCO clock */
 	div-p = <4>; /* 96MHz PLL general clock output */
 	div-q = <8>; /* 48MHz PLL output for USB, SDIO, RNG */
+	div-r = <7>; /* I2S - lowest possible frequency to save power */
 	clocks = <&clk_hsi>;
 	status = "okay";
 };
@@ -92,12 +93,38 @@
 };
 
 /*
- * The board uses STM32F412CG in UFQFPN48 package in which gpio[c-h] is not
+ * Set flags of unused pins as GPIO_ACTIVE_HIGH (0 << 0), which will be
+ * interpreted by GPIO driver as GPIO_DISCONNECTED, without setting the gpio as
+ * either input or output. The STM32 GPIO driver will set these pins as analog
+ * to reduce power consumption.
+ */
+&gpiob {
+	unused {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>, <5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioc {
+	unused {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>, <14 GPIO_ACTIVE_HIGH>,
+			<15 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioh {
+	unused {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>, <1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/*
+ * The board uses STM32F412CG in UFQFPN48 package in which gpio[d-g] is not
  * exposed, so disable it.
  */
-&gpioc {status = "disabled";};
 &gpiod {status = "disabled";};
 &gpioe {status = "disabled";};
 &gpiof {status = "disabled";};
 &gpiog {status = "disabled";};
-&gpioh {status = "disabled";};

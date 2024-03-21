@@ -3,4 +3,4 @@ tests:
     platform_exclude: fvp_base_revc_2xaemv8a_smp_ns
     tags: zbus
     integration_platforms:
-      - native_posix
+      - native_sim

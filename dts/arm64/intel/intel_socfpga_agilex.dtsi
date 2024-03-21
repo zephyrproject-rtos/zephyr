@@ -155,6 +155,33 @@
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0xffd00100 0x100>;
 		clock-frequency = < 100000000 >;
+	};
+
+	watchdog0: watchdog@ffd00200 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00200 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		status = "disabled";
+	};
+
+	watchdog1: watchdog@ffd00300 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00300 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		status = "disabled";
+	};
+
+	watchdog2: watchdog@ffd00400 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00400 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		status = "disabled";
+	};
+
+	watchdog3: watchdog@ffd00500 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00500 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
 		status = "disabled";
 	};
 };

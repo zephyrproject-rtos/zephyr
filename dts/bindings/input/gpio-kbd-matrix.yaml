@@ -31,13 +31,34 @@ properties:
     type: phandle-array
     required: true
     description: |
-      GPIO for the keyboard matrix rows, up to 8 different GPIOs.  All row GPIO
-      pins must have interrupt support.
+      GPIO for the keyboard matrix rows, up to 8 different GPIOs. All row GPIO
+      pins must have interrupt support if idle-mode is set to "interrupt"
+      (default).
 
   col-gpios:
     type: phandle-array
     required: true
     description: |
       GPIO for the keyboard matrix columns, supports up to 32 different GPIOs.
-      The pins will be driven according to the GPIO_ACTIVE_HIGH or
-      GPIO_ACTIVE_LOW flags when selected, high impedance when not selected.
+      When unselected, this pin will be either driven to inactive state or
+      configured to high impedance (input) depending on the col-drive-inactive
+      property.
+
+  col-drive-inactive:
+    type: boolean
+    description: |
+      If enabled, unselected column GPIOs will be driven to inactive state.
+      Default to configure unselected column GPIOs to high impedance.
+
+  idle-mode:
+    type: string
+    default: "interrupt"
+    enum:
+      - "interrupt"
+      - "poll"
+      - "scan"
+    description: |
+      Controls the driver behavior on idle, "interrupt" waits for a new key
+      press using GPIO interrupts on the row lines, "poll"  periodically polls
+      the row lines with all the columns selected, "scan" just keep scanning
+      the matrix continuously, requires "poll-timeout-ms" to be set to 0.

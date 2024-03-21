@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
 #include <stm32_ll_icache.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/irq.h>
@@ -31,7 +32,7 @@ LOG_MODULE_REGISTER(soc);
  *
  * @return 0
  */
-static int stm32wba_init(void)
+int stm32wba_init(void)
 {
 	/* Enable instruction cache in 1-way (direct mapped cache) */
 	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
@@ -43,6 +44,12 @@ static int stm32wba_init(void)
 
 	/* Enable PWR */
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
+
+#if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
+	LL_PWR_SetRegulatorSupply(LL_PWR_SMPS_SUPPLY);
+#elif defined(CONFIG_POWER_SUPPLY_LDO)
+	LL_PWR_SetRegulatorSupply(LL_PWR_LDO_SUPPLY);
+#endif
 
 	return 0;
 }

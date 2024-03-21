@@ -53,4 +53,14 @@ source "subsys/usb/usb_c/Kconfig"
 source "subsys/zbus/Kconfig"
 # zephyr-keep-sorted-stop
 
+config MODULES
+	bool "Make tristate Kconfig options and an 'm' selection available"
+	help
+	  Zephyr supports dynamically loadable code, e.g. using llext. Code,
+	  that can either be built as a part of the system image or as a
+	  loadable extension, can use tristate Kconfig options. For this to work
+	  the CONFIG_MODULES option must be enabled by the project. Enabling
+	  this option alone doesn't change the build on its own, it only allows
+	  using 'm' for tristate Kconfig options.
+
 endmenu

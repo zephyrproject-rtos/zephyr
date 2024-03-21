@@ -477,6 +477,23 @@ def write_interrupts(node):
                 name_vals.append((name_macro, f"DT_{idx_macro}"))
                 name_vals.append((name_macro + "_EXISTS", 1))
 
+        idx_controller_macro = f"{path_id}_IRQ_IDX_{i}_CONTROLLER"
+        idx_controller_path = f"DT_{irq.controller.z_path_id}"
+        idx_vals.append((idx_controller_macro, idx_controller_path))
+        if irq.name:
+            name_controller_macro = f"{path_id}_IRQ_NAME_{str2ident(irq.name)}_CONTROLLER"
+            name_vals.append((name_controller_macro, f"DT_{idx_controller_macro}"))
+
+    # Interrupt controller info
+    irqs = []
+    while node.interrupts is not None and len(node.interrupts) > 0:
+        irq = node.interrupts[0]
+        irqs.append(irq)
+        if node == irq.controller:
+            break
+        node = irq.controller
+    idx_vals.append((f"{path_id}_IRQ_LEVEL", len(irqs)))
+
     for macro, val in idx_vals:
         out_dt_define(macro, val)
     for macro, val in name_vals:

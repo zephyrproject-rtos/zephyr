@@ -7,6 +7,7 @@ menuconfig LPS22HH
 	bool "LPS22HH pressure and temperature"
 	default y
 	depends on DT_HAS_ST_LPS22HH_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i2c)
 	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),spi)

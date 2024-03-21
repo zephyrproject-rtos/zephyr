@@ -94,7 +94,7 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)
-		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr);
+		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
 
 		if (ret < 0) {
 			NET_DBG("Cannot add IPv4 multicast address to iface %p",
@@ -110,11 +110,11 @@ int setup_dst_addr(struct net_context *ctx, sa_family_t family,
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		create_ipv4_addr(net_sin(dst));
 		*dst_len = sizeof(struct sockaddr_in);
-		net_context_set_ipv4_ttl(ctx, 255);
+		net_context_set_ipv4_mcast_ttl(ctx, 255);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		create_ipv6_addr(net_sin6(dst));
 		*dst_len = sizeof(struct sockaddr_in6);
-		net_context_set_ipv6_hop_limit(ctx, 255);
+		net_context_set_ipv6_mcast_hop_limit(ctx, 255);
 	} else {
 		return -EPFNOSUPPORT;
 	}
@@ -634,7 +634,7 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	struct in_addr *addr = user_data;
 	int ret;
 
-	ret = net_ipv4_igmp_join(iface, addr);
+	ret = net_ipv4_igmp_join(iface, addr, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);
@@ -663,7 +663,7 @@ static int init_listener(void)
 	    (iface_count > MAX_IPV4_IFACE_COUNT && MAX_IPV4_IFACE_COUNT > 0)) {
 		NET_WARN("You have %d interfaces configured but there "
 			 "are %d network interfaces in the system.",
-			 MAX(MAX_IPV6_IFACE_COUNT,
+			 MAX(MAX_IPV4_IFACE_COUNT,
 			     MAX_IPV6_IFACE_COUNT), iface_count);
 	}
 

@@ -181,11 +181,11 @@ void test_main(void)
 {
 	/* Only startup suite will run. */
 	all_startup_checks_executed = false;
-	ztest_run_all(NULL);
+	ztest_run_all(NULL, false, 1, 1);
 
 	/* All other suites, except startup suite, will run. */
 	all_startup_checks_executed = true;
-	ztest_run_all(NULL);
+	ztest_run_all(NULL, false, 1, 1);
 
 	/* Check that all the suites in this binary ran at least once. */
 	ztest_verify_all_test_suites_ran();

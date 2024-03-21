@@ -25,7 +25,7 @@
 #include <zephyr/arch/xtensa/cache.h>
 #endif
 
-#if defined(CONFIG_DCACHE)
+#if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)
 
 /**
  * @brief Enable the d-cache
@@ -157,7 +157,7 @@ int arch_dcache_flush_and_invd_range(void *addr, size_t size);
 #define cache_data_flush_and_invd_range(addr, size) \
 	arch_dcache_flush_and_invd_range(addr, size)
 
-#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT) || defined(__DOXYGEN__)
 
 /**
  *
@@ -176,11 +176,11 @@ size_t arch_dcache_line_size_get(void);
 
 #define cache_data_line_size_get arch_dcache_line_size_get
 
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
+#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT || __DOXYGEN__ */
 
-#endif /* CONFIG_DCACHE */
+#endif /* CONFIG_DCACHE || __DOXYGEN__ */
 
-#if defined(CONFIG_ICACHE)
+#if defined(CONFIG_ICACHE) || defined(__DOXYGEN__)
 
 /**
  * @brief Enable the i-cache
@@ -311,7 +311,7 @@ int arch_icache_flush_and_invd_range(void *addr, size_t size);
 #define cache_instr_flush_and_invd_range(addr, size) \
 	arch_icache_flush_and_invd_range(addr, size)
 
-#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT) || defined(__DOXYGEN__)
 
 /**
  *
@@ -331,9 +331,23 @@ size_t arch_icache_line_size_get(void);
 
 #define cache_instr_line_size_get arch_icache_line_size_get
 
-#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
+#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT || __DOXYGEN__ */
 
-#endif /* CONFIG_ICACHE */
+#endif /* CONFIG_ICACHE || __DOXYGEN__ */
+
+#if CONFIG_CACHE_DOUBLEMAP  || __DOXYGEN__
+bool arch_cache_is_ptr_cached(void *ptr);
+#define cache_is_ptr_cached(ptr) arch_cache_is_ptr_cached(ptr)
+
+bool arch_cache_is_ptr_uncached(void *ptr);
+#define cache_is_ptr_uncached(ptr) arch_cache_is_ptr_uncached(ptr)
+
+void __sparse_cache *arch_cache_cached_ptr_get(void *ptr);
+#define cache_cached_ptr(ptr) arch_cache_cached_ptr_get(ptr)
+
+void *arch_cache_uncached_ptr_get(void __sparse_cache *ptr);
+#define cache_uncached_ptr(ptr) arch_cache_uncached_ptr_get(ptr)
+#endif /* CONFIG_CACHE_DOUBLEMAP */
 
 /**
  * @}

@@ -15,6 +15,7 @@
 extern enum bst_result_t bst_result;
 struct bt_conn *default_conn;
 atomic_t flag_connected;
+atomic_t flag_disconnected;
 atomic_t flag_conn_updated;
 volatile bt_security_t security_level;
 
@@ -100,6 +101,8 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 	default_conn = NULL;
 	UNSET_FLAG(flag_connected);
 	UNSET_FLAG(flag_conn_updated);
+	SET_FLAG(flag_disconnected);
+
 	security_level = BT_SECURITY_L1;
 }
 
@@ -163,6 +166,11 @@ static void register_more_cmd_args(void)
 	bs_add_extra_dynargs(args_struct_toadd);
 }
 NATIVE_TASK(register_more_cmd_args, PRE_BOOT_1, 100);
+
+uint16_t get_dev_cnt(void)
+{
+	return (uint16_t)dev_cnt;
+}
 
 /**
  * @brief Get the channel id based on remote device ID

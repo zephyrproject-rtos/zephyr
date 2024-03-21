@@ -44,5 +44,5 @@ properties:
       Setting clk-divider to 2 specifies the system timer uses the clock
       that CPU clock frequency divided by (2^2=)4, or 27MHz.
 
-      Devision ratio constants can be found in the
+      Division ratio constants can be found in the
       dt-bindings/timer/nuclei-systimer.h header file.

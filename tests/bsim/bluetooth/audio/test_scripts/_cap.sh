@@ -13,6 +13,9 @@ $dir_path/cap_unicast_inval.sh
 $dir_path/cap_unicast.sh
 
 $dir_path/cap_broadcast.sh
+$dir_path/cap_broadcast_ac_12.sh
+$dir_path/cap_broadcast_ac_13.sh
+$dir_path/cap_broadcast_ac_14.sh
 
 $dir_path/cap_unicast_ac_1.sh
 $dir_path/cap_unicast_ac_2.sh

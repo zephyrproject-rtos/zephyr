@@ -206,7 +206,7 @@ Connections and IOs
 Nucleo H563ZI Board has 9 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `STM32H5 Nucleo-144 board User Manual`_.
+For more details please refer to `STM32H5 Nucleo-144 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

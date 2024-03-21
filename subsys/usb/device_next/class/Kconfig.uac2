@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_AUDIO2_CLASS
+	bool "USB Audio 2 class support [EXPERIMENTAL]"
+	help
+	  USB Audio 2 device class support.
+
+if USBD_AUDIO2_CLASS
+
+module = USBD_UAC2
+module-str = usbd uac2
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

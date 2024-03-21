@@ -779,7 +779,7 @@ ZTEST(coap, test_retransmit_second_round)
 	zassert_not_null(pending, "No free pending");
 
 	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr,
-			      CONFIG_COAP_MAX_RETRANSMIT);
+			      NULL);
 	zassert_equal(r, 0, "Could not initialize packet");
 
 	/* We "send" the packet the first time here */
@@ -1716,6 +1716,59 @@ ZTEST(coap, test_coap_packet_set_path)
 	assert_coap_packet_set_path_query_options("a/bb/",
 						  (const char *const[]){"a", "bb"}, 2U,
 						  COAP_OPTION_URI_PATH);
+}
+
+ZTEST(coap, test_transmission_parameters)
+{
+	struct coap_packet cpkt;
+	struct coap_pending *pending;
+	struct coap_transmission_parameters params;
+	uint8_t *data = data_buf[0];
+	int r;
+	uint16_t id;
+
+	params = coap_get_transmission_parameters();
+	zassert_equal(params.ack_timeout, CONFIG_COAP_INIT_ACK_TIMEOUT_MS, "Wrong ACK timeout");
+	zassert_equal(params.coap_backoff_percent, CONFIG_COAP_BACKOFF_PERCENT,
+		      "Wrong backoff percent");
+	zassert_equal(params.max_retransmission, CONFIG_COAP_MAX_RETRANSMIT,
+		      "Wrong max retransmission value");
+
+	params.ack_timeout = 1000;
+	params.coap_backoff_percent = 150;
+	params.max_retransmission = 2;
+
+	coap_set_transmission_parameters(&params);
+
+	id = coap_next_id();
+
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1,
+			     COAP_TYPE_CON, 0, coap_next_token(),
+			     COAP_METHOD_GET, id);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	pending = coap_pending_next_unused(pendings, NUM_PENDINGS);
+	zassert_not_null(pending, "No free pending");
+
+	params.ack_timeout = 3000;
+	params.coap_backoff_percent = 250;
+	params.max_retransmission = 3;
+
+	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr,
+			      &params);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	zassert_equal(pending->params.ack_timeout, 3000, "Wrong ACK timeout");
+	zassert_equal(pending->params.coap_backoff_percent, 250, "Wrong backoff percent");
+	zassert_equal(pending->params.max_retransmission, 3, "Wrong max retransmission value");
+
+	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr,
+			      NULL);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	zassert_equal(pending->params.ack_timeout, 1000, "Wrong ACK timeout");
+	zassert_equal(pending->params.coap_backoff_percent, 150, "Wrong backoff percent");
+	zassert_equal(pending->params.max_retransmission, 2, "Wrong max retransmission value");
 }
 
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

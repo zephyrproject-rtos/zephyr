@@ -34,6 +34,8 @@ if sorted(REFERENCE_OUTPUT) != sorted(output):
     print()
     print("got:")
     print("\n".join(sorted(output)))
+    print("TEST FAILED")
     sys.exit(1)
 
+print("TEST PASSED")
 sys.exit(0)

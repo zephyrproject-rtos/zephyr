@@ -3,10 +3,10 @@
 
 description: |
     When setting the odr property in a .dts or .dtsi file you may include
-    st_lps22hh.h and use the macros defined there.
+    lps22hh.h and use the macros defined there.
 
     Example:
-    #include <zephyr/dt-bindings/sensor/st_lps22hh.h>
+    #include <zephyr/dt-bindings/sensor/lps22hh.h>
 
     lps22hh: lps22hh@0 {
       ...

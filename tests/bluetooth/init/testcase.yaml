@@ -341,3 +341,9 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - rv32m1_vega_ri5cy
+  bluetooth.init.test_config_bt_recv_workq_bt:
+    extra_args:
+      - CONF_FILE=prj_ctlr.conf
+      - CONFIG_BT_RECV_WORKQ_BT=y
+    platform_allow:
+      - nrf52840dk_nrf52840

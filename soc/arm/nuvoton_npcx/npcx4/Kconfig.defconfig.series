@@ -14,9 +14,9 @@ config NUM_IRQS
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
 
-config ESPI_NPCX
+config ESPI_TAF_NPCX
 	default y
-	depends on ESPI
+	depends on ESPI_SAF
 
 source "soc/arm/nuvoton_npcx/npcx4/Kconfig.defconfig.npcx4*"
 

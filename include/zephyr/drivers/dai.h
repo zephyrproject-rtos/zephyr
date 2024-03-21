@@ -33,6 +33,61 @@
 extern "C" {
 #endif
 
+/** Used to extract the clock configuration from the format attribute of struct dai_config */
+#define DAI_FORMAT_CLOCK_PROVIDER_MASK 0xf000
+/** Used to extract the protocol from the format attribute of struct dai_config */
+#define DAI_FORMAT_PROTOCOL_MASK 0x000f
+/** Used to extract the clock inversion from the format attribute of struct dai_config */
+#define DAI_FORMAT_CLOCK_INVERSION_MASK 0x0f00
+
+/** @brief DAI clock configurations
+ *
+ * This is used to describe all of the possible
+ * clock-related configurations w.r.t the DAI
+ * and the codec.
+ */
+enum dai_clock_provider {
+	/**< codec BLCK provider, codec FSYNC provider */
+	DAI_CBP_CFP = (0 << 12),
+	/**< codec BCLK consumer, codec FSYNC provider */
+	DAI_CBC_CFP = (2 << 12),
+	/**< codec BCLK provider, codec FSYNC consumer */
+	DAI_CBP_CFC = (3 << 12),
+	/**< codec BCLK consumer, codec FSYNC consumer */
+	DAI_CBC_CFC = (4 << 12),
+};
+
+/** @brief DAI protocol
+ *
+ * The communication between the DAI and the CODEC
+ * may use different protocols depending on the scenario.
+ */
+enum dai_protocol {
+	DAI_PROTO_I2S = 1, /**< I2S */
+	DAI_PROTO_RIGHT_J, /**< Right Justified */
+	DAI_PROTO_LEFT_J, /**< Left Justified */
+	DAI_PROTO_DSP_A, /**< TDM, FSYNC asserted 1 BCLK early */
+	DAI_PROTO_DSP_B, /**< TDM, FSYNC asserted at the same time as MSB */
+	DAI_PROTO_PDM, /**< Pulse Density Modulation */
+};
+
+/** @brief DAI clock inversion
+ *
+ * Some applications may require a different
+ * clock polarity (FSYNC/BCLK) compared to
+ * the default one chosen based on the protocol.
+ */
+enum dai_clock_inversion {
+	/**< no BCLK inversion, no FSYNC inversion */
+	DAI_INVERSION_NB_NF = 0,
+	/**< no BCLK inversion, FSYNC inversion */
+	DAI_INVERSION_NB_IF = (2 << 8),
+	 /**< BCLK inversion, no FSYNC inversion */
+	DAI_INVERSION_IB_NF = (3 << 8),
+	/**< BCLK inversion, FSYNC inversion */
+	DAI_INVERSION_IB_IF = (4 << 8),
+};
+
 /** @brief Types of DAI
  *
  * The type of the DAI. This ID type is used to configure bespoke DAI HW
@@ -64,10 +119,10 @@ enum dai_type {
  * @brief DAI Direction
  */
 enum dai_dir {
-	/** Receive data */
-	DAI_DIR_RX = 1,
 	/** Transmit data */
-	DAI_DIR_TX,
+	DAI_DIR_TX = 0,
+	/** Receive data */
+	DAI_DIR_RX,
 	/** Both receive and transmit data */
 	DAI_DIR_BOTH,
 };

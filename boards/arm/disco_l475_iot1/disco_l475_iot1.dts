@@ -187,16 +187,15 @@
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 	pinctrl-names = "default";
 
-	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+	cs-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>,
 		   <&gpioe 0 GPIO_ACTIVE_LOW>;
 
 	spbtle-rf@0 {
-		compatible = "zephyr,bt-hci-spi";
+		compatible = "st,hci-spi-v1";
 		reg = <0>;
-		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-		spi-max-frequency = <2000000>;
-		controller-data-delay-us = <0>;  /* No need for extra delay for BlueNRG-MS */
+		spi-max-frequency = <DT_FREQ_M(2)>;
 		spi-hold-cs;
 	};
 
@@ -262,7 +261,7 @@
 	};
 };
 
-&lptim1 {
+stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
@@ -322,12 +321,10 @@ zephyr_udc0: &usbotg_fs {
 
 	status = "okay";
 
-	mx25r6435f: qspi-nor-flash@0 {
+	mx25r6435f: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
 		qspi-max-frequency = <50000000>;
-		/* 64 Megabits = 8 Megabytes */
-		size = <0x4000000>;
 		status = "okay";
 
 		partitions {

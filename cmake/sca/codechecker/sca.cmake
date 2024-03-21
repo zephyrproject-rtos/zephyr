@@ -3,7 +3,7 @@
 # Copyright (c) 2023, Basalte bv
 
 find_program(CODECHECKER_EXE CodeChecker REQUIRED)
-message(STATUS "Found CodeChecker: ${CODECHECKER_EXE}")
+message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 
 # CodeChecker uses the compile_commands.json as input
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

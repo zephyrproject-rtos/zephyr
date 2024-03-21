@@ -8,6 +8,7 @@
 #include <mmu.h>
 #include <string.h>
 #include <kernel_arch_interface.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 
 /*
  * TODO:

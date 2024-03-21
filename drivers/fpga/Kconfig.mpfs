@@ -1,0 +1,10 @@
+# FPGA Microchip PolarFire SOC driver configuration options
+
+# Copyright (c) 2023 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MPFS_FPGA
+	bool "Microchip PolarFire SOC FPGA driver"
+	depends on SPI
+	help
+	  Enable support for the Microchip PolarFire SOC FPGA driver.

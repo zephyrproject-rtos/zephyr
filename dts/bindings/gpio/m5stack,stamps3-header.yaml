@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Martin Kiepfer
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on M5Stack StampS3 module headers.
+
+    This binding provides a nexus mapping for 28 pins as depicted below.
+
+         0 GPIO
+         1 GPIO
+         2 GPIO/CLKOUT0
+         3 GPIO
+         4 GPIO/SPILCD
+         5 GPIO/SPILCD
+         6 GPIO/SPILCD      27 3V3
+         7 GPIO             26 GPIO
+         8 GPIO/CLKOUT0     25 GPIO/CLKOUT/TXD
+         9 GPIO             24 GPIO
+        10 GND              23 GPIO/CLKOUT/RXD
+        11 GPIO/SDA1        22 GPIO/CLKOUT
+        12 5V               21 EN
+        13 GPIO/SCL1        20 GPIO/CLKOUT
+        14 GPIO/SDA0        19 GPIO
+        15 GPIO             18 GPIO/CLKOUT
+        16 GPIO/SCL0        17 GND
+
+    Note: Please note that the StampS3 is not pin compatible to the
+    other Stamp variantes like StampC3 or Stamp-Pico.
+
+
+compatible: "m5stack,stamps3-header"
+
+include: [gpio-nexus.yaml, base.yaml]

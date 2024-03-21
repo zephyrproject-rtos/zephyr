@@ -28,7 +28,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 extern enum bst_result_t bst_result;
-static struct bap_test_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct audio_test_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_bap_lc3_preset preset_16_1_1 = BT_BAP_LC3_BROADCAST_PRESET_16_1_1(
@@ -51,7 +51,7 @@ static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
 {
-	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct net_buf *buf;
 	int ret;
 
@@ -72,7 +72,7 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_iso_data, test_stream->tx_sdu_size);
-	ret = bt_bap_stream_send(stream, buf, test_stream->seq_num++, BT_ISO_TIMESTAMP_NONE);
+	ret = bt_bap_stream_send(stream, buf, test_stream->seq_num++);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
 		net_buf_unref(buf);
@@ -97,8 +97,8 @@ static struct bt_bap_stream_ops stream_ops = {
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
 	uint8_t bis_codec_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ)),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_16KHZ)),
 	};
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
@@ -111,7 +111,8 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		     sizeof(broadcast_source_streams));
 
 	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
-		stream_params[i].stream = &broadcast_source_streams[i].stream;
+		stream_params[i].stream =
+			bap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		bt_bap_stream_cb_register(stream_params[i].stream,
 					    &stream_ops);
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
@@ -121,7 +122,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_params); i++) {
-		subgroup_params[i].params_count = 1U;
+		subgroup_params[i].params_count = ARRAY_SIZE(stream_params);
 		subgroup_params[i].params = &stream_params[i];
 		subgroup_params[i].codec_cfg = &preset_16_1_1.codec_cfg;
 	}
@@ -141,7 +142,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		struct bap_test_stream *test_stream = &broadcast_source_streams[i];
+		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
 
 		test_stream->tx_sdu_size = preset_16_1_1.qos.sdu;
 	}
@@ -178,6 +179,8 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(ad_buf,
 			      BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
+	struct bt_le_adv_param adv_param = BT_LE_ADV_PARAM_INIT(
+		BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_USE_NAME, 0x80, 0x80, NULL);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
 	struct bt_data ext_ad;
 	struct bt_data per_ad;
@@ -185,7 +188,7 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	int err;
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
+	err = bt_le_ext_adv_create(&adv_param, NULL, adv);
 	if (err != 0) {
 		printk("Unable to create extended advertising set: %d\n", err);
 		return err;
@@ -245,8 +248,8 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *source)
 {
 	uint8_t bis_codec_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ)),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_16KHZ)),
 	};
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
@@ -256,7 +259,8 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 	int err;
 
 	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
-		stream_params[i].stream = &broadcast_source_streams[i].stream;
+		stream_params[i].stream =
+			bap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		stream_params[i].data_len = ARRAY_SIZE(bis_codec_data);
 		stream_params[i].data = bis_codec_data;
 	}
@@ -281,7 +285,7 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		struct bap_test_stream *test_stream = &broadcast_source_streams[i];
+		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
 
 		test_stream->tx_sdu_size = preset_16_1_1.qos.sdu;
 	}
@@ -303,6 +307,36 @@ static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
 	printk("Waiting for streams to be started\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
 		k_sem_take(&sem_started, K_FOREVER);
+	}
+}
+
+static void test_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
+						  struct bt_le_ext_adv *adv)
+{
+	uint8_t new_metadata[] = BT_AUDIO_CODEC_CFG_LC3_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
+	struct bt_data per_ad;
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
+
+	printk("Updating metadata\n");
+	err = bt_bap_broadcast_source_update_metadata(source, new_metadata,
+						      ARRAY_SIZE(new_metadata));
+	if (err != 0) {
+		FAIL("Failed to update metadata broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Get the new BASE */
+	test_broadcast_source_get_base(source, &base_buf);
+
+	/* Update the periodic advertising data with the new BASE */
+	per_ad.type = BT_DATA_SVC_DATA16;
+	per_ad.data_len = base_buf.len;
+	per_ad.data = base_buf.data;
+	err = bt_le_per_adv_set_data(adv, &per_ad, 1);
+	if (err != 0) {
+		FAIL("Failed to set periodic advertising data: %d\n", err);
 	}
 }
 
@@ -369,7 +403,6 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 
 static void test_main(void)
 {
-	uint8_t new_metadata[] = BT_AUDIO_CODEC_CFG_LC3_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -402,12 +435,10 @@ static void test_main(void)
 	printk("Sending data\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-			struct bap_test_stream *test_stream =
-				CONTAINER_OF(&broadcast_source_streams[i].stream,
-					     struct bap_test_stream, stream);
+			struct audio_test_stream *test_stream = &broadcast_source_streams[i];
 
 			test_stream->tx_active = true;
-			stream_sent_cb(&broadcast_source_streams[i].stream);
+			stream_sent_cb(&test_stream->stream.bap_stream);
 		}
 	}
 
@@ -415,13 +446,7 @@ static void test_main(void)
 	backchannel_sync_wait_any();
 
 	/* Update metadata while streaming */
-	printk("Updating metadata\n");
-	err = bt_bap_broadcast_source_update_metadata(source, new_metadata,
-						      ARRAY_SIZE(new_metadata));
-	if (err != 0) {
-		FAIL("Failed to update metadata broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_source_update_metadata(source, adv);
 
 	/* Wait for other devices to have received what they wanted */
 	backchannel_sync_wait_any();

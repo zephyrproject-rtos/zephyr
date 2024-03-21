@@ -12,6 +12,9 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/ztest.h>
 
+static thrd_t     thr;
+static uintptr_t  param;
+
 ZTEST(libc_thrd, test_thrd_sleep)
 {
 	int64_t end;
@@ -51,27 +54,27 @@ static int thrd_create_join_fn(void *arg)
 
 ZTEST(libc_thrd, test_thrd_create_join)
 {
-	thrd_t thr;
 	int res = 0;
-	uintptr_t x = 0;
 	thrd_start_t fun = thrd_create_join_fn;
+
+	param = 0;
 
 	if (false) {
 		/* pthread_create() is not hardened for degenerate cases like this */
 		zassert_equal(thrd_error, thrd_create(NULL, NULL, NULL));
-		zassert_equal(thrd_error, thrd_create(NULL, NULL, &x));
+		zassert_equal(thrd_error, thrd_create(NULL, NULL, &param));
 		zassert_equal(thrd_error, thrd_create(NULL, fun, NULL));
-		zassert_equal(thrd_error, thrd_create(NULL, fun, &x));
+		zassert_equal(thrd_error, thrd_create(NULL, fun, &param));
 		zassert_equal(thrd_error, thrd_create(&thr, NULL, NULL));
-		zassert_equal(thrd_error, thrd_create(&thr, NULL, &x));
+		zassert_equal(thrd_error, thrd_create(&thr, NULL, &param));
 	}
 
 	zassert_equal(thrd_success, thrd_create(&thr, fun, NULL));
 	zassert_equal(thrd_success, thrd_join(thr, NULL));
 
-	zassert_equal(thrd_success, thrd_create(&thr, fun, &x));
+	zassert_equal(thrd_success, thrd_create(&thr, fun, &param));
 	zassert_equal(thrd_success, thrd_join(thr, &res));
-	zassert_equal(BIOS_FOOD, x, "expected: %d actual: %d", BIOS_FOOD, x);
+	zassert_equal(BIOS_FOOD, param, "expected: %d actual: %d", BIOS_FOOD, param);
 	zassert_equal(FORTY_TWO, res);
 }
 
@@ -90,13 +93,13 @@ static int thrd_exit_fn(void *arg)
 
 ZTEST(libc_thrd, test_thrd_exit)
 {
-	thrd_t thr;
 	int res = 0;
-	uintptr_t x = 0;
 
-	zassert_equal(thrd_success, thrd_create(&thr, thrd_exit_fn, &x));
+	param = 0;
+
+	zassert_equal(thrd_success, thrd_create(&thr, thrd_exit_fn, &param));
 	zassert_equal(thrd_success, thrd_join(thr, &res));
-	zassert_equal(BIOS_FOOD, x);
+	zassert_equal(BIOS_FOOD, param);
 	zassert_equal(SEVENTY_THREE, res);
 }
 
@@ -141,8 +144,6 @@ static int thrd_detach_fn(void *arg)
 
 ZTEST(libc_thrd, test_thrd_detach)
 {
-	thrd_t thr;
-
 	zassert_equal(thrd_success, thrd_create(&thr, thrd_detach_fn, NULL));
 	zassert_equal(thrd_success, thrd_detach(thr));
 	zassert_equal(thrd_error, thrd_join(thr, NULL));
@@ -156,8 +157,6 @@ ZTEST(libc_thrd, test_thrd_detach)
 
 ZTEST(libc_thrd, test_thrd_reuse)
 {
-	thrd_t thr;
-
 	for (int i = 0; i < FORTY_TWO; ++i) {
 		zassert_equal(thrd_success, thrd_create(&thr, thrd_create_join_fn, NULL));
 		zassert_equal(thrd_success, thrd_join(thr, NULL));

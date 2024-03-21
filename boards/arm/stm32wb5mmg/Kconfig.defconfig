@@ -1,0 +1,16 @@
+# STM32WB5MMG Bluetooth module board configuration
+
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32WB5MMG
+
+config BOARD
+	default "stm32wb5mmg"
+
+choice BT_HCI_BUS_TYPE
+	default BT_STM32_IPM
+	depends on BT
+endchoice
+
+endif # BOARD_STM32WB5MMG

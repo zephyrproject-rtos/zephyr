@@ -144,3 +144,10 @@ const struct pfc_drive_reg *pfc_rcar_get_drive_regs(void)
 {
 	return pfc_drive_regs;
 }
+
+int pfc_rcar_get_reg_index(uint8_t pin, uint8_t *reg_index)
+{
+	/* There is only one register on Gen 3 */
+	*reg_index = 0;
+	return 0;
+}

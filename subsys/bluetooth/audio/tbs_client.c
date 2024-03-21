@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);
 	 IS_ENABLED(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) +                                     \
 	 IS_ENABLED(CONFIG_BT_TBS_CLIENT_INCOMING_CALL))
 
-BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= TBS_CLIENT_BUF_COUNT, "Too few L2CAP buffers");
+BUILD_ASSERT(CONFIG_BT_ATT_TX_COUNT >= TBS_CLIENT_BUF_COUNT, "Too few ATT buffers");
 
 #include "common/bt_str.h"
 
@@ -1539,12 +1539,16 @@ static uint8_t discover_func(struct bt_conn *conn,
 				sub_params->end_handle = current_inst->end_handle;
 				sub_params->notify = notify_handler;
 				atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
 				err = bt_gatt_subscribe(conn, sub_params);
-				if (err != 0) {
+				if (err != 0 && err != -EALREADY) {
 					LOG_DBG("Could not subscribe to "
 					       "characterstic at handle 0x%04X"
 					       "(%d)",
 					       sub_params->value_handle, err);
+					tbs_client_discover_complete(conn, err);
+
+					return BT_GATT_ITER_STOP;
 				} else {
 					LOG_DBG("Subscribed to characterstic at "
 					       "handle 0x%04X",
@@ -1785,7 +1789,7 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!bt_tbs_valid_uri(uri)) {
+	} else if (!bt_tbs_valid_uri(uri, strlen(uri))) {
 		LOG_DBG("Invalid URI: %s", uri);
 		return -EINVAL;
 	}

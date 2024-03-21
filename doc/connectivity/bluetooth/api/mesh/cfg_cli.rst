@@ -3,7 +3,7 @@
 Configuration Client
 ####################
 
-The Configuration Client model is a foundation model defined by the Bluetooth mesh
+The Configuration Client model is a foundation model defined by the Bluetooth Mesh
 specification. It provides functionality for configuring most parameters of a
 mesh node, including encryption keys, model configuration and feature
 enabling.

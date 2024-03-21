@@ -123,7 +123,7 @@ Pin Mapping
 STM32F3DISCOVERY Discovery kit has 6 GPIO controllers. These controllers are
 responsible for pin muxing, input/output, pull-up, etc.
 
-For mode details please refer to `STM32F3DISCOVERY board User Manual`_.
+For more details please refer to `STM32F3DISCOVERY board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

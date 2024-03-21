@@ -56,9 +56,9 @@ void k_free(void *ptr)
 	}
 }
 
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if (K_HEAP_MEM_POOL_SIZE > 0)
 
-K_HEAP_DEFINE(_system_heap, CONFIG_HEAP_MEM_POOL_SIZE);
+K_HEAP_DEFINE(_system_heap, K_HEAP_MEM_POOL_SIZE);
 #define _SYSTEM_HEAP (&_system_heap)
 
 void *k_aligned_alloc(size_t align, size_t size)

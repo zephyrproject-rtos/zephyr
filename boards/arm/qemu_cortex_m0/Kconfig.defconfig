@@ -17,7 +17,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 100
 
-config LOG_BUFFER_SIZE
-	default 128 if LOG
-
 endif # BOARD_QEMU_CORTEX_M0

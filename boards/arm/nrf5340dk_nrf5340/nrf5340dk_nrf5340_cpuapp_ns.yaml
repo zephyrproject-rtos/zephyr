@@ -16,4 +16,5 @@ supported:
   - usb_device
   - netif:openthread
   - gpio
+  - spi
 vendor: nordic

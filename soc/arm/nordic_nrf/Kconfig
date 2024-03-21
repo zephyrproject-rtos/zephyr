@@ -13,11 +13,12 @@ config SOC_FAMILY
 	string
 	default "nordic_nrf"
 
-source "soc/arm/nordic_nrf/Kconfig.peripherals"
+source "soc/common/nordic_nrf/Kconfig.peripherals"
 source "soc/arm/nordic_nrf/*/Kconfig.soc"
 
 config NRF_SOC_SECURE_SUPPORTED
 	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)
+	depends on !SOC_SERIES_NRF54HX
 	help
 	  Hidden function to indicate that that the soc_secure functions are
 	  available.
@@ -44,6 +45,10 @@ config TFM_LOG_LEVEL_SILENCE
 	help
 	  Disable TF-M secure output if the uart1 node has not assigned GPIO
 	  pins using pinctrl.
+
+config TFM_NRF_NS_STORAGE
+	bool "TF-M non-secure storage partition"
+	default y
 
 endif # BUILD_WITH_TFM
 
@@ -166,18 +171,5 @@ config NRF_TRACE_PORT
 	  Enable this option to initialize the TPIU (Trace Port Interface
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
-
-config NRF_STORE_REBOOT_TYPE_GPREGRET
-	bool "Set GPREGRET to reboot type (DEPRECATED)"
-	depends on SOC_SERIES_NRF51X || SOC_SERIES_NRF52X
-	depends on REBOOT
-	depends on !RETENTION_BOOT_MODE
-	select DEPRECATED
-	help
-	  If this option is enabled, then the parameter supplied to the
-	  sys_reboot() function will be set in the GPREGRET register.
-
-	  This has been replaced with the bootmode part of the retention
-	  subsystem, which should be used instead.
 
 endif # SOC_FAMILY_NRF

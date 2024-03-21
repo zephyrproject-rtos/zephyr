@@ -9,7 +9,7 @@
 
 #define DT_DRAM_SIZE		DT_SIZE_M(2048)
 
-#include <intel/raptor_lake.dtsi>
+#include <intel/raptor_lake_s.dtsi>
 
 / {
 	model = "intel_rpl_s_crb";

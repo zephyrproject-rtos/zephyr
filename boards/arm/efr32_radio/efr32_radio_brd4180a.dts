@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/efr32mg21a020f1024im32.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "efr32_radio_brd4180a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs BRD4180A (Mighty Gecko Radio Board)";
@@ -65,8 +66,8 @@
 
 &usart0 {
 	current-speed = <115200>;
-	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(6)>;
-	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(5)>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

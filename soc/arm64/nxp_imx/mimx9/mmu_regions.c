@@ -30,40 +30,18 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_NODELABEL(ana_pll)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
-	MMU_REGION_FLAT_ENTRY("UART1",
-			      DT_REG_ADDR(DT_NODELABEL(lpuart1)),
-			      DT_REG_SIZE(DT_NODELABEL(lpuart1)),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
-	MMU_REGION_FLAT_ENTRY("UART2",
-			      DT_REG_ADDR(DT_NODELABEL(lpuart2)),
-			      DT_REG_SIZE(DT_NODELABEL(lpuart2)),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
 	MMU_REGION_FLAT_ENTRY("IOMUXC",
 			      DT_REG_ADDR(DT_NODELABEL(iomuxc)),
 			      DT_REG_SIZE(DT_NODELABEL(iomuxc)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
+	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_kinetis_lpuart,
+			 (MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
+
 #if CONFIG_SOF
 	MMU_REGION_FLAT_ENTRY("MU2_A",
 			      DT_REG_ADDR(DT_NODELABEL(mu2_a)),
 			      DT_REG_SIZE(DT_NODELABEL(mu2_a)),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
-	MMU_REGION_FLAT_ENTRY("SAI3",
-			      DT_REG_ADDR(DT_NODELABEL(sai3)),
-			      DT_REG_SIZE(DT_NODELABEL(sai3)),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
-	MMU_REGION_FLAT_ENTRY("EDMA2_CH0",
-			      DT_REG_ADDR(DT_NODELABEL(edma2_ch0)),
-			      DT_REG_SIZE(DT_NODELABEL(edma2_ch0)),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
-	MMU_REGION_FLAT_ENTRY("EDMA2_CH1",
-			      DT_REG_ADDR(DT_NODELABEL(edma2_ch1)),
-			      DT_REG_SIZE(DT_NODELABEL(edma2_ch1)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
 	MMU_REGION_FLAT_ENTRY("OUTBOX",

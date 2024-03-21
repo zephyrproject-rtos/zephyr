@@ -3,7 +3,9 @@ tests:
     tags: drivers gpio
     depends_on: gpio
     filter: dt_compat_enabled("test-gpio-reserved-ranges")
-    platform_allow: native_posix native_posix_64
+    platform_allow:
+      - native_sim
+      - native_sim_64
     integration_platforms:
-      - native_posix
-      - native_posix_64
+      - native_sim
+      - native_sim_64

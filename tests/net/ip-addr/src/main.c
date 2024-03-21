@@ -68,15 +68,17 @@ static struct net_if *default_iface;
 			      "Test %s failed.\n", expected);		\
 	} while (0)
 
+#define LL_ADDR_STR_SIZE sizeof("xx:xx:xx:xx:xx:xx")
+
 #define TEST_LL_6_TWO(a, b, c, d, e, f, expected)			\
 	do {								\
 		uint8_t ll1[] = { a, b, c, d, e, f };			\
 		uint8_t ll2[] = { f, e, d, c, b, a };			\
-		char out[2 * sizeof("xx:xx:xx:xx:xx:xx") + 1 + 1];	\
+		char out[2 * LL_ADDR_STR_SIZE + 1 + 1];	\
 		snprintk(out, sizeof(out), "%s ",			\
 			 net_sprint_ll_addr(ll1, sizeof(ll1)));		\
-		snprintk(out + sizeof("xx:xx:xx:xx:xx:xx"),		\
-			 sizeof(out), "%s",				\
+		snprintk(out + LL_ADDR_STR_SIZE,			\
+			 sizeof(out) - LL_ADDR_STR_SIZE, "%s",		\
 			 net_sprint_ll_addr(ll2, sizeof(ll2)));		\
 		zassert_false(strcmp(out, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
@@ -598,6 +600,104 @@ ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 		     "IPv6 removing address failed\n");
 	zassert_true(net_if_ipv6_addr_rm(iface, &ml_eid),
 		     "IPv6 removing address failed\n");
+}
+
+ZTEST(ip_addr_fn, test_private_ipv6_addresses)
+{
+	bool ret;
+	struct {
+		struct in6_addr addr;
+		bool is_private;
+	} addrs[] = {
+		{
+			.addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0x99, 0x1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0xfc, 0x01, 0, 0, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0xfc, 0, 0, 0, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0, 2 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0x20, 0x01, 0x1d, 0xb8, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0x99, 0x1 } } },
+			.is_private = false,
+		},
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(addrs); i++) {
+		ret = net_ipv6_is_private_addr(&addrs[i].addr);
+		zassert_equal(ret, addrs[i].is_private, "Address %s check failed",
+			      net_sprint_ipv6_addr(&addrs[i].addr));
+	}
+
+}
+
+ZTEST(ip_addr_fn, test_private_ipv4_addresses)
+{
+	bool ret;
+	struct {
+		struct in_addr addr;
+		bool is_private;
+	} addrs[] = {
+		{
+			.addr = { { { 192, 0, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 10, 1, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 100, 124, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 172, 24, 100, 12 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 172, 15, 254, 255 } } },
+			.is_private = false,
+		},
+		{
+			.addr = { { { 172, 16, 0, 0 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 192, 168, 10, 122 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 192, 51, 100, 255 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 203, 0, 113, 122 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 1, 2, 3, 4 } } },
+			.is_private = false,
+		},
+		{
+			.addr = { { { 192, 1, 32, 4 } } },
+			.is_private = false,
+		},
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(addrs); i++) {
+		ret = net_ipv4_is_private_addr(&addrs[i].addr);
+		zassert_equal(ret, addrs[i].is_private, "Address %s check failed",
+			      net_sprint_ipv4_addr(&addrs[i].addr));
+	}
+
 }
 
 void *test_setup(void)

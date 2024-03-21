@@ -100,12 +100,19 @@ class Handler:
 
     def record(self, harness):
         if harness.recording:
+            if self.instance.recording is None:
+                self.instance.recording = harness.recording.copy()
+            else:
+                self.instance.recording.extend(harness.recording)
+
             filename = os.path.join(self.build_dir, "recording.csv")
             with open(filename, "at") as csvfile:
-                cw = csv.writer(csvfile, harness.fieldnames, lineterminator=os.linesep)
-                cw.writerow(harness.fieldnames)
-                for instance in harness.recording:
-                    cw.writerow(instance)
+                cw = csv.DictWriter(csvfile,
+                                    fieldnames = harness.recording[0].keys(),
+                                    lineterminator = os.linesep,
+                                    quoting = csv.QUOTE_NONNUMERIC)
+                cw.writeheader()
+                cw.writerows(harness.recording)
 
     def terminate(self, proc):
         terminate_process(proc)
@@ -319,10 +326,6 @@ class BinaryHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        if self.options.coverage:
-            subprocess.call(["GCOV_PREFIX=" + self.build_dir,
-                             "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
-
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
         if sys.stdout.isatty():
@@ -360,7 +363,7 @@ class DeviceHandler(Handler):
 
     def get_test_timeout(self):
         timeout = super().get_test_timeout()
-        if self.options.coverage:
+        if self.options.enable_coverage:
             # wait more for gcov data to be dumped on console
             timeout += 120
         return timeout
@@ -368,7 +371,7 @@ class DeviceHandler(Handler):
     def monitor_serial(self, ser, halt_event, harness):
         log_out_fp = open(self.log, "wb")
 
-        if self.options.coverage:
+        if self.options.enable_coverage:
             # Set capture_coverage to True to indicate that right after
             # test results we should get coverage data, otherwise we exit
             # from the test.
@@ -988,6 +991,7 @@ class QEMUHandler(Handler):
         self.thread.daemon = True
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
+        thread_max_time = time.time() + self.get_test_timeout()
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
@@ -1019,8 +1023,8 @@ class QEMUHandler(Handler):
                 self.returncode = proc.returncode
             # Need to wait for harness to finish processing
             # output from QEMU. Otherwise it might miss some
-            # error messages.
-            self.thread.join(0)
+            # messages.
+            self.thread.join(max(thread_max_time - time.time(), 0))
             if self.thread.is_alive():
                 logger.debug("Timed out while monitoring QEMU output")
 

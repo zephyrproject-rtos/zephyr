@@ -78,6 +78,7 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
+#if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL)
 static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
 	if (err) {
@@ -87,7 +88,9 @@ static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 
 	shell_print(ctx_shell, "Icon URL: 0x%s", url);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) */
 
+#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE)
 static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *title)
 {
 	if (err) {
@@ -97,6 +100,7 @@ static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *t
 
 	shell_print(ctx_shell, "Track title: %s", title);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE) */
 
 static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 {
@@ -108,6 +112,7 @@ static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 	shell_print(ctx_shell, "Track changed");
 }
 
+#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
@@ -117,7 +122,9 @@ static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t du
 
 	shell_print(ctx_shell, "Track duration: %d", dur);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
 
+#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
 static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
@@ -127,7 +134,9 @@ static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t po
 
 	shell_print(ctx_shell, "Track Position: %d", pos);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) */
 
+#if defined(CONFIG_BT_MCC_SET_TRACK_POSITION)
 static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
@@ -137,7 +146,9 @@ static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos
 
 	shell_print(ctx_shell, "Track Position: %d", pos);
 }
+#endif /* defined(CONFIG_BT_MCC_SET_TRACK_POSITION) */
 
+#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
 static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err,
 				       int8_t speed)
 {
@@ -148,7 +159,9 @@ static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err,
 
 	shell_print(ctx_shell, "Playback speed: %d", speed);
 }
+#endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) */
 
+#if defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED)
 static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
@@ -158,7 +171,9 @@ static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t spee
 
 	shell_print(ctx_shell, "Playback speed: %d", speed);
 }
+#endif /* defined (CONFIG_BT_MCC_SET_PLAYBACK_SPEED) */
 
+#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
 static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err,
 				      int8_t speed)
 {
@@ -169,6 +184,7 @@ static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err,
 
 	shell_print(ctx_shell, "Seeking speed: %d", speed);
 }
+#endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
 
 
 #ifdef CONFIG_BT_MCC_OTS
@@ -311,6 +327,7 @@ static void mcc_set_current_group_obj_id_cb(struct bt_conn *conn, int err,
 #endif /* CONFIG_BT_MCC_OTS */
 
 
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
 static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
@@ -320,7 +337,9 @@ static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t ord
 
 	shell_print(ctx_shell, "Playing order: %d", order);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
 
+#if defined(CONFIG_BT_MCC_SET_PLAYING_ORDER)
 static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
@@ -330,7 +349,9 @@ static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t orde
 
 	shell_print(ctx_shell, "Playing order: %d", order);
 }
+#endif /* defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) */
 
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED)
 static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err,
 						 uint16_t orders)
 {
@@ -342,7 +363,9 @@ static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err,
 
 	shell_print(ctx_shell, "Playing orders supported: %d", orders);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) */
 
+#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
 static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state)
 {
 	if (err) {
@@ -352,7 +375,9 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 
 	shell_print(ctx_shell, "Media State: %d", state);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
+#if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
 static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
@@ -364,6 +389,7 @@ static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd 
 
 	shell_print(ctx_shell, "Command opcode: %d, param: %d", cmd->opcode, cmd->param);
 }
+#endif /* defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) */
 
 static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 			   const struct mpl_cmd_ntf *ntf)
@@ -379,6 +405,7 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 		    ntf->requested_opcode, ntf->result_code);
 }
 
+#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
 static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 					    uint32_t opcodes)
 {
@@ -390,6 +417,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 
 	shell_print(ctx_shell, "Opcodes supported: %d", opcodes);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 
 #ifdef CONFIG_BT_MCC_OTS
 static void mcc_send_search_cb(struct bt_conn *conn, int err,
@@ -439,6 +467,7 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
+#if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
 	if (err) {
@@ -448,6 +477,7 @@ static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_
 
 	shell_print(ctx_shell, "Content Control ID: %d", ccid);
 }
+#endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 
 #ifdef CONFIG_BT_MCC_OTS
 /**** Callback functions for the included Object Transfer service *************/
@@ -569,15 +599,31 @@ static int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 #ifdef CONFIG_BT_MCC_OTS
 	cb.read_icon_obj_id              = mcc_read_icon_obj_id_cb;
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL)
 	cb.read_icon_url                 = mcc_read_icon_url_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) */
 	cb.track_changed_ntf             = mcc_track_changed_ntf_cb;
+#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE)
 	cb.read_track_title              = mcc_read_track_title_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 	cb.read_track_duration           = mcc_read_track_duration_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
 	cb.read_track_position           = mcc_read_track_position_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) */
+#if defined(CONFIG_BT_MCC_SET_TRACK_POSITION)
 	cb.set_track_position            = mcc_set_track_position_cb;
+#endif /* defined(CONFIG_BT_MCC_SET_TRACK_POSITION) */
+#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
 	cb.read_playback_speed           = mcc_read_playback_speed_cb;
+#endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) */
+#if defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED)
 	cb.set_playback_speed            = mcc_set_playback_speed_cb;
+#endif /* defined (CONFIG_BT_MCC_SET_PLAYBACK_SPEED) */
+#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
 	cb.read_seeking_speed            = mcc_read_seeking_speed_cb;
+#endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
 #ifdef CONFIG_BT_MCC_OTS
 	cb.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
 	cb.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
@@ -588,19 +634,33 @@ static int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 	cb.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
 	cb.set_current_group_obj_id      = mcc_set_current_group_obj_id_cb;
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
 	cb.read_playing_order            = mcc_read_playing_order_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
+#if defined(CONFIG_BT_MCC_SET_PLAYING_ORDER)
 	cb.set_playing_order             = mcc_set_playing_order_cb;
+#endif /* defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) */
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED)
 	cb.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
 	cb.read_media_state              = mcc_read_media_state_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
+#if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
 	cb.send_cmd                      = mcc_send_cmd_cb;
+#endif /* defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) */
 	cb.cmd_ntf                       = mcc_cmd_ntf_cb;
+#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
 	cb.read_opcodes_supported        = mcc_read_opcodes_supported_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 #ifdef CONFIG_BT_MCC_OTS
 	cb.send_search                   = mcc_send_search_cb;
 	cb.search_ntf                    = mcc_search_ntf_cb;
 	cb.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 	cb.read_content_control_id       = mcc_read_content_control_id_cb;
+#endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 #ifdef CONFIG_BT_MCC_OTS
 	cb.otc_obj_selected              = mcc_otc_obj_selected_cb;
 	cb.otc_obj_metadata              = mcc_otc_obj_metadata_cb;
@@ -670,6 +730,7 @@ static int cmd_mcc_read_icon_obj_id(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
+#if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL)
 static int cmd_mcc_read_icon_url(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
@@ -681,7 +742,9 @@ static int cmd_mcc_read_icon_url(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) */
 
+#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE)
 static int cmd_mcc_read_track_title(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
@@ -693,7 +756,9 @@ static int cmd_mcc_read_track_title(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE) */
 
+#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 static int cmd_mcc_read_track_duration(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
@@ -705,7 +770,9 @@ static int cmd_mcc_read_track_duration(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
 
+#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
 static int cmd_mcc_read_track_position(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
@@ -717,7 +784,9 @@ static int cmd_mcc_read_track_position(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) */
 
+#if defined(CONFIG_BT_MCC_SET_TRACK_POSITION)
 static int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
@@ -743,8 +812,10 @@ static int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_SET_TRACK_POSITION) */
 
 
+#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
 static int cmd_mcc_read_playback_speed(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
@@ -756,8 +827,10 @@ static int cmd_mcc_read_playback_speed(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) */
 
 
+#if defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED)
 static int cmd_mcc_set_playback_speed(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
@@ -783,7 +856,9 @@ static int cmd_mcc_set_playback_speed(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined (CONFIG_BT_MCC_SET_PLAYBACK_SPEED) */
 
+#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
 static int cmd_mcc_read_seeking_speed(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
@@ -795,6 +870,7 @@ static int cmd_mcc_read_seeking_speed(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
 
 
 #ifdef CONFIG_BT_MCC_OTS
@@ -938,6 +1014,7 @@ static int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
 static int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
@@ -949,7 +1026,9 @@ static int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
 
+#if defined(CONFIG_BT_MCC_SET_PLAYING_ORDER)
 static int cmd_mcc_set_playing_order(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
@@ -975,7 +1054,9 @@ static int cmd_mcc_set_playing_order(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) */
 
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED)
 static int cmd_mcc_read_playing_orders_supported(const struct shell *sh,
 						 size_t argc, char *argv[])
 {
@@ -987,7 +1068,9 @@ static int cmd_mcc_read_playing_orders_supported(const struct shell *sh,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) */
 
+#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
 static int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
@@ -999,7 +1082,9 @@ static int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
+#if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
 static int cmd_mcc_play(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct mpl_cmd cmd = {
@@ -1430,7 +1515,9 @@ static int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
 
 	return err;
 }
+#endif /* defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) */
 
+#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
 static int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
@@ -1442,6 +1529,7 @@ static int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 
 #ifdef CONFIG_BT_MCC_OTS
 static int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc,
@@ -1632,6 +1720,7 @@ static int cmd_mcc_read_search_results_obj_id(const struct shell *sh,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
+#if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 static int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
 					   char *argv[])
 {
@@ -1643,6 +1732,7 @@ static int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
+#endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 
 
 #ifdef CONFIG_BT_MCC_OTS
@@ -1867,22 +1957,38 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 	SHELL_CMD_ARG(read_icon_obj_id, NULL, "Read Icon Object ID",
 		      cmd_mcc_read_icon_obj_id, 1, 0),
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL)
 	SHELL_CMD_ARG(read_icon_url, NULL, "Read Icon URL",
 		      cmd_mcc_read_icon_url, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE)
 	SHELL_CMD_ARG(read_track_title, NULL, "Read Track Title",
 		      cmd_mcc_read_track_title, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 	SHELL_CMD_ARG(read_track_duration, NULL, "Read Track Duration",
 		      cmd_mcc_read_track_duration, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
+#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
 	SHELL_CMD_ARG(read_track_position, NULL, "Read Track Position",
 		      cmd_mcc_read_track_position, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) */
+#if defined(CONFIG_BT_MCC_SET_TRACK_POSITION)
 	SHELL_CMD_ARG(set_track_position, NULL, "Set Track position <position>",
 		      cmd_mcc_set_track_position, 2, 0),
+#endif /* defined(CONFIG_BT_MCC_SET_TRACK_POSITION) */
+#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
 	SHELL_CMD_ARG(read_playback_speed, NULL, "Read Playback Speed",
 		      cmd_mcc_read_playback_speed, 1, 0),
+#endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED */
+#if defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED)
 	SHELL_CMD_ARG(set_playback_speed, NULL, "Set Playback Speed <speed>",
 		      cmd_mcc_set_playback_speed, 2, 0),
+#endif /* defined (CONFIG_BT_MCC_SET_PLAYBACK_SPEED) */
+#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
 	SHELL_CMD_ARG(read_seeking_speed, NULL, "Read Seeking Speed",
 		      cmd_mcc_read_seeking_speed, 1, 0),
+#endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
 #ifdef CONFIG_BT_MCC_OTS
 	SHELL_CMD_ARG(read_track_segments_obj_id, NULL,
 		      "Read Track Segments Object ID",
@@ -1909,15 +2015,24 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      "Set Current Group Object ID <id: 48 bits or less>",
 		      cmd_mcc_set_current_group_obj_id, 2, 0),
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
 	SHELL_CMD_ARG(read_playing_order, NULL, "Read Playing Order",
 		      cmd_mcc_read_playing_order, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
+#if defined(CONFIG_BT_MCC_SET_PLAYING_ORDER)
 	SHELL_CMD_ARG(set_playing_order, NULL, "Set Playing Order <order>",
 		      cmd_mcc_set_playing_order, 2, 0),
+#endif /* defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) */
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED)
 	SHELL_CMD_ARG(read_playing_orders_supported, NULL,
 		     "Read Playing Orders Supported",
 		      cmd_mcc_read_playing_orders_supported, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
 	SHELL_CMD_ARG(read_media_state, NULL, "Read Media State",
 		      cmd_mcc_read_media_state, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
+#if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
 	SHELL_CMD_ARG(play, NULL, "Send the play command", cmd_mcc_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "Send the pause command",
 		      cmd_mcc_pause, 1, 0),
@@ -1962,8 +2077,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 	SHELL_CMD_ARG(goto_group, NULL,
 		      "Send the goto group command <int32_t: group>",
 		      cmd_mcc_goto_group, 2, 0),
+#endif /* defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) */
+#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
 	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Send the Read Opcodes Supported",
 		      cmd_mcc_read_opcodes_supported, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 #ifdef CONFIG_BT_MCC_OTS
 	SHELL_CMD_ARG(send_search_raw, NULL, "Send search <search control item sequence>",
 		      cmd_mcc_send_search_raw, 2, 0),
@@ -1982,8 +2100,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      "Read Search Results Object ID",
 		      cmd_mcc_read_search_results_obj_id, 1, 0),
 #endif /* CONFIG_BT_MCC_OTS */
+#if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 	SHELL_CMD_ARG(read_content_control_id, NULL, "Read Content Control ID",
 		      cmd_mcc_read_content_control_id, 1, 0),
+#endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 #ifdef CONFIG_BT_MCC_OTS
 	SHELL_CMD_ARG(ots_read_features, NULL, "Read OTC Features",
 		      cmd_mcc_otc_read_features, 1, 0),

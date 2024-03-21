@@ -139,6 +139,8 @@
 	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
 };
@@ -169,11 +171,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@0 {
+	n25q128a1: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
-		size = <DT_SIZE_M(16*8)>;
 		status = "okay";
 
 		partitions {

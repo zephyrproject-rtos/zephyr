@@ -29,16 +29,6 @@ LOG_MODULE_REGISTER(auxdisplay_serlcd, CONFIG_AUXDISPLAY_LOG_LEVEL);
 #define SERLCD_BEGIN_SPECIAL_COMMAND 0xFE
 
 /*
- * delay in milliseconds after a normal command was sent
- */
-#define SERLCD_COMMAND_DELAY_MS 10
-
-/*
- * delay in milliseconds after a special command was sent
- */
-#define SERLCD_SPECIAL_COMMAND_DELAY_MS 50
-
-/*
  * maximum amount of custom chars the display supports
  */
 #define SERLCD_CUSTOM_CHAR_MAX_COUNT 8
@@ -89,6 +79,8 @@ struct auxdisplay_serlcd_data {
 struct auxdisplay_serlcd_config {
 	struct auxdisplay_capabilities capabilities;
 	struct i2c_dt_spec bus;
+	uint16_t command_delay_ms;
+	uint16_t special_command_delay_ms;
 };
 
 enum auxdisplay_serlcd_command {
@@ -111,7 +103,7 @@ static int auxdisplay_serlcd_send_command(const struct device *dev,
 
 	int rc = i2c_write_dt(&config->bus, buffer, sizeof(buffer));
 
-	k_sleep(K_MSEC(SERLCD_COMMAND_DELAY_MS));
+	k_sleep(K_MSEC(config->command_delay_ms));
 	return rc;
 }
 
@@ -124,7 +116,7 @@ auxdisplay_serlcd_send_special_command(const struct device *dev,
 
 	int rc = i2c_write_dt(&config->bus, buffer, sizeof(buffer));
 
-	k_sleep(K_MSEC(SERLCD_SPECIAL_COMMAND_DELAY_MS));
+	k_sleep(K_MSEC(config->special_command_delay_ms));
 	return rc;
 }
 
@@ -269,9 +261,11 @@ static int auxdisplay_serlcd_capabilities_get(const struct device *dev,
 
 static int auxdisplay_serlcd_clear(const struct device *dev)
 {
+	const struct auxdisplay_serlcd_config *config = dev->config;
+
 	int rc = auxdisplay_serlcd_send_command(dev, SERLCD_COMMAND_CLEAR);
 
-	k_sleep(K_MSEC(SERLCD_COMMAND_DELAY_MS));
+	k_sleep(K_MSEC(config->command_delay_ms));
 	return rc;
 }
 
@@ -425,7 +419,10 @@ static const struct auxdisplay_driver_api auxdisplay_serlcd_auxdisplay_api = {
 				.custom_character_width = SERLCD_CUSTOM_CHAR_WIDTH,                \
 				.custom_character_height = SERLCD_CUSTOM_CHAR_HEIGHT,              \
 			},                                                                         \
-		.bus = I2C_DT_SPEC_INST_GET(inst)};                                                \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.command_delay_ms = DT_INST_PROP(inst, command_delay_ms),                          \
+		.special_command_delay_ms = DT_INST_PROP(inst, special_command_delay_ms),          \
+	};                                                                                         \
                                                                                                    \
 	static struct auxdisplay_serlcd_data auxdisplay_serlcd_data_##inst;                        \
                                                                                                    \

@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <arm/xilinx/zynqmp_rpu.dtsi>
+#include "mercury_xu-pinctrl.dtsi"
 
 / {
 	model = "Mercury XU";
@@ -13,6 +14,7 @@
 
 	chosen {
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -27,9 +29,20 @@
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <99999901>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
 };
 
 &ttc0 {
 	status = "okay";
 	clock-frequency = <5000000>;
+};
+
+&psgpio {
+	status = "okay";
 };

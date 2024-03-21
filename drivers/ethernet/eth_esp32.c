@@ -17,6 +17,7 @@
 #include <esp_mac.h>
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
+#include <soc/rtc.h>
 
 #include "eth.h"
 
@@ -217,12 +218,25 @@ int eth_esp32_initialize(const struct device *dev)
 	/* Configure phy for Media-Independent Interface (MII) or
 	 * Reduced Media-Independent Interface (RMII) mode
 	 */
-	const char *phy_connection_type = DT_INST_PROP(0, phy_connection_type);
+	const char *phy_connection_type = DT_INST_PROP_OR(0,
+						phy_connection_type,
+						"rmii");
 
 	if (strcmp(phy_connection_type, "rmii") == 0) {
 		emac_hal_iomux_init_rmii();
+#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
+			"Only GPIO16/17 are allowed as a GPIO REF_CLK source!");
+		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
+
+		emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
+		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
+		rtc_clk_apll_enable(true, 0, 0, 6, 2);
+#else
 		emac_hal_iomux_rmii_clk_input();
 		emac_ll_clock_enable_rmii_input(dev_data->hal.ext_regs);
+#endif
 	} else if (strcmp(phy_connection_type, "mii") == 0) {
 		emac_hal_iomux_init_mii();
 		emac_ll_clock_enable_mii(dev_data->hal.ext_regs);

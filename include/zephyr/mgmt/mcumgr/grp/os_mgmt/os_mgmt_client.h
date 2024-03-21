@@ -45,11 +45,12 @@ void os_mgmt_client_init(struct os_mgmt_client *client, struct smp_client_object
  *
  * @param client OS mgmt client object
  * @param echo_string Echo string
+ * @param max_len Max length of @p echo_string
  *
  * @return 0 on success.
  * @return @ref mcumgr_err_t code on failure.
  */
-int os_mgmt_client_echo(struct os_mgmt_client *client, const char *echo_string);
+int os_mgmt_client_echo(struct os_mgmt_client *client, const char *echo_string, size_t max_len);
 
 /**
  * @brief Send SMP Reset command.

@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/net/net_stats.h>
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #include "../ip/net_stats.h"
 
@@ -66,6 +66,47 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 	PR("Send timeouts    : %u\n", data->tx_timeout_count);
 	PR("Send restarts    : %u\n", data->tx_restart_queue);
 	PR("Unknown protocol : %u\n", data->unknown_protocol);
+
+	PR("Checksum offload : RX good %u errors %u\n",
+	   data->csum.rx_csum_offload_good,
+	   data->csum.rx_csum_offload_errors);
+	PR("Flow control     : RX xon %u xoff %u TX xon %u xoff %u\n",
+	   data->flow_control.rx_flow_control_xon,
+	   data->flow_control.rx_flow_control_xoff,
+	   data->flow_control.tx_flow_control_xon,
+	   data->flow_control.tx_flow_control_xoff);
+	PR("ECC errors       : uncorrected %u corrected %u\n",
+	   data->error_details.uncorr_ecc_errors,
+	   data->error_details.corr_ecc_errors);
+	PR("HW timestamp     : RX cleared %u TX timeout %u skipped %u\n",
+	   data->hw_timestamp.rx_hwtstamp_cleared,
+	   data->hw_timestamp.tx_hwtstamp_timeouts,
+	   data->hw_timestamp.tx_hwtstamp_skipped);
+
+	PR("RX errors : %5s %5s %5s %5s %5s %5s %5s %5s %5s %5s %5s\n",
+	   "Len", "Over", "CRC", "Frame", "NoBuf", "Miss", "Long", "Short",
+	   "Align", "DMA", "Alloc");
+	PR("            %5u %5u %5u %5u %5u %5u %5u %5u %5u %5u %5u\n",
+	   data->error_details.rx_length_errors,
+	   data->error_details.rx_over_errors,
+	   data->error_details.rx_crc_errors,
+	   data->error_details.rx_frame_errors,
+	   data->error_details.rx_no_buffer_count,
+	   data->error_details.rx_missed_errors,
+	   data->error_details.rx_long_length_errors,
+	   data->error_details.rx_short_length_errors,
+	   data->error_details.rx_align_errors,
+	   data->error_details.rx_dma_failed,
+	   data->error_details.rx_buf_alloc_failed);
+	PR("TX errors : %5s %8s %5s %10s %7s %5s\n",
+	   "Abort", "Carrier", "Fifo", "Heartbeat", "Window", "DMA");
+	PR("            %5u %8u %5u %10u %7u %5u\n",
+	   data->error_details.tx_aborted_errors,
+	   data->error_details.tx_carrier_errors,
+	   data->error_details.tx_fifo_errors,
+	   data->error_details.tx_heartbeat_errors,
+	   data->error_details.tx_window_errors,
+	   data->error_details.tx_dma_failed);
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
 	if (data->vendor) {

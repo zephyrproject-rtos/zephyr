@@ -142,6 +142,8 @@ config MODEM_CMD_HANDLER_MAX_PARAM_COUNT
 	  of the match_buf (match_buf_len) field as it needs to be large
 	  enough to hold a single line of data (ending with /r).
 
+endif # MODEM_CONTEXT
+
 config MODEM_SOCKET
 	bool "Generic modem socket support layer"
 	help
@@ -164,8 +166,6 @@ config MODEM_SOCKET_PACKET_COUNT
 	  As the modem indicates more data is available to be received,
 	  these values are organized into "packets".  This setting limits
 	  the maximum number of packet sizes the socket can keep track of.
-
-endif # MODEM_CONTEXT
 
 config MODEM_SHELL
 	bool "Modem shell utilities"

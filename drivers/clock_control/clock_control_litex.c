@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
+#include <soc.h>
+
 LOG_MODULE_REGISTER(CLK_CTRL_LITEX, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 static struct litex_clk_device *ldev;	/* global struct for whole driver */

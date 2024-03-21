@@ -162,8 +162,12 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR, TSL2540_ENABLE_MASK &
-				~TSL2540_ENABLE_CONF);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR, TSL2540_ENABLE_MASK &
+				    ~TSL2540_ENABLE_CONF);
+	if (ret) {
+		k_sem_give(&data->sem);
+		return ret;
+	}
 
 #if CONFIG_TSL2540_TRIGGER
 	if (chan == SENSOR_CHAN_LIGHT) {
@@ -288,6 +292,7 @@ static int tsl2540_init(const struct device *dev)
 {
 	const struct tsl2540_config *cfg = dev->config;
 	struct tsl2540_data *data = dev->data;
+	int ret;
 
 	data->enable_mode = TSL2540_ENABLE_DISABLE;
 
@@ -298,9 +303,18 @@ static int tsl2540_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_REG_PERS, 1);
-	i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
-				TSL2540_CFG3_DFLT);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_REG_PERS, 1);
+	if (ret) {
+		LOG_ERR("Failed to setup interrupt persistence filter");
+		return ret;
+	}
+
+	ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
+				     TSL2540_CFG3_DFLT);
+	if (ret) {
+		LOG_ERR("Failed to set configuration");
+		return ret;
+	}
 
 	if (tsl2540_setup(dev)) {
 		LOG_ERR("Failed to setup ambient light functionality");

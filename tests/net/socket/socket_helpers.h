@@ -6,7 +6,13 @@
 
 #include <zephyr/ztest_assert.h>
 
+#if defined(CONFIG_POSIX_API)
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#else
 #include <zephyr/net/socket.h>
+#endif
 
 #define clear_buf(buf) memset(buf, 0, sizeof(buf))
 

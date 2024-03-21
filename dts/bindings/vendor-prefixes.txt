@@ -208,6 +208,7 @@ excito	Excito
 ezchip	EZchip Semiconductor
 facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
+fanke	FANKE Technology Co., Ltd.
 faraday	Faraday Technology Corporation
 fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
@@ -223,6 +224,7 @@ fsl	Freescale Semiconductor
 ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
 gaisler	Gaisler
+galaxycore	Galaxycore, Inc.
 gardena	GARDENA GmbH
 gateworks	Gateworks Corporation
 gcw	Game Consoles Worldwide
@@ -472,6 +474,7 @@ phytec	PHYTEC Messtechnik GmbH
 picochip	Picochip Ltd
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
+pixart	PixArt Imaging Inc.
 pixcir	PIXCIR MICROELECTRONICS Co., Ltd
 plantower	Plantower Co., Ltd
 plathome	Plat'Home Co., Ltd.
@@ -512,6 +515,7 @@ rda	Unisoc Communications, Inc.
 realtek	Realtek Semiconductor Corp.
 remarkable	reMarkable AS
 renesas	Renesas Electronics Corporation
+renode	Antmicro's open source simulation and virtual development framework
 rex	iMX6 Rex Project
 rervision	Shenzhen Rervision Technology Co., Ltd.
 revotics	Revolution Robotics, Inc. (Revotics)
@@ -534,6 +538,7 @@ sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
 sc	Space Cubics, LLC
+sciosense	Sciosense B.V.
 schindler	Schindler
 seagate	Seagate Technology PLC
 segger	SEGGER Microcontroller GmbH
@@ -606,6 +611,7 @@ tbs-biometrics	Touchless Biometric Systems AG
 tcg	Trusted Computing Group
 tcl	Toby Churchill Ltd.
 tcs	Shenzhen City Tang Cheng Technology Co., Ltd.
+tdk	TDK Corporation.
 tdo	Shangai Top Display Optoelectronics Co., Ltd
 technexion	TechNexion
 technologic	Technologic Systems

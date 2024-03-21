@@ -1,0 +1,29 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.template.with_url"
+
+# Not user configurable (i.e. private for now)
+menuconfig $(TYPE)
+	bool "$(type) support"
+	depends on PTHREAD_IPC
+	default y
+	help
+	  Support for $(TYPE)
+	  For more info, see
+	  $(posix-url-base)/$(type-function).html
+
+if $(TYPE)
+
+# eventually, this size should be defaulted to 0
+config MAX_$(TYPE)_COUNT
+	int "Maximum number of $(type)"
+	default 5
+	depends on $(TYPE)
+	help
+	  Maximum simultaneously active $(type) in a POSIX application.
+
+rsource "Kconfig.template.with_logging"
+
+endif # $(TYPE)

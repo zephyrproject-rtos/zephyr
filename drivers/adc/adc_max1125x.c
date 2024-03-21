@@ -755,7 +755,7 @@ static int max1125x_init(const struct device *dev)
 	}
 
 	k_tid_t tid = k_thread_create(
-		&data->thread, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
+		&data->thread, data->stack, K_KERNEL_STACK_SIZEOF(data->stack),
 		max1125x_acquisition_thread, (void *)dev, NULL, NULL,
 		CONFIG_ADC_MAX1125X_ACQUISITION_THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_max1125x");

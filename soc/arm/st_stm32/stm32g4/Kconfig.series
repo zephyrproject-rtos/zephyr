@@ -14,5 +14,6 @@ config SOC_SERIES_STM32G4X
 	select CPU_HAS_ARM_MPU
 	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
 	select HAS_PM
+	select HAS_SWO
 	help
 	  Enable support for STM32G4 MCU series

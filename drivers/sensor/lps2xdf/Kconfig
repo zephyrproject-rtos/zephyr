@@ -1,0 +1,64 @@
+# ST Microelectronics LPS2xDF pressure and temperature sensor
+
+# Copyright (c) 2023 STMicroelectronics
+# Copyright (c) 2023 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LPS2XDF
+	bool "LPS2xDF pressure and temperature"
+	default y
+	depends on DT_HAS_ST_LPS22DF_ENABLED || DT_HAS_ST_LPS28DFW_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i2c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS28DFW),i2c)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i3c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS28DFW),i3c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),spi)
+	select HAS_STMEMSC
+	select USE_STDC_LPS22DF if DT_HAS_ST_LPS22DF_ENABLED
+	select USE_STDC_LPS28DFW if DT_HAS_ST_LPS28DFW_ENABLED
+	help
+	  Enable driver for LPS2xDF I2C-based pressure and temperature
+	  sensor.
+
+if LPS2XDF
+
+choice LPS2XDF_TRIGGER_MODE
+	prompt "Trigger mode"
+	default LPS2XDF_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config LPS2XDF_TRIGGER_NONE
+	bool "No trigger"
+
+config LPS2XDF_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select LPS2XDF_TRIGGER
+
+config LPS2XDF_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select LPS2XDF_TRIGGER
+
+endchoice # LPS2XDF_TRIGGER_MODE
+
+config LPS2XDF_TRIGGER
+	bool
+
+config LPS2XDF_THREAD_PRIORITY
+	int "Thread priority"
+	depends on LPS2XDF_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config LPS2XDF_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LPS2XDF_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # LPS2XDF

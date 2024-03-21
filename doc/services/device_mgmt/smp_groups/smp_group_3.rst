@@ -132,7 +132,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Write setting request
@@ -220,7 +220,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Delete setting command
@@ -310,7 +310,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Commit settings command
@@ -386,7 +386,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Load/Save settings command
@@ -462,7 +462,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                    |
     +------------------+-------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
-    |                  | using SMP version 1.                                                    |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
 
 Save settings request
@@ -532,7 +532,7 @@ where:
     |                  | non-zero (error condition) when using SMP version 2.                   |
     +------------------+------------------------------------------------------------------------+
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when |
-    |                  | using SMP version 1.                                                   |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.        |
     +------------------+------------------------------------------------------------------------+
 
 Settings access callback

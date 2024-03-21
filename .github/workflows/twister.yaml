@@ -24,7 +24,7 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -36,7 +36,6 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TESTS_PER_BUILDER: 700
@@ -60,7 +59,7 @@ jobs:
 
       - name: Checkout
         if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -79,6 +78,8 @@ jobs:
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Generate Test Plan with Twister
         if: github.event_name == 'pull_request_target'
@@ -122,7 +123,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -131,7 +132,6 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
@@ -156,7 +156,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -178,6 +178,14 @@ jobs:
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
+
+          # Hotfix until we have kitware ninja in the docker image.
+          # Needed for full functionality of the job server functionality in twister which only works with
+          # kitware supplied ninja version.
+          wget -c    https://github.com/Kitware/ninja/releases/download/v1.11.1.g95dee.kitware.jobserver-1/ninja-1.11.1.g95dee.kitware.jobserver-1_x86_64-linux-gnu.tar.gz -O - | tar xz --strip-components=1
+          sudo cp ninja /usr/local/bin
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check Environment
         run: |
@@ -263,7 +271,7 @@ jobs:
 
       - name: Upload Unit Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Unit Test Results (Subset ${{ matrix.subset }})
           if-no-files-found: ignore
@@ -272,6 +280,24 @@ jobs:
             twister-out/twister.json
             module_tests/twister.xml
             testplan.json
+
+      - if: matrix.subset == 1 && github.event_name == 'push'
+        name: Save the list of Python packages
+        shell: bash
+        run: |
+          FREEZE_FILE="frozen-requirements.txt"
+          timestamp="$(date)"
+          version="$(git describe --abbrev=12 --always)"
+          echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
+          pip3 freeze | tee -a $FREEZE_FILE
+
+      - if: matrix.subset == 1 && github.event_name == 'push'
+        name: Upload the list of Python packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frozen PIP package set
+          path: |
+            frozen-requirements.txt
 
   twister-test-results:
     name: "Publish Unit Tests Results"
@@ -287,13 +313,13 @@ jobs:
       # Needed for opensearch and upload script
       - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
@@ -319,7 +345,7 @@ jobs:
 
       - name: Upload Unit Test Results in HTML
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: HTML Unit Test Results
           if-no-files-found: ignore
@@ -332,3 +358,12 @@ jobs:
           check_name: Unit Test Results
           files: "**/twister.xml"
           comment_mode: off
+  twister-status-check:
+    if: always()
+    name: "Check Twister Status"
+    needs:
+      - twister-build-prep
+      - twister-build
+    uses: ./.github/workflows/ready-to-merge.yml
+    with:
+      needs_context: ${{ toJson(needs) }}

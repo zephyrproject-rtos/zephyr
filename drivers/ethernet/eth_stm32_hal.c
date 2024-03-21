@@ -84,7 +84,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 #define __eth_stm32_desc __dtcm_noinit_section
 #define __eth_stm32_buf  __dtcm_noinit_section
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
 #elif defined(CONFIG_NOCACHE_MEMORY)
@@ -1844,13 +1844,13 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	uint32_t addend_val;
 
 	/* No change needed */
-	if (ratio == 1.0f) {
+	if (ratio == 1.0L) {
 		return 0;
 	}
 
 	key = irq_lock();
 
-	ratio *= eth_dev_data->clk_ratio_adj;
+	ratio *= (double)eth_dev_data->clk_ratio_adj;
 
 	/* Limit possible ratio */
 	if (ratio * 100 < CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT ||
@@ -1863,7 +1863,7 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	eth_dev_data->clk_ratio_adj = ratio;
 
 	/* Update addend register */
-	addend_val = UINT32_MAX * eth_dev_data->clk_ratio * ratio;
+	addend_val = UINT32_MAX * (double)eth_dev_data->clk_ratio * ratio;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	heth->Instance->MACTSAR = addend_val;

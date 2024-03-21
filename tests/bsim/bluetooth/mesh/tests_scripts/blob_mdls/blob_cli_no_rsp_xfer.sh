@@ -4,13 +4,11 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-conf=prj_mesh1d1_conf
 RunTest blob_no_rsp_xfer_get \
 	blob_cli_fail_on_no_rsp \
 	blob_srv_fail_on_xfer_get \
 	blob_srv_fail_on_xfer_get -- -argstest msg-fail-type=1
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest blob_no_rsp_xfer_get_psa \
 	blob_cli_fail_on_no_rsp \

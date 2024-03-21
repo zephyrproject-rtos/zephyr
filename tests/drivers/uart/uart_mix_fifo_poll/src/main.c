@@ -264,6 +264,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 
 			int idx = data->cnt & 0xF;
 			size_t len = (idx < BUF_SIZE / 2) ? 5 : 1; /* Try various lengths */
+			len = MIN(len, data->max - data->cnt);
 
 			data->cnt += len;
 			err = uart_tx(uart_dev, &int_async_data.buf[idx],
@@ -317,7 +318,7 @@ static void init_test_data(struct test_data *data, const uint8_t *buf, int repea
 
 ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 {
-	int repeat = 10000;
+	int repeat = CONFIG_STRESS_TEST_REPS;
 	int err;
 	int num_of_contexts = ARRAY_SIZE(test_data);
 

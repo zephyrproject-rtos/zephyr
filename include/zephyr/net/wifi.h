@@ -12,7 +12,7 @@
 
 /**
  * @defgroup wifi_mgmt Wi-Fi Management
- * Wi-Fi Management API.
+ * @brief Wi-Fi Management API.
  * @ingroup networking
  * @{
  */
@@ -343,6 +343,14 @@ enum wifi_twt_fail_reason {
 	WIFI_TWT_FAIL_IP_NOT_ASSIGNED,
 	/** Flow already exists */
 	WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS,
+};
+
+/** Wi-Fi Target Wake Time (TWT) teradown status. */
+enum wifi_twt_teardown_status {
+	/** TWT teardown success */
+	WIFI_TWT_TEARDOWN_SUCCESS = 0,
+	/** TWT teardown failure */
+	WIFI_TWT_TEARDOWN_FAILED,
 };
 
 /** @cond INTERNAL_HIDDEN */

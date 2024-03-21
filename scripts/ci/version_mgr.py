@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Intel Corp.
+# Copyright (c) 2020-2023 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -16,6 +16,7 @@ import json
 import argparse
 import urllib.request
 import os
+import tempfile
 
 from git import Git
 from datetime import datetime
@@ -34,6 +35,8 @@ def parse_args():
                         help="Get latest published version")
     parser.add_argument('-w', '--weekly', action="store_true",
                         help="Mark as weekly")
+    parser.add_argument('-W', '--list-weekly', action="store_true",
+                        help="List weekly commits")
     parser.add_argument('-v', '--verbose', action="store_true",
                         help="Verbose output")
     return parser.parse_args()
@@ -41,12 +44,12 @@ def parse_args():
 
 def get_versions():
     data = None
+    fo = tempfile.NamedTemporaryFile()
     if not os.path.exists('versions.json'):
         url = 'https://testing.zephyrproject.org/daily_tests/versions.json'
-        urllib.request.urlretrieve(url, 'versions.json')
-    with open("versions.json", "r") as fp:
+        urllib.request.urlretrieve(url, fo.name)
+    with open(fo.name, "r") as fp:
         data = json.load(fp)
-
     return data
 
 def handle_compat(item):
@@ -60,11 +63,13 @@ def handle_compat(item):
 
     return item_compat
 
-def show_versions():
+def show_versions(weekly=False):
     data = get_versions()
     for item in data:
         item_compat = handle_compat(item)
         is_weekly = item_compat.get('weekly', False)
+        if weekly and not is_weekly:
+            continue
         wstr = ""
         datestr = ""
         if args.verbose:
@@ -77,6 +82,7 @@ def show_versions():
             print(f"- {item_compat['version']} {datestr} {wstr}")
         else:
             print(f"{item_compat['version']}")
+
 
 
 def show_latest():
@@ -134,8 +140,8 @@ def main():
     args = parse_args()
     if args.update:
         update(args.update, args.weekly)
-    elif args.list:
-        show_versions()
+    elif args.list or args.list_weekly:
+        show_versions(weekly=args.list_weekly)
     elif args.latest:
         show_latest()
     else:

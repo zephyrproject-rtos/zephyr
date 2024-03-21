@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 
 
 /* Driver dts compatibility: telink,b91_gpio */

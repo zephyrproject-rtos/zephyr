@@ -18,7 +18,17 @@ static struct bt_iso_server *iso_server;
 DEFINE_FAKE_VALUE_FUNC(int, bt_iso_chan_get_tx_sync, const struct bt_iso_chan *,
 		       struct bt_iso_tx_info *);
 
-int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num, uint32_t ts)
+int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num)
+{
+	if (chan->ops != NULL && chan->ops->sent != NULL) {
+		chan->ops->sent(chan);
+	}
+
+	return 0;
+}
+
+int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
+			uint32_t ts)
 {
 	if (chan->ops != NULL && chan->ops->sent != NULL) {
 		chan->ops->sent(chan);

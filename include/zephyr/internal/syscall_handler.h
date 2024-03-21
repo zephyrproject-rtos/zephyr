@@ -395,6 +395,22 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 #define K_SYSCALL_VERIFY(expr) K_SYSCALL_VERIFY_MSG(expr, #expr)
 
 /**
+ * @brief Macro to check if size is negative
+ *
+ * K_SYSCALL_MEMORY can be called with signed/unsigned types
+ * and because of that if we check if size is greater or equal to
+ * zero, many static analyzers complain about no effect expression.
+ *
+ * @param ptr Memory area to examine
+ * @param size Size of the memory area
+ * @return true if size is valid, false otherwise
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ */
+#define K_SYSCALL_MEMORY_SIZE_CHECK(ptr, size) \
+	(((uintptr_t)(ptr) + (size)) >= (uintptr_t)(ptr))
+
+/**
  * @brief Runtime check that a user thread has read and/or write permission to
  *        a memory area
  *
@@ -413,8 +429,10 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_MEMORY(ptr, size, write) \
-	K_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
-			     == 0, \
+	K_SYSCALL_VERIFY_MSG(K_SYSCALL_MEMORY_SIZE_CHECK(ptr, size) \
+			     && !Z_DETECT_POINTER_OVERFLOW(ptr, size) \
+			     && (arch_buffer_validate((void *)ptr, size, write) \
+			     == 0), \
 			     "Memory region %p (size %zu) %s access denied", \
 			     (void *)(ptr), (size_t)(size), \
 			     write ? "write" : "read")

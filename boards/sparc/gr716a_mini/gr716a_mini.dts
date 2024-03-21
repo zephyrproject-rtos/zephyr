@@ -6,11 +6,15 @@
 
 /dts-v1/;
 
+#include <mem.h>
 #include <gaisler/gr716a.dtsi>
 
 / {
 	model = "GR716-MINI Development Board";
 	compatible = "gaisler,gr716a-mini";
+	aliases {
+		spi-flash0 = &flash0;
+	};
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -20,4 +24,16 @@
 
 &uart0 {
 	status = "okay";
+};
+
+&spim0 {
+	status = "okay";
+	/* 256 Mbit SPI flash MX25L25635FZ2I-10G in 8 pin WSON package */
+	flash0: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		size = <DT_SIZE_M(256)>;
+		jedec-id = [c2 20 19];
+	};
 };

@@ -19,13 +19,9 @@ config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	default n
 endif
 
-config ACPI_PRT_BUS_NAME
+config HEAP_MEM_POOL_ADD_SIZE_ACPI
+	default 2097152
 	depends on ACPI
-	default "_SB.PC00"
-
-config HEAP_MEM_POOL_SIZE
-	default 2097152 if ACPI
-	depends on KERNEL_MEM_POOL
 
 # TSC on this board is 1.9 GHz, HPET and APIC are 19.2 MHz
 config SYS_CLOCK_HW_CYCLES_PER_SEC

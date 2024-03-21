@@ -18,7 +18,7 @@
 #include <zephyr/linker/linker-tool.h>
 
 #define RAMABLE_REGION dram0_0_seg
-#ifndef CONFIG_ESP32_NETWORK_CORE
+#ifndef CONFIG_SOC_ESP32_PROCPU
 #define RAMABLE_REGION_1 dram0_1_seg
 #else
 #define RAMABLE_REGION_1 dram0_0_seg
@@ -57,7 +57,7 @@ MEMORY
   metadata (RX): org = 0x20, len = 0x20
   ROM (RX): org = 0x40, len = FLASH_SIZE - 0x40
 
-  #ifdef CONFIG_ESP32_NETWORK_CORE
+  #ifdef CONFIG_SOC_ESP32_PROCPU
   iram0_0_seg(RX): org = 0x40080000, len = 0x08000
   #else
   iram0_0_seg(RX): org = 0x40080000, len = IRAM_SEG_LEN
@@ -78,7 +78,7 @@ MEMORY
    */
   dram0_0_seg(RW): org = 0x3FFB0000 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x2c200 - CONFIG_ESP32_BT_RESERVE_DRAM
 
-  #ifdef CONFIG_ESP32_NETWORK_CORE
+  #ifdef CONFIG_SOC_ESP32_PROCPU
   dram0_shm0_seg(RW): org = 0x3FFE5230, len = 2K /* shared RAM reserved for IPM */
   dram0_sem0_seg(RW): org = 0x3FFE5A30, len = 8 /* shared data reserved for IPM data header */
   dram0_1_seg(RW): org = 0x3FFE5A38, len = 0K /* for AMP builds dram0_1 is reserved for network core */
@@ -203,14 +203,8 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
-    _thread_local_start = ABSOLUTE(.);
-    *(.tdata)
-    *(.tdata.*)
-    *(.tbss)
-    *(.tbss.*)
     *(.rodata_wlog)
     *(.rodata_wlog*)
-    _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
@@ -221,6 +215,7 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
+  #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.

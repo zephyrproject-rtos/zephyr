@@ -41,21 +41,20 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(64)>;
 			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
 			slot0_partition: partition@10000 {
 				label = "image-0";
-				reg = <0x00010000 DT_SIZE_M(3)>;
+				reg = <0x00010000 (DT_SIZE_M(3) + DT_SIZE_K(4))>;
 			};
-			slot1_partition: partition@310000 {
+			slot1_partition: partition@311000 {
 				label = "image-1";
-				reg = <0x00310000 DT_SIZE_M(3)>;
+				reg = <0x00311000 DT_SIZE_M(3)>;
 			};
-			scratch_partition: partition@610000 {
-				label = "image-scratch";
-				reg = <0x00610000 DT_SIZE_K(128)>;
-			};
-			storage_partition: partition@630000 {
+			storage_partition: partition@611000 {
 				label = "storage";
-				reg = <0x00630000 DT_SIZE_K(1856)>;
+				reg = <0x00611000 DT_SIZE_K(1980)>;
 			};
 		};
 	};

@@ -23,12 +23,6 @@
 	aliases {
 		watchdog0 = &wdt0;
 	};
-
-	xtal_clk: xtal-clk {
-		compatible = "fixed-clock";
-		clock-frequency = <12000000>;
-		#clock-cells = <0>;
-	};
 };
 
 &flash0 {
@@ -62,6 +56,10 @@
 	};
 };
 
+&clocks {
+	pinctrl-0 = <&clocks_default>;
+	pinctrl-names = "default";
+};
 
 &uart0 {
 	current-speed = <115200>;

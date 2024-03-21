@@ -38,6 +38,15 @@
 /* Memory Map Sector (MMS) 10 (0xA) */
 #define LAN865x_DEVID MMS_REG(0xA, 0x094)
 
+struct lan865x_config_plca {
+	bool enable : 1; /* 1 - PLCA enable, 0 - CSMA/CD enable */
+	uint8_t node_id  /* PLCA node id range: 0 to 254 */;
+	uint8_t node_count;  /* PLCA node count range: 1 to 255 */
+	uint8_t burst_count;  /* PLCA burst count range: 0x0 to 0xFF */
+	uint8_t burst_timer;  /* PLCA burst timer */
+	uint8_t to_timer;  /* PLCA TO value */
+};
+
 struct lan865x_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
@@ -45,12 +54,7 @@ struct lan865x_config {
 	int32_t timeout;
 
 	/* PLCA */
-	bool plca_enable : 1; /* 1 - PLCA enable, 0 - CSMA/CD enable */
-	uint8_t plca_node_id  /* PLCA node id range: 0 to 254 */;
-	uint8_t plca_node_count;  /* PLCA node count range: 1 to 255 */
-	uint8_t plca_burst_count;  /* PLCA burst count range: 0x0 to 0xFF */
-	uint8_t plca_burst_timer;  /* PLCA burst timer */
-	uint8_t plca_to_timer;  /* PLCA TO value */
+	struct lan865x_config_plca *plca;
 
 	/* MAC */
 	bool tx_cut_through_mode; /* 1 - tx cut through, 0 - Store and forward */

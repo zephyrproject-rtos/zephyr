@@ -33,17 +33,27 @@ config ACPI
 	default y
 
 if ACPI
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_ACPI
 	default 64000000
 config MAIN_STACK_SIZE
 	default 320000
-config ACPI_PRT_BUS_NAME
-	default "_SB.PC00"
 
 if SHELL
 config SHELL_STACK_SIZE
 	default 320000
 endif # SHELL
 endif # ACPI
+
+if DMA
+config DMA_64BIT
+	default y
+config DMA_DW_HW_LLI
+	default n
+config DMA_DW_CHANNEL_COUNT
+	default 2
+endif
+
+config UART_NS16550_INTEL_LPSS_DMA
+	default y
 
 endif # BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP || BOARD_UP_SQUARED_PRO_7000

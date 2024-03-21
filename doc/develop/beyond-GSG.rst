@@ -215,7 +215,7 @@ depending on your board.
 The other sample applications in the :zephyr_file:`samples` folder are
 documented in :ref:`samples-and-demos`.
 
-.. note:: If you want to re-use an
+.. note:: If you want to reuse an
    existing build directory for another board or application, you need to
    add the parameter ``-p=auto`` to ``west build`` to clean out settings
    and artifacts from the previous build.
@@ -279,6 +279,13 @@ system using `QEMU <https://www.qemu.org/>`_ when targeting either
 the x86 or ARM Cortex-M3 architectures. (QEMU is included with the Zephyr
 SDK installation.)
 
+On Windows, you need to install QEMU manually from
+`Download QEMU <https://www.qemu.org/download/#windows>`_. After installation,
+add path to QEMU installation folder to PATH environment variable.
+To enable QEMU in Test Runner (Twister) on Windows,
+:ref:`set the environment variable <env_vars>`
+``QEMU_BIN_PATH`` to the path of QEMU installation folder.
+
 For example, you can build and run the :ref:`hello_world` sample using
 the x86 emulation board configuration (``qemu_x86``), with:
 
@@ -330,7 +337,7 @@ valgrind.
 .. [#pip]
 
    pip is Python's package installer. Its ``install`` command first tries to
-   re-use packages and package dependencies already installed on your computer.
+   reuse packages and package dependencies already installed on your computer.
    If that is not possible, ``pip install`` downloads them from the Python
    Package Index (PyPI) on the Internet.
 

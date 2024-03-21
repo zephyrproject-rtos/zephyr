@@ -17,3 +17,5 @@ tests:
     tags: userspace
     extra_configs:
       - CONFIG_USERSPACE=y
+    platform_exclude:
+      - ip_k66f

@@ -12,11 +12,11 @@
  * arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ERROR_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ERROR_H_
 
 #include <zephyr/arch/arm/syscall.h>
-#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/exception.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -83,4 +83,4 @@ do { \
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ERROR_H_ */

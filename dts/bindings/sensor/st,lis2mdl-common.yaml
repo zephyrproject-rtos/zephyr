@@ -16,7 +16,7 @@ properties:
     type: boolean
     description: |
       Set to config the sensor in single measurement mode. Leave
-      unset to configure the sensor in continious measurement mode.
+      unset to configure the sensor in continuous measurement mode.
 
   cancel-offset:
     type: boolean

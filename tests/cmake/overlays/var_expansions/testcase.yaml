@@ -1,7 +1,7 @@
 common:
   tags: cmake
   build_only: true
-  platform_allow: native_posix
+  platform_allow: native_sim
 tests:
   buildsystem.overlays.var_expansions.CONF_FILE:
     extra_conf_files:

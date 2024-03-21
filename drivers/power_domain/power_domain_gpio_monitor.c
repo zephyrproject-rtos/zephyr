@@ -35,7 +35,7 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 	struct pd_visitor_context *visitor_context = context;
 
 	/* Only run action if the device is on the specified domain */
-	if (!dev->pm || (dev->pm->domain != visitor_context->domain)) {
+	if (!dev->pm || (dev->pm_base->domain != visitor_context->domain)) {
 		return 0;
 	}
 
@@ -145,6 +145,6 @@ unconfigure_pin:
 	DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_init,					\
 				PM_DEVICE_DT_INST_GET(inst), &pd_gpio_monitor_data_##inst,	\
 				&pd_gpio_monitor_config_##inst, POST_KERNEL,			\
-				CONFIG_POWER_DOMAIN_INIT_PRIORITY, NULL);
+				CONFIG_POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

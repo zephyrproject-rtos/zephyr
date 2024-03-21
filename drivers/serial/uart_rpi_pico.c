@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/uart.h>
-#include <zephyr/drivers/reset.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/irq.h>
-#include <string.h>
 
 /* pico-sdk includes */
 #include <hardware/uart.h>
@@ -17,10 +17,11 @@
 #define DT_DRV_COMPAT raspberrypi_pico_uart
 
 struct uart_rpi_config {
-	uart_inst_t *const uart_dev;
 	uart_hw_t *const uart_regs;
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_id;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -59,13 +60,51 @@ static void uart_rpi_poll_out(const struct device *dev, unsigned char c)
 	uart_hw->dr = c;
 }
 
+static int uart_rpi_set_baudrate(const struct device *dev, uint32_t input_baudrate,
+				 uint32_t *output_baudrate)
+{
+	const struct uart_rpi_config *cfg = dev->config;
+	uart_hw_t * const uart_hw = cfg->uart_regs;
+	uint32_t baudrate_frac;
+	uint32_t baudrate_int;
+	uint32_t baudrate_div;
+	uint32_t pclk;
+	int ret;
+
+	if (input_baudrate == 0) {
+		return -EINVAL;
+	}
+
+	ret = clock_control_get_rate(cfg->clk_dev, cfg->clk_id, &pclk);
+	if (ret < 0 || pclk == 0) {
+		return -EINVAL;
+	}
+
+	baudrate_div = (8 * pclk / input_baudrate);
+	baudrate_int = baudrate_div >> 7;
+	baudrate_frac = (baudrate_int == 0) || (baudrate_int >= UINT16_MAX) ? 0 :
+		((baudrate_div & 0x7f) + 1) / 2;
+	baudrate_int = (baudrate_int == 0) ? 1 :
+		(baudrate_int >= UINT16_MAX) ? UINT16_MAX : baudrate_int;
+
+	uart_hw->ibrd = baudrate_int;
+	uart_hw->fbrd = baudrate_frac;
+
+	uart_hw->lcr_h |= 0;
+
+	*output_baudrate = (4 * pclk) / (64 * baudrate_int + baudrate_frac);
+
+	return 0;
+}
+
 static int uart_rpi_set_format(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct uart_rpi_config *config = dev->config;
-	uart_inst_t * const uart_inst = config->uart_dev;
-	uart_parity_t parity = 0;
-	uint data_bits = 0;
-	uint stop_bits = 0;
+	uart_hw_t * const uart_hw = config->uart_regs;
+	uint32_t data_bits;
+	uint32_t stop_bits;
+	uint32_t lcr_value;
+	uint32_t lcr_mask;
 
 	switch (cfg->data_bits) {
 	case UART_CFG_DATA_BITS_5:
@@ -95,30 +134,25 @@ static int uart_rpi_set_format(const struct device *dev, const struct uart_confi
 		return -EINVAL;
 	}
 
-	switch (cfg->parity) {
-	case UART_CFG_PARITY_NONE:
-		parity = UART_PARITY_NONE;
-		break;
-	case UART_CFG_PARITY_EVEN:
-		parity = UART_PARITY_EVEN;
-		break;
-	case UART_CFG_PARITY_ODD:
-		parity = UART_PARITY_ODD;
-		break;
-	default:
-		return -EINVAL;
-	}
+	lcr_mask = UART_UARTLCR_H_WLEN_BITS | UART_UARTLCR_H_STP2_BITS |
+		   UART_UARTLCR_H_PEN_BITS | UART_UARTLCR_H_EPS_BITS;
 
-	uart_set_format(uart_inst, data_bits, stop_bits, parity);
+	lcr_value = ((data_bits - 5) << UART_UARTLCR_H_WLEN_LSB) |
+		    ((stop_bits - 1) << UART_UARTLCR_H_STP2_LSB) |
+		    (!!(cfg->parity != UART_CFG_PARITY_NONE) << UART_UARTLCR_H_PEN_LSB) |
+		    (!!(cfg->parity == UART_CFG_PARITY_EVEN) << UART_UARTLCR_H_EPS_LSB);
+
+	uart_hw->lcr_h = (uart_hw->lcr_h & ~lcr_mask) | (lcr_value & lcr_mask);
+
 	return 0;
 }
 
 static int uart_rpi_init(const struct device *dev)
 {
 	const struct uart_rpi_config *config = dev->config;
-	uart_inst_t * const uart_inst = config->uart_dev;
 	uart_hw_t * const uart_hw = config->uart_regs;
 	struct uart_rpi_data * const data = dev->data;
+	uint32_t baudrate;
 	int ret;
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -126,20 +160,32 @@ static int uart_rpi_init(const struct device *dev)
 		return ret;
 	}
 
-	/*
-	 * uart_init() may be replaced by register based API once rpi-pico platform
-	 * has a clock controller driver
-	 */
-	data->uart_config.baudrate = uart_init(uart_inst, data->uart_config.baudrate);
-
-	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
-	if (data->uart_config.baudrate == 0) {
-		return -EINVAL;
+	ret = clock_control_on(config->clk_dev, config->clk_id);
+	if (ret < 0) {
+		return ret;
 	}
+
+	ret = reset_line_toggle(config->reset.dev, config->reset.id);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = uart_rpi_set_baudrate(dev, data->uart_config.baudrate, &baudrate);
+	if (ret < 0) {
+		return ret;
+	}
+
+	uart_rpi_set_format(dev, &data->uart_config);
+
+	uart_hw->cr = UART_UARTCR_UARTEN_BITS | UART_UARTCR_TXE_BITS | UART_UARTCR_RXE_BITS;
+	uart_hw->lcr_h |= UART_UARTLCR_H_FEN_BITS;
+
+	uart_hw->dmacr = UART_UARTDMACR_TXDMAE_BITS | UART_UARTDMACR_RXDMAE_BITS;
+
 	/*
 	 * initialize uart_config with hardware reset values
 	 * https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf#tab-registerlist_uart page:431
-	 * data bits set default to 8 instaed of hardware reset 5 to increase compatibility.
+	 * data bits set default to 8 instead of hardware reset 5 to increase compatibility.
 	 */
 	data->uart_config.data_bits = UART_CFG_DATA_BITS_8;
 	data->uart_config.parity = UART_CFG_PARITY_NONE;
@@ -149,7 +195,7 @@ static int uart_rpi_init(const struct device *dev)
 	uart_hw->dr = 0U;
 
 	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
-		uart_set_hw_flow(uart_inst, true, true);
+		uart_set_hw_flow((uart_inst_t *)uart_hw, true, true);
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -163,24 +209,25 @@ static int uart_rpi_config_get(const struct device *dev, struct uart_config *cfg
 {
 	struct uart_rpi_data *data = dev->data;
 
-	memcpy(cfg, &data->uart_config, sizeof(struct uart_config));
+	*cfg = data->uart_config;
+
 	return 0;
 }
 
 static int uart_rpi_configure(const struct device *dev, const struct uart_config *cfg)
 {
-	const struct uart_rpi_config *config = dev->config;
-	uart_inst_t * const uart_inst = config->uart_dev;
 	struct uart_rpi_data *data = dev->data;
-	uint baudrate = 0;
+	uint32_t baudrate = 0;
+	int ret;
 
-	baudrate = uart_set_baudrate(uart_inst, cfg->baudrate);
-	if (baudrate == 0) {
-		return -EINVAL;
+	ret = uart_rpi_set_baudrate(dev, cfg->baudrate, &baudrate);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (uart_rpi_set_format(dev, cfg) != 0) {
-		return -EINVAL;
+	ret = uart_rpi_set_format(dev, cfg);
+	if (ret < 0) {
+		return ret;
 	}
 
 	data->uart_config = *cfg;
@@ -389,37 +436,38 @@ static const struct uart_driver_api uart_rpi_driver_api = {
 #define RPI_UART_IRQ_CONFIG_INIT(idx)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN*/
 
-#define RPI_UART_INIT(idx)							\
-	PINCTRL_DT_INST_DEFINE(idx);						\
-										\
-	static void uart##idx##_rpi_irq_config_func(const struct device *port)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(idx),					\
-			    DT_INST_IRQ(idx, priority),				\
-			    uart_rpi_isr,					\
-			    DEVICE_DT_INST_GET(idx), 0);			\
-		irq_enable(DT_INST_IRQN(idx));					\
-	}									\
-										\
-	static const struct uart_rpi_config uart##idx##_rpi_config = {		\
-		.uart_dev = (uart_inst_t *const)DT_INST_REG_ADDR(idx),		\
-		.uart_regs = (uart_hw_t *const)DT_INST_REG_ADDR(idx),		\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),			\
-		.reset = RESET_DT_SPEC_INST_GET(idx),				\
-		RPI_UART_IRQ_CONFIG_INIT(idx),					\
-	};									\
-										\
-	static struct uart_rpi_data uart##idx##_rpi_data = {			\
-		.uart_config.baudrate = DT_INST_PROP(idx, current_speed),	\
-		.uart_config.flow_ctrl = DT_INST_PROP(idx, hw_flow_control)	\
-				       ? UART_CFG_FLOW_CTRL_RTS_CTS		\
-				       : UART_CFG_FLOW_CTRL_NONE,		\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(idx, &uart_rpi_init,				\
-			    NULL, &uart##idx##_rpi_data,			\
-			    &uart##idx##_rpi_config, PRE_KERNEL_1,		\
-			    CONFIG_SERIAL_INIT_PRIORITY,			\
-			    &uart_rpi_driver_api);				\
+#define RPI_UART_INIT(idx)									   \
+	PINCTRL_DT_INST_DEFINE(idx);								   \
+												   \
+	static void uart##idx##_rpi_irq_config_func(const struct device *port)			   \
+	{											   \
+		IRQ_CONNECT(DT_INST_IRQN(idx),							   \
+			    DT_INST_IRQ(idx, priority),						   \
+			    uart_rpi_isr,							   \
+			    DEVICE_DT_INST_GET(idx), 0);					   \
+		irq_enable(DT_INST_IRQN(idx));							   \
+	}											   \
+												   \
+	static const struct uart_rpi_config uart##idx##_rpi_config = {				   \
+		.uart_regs = (uart_hw_t *const)DT_INST_REG_ADDR(idx),				   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),					   \
+		.reset = RESET_DT_SPEC_INST_GET(idx),						   \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),				   \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),	   \
+		RPI_UART_IRQ_CONFIG_INIT(idx),							   \
+	};											   \
+												   \
+	static struct uart_rpi_data uart##idx##_rpi_data = {					   \
+		.uart_config.baudrate = DT_INST_PROP(idx, current_speed),			   \
+		.uart_config.flow_ctrl = DT_INST_PROP(idx, hw_flow_control)			   \
+				       ? UART_CFG_FLOW_CTRL_RTS_CTS				   \
+				       : UART_CFG_FLOW_CTRL_NONE,				   \
+	};											   \
+												   \
+	DEVICE_DT_INST_DEFINE(idx, &uart_rpi_init,						   \
+			    NULL, &uart##idx##_rpi_data,					   \
+			    &uart##idx##_rpi_config, PRE_KERNEL_1,				   \
+			    CONFIG_SERIAL_INIT_PRIORITY,					   \
+			    &uart_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RPI_UART_INIT)

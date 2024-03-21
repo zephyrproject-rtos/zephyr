@@ -153,6 +153,38 @@ config MCUMGR_GRP_IMG_MUTEX
 	  can be used by applications to reset the image management state (useful if there are
 	  multiple ways that firmware updates can be loaded).
 
+choice MCUMGR_GRP_IMG_TOO_LARGE_CHECK
+	prompt "Image size check overhead"
+	default MCUMGR_GRP_IMG_TOO_LARGE_DISABLED
+	help
+	  MCUboot images should be limited to the maximum size that the bootloader can swap, in
+	  order to know this size, additional information is needed from the MCUboot
+	  configuration, otherwise an image can be uploaded that is too large for the bootloader
+	  to swap, this selects which method to use.
+
+	  Note: setting this to a non-disabled option will prevent uploading of padded and
+	  confirmed images, if support for that is required then this feature should be left as
+	  disabled.
+
+config MCUMGR_GRP_IMG_TOO_LARGE_DISABLED
+	bool "Disabled"
+	help
+	  Will not take MCUboot configuration into account when checking for maximum file size.
+
+config MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD
+	bool "Via Sysbuild from MCUboot configuration"
+	depends on ROM_END_OFFSET > 0 || MCUBOOT_UPDATE_FOOTER_SIZE > 0
+	help
+	  Will use the image overhead size calculated during Sysbuild image configuration.
+
+config MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO
+	bool "Via retention bootloader info"
+	depends on RETENTION_BOOTLOADER_INFO_OUTPUT_FUNCTION
+	help
+	  Will fetch the maximum image size from the bootloader info retention subsystem module.
+
+endchoice
+
 module = MCUMGR_GRP_IMG
 module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"

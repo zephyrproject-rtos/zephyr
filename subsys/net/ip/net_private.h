@@ -43,6 +43,9 @@ union net_mgmt_events {
 	struct net_event_ipv6_route ipv6_route;
 #endif /* CONFIG_NET_IPV6_MLD */
 #endif /* CONFIG_NET_IPV6 */
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	struct net_event_l4_hostname hostname;
+#endif /* CONFIG_NET_HOSTNAME_ENABLE */
 	char default_event[DEFAULT_NET_EVENT_INFO_SIZE];
 };
 
@@ -72,6 +75,7 @@ extern const char *net_context_state(struct net_context *context);
 extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern bool net_context_is_reuseport_set(struct net_context *context);
 extern bool net_context_is_v6only_set(struct net_context *context);
+extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
@@ -95,15 +99,22 @@ static inline bool net_context_is_reuseport_set(struct net_context *context)
 	ARG_UNUSED(context);
 	return false;
 }
+static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return false;
+}
 #endif
 
 #if defined(CONFIG_NET_NATIVE)
-enum net_verdict net_ipv4_input(struct net_pkt *pkt);
+enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
 enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
 #else
-static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt)
+static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt,
+					      bool is_loopback)
 {
 	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
@@ -230,12 +241,12 @@ void net_ipv4_igmp_init(struct net_if *iface);
 #endif /* CONFIG_NET_IPV4_IGMP */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
-uint16_t net_calc_chksum_igmp(uint8_t *data, size_t len);
+uint16_t net_calc_chksum_igmp(struct net_pkt *pkt);
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt,
 				     struct net_ipv4_hdr *ip_hdr);
 #else
 #define net_ipv4_igmp_input(...)
-#define net_calc_chksum_igmp(data, len) 0U
+#define net_calc_chksum_igmp(pkt) 0U
 #endif /* CONFIG_NET_IPV4_IGMP */
 
 static inline uint16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)

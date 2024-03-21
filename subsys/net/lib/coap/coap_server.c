@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_link_format.h>
+#include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/coap_service.h>
 #ifdef CONFIG_ARCH_POSIX
 #include <fcntl.h>
@@ -126,7 +127,8 @@ static int coap_service_remove_observer(const struct coap_service *service,
 
 static int coap_server_process(int sock_fd)
 {
-	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	static uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+
 	struct sockaddr client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 	struct coap_service *service = NULL;
@@ -214,11 +216,24 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		ret = coap_service_send(service, &response, &client_addr, client_addr_len);
+		ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
 	} else {
 		ret = coap_handle_request_len(&request, service->res_begin,
 					      COAP_SERVICE_RESOURCE_COUNT(service),
 					      options, opt_num, &client_addr, client_addr_len);
+
+		/* Translate errors to response codes */
+		switch (ret) {
+		case -ENOENT:
+			ret = COAP_RESPONSE_CODE_NOT_FOUND;
+			break;
+		case -ENOTSUP:
+			ret = COAP_RESPONSE_CODE_BAD_REQUEST;
+			break;
+		case -EPERM:
+			ret = COAP_RESPONSE_CODE_NOT_ALLOWED;
+			break;
+		}
 
 		/* Shortcut for replying a code without a body */
 		if (ret > 0 && type == COAP_TYPE_CON) {
@@ -232,7 +247,7 @@ static int coap_server_process(int sock_fd)
 				goto unlock;
 			}
 
-			ret = coap_service_send(service, &ack, &client_addr, client_addr_len);
+			ret = coap_service_send(service, &ack, &client_addr, client_addr_len, NULL);
 		}
 	}
 
@@ -320,7 +335,9 @@ static int coap_server_poll_timeout(void)
 
 static void coap_server_update_services(void)
 {
-	zsock_send(control_socks[1], &(char){0}, 1, 0);
+	if (zsock_send(control_socks[1], &(char){0}, 1, 0) < 0) {
+		LOG_ERR("Failed to notify server thread (%d)", errno);
+	}
 }
 
 static inline bool coap_service_in_section(const struct coap_service *service)
@@ -330,6 +347,21 @@ static inline bool coap_service_in_section(const struct coap_service *service)
 
 	return STRUCT_SECTION_START(coap_service) <= service &&
 	       STRUCT_SECTION_END(coap_service) > service;
+}
+
+static inline void coap_service_raise_event(const struct coap_service *service, uint32_t mgmt_event)
+{
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	const struct net_event_coap_service net_event = {
+		.service = service,
+	};
+
+	net_mgmt_event_notify_with_info(mgmt_event, NULL, (void *)&net_event, sizeof(net_event));
+#else
+	ARG_UNUSED(service);
+
+	net_mgmt_event_notify(mgmt_event, NULL);
+#endif
 }
 
 int coap_service_start(const struct coap_service *service)
@@ -433,6 +465,8 @@ end:
 
 	coap_server_update_services();
 
+	coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STARTED);
+
 	return ret;
 
 close:
@@ -456,22 +490,42 @@ int coap_service_stop(const struct coap_service *service)
 	k_mutex_lock(&lock, K_FOREVER);
 
 	if (service->data->sock_fd < 0) {
-		ret = -EALREADY;
-		goto end;
+		k_mutex_unlock(&lock);
+		return -EALREADY;
 	}
 
 	/* Closing a socket will trigger a poll event */
 	ret = zsock_close(service->data->sock_fd);
 	service->data->sock_fd = -1;
 
-end:
+	k_mutex_unlock(&lock);
+
+	coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STOPPED);
+
+	return ret;
+}
+
+int coap_service_is_running(const struct coap_service *service)
+{
+	int ret;
+
+	if (!coap_service_in_section(service)) {
+		__ASSERT_NO_MSG(false);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	ret = (service->data->sock_fd < 0) ? 0 : 1;
+
 	k_mutex_unlock(&lock);
 
 	return ret;
 }
 
 int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
-		      const struct sockaddr *addr, socklen_t addr_len)
+		      const struct sockaddr *addr, socklen_t addr_len,
+		      const struct coap_transmission_parameters *params)
 {
 	int ret;
 
@@ -500,8 +554,7 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 			goto send;
 		}
 
-		ret = coap_pending_init(pending, cpkt, addr,
-					CONFIG_COAP_SERVICE_PENDING_RETRANSMITS);
+		ret = coap_pending_init(pending, cpkt, addr, params);
 		if (ret < 0) {
 			LOG_WRN("Failed to init pending message for %s (%d)", service->name, ret);
 			goto send;
@@ -536,12 +589,13 @@ send:
 }
 
 int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
-		       const struct sockaddr *addr, socklen_t addr_len)
+		       const struct sockaddr *addr, socklen_t addr_len,
+		       const struct coap_transmission_parameters *params)
 {
 	/* Find owning service */
 	COAP_SERVICE_FOREACH(svc) {
 		if (COAP_SERVICE_HAS_RESOURCE(svc, resource)) {
-			return coap_service_send(svc, cpkt, addr, addr_len);
+			return coap_service_send(svc, cpkt, addr, addr_len, params);
 		}
 	}
 
@@ -694,9 +748,6 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 	}
 
 	COAP_SERVICE_FOREACH(svc) {
-		/* Init all file descriptors to -1 */
-		svc->data->sock_fd = -1;
-
 		if (svc->flags & COAP_SERVICE_AUTOSTART) {
 			ret = coap_service_start(svc);
 			if (ret < 0) {

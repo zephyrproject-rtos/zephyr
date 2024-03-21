@@ -1,0 +1,41 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_NXP_SAI
+	bool "NXP Synchronous Audio Interface (SAI) driver"
+	default y
+	depends on DT_HAS_NXP_DAI_SAI_ENABLED
+	help
+		Select this to enable NXP SAI driver.
+
+if DAI_NXP_SAI
+
+config SAI_HAS_MCLK_CONFIG_OPTION
+	bool "Set if SAI has MCLK configuration options"
+	default n
+	help
+		Select this if the SAI IP allows configuration
+		of the master clock. Master clock configuration
+		refers to enabling/disabling the master clock,
+		setting the signal as input or output or dividing
+		the master clock output.
+
+config SAI_FIFO_WORD_SIZE
+	int "Size (in bytes) of a FIFO word"
+	default 4
+	help
+		Use this to set the size (in bytes) of a SAI
+		FIFO word.
+
+config SAI_IMX93_ERRATA_051421
+	bool "Set if your SAI IP version is affected by i.MX93's ERRATA 051421"
+	default n
+	help
+		Select this if your SAI ip version is affected by
+		i.MX93's ERRATA 051421. The errata states that if
+		the SAI is FSYNC/BCLK master, one of the directions
+		is SYNC with the other, and the ASYNC direction has
+		the BYP bit toggled, the SYNC direction's BCLK won't
+		be generated properly.
+
+endif # DAI_NXP_SAI

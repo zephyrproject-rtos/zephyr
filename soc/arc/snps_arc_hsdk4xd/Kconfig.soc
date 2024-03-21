@@ -5,4 +5,4 @@ config SOC_ARC_HSDK4XD
 	bool "Synopsys ARC HSDK4XD SoC"
 	select ARC
 	select CPU_HAS_FPU
-	select ARC_HAS_DSP
+	select CPU_HAS_DSP

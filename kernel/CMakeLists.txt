@@ -59,6 +59,7 @@ list(APPEND kernel_files
   mem_slab.c
   thread.c
   version.c
+  sched.c
   )
 
 if(CONFIG_MULTITHREADING)
@@ -72,7 +73,6 @@ list(APPEND kernel_files
   stack.c
   system_work_q.c
   work.c
-  sched.c
   condvar.c
   )
 
@@ -117,8 +117,38 @@ target_sources_ifdef(CONFIG_OBJ_CORE              kernel PRIVATE obj_core.c)
 
 if(${CONFIG_KERNEL_MEM_POOL})
   target_sources(kernel PRIVATE mempool.c)
-endif()
 
+  if(CONFIG_HEAP_MEM_POOL_IGNORE_MIN)
+    set(final_heap_size ${CONFIG_HEAP_MEM_POOL_SIZE})
+  else()
+    # Import all custom HEAP_MEM_POOL size requirements
+    import_kconfig(CONFIG_HEAP_MEM_POOL_ADD_SIZE_ ${DOTCONFIG} add_size_keys)
+
+    # Calculate the sum of all "ADD_SIZE" requirements
+    set(add_size_sum 0)
+    foreach(add_size ${add_size_keys})
+      math(EXPR add_size_sum "${add_size_sum} + ${${add_size}}")
+    endforeach()
+
+    if(CONFIG_HEAP_MEM_POOL_SIZE LESS "${add_size_sum}")
+      # Only warn if default value 0 has been modified
+      if(NOT CONFIG_HEAP_MEM_POOL_SIZE EQUAL 0)
+        message(WARNING "
+        CONFIG_HEAP_MEM_POOL_SIZE is less than requested minimum:
+          ${CONFIG_HEAP_MEM_POOL_SIZE} < ${add_size_sum}
+        Setting the system heap size to ${add_size_sum}")
+      endif()
+
+      set(final_heap_size ${add_size_sum})
+    else()
+      # CONFIG_HEAP_MEM_POOL_SIZE was greater than the sum of the requirements
+      set(final_heap_size ${CONFIG_HEAP_MEM_POOL_SIZE})
+    endif()
+
+  endif()
+
+  zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
+endif()
 
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.

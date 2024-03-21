@@ -22,14 +22,14 @@
 		#size-cells = <0>;
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "riscv";
+			compatible = "openisa,ri5cy", "riscv";
 			riscv,isa = "rv32ima_zicsr_zifencei";
 			reg = <0>;
 		};
 
 		cpu@1 {
 			device_type = "cpu";
-			compatible = "riscv";
+			compatible = "openisa,zero-ri5cy", "riscv";
 			riscv,isa = "rv32ima_zicsr_zifencei";
 			reg = <1>;
 		};

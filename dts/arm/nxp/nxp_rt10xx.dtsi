@@ -35,7 +35,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <16>;
 			};
 
 			itm: itm@e0000000 {
@@ -127,6 +126,7 @@
 			ahb-bufferable;
 			ahb-cacheable;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0x0>;
 		};
 
 		flexspi2: spi@402a4000 {
@@ -138,6 +138,7 @@
 			ahb-bufferable;
 			ahb-cacheable;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI2_CLK 0x0 0x0>;
 		};
 
 		semc: semc0@402f0000 {

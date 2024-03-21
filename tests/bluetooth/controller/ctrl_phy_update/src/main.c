@@ -159,6 +159,9 @@ ZTEST(phy_central, test_phy_update_central_loc)
 	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* Rx */
 	lt_tx(LL_PHY_RSP, &conn, &rsp);
 
@@ -279,6 +282,9 @@ ZTEST(phy_central, test_phy_update_central_loc_invalid)
 	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* Rx */
 	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
 
@@ -287,6 +293,9 @@ ZTEST(phy_central, test_phy_update_central_loc_invalid)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
@@ -330,6 +339,9 @@ ZTEST(phy_central, test_phy_update_central_loc_unsupp_feat)
 	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* Rx */
 	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
 
@@ -338,6 +350,9 @@ ZTEST(phy_central, test_phy_update_central_loc_unsupp_feat)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
@@ -502,8 +517,14 @@ ZTEST(phy_periph, test_phy_update_periph_loc)
 	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
 	event_done(&conn);
@@ -523,6 +544,9 @@ ZTEST(phy_periph, test_phy_update_periph_loc)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -691,11 +715,20 @@ ZTEST(phy_periph, test_phy_update_periph_loc_unsupp_feat)
 	/* Rx */
 	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
@@ -825,13 +858,13 @@ ZTEST(phy_central, test_phy_update_central_loc_collision)
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
-	/* Check that data tx is not paused */
+	/* Check that data tx is paused */
 	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Done */
 	event_done(&conn);
 
-	/* Check that data tx is not paused */
+	/* Check that data tx is paused */
 	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Release Tx */
@@ -978,6 +1011,9 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 	/* Done */
 	event_done(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/*** ***/
 
 	/* Initiate an PHY Update Procedure */
@@ -998,6 +1034,9 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
@@ -1038,6 +1077,9 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 	 * event due to completion of remote PHY update at end of the "at instant" conneciton event.
 	 */
 
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -1053,6 +1095,9 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
@@ -1076,6 +1121,9 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
@@ -1161,8 +1209,14 @@ ZTEST(phy_periph, test_phy_update_periph_loc_collision)
 	/* Rx */
 	lt_tx(LL_PHY_REQ, &conn, &req_central);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
 	event_done(&conn);
@@ -1212,6 +1266,9 @@ ZTEST(phy_periph, test_phy_update_periph_loc_collision)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -1428,8 +1485,14 @@ ZTEST(phy_periph, test_phy_update_periph_loc_no_actual_change)
 	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
 	event_done(&conn);
@@ -1454,6 +1517,9 @@ ZTEST(phy_periph, test_phy_update_periph_loc_no_actual_change)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* There should be one notification due to Host initiated PHY UPD */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);

@@ -7,6 +7,7 @@
 #include "kernel_internal.h"
 
 #include <zephyr/kernel.h>
+#include <ksched.h>
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/bitarray.h>
@@ -120,20 +121,14 @@ static void dyn_cb(const struct k_thread *thread, void *user_data)
 
 int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 {
-	char state_buf[16] = {0};
 	struct dyn_cb_data data = {.stack = stack};
 
 	/* Get a possible tid associated with stack */
 	k_thread_foreach(dyn_cb, &data);
 
 	if (data.tid != NULL) {
-		/* Check if thread is in use */
-		if (k_thread_state_str(data.tid, state_buf, sizeof(state_buf)) != state_buf) {
-			LOG_ERR("tid %p is invalid!", data.tid);
-			return -EINVAL;
-		}
-
-		if (!(strcmp("dummy", state_buf) == 0) || (strcmp("dead", state_buf) == 0)) {
+		if (!(z_is_thread_state_set(data.tid, _THREAD_DUMMY) ||
+		      z_is_thread_state_set(data.tid, _THREAD_DEAD))) {
 			LOG_ERR("tid %p is in use!", data.tid);
 			return -EBUSY;
 		}
@@ -161,7 +156,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 		k_free(stack);
 #endif
 	} else {
-		LOG_ERR("Invalid stack %p", stack);
+		LOG_DBG("Invalid stack %p", stack);
 		return -EINVAL;
 	}
 

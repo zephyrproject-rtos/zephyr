@@ -198,6 +198,114 @@ ZTEST(dle_central, test_data_length_update_central_loc_unknown_rsp)
 /*
  * Locally triggered Data Length Update procedure
  *
+ *
+ * Start a Feature Exchange procedure and Data Length Update procedure.
+ *
+ * The Feature Exchange procedure completes, removing Data Length Update
+ * procedure support.
+ *
+ * Expect that the already enqueued Data Length Update procedure completes
+ * without doing anything.
+ *
+ * +-----+                     +-------+                       +-----+
+ * | UT  |                     | LL_A  |                       | LT  |
+ * +-----+                     +-------+                       +-----+
+ *    |                            |                              |
+ *    | Start                      |                              |
+ *    | Feature Exchange Proc.     |                              |
+ *    |--------------------------->|                              |
+ *    |                            |                              |
+ *    | Start                      |                              |
+ *    | Data Length Update Proc.   |                              |
+ *    |--------------------------->|                              |
+ *    |                            |                              |
+ *    |                            | LL_FEATURE_REQ               |
+ *    |                            |----------------------------->|
+ *    |                            |                              |
+ *    |                            |               LL_FEATURE_RSP |
+ *    |                            |<-----------------------------|
+ *    |                            |                              |
+ *  ~~~~~~~~~~~~~~~~~~~~~~~  Unmask DLE support ~~~~~~~~~~~~~~~~~~~~
+ *    |                            |                              |
+ *    |     Feature Exchange Proc. |                              |
+ *    |                   Complete |                              |
+ *    |<---------------------------|                              |
+ *    |                            |                              |
+ */
+ZTEST(dle_central, test_data_length_update_central_loc_unsupported)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_feature_req local_feature_req;
+	struct pdu_data_llctrl_feature_rsp remote_feature_rsp;
+	struct pdu_data_llctrl_feature_rsp exp_remote_feature_rsp;
+
+	sys_put_le64(DEFAULT_FEATURE, local_feature_req.features);
+	sys_put_le64(0ULL, remote_feature_rsp.features);
+	sys_put_le64(0ULL, exp_remote_feature_rsp.features);
+
+
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	/* Init DLE data */
+	ull_conn_default_tx_octets_set(251);
+	ull_conn_default_tx_time_set(2120);
+	ull_dle_init(&conn, PHY_1M);
+
+	/* Confirm DLE is indicated as supported */
+	zassert_equal(feature_dle(&conn), true, "DLE Feature masked out");
+
+	/* Initiate a Feature Exchange Procedure */
+	err = ull_cp_feature_exchange(&conn, 1U);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Initiate a Data Length Update Procedure */
+	err = ull_cp_data_length_update(&conn, 211, 1800);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	event_prepare(&conn);
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_FEATURE_REQ, &conn, &tx, &local_feature_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_FEATURE_RSP, &conn, &remote_feature_rsp);
+
+	event_done(&conn);
+	/* There should be one host notification */
+
+	ut_rx_pdu(LL_FEATURE_RSP, &ntf, &exp_remote_feature_rsp);
+
+	ut_rx_q_is_empty();
+
+	ull_cp_release_tx(&conn, tx);
+	release_ntf(ntf);
+
+	/* Confirm DLE is no longer indicated as supported */
+	zassert_equal(feature_dle(&conn), false, "DLE Feature not masked out");
+
+	/* Prepare another event for enqueued Data Length Update procedure */
+	event_prepare(&conn);
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	/* Confirm DLE is no longer indicated as supported */
+	zassert_equal(feature_dle(&conn), false, "DLE Feature not masked out");
+
+	/* There should not be a host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/*
+ * Locally triggered Data Length Update procedure
+ *
  * +-----+                     +-------+                       +-----+
  * | UT  |                     | LL_A  |                       | LT  |
  * +-----+                     +-------+                       +-----+

@@ -80,23 +80,15 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
+	if (ticks == K_TICKS_FOREVER) {
+		return;
+	}
+
+	ticks = MIN(MAX_TICKS, ticks);
+	/* If tick is 0, set delta cyc to MIN_DELAY to trigger tick isr asap */
+	uint32_t cyc = MAX(ticks * CYC_PER_TICK, MIN_DELAY);
+
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
-
-	uint64_t now = am_hal_stimer_counter_get();
-	uint32_t adj, cyc = ticks * CYC_PER_TICK;
-
-	/* Round up to next tick boundary. */
-	adj = (uint32_t)(now - g_last_count) + (CYC_PER_TICK - 1);
-	if (cyc <= MAX_CYCLES - adj) {
-		cyc += adj;
-	} else {
-		cyc = MAX_CYCLES;
-	}
-	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
-
-	if ((int32_t)(cyc + g_last_count - now) < MIN_DELAY) {
-		cyc += CYC_PER_TICK;
-	}
 
 	am_hal_stimer_compare_delta_set(0, cyc);
 
@@ -142,7 +134,10 @@ static int stimer_init(void)
 	irq_enable(TIMER_IRQ);
 
 	am_hal_stimer_int_enable(AM_HAL_STIMER_INT_COMPAREA);
-
+	/* Start timer with period CYC_PER_TICK if tickless is not enabled */
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		am_hal_stimer_compare_delta_set(0, CYC_PER_TICK);
+	}
 	return 0;
 }
 

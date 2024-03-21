@@ -55,4 +55,14 @@ config HAS_XMCLIB_WDT
 	help
 	  Enable XMCLIB WDT
 
+config HAS_XMCLIB_ETH
+	bool
+	help
+	  Enable XMCLIB Ethernet MAC
+
+config HAS_XMCLIB_CAN
+	bool
+	help
+	  Enable XMCLIB CAN
+
 endif # HAS_XMCLIB

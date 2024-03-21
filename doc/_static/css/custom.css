@@ -163,105 +163,6 @@ a.icon-home:visited {
     color: var(--navbar-level-1-color);
 }
 
-/* Sphinx Search extension */
-/* .wy-body-for-nav is used for higher rule specificity */
-
-/* Search popup body */
-.wy-body-for-nav .search__outer {
-    background-color: var(--content-background-color);
-    border: 2px solid var(--content-background-color);
-}
-.wy-body-for-nav .search__cross svg {
-    fill: var(--body-color);
-}
-
-.wy-body-for-nav .search__outer::-webkit-scrollbar-track {
-    border-radius: 10px;
-    background-color: var(--content-background-color);
-}
-.wy-body-for-nav .search__outer::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
-    background-color: var(--content-background-color);
-}
-.wy-body-for-nav .search__outer::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    background-color: var(--hr-color);
-}
-
-/* Search input */
-.wy-body-for-nav .search__outer__input {
-    background-color: var(--search-input-background-color);
-    background-image: none;
-    border-radius: 50px;
-    border: 2px solid transparent;
-    color: var(--body-color);
-    height: 36px;
-    padding: 6px 12px;
-}
-.wy-body-for-nav .search__outer__input:focus {
-    border-color: var(--input-focus-border-color);
-}
-.wy-body-for-nav .search__outer .bar:after,
-.wy-body-for-nav .search__outer .bar:before {
-    display: none;
-}
-
-/* Search results item */
-.wy-body-for-nav .search__result__single {
-    border-bottom-color: var(--hr-color);
-}
-/* Search item title */
-.wy-body-for-nav .search__result__title {
-    color: var(--link-color);
-    border-bottom: none;
-    font-size: 120%;
-    font-weight: 400;
-}
-
-/* Search item section */
-.wy-body-for-nav .outer_div_page_results:hover,
-.wy-body-for-nav .search__result__box .active {
-    background-color: var(--search-active-color);
-}
-.wy-body-for-nav .search__result__subheading{
-    color: var(--body-color);
-    font-size: 100%;
-    font-weight: 400;
-}
-.wy-body-for-nav .search__result__content {
-    color: var(--footer-color);
-}
-
-/* Search item matching substring */
-.wy-body-for-nav .search__outer .search__result__title span,
-.wy-body-for-nav .search__outer .search__result__content span {
-    color: var(--search-match-color);
-    border-bottom: 1px solid var(--search-match-color);
-    background-color: var(--search-match-background-color);
-    padding: 0 2px;
-}
-.wy-body-for-nav .search__result__subheading span {
-    border-bottom-color: var(--body-color);
-}
-
-/* Search empty results */
-/* The original styles are inlined, see https://github.com/readthedocs/readthedocs-sphinx-search/issues/48 */
-.wy-body-for-nav .search__result__box {
-    color: var(--body-color) !important;
-}
-
-/* Search footer & credits */
-.wy-body-for-nav .rtd__search__credits {
-    background-color: var(--search-credits-background-color);
-    border-color: var(--search-credits-background-color);
-    color: var(--search-credits-color);
-    padding: 4px 8px;
-}
-.wy-body-for-nav .rtd__search__credits a {
-    color: var(--search-credits-link-color);
-}
-
 /* Main sections */
 
 .wy-nav-content-wrap {
@@ -651,7 +552,10 @@ kbd, .kbd,
     background-color: var(--navbar-background-color-active);
 }
 
-.wy-side-nav-search input[type="text"] {
+.wy-side-nav-search input[type=search] {
+    width: 100%;
+    border-radius: 50px;
+    padding: 6px 12px;
     background-color: var(--input-background-color);
     color: var(--body-color);
     /* Avoid reflowing when toggling the focus state */
@@ -662,11 +566,11 @@ kbd, .kbd,
     font-size: 14px;
 }
 
-.wy-side-nav-search input[type="text"]:focus {
+.wy-side-nav-search input[type="search"]:focus {
     border: 2px solid var(--input-focus-border-color);
 }
 
-.wy-side-nav-search input[type="text"]::placeholder {
+.wy-side-nav-search input[type="search"]::placeholder {
     color: var(--body-color);
     opacity: 0.55;
 }
@@ -988,3 +892,61 @@ dark-mode-toggle::part(toggleLabel){
    font-size: 3rem;
    color: white;
 }
+
+/* Custom search box, including search engine selection */
+
+.search-container {
+    position: relative;
+}
+
+#search-se-settings-icon {
+    position: absolute;
+    color: var(--body-color);
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+#search-se-menu {
+    display: none;
+    position: absolute;
+    font-size: 11px;
+    background-color: var(--input-background-color);
+    color: var(--body-color);
+    right: 0px;
+    top: 36px;
+    border: solid 1px var(--body-color);
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+#search-se-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 2px;
+}
+
+#search-se-menu ul li {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1em;
+}
+
+#search-se-menu [role="menuitemradio"]:focus {
+    background-color: var(--navbar-current-background-color-hover);
+    color: var(--navbar-level-1-color);
+    border-radius: 10px;
+}
+
+#search-se-menu ul li .fa-check {
+    display: none;
+  }
+
+  #search-se-menu ul li.selected .fa-check {
+    display: inline;
+  }

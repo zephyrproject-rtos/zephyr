@@ -49,9 +49,9 @@ bool create_mcumgr_datetime_set_packet_str(zcbor_state_t *zse, bool version2, co
 					   uint8_t *buffer, uint8_t *output_buffer,
 					   uint16_t *buffer_size)
 {
-	bool ok = zcbor_map_start_encode(zse, 2)	&&
-	     zcbor_tstr_put_lit(zse, "datetime")	&&
-	     zcbor_tstr_put_term(zse, data)		&&
+	bool ok = zcbor_map_start_encode(zse, 2)			&&
+	     zcbor_tstr_put_lit(zse, "datetime")			&&
+	     zcbor_tstr_put_term(zse, data, CONFIG_ZCBOR_MAX_STR_LEN)	&&
 	     zcbor_map_end_encode(zse, 2);
 
 	*buffer_size = (zse->payload_mut - buffer);

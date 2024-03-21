@@ -6,9 +6,6 @@ if SOC_SERIES_ESP32S3
 config SOC_SERIES
 	default "esp32s3"
 
-config HEAP_MEM_POOL_SIZE
-	default 32768
-
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n
 

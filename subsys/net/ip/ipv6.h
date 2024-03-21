@@ -271,6 +271,21 @@ static inline enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 #endif
 
 /**
+ * @brief Lock IPv6 Neighbor table mutex
+ *
+ * Neighbor table mutex is used by IPv6 Neighbor cache and IPv6 Routing module.
+ * Mutex shall be held whenever accessing or manipulating neighbor or routing
+ * table entries (for example when obtaining a pointer to the neighbor table
+ * entry). Neighbor and Routing API functions will lock the mutex when called.
+ */
+void net_ipv6_nbr_lock(void);
+
+/**
+ * @brief Unlock IPv6 Neighbor table mutex
+ */
+void net_ipv6_nbr_unlock(void);
+
+/**
  * @brief Look for a neighbor from it's address on an iface
  *
  * @param iface A valid pointer on a network interface
@@ -384,6 +399,29 @@ static inline void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data)
 	return;
 }
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
+
+/**
+ * @brief Provide a reachability hint for IPv6 Neighbor Discovery.
+ *
+ * This function is intended for upper-layer protocols to inform the IPv6
+ * Neighbor Discovery process about the active link to a specific neighbor.
+ * By signaling recent "forward progress" event, such as the reception of
+ * an ACK, this function can help reducing unnecessary ND traffic as per the
+ * guidelines in RFC 4861 (section 7.3).
+ *
+ * @param iface A pointer to the network interface.
+ * @param ipv6_addr Pointer to the IPv6 address of the neighbor node.
+ */
+#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
+void net_ipv6_nbr_reachability_hint(struct net_if *iface, const struct in6_addr *ipv6_addr);
+#else
+static inline void net_ipv6_nbr_reachability_hint(struct net_if *iface,
+						  const struct in6_addr *ipv6_addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ipv6_addr);
+}
+#endif
 
 /**
  * @brief Set the neighbor reachable timer.

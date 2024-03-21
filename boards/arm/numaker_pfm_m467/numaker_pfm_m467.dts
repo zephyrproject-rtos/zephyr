@@ -123,3 +123,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+/* On enabled, 'core-clock', as above, is required to to be 192MHz. */
+zephyr_udc0: &usbd {
+	pinctrl-0 = <&usbd_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -1,0 +1,52 @@
+# Copyright 2024 (c) TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - display
+  filter: dt_chosen_enabled("zephyr,display")
+  build_only: true # The CI environment has no display device
+tests:
+  drivers.display.read_write.sdl.argb8888:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+  drivers.display.read_write.sdl.rgb888:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+  drivers.display.read_write.sdl.mono01:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+  drivers.display.read_write.sdl.mono10:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+  drivers.display.read_write.sdl.mono01.lsbfirst:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
+  drivers.display.read_write.sdl.mono10.lsbfirst:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
+  drivers.display.read_write.sdl.rgb565:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+  drivers.display.read_write.sdl.bgr565:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n

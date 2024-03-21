@@ -89,6 +89,8 @@ struct mpl_mediaplayer   {
 		struct mpl_track    *track; /* The track explicitly set as next track */
 		struct mpl_group    *group; /* The group of the set track */
 	} next;
+
+	struct k_work_delayable pos_work;
 };
 
 

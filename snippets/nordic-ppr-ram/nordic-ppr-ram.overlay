@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* code is sourced from cpuppr code partition */
+&cpuppr_vpr {
+	status = "okay";
+	source-memory = <&cpuppr_code_partition>;
+};
+
+/* code partition size must match RAM size */
+&cpuppr_code_partition {
+	reg = <0x126000 DT_SIZE_K(28)>;
+};

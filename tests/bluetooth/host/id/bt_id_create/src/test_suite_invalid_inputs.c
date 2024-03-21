@@ -93,6 +93,10 @@ ZTEST(bt_id_create_invalid_inputs, test_public_address)
 {
 	int err;
 
+	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		ztest_test_skip();
+	}
+
 	err = bt_id_create(BT_LE_ADDR, NULL);
 
 	zassert_true(err == -EINVAL, "Unexpected error code '%d' was returned", err);

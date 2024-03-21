@@ -52,4 +52,4 @@ properties:
         ADC 3 and 4 prescaler
         - 0: Disables the clock so the ADC can use AHB clock (synchronous mode)
         - Other values n: The ADC can use the PLL clock divided by n
-        Check RefMan for availabilty.
+        Check RefMan for availability.

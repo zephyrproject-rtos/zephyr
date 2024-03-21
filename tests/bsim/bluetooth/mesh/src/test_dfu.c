@@ -6,7 +6,6 @@
 #include "mesh_test.h"
 #include "mesh/dfd_srv_internal.h"
 #include "mesh/dfu_slot.h"
-#include "mesh/adv.h"
 #include "mesh/dfu.h"
 #include "mesh/blob.h"
 #include "argparse.h"

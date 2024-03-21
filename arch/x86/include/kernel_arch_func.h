@@ -37,7 +37,7 @@ static inline bool arch_is_in_isr(void)
 
 struct multiboot_info;
 
-extern FUNC_NORETURN void z_x86_prep_c(void *arg);
+extern FUNC_NORETURN void z_prep_c(void *arg);
 
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 /* Setup ultra-minimal serial driver for printk() */

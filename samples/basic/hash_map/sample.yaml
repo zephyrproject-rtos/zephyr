@@ -16,8 +16,6 @@ common:
     type: one_line
     regex:
       - .*success
-  platform_exclude:
-    - esp32_net
 
 
 tests:

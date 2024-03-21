@@ -890,7 +890,7 @@ int lwm2m_engine_set_u64(const char *pathstr, uint64_t value)
 	if (ret < 0) {
 		return ret;
 	}
-	return lwm2m_set_u64(&path, value);
+	return lwm2m_set_s64(&path, (int64_t) value);
 }
 
 int lwm2m_set_s8(const struct lwm2m_obj_path *path, int8_t value)
@@ -1378,7 +1378,7 @@ int lwm2m_engine_get_u64(const char *pathstr, uint64_t *value)
 	if (ret < 0) {
 		return ret;
 	}
-	return lwm2m_get_u64(&path, value);
+	return lwm2m_get_s64(&path, (int64_t *) value);
 }
 
 int lwm2m_get_s8(const struct lwm2m_obj_path *path, int8_t *value)
@@ -2234,9 +2234,9 @@ int lwm2m_engine_enable_cache(const char *resource_path, struct lwm2m_time_serie
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 }
 
-int lwm2m_engine_data_cache_init(void)
-{
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+static int lwm2m_engine_data_cache_init(void)
+{
 	int i;
 
 	sys_slist_init(&lwm2m_timed_cache_list);
@@ -2244,9 +2244,10 @@ int lwm2m_engine_data_cache_init(void)
 	for (i = 0; i < ARRAY_SIZE(lwm2m_cache_entries); i++) {
 		lwm2m_cache_entries[i].path.level = LWM2M_PATH_LEVEL_NONE;
 	}
-#endif
 	return 0;
 }
+LWM2M_ENGINE_INIT(lwm2m_engine_data_cache_init);
+#endif
 
 bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
 		       struct lwm2m_time_series_elem *buf)
@@ -2330,4 +2331,23 @@ size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry)
 #else
 	return 0;
 #endif
+}
+
+int lwm2m_set_bulk(const struct lwm2m_res_item res_list[], size_t res_list_size)
+{
+	int ret;
+
+	k_mutex_lock(&registry_lock, K_FOREVER);
+	for (int i = 0; i < res_list_size; i++) {
+
+		ret = lwm2m_engine_set(res_list[i].path, res_list[i].value, res_list[i].size);
+
+		if (ret) {
+			k_mutex_unlock(&registry_lock);
+			return ret;
+		}
+	}
+	k_mutex_unlock(&registry_lock);
+
+	return 0;
 }

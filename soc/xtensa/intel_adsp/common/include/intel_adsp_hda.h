@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
+#include <adsp_shim.h>
 
 /**
  * @brief HDA stream functionality for Intel ADSP
@@ -27,6 +28,8 @@
 /* Buffers must be 128 byte aligned, this mask enforces that */
 #define HDA_ALIGN_MASK 0xFFFFFF80
 
+/* Buffer size must match the mask of BS field in DGBS register */
+#define HDA_BUFFER_SIZE_MASK 0x00FFFFF0
 
 /* Calculate base address of the stream registers */
 #define HDA_ADDR(base, regblock_size, stream) ((base) + (stream)*(regblock_size))
@@ -156,16 +159,16 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 	 * region or not, we do need a consistent address space to check
 	 * against for our assertion. This is cheap.
 	 */
-	uint32_t addr = (uint32_t)arch_xtensa_cached_ptr(buf);
+	uint32_t addr = (uint32_t)sys_cache_cached_ptr_get(buf);
 	uint32_t aligned_addr = addr & HDA_ALIGN_MASK;
-	uint32_t aligned_size = buf_size & HDA_ALIGN_MASK;
+	uint32_t aligned_size = buf_size & HDA_BUFFER_SIZE_MASK;
 
 	__ASSERT(aligned_addr == addr, "Buffer must be 128 byte aligned");
 	__ASSERT(aligned_addr >= L2_SRAM_BASE
 		 && aligned_addr < L2_SRAM_BASE + L2_SRAM_SIZE,
 		 "Buffer must be in L2 address space");
 	__ASSERT(aligned_size == buf_size,
-		 "Buffer must be 128 byte aligned in size");
+		 "Buffer must be 16 byte aligned in size");
 
 	__ASSERT(aligned_addr + aligned_size < L2_SRAM_BASE + L2_SRAM_SIZE,
 		 "Buffer must end in L2 address space");
@@ -439,6 +442,20 @@ static inline void intel_adsp_hda_disable_buffer_interrupt(uint32_t base, uint32
 							   uint32_t sid)
 {
 	*DGCS(base, regblock_size, sid) &= ~DGCS_BSCIE;
+}
+
+static inline void intel_adsp_force_dmi_l0_state(void)
+{
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	ACE_DfPMCCH.svcfg |= ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT;
+#endif
+}
+
+static inline void intel_adsp_allow_dmi_l1_state(void)
+{
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	ACE_DfPMCCH.svcfg &= ~(ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT);
+#endif
 }
 
 /**

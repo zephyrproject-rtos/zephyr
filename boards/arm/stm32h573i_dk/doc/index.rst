@@ -17,7 +17,7 @@ the STM32H573I-DK Discovery board:
 - USB Type-C |trade| Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
-- Octo-SPI interface connected to 152Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
+- Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
 - 10/100-Mbit Ethernet,
 - microSD  |trade|
 - A Wi‑Fi® add-on board
@@ -223,7 +223,7 @@ Connections and IOs
 STM32H573I-DK Discovery Board has 9 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `STM32H573I-DK Discovery board User Manual`_.
+For more details please refer to `STM32H573I-DK Discovery board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -293,8 +293,16 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+Waiting for openocd support, debugging could be performed with pyocd which
+requires to enable "pack" support with the following pyocd command:
+
+.. code-block:: console
+
+   $ pyocd pack --update
+   $ pyocd pack --install stm32h5
+
+Once installed, you can debug an application in the usual way. Here is an
+example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

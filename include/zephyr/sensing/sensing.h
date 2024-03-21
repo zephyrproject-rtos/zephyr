@@ -72,6 +72,11 @@ struct sensing_sensor_version {
  */
 #define SENSING_SENSOR_FLAG_REPORT_ON_CHANGE			BIT(1)
 
+/**
+ * @brief SENSING_SENSITIVITY_INDEX_ALL indicating sensitivity of each data field should be set
+ *
+ */
+#define SENSING_SENSITIVITY_INDEX_ALL -1
 
 /**
  * @brief Sensing subsystem sensor state.
@@ -107,10 +112,13 @@ typedef void *sensing_sensor_handle_t;
  * @param handle The sensor instance handle.
  *
  * @param buf The data buffer with sensor data.
+ *
+ * @param context User provided context pointer.
  */
 typedef void (*sensing_data_event_t)(
 		sensing_sensor_handle_t handle,
-		const void *buf);
+		const void *buf,
+		void *context);
 
 /**
  * @struct sensing_sensor_info
@@ -144,6 +152,7 @@ struct sensing_sensor_info {
  */
 struct sensing_callback_list {
 	sensing_data_event_t on_data_event;
+	void *context;
 };
 /**
  * @struct sensing_sensor_config
@@ -152,7 +161,10 @@ struct sensing_callback_list {
  */
 struct sensing_sensor_config {
 	enum sensing_sensor_attribute attri;
+
+	/** \ref SENSING_SENSITIVITY_INDEX_ALL */
 	int8_t data_field;
+
 	union {
 		uint32_t interval;
 		uint32_t sensitivity;
@@ -186,7 +198,8 @@ int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **inf
  *
  * @param info The sensor info got from \ref sensing_get_sensors
  *
- * @param cb_list callback list to be registered to sensing.
+ * @param cb_list callback list to be registered to sensing, must have a static
+ *                lifetime.
  *
  * @param handle The opened instance handle, if failed will be set to NULL.
  *
@@ -194,7 +207,7 @@ int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **inf
  */
 int sensing_open_sensor(
 		const struct sensing_sensor_info *info,
-		const struct sensing_callback_list *cb_list,
+		struct sensing_callback_list *cb_list,
 		sensing_sensor_handle_t *handle);
 
 /**
@@ -207,14 +220,15 @@ int sensing_open_sensor(
  *
  * @param dev pointer device get from device tree.
  *
- * @param cb_list callback list to be registered to sensing.
+ * @param cb_list callback list to be registered to sensing, must have a static
+ *                lifetime.
  *
  * @param handle The opened instance handle, if failed will be set to NULL.
  *
  * @return 0 on success or negative error value on failure.
  */
 int sensing_open_sensor_by_dt(
-		const struct device *dev, const struct sensing_callback_list *cb_list,
+		const struct device *dev, struct sensing_callback_list *cb_list,
 		sensing_sensor_handle_t *handle);
 
 /**

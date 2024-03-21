@@ -56,6 +56,7 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
+static struct in_addr inaddr_mcast = { { { 224, 0, 0, 1 } } };
 static struct in6_addr in6addr_mcast;
 
 static struct net_if *iface1;
@@ -66,6 +67,7 @@ static struct net_if *iface4;
 static bool test_failed;
 static bool test_started;
 static struct k_sem wait_data;
+static bool device_ok;
 
 #define WAIT_TIME 250
 
@@ -101,6 +103,15 @@ static void net_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
+}
+
+static int dev_init(const struct device *dev)
+{
+	if (device_ok == false) {
+		return -EAGAIN;
+	}
+
+	return 0;
 }
 
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
@@ -144,7 +155,7 @@ static struct dummy_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
-			 NULL,
+			 dev_init,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,
@@ -314,7 +325,9 @@ static void *iface_setup(void)
 {
 	struct net_if_mcast_addr *maddr;
 	struct net_if_addr *ifaddr;
-	int idx;
+	const struct device *dev;
+	bool status;
+	int idx, ret;
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
@@ -341,6 +354,42 @@ static void *iface_setup(void)
 	zassert_not_null(iface1, "Interface 1");
 	zassert_not_null(iface2, "Interface 2");
 	zassert_not_null(iface3, "Interface 3");
+
+	/* Make sure that the first interface device is not ready */
+	dev = net_if_get_device(iface1);
+	zassert_not_null(dev, "Device is not set!");
+
+	status = device_is_ready(dev);
+	zassert_equal(status, false,  "Device %s (%p) is ready!",
+		      dev->name, dev);
+
+	/* Trying to take the interface up will fail */
+	ret = net_if_up(iface1);
+	zassert_equal(ret, -ENXIO, "Interface 1 is up (%d)", ret);
+
+	/* Try to set dormant state */
+	net_if_dormant_on(iface1);
+
+	/* Operational state should be "oper down" */
+	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_DOWN,
+		      "Invalid operational state (%d)",
+		      iface1->if_dev->oper_state);
+
+	/* Mark the device ready and take the interface up */
+	dev->state->init_res = 0;
+	device_ok = true;
+
+	ret = net_if_up(iface1);
+	zassert_equal(ret, 0, "Interface 1 is not up (%d)", ret);
+
+	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_DORMANT,
+		      "Invalid operational state (%d)",
+		      iface1->if_dev->oper_state);
+
+	net_if_dormant_off(iface1);
+	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_UP,
+		      "Invalid operational state (%d)",
+		      iface1->if_dev->oper_state);
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
@@ -390,6 +439,13 @@ static void *iface_setup(void)
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	maddr = net_if_ipv4_maddr_add(iface1, &inaddr_mcast);
+	if (!maddr) {
+		DBG("Cannot add multicast IPv4 address %s\n",
+		       net_sprint_ipv4_addr(&inaddr_mcast));
+		zassert_not_null(maddr, "mcast");
+	}
 
 	net_ipv6_addr_create(&in6addr_mcast, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
 
@@ -1126,6 +1182,34 @@ ZTEST(net_iface, test_ipv4_addr_foreach)
 	zassert_equal(count, 0, "Incorrect number of callback calls");
 }
 
+static void foreach_ipv4_maddr_check(struct net_if *iface,
+				     struct net_if_mcast_addr *if_addr,
+				     void *user_data)
+{
+	int *count = (int *)user_data;
+
+	(*count)++;
+
+	zassert_equal_ptr(iface, iface1, "Callback called on wrong interface");
+	zassert_mem_equal(&if_addr->address.in_addr, &inaddr_mcast,
+			  sizeof(struct in_addr), "Wrong IPv4 multicast address");
+}
+
+ZTEST(net_iface, test_ipv4_maddr_foreach)
+{
+	int count = 0;
+
+	/* iface1 has one IPv4 multicast address configured */
+	net_if_ipv4_maddr_foreach(iface1, foreach_ipv4_maddr_check, &count);
+	zassert_equal(count, 1, "Incorrect number of callback calls");
+
+	count = 0;
+
+	/* iface4 has no IPv4 multicast address configured */
+	net_if_ipv4_maddr_foreach(iface4, foreach_ipv4_maddr_check, &count);
+	zassert_equal(count, 0, "Incorrect number of callback calls");
+}
+
 static void foreach_ipv6_addr_check(struct net_if *iface,
 				    struct net_if_addr *if_addr,
 				    void *user_data)
@@ -1157,6 +1241,34 @@ ZTEST(net_iface, test_ipv6_addr_foreach)
 
 	/* iface4 has no IPv6 address configured */
 	net_if_ipv6_addr_foreach(iface4, foreach_ipv6_addr_check, &count);
+	zassert_equal(count, 0, "Incorrect number of callback calls");
+}
+
+static void foreach_ipv6_maddr_check(struct net_if *iface,
+				     struct net_if_mcast_addr *if_addr,
+				     void *user_data)
+{
+	int *count = (int *)user_data;
+
+	(*count)++;
+
+	zassert_equal_ptr(iface, iface1, "Callback called on wrong interface");
+	zassert_mem_equal(&if_addr->address.in6_addr, &in6addr_mcast, sizeof(struct in6_addr),
+			  "Wrong IPv6 multicast address");
+}
+
+ZTEST(net_iface, test_ipv6_maddr_foreach)
+{
+	int count = 0;
+
+	/* iface1 has one IPv6 multicast address configured */
+	net_if_ipv6_maddr_foreach(iface1, foreach_ipv6_maddr_check, &count);
+	zassert_equal(count, 1, "Incorrect number of callback calls");
+
+	count = 0;
+
+	/* iface4 has no IPv6 multicast address configured */
+	net_if_ipv6_maddr_foreach(iface4, foreach_ipv6_maddr_check, &count);
 	zassert_equal(count, 0, "Incorrect number of callback calls");
 }
 

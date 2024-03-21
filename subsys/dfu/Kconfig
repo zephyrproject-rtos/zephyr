@@ -31,9 +31,10 @@ config MCUBOOT_IMG_MANAGER
 
 endchoice
 
+if MCUBOOT_IMG_MANAGER
+
 config MCUBOOT_SHELL
 	bool "MCUboot shell"
-	depends on MCUBOOT_IMG_MANAGER
 	depends on SHELL
 	help
 	  Enable shell module, which provides information about image slots and
@@ -43,7 +44,6 @@ config MCUBOOT_SHELL
 config MCUBOOT_TRAILER_SWAP_TYPE
 	bool "use trailer's swap_type field"
 	default y
-	depends on MCUBOOT_IMG_MANAGER
 	help
 	  Enables usage swap type field which is required after
 	  "Fix double swap on interrupted revert"  mcuboot patch
@@ -51,9 +51,16 @@ config MCUBOOT_TRAILER_SWAP_TYPE
 	  Disable this option if need to be compatible with earlier version
 	  of MCUBoot.
 
+config MCUBOOT_UPDATE_FOOTER_SIZE
+	hex "Estimated update footer size"
+	default 0x0
+	help
+	  Estimated size of update image data, which is used to prevent loading of firmware updates
+	  that MCUboot cannot update due to being too large. This should be set from sysbuild, only
+	  used when MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD is enabled.
+
 config IMG_BLOCK_BUF_SIZE
 	int "Image writer buffer size"
-	depends on MCUBOOT_IMG_MANAGER
 	default 512
 	help
 	  Size (in Bytes) of buffer for image writer. Must be a multiple of
@@ -61,7 +68,6 @@ config IMG_BLOCK_BUF_SIZE
 
 config IMG_ERASE_PROGRESSIVELY
 	bool "Erase flash progressively when receiving new firmware"
-	depends on MCUBOOT_IMG_MANAGER
 	select STREAM_FLASH_ERASE
 	help
 	  If enabled, flash is erased as necessary when receiving new firmware,
@@ -71,7 +77,6 @@ config IMG_ERASE_PROGRESSIVELY
 
 config IMG_ENABLE_IMAGE_CHECK
 	bool "Image check functions"
-	depends on MCUBOOT_IMG_MANAGER
 	select FLASH_AREA_CHECK_INTEGRITY
 	help
 	  If enabled, there will be available the function to check flash
@@ -79,6 +84,8 @@ config IMG_ENABLE_IMAGE_CHECK
 	  a new firmware.  This is useful to avoid firmware reboot and test.
 	  Another use is to ensure that firmware upgrade routines from internet
 	  server to flash slot are performing properly.
+
+endif # MCUBOOT_IMG_MANAGER
 
 module = IMG_MANAGER
 module-str = image manager

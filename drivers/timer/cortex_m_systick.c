@@ -368,14 +368,22 @@ void sys_clock_idle_exit(void)
 	if (timeout_idle) {
 		cycle_t systick_diff, missed_cycles;
 		uint32_t idle_timer_diff, idle_timer_post, dcycles, dticks;
-		uint64_t systick_us, idle_timer_us, measurement_diff_us;
+		uint64_t systick_us, idle_timer_us;
 
 		/* Get current values for both timers */
 		counter_get_value(idle_timer, &idle_timer_post);
 		systick_diff = cycle_count + elapsed() - cycle_pre_idle;
 
 		/* Calculate has much time has pasted since last measurement for both timers */
-		idle_timer_diff = idle_timer_post - idle_timer_pre_idle;
+		/* Check IDLE timer overflow */
+		if (idle_timer_pre_idle > idle_timer_post) {
+			idle_timer_diff =
+				(counter_get_top_value(idle_timer) - idle_timer_pre_idle) +
+				idle_timer_post + 1;
+
+		} else {
+			idle_timer_diff = idle_timer_post - idle_timer_pre_idle;
+		}
 		idle_timer_us = counter_ticks_to_us(idle_timer, idle_timer_diff);
 		systick_us =
 			((uint64_t)systick_diff * USEC_PER_SEC) / sys_clock_hw_cycles_per_sec();
@@ -383,9 +391,20 @@ void sys_clock_idle_exit(void)
 		/* Calculate difference in measurements to get how much time
 		 * the SysTick missed in idle state.
 		 */
-		measurement_diff_us = idle_timer_us - systick_us;
-		missed_cycles =
-			(sys_clock_hw_cycles_per_sec() * measurement_diff_us) / USEC_PER_SEC;
+		if (idle_timer_us < systick_us) {
+			/* This case is possible, when the time in low power mode is
+			 * very short or 0. SysTick usually has higher measurement
+			 * resolution of than the IDLE timer, thus the measurement of
+			 * passed time since the sys_clock_set_timeout call can be higher.
+			 */
+			missed_cycles = 0;
+		} else {
+			uint64_t measurement_diff_us;
+
+			measurement_diff_us = idle_timer_us - systick_us;
+			missed_cycles = (sys_clock_hw_cycles_per_sec() * measurement_diff_us) /
+					USEC_PER_SEC;
+		}
 
 		/* Update the cycle counter to include the cycles missed in idle */
 		cycle_count += missed_cycles;

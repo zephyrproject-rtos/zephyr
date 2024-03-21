@@ -48,24 +48,20 @@
 	};
 
 	chosen {
-		zephyr,sram = &psram1;
+		zephyr,sram = &dsram_joined;
 		zephyr,flash = &flash0;
 		zephyr,console = &usic0ch0;
 		zephyr,shell-uart = &usic0ch0;
 		zephyr,flash-controller = &flash_controller;
 		zephyr,code-partition = &code_partition;
+		zephyr,canbus = &can_node1;
 	};
 
 };
 
-&dsram1 {
+&psram1 {
 	compatible = "zephyr,memory-region", "mmio-sram";
-	zephyr,memory-region = "DSRAM1";
-};
-
-&dsram2 {
-	compatible = "zephyr,memory-region", "mmio-sram";
-	zephyr,memory-region = "DSRAM2";
+	zephyr,memory-region = "PSRAM1";
 };
 
 &cpu0 {
@@ -173,5 +169,47 @@
 	channel-deadtime-high = <0 0 0 0 0 0 0 0>;
 	channel-deadtime-low = <0 0 0 0 0 0 0 0>;
 	pinctrl-0 = <&pwm_out_p5_9_ccu80_ch4_high &pwm_out_p5_8_ccu80_ch0_low>;
+	pinctrl-names = "default";
+};
+
+&eth {
+	status = "okay";
+	pinctrl-0 = <&eth_p2_4_rxer &eth_p2_2_rxd0 &eth_p2_3_rxd1
+		     &eth_p15_8_clk_rmii &eth_p15_9_crs_dv &eth_p2_5_tx_en
+		     &eth_p2_8_txd0 &eth_p2_9_txd1>;
+	pinctrl-names = "default";
+
+	rxer-port-ctrl = "P2_4";
+	rxd0-port-ctrl = "P2_2";
+	rxd1-port-ctrl = "P2_3";
+	rmii-rx-clk-port-ctrl = "P15_8";
+	crs-rx-dv-port-ctrl = "P15_9";
+
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	status = "okay";
+	mdi-port-ctrl = "P2_0";
+	pinctrl-0 = <&eth_p2_0_mdo &eth_p2_7_mdc>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+	};
+};
+
+&can {
+	clock-prescaler = <6>;
+};
+
+&can_node1 {
+	status = "okay";
+	bus-speed = <125000>;
+	sample-point = <875>;
+	input-src = "RXDC";
+	pinctrl-0 = <&can_tx_p1_12_node1 &can_rx_p1_13_node1>;
 	pinctrl-names = "default";
 };

@@ -73,12 +73,24 @@ struct btp_ascs_update_metadata_cmd {
 	uint8_t ase_id;
 } __packed;
 
-#define BTP_ASCS_ADD_ASE_TO_CIS	0x0a
+#define BTP_ASCS_ADD_ASE_TO_CIS		0x0a
 struct btp_ascs_add_ase_to_cis {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 	uint8_t cig_id;
 	uint8_t cis_id;
+} __packed;
+
+#define BTP_ASCS_PRECONFIGURE_QOS	0x0b
+struct btp_ascs_preconfigure_qos_cmd {
+	uint8_t cig_id;
+	uint8_t cis_id;
+	uint8_t sdu_interval[3];
+	uint8_t framing;
+	uint16_t max_sdu;
+	uint8_t retransmission_num;
+	uint16_t max_transport_latency;
+	uint8_t presentation_delay[3];
 } __packed;
 
 /* ASCS events */

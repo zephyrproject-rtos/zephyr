@@ -30,7 +30,8 @@ Extended Configuration
 **********************
 
 This sample can be configured to run the application-layer clock
-synchronization service in the background.
+synchronization service and/or the remote multicast setup service
+in the background.
 
 The following commands build and flash the sample with clock synchronization
 enabled.
@@ -40,4 +41,14 @@ enabled.
    :board: nucleo_wl55jc
    :goals: build flash
    :gen-args: -DEXTRA_CONF_FILE=overlay-clock-sync.conf
+   :compact:
+
+The following commands build and flash the sample with remote multicast setup
+enabled.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/lorawan/class_a
+   :board: nucleo_wl55jc
+   :goals: build flash
+   :gen-args: -DEXTRA_CONF_FILE=overlay-multicast.conf
    :compact:

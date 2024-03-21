@@ -82,18 +82,19 @@ config COAP_MAX_RETRANSMIT
 	default 4
 	range 1 10
 
+config COAP_BACKOFF_PERCENT
+	int "Retransmission backoff factor for ACK timeout described as percentage"
+	default 200
+	help
+	  Factor described as percentage to extend CoAP ACK timeout for retransmissions.
+	  A value of 200 means a factor of 2.0.
+
 config COAP_URI_WILDCARD
 	bool "Wildcards in CoAP resource path"
 	default y
 	help
 	  This option enables MQTT-style wildcards in path. Disable it if
 	  resource path may contain plus or hash symbol.
-
-config COAP_OBSERVER_EVENTS
-	bool "CoAP resource observer events"
-	help
-	  This option enables to register a callback function to CoAP resources
-	  that will be called when adding/removing observers.
 
 config COAP_KEEP_USER_DATA
 	bool "Keeping user data in the CoAP packet"
@@ -200,12 +201,6 @@ config COAP_SERVICE_PENDING_MESSAGES
 	default 10
 	help
 	  Maximum number of pending CoAP messages to retransmit per active service.
-
-config COAP_SERVICE_PENDING_RETRANSMITS
-	int "CoAP retransmit count"
-	default 2
-	help
-	  Maximum number of retries to send a pending message.
 
 config COAP_SERVICE_OBSERVERS
 	int "CoAP service observers"

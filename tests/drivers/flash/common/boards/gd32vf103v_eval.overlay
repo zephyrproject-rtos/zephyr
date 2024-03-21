@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2023, BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 2KB of storage at the end of 128KB flash */
+		storage_partition: partition@1f800 {
+			label = "storage";
+			reg = <0x0001f800 DT_SIZE_K(2)>;
+		};
+	};
+};
+
+/* To avoid test on nor_flash, disable it. */
+&nor_flash {
+	status = "disabled";
+};

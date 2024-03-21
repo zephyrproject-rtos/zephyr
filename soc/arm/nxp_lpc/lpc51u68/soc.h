@@ -10,6 +10,8 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 
+#include <fsl_common.h>
+
 #endif /* !_ASMLANGUAGE*/
 
 #define IOCON_PIO_DIGITAL_EN	0x80u

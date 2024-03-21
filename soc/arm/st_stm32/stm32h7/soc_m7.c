@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/cache.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
@@ -54,13 +55,8 @@ static int stm32h7_m4_wakeup(void)
  */
 static int stm32h7_init(void)
 {
-	SCB_EnableICache();
-
-	if (IS_ENABLED(CONFIG_DCACHE)) {
-		if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
-			SCB_EnableDCache();
-		}
-	}
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 64 MHz from HSI */

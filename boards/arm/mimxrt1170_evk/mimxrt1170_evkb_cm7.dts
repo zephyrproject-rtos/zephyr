@@ -59,13 +59,9 @@
 				label = "image-1";
 				reg = <0x00321000 0x300000>;
 			};
-			scratch_partition: partition@621000 {
-				label = "image-scratch";
-				reg = <0x00621000 DT_SIZE_K(128)>;
-			};
-			storage_partition: partition@641000 {
+			storage_partition: partition@621000 {
 				label = "storage";
-				reg = <0x00641000 DT_SIZE_K(1856)>;
+				reg = <0x00621000 DT_SIZE_K(1984)>;
 			};
 		};
 	};

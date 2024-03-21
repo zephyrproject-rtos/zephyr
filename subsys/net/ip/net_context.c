@@ -42,6 +42,30 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "tcp.h"
 #endif
 
+#ifdef CONFIG_NET_INITIAL_MCAST_TTL
+#define INITIAL_MCAST_TTL CONFIG_NET_INITIAL_MCAST_TTL
+#else
+#define INITIAL_MCAST_TTL 1
+#endif
+
+#ifdef CONFIG_NET_INITIAL_TTL
+#define INITIAL_TTL CONFIG_NET_INITIAL_TTL
+#else
+#define INITIAL_TTL 1
+#endif
+
+#ifdef CONFIG_NET_INITIAL_MCAST_HOP_LIMIT
+#define INITIAL_MCAST_HOP_LIMIT CONFIG_NET_INITIAL_MCAST_HOP_LIMIT
+#else
+#define INITIAL_MCAST_HOP_LIMIT 1
+#endif
+
+#ifdef CONFIG_NET_INITIAL_HOP_LIMIT
+#define INITIAL_HOP_LIMIT CONFIG_NET_INITIAL_HOP_LIMIT
+#else
+#define INITIAL_HOP_LIMIT 1
+#endif
+
 #ifndef EPFNOSUPPORT
 /* Some old versions of newlib haven't got this defined in errno.h,
  * Just use EPROTONOSUPPORT in this case
@@ -86,6 +110,17 @@ bool net_context_is_v6only_set(struct net_context *context)
 	ARG_UNUSED(context);
 
 	return true;
+#endif
+}
+
+bool net_context_is_recv_pktinfo_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	return context->options.recv_pktinfo;
+#else
+	ARG_UNUSED(context);
+
+	return false;
 #endif
 }
 
@@ -457,6 +492,9 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 					ret = -EADDRINUSE;
 					break;
 				}
+
+				contexts[i].ipv6_hop_limit = INITIAL_HOP_LIMIT;
+				contexts[i].ipv6_mcast_hop_limit = INITIAL_MCAST_HOP_LIMIT;
 			}
 			if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 				struct sockaddr_in *addr = (struct sockaddr_in *)&contexts[i].local;
@@ -468,6 +506,9 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 					ret = -EADDRINUSE;
 					break;
 				}
+
+				contexts[i].ipv4_ttl = INITIAL_TTL;
+				contexts[i].ipv4_mcast_ttl = INITIAL_MCAST_TTL;
 			}
 		}
 
@@ -1063,7 +1104,6 @@ int net_context_create_ipv4_new(struct net_context *context,
 		}
 	}
 
-	net_pkt_set_ipv4_ttl(pkt, net_context_get_ipv4_ttl(context));
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(context->options.dscp_ecn));
@@ -1097,8 +1137,6 @@ int net_context_create_ipv6_new(struct net_context *context,
 						  (struct in6_addr *)dst);
 	}
 
-	net_pkt_set_ipv6_hop_limit(pkt,
-				   net_context_get_ipv6_hop_limit(context));
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(context->options.dscp_ecn));
@@ -1341,19 +1379,66 @@ unlock:
 	return ret;
 }
 
+__maybe_unused static int get_bool_option(bool option, int *value, size_t *len)
+{
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	if (len != NULL) {
+		if (*len != sizeof(int)) {
+			return -EINVAL;
+		}
+
+		*len = sizeof(int);
+	}
+
+	*((int *)value) = (int)option;
+
+	return 0;
+}
+
+__maybe_unused static int get_uint8_option(uint8_t option, uint8_t *value, size_t *len)
+{
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	*value = option;
+
+	if (len != NULL) {
+		*len = sizeof(uint8_t);
+	}
+
+	return 0;
+}
+
+__maybe_unused static int get_uint16_option(uint16_t option, int *value, size_t *len)
+{
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	*value = option;
+
+	if (len != NULL) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+}
 
 static int get_context_priority(struct net_context *context,
 				void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_PRIORITY)
-	*((uint8_t *)value) = context->options.priority;
-
-	if (len) {
-		*len = sizeof(uint8_t);
-	}
-
-	return 0;
+	return get_uint8_option(context->options.priority,
+				value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1378,6 +1463,10 @@ static int get_context_proxy(struct net_context *context,
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1386,14 +1475,13 @@ static int get_context_txtime(struct net_context *context,
 			      void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_TXTIME)
-	*((bool *)value) = context->options.txtime;
-
-	if (len) {
-		*len = sizeof(bool);
-	}
-
-	return 0;
+	return get_bool_option(context->options.txtime,
+			       value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1410,6 +1498,10 @@ static int get_context_rcvtimeo(struct net_context *context,
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1426,6 +1518,10 @@ static int get_context_sndtimeo(struct net_context *context,
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1434,13 +1530,13 @@ static int get_context_rcvbuf(struct net_context *context,
 			      void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
-	*((int *)value) = context->options.rcvbuf;
-
-	if (len) {
-		*len = sizeof(int);
-	}
-	return 0;
+	return get_uint16_option(context->options.rcvbuf,
+				 value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1449,13 +1545,13 @@ static int get_context_sndbuf(struct net_context *context,
 				void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
-	*((int *)value) = context->options.sndbuf;
-
-	if (len) {
-		*len = sizeof(int);
-	}
-	return 0;
+	return get_uint16_option(context->options.sndbuf,
+				 value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1464,7 +1560,22 @@ static int get_context_dscp_ecn(struct net_context *context,
 				void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
-	*((int *)value) = context->options.dscp_ecn;
+	return get_uint8_option(context->options.dscp_ecn,
+				value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_ttl(struct net_context *context,
+				 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV4)
+	*((int *)value) = context->ipv4_ttl;
 
 	if (len) {
 		*len = sizeof(int);
@@ -1472,6 +1583,70 @@ static int get_context_dscp_ecn(struct net_context *context,
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_mcast_ttl(struct net_context *context,
+				 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV4)
+	*((int *)value) = context->ipv4_mcast_ttl;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_mcast_hop_limit(struct net_context *context,
+				       void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV6)
+	*((int *)value) = context->ipv6_mcast_hop_limit;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_unicast_hop_limit(struct net_context *context,
+					 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV6)
+	*((int *)value) = context->ipv6_hop_limit;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1480,24 +1655,13 @@ static int get_context_reuseaddr(struct net_context *context,
 				 void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_REUSEADDR)
-	if (!value || !len) {
-		return -EINVAL;
-	}
-
-	if (*len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if (context->options.reuseaddr == true) {
-		*((int *)value) = (int) true;
-	} else {
-		*((int *)value) = (int) false;
-	}
-
-	*len = sizeof(int);
-
-	return 0;
+	return get_bool_option(context->options.reuseaddr,
+			       value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1506,24 +1670,13 @@ static int get_context_reuseport(struct net_context *context,
 				void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_REUSEPORT)
-	if (!value || !len) {
-		return -EINVAL;
-	}
-
-	if (*len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if (context->options.reuseport == true) {
-		*((int *)value) = (int) true;
-	} else {
-		*((int *)value) = (int) false;
-	}
-
-	*len = sizeof(int);
-
-	return 0;
+	return get_bool_option(context->options.reuseport,
+			       value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -1532,23 +1685,23 @@ static int get_context_ipv6_v6only(struct net_context *context,
 				   void *value, size_t *len)
 {
 #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
-	if (!value || !len) {
-		return -EINVAL;
-	}
+	return get_bool_option(context->options.ipv6_v6only,
+			       value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
 
-	if (*len != sizeof(int)) {
-		return -EINVAL;
-	}
+	return -ENOTSUP;
+#endif
+}
 
-	if (context->options.ipv6_v6only == true) {
-		*((int *)value) = (int) true;
-	} else {
-		*((int *)value) = (int) false;
-	}
-
-	*len = sizeof(int);
-
-	return 0;
+static int get_context_recv_pktinfo(struct net_context *context,
+				    void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	return get_bool_option(context->options.recv_pktinfo,
+			       value, len);
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -1591,6 +1744,7 @@ static int context_write_data(struct net_pkt *pkt, const void *buf,
 }
 
 static int context_setup_udp_packet(struct net_context *context,
+				    sa_family_t family,
 				    struct net_pkt *pkt,
 				    const void *buf,
 				    size_t len,
@@ -1601,16 +1755,14 @@ static int context_setup_udp_packet(struct net_context *context,
 	int ret = -EINVAL;
 	uint16_t dst_port = 0U;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		dst_port = addr6->sin6_port;
 
 		ret = net_context_create_ipv6_new(context, pkt,
 						  NULL, &addr6->sin6_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(context) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
 		dst_port = addr4->sin_port;
@@ -1645,6 +1797,7 @@ static int context_setup_udp_packet(struct net_context *context,
 }
 
 static void context_finalize_packet(struct net_context *context,
+				    sa_family_t family,
 				    struct net_pkt *pkt)
 {
 	/* This function is meant to be temporary: once all moved to new
@@ -1653,16 +1806,15 @@ static void context_finalize_packet(struct net_context *context,
 
 	net_pkt_cursor_init(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		net_ipv6_finalize(pkt, net_context_get_proto(context));
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(context) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		net_ipv4_finalize(pkt, net_context_get_proto(context));
 	}
 }
 
 static struct net_pkt *context_alloc_pkt(struct net_context *context,
+					 sa_family_t family,
 					 size_t len, k_timeout_t timeout)
 {
 	struct net_pkt *pkt;
@@ -1675,13 +1827,14 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 		}
 
 		net_pkt_set_iface(pkt, net_context_get_iface(context));
-		net_pkt_set_family(pkt, net_context_get_family(context));
+		net_pkt_set_family(pkt, family);
 		net_pkt_set_context(pkt, context);
 
 		if (net_pkt_alloc_buffer(pkt, len,
 					 net_context_get_proto(context),
 					 timeout)) {
 			net_pkt_unref(pkt);
+
 			return NULL;
 		}
 
@@ -1689,7 +1842,7 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 	}
 #endif
 	pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context), len,
-					net_context_get_family(context),
+					family,
 					net_context_get_proto(context),
 					timeout);
 	if (pkt) {
@@ -1727,6 +1880,7 @@ static int context_sendto(struct net_context *context,
 	const struct msghdr *msghdr = NULL;
 	struct net_if *iface;
 	struct net_pkt *pkt = NULL;
+	sa_family_t family;
 	size_t tmp_len;
 	int ret;
 
@@ -1745,8 +1899,20 @@ static int context_sendto(struct net_context *context,
 		return -EDESTADDRREQ;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(context) == AF_INET6) {
+	/* Are we trying to send IPv4 packet to mapped V6 address, in that case
+	 * we need to set the family to AF_INET so that various checks below
+	 * are done to the packet correctly and we actually send an IPv4 pkt.
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+	    IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == AF_INET6 &&
+	    dst_addr->sa_family == AF_INET) {
+		family = AF_INET;
+	} else {
+		family = net_context_get_family(context);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		const struct sockaddr_in6 *addr6 =
 			(const struct sockaddr_in6 *)dst_addr;
 
@@ -1786,8 +1952,7 @@ static int context_sendto(struct net_context *context,
 			net_context_set_iface(context, iface);
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(context) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		const struct sockaddr_in *addr4 = (const struct sockaddr_in *)dst_addr;
 		struct sockaddr_in mapped;
 
@@ -1839,8 +2004,7 @@ static int context_sendto(struct net_context *context,
 			net_context_set_iface(context, iface);
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		   net_context_get_family(context) == AF_PACKET) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == AF_PACKET) {
 		struct sockaddr_ll *ll_addr = (struct sockaddr_ll *)dst_addr;
 
 		if (msghdr) {
@@ -1890,8 +2054,7 @@ static int context_sendto(struct net_context *context,
 			}
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-		   net_context_get_family(context) == AF_CAN) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
 		struct sockaddr_can *can_addr = (struct sockaddr_can *)dst_addr;
 
 		if (msghdr) {
@@ -1930,8 +2093,7 @@ static int context_sendto(struct net_context *context,
 			return -EDESTADDRREQ;
 		}
 	} else {
-		NET_DBG("Invalid protocol family %d",
-			net_context_get_family(context));
+		NET_DBG("Invalid protocol family %d", family);
 		return -EINVAL;
 	}
 
@@ -1957,7 +2119,7 @@ static int context_sendto(struct net_context *context,
 		goto skip_alloc;
 	}
 
-	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
+	pkt = context_alloc_pkt(context, family, len, PKT_WAIT_TIME);
 	if (!pkt) {
 		NET_ERR("Failed to allocate net_pkt");
 		return -ENOBUFS;
@@ -1987,7 +2149,7 @@ static int context_sendto(struct net_context *context,
 	 */
 	if (msghdr && msghdr->msg_control && msghdr->msg_controllen) {
 		if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
-			bool is_txtime;
+			int is_txtime;
 
 			get_context_txtime(context, &is_txtime, NULL);
 			if (is_txtime) {
@@ -2016,13 +2178,13 @@ skip_alloc:
 		}
 	} else if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    net_context_get_proto(context) == IPPROTO_UDP) {
-		ret = context_setup_udp_packet(context, pkt, buf, len, msghdr,
+		ret = context_setup_udp_packet(context, family, pkt, buf, len, msghdr,
 					       dst_addr, addrlen);
 		if (ret < 0) {
 			goto fail;
 		}
 
-		context_finalize_packet(context, pkt);
+		context_finalize_packet(context, family, pkt);
 
 		ret = net_send_data(pkt);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
@@ -2036,8 +2198,7 @@ skip_alloc:
 		len = ret;
 
 		ret = net_tcp_send_data(context, cb, user_data);
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		   net_context_get_family(context) == AF_PACKET) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == AF_PACKET) {
 		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
@@ -2066,8 +2227,7 @@ skip_alloc:
 		} else {
 			net_if_queue_tx(net_pkt_iface(pkt), pkt);
 		}
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-		   net_context_get_family(context) == AF_CAN &&
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN &&
 		   net_context_get_proto(context) == CAN_RAW) {
 		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
@@ -2475,18 +2635,70 @@ int net_context_update_recv_wnd(struct net_context *context,
 	return ret;
 }
 
-static int set_context_priority(struct net_context *context,
-				const void *value, size_t len)
+__maybe_unused static int set_bool_option(bool *option, const void *value, size_t len)
 {
-#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*option = !!*((int *)value);
+
+	return 0;
+}
+
+__maybe_unused static int set_uint8_option(uint8_t *option, const void *value, size_t len)
+{
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
 	if (len > sizeof(uint8_t)) {
 		return -EINVAL;
 	}
 
-	context->options.priority = *((uint8_t *)value);
+	*option = *((uint8_t *)value);
 
 	return 0;
+}
+
+__maybe_unused static int set_uint16_option(uint16_t *option, const void *value, size_t len)
+{
+	int v;
+
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	v = *((int *)value);
+
+	if (v < 0 || v > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	*option = (uint16_t)v;
+
+	return 0;
+
+}
+
+static int set_context_priority(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+	return set_uint8_option(&context->options.priority, value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2495,14 +2707,12 @@ static int set_context_txtime(struct net_context *context,
 			      const void *value, size_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_TXTIME)
-	if (len > sizeof(bool)) {
-		return -EINVAL;
-	}
-
-	context->options.txtime = *((bool *)value);
-
-	return 0;
+	return set_bool_option(&context->options.txtime, value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2526,6 +2736,10 @@ static int set_context_proxy(struct net_context *context,
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2542,6 +2756,10 @@ static int set_context_rcvtimeo(struct net_context *context,
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2558,6 +2776,10 @@ static int set_context_sndtimeo(struct net_context *context,
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2566,20 +2788,12 @@ static int set_context_rcvbuf(struct net_context *context,
 				const void *value, size_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
-	int rcvbuf_value = *((int *)value);
-
-	if (len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if ((rcvbuf_value < 0) || (rcvbuf_value > UINT16_MAX)) {
-		return -EINVAL;
-	}
-
-	context->options.rcvbuf = (uint16_t) rcvbuf_value;
-
-	return 0;
+	return set_uint16_option(&context->options.rcvbuf, value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2588,19 +2802,12 @@ static int set_context_sndbuf(struct net_context *context,
 				const void *value, size_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
-	int sndbuf_value = *((int *)value);
-
-	if (len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if ((sndbuf_value < 0) || (sndbuf_value > UINT16_MAX)) {
-		return -EINVAL;
-	}
-
-	context->options.sndbuf = (uint16_t) sndbuf_value;
-	return 0;
+	return set_uint16_option(&context->options.sndbuf, value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2609,20 +2816,103 @@ static int set_context_dscp_ecn(struct net_context *context,
 				const void *value, size_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
-	int dscp_ecn = *((int *)value);
+	return set_uint8_option(&context->options.dscp_ecn, value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_ttl(struct net_context *context,
+			   const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV4)
+	uint8_t ttl = *((int *)value);
+
+	len = sizeof(context->ipv4_ttl);
+
+	return set_uint8_option(&context->ipv4_ttl, &ttl, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_mcast_ttl(struct net_context *context,
+				 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV4)
+	uint8_t mcast_ttl = *((int *)value);
+
+	len = sizeof(context->ipv4_mcast_ttl);
+
+	return set_uint8_option(&context->ipv4_mcast_ttl, &mcast_ttl, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_mcast_hop_limit(struct net_context *context,
+				       const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	int mcast_hop_limit = *((int *)value);
 
 	if (len != sizeof(int)) {
 		return -EINVAL;
 	}
 
-	if ((dscp_ecn < 0) || (dscp_ecn > UINT8_MAX)) {
+	if (mcast_hop_limit == -1) {
+		/* If value is -1 then use the system default.
+		 * This is done same way as in Linux.
+		 */
+		if (net_if_get_by_index(context->iface) == NULL) {
+			mcast_hop_limit = INITIAL_MCAST_HOP_LIMIT;
+		} else {
+			mcast_hop_limit = net_if_ipv6_get_mcast_hop_limit(
+				net_if_get_by_index(context->iface));
+		}
+	} else if (mcast_hop_limit < 0 || mcast_hop_limit > 255) {
 		return -EINVAL;
 	}
 
-	context->options.dscp_ecn = (uint8_t)dscp_ecn;
+	context->ipv6_mcast_hop_limit = mcast_hop_limit;
 
 	return 0;
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_unicast_hop_limit(struct net_context *context,
+					 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	uint8_t unicast_hop_limit = *((int *)value);
+
+	len = sizeof(context->ipv6_hop_limit);
+
+	return set_uint8_option(&context->ipv6_hop_limit,
+				&unicast_hop_limit, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2631,20 +2921,12 @@ static int set_context_reuseaddr(struct net_context *context,
 				 const void *value, size_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_REUSEADDR)
-	bool reuseaddr = false;
-
-	if (len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if (*((int *) value) != 0) {
-		reuseaddr = true;
-	}
-
-	context->options.reuseaddr = reuseaddr;
-
-	return 0;
+	return set_bool_option(&context->options.reuseaddr, value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2653,20 +2935,12 @@ static int set_context_reuseport(struct net_context *context,
 				 const void *value, size_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_REUSEPORT)
-	bool reuseport = false;
-
-	if (len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if (*((int *) value) != 0) {
-		reuseport = true;
-	}
-
-	context->options.reuseport = reuseport;
-
-	return 0;
+	return set_bool_option(&context->options.reuseport, value, len);
 #else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
 	return -ENOTSUP;
 #endif
 }
@@ -2675,19 +2949,21 @@ static int set_context_ipv6_v6only(struct net_context *context,
 				   const void *value, size_t len)
 {
 #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
-	bool v6only = false;
+	return set_bool_option(&context->options.ipv6_v6only, value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
 
-	if (len != sizeof(int)) {
-		return -EINVAL;
-	}
+	return -ENOTSUP;
+#endif
+}
 
-	if (*((int *) value) != 0) {
-		v6only = true;
-	}
-
-	context->options.ipv6_v6only = v6only;
-
-	return 0;
+static int set_context_recv_pktinfo(struct net_context *context,
+				    const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	return set_bool_option(&context->options.recv_pktinfo, value, len);
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -2736,6 +3012,18 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_DSCP_ECN:
 		ret = set_context_dscp_ecn(context, value, len);
 		break;
+	case NET_OPT_TTL:
+		ret = set_context_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_TTL:
+		ret = set_context_mcast_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_HOP_LIMIT:
+		ret = set_context_mcast_hop_limit(context, value, len);
+		break;
+	case NET_OPT_UNICAST_HOP_LIMIT:
+		ret = set_context_unicast_hop_limit(context, value, len);
+		break;
 	case NET_OPT_REUSEADDR:
 		ret = set_context_reuseaddr(context, value, len);
 		break;
@@ -2744,6 +3032,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_IPV6_V6ONLY:
 		ret = set_context_ipv6_v6only(context, value, len);
+		break;
+	case NET_OPT_RECV_PKTINFO:
+		ret = set_context_recv_pktinfo(context, value, len);
 		break;
 	}
 
@@ -2791,6 +3082,18 @@ int net_context_get_option(struct net_context *context,
 	case NET_OPT_DSCP_ECN:
 		ret = get_context_dscp_ecn(context, value, len);
 		break;
+	case NET_OPT_TTL:
+		ret = get_context_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_TTL:
+		ret = get_context_mcast_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_HOP_LIMIT:
+		ret = get_context_mcast_hop_limit(context, value, len);
+		break;
+	case NET_OPT_UNICAST_HOP_LIMIT:
+		ret = get_context_unicast_hop_limit(context, value, len);
+		break;
 	case NET_OPT_REUSEADDR:
 		ret = get_context_reuseaddr(context, value, len);
 		break;
@@ -2799,6 +3102,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_IPV6_V6ONLY:
 		ret = get_context_ipv6_v6only(context, value, len);
+		break;
+	case NET_OPT_RECV_PKTINFO:
+		ret = get_context_recv_pktinfo(context, value, len);
 		break;
 	}
 

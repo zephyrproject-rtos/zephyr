@@ -16,16 +16,21 @@
 #define VRING_DATA_MAX_LEN 2304
 
 static struct eth_ivshmem_queue q1, q2;
-static uint8_t shmem_buff[SHMEM_SECTION_SIZE * 2];
+static uint8_t shmem_buff[2][SHMEM_SECTION_SIZE] __aligned(KB(4));
 static const void *rx_message;
 static size_t rx_len;
 
 static void test_init_queues(void)
 {
-	int res = eth_ivshmem_queue_init(&q1, (uintptr_t)shmem_buff, SHMEM_SECTION_SIZE, true);
+	int res;
 
+	res = eth_ivshmem_queue_init(
+		&q1, (uintptr_t)shmem_buff[0],
+		(uintptr_t)shmem_buff[1], SHMEM_SECTION_SIZE);
 	zassert_ok(res);
-	res = eth_ivshmem_queue_init(&q2, (uintptr_t)shmem_buff, SHMEM_SECTION_SIZE, false);
+	res = eth_ivshmem_queue_init(
+		&q2, (uintptr_t)shmem_buff[1],
+		(uintptr_t)shmem_buff[0], SHMEM_SECTION_SIZE);
 	zassert_ok(res);
 }
 
@@ -55,10 +60,10 @@ ZTEST(eth_ivshmem_queue_tests, test_init)
 	zassert_equal(q1.desc_max_len, VRING_DESC_LEN);
 	zassert_equal(q1.vring_header_size, VRING_HEADER_SIZE);
 	zassert_equal(q1.vring_data_max_len, VRING_DATA_MAX_LEN);
-	zassert_equal_ptr(q1.tx.shmem, shmem_buff);
-	zassert_equal_ptr(q1.rx.shmem, shmem_buff + SHMEM_SECTION_SIZE);
-	zassert_equal_ptr(q2.tx.shmem, shmem_buff + SHMEM_SECTION_SIZE);
-	zassert_equal_ptr(q2.rx.shmem, shmem_buff);
+	zassert_equal_ptr(q1.tx.shmem, shmem_buff[0]);
+	zassert_equal_ptr(q1.rx.shmem, shmem_buff[1]);
+	zassert_equal_ptr(q2.tx.shmem, shmem_buff[1]);
+	zassert_equal_ptr(q2.rx.shmem, shmem_buff[0]);
 }
 
 ZTEST(eth_ivshmem_queue_tests, test_simple_send_receive)

@@ -129,7 +129,7 @@ Default Zephyr Peripheral Mapping:
 - ADC : PA0
 
 
-For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
+For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Programming and Debugging
 *************************

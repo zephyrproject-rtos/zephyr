@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Extended Advertising Scanner
+tests:
+  sample.bluetooth.extended_advertising.scanner:
+    harness: bluetooth
+    platform_allow: nrf52840dk_nrf52840
+    tags: bluetooth

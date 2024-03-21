@@ -89,7 +89,7 @@ static int query_get(struct coap_resource *resource,
 		return r;
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len);
+	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
 
 	return r;
 }

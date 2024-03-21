@@ -7,3 +7,10 @@ config RETAINED_MEM_ZEPHYR_RAM
 	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED
 	help
 	  Enable driver for retained memory in RAM.
+
+config RETAINED_MEM_ZEPHYR_REG
+	bool "Generic Zephyr register retained memory driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RETAINED_REG_ENABLED
+	help
+	  Enable driver for retained memory in retained registers.

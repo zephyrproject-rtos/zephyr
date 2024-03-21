@@ -16,6 +16,7 @@
 #define MAX20335_BUCK2_CFG        0x0FU
 #define MAX20335_BUCK2_VSET       0x10U
 #define MAX20335_BUCK12_CSET      0x11U
+#define MAX20335_PWR_CMD	  0x1FU
 #define MAX20335_BUCK1_CSET_MASK  0xF0U
 #define MAX20335_BUCK2_CSET_MASK  0x0FU
 #define MAX20335_BUCK2_CSET_SHIFT 4
@@ -32,6 +33,8 @@
 #define MAX20335_LDO_EN           BIT(1)
 #define MAX20335_LDO_EN_MASK      GENMASK(2, 1)
 
+#define MAX20335_OFF_MODE	  0xB2U
+
 enum max20335_pmic_sources {
 	MAX20335_PMIC_SOURCE_BUCK1,
 	MAX20335_PMIC_SOURCE_BUCK2,
@@ -47,6 +50,10 @@ struct regulator_max20335_desc {
 	uint8_t cfg_reg;
 	const struct linear_range *uv_range;
 	const struct linear_range *ua_range;
+};
+
+struct regulator_max20335_common_config {
+	struct i2c_dt_spec bus;
 };
 
 struct regulator_max20335_config {
@@ -67,7 +74,7 @@ static const struct linear_range buck12_current_limit_range =
 static const struct linear_range ldo1_range = LINEAR_RANGE_INIT(800000, 100000U, 0x0U, 0x1CU);
 static const struct linear_range ldo23_range = LINEAR_RANGE_INIT(900000, 100000U, 0x0U, 0x1FU);
 
-static const struct regulator_max20335_desc buck1_desc = {
+static const struct regulator_max20335_desc __maybe_unused buck1_desc = {
 	.vsel_reg = MAX20335_BUCK1_VSET,
 	.enable_mask = MAX20335_BUCK_EN_MASK,
 	.enable_val = MAX20335_BUCK_EN,
@@ -76,7 +83,7 @@ static const struct regulator_max20335_desc buck1_desc = {
 	.ua_range = &buck12_current_limit_range,
 };
 
-static const struct regulator_max20335_desc buck2_desc = {
+static const struct regulator_max20335_desc __maybe_unused buck2_desc = {
 	.vsel_reg = MAX20335_BUCK2_VSET,
 	.enable_mask = MAX20335_BUCK_EN_MASK,
 	.enable_val = MAX20335_BUCK_EN,
@@ -85,7 +92,7 @@ static const struct regulator_max20335_desc buck2_desc = {
 	.ua_range = &buck12_current_limit_range,
 };
 
-static const struct regulator_max20335_desc ldo1_desc = {
+static const struct regulator_max20335_desc __maybe_unused ldo1_desc = {
 	.vsel_reg = MAX20335_LDO1_VSET,
 	.enable_mask = MAX20335_LDO_EN_MASK,
 	.enable_val = MAX20335_LDO_EN,
@@ -93,7 +100,7 @@ static const struct regulator_max20335_desc ldo1_desc = {
 	.uv_range = &ldo1_range,
 };
 
-static const struct regulator_max20335_desc ldo2_desc = {
+static const struct regulator_max20335_desc __maybe_unused ldo2_desc = {
 	.vsel_reg = MAX20335_LDO2_VSET,
 	.enable_mask = MAX20335_LDO_EN_MASK,
 	.enable_val = MAX20335_LDO_EN,
@@ -101,7 +108,7 @@ static const struct regulator_max20335_desc ldo2_desc = {
 	.uv_range = &ldo23_range,
 };
 
-static const struct regulator_max20335_desc ldo3_desc = {
+static const struct regulator_max20335_desc __maybe_unused ldo3_desc = {
 	.vsel_reg = MAX20335_LDO3_VSET,
 	.enable_mask = MAX20335_LDO_EN_MASK,
 	.enable_val = MAX20335_LDO_EN,
@@ -224,6 +231,11 @@ static unsigned int regulator_max20335_count_current_limits(const struct device 
 {
 	const struct regulator_max20335_config *config = dev->config;
 
+	if (config->source != MAX20335_PMIC_SOURCE_BUCK1 &&
+	    config->source != MAX20335_PMIC_SOURCE_BUCK2) {
+		return -ENOTSUP;
+	}
+
 	return linear_range_values_count(config->desc->ua_range);
 }
 
@@ -231,6 +243,11 @@ static int regulator_max20335_list_current_limit(const struct device *dev, unsig
 						 int32_t *current_ua)
 {
 	const struct regulator_max20335_config *config = dev->config;
+
+	if (config->source != MAX20335_PMIC_SOURCE_BUCK1 &&
+	    config->source != MAX20335_PMIC_SOURCE_BUCK2) {
+		return -ENOTSUP;
+	}
 
 	return linear_range_get_value(config->desc->ua_range, idx, current_ua);
 }
@@ -243,6 +260,11 @@ static int regulator_max20335_set_current_limit(const struct device *dev,
 	uint8_t val;
 	uint16_t idx;
 	int ret;
+
+	if (config->source != MAX20335_PMIC_SOURCE_BUCK1 &&
+	    config->source != MAX20335_PMIC_SOURCE_BUCK2) {
+		return -ENOTSUP;
+	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_BUCK12_CSET, &val);
 	if (ret < 0) {
@@ -268,6 +290,13 @@ static int regulator_max20335_set_current_limit(const struct device *dev,
 	return i2c_reg_write_byte_dt(&config->bus, MAX20335_BUCK12_CSET, val);
 }
 
+static int regulator_max20335_power_off(const struct device *dev)
+{
+	const struct regulator_max20335_common_config *common_config = dev->config;
+
+	return i2c_reg_write_byte_dt(&common_config->bus, MAX20335_PWR_CMD, MAX20335_OFF_MODE);
+}
+
 static int regulator_max20335_init(const struct device *dev)
 {
 	const struct regulator_max20335_config *config = dev->config;
@@ -280,6 +309,21 @@ static int regulator_max20335_init(const struct device *dev)
 
 	return regulator_common_init(dev, false);
 }
+
+static int regulator_max20335_common_init(const struct device *dev)
+{
+	const struct regulator_max20335_common_config *common_config = dev->config;
+
+	if (!i2c_is_ready_dt(&common_config->bus)) {
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static const struct regulator_parent_driver_api parent_api = {
+	.ship_mode = regulator_max20335_power_off,
+};
 
 static const struct regulator_driver_api api = {
 	.enable = regulator_max20335_enable,
@@ -317,10 +361,19 @@ static const struct regulator_driver_api api = {
 		    ())
 
 #define REGULATOR_MAX20335_DEFINE_ALL(inst)							\
+	static const struct regulator_max20335_common_config common_config_##inst = {		\
+		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),					\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, regulator_max20335_common_init,				\
+			      NULL, NULL, &common_config_##inst, POST_KERNEL,			\
+			      CONFIG_REGULATOR_MAXIM_MAX20335_COMMON_INIT_PRIORITY,		\
+			      &parent_api);							\
+												\
 	REGULATOR_MAX20335_DEFINE_COND(inst, buck1, MAX20335_PMIC_SOURCE_BUCK1)			\
 	REGULATOR_MAX20335_DEFINE_COND(inst, buck2, MAX20335_PMIC_SOURCE_BUCK2)			\
 	REGULATOR_MAX20335_DEFINE_COND(inst, ldo1, MAX20335_PMIC_SOURCE_LDO1)			\
 	REGULATOR_MAX20335_DEFINE_COND(inst, ldo2, MAX20335_PMIC_SOURCE_LDO2)			\
 	REGULATOR_MAX20335_DEFINE_COND(inst, ldo3, MAX20335_PMIC_SOURCE_LDO3)
 
-DT_INST_FOREACH_STATUS_OKAY(REGULATOR_MAX20335_DEFINE_ALL);
+DT_INST_FOREACH_STATUS_OKAY(REGULATOR_MAX20335_DEFINE_ALL)

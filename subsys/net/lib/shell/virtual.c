@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/virtual.h>
 #endif
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_L2_VIRTUAL)
 static void virtual_iface_cb(struct net_if *iface, void *user_data)

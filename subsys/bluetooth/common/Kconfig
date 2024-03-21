@@ -33,6 +33,7 @@ config BT_BUF_ACL_TX_SIZE
 config BT_BUF_ACL_TX_COUNT
 	int "Number of outgoing ACL data buffers"
 	default 7 if BT_HCI_RAW
+	default 4 if BT_MESH_GATT
 	default 3
 	range 1 255
 	help
@@ -242,7 +243,7 @@ config BT_HCI_MESH_EXT
 	bool "Mesh HCI Command support"
 	depends on BT_BROADCASTER && BT_OBSERVER && !BT_LL_SW_SPLIT
 	help
-	  Enable support for the Bluetooth mesh HCI Commands.
+	  Enable support for the Bluetooth Mesh HCI Commands.
 
 config BT_WAIT_NOP
 	bool "Wait for \"NOP\" Command Complete event during init"

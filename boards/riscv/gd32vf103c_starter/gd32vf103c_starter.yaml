@@ -4,7 +4,7 @@
 identifier: gd32vf103c_starter
 name: GigaDevice GD32VF103C-STARTER
 type: mcu
-arch: riscv32
+arch: riscv
 ram: 32
 flash: 128
 toolchain:

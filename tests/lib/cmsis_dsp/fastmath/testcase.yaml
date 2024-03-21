@@ -6,7 +6,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 128
     min_ram: 64
@@ -17,7 +17,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     extra_configs:
       - CONFIG_FPU=y

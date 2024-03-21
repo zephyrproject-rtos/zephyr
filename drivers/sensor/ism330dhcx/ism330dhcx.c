@@ -473,9 +473,11 @@ static int ism330dhcx_gyro_channel_get(const struct device *dev, enum sensor_cha
 }
 
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
-static void ism330dhcx_gyro_channel_get_temp(struct sensor_value *val,
-					  struct ism330dhcx_data *data)
+static void ism330dhcx_gyro_channel_get_temp(const struct device *dev,
+					     struct sensor_value *val)
 {
+	struct ism330dhcx_data *data = dev->data;
+
 	/* val = temp_sample / 256 + 25 */
 	val->val1 = data->temp_sample / 256 + 25;
 	val->val2 = (data->temp_sample % 256) * (1000000 / 256);

@@ -347,7 +347,7 @@ build_only: <True|False> (default False)
 
     This option is often used to test drivers and the fact that they are correctly
     enabled in Zephyr and that the code builds, for example sensor drivers. Such
-    test shall not be used to verify the functionality of the dritver.
+    test shall not be used to verify the functionality of the driver.
 
 build_on_all: <True|False> (default False)
     If true, attempt to build test on all available platforms. This is mostly
@@ -419,7 +419,7 @@ harness: <string>
     Twister to be able to evaluate if a test passes criteria. For example, a
     keyboard harness is set on tests that require keyboard interaction to reach
     verdict on whether a test has passed or failed, however, Twister lack this
-    harness implementation at the momemnt.
+    harness implementation at the moment.
 
     Supported harnesses:
 
@@ -445,6 +445,14 @@ harness: <string>
     - net
     - bluetooth
 
+    Harness ``bsim`` is implemented in limited way - it helps only to copy the
+    final executable (``zephyr.exe``) from build directory to BabbleSim's
+    ``bin`` directory (``${BSIM_OUT_PATH}/bin``). This action is useful to allow
+    BabbleSim's tests to directly run after. By default, the executable file
+    name is (with dots and slashes replaced by underscores):
+    ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
+    This name can be overridden with the ``bsim_exe_name`` option in
+    ``harness_config`` section.
 
 platform_key: <list of platform attributes>
     Often a test needs to only be built and run once to qualify as passing.
@@ -465,7 +473,7 @@ platform_key: <list of platform attributes>
     Adding platform (board) attributes to include things such as soc name,
     soc family, and perhaps sets of IP blocks implementing each peripheral
     interface would enable other interesting uses. For example, this could enable
-    building and running SPI tests once for eacn unique IP block.
+    building and running SPI tests once for each unique IP block.
 
 harness_config: <harness configuration options>
     Extra harness configuration options to be used to select a board and/or
@@ -478,21 +486,30 @@ harness_config: <harness configuration options>
     type: <one_line|multi_line> (required)
         Depends on the regex string to be matched
 
-
-    record: <recording options>
-      regex: <expression> (required)
-        Any string that the particular test case prints to record test
-        results.
-
-    regex: <expression> (required)
-        Any string that the particular test case prints to confirm test
-        runs as expected.
+    regex: <list of regular expressions> (required)
+        Strings with regular expressions to match with the test's output
+        to confirm the test runs as expected.
 
     ordered: <True|False> (default False)
         Check the regular expression strings in orderly or randomly fashion
 
     repeat: <integer>
         Number of times to validate the repeated regex expression
+
+    record: <recording options> (optional)
+      regex: <regular expression> (required)
+        The regular expression with named subgroups to match data fields
+        at the test's output lines where the test provides some custom data
+        for further analysis. These records will be written into the build
+        directory 'recording.csv' file as well as 'recording' property
+        of the test suite object in 'twister.json'.
+
+        For example, to extract three data fields 'metric', 'cycles', 'nanoseconds':
+
+        .. code-block:: yaml
+
+          record:
+            regex: "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
 
     fixture: <expression>
         Specify a test case dependency on an external device(e.g., sensor),
@@ -505,14 +522,36 @@ harness_config: <harness configuration options>
         Only one fixture can be defined per testcase and the fixture name has to
         be unique across all tests in the test suite.
 
+.. _pytest_root:
+
     pytest_root: <list of pytest testpaths> (default pytest)
-        Specify a list of pytest directories, files or subtests that need to be executed
-        when test case begin to running, default pytest directory is pytest.
-        After pytest finished, twister will check if this case pass or fail according
-        to the pytest report.
+        Specify a list of pytest directories, files or subtests that need to be
+        executed when a test case begins to run. The default pytest directory is
+        ``pytest``. After the pytest run is finished, Twister will check if
+        the test case passed or failed according to the pytest report.
+        As an example, a list of valid pytest roots is presented below:
+
+        .. code-block:: yaml
+
+            harness_config:
+              pytest_root:
+                - "pytest/test_shell_help.py"
+                - "../shell/pytest/test_shell.py"
+                - "/tmp/test_shell.py"
+                - "~/tmp/test_shell.py"
+                - "$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest/test_shell.py"
+                - "pytest/test_shell_help.py::test_shell2_sample"  # select pytest subtest
+                - "pytest/test_shell_help.py::test_shell2_sample[param_a]"  # select pytest parametrized subtest
+
+.. _pytest_args:
 
     pytest_args: <list of arguments> (default empty)
-        Specify a list of additional arguments to pass to ``pytest``.
+        Specify a list of additional arguments to pass to ``pytest`` e.g.:
+        ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``. Note that
+        ``--pytest-args`` can be passed multiple times to pass several arguments
+        to the pytest.
+
+.. _pytest_dut_scope:
 
     pytest_dut_scope: <function|class|module|package|session> (default function)
         The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
@@ -521,6 +560,11 @@ harness_config: <harness configuration options>
 
     robot_test_path: <robot file path> (default empty)
         Specify a path to a file containing a Robot Framework test suite to be run.
+
+    bsim_exe_name: <string>
+        If provided, the executable filename when copying to BabbleSim's bin
+        directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
+        default based on the test path and scenario name.
 
     The following is an example yaml file with a few harness_config options.
 
@@ -949,8 +993,8 @@ on those platforms.
 
 .. note::
 
-  Currently only boards with support for both pyocd and nrfjprog are supported
-  with the hardware map features. Boards that require other runners to flash the
+  Currently only boards with support for pyocd, nrfjprog, jlink, openocd, or dediprog
+  are supported with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
 
 Hardware map allows to set ``--device-flash-timeout`` and ``--device-flash-with-test``
@@ -1080,7 +1124,7 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
 Quarantine
 ++++++++++
 
-Twister allows user to provide onfiguration files defining a list of tests or
+Twister allows user to provide configuration files defining a list of tests or
 platforms to be put under quarantine. Such tests will be skipped and marked
 accordingly in the output reports. This feature is especially useful when
 running larger test suits, where a failure of one test can affect the execution
@@ -1133,7 +1177,7 @@ Additionally you can quarantine entire architectures or a specific simulator for
 Test Configuration
 ******************
 
-A test configuration can be used to customize various apects of twister
+A test configuration can be used to customize various aspects of twister
 and the default enabled options and features. This allows tweaking the filtering
 capabilities depending on the environment and makes it possible to adapt and
 improve coverage when targeting different sets of platforms.
@@ -1143,7 +1187,7 @@ assign a specific test to one or more levels. Using command line options of
 twister it is then possible to select a level and just execute the tests
 included in this level.
 
-Additionally, the test configuration allows  defining level
+Additionally, the test configuration allows defining level
 dependencies and additional inclusion of tests into a specific level if
 the test itself does not have this information already.
 
@@ -1160,7 +1204,7 @@ locally. As of now, those options are available:
   CI)
 - Option to specify your own list of default platforms overriding what
   upstream defines.
-- Ability to override `build_onl_all` options used in some testcases.
+- Ability to override `build_on_all` options used in some testcases.
   This will treat tests or sample as any other just build for default
   platforms you specify in the configuration file or on the command line.
 - Ignore some logic in twister to expand platform coverage in cases where
@@ -1225,7 +1269,7 @@ Combined configuration
 
 To mix the Platform and level configuration, you can take an example as below:
 
-And example platforms plus level configuration:
+An example platforms plus level configuration:
 
 .. code-block:: yaml
 
@@ -1254,7 +1298,7 @@ And example platforms plus level configuration:
 	        A plan to be used verifying regression.
 
 
-To run with above test_config.yaml file, only default_paltforms with given test level
+To run with above test_config.yaml file, only default_platforms with given test level
 test cases will run.
 
 .. tabs::
@@ -1316,3 +1360,12 @@ It provides a list of the most commonly used keywords together with links to the
 
 It's possible to extend the framework by adding new keywords expressed directly in Robot test suite files, as an external Python library or, like Renode does it, dynamically via XML-RPC.
 For details see the `extending Robot Framework <https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#extending-robot-framework>`_ section in the official Robot documentation.
+
+Running a single testsuite
+==========================
+
+To run a single testsuite instead of a whole group of test you can run:
+
+.. code-block:: bash
+
+   $ twister -p qemu_riscv32 -s tests/kernel/interrupt/arch.shared_interrupt

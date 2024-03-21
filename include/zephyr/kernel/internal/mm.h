@@ -56,6 +56,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/mem_manage.h>
 
 /* Just like Z_MEM_PHYS_ADDR() but with type safety and assertions */
 static inline uintptr_t z_mem_phys_addr(void *virt)
@@ -167,10 +168,10 @@ extern "C" {
  * This API is part of infrastructure still under development and may
  * change.
  *
- * @param virt [out] Output virtual address storage location
- * @param phys Physical address base of the memory region
- * @param size Size of the memory region
- * @param flags Caching mode and access flags, see K_MAP_* macros
+ * @param[out] virt Output virtual address storage location
+ * @param[in]  phys Physical address base of the memory region
+ * @param[in]  size Size of the memory region
+ * @param[in]  flags Caching mode and access flags, see K_MAP_* macros
  */
 void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
 		uint32_t flags);

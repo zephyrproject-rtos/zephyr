@@ -40,21 +40,4 @@
 #define RI5CY_PRIVLV    0xC10
 #define RI5CY_MHARTID   0xF14
 
-/*
- * Map from SoC-specific configuration to generic Zephyr macros.
- *
- * These are expected by the code in arch/, and must be provided for
- * the kernel to work (or even build at all).
- *
- * Some of these may also apply to ZERO-RISCY; needs investigation.
- */
-
-/*
- * Exception code mask. Use of the bottom five bits is a subset of
- * what the standard allocates (which is XLEN-1 bits).
- */
-#define SOC_MCAUSE_EXP_MASK 0x1F
-
-/* The ecall exception number. This is a standard value. */
-#define SOC_MCAUSE_ECALL_EXP 11
 #endif /* SOC_RISCV32_OPENISA_RV32M1_SOC_RI5CY_H_ */

@@ -143,33 +143,7 @@ static void smbalert_work(struct k_work *work)
 					     smb_alert_work);
 	const struct device *dev = data->dev;
 
-	/**
-	 * There might be several peripheral devices and the he highest
-	 * priority (lowest address) device wins arbitration, we need to
-	 * read them all.
-	 *
-	 * The format of the transaction is:
-	 *
-	 *  0                   1                   2
-	 *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0
-	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	 *  |S|  Alert Addr |R|A|   Address   |X|N|P|
-	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	 */
-	do {
-		uint8_t addr;
-		int ret;
-
-		ret = smbus_byte_read(dev, SMBUS_ADDRESS_ARA, &addr);
-		if (ret < 0) {
-			LOG_DBG("Cannot read peripheral address (anymore)");
-			return;
-		}
-
-		LOG_DBG("Read addr 0x%02x, ret %d", addr, ret);
-
-		smbus_fire_callbacks(&data->smbalert_cbs, dev, addr);
-	} while (true);
+	smbus_loop_alert_devices(dev, &data->smbalert_cbs);
 }
 
 static int pch_smbus_smbalert_set_sb(const struct device *dev,

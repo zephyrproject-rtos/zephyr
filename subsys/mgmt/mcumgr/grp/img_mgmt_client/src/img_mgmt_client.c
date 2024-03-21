@@ -74,7 +74,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 		goto out;
 	}
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_start_decode(zsd);
 	if (!ok) {
@@ -201,7 +201,7 @@ static int image_upload_res_fn(struct net_buf *nb, void *user_data)
 		goto end;
 	}
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
 
 	rc = zcbor_map_decode_bulk(zsd, upload_res_decode, ARRAY_SIZE(upload_res_decode), &decoded);
 	if (rc || image_upload_buf->image_upload_offset == SIZE_MAX) {
@@ -233,7 +233,7 @@ static int erase_res_fn(struct net_buf *nb, void *user_data)
 		goto end;
 	}
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
 
 	rc = zcbor_map_decode_bulk(zsd, upload_res_decode, ARRAY_SIZE(upload_res_decode), &decoded);
 	if (rc) {
@@ -255,7 +255,7 @@ static size_t upload_message_header_size(struct img_gr_upload *upload_state)
 	int map_count;
 	zcbor_state_t zse[CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2];
 	uint8_t temp_buf[MCUMGR_UPLOAD_INIT_HEADER_BUF_SIZE];
-	uint8_t temp_data;
+	uint8_t temp_data = 0U;
 
 	/* Calculation of message header with data length of 1 */
 

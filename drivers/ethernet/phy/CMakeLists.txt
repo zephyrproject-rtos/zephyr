@@ -2,3 +2,5 @@
 
 zephyr_library_sources_ifdef(CONFIG_PHY_GENERIC_MII	phy_mii.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_ADIN2111	phy_adin2111.c)
+zephyr_library_sources_ifdef(CONFIG_PHY_TJA1103	        phy_tja1103.c)
+zephyr_library_sources_ifdef(CONFIG_PHY_MICROCHIP_KSZ8081	phy_microchip_ksz8081.c)

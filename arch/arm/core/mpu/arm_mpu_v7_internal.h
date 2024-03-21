@@ -269,4 +269,9 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 	return mpu_reg_index;
 }
 
+static inline void mpu_clear_region(uint32_t rnr)
+{
+	ARM_MPU_ClrRegion(rnr);
+}
+
 #endif	/* ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V7_INTERNAL_H_ */

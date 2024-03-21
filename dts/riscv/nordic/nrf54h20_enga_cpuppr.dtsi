@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54h20_enga.dtsi>
+
+cpu: &cpuppr {};
+clic: &cpuppr_clic {};
+
+/delete-node/ &cpuapp;
+/delete-node/ &cpuapp_peripherals;
+/delete-node/ &cpuapp_ppb;
+/delete-node/ &cpuapp_ram0;
+/delete-node/ &cpurad;
+/delete-node/ &cpurad_peripherals;
+/delete-node/ &cpurad_ppb;
+/delete-node/ &cpurad_ram0;
+
+/ {
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&cpuppr_clic>;
+		ranges;
+	};
+};
+
+&gpiote130 {
+	interrupts = <104 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&grtc {
+	interrupts = <108 NRF_DEFAULT_IRQ_PRIORITY>;
+};

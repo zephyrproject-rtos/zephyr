@@ -17,7 +17,15 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_SAM_RNG            entropy_sam.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_SMARTBOND_TRNG     entropy_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_STM32_RNG          entropy_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_LITEX_RNG          entropy_litex.c)
-zephyr_library_sources_ifdef(CONFIG_FAKE_ENTROPY_NATIVE_POSIX  fake_entropy_native_posix.c)
+if(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
+  zephyr_library_sources(fake_entropy_native_posix.c)
+  if(CONFIG_NATIVE_LIBRARY)
+    target_sources(native_simulator INTERFACE fake_entropy_native_bottom.c)
+  else()
+    zephyr_library_sources(fake_entropy_native_bottom.c)
+  endif()
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_USERSPACE                  entropy_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_RV32M1_TRNG        entropy_rv32m1_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_TRNG         entropy_gecko_trng.c)
@@ -28,6 +36,6 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_PSA_CRYPTO_RNG     entropy_psa_crypt
 
 if (CONFIG_BUILD_WITH_TFM)
   target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
   )
 endif()

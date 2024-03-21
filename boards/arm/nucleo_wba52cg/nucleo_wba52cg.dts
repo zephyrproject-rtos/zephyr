@@ -59,6 +59,10 @@
 	status = "okay";
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
 &pll1 {
 	div-m = <8>;
 	mul-n = <48>;
@@ -125,7 +129,7 @@
 	status = "okay";
 };
 
-&lptim1 {
+stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00000800>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";

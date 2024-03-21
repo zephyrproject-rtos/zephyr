@@ -9,5 +9,9 @@ config WDT_NRFX
 	depends on DT_HAS_NORDIC_NRF_WDT_ENABLED
 	select NRFX_WDT0 if HAS_HW_NRF_WDT0
 	select NRFX_WDT1 if HAS_HW_NRF_WDT1
+	select NRFX_WDT30 if HAS_HW_NRF_WDT30
+	select NRFX_WDT31 if HAS_HW_NRF_WDT31
+	select NRFX_WDT130 if HAS_HW_NRF_WDT130
+
 	help
 	  Enable support for nrfx WDT driver for nRF MCU series.

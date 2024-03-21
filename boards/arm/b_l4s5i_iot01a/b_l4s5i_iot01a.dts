@@ -148,16 +148,15 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+	cs-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>,
 		   <&gpioe 0 GPIO_ACTIVE_LOW>;
 
 	spbtle-rf@0 {
-		compatible = "zephyr,bt-hci-spi";
+		compatible = "st,hci-spi-v1";
 		reg = <0>;
-		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-		spi-max-frequency = <2000000>;
-		controller-data-delay-us = <0>;  /* No need for extra delay for BlueNRG-MS */
+		spi-max-frequency = <DT_FREQ_M(2)>;
 		spi-hold-cs;
 	};
 
@@ -252,11 +251,10 @@ zephyr_udc0: &usbotg_fs {
 
 	status = "okay";
 
-	mx25r6435f: ospi-nor-flash@0 {
+	mx25r6435f: ospi-nor-flash@90000000 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
-		size = <DT_SIZE_M(64)>; /* 64 Megabits */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc="PP_1_4_4";

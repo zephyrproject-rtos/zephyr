@@ -6,8 +6,14 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+
+BUILD_ASSERT((CONFIG_NUM_2ND_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
+		     BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
+	     "L2 bits not enough to cover the number of L2 IRQs");
 
 /*
  * Insert code if the node_id is an interrupt controller
@@ -16,25 +22,25 @@
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, interrupt_controller), (code))
 
 /*
- * Expands to node_id if its IRQN is equal to `irq`, nothing otherwise
- * This only works for `irq` between 0 & 4095, see `IS_EQ`
+ * Expands to node_id if its IRQN is equal to `_irq`, nothing otherwise
+ * This only works for `_irq` between 0 & 4095, see `IS_EQ`
  */
-#define Z_IF_DT_INTC_IRQN_EQ(node_id, irq) IF_ENABLED(IS_EQ(DT_IRQ(node_id, irq), irq), (node_id))
+#define Z_IF_DT_INTC_IRQN_EQ(node_id, _irq) IF_ENABLED(IS_EQ(DT_IRQ(node_id, irq), _irq), (node_id))
 
 /*
  * Expands to node_id if it's an interrupt controller & its IRQN is `irq`, or nothing otherwise
  */
-#define Z_DT_INTC_GET_IRQN(node_id, irq)                                                           \
-	Z_IF_DT_IS_INTC(node_id, Z_IF_DT_INTC_IRQN_EQ(node_id, irq))
+#define Z_DT_INTC_GET_IRQN(node_id, _irq)                                                          \
+	Z_IF_DT_IS_INTC(node_id, Z_IF_DT_INTC_IRQN_EQ(node_id, _irq))
 
 /**
- * Loop through child of "/soc" and get root interrupt controllers with `irq` as IRQN,
+ * Loop through child of "/soc" and get root interrupt controllers with `_irq` as IRQN,
  * this assumes only one device has the IRQN
- * @param irq irq number
- * @return node_id(s) that has the `irq` number, or empty if none of them has the `irq`
+ * @param _irq irq number
+ * @return node_id(s) that has the `_irq` number, or empty if none of them has the `_irq`
  */
-#define INTC_DT_IRQN_GET(irq)                                                                      \
-	DT_FOREACH_CHILD_STATUS_OKAY_VARGS(DT_PATH(soc), Z_DT_INTC_GET_IRQN, irq)
+#define INTC_DT_IRQN_GET(_irq)                                                                     \
+	DT_FOREACH_CHILD_STATUS_OKAY_VARGS(DT_PATH(soc), Z_DT_INTC_GET_IRQN, _irq)
 
 /* If can't find any matching interrupt controller, fills with `NULL` */
 #define INTC_DEVICE_INIT(node_id) .dev = DEVICE_DT_GET_OR_NULL(node_id),
@@ -54,11 +60,15 @@ const struct _irq_parent_entry _lvl2_irq_list[CONFIG_NUM_2ND_LEVEL_AGGREGATORS]
 	= { LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, CAT_2ND_LVL_LIST, (,),
 		CONFIG_2ND_LVL_ISR_TBL_OFFSET) };
 
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+
+BUILD_ASSERT((CONFIG_NUM_3RD_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
+		     BIT(CONFIG_3RD_LEVEL_INTERRUPT_BITS),
+	     "L3 bits not enough to cover the number of L3 IRQs");
+
 #define CAT_3RD_LVL_LIST(i, base) \
 	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_3RD_LVL_INTR_0##i##_OFFSET), \
 			       CONFIG_3RD_LVL_INTR_0##i##_OFFSET, IRQ_INDEX_TO_OFFSET(i, base))
-
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 
 const struct _irq_parent_entry _lvl3_irq_list[CONFIG_NUM_3RD_LEVEL_AGGREGATORS]
 	 = { LISTIFY(CONFIG_NUM_3RD_LEVEL_AGGREGATORS, CAT_3RD_LVL_LIST, (,),
@@ -133,28 +143,31 @@ unsigned int z_get_sw_isr_irq_from_device(const struct device *dev)
 
 unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 {
-	unsigned int table_idx;
-	unsigned int level, parent_irq, parent_offset;
+	unsigned int table_idx, level, parent_irq, local_irq, parent_offset;
 	const struct _irq_parent_entry *entry = NULL;
 
 	level = irq_get_level(irq);
 
 	if (level == 2U) {
+		local_irq = irq_from_level_2(irq);
+		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
 		parent_irq = irq_parent_level_2(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl2_irq_list,
 					 CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
 		parent_offset = entry != NULL ? entry->offset : 0U;
-		table_idx = parent_offset + irq_from_level_2(irq);
+		table_idx = parent_offset + local_irq;
 	}
 #ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 	else if (level == 3U) {
+		local_irq = irq_from_level_3(irq);
+		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
 		parent_irq = irq_parent_level_3(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl3_irq_list,
 					 CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
 		parent_offset = entry != NULL ? entry->offset : 0U;
-		table_idx = parent_offset + irq_from_level_3(irq);
+		table_idx = parent_offset + local_irq;
 	}
 #endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 	else {
@@ -162,6 +175,8 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 	}
 
 	table_idx -= CONFIG_GEN_IRQ_START_VECTOR;
+
+	__ASSERT_NO_MSG(table_idx < IRQ_TABLE_SIZE);
 
 	return table_idx;
 }

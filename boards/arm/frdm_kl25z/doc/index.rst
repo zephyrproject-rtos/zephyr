@@ -130,14 +130,21 @@ Early versions of this board have an outdated version of the OpenSDA bootloader
 and require an update. Please see the `DAPLink Bootloader Update`_ page for
 instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
 
-Option 1: :ref:`opensda-daplink-onboard-debug-probe` (Recommended)
-------------------------------------------------------------------
+Option 1: Linkserver: :ref:`opensda-daplink-onboard-debug-probe` (Recommended)
+------------------------------------------------------------------------------
 
-Install the :ref:`pyocd-debug-host-tools` and make sure they are in your search
-path.
+	Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+	search path.  LinkServer works with the CMSIS-DAP debug firmware. Please follow the
+	instructions on :ref:`opensda-daplink-onboard-debug-probe` and select the latest revision
+	of the firmware image.
 
-Follow the instructions in :ref:`opensda-daplink-onboard-debug-probe` to program
-the `OpenSDA DAPLink FRDM-KL25Z Firmware`_.
+        Linkserver is the default for this board, ``west flash`` and ``west debug`` will
+        call the linkserver runner.
+
+	.. code-block:: console
+
+	   west flash
+	   west debug
 
 Option 2: :ref:`opensda-jlink-onboard-debug-probe`
 --------------------------------------------------
@@ -157,6 +164,12 @@ default runner from pyOCD to J-Link:
    :board: frdm_kl25z
    :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
+
+Note:
+-----
+
+The runners supported by NXP are LinkServer and JLink. pyOCD is another potential option,
+but NXP does not test or support the pyOCD runner.
 
 Configuring a Console
 =====================

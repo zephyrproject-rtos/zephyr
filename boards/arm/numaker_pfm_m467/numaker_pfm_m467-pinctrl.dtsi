@@ -49,4 +49,14 @@
 				 <PB6MFP_EMAC0_PPS>;
 		};
 	};
+
+	/* USBD multi-function pins for VBUS, D+, D-, and ID pins */
+	usbd_default: usbd_default {
+		group0 {
+			pinmux = <PA12MFP_USB_VBUS>,
+				 <PA13MFP_USB_D_N>,
+				 <PA14MFP_USB_D_P>,
+				 <PA15MFP_USB_OTG_ID>;
+		};
+	};
 };

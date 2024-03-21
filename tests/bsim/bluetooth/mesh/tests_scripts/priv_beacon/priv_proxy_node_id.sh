@@ -23,13 +23,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 5. Test passes if the random field of the two Private Node ID advertisements
 #    are NOT equal.
 
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf
 RunTest mesh_priv_proxy_node_id \
 	beacon_tx_priv_node_id \
 	beacon_rx_priv_node_id
 
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf_overlay_psa_conf
 RunTest mesh_priv_proxy_node_id \
 	beacon_tx_priv_node_id \

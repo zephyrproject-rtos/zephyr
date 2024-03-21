@@ -25,7 +25,7 @@ properties:
     type: int
     required: true
     description: |
-        Temperature sensor voltage at 25 degrees Celcius in microvolts
+        Temperature sensor voltage at 25 degrees Celsius in microvolts
 
   sensor-slope-cold:
     type: int

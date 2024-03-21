@@ -32,7 +32,7 @@ bool create_mcumgr_format_packet(zcbor_state_t *zse, const uint8_t *format, uint
 
 	ok = zcbor_map_start_encode(zse, 2)	&&
 	     zcbor_tstr_put_lit(zse, "format")	&&
-	     zcbor_tstr_put_term(zse, format)	&&
+	     zcbor_tstr_put_term(zse, format, CONFIG_ZCBOR_MAX_STR_LEN)	&&
 	     zcbor_map_end_encode(zse, 2);
 
 	*buffer_size = (zse->payload_mut - buffer);

@@ -14,8 +14,6 @@
 
 #include "emul.h"
 
-#define CONFIG_SMBUS_LOG_LEVEL LOG_LEVEL_DBG
-
 #define PERIPH_ADDR	0x10
 
 static uint8_t mock_sys_in8(io_port_t port)
@@ -183,7 +181,7 @@ ZTEST(test_smbus_emul, test_proc_call)
 	zassert_ok(ret, "SMBus Proc Call failed");
 
 	/* Our emulated Proc Call swaps bytes */
-	zassert_equal(snd_word, __bswap_16(rcv_word), "Data mismatch");
+	zassert_equal(snd_word, BSWAP_16(rcv_word), "Data mismatch");
 }
 
 ZTEST(test_smbus_emul, test_block)

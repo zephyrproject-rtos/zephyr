@@ -7,6 +7,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <soc.h>
 #include <hal/nrf_timer.h>
 #ifdef PWM_PRESENT
 #include <hal/nrf_pwm.h>
@@ -89,6 +90,8 @@ struct display_drv_config {
 	NRF_TIMER_Type *timer;
 #if USE_PWM
 	NRF_PWM_Type *pwm;
+#else
+	nrfx_gpiote_t gpiote;
 #endif
 	uint8_t rows[ROW_COUNT];
 	uint8_t cols[COL_COUNT];
@@ -188,12 +191,6 @@ static int api_set_brightness(const struct device *dev,
 	return 0;
 }
 
-static int api_set_contrast(const struct device *dev,
-			    const uint8_t contrast)
-{
-	return -ENOTSUP;
-}
-
 static int api_set_pixel_format(const struct device *dev,
 				const enum display_pixel_format format)
 {
@@ -279,22 +276,12 @@ static int api_write(const struct device *dev,
 	return 0;
 }
 
-static int api_read(const struct device *dev,
-		    const uint16_t x, const uint16_t y,
-		    const struct display_buffer_descriptor *desc,
-		    void *buf)
-{
-	return -ENOTSUP;
-}
-
 const struct display_driver_api driver_api = {
 	.blanking_on = api_blanking_on,
 	.blanking_off = api_blanking_off,
 	.write = api_write,
-	.read = api_read,
 	.get_framebuffer = api_get_framebuffer,
 	.set_brightness = api_set_brightness,
-	.set_contrast = api_set_contrast,
 	.get_capabilities = api_get_capabilities,
 	.set_pixel_format = api_set_pixel_format,
 	.set_orientation = api_set_orientation,
@@ -340,7 +327,7 @@ static void prepare_pixel_pulse(const struct device *dev,
 
 	/* First timer channel is used for timing the period of pulses. */
 	nrf_timer_cc_set(dev_config->timer, 1 + channel_idx, pulse);
-	NRF_GPIOTE->CONFIG[dev_data->gpiote_ch[channel_idx]] = gpiote_cfg;
+	dev_config->gpiote.p_reg->CONFIG[dev_data->gpiote_ch[channel_idx]] = gpiote_cfg;
 #endif /* USE_PWM */
 }
 
@@ -370,7 +357,7 @@ static void timer_irq_handler(void *arg)
 	}
 #else
 	for (int i = 0; i < GROUP_SIZE; ++i) {
-		NRF_GPIOTE->CONFIG[dev_data->gpiote_ch[i]] = 0;
+		dev_config->gpiote.p_reg->CONFIG[dev_data->gpiote_ch[i]] = 0;
 	}
 #endif
 
@@ -466,7 +453,7 @@ static int instance_init(const struct device *dev)
 			return -ENOMEM;
 		}
 
-		err = nrfx_gpiote_channel_alloc(gpiote_ch);
+		err = nrfx_gpiote_channel_alloc(&dev_config->gpiote, gpiote_ch);
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate GPIOTE channel.");
 			/* Do not bother with freeing resources allocated
@@ -479,7 +466,7 @@ static int instance_init(const struct device *dev)
 		nrf_ppi_channel_endpoint_setup(NRF_PPI, ppi_ch,
 			nrf_timer_event_address_get(dev_config->timer,
 				nrf_timer_compare_event_get(1 + i)),
-			nrf_gpiote_event_address_get(NRF_GPIOTE,
+			nrf_gpiote_event_address_get(dev_config->gpiote.p_reg,
 				nrf_gpiote_out_task_get(*gpiote_ch)));
 		nrf_ppi_channel_enable(NRF_PPI, ppi_ch);
 	}
@@ -530,6 +517,14 @@ static struct display_drv_data instance_data = {
 	.blanking   = true,
 };
 
+#if !USE_PWM
+#define CHECK_GPIOTE_INST(node_id, prop, idx) \
+	BUILD_ASSERT(NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, idx) == \
+		     NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, 0), \
+		"All column GPIOs must use the same GPIOTE instance");
+DT_FOREACH_PROP_ELEM(MATRIX_NODE, col_gpios, CHECK_GPIOTE_INST)
+#endif
+
 #define GET_PIN_INFO(node_id, pha, idx) \
 	(DT_GPIO_PIN_BY_IDX(node_id, pha, idx) | \
 	 (DT_PROP_BY_PHANDLE_IDX(node_id, pha, idx, port) << 5) | \
@@ -546,6 +541,9 @@ static const struct display_drv_config instance_config = {
 	.timer = (NRF_TIMER_Type *)DT_REG_ADDR(TIMER_NODE),
 #if USE_PWM
 	.pwm = (NRF_PWM_Type *)DT_REG_ADDR(PWM_NODE),
+#else
+	.gpiote = NRFX_GPIOTE_INSTANCE(
+			NRF_DT_GPIOTE_INST_BY_IDX(MATRIX_NODE, col_gpios, 0)),
 #endif
 	.rows = { DT_FOREACH_PROP_ELEM(MATRIX_NODE, row_gpios, GET_PIN_INFO) },
 	.cols = { DT_FOREACH_PROP_ELEM(MATRIX_NODE, col_gpios, GET_PIN_INFO) },

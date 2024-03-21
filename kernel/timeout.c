@@ -190,7 +190,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 	k_ticks_t ticks = 0;
 
 	K_SPINLOCK(&timeout_lock) {
-		ticks = curr_tick + timeout_rem(timeout);
+		ticks = curr_tick + timeout_rem(timeout) + elapsed();
 	}
 
 	return ticks;

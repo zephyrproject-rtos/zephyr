@@ -1,14 +1,14 @@
 tests:
   libraries.spsc_pbuf:
     integration_platforms:
-      - native_posix
+      - native_sim
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
     timeout: 120
 
   libraries.spsc_pbuf.cache:
     integration_platforms:
-      - native_posix
+      - native_sim
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
     timeout: 120
@@ -17,7 +17,7 @@ tests:
 
   libraries.spsc_pbuf.nocache.:
     integration_platforms:
-      - native_posix
+      - native_sim
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
     timeout: 120
@@ -26,7 +26,7 @@ tests:
 
   libraries.spsc_pbuf.utilization:
     integration_platforms:
-      - native_posix
+      - native_sim
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
     timeout: 120

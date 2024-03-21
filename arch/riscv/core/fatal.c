@@ -31,6 +31,7 @@ static const struct z_exc_handle exceptions[] = {
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
 {
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
 		LOG_ERR("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
@@ -54,7 +55,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
 		LOG_ERR("");
 	}
-
+#endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
@@ -167,7 +168,7 @@ void _Fault(z_arch_esf_t *esf)
 	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
 #endif
 
-	mcause &= SOC_MCAUSE_EXP_MASK;
+	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 	LOG_ERR("");
 	LOG_ERR(" mcause: %ld, %s", mcause, cause_str(mcause));
 #ifndef CONFIG_SOC_OPENISA_RV32M1_RISCV32

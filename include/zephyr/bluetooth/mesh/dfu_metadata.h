@@ -6,10 +6,10 @@
 
 /**
  * @file
- * @defgroup bt_mesh_dfu_metadata Bluetooth mesh Device Firmware Update (DFU) metadata
+ * @defgroup bt_mesh_dfu_metadata Bluetooth Mesh Device Firmware Update (DFU) metadata
  * @ingroup bt_mesh_dfu
  * @{
- * @brief Common types and functions for the Bluetooth mesh DFU metadata.
+ * @brief Common types and functions for the Bluetooth Mesh DFU metadata.
  */
 
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_METADATA_H__

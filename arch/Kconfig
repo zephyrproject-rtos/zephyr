@@ -125,7 +125,7 @@ config XTENSA
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
-	imply ATOMIC_OPERATIONS_ARCH
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	help
 	  Xtensa architecture
 
@@ -139,7 +139,7 @@ config ARCH_POSIX
 	select NATIVE_BUILD
 	select HAS_COVERAGE_SUPPORT
 	select BARRIER_OPERATIONS_BUILTIN
-	# native_posix gets its memory cleared on entry by the host OS
+	# POSIX arch based targets get their memory cleared on entry by the host OS
 	select SKIP_BSS_CLEAR
 	help
 	  POSIX (native) architecture
@@ -391,6 +391,29 @@ config NOCACHE_MEMORY
 
 menu "Interrupt Configuration"
 
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	bool
+	default y
+	# Userspace is currently not supported
+	depends on !USERSPACE
+	# List of currently supported architectures
+	depends on ARM || ARM64
+	# List of currently supported toolchains
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
+
+config ISR_TABLES_LOCAL_DECLARATION
+	bool "ISR tables created locally and placed by linker [EXPERIMENTAL]"
+	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	select EXPERIMENTAL
+	help
+	  Enable new scheme of interrupt tables generation.
+	  This is totally different generator that would create tables entries locally
+	  where the IRQ_CONNECT macro is called and then use the linker script to position it
+	  in the right place in memory.
+	  The most important advantage of such approach is that the generated interrupt tables
+	  are LTO compatible.
+	  The drawback is that the support on the architecture port is required.
+
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"
 	help
@@ -512,6 +535,16 @@ config IRQ_OFFLOAD_NESTED
 	  legally be called in interrupt context to cause a
 	  synchronous nested interrupt on the current CPU.  Not all
 	  hardware is capable.
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on PRINTK || LOG
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
 
 config EXTRA_EXCEPTION_INFO
 	bool "Collect extra exception info"
@@ -655,6 +688,11 @@ config CPU_HAS_FPU
 	  This option is enabled when the CPU has hardware floating point
 	  unit.
 
+config CPU_HAS_DSP
+	bool
+	help
+	  This option is enabled when the CPU has hardware DSP unit.
+
 config CPU_HAS_FPU_DOUBLE_PRECISION
 	bool
 	select CPU_HAS_FPU
@@ -691,6 +729,13 @@ config CPU_HAS_DCACHE
 	bool
 	help
 	  This hidden configuration should be selected when the CPU has a d-cache.
+
+config CPU_CACHE_INCOHERENT
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has
+	  incoherent cache. This applies to intra-CPU multiprocessing
+	  incoherence and makes only sense when MP_NUM_CPUS > 1.
 
 config CPU_HAS_ICACHE
 	bool
@@ -819,6 +864,17 @@ config CODE_DATA_RELOCATION
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
 
+menu "DSP Options"
+
+config DSP_SHARING
+	bool "DSP register sharing"
+	depends on CPU_HAS_DSP
+	help
+	  This option enables preservation of the hardware DSP registers
+	  across context switches to allow multiple threads to perform concurrent
+	  DSP operations.
+endmenu
+
 menu "Floating Point Options"
 
 config FPU
@@ -875,6 +931,17 @@ config ICACHE
 	default y
 	help
 	  This option enables the support for the instruction cache (i-cache).
+
+config CACHE_DOUBLEMAP
+	bool "Cache double-mapping support"
+	depends on CPU_CACHE_INCOHERENT
+	default y
+	help
+	  Double-mapping behavior where a pointer can be cheaply converted to
+	  point to the same cached/uncached memory at different locations.
+
+	  This applies to intra-CPU multiprocessing incoherence and makes only
+	  sense when MP_NUM_CPUS > 1.
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"

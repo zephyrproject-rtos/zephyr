@@ -135,7 +135,7 @@ ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 	struct k_thread *thread = _current;
 
 	uintptr_t start_addr, end_addr;
-	size_t size_heap = CONFIG_HEAP_MEM_POOL_SIZE;
+	size_t size_heap = K_HEAP_MEM_POOL_SIZE;
 
 	/* dynamically allocate kernel object semaphore */
 	test_dyn_sem = k_object_alloc(K_OBJ_SEM);

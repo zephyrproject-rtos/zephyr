@@ -42,7 +42,7 @@ GTEXT(z_arm_platform_init)
  * and interrupts are disabled. The processor architectural registers are in
  * an indeterminate state.
  *
- * When these steps are completed, jump to z_arm_prep_c(), which will finish
+ * When these steps are completed, jump to z_prep_c(), which will finish
  * setting up the system for running C code.
  *
  */
@@ -217,7 +217,7 @@ EL1_Reset_Handler:
     bne 1b
 
     /* we can now move on */
-    ldr r4, =z_arm_secondary_start
+    ldr r4, =arch_secondary_cpu_init
     ldr r5, [r0, #BOOT_PARAM_FIQ_SP_OFFSET]
     ldr r6, [r0, #BOOT_PARAM_IRQ_SP_OFFSET]
     ldr r7, [r0, #BOOT_PARAM_ABT_SP_OFFSET]
@@ -229,7 +229,7 @@ EL1_Reset_Handler:
 _primary_core:
 #endif
 
-    ldr r4, =z_arm_prep_c
+    ldr r4, =z_prep_c
     ldr r5, =(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE)
     ldr r6, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
     ldr r7, =(z_arm_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)

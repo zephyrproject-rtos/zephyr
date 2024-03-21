@@ -645,7 +645,7 @@ static int rtc_sam_get_calibration(const struct device *dev, int32_t *calibratio
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static struct rtc_driver_api rtc_sam_driver_api = {
+static const struct rtc_driver_api rtc_sam_driver_api = {
 	.set_time = rtc_sam_set_time,
 	.get_time = rtc_sam_get_time,
 #ifdef CONFIG_RTC_ALARM

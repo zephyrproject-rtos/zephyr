@@ -16,7 +16,7 @@
  * Note that all passed in addresses should be in cached range
  * (aka cached addresses). Due to the need to calculate TLB
  * indexes, virtual addresses will be converted internally to
- * cached one via z_soc_cached_ptr(). However, physical addresses
+ * cached one via sys_cache_cached_ptr_get(). However, physical addresses
  * are untouched.
  */
 
@@ -183,8 +183,8 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	 * the cached physical address is needed to perform
 	 * bound check.
 	 */
-	uintptr_t pa = POINTER_TO_UINT(z_soc_cached_ptr(UINT_TO_POINTER(phys)));
-	uintptr_t va = POINTER_TO_UINT(z_soc_cached_ptr(virt));
+	uintptr_t pa = POINTER_TO_UINT(sys_cache_cached_ptr_get(UINT_TO_POINTER(phys)));
+	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
 	ARG_UNUSED(flags);
 
@@ -215,7 +215,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 				 "unable to assign free phys page %d\n", ret);
 			goto out;
 		}
-		pa = POINTER_TO_UINT(z_soc_cached_ptr(phys_block_ptr));
+		pa = POINTER_TO_UINT(sys_cache_cached_ptr_get(phys_block_ptr));
 	}
 
 	/* Check bounds of physical address space */
@@ -296,7 +296,7 @@ int sys_mm_drv_map_region(void *virt, uintptr_t phys,
 		goto out;
 	}
 
-	va = (__sparse_force uint8_t *)z_soc_cached_ptr(virt);
+	va = (__sparse_force uint8_t *)sys_cache_cached_ptr_get(virt);
 	pa = phys;
 
 	key = k_spin_lock(&sys_mm_drv_common_lock);
@@ -324,7 +324,7 @@ out:
 int sys_mm_drv_map_array(void *virt, uintptr_t *phys,
 			 size_t cnt, uint32_t flags)
 {
-	void *va = (__sparse_force void *)z_soc_cached_ptr(virt);
+	void *va = (__sparse_force void *)sys_cache_cached_ptr_get(virt);
 
 	return sys_mm_drv_simple_map_array(va, phys, cnt, flags);
 }
@@ -333,13 +333,12 @@ int sys_mm_drv_unmap_page(void *virt)
 {
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
-	uint16_t entry;
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	uintptr_t pa;
 	int ret = 0;
 
 	/* Use cached virtual address */
-	uintptr_t va = POINTER_TO_UINT(z_soc_cached_ptr(virt));
+	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
 	/* Check bounds of virtual address space */
 	CHECKIF((va < UNUSED_L2_START_ALIGNED) ||
@@ -363,16 +362,14 @@ int sys_mm_drv_unmap_page(void *virt)
 	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	entry_idx = get_tlb_entry_idx(va);
-	/* Restore default entry settings */
-	entry = pa_to_tlb_entry(va) | TLB_EXEC_BIT | TLB_WRITE_BIT;
-	/* Clear the enable bit */
-	entry &= ~TLB_ENABLE_BIT;
-	tlb_entries[entry_idx] = entry;
-
 	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
 
-	/* Check bounds of physical address space. */
-	/* Initial TLB mappings could point to non existing physical pages. */
+	/* Restore default entry settings with cleared the enable bit. */
+	tlb_entries[entry_idx] = 0;
+
+	/* Check bounds of physical address space.
+	 * Initial TLB mappings could point to non existing physical pages.
+	 */
 	if ((pa >= L2_SRAM_BASE) && (pa < (L2_SRAM_BASE + L2_SRAM_SIZE))) {
 		sys_mem_blocks_free_contiguous(&L2_PHYS_SRAM_REGION,
 					       UINT_TO_POINTER(pa), 1);
@@ -396,9 +393,52 @@ out:
 
 int sys_mm_drv_unmap_region(void *virt, size_t size)
 {
-	void *va = (__sparse_force void *)z_soc_cached_ptr(virt);
+	void *va = (__sparse_force void *)sys_cache_cached_ptr_get(virt);
 
 	return sys_mm_drv_simple_unmap_region(va, size);
+}
+
+int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
+{
+	k_spinlock_key_t key;
+	uint32_t entry_idx;
+	uint16_t entry;
+	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	int ret = 0;
+
+	/* Use cached virtual address */
+	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
+
+	/* Make sure inputs are page-aligned and check bounds of virtual address space */
+	CHECKIF(!sys_mm_drv_is_addr_aligned(va) ||
+		(va < UNUSED_L2_START_ALIGNED) ||
+		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&tlb_lock);
+
+	entry_idx = get_tlb_entry_idx(va);
+
+	entry = tlb_entries[entry_idx];
+
+	/* Check entry is already mapped */
+	if (!(entry & TLB_ENABLE_BIT)) {
+		ret = -EFAULT;
+		goto out;
+	}
+
+	/* Clear the access flags */
+	entry &= ~(TLB_EXEC_BIT | TLB_WRITE_BIT);
+
+	/* Set new permissions for this entry */
+	entry |= flags_to_tlb_perms(flags);
+
+	tlb_entries[entry_idx] = entry;
+
+out:
+	k_spin_unlock(&tlb_lock, key);
+	return ret;
 }
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
@@ -408,7 +448,7 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 	int ret = 0;
 
 	/* Use cached address */
-	uintptr_t va = POINTER_TO_UINT(z_soc_cached_ptr(virt));
+	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
 	CHECKIF(!sys_mm_drv_is_addr_aligned(va)) {
 		ret = -EINVAL;
@@ -449,7 +489,7 @@ int sys_mm_drv_page_flag_get(void *virt, uint32_t *flags)
 	uint16_t ent;
 
 	/* Use cached address */
-	uintptr_t va = POINTER_TO_UINT(z_soc_cached_ptr(virt));
+	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
 	CHECKIF(!sys_mm_drv_is_addr_aligned(va)) {
 		ret = -EINVAL;
@@ -487,8 +527,8 @@ out:
 int sys_mm_drv_remap_region(void *virt_old, size_t size,
 			    void *virt_new)
 {
-	void *va_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
-	void *va_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
+	void *va_new = (__sparse_force void *)sys_cache_cached_ptr_get(virt_new);
+	void *va_old = (__sparse_force void *)sys_cache_cached_ptr_get(virt_old);
 
 	return sys_mm_drv_simple_remap_region(va_old, size, va_new);
 }
@@ -500,8 +540,8 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 	size_t offset;
 	int ret = 0;
 
-	virt_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
-	virt_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
+	virt_new = (__sparse_force void *)sys_cache_cached_ptr_get(virt_new);
+	virt_old = (__sparse_force void *)sys_cache_cached_ptr_get(virt_old);
 
 	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
 		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
@@ -598,8 +638,8 @@ int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 {
 	int ret;
 
-	void *va_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
-	void *va_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
+	void *va_new = (__sparse_force void *)sys_cache_cached_ptr_get(virt_new);
+	void *va_old = (__sparse_force void *)sys_cache_cached_ptr_get(virt_old);
 
 	ret = sys_mm_drv_simple_move_array(va_old, size, va_new,
 					    phys_new, phys_cnt);
@@ -783,7 +823,7 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 
 	while (phys_addr != 0) {
 		uint32_t phys_addr_uncached =
-				POINTER_TO_UINT(z_soc_uncached_ptr(
+				POINTER_TO_UINT(sys_cache_uncached_ptr_get(
 					(void __sparse_cache *)UINT_TO_POINTER(phys_addr)));
 		uint32_t phys_offset = phys_addr - L2_SRAM_BASE;
 		uint32_t bank_idx = (phys_offset / SRAM_BANK_SIZE);

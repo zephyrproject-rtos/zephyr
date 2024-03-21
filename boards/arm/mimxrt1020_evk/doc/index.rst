@@ -231,8 +231,23 @@ however the :ref:`pyocd-debug-host-tools` do not yet support programming the
 external flashes on this board so you must reconfigure the board for one of the
 following debug probes instead.
 
-Option 1: :ref:`opensda-jlink-onboard-debug-probe` (Recommended)
-----------------------------------------------------------------
+Using LinkServer
+----------------
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path.  LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
+
+Linkserver is the default runner. You may also se the ``-r linkserver`` option
+with West to use the LinkServer runner.
+
+.. code-block:: console
+
+   west flash
+   west debug
+
+JLink (on-board): :ref:`opensda-jlink-onboard-debug-probe`
+----------------------------------------------------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
@@ -242,8 +257,8 @@ the `OpenSDA J-Link MIMXRT1020-EVK Firmware`_. Check that jumpers J27 and J28
 are **on** (they are on by default when boards ship from the factory) to ensure
 SWD signals are connected to the OpenSDA microcontroller.
 
-Option 2: :ref:`jlink-external-debug-probe`
--------------------------------------------
+External JLink: :ref:`jlink-external-debug-probe`
+-------------------------------------------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.

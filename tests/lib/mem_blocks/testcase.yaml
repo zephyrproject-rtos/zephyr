@@ -4,4 +4,4 @@ tests:
       - heap
       - mem_blocks
     integration_platforms:
-      - native_posix
+      - native_sim

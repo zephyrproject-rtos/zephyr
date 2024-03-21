@@ -59,7 +59,7 @@ static inline void soc_secure_gpio_pin_mcu_select(uint32_t pin_number,
 #if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
 static inline uint32_t soc_secure_read_xosc32mtrim(void)
 {
-	return NRF_FICR_S->XOSC32MTRIM;
+	return NRF_FICR->XOSC32MTRIM;
 }
 #endif /* defined(CONFIG_SOC_HFXO_CAP_INTERNAL) */
 

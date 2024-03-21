@@ -7,6 +7,7 @@ menuconfig LSM6DSO16IS
 	bool "LSM6DSO16IS I2C/SPI accelerometer and gyroscope Chip"
 	default y
 	depends on DT_HAS_ST_LSM6DSO16IS_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO16IS),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO16IS),spi)
 	select HAS_STMEMSC

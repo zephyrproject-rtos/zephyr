@@ -24,6 +24,3 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # enable pin controller
 CONFIG_PINCTRL=y
-
-# LSE defined as LPTIM clock source by the DTS
-CONFIG_STM32_LPTIM_CLOCK_LSE=y

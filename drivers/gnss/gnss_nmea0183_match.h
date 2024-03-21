@@ -49,11 +49,9 @@ struct gnss_nmea0183_match_data {
 	uint16_t satellites_size;
 	uint16_t satellites_length;
 #endif
-	int64_t timestamp;
-	uint16_t timeout_ms;
-	uint8_t gga_received : 1;
-	uint8_t rmc_received : 1;
-	uint8_t gsv_message_number : 6;
+	uint32_t gga_utc;
+	uint32_t rmc_utc;
+	uint8_t gsv_message_number;
 };
 
 /** GNSS NMEA0183 match configuration structure */
@@ -66,8 +64,6 @@ struct gnss_nmea0183_match_config {
 	/** Number of elements in buffer for parsed satellites */
 	uint16_t satellites_size;
 #endif
-	/** The maximum time from the first to the last NMEA0183 message of a fix */
-	uint16_t timeout_ms;
 };
 
 /**

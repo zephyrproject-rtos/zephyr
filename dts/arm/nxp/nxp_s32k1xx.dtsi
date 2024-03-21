@@ -1,0 +1,330 @@
+/*
+ * Copyright 2023-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	aliases {
+		watchdog0 = &wdog;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		interrupt-parent = <&nvic>;
+
+		mpu: mpu@4000d000 {
+			compatible = "nxp,kinetis-mpu";
+			reg = <0x4000d000 0x1000>;
+			status = "disabled";
+		};
+
+		ftfc: flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfc";
+			reg = <0x40020000 0x1000>;
+			interrupts = <18 0>, <19 0>, <21 0>;
+			interrupt-names = "command-complete", "read-collision", "double-bit";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		flexcan0: can@40024000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x40024000 0x1000>;
+			clocks = <&clock NXP_S32_FLEXCAN0_CLK>;
+			clk-source = <1>;
+			status = "disabled";
+		};
+
+		flexcan1: can@40025000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x40025000 0x1000>;
+			clk-source = <1>;
+			status = "disabled";
+		};
+
+		flexcan2: can@4002b000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x4002b000 0x1000>;
+			clk-source = <1>;
+			status = "disabled";
+		};
+
+		lpspi0: spi@4002c000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002c000 0x1000>;
+			interrupts = <26 0>;
+			clocks = <&clock NXP_S32_LPSPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@4002d000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <27 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi2: spi@4002e000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002e000 0x1000>;
+			interrupts = <28 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		porta: pinmux@40049000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x40049000 0x1000>;
+			clocks = <&clock NXP_S32_PORTA_CLK>;
+		};
+
+		portb: pinmux@4004a000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004a000 0x1000>;
+			clocks = <&clock NXP_S32_PORTB_CLK>;
+		};
+
+		portc: pinmux@4004b000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004b000 0x1000>;
+			clocks = <&clock NXP_S32_PORTC_CLK>;
+		};
+
+		portd: pinmux@4004c000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004c000 0x1000>;
+			clocks = <&clock NXP_S32_PORTD_CLK>;
+		};
+
+		porte: pinmux@4004d000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004d000 0x1000>;
+			clocks = <&clock NXP_S32_PORTE_CLK>;
+		};
+
+		wdog: watchdog@40052000 {
+			compatible = "nxp,kinetis-wdog32";
+			reg = <0x40052000 0x1000>;
+			interrupts = <22 0>;
+			clocks = <&clock NXP_S32_LPO_128K_CLK>;
+			clk-source = <1>;
+			clk-divider = <256>;
+		};
+
+		clock: clock-controller@40064000 {
+			compatible = "nxp,s32-clock";
+			reg = <0x40064000 0x1000>, <0x40065000 0x1000>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		lpi2c0: i2c@40066000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40066000 0x1000>;
+			interrupts = <24 0>;
+			clocks = <&clock NXP_S32_LPI2C0_CLK>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@40067000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40067000 0x1000>;
+			interrupts = <25 0>;
+			status = "disabled";
+		};
+
+		lpuart0: uart@4006a000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4006a000 0x1000>;
+			interrupts = <31 0>;
+			clocks = <&clock NXP_S32_LPUART0_CLK>;
+			status = "disabled";
+		};
+
+		lpuart1: uart@4006b000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4006b000 0x1000>;
+			interrupts = <33 0>;
+			clocks = <&clock NXP_S32_LPUART1_CLK>;
+			status = "disabled";
+		};
+
+		lpuart2: uart@4006c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4006c000 0x1000>;
+			interrupts = <35 0>;
+			status = "disabled";
+		};
+
+		gpioa: gpio@400ff000 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff000 0x40>;
+			interrupts = <59 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@400ff040 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff040 0x40>;
+			interrupts = <60 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
+			status = "disabled";
+		};
+
+		gpioc: gpio@400ff080 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff080 0x40>;
+			interrupts = <61 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
+			status = "disabled";
+		};
+
+		gpiod: gpio@400ff0c0 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff0c0 0x40>;
+			interrupts = <62 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
+			status = "disabled";
+		};
+
+		gpioe: gpio@400ff100 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff100 0x40>;
+			interrupts = <63 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
+			status = "disabled";
+		};
+
+		ftm0: ftm@40038000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40038000 0x1000>;
+			interrupts = <99 0>, <100 0>, <101 0>, <102 0>, <104 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		ftm1: ftm@40039000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40039000 0x1000>;
+			interrupts = <105 0>, <106 0>, <107 0>, <108 0>, <110 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		ftm2: ftm@4003a000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4003a000 0x1000>;
+			interrupts = <111 0>, <112 0>, <113 0>, <114 0>, <116 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		ftm3: ftm@40026000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40026000 0x1000>;
+			interrupts = <117 0>, <118 0>, <119 0>, <120 0>, <122 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		ftm4: ftm@4006e000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4006e000 0x1000>;
+			interrupts = <123 0>, <124 0>, <125 0>, <126 0>, <128 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		ftm5: ftm@4006f000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4006f000 0x1000>;
+			interrupts = <129 0>, <130 0>, <131 0>, <132 0>, <134 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		ftm6: ftm@40070000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40070000 0x1000>;
+			interrupts = <135 0>, <136 0>, <137 0>, <138 0>, <140 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		ftm7: ftm@40071000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40071000 0x1000>;
+			interrupts = <141 0>, <142 0>, <143 0>, <144 0>, <146 0>;
+			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
+			clocks = <&clock NXP_S32_RTC_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		rtc: rtc@4003d000 {
+			compatible = "nxp,kinetis-rtc";
+			reg = <0x4003d000 0x1000>;
+			interrupts = <46 0>, <47 0>;
+			interrupt-names = "alarm", "seconds";
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+		};
+	};
+};

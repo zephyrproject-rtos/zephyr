@@ -1,7 +1,7 @@
 identifier: longan_nano
 name: Sipeed Longan Nano
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
   - xtools

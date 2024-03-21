@@ -22,8 +22,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_ASE_SRC_COUNT,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-	BT_AUDIO_CODEC_LC3_FREQ_16KHZ | BT_AUDIO_CODEC_LC3_FREQ_24KHZ,
-	BT_AUDIO_CODEC_LC3_DURATION_10, BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u,
+	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
+	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u,
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 static struct bt_conn *default_conn;
@@ -159,9 +159,7 @@ static void audio_timer_timeout(struct k_work *work)
 
 		net_buf_add_mem(buf, buf_data, len_to_send);
 
-		ret = bt_bap_stream_send(stream, buf,
-					   get_and_incr_seq_num(stream),
-					   BT_ISO_TIMESTAMP_NONE);
+		ret = bt_bap_stream_send(stream, buf, get_and_incr_seq_num(stream));
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n",
 			       i, stream, ret);

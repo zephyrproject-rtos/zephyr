@@ -1,5 +1,5 @@
 identifier: emsdp_em7d_esp
-name: EM Software Development Platform
+name: EM Software Development Platform (EM7D_ESP)
 type: mcu
 arch: arc
 toolchain:

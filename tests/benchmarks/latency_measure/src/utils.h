@@ -15,9 +15,10 @@
 #include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include <zephyr/timestamp.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
-#define START_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#define ALT_STACK_SIZE   (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define START_STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define ALT_STACK_SIZE   (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #ifdef CONFIG_USERSPACE
 #define  BENCH_BMEM  K_APP_BMEM(bench_mem_partition)
@@ -49,11 +50,11 @@ extern int error_count;
 #define TICK_OCCURRENCE_ERROR  "Error: Tick Occurred"
 
 #ifdef CSV_FORMAT_OUTPUT
-#define FORMAT_STR   "%-52s,%s,%s,%s\n"
+#define FORMAT_STR   "%-94s,%s,%s,%s\n"
 #define CYCLE_FORMAT "%8u"
 #define NSEC_FORMAT  "%8u"
 #else
-#define FORMAT_STR   "%-52s:%s , %s : %s\n"
+#define FORMAT_STR   "%-94s:%s , %s : %s\n"
 #define CYCLE_FORMAT "%8u cycles"
 #define NSEC_FORMAT  "%8u ns"
 #endif

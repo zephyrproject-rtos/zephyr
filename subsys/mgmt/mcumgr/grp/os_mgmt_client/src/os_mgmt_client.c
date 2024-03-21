@@ -104,7 +104,7 @@ static int echo_res_fn(struct net_buf *nb, void *user_data)
 	}
 
 	/* Init ZCOR decoder state */
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, echo_response, ARRAY_SIZE(echo_response), &decoded) == 0;
 
@@ -119,7 +119,7 @@ end:
 	return rc;
 }
 
-int os_mgmt_client_echo(struct os_mgmt_client *client, const char *echo_string)
+int os_mgmt_client_echo(struct os_mgmt_client *client, const char *echo_string, size_t max_len)
 {
 	struct net_buf *nb;
 	int rc;
@@ -138,7 +138,8 @@ int os_mgmt_client_echo(struct os_mgmt_client *client, const char *echo_string)
 	zcbor_new_encode_state(zse, ARRAY_SIZE(zse), nb->data + nb->len, net_buf_tailroom(nb), 0);
 
 	ok = zcbor_map_start_encode(zse, 2) &&
-	     zcbor_tstr_put_lit(zse, "d") && zcbor_tstr_put_term(zse, echo_string) &&
+	     zcbor_tstr_put_lit(zse, "d") &&
+	     zcbor_tstr_put_term(zse, echo_string, max_len) &&
 	     zcbor_map_end_encode(zse, 2);
 
 	if (!ok) {

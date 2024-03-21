@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(pwm_mcux_sctimer, CONFIG_PWM_LOG_LEVEL);
 
 #define CHANNEL_COUNT FSL_FEATURE_SCT_NUMBER_OF_OUTPUTS
 
+/* Constant identifying that no event number has been set */
+#define EVENT_NOT_SET FSL_FEATURE_SCT_NUMBER_OF_EVENTS
+
 struct pwm_mcux_sctimer_config {
 	SCT_Type *base;
 	uint32_t prescale;
@@ -29,10 +32,51 @@ struct pwm_mcux_sctimer_config {
 };
 
 struct pwm_mcux_sctimer_data {
-	uint32_t period_cycles[CHANNEL_COUNT];
 	uint32_t event_number[CHANNEL_COUNT];
 	sctimer_pwm_signal_param_t channel[CHANNEL_COUNT];
+	uint32_t match_period;
+	uint32_t configured_chan;
 };
+
+/* Helper to setup channel that has not previously been configured for PWM */
+static int mcux_sctimer_new_channel(const struct device *dev,
+				    uint32_t channel, uint32_t period_cycles,
+				    uint32_t duty_cycle)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+	uint32_t clock_freq;
+	uint32_t pwm_freq;
+
+	data->match_period = period_cycles;
+
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				&clock_freq)) {
+		return -EINVAL;
+	}
+
+	pwm_freq = (clock_freq / config->prescale) / period_cycles;
+
+	if (pwm_freq == 0) {
+		LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
+		return -EINVAL;
+	}
+
+	SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
+
+	LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
+	data->channel[channel].dutyCyclePercent = duty_cycle;
+	if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
+			     kSCTIMER_EdgeAlignedPwm, pwm_freq,
+			     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
+		LOG_ERR("Could not set up pwm");
+		return -ENOTSUP;
+	}
+
+	SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+	data->configured_chan++;
+	return 0;
+}
 
 static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 				       uint32_t channel, uint32_t period_cycles,
@@ -41,6 +85,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
 	uint8_t duty_cycle;
+	int ret;
 
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
@@ -60,10 +105,14 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
 
-	if (duty_cycle == 0) {
+	if (duty_cycle == 0 && data->configured_chan == 1) {
+		/* Only one channel is active. We can turn off the SCTimer
+		 * global counter.
+		 */
 		SCT_Type *base = config->base;
 
-		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
+		/* Stop timer so we can set output directly */
+		SCTIMER_StopTimer(base, kSCTIMER_Counter_U);
 
 		/* Set the output to inactive State */
 		if (data->channel[channel].level == kSCTIMER_HighTrue) {
@@ -75,39 +124,65 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		return 0;
 	}
 
-	if (period_cycles != data->period_cycles[channel] &&
-	    duty_cycle != data->channel[channel].dutyCyclePercent) {
-		uint32_t clock_freq;
-		uint32_t pwm_freq;
-
-		data->period_cycles[channel] = period_cycles;
-
-		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&clock_freq)) {
-			return -EINVAL;
+	/* SCTimer has some unique restrictions when operation as a PWM output.
+	 * The peripheral is based around a single counter, with a block of
+	 * match registers that can trigger corresponding events. When used
+	 * as a PWM peripheral, MCUX SDK sets up the SCTimer as follows:
+	 * - one match register is used to set PWM output high, and reset
+	 *   SCtimer counter. This sets the PWM period
+	 * - one match register is used to set PWM output low. This sets the
+	 *   pulse length
+	 *
+	 * This means that when configured, multiple channels must have the
+	 * same PWM period, since they all share the same SCTimer counter.
+	 */
+	if (period_cycles != data->match_period &&
+	    data->event_number[channel] == EVENT_NOT_SET &&
+	    data->match_period == 0U) {
+		/* No PWM signals have been configured. We can set up the first
+		 * PWM output using the MCUX SDK.
+		 */
+		ret = mcux_sctimer_new_channel(dev, channel, period_cycles,
+					       duty_cycle);
+		if (ret < 0) {
+			return ret;
 		}
-
-		pwm_freq = (clock_freq / config->prescale) / period_cycles;
-
-		if (pwm_freq == 0) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
-			return -EINVAL;
+	} else if (data->event_number[channel] == EVENT_NOT_SET) {
+		/* We have already configured a PWM signal, but this channel
+		 * has not been setup. We can only support this channel
+		 * if the period matches that of other PWM signals.
+		 */
+		if (period_cycles != data->match_period) {
+			LOG_ERR("Only one PWM period is supported between "
+				"multiple channels");
+			return -ENOTSUP;
 		}
-
-		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
-
-		LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
-		data->channel[channel].dutyCyclePercent = duty_cycle;
-		if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
-				     kSCTIMER_EdgeAlignedPwm, pwm_freq,
-				     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
-			LOG_ERR("Could not set up pwm");
+		/* Setup PWM output using MCUX SDK */
+		ret = mcux_sctimer_new_channel(dev, channel, period_cycles,
+					       duty_cycle);
+	} else if (period_cycles != data->match_period) {
+		uint32_t period_event = data->event_number[channel];
+		/* We are reconfiguring the period of a configured channel
+		 * MCUX SDK does not provide support for this feature, and
+		 * we cannot do this safely if multiple channels are setup.
+		 */
+		if (data->configured_chan != 1) {
+			LOG_ERR("Cannot change PWM period when multiple "
+				"channels active");
 			return -ENOTSUP;
 		}
 
+		/* To make this change, we can simply set the MATCHREL
+		 * registers for the period match, and the next match
+		 * (which the SDK will setup as the pulse match event)
+		 */
+		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
+		config->base->MATCHREL[period_event] = period_cycles - 1U;
+		config->base->MATCHREL[period_event + 1] = pulse_cycles - 1U;
 		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+		data->match_period = period_cycles;
 	} else {
-		data->period_cycles[channel] = period_cycles;
+		/* Only duty cycle needs to be updated */
 		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
 					   data->event_number[channel]);
 	}
@@ -160,8 +235,10 @@ static int mcux_sctimer_pwm_init(const struct device *dev)
 		data->channel[i].output = i;
 		data->channel[i].level = kSCTIMER_HighTrue;
 		data->channel[i].dutyCyclePercent = 0;
-		data->period_cycles[i] = 0;
+		data->event_number[i] = EVENT_NOT_SET;
 	}
+	data->match_period = 0;
+	data->configured_chan = 0;
 
 	return 0;
 }

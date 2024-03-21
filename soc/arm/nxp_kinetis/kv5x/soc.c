@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/cache.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 
@@ -90,14 +91,8 @@ static int kv5x_init(void)
 	/* Initialize system clocks and PLL */
 	clk_init();
 
-#ifndef CONFIG_KINETIS_KV5X_ENABLE_CODE_CACHE
-	/* SystemInit will have enabled the code cache. Disable it here */
-	SCB_DisableICache();
-#endif
-#ifndef CONFIG_KINETIS_KV5X_ENABLE_DATA_CACHE
-	/* SystemInit will have enabled the data cache. Disable it here */
-	SCB_DisableDCache();
-#endif
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	return 0;
 }

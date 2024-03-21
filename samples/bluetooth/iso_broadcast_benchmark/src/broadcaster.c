@@ -593,8 +593,7 @@ static void iso_timer_timeout(struct k_work *work)
 
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 		net_buf_add_mem(buf, iso_data, iso_tx_qos.sdu);
-		ret = bt_iso_chan_send(&bis_iso_chans[i], buf, seq_num,
-				       BT_ISO_TIMESTAMP_NONE);
+		ret = bt_iso_chan_send(&bis_iso_chans[i], buf, seq_num);
 		if (ret < 0) {
 			LOG_ERR("Unable to broadcast data: %d", ret);
 			net_buf_unref(buf);

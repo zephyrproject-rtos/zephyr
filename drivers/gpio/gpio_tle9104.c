@@ -75,6 +75,8 @@ struct tle9104_data {
 	/* each bit defines if the output channel is configured, see state */
 	uint8_t configured;
 	struct k_mutex lock;
+	/* communication watchdog is getting ignored */
+	bool cwd_ignore;
 };
 
 static void tle9104_set_cfg_cwdtime(uint8_t *destination, uint8_t value)
@@ -116,6 +118,7 @@ static int tle9104_transceive_frame(const struct device *dev, bool write,
 				    enum tle9104_register *read_reg, uint8_t *read_data)
 {
 	const struct tle9104_config *config = dev->config;
+	struct tle9104_data *data = dev->data;
 	uint16_t write_frame;
 	uint16_t read_frame;
 	int result;
@@ -160,8 +163,10 @@ static int tle9104_transceive_frame(const struct device *dev, bool write,
 		return -EIO;
 	}
 
-	if ((TLE9104_SPIFRAME_FAULTCOMMUNICATION_BIT & read_frame) != 0) {
-		LOG_WRN("communication fault reported by TLE9104");
+	if (!data->cwd_ignore) {
+		if ((TLE9104_SPIFRAME_FAULTCOMMUNICATION_BIT & read_frame) != 0) {
+			LOG_WRN("%s: communication fault reported by TLE9104", dev->name);
+		}
 	}
 
 	*read_reg = FIELD_GET(GENMASK(TLE9104_FRAME_FAULTGLOBAL_POS - 1, TLE9104_FRAME_ADDRESS_POS),
@@ -249,7 +254,7 @@ static int tle9104_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	}
 
 	if (pin >= TLE9104_GPIO_COUNT) {
-		LOG_ERR("invalid pin nummber %i", pin);
+		LOG_ERR("invalid pin number %i", pin);
 		return -EINVAL;
 	}
 
@@ -385,6 +390,8 @@ static int tle9104_init(const struct device *dev)
 
 	LOG_DBG("initialize TLE9104 instance %s", dev->name);
 
+	data->cwd_ignore = true;
+
 	result = k_mutex_init(&data->lock);
 	if (result != 0) {
 		LOG_ERR("unable to initialize mutex");
@@ -408,8 +415,8 @@ static int tle9104_init(const struct device *dev)
 
 		register_cfg |= TLE9104_CFG_OUT1DD_BIT << i;
 
-		if (!device_is_ready(current->port)) {
-			LOG_ERR("control GPIO %s is not ready", current->port->name);
+		if (!gpio_is_ready_dt(current)) {
+			LOG_ERR("%s: control GPIO is not ready", dev->name);
 			return -ENODEV;
 		}
 
@@ -421,8 +428,8 @@ static int tle9104_init(const struct device *dev)
 	}
 
 	if (config->gpio_enable.port != NULL) {
-		if (!device_is_ready(config->gpio_enable.port)) {
-			LOG_ERR("enable GPIO %s is not ready", config->gpio_enable.port->name);
+		if (!gpio_is_ready_dt(&config->gpio_enable)) {
+			LOG_ERR("%s: enable GPIO is not ready", dev->name);
 			return -ENODEV;
 		}
 
@@ -433,16 +440,23 @@ static int tle9104_init(const struct device *dev)
 		}
 	}
 
-	result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
-	if (result != 0) {
-		LOG_ERR("failed to initialize GPIO for reset");
-		return result;
-	}
+	if (config->gpio_reset.port != NULL) {
+		if (!gpio_is_ready_dt(&config->gpio_reset)) {
+			LOG_ERR("%s: reset GPIO is not yet ready", dev->name);
+			return -ENODEV;
+		}
 
-	k_busy_wait(TLE9104_RESET_DURATION_TIME_US);
-	gpio_pin_set_dt(&config->gpio_reset, 0);
-	k_busy_wait(TLE9104_RESET_DURATION_WAIT_TIME_US +
-		    TLE9104_RESET_DURATION_WAIT_TIME_SAFETY_MARGIN_US);
+		result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
+		if (result != 0) {
+			LOG_ERR("failed to initialize GPIO for reset");
+			return result;
+		}
+
+		k_busy_wait(TLE9104_RESET_DURATION_TIME_US);
+		gpio_pin_set_dt(&config->gpio_reset, 0);
+		k_busy_wait(TLE9104_RESET_DURATION_WAIT_TIME_US +
+			    TLE9104_RESET_DURATION_WAIT_TIME_SAFETY_MARGIN_US);
+	}
 
 	/*
 	 * The first read value should be the ICVID, this acts also as the setup of the
@@ -498,6 +512,8 @@ static int tle9104_init(const struct device *dev)
 		return result;
 	}
 
+	data->cwd_ignore = false;
+
 	return 0;
 }
 
@@ -516,7 +532,7 @@ BUILD_ASSERT(CONFIG_GPIO_TLE9104_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
 			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),            \
 		.gpio_enable = TLE9104_INIT_GPIO_FIELDS(inst, en_gpios),                           \
-		.gpio_reset = GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), resn_gpios, 0),           \
+		.gpio_reset = TLE9104_INIT_GPIO_FIELDS(inst, resn_gpios),                          \
 		.gpio_control = {                                                                  \
 				TLE9104_INIT_GPIO_FIELDS(inst, in1_gpios),                         \
 				TLE9104_INIT_GPIO_FIELDS(inst, in2_gpios),                         \

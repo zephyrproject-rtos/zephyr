@@ -17,8 +17,9 @@ target_sources(testlib PRIVATE
   src/adv.c
   src/att_read.c
   src/att_write.c
-  src/connect.c
+  src/conn_ref.c
   src/conn_wait.c
+  src/connect.c
   src/scan.c
   src/security.c
 )

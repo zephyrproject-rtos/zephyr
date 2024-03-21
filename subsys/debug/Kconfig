@@ -424,6 +424,12 @@ config GDBSTUB_BUF_SZ
 	  for GDB backend. This needs to be big enough to hold one
 	  full GDB packet at a time.
 
+config GDBSTUB_TRACE
+	bool "GDB backend extra logging"
+	help
+	  Enable extra debug logging for the GDB backend, including
+	  breakpoint interrupts and remote commands it receives.
+
 endif
 
 config SEGGER_DEBUGMON

@@ -887,4 +887,39 @@ ZTEST(socket_misc_test_suite, test_ipv4_mapped_to_ipv6_server)
 	test_ipv4_mapped_to_ipv6_server();
 }
 
+ZTEST(socket_misc_test_suite, test_so_domain_socket_option)
+{
+	int ret;
+	int sock_u;
+	int sock_t;
+	socklen_t optlen = sizeof(int);
+	int domain;
+
+	sock_t = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_t >= 0, "TCP socket open failed");
+	sock_u = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock_u >= 0, "UDP socket open failed");
+
+	ret = getsockopt(sock_t, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed, %d", -errno);
+	zassert_equal(domain, AF_INET, "Mismatch domain value %d vs %d",
+		      AF_INET, domain);
+
+	ret = getsockopt(sock_u, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed, %d", -errno);
+	zassert_equal(domain, AF_INET6, "Mismatch domain value %d vs %d",
+		      AF_INET6, domain);
+
+	/* setsockopt() is not supported for this option */
+	domain = AF_INET;
+	ret = setsockopt(sock_u, SOL_SOCKET, SO_DOMAIN, &domain, optlen);
+	zassert_equal(ret, -1, "setsockopt succeed");
+	zassert_equal(errno, ENOPROTOOPT, "Invalid errno %d", errno);
+
+	ret = close(sock_t);
+	zassert_equal(ret, 0, "close failed, %d", -errno);
+	ret = close(sock_u);
+	zassert_equal(ret, 0, "close failed, %d", -errno);
+}
+
 ZTEST_SUITE(socket_misc_test_suite, NULL, setup, NULL, NULL, NULL);

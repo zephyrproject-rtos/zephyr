@@ -408,7 +408,7 @@
 		Z_FOR_LOOP_3, \
 		Z_FOR_LOOP_2, \
 		Z_FOR_LOOP_1, \
-		Z_FOR_LOOP_0)(x, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+		Z_FOR_LOOP_0)(x, sep, fixed_arg0, fixed_arg1, __VA_ARGS__)
 
 #define Z_GET_ARG_1(_0, ...) _0
 

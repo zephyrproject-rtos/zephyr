@@ -142,7 +142,7 @@ Default Zephyr Peripheral Mapping:
 - ADC1 IN1  : PA1
 - DAC1_OUT1 : PA4
 
-For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
+For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Programming and Debugging
 *************************

@@ -45,6 +45,9 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wno-deprecated-non-prototype
 )
 
+# C implicit promotion rules will want to make floats into doubles very easily
+check_set_compiler_property(APPEND PROPERTY warning_base -Wdouble-promotion)
+
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 
 # Prohibit void pointer arithmetic. Illegal in C99

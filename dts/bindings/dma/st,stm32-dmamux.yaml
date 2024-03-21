@@ -41,7 +41,7 @@ description: |
                0x1: medium
                0x2: high
                0x3: very high
-   exemple for stm32wb55x
+   example for stm32wb55x
      dmamux1: dmamux@40020800 {
          compatible = "st,stm32-dmamux";
          ...

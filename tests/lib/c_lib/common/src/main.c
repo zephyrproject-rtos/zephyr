@@ -15,8 +15,9 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#ifdef CONFIG_NEWLIB_LIBC
-#define _POSIX_C_SOURCE 200809
+#if defined(CONFIG_NATIVE_LIBC)
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #endif
 
 #include <zephyr/kernel.h>

@@ -906,10 +906,12 @@ static int dns_write(struct dns_resolve_context *ctx,
 			   dns_qname->len + 2);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(net_ctx) == AF_INET6) {
+	    net_context_get_family(net_ctx) == AF_INET6 &&
+	    hop_limit > 0) {
 		net_context_set_ipv6_hop_limit(net_ctx, hop_limit);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(net_ctx) == AF_INET) {
+		   net_context_get_family(net_ctx) == AF_INET &&
+		   hop_limit > 0) {
 		net_context_set_ipv4_ttl(net_ctx, hop_limit);
 	}
 
@@ -1484,12 +1486,12 @@ struct dns_resolve_context *dns_resolve_get_default(void)
 	return &dns_default_ctx;
 }
 
-void dns_init_resolver(void)
+int dns_resolve_init_default(struct dns_resolve_context *ctx)
 {
+	int ret = 0;
 #if defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	static const char *dns_servers[SERVER_COUNT + 1];
 	int count = DNS_SERVER_COUNT;
-	int ret;
 
 	if (count > 5) {
 		count = 5;
@@ -1556,7 +1558,7 @@ void dns_init_resolver(void)
 
 	dns_servers[SERVER_COUNT] = NULL;
 
-	ret = dns_resolve_init(dns_resolve_get_default(), dns_servers, NULL);
+	ret = dns_resolve_init(ctx, dns_servers, NULL);
 	if (ret < 0) {
 		NET_WARN("Cannot initialize DNS resolver (%d)", ret);
 	}
@@ -1566,4 +1568,12 @@ void dns_init_resolver(void)
 	 */
 	(void)dns_resolve_init(dns_resolve_get_default(), NULL, NULL);
 #endif
+	return ret;
 }
+
+#ifdef CONFIG_DNS_RESOLVER_AUTO_INIT
+void dns_init_resolver(void)
+{
+	dns_resolve_init_default(dns_resolve_get_default());
+}
+#endif /* CONFIG_DNS_RESOLVER_AUTO_INIT */

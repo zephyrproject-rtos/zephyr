@@ -825,7 +825,7 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 
 	info.tx_power = evt->tx_power;
 	info.rssi = evt->rssi;
-	info.cte_type = BIT(evt->cte_type);
+	info.cte_type = bt_get_df_cte_type(evt->cte_type);
 	info.addr = &per_adv_sync->addr;
 	info.sid = per_adv_sync->sid;
 

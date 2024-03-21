@@ -49,7 +49,3 @@
 		};
 	};
 };
-
-&hpet {
-	status = "disabled";
-};

@@ -92,7 +92,7 @@ struct uart_sedi_config_info {
 	/* Specifies the baudrate for the uart instance. */
 	uint32_t baud_rate;
 
-	/* Specifies the port line contorl settings */
+	/* Specifies the port line control settings */
 	sedi_uart_lc_t line_ctrl;
 
 	struct k_mutex *mutex;

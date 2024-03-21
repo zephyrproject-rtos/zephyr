@@ -288,6 +288,20 @@ config ERRNO_IN_TLS
 	  Use thread local storage to store errno instead of storing it in
 	  the kernel thread struct. This avoids a syscall if userspace is enabled.
 
+config CURRENT_THREAD_USE_NO_TLS
+	bool
+	help
+	  Hidden symbol to not use thread local storage to store current
+	  thread.
+
+config CURRENT_THREAD_USE_TLS
+	bool "Store current thread in thread local storage (TLS)"
+	depends on THREAD_LOCAL_STORAGE && !CURRENT_THREAD_USE_NO_TLS
+	default y
+	help
+	  Use thread local storage to store the current thread. This avoids a
+	  syscall if userspace is enabled.
+
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
 	default SCHED_DUMB
@@ -821,13 +835,28 @@ if KERNEL_MEM_POOL
 
 config HEAP_MEM_POOL_SIZE
 	int "Heap memory pool size (in bytes)"
-	default 0 if !POSIX_MQUEUE
-	default 1024 if POSIX_MQUEUE
+	default 0
 	help
 	  This option specifies the size of the heap memory pool used when
 	  dynamically allocating memory using k_malloc(). The maximum size of
-	  the memory pool is only limited to available memory. A size of zero
-	  means that no heap memory pool is defined.
+	  the memory pool is only limited to available memory. If subsystems
+	  specify HEAP_MEM_POOL_ADD_SIZE_* options, these will be added together
+	  and the sum will be compared to the HEAP_MEM_POOL_SIZE value.
+	  If the sum is greater than the HEAP_MEM_POOL_SIZE option (even if this
+	  has the default 0 value), then the actual heap size will be rounded up
+	  to the sum of the individual requirements (unless the
+	  HEAP_MEM_POOL_IGNORE_MIN option is enabled). If the final value, after
+	  considering both this option as well as sum of the custom
+	  requirements, ends up being zero, then no system heap will be
+	  available.
+
+config HEAP_MEM_POOL_IGNORE_MIN
+	bool "Ignore the minimum heap memory pool requirement"
+	help
+	  This option can be set to force setting a smaller heap memory pool
+	  size than what's specified by enabled subsystems. This can be useful
+	  when optimizing memory usage and a more precise minimum heap size
+	  is known for a given application.
 
 endif # KERNEL_MEM_POOL
 
@@ -1148,8 +1177,9 @@ config SMP_BOOT_DELAY
 	depends on SMP
 	help
 	  By default Zephyr will boot all available CPUs during start up.
-	  Select this option to skip this and allow architecture code boot
-	  secondary CPUs at a later time.
+	  Select this option to skip this and allow custom code
+	  (architecture/SoC/board/application) to boot secondary CPUs at
+	  a later time.
 
 config MP_NUM_CPUS
 	int "Number of CPUs/cores [DEPRECATED]"
@@ -1259,6 +1289,13 @@ config DEVICE_DEPS_DYNAMIC
 	help
 	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
+
+config DEVICE_MUTABLE
+	bool "Mutable devices [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Support mutable devices. Mutable devices are instantiated in SRAM
+	  instead of Flash and are runtime modifiable in kernel mode.
 
 endmenu
 

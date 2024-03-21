@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32f4xx/gd32f450xk.dtsi>
+#include <gd/gd32f4xx/gd32f450xk.dtsi>
 #include "gd32f450i_eval-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

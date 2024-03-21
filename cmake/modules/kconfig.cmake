@@ -84,7 +84,7 @@ if(EXTRA_CONF_FILE)
   string(REPLACE " " ";" EXTRA_CONF_FILE_AS_LIST "${EXTRA_CONF_FILE_EXPANDED}")
 endif()
 
-zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files)
+zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files SUFFIX ${FILE_SUFFIX})
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
 # problems when invoking kconfig_target since semicolon is a special
@@ -133,6 +133,8 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   srctree=${ZEPHYR_BASE}
   KERNELVERSION=${KERNELVERSION}
   APPVERSION=${APP_VERSION_STRING}
+  APP_VERSION_EXTENDED_STRING=${APP_VERSION_EXTENDED_STRING}
+  APP_VERSION_TWEAK_STRING=${APP_VERSION_TWEAK_STRING}
   CONFIG_=${KCONFIG_NAMESPACE}_
   KCONFIG_CONFIG=${DOTCONFIG}
   # Set environment variables so that Kconfig can prune Kconfig source

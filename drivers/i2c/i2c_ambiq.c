@@ -139,7 +139,7 @@ static int i2c_ambiq_init(const struct device *dev)
 
 	ret = config->pwr_func();
 
-	ret = i2c_ambiq_configure(dev, I2C_MODE_CONTROLLER | I2C_SPEED_SET(bitrate_cfg));
+	ret = i2c_ambiq_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
@@ -152,7 +152,7 @@ static int i2c_ambiq_init(const struct device *dev)
 	return ret;
 }
 
-static struct i2c_driver_api i2c_ambiq_driver_api = {
+static const struct i2c_driver_api i2c_ambiq_driver_api = {
 	.configure = i2c_ambiq_configure,
 	.transfer = i2c_ambiq_transfer,
 };

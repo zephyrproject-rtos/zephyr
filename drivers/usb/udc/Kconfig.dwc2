@@ -1,0 +1,30 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_DWC2
+	bool "DWC2 USB device controller driver"
+	default y
+	depends on DT_HAS_SNPS_DWC2_ENABLED
+	help
+	  DWC2 USB device controller driver.
+
+config UDC_DWC2_STACK_SIZE
+	int "UDC DWC2 driver internal thread stack size"
+	depends on UDC_DWC2
+	default 512
+	help
+	  DWC2 driver internal thread stack size.
+
+config UDC_DWC2_THREAD_PRIORITY
+	int "UDC DWC2 driver thread priority"
+	depends on UDC_DWC2
+	default 8
+	help
+	  DWC2 driver thread priority.
+
+config UDC_DWC2_MAX_QMESSAGES
+	int "UDC DWC2 maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  DWC2 maximum number of ISR event messages.

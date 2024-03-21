@@ -21,7 +21,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap_internal.h"
+#include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "at.h"
 #include "hfp_internal.h"
@@ -35,7 +35,8 @@ LOG_MODULE_REGISTER(bt_hfp_hf);
 struct bt_hfp_hf_cb *bt_hf;
 
 NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
-			  BT_RFCOMM_BUF_SIZE(BT_HF_CLIENT_MAX_PDU), 8, NULL);
+			  BT_RFCOMM_BUF_SIZE(BT_HF_CLIENT_MAX_PDU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 

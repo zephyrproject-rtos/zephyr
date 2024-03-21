@@ -93,7 +93,7 @@ static int i2c_sbcon_transfer(const struct device *dev, struct i2c_msg *msgs,
 							slave_address);
 }
 
-static struct i2c_driver_api api = {
+static const struct i2c_driver_api api = {
 	.configure = i2c_sbcon_configure,
 	.transfer = i2c_sbcon_transfer,
 };

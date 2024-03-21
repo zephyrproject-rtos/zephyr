@@ -22,11 +22,9 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 6. The client keeps track of the number of received status messages. When X messages have been
 #    received, the client pass if the sequence of received status messages corresponds to the order
 #    in which the messages were sent, or the test fails.
-conf=prj_mesh1d1_conf
 RunTest mesh_op_agg_test_max_access_payload \
 	op_agg_cli_max_len_sequence_msg_send op_agg_srv_max_len_status_msg_send
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_op_agg_test_max_access_payload_psa \
 	op_agg_cli_max_len_sequence_msg_send op_agg_srv_max_len_status_msg_send

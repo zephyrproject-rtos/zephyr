@@ -137,7 +137,7 @@ config ETH_STM32_AUTO_NEGOTIATION_ENABLE
 
 config ETH_STM32_HW_CHECKSUM
 	bool "Use TX and RX hardware checksum"
-	depends on (!SOC_SERIES_STM32H7X && !SOC_SERIES_STM32H5X )
+	depends on !SOC_SERIES_STM32H5X
 	help
 	  Enable receive and transmit checksum offload to enhance throughput
 	  performances.

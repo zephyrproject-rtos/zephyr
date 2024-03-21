@@ -134,6 +134,14 @@ BT_GATT_SERVICE_DEFINE(test_svc,
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_WRITE | BT_GATT_PERM_READ | BT_GATT_PERM_PREPARE_WRITE,
 			       read_long_test_chrc, write_long_test_chrc, NULL),
+	BT_GATT_CHARACTERISTIC(TEST_ENC_CHRC_UUID,
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
+			       read_test_chrc, write_test_chrc, NULL),
+	BT_GATT_CHARACTERISTIC(TEST_LESC_CHRC_UUID,
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ_LESC | BT_GATT_PERM_WRITE_LESC,
+			       read_test_chrc, write_test_chrc, NULL),
 );
 
 static void test_main(void)

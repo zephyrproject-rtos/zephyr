@@ -271,6 +271,14 @@
 			};
 		};
 
+		touch: touch@3ff48858 {
+			compatible = "espressif,esp32-touch";
+			reg = <0x3ff48858 0x38>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		i2c0: i2c@3ff53000 {
 			compatible = "espressif,esp32-i2c";
 			#address-cells = <1>;

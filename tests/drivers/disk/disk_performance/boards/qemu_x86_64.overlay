@@ -4,11 +4,6 @@
 
 / {
 	pcie0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "intel,pcie";
-		ranges;
-
 		nvme0: nvme0 {
 			compatible = "nvme-controller";
 

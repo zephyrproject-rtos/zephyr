@@ -6,6 +6,7 @@
 
 zephyr_library()
 zephyr_library_sources(board.c)
+zephyr_library_include_directories(.)
 
 if(CONFIG_NXP_IMX_RT5XX_BOOT_HEADER)
   if(NOT DEFINED CONFIG_BOARD_MIMXRT595_EVK)

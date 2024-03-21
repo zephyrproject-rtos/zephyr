@@ -136,7 +136,7 @@ static int tsl2561_sample_fetch(const struct device *dev, enum sensor_channel ch
 	const struct tsl2561_config *config = dev->config;
 	struct tsl2561_data *data = dev->data;
 	uint8_t bytes[2];
-	uint8_t ret;
+	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_LIGHT) {
 		LOG_ERR("Unsupported sensor channel");

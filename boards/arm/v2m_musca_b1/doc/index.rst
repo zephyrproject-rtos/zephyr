@@ -205,7 +205,7 @@ Peripheral Mapping:
    - I2C_0_SDA : D14
    - I2C_0_SCL : D15
 
-For mode details please refer to `Musca B1 Technical Reference Manual (TRM)`_.
+For more details please refer to `Musca B1 Technical Reference Manual (TRM)`_.
 
 
 RGB LED

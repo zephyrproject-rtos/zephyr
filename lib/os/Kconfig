@@ -10,29 +10,6 @@ config FDTABLE
 	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
 	  aux operations).
 
-config JSON_LIBRARY
-	bool "Build JSON library"
-	help
-	  Build a minimal JSON parsing/encoding library. Used by sample
-	  applications such as the NATS client.
-
-config RING_BUFFER
-	bool "Ring buffers"
-	help
-	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
-	  buffers manage their own buffer memory and can store arbitrary data.
-	  For optimal performance, use buffer sizes that are a power of 2.
-
-config NOTIFY
-	bool "Asynchronous Notifications"
-	help
-	  Use this API to support async transactions.
-
-config BASE64
-	bool "Base64 encoding and decoding"
-	help
-	  Enable base64 encoding and decoding functionality
-
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_MAX_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
@@ -49,14 +26,6 @@ config MPSC_PBUF
 	  Enable usage of mpsc packet buffer. Packet buffer is capable of
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
-
-config ONOFF
-	bool "On-Off Manager"
-	select NOTIFY
-	help
-	  An on-off manager supports an arbitrary number of clients of a
-	  service which has a binary state.  Example applications are power
-	  rails, clocks, and binary device power management.
 
 config SPSC_PBUF
 	bool "Single producer, single consumer packet buffer"
@@ -119,31 +88,6 @@ config SPSC_PBUF_UTILIZATION
 
 endif # SPSC_PBUF
 
-config SHARED_MULTI_HEAP
-	bool "Shared multi-heap manager"
-	help
-	  Enable support for a shared multi-heap manager that uses the
-	  multi-heap allocator to manage a set of reserved memory regions with
-	  different capabilities / attributes (cacheable, non-cacheable,
-	  etc...) defined in the DT.
-
-config WINSTREAM
-	bool "Lockless shared memory window byte stream"
-	help
-	  Winstream is a byte stream IPC for use in shared memory
-	  "windows", generally for transmit to non-Zephyr contexts that
-	  can't share Zephyr APIs or data structures.
-
-if WINSTREAM
-config WINSTREAM_STDLIB_MEMCOPY
-	bool "Use standard memcpy() in winstream"
-	help
-	  The sys_winstream utility is sometimes used in early boot
-	  environments before the standard library is usable.  By
-	  default it uses a simple internal bytewise memcpy().  Set
-	  this to use the one from the standard library.
-endif
-
 if MPSC_PBUF
 config MPSC_CLEAR_ALLOCATED
 	bool "Clear allocated packet"
@@ -169,14 +113,6 @@ config POWEROFF
 	help
 	  Enable support for system power off.
 
-config UTF8
-	bool "UTF-8 string operation supported"
-	help
-	  Enable the utf8 API. The API implements functions to specifically
-	  handle UTF-8 encoded strings.
-
 rsource "Kconfig.cbprintf"
-
-rsource "Kconfig.heap"
 
 endmenu

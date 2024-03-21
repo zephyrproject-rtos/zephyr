@@ -3,7 +3,7 @@ sample:
 common:
   extra_args: DEBUG_PRINTF=1
   tags:
-    - inroduction
+    - introduction
     - kernel
   harness: console
   min_ram: 16

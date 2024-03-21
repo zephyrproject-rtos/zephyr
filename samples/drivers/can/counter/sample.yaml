@@ -7,6 +7,7 @@ tests:
     integration_platforms:
       - native_sim
     filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+      and not dt_compat_enabled("infineon,xmc4xxx-can-node")
     harness: console
     harness_config:
       type: one_line

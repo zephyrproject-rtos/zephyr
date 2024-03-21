@@ -10,6 +10,7 @@ set(APP_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_sources(app PRIVATE ${APP_SRC_DIR}/main.c)
 target_sources(app PRIVATE ${APP_SRC_DIR}/stubs.c)
 target_sources(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/lwm2m/lwm2m_engine.c)
+zephyr_linker_sources(SECTIONS ${ZEPHYR_BASE}/subsys/net/lib/lwm2m/iterables.ld)
 
 # Add includes directories
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

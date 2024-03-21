@@ -86,7 +86,7 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		}
 		break;
 	case BT_BAP_EP_STATE_ENABLING:
-		if (state != BT_BAP_EP_STATE_STREAMING) {
+		if (state != BT_BAP_EP_STATE_STREAMING && state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
 			LOG_DBG("Invalid broadcast sync endpoint state transition");
 			return;
 		}
@@ -166,9 +166,17 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
-	ops = stream->ops;
-
 	LOG_DBG("stream %p ep %p", stream, ep);
+
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	/* reset sequence number */
+	stream->_prev_seq_num = 0U;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
+
+	ops = stream->ops;
+	if (ops != NULL && ops->connected != NULL) {
+		ops->connected(stream);
+	}
 
 	broadcast_source_set_ep_state(ep, BT_BAP_EP_STATE_STREAMING);
 
@@ -197,9 +205,12 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 		return;
 	}
 
-	ops = stream->ops;
-
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->disconnected != NULL) {
+		ops->disconnected(stream, reason);
+	}
 
 	broadcast_source_set_ep_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 
@@ -288,7 +299,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->tx, qos);
-	bt_audio_codec_cfg_to_iso_path(iso->chan.qos->tx->path, codec_cfg);
+	bt_bap_iso_configure_data_path(ep, codec_cfg);
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -788,7 +799,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		for (size_t i = 0U; i < subgroup_param->params_count; i++) {
 			struct bt_bap_stream *subgroup_stream;
 			struct bt_bap_stream *param_stream;
-			bool stream_in_subgroup;
+			bool stream_in_subgroup = false;
 
 			param_stream = subgroup_param->params[i].stream;
 
@@ -878,7 +889,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
 			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
-			bt_audio_codec_cfg_to_iso_path(iso_qos->path, codec_cfg);
+			bt_bap_iso_configure_data_path(stream->ep, codec_cfg);
 		}
 	}
 
@@ -938,6 +949,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
 		memset(subgroup->codec_cfg->meta, 0, sizeof(subgroup->codec_cfg->meta));
 		memcpy(subgroup->codec_cfg->meta, meta, meta_len);
+		subgroup->codec_cfg->meta_len = meta_len;
 	}
 
 	return 0;

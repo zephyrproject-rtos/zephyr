@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_library()
+
 add_subdirectory(${SOC_SERIES})
 add_subdirectory(common)
 
-zephyr_sources(
+zephyr_library_sources(
   validate_base_addresses.c
   validate_enabled_instances.c
   )
@@ -24,5 +26,9 @@ if(CONFIG_BUILD_WITH_TFM)
 
   set_property(TARGET zephyr_property_target
     APPEND PROPERTY TFM_CMAKE_OPTIONS -DZEPHYR_BASE=${ZEPHYR_BASE}
+    )
+
+  set_property(TARGET zephyr_property_target
+    APPEND PROPERTY TFM_CMAKE_OPTIONS -DNRF_NS_STORAGE=${CONFIG_TFM_NRF_NS_STORAGE}
     )
 endif()

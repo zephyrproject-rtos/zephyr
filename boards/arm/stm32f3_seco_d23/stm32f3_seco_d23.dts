@@ -9,7 +9,7 @@
 #include <st/f3/stm32f302v(b-c)tx-pinctrl.dtsi>
 
 / {
-	model = "SECO JUNO SBC-D23 board (STM32F302VCT6)";
+	model = "SECO SBC-3.5-PX30 board (STM32F302VCT6)";
 	compatible = "seco,stm32f3-d23";
 
 	chosen {

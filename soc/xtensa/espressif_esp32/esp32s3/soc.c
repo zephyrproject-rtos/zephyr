@@ -47,6 +47,7 @@ extern int _ext_ram_bss_end;
 #endif
 
 extern void z_cstart(void);
+extern void esp_reset_reason_init(void);
 
 #ifdef CONFIG_SOC_ESP32S3_PROCPU
 extern const unsigned char esp32s3_appcpu_fw_array[];
@@ -183,6 +184,8 @@ void IRAM_ATTR __esp_platform_start(void)
 	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
 	wdt_hal_disable(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+	esp_reset_reason_init();
 
 	esp_clk_init();
 

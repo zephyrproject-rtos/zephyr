@@ -134,6 +134,7 @@
 /boards/shields/inventek_eswifi/          @nandojve
 /boards/xtensa/odroid_go/                 @ydamigos
 /boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
+/boards/xtensa/kincony_kc868_a32/         @bbilas
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
 /boards/arm64/mimx8mm_evk/                @MrVan @JiafeiPan
@@ -234,6 +235,7 @@
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @de-nordic
 /drivers/flash/*esp32*                    @sylvioalves
+/drivers/flash/flash_cadence_nand*        @nbalabak
 /drivers/gpio/*b91*                       @andy-liu-telink
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
@@ -364,6 +366,8 @@
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/spi/*esp32*                      @sylvioalves
 /drivers/spi/*pl022*                      @soburi
+/drivers/sdhc/                            @danieldegrasse
+/drivers/sdhc/sdhc_cdns*                  @roymurlidhar @tanmaykathpalia
 /drivers/timer/*arm_arch*                 @carlocaione
 /drivers/timer/*cortex_m_systick*         @anangl
 /drivers/timer/*altera_avalon*            @nashif
@@ -399,7 +403,7 @@
 /drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
 /drivers/watchdog/wdt_counter.c           @nordic-krch
 /drivers/watchdog/*rpi_pico*              @thedjnK
-/drivers/watchdog/*dw*                    @softwarecki
+/drivers/watchdog/*dw*                    @softwarecki @pbalsundar
 /drivers/watchdog/*ifx*                   @sreeramIfx
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
@@ -417,7 +421,7 @@
 /dts/arm/atmel/                           @galak
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/cypress/                         @ifyall @npal-cy
-/dts/arm/gigadevice/                      @nandojve
+/dts/arm/gd/                              @nandojve
 /dts/arm/infineon/xmc4*                   @parthitce @ifyall @npal-cy
 /dts/arm/infineon/psoc6/                  @ifyall @npal-cy
 /dts/arm64/armv8-r.dtsi                   @povergoing

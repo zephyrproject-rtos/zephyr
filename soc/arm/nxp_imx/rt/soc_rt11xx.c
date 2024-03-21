@@ -10,6 +10,7 @@
 #include <soc.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/cache.h>
 #include <fsl_clock.h>
 #include <fsl_gpc.h>
 #include <fsl_pmu.h>
@@ -277,7 +278,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
 
 	/* Init System Pll2 pfd3. */
-#ifdef CONFIG_ETH_MCUX
+#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
 #else
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
@@ -324,7 +325,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Configure BUS using SYS_PLL3_CLK */
-#ifdef CONFIG_ETH_MCUX
+#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
 	/* Configure root bus clock at 198M */
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll2Pfd3;
 	rootCfg.div = 2;
@@ -396,15 +397,21 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 
-#ifdef CONFIG_ETH_MCUX
+#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	/* 50 MHz ENET clock */
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
+#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+	/* Set ENET_REF_CLK as an input driven by PHY */
+	IOMUXC_GPR->GPR4 &= ~IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U);
+	IOMUXC_GPR->GPR4 |= IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U);
+#else
 	/* Set ENET_REF_CLK as an output driven by ENET1_CLK_ROOT */
 	IOMUXC_GPR->GPR4 |= (IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U) |
 		IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U));
+#endif
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet1g), okay)
 	/*
@@ -414,9 +421,15 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_ENET2_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
+#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+	/* Set ENET1G_REF_CLK as an input driven by PHY */
+	IOMUXC_GPR->GPR5 &= ~IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U);
+	IOMUXC_GPR->GPR5 |= IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U);
+#else
 	/* Set ENET1G_REF_CLK as an output driven by ENET2_CLK_ROOT */
 	IOMUXC_GPR->GPR5 |= (IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U) |
 		IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U));
+#endif
 #endif
 #endif
 
@@ -661,23 +674,8 @@ static int imxrt_init(void)
 
 
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
-#ifndef CONFIG_IMXRT1XXX_CODE_CACHE
-	/* SystemInit enables code cache, disable it here */
-	SCB_DisableICache();
-#else
-	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
-	 * enable it here.
-	 */
-	SCB_EnableICache();
-#endif
-
-	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE)) {
-		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
-			SCB_EnableDCache();
-		}
-	} else {
-		SCB_DisableDCache();
-	}
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 #endif
 
 	/* Initialize system clock */

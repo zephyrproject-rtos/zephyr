@@ -19,6 +19,10 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 
 #include "i2c-priv.h"
 
+#define I2C_TRANSFER_TIMEOUT_MSEC                                                                  \
+	COND_CODE_0(CONFIG_I2C_NXP_TRANSFER_TIMEOUT, (K_FOREVER),                                  \
+		    (K_MSEC(CONFIG_I2C_NXP_TRANSFER_TIMEOUT)))
+
 struct mcux_flexcomm_config {
 	I2C_Type *base;
 	const struct device *clock_dev;
@@ -168,7 +172,7 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		}
 
 		/* Wait for the transfer to complete */
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC);
 
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration

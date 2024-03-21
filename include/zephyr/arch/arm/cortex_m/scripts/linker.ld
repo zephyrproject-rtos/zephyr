@@ -32,10 +32,16 @@
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#if CONFIG_FLASH_LOAD_SIZE > 0
-#define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
 #else
-#define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - CONFIG_FLASH_LOAD_OFFSET)
+#define ROM_END_OFFSET 0
+#endif
+
+#if CONFIG_FLASH_LOAD_SIZE > 0
+#define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
+#else
+#define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
 #endif
 
 #if defined(CONFIG_XIP)
@@ -86,7 +92,7 @@ MEMORY
 #endif
     LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+    IDT_LIST (wx) : ORIGIN = 0xFFFF7FFF, LENGTH = 32K
     }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -390,6 +396,11 @@ GROUP_START(ITCM)
 		__itcm_start = .;
 		*(.itcm)
 		*(".itcm.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function. */
+#include <snippets-itcm-section.ld>
+
 		__itcm_end = .;
 	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
 
@@ -424,6 +435,11 @@ GROUP_START(DTCM)
 		__dtcm_data_start = .;
 		*(.dtcm_data)
 		*(".dtcm_data.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function. */
+#include <snippets-dtcm-section.ld>
+
 		__dtcm_data_end = .;
 	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
 

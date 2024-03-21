@@ -10,6 +10,11 @@
 #include <kernel_internal.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_GDBSTUB)
+#include <zephyr/arch/arm/gdbstub.h>
+#include <zephyr/debug/gdbstub.h>
+#endif
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #define FAULT_DUMP_VERBOSE	(CONFIG_FAULT_DUMP == 2)
@@ -213,6 +218,12 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
 	z_arm_fpu_caller_save(&esf->fpu);
 #endif
 
+#if defined(CONFIG_GDBSTUB)
+	z_gdb_entry(esf, GDB_EXCEPTION_INVALID_INSTRUCTION);
+	/* Might not be fatal if GDB stub placed it in the code. */
+	return false;
+#endif
+
 	/* Print fault information */
 	LOG_ERR("***** UNDEFINED INSTRUCTION ABORT *****");
 
@@ -247,6 +258,17 @@ bool z_arm_fault_prefetch(z_arch_esf_t *esf)
 	/* Read Instruction Fault Address Register (IFAR) */
 	uint32_t ifar = __get_IFAR();
 
+#if defined(CONFIG_GDBSTUB)
+	/* The BKPT instruction could have caused a software breakpoint */
+	if (fs == IFSR_DEBUG_EVENT) {
+		/* Debug event, call the gdbstub handler */
+		z_gdb_entry(esf, GDB_EXCEPTION_BREAKPOINT);
+	} else {
+		/* Fatal */
+		z_gdb_entry(esf, GDB_EXCEPTION_MEMORY_FAULT);
+	}
+	return false;
+#endif
 	/* Print fault information*/
 	LOG_ERR("***** PREFETCH ABORT *****");
 	if (FAULT_DUMP_VERBOSE) {
@@ -313,6 +335,12 @@ bool z_arm_fault_data(z_arch_esf_t *esf)
 
 	/* Read Data Fault Address Register (DFAR) */
 	uint32_t dfar = __get_DFAR();
+
+#if defined(CONFIG_GDBSTUB)
+	z_gdb_entry(esf, GDB_EXCEPTION_MEMORY_FAULT);
+	/* return false - non-fatal error */
+	return false;
+#endif
 
 #if defined(CONFIG_USERSPACE)
 	if ((fs == COND_CODE_1(CONFIG_AARCH32_ARMV8_R,

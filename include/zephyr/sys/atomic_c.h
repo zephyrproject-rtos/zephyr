@@ -72,7 +72,26 @@ __syscall atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
 #endif
 
 #ifdef CONFIG_ATOMIC_OPERATIONS_C
+
+#ifndef DISABLE_SYSCALL_TRACING
+/* Skip defining macros of atomic_*() for syscall tracing.
+ * Compiler does not like "({ ... tracing code ... })" and complains
+ *
+ *   error: expected identifier or '(' before '{' token
+ *
+ * ... even though there is a '(' before '{'.
+ */
+#define DISABLE_SYSCALL_TRACING
+#define _REMOVE_DISABLE_SYSCALL_TRACING
+#endif
+
 #include <syscalls/atomic_c.h>
+
+#ifdef _REMOVE_DISABLE_SYSCALL_TRACING
+#undef DISABLE_SYSCALL_TRACING
+#undef _REMOVE_DISABLE_SYSCALL_TRACING
+#endif
+
 #endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_ATOMIC_C_H_ */

@@ -1,0 +1,26 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip KSZ8081 Ethernet PHY device
+
+compatible: "microchip,ksz8081"
+
+include: ethernet-phy.yaml
+
+properties:
+  mc,reset-gpio:
+    type: phandle-array
+    specifier-space: gpio
+    description: GPIO connected to PHY reset signal pin. Reset is active low.
+  mc,interrupt-gpio:
+    type: phandle-array
+    specifier-space: gpio
+    description: GPIO for interrupt signal indicating PHY state change.
+  mc,interface-type:
+    type: string
+    required: true
+    description: Which type of phy connection the phy is set up for
+    enum:
+      - "mii"
+      - "rmii"
+      - "rmii-25MHz"

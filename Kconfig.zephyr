@@ -141,6 +141,17 @@ config ROM_START_OFFSET
 	  alignment requirements on most ARM targets, although some targets
 	  may require smaller or larger values.
 
+config ROM_END_OFFSET
+	hex "ROM end offset"
+	default 0
+	help
+	  If non-zero, this option reduces the maximum size that the Zephyr image is allowed to
+	  occupy, this is to allow for additional image storage which can be created and used by
+	  other systems such as bootloaders (for MCUboot, this would include the image swap
+	  fields and TLV storage at the end of the image).
+
+	  If unsure, leave at the default value 0.
+
 config LD_LINKER_SCRIPT_SUPPORTED
 	bool
 	default y
@@ -416,6 +427,13 @@ config NO_OPTIMIZATIONS
 	  Selecting this option will likely require manual tuning of the
 	  default stack sizes in order to avoid stack overflows.
 endchoice
+
+config LTO
+	bool "Link Time Optimization [EXPERIMENTAL]"
+	depends on (!(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION) && !NATIVE_LIBRARY
+	select EXPERIMENTAL
+	help
+	  This option enables Link Time Optimization.
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
@@ -777,7 +795,9 @@ config BUILD_OUTPUT_STRIP_PATHS
 config CHECK_INIT_PRIORITIES
 	bool "Build time initialization priorities check"
 	default y
-	depends on !NATIVE_LIBRARY
+	# If we are building a native_simulator target, we can only check the init priorities
+	# if we are building the final output but we are not assembling several images together
+	depends on !(NATIVE_LIBRARY && (!BUILD_OUTPUT_EXE || NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS != ""))
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "armclang"
 	help
 	  Check the build for initialization priority issues by comparing the
@@ -859,7 +879,7 @@ config IS_BOOTLOADER
 	  a separate Zephyr image payload.
 
 config BOOTLOADER_SRAM_SIZE
-	int "SRAM reserved for bootloader"
+	int "SRAM reserved for bootloader [DEPRECATED]"
 	default 0
 	depends on !XIP || IS_BOOTLOADER
 	depends on ARM || XTENSA
@@ -869,6 +889,20 @@ config BOOTLOADER_SRAM_SIZE
 	  - the Zephyr image itself is to act as the bootloader, or
 	  - Zephyr is a !XIP image, which implicitly assumes existence of a
 	  bootloader that loads the Zephyr !XIP image onto SRAM.
+
+	  This option is deprecated, users should transition to using DTS to set this, if needed.
+	  To be removed after Zephyr 3.7 release.
+
+config BOOTLOADER_SRAM_SIZE_DEPRECATED
+	bool
+	default y
+	select DEPRECATED
+	depends on BOOTLOADER_SRAM_SIZE != 0
+	depends on !XIP || IS_BOOTLOADER
+	depends on ARM || XTENSA
+	help
+	  Non-prompt symbol to indicate that the deprecated BOOTLOADER_SRAM_SIZE Kconfig has a
+	  non-0 value. Please transition to using devicetree.
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"

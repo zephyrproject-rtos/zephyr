@@ -20,7 +20,6 @@
 #include <adsp_clk.h>
 #include <adsp_imr_layout.h>
 #include <cavs-idc.h>
-#include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 #include <zephyr/sw_isr_table.h>
@@ -52,6 +51,7 @@ LOG_MODULE_REGISTER(soc);
  * @biref FW entry point called by ROM during normal boot flow
  */
 extern void rom_entry(void);
+void mp_resume_entry(void);
 
 struct core_state {
 	uint32_t a0;
@@ -104,6 +104,11 @@ void power_gate_exit(void)
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();
 	_restore_core_context();
+
+	/* Secondary core is resumed by set_dx */
+	if (arch_proc_id()) {
+		mp_resume_entry();
+	}
 }
 
 __asm__(".align 4\n\t"
@@ -144,7 +149,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 				.imr_restore_vector = rom_entry,
 			};
 			struct imr_layout *imr_layout =
-				z_soc_uncached_ptr((__sparse_force void __sparse_cache *)
+				sys_cache_uncached_ptr_get((__sparse_force void __sparse_cache *)
 						   L3_MEM_BASE_ADDR);
 
 			imr_layout->imr_state.header = hdr;
@@ -157,7 +162,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* do power down - this function won't return */
 			power_down_cavs(true, uncache_to_cache(&hpsram_mask[0]));
 		} else {
-			k_cpu_idle();
+			k_cpu_atomic_idle(arch_irq_lock());
 		}
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");
@@ -177,6 +182,12 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
+
+	/**
+	 * We don't have the key used to lock interruptions here.
+	 * Just set PS.INTLEVEL to 0.
+	 */
+	__asm__ volatile ("rsil a2, 0");
 }
 #endif /* CONFIG_PM */
 

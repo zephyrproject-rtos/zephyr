@@ -18,6 +18,6 @@ config I2C_DW_LPSS_DMA
 	select DMA
 	select DMA_INTEL_LPSS
 	help
-	  This option enables I2C DMA feature to be used for asynchrounous
-	  data transfers. All Tx operaton are done using dma channel 0 and
+	  This option enables I2C DMA feature to be used for asynchronous
+	  data transfers. All Tx operations are done using dma channel 0 and
 	  all Rx operations are done using dma channel 1.

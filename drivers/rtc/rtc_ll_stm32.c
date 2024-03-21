@@ -71,39 +71,14 @@ struct rtc_stm32_config {
 	uint32_t async_prescaler;
 	uint32_t sync_prescaler;
 	const struct stm32_pclken *pclken;
+#if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
+	uint32_t cal_out_freq;
+#endif
 };
 
 struct rtc_stm32_data {
 	struct k_mutex lock;
 };
-
-static int rtc_stm32_enter_initialization_mode(bool kernel_available)
-{
-	if (kernel_available) {
-		LL_RTC_EnableInitMode(RTC);
-		bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_msleep(1));
-
-		if (!success) {
-			return -EIO;
-		}
-	} else {
-		/* kernel is not available so use the blocking but otherwise equivalent function
-		 * provided by LL
-		 */
-		ErrorStatus status = LL_RTC_EnterInitMode(RTC);
-
-		if (status != SUCCESS) {
-			return -EIO;
-		}
-	}
-
-	return 0;
-}
-
-static inline void rtc_stm32_leave_initialization_mode(void)
-{
-	LL_RTC_DisableInitMode(RTC);
-}
 
 static int rtc_stm32_configure(const struct device *dev)
 {
@@ -123,15 +98,24 @@ static int rtc_stm32_configure(const struct device *dev)
 	if ((hour_format != LL_RTC_HOURFORMAT_24HOUR) ||
 	    (sync_prescaler != cfg->sync_prescaler) ||
 	    (async_prescaler != cfg->async_prescaler)) {
-		err = rtc_stm32_enter_initialization_mode(false);
-		if (err == 0) {
+		ErrorStatus status = LL_RTC_EnterInitMode(RTC);
+
+		if (status == SUCCESS) {
 			LL_RTC_SetHourFormat(RTC, LL_RTC_HOURFORMAT_24HOUR);
 			LL_RTC_SetSynchPrescaler(RTC, cfg->sync_prescaler);
 			LL_RTC_SetAsynchPrescaler(RTC, cfg->async_prescaler);
+		} else {
+			err = -EIO;
 		}
 
-		rtc_stm32_leave_initialization_mode();
+		LL_RTC_DisableInitMode(RTC);
 	}
+
+#if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
+	LL_RTC_CAL_SetOutputFreq(RTC, cfg->cal_out_freq);
+#else
+	LL_RTC_CAL_SetOutputFreq(RTC, LL_RTC_CALIB_OUTPUT_NONE);
+#endif
 
 #ifdef RTC_CR_BYPSHAD
 	LL_RTC_EnableShadowRegBypass(RTC);
@@ -164,7 +148,6 @@ static int rtc_stm32_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	/* Enable Backup access */
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
@@ -175,11 +158,17 @@ static int rtc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
 	LL_RCC_EnableRTC();
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 	err = rtc_stm32_configure(dev);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	return err;
 }
@@ -208,12 +197,21 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	}
 
 	LOG_INF("Setting clock");
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
 	LL_RTC_DisableWriteProtection(RTC);
 
-	err = rtc_stm32_enter_initialization_mode(true);
-	if (err) {
+	ErrorStatus status = LL_RTC_EnterInitMode(RTC);
+
+	if (status != SUCCESS) {
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+		LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 		k_mutex_unlock(&data->lock);
-		return err;
+		return -EIO;
 	}
 
 	LL_RTC_DATE_SetYear(RTC, bin2bcd(real_year - RTC_YEAR_REF));
@@ -233,9 +231,13 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LL_RTC_TIME_SetMinute(RTC, bin2bcd(timeptr->tm_min));
 	LL_RTC_TIME_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
 
-	rtc_stm32_leave_initialization_mode();
+	LL_RTC_DisableInitMode(RTC);
 
 	LL_RTC_EnableWriteProtection(RTC);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	k_mutex_unlock(&data->lock);
 
@@ -257,6 +259,15 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	if (err) {
 		return err;
+	}
+
+	if (!LL_RTC_IsActiveFlag_INITS(RTC)) {
+		/* INITS flag is set when the calendar has been initialiazed. This flag is
+		 * reset only on backup domain reset, so it can be read after a system
+		 * reset to check if the calendar has been initialized.
+		 */
+		k_mutex_unlock(&data->lock);
+		return -ENODATA;
 	}
 
 	do {
@@ -350,11 +361,19 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 		return -EIO;
 	}
 
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
 	LL_RTC_DisableWriteProtection(RTC);
 
 	MODIFY_REG(RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
 
 	LL_RTC_EnableWriteProtection(RTC);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	return 0;
 }
@@ -381,7 +400,7 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 #endif
 #endif /* CONFIG_RTC_CALIBRATION */
 
-struct rtc_driver_api rtc_stm32_driver_api = {
+static const struct rtc_driver_api rtc_stm32_driver_api = {
 	.set_time = rtc_stm32_set_time,
 	.get_time = rtc_stm32_get_time,
 	/* RTC_ALARM not supported */
@@ -412,6 +431,9 @@ static const struct rtc_stm32_config rtc_config = {
 	.sync_prescaler = 0x00FF,
 #endif
 	.pclken = rtc_clk,
+#if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
+	.cal_out_freq = _CONCAT(_CONCAT(LL_RTC_CALIB_OUTPUT_, DT_INST_PROP(0, calib_out_freq)), HZ),
+#endif
 };
 
 static struct rtc_stm32_data rtc_data;

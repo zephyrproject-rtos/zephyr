@@ -12,8 +12,10 @@ config BOARD
 config ENTROPY_GENERATOR
 	default y
 
-config HEAP_MEM_POOL_SIZE
-	default 98304 if WIFI
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 65535 if WIFI && BT
+	default 51200 if WIFI
 	default 65536 if BT
 	default 4096
 
@@ -38,5 +40,14 @@ config INPUT
 
 config LV_COLOR_16_SWAP
 	default y if LVGL
+
+# Increase initialization priority of MIPI DBI device, so that it initializes
+# after the GPIO controller
+if MIPI_DBI
+
+config MIPI_DBI_INIT_PRIORITY
+	default 82
+
+endif # MIPI_DBI
 
 endif # BOARD_M5STACK_CORE2

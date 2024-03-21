@@ -17,6 +17,9 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/audio/mcs.h>
+#include <../../subsys/bluetooth/audio/mpl_internal.h>
+#include <../../subsys/bluetooth/audio/mcc_internal.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 
 #include <zephyr/logging/log.h>
@@ -29,19 +32,116 @@
 #define LOG_MODULE_NAME bttester_mcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
+static struct media_player *mcs_media_player;
+static uint64_t current_track_obj_id;
+static uint64_t next_track_obj_id;
+static uint8_t media_player_state;
+static uint64_t current_id;
+static uint64_t parent_id;
+struct service_handles {
+	struct {
+		uint16_t player_name;
+		uint16_t icon_obj_id;
+		uint16_t icon_url;
+		uint16_t track_changed;
+		uint16_t track_title;
+		uint16_t track_duration;
+		uint16_t track_position;
+		uint16_t playback_speed;
+		uint16_t seeking_speed;
+		uint16_t segments_obj_id;
+		uint16_t current_track_obj_id;
+		uint16_t next_track_obj_id;
+		uint16_t current_group_obj_id;
+		uint16_t parent_group_obj_id;
+		uint16_t playing_order;
+		uint16_t playing_orders_supported;
+		uint16_t media_state;
+		uint16_t cp;
+		uint16_t opcodes_supported;
+		uint16_t search_results_obj_id;
+		uint16_t scp;
+		uint16_t content_control_id;
+	} gmcs_handles;
+
+	struct {
+		uint16_t feature;
+		uint16_t obj_name;
+		uint16_t obj_type;
+		uint16_t obj_size;
+		uint16_t obj_properties;
+		uint16_t obj_created;
+		uint16_t obj_modified;
+		uint16_t obj_id;
+		uint16_t oacp;
+		uint16_t olcp;
+	} ots_handles;
+};
+
+struct service_handles svc_chrc_handles;
+
 #define SEARCH_LEN_MAX 64
 
 static struct net_buf_simple *rx_ev_buf = NET_BUF_SIMPLE(SEARCH_LEN_MAX +
 							 sizeof(struct btp_mcp_search_cp_ev));
 
 /* Media Control Profile */
-static void btp_send_mcp_found_ev(struct bt_conn *conn, uint8_t status)
+static void btp_send_mcp_found_ev(struct bt_conn *conn, uint8_t status,
+				  const struct service_handles svc_chrc_handles)
 {
 	struct btp_mcp_discovered_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
 	ev.status = status;
+	ev.gmcs_handles.player_name = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.player_name);
+	ev.gmcs_handles.icon_obj_id = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.icon_obj_id);
+	ev.gmcs_handles.icon_url = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.icon_url);
+	ev.gmcs_handles.track_changed =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_changed);
+	ev.gmcs_handles.track_title = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_title);
+	ev.gmcs_handles.track_duration =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_duration);
+	ev.gmcs_handles.track_position =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_position);
+	ev.gmcs_handles.playback_speed =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.playback_speed);
+	ev.gmcs_handles.seeking_speed =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.seeking_speed);
+	ev.gmcs_handles.segments_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.segments_obj_id);
+	ev.gmcs_handles.current_track_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.current_track_obj_id);
+	ev.gmcs_handles.next_track_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.next_track_obj_id);
+	ev.gmcs_handles.current_group_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.current_group_obj_id);
+	ev.gmcs_handles.parent_group_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.parent_group_obj_id);
+	ev.gmcs_handles.playing_order =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.playing_order);
+	ev.gmcs_handles.playing_orders_supported =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.playing_orders_supported);
+	ev.gmcs_handles.media_state = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.media_state);
+	ev.gmcs_handles.cp = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.cp);
+	ev.gmcs_handles.opcodes_supported =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.opcodes_supported);
+	ev.gmcs_handles.search_results_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.search_results_obj_id);
+	ev.gmcs_handles.scp = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.scp);
+	ev.gmcs_handles.content_control_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.content_control_id);
+	ev.ots_handles.feature = sys_cpu_to_le16(svc_chrc_handles.ots_handles.feature);
+	ev.ots_handles.obj_name = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_name);
+	ev.ots_handles.obj_type = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_type);
+	ev.ots_handles.obj_size = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_size);
+	ev.ots_handles.obj_properties =
+		sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_properties);
+	ev.ots_handles.obj_created = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_created);
+	ev.ots_handles.obj_modified = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_modified);
+	ev.ots_handles.obj_id = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_id);
+	ev.ots_handles.oacp = sys_cpu_to_le16(svc_chrc_handles.ots_handles.oacp);
+	ev.ots_handles.olcp = sys_cpu_to_le16(svc_chrc_handles.ots_handles.olcp);
 
 	tester_event(BTP_SERVICE_ID_MCP, BTP_MCP_DISCOVERED_EV, &ev, sizeof(ev));
 }
@@ -300,12 +400,50 @@ static void btp_send_search_notifications_ev(struct bt_conn *conn, uint8_t statu
 
 static void mcc_discover_cb(struct bt_conn *conn, int err)
 {
+	struct mcs_instance_t *mcc_inst;
+
 	if (err) {
 		LOG_DBG("Discovery failed (%d)", err);
-		return;
 	}
 
-	btp_send_mcp_found_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	mcc_inst = lookup_inst_by_conn(conn);
+
+	svc_chrc_handles.gmcs_handles.player_name = mcc_inst->player_name_handle;
+	svc_chrc_handles.gmcs_handles.icon_obj_id = mcc_inst->icon_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.icon_url = mcc_inst->icon_url_handle;
+	svc_chrc_handles.gmcs_handles.track_changed = mcc_inst->track_changed_handle;
+	svc_chrc_handles.gmcs_handles.track_title = mcc_inst->track_title_handle;
+	svc_chrc_handles.gmcs_handles.track_duration = mcc_inst->track_duration_handle;
+	svc_chrc_handles.gmcs_handles.track_position = mcc_inst->track_position_handle;
+	svc_chrc_handles.gmcs_handles.playback_speed = mcc_inst->playback_speed_handle;
+	svc_chrc_handles.gmcs_handles.seeking_speed = mcc_inst->seeking_speed_handle;
+	svc_chrc_handles.gmcs_handles.segments_obj_id = mcc_inst->segments_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.current_track_obj_id = mcc_inst->current_track_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.next_track_obj_id = mcc_inst->next_track_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.current_group_obj_id = mcc_inst->current_group_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.parent_group_obj_id = mcc_inst->parent_group_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.playing_order = mcc_inst->playing_order_handle;
+	svc_chrc_handles.gmcs_handles.playing_orders_supported =
+		mcc_inst->playing_orders_supported_handle;
+	svc_chrc_handles.gmcs_handles.media_state = mcc_inst->media_state_handle;
+	svc_chrc_handles.gmcs_handles.cp = mcc_inst->cp_handle;
+	svc_chrc_handles.gmcs_handles.opcodes_supported = mcc_inst->opcodes_supported_handle;
+	svc_chrc_handles.gmcs_handles.search_results_obj_id =
+		mcc_inst->search_results_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.scp = mcc_inst->scp_handle;
+	svc_chrc_handles.gmcs_handles.content_control_id = mcc_inst->content_control_id_handle;
+	svc_chrc_handles.ots_handles.feature = mcc_inst->otc.feature_handle;
+	svc_chrc_handles.ots_handles.obj_name = mcc_inst->otc.obj_name_handle;
+	svc_chrc_handles.ots_handles.obj_type = mcc_inst->otc.obj_type_handle;
+	svc_chrc_handles.ots_handles.obj_size = mcc_inst->otc.obj_size_handle;
+	svc_chrc_handles.ots_handles.obj_id = mcc_inst->otc.obj_id_handle;
+	svc_chrc_handles.ots_handles.obj_properties = mcc_inst->otc.obj_properties_handle;
+	svc_chrc_handles.ots_handles.obj_created = mcc_inst->otc.obj_created_handle;
+	svc_chrc_handles.ots_handles.obj_modified = mcc_inst->otc.obj_modified_handle;
+	svc_chrc_handles.ots_handles.oacp = mcc_inst->otc.oacp_handle;
+	svc_chrc_handles.ots_handles.olcp = mcc_inst->otc.olcp_handle;
+
+	btp_send_mcp_found_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, svc_chrc_handles);
 }
 
 static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
@@ -1314,6 +1452,245 @@ uint8_t tester_init_mcp(void)
 }
 
 uint8_t tester_unregister_mcp(void)
+{
+	return BTP_STATUS_SUCCESS;
+}
+
+/* Media Control Service */
+static uint8_t mcs_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,
+				      uint16_t *rsp_len)
+{
+	struct btp_mcs_read_supported_commands_rp *rp = rsp;
+
+	/* octet 0 */
+	tester_set_bit(rp->data, BTP_MCS_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(rp->data, BTP_MCS_CMD_SEND);
+	tester_set_bit(rp->data, BTP_MCS_CURRENT_TRACK_OBJ_ID_GET);
+	tester_set_bit(rp->data, BTP_MCS_NEXT_TRACK_OBJ_ID_GET);
+	tester_set_bit(rp->data, BTP_MCS_INACTIVE_STATE_SET);
+	tester_set_bit(rp->data, BTP_MCS_PARENT_GROUP_SET);
+
+	*rsp_len = sizeof(*rp) + 1;
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mcs_send_cmd *cp = cmd;
+	struct mpl_cmd mcp_cmd;
+	int err;
+
+	LOG_DBG("MCS Send Command");
+
+	mcp_cmd.opcode = cp->opcode;
+	mcp_cmd.use_param = cp->use_param;
+	mcp_cmd.param = (cp->use_param != 0) ? sys_le32_to_cpu(cp->param) : 0;
+
+	err = media_proxy_ctrl_send_command(mcs_media_player, &mcp_cmd);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_next_track_obj_id_get(const void *cmd, uint16_t cmd_len, void *rsp,
+					 uint16_t *rsp_len)
+{
+	struct btp_mcs_next_track_obj_id_rp *rp = rsp;
+	int err;
+
+	LOG_DBG("MCS Read Next Track Obj Id");
+
+	err = media_proxy_ctrl_get_next_track_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	sys_put_le48(next_track_obj_id, rp->id);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_current_track_obj_id_get(const void *cmd, uint16_t cmd_len, void *rsp,
+					    uint16_t *rsp_len)
+{
+	struct btp_mcs_current_track_obj_id_rp *rp = rsp;
+	int err;
+
+	LOG_DBG("MCS Read Current Track Obj Id");
+
+	err = media_proxy_ctrl_get_current_track_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	sys_put_le48(current_track_obj_id, rp->id);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_parent_group_set(const void *cmd, uint16_t cmd_len, void *rsp,
+				    uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("MCS Set Current Group to be it's own parent");
+
+	err = media_proxy_ctrl_get_current_group_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Setting current group to be it's own parent */
+	mpl_test_unset_parent_group();
+
+	err = media_proxy_ctrl_get_parent_group_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (current_id != parent_id) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *rsp,
+				      uint16_t *rsp_len)
+{
+	struct btp_mcs_state_set_rp *rp = rsp;
+
+	LOG_DBG("MCS Set Media Player to inactive state");
+
+	mpl_test_media_state_set(MEDIA_PROXY_STATE_INACTIVE);
+
+	rp->state = media_player_state;
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static void mcs_player_instance_cb(struct media_player *plr, int err)
+{
+	mcs_media_player = plr;
+
+	LOG_DBG("Media PLayer Instance cb");
+}
+
+static void mcs_command_send_cb(struct media_player *player, int err, const struct mpl_cmd *cmd)
+{
+	LOG_DBG("Media PLayer Send Command cb");
+}
+
+static void mcs_current_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media Player Current Track Object Id cb");
+
+	current_track_obj_id = id;
+}
+
+static void mcs_next_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media PLayer Next Track Object ID cb");
+
+	next_track_obj_id = id;
+}
+
+static void mcs_media_state_cb(struct media_player *player, int err, uint8_t state)
+{
+	LOG_DBG("Media Player State cb");
+
+	media_player_state = state;
+}
+
+static void mcs_current_group_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media Player Current Group ID cb");
+
+	current_id = id;
+}
+
+static void mcs_parent_group_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media Player Parent Group ID cb");
+
+	parent_id = id;
+}
+
+static struct media_proxy_ctrl_cbs mcs_cbs = {
+	.local_player_instance = mcs_player_instance_cb,
+	.command_send = mcs_command_send_cb,
+	.current_track_id_recv = mcs_current_track_obj_id_cb,
+	.next_track_id_recv = mcs_next_track_obj_id_cb,
+	.media_state_recv = mcs_media_state_cb,
+	.current_group_id_recv = mcs_current_group_id_cb,
+	.parent_group_id_recv = mcs_parent_group_id_cb,
+};
+
+static const struct btp_handler mcs_handlers[] = {
+	{
+		.opcode = BTP_MCS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = mcs_supported_commands,
+	},
+	{
+		.opcode = BTP_MCS_CMD_SEND,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = mcs_cmd_send,
+	},
+	{
+		.opcode = BTP_MCS_CURRENT_TRACK_OBJ_ID_GET,
+		.expect_len = 0,
+		.func = mcs_current_track_obj_id_get,
+	},
+	{
+		.opcode = BTP_MCS_NEXT_TRACK_OBJ_ID_GET,
+		.expect_len = 0,
+		.func = mcs_next_track_obj_id_get,
+	},
+	{
+		.opcode = BTP_MCS_INACTIVE_STATE_SET,
+		.expect_len = 0,
+		.func = mcs_inactive_state_set,
+	},
+	{
+		.opcode = BTP_MCS_PARENT_GROUP_SET,
+		.expect_len = 0,
+		.func = mcs_parent_group_set,
+	},
+};
+
+uint8_t tester_init_mcs(void)
+{
+	int err;
+
+	err = media_proxy_pl_init();
+	if (err) {
+		LOG_DBG("Failed to initialize Media Player: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = media_proxy_ctrl_register(&mcs_cbs);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	tester_register_command_handlers(BTP_SERVICE_ID_GMCS, mcs_handlers,
+					 ARRAY_SIZE(mcs_handlers));
+
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t tester_unregister_mcs(void)
 {
 	return BTP_STATUS_SUCCESS;
 }

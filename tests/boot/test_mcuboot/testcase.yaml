@@ -13,9 +13,19 @@ tests:
   bootloader.mcuboot:
     tags: mcuboot
     platform_allow:
+      - frdm_k22f
       - frdm_k64f
+      - frdm_k82f
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69_cpu0
+      - mimxrt1010_evk
+      - mimxrt1015_evk
       - mimxrt1020_evk
       - mimxrt1024_evk
+      - mimxrt1040_evk
       - mimxrt1050_evk
       - mimxrt1060_evk
       - mimxrt1064_evk

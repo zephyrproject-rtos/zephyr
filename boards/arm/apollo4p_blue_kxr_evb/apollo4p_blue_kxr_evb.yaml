@@ -9,6 +9,14 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - watchdog
+  - counter
+  - gpio
+  - spi
+  - i2c
+  - clock_control
+  - ble
 testing:
   ignore_tags:
     - net
+vendor: ambiq

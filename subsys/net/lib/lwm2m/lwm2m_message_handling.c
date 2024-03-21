@@ -45,6 +45,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
 #include "lwm2m_obj_access_control.h"
+#include "lwm2m_obj_server.h"
+#include "lwm2m_obj_gateway.h"
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
@@ -478,7 +480,7 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 }
 /* utility functions */
 
-static int coap_options_to_path(struct coap_option *opt, int options_count,
+int coap_options_to_path(struct coap_option *opt, int options_count,
 				struct lwm2m_obj_path *path)
 {
 	uint16_t len,
@@ -653,8 +655,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup;
 	}
 
-	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-			      CONFIG_COAP_MAX_RETRANSMIT);
+	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
 	if (r < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -723,6 +724,13 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 	if (ret) {
 		lwm2m_reset_message(msg, true);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_NO_MSG_BUFFERING)) {
+		sys_slist_append(&msg->ctx->pending_sends, &msg->node);
+		lwm2m_engine_wake_up();
+		lwm2m_engine_connection_resume(msg->ctx);
+		return 0;
 	}
 
 	if (msg->ctx->buffer_client_messages) {
@@ -2268,6 +2276,15 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 		msg->token = token;
 	}
 
+	if (IS_ENABLED(CONFIG_LWM2M_GATEWAY_OBJ_SUPPORT)) {
+		r = lwm2m_gw_handle_req(msg);
+		if (r == 0) {
+			return 0;
+		} else if (r != -ENOENT) {
+			goto error;
+		}
+	}
+
 	/* parse the URL path into components */
 	r = coap_find_options(msg->in.in_cpkt, COAP_OPTION_URI_PATH, options, ARRAY_SIZE(options));
 	if (r < 0) {
@@ -2593,8 +2610,7 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 		return -ENOMEM;
 	}
 
-	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-				CONFIG_COAP_MAX_RETRANSMIT);
+	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
 	if (ret < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",

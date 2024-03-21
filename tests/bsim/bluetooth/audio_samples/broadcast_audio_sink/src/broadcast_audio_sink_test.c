@@ -11,7 +11,7 @@
 #include "time_machine.h"
 #include "bstests.h"
 
-#define WAIT_TIME 10 /* Seconds */
+#define WAIT_TIME 120 /* Seconds */
 
 #define PASS_THRESHOLD 100 /* Audio packets */
 

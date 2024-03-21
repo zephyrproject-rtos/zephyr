@@ -1,0 +1,7 @@
+tests:
+  kernel.smp_suspend:
+    tags:
+      - kernel
+      - smp
+    timeout: 600
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)

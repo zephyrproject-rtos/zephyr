@@ -11,6 +11,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
@@ -18,6 +20,7 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 /* FT5336 used registers */
 #define REG_TD_STATUS		0x02U
 #define REG_P1_XH		0x03U
+#define REG_G_PMODE		0xA5U
 
 /* REG_TD_STATUS: Touch points. */
 #define TOUCH_POINTS_POS	0U
@@ -34,6 +37,9 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 
 /* REG_Pn_XH: Position */
 #define POSITION_H_MSK		0x0FU
+
+/* REG_G_PMODE: Power Consume Mode */
+#define PMOD_HIBERNATE		0x03U
 
 /** FT5336 configuration (DT). */
 struct ft5336_config {
@@ -173,7 +179,6 @@ static int ft5336_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_INPUT_FT5336_INTERRUPT
-
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("Interrupt GPIO controller device not ready");
 		return -ENODEV;
@@ -204,19 +209,80 @@ static int ft5336_init(const struct device *dev)
 	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_FT5336_PERIOD),
 		      K_MSEC(CONFIG_INPUT_FT5336_PERIOD));
 #endif
+
+	r = pm_device_runtime_enable(dev);
+	if (r < 0 && r != -ENOTSUP) {
+		LOG_ERR("Failed to enable runtime power management");
+		return r;
+	}
+
 	return 0;
 }
 
-#define FT5336_INIT(index)                                                     \
-	static const struct ft5336_config ft5336_config_##index = {	       \
-		.bus = I2C_DT_SPEC_INST_GET(index),			       \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),  \
-		IF_ENABLED(CONFIG_INPUT_FT5336_INTERRUPT,		       \
-		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),))	       \
-	};								       \
-	static struct ft5336_data ft5336_data_##index;			       \
-	DEVICE_DT_INST_DEFINE(index, ft5336_init, NULL,			       \
-			    &ft5336_data_##index, &ft5336_config_##index,      \
-			    POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+#ifdef CONFIG_PM_DEVICE
+static int ft5336_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	const struct ft5336_config *config = dev->config;
+#ifndef CONFIG_INPUT_FT5336_INTERRUPT
+	struct ft5336_data *data = dev->data;
+#endif
+	int ret;
+
+	if (config->reset_gpio.port == NULL) {
+		return -ENOTSUP;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = i2c_reg_write_byte_dt(&config->bus,
+					    REG_G_PMODE, PMOD_HIBERNATE);
+		if (ret < 0) {
+			return ret;
+		}
+
+#ifndef CONFIG_INPUT_FT5336_INTERRUPT
+		k_timer_stop(&data->timer);
+#endif
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+		if (ret < 0) {
+			return ret;
+		}
+
+		k_sleep(K_MSEC(5));
+
+		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+#ifndef CONFIG_INPUT_FT5336_INTERRUPT
+		k_timer_start(&data->timer,
+			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD),
+			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD));
+#endif
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
+#define FT5336_INIT(index)								\
+	PM_DEVICE_DT_INST_DEFINE(n, ft5336_pm_action);					\
+	static const struct ft5336_config ft5336_config_##index = {			\
+		.bus = I2C_DT_SPEC_INST_GET(index),					\
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),	\
+		IF_ENABLED(CONFIG_INPUT_FT5336_INTERRUPT,				\
+		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),))			\
+	};										\
+	static struct ft5336_data ft5336_data_##index;					\
+	DEVICE_DT_INST_DEFINE(index, ft5336_init, PM_DEVICE_DT_INST_GET(n),		\
+			      &ft5336_data_##index, &ft5336_config_##index,		\
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(FT5336_INIT)

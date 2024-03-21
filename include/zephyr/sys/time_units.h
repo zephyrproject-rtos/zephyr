@@ -135,15 +135,26 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 	 (__round_up) ? ((__from_hz) / (__to_hz)) - 1 :			\
 	 0)
 
-/* Clang emits a divide-by-zero warning even though the int_div macro
- * results are only used when the divisor will not be zero. Work
- * around this by substituting 1 to make the compiler happy.
+/*
+ * All users of this macro MUST ensure its output is never used when a/b
+ * is zero because it incorrectly but by design never returns zero.
+ *
+ * Some compiler versions emit a divide-by-zero warning for this code:
+ * "false ? 42/0 : 43". Dealing with (generated) dead code is hard:
+ * https://github.com/zephyrproject-rtos/zephyr/issues/63564
+ * https://blog.llvm.org/2011/05/what-every-c-programmer-should-know_21.html
+ *
+ * To silence such divide-by-zero warnings, "cheat" and never return
+ * zero.  Return 1 instead. Use octal "01u" as a breadcrumb to ease a
+ * little bit the huge pain of "reverse-engineering" pre-processor
+ * output.
+ *
+ * The "Elvis" operator "a/b ?: 1" is tempting because it avoids
+ * evaluating the same expression twice. However: 1. it's a non-standard
+ * GNU extension; 2. everything in this file is designed to be computed
+ * at compile time anyway.
  */
-#ifdef __clang__
-#define z_tmcvt_divisor(a, b) ((a) / (b) ?: 1)
-#else
-#define z_tmcvt_divisor(a, b) ((a) / (b))
-#endif
+#define z_tmcvt_divisor(a, b) ((a)/(b) ? (a)/(b) : 01u)
 
 /*
  * Compute the offset needed to round the result correctly when

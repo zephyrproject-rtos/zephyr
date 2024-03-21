@@ -792,7 +792,7 @@ int sdio_read_byte(struct sdio_func *func, uint32_t reg, uint8_t *val)
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -822,7 +822,7 @@ int sdio_write_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val)
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -855,7 +855,7 @@ int sdio_rw_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val,
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -889,7 +889,7 @@ int sdio_read_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -923,7 +923,7 @@ int sdio_write_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -957,7 +957,7 @@ int sdio_read_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -991,7 +991,7 @@ int sdio_write_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -1024,7 +1024,7 @@ int sdio_read_addr(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -1058,7 +1058,7 @@ int sdio_write_addr(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;

@@ -198,7 +198,7 @@ static bool ivshmem_configure(const struct device *dev)
 			(volatile struct ivshmem_v2_reg *)DEVICE_MMIO_GET(dev);
 
 		data->max_peers = regs->max_peers;
-		if (!IN_RANGE(data->max_peers, 2, 0x10000)) {
+		if (!IN_RANGE(data->max_peers, 2, CONFIG_IVSHMEM_V2_MAX_PEERS)) {
 			LOG_ERR("Invalid max peers %u", data->max_peers);
 			return false;
 		}
@@ -211,26 +211,49 @@ static bool ivshmem_configure(const struct device *dev)
 			shmem_phys_addr = pcie_conf_read_u64(data->pcie->bdf, cap_pos);
 		}
 
+		/* State table R/O */
 		cap_pos = vendor_cap + IVSHMEM_CFG_STATE_TAB_SZ / 4;
 		size_t state_table_size = pcie_conf_read(data->pcie->bdf, cap_pos);
-
 		LOG_INF("State table size 0x%zX", state_table_size);
 		if (state_table_size < sizeof(uint32_t) * data->max_peers) {
 			LOG_ERR("Invalid state table size %zu", state_table_size);
 			return false;
 		}
+		z_phys_map((uint8_t **)&data->state_table_shmem,
+			   shmem_phys_addr, state_table_size,
+			   K_MEM_CACHE_WB | K_MEM_PERM_USER);
 
+		/* R/W section (optional) */
 		cap_pos = vendor_cap + IVSHMEM_CFG_RW_SECTION_SZ / 4;
 		data->rw_section_size = pcie_conf_read_u64(data->pcie->bdf, cap_pos);
-		data->rw_section_offset = state_table_size;
+		size_t rw_section_offset = state_table_size;
 		LOG_INF("RW section size 0x%zX", data->rw_section_size);
+		if (data->rw_section_size > 0) {
+			z_phys_map((uint8_t **)&data->rw_section_shmem,
+				   shmem_phys_addr + rw_section_offset, data->rw_section_size,
+				   K_MEM_CACHE_WB | K_MEM_PERM_RW | K_MEM_PERM_USER);
+		}
 
+		/* Output sections */
 		cap_pos = vendor_cap + IVSHMEM_CFG_OUTPUT_SECTION_SZ / 4;
 		data->output_section_size = pcie_conf_read_u64(data->pcie->bdf, cap_pos);
-		data->output_section_offset = data->rw_section_offset + data->rw_section_size;
+		size_t output_section_offset = rw_section_offset + data->rw_section_size;
 		LOG_INF("Output section size 0x%zX", data->output_section_size);
+		for (uint32_t i = 0; i < data->max_peers; i++) {
+			uintptr_t phys_addr = shmem_phys_addr +
+				    output_section_offset +
+				    (data->output_section_size * i);
+			uint32_t flags = K_MEM_CACHE_WB | K_MEM_PERM_USER;
 
-		data->size = data->output_section_offset +
+			/* Only your own output section is R/W */
+			if (i == regs->id) {
+				flags |= K_MEM_PERM_RW;
+			}
+			z_phys_map((uint8_t **)&data->output_section_shmem[i],
+				   phys_addr, data->output_section_size, flags);
+		}
+
+		data->size = output_section_offset +
 			data->output_section_size * data->max_peers;
 
 		/* Ensure one-shot ISR mode is disabled */
@@ -249,11 +272,11 @@ static bool ivshmem_configure(const struct device *dev)
 		}
 
 		data->size = mbar_shmem.size;
-	}
 
-	z_phys_map((uint8_t **)&data->shmem,
-		   shmem_phys_addr, data->size,
-		   K_MEM_CACHE_WB | K_MEM_PERM_RW | K_MEM_PERM_USER);
+		z_phys_map((uint8_t **)&data->shmem,
+			   shmem_phys_addr, data->size,
+			   K_MEM_CACHE_WB | K_MEM_PERM_RW | K_MEM_PERM_USER);
+	}
 
 	if (msi_x_bar_present) {
 		if (!ivshmem_configure_msi_x_interrupts(dev)) {
@@ -283,6 +306,13 @@ static size_t ivshmem_api_get_mem(const struct device *dev,
 				  uintptr_t *memmap)
 {
 	struct ivshmem *data = dev->data;
+
+#ifdef CONFIG_IVSHMEM_V2
+	if (data->ivshmem_v2) {
+		*memmap = 0;
+		return 0;
+	}
+#endif
 
 	*memmap = data->shmem;
 
@@ -389,11 +419,11 @@ static size_t ivshmem_api_get_rw_mem_section(const struct device *dev,
 	struct ivshmem *data = dev->data;
 
 	if (!data->ivshmem_v2) {
-		memmap = NULL;
+		*memmap = 0;
 		return 0;
 	}
 
-	*memmap = data->shmem + data->rw_section_offset;
+	*memmap = data->rw_section_shmem;
 
 	return data->rw_section_size;
 }
@@ -405,12 +435,11 @@ static size_t ivshmem_api_get_output_mem_section(const struct device *dev,
 	struct ivshmem *data = dev->data;
 
 	if (!data->ivshmem_v2 || peer_id >= data->max_peers) {
-		memmap = NULL;
+		*memmap = 0;
 		return 0;
 	}
 
-	*memmap = data->shmem + data->output_section_offset +
-		data->output_section_size * peer_id;
+	*memmap = data->output_section_shmem[peer_id];
 
 	return data->output_section_size;
 }
@@ -425,7 +454,7 @@ static uint32_t ivshmem_api_get_state(const struct device *dev,
 	}
 
 	const volatile uint32_t *state_table =
-		(const volatile uint32_t *)data->shmem;
+		(const volatile uint32_t *)data->state_table_shmem;
 
 	return state_table[peer_id];
 }

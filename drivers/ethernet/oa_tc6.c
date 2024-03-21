@@ -135,23 +135,30 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 	return ret;
 }
 
-int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
+int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg,
+		   uint32_t mask, uint32_t val)
 {
-	uint32_t val;
+	uint32_t tmp;
 	int ret;
 
-	ret = oa_tc6_reg_read(tc6, OA_CONFIG0, &val);
+	ret = oa_tc6_reg_read(tc6, reg, &tmp);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (prote) {
-		val |= OA_CONFIG0_PROTE;
-	} else {
-		val &= ~OA_CONFIG0_PROTE;
+	tmp &= ~mask;
+
+	if (val) {
+		tmp |= val;
 	}
 
-	ret = oa_tc6_reg_write(tc6, OA_CONFIG0, val);
+	return oa_tc6_reg_write(tc6, reg, tmp);
+}
+
+int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
+{
+	int ret = oa_tc6_reg_rmw(tc6, OA_CONFIG0, OA_CONFIG0_PROTE,
+				 prote ? OA_CONFIG0_PROTE : 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -168,7 +175,14 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	uint8_t chunks, i;
 	int ret;
 
-	chunks = (len / tc6->cps) + 1;
+	if (len == 0) {
+		return -ENODATA;
+	}
+
+	chunks = len / tc6->cps;
+	if (len % tc6->cps) {
+		chunks++;
+	}
 
 	/* Check if LAN865x has any free internal buffer space */
 	if (chunks > tc6->txc) {
@@ -183,7 +197,7 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			FIELD_PREP(OA_DATA_HDR_SWO, 0);
 
 		if (i == 1) {
-			hdr |=	FIELD_PREP(OA_DATA_HDR_SV, 1);
+			hdr |= FIELD_PREP(OA_DATA_HDR_SV, 1);
 		}
 
 		if (i == chunks) {
@@ -209,26 +223,48 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	return 0;
 }
 
-static void oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
+int oa_tc6_check_status(struct oa_tc6 *tc6)
 {
+	uint32_t sts;
+
+	if (!tc6->sync) {
+		LOG_ERR("SYNC: Configuration lost, reset IC!");
+		return -EIO;
+	}
+
+	if (tc6->exst) {
+		/*
+		 * Just clear any pending interrupts.
+		 * The RESETC is handled separately as it requires per
+		 * device configuration.
+		 */
+		oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
+		if (sts != 0) {
+			oa_tc6_reg_write(tc6, OA_STATUS0, sts);
+			LOG_WRN("EXST: OA_STATUS0: 0x%x", sts);
+		}
+
+		oa_tc6_reg_read(tc6, OA_STATUS1, &sts);
+		if (sts != 0) {
+			oa_tc6_reg_write(tc6, OA_STATUS1, sts);
+			LOG_WRN("EXST: OA_STATUS1: 0x%x", sts);
+		}
+	}
+
+	return 0;
+}
+
+static int oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
+{
+	if (oa_tc6_get_parity(ftr)) {
+		LOG_DBG("OA Status Update: Footer parity error!");
+		return -EIO;
+	}
+
 	tc6->exst = FIELD_GET(OA_DATA_FTR_EXST, ftr);
 	tc6->sync = FIELD_GET(OA_DATA_FTR_SYNC, ftr);
 	tc6->rca = FIELD_GET(OA_DATA_FTR_RCA, ftr);
 	tc6->txc = FIELD_GET(OA_DATA_FTR_TXC, ftr);
-}
-
-int oa_tc6_update_buf_info(struct oa_tc6 *tc6)
-{
-	uint32_t val;
-	int ret;
-
-	ret = oa_tc6_reg_read(tc6, OA_BUFSTS, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	tc6->rca = FIELD_GET(OA_BUFSTS_RCA, val);
-	tc6->txc = FIELD_GET(OA_BUFSTS_TXC, val);
 
 	return 0;
 }
@@ -266,9 +302,8 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 		return ret;
 	}
 	*ftr = sys_be32_to_cpu(*ftr);
-	oa_tc6_update_status(tc6, *ftr);
 
-	return 0;
+	return oa_tc6_update_status(tc6, *ftr);
 }
 
 int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
@@ -286,8 +321,8 @@ int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 {
 	struct net_buf *buf_rx = NULL;
-	uint8_t chunks, sbo, ebo;
 	uint32_t hdr, ftr;
+	uint8_t sbo, ebo;
 	int ret;
 
 	/*
@@ -299,7 +334,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		tc6->concat_buf = NULL;
 	}
 
-	for (chunks = tc6->rca; chunks; chunks--) {
+	do {
 		buf_rx = net_pkt_get_frag(pkt, tc6->cps, OA_TC6_BUF_ALLOC_TIMEOUT);
 		if (!buf_rx) {
 			LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
@@ -327,7 +362,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		}
 
 		if (!FIELD_GET(OA_DATA_FTR_DV, ftr)) {
-			LOG_ERR("OA RX: Data chunk not valid, skip!");
+			LOG_DBG("OA RX: Data chunk not valid, skip!");
 			goto unref_buf;
 		}
 
@@ -383,7 +418,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			 */
 			break;
 		}
-	}
+	} while (tc6->rca > 0);
 
 	return 0;
 

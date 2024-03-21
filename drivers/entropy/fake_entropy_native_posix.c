@@ -23,8 +23,10 @@
 #include "soc.h"
 #include "cmdline.h" /* native_posix command line options header */
 #include "nsi_host_trampolines.h"
+#include "fake_entropy_native_bottom.h"
 
 static unsigned int seed = 0x5678;
+static bool seed_random;
 
 static int entropy_native_posix_get_entropy(const struct device *dev,
 					    uint8_t *buffer,
@@ -67,7 +69,7 @@ static int entropy_native_posix_get_entropy_isr(const struct device *dev,
 static int entropy_native_posix_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	nsi_host_srandom(seed);
+	entropy_native_seed(seed, seed_random);
 	posix_print_warning("WARNING: "
 			    "Using a test - not safe - entropy source\n");
 	return 0;
@@ -87,18 +89,22 @@ DEVICE_DT_INST_DEFINE(0,
 static void add_fake_entropy_option(void)
 {
 	static struct args_struct_t entropy_options[] = {
-		/*
-		 * Fields:
-		 * manual, mandatory, switch,
-		 * option_name, var_name ,type,
-		 * destination, callback,
-		 * description
-		 */
-		{false, false, false,
-		"seed", "r_seed", 'u',
-		(void *)&seed, NULL,
-		"A 32-bit integer seed value for the entropy device, such as "
-		"97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"},
+		{
+			.option = "seed",
+			.name = "r_seed",
+			.type = 'u',
+			.dest = (void *)&seed,
+			.descript = "A 32-bit integer seed value for the entropy device, such as "
+				    "97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"
+		},
+		{
+			.is_switch = true,
+			.option = "seed-random",
+			.type = 'b',
+			.dest = (void *)&seed_random,
+			.descript = "Seed the random generator from /dev/urandom. "
+				    "Note your test may not be reproducible if you set this option"
+		},
 		ARG_TABLE_ENDMARKER
 	};
 

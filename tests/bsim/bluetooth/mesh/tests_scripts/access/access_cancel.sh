@@ -7,11 +7,6 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_access_publication_cancel \
 	access_tx_cancel access_rx_cancel
 
-conf=prj_mesh1d1_conf
-RunTest mesh_access_publication_cancel_1d1 \
-	access_tx_cancel access_rx_cancel
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_access_publication_cancel_psa \
 	access_tx_cancel access_rx_cancel

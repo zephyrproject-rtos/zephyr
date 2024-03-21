@@ -586,6 +586,11 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
 		}
+		/* Check if we need to enable HSE clock security system or not */
+#if STM32_HSE_CSS
+		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
+		LL_RCC_HSE_EnableCSS();
+#endif /* STM32_HSE_CSS */
 	}
 
 	if (IS_ENABLED(STM32_HSI_ENABLED)) {
@@ -819,14 +824,13 @@ static int set_up_plls(void)
 	return 0;
 }
 
-#if defined(CONFIG_CPU_CORTEX_M7)
 int stm32_clock_control_init(const struct device *dev)
 {
+	int r = 0;
+
+#if defined(CONFIG_CPU_CORTEX_M7)
 	uint32_t old_hclk_freq = 0;
 	uint32_t new_hclk_freq = 0;
-	int r;
-
-	ARG_UNUSED(dev);
 
 	/* HW semaphore Clock enable */
 #if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) || \
@@ -912,23 +916,25 @@ int stm32_clock_control_init(const struct device *dev)
 	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif /* CONFIG_CPU_CORTEX_M7 */
+
+	ARG_UNUSED(dev);
 
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	return r;
 }
-#else
-int stm32_clock_control_init(const struct device *dev)
+
+#if defined(STM32_HSE_CSS)
+void __weak stm32_hse_css_callback(void) {}
+
+/* Called by the HAL in response to an HSE CSS interrupt */
+void HAL_RCC_CSSCallback(void)
 {
-	ARG_UNUSED(dev);
-
-	/* Update CMSIS variable */
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-
-	return 0;
+	stm32_hse_css_callback();
 }
-#endif /* CONFIG_CPU_CORTEX_M7 */
+#endif
 
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so

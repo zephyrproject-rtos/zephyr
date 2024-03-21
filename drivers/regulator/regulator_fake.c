@@ -39,6 +39,10 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_mode, const struct device *,
 		       regulator_mode_t);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_mode, const struct device *,
 		       regulator_mode_t *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_active_discharge, const struct device *,
+		       bool);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct device *,
+		       bool *);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
 		       const struct device *, regulator_error_flags_t *);
 
@@ -53,6 +57,8 @@ static struct regulator_driver_api api = {
 	.get_current_limit = regulator_fake_get_current_limit,
 	.set_mode = regulator_fake_set_mode,
 	.get_mode = regulator_fake_get_mode,
+	.set_active_discharge = regulator_fake_set_active_discharge,
+	.get_active_discharge = regulator_fake_get_active_discharge,
 	.get_error_flags = regulator_fake_get_error_flags,
 };
 

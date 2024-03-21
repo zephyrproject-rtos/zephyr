@@ -1,0 +1,39 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP NX20P3483 Power path controller chip
+
+compatible: "nxp,nx20p3483"
+
+include: [base.yaml, i2c-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: Interrupt pin
+
+  snk-ovp:
+    type: int
+    default: 1
+    description:
+      Sink high-voltage overvoltage protection threshold in millivolts.
+      This value must be set using one of the NX20P348X_U_THRESHOLD_* defines.
+
+  src-hv:
+    type: boolean
+    description:
+      If set, source role will use high-voltage path instead of 5V.
+
+  src-hv-ocp:
+    type: int
+    default: 6
+    description:
+      Source high-voltage overcurrent protection threshold in milliamperes.
+      This value must be set using one of the NX20P348X_I_THRESHOLD_* defines.
+
+  src-5v-ocp:
+    type: int
+    default: 6
+    description:
+      Source 5V overcurrent protection threshold in milliamperes.
+      This value must be set using one of the NX20P348X_I_THRESHOLD_* defines.

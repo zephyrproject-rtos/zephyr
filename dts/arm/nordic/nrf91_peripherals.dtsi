@@ -313,6 +313,7 @@ gpio0: gpio@842500 {
 	#gpio-cells = <2>;
 	status = "disabled";
 	port = <0>;
+	gpiote-instance = <&gpiote>;
 };
 
 rtc0: rtc@14000 {
@@ -345,24 +346,25 @@ clock: clock@5000 {
 power: power@5000 {
 	compatible = "nordic,nrf-power";
 	reg = <0x5000 0x1000>;
+	ranges = <0x0 0x5000 0x1000>;
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	gpregret1: gpregret1@551c {
+	gpregret1: gpregret1@51c {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "nordic,nrf-gpregret";
-		reg = <0x551c 0x1>;
+		reg = <0x51c 0x1>;
 		status = "okay";
 	};
 
-	gpregret2: gpregret2@5520 {
+	gpregret2: gpregret2@520 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "nordic,nrf-gpregret";
-		reg = <0x5520 0x1>;
+		reg = <0x520 0x1>;
 		status = "okay";
 	};
 };

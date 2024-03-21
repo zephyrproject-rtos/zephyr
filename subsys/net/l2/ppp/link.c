@@ -114,6 +114,8 @@ void ppp_link_authenticated(struct ppp_context *ctx)
 
 void ppp_link_terminated(struct ppp_context *ctx)
 {
+	k_sem_give(&ctx->wait_ppp_link_terminated);
+
 	if (ctx->phase == PPP_DEAD) {
 		return;
 	}
@@ -127,6 +129,8 @@ void ppp_link_terminated(struct ppp_context *ctx)
 
 void ppp_link_down(struct ppp_context *ctx)
 {
+	k_sem_give(&ctx->wait_ppp_link_down);
+
 	if (ctx->phase == PPP_DEAD) {
 		return;
 	}

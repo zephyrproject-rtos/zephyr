@@ -38,9 +38,6 @@
 #define FUSES_OSC32K_CAL_Msk		FUSES_OSC32KCAL_Msk
 #endif
 
-#if !CONFIG_SOC_ATMEL_SAMD_OSC8M || CONFIG_SOC_ATMEL_SAMD_DEFAULT_AS_MAIN
-#define osc8m_init()
-#else
 static inline void osc8m_init(void)
 {
 	uint32_t reg;
@@ -56,8 +53,24 @@ static inline void osc8m_init(void)
 
 	while (!SYSCTRL->PCLKSR.bit.OSC8MRDY) {
 	}
+
+	/* Use 8Mhz clock as gclk_main to allow switching between clocks
+	 * when using bootloaders
+	 */
+	GCLK->GENDIV.reg = GCLK_GENDIV_ID(0)
+			 | GCLK_GENDIV_DIV(0);
+
+	while (GCLK->STATUS.bit.SYNCBUSY) {
+	}
+
+	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(0)
+			  | GCLK_GENCTRL_SRC_OSC8M
+			  | GCLK_GENCTRL_IDC
+			  | GCLK_GENCTRL_GENEN;
+
+	while (GCLK->STATUS.bit.SYNCBUSY) {
+	}
 }
-#endif
 
 #if !CONFIG_SOC_ATMEL_SAMD_OSC32K || CONFIG_SOC_ATMEL_SAMD_DEFAULT_AS_MAIN
 #define osc32k_init()
@@ -246,6 +259,24 @@ static inline void gclk_adc_configure(void)
 }
 #endif
 
+#if !CONFIG_WDT_SAM0
+#define gclk_wdt_configure()
+#else
+static inline void gclk_wdt_configure(void)
+{
+	GCLK->GENDIV.reg = GCLK_GENDIV_ID(2)
+			 | GCLK_GENDIV_DIV(4);
+
+	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(2)
+			  | GCLK_GENCTRL_GENEN
+			  | GCLK_GENCTRL_SRC_OSCULP32K
+			  | GCLK_GENCTRL_DIVSEL;
+
+	while (GCLK->STATUS.bit.SYNCBUSY) {
+	}
+}
+#endif
+
 #if CONFIG_SOC_ATMEL_SAMD_OSC8M || CONFIG_SOC_ATMEL_SAMD_DEFAULT_AS_MAIN
 #define osc8m_disable()
 #else
@@ -265,5 +296,6 @@ void z_arm_platform_init(void)
 	flash_waitstates_init();
 	gclk_main_configure();
 	gclk_adc_configure();
+	gclk_wdt_configure();
 	osc8m_disable();
 }

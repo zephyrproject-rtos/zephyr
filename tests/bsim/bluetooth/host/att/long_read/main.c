@@ -15,9 +15,7 @@
 #include "testlib/att_write.h"
 #include "bs_macro.h"
 #include "bs_sync.h"
-#include "testlib/conn_ref.h"
-#include "testlib/conn_wait.h"
-#include "testlib/connect.h"
+#include <testlib/conn.h>
 #include "testlib/log_utils.h"
 #include "testlib/scan.h"
 #include "testlib/security.h"
@@ -146,7 +144,7 @@ static void test_long_read(enum bt_att_chan_opt bearer, uint16_t chrc_value_hand
 		NET_BUF_SIMPLE_DEFINE(attr_value_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
 		/* Perform the whole long read operation. */
-		EXPECT_ZERO(bt_testlib_gatt_long_read(&attr_value_buf, NULL, conn, bearer,
+		EXPECT_ZERO(bt_testlib_gatt_long_read(&attr_value_buf, NULL, NULL, conn, bearer,
 						      chrc_value_handle, 0));
 
 		/* Parse the read attribute value to verify the

@@ -77,4 +77,17 @@ config LV_Z_ENCODER_INPUT_MSGQ_COUNT
 	help
 	  Size of the encoder message queue buffering input events.
 
+config LV_Z_KEYPAD_INPUT
+	bool "Input lvgl keypad"
+	default y
+	depends on INPUT
+	depends on DT_HAS_ZEPHYR_LVGL_KEYPAD_INPUT_ENABLED
+
+config LV_Z_KEYPAD_INPUT_MSGQ_COUNT
+	int "Input keypad queue message count"
+	default 4
+	depends on LV_Z_KEYPAD_INPUT
+	help
+	  Size of the keypad message queue buffering input events.
+
 endmenu

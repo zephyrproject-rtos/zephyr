@@ -1,0 +1,19 @@
+# Raspberry Pi Pico Clock Controller Driver configuration options
+
+# Copyright (c) 2022 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RPI_PICO
+	bool "Raspberry Pi Pico Clock Controller Driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_CLOCK_CONTROLLER_ENABLED
+
+if CLOCK_CONTROL_RPI_PICO
+
+config RPI_PICO_ROSC_USE_MEASURED_FREQ
+	bool "Use measured frequency for ring oscillator"
+	help
+	 Instead of the dts value, use the value measured by
+	 the frequency counter as the rosc frequency.
+
+endif # CLOCK_CONTROL_RPI_PICO

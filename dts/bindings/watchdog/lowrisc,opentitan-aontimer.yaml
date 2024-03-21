@@ -22,5 +22,5 @@ properties:
   wdog-lock:
     type: boolean
     description: |
-      When set, lock watchdog configration after setup until the next
+      When set, lock watchdog configuration after setup until the next
       reset.

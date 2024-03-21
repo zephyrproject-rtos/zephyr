@@ -11,6 +11,8 @@ config SOC_SERIES_KINETIS_KV5X
 	select SOC_FAMILY_KINETIS
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
 	select CLOCK_CONTROL
 	select HAS_MCUX
 	select HAS_MCUX_ADC16

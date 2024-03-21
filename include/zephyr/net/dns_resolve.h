@@ -278,6 +278,15 @@ int dns_resolve_init(struct dns_resolve_context *ctx,
 		     const struct sockaddr *dns_servers_sa[]);
 
 /**
+ * @brief Init DNS resolving context with default Kconfig options.
+ *
+ * @param ctx DNS context.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int dns_resolve_init_default(struct dns_resolve_context *ctx);
+
+/**
  * @brief Close DNS resolving context.
  *
  * @details This releases DNS resolving context and marks the context unusable.
@@ -455,12 +464,12 @@ static inline int dns_cancel_addr_info(uint16_t dns_id)
 /**
  * @brief Initialize DNS subsystem.
  */
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_DNS_RESOLVER_AUTO_INIT)
 void dns_init_resolver(void);
 
 #else
 #define dns_init_resolver(...)
-#endif /* CONFIG_DNS_RESOLVER */
+#endif /* CONFIG_DNS_RESOLVER_AUTO_INIT */
 
 /** @endcond */
 

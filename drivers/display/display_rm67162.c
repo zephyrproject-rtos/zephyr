@@ -434,18 +434,14 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	 * give to the TE semaphore) before sending the frame
 	 */
 	if (config->te_gpio.port != NULL) {
-		if (IS_ENABLED(CONFIG_PM)) {
-			/* Block sleep state until next TE interrupt
-			 * so we can send frame during that interval
-			 */
-			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE,
-						PM_ALL_SUBSTATES);
-		}
+		/* Block sleep state until next TE interrupt so we can send
+		 * frame during that interval
+		 */
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE,
+					 PM_ALL_SUBSTATES);
 		k_sem_take(&data->te_sem, K_FOREVER);
-		if (IS_ENABLED(CONFIG_PM)) {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
-						PM_ALL_SUBSTATES);
-		}
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
+					 PM_ALL_SUBSTATES);
 	}
 	src = buf;
 	first_cmd = true;
@@ -514,20 +510,6 @@ static int rm67162_blanking_on(const struct device *dev)
 	} else {
 		return -ENOTSUP;
 	}
-}
-
-static int rm67162_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	LOG_WRN("Set brightness not implemented");
-	return -ENOTSUP;
-}
-
-static int rm67162_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	LOG_ERR("Set contrast not implemented");
-	return -ENOTSUP;
 }
 
 static int rm67162_set_pixel_format(const struct device *dev,
@@ -599,8 +581,6 @@ static const struct display_driver_api rm67162_api = {
 	.blanking_off = rm67162_blanking_off,
 	.get_capabilities = rm67162_get_capabilities,
 	.write = rm67162_write,
-	.set_brightness = rm67162_set_brightness,
-	.set_contrast = rm67162_set_contrast,
 	.set_pixel_format = rm67162_set_pixel_format,
 	.set_orientation = rm67162_set_orientation,
 };

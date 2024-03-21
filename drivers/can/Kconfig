@@ -54,6 +54,13 @@ config CAN_STATS
 	help
 	  Enable CAN controller device statistics.
 
+config CAN_ACCEPT_RTR
+	bool "Accept Remote Transmission Requests (RTR) frames"
+	help
+	  Accept incoming Remote Transmission Request (RTR) frames matching CAN RX filters. Unless
+	  enabled, all incoming Remote Transmission Request (RTR) frames are rejected at the driver
+	  level.
+
 config CAN_FD_MODE
 	bool "CAN FD"
 	help
@@ -93,7 +100,7 @@ source "drivers/can/Kconfig.mcan"
 source "drivers/can/Kconfig.rcar"
 source "drivers/can/Kconfig.numaker"
 source "drivers/can/Kconfig.loopback"
-source "drivers/can/Kconfig.native_posix_linux"
+source "drivers/can/Kconfig.native_linux"
 source "drivers/can/Kconfig.sja1000"
 source "drivers/can/Kconfig.esp32"
 source "drivers/can/Kconfig.kvaser"
@@ -101,6 +108,7 @@ source "drivers/can/Kconfig.fake"
 source "drivers/can/Kconfig.nxp_s32"
 source "drivers/can/Kconfig.tcan4x5x"
 source "drivers/can/Kconfig.mcp251xfd"
+source "drivers/can/Kconfig.xmc4xxx"
 
 source "drivers/can/transceiver/Kconfig"
 

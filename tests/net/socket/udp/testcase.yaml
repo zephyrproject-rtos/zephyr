@@ -16,3 +16,15 @@ tests:
   net.socket.udp.ipv6_fragment:
     extra_configs:
       - CONFIG_NET_IPV6_FRAGMENT=y
+  net.socket.udp.pktinfo:
+    extra_configs:
+      - CONFIG_NET_CONTEXT_RECV_PKTINFO=y
+  net.socket.udp.ttl:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_PACKET=y
+      - CONFIG_NET_STATISTICS=y
+      - CONFIG_NET_STATISTICS_IPV4=y
+      - CONFIG_NET_STATISTICS_IPV6=y
+      - CONFIG_NET_STATISTICS_USER_API=y
+      - CONFIG_NET_MGMT_EVENT=y
+      - CONFIG_NET_MGMT=y

@@ -75,6 +75,13 @@ config PM_MCUX_PMU
 
 endif # SOC_SERIES_IMX_RT10XX && PM
 
+if ETH_NXP_ENET
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 1560
+
+endif # ETH_NXP_ENET
+
 DT_CHOSEN_Z_FLASH := zephyr,flash
 DT_COMPAT_FLEXSPI := nxp,imx-flexspi
 
@@ -128,6 +135,11 @@ config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024
 endif # MBEDTLS
+
+# Enable cache management features when using M7 core, since these parts
+# have L1 instruction and data caches that should be enabled at boot
+config CACHE_MANAGEMENT
+	default y if CPU_CORTEX_M7
 
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 

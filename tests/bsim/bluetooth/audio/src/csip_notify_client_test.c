@@ -21,7 +21,7 @@ static void csip_discover_cb(struct bt_conn *conn,
 			     int err, size_t set_count)
 {
 	if (err != 0) {
-		printk("CSIP Lock Discover failed (err = %d)\n", err);
+		FAIL("CSIP Lock Discover failed (err = %d)\n", err);
 		return;
 	}
 

@@ -322,8 +322,23 @@ however the :ref:`pyocd-debug-host-tools` do not yet support programming the
 external flashes on this board so you must reconfigure the board for one of the
 following debug probes instead.
 
-Option 1: :ref:`opensda-jlink-onboard-debug-probe` (Recommended)
-----------------------------------------------------------------
+Using LinkServer
+----------------
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path.  LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
+
+Linkserver is the default runner. You may also se the ``-r linkserver`` option
+with West to use the LinkServer runner.
+
+.. code-block:: console
+
+   west flash
+   west debug
+
+JLink (on-board): :ref:`opensda-jlink-onboard-debug-probe`
+----------------------------------------------------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
@@ -337,8 +352,8 @@ Follow the instructions in `Enable QSPI flash support in SEGGER JLink`_
 in order to support your EVK if you have modified it to boot from QSPI NOR
 flash as specified by NXP AN12108.
 
-Option 2: :ref:`jlink-external-debug-probe`
--------------------------------------------
+External JLink :ref:`jlink-external-debug-probe`
+------------------------------------------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
@@ -472,3 +487,13 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _Enable QSPI flash support in SEGGER JLink:
    https://wiki.segger.com/i.MXRT1050#QSPI_flash
+
+Experimental ENET Driver
+========================
+
+Current default ethernet driver is eth_mcux, with binding `nxp,kinetis-ethernet`. There is a new
+driver with binding `nxp,enet`, which is experimental and undergoing development, but will have
+enhanced capability, such as not hardcoding code for only one phy in the driver like eth_mcux.
+
+To build for this EVK with the new driver, include the experimental overlay to west build with
+the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet-experimental.overlay`.

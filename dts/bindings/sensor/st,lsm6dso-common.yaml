@@ -3,11 +3,11 @@
 
 description: |
     When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
-    gyro-odr properties in a .dts or .dtsi file you may include st_lsm6dso.h
+    gyro-odr properties in a .dts or .dtsi file you may include lsm6dso.h
     and use the macros defined there.
 
     Example:
-    #include <zephyr/dt-bindings/sensor/st_lsm6dso.h>
+    #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 
     lsm6dso: lsm6dso@0 {
       ...

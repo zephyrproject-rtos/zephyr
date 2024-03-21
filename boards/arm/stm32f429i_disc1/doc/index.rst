@@ -97,6 +97,8 @@ The Zephyr stm32f429i_disc1 board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | FMC       | on-chip    | memc (SDRAM)                        |
 +-----------+------------+-------------------------------------+
+| OTG_HS    | on-chip    | usbotg_hs                           |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -111,7 +113,7 @@ Pin Mapping
 The STM32F429I-DISC1 Discovery kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `STM32F429I-DISC1 board User Manual`_.
+For more details please refer to `STM32F429I-DISC1 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -130,6 +132,9 @@ Default Zephyr Peripheral Mapping:
 - SPI_5_SCK : PF7
 - SPI_5_MISO : PF8
 - SPI_5_MOSI : PF9
+- OTG_HS_ID : PB12
+- OTG_HS_DM : PB14
+- OTG_HS_DP : PB15
 
 System Clock
 ============
@@ -144,6 +149,12 @@ Serial Port
 The STM32F429I-DISC1 Discovery kit has up to 8 UARTs. The Zephyr console output is assigned to UART1.
 The default communication settings are 115200 8N1.
 
+USB Port
+===========
+
+The STM32F429I-DISC1 Discovery kit has a USB FS capable Micro-B port. It is connected to the on-chip
+OTG_HS peripheral, but operates in FS mode only since no HS PHY is present. The board supports device
+and host OTG operation, but only device mode has been tested with Zephyr at this time.
 
 Programming and Debugging
 *************************
@@ -160,6 +171,14 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 Flashing an application to STM32F429I-DISC1
 -------------------------------------------
+
+The board is configured to be flashed using west OpenOCD runner.
+Alternatively, you can use `STM32CubeProgrammer`_ (after installing it) using the ``--runner``
+(or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner stm32cubeprogrammer
 
 First, connect the STM32F429I-DISC1 Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
@@ -206,3 +225,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F429 Reference Manual:
    https://www.st.com/content/ccc/resource/technical/document/reference_manual/3d/6d/5a/66/b4/99/40/d4/DM00031020.pdf/files/DM00031020.pdf/jcr:content/translations/en.DM00031020.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

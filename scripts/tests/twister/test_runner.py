@@ -131,6 +131,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
         os.path.join('zephyr', 'zephyr.elf'),
         os.path.join('zephyr', 'zephyr.exe'),
     ]
+    project_builder.testsuite.sysbuild = False
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(default_binaries)
 
@@ -138,6 +139,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
 def test_if_binaries_from_platform_are_taken_properly(project_builder: ProjectBuilder):
     platform_binaries = ['spi_image.bin']
     project_builder.platform.binaries = platform_binaries
+    project_builder.testsuite.sysbuild = False
     platform_binaries_expected = [os.path.join('zephyr', bin) for bin in platform_binaries]
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(platform_binaries_expected)
@@ -250,20 +252,20 @@ TESTDATA_1_1 = [
 ]
 TESTDATA_1_2 = [
     (0, False, 'dummy out',
-     True, True, True, True, 'passed', None, False, True),
+     True, True, 'passed', None, False, True),
     (0, True, '',
-     False, False, False, False, 'passed', None, False, False),
+     False, False, 'passed', None, False, False),
     (1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
-     False, True, True, True, 'skipped', 'FLASH overflow', True, False),
+     True,  True, 'skipped', 'FLASH overflow', True, False),
     (1, True, 'Error: Image size (99 B) + trailer (1 B) exceeds requested size',
-     False, True, True, True, 'skipped', 'imgtool overflow', True, False),
+     True, True, 'skipped', 'imgtool overflow', True, False),
     (1, True, 'mock.ANY',
-     False, True, True, True, 'error', 'Build failure', False, False)
+     True, True, 'error', 'Build failure', False, False)
 ]
 
 @pytest.mark.parametrize(
-    'return_code, is_instance_run, p_out, expect_msg, expect_returncode,' \
-    ' expect_instance, expect_writes, expected_status, expected_reason,' \
+    'return_code, is_instance_run, p_out, expect_returncode,' \
+    ' expect_writes, expected_status, expected_reason,' \
     ' expected_change_skip, expected_add_missing',
     TESTDATA_1_2,
     ids=['no error, no instance run', 'no error, instance run',
@@ -275,9 +277,7 @@ def test_cmake_run_build(
     return_code,
     is_instance_run,
     p_out,
-    expect_msg,
     expect_returncode,
-    expect_instance,
     expect_writes,
     expected_status,
     expected_reason,
@@ -303,6 +303,7 @@ def test_cmake_run_build(
         popen=mock.Mock(side_effect=mock_popen)
     )
     instance_mock = mock.Mock(add_missing_case_status=mock.Mock())
+    instance_mock.build_time = 0
     instance_mock.run = is_instance_run
     instance_mock.status = None
     instance_mock.reason = None
@@ -328,14 +329,8 @@ def test_cmake_run_build(
         result = cmake.run_build(args=['arg1', 'arg2'])
 
     expected_results = {}
-    if expect_msg:
-        expected_results['msg'] = 'Finished building %s for %s' % \
-                                   (os.path.join('source', 'dir'), \
-                                    '<platform name>')
     if expect_returncode:
         expected_results['returncode'] = return_code
-    if expect_instance:
-        expected_results['instance'] = instance_mock
     if expected_results == {}:
         expected_results = None
 
@@ -369,7 +364,7 @@ TESTDATA_2_1 = [
 TESTDATA_2_2 = [
     (True, ['dummy_stage_1', 'ds2'],
      0, False, '',
-     True, False, True, False,
+     True, True, False,
      None, None,
      [os.path.join('dummy', 'cmake'),
       '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
@@ -383,7 +378,7 @@ TESTDATA_2_2 = [
       '-Pzephyr_base/cmake/package_helper.cmake']),
     (False, [],
      1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
-     False, True, False, True,
+     True, False, True,
      'error', 'Cmake build failure',
      [os.path.join('dummy', 'cmake'),
       '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
@@ -398,7 +393,7 @@ TESTDATA_2_2 = [
 
 @pytest.mark.parametrize(
     'error_warns, f_stages,' \
-    ' return_code, is_instance_run, p_out, expect_msg, expect_returncode,' \
+    ' return_code, is_instance_run, p_out, expect_returncode,' \
     ' expect_filter, expect_writes, expected_status, expected_reason,' \
     ' expected_cmd',
     TESTDATA_2_2,
@@ -412,7 +407,6 @@ def test_cmake_run_cmake(
     return_code,
     is_instance_run,
     p_out,
-    expect_msg,
     expect_returncode,
     expect_filter,
     expect_writes,
@@ -442,6 +436,7 @@ def test_cmake_run_cmake(
     instance_mock = mock.Mock(add_missing_case_status=mock.Mock())
     instance_mock.run = is_instance_run
     instance_mock.run_id = 1
+    instance_mock.build_time = 0
     instance_mock.status = None
     instance_mock.reason = None
     instance_mock.testsuite = mock.Mock()
@@ -476,10 +471,6 @@ def test_cmake_run_cmake(
         result = cmake.run_cmake(args=['arg1', 'arg2'], filter_stages=f_stages)
 
     expected_results = {}
-    if expect_msg:
-        expected_results['msg'] = 'Finished building %s for %s' % \
-                                   (os.path.join('source', 'dir'), \
-                                    '<platform name>')
     if expect_returncode:
         expected_results['returncode'] = return_code
     if expect_filter:
@@ -1649,6 +1640,7 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
     bins = [os.path.join('zephyr', 'file.bin')]
 
     instance_mock = mock.Mock()
+    instance_mock.testsuite.sysbuild = False
     build_dir = os.path.join('build', 'dir')
     instance_mock.build_dir = build_dir
     env_mock = mock.Mock()
@@ -1698,7 +1690,12 @@ def test_projectbuilder_get_binaries(
     runner_binaries,
     expected_binaries
 ):
+    def mock_get_domains(*args, **kwargs):
+        return []
+
     instance_mock = mock.Mock()
+    instance_mock.build_dir = os.path.join('build', 'dir')
+    instance_mock.domains.get_domains.side_effect = mock_get_domains
     instance_mock.platform = mock.Mock()
     instance_mock.platform.binaries = platform_binaries
     env_mock = mock.Mock()
@@ -1713,9 +1710,9 @@ def test_projectbuilder_get_binaries(
 
 
 TESTDATA_10 = [
-    (None, []),
-    ({'dummy': 'dummy'}, []),
-    (
+    (None, None, []),
+    (None, {'dummy': 'dummy'}, []),
+    (   None,
         {
             'config': {
                 'elf_file': '/absolute/path/dummy.elf',
@@ -1724,20 +1721,31 @@ TESTDATA_10 = [
         },
         ['/absolute/path/dummy.elf', os.path.join('zephyr', 'path/dummy.bin')]
     ),
+    (   'test_domain',
+        {
+            'config': {
+                'elf_file': '/absolute/path/dummy.elf',
+                'bin_file': 'path/dummy.bin'
+            }
+        },
+        ['/absolute/path/dummy.elf', os.path.join('test_domain', 'zephyr', 'path/dummy.bin')]
+    ),
 ]
 
 @pytest.mark.parametrize(
-    'runners_content, expected_binaries',
+    'domain, runners_content, expected_binaries',
     TESTDATA_10,
-    ids=['no file', 'no config', 'valid']
+    ids=['no file', 'no config', 'valid', 'with domain']
 )
 def test_projectbuilder_get_binaries_from_runners(
     mocked_jobserver,
+    domain,
     runners_content,
     expected_binaries
 ):
     def mock_exists(fname):
-        assert fname == os.path.join('build', 'dir', 'zephyr', 'runners.yaml')
+        assert fname == os.path.join('build', 'dir', domain if domain else '',
+                                     'zephyr', 'runners.yaml')
         return runners_content is not None
 
     instance_mock = mock.Mock()
@@ -1749,7 +1757,10 @@ def test_projectbuilder_get_binaries_from_runners(
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock.mock_open()), \
          mock.patch('yaml.safe_load', return_value=runners_content):
-        bins = pb._get_binaries_from_runners()
+        if domain:
+            bins = pb._get_binaries_from_runners(domain)
+        else:
+            bins = pb._get_binaries_from_runners()
 
     assert all(bin in expected_binaries for bin in bins)
     assert all(bin in bins for bin in expected_binaries)
@@ -2082,6 +2093,7 @@ def test_projectbuilder_cmake():
 
 def test_projectbuilder_build(mocked_jobserver):
     instance_mock = mock.Mock()
+    instance_mock.testsuite.harness = 'test'
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
@@ -2540,11 +2552,11 @@ def test_twisterrunner_add_tasks_to_queue(
         return [filter]
 
     instances = {
-        'dummy1': mock.Mock(run=True, retries=0, status='passed'),
-        'dummy2': mock.Mock(run=True, retries=0, status='skipped'),
-        'dummy3': mock.Mock(run=True, retries=0, status='filtered'),
-        'dummy4': mock.Mock(run=True, retries=0, status='error'),
-        'dummy5': mock.Mock(run=True, retries=0, status='failed')
+        'dummy1': mock.Mock(run=True, retries=0, status='passed', build_dir="/tmp"),
+        'dummy2': mock.Mock(run=True, retries=0, status='skipped', build_dir="/tmp"),
+        'dummy3': mock.Mock(run=True, retries=0, status='filtered', build_dir="/tmp"),
+        'dummy4': mock.Mock(run=True, retries=0, status='error', build_dir="/tmp"),
+        'dummy5': mock.Mock(run=True, retries=0, status='failed', build_dir="/tmp")
     }
     instances['dummy4'].testsuite.filter = 'some'
     instances['dummy5'].testsuite.filter = 'full'
@@ -2650,11 +2662,6 @@ def test_twisterrunner_execute(caplog):
     with mock.patch('twisterlib.runner.Process', process_mock):
         tr.execute(pipeline_mock, done_mock)
 
-    assert 'Launch process 0' in caplog.text
-    assert 'Launch process 1' in caplog.text
-    assert 'Launch process 2' in caplog.text
-    assert 'Launch process 3' in caplog.text
-    assert 'Launch process 4' in caplog.text
     assert 'Execution interrupted' in caplog.text
 
     assert len(process_mock().start.call_args_list) == 5

@@ -48,17 +48,13 @@ set(cmake_modules_file ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
 set(cmake_sysbuild_file ${CMAKE_BINARY_DIR}/sysbuild_modules.txt)
 set(zephyr_settings_file ${CMAKE_BINARY_DIR}/zephyr_settings.txt)
 
-if(WEST)
-  set(west_arg "--zephyr-base" ${ZEPHYR_BASE})
-endif()
-
 if(WEST OR ZEPHYR_MODULES)
   # Zephyr module uses west, so only call it if west is installed or
   # ZEPHYR_MODULES was provided as argument to CMake.
   execute_process(
     COMMAND
     ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
-    ${west_arg}
+    --zephyr-base=${ZEPHYR_BASE}
     ${ZEPHYR_MODULES_ARG}
     ${EXTRA_ZEPHYR_MODULES_ARG}
     --kconfig-out ${kconfig_modules_file}
@@ -141,6 +137,7 @@ if(WEST OR ZEPHYR_MODULES)
 
     zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
     if(NOT ${MODULE_NAME_UPPER} STREQUAL CURRENT)
+      set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_NAME ${module_name})
       set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
       set(ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR ${cmake_path})
     else()

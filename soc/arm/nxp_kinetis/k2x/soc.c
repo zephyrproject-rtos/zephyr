@@ -49,7 +49,9 @@ static const osc_config_t oscConfig = {
 
 	.oscerConfig = {
 		.enableMode = 0U, /* Disable external reference clock */
+#if FSL_FEATURE_OSC_HAS_EXT_REF_CLOCK_DIVIDER
 		.erclkDiv = 0U,
+#endif
 	},
 };
 

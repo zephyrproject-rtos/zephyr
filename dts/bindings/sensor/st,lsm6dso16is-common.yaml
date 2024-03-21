@@ -3,11 +3,11 @@
 
 description: |
     When setting the accel-range, accel-odr, gyro-range, gyro-odr properties in
-    a .dts or .dtsi file you may include st_lsm6dso16is.h and use the macros
+    a .dts or .dtsi file you may include lsm6dso16is.h and use the macros
     defined there.
 
     Example:
-    #include <zephyr/dt-bindings/sensor/st_lsm6dso16is.h>
+    #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
 
     lsm6dso16is: lsm6dso16is@0 {
       ...

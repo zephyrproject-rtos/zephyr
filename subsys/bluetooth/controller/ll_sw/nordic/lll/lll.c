@@ -86,7 +86,12 @@ static void ticker_op_job_disable(uint32_t status, void *op_context);
 #endif
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
 
+#if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS) && \
+	defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+static void radio_nrf5_isr(const void *arg)
+#else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 ISR_DIRECT_DECLARE(radio_nrf5_isr)
+#endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 {
 	DEBUG_RADIO_ISR(1);
 
@@ -99,7 +104,11 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 	lll_prof_exit_radio();
 
 	DEBUG_RADIO_ISR(0);
+
+#if !defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS) || \
+	!defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
 	return 1;
+#endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 }
 
 static void rtc0_nrf5_isr(const void *arg)
@@ -187,17 +196,44 @@ int lll_init(void)
 	hal_swi_init();
 
 	/* Connect ISRs */
+#if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
+#if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+				       IRQ_CONNECT_FLAGS, no_reschedule);
+	irq_connect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			    radio_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#else /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+#endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+	irq_connect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+			    rtc0_nrf5_isr, NULL, 0U);
+	irq_connect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+			    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	irq_connect_dynamic(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+			    swi_ull_low_nrf5_isr, NULL, 0U);
+#endif
+
+#else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
 	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
+#if defined(CONFIG_BT_CTLR_ZLI)
+	IRQ_DIRECT_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+			   swi_lll_nrf5_isr, IRQ_CONNECT_FLAGS);
+#else
 	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 		    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#endif
 #if defined(CONFIG_BT_CTLR_LOW_LAT) || \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
 		    swi_ull_low_nrf5_isr, NULL, 0);
 #endif
+#endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	/* Enable IRQs */
 	irq_enable(RADIO_IRQn);
@@ -231,6 +267,39 @@ int lll_deinit(void)
 		(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
 		irq_disable(HAL_SWI_JOB_IRQ);
 	}
+
+	/* Disconnect dynamic ISRs used */
+#if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
+#if defined(CONFIG_SHARED_INTERRUPTS)
+#if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+	irq_disconnect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			       radio_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+	irq_disconnect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+			       rtc0_nrf5_isr, NULL, 0U);
+	irq_disconnect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+			       swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	irq_disconnect_dynamic(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+			       swi_ull_low_nrf5_isr, NULL, 0U);
+#endif
+#else /* !CONFIG_SHARED_INTERRUPTS */
+#if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+	irq_connect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO, NULL, NULL,
+			    IRQ_CONNECT_FLAGS);
+#endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+	irq_connect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO, NULL, NULL,
+			    0U);
+	irq_connect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO, NULL,
+			    NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	irq_connect_dynamic(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO, NULL,
+			    NULL, 0U);
+#endif
+#endif /* !CONFIG_SHARED_INTERRUPTS */
+#endif /* CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	return 0;
 }
@@ -832,7 +901,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	ARG_UNUSED(status);
 
 	LL_ASSERT(preempt_stop_req != preempt_stop_ack);
-	preempt_stop_ack++;
+	preempt_stop_ack = preempt_stop_req;
 
 	preempt_req = preempt_ack;
 }
@@ -852,7 +921,7 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 	 * start operation has been handled.
 	 */
 	LL_ASSERT(preempt_start_req != preempt_start_ack);
-	preempt_start_ack++;
+	preempt_start_ack = preempt_start_req;
 }
 
 static uint32_t preempt_ticker_start(struct lll_event *first,
@@ -905,6 +974,26 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		ret = preempt_ticker_stop();
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
+
+#if defined(CONFIG_BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE)
+		/* FIXME: Prepare pipeline is not a ordered list implementation,
+		 *        and for short prepare being enqueued, ideally the
+		 *        pipeline has to be implemented as ordered list.
+		 *        Until then a workaround to abort a prepare present
+		 *        before the short prepare being enqueued is implemented
+		 *        below.
+		 *        A proper solution will be to re-design the pipeline
+		 *        as a ordered list, instead of the current FIFO.
+		 */
+		/* Set early as we get called again through the call to
+		 * abort_cb().
+		 */
+		ticks_at_preempt = ticks_at_preempt_new;
+
+		/* Abort previous prepare that set the preempt timeout */
+		prev->is_aborted = 1U;
+		prev->abort_cb(&prev->prepare_param, prev->prepare_param.param);
+#endif /* CONFIG_BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE */
 
 		/* Schedule short preempt timeout */
 		first = next;
@@ -974,7 +1063,7 @@ static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	uint32_t ret;
 
 	LL_ASSERT(preempt_ack != preempt_req);
-	preempt_ack++;
+	preempt_ack = preempt_req;
 
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,

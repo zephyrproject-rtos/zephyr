@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Intel Corporation
+ * Copyright 2023 Meta Platforms, Inc. and its affiliates
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,27 +36,34 @@ extern "C" {
  *   - 1: I3C Controller capable
  *   - 2: Reserved
  *   - 3: Reserved
+ *   .
  * - BCR[5]: Advanced Capabilities
  *   - 0: Does not support optional advanced capabilities.
  *   - 1: Supports optional advanced capabilities which
  *        can be viewed via GETCAPS CCC.
- * - BCR[4}: Virtual Target Support
+ *   .
+ * - BCR[4]: Virtual Target Support
  *   - 0: Is not a virtual target.
  *   - 1: Is a virtual target.
+ *   .
  * - BCR[3]: Offline Capable
  *   - 0: Will always response to I3C commands.
  *   - 1: Will not always response to I3C commands.
+ *   .
  * - BCR[2]: IBI Payload
  *   - 0: No data bytes following the accepted IBI.
  *   - 1: One data byte (MDB, Mandatory Data Byte) follows
  *        the accepted IBI. Additional data bytes may also
  *        follows.
+ *   .
  * - BCR[1]: IBI Request Capable
  *   - 0: Not capable
  *   - 1: Capable
+ *   .
  * - BCR[0]: Max Data Speed Limitation
  *   - 0: No Limitation
  *   - 1: Limitation obtained via GETMXDS CCC.
+ *   .
  *
  * @{
  */
@@ -130,7 +138,7 @@ extern "C" {
 /** @} */
 
 /**
- * @name Device Characteristic Register (DCR)
+ * @name Legacy Virtual Register (LVR)
  *
  * Legacy Virtual Register (LVR)
  * - LVR[7:5]: I2C device index:
@@ -149,26 +157,26 @@ extern "C" {
  */
 
 /** I2C FM+ Mode. */
-#define I3C_DCR_I2C_FM_PLUS_MODE			0
+#define I3C_LVR_I2C_FM_PLUS_MODE			0
 
 /** I2C FM Mode. */
-#define I3C_DCR_I2C_FM_MODE				1
+#define I3C_LVR_I2C_FM_MODE				1
 
 /** I2C Mode Indicator bit shift value. */
-#define I3C_DCR_I2C_MODE_SHIFT				4
+#define I3C_LVR_I2C_MODE_SHIFT				4
 
 /** I2C Mode Indicator bitmask. */
-#define I3C_DCR_I2C_MODE_MASK				BIT(4)
+#define I3C_LVR_I2C_MODE_MASK				BIT(4)
 
 /**
  * @brief I2C Mode
  *
- * Obtain I2C Mode value from the DCR value obtained via GETDCR.
+ * Obtain I2C Mode value from the LVR value.
  *
- * @param dcr DCR value
+ * @param lvr LVR value
  */
-#define I3C_DCR_I2C_MODE(dcr)				\
-	(((mode) & I3C_DCR_I2C_MODE_MASK) >> I3C_DCR_I2C_MODE_SHIFT)
+#define I3C_LVR_I2C_MODE(lvr)				\
+	(((lvr) & I3C_LVR_I2C_MODE_MASK) >> I3C_LVR_I2C_MODE_SHIFT)
 
 /**
  * @brief I2C Device Index 0.
@@ -176,7 +184,7 @@ extern "C" {
  * I2C device has a 50 ns spike filter where it is not affected by high
  * frequency on SCL.
  */
-#define I3C_DCR_I2C_DEV_IDX_0				0
+#define I3C_LVR_I2C_DEV_IDX_0				0
 
 /**
  * @brief I2C Device Index 1.
@@ -184,7 +192,7 @@ extern "C" {
  * I2C device does not have a 50 ns spike filter but can work with high
  * frequency on SCL.
  */
-#define I3C_DCR_I2C_DEV_IDX_1				1
+#define I3C_LVR_I2C_DEV_IDX_1				1
 
 /**
  * @brief I2C Device Index 2.
@@ -192,23 +200,23 @@ extern "C" {
  * I2C device does not have a 50 ns spike filter and cannot work with high
  * frequency on SCL.
  */
-#define I3C_DCR_I2C_DEV_IDX_2				2
+#define I3C_LVR_I2C_DEV_IDX_2				2
 
 /** I2C Device Index bit shift value. */
-#define I3C_DCR_I2C_DEV_IDX_SHIFT			5
+#define I3C_LVR_I2C_DEV_IDX_SHIFT			5
 
 /** I2C Device Index bitmask. */
-#define I3C_DCR_I2C_DEV_IDX_MASK			(0x07U << I3C_DCR_I2C_DEV_IDX_SHIFT)
+#define I3C_LVR_I2C_DEV_IDX_MASK			(0x07U << I3C_LVR_I2C_DEV_IDX_SHIFT)
 
 /**
  * @brief I2C Device Index
  *
- * Obtain I2C Device Index value from the DCR value obtained via GETDCR.
+ * Obtain I2C Device Index value from the LVR value.
  *
- * @param dcr DCR value
+ * @param lvr LVR value
  */
-#define I3C_DCR_I2C_DEV_IDX(dcr)			\
-	(((dcr) & I3C_DCR_I2C_DEV_IDX_MASK) >> I3C_DCR_I2C_DEV_IDX_SHIFT)
+#define I3C_LVR_I2C_DEV_IDX(lvr)			\
+	(((lvr) & I3C_LVR_I2C_DEV_IDX_MASK) >> I3C_LVR_I2C_DEV_IDX_SHIFT)
 
 /** @} */
 
@@ -468,6 +476,15 @@ struct i3c_msg {
 
 	/** Length of buffer in bytes */
 	uint32_t		len;
+
+	/**
+	 * Total number of bytes transferred
+	 *
+	 * A Target can issue an EoD or the Controller can abort a transfer
+	 * before the length of the buffer. It is expected for the driver to
+	 * write to this after the transfer.
+	 */
+	uint32_t		num_xfer;
 
 	/** Flags for this message */
 	uint8_t			flags;

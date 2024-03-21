@@ -57,10 +57,12 @@ static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *
 	return ETHERNET_LINK_10BASE_T | ETHERNET_PROMISC_MODE;
 }
 
+static int lan865x_gpio_reset(const struct device *dev);
 static void lan865x_write_macaddress(const struct device *dev);
 static int lan865x_set_config(const struct device *dev, enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
+	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
 	int ret = -ENOTSUP;
 
@@ -97,6 +99,25 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 	}
 
+	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
+		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
+		if (ret) {
+			return ret;
+		}
+
+		if (config->t1s_param.type == ETHERNET_T1S_PARAM_TYPE_PLCA_CONFIG) {
+			cfg->plca->enable = config->t1s_param.plca.enable;
+			cfg->plca->node_id = config->t1s_param.plca.node_id;
+			cfg->plca->node_count = config->t1s_param.plca.node_count;
+			cfg->plca->burst_count = config->t1s_param.plca.burst_count;
+			cfg->plca->burst_timer = config->t1s_param.plca.burst_timer;
+			cfg->plca->to_timer = config->t1s_param.plca.to_timer;
+		}
+
+		/* Reset is required to re-program PLCA new configuration */
+		lan865x_gpio_reset(dev);
+	}
+
 	return ret;
 }
 
@@ -121,6 +142,10 @@ static int lan865x_wait_for_reset(const struct device *dev)
 static int lan865x_gpio_reset(const struct device *dev)
 {
 	const struct lan865x_config *cfg = dev->config;
+	struct lan865x_data *ctx = dev->data;
+
+	ctx->reset = false;
+	ctx->tc6->protected = false;
 
 	/* Perform (GPIO based) HW reset */
 	/* assert RESET_N low for 10 µs (5 µs min) */
@@ -337,11 +362,11 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	if (ret < 0)
 		return ret;
 
-	if (cfg->plca_enable) {
-		ret = lan865x_config_plca(dev, cfg->plca_node_id,
-					  cfg->plca_node_count,
-					  cfg->plca_burst_count,
-					  cfg->plca_burst_timer);
+	if (cfg->plca->enable) {
+		ret = lan865x_config_plca(dev, cfg->plca->node_id,
+					  cfg->plca->node_count,
+					  cfg->plca->burst_count,
+					  cfg->plca->burst_timer);
 		if (ret < 0) {
 			return ret;
 		}
@@ -370,19 +395,18 @@ static void lan865x_read_chunks(const struct device *dev)
 	struct net_pkt *pkt;
 	int ret;
 
-	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 	pkt = net_pkt_rx_alloc(K_MSEC(cfg->timeout));
 	if (!pkt) {
 		LOG_ERR("OA RX: Could not allocate packet!");
-		k_sem_give(&ctx->tx_rx_sem);
 		return;
 	}
 
+	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 	ret = oa_tc6_read_chunks(tc6, pkt);
-	k_sem_give(&ctx->tx_rx_sem);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(ctx->iface);
 		net_pkt_unref(pkt);
+		k_sem_give(&ctx->tx_rx_sem);
 		return;
 	}
 
@@ -392,6 +416,7 @@ static void lan865x_read_chunks(const struct device *dev)
 		LOG_ERR("OA RX: Could not process packet (%d)!", ret);
 		net_pkt_unref(pkt);
 	}
+	k_sem_give(&ctx->tx_rx_sem);
 }
 
 static void lan865x_int_thread(const struct device *dev)
@@ -399,6 +424,7 @@ static void lan865x_int_thread(const struct device *dev)
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
 	uint32_t sts, val, ftr;
+	int ret;
 
 	while (true) {
 		k_sem_take(&ctx->int_sem, K_FOREVER);
@@ -408,7 +434,8 @@ static void lan865x_int_thread(const struct device *dev)
 				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
 				lan865x_default_config(dev, ctx->silicon_rev);
 				oa_tc6_reg_read(tc6, OA_CONFIG0, &val);
-				oa_tc6_reg_write(tc6, OA_CONFIG0, OA_CONFIG0_SYNC | val);
+				val |= OA_CONFIG0_SYNC | OA_CONFIG0_RFA_ZARFE;
+				oa_tc6_reg_write(tc6, OA_CONFIG0, val);
 				lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 
 				ctx->reset = true;
@@ -422,31 +449,19 @@ static void lan865x_int_thread(const struct device *dev)
 		}
 
 		/*
-		 * The IRQ_N is asserted when RCA becomes > 0, so update its value
-		 * before reading chunks.
+		 * The IRQ_N is asserted when RCA becomes > 0. As described in
+		 * OPEN Alliance 10BASE-T1x standard it is deasserted when first
+		 * data header is received by LAN865x.
+		 *
+		 * Hence, it is mandatory to ALWAYS read at least one data chunk!
 		 */
-		oa_tc6_update_buf_info(tc6);
-
-		while (tc6->rca > 0) {
+		do {
 			lan865x_read_chunks(dev);
-		}
+		} while (tc6->rca > 0);
 
-		if (tc6->exst) {
-			/*
-			 * Just clear any pending interrupts - data RX will be served
-			 * earlier.
-			 * The RESETC is handled separately as it requires LAN865x device
-			 * configuration.
-			 */
-			oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
-			if (sts != 0) {
-				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
-			}
-
-			oa_tc6_reg_read(tc6, OA_STATUS1, &sts);
-			if (sts != 0) {
-				oa_tc6_reg_write(tc6, OA_STATUS1, sts);
-			}
+		ret = oa_tc6_check_status(tc6);
+		if (ret == -EIO) {
+			lan865x_gpio_reset(dev);
 		}
 	}
 }
@@ -508,8 +523,6 @@ static int lan865x_init(const struct device *dev)
 				0, K_NO_WAIT);
 	k_thread_name_set(ctx->tid_int, "lan865x_interrupt");
 
-	ctx->reset = false;
-
 	/* Perform HW reset - 'rst-gpios' required property set in DT */
 	if (!gpio_is_ready_dt(&cfg->reset)) {
 		LOG_ERR("Reset GPIO device %s is not ready",
@@ -534,6 +547,12 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 
 	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 	ret = oa_tc6_send_chunks(tc6, pkt);
+
+	/* Check if rca > 0 during half-duplex TX transmission */
+	if (tc6->rca > 0) {
+		k_sem_give(&ctx->int_sem);
+	}
+
 	k_sem_give(&ctx->tx_rx_sem);
 	if (ret < 0) {
 		LOG_ERR("TX transmission error, %d", ret);
@@ -552,17 +571,21 @@ static const struct ethernet_api lan865x_api_func = {
 };
 
 #define LAN865X_DEFINE(inst)                                                                       \
+	static struct lan865x_config_plca lan865x_config_plca_##inst = {                           \
+		.node_id = DT_INST_PROP(inst, plca_node_id),                                       \
+		.node_count = DT_INST_PROP(inst, plca_node_count),                                 \
+		.burst_count = DT_INST_PROP(inst, plca_burst_count),                               \
+		.burst_timer = DT_INST_PROP(inst, plca_burst_timer),                               \
+		.to_timer = DT_INST_PROP(inst, plca_to_timer),                                     \
+		.enable = DT_INST_PROP(inst, plca_enable),                                         \
+	};                                                                                         \
+												   \
 	static const struct lan865x_config lan865x_config_##inst = {                               \
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
 		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
-		.plca_node_id = DT_INST_PROP(inst, plca_node_id),                                  \
-		.plca_node_count = DT_INST_PROP(inst, plca_node_count),                            \
-		.plca_burst_count = DT_INST_PROP(inst, plca_burst_count),                          \
-		.plca_burst_timer = DT_INST_PROP(inst, plca_burst_timer),                          \
-		.plca_to_timer = DT_INST_PROP(inst, plca_to_timer),                                \
-		.plca_enable = DT_INST_PROP(inst, plca_enable),                                    \
+		.plca = &lan865x_config_plca_##inst,                                               \
 	};                                                                                         \
 												   \
 	struct oa_tc6 oa_tc6_##inst = {                                                            \
@@ -573,8 +596,8 @@ static const struct ethernet_api lan865x_api_func = {
 	static struct lan865x_data lan865x_data_##inst = {                                         \
 		.mac_address = DT_INST_PROP(inst, local_mac_address),                              \
 		.tx_rx_sem =                                                                       \
-			Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, UINT_MAX),           \
-		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, UINT_MAX),          \
+			Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),                  \
+		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, 1),                 \
 		.tc6 = &oa_tc6_##inst                                                              \
 	};                                                                                         \
 												   \

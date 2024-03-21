@@ -39,6 +39,11 @@ zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
   ${ZEPHYR_BASE}/include/zephyr/linker/intlist.ld
 )
 
+zephyr_linker_sources_ifdef(CONFIG_ISR_TABLES_LOCAL_DECLARATION
+  SECTIONS
+  ${ZEPHYR_BASE}/include/zephyr/linker/isr-local-drop-unused.ld
+)
+
 zephyr_linker_sources_ifdef(CONFIG_GEN_IRQ_VECTOR_TABLE
   ROM_START
   SORT_KEY 0x0vectors

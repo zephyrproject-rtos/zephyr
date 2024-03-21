@@ -15,6 +15,7 @@ sensors:
 - HTS221: ambient temperature and relative humidity
 - LPS22DF: ambient temperature and atmospheric pressure
 - LSM6DSV16X: 6-Axis acceleration and angular velocity
+- LIS2DU12: 3-Axis acceleration
 
 Requirements
 ************
@@ -67,7 +68,11 @@ The sample code outputs sensors data on the SensorTile.box Pro console.
     LPS22DF: Pressure:99.694 kpa
     LSM6DSV16X: Accel (m.s-2): x: -0.158, y: 0.158, z: 9.811
     LSM6DSV16X: GYro (dps): x: 0.003, y: 0.000, z: -0.005
+    LIS2DU12: Accel (m.s-2): x: -0.756, y: -0.249, z: -9.629
+    1:: lps22df trig 199
     1:: lsm6dsv16x acc trig 836
     1:: lsm6dsv16x gyr trig 836
+    1:: lis2mdl trig 402
+    1:: lis2du12 trig 1589
 
     <repeats endlessly every 2s>

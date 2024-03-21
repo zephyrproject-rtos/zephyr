@@ -17,7 +17,7 @@ properties:
   conversions-per-second:
     description: |
       Number of temperature readings performed by the MAX31875 per second.
-      0.25 converions per second is the power-on reset configuration.
+      0.25 conversions per second is the power-on reset configuration.
     type: string
     default: "0.25"
     # Note: the driver relies on the ordering of this enum,

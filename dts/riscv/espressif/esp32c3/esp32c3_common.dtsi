@@ -31,7 +31,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "espressif,riscv";
+			compatible = "espressif,riscv", "riscv";
 			riscv,isa = "rv32imc_zicsr";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;

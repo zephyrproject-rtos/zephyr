@@ -207,8 +207,7 @@ static void iso_send(struct bt_iso_chan *chan)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, iso_data, iso_tx_qos.sdu);
 
-	ret = bt_iso_chan_send(chan, buf, chan_work->seq_num++,
-			       BT_ISO_TIMESTAMP_NONE);
+	ret = bt_iso_chan_send(chan, buf, chan_work->seq_num++);
 	if (ret < 0) {
 		LOG_ERR("Unable to send data: %d", ret);
 		net_buf_unref(buf);

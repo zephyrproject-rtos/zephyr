@@ -54,6 +54,7 @@ config SPI_NRFX_SPIS
 
 config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	depends on SOC_NRF52832
+	select NRFX_PPI
 	bool "Allow enabling the SPIM driver despite PAN 58"
 	help
 	  Allow enabling the nRF SPI Master with EasyDMA, despite
@@ -74,14 +75,20 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	default 8
 	depends on SPI_NRFX_SPIM
 	help
-	  SPIM peripherals cannot transmit data directly from flash. Therefore,
-	  a buffer in RAM needs to be provided for each instance of SPI driver
-	  using SPIM peripheral, so that the driver can copy there a chunk of
-	  data from flash and transmit it.
-	  The size is specified in bytes. A size of 0 means that this feature
-	  should be disabled, and the application must then take care of not
-	  supplying buffers located in flash to the driver, otherwise such
-	  transfers will fail.
+	  Because of using EasyDMA, SPIM peripherals cannot use transmit and
+	  receive buffers from all memory locations. They are restricted to
+	  buffers located in certain RAM memories only. Therefore, each SPIM
+	  driver instance needs to use an intermediate local RAM buffer,
+	  to transfer data in chunks not exceeding the size of that buffer,
+	  and to copy those chunks between the local buffer and the one
+	  specified in the transfer request if the latter is not accessible
+	  by EasyDMA.
+
+	  This option specifies the size in bytes of such local RAM buffers
+	  for both TX and RX paths. A size of 0 means that this feature should
+	  be disabled and the driver user must take care of not making transfer
+	  requests with buffers not accessible by EasyDMA since such transfers
+	  will fail.
 
 config SPI_NRFX_WAKE_TIMEOUT_US
 	int "Maximum time to wait for SPI slave to wake up"

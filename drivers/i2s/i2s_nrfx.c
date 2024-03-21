@@ -20,6 +20,11 @@ struct stream_cfg {
 	nrfx_i2s_config_t nrfx_cfg;
 };
 
+struct i2s_buf {
+	void *mem_block;
+	size_t size;
+};
+
 struct i2s_nrfx_drv_data {
 	struct onoff_manager *clk_mgr;
 	struct onoff_client clk_cli;
@@ -189,9 +194,14 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 static bool get_next_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
 			       nrfx_i2s_buffers_t *buffers)
 {
+	struct i2s_buf buf;
 	int ret = k_msgq_get(&drv_data->tx_queue,
-			     &buffers->p_tx_buffer,
+			     &buf,
 			     K_NO_WAIT);
+	if (ret == 0) {
+		buffers->p_tx_buffer = buf.mem_block;
+		buffers->buffer_size = buf.size / sizeof(uint32_t);
+	}
 	return (ret == 0);
 }
 
@@ -226,15 +236,22 @@ static void free_rx_buffer(struct i2s_nrfx_drv_data *drv_data, void *buffer)
 static bool supply_next_buffers(struct i2s_nrfx_drv_data *drv_data,
 				nrfx_i2s_buffers_t *next)
 {
-	drv_data->last_tx_buffer = next->p_tx_buffer;
-
 	if (drv_data->active_dir != I2S_DIR_TX) { /* -> RX active */
 		if (!get_next_rx_buffer(drv_data, next)) {
 			drv_data->state = I2S_STATE_ERROR;
 			nrfx_i2s_stop(drv_data->p_i2s);
 			return false;
 		}
+		/* Set buffer size if there is no TX buffer (which effectively
+		 * controls how many bytes will be received).
+		 */
+		if (drv_data->active_dir == I2S_DIR_RX) {
+			next->buffer_size =
+				drv_data->rx.cfg.block_size / sizeof(uint32_t);
+		}
 	}
+
+	drv_data->last_tx_buffer = next->p_tx_buffer;
 
 	LOG_DBG("Next buffers: %p/%p", next->p_tx_buffer, next->p_rx_buffer);
 	nrfx_i2s_next_buffers_set(drv_data->p_i2s, next);
@@ -294,8 +311,12 @@ static void data_handler(const struct device *dev,
 		if (drv_data->discard_rx) {
 			free_rx_buffer(drv_data, released->p_rx_buffer);
 		} else {
+			struct i2s_buf buf = {
+				.mem_block = released->p_rx_buffer,
+				.size = released->buffer_size * sizeof(uint32_t)
+			};
 			int ret = k_msgq_put(&drv_data->rx_queue,
-					     &released->p_rx_buffer,
+					     &buf,
 					     K_NO_WAIT);
 			if (ret < 0) {
 				LOG_ERR("No room in RX queue");
@@ -345,6 +366,7 @@ static void data_handler(const struct device *dev,
 				 * before this buffer would be started again).
 				 */
 				next.p_tx_buffer = drv_data->last_tx_buffer;
+				next.buffer_size = 1;
 			} else if (get_next_tx_buffer(drv_data, &next)) {
 				/* Next TX buffer successfully retrieved from
 				 * the queue, nothing more to do here.
@@ -361,6 +383,7 @@ static void data_handler(const struct device *dev,
 				 * will be stopped earlier.
 				 */
 				next.p_tx_buffer = drv_data->last_tx_buffer;
+				next.buffer_size = 1;
 			} else {
 				/* Next TX buffer cannot be supplied now.
 				 * Defer it to when the user writes more data.
@@ -377,21 +400,21 @@ static void data_handler(const struct device *dev,
 static void purge_queue(const struct device *dev, enum i2s_dir dir)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
-	void *mem_block;
+	struct i2s_buf buf;
 
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 		while (k_msgq_get(&drv_data->tx_queue,
-				  &mem_block,
+				  &buf,
 				  K_NO_WAIT) == 0) {
-			free_tx_buffer(drv_data, mem_block);
+			free_tx_buffer(drv_data, buf.mem_block);
 		}
 	}
 
 	if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
 		while (k_msgq_get(&drv_data->rx_queue,
-				  &mem_block,
+				  &buf,
 				  K_NO_WAIT) == 0) {
-			free_rx_buffer(drv_data, mem_block);
+			free_rx_buffer(drv_data, buf.mem_block);
 		}
 	}
 }
@@ -501,7 +524,8 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	 * the MCK output is used), find a suitable clock configuration for it.
 	 */
 	if (nrfx_cfg.mode == NRF_I2S_MODE_MASTER ||
-	    nrfx_cfg.mck_pin != NRF_I2S_PIN_NOT_CONNECTED) {
+	    (nrf_i2s_mck_pin_get(drv_cfg->i2s.p_reg) & I2S_PSEL_MCK_CONNECT_Msk)
+	    == I2S_PSEL_MCK_CONNECT_Connected << I2S_PSEL_MCK_CONNECT_Pos) {
 		find_suitable_clock(drv_cfg, &nrfx_cfg, i2s_cfg);
 		/* Unless the PCLK32M source is used with the HFINT oscillator
 		 * (which is always available without any additional actions),
@@ -554,6 +578,7 @@ static int i2s_nrfx_read(const struct device *dev,
 			 void **mem_block, size_t *size)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
+	struct i2s_buf buf;
 	int ret;
 
 	if (!drv_data->rx_configured) {
@@ -562,7 +587,7 @@ static int i2s_nrfx_read(const struct device *dev,
 	}
 
 	ret = k_msgq_get(&drv_data->rx_queue,
-			 mem_block,
+			 &buf,
 			 (drv_data->state == I2S_STATE_ERROR)
 				? K_NO_WAIT
 				: SYS_TIMEOUT_MS(drv_data->rx.cfg.timeout));
@@ -570,10 +595,11 @@ static int i2s_nrfx_read(const struct device *dev,
 		return -EIO;
 	}
 
-	LOG_DBG("Released RX %p", *mem_block);
+	LOG_DBG("Released RX %p", buf.mem_block);
 
 	if (ret == 0) {
-		*size = drv_data->rx.cfg.block_size;
+		*mem_block = buf.mem_block;
+		*size = buf.size;
 	}
 
 	return ret;
@@ -583,6 +609,7 @@ static int i2s_nrfx_write(const struct device *dev,
 			  void *mem_block, size_t size)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
+	struct i2s_buf buf = { .mem_block = mem_block, .size = size };
 	int ret;
 
 	if (!drv_data->tx_configured) {
@@ -596,14 +623,14 @@ static int i2s_nrfx_write(const struct device *dev,
 		return -EIO;
 	}
 
-	if (size != drv_data->tx.cfg.block_size) {
-		LOG_ERR("This device can only write blocks of %u bytes",
+	if (size > drv_data->tx.cfg.block_size || size < sizeof(uint32_t)) {
+		LOG_ERR("This device can only write blocks up to %u bytes",
 			drv_data->tx.cfg.block_size);
 		return -EIO;
 	}
 
 	ret = k_msgq_put(&drv_data->tx_queue,
-			 &mem_block,
+			 &buf,
 			 SYS_TIMEOUT_MS(drv_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;
@@ -656,15 +683,20 @@ static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 		/* Failed to allocate next RX buffer */
 		ret = -ENOMEM;
 	} else {
-		uint32_t block_size = (drv_data->active_dir == I2S_DIR_TX)
-				      ? drv_data->tx.cfg.block_size
-				      : drv_data->rx.cfg.block_size;
 		nrfx_err_t err;
+
+		/* It is necessary to set buffer size here only for I2S_DIR_RX,
+		 * because only then the get_next_tx_buffer() call in the if
+		 * condition above gets short-circuited.
+		 */
+		if (drv_data->active_dir == I2S_DIR_RX) {
+			initial_buffers.buffer_size =
+				drv_data->rx.cfg.block_size / sizeof(uint32_t);
+		}
 
 		drv_data->last_tx_buffer = initial_buffers.p_tx_buffer;
 
-		err = nrfx_i2s_start(drv_data->p_i2s, &initial_buffers,
-				     block_size / sizeof(uint32_t), 0);
+		err = nrfx_i2s_start(drv_data->p_i2s, &initial_buffers, 0);
 		if (err == NRFX_SUCCESS) {
 			return 0;
 		}
@@ -898,8 +930,8 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 #define I2S_CLK_SRC(idx) DT_STRING_TOKEN(I2S(idx), clock_source)
 
 #define I2S_NRFX_DEVICE(idx)						     \
-	static void *tx_msgs##idx[CONFIG_I2S_NRFX_TX_BLOCK_COUNT];	     \
-	static void *rx_msgs##idx[CONFIG_I2S_NRFX_RX_BLOCK_COUNT];	     \
+	static struct i2s_buf tx_msgs##idx[CONFIG_I2S_NRFX_TX_BLOCK_COUNT];  \
+	static struct i2s_buf rx_msgs##idx[CONFIG_I2S_NRFX_RX_BLOCK_COUNT];  \
 	static void data_handler##idx(nrfx_i2s_buffers_t const *p_released,  \
 				      uint32_t status)			     \
 	{								     \
@@ -935,10 +967,10 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 			return err;					     \
 		}							     \
 		k_msgq_init(&i2s_nrfx_data##idx.tx_queue,		     \
-			    (char *)tx_msgs##idx, sizeof(void *),	     \
+			    (char *)tx_msgs##idx, sizeof(struct i2s_buf),    \
 			    ARRAY_SIZE(tx_msgs##idx));			     \
 		k_msgq_init(&i2s_nrfx_data##idx.rx_queue,		     \
-			    (char *)rx_msgs##idx, sizeof(void *),	     \
+			    (char *)rx_msgs##idx, sizeof(struct i2s_buf),    \
 			    ARRAY_SIZE(rx_msgs##idx));			     \
 		init_clock_manager(dev);				     \
 		return 0;						     \

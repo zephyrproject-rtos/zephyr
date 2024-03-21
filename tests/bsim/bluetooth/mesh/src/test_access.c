@@ -60,6 +60,7 @@ static const struct {
 	uint8_t div;
 	int32_t period_ms;
 } test_period[] = {
+	{ BT_MESH_PUB_PERIOD_100MS(1), 0, 100 },
 	{ BT_MESH_PUB_PERIOD_100MS(5), 0, 500 },
 	{ BT_MESH_PUB_PERIOD_SEC(2),   0, 2000 },
 	{ BT_MESH_PUB_PERIOD_10SEC(1), 0, 10000 },
@@ -101,11 +102,15 @@ static bool publish_allow;
 
 static int model1_update(const struct bt_mesh_model *model)
 {
+	if (!publish_allow) {
+		return -1;
+	}
+
 	model->pub->msg->data[1]++;
-
 	LOG_DBG("New pub: n: %d t: %d", model->pub->msg->data[1], k_uptime_get_32());
+	k_sem_give(&publish_sem);
 
-	return publish_allow ? k_sem_give(&publish_sem), 0 : -1;
+	return 0;
 }
 
 static int test_msgf_handler(const struct bt_mesh_model *model,
@@ -522,6 +527,92 @@ static void msgf_publish(void)
 	bt_mesh_model_publish(model);
 }
 
+static void pub_delayable_check(int32_t interval, uint8_t count)
+{
+	int64_t timestamp = k_uptime_get();
+	int err;
+
+	for (size_t j = 0; j < count; j++) {
+		/* Every new publication will release semaphore in the update handler and the time
+		 * between two consecutive publications will be measured.
+		 */
+		err = k_sem_take(&publish_sem, K_SECONDS(20));
+		if (err) {
+			FAIL("Send timed out");
+		}
+
+		int32_t time_delta = k_uptime_delta(&timestamp);
+		int32_t pub_delta = time_delta - interval;
+
+		LOG_DBG("Send time: %d delta: %d pub_delta: %d", (int32_t)timestamp, time_delta,
+			pub_delta);
+
+		if (j == 0) {
+			/* The first delta will be between the messages published manually and next
+			 * publication (or retransmission). So the time difference should not be
+			 * longer than 500 - 20 + 10 (margin):
+			 *
+			 * |---|-------|--------|-------|---->
+			 *    M1      20ms   tx(M1)   500ms
+			 *                  update()
+			 */
+			ASSERT_IN_RANGE(pub_delta, 0, 510);
+		} else {
+			/* Time difference between the consequtive update callback calls should be
+			 * within a small margin like without random delay as the callbacks should
+			 * be called at the regular interval or immediately (if it passed the next
+			 * period time).
+			 */
+			ASSERT_IN_RANGE(pub_delta, 0, 10);
+		}
+	}
+}
+
+static void recv_delayable_check(int32_t interval, uint8_t count)
+{
+	int64_t timestamp;
+	int err;
+
+	/* The measurement starts by the first received message. */
+	err = k_sem_take(&publish_sem, K_SECONDS(20));
+	if (err) {
+		FAIL("Recv timed out");
+	}
+
+	timestamp = k_uptime_get();
+
+	for (size_t j = 0; j < count; j++) {
+		/* Every new received message will release semaphore in the message handler and
+		 * the time between two consecutive publications will be measured.
+		 */
+		err = k_sem_take(&publish_sem, K_SECONDS(20));
+		if (err) {
+			FAIL("Recv timed out");
+		}
+
+		int32_t time_delta = k_uptime_delta(&timestamp);
+		/* First message can be delayed up to 500ms, others for up to 50ms. */
+		int32_t upper_delay = j == 0 ? 500 : 50;
+
+		/*
+		 * Lower boundary: tx2 - tx1 + interval
+		 * |---|-------|---------------|-------|----->
+		 *    M1   tx1(50ms/500ms)    M2  tx2(20ms)
+		 *
+		 * Upper boundary: tx2 - tx1 + interval
+		 * |---|-------|--------|-----------|----->
+		 *    M1   tx1(20ms)    M2     tx2(50ms/500ms)
+		 */
+		int32_t lower_boundary = 20 - upper_delay + interval;
+		int32_t upper_boundary = upper_delay - 20 + interval;
+
+		LOG_DBG("Recv time: %d delta: %d boundaries: %d/%d", (int32_t)timestamp, time_delta,
+			lower_boundary, upper_boundary);
+		ASSERT_IN_RANGE(time_delta, lower_boundary - RX_JITTER_MAX,
+				upper_boundary + RX_JITTER_MAX);
+	}
+}
+
 static void pub_jitter_check(int32_t interval, uint8_t count)
 {
 	int64_t timestamp = k_uptime_get();
@@ -578,8 +669,8 @@ static void recv_jitter_check(int32_t interval, uint8_t count)
 
 		jitter = MAX(pub_delta, jitter);
 
-		LOG_DBG("Recv time: %d delta: %d jitter: %d", (int32_t)timestamp, time_delta,
-			jitter);
+		LOG_DBG("Recv time: %d delta: %d jitter: %d, j: %d", (int32_t)timestamp, time_delta,
+			jitter, j);
 	}
 
 	LOG_INF("Recv jitter: %d", jitter);
@@ -589,16 +680,18 @@ static void recv_jitter_check(int32_t interval, uint8_t count)
 /* Test publish period states by publishing a message and checking interval between update handler
  * calls.
  */
-static void test_tx_period(void)
+static void tx_period(bool delayable)
 {
 	const struct bt_mesh_model *model = &models[2];
 
-	bt_mesh_test_cfg_set(NULL, 60);
+	bt_mesh_test_cfg_set(NULL, 70);
 	bt_mesh_device_setup(&prov, &local_comp);
 	provision(UNICAST_ADDR1);
 	common_configure(UNICAST_ADDR1);
 
 	k_sem_init(&publish_sem, 0, 1);
+
+	model->pub->delayable = delayable;
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_period); i++) {
 		pub_param_set(test_period[i].period, 0);
@@ -611,7 +704,11 @@ static void test_tx_period(void)
 		/* Start publishing messages and measure jitter. */
 		msgf_publish();
 		publish_allow = true;
-		pub_jitter_check(test_period[i].period_ms, PUB_PERIOD_COUNT);
+		if (delayable) {
+			pub_delayable_check(test_period[i].period_ms, PUB_PERIOD_COUNT);
+		} else {
+			pub_jitter_check(test_period[i].period_ms, PUB_PERIOD_COUNT);
+		}
 
 		/* Disable periodic publication before the next test iteration. */
 		publish_allow = false;
@@ -626,9 +723,9 @@ static void test_tx_period(void)
 /* Receive a periodically published message and check publication period by measuring interval
  * between message handler calls.
  */
-static void test_rx_period(void)
+static void rx_period(bool delayable)
 {
-	bt_mesh_test_cfg_set(NULL, 60);
+	bt_mesh_test_cfg_set(NULL, 70);
 	bt_mesh_device_setup(&prov, &local_comp);
 	provision(UNICAST_ADDR2);
 	common_configure(UNICAST_ADDR2);
@@ -636,16 +733,40 @@ static void test_rx_period(void)
 	k_sem_init(&publish_sem, 0, 1);
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_period); i++) {
-		recv_jitter_check(test_period[i].period_ms, PUB_PERIOD_COUNT);
+		if (delayable) {
+			recv_delayable_check(test_period[i].period_ms, PUB_PERIOD_COUNT);
+		} else {
+			recv_jitter_check(test_period[i].period_ms, PUB_PERIOD_COUNT);
+		}
 	}
 
 	PASS();
 }
 
+static void test_tx_period(void)
+{
+	tx_period(false);
+}
+
+static void test_rx_period(void)
+{
+	rx_period(false);
+}
+
+static void test_tx_period_delayable(void)
+{
+	tx_period(true);
+}
+
+static void test_rx_period_delayable(void)
+{
+	rx_period(true);
+}
+
 /* Test publish retransmit interval and count states by publishing a message and checking interval
  * between update handler calls.
  */
-static void test_tx_transmit(void)
+static void tx_transmit(bool delayable)
 {
 	const struct bt_mesh_model *model = &models[2];
 	uint8_t status;
@@ -672,6 +793,7 @@ static void test_tx_transmit(void)
 
 	publish_allow = true;
 	model->pub->retr_update = true;
+	model->pub->delayable = delayable;
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_transmit); i++) {
 		pub_param_set(0, test_transmit[i]);
@@ -683,7 +805,11 @@ static void test_tx_transmit(void)
 
 		/* Start publishing messages and measure jitter. */
 		msgf_publish();
-		pub_jitter_check(interval, count);
+		if (delayable) {
+			pub_delayable_check(interval, count);
+		} else {
+			pub_jitter_check(interval, count);
+		}
 
 		/* Let the receiver hit the first semaphore. */
 		k_sleep(K_SECONDS(1));
@@ -695,7 +821,7 @@ static void test_tx_transmit(void)
 /* Receive a published message and check retransmission interval by measuring interval between
  * message handler calls.
  */
-static void test_rx_transmit(void)
+static void rx_transmit(bool delayable)
 {
 	bt_mesh_test_cfg_set(NULL, 60);
 	bt_mesh_device_setup(&prov, &local_comp);
@@ -708,10 +834,34 @@ static void test_rx_transmit(void)
 		int32_t interval = BT_MESH_PUB_TRANSMIT_INT(test_transmit[i]);
 		int count = BT_MESH_PUB_TRANSMIT_COUNT(test_transmit[i]);
 
-		recv_jitter_check(interval, count);
+		if (delayable) {
+			recv_delayable_check(interval, count);
+		} else {
+			recv_jitter_check(interval, count);
+		}
 	}
 
 	PASS();
+}
+
+static void test_tx_transmit(void)
+{
+	tx_transmit(false);
+}
+
+static void test_rx_transmit(void)
+{
+	rx_transmit(false);
+}
+
+static void test_tx_transmit_delayable(void)
+{
+	tx_transmit(true);
+}
+
+static void test_rx_transmit_delayable(void)
+{
+	rx_transmit(true);
 }
 
 /* Cancel one of messages to be published and check that the next one is published when next period
@@ -840,6 +990,13 @@ static const struct bst_test_instance test_access[] = {
 	TEST_CASE(rx, transmit, "Access: Receive retransmitted messages"),
 	TEST_CASE(tx, cancel, "Access: Cancel a message during publication"),
 	TEST_CASE(rx, cancel, "Access: Receive published messages except cancelled"),
+
+	TEST_CASE(tx, period_delayable, "Access: Test delayable periodic publication"),
+	TEST_CASE(rx, period_delayable, "Access: Receive delayable periodic publication"),
+
+	TEST_CASE(tx, transmit_delayable, "Access: Test delayable publication with retransmission"),
+	TEST_CASE(rx, transmit_delayable, "Access: Receive delayable publication with"
+		  " retransmissions"),
 
 	BSTEST_END_MARKER
 };

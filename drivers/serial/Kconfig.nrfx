@@ -25,11 +25,20 @@ config UART_NRFX_UART
 config UART_NRFX_UARTE
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
+	imply NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
+	imply NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
+
+config UART_NRFX_UARTE_LEGACY_SHIM
+	bool "Legacy UARTE shim"
+	depends on UART_NRFX_UARTE
+	depends on !SOC_SERIES_NRF54LX && !SOC_SERIES_NRF54HX
+	# New shim takes more ROM. Until it is fixed use legacy shim.
+	default y
 
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"
 	depends on UART_ASYNC_API
-	depends on UART_NRFX_UARTE
+	depends on UART_NRFX_UARTE_LEGACY_SHIM
 	default 8
 	help
 	  For UARTE, TX cache buffer is used when provided TX buffer is not located
@@ -53,6 +62,76 @@ endif
 
 if HAS_HW_NRF_UARTE3
 nrfx_uart_num = 3
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE00
+nrfx_uart_num = 00
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE20
+nrfx_uart_num = 20
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE21
+nrfx_uart_num = 21
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE22
+nrfx_uart_num = 22
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE30
+nrfx_uart_num = 30
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE120
+nrfx_uart_num = 120
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE130
+nrfx_uart_num = 130
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE131
+nrfx_uart_num = 131
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE132
+nrfx_uart_num = 132
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE133
+nrfx_uart_num = 133
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE134
+nrfx_uart_num = 134
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE135
+nrfx_uart_num = 135
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE136
+nrfx_uart_num = 136
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE137
+nrfx_uart_num = 137
 rsource "Kconfig.nrfx_uart_instance"
 endif
 

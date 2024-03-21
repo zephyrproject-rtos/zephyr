@@ -84,7 +84,7 @@ static inline void write_u32(void *buffer, size_t *off, uint32_t v)
 	*off = *off + sizeof(uint32_t);
 }
 
-size_t calculate_buff_size(struct gcov_info *info)
+size_t gcov_calculate_buff_size(struct gcov_info *info)
 {
 	uint32_t iter;
 	uint32_t iter_1;
@@ -266,7 +266,7 @@ void gcov_coverage_dump(void)
 	while (gcov_list) {
 
 		dump_on_console_start(gcov_list->filename);
-		size = calculate_buff_size(gcov_list);
+		size = gcov_calculate_buff_size(gcov_list);
 
 		buffer = k_heap_alloc(&gcov_heap, size, K_NO_WAIT);
 		if (CONFIG_COVERAGE_GCOV_HEAP_SIZE > 0 && !buffer) {
@@ -294,6 +294,11 @@ coverage_dump_end:
 	return;
 }
 
+struct gcov_info *gcov_get_list_head(void)
+{
+	/* Locking someway before getting this is recommended. */
+	return gcov_info_head;
+}
 
 /* Initialize the gcov by calling the required constructors */
 void gcov_static_init(void)

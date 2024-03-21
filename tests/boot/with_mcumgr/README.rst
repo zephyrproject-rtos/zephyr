@@ -3,7 +3,7 @@ Upgrade testing with MCUmgr
 
 This application is based on :ref:`smp_svr_sample`. It is built
 using **sysbuild**. Tests are automated with pytest, a new harness of Twister
-(more information can be found here :ref:`integration-with-pytest`)
+(more information can be found :ref:`here <integration_with_pytest>`)
 
 .. note::
    Pytest uses the MCUmgr fixture which requires the ``mcumgr`` available

@@ -85,7 +85,7 @@ buf_alloc_err:
 
 int usbh_req_desc(struct usb_device *const udev,
 		  const uint8_t type, const uint8_t index,
-		  const uint8_t id,
+		  const uint16_t id,
 		  const uint16_t len,
 		  struct net_buf *const buf)
 {

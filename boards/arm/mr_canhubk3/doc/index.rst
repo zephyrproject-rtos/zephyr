@@ -31,7 +31,7 @@ Hardware
     - Console UART
     - 6x CAN FD
     - 100Base-T1 Ethernet
-    - DroneCode standard JST-GH connectors and I/O headers for I2C, SPI, GPIO,
+    - JST-GH connectors and I/O headers for I2C, SPI, GPIO,
       PWM, etc.
 
 More information about the hardware and design resources can be found at
@@ -57,6 +57,7 @@ ADC SAR       on-chip     adc
 LPSPI         on-chip     spi
 WDT           FS26 SBC    watchdog
 EMAC          on-chip     ethernet
+                          mdio
 eMIOS         on-chip     pwm
 EDMA          on-chip     dma
 ============  ==========  ================================
@@ -252,9 +253,9 @@ Ethernet
 
 This board has a single instance of Ethernet Media Access Controller (EMAC)
 interfacing with a `NXP TJA1103`_ 100Base-T1 Ethernet PHY. Currently, there is
-no driver for this PHY and this board default pin strapping configuration for
+limited driver for this PHY that allows for overiding the default pin strapping configuration for
 the PHY (RMII, master, autonomous mode enabled, polarity correction enabled)
-allows to use it without software configuration.
+to slave mode.
 
 The 100Base-T1 signals are available in connector ``P9`` and can be converted to
 100Base-T using a Ethernet media converter such as `RDDRONE-T1ADAPT`_.

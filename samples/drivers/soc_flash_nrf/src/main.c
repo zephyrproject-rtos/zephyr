@@ -13,11 +13,7 @@
 #include <stdio.h>
 
 
-#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-#define TEST_PARTITION	slot1_ns_partition
-#else
-#define TEST_PARTITION	slot1_partition
-#endif
+#define TEST_PARTITION	storage_partition
 
 #define TEST_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(TEST_PARTITION)
 #define TEST_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(TEST_PARTITION)
@@ -84,9 +80,9 @@ int main(void)
 		}
 	}
 
-	offset = TEST_PARTITION_OFFSET - FLASH_PAGE_SIZE * 2;
-	printf("\nTest 3: Flash erase (4 pages at 0x%x)\n", offset);
-	if (flash_erase(flash_dev, offset, FLASH_PAGE_SIZE * 4) != 0) {
+	offset = TEST_PARTITION_OFFSET;
+	printf("\nTest 3: Flash erase (2 pages at 0x%x)\n", offset);
+	if (flash_erase(flash_dev, offset, FLASH_PAGE_SIZE * 2) != 0) {
 		printf("   Flash erase failed!\n");
 	} else {
 		printf("   Flash erase succeeded!\n");
@@ -191,5 +187,7 @@ int main(void)
 	printf("\nTest 8: Write block size API\n");
 	printf("   write-block-size = %u\n",
 	       flash_get_write_block_size(flash_dev));
+
+	printf("\nFinished!\n");
 	return 0;
 }

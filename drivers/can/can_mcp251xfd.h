@@ -478,6 +478,8 @@ struct mcp251xfd_fifo {
 };
 
 struct mcp251xfd_data {
+	struct can_driver_data common;
+
 	/* Interrupt Data */
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;
@@ -486,8 +488,6 @@ struct mcp251xfd_data {
 
 	/* General */
 	enum can_state state;
-	can_state_change_callback_t state_change_cb;
-	void *state_change_cb_data;
 	struct k_mutex mutex;
 
 	/* TX Callback */
@@ -503,27 +503,17 @@ struct mcp251xfd_data {
 
 	const struct device *dev;
 
-	bool started;
 	uint8_t next_mcp251xfd_mode;
 	uint8_t current_mcp251xfd_mode;
 	int tdco;
-
-	can_mode_t mode;
 
 	struct mcp251xfd_spi_data spi_data;
 
 };
 
-struct mcp251xfd_timing_params {
-	uint8_t sjw;
-	uint8_t prop_seg;
-	uint8_t phase_seg1;
-	uint8_t phase_seg2;
-	uint32_t bus_speed;
-	uint16_t sample_point;
-};
-
 struct mcp251xfd_config {
+	const struct can_driver_config common;
+
 	/* spi configuration */
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec int_gpio_dt;
@@ -536,16 +526,6 @@ struct mcp251xfd_config {
 	uint8_t clko_div;
 
 	uint16_t timestamp_prescaler;
-
-	/* CAN Timing */
-	struct mcp251xfd_timing_params timing_params;
-#if defined(CONFIG_CAN_FD_MODE)
-	struct mcp251xfd_timing_params timing_params_data;
-#endif
-
-	/* CAN transceiver */
-	const struct device *phy;
-	uint32_t max_bitrate;
 
 	const struct device *clk_dev;
 	uint8_t clk_id;

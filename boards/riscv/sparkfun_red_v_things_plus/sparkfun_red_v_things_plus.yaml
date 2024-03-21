@@ -1,7 +1,7 @@
 identifier: sparkfun_red_v_things_plus
 name: SparkFun RED-V Things Plus
 type: mcu
-arch: riscv32
+arch: riscv
 toolchain:
   - zephyr
 ram: 16

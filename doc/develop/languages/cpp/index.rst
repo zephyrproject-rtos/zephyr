@@ -83,7 +83,7 @@ The scope of the minimal C++ library is strictly limited to providing the basic
 C++ language support, and it does not implement any `Standard Template Library
 (STL)`_ classes and functions. For this reason, it is only suitable for use in
 the applications that implement their own (non-standard) class library and do
-rely on the Standard Template Library (STL) components.
+not rely on the Standard Template Library (STL) components.
 
 Any application that makes use of the Standard Template Library (STL)
 components, such as ``std::string`` and ``std::vector``, must enable the C++

@@ -21,7 +21,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap_internal.h"
+#include "l2cap_br_internal.h"
 #include "sdp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_SDP_LOG_LEVEL
@@ -70,8 +70,8 @@ static uint8_t num_services;
 static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
-NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
-			  BT_L2CAP_BUF_SIZE(SDP_MTU), 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDP_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
 
@@ -219,7 +219,7 @@ static int bt_sdp_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 
 	hdr = net_buf_push(buf, sizeof(struct bt_sdp_hdr));
 	hdr->op_code = op;
-	hdr->tid = tid;
+	hdr->tid = sys_cpu_to_be16(tid);
 	hdr->param_len = sys_cpu_to_be16(param_len);
 
 	err = bt_l2cap_chan_send(chan, buf);
@@ -1366,14 +1366,14 @@ static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 				continue;
 			}
 
-			err = handlers[i].func(sdp, buf, hdr->tid);
+			err = handlers[i].func(sdp, buf, sys_be16_to_cpu(hdr->tid));
 			break;
 		}
 	}
 
 	if (err) {
 		LOG_WRN("SDP error 0x%02x", err);
-		send_err_rsp(chan, err, hdr->tid);
+		send_err_rsp(chan, err, sys_be16_to_cpu(hdr->tid));
 	}
 
 	return 0;

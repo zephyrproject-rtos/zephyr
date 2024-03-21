@@ -13,14 +13,6 @@ RunTest mesh_prov_pb_adv_multi \
 	prov_device_pb_adv_no_oob \
 	prov_device_pb_adv_no_oob
 
-conf=prj_mesh1d1_conf
-RunTest mesh_prov_pb_adv_multi_1d1 \
-	prov_provisioner_pb_adv_multi \
-	prov_device_pb_adv_no_oob \
-	prov_device_pb_adv_no_oob \
-	prov_device_pb_adv_no_oob
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_adv_multi_psa \
 	prov_provisioner_pb_adv_multi \

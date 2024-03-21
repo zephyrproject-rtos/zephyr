@@ -145,7 +145,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * This routine prepares for the execution of and runs C code.
  *
  */
-void z_arm_prep_c(void)
+void z_prep_c(void)
 {
 	/* Initialize tpidruro with our struct _cpu instance address */
 	write_tpidruro((uintptr_t)&_kernel.cpus[0]);

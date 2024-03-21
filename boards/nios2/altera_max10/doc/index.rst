@@ -233,14 +233,14 @@ You will see output similar to the following:
    Listening on port 3335 for connection from GDB: accepted
    isr_tables_syms () at /projects/zephyr/arch/common/isr_tables.c:63
    63      GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(struct _isr_list));
-   (gdb) b _PrepC
+   (gdb) b z_prep_c
    Breakpoint 1 at 0xdf0: file /projects/zephyr/arch/nios2/core/prep_c.c, line 36.
    (gdb) b z_cstart
    Breakpoint 2 at 0x1254: file /projects/zephyr/kernel/init.c, line 348.
    (gdb) c
    Continuing.
 
-   Breakpoint 2, _Cstart () at /projects/zephyr/kernel/init.c:348
+   Breakpoint 2, z_cstart () at /projects/zephyr/kernel/init.c:348
    348     {
    (gdb)
 

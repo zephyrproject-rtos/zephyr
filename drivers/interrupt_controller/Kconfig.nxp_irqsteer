@@ -1,0 +1,14 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_IRQSTEER
+	bool "IRQ_STEER interrupt controller for NXP chips"
+	default y
+	depends on DT_HAS_NXP_IRQSTEER_INTC_ENABLED
+	depends on MULTI_LEVEL_INTERRUPTS
+	depends on XTENSA
+	help
+		The IRQSTEER INTC provides support for MUX-ing
+		multiple interrupts from peripheral to one or
+		more CPU interrupt lines. This is used for CPUs
+		such as XTENSA DSPs.

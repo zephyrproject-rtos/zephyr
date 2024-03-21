@@ -151,6 +151,7 @@ source "drivers/flash/Kconfig.gd32"
 source "drivers/flash/Kconfig.xmc4xxx"
 
 source "drivers/flash/Kconfig.ifx_cat1"
+source "drivers/flash/Kconfig.cadence_nand"
 
 source "drivers/flash/Kconfig.numaker"
 
@@ -159,5 +160,7 @@ source "drivers/flash/Kconfig.nxp_s32"
 source "drivers/flash/Kconfig.andes"
 
 source "drivers/flash/Kconfig.ambiq"
+
+source "drivers/flash/Kconfig.nrf_rram"
 
 endif # FLASH

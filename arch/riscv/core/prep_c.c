@@ -20,6 +20,10 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 
+#if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
+void soc_interrupt_init(void);
+#endif
+
 /**
  *
  * @brief Prepare to and run C code
@@ -27,7 +31,7 @@
  * This routine prepares for the execution of and runs C code.
  */
 
-void _PrepC(void)
+void z_prep_c(void)
 {
 	z_bss_zero();
 	z_data_copy();

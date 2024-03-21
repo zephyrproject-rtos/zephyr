@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/virtual.h>
 #endif
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_NATIVE)
 struct ethernet_capabilities {
@@ -218,7 +218,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			name = "<unknown>";
 		}
 
-		PR("Name      : %s\n", name);
+		PR("Virtual name : %s\n", name);
 
 		orig_iface = net_virtual_get_iface(iface);
 		if (orig_iface == NULL) {

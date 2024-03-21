@@ -11,6 +11,7 @@
 #include <zephyr/drivers/bbram.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <stm32_ll_rtc.h>
 LOG_MODULE_REGISTER(bbram, CONFIG_BBRAM_LOG_LEVEL);
 
 #define STM32_BKP_REG_BYTES		 4

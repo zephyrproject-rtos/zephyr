@@ -36,6 +36,9 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 		    (_CONCAT(HAL_OSPIM_, DT_STRING_TOKEN(STM32_OSPI_NODE, prop))),	\
 		    ((default_value)))
 
+/* Get the base address of the flash from the DTS node */
+#define STM32_OSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
+
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
 #define STM32_OSPI_DLYB_BYPASSED DT_PROP(STM32_OSPI_NODE, dlyb_bypass)
@@ -1048,10 +1051,20 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				break;
 			}
 		} else {
-			/* Sector erase */
-			LOG_DBG("Sector Erase");
+			/* Sector or Block erase depending on the size */
+			LOG_DBG("Sector/Block Erase");
 
+			cmd_erase.AddressMode =
+				(dev_cfg->data_mode == OSPI_OPI_MODE)
+				? HAL_OSPI_ADDRESS_8_LINES
+				: HAL_OSPI_ADDRESS_1_LINE;
+			cmd_erase.AddressDtrMode =
+				(dev_cfg->data_rate == OSPI_DTR_TRANSFER)
+				? HAL_OSPI_ADDRESS_DTR_ENABLE
+				: HAL_OSPI_ADDRESS_DTR_DISABLE;
+			cmd_erase.AddressSize = stm32_ospi_hal_address_size(dev);
 			cmd_erase.Address = addr;
+
 			const struct jesd216_erase_type *erase_types =
 							dev_data->erase_types;
 			const struct jesd216_erase_type *bet = NULL;
@@ -1063,12 +1076,12 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 				if ((etp->exp != 0)
 				    && SPI_NOR_IS_ALIGNED(addr, etp->exp)
-				    && SPI_NOR_IS_ALIGNED(size, etp->exp)
+				    && (size >= BIT(etp->exp))
 				    && ((bet == NULL)
 					|| (etp->exp > bet->exp))) {
 					bet = etp;
 					cmd_erase.Instruction = bet->cmd;
-				} else {
+				} else if (bet == NULL) {
 					/* Use the default sector erase cmd */
 					if (dev_cfg->data_mode == OSPI_OPI_MODE) {
 						cmd_erase.Instruction = SPI_NOR_OCMD_SE;
@@ -1079,22 +1092,15 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 							? SPI_NOR_CMD_SE_4B
 							: SPI_NOR_CMD_SE;
 					}
-					cmd_erase.AddressMode =
-						(dev_cfg->data_mode == OSPI_OPI_MODE)
-						? HAL_OSPI_ADDRESS_8_LINES
-						: HAL_OSPI_ADDRESS_1_LINE;
-					cmd_erase.AddressDtrMode =
-						(dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-						? HAL_OSPI_ADDRESS_DTR_ENABLE
-						: HAL_OSPI_ADDRESS_DTR_DISABLE;
-					cmd_erase.AddressSize = stm32_ospi_hal_address_size(dev);
-					cmd_erase.Address = addr;
 					/* Avoid using wrong erase type,
 					 * if zero entries are found in erase_types
 					 */
 					bet = NULL;
 				}
 			}
+			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
+				cmd_erase.Address, cmd_erase.AddressSize,
+				cmd_erase.AddressMode, cmd_erase.Instruction);
 
 			ospi_send_cmd(dev, &cmd_erase);
 
@@ -2221,6 +2227,39 @@ static int flash_stm32_ospi_init(const struct device *dev)
 				break;
 			}
 		}
+		if (id == JESD216_SFDP_PARAM_ID_4B_ADDR_INSTR) {
+
+			if (dev_data->address_width == 4U) {
+				/*
+				 * Check table 4 byte address instruction table to get supported
+				 * erase opcodes when running in 4 byte address mode
+				 */
+				union {
+					uint32_t dw[2];
+					struct {
+						uint32_t dummy;
+						uint8_t type[4];
+					} types;
+				} u2;
+				ret = ospi_read_sfdp(dev, jesd216_param_addr(php),
+					     (uint8_t *)u2.dw,
+					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
+				if (ret != 0) {
+					break;
+				}
+				for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
+					struct jesd216_erase_type *etp = &dev_data->erase_types[ei];
+					const uint8_t cmd = u2.types.type[ei];
+					/* 0xff means not supported */
+					if (cmd == 0xff) {
+						etp->exp = 0;
+						etp->cmd = 0;
+					} else {
+						etp->cmd = cmd;
+					};
+				}
+			}
+		}
 		++php;
 	}
 
@@ -2231,6 +2270,10 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+	LOG_INF("NOR octo-flash at 0x%lx (0x%x bytes)",
+		(long)(STM32_OSPI_BASE_ADDRESS),
+		dev_cfg->flash_size);
 
 	return 0;
 }
@@ -2297,7 +2340,7 @@ static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospi_mgr, bits)},
 #endif
 	.irq_config = flash_stm32_ospi_irq_config_func,
-	.flash_size = DT_INST_PROP(0, size) / 8U,
+	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
 	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */

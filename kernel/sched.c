@@ -1094,7 +1094,7 @@ void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 
 void z_reschedule_irqlock(uint32_t key)
 {
-	if (resched(key)) {
+	if (resched(key) && need_swap()) {
 		z_swap_irqlock(key);
 	} else {
 		irq_unlock(key);
@@ -1527,26 +1527,28 @@ static inline void z_vrfy_k_yield(void)
 
 static int32_t z_tick_sleep(k_ticks_t ticks)
 {
-#ifdef CONFIG_MULTITHREADING
 	uint32_t expected_wakeup_ticks;
 
 	__ASSERT(!arch_is_in_isr(), "");
 
 	LOG_DBG("thread %p for %lu ticks", _current, (unsigned long)ticks);
 
+#ifdef CONFIG_MULTITHREADING
 	/* wait of 0 ms is treated as a 'yield' */
 	if (ticks == 0) {
 		k_yield();
 		return 0;
 	}
+#endif
 
-	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
 	if (Z_TICK_ABS(ticks) <= 0) {
 		expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
 	} else {
 		expected_wakeup_ticks = Z_TICK_ABS(ticks);
 	}
 
+#ifdef CONFIG_MULTITHREADING
+	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
@@ -1564,6 +1566,9 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 	if (ticks > 0) {
 		return ticks;
 	}
+#else
+	/* busy wait to be time coherent since subsystems may depend on it */
+	z_impl_k_busy_wait(k_ticks_to_us_ceil32(expected_wakeup_ticks));
 #endif
 
 	return 0;
@@ -1579,8 +1584,12 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	/* in case of K_FOREVER, we suspend */
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+#ifdef CONFIG_MULTITHREADING
 		k_thread_suspend(_current);
-
+#else
+		/* In Single Thread, just wait for an interrupt saving power */
+		k_cpu_idle();
+#endif
 		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, (int32_t) K_TICKS_FOREVER);
 
 		return (int32_t) K_TICKS_FOREVER;
@@ -1590,7 +1599,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	ticks = z_tick_sleep(ticks);
 
-	int32_t ret = k_ticks_to_ms_floor64(ticks);
+	int32_t ret = k_ticks_to_ms_ceil64(ticks);
 
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ret);
 
@@ -1614,9 +1623,11 @@ int32_t z_impl_k_usleep(int us)
 	ticks = k_us_to_ticks_ceil64(us);
 	ticks = z_tick_sleep(ticks);
 
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, usleep, us, k_ticks_to_us_floor64(ticks));
+	int32_t ret = k_ticks_to_us_ceil64(ticks);
 
-	return k_ticks_to_us_floor64(ticks);
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, usleep, us, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1642,13 +1653,18 @@ void z_impl_k_wakeup(k_tid_t thread)
 		}
 	}
 
+	k_spinlock_key_t  key = k_spin_lock(&sched_spinlock);
+
 	z_mark_thread_as_not_suspended(thread);
-	z_ready_thread(thread);
 
-	flag_ipi();
+	if (!thread_active_elsewhere(thread)) {
+		ready_thread(thread);
+	}
 
-	if (!arch_is_in_isr()) {
-		z_reschedule_unlocked();
+	if (arch_is_in_isr()) {
+		k_spin_unlock(&sched_spinlock, key);
+	} else {
+		z_reschedule(&sched_spinlock, key);
 	}
 }
 

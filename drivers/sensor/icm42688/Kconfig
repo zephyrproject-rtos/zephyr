@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config ICM42688
+menuconfig ICM42688
 	bool "ICM42688 Six-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM42688_ENABLED
@@ -12,24 +12,23 @@ config ICM42688
 	help
 	  Enable driver for ICM42688 SPI-based six-axis motion tracking device.
 
+if ICM42688
+
 config EMUL_ICM42688
 	bool "Emulator for the ICM42688"
 	default y
-	depends on ICM42688
 	depends on EMUL
 	help
 	  Enable the hardware emulator for the ICM42688. Doing so allows exercising
-	  sensor APIs for this IMU in native_posix and qemu.
+	  sensor APIs for this IMU in native_sim and qemu.
 
 config ICM42688_DECODER
 	bool "ICM42688 decoder logic"
-	default y if ICM42688
+	default y
 	select SENSOR_ASYNC_API
 	help
 	  Compile the ICM42688 decoder API which allows decoding raw data returned
 	  from the sensor.
-
-if ICM42688
 
 choice
 	prompt "Trigger mode"

@@ -1,6 +1,6 @@
 # i.MX RT5XX Series
 
-# Copyright (c) 2022, NXP
+# Copyright 2022-2023, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -128,5 +128,29 @@ config IMXRT5XX_CODE_CACHE
 	help
 	  Enable code cache for FlexSPI region at boot. If this Kconfig is
 	  cleared, the CACHE64 controller will be disabled during SOC init
+
+choice FLEXCOMM0_CLK_SRC
+	prompt "Clock source for Flexcomm0"
+	default FLEXCOMM0_CLK_SRC_FRG
+
+config FLEXCOMM0_CLK_SRC_FRG
+	bool "FRG is source of Flexcomm0 clock"
+
+config FLEXCOMM0_CLK_SRC_FRO
+	bool "FRO_DIV4 is source of Flexcomm0 clock"
+
+endchoice
+
+choice MIPI_DPHY_CLK_SRC
+	prompt "Clock source for MIPI DPHY"
+	default MIPI_DPHY_CLK_SRC_AUX1_PLL
+
+config MIPI_DPHY_CLK_SRC_AUX1_PLL
+	bool "AUX1_PLL is source of MIPI_DPHY clock"
+
+config MIPI_DPHY_CLK_SRC_FRO
+	bool "FRO 192/96M is source of MIPI_DPHY clock"
+
+endchoice
 
 endif # SOC_SERIES_IMX_RT5XX

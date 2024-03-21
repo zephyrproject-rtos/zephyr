@@ -78,3 +78,6 @@ API documentation
 *****************
 
 .. doxygengroup:: timing_api
+.. doxygengroup:: timing_api_arch
+.. doxygengroup:: timing_api_soc
+.. doxygengroup:: timing_api_board

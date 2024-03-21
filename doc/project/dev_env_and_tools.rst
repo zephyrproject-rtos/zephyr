@@ -111,7 +111,7 @@ TSC and Working Groups
 
 Changes that introduce new features or functionality or change the way the
 overall system works need to be reviewed by the TSC or the responsible Working
-Group. For example for :ref:`stable API changes <stable_api_changes>`, the
+Group. For example for :ref:`breaking API changes <breaking_api_changes>`, the
 proposal needs to be presented in the Architecture meeting so that the relevant
 stakeholders are made aware of the change.
 
@@ -323,7 +323,7 @@ Fix for an issue blocking development.
 
 * *Maintainer*
 
-Maintainer review reqiured.
+Maintainer review required.
 
 * *Security Review*
 
@@ -383,10 +383,10 @@ following `TSC meeting`_ if time permits.
 
 .. _`TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#technical-steering-committee-tsc
 
-* *Stable API Change*
+* *Breaking API Change*
 
-The issue or PR describes a change to a stable API. See additional information
-in :ref:`stable_api_changes`.
+The issue or PR describes a breaking change to a stable API. See additional information
+in :ref:`breaking_api_changes`.
 
 * *Bug*
 

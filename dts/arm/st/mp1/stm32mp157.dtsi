@@ -22,7 +22,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
@@ -397,6 +397,14 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000001>;
 			status = "disabled";
 		};
+	};
+
+	smbus5: smbus5 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c5>;
+		status = "disabled";
 	};
 };
 

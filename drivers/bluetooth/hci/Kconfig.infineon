@@ -129,11 +129,6 @@ config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
 config BT_BUF_CMD_TX_SIZE
 	default 255
 
-# Disable ATT_ENFORCE_FLOW feature, CYW43XX informs about frees buffer
-# (HCL Number Of Completed Packets event) after second packet.
-config BT_ATT_ENFORCE_FLOW
-	default n
-
 endif # BT_AIROC
 
 if BT_PSOC6_BLESS

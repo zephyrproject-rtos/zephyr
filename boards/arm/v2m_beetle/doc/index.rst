@@ -190,7 +190,7 @@ Peripheral Mapping:
    - I2C_1_SDA : D22
    - I2C_1_SCL : D23
 
-For mode details please refer to `Beetle Technical Reference Manual (TRM)`_.
+For more details please refer to `Beetle Technical Reference Manual (TRM)`_.
 
 System Clock
 ============

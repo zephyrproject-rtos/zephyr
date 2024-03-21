@@ -44,7 +44,8 @@ config BT_CTLR
 	default y if BOARD_NRF52_BSIM || BOARD_NRF5340BSIM_NRF5340_CPUNET
 	depends on BT
 
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 4096 if BT_HCI_IPC
 	default 4096 if NRF_802154_SER_HOST && BOARD_NRF5340BSIM_NRF5340_CPUAPP
 	default 4096 if NRF_802154_SER_RADIO && BOARD_NRF5340BSIM_NRF5340_CPUNET
@@ -86,10 +87,7 @@ endif # LOG
 if CONSOLE
 
 config POSIX_ARCH_CONSOLE
-	default y if !SERIAL
-
-config UART_CONSOLE
-	default y if SERIAL
+	default y
 
 endif # CONSOLE
 

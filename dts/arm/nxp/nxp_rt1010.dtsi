@@ -112,6 +112,7 @@
 			ahb-bufferable;
 			ahb-cacheable;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0x0>;
 		};
 
 		/* Remove SEMC, it does'nt exist on RT1010 */

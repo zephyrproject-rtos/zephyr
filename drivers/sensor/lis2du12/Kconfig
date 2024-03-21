@@ -1,0 +1,25 @@
+# ST Microelectronics LIS2DU12 3-axis accelerometer sensor driver
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LIS2DU12
+	bool "LIS2DU12 I2C/SPI smartxl Chip"
+	default y
+	depends on DT_HAS_ST_LIS2DU12_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DU12),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DU12),spi)
+	select HAS_STMEMSC
+	select USE_STDC_LIS2DU12
+	help
+	  Enable driver for LIS2DU12 smartxl sensor.
+
+if LIS2DU12
+
+module = LIS2DU12
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # LIS2DU12

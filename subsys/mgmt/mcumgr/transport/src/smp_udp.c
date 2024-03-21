@@ -111,7 +111,11 @@ static int smp_udp4_tx(struct net_buf *nb)
 	ret = sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
-		ret = MGMT_ERR_EINVAL;
+		if (errno == ENOMEM) {
+			ret = MGMT_ERR_EMSGSIZE;
+		} else {
+			ret = MGMT_ERR_EINVAL;
+		}
 	} else {
 		ret = MGMT_ERR_EOK;
 	}
@@ -131,7 +135,11 @@ static int smp_udp6_tx(struct net_buf *nb)
 	ret = sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
-		ret = MGMT_ERR_EINVAL;
+		if (errno == ENOMEM) {
+			ret = MGMT_ERR_EMSGSIZE;
+		} else {
+			ret = MGMT_ERR_EINVAL;
+		}
 	} else {
 		ret = MGMT_ERR_EOK;
 	}
@@ -266,27 +274,34 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
-				      struct net_if *iface)
+static void smp_udp_open_iface(struct net_if *iface, void *user_data)
 {
-	ARG_UNUSED(cb);
-	ARG_UNUSED(iface);
+	ARG_UNUSED(user_data);
 
-	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
-		LOG_INF("Network connected");
+	if (net_if_is_up(iface)) {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-		if (IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
+		if (net_if_flag_is_set(iface, NET_IF_IPV4) &&
+		    IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
 			k_sem_give(&smp_udp_configs.ipv4.network_ready_sem);
 		}
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-		if (IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
+		if (net_if_flag_is_set(iface, NET_IF_IPV6) &&
+		    IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
 			k_sem_give(&smp_udp_configs.ipv6.network_ready_sem);
 		}
 #endif
-	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
-		LOG_INF("Network disconnected");
+	}
+}
+
+static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+				      struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		smp_udp_open_iface(iface, NULL);
 	}
 }
 
@@ -326,8 +341,8 @@ int smp_udp_open(void)
 #endif
 
 	if (started) {
-		/* One or more threads were started, send interface notifications */
-		conn_mgr_mon_resend_status();
+		/* One or more threads were started, check existing interfaces */
+		net_if_foreach(smp_udp_open_iface, NULL);
 	}
 
 	return 0;
@@ -413,8 +428,7 @@ static void smp_udp_start(void)
 	}
 #endif
 
-	net_mgmt_init_event_callback(&smp_udp_mgmt_cb, smp_udp_net_event_handler,
-				     (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED));
+	net_mgmt_init_event_callback(&smp_udp_mgmt_cb, smp_udp_net_event_handler, NET_EVENT_IF_UP);
 	net_mgmt_add_event_callback(&smp_udp_mgmt_cb);
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT

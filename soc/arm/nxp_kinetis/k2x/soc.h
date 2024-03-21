@@ -33,9 +33,6 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
-#include <zephyr/device.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/random/random.h>
 
 #endif /* !_ASMLANGUAGE */
 

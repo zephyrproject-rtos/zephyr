@@ -7,7 +7,7 @@
 /* .dtsi header for nRF5340 CPUAPP (Application MCU), Non-Secure domain */
 
 #include <arm/armv8-m.dtsi>
-#include "nrf_common.dtsi"
+#include <nordic/nrf_common.dtsi>
 
 / {
 	cpus {
@@ -48,6 +48,19 @@
 			 */
 			#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
+
+		/*
+		 * GPIOTE1 is always accessible as a non-secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		gpiote: gpiote1: gpiote@4002f000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x4002f000 0x1000>;
+			interrupts = <47 5>;
+			status = "disabled";
+			instance = <1>;
+		};
 	};
 
 	/* Default IPC description */
@@ -65,11 +78,7 @@
 	arm,num-irq-priority-bits = <3>;
 };
 
-/*
- * Include the non-secure peripherals file here since
- * it expects to be at the root level, adding a 'gpiote' label
- * for the GPIOTE1 peripheral defined in that file which is
- * always accessible as a non-secure peripheral.
- */
-#include "nrf5340_cpuapp_peripherals_ns.dtsi"
-gpiote: &gpiote1 {};
+&systick {
+	/* Use RTC for system clock, instead of SysTick. */
+	status = "disabled";
+};

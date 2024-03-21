@@ -436,6 +436,8 @@ static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 		break;
 	case NRF_USBD_COMMON_EVT_WUREQ:
 		LOG_INF("Remote wakeup initiated");
+		udc_set_suspended(udc_nrf_dev, false);
+		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
 		break;
 	case NRF_USBD_COMMON_EVT_RESET:
 		LOG_INF("Reset");

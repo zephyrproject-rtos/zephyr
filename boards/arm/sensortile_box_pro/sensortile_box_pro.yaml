@@ -9,6 +9,7 @@ toolchain:
 supported:
   - pwm
   - spi
+  - ble
   - i2c
   - gpio
   - usb device

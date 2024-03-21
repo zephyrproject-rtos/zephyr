@@ -8,9 +8,6 @@ if BOARD_RAK5010_NRF52840
 config BOARD
 	default "rak5010_nrf52840"
 
-config MODEM_QUECTEL_BG9X
-	default y
-
 config BT_CTLR
 	default BT
 

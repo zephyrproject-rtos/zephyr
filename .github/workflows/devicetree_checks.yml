@@ -35,14 +35,14 @@ jobs:
           python-version: 3.6
     steps:
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: cache-pip-linux
       if: startsWith(runner.os, 'Linux')
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}
@@ -50,7 +50,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: cache-pip-mac
       if: startsWith(runner.os, 'macOS')
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/Library/Caches/pip
         # Trailing '-' was just to get a different cache name
@@ -59,7 +59,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
     - name: cache-pip-win
       if: startsWith(runner.os, 'Windows')
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~\AppData\Local\pip\Cache
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}

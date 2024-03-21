@@ -4,7 +4,7 @@ Host Toolchains
 ###############
 
 In some specific configurations, like when building for non-MCU x86 targets on
-a Linux host, you may be able to re-use the native development tools provided
+a Linux host, you may be able to reuse the native development tools provided
 by your operating system.
 
 To use your host gcc, set the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`

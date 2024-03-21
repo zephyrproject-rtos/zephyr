@@ -3,10 +3,10 @@
 
 description: |
     When setting the odr and power-mode properties in a .dts or .dtsi file you may include
-    st_lis2ds12.h and use the macros defined there.
+    lis2ds12.h and use the macros defined there.
 
     Example:
-    #include <zephyr/dt-bindings/sensor/st_lis2ds12.h>
+    #include <zephyr/dt-bindings/sensor/lis2ds12.h>
 
     lis2ds12: lis2ds12@0 {
       ...

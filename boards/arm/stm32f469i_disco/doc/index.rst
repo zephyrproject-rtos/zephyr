@@ -113,7 +113,7 @@ Pin Mapping
 STM32F469I-DISCO Discovery kit has 9 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `32F469IDISCOVERY board User Manual`_.
+For more details please refer to `32F469IDISCOVERY board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

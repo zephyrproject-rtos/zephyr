@@ -111,7 +111,7 @@ features.
 The default configuration can be found in the defconfig file:
 ``boards/arm/mps3_an547/mps3_an547_defconfig``.
 
-For mode details refer to `MPS3 AN547 Technical Reference Manual (TRM)`_.
+For more details refer to `MPS3 AN547 Technical Reference Manual (TRM)`_.
 
 Serial Port
 ===========

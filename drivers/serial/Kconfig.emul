@@ -20,7 +20,7 @@ config UART_EMUL_WORK_Q_STACK_SIZE
 	default 2048
 
 config UART_EMUL_WORK_Q_PRIORITY
-	int "UART emulator work queue tread priority"
+	int "UART emulator work queue thread priority"
 	default 1
 
 endif # UART_EMUL

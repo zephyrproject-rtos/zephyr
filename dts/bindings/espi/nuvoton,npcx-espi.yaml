@@ -30,3 +30,13 @@ properties:
 
         For example the WUI mapping on NPCX7 would be
            espi-rst-wui = <&wui_cr_sin1>;
+
+  rx-plsize:
+    type: int
+    required: true
+    description: The maximum receive channel payload size.
+
+  tx-plsize:
+    type: int
+    required: true
+    description: The maximum transmit channel payload size.

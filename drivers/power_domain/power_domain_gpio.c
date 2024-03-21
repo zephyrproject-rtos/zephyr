@@ -37,7 +37,7 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 	struct pd_visitor_context *visitor_context = context;
 
 	/* Only run action if the device is on the specified domain */
-	if (!dev->pm || (dev->pm->domain != visitor_context->domain)) {
+	if (!dev->pm || (dev->pm_base->domain != visitor_context->domain)) {
 		return 0;
 	}
 
@@ -135,7 +135,7 @@ static int pd_gpio_init(const struct device *dev)
 	PM_DEVICE_DT_INST_DEFINE(id, pd_gpio_pm_action);			\
 	DEVICE_DT_INST_DEFINE(id, pd_gpio_init, PM_DEVICE_DT_INST_GET(id),	\
 			      &pd_gpio_##id##_data, &pd_gpio_##id##_cfg,	\
-			      POST_KERNEL, CONFIG_POWER_DOMAIN_INIT_PRIORITY,	\
+			      POST_KERNEL, CONFIG_POWER_DOMAIN_GPIO_INIT_PRIORITY,	\
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

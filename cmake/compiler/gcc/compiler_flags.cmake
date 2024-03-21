@@ -21,6 +21,11 @@ endif()
 set_compiler_property(PROPERTY optimization_speed -O2)
 set_compiler_property(PROPERTY optimization_size  -Os)
 
+if(CMAKE_C_COMPILER_VERSION GREATER_EQUAL "4.5.0")
+  set_compiler_property(PROPERTY optimization_lto -flto)
+  set_compiler_property(PROPERTY prohibit_lto -fno-lto)
+endif()
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
@@ -31,6 +36,9 @@ check_set_compiler_property(PROPERTY warning_base
     "SHELL:-Wformat -Wformat-security"
     "SHELL:-Wformat -Wno-format-zero-length"
 )
+
+# C implicit promotion rules will want to make floats into doubles very easily
+check_set_compiler_property(APPEND PROPERTY warning_base -Wdouble-promotion)
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 
@@ -169,9 +177,11 @@ endif()
 
 if(NOT CONFIG_NO_OPTIMIZATIONS)
   # _FORTIFY_SOURCE: Detect common-case buffer overflows for certain functions
-  # _FORTIFY_SOURCE=1 : Compile-time checks (requires -O1 at least)
-  # _FORTIFY_SOURCE=2 : Additional lightweight run-time checks
-  set_compiler_property(PROPERTY security_fortify_compile_time _FORTIFY_SOURCE=1)
+  # _FORTIFY_SOURCE=1 : Loose checking (use wide bounds checks)
+  # _FORTIFY_SOURCE=2 : Tight checking (use narrow bounds checks)
+  # GCC always does compile-time bounds checking for string/mem functions, so
+  # there's no additional value to set here
+  set_compiler_property(PROPERTY security_fortify_compile_time)
   set_compiler_property(PROPERTY security_fortify_run_time _FORTIFY_SOURCE=2)
 endif()
 

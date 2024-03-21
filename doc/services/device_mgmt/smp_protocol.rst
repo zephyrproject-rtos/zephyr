@@ -141,7 +141,7 @@ groups. The following table presents a list of common groups:
     +---------------+-----------------------------------------------+
     | ``9``         | :ref:`mcumgr_smp_group_9`                     |
     +---------------+-----------------------------------------------+
-    | ``63``        | Zephyr specific basic commands group          |
+    | ``63``        | :ref:`mcumgr_smp_group_63`                    |
     +---------------+-----------------------------------------------+
     | ``64``        | This is the base group for defining           |
     |               | an application specific management groups.    |

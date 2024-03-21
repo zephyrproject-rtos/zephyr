@@ -71,7 +71,7 @@
 	apb2-prescaler = <1>;
 };
 
-&lptim1 {
+stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
@@ -111,16 +111,15 @@
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pg2 &spi1_miso_pg3 &spi1_mosi_pg4>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpiog 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	cs-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
 	spbtle-rf@0 {
-		compatible = "zephyr,bt-hci-spi";
+		compatible = "st,hci-spi-v1";
 		reg = <0>;
 		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-		spi-max-frequency = <2000000>;
-		controller-data-delay-us = <0>;  /* No need for extra delay for BlueNRG-MS */
+		reset-gpios = <&gpiog 8 GPIO_ACTIVE_LOW>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
 		spi-hold-cs;
 	};
 };
@@ -136,11 +135,10 @@
 
 	status = "okay";
 
-	mx25lm51245: ospi-nor-flash@0 {
+	mx25lm51245: ospi-nor-flash@90000000 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0>;
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;

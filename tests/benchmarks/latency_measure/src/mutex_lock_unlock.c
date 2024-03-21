@@ -73,7 +73,8 @@ static void start_lock_unlock(void *p1, void *p2, void *p3)
  */
 int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 {
-	char description[80];
+	char tag[50];
+	char description[120];
 	int  priority;
 	uint64_t  cycles;
 
@@ -91,21 +92,23 @@ int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 	k_thread_start(&start_thread);
 
 	cycles = timestamp.cycles;
-	cycles -= timestamp_overhead_adjustment(options, options);
 	k_sem_give(&pause_sem);
 
-	snprintf(description, sizeof(description),
-		 "Lock a mutex from %s thread",
+	snprintf(tag, sizeof(tag),
+		 "mutex.lock.immediate.recursive.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Lock a mutex", tag);
 	PRINT_STATS_AVG(description, (uint32_t)cycles, num_iterations,
 			false, "");
 
 	cycles = timestamp.cycles;
-	cycles -= timestamp_overhead_adjustment(options, options);
 
-	snprintf(description, sizeof(description),
-		 "Unlock a mutex from %s thread",
+	snprintf(tag, sizeof(tag),
+		 "mutex.unlock.immediate.recursive.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Unlock a mutex", tag);
 	PRINT_STATS_AVG(description, (uint32_t)cycles, num_iterations,
 			false, "");
 

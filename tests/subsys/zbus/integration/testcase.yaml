@@ -7,4 +7,4 @@ tests:
       - fvp_baser_aemv8r_aarch32_smp
     tags: zbus
     integration_platforms:
-      - native_posix
+      - native_sim

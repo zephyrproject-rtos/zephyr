@@ -10,6 +10,7 @@ config BOARD
 config ENTROPY_GENERATOR
 	default y
 
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 32768 if WIFI
 	default 4096

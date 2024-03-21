@@ -6,11 +6,10 @@ description: |
 
     Representation of a serial flash on a quadspi bus:
 
-        mx25r6435f: qspi-nor-flash@0 {
+        mx25r6435f: qspi-nor-flash@90000000 {
                 compatible = "st,stm32-qspi-nor";
-                reg = <0>;
+                reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
                 qspi-max-frequency = <80000000>;
-                size = <0x4000000>;
                 reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
                 reset-gpios-duration = <1>;
                 spi-bus-width = <4>;
@@ -26,13 +25,11 @@ on-bus: qspi
 properties:
   reg:
     required: true
+    description: Flash Memory base address and size in bytes
   qspi-max-frequency:
     type: int
     required: true
     description: Maximum clock frequency of device's QSPI interface in Hz
-  size:
-    required: true
-    description: Flash Memory size in bits
   reset-gpios:
     type: phandle-array
     description: RESETn pin

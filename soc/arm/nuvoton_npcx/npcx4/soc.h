@@ -7,9 +7,7 @@
 #ifndef _NUVOTON_NPCX_SOC_H_
 #define _NUVOTON_NPCX_SOC_H_
 
-/* CMSIS required definitions */
-#define __FPU_PRESENT  CONFIG_CPU_HAS_FPU
-#define __MPU_PRESENT  CONFIG_CPU_HAS_ARM_MPU
+#include <cmsis_core_m_defaults.h>
 
 /* NPCX4 SCFG multi-registers */
 #define NPCX_DEVALT_OFFSET(n)		(0x010 + n)
@@ -55,6 +53,7 @@
 #include <reg/reg_def.h>
 #include <soc_dt.h>
 #include <soc_clock.h>
+#include <soc_espi_taf.h>
 #include <soc_pins.h>
 #include <soc_power.h>
 

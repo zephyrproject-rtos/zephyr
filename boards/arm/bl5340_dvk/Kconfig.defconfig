@@ -78,7 +78,8 @@ choice BT_HCI_BUS_TYPE
 	default BT_HCI_IPC if BT
 endchoice
 
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 4096 if BT_HCI_IPC
 
 config BT_HCI_VS

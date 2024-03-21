@@ -103,7 +103,7 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
 
-#if defined(CONFIG_ARCH_POSIX)
+#if defined(CONFIG_ARCH_POSIX) && !defined(_ASMLANGUAGE)
 #include <zephyr/arch/posix/posix_trace.h>
 
 /*let's not segfault if this were to happen for some reason*/
@@ -648,7 +648,8 @@ do {                                                                    \
  *
  * @note Only supported for GCC >= 11.0.0 or Clang >= 7.
  */
-#if (TOOLCHAIN_GCC_VERSION >= 110000) || (TOOLCHAIN_CLANG_VERSION >= 70000)
+#if (TOOLCHAIN_GCC_VERSION >= 110000) || \
+	(defined(TOOLCHAIN_CLANG_VERSION) && (TOOLCHAIN_CLANG_VERSION >= 70000))
 #define FUNC_NO_STACK_PROTECTOR __attribute__((no_stack_protector))
 #else
 #define FUNC_NO_STACK_PROTECTOR

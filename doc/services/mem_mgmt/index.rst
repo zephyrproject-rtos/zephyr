@@ -84,7 +84,112 @@ one by renaming the property and changing its value according to the following l
    "IO"          -> <( DT_ARM_MPU(ATTR_MPU_IO) )>
    "EXTMEM"      -> <( DT_ARM_MPU(ATTR_MPU_EXTMEM) )>
 
+Memory Attributes Heap Allocator
+********************************
+
+It is possible to leverage the memory attribute property ``zephyr,memory-attr``
+to define and create a set of memory heaps from which the user can allocate
+memory from with certain attributes / capabilities.
+
+When the :kconfig:option:`CONFIG_MEM_ATTR_HEAP` is set, every region marked
+with one of the memory attributes listed in in
+:zephyr_file:`include/zephyr/dt-bindings/memory-attr/memory-attr-sw.h` is added
+to a pool of memory heaps used for dynamic allocation of memory buffers with
+certain attributes.
+
+Here a non exhaustive list of possible attributes:
+
+.. code-block:: none
+
+   DT_MEM_SW_ALLOC_CACHE
+   DT_MEM_SW_ALLOC_NON_CACHE
+   DT_MEM_SW_ALLOC_DMA
+
+For example we can define several memory regions with different attributes and
+use the appropriate attribute to indicate that it is possible to dynamically
+allocate memory from those regions:
+
+.. code-block:: devicetree
+
+   mem_cacheable: memory@10000000 {
+       compatible = "mmio-sram";
+       reg = <0x10000000 0x1000>;
+       zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_SW_ALLOC_CACHE )>;
+   };
+
+   mem_non_cacheable: memory@20000000 {
+       compatible = "mmio-sram";
+       reg = <0x20000000 0x1000>;
+       zephyr,memory-attr = <( DT_MEM_NON_CACHEABLE | ATTR_SW_ALLOC_NON_CACHE )>;
+   };
+
+   mem_cacheable_big: memory@30000000 {
+       compatible = "mmio-sram";
+       reg = <0x30000000 0x10000>;
+       zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_OOO | DT_MEM_SW_ALLOC_CACHE )>;
+   };
+
+   mem_cacheable_dma: memory@40000000 {
+       compatible = "mmio-sram";
+       reg = <0x40000000 0x10000>;
+       zephyr,memory-attr = <( DT_MEM_CACHEABLE      | DT_MEM_DMA |
+                               DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA )>;
+   };
+
+The user can then dynamically carve memory out of those regions using the
+provided functions, the library will take care of allocating memory from the
+correct heap depending on the provided attribute and size:
+
+.. code-block:: c
+
+   // Init the pool
+   mem_attr_heap_pool_init();
+
+   // Allocate 0x100 bytes of cacheable memory from `mem_cacheable`
+   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE, 0x100);
+
+   // Allocate 0x200 bytes of non-cacheable memory aligned to 32 bytes
+   // from `mem_non_cacheable`
+   block = mem_attr_heap_aligned_alloc(ATTR_SW_ALLOC_NON_CACHE, 0x100, 32);
+
+   // Allocate 0x100 bytes of cacheable and dma-able memory from `mem_cacheable_dma`
+   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA, 0x100);
+
+When several regions are marked with the same attributes, the memory is allocated:
+
+1. From the regions where the ``zephyr,memory-attr`` property has the requested
+   property (or properties).
+
+2. Among the regions as at point 1, from the smallest region if there is any
+   unallocated space left for the requested size
+
+3. If there is not enough space, from the next bigger region able to
+   accommodate the requested size
+
+The following example shows the point 3:
+
+.. code-block:: c
+
+   // This memory is allocated from `mem_non_cacheable`
+   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE, 0x100);
+
+   // This memory is allocated from `mem_cacheable_big`
+   block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_CACHE, 0x5000);
+
+.. note::
+
+    The framework is assuming that the memory regions used to create the heaps
+    are usable by the code and available at init time. The user must take of
+    initializing and setting the memory area before calling
+    :c:func:`mem_attr_heap_pool_init`.
+
+    That means that the region must be correctly configured in terms of MPU /
+    MMU (if needed) and that an actual heap can be created out of it, for
+    example by leveraging the ``zephyr,memory-region`` property to create a
+    proper linker section to accommodate the heap.
+
 API Reference
 *************
 
 .. doxygengroup:: memory_attr_interface
+.. doxygengroup:: memory_attr_heap

@@ -18,9 +18,6 @@ config MP_MAX_NUM_CPUS
 config ISR_STACK_SIZE
 	default 2048
 
-config HEAP_MEM_POOL_SIZE
-	default 32768
-
 config ESPTOOLPY_FLASHFREQ_80M
 	default y
 

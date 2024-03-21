@@ -29,6 +29,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/llext/symbol.h>
 #include <zephyr/sys/iterable_sections.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -141,6 +142,7 @@ bool k_is_in_isr(void)
 {
 	return arch_is_in_isr();
 }
+EXPORT_SYMBOL(k_is_in_isr);
 
 /*
  * This function tags the current thread as essential to system operation.
@@ -528,6 +530,15 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 		stack_obj_size = Z_KERNEL_STACK_SIZE_ADJUST(stack_size);
 		stack_buf_start = Z_KERNEL_STACK_BUFFER(stack);
 		stack_buf_size = stack_obj_size - K_KERNEL_STACK_RESERVED;
+
+		/* Zephyr treats stack overflow as an app bug.  But
+		 * this particular overflow can be seen by static
+		 * analysis so needs to be handled somehow.
+		 */
+		if (K_KERNEL_STACK_RESERVED > stack_obj_size) {
+			k_panic();
+		}
+
 	}
 
 	/* Initial stack pointer at the high end of the stack object, may
@@ -630,7 +641,14 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	 * still cached!
 	 */
 	__ASSERT_NO_MSG(arch_mem_coherent(new_thread));
+
+	/* When dynamic thread stack is available, the stack may come from
+	 * uncached area.
+	 */
+#ifndef CONFIG_DYNAMIC_THREAD
 	__ASSERT_NO_MSG(!arch_mem_coherent(stack));
+#endif  /* CONFIG_DYNAMIC_THREAD */
+
 #endif
 
 	arch_new_thread(new_thread, stack, stack_ptr, entry, p1, p2, p3);

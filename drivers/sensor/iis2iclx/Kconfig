@@ -7,6 +7,7 @@ menuconfig IIS2ICLX
 	bool "IIS2ICLX I2C/SPI accelerometer Chip"
 	default y
 	depends on DT_HAS_ST_IIS2ICLX_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2ICLX),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2ICLX),spi)
 	select HAS_STMEMSC

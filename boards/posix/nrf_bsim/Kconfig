@@ -6,7 +6,9 @@ if SOC_SERIES_BSIM_NRFXX
 # used by Nordic SoCs, so to make the symbols defined in this file available for
 # the simulated nrf5x_bsim boards, which use the POSIX architecture, the file
 # must be read also from here.
-source "soc/arm/nordic_nrf/Kconfig.peripherals"
+source "soc/common/nordic_nrf/Kconfig.peripherals"
+
+source "boards/$(ARCH)/common/extra_args/Kconfig"
 
 endif # SOC_SERIES_BSIM_NRFXX
 
@@ -17,19 +19,25 @@ endif # SOC_SERIES_BSIM_NRFXX
 
 config SOC_SERIES_BSIM_NRFXX
 	bool
-	depends on SOC_POSIX
+	select NATIVE_LIBRARY
+	select SOC_COMPATIBLE_NRF
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select PINCTRL_DYNAMIC if PINCTRL
 	help
 	  Any NRF simulated SOC with BabbleSim, based on the POSIX arch
 
 config SOC_SERIES_BSIM_NRF52X
 	bool
-	depends on SOC_SERIES_BSIM_NRFXX
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_COMPATIBLE_NRF52X
 	help
 	  Any NRF52 simulated SOC with BabbleSim, based on the POSIX arch
 
 config SOC_SERIES_BSIM_NRF53X
 	bool
-	depends on SOC_SERIES_BSIM_NRFXX
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_COMPATIBLE_NRF53X
 	help
 	  Any NRF53 simulated SOC with BabbleSim, based on the POSIX arch
 

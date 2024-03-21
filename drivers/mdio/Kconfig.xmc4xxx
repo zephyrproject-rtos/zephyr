@@ -1,0 +1,9 @@
+# Copyright (c) 2023 SLB
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_INFINEON_XMC4XXX
+	bool "Infineon XMC4XXX MDIO driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_MDIO_ENABLED
+	help
+	  Enable Infineon XMC4XXX MDIO driver.

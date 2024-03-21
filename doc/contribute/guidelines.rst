@@ -532,9 +532,18 @@ results you have to create an account yourself.  From the Zephyr project page,
 you may select "Add me to project" to be added to the project. New members must
 be approved by an admin.
 
-Coverity scans the Zephyr codebase weekly. GitHub issues are automatically
-created for any problems found and assigned to the maintainers of the affected
-areas.
+Static analysis of the Zephyr codebase is conducted on a bi-weekly basis. GitHub
+issues are automatically created for any issues detected by static analysis
+tools. These issues will have the same (or equivalent) priority initially
+defined by the tool.
+
+To ensure accountability and efficient issue resolution, they are assigned to
+the respective maintainer who is responsible for the affected code.
+
+A dedicated team comprising members with expertise in static analysis, code
+quality, and software security ensures the effectiveness of the static
+analysis process and verifies that identified issues are properly
+triaged and resolved in a timely manner.
 
 Workflow
 ========

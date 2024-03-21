@@ -331,7 +331,7 @@ Peripheral Mapping:
    - I2C_4_SDA : D40
    - I2C_4_SCL : D41
 
-For mode details refer to `MPS2+ AN521 Technical Reference Manual (TRM)`_.
+For more details refer to `MPS2+ AN521 Technical Reference Manual (TRM)`_.
 
 LED
 ============

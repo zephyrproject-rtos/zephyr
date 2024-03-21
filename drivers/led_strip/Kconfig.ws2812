@@ -9,7 +9,6 @@
 
 menuconfig WS2812_STRIP
 	bool "WS2812 (and compatible) LED strip driver"
-	select LED_STRIP_RGB_SCRATCH
 	help
 	  Enable LED strip driver for daisy chains of WS2812-ish (or WS2812B,
 	  WS2813, SK6812, Everlight B1414, or compatible) devices.
@@ -39,11 +38,19 @@ config WS2812_STRIP_GPIO
 	# Only an Cortex-M0 inline assembly implementation for the nRF51
 	# is supported currently.
 	depends on SOC_SERIES_NRF51X
+	select LED_STRIP_RGB_SCRATCH
 	help
 	  The GPIO driver does bit-banging with inline assembly,
 	  and is not available on all SoCs.
 
 	  Note that this driver is not compatible with the Everlight B1414
 	  controller.
+
+config WS2812_STRIP_RPI_PICO_PIO
+	bool "Raspberry Pi Pico PIO"
+	depends on DT_HAS_WORLDSEMI_WS2812_RPI_PICO_PIO_ENABLED
+	select PICOSDK_USE_PIO
+	help
+	  Use the PIO feature available on RaspberryPi Pico devices.
 
 endchoice

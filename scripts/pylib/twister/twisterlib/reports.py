@@ -232,7 +232,7 @@ class Reporting:
         with open(filename, 'wb') as report:
             report.write(result)
 
-    def json_report(self, filename, version="NA"):
+    def json_report(self, filename, version="NA", platform=None):
         logger.info(f"Writing JSON report {filename}")
         report = {}
         report["environment"] = {"os": os.name,
@@ -244,6 +244,8 @@ class Reporting:
         suites = []
 
         for instance in self.instances.values():
+            if platform and platform != instance.platform.name:
+                continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
             pytest_log = os.path.join(instance.build_dir, "twister_harness.log")
@@ -304,6 +306,7 @@ class Reporting:
 
             if instance.status is not None:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
+            suite["build_time"] =  f"{float(instance.build_time):.2f}"
 
             testcases = []
 
@@ -344,6 +347,10 @@ class Reporting:
                 testcases.append(testcase)
 
             suite['testcases'] = testcases
+
+            if instance.recording is not None:
+                suite['recording'] = instance.recording
+
             suites.append(suite)
 
         report["testsuites"] = suites
@@ -542,6 +549,9 @@ class Reporting:
         for platform in platforms:
             if suffix:
                 filename = os.path.join(outdir,"{}_{}.xml".format(platform, suffix))
+                json_platform_file = os.path.join(outdir,"{}_{}.json".format(platform, suffix))
             else:
                 filename = os.path.join(outdir,"{}.xml".format(platform))
+                json_platform_file = os.path.join(outdir,"{}.json".format(platform))
             self.xunit_report(json_file, filename, platform, full_report=True)
+            self.json_report(json_platform_file, version=self.env.version, platform=platform)

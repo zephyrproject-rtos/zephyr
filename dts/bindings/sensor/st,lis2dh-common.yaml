@@ -3,10 +3,10 @@
 
 description: |
     When setting the int1-gpio-config/int2-gpio-config and anym-mode properties
-    in a .dts or .dtsi file you may include st_lis2dh.h and use the macros defined there.
+    in a .dts or .dtsi file you may include lis2dh.h and use the macros defined there.
 
     Example:
-    #include <zephyr/dt-bindings/sensor/st_lis2dh.h>
+    #include <zephyr/dt-bindings/sensor/lis2dh.h>
 
     lis2dh: lis2dh@0 {
       ...

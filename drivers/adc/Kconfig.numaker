@@ -1,0 +1,14 @@
+# NUMAKER ADC Driver configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_NUMAKER
+	bool "Nuvoton NuMaker MCU ADC driver"
+	default y
+	select HAS_NUMAKER_ADC
+	depends on DT_HAS_NUVOTON_NUMAKER_ADC_ENABLED
+	help
+	  This option enables the ADC driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker ADC.

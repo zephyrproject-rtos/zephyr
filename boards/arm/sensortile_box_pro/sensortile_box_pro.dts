@@ -130,7 +130,7 @@
 	apb3-prescaler = <1>;
 };
 
-&lptim1 {
+stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
@@ -158,10 +158,28 @@
 };
 
 &spi1 {
-	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
-		     &spi1_miso_pe14 &spi1_mosi_pe15>;
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
 	status = "okay";
+
+	bluenrg-lp@0 {
+		compatible = "st,hci-spi-v2";
+		reg = <0>;
+		irq-gpios = <&gpiod 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+		spi-cpol;
+		spi-cpha;
+		spi-hold-cs;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		controller-data-delay-us = <0>;
+		reset-assert-duration-ms = <6>;
+	};
+};
+
+&spi1_sck_pa5 {
+	/delete-property/ bias-pull-down;
+	bias-pull-up; /* Idle state for the clock pin is high-level due to SPI mode 3 */
 };
 
 &spi2 {
@@ -169,14 +187,24 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	cs-gpios = <&gpioi 5 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpioi 5 GPIO_ACTIVE_LOW>, <&gpioi 7 GPIO_ACTIVE_LOW>;
 
 	lsm6dsv16x: lsm6dsv16x@0 {
 		compatible = "st,lsm6dsv16x";
-		spi-max-frequency = <DT_FREQ_M(10)>; /* 10 MHz */
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		reg = <0>;
 		int1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
 		int2-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+
+		drdy-pin = <2>;
+	};
+
+	lis2du12: lis2du12@1 {
+		compatible = "st,lis2du12";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <1>;
+		int1-gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+		int2-gpios = <&gpiof 15 GPIO_ACTIVE_HIGH>;
 
 		drdy-pin = <2>;
 	};

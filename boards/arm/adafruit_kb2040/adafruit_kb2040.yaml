@@ -19,3 +19,5 @@ supported:
   - pwm
   - flash
   - dma
+  - counter
+  - clock

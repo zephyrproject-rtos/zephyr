@@ -28,6 +28,10 @@ config NRFX_GPIOTE_LOG
 	bool "GPIOTE driver logging"
 	depends on NRFX_GPIOTE
 
+config NRFX_GRTC_LOG
+	bool "GRTC driver logging"
+	depends on NRFX_GRTC
+
 config NRFX_I2S_LOG
 	bool "I2S driver logging"
 	depends on NRFX_I2S

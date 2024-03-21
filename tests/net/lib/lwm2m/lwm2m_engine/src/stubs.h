@@ -28,6 +28,7 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_rd_client_resume);
 DECLARE_FAKE_VALUE_FUNC(struct lwm2m_message *, find_msg, struct coap_pending *,
 			struct coap_reply *);
 DECLARE_FAKE_VOID_FUNC(coap_pending_clear, struct coap_pending *);
+DECLARE_FAKE_VALUE_FUNC(size_t, coap_pendings_count, struct coap_pending *, size_t);
 DECLARE_FAKE_VOID_FUNC(lwm2m_reset_message, struct lwm2m_message *, bool);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_send_message_async, struct lwm2m_message *);
 DECLARE_FAKE_VOID_FUNC(lwm2m_registry_lock);
@@ -56,6 +57,7 @@ DECLARE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct sockaddr *, socklen_t);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
+DECLARE_FAKE_VOID_FUNC(engine_update_tx_time);
 
 #define DO_FOREACH_FAKE(FUNC)                                                                      \
 	do {                                                                                       \
@@ -63,6 +65,7 @@ DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void 
 		FUNC(lwm2m_rd_client_resume)                                                       \
 		FUNC(find_msg)                                                                     \
 		FUNC(coap_pending_clear)                                                           \
+		FUNC(coap_pendings_count)                                                          \
 		FUNC(lwm2m_reset_message)                                                          \
 		FUNC(lwm2m_send_message_async)                                                     \
 		FUNC(lwm2m_registry_lock)                                                          \
@@ -85,6 +88,7 @@ DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void 
 		FUNC(z_impl_zsock_connect)                                                         \
 		FUNC(lwm2m_security_mode)                                                          \
 		FUNC(z_impl_zsock_setsockopt)                                                      \
+		FUNC(engine_update_tx_time)                                                        \
 	} while (0)
 
 #endif /* STUBS_H */

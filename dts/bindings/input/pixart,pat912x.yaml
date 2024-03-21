@@ -1,0 +1,27 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: PAT9125EL Miniature Optical Navigation Chip
+
+compatible: "pixart,pat912x"
+
+include: i2c-device.yaml
+
+properties:
+  motion-gpios:
+    type: phandle-array
+    required: true
+    description:
+      GPIO connected to the motion pin, active low.
+
+  zephyr,axis-x:
+    type: int
+    description: |
+      The input code for the X axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device X axis if unspecified.
+
+  zephyr,axis-y:
+    type: int
+    description: |
+      The input code for the Y axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device Y axis if unspecified.

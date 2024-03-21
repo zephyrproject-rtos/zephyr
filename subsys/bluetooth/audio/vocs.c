@@ -134,8 +134,7 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	}
 
 	new_location = sys_get_le32(buf);
-	if (new_location == BT_AUDIO_LOCATION_PROHIBITED ||
-	    (new_location & BT_AUDIO_LOCATION_RFU) > 0) {
+	if ((new_location & BT_AUDIO_LOCATION_RFU) > 0) {
 		LOG_DBG("Invalid location %u", new_location);
 
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -413,10 +412,8 @@ int bt_vocs_register(struct bt_vocs *vocs,
 	inst->cb = param->cb;
 
 	if (param->output_desc) {
-		strncpy(inst->output_desc, param->output_desc,
-			sizeof(inst->output_desc) - 1);
-		/* strncpy may not always null-terminate */
-		inst->output_desc[sizeof(inst->output_desc) - 1] = '\0';
+		(void)utf8_lcpy(inst->output_desc, param->output_desc,
+				sizeof(inst->output_desc));
 		if (IS_ENABLED(CONFIG_BT_VOCS_LOG_LEVEL_DBG) &&
 		    strcmp(inst->output_desc, param->output_desc)) {
 			LOG_DBG("Output desc clipped to %s", inst->output_desc);

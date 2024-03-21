@@ -76,7 +76,7 @@ def get_gdb_reg_definition(soc, toolchain):
 
 
 class ExceptionCodes(Enum):
-    # Matches arch/xtensa/core/fatal.c->z_xtensa_exccause
+    # Matches arch/xtensa/core/fatal.c->xtensa_exccause
     ILLEGAL_INSTRUCTION = 0
     # Syscall not fatal
     INSTR_FETCH_ERROR = 2

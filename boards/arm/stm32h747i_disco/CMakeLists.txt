@@ -1,0 +1,9 @@
+#
+# Copyright 2023 BrainCo Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Add custom linker section to relocate framebuffers to PSRAM
+zephyr_linker_sources_ifdef(CONFIG_LV_Z_VBD_CUSTOM_SECTION
+  SECTIONS dc_ram.ld)

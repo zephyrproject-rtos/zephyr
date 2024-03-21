@@ -195,6 +195,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
+| RADIO     | STM32WB5MMG| Bluetooth Low Energy (BLE)          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -245,7 +247,7 @@ Connections and IOs
 B_U585I_IOT02A Discovery kit has 9 GPIO controllers (from A to I). These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `B U585I IOT02A board User Manual`_.
+For more details please refer to `B U585I IOT02A board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -346,14 +348,14 @@ can be generated using ``b_u585i_iot02a_ns`` as build target.
 
    $ west build -b b_u585i_iot02a_ns path/to/source/directory
 
-Note: When building the ``*_ns`` image with TF-M, ``build/tfm/postbuild.sh`` bash script
+Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
 is run automatically in a post-build step to make some required flash layout changes.
 
 Once the build is completed, run the following script to initialize the option bytes.
 
 .. code-block:: bash
 
-   $ build/tfm/regression.sh
+   $ build/tfm/api_ns/regression.sh
 
 Finally, to flash the board, run:
 

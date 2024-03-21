@@ -109,7 +109,7 @@ Default Zephyr Peripheral Mapping:
 - RDCC1              : PB12 (Enable Door Sense on CC1)
 
 
-For mode details please refer to `STM32G0 Discovery board User Manual`_.
+For more details please refer to `STM32G0 Discovery board User Manual`_.
 
 Programming and Debugging
 *************************
