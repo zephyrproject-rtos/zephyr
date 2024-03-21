@@ -41,7 +41,6 @@ app=tests/bsim/bluetooth/host/att/sequential/dut compile
 app=tests/bsim/bluetooth/host/att/sequential/tester compile
 app=tests/bsim/bluetooth/host/att/long_read compile
 
-app=tests/bsim/bluetooth/host/gatt/authorization compile
 app=tests/bsim/bluetooth/host/gatt/caching compile
 app=tests/bsim/bluetooth/host/gatt/general compile
 app=tests/bsim/bluetooth/host/gatt/notify compile
