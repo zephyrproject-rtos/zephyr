@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2022 Codecoup
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,3 +136,6 @@ uint8_t tester_unregister_tbs(void);
 
 uint8_t tester_init_tmap(void);
 uint8_t tester_unregister_tmap(void);
+
+uint8_t tester_init_sdp(void);
+uint8_t tester_unregister_sdp(void);

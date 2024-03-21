@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2023 Codecoup
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,7 +109,11 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_SERVICE_ID_TMAP);
 #endif /* CONFIG_BT_TMAP */
 
-	*rsp_len = sizeof(*rp) + 2;
+#if defined(CONFIG_BT_CLASSIC)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_SDP);
+#endif /* CONFIG_BT_CLASSIC */
+
+	*rsp_len = sizeof(*rp) + (BTP_SERVICE_ID_MAX)/8;
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -245,6 +250,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_tmap();
 		break;
 #endif /* CONFIG_BT_TMAP */
+#if defined(CONFIG_BT_CLASSIC)
+	case BTP_SERVICE_ID_SDP:
+		status = tester_init_sdp();
+		break;
+#endif /* CONFIG_BT_CLASSIC */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -387,6 +397,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_tmap();
 		break;
 #endif /* CONFIG_BT_TMAP */
+#if defined(CONFIG_BT_CLASSIC)
+	case BTP_SERVICE_ID_SDP:
+		status = tester_unregister_sdp();
+		break;
+#endif /* CONFIG_BT_CLASSIC */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
