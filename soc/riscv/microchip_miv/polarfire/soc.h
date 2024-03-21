@@ -8,4 +8,7 @@
 
 #include <zephyr/devicetree.h>
 
+
+#define RISCV_MSIP_BASE					0x02000000
+
 #endif /* __RISCV64_MPFS_SOC_H_ */
