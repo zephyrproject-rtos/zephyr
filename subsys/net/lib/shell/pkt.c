@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include "net_shell_private.h"
+#include "common.h"
 
 static bool is_pkt_part_of_slab(const struct k_mem_slab *slab, const char *ptr)
 {

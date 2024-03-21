@@ -9,7 +9,7 @@
 #include <zephyr/pm/device.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include "net_shell_private.h"
+#include "common.h"
 
 static int cmd_net_suspend(const struct shell *sh, size_t argc, char *argv[])
 {

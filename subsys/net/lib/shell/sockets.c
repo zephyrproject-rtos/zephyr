@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include "net_shell_private.h"
+#include "common.h"
 #include <zephyr/net/socket.h>
 
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)

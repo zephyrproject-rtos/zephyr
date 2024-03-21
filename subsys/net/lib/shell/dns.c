@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/net/dns_resolve.h>
 
-#include "net_shell_private.h"
+#include "common.h"
 
 #if defined(CONFIG_DNS_RESOLVER)
 static void dns_result_cb(enum dns_resolve_status status,

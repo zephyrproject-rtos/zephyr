@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/virtual.h>
 #endif
 
-#include "net_shell_private.h"
+#include "common.h"
 
 #include "websocket/websocket_internal.h"
 

@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/net/net_stats.h>
 
-#include "net_shell_private.h"
+#include "common.h"
 
 #include "../ip/net_stats.h"
 

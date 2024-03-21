@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <stdlib.h>
 
-#include "net_shell_private.h"
+#include "common.h"
 
 #if defined(CONFIG_NET_VLAN)
 static void iface_vlan_del_cb(struct net_if *iface, void *user_data)

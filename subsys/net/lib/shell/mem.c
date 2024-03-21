@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include "net_shell_private.h"
+#include "common.h"
 
 struct ctx_info {
 	int pos;
