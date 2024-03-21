@@ -1820,7 +1820,11 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 	 * we have the ISO <-> EP coupling completed (due to setting
 	 * the CIS ID in the QoS procedure).
 	 */
-	bt_bap_iso_configure_data_path(ep, stream->codec_cfg);
+	if (ep->dir == BT_AUDIO_DIR_SINK) {
+		bt_audio_codec_cfg_to_iso_path(&ep->iso->rx.path, stream->codec_cfg);
+	} else {
+		bt_audio_codec_cfg_to_iso_path(&ep->iso->tx.path, stream->codec_cfg);
+	}
 
 	ep->cig_id = cig_id;
 	ep->cis_id = cis_id;
