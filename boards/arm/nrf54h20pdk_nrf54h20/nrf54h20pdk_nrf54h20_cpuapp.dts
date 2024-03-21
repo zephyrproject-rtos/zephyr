@@ -123,7 +123,6 @@
 };
 
 &uart135 {
-	current-speed = <115200>;
 	pinctrl-0 = <&uart135_default>;
 	pinctrl-1 = <&uart135_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -132,7 +131,6 @@
 &uart136 {
 	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
-	current-speed = <115200>;
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
