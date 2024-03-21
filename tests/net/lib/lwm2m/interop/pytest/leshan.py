@@ -389,9 +389,6 @@ class Leshan:
         return self.post(f'/clients/{endpoint}/{path}/observe', data="")
 
     def cancel_observe(self, endpoint: str, path: str):
-        return self.delete_raw(f'/clients/{endpoint}/{path}/observe?active')
-
-    def passive_cancel_observe(self, endpoint: str, path: str):
         return self.delete_raw(f'/clients/{endpoint}/{path}/observe')
 
     def composite_observe(self, endpoint: str, paths: list[str]):
@@ -401,10 +398,6 @@ class Leshan:
         return self.parse_composite(payload)
 
     def cancel_composite_observe(self, endpoint: str, paths: list[str]):
-        paths = [path if path.startswith('/') else '/' + path for path in paths]
-        return self.delete_raw(f'/clients/{endpoint}/composite/observe?paths=' + ','.join(paths) + '&active')
-
-    def passive_cancel_composite_observe(self, endpoint: str, paths: list[str]):
         paths = [path if path.startswith('/') else '/' + path for path in paths]
         return self.delete_raw(f'/clients/{endpoint}/composite/observe?paths=' + ','.join(paths))
 
