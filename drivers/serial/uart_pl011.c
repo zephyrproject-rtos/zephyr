@@ -378,13 +378,13 @@ static int pl011_init(const struct device *dev)
 
 #define PL011_GET_COMPAT_CLK_QUIRK_0(n)					\
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart),	\
-		    (clk_enable_ambiq_uart),				\
-		    PL011_GET_COMPAT_QUIRK_NONE(n))
+			(clk_enable_ambiq_uart),				\
+			PL011_GET_COMPAT_QUIRK_NONE(n))
 
 #define PL011_GET_COMPAT_PWR_QUIRK_0(n)					\
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart),	\
-		    (pwr_on_ambiq_uart_##n),				\
-		    PL011_GET_COMPAT_QUIRK_NONE(n))
+			(pwr_on_ambiq_uart_##n),				\
+			PL011_GET_COMPAT_QUIRK_NONE(n))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 void pl011_isr(const struct device *dev)
@@ -441,9 +441,8 @@ void pl011_isr(const struct device *dev)
 	static struct pl011_data pl011_data_port_##n = {	\
 		.baud_rate = DT_INST_PROP(n, current_speed),	\
 	};							\
-								\
 	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
-			NULL,					\
+			PM_DEVICE_DT_INST_GET(n),					\
 			&pl011_data_port_##n,			\
 			&pl011_cfg_port_##n,			\
 			PRE_KERNEL_1,				\
