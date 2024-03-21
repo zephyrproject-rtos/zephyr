@@ -2055,7 +2055,6 @@ static void unicast_client_reset(struct bt_bap_ep *ep, uint8_t reason)
 
 static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 {
-	struct unicast_client *client;
 	uint8_t index;
 
 	LOG_DBG("conn %p", conn);
@@ -2077,11 +2076,6 @@ static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 		unicast_client_reset(ep, reason);
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
-
-	client = &uni_cli_insts[index];
-	client->busy = false;
-	client->dir = 0U;
-	reset_att_buf(client);
 }
 
 static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
