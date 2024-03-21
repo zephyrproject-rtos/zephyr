@@ -8,8 +8,14 @@ config SOC_SERIES_APOLLO4X
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	select HAS_SWO
 	select AMBIQ_HAL
+
+	select HAS_PM
+	help
+	  Enable support for Apollo4 MCU series

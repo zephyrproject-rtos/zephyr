@@ -78,7 +78,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			/* MRAM region */
+			/* Flash region */
 			flash0: flash@18000 {
 				compatible = "soc-nv-flash";
 				reg = <0x00018000 0x1e8000>;
@@ -115,6 +115,7 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x200>;
 			zephyr,pm-device-runtime-auto;
 		};
+
 		uart1: uart@4001d000 {
 			compatible = "ambiq,uart", "arm,pl011";
 			reg = <0x4001d000 0x1000>;

@@ -441,9 +441,8 @@ void pl011_isr(const struct device *dev)
 	static struct pl011_data pl011_data_port_##n = {	\
 		.baud_rate = DT_INST_PROP(n, current_speed),	\
 	};							\
-								\
 	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
-			NULL,					\
+			PM_DEVICE_DT_INST_GET(n),					\
 			&pl011_data_port_##n,			\
 			&pl011_cfg_port_##n,			\
 			PRE_KERNEL_1,				\

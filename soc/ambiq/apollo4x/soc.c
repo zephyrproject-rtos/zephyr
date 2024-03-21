@@ -8,8 +8,7 @@
 
 #include <am_mcu_apollo.h>
 
-static int arm_apollo4_init(void)
-{
+static int arm_apollo4_init(void) {
 
 	/* Initialize for low power in the power control block */
 	am_hal_pwrctrl_low_power_init();
