@@ -99,4 +99,8 @@
 #define IMX_CCM_PIT_CLK                 0x5000UL
 #define IMX_CCM_PIT1_CLK                0x5001UL
 
+/* ADC */
+#define IMX_CCM_LPADC1_CLK	0x6000UL
+#define IMX_CCM_LPADC2_CLK	0x6001UL
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */
