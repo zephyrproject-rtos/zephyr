@@ -9,3 +9,9 @@ config SOF
 	depends on ZEPHYR_SOF_MODULE
 	help
 	  Build Sound Open Firmware (SOF) support.
+
+
+if SOF
+config SYSTEM_CLOCK_MP_BROADCAST
+	default n
+endif
