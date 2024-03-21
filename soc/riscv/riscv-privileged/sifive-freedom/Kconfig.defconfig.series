@@ -1,10 +1,9 @@
-# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_SIFIVE_FREEDOM_U700
+if SOC_SERIES_RISCV_SIFIVE_FREEDOM
 
 config SOC_SERIES
-	default "u700"
+	default "sifive-freedom"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
@@ -33,6 +32,4 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 64
 
-source "soc/riscv/sifive_freedom/u700/Kconfig.defconfig.u*"
-
-endif # SOC_SERIES_SIFIVE_FREEDOM_U700
+endif # SOC_SERIES_RISCV_SIFIVE_FREEDOM
