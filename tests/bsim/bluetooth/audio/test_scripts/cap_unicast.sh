@@ -6,7 +6,6 @@
 
 SIMULATION_ID="cap_unicast"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=20
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 

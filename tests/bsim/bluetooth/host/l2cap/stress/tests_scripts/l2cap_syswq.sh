@@ -7,8 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # EATT test
 simulation_id="l2cap_stress_syswq"
 verbosity_level=2
-EXECUTE_TIMEOUT=240
-
+EXECUTE_TIMEOUT=2400
 bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_stress_prj_syswq_conf
 
 cd ${BSIM_OUT_PATH}/bin

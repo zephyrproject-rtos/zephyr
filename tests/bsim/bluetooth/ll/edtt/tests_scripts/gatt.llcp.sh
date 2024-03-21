@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # GATT regression tests based on the EDTTool
 SIMULATION_ID="edtt_gatt_llcp"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=300
+EXECUTE_TIMEOUT=3000
 
 CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 

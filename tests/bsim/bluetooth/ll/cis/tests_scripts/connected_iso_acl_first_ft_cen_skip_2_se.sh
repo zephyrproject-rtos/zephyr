@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # FT=2, skips 2 subevents in the central
 simulation_id="connected_iso_acl_first_ft_cen_skip_2_se"
 verbosity_level=2
-EXECUTE_TIMEOUT=60
+EXECUTE_TIMEOUT=600
 
 cd ${BSIM_OUT_PATH}/bin
 

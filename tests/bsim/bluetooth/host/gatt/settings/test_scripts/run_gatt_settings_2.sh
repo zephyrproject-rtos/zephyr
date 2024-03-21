@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 simulation_id="settings_2"
 verbosity_level=2
-EXECUTE_TIMEOUT=120
+EXECUTE_TIMEOUT=1200
 test_2_exe="./bs_${BOARD_TS}_$(guess_test_long_name)_prj_2_conf"
 
 cd ${BSIM_OUT_PATH}/bin

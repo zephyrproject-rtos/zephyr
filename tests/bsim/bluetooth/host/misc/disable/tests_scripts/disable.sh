@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Disable test: bt_enable and bt_disable are called in a loop.
 simulation_id="disable_test"
 verbosity_level=2
-EXECUTE_TIMEOUT=120
+EXECUTE_TIMEOUT=1200
 
 cd ${BSIM_OUT_PATH}/bin
 

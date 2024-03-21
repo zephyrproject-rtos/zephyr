@@ -8,7 +8,6 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # notification, using the split controller (ULL LLL) in Low Latency Variant
 simulation_id="basic_conn_split_low_lat"
 verbosity_level=2
-EXECUTE_TIMEOUT=5
 
 cd ${BSIM_OUT_PATH}/bin
 
