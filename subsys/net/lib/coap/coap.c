@@ -1856,13 +1856,28 @@ bool coap_register_observer(struct coap_resource *resource,
 		resource->age = 2;
 	}
 
+#ifdef CONFIG_COAP_OBSERVER_EVENTS
+	if (resource->observer_event_handler) {
+		resource->observer_event_handler(resource, observer, COAP_OBSERVER_ADDED);
+	}
+#endif
+
 	return first;
 }
 
 bool coap_remove_observer(struct coap_resource *resource,
 			  struct coap_observer *observer)
 {
-	return sys_slist_find_and_remove(&resource->observers, &observer->list);
+	if (!sys_slist_find_and_remove(&resource->observers, &observer->list)) {
+		return false;
+	}
+
+#ifdef CONFIG_COAP_OBSERVER_EVENTS
+	if (resource->observer_event_handler) {
+		resource->observer_event_handler(resource, observer, COAP_OBSERVER_REMOVED);
+	}
+#endif
+	return true;
 }
 
 static bool sockaddr_equal(const struct sockaddr *a,
