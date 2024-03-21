@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -39,6 +41,20 @@
 				rotation = <270>;
 				width = <320>;
 				height = <240>;
+			};
+
+			test_mipi_dbi_st7735r: st7735t@1 {
+				compatible = "sitronix,st7735r";
+				mipi-max-frequency = <250000000>;
+				mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+				reg = <1>;
+				/* Arbitrary values */
+				x-offset = <0>;
+				y-offset = <0>;
+				gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+				gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+				width = <160>;
+				height = <128>;
 			};
 		};
 
