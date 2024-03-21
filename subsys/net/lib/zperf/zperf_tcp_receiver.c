@@ -33,8 +33,10 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 static zperf_callback tcp_session_cb;
 static void *tcp_user_data;
 static bool tcp_server_running;
+static bool tcp_server_stop;
 static uint16_t tcp_server_port;
 static struct sockaddr tcp_server_addr;
+static K_SEM_DEFINE(tcp_server_run, 0, 1);
 
 static struct zsock_pollfd fds[SOCK_ID_MAX];
 static struct sockaddr sock_addr[SOCK_ID_MAX];
@@ -101,46 +103,26 @@ static void tcp_session_error_report(void)
 	}
 }
 
-static void tcp_receiver_cleanup(void)
-{
-	int i;
-
-	(void)net_socket_service_unregister(&svc_tcp);
-
-	for (i = 0; i < ARRAY_SIZE(fds); i++) {
-		if (fds[i].fd >= 0) {
-			zsock_close(fds[i].fd);
-			fds[i].fd = -1;
-			memset(&sock_addr[i], 0, sizeof(struct sockaddr));
-		}
-	}
-
-	tcp_server_running = false;
-	tcp_session_cb = NULL;
-}
-
 static int tcp_recv_data(struct net_socket_service_event *pev)
 {
 	static uint8_t buf[TCP_RECEIVER_BUF_SIZE];
 	int i, ret = 0;
-	int family, sock, sock_error;
+	int family, sock;
 	struct sockaddr addr_incoming_conn;
 	socklen_t optlen = sizeof(int);
 	socklen_t addrlen = sizeof(struct sockaddr);
 
-	if (!tcp_server_running) {
-		return -ENOENT;
+	if (tcp_server_stop) {
+		ret = -ENOENT;
+		goto cleanup;
 	}
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
 	    (pev->event.revents & ZSOCK_POLLNVAL)) {
 		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 				       SO_DOMAIN, &family, &optlen);
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
-		NET_ERR("TCP receiver IPv%d socket error (%d)",
-			family == AF_INET ? 4 : 6, sock_error);
-		ret = -sock_error;
+		NET_ERR("TCP receiver IPv%d socket error",
+			family == AF_INET ? 4 : 6);
 		goto error;
 	}
 
@@ -158,11 +140,10 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 				    &addr_incoming_conn,
 				    &addrlen);
 		if (sock < 0) {
-			ret = -errno;
 			(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 					       SO_DOMAIN, &family, &optlen);
-			NET_ERR("TCP receiver IPv%d accept error (%d)",
-				family == AF_INET ? 4 : 6, ret);
+			NET_ERR("TCP receiver IPv%d accept error",
+				family == AF_INET ? 4 : 6);
 			goto error;
 		}
 
@@ -226,6 +207,17 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 error:
 	tcp_session_error_report();
 
+cleanup:
+	for (i = 0; i < ARRAY_SIZE(fds); i++) {
+		if (fds[i].fd >= 0) {
+			zsock_close(fds[i].fd);
+			fds[i].fd = -1;
+			memset(&sock_addr[i], 0, sizeof(struct sockaddr));
+		}
+	}
+
+	(void)net_socket_service_unregister(&svc_tcp);
+
 	return ret;
 }
 
@@ -237,7 +229,7 @@ static void tcp_svc_handler(struct k_work *work)
 
 	ret = tcp_recv_data(pev);
 	if (ret < 0) {
-		tcp_receiver_cleanup();
+		(void)net_socket_service_unregister(&svc_tcp);
 	}
 }
 
@@ -273,7 +265,7 @@ out:
 	return ret;
 }
 
-static int zperf_tcp_receiver_init(void)
+static void zperf_tcp_receiver_init(void)
 {
 	int ret;
 
@@ -288,7 +280,6 @@ static int zperf_tcp_receiver_init(void)
 		fds[SOCK_ID_IPV4_LISTEN].fd = zsock_socket(AF_INET, SOCK_STREAM,
 							   IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV4_LISTEN].fd < 0) {
-			ret = -errno;
 			NET_ERR("Cannot create IPv4 network socket.");
 			goto error;
 		}
@@ -334,7 +325,6 @@ use_any_ipv4:
 		fds[SOCK_ID_IPV6_LISTEN].fd = zsock_socket(AF_INET6, SOCK_STREAM,
 							   IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV6_LISTEN].fd < 0) {
-			ret = -errno;
 			NET_ERR("Cannot create IPv6 network socket.");
 			goto error;
 		}
@@ -384,14 +374,12 @@ use_any_ipv6:
 	}
 
 error:
-	return ret;
+	return;
 }
 
 int zperf_tcp_download(const struct zperf_download_params *param,
 		       zperf_callback callback, void *user_data)
 {
-	int ret;
-
 	if (param == NULL || callback == NULL) {
 		return -EINVAL;
 	}
@@ -403,15 +391,13 @@ int zperf_tcp_download(const struct zperf_download_params *param,
 	tcp_session_cb = callback;
 	tcp_user_data = user_data;
 	tcp_server_port = param->port;
+	tcp_server_running = true;
+	tcp_server_stop = false;
 	memcpy(&tcp_server_addr, &param->addr, sizeof(struct sockaddr));
 
-	ret = zperf_tcp_receiver_init();
-	if (ret < 0) {
-		tcp_receiver_cleanup();
-		return ret;
-	}
+	zperf_tcp_receiver_init();
 
-	tcp_server_running = true;
+	k_sem_give(&tcp_server_run);
 
 	return 0;
 }
@@ -422,7 +408,8 @@ int zperf_tcp_download_stop(void)
 		return -EALREADY;
 	}
 
-	tcp_receiver_cleanup();
+	tcp_server_stop = true;
+	tcp_session_cb = NULL;
 
 	return 0;
 }
