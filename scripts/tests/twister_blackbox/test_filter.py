@@ -12,12 +12,72 @@ import os
 import pytest
 import sys
 import json
+import re
 
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
 class TestFilter:
+    TESTDATA_1 = [
+        (
+            'x86',
+            [
+                r'(it8xxx2_evb).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(frdm_k64f).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(DEBUG\s+- adding qemu_x86)',
+                r'(DEBUG\s+- adding intel_ish_5_4_1)'
+            ],
+        ),
+        (
+            'arm',
+            [
+                r'(it8xxx2_evb).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(qemu_x86).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(intel_ish_5_4_1).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(DEBUG\s+- adding frdm_k64f)'
+            ]
+        ),
+        (
+            'riscv',
+            [
+                r'(qemu_x86).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(frdm_k64f).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(intel_ish_5_4_1).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(DEBUG\s+- adding it8xxx2_evb)'
+            ]
+        )
+    ]
+    TESTDATA_2 = [
+        (
+            'nxp',
+            [
+                r'(it8xxx2_evb).*?(SKIPPED: Not a selected vendor platform)',
+                r'(intel_ish_5_4_1).*?(SKIPPED: Not a selected vendor platform)',
+                r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
+                r'(DEBUG\s+- adding frdm_k64f)'
+            ],
+        ),
+        (
+            'intel',
+            [
+                r'(it8xxx2_evb).*?(SKIPPED: Not a selected vendor platform)',
+                r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
+                r'(frdm_k64f).*?(SKIPPED: Not a selected vendor platform)',
+                r'(DEBUG\s+- adding intel_ish_5_4_1)'
+            ]
+        ),
+        (
+            'ite',
+            [
+                r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
+                r'(frdm_k64f).*?(SKIPPED: Not a selected vendor platform)',
+                r'(intel_ish_5_4_1).*?(SKIPPED: Not a selected vendor platform)',
+                r'(DEBUG\s+- adding it8xxx2_evb)'
+            ]
+        )
+    ]
+
     @classmethod
     def setup_class(cls):
         apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
@@ -122,3 +182,69 @@ class TestFilter:
         assert str(sys_exit.value) == '0'
 
         assert len(filtered_j) == 3
+
+    @pytest.mark.parametrize(
+        'arch, expected',
+        TESTDATA_1,
+        ids=[
+            'arch x86',
+            'arch arm',
+            'arch riscv'
+        ],
+    )
+
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    def test_arch(self, capfd, out_path, arch, expected):
+        path = os.path.join(TEST_DATA, 'tests', 'no_filter')
+        test_platforms = ['qemu_x86', 'intel_ish_5_4_1', 'frdm_k64f', 'it8xxx2_evb']
+        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+               ['--arch', arch] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+            pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        assert str(sys_exit.value) == '0'
+
+        for line in expected:
+            assert re.search(line, err)
+
+    @pytest.mark.parametrize(
+        'vendor, expected',
+        TESTDATA_2,
+        ids=[
+            'vendor nxp',
+            'vendor intel',
+            'vendor ite'
+        ],
+    )
+
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    def test_vendor(self, capfd, out_path, vendor, expected):
+        path = os.path.join(TEST_DATA, 'tests', 'no_filter')
+        test_platforms = ['qemu_x86', 'intel_ish_5_4_1', 'frdm_k64f', 'it8xxx2_evb']
+        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+               ['--vendor', vendor] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+            pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        for line in expected:
+            assert re.search(line, err)
+
+        assert str(sys_exit.value) == '0'
