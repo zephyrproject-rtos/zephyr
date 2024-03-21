@@ -1255,7 +1255,10 @@ void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacF
 otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShortAddress aShortAddr,
 			     const otExtAddress *aExtAddr)
 {
-	struct ieee802154_config config = { 0 };
+	struct ieee802154_config config = {
+		.ack_ie.short_addr = aShortAddr,
+		.ack_ie.ext_addr = aExtAddr->m8,
+	};
 	int result;
 
 	ARG_UNUSED(aInstance);
@@ -1268,8 +1271,6 @@ otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShort
 	if (result) {
 		return OT_ERROR_FAILED;
 	}
-	config.ack_ie.short_addr = aShortAddr;
-	config.ack_ie.ext_addr = aExtAddr != NULL ? aExtAddr->m8 : NULL;
 
 	/* Configure the CSL IE. */
 	if (aCslPeriod > 0) {
