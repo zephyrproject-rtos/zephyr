@@ -1,0 +1,36 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Use this compatible for the i.MX8ULP boards
+
+compatible: "nxp,imx8ulp-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: i.MX8ULP pin controller pin group
+  child-binding:
+    description: i.MX8ULP pin controller pin configuration node
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-open-drain
+    properties:
+      pinmux:
+        required: true
+        type: phandles
+      drive-strength:
+        type: boolean
+        description: |
+          Use this property to enable drive strength. If specified,
+          this property will be used to configure the pad for high
+          drive strength. If not present, the standard drive strength
+          will be used.
+      slew-rate:
+        type: boolean
+        description: |
+          Use this property to switch between standard and slow slew rate.
+          If present, this property will be used to configure the pad for
+          slow slew rate. If not present, the standard slew rate will be used.
