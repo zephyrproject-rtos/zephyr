@@ -23,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,display = &st7735;
+		zephyr,canbus = &can0;
 	};
 
 	leds {
@@ -195,4 +196,10 @@
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+};
+
+&can0 {
+	status = "okay";
+	pinctrl-0 = <&can0b_tx_p2_23 &can0b_rx_p2_22>;
+	pinctrl-names = "default";
 };

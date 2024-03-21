@@ -22,5 +22,6 @@ supported:
   - flash
   - usbd
   - memc
+  - can
 ram: 1024
 flash: 3072
