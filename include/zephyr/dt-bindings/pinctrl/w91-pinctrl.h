@@ -98,7 +98,7 @@
 #define W91_PULL_POS     21
 #define W91_PULL_MSK     0x3
 #define W91_FUNC_POS     16
-#define W91_FUNC_MSK     0x1F
+#define W91_FUNC_MSK     0xFF
 #define W91_PIN_POS      0
 #define W91_PIN_MSK      0xFFFF
 #define W91_PIN_ID_MSK   0xFF

@@ -1,0 +1,25 @@
+# Copyright (c) 2021-2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_TELINK_W91
+	bool "Telink Semiconductor W91 I2C driver"
+	default y
+	depends on DT_HAS_TELINK_W91_I2C_ENABLED
+	help
+	  Enables Telink W91 I2C driver.
+
+if I2C_TELINK_W91
+
+config I2C_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 10
+	help
+		This option sets Telink IPC dispatcher response driver timeout in mS.
+
+config I2C_TELINK_W91_IPC_MASTER_RX_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher Master RX timeout waiting for endpoint response"
+	default 200
+	help
+		This option sets Telink IPC dispatcher master RX response timeout in mS.
+
+endif # I2C_TELINK_W91

@@ -18,6 +18,7 @@ enum ipc_dispatcher_id {
 	IPC_DISPATCHER_PWM                      = 0x300,
 	IPC_DISPATCHER_ENTROPY_TRNG             = 0x400,
 	IPC_DISPATCHER_PINCTRL                  = 0x500,
+	IPC_DISPATCHER_I2C                      = 0x600,
 } __attribute__((__packed__));
 
 typedef void (*ipc_based_driver_unpack_t)(void *result, const uint8_t *data, size_t len);
@@ -105,7 +106,7 @@ static void unpack_##name(void *unpack_data,                                   \
 #define IPC_DISPATCHER_HOST_SEND_DATA(ipc, inst, name,                         \
 	tx_buff, rx_buff, timeout_ms)                                              \
 do {                                                                           \
-	uint8_t packed_data[pack_##name(inst, NULL, NULL)];                        \
+	uint8_t packed_data[pack_##name(inst, tx_buff, NULL)];                     \
 	size_t packed_len = pack_##name(inst, tx_buff, packed_data);               \
 	struct ipc_based_driver_ctx ctx = {                                        \
 		.unpack = unpack_##name,                                               \
