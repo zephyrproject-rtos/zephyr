@@ -1653,7 +1653,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[MFP (optional: needs security type to be specified)]\n"
 		  ": 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect,
-		  2, 4),
+		  2, 5),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect,
 		  1, 0),
