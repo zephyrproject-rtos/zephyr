@@ -22,8 +22,7 @@
 
 #define TEST_MODEM_BACKEND_TTY_PIPE_EVENT_OPENED_BIT (0)
 #define TEST_MODEM_BACKEND_TTY_PIPE_EVENT_RRDY_BIT   (1)
-#define TEST_MODEM_BACKEND_TTY_PIPE_EVENT_TIDLE_BIT  (2)
-#define TEST_MODEM_BACKEND_TTY_PIPE_EVENT_CLOSED_BIT (3)
+#define TEST_MODEM_BACKEND_TTY_PIPE_EVENT_CLOSED_BIT (2)
 
 #define TEST_MODEM_BACKEND_TTY_OP_DELAY (K_MSEC(1000))
 
@@ -71,10 +70,6 @@ static void modem_pipe_callback_handler(struct modem_pipe *pipe, enum modem_pipe
 
 	case MODEM_PIPE_EVENT_RECEIVE_READY:
 		atomic_set_bit(&tty_pipe_events, TEST_MODEM_BACKEND_TTY_PIPE_EVENT_RRDY_BIT);
-		break;
-
-	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
-		atomic_set_bit(&tty_pipe_events, TEST_MODEM_BACKEND_TTY_PIPE_EVENT_TIDLE_BIT);
 		break;
 
 	case MODEM_PIPE_EVENT_CLOSED:
@@ -127,13 +122,9 @@ static void test_modem_backend_tty_teardown(void *f)
 /*************************************************************************************************/
 ZTEST(modem_backend_tty_suite, test_close_open)
 {
-	bool result;
-
 	zassert_ok(modem_pipe_close(tty_pipe), "Failed to close pipe");
 	zassert_ok(modem_pipe_close(tty_pipe), "Pipe should already be closed");
 	zassert_ok(modem_pipe_open(tty_pipe), "Failed to open pipe");
-	result = atomic_test_bit(&tty_pipe_events, TEST_MODEM_BACKEND_TTY_PIPE_EVENT_TIDLE_BIT);
-	zassert_true(result, "Transmit idle event should be set");
 	zassert_ok(modem_pipe_open(tty_pipe), "Pipe should already be open");
 }
 
@@ -181,18 +172,11 @@ ZTEST(modem_backend_tty_suite, test_transmit)
 {
 	int ret;
 	char msg[] = "Test me buddy 2";
-	bool result;
-
-	result = atomic_test_bit(&tty_pipe_events, TEST_MODEM_BACKEND_TTY_PIPE_EVENT_TIDLE_BIT);
-	zassert_false(result, "Transmit idle event should not be set");
 
 	ret = modem_pipe_transmit(tty_pipe, msg, sizeof(msg));
 	zassert_true(ret == sizeof(msg), "Failed to transmit using pipe");
 
 	k_sleep(TEST_MODEM_BACKEND_TTY_OP_DELAY);
-
-	result = atomic_test_bit(&tty_pipe_events, TEST_MODEM_BACKEND_TTY_PIPE_EVENT_TIDLE_BIT);
-	zassert_true(result, "Transmit idle event should be set");
 
 	ret = read(primary_fd, buffer1, sizeof(buffer1));
 	zassert_true(ret == sizeof(msg), "Read incorrect number of bytes");
