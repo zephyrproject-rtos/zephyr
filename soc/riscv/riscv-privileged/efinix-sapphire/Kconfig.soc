@@ -1,7 +1,11 @@
 # Copyright (c) 2023 Efinix Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_EFINIX_SAPPHIRE
+choice
+	prompt "Efinix SoC selection"
+	depends on SOC_SERIES_EFINIX_SAPPHIRE
+
+config SOC_RISCV32_EFINIX_SAPPHIRE
 	bool "Efinix Sapphire VexRiscv system implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
@@ -10,6 +14,5 @@ config SOC_EFINIX_SAPPHIRE
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
-	select RISCV
-	select RISCV_PRIVILEGED
-	select RISCV_PRIVILEGED_STANDALONE
+
+endchoice
