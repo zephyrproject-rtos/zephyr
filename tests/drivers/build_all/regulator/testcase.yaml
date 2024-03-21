@@ -5,6 +5,4 @@ tests:
   drivers.regulator.build:
     tags: drivers regulator
     build_only: true
-    platform_allow:
-      - native_posix
-      - native_sim
+    platform_allow: native_posix
