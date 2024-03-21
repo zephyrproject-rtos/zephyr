@@ -1,0 +1,71 @@
+/*
+ * Copyright 2024 Myeonghyeon Park <myeonghyeon@tsnlab.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0>;
+		};
+	};
+
+	interrupt-parent = <&gic>;
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	soc {
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		sram0: memory@200000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x0 0x200000 0x80000>;
+		};
+
+		gic: interrupt-controller@107fff9000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0x10 0x7fff9000 0x1000>,
+			      <0x10 0x7fffa000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		gpio2@107d517c00 {
+			compatible = "simple-bus";
+			reg = <0x10 0x7d517c00 0x40>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			gio_aon: gpio@0 {
+				compatible = "brcm,brcmstb-gpio";
+				reg = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <17>;
+				status = "disabled";
+			};
+		};
+	};
+};
