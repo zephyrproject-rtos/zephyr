@@ -297,6 +297,21 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetLcdClkFreq();
 		break;
 #endif
+
+#if defined(CONFIG_ADC_MCUX_LPADC)
+	case MCUX_LPADC1_CLK:
+#if (FSL_FEATURE_SOC_LPADC_COUNT == 1)
+		*rate = CLOCK_GetAdcClkFreq();
+#else
+		*rate = CLOCK_GetAdcClkFreq(0);
+#endif
+		break;
+#if (FSL_FEATURE_SOC_LPADC_COUNT == 2)
+	case MCUX_LPADC2_CLK:
+		*rate = CLOCK_GetAdcClkFreq(1);
+		break;
+#endif
+#endif /* CONFIG_ADC_MCUX_LPADC */
 	}
 
 	return 0;
