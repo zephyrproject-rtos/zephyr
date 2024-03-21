@@ -1,0 +1,38 @@
+/*
+ * Copyright 2024 Junho Lee <junho@tsnlab.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2712.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "raspberrypi,5-model-b", "brcm,bcm2712";
+	model = "Raspberry Pi 5";
+	#address-cells = <2>;
+	#size-cells = <1>;
+
+	aliases {
+		led0 = &led_act;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_act: led-act {
+			gpios = <&gio_aon 9 GPIO_ACTIVE_LOW>;
+			label = "ACT";
+		};
+	};
+};
+
+&gio_aon {
+	status = "okay";
+};
