@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MAX32
+	bool "ADI MAX32 CAN Driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_CAN_ENABLED
+	help
+	  Enable ADI MAX32 CAN Driver
+
+if CAN_MAX32
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 5
+	range 1 32
+	help
+	  Maximum number of filters supported by the can_add_rx_callback() API call.
+
+endif # CAN_MAX32
