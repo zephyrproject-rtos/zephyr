@@ -19,7 +19,6 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 
-#include <cmsis_core_m_defaults.h>
 
 #endif /* !_ASMLANGUAGE */
 

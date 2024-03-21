@@ -7,8 +7,6 @@
 #ifndef TI_SIMPLELINK_CC13X2_CC26X2_SOC_H_
 #define TI_SIMPLELINK_CC13X2_CC26X2_SOC_H_
 
-#include <zephyr/arch/arm/cortex_m/nvic.h>
-
 /* CMSIS required values */
 typedef enum {
 	Reset_IRQn            = -15,
@@ -28,7 +26,5 @@ typedef enum {
 #define __NVIC_PRIO_BITS       NUM_IRQ_PRIO_BITS
 #define __Vendor_SysTickConfig 0
 #define __FPU_PRESENT          1
-
-#include <core_cm4.h>
 
 #endif /* TI_SIMPLELINK_CC13X2_CC26X2_SOC_H_ */

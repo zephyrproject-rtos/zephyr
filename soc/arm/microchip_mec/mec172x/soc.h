@@ -242,8 +242,6 @@ typedef enum {
 	MAX_IRQn
 } IRQn_Type;
 
-#include <core_cm4.h>
-
 #include <zephyr/sys/util.h>
 
 /* chip specific register defines */

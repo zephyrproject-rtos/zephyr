@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-#include <cmsis_core_m_defaults.h>
-
 #ifdef __cplusplus
 }
 #endif

@@ -292,6 +292,4 @@ typedef enum IRQn {
 #define PCIE0_PERST_FE_INTR		BIT(1)
 #define PCIE0_PERST_INB_FE_INTR		BIT(3)
 
-#include <core_cm7.h>
-
 #endif

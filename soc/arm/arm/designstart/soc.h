@@ -7,6 +7,7 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
-#include <cmsis_core_m_defaults.h>
+
+#define __MPU_PRESENT CONFIG_CPU_HAS_ARM_MPU
 
 #endif /* _SOC_H_ */
