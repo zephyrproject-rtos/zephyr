@@ -27,27 +27,40 @@
 		regulator-name = "oscen";
 		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
+		status = "okay";
 	};
 };
 
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass;
+	status = "okay";
+};
+
 &clk_hsi {
-	hsi-div = <8>;
+	hsi-div = <1>;
 	status = "okay";
 };
 
 &pll {
-	div-m = <1>;
-	mul-n = <24>;
+	div-m = <5>;
+	mul-n = <160>;
 	div-p = <2>;
-	div-q = <4>;
+	div-q = <10>;
 	div-r = <2>;
-	clocks = <&clk_hsi>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
+/** The power supply for the Portenta H7 is based on a ST PSU reference design.
+ *  The design specification from this reference design limits the maximum
+ *  clock speed to 400 MHz.
+ *	Refer: section 8.1 of the reference design guide.
+ */
+
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(96)>;
+	clock-frequency = <DT_FREQ_M(400)>;
 };
 
 
