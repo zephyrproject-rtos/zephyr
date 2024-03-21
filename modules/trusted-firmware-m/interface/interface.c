@@ -35,7 +35,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 	if (!is_pre_kernel) {
 		/* TF-M request protected by NS lock */
 		if (k_mutex_lock(&tfm_mutex, K_FOREVER) != 0) {
-			return (int32_t)PSA_ERROR_GENERIC_ERROR;
+			return (int32_t)TFM_ERROR_GENERIC;
 		}
 
 #if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
@@ -79,7 +79,7 @@ uint32_t tfm_ns_interface_init(void)
 	 * The static K_MUTEX_DEFINE handles mutex initialization,
 	 * so this function may be implemented as no-op.
 	 */
-	return PSA_SUCCESS;
+	return TFM_SUCCESS;
 }
 
 
@@ -90,7 +90,7 @@ uint32_t tfm_ns_interface_init(void)
 static int ns_interface_init(void)
 {
 
-	__ASSERT(tfm_ns_interface_init() == PSA_SUCCESS,
+	__ASSERT(tfm_ns_interface_init() == TFM_SUCCESS,
 		"TF-M NS interface init failed");
 
 	return 0;
