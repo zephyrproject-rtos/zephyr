@@ -31,9 +31,15 @@
 		};
 	};
 
-	ddr0:memory@a4100000 {
+	rsc_table: memory@a4100000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa4100000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr0: memory@a4101000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa4101000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
 	};
 
