@@ -69,6 +69,8 @@ extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 				       struct net_ipv6_hdr *ipv6_hdr,
 				       struct net_icmp_hdr *icmp_hdr);
 
+extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
+
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
