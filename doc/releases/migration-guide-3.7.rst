@@ -175,6 +175,10 @@ Networking
   one IPv4 address / network interface, the netmask must be specified
   for each IPv4 address separately. (:github:`68419`)
 
+* Virtual network interface API no longer has the `input` callback. The input callback was
+  used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
+  implemented in `recv` callback. (:github:`70549`)
+
 Other Subsystems
 ****************
 
