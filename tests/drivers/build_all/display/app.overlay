@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	test {
@@ -55,6 +56,20 @@
 				pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
 				ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
 			};
+
+			test_mipi_dbi_st7735r: st7735t@2 {
+				compatible = "sitronix,st7735r";
+				mipi-max-frequency = <250000000>;
+				mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+				reg = <2>;
+				/* Arbitrary values */
+				x-offset = <0>;
+				y-offset = <0>;
+				gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+				gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+				width = <160>;
+				height = <128>;
+			};
 		};
 
 
@@ -67,7 +82,7 @@
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices at spi.dtsi */
-			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1>;
+			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2>;
 
 			test_spi_gc9x01x: gc9x01x@1 {
 				compatible = "galaxycore,gc9x01x";
