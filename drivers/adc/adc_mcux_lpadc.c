@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  * Copyright (c) 2020 Toby Firth
  *
  * Based on adc_mcux_adc16.c and adc_mcux_adc12.c, which are:
@@ -14,14 +14,14 @@
 #include <errno.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/util.h>
-#include <fsl_lpadc.h>
 #include <zephyr/drivers/regulator.h>
-
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <fsl_lpadc.h>
 LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
 /*
@@ -35,7 +35,6 @@ LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-
 struct mcux_lpadc_config {
 	ADC_Type *base;
 	lpadc_reference_voltage_source_t voltage_ref;
@@ -46,6 +45,8 @@ struct mcux_lpadc_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
 	const struct device **ref_supplies;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 struct mcux_lpadc_data {
@@ -57,13 +58,70 @@ struct mcux_lpadc_data {
 	lpadc_conv_command_config_t cmd_config[CONFIG_LPADC_CHANNEL_COUNT];
 };
 
+static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t acq_time,
+					     lpadc_conv_command_config_t *cmd)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	uint32_t adc_freq_hz = 0;
+	uint32_t conversion_factor = 0;
+	uint32_t acquisition_time_value = ADC_ACQ_TIME_VALUE(acq_time);
+	uint8_t acquisition_time_unit = ADC_ACQ_TIME_UNIT(acq_time);
 
+	if (ADC_ACQ_TIME_DEFAULT == acquisition_time_value) {
+		return 0;
+	}
+
+	/* If the acquisition time is expressed in ADC ticks, then directly compare
+	 * the acquisition time with configuration items (3, 5, 7, etc. ADC ticks)
+	 * supported by the LPADC. The conversion factor is set to 1 (means do not need
+	 * to convert configuration items from ADC ticks to nanoseconds).
+	 * If the acquisition time is expressed in microseconds or nanoseconds, First
+	 * calculate the ADC cycle based on the ADC clock, then convert the configuration
+	 * items supported by LPADC into nanoseconds, and finally compare the acquisition
+	 * time with configuration items. The conversion factor is equal to the ADC cycle
+	 * (means convert configuration items from ADC ticks to nanoseconds).
+	 */
+	if (ADC_ACQ_TIME_TICKS == acquisition_time_unit) {
+		conversion_factor = 1;
+	} else {
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &adc_freq_hz)) {
+			LOG_ERR("Get clock rate failed");
+			return -EINVAL;
+		}
+
+		conversion_factor = 1000000000 / adc_freq_hz;
+
+		if (ADC_ACQ_TIME_MICROSECONDS == acquisition_time_unit) {
+			acquisition_time_value *= 1000;
+		}
+	}
+
+	if ((3 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK3;
+	} else if ((5 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK5;
+	} else if ((7 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK7;
+	} else if ((11 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK11;
+	} else if ((19 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK19;
+	} else if ((35 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK35;
+	} else if ((67 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK67;
+	} else if ((131 * conversion_factor) >= acquisition_time_value) {
+		cmd->sampleTimeMode = kLPADC_SampleTimeADCK131;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
 {
-
-
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_conv_command_config_t *cmd;
 	uint8_t channel_side;
@@ -72,11 +130,6 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	/* User may configure maximum number of active channels */
 	if (channel_cfg->channel_id >= CONFIG_LPADC_CHANNEL_COUNT) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
-		return -EINVAL;
-	}
-
-	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid channel acquisition time");
 		return -EINVAL;
 	}
 
@@ -92,6 +145,12 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		channel_side == 0 ? 'A' : 'B');
 
 	LPADC_GetDefaultConvCommandConfig(cmd);
+
+	/* Configure LPADC acquisition time. */
+	if (mcux_lpadc_acquisition_time_setup(dev, channel_cfg->acquisition_time, cmd)) {
+		LOG_ERR("LPADC acquisition time setting failed");
+		return -EINVAL;
+	}
 
 	if (channel_cfg->differential) {
 		/* Channel pairs must match in differential mode */
@@ -493,6 +552,8 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.ref_supplies = mcux_lpadc_ref_supplies_##n, \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	};									\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\
 		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),	\
