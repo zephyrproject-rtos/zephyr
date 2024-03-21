@@ -84,25 +84,25 @@
 #define IMX_CCM_GPT6_CLK               0x1005UL
 
 /* SAI */
-#define IMX_CCM_SAI1_CLK               0x2000UL
-#define IMX_CCM_SAI2_CLK               0x2001UL
-#define IMX_CCM_SAI3_CLK               0x2002UL
-#define IMX_CCM_SAI4_CLK               0x2003UL
+#define IMX_CCM_SAI1_CLK               0x1100UL
+#define IMX_CCM_SAI2_CLK               0x1101UL
+#define IMX_CCM_SAI3_CLK               0x1102UL
+#define IMX_CCM_SAI4_CLK               0x1103UL
 
 /* ENET */
-#define IMX_CCM_ENET_CLK               0x3000UL
-#define IMX_CCM_ENET_PLL               0x3001UL
+#define IMX_CCM_ENET_CLK               0x1200UL
+#define IMX_CCM_ENET_PLL               0x1201UL
 
 /* FLEXSPI */
-#define IMX_CCM_FLEXSPI_CLK            0x4000UL
-#define IMX_CCM_FLEXSPI2_CLK           0x4001UL
+#define IMX_CCM_FLEXSPI_CLK            0x1300UL
+#define IMX_CCM_FLEXSPI2_CLK           0x1301UL
 
 /* PIT */
-#define IMX_CCM_PIT_CLK                0x5000UL
-#define IMX_CCM_PIT1_CLK               0x5001UL
+#define IMX_CCM_PIT_CLK                0x1400UL
+#define IMX_CCM_PIT1_CLK               0x1401UL
 
 /* ADC */
-#define IMX_CCM_LPADC1_CLK             0x6000UL
-#define IMX_CCM_LPADC2_CLK             0x6001UL
+#define IMX_CCM_LPADC1_CLK             0x1500UL
+#define IMX_CCM_LPADC2_CLK             0x1501UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */
