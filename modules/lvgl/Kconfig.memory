@@ -39,6 +39,15 @@ config LV_Z_MEM_POOL_SIZE
 	help
 	  Size of the memory pool in bytes
 
+config LV_Z_MEMORY_POOL_CUSTOM_SECTION
+	bool "Link memory pool to custom section"
+	depends on LV_Z_MEM_POOL_SYS_HEAP
+	help
+	  Place LVGL memory pool in custom section, with tag ".lvgl_heap".
+	  This can be used by custom linker scripts to relocate the LVGL
+	  memory pool to a custom location, such as tightly coupled or
+	  external memory.
+
 config LV_Z_VDB_SIZE
 	int "Rendering buffer size"
 	default 100 if LV_Z_FULL_REFRESH
