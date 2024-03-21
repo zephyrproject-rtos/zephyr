@@ -290,11 +290,20 @@ struct net_pkt {
 	 */
 	uint8_t priority;
 
-#if defined(CONFIG_NET_OFFLOAD)
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
 	/* Remote address of the recived packet. This is only used by
-	 * network interfaces with an offloaded TCP/IP stack.
+	 * network interfaces with an offloaded TCP/IP stack, or if we
+	 * have network tunneling in use.
 	 */
-	struct sockaddr remote;
+	union {
+		struct sockaddr remote;
+
+		/* This will make sure that there is enough storage to store
+		 * the address struct. The access to value is via remote
+		 * address.
+		 */
+		struct sockaddr_storage remote_storage;
+	};
 #endif /* CONFIG_NET_OFFLOAD */
 
 	/* @endcond */
@@ -1354,6 +1363,20 @@ static inline bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
 }
 
 #endif /* CONFIG_NET_PKT_FILTER && CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
+
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
+static inline struct sockaddr *net_pkt_remote_address(struct net_pkt *pkt)
+{
+	return &pkt->remote;
+}
+
+static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
+					      struct sockaddr *address,
+					      socklen_t len)
+{
+	memcpy(&pkt->remote, address, len);
+}
+#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_L2_IPIP */
 
 /* @endcond */
 
