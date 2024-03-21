@@ -791,17 +791,25 @@ static void nrf5_iface_init(struct net_if *iface)
 #if defined(CONFIG_NRF_802154_ENCRYPTION)
 static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 {
-	nrf_802154_security_key_remove_all();
+	static nrf_802154_key_id_t stored_key_ids[NRF_802154_SECURITY_KEY_STORAGE_SIZE];
+	static uint8_t stored_ids[NRF_802154_SECURITY_KEY_STORAGE_SIZE];
+	uint8_t i;
 
-	for (uint8_t i = 0; mac_keys->key_value
-			&& i < NRF_802154_SECURITY_KEY_STORAGE_SIZE; mac_keys++, i++) {
+	for (i = 0; i < NRF_802154_SECURITY_KEY_STORAGE_SIZE && stored_key_ids[i].p_key_id; i++) {
+		nrf_802154_security_key_remove(&stored_key_ids[i]);
+		stored_key_ids[i].p_key_id = NULL;
+	}
+
+	i = 0;
+	for (struct ieee802154_key *keys = mac_keys; keys->key_value
+			&& i < NRF_802154_SECURITY_KEY_STORAGE_SIZE; keys++, i++) {
 		nrf_802154_key_t key = {
-			.value.p_cleartext_key = mac_keys->key_value,
-			.id.mode = mac_keys->key_id_mode,
-			.id.p_key_id = mac_keys->key_id,
+			.value.p_cleartext_key = keys->key_value,
+			.id.mode = keys->key_id_mode,
+			.id.p_key_id = &(keys->key_index),
 			.type = NRF_802154_KEY_CLEARTEXT,
 			.frame_counter = 0,
-			.use_global_frame_counter = !(mac_keys->frame_counter_per_key),
+			.use_global_frame_counter = !(keys->frame_counter_per_key),
 		};
 
 		__ASSERT_EVAL((void)nrf_802154_security_key_store(&key),
@@ -809,6 +817,10 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 			err == NRF_802154_SECURITY_ERROR_NONE ||
 			err == NRF_802154_SECURITY_ERROR_ALREADY_PRESENT,
 			"Storing key failed, err: %d", err);
+
+		stored_ids[i] = *key.id.p_key_id;
+		stored_key_ids[i].mode = key.id.mode;
+		stored_key_ids[i].p_key_id = &stored_ids[i];
 	};
 }
 #endif /* CONFIG_NRF_802154_ENCRYPTION */
