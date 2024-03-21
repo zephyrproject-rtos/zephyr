@@ -5,13 +5,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_HAS_PLIC
-	bool
+	bool "Does the SOC provide support for a Platform Level Interrupt Controller (PLIC)"
 	depends on RISCV_PRIVILEGED
 	help
 	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
 
 config RISCV_HAS_CLIC
-	bool
+	bool "Does the SOC provide support for a Core-Local Interrupt Controller (CLIC)"
 	depends on RISCV_PRIVILEGED
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
