@@ -15,8 +15,9 @@
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
-		zephyr,console = &usart1;
-		zephyr,shell-uart = &usart1;
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,cdc-acm-uart0 = &cdc_acm_uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -26,6 +27,14 @@
 		compatible = "regulator-fixed";
 		regulator-name = "oscen";
 		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	ethernet_phy_en: ethernet_phy_en {
+		compatible = "regulator-fixed";
+		regulator-name = "ethernet-phy-reset-release";
+		enable-gpios = <&gpioj 15 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 		status = "okay";
 	};
@@ -80,7 +89,16 @@
 	status = "okay";
 };
 
+/* Only one should be enabled */
 &usbotg_fs {
+	status = "disabled";
+};
+
+&usbotg_hs {
+	status = "okay";
+};
+
+&cdc_acm_uart0 {
 	status = "okay";
 };
 
