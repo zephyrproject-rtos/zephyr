@@ -6,6 +6,7 @@
 #ifndef __RISCV64_MPFS_SOC_H_
 #define __RISCV64_MPFS_SOC_H_
 
+#include <soc_common.h>
 #include <zephyr/devicetree.h>
 
 
