@@ -98,10 +98,6 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api 
  *
  * @retval 0 if pipe was successfully opened or was already open
  * @retval -errno code otherwise
- *
- * @warning Be cautious when using this synchronous version of the call.
- * It may block the calling thread, which in the case of the system workqueue
- * can result in a deadlock until this call times out waiting for the pipe to be open.
  */
 int modem_pipe_open(struct modem_pipe *pipe);
 
@@ -174,10 +170,6 @@ void modem_pipe_release(struct modem_pipe *pipe);
  *
  * @retval 0 if pipe open was called closed or pipe was already closed
  * @retval -errno code otherwise
- *
- * @warning Be cautious when using this synchronous version of the call.
- * It may block the calling thread, which in the case of the system workqueue
- * can result in a deadlock until this call times out waiting for the pipe to be closed.
  */
 int modem_pipe_close(struct modem_pipe *pipe);
 
