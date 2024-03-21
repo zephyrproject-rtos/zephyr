@@ -29,7 +29,6 @@
 #include <zephyr/irq.h>
 #include <nrfx.h>
 #include "cmsis.h"
-#include "soc_nrf_common.h"
 
 #if defined(CONFIG_BOARD_NRF52_BSIM)
 #define OFFLOAD_SW_IRQ SWI0_EGU0_IRQn
