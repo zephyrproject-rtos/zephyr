@@ -266,6 +266,13 @@
 				};
 			};
 
+			ccm030: ccm@3a000 {
+				compatible = "nordic,nrf-ccm";
+				reg = <0x3a000 0x1000>;
+				interrupts = <58 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+			};
+
 			ecb030: ecb@3b000 {
 				compatible = "nordic,nrf-ecb";
 				reg = <0x3b000 0x1000>;
