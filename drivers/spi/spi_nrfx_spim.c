@@ -11,10 +11,8 @@
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_ppi.h>
 #endif
-#ifdef CONFIG_SOC_NRF5340_CPUAPP
-#include <hal/nrf_clock.h>
-#endif
 #include <nrfx_spim.h>
+#include <hal/nrf_clock.h>
 #include <string.h>
 #include <zephyr/linker/devicetree_regions.h>
 
