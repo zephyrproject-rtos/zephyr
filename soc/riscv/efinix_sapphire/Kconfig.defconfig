@@ -11,7 +11,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 config RISCV_HAS_CPU_IDLE
 	bool
-	default y
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool
