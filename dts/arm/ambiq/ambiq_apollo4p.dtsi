@@ -3,6 +3,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -248,6 +249,18 @@
 			interrupts = <13 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+		};
+
+		adc0: adc@40038000 {
+			reg = <0x40038000 0x294>;
+			interrupts = <19 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			vref-mv = <1500>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x2000>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		mspi0: spi@40060000 {
