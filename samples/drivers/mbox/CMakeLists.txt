@@ -12,7 +12,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../remote/zephyr)
 
 if(("${BOARD}" STREQUAL "nrf5340dk") OR
-   ("${BOARD}${BOARD_IDENTIFIER}" STREQUAL "nrf5340bsim/nrf5340/cpuapp") OR
+   ("${BOARD}${BOARD_QUALIFIERS}" STREQUAL "nrf5340bsim/nrf5340/cpuapp") OR
    ("${BOARD}" STREQUAL "nrf5340bsim_nrf5340_cpuapp") OR
    ("${BOARD}" STREQUAL "adp_xc7k") OR
    ("${BOARD}" STREQUAL "mimxrt1170_evkb") OR
@@ -20,7 +20,7 @@ if(("${BOARD}" STREQUAL "nrf5340dk") OR
    ("${BOARD}" STREQUAL "mimxrt1160_evk") OR
    ("${BOARD}" STREQUAL "lpcxpresso55s69") OR
    ("${BOARD}" STREQUAL "nrf54h20dk"))
-  message(STATUS "${BOARD}${BOARD_IDENTIFIER} compile as Main in this sample")
+  message(STATUS "${BOARD}${BOARD_QUALIFIERS} compile as Main in this sample")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")
 endif()
