@@ -360,6 +360,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	volatile int temp;
 
 	ARG_UNUSED(dev);
 
@@ -371,6 +372,11 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	sys_set_bits(STM32H7_BUS_CLK_REG + pclken->bus, pclken->enr);
+	/* Delay after enabling the clock, to allow it to become active.
+	 * See RM0433 8.5.10 "Clock enabling delays"
+	 */
+	temp = sys_read32(STM32H7_BUS_CLK_REG + pclken->bus);
+	UNUSED(temp);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
