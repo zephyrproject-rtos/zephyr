@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Linaro Ltd.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -331,6 +332,7 @@
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
+		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
 	usbfs: usbfs@84000 {

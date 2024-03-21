@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -282,6 +282,7 @@
 		dmas = <&dma0 21>, <&dma0 22>;
 		dma-names = "adc0-dma0", "adc0-dma1";
 		nxp,reference-supply = <&vref0>;
+		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
 	dac0: dac@b2000 {
