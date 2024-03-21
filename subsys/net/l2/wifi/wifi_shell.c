@@ -1539,6 +1539,8 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"sta", no_argument, 0, 's'},
 					       {"monitor", no_argument, 0, 'm'},
+					       {"tx-injection", no_argument, 0, 't'},
+					       {"promiscuous", no_argument, 0, 'p'},
 					       {"ap", no_argument, 0, 'a'},
 					       {"softap", no_argument, 0, 'k'},
 					       {"get", no_argument, 0, 'g'},
@@ -1552,6 +1554,12 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			break;
 		case 'm':
 			mode->mode |= WIFI_MONITOR_MODE;
+			break;
+		case 't':
+			mode->mode |= WIFI_TX_INJECTION_MODE;
+			break;
+		case 'p':
+			mode->mode |= WIFI_PROMISCUOUS_MODE;
 			break;
 		case 'a':
 			mode->mode |= WIFI_AP_MODE;
@@ -1954,6 +1962,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"[-i, --if-index <idx>] : Interface index\n"
 		"[-s, --sta] : Station mode\n"
 		"[-m, --monitor] : Monitor mode\n"
+		"[-p, --promiscuous] : Promiscuous mode\n"
+		"[-t, --tx-injection] : TX-Injection mode\n"
 		"[-a, --ap] : AP mode\n"
 		"[-k, --softap] : Softap mode\n"
 		"[-h, --help] : Help\n"
