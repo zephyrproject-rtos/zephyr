@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
@@ -16,6 +17,8 @@
 #include <zephyr/bluetooth/conn.h>
 
 #include "../host/hci_core.h"
+
+LOG_MODULE_REGISTER(hci_shell, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 int cmd_mesh_adv(const struct shell *sh, size_t argc, char *argv[])

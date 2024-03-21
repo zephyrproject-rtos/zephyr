@@ -27,9 +27,12 @@
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
 #include "bt.h"
+
+LOG_MODULE_REGISTER(rfcomm_shell, LOG_LEVEL_DBG);
 
 #define DATA_MTU 48
 
@@ -101,17 +104,17 @@ static struct bt_sdp_record spp_rec = BT_SDP_RECORD(spp_attrs);
 
 static void rfcomm_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
-	shell_print(ctx_shell, "Incoming data dlc %p len %u", dlci, buf->len);
+	LOG_DBG("Incoming data dlc %p len %u", dlci, buf->len);
 }
 
 static void rfcomm_connected(struct bt_rfcomm_dlc *dlci)
 {
-	shell_print(ctx_shell, "Dlc %p connected", dlci);
+	LOG_DBG("Dlc %p connected", dlci);
 }
 
 static void rfcomm_disconnected(struct bt_rfcomm_dlc *dlci)
 {
-	shell_print(ctx_shell, "Dlc %p disconnected", dlci);
+	LOG_DBG("Dlc %p disconnected", dlci);
 }
 
 static struct bt_rfcomm_dlc_ops rfcomm_ops = {
@@ -127,10 +130,10 @@ static struct bt_rfcomm_dlc rfcomm_dlc = {
 
 static int rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 {
-	shell_print(ctx_shell, "Incoming RFCOMM conn %p", conn);
+	LOG_DBG("Incoming RFCOMM conn %p", (void *)conn);
 
 	if (rfcomm_dlc.session) {
-		shell_error(ctx_shell, "No channels available");
+		LOG_ERR("No channels available");
 		return -ENOMEM;
 	}
 

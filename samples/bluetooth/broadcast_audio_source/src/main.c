@@ -384,7 +384,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_subgroup_param
 		subgroup_param[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
-	struct bt_bap_broadcast_source_param create_param;
+	struct bt_bap_broadcast_source_param create_param = {0};
 	const size_t streams_per_subgroup = ARRAY_SIZE(stream_params) / ARRAY_SIZE(subgroup_param);
 	uint8_t left[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 			  BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_LEFT))};
@@ -409,6 +409,12 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	create_param.params = subgroup_param;
 	create_param.qos = &preset_active.qos;
 	create_param.encryption = false;
+	create_param.broadcast_code[0] = 'z';
+	create_param.broadcast_code[1] = 'e';
+	create_param.broadcast_code[2] = 'p';
+	create_param.broadcast_code[3] = 'h';
+	create_param.broadcast_code[4] = 'y';
+	create_param.broadcast_code[5] = 'r';
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",

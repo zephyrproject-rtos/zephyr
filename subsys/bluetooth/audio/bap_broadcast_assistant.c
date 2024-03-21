@@ -1024,6 +1024,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	sys_put_le24(param->broadcast_id, cp->broadcast_id);
 
 	if (param->pa_sync) {
+		/* TODO: Lookup the address to see if we have a matching PA sync first f*/
 		if (past_available(conn, &param->addr, param->adv_sid)) {
 			cp->pa_sync = BT_BAP_BASS_PA_REQ_SYNC_PAST;
 		} else {

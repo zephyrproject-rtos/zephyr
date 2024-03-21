@@ -79,7 +79,7 @@ struct bt_cap_commander_proc_param {
 		} change_volume;
 		struct {
 			bool mute;
-		} change_mute;
+		} change_vol_mute;
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 		struct {
@@ -88,6 +88,9 @@ struct bt_cap_commander_proc_param {
 		} change_offset;
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+		struct {
+			bool mute;
+		} change_mic_mute;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 		struct {
 			int8_t gain;
