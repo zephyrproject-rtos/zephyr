@@ -642,6 +642,13 @@ static void modem_cmux_on_frame(struct modem_cmux *cmux)
 	modem_cmux_on_dlci_frame(cmux);
 }
 
+static void modem_cmux_transmit_resync(struct modem_cmux *cmux)
+{
+	static const uint8_t resync[3] = {0xF9, 0xF9, 0xF9};
+
+	modem_pipe_transmit(cmux->pipe, resync, sizeof(resync));
+}
+
 static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t byte)
 {
 	uint8_t fcs;
@@ -649,22 +656,45 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 	switch (cmux->receive_state) {
 	case MODEM_CMUX_RECEIVE_STATE_SOF:
 		if (byte == 0xF9) {
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC;
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_ADDRESS;
 			break;
+		}
+
+		modem_cmux_transmit_resync(cmux);
+		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
+		break;
+
+	case MODEM_CMUX_RECEIVE_STATE_RESYNC_0:
+		if (byte == 0xF9) {
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_1;
 		}
 
 		break;
 
-	case MODEM_CMUX_RECEIVE_STATE_RESYNC:
-		/*
-		 * Allow any number of consequtive flags (0xF9).
-		 * 0xF9 could also be a valid address field for DLCI 62.
-		 */
+	case MODEM_CMUX_RECEIVE_STATE_RESYNC_1:
+		if (byte == 0xF9) {
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_2;
+		} else {
+			modem_cmux_transmit_resync(cmux);
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
+		}
+
+		break;
+
+	case MODEM_CMUX_RECEIVE_STATE_RESYNC_2:
+		if (byte == 0xF9) {
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_3;
+		} else {
+			modem_cmux_transmit_resync(cmux);
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
+		}
+
+		break;
+
+	case MODEM_CMUX_RECEIVE_STATE_RESYNC_3:
 		if (byte == 0xF9) {
 			break;
 		}
-
-		__fallthrough;
 
 	case MODEM_CMUX_RECEIVE_STATE_ADDRESS:
 		/* Initialize */
