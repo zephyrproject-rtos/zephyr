@@ -133,6 +133,25 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 		return 0;
 #endif
+#if defined(CONFIG_COUNTER_MCUX_TPM) && defined(CONFIG_SOC_MIMX9352_A55)
+	case IMX_CCM_TPM_CLK:
+	{
+		clock_root = kCLOCK_Root_Tpm1 + instance;
+		uint32_t tpm_mux = CLOCK_GetRootClockMux(clock_root);
+		uint32_t divider = CLOCK_GetRootClockDiv(clock_root);
+
+		if (tpm_mux != 0) {
+			LOG_ERR("TPM Clock is not supported\r\n");
+
+			return -EINVAL;
+		}
+
+		*rate = MHZ(24) / divider;
+
+		return 0;
+	} break;
+#endif
+
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 	case IMX_CCM_FLEXSPI_CLK:
 		clock_root = kCLOCK_Root_Flexspi1;
