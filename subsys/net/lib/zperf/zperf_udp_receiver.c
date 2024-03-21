@@ -240,8 +240,6 @@ static void udp_receiver_cleanup(void)
 
 	udp_server_running = false;
 	udp_session_cb = NULL;
-
-	zperf_session_reset(SESSION_UDP);
 }
 
 static int udp_recv_data(struct net_socket_service_event *pev)

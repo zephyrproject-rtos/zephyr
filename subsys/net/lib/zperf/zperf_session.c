@@ -102,27 +102,14 @@ void zperf_reset_session_stats(struct session *session)
 	session->last_transit_time = 0;
 }
 
-void zperf_session_reset(enum session_proto proto)
+void zperf_session_init(void)
 {
 	int i, j;
 
-	if (proto >= SESSION_PROTO_END) {
-		return;
-	}
-
-	i = (int)proto;
-
-	for (j = 0; j < SESSION_MAX; j++) {
-		sessions[i][j].state = STATE_NULL;
-		zperf_reset_session_stats(&(sessions[i][j]));
-	}
-}
-
-void zperf_session_init(void)
-{
-	int i;
-
 	for (i = 0; i < SESSION_PROTO_END; i++) {
-		zperf_session_reset(i);
+		for (j = 0; j < SESSION_MAX; j++) {
+			sessions[i][j].state = STATE_NULL;
+			zperf_reset_session_stats(&(sessions[i][j]));
+		}
 	}
 }
