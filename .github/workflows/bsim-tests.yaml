@@ -154,22 +154,19 @@ jobs:
         if: steps.check-bluetooth-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
           export ZEPHYR_BASE=${PWD}
-          export WORK_DIR=${ZEPHYR_BASE}/bsim_bt
           # Build and run the BT tests for nrf52_bsim:
           nice tests/bsim/bluetooth/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_52_test_results_file} \
           TESTS_FILE=tests/bsim/bluetooth/tests.nrf52bsim.txt tests/bsim/run_parallel.sh
-          # Build and run the BT controller tests also for the nrf5340bsim_nrf5340_cpunet
-          BOARD=nrf5340bsim_nrf5340_cpunet \
+          # Build and run the BT controller tests also for the nrf5340bsim/nrf5340/cpunet
           nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpunet.sh
-          BOARD=nrf5340bsim_nrf5340_cpunet \
+          BOARD=nrf5340bsim/nrf5340/cpunet \
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_53_test_results_file} \
           TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpunet.txt \
           tests/bsim/run_parallel.sh
           # Build and run the nrf5340 split stack tests set
-          BOARD=nrf5340bsim_nrf5340_cpuapp \
           nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpuapp.sh
-          BOARD=nrf5340bsim_nrf5340_cpuapp \
+          BOARD=nrf5340bsim/nrf5340/cpuapp \
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_53split_test_results_file} \
           TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpuapp.txt \
           tests/bsim/run_parallel.sh
