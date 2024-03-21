@@ -145,12 +145,8 @@ static const struct wdt_driver_api wdt_nrfx_driver_api = {
 	.feed = wdt_nrf_feed,
 };
 
-static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_type,
-			      uint32_t requests, void *p_context)
+static void wdt_event_handler(const struct device *dev, uint32_t requests)
 {
-	(void)event_type;
-	(void)p_context;
-
 	struct wdt_nrfx_data *data = dev->data;
 
 	while (requests) {
@@ -166,12 +162,9 @@ static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_ty
 #define WDT(idx) DT_NODELABEL(wdt##idx)
 
 #define WDT_NRFX_WDT_DEVICE(idx)					       \
-	static void wdt_##idx##_event_handler(nrf_wdt_event_t event_type,      \
-					      uint32_t requests,	       \
-					      void *p_context)		       \
+	static void wdt_##idx##_event_handler(uint32_t requests)	       \
 	{								       \
-		wdt_event_handler(DEVICE_DT_GET(WDT(idx)), event_type,         \
-				  requests, p_context);			       \
+		wdt_event_handler(DEVICE_DT_GET(WDT(idx)), requests);	       \
 	}								       \
 	static int wdt_##idx##_init(const struct device *dev)		       \
 	{								       \
@@ -181,8 +174,7 @@ static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_ty
 			    nrfx_isr, nrfx_wdt_##idx##_irq_handler, 0);	       \
 		err_code = nrfx_wdt_init(&config->wdt,			       \
 					 NULL,				       \
-					 wdt_##idx##_event_handler,	       \
-					 NULL);				       \
+					 wdt_##idx##_event_handler);	       \
 		if (err_code != NRFX_SUCCESS) {				       \
 			return -EBUSY;					       \
 		}							       \
