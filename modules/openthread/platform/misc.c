@@ -99,10 +99,5 @@ void otPlatWakeHost(void)
 
 void otPlatAssertFail(const char *aFilename, int aLineNumber)
 {
-	/*
-	 * The code below is used instead of __ASSERT(false) to print the actual assert
-	 * location instead of __FILE__:__LINE__, which would point to this function.
-	 */
-	__ASSERT_PRINT("OpenThread ASSERT @ %s:%d\n", aFilename, aLineNumber);
-	__ASSERT_POST_ACTION();
+	__ASSERT(false, "OpenThread ASSERT @ %s:%d", aFilename, aLineNumber);
 }
