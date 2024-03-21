@@ -16,12 +16,6 @@ zephyr_interface_library_named(mbedTLS)
         MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
-    if (CONFIG_BUILD_WITH_TFM)
-      target_include_directories(mbedTLS INTERFACE
-        $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
-      )
-    endif()
-
     # Add regular includes
     target_include_directories(mbedTLS INTERFACE
         ${ZEPHYR_CURRENT_MODULE_DIR}/include
@@ -115,7 +109,7 @@ zephyr_interface_library_named(mbedTLS)
 
     zephyr_library_named(mbedTLSCrypto)
 
-    if (CONFIG_MBEDTLS_PSA_CRYPTO_C AND NOT CONFIG_BUILD_WITH_TFM)
+    if (CONFIG_MBEDTLS_PSA_CRYPTO_C)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_aead.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
@@ -127,6 +121,11 @@ zephyr_interface_library_named(mbedTLS)
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_se.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_storage.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_its_file.c
+      )
+    endif()
+
+    if (NOT CONFIG_BUILD_WITH_TFM)
+      list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_client.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_slot_management.c
