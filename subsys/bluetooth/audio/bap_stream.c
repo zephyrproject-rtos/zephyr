@@ -245,7 +245,6 @@ static bool bt_bap_stream_can_send(const struct bt_bap_stream *stream)
 int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 			 uint16_t seq_num, uint32_t ts)
 {
-	int ret;
 	struct bt_bap_ep *ep;
 
 	if (stream == NULL || stream->ep == NULL) {
@@ -266,12 +265,6 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 		return -EBADMSG;
 	}
 
-	ret = bt_iso_chan_send(bt_bap_stream_iso_chan_get(stream),
-			       buf, seq_num, ts);
-	if (ret) {
-		return ret;
-	}
-
 #if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
 	if (stream->_prev_seq_num != 0U && seq_num != 0U &&
 	    (stream->_prev_seq_num + 1U) != seq_num) {
@@ -284,7 +277,8 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 
 	/* TODO: Add checks for broadcast sink */
 
-	return ret;
+	return bt_iso_chan_send(bt_bap_stream_iso_chan_get(stream),
+				buf, seq_num, ts);
 }
 
 int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_info *info)
