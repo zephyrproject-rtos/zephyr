@@ -154,8 +154,6 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
-  * Removed :kconfig:option:`CONFIG_IEEE802154_SELECTIVE_TXPOWER` Kconfig option.
-
 * Interrupt Controller
 
 * Input

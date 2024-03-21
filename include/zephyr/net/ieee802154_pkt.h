@@ -59,6 +59,12 @@ struct net_pkt_cb_ieee802154 {
 			 */
 			uint8_t rssi;
 		};
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+		/* TX packets */
+		struct {
+			int8_t txpwr; /* TX power in dBm. */
+		};
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 	};
 
 	/* Flags */
@@ -178,6 +184,18 @@ static inline void net_pkt_set_ieee802154_rssi_dbm(struct net_pkt *pkt, int16_t 
 
 	CODE_UNREACHABLE;
 }
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+static inline int8_t net_pkt_ieee802154_txpwr(struct net_pkt *pkt)
+{
+	return net_pkt_cb_ieee802154(pkt)->txpwr;
+}
+
+static inline void net_pkt_set_ieee802154_txpwr(struct net_pkt *pkt, int8_t txpwr)
+{
+	net_pkt_cb_ieee802154(pkt)->txpwr = txpwr;
+}
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 
 static inline bool net_pkt_ieee802154_ack_fpb(struct net_pkt *pkt)
 {
