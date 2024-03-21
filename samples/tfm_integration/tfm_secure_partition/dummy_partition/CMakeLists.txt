@@ -50,7 +50,7 @@ target_link_libraries(tfm_partitions
         tfm_app_rot_partition_dp
 )
 
-target_compile_definitions(tfm_config
+target_compile_definitions(tfm_partition_defs
     INTERFACE
         TFM_PARTITION_DUMMY_PARTITION
 )
