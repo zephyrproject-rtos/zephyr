@@ -1,0 +1,5 @@
+board:
+  name: rpi_5
+  vendor: raspberrypi
+  socs:
+  - name: bcm2712
