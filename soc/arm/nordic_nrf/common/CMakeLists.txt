@@ -11,6 +11,6 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/li
 if (CONFIG_TFM_PARTITION_PLATFORM)
   zephyr_library_sources(soc_secure.c)
   zephyr_library_include_directories(
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
+    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
   )
 endif()
