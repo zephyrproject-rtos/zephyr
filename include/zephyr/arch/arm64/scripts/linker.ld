@@ -61,7 +61,7 @@ MEMORY
     FLASH     (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     RAM       (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx) : ORIGIN = 0xFFFF8000, LENGTH = 32K
+    IDT_LIST  (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
