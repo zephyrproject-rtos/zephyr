@@ -242,7 +242,7 @@ struct modem_chat {
 	/* Script sending */
 	uint16_t script_send_request_pos;
 	uint16_t script_send_delimiter_pos;
-	struct k_work script_send_work;
+	struct k_work_delayable script_send_work;
 	struct k_work_delayable script_send_timeout_work;
 
 	/* Match parsing */
@@ -252,7 +252,8 @@ struct modem_chat {
 	uint16_t parse_match_type;
 
 	/* Process received data */
-	struct k_work receive_work;
+	struct k_work_delayable process_work;
+	k_timeout_t process_timeout;
 };
 
 /**
@@ -281,6 +282,8 @@ struct modem_chat_config {
 	const struct modem_chat_match *unsol_matches;
 	/** Elements in array of unsolicited matches */
 	uint16_t unsol_matches_size;
+	/** Delay from receive ready event to pipe receive occurs */
+	k_timeout_t process_timeout;
 };
 
 /**
