@@ -14,7 +14,6 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_link_format.h>
-#include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/coap_service.h>
 #ifdef CONFIG_ARCH_POSIX
 #include <fcntl.h>
@@ -346,21 +345,6 @@ static inline bool coap_service_in_section(const struct coap_service *service)
 	       STRUCT_SECTION_END(coap_service) > service;
 }
 
-static inline void coap_service_raise_event(const struct coap_service *service, uint32_t mgmt_event)
-{
-#if defined(CONFIG_NET_MGMT_EVENT_INFO)
-	const struct net_event_coap_service net_event = {
-		.service = service,
-	};
-
-	net_mgmt_event_notify_with_info(mgmt_event, NULL, (void *)&net_event, sizeof(net_event));
-#else
-	ARG_UNUSED(service);
-
-	net_mgmt_event_notify(mgmt_event, NULL);
-#endif
-}
-
 int coap_service_start(const struct coap_service *service)
 {
 	int ret;
@@ -462,8 +446,6 @@ end:
 
 	coap_server_update_services();
 
-	coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STARTED);
-
 	return ret;
 
 close:
@@ -487,17 +469,16 @@ int coap_service_stop(const struct coap_service *service)
 	k_mutex_lock(&lock, K_FOREVER);
 
 	if (service->data->sock_fd < 0) {
-		k_mutex_unlock(&lock);
-		return -EALREADY;
+		ret = -EALREADY;
+		goto end;
 	}
 
 	/* Closing a socket will trigger a poll event */
 	ret = zsock_close(service->data->sock_fd);
 	service->data->sock_fd = -1;
 
+end:
 	k_mutex_unlock(&lock);
-
-	coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STOPPED);
 
 	return ret;
 }
