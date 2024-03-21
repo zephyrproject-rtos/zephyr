@@ -88,18 +88,13 @@ struct virtual_interface_api {
 	/** Send a network packet */
 	int (*send)(struct net_if *iface, struct net_pkt *pkt);
 
-	/** Receive a network packet */
-	enum net_verdict (*recv)(struct net_if *iface, struct net_pkt *pkt);
-
-	/** Check if this received network packet is for this interface.
+	/**
+	 * Receive a network packet.
 	 * The callback returns NET_CONTINUE if this interface will accept the
 	 * packet and pass it upper layers, NET_DROP if the packet is to be
 	 * dropped and NET_OK to pass it to next interface.
 	 */
-	enum net_verdict (*input)(struct net_if *input_iface,
-				  struct net_if *iface,
-				  struct net_addr *remote_addr,
-				  struct net_pkt *pkt);
+	enum net_verdict (*recv)(struct net_if *iface, struct net_pkt *pkt);
 
 	/** Pass the attachment information to virtual interface */
 	int (*attach)(struct net_if *virtual_iface, struct net_if *iface);
