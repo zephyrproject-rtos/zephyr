@@ -137,6 +137,8 @@ Drivers and Sensors
 
 * LED
 
+  * lp5569: added ``charge-pump-mode`` property to configure the charge pump of the lp5569.
+
 * LED Strip
 
 * LoRa
