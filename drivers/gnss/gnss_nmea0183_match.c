@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/gnss/gnss_publish.h>
 #include <zephyr/kernel.h>
 #include <zephyr/modem/chat.h>
 
@@ -12,6 +11,7 @@
 
 #include "gnss_nmea0183.h"
 #include "gnss_nmea0183_match.h"
+#include "gnss_publish.h"
 
 static bool gnss_nmea0183_match_timed_out(struct gnss_nmea0183_match_data *data)
 {
