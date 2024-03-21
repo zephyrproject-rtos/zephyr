@@ -21,7 +21,7 @@ DEFINE_FFF_GLOBALS;
 /* Maximum number of iterations within the state machine of RD Client
  * service that is waited for until a possible event occurs
  */
-#define RD_CLIENT_MAX_LOOKUP_ITERATIONS 500
+static const uint8_t RD_CLIENT_MAX_LOOKUP_ITERATIONS = 100;
 
 FAKE_VOID_FUNC(show_lwm2m_event, enum lwm2m_rd_client_event);
 FAKE_VOID_FUNC(show_lwm2m_observe, enum lwm2m_observe_event);
@@ -97,9 +97,6 @@ static void lwm2m_event_cb(struct lwm2m_ctx *client, enum lwm2m_rd_client_event 
 	case LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF:
 		LOG_INF("*** LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF");
 		break;
-	case LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED:
-		LOG_INF("*** LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED");
-		break;
 	case LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED:
 		LOG_INF("*** LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED");
 		break;
@@ -168,7 +165,6 @@ static void my_suite_before(void *data)
 	lwm2m_init_message_fake.custom_fake = lwm2m_init_message_fake_default;
 	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_created;
 	coap_packet_append_option_fake.custom_fake = NULL;
-	stub_lwm2m_server_disable(false);
 }
 
 static void my_suite_after(void *data)
@@ -202,6 +198,8 @@ ZTEST(lwm2m_rd_client, test_start_registration_ok)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -209,7 +207,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_ok)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert(lwm2m_rd_client_ctx() == &ctx, "");
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
@@ -231,6 +228,8 @@ ZTEST(lwm2m_rd_client, test_register_update_too_small_lifetime_to_default)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -238,7 +237,6 @@ ZTEST(lwm2m_rd_client, test_register_update_too_small_lifetime_to_default)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert(lwm2m_rd_client_ctx() == &ctx, "");
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
@@ -251,13 +249,14 @@ ZTEST(lwm2m_rd_client, test_timeout_resume_registration)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert(lwm2m_rd_client_ctx() == &ctx, "");
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
@@ -274,17 +273,16 @@ ZTEST(lwm2m_rd_client, test_start_registration_timeout)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_timeout_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
 
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_timeout_cb_default);
+	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DISCONNECT), NULL);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT), NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT), NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT), NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR), NULL);
 }
 
 ZTEST(lwm2m_rd_client, test_start_registration_fail)
@@ -292,6 +290,8 @@ ZTEST(lwm2m_rd_client, test_start_registration_fail)
 	struct lwm2m_ctx ctx;
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
+
+	test_prepare_pending_message_cb(&message_reply_cb_default);
 
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
@@ -302,14 +302,7 @@ ZTEST(lwm2m_rd_client, test_start_registration_fail)
 	lwm2m_init_message_fake.custom_fake = lwm2m_init_message_fake_default;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE),
-		     NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE),
-		     NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE),
-		     NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR),
 		     NULL);
 }
 
@@ -319,6 +312,8 @@ ZTEST(lwm2m_rd_client, test_start_registration_update)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -326,7 +321,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_update)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
@@ -341,6 +335,8 @@ ZTEST(lwm2m_rd_client, test_rx_off)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -348,7 +344,6 @@ ZTEST(lwm2m_rd_client, test_rx_off)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
@@ -364,6 +359,8 @@ ZTEST(lwm2m_rd_client, test_start_registration_update_fail)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -371,7 +368,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_update_fail)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
@@ -388,6 +384,8 @@ ZTEST(lwm2m_rd_client, test_registration_update_timeout)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -395,7 +393,6 @@ ZTEST(lwm2m_rd_client, test_registration_update_timeout)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 	test_prepare_pending_message_cb(&message_reply_timeout_cb_default);
@@ -418,6 +415,8 @@ ZTEST(lwm2m_rd_client, test_deregistration_timeout)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -425,7 +424,6 @@ ZTEST(lwm2m_rd_client, test_deregistration_timeout)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
@@ -441,6 +439,8 @@ ZTEST(lwm2m_rd_client, test_error_on_registration_update)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -449,8 +449,6 @@ ZTEST(lwm2m_rd_client, test_error_on_registration_update)
 	coap_packet_append_option_fake.custom_fake = NULL;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
-
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
@@ -484,6 +482,8 @@ ZTEST(lwm2m_rd_client, test_suspend_resume_registration)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -491,7 +491,6 @@ ZTEST(lwm2m_rd_client, test_suspend_resume_registration)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 	zassert_true(!lwm2m_rd_client_is_suspended(&ctx), NULL);
@@ -518,6 +517,8 @@ ZTEST(lwm2m_rd_client, test_suspend_stop_resume)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -526,7 +527,6 @@ ZTEST(lwm2m_rd_client, test_suspend_stop_resume)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 	zassert_true(lwm2m_rd_client_pause() == 0, NULL);
@@ -544,6 +544,8 @@ ZTEST(lwm2m_rd_client, test_socket_error)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -552,7 +554,6 @@ ZTEST(lwm2m_rd_client, test_socket_error)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
@@ -568,6 +569,8 @@ ZTEST(lwm2m_rd_client, test_socket_error_on_stop)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -576,7 +579,6 @@ ZTEST(lwm2m_rd_client, test_socket_error_on_stop)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
@@ -606,6 +608,8 @@ ZTEST(lwm2m_rd_client, test_engine_trigger_bootstrap)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -613,7 +617,6 @@ ZTEST(lwm2m_rd_client, test_engine_trigger_bootstrap)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 	lwm2m_get_bool_fake.custom_fake = lwm2m_get_bool_fake_true;
@@ -635,6 +638,8 @@ ZTEST(lwm2m_rd_client, test_bootstrap_timeout)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	test_prepare_pending_message_cb(&message_reply_timeout_cb_default);
+
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
 	wait_for_service(1);
@@ -646,7 +651,6 @@ ZTEST(lwm2m_rd_client, test_bootstrap_timeout)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 1, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_timeout_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE),
 		     NULL);
 }
@@ -656,6 +660,8 @@ ZTEST(lwm2m_rd_client, test_bootstrap_fail)
 	struct lwm2m_ctx ctx;
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
+
+	test_prepare_pending_message_cb(&message_reply_cb_default);
 
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
@@ -668,18 +674,19 @@ ZTEST(lwm2m_rd_client, test_bootstrap_fail)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 1, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE),
 		     NULL);
 
 }
 
-ZTEST(lwm2m_rd_client, test_bootstrap_no_srv)
+ZTEST(lwm2m_rd_client, test_bootstrap_no_srv_fallback_to_register)
 {
 
 	struct lwm2m_ctx ctx;
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
+
+	test_prepare_pending_message_cb(&message_reply_cb_default);
 
 	lwm2m_rd_client_init();
 	test_lwm2m_engine_start_service();
@@ -688,134 +695,6 @@ ZTEST(lwm2m_rd_client, test_bootstrap_no_srv)
 	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
 	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 1, lwm2m_event_cb, lwm2m_observe_cb) == 0,
 		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE),
-		     NULL);
-}
-
-ZTEST(lwm2m_rd_client, test_disable_server)
-{
-	struct lwm2m_ctx ctx;
-
-	(void)memset(&ctx, 0x0, sizeof(ctx));
-
-	lwm2m_rd_client_init();
-	test_lwm2m_engine_start_service();
-	wait_for_service(1);
-
-	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
-	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
-		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
-		     NULL);
-	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_deleted;
-	stub_lwm2m_server_disable(true);
-	lwm2m_rd_client_server_disabled(0);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED),
-		     NULL);
-}
-
-ZTEST(lwm2m_rd_client, test_disable_server_stop)
-{
-	struct lwm2m_ctx ctx;
-
-	(void)memset(&ctx, 0x0, sizeof(ctx));
-
-	lwm2m_rd_client_init();
-	test_lwm2m_engine_start_service();
-	wait_for_service(1);
-
-	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
-	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
-		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
-		     NULL);
-	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_deleted;
-	stub_lwm2m_server_disable(true);
-	lwm2m_rd_client_server_disabled(0);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED),
-		     NULL);
-	wait_for_service(1);
-	zassert_true(lwm2m_rd_client_stop(&ctx, lwm2m_event_cb, true) == 0, NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DISCONNECT), NULL);
-}
-
-ZTEST(lwm2m_rd_client, test_disable_server_connect)
-{
-	struct lwm2m_ctx ctx;
-
-	(void)memset(&ctx, 0x0, sizeof(ctx));
-
-	lwm2m_rd_client_init();
-	test_lwm2m_engine_start_service();
-	wait_for_service(1);
-
-	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
-	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
-		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
-		     NULL);
-	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_deleted;
-	stub_lwm2m_server_disable(true);
-	lwm2m_rd_client_server_disabled(0);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED),
-		     NULL);
-
-	wait_for_service(500);
-
-	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_created;
-	stub_lwm2m_server_disable(false);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
-		     NULL);
-}
-
-ZTEST(lwm2m_rd_client, test_fallback_to_bootstrap)
-{
-	struct lwm2m_ctx ctx;
-
-	(void)memset(&ctx, 0x0, sizeof(ctx));
-
-	lwm2m_rd_client_init();
-	test_lwm2m_engine_start_service();
-	wait_for_service(1);
-
-	lwm2m_get_bool_fake.custom_fake = lwm2m_get_bool_fake_true;
-	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
-		     NULL);
-	test_prepare_pending_message_cb(&message_reply_timeout_cb_default);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT), NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT), NULL);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT), NULL);
-
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE),
-		     NULL);
-}
-
-ZTEST(lwm2m_rd_client, test_no_srv_fallback_to_bootstrap)
-{
-	struct lwm2m_ctx ctx;
-
-	(void)memset(&ctx, 0x0, sizeof(ctx));
-
-	lwm2m_rd_client_init();
-	test_lwm2m_engine_start_service();
-	wait_for_service(1);
-
-	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_changed;
-	lwm2m_get_bool_fake.custom_fake = lwm2m_get_bool_fake_true;
-	stub_lwm2m_server_disable(true);
-	zassert_true(lwm2m_rd_client_start(&ctx, "Test", 0, lwm2m_event_cb, lwm2m_observe_cb) == 0,
-		     NULL);
-	test_prepare_pending_message_cb(&message_reply_cb_default);
-	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE),
-		     NULL);
-	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_created;
-	coap_find_options_fake.custom_fake = coap_find_options_do_registration_reply_cb_ok;
-	stub_lwm2m_server_disable(false);
-	engine_bootstrap_finish();
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 }
