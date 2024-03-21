@@ -22,6 +22,7 @@
 #include "host/testing.h"
 
 #include "crypto.h"
+#include "adv.h"
 #include "mesh.h"
 #include "net.h"
 #include "app_keys.h"
@@ -121,26 +122,26 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		      const struct bt_mesh_send_cb *cb, void *cb_data,
 		      const uint8_t *ctl_op)
 {
-	struct bt_mesh_adv *adv;
+	struct net_buf *buf;
 
-	adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				 tx->xmit, BUF_TIMEOUT);
-	if (!adv) {
-		LOG_ERR("Out of network advs");
+	if (!buf) {
+		LOG_ERR("Out of network buffers");
 		return -ENOBUFS;
 	}
 
-	net_buf_simple_reserve(&adv->b, BT_MESH_NET_HDR_LEN);
+	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
 	if (ctl_op) {
-		net_buf_simple_add_u8(&adv->b, TRANS_CTL_HDR(*ctl_op, 0));
+		net_buf_add_u8(buf, TRANS_CTL_HDR(*ctl_op, 0));
 	} else if (BT_MESH_IS_DEV_KEY(tx->ctx->app_idx)) {
-		net_buf_simple_add_u8(&adv->b, UNSEG_HDR(0, 0));
+		net_buf_add_u8(buf, UNSEG_HDR(0, 0));
 	} else {
-		net_buf_simple_add_u8(&adv->b, UNSEG_HDR(1, tx->aid));
+		net_buf_add_u8(buf, UNSEG_HDR(1, tx->aid));
 	}
 
-	net_buf_simple_add_mem(&adv->b, sdu->data, sdu->len);
+	net_buf_add_mem(buf, sdu->data, sdu->len);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 		if (!bt_mesh_friend_queue_has_space(tx->sub->net_idx,
@@ -148,7 +149,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 						    NULL, 1)) {
 			if (BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 				LOG_ERR("Not enough space in Friend Queue");
-				bt_mesh_adv_unref(adv);
+				net_buf_unref(buf);
 				return -ENOBUFS;
 			} else {
 				LOG_WRN("No space in Friend Queue");
@@ -157,19 +158,19 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		}
 
 		if (bt_mesh_friend_enqueue_tx(tx, BT_MESH_FRIEND_PDU_SINGLE,
-					      NULL, 1, &adv->b) &&
+					      NULL, 1, &buf->b) &&
 		    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 			/* PDUs for a specific Friend should only go
 			 * out through the Friend Queue.
 			 */
-			bt_mesh_adv_unref(adv);
+			net_buf_unref(buf);
 			send_cb_finalize(cb, cb_data);
 			return 0;
 		}
 	}
 
 send:
-	return bt_mesh_net_send(tx, adv, cb, cb_data);
+	return bt_mesh_net_send(tx, buf, cb, cb_data);
 }
 
 static inline uint8_t seg_len(bool ctl)
@@ -404,7 +405,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		(uint16_t)(tx->seq_auth & TRANS_SEQ_ZERO_MASK), tx->attempts_left);
 
 	while (tx->seg_o <= tx->seg_n) {
-		struct bt_mesh_adv *seg;
+		struct net_buf *seg;
 		int err;
 
 		if (!tx->seg[tx->seg_o]) {
@@ -420,7 +421,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 			goto end;
 		}
 
-		net_buf_simple_reserve(&seg->b, BT_MESH_NET_HDR_LEN);
+		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 		seg_tx_buf_build(tx, tx->seg_o, &seg->b);
 
 		LOG_DBG("Sending %u/%u", tx->seg_o, tx->seg_n);

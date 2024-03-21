@@ -18,6 +18,7 @@
 #include <common/bt_str.h>
 
 #include "test.h"
+#include "adv.h"
 #include "prov.h"
 #include "provisioner.h"
 #include "net.h"

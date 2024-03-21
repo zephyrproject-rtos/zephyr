@@ -17,6 +17,7 @@
 #include "rpl.h"
 #include "settings.h"
 #include "crypto.h"
+#include "adv.h"
 #include "proxy.h"
 #include "friend.h"
 #include "foundation.h"

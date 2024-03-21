@@ -5,6 +5,7 @@
  */
 #include <zephyr/bluetooth/mesh.h>
 #include "net.h"
+#include "adv.h"
 #include <zephyr/bluetooth/conn.h>
 #include "proxy.h"
 #include "foundation.h"
