@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/** Bluetooth Mesh feature states */
+/** Bluetooth mesh feature states */
 enum bt_mesh_feat_state {
 	/** Feature is supported, but disabled. */
 	BT_MESH_FEATURE_DISABLED,
