@@ -207,7 +207,7 @@ os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 	snprintf(thread_name, sizeof(thread_name) - 1, "%d", idx);
 	thread_name[sizeof(thread_name) - 1] = 0;
 
-	return zcbor_tstr_put_term(zse, thread_name, sizeof(thread_name));
+	return zcbor_tstr_put_term(zse, thread_name);
 }
 
 #endif
