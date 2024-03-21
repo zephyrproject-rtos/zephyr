@@ -1519,8 +1519,7 @@ endfunction()
 # build string as first item in the list.
 # The full order of build strings returned in the list will be:
 # - Normalized board target build string, this includes qualifiers and revision
-# - Build string with board variants removed in addition
-# - Build string with cpuset removed in addition
+# - Normalized board target build string, without revision
 # - Build string with soc removed in addition
 #
 # If BUILD is supplied, then build type will be appended to each entry in the
@@ -1561,7 +1560,7 @@ endfunction()
 # calling
 #   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
 # will return a list of the following strings
-# `alpha_soc_bar_1_0_0;alpha_soc_bar;alpha_soc_1_0_0;alpha_soc;alpha_1_0_0;alpha` in `build_string` parameter.
+# `alpha_soc_bar_1_0_0;alpha_soc_bar;alpha_bar` in `build_string` parameter.
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
@@ -1595,20 +1594,17 @@ function(zephyr_build_string outvar)
   string(JOIN "_" ${outvar} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
 
   if(BUILD_STR_MERGE)
-    if(DEFINED BUILD_STR_BOARD_REVISION)
-      string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
+    string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
+
+    if(NOT "${variant_string}" IN_LIST ${outvar})
       list(APPEND ${outvar} "${variant_string}")
     endif()
-    list(POP_BACK str_segment_list)
-    while(NOT str_segment_list STREQUAL "")
-      if(DEFINED BUILD_STR_BOARD_REVISION)
-        string(JOIN "_" variant_string ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
-        list(APPEND ${outvar} "${variant_string}")
-      endif()
-      string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
-      list(APPEND ${outvar} "${variant_string}")
-      list(POP_BACK str_segment_list)
-    endwhile()
+
+    if(BUILD_STR_BOARD_QUALIFIERS)
+      string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${BUILD_STR_BOARD_QUALIFIERS}")
+      string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
+      list(APPEND ${outvar} "${BUILD_STR_BOARD}${qualifiers_without_soc}")
+    endif()
   endif()
 
   if(BUILD_STR_REVERSE)
