@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
@@ -8,7 +8,6 @@ test_name='security_changed_callback'
 test_exe="bs_${BOARD}_tests_bsim_bluetooth_host_security_${test_name}_prj_conf"
 simulation_id="${test_name}"
 verbosity_level=2
-EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 
