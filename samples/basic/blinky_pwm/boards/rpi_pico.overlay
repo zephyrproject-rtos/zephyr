@@ -1,7 +1,3 @@
-&{/pwm_leds} {
-	status = "okay";
-};
-
 &pwm_led0 {
 	status = "okay";
 };
