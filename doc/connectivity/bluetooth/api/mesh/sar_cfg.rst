@@ -43,8 +43,36 @@ Keep this in mind when defining the size of the buffers.
 
 SAR does not impose extra overhead on the access layer payload per segment.
 
+Intervals, timers and retransmission counters
+*********************************************
+
+The current stable stack implementation allows you to configure the following SAR behavior.
+
+When sending a segmented message to a unicast address, the unacknowledged segments are repeated
+the :kconfig:option:`CONFIG_BT_MESH_TX_SEG_RETRANS_COUNT` number of times before the transmission
+is considered as failed. The same option configures a number of retransmissions to a group or
+virtual address, but the transmission always succeedes after retransmitting all segments the
+configured number of times.
+
+The timeout between each retransmission to a unicast address is configured by the Kconfig option
+:kconfig:option:`CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_UNICAST`. The timeout between each
+retransmission to a group or a virtual address is configured by the Kconfig option
+:kconfig:option:`CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_GROUP`.
+
+The time before sending a Segment Acknowledgment message is controlled by the Kconfig options
+:kconfig:option:`CONFIG_BT_MESH_SEG_ACK_BASE_TIMEOUT`,
+:kconfig:option:`CONFIG_BT_MESH_SEG_ACK_PER_HOP_TIMEOUT` and
+:kconfig:option:`CONFIG_BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT`, and is defined as:
+
+.. math::
+   \begin{aligned}
+   \max(&\mathtt{CONFIG\_BT\_MESH\_SEG\_ACK\_BASE\_TIMEOUT} \\
+   &+ \text{TTL} \times \mathtt{CONFIG\_BT\_MESH\_SEG\_ACK\_PER\_HOP\_TIMEOUT} \\
+   &+ \text{number of un-acked segments} \times \mathtt{CONFIG\_BT\_MESH\_SEG\_ACK\_PER\_SEGMENT\_TIMEOUT} , 400)
+   \end{aligned}
+
 Segmentation and reassembly (SAR) Configuration models
-******************************************************
+======================================================
 
 With Bluetooth Mesh Protocol Specification version 1.1, it became possible to configure SAR
 behavior, such as intervals, timers and retransmission counters, over a mesh network using SAR
@@ -111,7 +139,7 @@ of the `SAR Acknowledgment Retransmissions Count`_ state.
 .. _bt_mesh_sar_cfg_states:
 
 SAR states
-**********
+==========
 
 There are two states defined related to segmentation and reassembly:
 
@@ -140,7 +168,7 @@ the following states:
 * SAR Receiver Segment Interval Step
 
 SAR Segment Interval Step
-=========================
+-------------------------
 
 SAR Segment Interval Step state holds a value that controls the interval between transmissions of
 segments of a segmented message. The interval is measured in milliseconds.
@@ -154,7 +182,7 @@ value. Segment transmission interval is then calculated using the following form
 
 
 SAR Unicast Retransmissions Count
-=================================
+---------------------------------
 
 SAR Unicast Retransmissions Count holds a value that defines the maximum number of retransmissions
 of a segmented message to a unicast destination. Use the
@@ -162,7 +190,7 @@ of a segmented message to a unicast destination. Use the
 value for this state.
 
 SAR Unicast Retransmissions Without Progress Count
-==================================================
+--------------------------------------------------
 
 This state holds a value that defines the maximum number of retransmissions of a segmented message
 to a unicast address that will be sent if no acknowledgment was received during the timeout, or if
@@ -171,7 +199,7 @@ an acknowledgment with already confirmed segments was received. Use the Kconfig 
 of retransmissions.
 
 SAR Unicast Retransmissions Interval Step
-=========================================
+-----------------------------------------
 
 The value of this state controls the interval step used for delaying the retransmissions of
 unacknowledged segments of a segmented message to a unicast address. The interval step is measured
@@ -186,7 +214,7 @@ default value.  This value is then used to calculate the interval step using the
 
 
 SAR Unicast Retransmissions Interval Increment
-==============================================
+----------------------------------------------
 
 SAR Unicast Retransmissions Interval Increment holds a value that controls the interval increment
 used for delaying the retransmissions of unacknowledged segments of a segmented message to a unicast
@@ -202,7 +230,7 @@ formula:
 
 
 SAR Multicast Retransmissions Count
-===================================
+-----------------------------------
 
 The state holds a value that controls the total number of retransmissions of a segmented message to
 a multicast address. Use the Kconfig option
@@ -210,7 +238,7 @@ a multicast address. Use the Kconfig option
 retransmissions.
 
 SAR Multicast Retransmissions Interval Step
-===========================================
+-------------------------------------------
 
 This state holds a value that controls the interval between retransmissions of all segments in a
 segmented message to a multicast address.  The interval is measured in milliseconds.
@@ -224,7 +252,7 @@ default value that is used to calculate the interval using the following formula
 
 
 SAR Discard Timeout
-===================
+-------------------
 
 The value of this state defines the time in seconds that the lower transport layer waits after
 receiving segments of a segmented message before discarding that segmented message. Use the Kconfig
@@ -237,7 +265,7 @@ timeout will be calculated using the following formula:
 
 
 SAR Acknowledgment Delay Increment
-==================================
+----------------------------------
 
 This state holds a value that controls the delay increment of an interval used for delaying the
 transmission of an acknowledgment message after receiving a new segment. The increment is measured
@@ -248,7 +276,7 @@ value. The increment value is calculated to be
 :math:`\verb|CONFIG_BT_MESH_SAR_RX_ACK_DELAY_INC| + 1.5`.
 
 SAR Segments Threshold
-======================
+----------------------
 
 SAR Segments Threshold state holds a value that defines a threshold in number of segments of a
 segmented message for acknowledgment retransmissions.  Use the Kconfig option
@@ -259,7 +287,7 @@ additionally retransmit every acknowledgment message the number of times given b
 :kconfig:option:`CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT`.
 
 SAR Acknowledgment Retransmissions Count
-========================================
+----------------------------------------
 
 The SAR Acknowledgment Retransmissions Count state controls the number of retransmissions of Segment
 Acknowledgment messages sent by the lower transport layer.  It gives the total number of
@@ -272,7 +300,7 @@ value for this state.  The maximum number of transmissions of a Segment Acknowle
 :math:`\verb|CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT| + 1`.
 
 SAR Receiver Segment Interval Step
-==================================
+----------------------------------
 
 The SAR Receiver Segment Interval Step defines the segments reception interval step used for
 delaying the transmission of an acknowledgment message after receiving a new segment. The interval
