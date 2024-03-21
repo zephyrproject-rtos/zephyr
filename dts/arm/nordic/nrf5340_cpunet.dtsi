@@ -108,12 +108,11 @@
 			status = "okay";
 		};
 
-		gpiote: gpiote0: gpiote@4100a000 {
+		gpiote: gpiote@4100a000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x4100a000 0x1000>;
 			interrupts = <10 5>;
 			status = "disabled";
-			instance = <0>;
 		};
 
 		wdt: wdt0: watchdog@4100b000 {
@@ -319,7 +318,6 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 			port = <0>;
-			gpiote-instance = <&gpiote>;
 		};
 
 		gpio1: gpio@418c0800 {
@@ -330,7 +328,6 @@
 			ngpios = <16>;
 			status = "disabled";
 			port = <1>;
-			gpiote-instance = <&gpiote>;
 		};
 	};
 

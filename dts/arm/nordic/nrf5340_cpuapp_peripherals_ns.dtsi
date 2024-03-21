@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * GPIOTE1 is always accessible as a non-secure peripheral.
+ */
+
+/ {
+	soc {
+		gpiote1: gpiote@4002f000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x4002f000 0x1000>;
+			interrupts = <47 5>;
+			status = "disabled";
+		};
+	};
+};
