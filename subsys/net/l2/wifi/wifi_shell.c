@@ -27,13 +27,13 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/slist.h>
 
-#include "net_shell_private.h"
+#include "net_private.h"
 
 #define WIFI_SHELL_MODULE "wifi"
 
 #define WIFI_SHELL_MGMT_EVENTS_COMMON (NET_EVENT_WIFI_SCAN_DONE   |\
 				NET_EVENT_WIFI_CONNECT_RESULT     |\
-				NET_EVENT_WIFI_DISCONNECT_RESULT  |\
+				NET_EVENT_WIFI_DISCONNECT_RESULT  |  \
 				NET_EVENT_WIFI_TWT                |\
 				NET_EVENT_WIFI_RAW_SCAN_RESULT    |\
 				NET_EVENT_WIFI_AP_ENABLE_RESULT   |\
@@ -57,9 +57,9 @@ static struct {
 	union {
 		struct {
 
-			uint8_t connecting: 1;
-			uint8_t disconnecting: 1;
-			uint8_t _unused: 6;
+			uint8_t connecting		: 1;
+			uint8_t disconnecting	: 1;
+			uint8_t _unused		: 6;
 		};
 		uint8_t all;
 	};
@@ -163,9 +163,9 @@ static enum wifi_frequency_bands wifi_freq_to_band(int frequency)
 {
 	enum wifi_frequency_bands band = WIFI_FREQ_BAND_2_4_GHZ;
 
-	if ((frequency >= 2401) && (frequency <= 2495)) {
+	if ((frequency  >= 2401) && (frequency <= 2495)) {
 		band = WIFI_FREQ_BAND_2_4_GHZ;
-	} else if ((frequency >= 5170) && (frequency <= 5895)) {
+	} else if ((frequency  >= 5170) && (frequency <= 5895)) {
 		band = WIFI_FREQ_BAND_5_GHZ;
 	} else {
 		band = WIFI_FREQ_BAND_6_GHZ;
@@ -452,8 +452,8 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static int __wifi_args_to_params(size_t argc, char *argv[],
-				 struct wifi_connect_req_params *params,
-				 enum wifi_iface_mode iface_mode)
+				struct wifi_connect_req_params *params,
+				enum wifi_iface_mode iface_mode)
 {
 	char *endptr;
 	int idx = 1;
@@ -508,14 +508,14 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 					params->band = WIFI_FREQ_BAND_6_GHZ;
 					break;
 				default:
-					print(sh, SHELL_ERROR,
+					print(context.sh, SHELL_ERROR,
 					      "Invalid band: %ld\n", channel);
 					return -EINVAL;
 				}
 			}
 		} else {
 			if (channel < 0) {
-				print(sh, SHELL_ERROR,
+				print(context.sh, SHELL_ERROR,
 				      "Invalid channel: %ld\n", channel);
 				return -EINVAL;
 			}
@@ -524,10 +524,10 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		if (channel > 0) {
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset,
-						   sizeof(bands_str) - offset,
-						   "%s%s",
-						   band ? "," : "",
-						   wifi_band_txt(all_bands[band]));
+						  sizeof(bands_str) - offset,
+						  "%s%s",
+						  band ? "," : "",
+						  wifi_band_txt(all_bands[band]));
 				if (offset >= sizeof(bands_str)) {
 					print(sh, SHELL_ERROR,
 					      "Failed to parse channel: %s: "
@@ -546,8 +546,8 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			if (!found) {
 				print(sh, SHELL_ERROR,
 				      "Invalid channel: %ld, checked bands: %s\n",
-				      channel,
-				      bands_str);
+				       channel,
+				       bands_str);
 				return -EINVAL;
 			}
 
@@ -606,6 +606,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		}
 	}
 
+
 	return 0;
 }
 
@@ -625,13 +626,14 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 
 	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
 		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		PR_WARNING("Connection request failed\n");
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Connection request failed\n");
 		context.connecting = false;
 
 		return -ENOEXEC;
 	}
 
-	PR("Connection requested\n");
+	shell_fprintf(sh, SHELL_NORMAL, "Connection requested\n");
 
 	return 0;
 }
@@ -651,17 +653,22 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 		context.disconnecting = false;
 
 		if (status == -EALREADY) {
-			PR_INFO("Already disconnected\n");
+			shell_fprintf(sh, SHELL_INFO,
+				      "Already disconnected\n");
 		} else {
-			PR_WARNING("Disconnect request failed\n");
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Disconnect request failed\n");
 			return -ENOEXEC;
 		}
 	} else {
-		PR("Disconnect requested\n");
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Disconnect requested\n");
 	}
 
 	return 0;
 }
+
+
 
 static int wifi_scan_args_to_params(const struct shell *sh,
 				    size_t argc,
@@ -695,7 +702,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			} else if (!strncasecmp(optarg, "active", 6)) {
 				params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
 			} else {
-				PR_ERROR("Invalid scan type %s\n", optarg);
+				shell_fprintf(sh, SHELL_ERROR, "Invalid scan type %s\n", optarg);
 				return -ENOEXEC;
 			}
 
@@ -703,7 +710,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			break;
 		case 'b':
 			if (wifi_utils_parse_scan_bands(optarg, &params->bands)) {
-				PR_ERROR("Invalid band value(s)\n");
+				shell_fprintf(sh, SHELL_ERROR, "Invalid band value(s)\n");
 				return -ENOEXEC;
 			}
 
@@ -713,7 +720,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			val = atoi(optarg);
 
 			if ((val < 5) || (val > 1000)) {
-				PR_ERROR("Invalid dwell_time_active val\n");
+				shell_fprintf(sh, SHELL_ERROR, "Invalid dwell_time_active val\n");
 				return -ENOEXEC;
 			}
 
@@ -724,7 +731,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			val = atoi(optarg);
 
 			if ((val < 10) || (val > 1000)) {
-				PR_ERROR("Invalid dwell_time_passive val\n");
+				shell_fprintf(sh, SHELL_ERROR, "Invalid dwell_time_passive val\n");
 				return -ENOEXEC;
 			}
 
@@ -735,7 +742,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			if (wifi_utils_parse_scan_ssids(optarg,
 							params->ssids,
 							ARRAY_SIZE(params->ssids))) {
-				PR_ERROR("Invalid SSID(s)\n");
+				shell_fprintf(sh, SHELL_ERROR, "Invalid SSID(s)\n");
 				return -ENOEXEC;
 			}
 
@@ -745,7 +752,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			val = atoi(optarg);
 
 			if ((val < 0) || (val > 65535)) {
-				PR_ERROR("Invalid max_bss val\n");
+				shell_fprintf(sh, SHELL_ERROR, "Invalid max_bss val\n");
 				return -ENOEXEC;
 			}
 
@@ -756,7 +763,9 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			if (wifi_utils_parse_scan_chan(optarg,
 						       params->band_chan,
 						       ARRAY_SIZE(params->band_chan))) {
-				PR_ERROR("Invalid band or channel value(s)\n");
+				shell_fprintf(sh,
+					      SHELL_ERROR,
+					      "Invalid band or channel value(s)\n");
 				return -ENOEXEC;
 			}
 
@@ -769,8 +778,8 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			break;
 		case '?':
 		default:
-			PR_ERROR("Invalid option or option usage: %s\n",
-				 argv[opt_index + 1]);
+			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
+						  argv[opt_index + 1]);
 			return -ENOEXEC;
 		}
 	}
@@ -794,23 +803,23 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 			shell_help(sh);
 			return -ENOEXEC;
 		} else if (!opt_num) {
-			PR_WARNING("No valid option(s) found\n");
+			shell_fprintf(sh, SHELL_WARNING, "No valid option(s) found\n");
 			do_scan = false;
 		}
 	}
 
 	if (do_scan) {
 		if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
-			PR_WARNING("Scan request failed\n");
+			shell_fprintf(sh, SHELL_WARNING, "Scan request failed\n");
 			return -ENOEXEC;
 		}
 
-		PR("Scan requested\n");
+		shell_fprintf(sh, SHELL_NORMAL, "Scan requested\n");
 
 		return 0;
 	}
 
-	PR_WARNING("Scan not initiated\n");
+	shell_fprintf(sh, SHELL_WARNING, "Scan not initiated\n");
 	return -ENOEXEC;
 }
 
@@ -822,37 +831,43 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
-		     sizeof(struct wifi_iface_status))) {
-		PR_WARNING("Status request failed\n");
+				sizeof(struct wifi_iface_status))) {
+		shell_fprintf(sh, SHELL_WARNING, "Status request failed\n");
 
 		return -ENOEXEC;
 	}
 
-	PR("Status: successful\n");
-	PR("==================\n");
-	PR("State: %s\n", wifi_state_txt(status.state));
+	shell_fprintf(sh, SHELL_NORMAL, "Status: successful\n");
+	shell_fprintf(sh, SHELL_NORMAL, "==================\n");
+	shell_fprintf(sh, SHELL_NORMAL, "State: %s\n", wifi_state_txt(status.state));
 
 	if (status.state >= WIFI_STATE_ASSOCIATED) {
 		uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 
-		PR("Interface Mode: %s\n", wifi_mode_txt(status.iface_mode));
-		PR("Link Mode: %s\n", wifi_link_mode_txt(status.link_mode));
-		PR("SSID: %.32s\n", status.ssid);
-		PR("BSSID: %s\n",
-		   net_sprint_ll_addr_buf(status.bssid,
+		shell_fprintf(sh, SHELL_NORMAL, "Interface Mode: %s\n",
+				wifi_mode_txt(status.iface_mode));
+		shell_fprintf(sh, SHELL_NORMAL, "Link Mode: %s\n",
+				wifi_link_mode_txt(status.link_mode));
+		shell_fprintf(sh, SHELL_NORMAL, "SSID: %.32s\n", status.ssid);
+		shell_fprintf(sh, SHELL_NORMAL, "BSSID: %s\n",
+					  net_sprint_ll_addr_buf(status.bssid,
 					  WIFI_MAC_ADDR_LEN, mac_string_buf,
-					  sizeof(mac_string_buf)));
-		PR("Band: %s\n", wifi_band_txt(status.band));
-		PR("Channel: %d\n", status.channel);
-		PR("Security: %s\n", wifi_security_txt(status.security));
-		PR("MFP: %s\n", wifi_mfp_txt(status.mfp));
+					  sizeof(mac_string_buf))
+					 );
+		shell_fprintf(sh, SHELL_NORMAL, "Band: %s\n",
+				wifi_band_txt(status.band));
+		shell_fprintf(sh, SHELL_NORMAL, "Channel: %d\n", status.channel);
+		shell_fprintf(sh, SHELL_NORMAL, "Security: %s\n",
+				wifi_security_txt(status.security));
+		shell_fprintf(sh, SHELL_NORMAL, "MFP: %s\n",
+				wifi_mfp_txt(status.mfp));
 		if (status.iface_mode == WIFI_MODE_INFRA) {
-			PR("RSSI: %d\n", status.rssi);
+			shell_fprintf(sh, SHELL_NORMAL, "RSSI: %d\n", status.rssi);
 		}
-		PR("Beacon Interval: %d\n", status.beacon_interval);
-		PR("DTIM: %d\n", status.dtim_period);
-		PR("TWT: %s\n",
-		   status.twt_capable ? "Supported" : "Not supported");
+		shell_fprintf(sh, SHELL_NORMAL, "Beacon Interval: %d\n", status.beacon_interval);
+		shell_fprintf(sh, SHELL_NORMAL, "DTIM: %d\n", status.dtim_period);
+		shell_fprintf(sh, SHELL_NORMAL, "TWT: %s\n",
+				status.twt_capable ? "Supported" : "Not supported");
 	}
 
 	return 0;
@@ -861,23 +876,24 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_STATISTICS_WIFI) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
-			     const struct shell *sh)
+			    const struct shell *sh)
 {
-	PR("Statistics for Wi-Fi interface %p [%d]\n", iface,
-	   net_if_get_by_iface(iface));
+	shell_fprintf(sh, SHELL_NORMAL, "Statistics for Wi-Fi interface %p [%d]\n", iface,
+	       net_if_get_by_iface(iface));
 
-	PR("Bytes received   : %u\n", data->bytes.received);
-	PR("Bytes sent       : %u\n", data->bytes.sent);
-	PR("Packets received : %u\n", data->pkts.rx);
-	PR("Packets sent     : %u\n", data->pkts.tx);
-	PR("Receive errors   : %u\n", data->errors.rx);
-	PR("Send errors      : %u\n", data->errors.tx);
-	PR("Bcast received   : %u\n", data->broadcast.rx);
-	PR("Bcast sent       : %u\n", data->broadcast.tx);
-	PR("Mcast received   : %u\n", data->multicast.rx);
-	PR("Mcast sent       : %u\n", data->multicast.tx);
-	PR("Beacons received : %u\n", data->sta_mgmt.beacons_rx);
-	PR("Beacons missed   : %u\n", data->sta_mgmt.beacons_miss);
+	shell_fprintf(sh, SHELL_NORMAL, "Bytes received   : %u\n", data->bytes.received);
+	shell_fprintf(sh, SHELL_NORMAL, "Bytes sent       : %u\n", data->bytes.sent);
+	shell_fprintf(sh, SHELL_NORMAL, "Packets received : %u\n", data->pkts.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Packets sent     : %u\n", data->pkts.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Receive errors   : %u\n", data->errors.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Send errors      : %u\n", data->errors.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Bcast received   : %u\n", data->broadcast.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Bcast sent       : %u\n", data->broadcast.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Mcast received   : %u\n", data->multicast.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Mcast sent       : %u\n", data->multicast.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Beacons received : %u\n",	data->sta_mgmt.beacons_rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Beacons missed   : %u\n",
+				data->sta_mgmt.beacons_miss);
 }
 #endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
 
@@ -898,7 +914,7 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	PR_INFO("Set %s to enable %s support.\n",
+	shell_fprintf(sh, SHELL_INFO, "Set %s to enable %s support.\n",
 		"CONFIG_NET_STATISTICS_WIFI and CONFIG_NET_STATISTICS_USER_API",
 		"statistics");
 #endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
@@ -914,7 +930,7 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 	context.sh = sh;
 
 	if (argc > 2) {
-		PR_WARNING("Invalid number of arguments\n");
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
 		return -ENOEXEC;
 	}
 
@@ -923,32 +939,33 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 
 		if (net_mgmt(NET_REQUEST_WIFI_PS_CONFIG, iface,
 				&config, sizeof(config))) {
-			PR_WARNING("Failed to get PS config\n");
+			shell_fprintf(sh, SHELL_WARNING, "Failed to get PS config\n");
 			return -ENOEXEC;
 		}
 
-		PR("PS status: %s\n",
-		   wifi_ps_txt(config.ps_params.enabled));
+		shell_fprintf(sh, SHELL_NORMAL, "PS status: %s\n",
+				wifi_ps_txt(config.ps_params.enabled));
 		if (config.ps_params.enabled) {
-			PR("PS mode: %s\n",
-			   wifi_ps_mode_txt(config.ps_params.mode));
+			shell_fprintf(sh, SHELL_NORMAL, "PS mode: %s\n",
+					wifi_ps_mode_txt(config.ps_params.mode));
 		}
 
-		PR("PS listen_interval: %d\n",
-		   config.ps_params.listen_interval);
+		shell_fprintf(sh, SHELL_NORMAL, "PS listen_interval: %d\n",
+				config.ps_params.listen_interval);
 
-		PR("PS wake up mode: %s\n",
-		   config.ps_params.wakeup_mode ? "Listen interval" : "DTIM");
+		shell_fprintf(sh, SHELL_NORMAL, "PS wake up mode: %s\n",
+				config.ps_params.wakeup_mode ? "Listen interval" : "DTIM");
 
 		if (config.ps_params.timeout_ms) {
-			PR("PS timeout: %d ms\n",
-			   config.ps_params.timeout_ms);
+			shell_fprintf(sh, SHELL_NORMAL, "PS timeout: %d ms\n",
+					config.ps_params.timeout_ms);
 		} else {
-			PR("PS timeout: disabled\n");
+			shell_fprintf(sh, SHELL_NORMAL, "PS timeout: disabled\n");
 		}
 
+
 		if (config.num_twt_flows == 0) {
-			PR("No TWT flows\n");
+			shell_fprintf(sh, SHELL_NORMAL, "No TWT flows\n");
 		} else {
 			for (int i = 0; i < config.num_twt_flows; i++) {
 				print_twt_params(
@@ -961,8 +978,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 					config.twt_flows[i].trigger,
 					config.twt_flows[i].twt_wake_interval,
 					config.twt_flows[i].twt_interval);
-				PR("TWT Wake ahead duration : %d us\n",
-				   config.twt_flows[i].twt_wake_ahead_duration);
+				shell_fprintf(sh, SHELL_NORMAL,
+					      "TWT Wake ahead duration : %d us\n",
+					      config.twt_flows[i].twt_wake_ahead_duration);
 			}
 		}
 		return 0;
@@ -973,20 +991,21 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 	} else if (!strncasecmp(argv[1], "off", 3)) {
 		params.enabled = WIFI_PS_DISABLED;
 	} else {
-		PR_WARNING("Invalid argument\n");
+		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
 		return -ENOEXEC;
 	}
 
 	params.type = WIFI_PS_PARAM_STATE;
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
-		PR_WARNING("PS %s failed. Reason: %s\n",
-			   params.enabled ? "enable" : "disable",
-			   wifi_ps_get_config_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING,
+			      "PS %s failed. Reason: %s\n",
+			      params.enabled ? "enable" : "disable",
+			      wifi_ps_get_config_err_code_str(params.fail_reason));
 		return -ENOEXEC;
 	}
 
-	PR("%s\n", wifi_ps_txt(params.enabled));
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps_txt(params.enabled));
 
 	return 0;
 }
@@ -1003,20 +1022,20 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 	} else if (!strncasecmp(argv[1], "WMM", 3)) {
 		params.mode = WIFI_PS_MODE_WMM;
 	} else {
-		PR_WARNING("Invalid PS mode\n");
+		shell_fprintf(sh, SHELL_WARNING, "Invalid PS mode\n");
 		return -ENOEXEC;
 	}
 
 	params.type = WIFI_PS_PARAM_MODE;
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
-		PR_WARNING("%s failed Reason : %s\n",
-			   wifi_ps_mode_txt(params.mode),
-			   wifi_ps_get_config_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING, "%s failed Reason : %s\n",
+			      wifi_ps_mode_txt(params.mode),
+			      wifi_ps_get_config_err_code_str(params.fail_reason));
 		return -ENOEXEC;
 	}
 
-	PR("%s\n", wifi_ps_mode_txt(params.mode));
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps_mode_txt(params.mode));
 
 	return 0;
 }
@@ -1041,22 +1060,23 @@ static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[]
 	params.type = WIFI_PS_PARAM_TIMEOUT;
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
-		PR_WARNING("Setting PS timeout failed. Reason : %s\n",
-			   wifi_ps_get_config_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting PS timeout failed. Reason : %s\n",
+			      wifi_ps_get_config_err_code_str(params.fail_reason));
 		return -ENOEXEC;
 	}
 
 	if (params.timeout_ms) {
-		PR("PS timeout: %d ms\n", params.timeout_ms);
+		shell_fprintf(sh, SHELL_NORMAL, "PS timeout: %d ms\n", params.timeout_ms);
 	} else {
-		PR("PS timeout: disabled\n");
+		shell_fprintf(sh, SHELL_NORMAL, "PS timeout: disabled\n");
 	}
 
 	return 0;
 }
 
 static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
-				    char *argv[])
+			      char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
@@ -1087,20 +1107,21 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.setup.twt_interval = (uint64_t)value;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		PR_WARNING("%s with %s failed, reason : %s\n",
-			   wifi_twt_operation_txt(params.operation),
-			   wifi_twt_negotiation_type_txt(params.negotiation_type),
-			   wifi_twt_get_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
+			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
-	PR("TWT operation %s with dg: %d, flow_id: %d requested\n",
-	   wifi_twt_operation_txt(params.operation),
-	   params.dialog_token, params.flow_id);
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
+		wifi_twt_operation_txt(params.operation),
+		params.dialog_token, params.flow_id);
 
 	return 0;
 }
+
 
 static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 			      char *argv[])
@@ -1172,23 +1193,23 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 	params.setup.twt_wake_ahead_duration = (uint32_t)value;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		PR_WARNING("%s with %s failed. reason : %s\n",
-			   wifi_twt_operation_txt(params.operation),
-			   wifi_twt_negotiation_type_txt(params.negotiation_type),
-			   wifi_twt_get_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed. reason : %s\n",
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
+			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
-	PR("TWT operation %s with dg: %d, flow_id: %d requested\n",
-	   wifi_twt_operation_txt(params.operation),
-	   params.dialog_token, params.flow_id);
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
+		wifi_twt_operation_txt(params.operation),
+		params.dialog_token, params.flow_id);
 
 	return 0;
 }
 
 static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
-				 char *argv[])
+			      char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
@@ -1222,23 +1243,23 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 	params.flow_id = (uint8_t)value;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		PR_WARNING("%s with %s failed, reason : %s\n",
-			   wifi_twt_operation_txt(params.operation),
-			   wifi_twt_negotiation_type_txt(params.negotiation_type),
-			   wifi_twt_get_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
+			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
-	PR("TWT operation %s with dg: %d, flow_id: %d success\n",
-	   wifi_twt_operation_txt(params.operation),
-	   params.dialog_token, params.flow_id);
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d success\n",
+		wifi_twt_operation_txt(params.operation),
+		params.dialog_token, params.flow_id);
 
 	return 0;
 }
 
 static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
-				     char *argv[])
+			      char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
@@ -1249,16 +1270,16 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 	params.teardown.teardown_all = 1;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
-		PR_WARNING("%s with %s failed, reason : %s\n",
-			   wifi_twt_operation_txt(params.operation),
-			   wifi_twt_negotiation_type_txt(params.negotiation_type),
-			   wifi_twt_get_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
+			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
-	PR("TWT operation %s all flows success\n",
-	   wifi_twt_operation_txt(params.operation));
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s all flows success\n",
+		wifi_twt_operation_txt(params.operation));
 
 	return 0;
 }
@@ -1279,13 +1300,13 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	k_mutex_init(&wifi_ap_sta_list_lock);
 
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface, &cnx_params,
-		       sizeof(struct wifi_connect_req_params));
+		sizeof(struct wifi_connect_req_params));
 	if (ret) {
-		PR_WARNING("AP mode enable failed: %s\n", strerror(-ret));
+		shell_fprintf(sh, SHELL_WARNING, "AP mode enable failed: %s\n", strerror(-ret));
 		return -ENOEXEC;
 	}
 
-	PR("AP mode enable requested\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode enable requested\n");
 
 	return 0;
 }
@@ -1298,11 +1319,11 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0);
 	if (ret) {
-		PR_WARNING("AP mode disable failed: %s\n", strerror(-ret));
+		shell_fprintf(sh, SHELL_WARNING, "AP mode disable failed: %s\n", strerror(-ret));
 		return -ENOEXEC;
 	}
 
-	PR("AP mode disable requested\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode disable requested\n");
 	return 0;
 }
 
@@ -1314,8 +1335,8 @@ static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argc);
 
-	PR("AP stations:\n");
-	PR("============\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP stations:\n");
+	shell_fprintf(sh, SHELL_NORMAL, "============\n");
 
 	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
 	for (int i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
@@ -1328,21 +1349,21 @@ static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
 
 		sta = &sta_list[i].sta_info;
 
-		PR("Station %zu:\n", id++);
-		PR("==========\n");
-		PR("MAC: %s\n",
-		   net_sprint_ll_addr_buf(sta->mac,
-					  WIFI_MAC_ADDR_LEN,
-					  mac_string_buf,
-					  sizeof(mac_string_buf)));
-		PR("Link mode: %s\n",
-		   wifi_link_mode_txt(sta->link_mode));
-		PR("TWT: %s\n",
-		   sta->twt_capable ? "Supported" : "Not supported");
+		shell_fprintf(sh, SHELL_NORMAL, "Station %zu:\n", id++);
+		shell_fprintf(sh, SHELL_NORMAL, "==========\n");
+		shell_fprintf(sh, SHELL_NORMAL, "MAC: %s\n",
+			      net_sprint_ll_addr_buf(sta->mac,
+						     WIFI_MAC_ADDR_LEN,
+						     mac_string_buf,
+						     sizeof(mac_string_buf)));
+		shell_fprintf(sh, SHELL_NORMAL, "Link mode: %s\n",
+			      wifi_link_mode_txt(sta->link_mode));
+		shell_fprintf(sh, SHELL_NORMAL, "TWT: %s\n",
+			      sta->twt_capable ? "Supported" : "Not supported");
 	}
 
 	if (id == 1) {
-		PR("No stations connected\n");
+		shell_fprintf(sh, SHELL_NORMAL, "No stations connected\n");
 	}
 	k_mutex_unlock(&wifi_ap_sta_list_lock);
 
@@ -1363,18 +1384,18 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 	}
 
 	if (net_bytes_from_str(mac, sizeof(mac), argv[1]) < 0) {
-		PR_WARNING("Invalid MAC address\n");
+		shell_fprintf(sh, SHELL_WARNING, "Invalid MAC address\n");
 		return -ENOEXEC;
 	}
 
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_STA_DISCONNECT, iface, mac, sizeof(mac));
 	if (ret) {
-		PR_WARNING("AP station disconnect failed: %s\n",
-			   strerror(-ret));
+		shell_fprintf(sh, SHELL_WARNING, "AP station disconnect failed: %s\n",
+			      strerror(-ret));
 		return -ENOEXEC;
 	}
 
-	PR("AP station disconnect requested\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP station disconnect requested\n");
 	return 0;
 }
 
@@ -1391,7 +1412,8 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	} else if (argc >= 2 && argc <= 3) {
 		regd.oper = WIFI_MGMT_SET;
 		if (strlen(argv[1]) != 2) {
-			PR_WARNING("Invalid reg domain: Length should be two letters/digits\n");
+			shell_fprintf(sh, SHELL_WARNING,
+				"Invalid reg domain: Length should be two letters/digits\n");
 			return -ENOEXEC;
 		}
 
@@ -1399,7 +1421,8 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		if (((argv[1][0] < 'A' || argv[1][0] > 'Z') ||
 			(argv[1][1] < 'A' || argv[1][1] > 'Z')) &&
 			(argv[1][0] != '0' || argv[1][1] != '0')) {
-			PR_WARNING("Invalid reg domain %c%c\n", argv[1][0], argv[1][1]);
+			shell_fprintf(sh, SHELL_WARNING, "Invalid reg domain %c%c\n", argv[1][0],
+				argv[1][1]);
 			return -ENOEXEC;
 		}
 		regd.country_code[0] = argv[1][0];
@@ -1409,7 +1432,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			if (strncmp(argv[2], "-f", 2) == 0) {
 				regd.force = true;
 			} else {
-				PR_WARNING("Invalid option %s\n", argv[2]);
+				shell_fprintf(sh, SHELL_WARNING, "Invalid option %s\n", argv[2]);
 				return -ENOEXEC;
 			}
 		}
@@ -1421,28 +1444,30 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	ret = net_mgmt(NET_REQUEST_WIFI_REG_DOMAIN, iface,
 		       &regd, sizeof(regd));
 	if (ret) {
-		PR_WARNING("Cannot %s Regulatory domain: %d\n",
-			   regd.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+		shell_fprintf(sh, SHELL_WARNING, "Cannot %s Regulatory domain: %d\n",
+			regd.oper == WIFI_MGMT_GET ? "get" : "set", ret);
 		return -ENOEXEC;
 	}
 
 	if (regd.oper == WIFI_MGMT_GET) {
-		PR("Wi-Fi Regulatory domain is: %c%c\n",
-		   regd.country_code[0], regd.country_code[1]);
-		PR("<channel>\t<center frequency>\t<supported(y/n)>\t"
-		   "<max power(dBm)>\t<passive scan supported(y/n)>\t<dfs supported(y/n)>\n");
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain is: %c%c\n",
+			regd.country_code[0], regd.country_code[1]);
+		shell_fprintf(sh, SHELL_NORMAL,
+			"<channel>\t<center frequency>\t<supported(y/n)>\t"
+			"<max power(dBm)>\t<passive scan supported(y/n)>\t<dfs supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
-			PR("  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
-			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
-			   chan_info[chan_idx].center_frequency,
-			   chan_info[chan_idx].supported ? "y" : "n",
-			   chan_info[chan_idx].max_power,
-			   chan_info[chan_idx].passive_only ? "y" : "n",
-			   chan_info[chan_idx].dfs ? "y" : "n");
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
+				      wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
+				      chan_info[chan_idx].center_frequency,
+				      chan_info[chan_idx].supported ? "y" : "n",
+				      chan_info[chan_idx].max_power,
+				      chan_info[chan_idx].passive_only ? "y" : "n",
+				      chan_info[chan_idx].dfs ? "y" : "n");
 		}
 	} else {
-		PR("Wi-Fi Regulatory domain set to: %c%c\n",
-		   regd.country_code[0], regd.country_code[1]);
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain set to: %c%c\n",
+			regd.country_code[0], regd.country_code[1]);
 	}
 
 	return 0;
@@ -1468,17 +1493,21 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
 		if (params.fail_reason ==
 		    WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID) {
-			PR_WARNING("Setting listen interval failed. Reason :%s\n",
-				   wifi_ps_get_config_err_code_str(params.fail_reason));
-			PR_WARNING("Hardware support valid range : 3 - 65535\n");
-		} else {
-			PR_WARNING("Setting listen interval failed. Reason :%s\n",
-				   wifi_ps_get_config_err_code_str(params.fail_reason));
+			shell_fprintf(sh, SHELL_WARNING,
+			      "Setting listen interval failed. Reason :%s\n",
+			      wifi_ps_get_config_err_code_str(params.fail_reason));
+			shell_fprintf(sh, SHELL_WARNING,
+				"Hardware support valid range : 3 - 65535\n");
+		} else  {
+			shell_fprintf(sh, SHELL_WARNING,
+				"Setting listen interval failed. Reason :%s\n",
+				wifi_ps_get_config_err_code_str(params.fail_reason));
 		}
 		return -ENOEXEC;
 	}
 
-	PR("Listen interval %hu\n", params.listen_interval);
+	shell_fprintf(sh, SHELL_NORMAL,
+		"Listen interval %hu\n", params.listen_interval);
 
 	return 0;
 }
@@ -1495,21 +1524,24 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 	} else if (!strncasecmp(argv[1], "listen_interval", 15)) {
 		params.wakeup_mode = WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL;
 	} else {
-		PR_WARNING("Invalid argument\n");
-		PR_INFO("Valid argument : <dtim> / <listen_interval>\n");
+		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
+		shell_fprintf(sh, SHELL_INFO,
+			      "Valid argument : <dtim> / <listen_interval>\n");
 		return -ENOEXEC;
 	}
 
 	params.type = WIFI_PS_PARAM_WAKEUP_MODE;
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
-		PR_WARNING("Setting PS wake up mode to %s failed..Reason :%s\n",
-			   params.wakeup_mode ? "Listen interval" : "DTIM interval",
-			   wifi_ps_get_config_err_code_str(params.fail_reason));
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting PS wake up mode to %s failed..Reason :%s\n",
+			      params.wakeup_mode ? "Listen interval" : "DTIM interval",
+			      wifi_ps_get_config_err_code_str(params.fail_reason));
 		return -ENOEXEC;
 	}
 
-	PR("%s\n", wifi_ps_wakeup_mode_txt(params.wakeup_mode));
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n",
+		      wifi_ps_wakeup_mode_txt(params.wakeup_mode));
 
 	return 0;
 }
@@ -1572,7 +1604,7 @@ static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 		mode_info.oper = WIFI_MGMT_SET;
 		parse_mode_args_to_params(sh, argc, argv, &mode_info, &do_mode_oper);
 	} else {
-		PR_ERROR("Invalid number of arguments\n");
+		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
 		return -EINVAL;
 	}
 
@@ -1583,15 +1615,17 @@ static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 		if (mode_info.if_index == 0) {
 			iface = net_if_get_first_wifi();
 			if (iface == NULL) {
-				PR_ERROR("Cannot find the default wifi interface\n");
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find the default wifi interface\n");
 				return -ENOEXEC;
 			}
 			mode_info.if_index = net_if_get_by_iface(iface);
 		} else {
 			iface = net_if_get_by_index(mode_info.if_index);
 			if (iface == NULL) {
-				PR_ERROR("Cannot find interface for if_index %d\n",
-					 mode_info.if_index);
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find interface for if_index %d\n",
+					      mode_info.if_index);
 				return -ENOEXEC;
 			}
 		}
@@ -1599,15 +1633,16 @@ static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 		ret = net_mgmt(NET_REQUEST_WIFI_MODE, iface, &mode_info, sizeof(mode_info));
 
 		if (ret) {
-			PR_ERROR("mode %s operation failed with reason %d\n",
-				 mode_info.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+			shell_fprintf(sh, SHELL_ERROR, "mode %s operation failed with reason %d\n",
+					mode_info.oper == WIFI_MGMT_GET ? "get" : "set", ret);
 			return -ENOEXEC;
 		}
 
 		if (mode_info.oper == WIFI_MGMT_GET) {
-			PR("Wi-Fi current mode is %x\n", mode_info.mode);
+			shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi current mode is %x\n",
+					mode_info.mode);
 		} else {
-			PR("Wi-Fi mode set to %x\n", mode_info.mode);
+			shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi mode set to %x\n", mode_info.mode);
 		}
 	}
 	return 0;
@@ -1626,7 +1661,7 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1)  {
 		switch (opt) {
 		case 'c':
 			channel->channel = (uint16_t)atoi(optarg);
@@ -1669,15 +1704,17 @@ static int cmd_wifi_channel(const struct shell *sh, size_t argc, char *argv[])
 		if (channel_info.if_index == 0) {
 			iface = net_if_get_first_wifi();
 			if (iface == NULL) {
-				PR_ERROR("Cannot find the default wifi interface\n");
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find the default wifi interface\n");
 				return -ENOEXEC;
 			}
 			channel_info.if_index = net_if_get_by_iface(iface);
 		} else {
 			iface = net_if_get_by_index(channel_info.if_index);
 			if (iface == NULL) {
-				PR_ERROR("Cannot find interface for if_index %d\n",
-					 channel_info.if_index);
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find interface for if_index %d\n",
+					      channel_info.if_index);
 				return -ENOEXEC;
 			}
 		}
@@ -1685,24 +1722,28 @@ static int cmd_wifi_channel(const struct shell *sh, size_t argc, char *argv[])
 		if (channel_info.oper == WIFI_MGMT_SET) {
 			if ((channel_info.channel < WIFI_CHANNEL_MIN) ||
 			    (channel_info.channel > WIFI_CHANNEL_MAX)) {
-				PR_ERROR("Invalid channel number. Range is (1-233)\n");
+				shell_fprintf(sh, SHELL_ERROR,
+						"Invalid channel number. Range is (1-233)\n");
 				return -ENOEXEC;
 			}
 		}
 
-		ret = net_mgmt(NET_REQUEST_WIFI_CHANNEL, iface, &channel_info,
-			       sizeof(channel_info));
+		ret = net_mgmt(NET_REQUEST_WIFI_CHANNEL, iface,
+				&channel_info, sizeof(channel_info));
 
 		if (ret) {
-			PR_ERROR("channel %s operation failed with reason %d\n",
-				 channel_info.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+			shell_fprintf(sh, SHELL_ERROR,
+					"channel %s operation failed with reason %d\n",
+					channel_info.oper == WIFI_MGMT_GET ? "get" : "set", ret);
 			return -ENOEXEC;
 		}
 
 		if (channel_info.oper == WIFI_MGMT_GET) {
-			PR("Wi-Fi current channel is: %d\n", channel_info.channel);
+			shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi current channel is: %d\n",
+					channel_info.channel);
 		} else {
-			PR("Wi-Fi channel set to %d\n", channel_info.channel);
+			shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi channel set to %d\n",
+					channel_info.channel);
 		}
 	}
 	return 0;
@@ -1725,7 +1766,7 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1)  {
 		switch (opt) {
 		case 'a':
 			filter->filter |= WIFI_PACKET_FILTER_ALL;
@@ -1780,34 +1821,37 @@ static int cmd_wifi_packet_filter(const struct shell *sh, size_t argc, char *arg
 		if (packet_filter.if_index == 0) {
 			iface = net_if_get_first_wifi();
 			if (iface == NULL) {
-				PR_ERROR("Cannot find the default wifi interface\n");
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find the default wifi interface\n");
 				return -ENOEXEC;
 			}
 			packet_filter.if_index = net_if_get_by_iface(iface);
 		} else {
 			iface = net_if_get_by_index(packet_filter.if_index);
 			if (iface == NULL) {
-				PR_ERROR("Cannot find interface for if_index %d\n",
-					 packet_filter.if_index);
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find interface for if_index %d\n",
+					      packet_filter.if_index);
 				return -ENOEXEC;
 			}
 		}
 
-		ret = net_mgmt(NET_REQUEST_WIFI_PACKET_FILTER, iface, &packet_filter,
-			       sizeof(packet_filter));
+		ret = net_mgmt(NET_REQUEST_WIFI_PACKET_FILTER, iface,
+					&packet_filter, sizeof(packet_filter));
 
 		if (ret) {
-			PR_ERROR("Wi-Fi packet filter %s operation failed with reason %d\n",
-				 packet_filter.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+			shell_fprintf(sh, SHELL_ERROR,
+					"Wi-Fi packet filter %s operation failed with reason %d\n",
+					packet_filter.oper == WIFI_MGMT_GET ? "get" : "set", ret);
 			return -ENOEXEC;
 		}
 
 		if (packet_filter.oper == WIFI_MGMT_GET) {
-			PR("Wi-Fi current mode packet filter is %d\n",
-			   packet_filter.filter);
+			shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi current mode packet filter is %d\n",
+					packet_filter.filter);
 		} else {
-			PR("Wi-Fi mode packet filter set to %d\n",
-			   packet_filter.filter);
+			shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi mode packet filter set to %d\n",
+					packet_filter.filter);
 		}
 	}
 	return 0;
@@ -1819,17 +1863,17 @@ static int cmd_wifi_version(const struct shell *sh, size_t argc, char *argv[])
 	struct wifi_version version = {0};
 
 	if (argc > 1) {
-		PR_WARNING("Invalid number of arguments\n");
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
 		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_VERSION, iface, &version, sizeof(version))) {
-		PR_WARNING("Failed to get Wi-Fi versions\n");
+		shell_fprintf(sh, SHELL_WARNING, "Failed to get Wi-Fi versions\n");
 		return -ENOEXEC;
 	}
 
-	PR("Wi-Fi Driver Version: %s\n", version.drv_version);
-	PR("Wi-Fi Firmware Version: %s\n", version.fw_version);
+	shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Driver Version: %s\n", version.drv_version);
+	shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Firmware Version: %s\n", version.fw_version);
 
 	return 0;
 }
