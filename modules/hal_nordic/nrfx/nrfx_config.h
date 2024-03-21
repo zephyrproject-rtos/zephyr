@@ -108,9 +108,6 @@
 #ifdef CONFIG_NRFX_EGU5
 #define NRFX_EGU5_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_EGU020
-#define NRFX_EGU020_ENABLED 1
-#endif
 
 #ifdef CONFIG_NRFX_GRTC
 #define NRFX_GRTC_ENABLED 1
