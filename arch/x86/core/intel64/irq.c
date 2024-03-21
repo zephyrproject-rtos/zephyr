@@ -14,7 +14,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <x86_mmu.h>
-#include <zephyr/init.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -155,7 +154,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 
 #if defined(CONFIG_SMP)
 
-int arch_smp_init(void)
+void z_x86_ipi_setup(void)
 {
 	/*
 	 * z_sched_ipi() doesn't have the same signature as a typical ISR, so
@@ -167,10 +166,7 @@ int arch_smp_init(void)
 
 	/* TLB shootdown handling */
 	x86_irq_funcs[CONFIG_TLB_IPI_VECTOR - IV_IRQS] = z_x86_tlb_ipi;
-	return 0;
 }
-
-SYS_INIT(arch_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /*
  * it is not clear exactly how/where/why to abstract this, as it

@@ -145,7 +145,7 @@ void arch_sched_ipi(void)
 	}
 }
 
-int arch_smp_init(void)
+static int arc_smp_init(void)
 {
 	struct arc_connect_bcr bcr;
 
@@ -188,5 +188,6 @@ int arch_smp_init(void)
 
 	return 0;
 }
-SYS_INIT(arch_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+SYS_INIT(arc_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
