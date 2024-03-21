@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
-bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
-
-# Read variable definitions output by _env.sh
-source "${bash_source_dir}/_env.sh"
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-EXECUTE_TIMEOUT=30
+verbosity_level=2
+
+simulation_id="security_bond_per_connection"
+
+central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD}_$(guess_test_long_name)_prj_conf"
+peripheral_exe="${central_exe}"
 
 cd ${BSIM_OUT_PATH}/bin
 

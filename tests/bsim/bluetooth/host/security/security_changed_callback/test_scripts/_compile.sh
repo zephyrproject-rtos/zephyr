@@ -1,18 +1,12 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
 
-# Terminate running simulations (if any)
-${BSIM_COMPONENTS_PATH}/common/stop_bsim.sh
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
+INCR_BUILD=1
 
-test_name='security_changed_callback'
-
-: "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
-bsim_bin="${BSIM_OUT_PATH}/bin"
-BOARD="${BOARD:-nrf52_bsim}"
-test_exe="${bsim_bin}/bs_${BOARD}_tests_bsim_bluetooth_host_security_${test_name}_prj_conf"
-
-west build -b nrf52_bsim -d build && \
-        cp -v build/zephyr/zephyr.exe "${test_exe}"
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
+app="$(guess_test_relpath)" _compile
