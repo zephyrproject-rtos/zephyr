@@ -26,6 +26,7 @@
 #endif /* CONFIG_USERSPACE */
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
+#include <soc.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/exp.h>

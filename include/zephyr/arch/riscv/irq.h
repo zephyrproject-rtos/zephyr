@@ -22,6 +22,7 @@ extern "C" {
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
+#include <soc.h>
 #endif /* !_ASMLANGUAGE */
 
 /* Exceptions 0-15 (MCAUSE interrupt=0) */
