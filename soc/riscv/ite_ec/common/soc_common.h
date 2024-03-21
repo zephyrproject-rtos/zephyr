@@ -22,6 +22,9 @@
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK          0x7FFFFFFF
 
+/* Exception code of environment call from M-mode */
+#define SOC_MCAUSE_ECALL_EXP         11
+
 #ifndef _ASMLANGUAGE
 
 #ifdef CONFIG_HAS_ITE_INTC

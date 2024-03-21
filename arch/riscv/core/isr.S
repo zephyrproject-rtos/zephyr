@@ -14,7 +14,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/syscall.h>
 #include <zephyr/arch/riscv/csr.h>
-#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/arch/riscv/syscall.h>
 #include "asm_macros.inc"
 
@@ -299,18 +298,18 @@ no_fp:	/* increment _current->arch.exception_depth */
 	and t0, t0, t2
 
 	/*
-	 * If mcause == RISCV_EXC_ECALLM, handle system call from
+	 * If mcause == SOC_MCAUSE_ECALL_EXP, handle system call from
 	 * kernel thread.
 	 */
-	li t1, RISCV_EXC_ECALLM
+	li t1, SOC_MCAUSE_ECALL_EXP
 	beq t0, t1, is_kernel_syscall
 
 #ifdef CONFIG_USERSPACE
 	/*
-	 * If mcause == RISCV_EXC_ECALLU, handle system call
+	 * If mcause == SOC_MCAUSE_USER_ECALL_EXP, handle system call
 	 * for user mode thread.
 	 */
-	li t1, RISCV_EXC_ECALLU
+	li t1, SOC_MCAUSE_USER_ECALL_EXP
 	beq t0, t1, is_user_syscall
 #endif /* CONFIG_USERSPACE */
 
