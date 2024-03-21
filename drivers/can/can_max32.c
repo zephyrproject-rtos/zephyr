@@ -82,9 +82,6 @@ static void can_max32_convert_canframe_to_req(const struct can_frame *msg, mxc_c
 	}
 
 	info->rtr = ((msg->flags & CAN_FRAME_RTR) != 0) ? 1 : 0;
-	info->fdf = ((msg->flags & CAN_FRAME_FDF) != 0) ? 1 : 0;
-	info->brs = ((msg->flags & CAN_FRAME_BRS) != 0) ? 1 : 0;
-	info->esi = ((msg->flags & CAN_FRAME_ESI) != 0) ? 1 : 0;
 	info->dlc = msg->dlc;
 
 	req->data_sz = MIN(CAN_MAX_DLEN, can_dlc_to_bytes(msg->dlc));
@@ -106,18 +103,6 @@ static void can_max32_convert_req_to_canframe(const mxc_can_req_t *req, struct c
 
 	if (info->rtr) {
 		msg->flags |= CAN_FRAME_RTR;
-	}
-
-	if (info->fdf) {
-		msg->flags |= CAN_FRAME_FDF;
-	}
-
-	if (info->brs) {
-		msg->flags |= CAN_FRAME_BRS;
-	}
-
-	if (info->esi) {
-		msg->flags |= CAN_FRAME_ESI;
 	}
 
 	msg->dlc = info->dlc;
@@ -211,6 +196,7 @@ static int can_max32_set_timing(const struct device *dev, const struct can_timin
 	const struct max32_can_config *dev_cfg = dev->config;
 	struct max32_can_data *dev_data = dev->data;
 	mxc_can_regs_t *can = dev_cfg->can;
+	uint32_t nbt_reg = 0;
 
 	if (!timing) {
 		LOG_ERR("timing structure is null");
@@ -225,14 +211,12 @@ static int can_max32_set_timing(const struct device *dev, const struct can_timin
 
 	can->mode |= MXC_F_CAN_MODE_RST;
 
-	uint32_t reg = 0;
+	nbt_reg |= FIELD_PREP(MXC_F_CAN_NBT_NBRP, timing->prescaler - 1);
+	nbt_reg |= FIELD_PREP(MXC_F_CAN_NBT_NSEG1, timing->prop_seg + timing->phase_seg1 - 1);
+	nbt_reg |= FIELD_PREP(MXC_F_CAN_NBT_NSEG2, timing->phase_seg2 - 1);
+	nbt_reg |= FIELD_PREP(MXC_F_CAN_NBT_NSJW, timing->sjw - 1);
 
-	reg |= FIELD_PREP(MXC_F_CAN_NBT_NBRP, timing->prescaler - 1);
-	reg |= FIELD_PREP(MXC_F_CAN_NBT_NSEG1, timing->prop_seg + timing->phase_seg1 - 1);
-	reg |= FIELD_PREP(MXC_F_CAN_NBT_NSEG2, timing->phase_seg2 - 1);
-	reg |= FIELD_PREP(MXC_F_CAN_NBT_NSJW, timing->sjw - 1);
-
-	can->nbt |= reg;
+	can->nbt |= nbt_reg;
 
 	can->mode &= ~MXC_F_CAN_MODE_RST;
 
@@ -315,11 +299,9 @@ static int can_max32_send(const struct device *dev, const struct can_frame *msg,
 	int ret = 0;
 	unsigned int key;
 
-	LOG_DBG("Sending %d bytes. Id: 0x%x, ID type: %s %s %s %s", can_dlc_to_bytes(msg->dlc),
+	LOG_DBG("Sending %d bytes. Id: 0x%x, ID type: %s %s", can_dlc_to_bytes(msg->dlc),
 		msg->id, (msg->flags & CAN_FRAME_IDE) ? "extended" : "standard",
-		(msg->flags & CAN_FRAME_RTR) ? "RTR" : "",
-		(msg->flags & CAN_FRAME_FDF) ? "FD frame" : "",
-		(msg->flags & CAN_FRAME_BRS) ? "BRS" : "");
+		(msg->flags & CAN_FRAME_RTR) ? "RTR" : "");
 
 	__ASSERT_NO_MSG(callback != NULL);
 	__ASSERT((msg->dlc == 0U) || (msg->data != NULL), "Dataptr is null");
@@ -663,12 +645,6 @@ static int can_max32_init(const struct device *dev)
 	dev_cfg->irq_config_func(dev);
 
 	dev_list[dev_cfg->can_id] = dev;
-
-	ret = MXC_CAN_PowerControl(dev_cfg->can_id, MXC_CAN_PWR_CTRL_FULL);
-	if (ret < 0) {
-		LOG_ERR("MXC_CAN_PowerControl() failed:%d", ret);
-		return ret;
-	}
 
 	ret = MXC_CAN_Init(dev_cfg->can_id, MXC_CAN_OBJ_CFG_TXRX, unit_event_callback,
 			   object_event_callback);
