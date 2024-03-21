@@ -81,6 +81,13 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	struct bt_conn *conn;
 	int err;
 
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
+	if (conn) {
+		LOG_DBG("Old connection is not yet purged");
+		bt_conn_unref(conn);
+		return;
+	}
+
 	err = bt_le_scan_stop();
 	if (err) {
 		FAIL("Stop LE scan failed (err %d)", err);
