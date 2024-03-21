@@ -1593,20 +1593,18 @@ function(zephyr_build_string outvar)
   string(JOIN "_" ${outvar} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
 
   if(BUILD_STR_MERGE)
-    if(DEFINED BUILD_STR_BOARD_REVISION)
-      string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
+    string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
+
+    if(NOT "${variant_string}" IN_LIST ${outvar})
       list(APPEND ${outvar} "${variant_string}")
     endif()
-    list(POP_BACK str_segment_list)
-    while(NOT str_segment_list STREQUAL "")
-      if(DEFINED BUILD_STR_BOARD_REVISION)
-        string(JOIN "_" variant_string ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
-        list(APPEND ${outvar} "${variant_string}")
-      endif()
-      string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
-      list(APPEND ${outvar} "${variant_string}")
-      list(POP_BACK str_segment_list)
-    endwhile()
+
+    list(LENGTH str_segment_list str_segment_list_len)
+
+    # Include board name without SoC as deprecated option
+    string(REGEX REPLACE "^/(.+)/" "/" qualifiers_without_soc "${BUILD_STR_BOARD_QUALIFIERS}")
+    string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
+    list(APPEND ${outvar} "${BUILD_STR_BOARD}${qualifiers_without_soc}")
   endif()
 
   if(BUILD_STR_REVERSE)
