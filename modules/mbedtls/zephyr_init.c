@@ -15,8 +15,6 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/random/random.h>
 #include <mbedtls/entropy.h>
-#include <mbedtls/platform_time.h>
-
 
 #include <mbedtls/debug.h>
 
@@ -108,10 +106,4 @@ SYS_INIT(_mbedtls_init, POST_KERNEL, 0);
 int mbedtls_init(void)
 {
 	return _mbedtls_init();
-}
-
-/* TLS 1.3 ticket lifetime needs a timing interface */
-mbedtls_ms_time_t mbedtls_ms_time(void)
-{
-	return (mbedtls_ms_time_t)k_uptime_get();
 }
