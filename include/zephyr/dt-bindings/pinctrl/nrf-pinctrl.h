@@ -131,6 +131,7 @@
 
 /**
  * @name nRF pinctrl output drive.
+ * @note Values match nrf_gpio_pin_drive_t constants.
  * @{
  */
 
@@ -151,7 +152,7 @@
 /** High drive '0', disconnect '1'. */
 #define NRF_DRIVE_H0D1 7U
 /** Extra high drive '0', extra high drive '1'. */
-#define NRF_DRIVE_E0E1 8U
+#define NRF_DRIVE_E0E1 11U
 
 /** @} */
 
