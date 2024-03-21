@@ -129,10 +129,6 @@
 	status = "okay";
 };
 
-&ieee802154 {
-	status = "okay";
-};
-
 &rram0 {
 	partitions {
 		compatible = "fixed-partitions";
