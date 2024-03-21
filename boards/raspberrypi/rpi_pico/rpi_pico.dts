@@ -8,10 +8,6 @@
 
 #include "rpi_pico-common.dtsi"
 
-/* Only the rpi_pico/rp2040 has a pwm. */
-/* This define can be used to avoid sourcing board overlays when the PWM is not available */
-#define HAS_DT_PWM_LED 1
-
 / {
 	leds {
 		compatible = "gpio-leds";
