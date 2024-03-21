@@ -1,7 +1,11 @@
 # Copyright (c) 2023 Rivos Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_OPENTITAN
+choice
+	prompt "OpenTitan implementation"
+	depends on SOC_SERIES_RISCV_OPENTITAN
+
+config SOC_RISCV_OPENTITAN
 	bool "OpenTitan implementation"
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
@@ -14,9 +18,5 @@ config SOC_OPENTITAN
 	select RISCV_ISA_EXT_ZBB
 	select RISCV_ISA_EXT_ZBC
 	select RISCV_ISA_EXT_ZBS
-	select RISCV
-	select RISCV_PRIVILEGED
-	# OpenTitan Ibex core mtvec mode is read-only / forced to vectored mode.
-	select RISCV_VECTORED_MODE
-	select GEN_IRQ_VECTOR_TABLE
-	select RISCV_PRIVILEGED_STANDALONE
+
+endchoice
