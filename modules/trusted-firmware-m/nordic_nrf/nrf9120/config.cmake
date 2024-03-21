@@ -4,6 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-set(NRF_SOC_VARIANT nrf91 CACHE STRING "nRF SoC Variant")
-
+set(PLATFORM_PATH platform/ext/target/nordic_nrf/)
 include(${PLATFORM_PATH}/common/nrf91/config.cmake)
