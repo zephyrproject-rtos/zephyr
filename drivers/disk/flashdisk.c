@@ -208,13 +208,17 @@ end:
 
 static int flashdisk_cache_commit(struct flashdisk_data *ctx)
 {
+	const struct flash_parameters *fpar = flash_get_parameters(ctx->info.dev);
+
 	if (!ctx->cache_valid || !ctx->cache_dirty) {
 		/* Either no cached data or cache matches flash data */
 		return 0;
 	}
 
-	if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
-		return -EIO;
+	if (!fpar->skip_erase) {
+		if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
+			return -EIO;
+		}
 	}
 
 	/* write data to flash */

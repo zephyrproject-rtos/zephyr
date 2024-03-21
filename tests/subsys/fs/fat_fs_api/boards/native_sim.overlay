@@ -6,6 +6,7 @@
 
 &flashcontroller0 {
 	reg = <0x00000000 DT_SIZE_K(2048)>;
+	skip-erase;
 };
 
 &flash0 {

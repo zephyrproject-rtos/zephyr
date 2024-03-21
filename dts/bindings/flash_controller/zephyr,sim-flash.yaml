@@ -15,3 +15,7 @@ properties:
     description: |
       Memory region used by the simulated flash memory. If this option is used
       the memory that is used by the simulated flash memory is not erased.
+  skip-erase:
+    type: boolean
+    description: |
+      If set, indicates that erase of flash can be skipped.
