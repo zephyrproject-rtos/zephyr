@@ -6,18 +6,7 @@
 
 #set -x #uncomment this line for debugging
 set -ue
-
-
-
-: "${BSIM_COMPONENTS_PATH:?BSIM_COMPONENTS_PATH must be defined}"
-: "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root\
- directory}"
-
-WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
-
-BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
-
-mkdir -p ${WORK_DIR}
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root directory}"
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
