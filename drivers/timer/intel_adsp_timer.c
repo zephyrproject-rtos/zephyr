@@ -210,6 +210,14 @@ static void irq_init(void)
 
 void smp_timer_init(void)
 {
+	/* This is called from the secondary CPU boot path, so we need to
+	 * set up the timer interrupt for this CPU.
+	 * Some users might want to serve the timer interrupt on only the
+	 * primary core and use a different mechanism to notify other cores.
+	 */
+#ifdef CONFIG_SYSTEM_CLOCK_MP_BROADCAST
+	irq_init();
+#endif
 }
 
 /* Runs on core 0 only */

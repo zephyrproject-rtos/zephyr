@@ -39,6 +39,14 @@ config SYSTEM_CLOCK_INIT_PRIORITY
 	  the clock to be running already, you should let the default value as it
 	  is (0).
 
+config SYSTEM_CLOCK_MP_BROADCAST
+	bool "select whether or not the timer is broadcast"
+	depends on SMP
+	help
+	  Used to select if we serve the timer interrupt on all cores.
+	  Some users might want to serve the timer interrupt on only the
+	  primary core and use a different mechanism to notify other cores.
+
 # Hidden option to be selected by individual SoC.
 config TICKLESS_CAPABLE
 	bool

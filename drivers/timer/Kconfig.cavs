@@ -28,3 +28,8 @@ config INTEL_ADSP_TIMER
 	  It is not as fast as the internal core clock, but provides
 	  a common and synchronized counter for all CPU cores (which
 	  is useful for SMP).
+
+if INTEL_ADSP_TIMER
+config SYSTEM_CLOCK_MP_BROADCAST
+	def_bool y
+endif
