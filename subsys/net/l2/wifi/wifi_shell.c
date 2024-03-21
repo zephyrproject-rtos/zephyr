@@ -541,6 +541,11 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		idx++;
 	}
 
+	if ((idx == 1) && (iface_mode == WIFI_MODE_AP)) {
+		PR_ERROR("Invalid channel: %s\n", argv[idx]);
+		return -EINVAL;
+	}
+
 	/* PSK (optional) */
 	if (idx < argc) {
 		params->psk = argv[idx];
