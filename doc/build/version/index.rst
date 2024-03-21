@@ -109,7 +109,8 @@ following defines are available:
 |                             |                   | ``PATCHLEVEL``, |br|                                 |                         |
 |                             |                   | ``VERSION_TWEAK`` |br|                               |                         |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
-| APP_BUILD_VERSION           | String (unquoted) | None (value of ``git describe --abbrev=12 --always`` | v3.3.0-18-g2c85d9224fca |
+| APP_BUILD_VERSION           | String (unquoted) | None (value of                                       |                         |
+|                             |                   | ``git describe --abbrev=12 --always --dirty``        | v3.3.0-18-g2c85d9224fca |
 |                             |                   | from application repository)                         |                         |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
 

@@ -13,7 +13,7 @@ if(NOT DEFINED ${BUILD_VERSION_NAME})
   find_package(Git QUIET)
   if(GIT_FOUND)
     execute_process(
-      COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always
+      COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always --dirty
       WORKING_DIRECTORY                ${work_dir}
       OUTPUT_VARIABLE                  ${BUILD_VERSION_NAME}
       OUTPUT_STRIP_TRAILING_WHITESPACE
