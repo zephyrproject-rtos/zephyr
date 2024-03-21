@@ -184,6 +184,12 @@ LoRaWAN
 MCUmgr
 ======
 
+Modem
+=====
+
+* The ``CONFIG_MODEM_CHAT_LOG_BUFFER`` Kconfig option was
+  renamed to :kconfig:option:`MODEM_CHAT_LOG_BUFFER_SIZE`.
+
 Shell
 =====
 
