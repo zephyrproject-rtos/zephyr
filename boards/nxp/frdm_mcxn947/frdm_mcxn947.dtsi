@@ -49,6 +49,11 @@
 	};
 };
 
+&flexcomm1_lpspi1 {
+	pinctrl-0 = <&pinmux_flexcomm1_lpspi>;
+	pinctrl-names = "default";
+};
+
 &flexcomm4_lpuart4 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm4_lpuart>;
