@@ -6,7 +6,7 @@ source "share/sysbuild/Kconfig"
 config NET_CORE_BOARD
 	string
 	default "nrf5340bsim_nrf5340_cpunet" if $(BOARD) = "nrf5340bsim_nrf5340_cpuapp"
-	default "nrf5340bsim/nrf5340/cpunet" if $(BOARD)$(BOARD_IDENTIFIER) = "nrf5340bsim/nrf5340/cpuapp"
+	default "nrf5340bsim/nrf5340/cpunet" if $(BOARD)$(BOARD_QUALIFIERS) = "nrf5340bsim/nrf5340/cpuapp"
 
 config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	int
