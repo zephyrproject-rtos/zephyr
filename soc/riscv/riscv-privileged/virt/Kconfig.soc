@@ -1,6 +1,10 @@
 # Copyright (c) 2020 Cobham Gaisler AB
 # SPDX-License-Identifier: Apache-2.0
 
+choice
+	prompt "QEMU RISC-V VirtIO Board"
+	depends on SOC_SERIES_RISCV_VIRT
+
 config SOC_RISCV_VIRT
 	bool "QEMU RISC-V VirtIO Board"
 	select ATOMIC_OPERATIONS_BUILTIN
@@ -8,6 +12,5 @@ config SOC_RISCV_VIRT
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
-	select RISCV
-	select RISCV_PRIVILEGED
-	select RISCV_PRIVILEGED_STANDALONE
+
+endchoice
