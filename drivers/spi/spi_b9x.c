@@ -334,6 +334,7 @@ static int spi_b9x_config(const struct device *dev,
 	spi_mode_type_e mode = SPI_MODE0;
 	struct spi_b9x_cfg *b9x_config = SPI_CFG(dev);
 	struct spi_b9x_data *b9x_data = SPI_DATA(dev);
+	const pinctrl_soc_pin_t *pins = b9x_config->pcfg->states->pins;
 #if CONFIG_SOC_RISCV_TELINK_B91
 	uint8_t clk_src = b9x_config->peripheral_id == PSPI_MODULE ? sys_clk.pclk : sys_clk.hclk;
 #elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
@@ -350,7 +351,7 @@ static int spi_b9x_config(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* get SPI mode */
+		/* get SPI mode */
 	if (((config->operation & SPI_MODE_CPHA) == 0) &&
 	    ((config->operation & SPI_MODE_CPOL) == 0)) {
 		mode = SPI_MODE0;
@@ -385,6 +386,10 @@ static int spi_b9x_config(const struct device *dev,
 			spi_set_io_mode(b9x_config->peripheral_id, SPI_QUAD_MODE);
 #endif
 		}
+	}
+	/* The GPIO need to be configured as input to support alternative function */
+	for (uint8_t i = 0; i < b9x_config->pcfg->states->pin_cnt; i++) {
+		gpio_input_en(B9x_PINMUX_GET_PIN(*pins++));
 	}
 
 	/* configure pins */
