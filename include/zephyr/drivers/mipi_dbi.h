@@ -94,7 +94,7 @@ extern "C" {
 	{								\
 		.frequency = DT_PROP(node_id, mipi_max_frequency),	\
 		.operation = (operation_) |				\
-			DT_PROP(node_id, duplex) |			\
+			DT_PROP_OR(node_id, duplex, 0) |			\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpha), SPI_MODE_CPHA, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
@@ -107,6 +107,19 @@ extern "C" {
 			.delay = (delay_),				\
 		},							\
 	}
+
+/**
+ * @brief Initialize a MIPI DBI SPI configuration from devicetree instance
+ *
+ * This helper initializes a MIPI DBI SPI configuration from a devicetree
+ * instance. It is equivalent to MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst))
+ * @param inst Instance number to initialize configuration from
+ * @param operation_ the desired operation field in the struct spi_config
+ * @param delay_ the desired delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define MIPI_DBI_SPI_CONFIG_DT_INST(inst, operation_, delay_)		\
+	MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
 
 /**
  * @brief MIPI DBI controller configuration
