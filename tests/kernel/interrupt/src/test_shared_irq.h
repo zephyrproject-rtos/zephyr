@@ -41,7 +41,7 @@ static inline bool client_exists_at_index(void (*routine)(const void *arg),
 {
 	size_t i;
 	struct z_shared_isr_table_entry *shared_entry;
-	struct _isr_table_entry *client;
+	struct z_shared_isr_client *client;
 
 	shared_entry = &z_shared_sw_isr_table[irq];
 
