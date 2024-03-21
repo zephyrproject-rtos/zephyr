@@ -59,6 +59,11 @@ The current Zephyr arduino_portenta_h7 board configuration supports the followin
 
 Other hardware features are not yet supported on Zephyr porting.
 
+NOTE: There are two versions of the board available on the market. Version 1.0
+did not have the low speed external oscillator populated, while board
+version 4.1 does have the LSE clock populated. If you wish to build support
+for the LSE clock use ``arduino_portenta_h7@4.1`` as the board.
+
 Resources sharing
 =================
 
@@ -78,7 +83,7 @@ Building and Flashing
 *************************
 
 Applications for the ``arduino_portenta_h7`` board should be built per core target,
-using either ``arduino_portenta_h7_m7`` or ``arduino_portenta_h7_m4`` as the target.
+using either ``arduino_portenta_h7//m7`` or ``arduino_portenta_h7//m4`` as the target.
 See :ref:`build_an_application` for more information about application builds.
 
 
