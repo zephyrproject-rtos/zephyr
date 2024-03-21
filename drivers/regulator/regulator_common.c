@@ -107,13 +107,10 @@ int regulator_enable(const struct device *dev)
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
 #endif
 
-	data->refcnt++;
-
-	if (data->refcnt == 1) {
+	if (data->refcnt == 0) {
 		ret = api->enable(dev);
-		if (ret < 0) {
-			data->refcnt--;
-		} else {
+		if (ret == 0) {
+			data->refcnt++;
 			regulator_delay(config->off_on_delay_us);
 		}
 	}
