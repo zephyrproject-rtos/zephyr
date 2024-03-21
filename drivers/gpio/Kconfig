@@ -242,4 +242,6 @@ source "drivers/gpio/Kconfig.rzt2m"
 
 source "drivers/gpio/Kconfig.ambiq"
 
+source "drivers/gpio/Kconfig.brcmstb"
+
 endif # GPIO
