@@ -29,18 +29,6 @@ nvic: &cpurad_nvic {};
 	ranges;
 };
 
-&cpusec_bellboard {
-	compatible = "nordic,nrf-bellboard-remote";
-};
-
-&cpuapp_bellboard {
-	compatible = "nordic,nrf-bellboard-remote";
-};
-
-&cpurad_bellboard {
-	compatible = "nordic,nrf-bellboard-local";
-};
-
 &gpiote130 {
 	interrupts = <105 NRF_DEFAULT_IRQ_PRIORITY>;
 };
