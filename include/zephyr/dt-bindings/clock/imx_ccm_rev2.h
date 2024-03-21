@@ -105,4 +105,13 @@
 #define IMX_CCM_LPADC1_CLK             0x1500UL
 #define IMX_CCM_LPADC2_CLK             0x1501UL
 
+/* TPM */
+#define IMX_CCM_TPM_CLK                0x1600UL
+#define IMX_CCM_TPM1_CLK               0x1600UL
+#define IMX_CCM_TPM2_CLK               0x1601UL
+#define IMX_CCM_TPM3_CLK               0x1602UL
+#define IMX_CCM_TPM4_CLK               0x1603UL
+#define IMX_CCM_TPM5_CLK               0x1604UL
+#define IMX_CCM_TPM6_CLK               0x1605UL
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */
