@@ -90,9 +90,9 @@ struct virtual_interface_api {
 
 	/**
 	 * Receive a network packet.
-	 * The callback returns NET_CONTINUE if this interface will accept the
+	 * The callback returns NET_OK if this interface will accept the
 	 * packet and pass it upper layers, NET_DROP if the packet is to be
-	 * dropped and NET_OK to pass it to next interface.
+	 * dropped and NET_CONTINUE to pass it to next interface.
 	 */
 	enum net_verdict (*recv)(struct net_if *iface, struct net_pkt *pkt);
 
