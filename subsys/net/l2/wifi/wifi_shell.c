@@ -473,14 +473,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 
 	/* Channel (optional: STA, mandatory: AP) */
 	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
-		uint8_t band;
 		long channel = strtol(argv[idx], &endptr, 10);
-		const uint8_t all_bands[] = {WIFI_FREQ_BAND_2_4_GHZ,
-					WIFI_FREQ_BAND_5_GHZ,
-					WIFI_FREQ_BAND_6_GHZ};
-		bool found = false;
-		char bands_str[MAX_BANDS_STR_LEN] = {0};
-		size_t offset = 0;
 
 		if (*endptr != '\0') {
 			print(context.sh, SHELL_ERROR,
@@ -491,40 +484,23 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			return -EINVAL;
 		}
 
-		if (iface_mode == WIFI_MODE_INFRA) {
-			if (channel < 0) {
-				/* Negative channel means band */
-				switch (-channel) {
-				case 2:
-					params->band = WIFI_FREQ_BAND_2_4_GHZ;
-					break;
-				case 5:
-					params->band = WIFI_FREQ_BAND_5_GHZ;
-					break;
-				case 6:
-					params->band = WIFI_FREQ_BAND_6_GHZ;
-					break;
-				default:
-					print(context.sh, SHELL_ERROR,
-					      "Invalid band: %ld\n", channel);
-					return -EINVAL;
-				}
-			}
+		if (iface_mode == WIFI_MODE_INFRA && channel == 0) {
+			params->channel = WIFI_CHANNEL_ANY;
 		} else {
-			if (channel < 0) {
-				print(context.sh, SHELL_ERROR,
-				      "Invalid channel: %ld\n", channel);
-				return -EINVAL;
-			}
-		}
+			const uint8_t bands[] = {WIFI_FREQ_BAND_2_4_GHZ,
+					       WIFI_FREQ_BAND_5_GHZ,
+					       WIFI_FREQ_BAND_6_GHZ};
+			uint8_t band;
+			bool found = false;
+			char bands_str[MAX_BANDS_STR_LEN] = {0};
+			size_t offset = 0;
 
-		if (channel > 0) {
-			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
+			for (band = 0; band < ARRAY_SIZE(bands); band++) {
 				offset += snprintf(bands_str + offset,
 						  sizeof(bands_str) - offset,
 						  "%s%s",
 						  band ? "," : "",
-						  wifi_band_txt(all_bands[band]));
+						  wifi_band_txt(bands[band]));
 				if (offset >= sizeof(bands_str)) {
 					print(context.sh, SHELL_ERROR,
 					      "Failed to parse channel: %s: "
@@ -533,7 +509,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 					return -EINVAL;
 				}
 
-				if (wifi_utils_validate_chan(all_bands[band],
+				if (wifi_utils_validate_chan(bands[band],
 							     channel)) {
 					found = true;
 					break;
@@ -1930,8 +1906,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD_ARG(connect, NULL,
 		  "Connect to a Wi-Fi AP\n"
 		  "\"<SSID>\"\n"
-		  "[channel number/band: > 0:Channel, 0:any channel,\n"
-		  "< 0:band (-2:2.4GHz, -5:5GHz, -6:6GHz]\n"
+		  "[channel number: 0 means all]\n"
 		  "[PSK: valid only for secure SSIDs]\n"
 		  "[Security type: valid only for secure SSIDs]\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
