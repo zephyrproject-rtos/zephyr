@@ -1,1 +1,0 @@
-add_subdirectory_ifdef(CONFIG_SOC_FAMILY_RISCV_PRIVILEGED riscv-privileged)
