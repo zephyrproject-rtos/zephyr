@@ -184,12 +184,11 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	int rssi;
 	int i = 0;
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
-	const struct shell *sh = context.sh;
 
 	scan_result++;
 
 	if (scan_result == 1U) {
-		print(sh, SHELL_NORMAL,
+		print(context.sh, SHELL_NORMAL,
 		      "\n%-4s | %-13s | %-4s |  %-15s | %-15s | %-32s\n",
 		      "Num", "Channel (Band)", "RSSI", "BSSID", "Frame length", "Frame Body");
 	}
@@ -198,7 +197,7 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	channel = wifi_freq_to_channel(raw->frequency);
 	band = wifi_freq_to_band(raw->frequency);
 
-	print(sh, SHELL_NORMAL, "%-4d | %-4u (%-6s) | %-4d | %s |      %-4d        ",
+	print(context.sh, SHELL_NORMAL, "%-4d | %-4u (%-6s) | %-4d | %s |      %-4d        ",
 	      scan_result,
 	      channel,
 	      wifi_band_txt(band),
@@ -207,10 +206,10 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 				     sizeof(mac_string_buf)), raw->frame_length);
 
 	for (i = 0; i < 32; i++) {
-		print(sh, SHELL_NORMAL, "%02X ", *(raw->data + i));
+		print(context.sh, SHELL_NORMAL, "%02X ", *(raw->data + i));
 	}
 
-	print(sh, SHELL_NORMAL, "\n");
+	print(context.sh, SHELL_NORMAL, "\n");
 }
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 
@@ -218,13 +217,12 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *)cb->info;
-	const struct shell *sh = context.sh;
 
 	if (status->status) {
-		print(sh, SHELL_WARNING,
+		print(context.sh, SHELL_WARNING,
 		      "Scan request failed (%d)\n", status->status);
 	} else {
-		print(sh, SHELL_NORMAL, "Scan request done\n");
+		print(context.sh, SHELL_NORMAL, "Scan request done\n");
 	}
 
 	scan_result = 0U;
@@ -268,50 +266,47 @@ static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
 			     bool trigger, uint32_t twt_wake_interval,
 			     uint64_t twt_interval)
 {
-	const struct shell *sh = context.sh;
-
-	print(sh, SHELL_NORMAL, "TWT Dialog token: %d\n",
+	print(context.sh, SHELL_NORMAL, "TWT Dialog token: %d\n",
 	      dialog_token);
-	print(sh, SHELL_NORMAL, "TWT flow ID: %d\n",
+	print(context.sh, SHELL_NORMAL, "TWT flow ID: %d\n",
 	      flow_id);
-	print(sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
+	print(context.sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
 	      wifi_twt_negotiation_type_txt(negotiation_type));
-	print(sh, SHELL_NORMAL, "TWT responder: %s\n",
+	print(context.sh, SHELL_NORMAL, "TWT responder: %s\n",
 	       responder ? "true" : "false");
-	print(sh, SHELL_NORMAL, "TWT implicit: %s\n",
+	print(context.sh, SHELL_NORMAL, "TWT implicit: %s\n",
 	      implicit ? "true" : "false");
-	print(sh, SHELL_NORMAL, "TWT announce: %s\n",
+	print(context.sh, SHELL_NORMAL, "TWT announce: %s\n",
 	      announce ? "true" : "false");
-	print(sh, SHELL_NORMAL, "TWT trigger: %s\n",
+	print(context.sh, SHELL_NORMAL, "TWT trigger: %s\n",
 	      trigger ? "true" : "false");
-	print(sh, SHELL_NORMAL, "TWT wake interval: %d us\n",
+	print(context.sh, SHELL_NORMAL, "TWT wake interval: %d us\n",
 	      twt_wake_interval);
-	print(sh, SHELL_NORMAL, "TWT interval: %lld us\n",
+	print(context.sh, SHELL_NORMAL, "TWT interval: %lld us\n",
 	      twt_interval);
-	print(sh, SHELL_NORMAL, "========================\n");
+	print(context.sh, SHELL_NORMAL, "========================\n");
 }
 
 static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_twt_params *resp =
 		(const struct wifi_twt_params *)cb->info;
-	const struct shell *sh = context.sh;
 
 	if (resp->operation == WIFI_TWT_TEARDOWN) {
 		if (resp->teardown_status == WIFI_TWT_TEARDOWN_SUCCESS) {
-			print(sh, SHELL_NORMAL, "TWT teardown succeeded for flow ID %d\n",
+			print(context.sh, SHELL_NORMAL, "TWT teardown succeeded for flow ID %d\n",
 			      resp->flow_id);
 		} else {
-			print(sh, SHELL_NORMAL, "TWT teardown failed for flow ID %d\n",
+			print(context.sh, SHELL_NORMAL, "TWT teardown failed for flow ID %d\n",
 			      resp->flow_id);
 		}
 		return;
 	}
 
 	if (resp->resp_status == WIFI_TWT_RESP_RECEIVED) {
-		print(sh, SHELL_NORMAL, "TWT response: %s\n",
+		print(context.sh, SHELL_NORMAL, "TWT response: %s\n",
 		      wifi_twt_setup_cmd_txt(resp->setup_cmd));
-		print(sh, SHELL_NORMAL, "== TWT negotiated parameters ==\n");
+		print(context.sh, SHELL_NORMAL, "== TWT negotiated parameters ==\n");
 		print_twt_params(resp->dialog_token,
 				 resp->flow_id,
 				 resp->negotiation_type,
@@ -322,7 +317,7 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 				 resp->setup.twt_wake_interval,
 				 resp->setup.twt_interval);
 	} else {
-		print(sh, SHELL_NORMAL, "TWT response timed out\n");
+		print(context.sh, SHELL_NORMAL, "TWT response timed out\n");
 	}
 }
 
@@ -330,13 +325,12 @@ static void handle_wifi_ap_enable_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *)cb->info;
-	const struct shell *sh = context.sh;
 
 	if (status->status) {
-		print(sh, SHELL_WARNING,
+		print(context.sh, SHELL_WARNING,
 		      "AP enable request failed (%d)\n", status->status);
 	} else {
-		print(sh, SHELL_NORMAL, "AP enabled\n");
+		print(context.sh, SHELL_NORMAL, "AP enabled\n");
 	}
 }
 
@@ -344,13 +338,12 @@ static void handle_wifi_ap_disable_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *)cb->info;
-	const struct shell *sh = context.sh;
 
 	if (status->status) {
-		print(sh, SHELL_WARNING,
+		print(context.sh, SHELL_WARNING,
 		      "AP disable request failed (%d)\n", status->status);
 	} else {
-		print(sh, SHELL_NORMAL, "AP disabled\n");
+		print(context.sh, SHELL_NORMAL, "AP disabled\n");
 	}
 
 	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
@@ -362,11 +355,10 @@ static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_ap_sta_info *sta_info =
 		(const struct wifi_ap_sta_info *)cb->info;
-	const struct shell *sh = context.sh;
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 	int i;
 
-	print(sh, SHELL_NORMAL, "Station connected: %s\n",
+	print(context.sh, SHELL_NORMAL, "Station connected: %s\n",
 	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
 				     mac_string_buf, sizeof(mac_string_buf)));
 
@@ -379,7 +371,7 @@ static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
 		}
 	}
 	if (i == CONFIG_WIFI_SHELL_MAX_AP_STA) {
-		print(sh, SHELL_WARNING, "No space to store station info: "
+		print(context.sh, SHELL_WARNING, "No space to store station info: "
 			"Increase CONFIG_WIFI_SHELL_MAX_AP_STA\n");
 	}
 	k_mutex_unlock(&wifi_ap_sta_list_lock);
@@ -389,10 +381,9 @@ static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_ap_sta_info *sta_info =
 		(const struct wifi_ap_sta_info *)cb->info;
-	const struct shell *sh = context.sh;
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 
-	print(sh, SHELL_NORMAL, "Station disconnected: %s\n",
+	print(context.sh, SHELL_NORMAL, "Station disconnected: %s\n",
 	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
 				     mac_string_buf, sizeof(mac_string_buf)));
 
@@ -458,7 +449,6 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 {
 	char *endptr;
 	int idx = 1;
-	const struct shell *sh = context.sh;
 
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
@@ -469,7 +459,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	params->ssid = argv[0];
 	params->ssid_length = strlen(params->ssid);
 	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
-		print(sh, SHELL_WARNING,
+		print(context.sh, SHELL_WARNING,
 		      "SSID too long (max %d characters)\n",
 		      WIFI_SSID_MAX_LEN);
 		return -EINVAL;
@@ -487,7 +477,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		size_t offset = 0;
 
 		if (*endptr != '\0') {
-			print(sh, SHELL_ERROR,
+			print(context.sh, SHELL_ERROR,
 			      "Failed to parse channel: %s: endp: %s, err: %s\n",
 			      argv[idx],
 			      endptr,
@@ -530,7 +520,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 						  band ? "," : "",
 						  wifi_band_txt(all_bands[band]));
 				if (offset >= sizeof(bands_str)) {
-					print(sh, SHELL_ERROR,
+					print(context.sh, SHELL_ERROR,
 					      "Failed to parse channel: %s: "
 					      "band string too long\n",
 					      argv[idx]);
@@ -545,7 +535,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			}
 
 			if (!found) {
-				print(sh, SHELL_ERROR,
+				print(context.sh, SHELL_ERROR,
 				      "Invalid channel: %ld, checked bands: %s\n",
 				       channel,
 				       bands_str);
@@ -581,7 +571,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 
 				if (security == WIFI_SECURITY_TYPE_NONE ||
 				    security == WIFI_SECURITY_TYPE_WPA_PSK) {
-					print(sh, SHELL_ERROR,
+					print(context.sh, SHELL_ERROR,
 					      "MFP not supported for security type %s\n",
 					      wifi_security_txt(security));
 					return -EINVAL;
@@ -599,7 +589,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		     params->psk_length > WIFI_PSK_MAX_LEN) ||
 		    (params->security == WIFI_SECURITY_TYPE_SAE &&
 		     params->psk_length > WIFI_SAE_PSWD_MAX_LEN)) {
-			print(sh, SHELL_ERROR,
+			print(context.sh, SHELL_ERROR,
 			      "Invalid PSK length (%d) for security type %s\n",
 			      params->psk_length,
 			      wifi_security_txt(params->security));
@@ -979,7 +969,7 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 					config.twt_flows[i].trigger,
 					config.twt_flows[i].twt_wake_interval,
 					config.twt_flows[i].twt_interval);
-				shell_fprintf(sh, SHELL_NORMAL,
+				shell_fprintf(context.sh, SHELL_NORMAL,
 					      "TWT Wake ahead duration : %d us\n",
 					      config.twt_flows[i].twt_wake_ahead_duration);
 			}
