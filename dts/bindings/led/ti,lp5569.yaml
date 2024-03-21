@@ -3,3 +3,16 @@ description: TI LP5569 LED
 compatible: "ti,lp5569"
 
 include: i2c-device.yaml
+
+properties:
+  charge-pump-mode:
+    type: int
+    default: 0
+    description: |
+      If provided, configures the internal charge-pump mode in the MISC
+      register following the datasheet:
+        0x00 -> disabled (default)
+        0x01 -> 1x
+        0x10 -> 1.5x
+        0x11 -> auto
+      any other values are considered as undefined configurations.
