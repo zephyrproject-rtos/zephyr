@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Meta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Made-up devicetree to build intc_dw.c */
+
+ /{
+	soc {
+		dw_intc: dw_intc@7a000  {
+			compatible = "snps,designware-intc";
+			reg = <0x7a000 0xc00>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <6 0 0>;
+			num-irqs = <28>;
+			interrupt-parent = <&core_intc>;
+		};
+	};
+};

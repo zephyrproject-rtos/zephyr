@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt
+  filter: CONFIG_MULTI_LEVEL_INTERRUPTS and not CONFIG_LEGACY_MULTI_LEVEL_TABLE_GENERATION
+  arch_allow:
+    - riscv
+    - xtensa
+tests:
+  interrupt_controller.intc_multi_level_backend.default: {}
+  interrupt_controller.intc_multi_level_backend.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n
