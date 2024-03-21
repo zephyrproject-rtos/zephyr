@@ -33,9 +33,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_CONNECT_RESULT     |\
 				NET_EVENT_WIFI_DISCONNECT_RESULT  |  \
 				NET_EVENT_WIFI_TWT                |\
-				NET_EVENT_WIFI_RAW_SCAN_RESULT    |\
-				NET_EVENT_WIFI_AP_ENABLE_RESULT   |\
-				NET_EVENT_WIFI_AP_DISABLE_RESULT)
+				NET_EVENT_WIFI_RAW_SCAN_RESULT)
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 #define WIFI_SHELL_MGMT_EVENTS (WIFI_SHELL_MGMT_EVENTS_COMMON)
@@ -302,32 +300,6 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 	}
 }
 
-static void handle_wifi_ap_enable_result(struct net_mgmt_event_callback *cb)
-{
-	const struct wifi_status *status =
-		(const struct wifi_status *)cb->info;
-
-	if (status->status) {
-		print(context.sh, SHELL_WARNING,
-		      "AP enable request failed (%d)\n", status->status);
-	} else {
-		print(context.sh, SHELL_NORMAL, "AP enabled\n");
-	}
-}
-
-static void handle_wifi_ap_disable_result(struct net_mgmt_event_callback *cb)
-{
-	const struct wifi_status *status =
-		(const struct wifi_status *)cb->info;
-
-	if (status->status) {
-		print(context.sh, SHELL_WARNING,
-		      "AP disable request failed (%d)\n", status->status);
-	} else {
-		print(context.sh, SHELL_NORMAL, "AP disabled\n");
-	}
-}
-
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
@@ -352,12 +324,6 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		handle_wifi_raw_scan_result(cb);
 		break;
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
-	case NET_EVENT_WIFI_AP_ENABLE_RESULT:
-		handle_wifi_ap_enable_result(cb);
-		break;
-	case NET_EVENT_WIFI_AP_DISABLE_RESULT:
-		handle_wifi_ap_disable_result(cb);
-		break;
 	default:
 		break;
 	}
@@ -1146,7 +1112,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "AP mode enable requested\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode enabled\n");
 
 	return 0;
 }
@@ -1163,7 +1129,8 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "AP mode disable requested\n");
+	shell_fprintf(sh, SHELL_NORMAL, "AP mode disabled\n");
+
 	return 0;
 }
 
