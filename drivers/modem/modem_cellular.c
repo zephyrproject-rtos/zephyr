@@ -301,7 +301,7 @@ static void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, ui
 		return;
 	}
 
-	strncpy(data->imei, argv[1], sizeof(data->imei) - 1);
+	strncpy(data->imei, argv[1], sizeof(data->imei));
 }
 
 static void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
