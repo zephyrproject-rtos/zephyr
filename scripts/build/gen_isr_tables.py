@@ -358,10 +358,6 @@ def main():
 
     for irq, flags, func, param in intlist["interrupts"]:
         if flags & ISR_FLAG_DIRECT:
-            if not vt:
-                error("Direct Interrupt %d declared with parameter 0x%x "
-                      "but no vector table in use"
-                      % (irq, param))
             if param != 0:
                 error("Direct irq %d declared, but has non-NULL parameter"
                         % irq)
