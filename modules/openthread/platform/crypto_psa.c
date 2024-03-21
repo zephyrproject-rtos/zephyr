@@ -41,8 +41,6 @@ static psa_key_type_t toPsaKeyType(otCryptoKeyType aType)
 		return PSA_KEY_TYPE_AES;
 	case OT_CRYPTO_KEY_TYPE_HMAC:
 		return PSA_KEY_TYPE_HMAC;
-	case OT_CRYPTO_KEY_TYPE_ECDSA:
-		return PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
 	default:
 		return PSA_KEY_TYPE_NONE;
 	}
@@ -55,8 +53,6 @@ static psa_algorithm_t toPsaAlgorithm(otCryptoKeyAlgorithm aAlgorithm)
 		return PSA_ALG_ECB_NO_PADDING;
 	case OT_CRYPTO_KEY_ALG_HMAC_SHA_256:
 		return PSA_ALG_HMAC(PSA_ALG_SHA_256);
-	case OT_CRYPTO_KEY_ALG_ECDSA:
-		return PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256);
 	default:
 		/*
 		 * There is currently no constant like PSA_ALG_NONE, but 0 is used
@@ -86,10 +82,6 @@ static psa_key_usage_t toPsaKeyUsage(int aUsage)
 		usage |= PSA_KEY_USAGE_SIGN_HASH;
 	}
 
-	if (aUsage & OT_CRYPTO_KEY_USAGE_VERIFY_HASH) {
-		usage |= PSA_KEY_USAGE_VERIFY_HASH;
-	}
-
 	return usage;
 }
 
@@ -97,10 +89,9 @@ static bool checkKeyUsage(int aUsage)
 {
 	/* Check if only supported flags have been passed */
 	int supported_flags = OT_CRYPTO_KEY_USAGE_EXPORT |
-			      OT_CRYPTO_KEY_USAGE_ENCRYPT   |
-			      OT_CRYPTO_KEY_USAGE_DECRYPT   |
-			      OT_CRYPTO_KEY_USAGE_SIGN_HASH |
-				  OT_CRYPTO_KEY_USAGE_VERIFY_HASH;
+			      OT_CRYPTO_KEY_USAGE_ENCRYPT |
+			      OT_CRYPTO_KEY_USAGE_DECRYPT |
+			      OT_CRYPTO_KEY_USAGE_SIGN_HASH;
 
 	return (aUsage & ~supported_flags) == 0;
 }
