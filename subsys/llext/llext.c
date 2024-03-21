@@ -242,8 +242,7 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 		return 0;
 	}
 
-	if (ldr->sects[sect_idx].sh_type != SHT_NOBITS &&
-	    IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
+	if (ldr->sects[sect_idx].sh_type != SHT_NOBITS) {
 		ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[sect_idx].sh_offset);
 		if (ext->mem[mem_idx]) {
 			ext->mem_on_heap[mem_idx] = false;

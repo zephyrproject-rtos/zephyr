@@ -10,10 +10,7 @@
 #include <zephyr/llext/buf_loader.h>
 
 #if defined(CONFIG_ARM) /* ARMV7 */ || defined(CONFIG_XTENSA)
-#ifndef CONFIG_LLEXT_STORAGE_WRITABLE
-const
-#endif
-static uint8_t hello_world_elf[] __aligned(4) = {
+const static uint8_t hello_world_elf[] __aligned(4) = {
 #include "hello_world.inc"
 };
 #endif
