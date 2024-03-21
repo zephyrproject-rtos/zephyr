@@ -65,6 +65,18 @@
 	status = "okay";
 };
 
+&edma0 {
+	status = "okay";
+};
+
+&flexcomm1 {
+	status = "okay";
+};
+
+&flexcomm1_lpspi1 {
+	status = "okay";
+};
+
 &flexcomm4 {
 	status = "okay";
 };

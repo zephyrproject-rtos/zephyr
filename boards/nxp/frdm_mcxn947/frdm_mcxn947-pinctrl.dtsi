@@ -7,6 +7,18 @@
 #include <nxp/mcx/MCXN947VDF-pinctrl.h>
 
 &pinctrl {
+	pinmux_flexcomm1_lpspi: pinmux_flexcomm1_lpspi {
+		group0 {
+			pinmux = <FC1_P0_PIO0_24>,
+				<FC1_P1_PIO0_25>,
+				<FC1_P2_PIO0_26>,
+				<FC1_P3_PIO0_27>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexcomm4_lpuart: pinmux_flexcomm4_lpuart {
 		group0 {
 			pinmux = <FC4_P0_PIO1_8>,
