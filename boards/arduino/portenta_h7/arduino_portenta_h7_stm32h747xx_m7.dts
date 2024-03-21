@@ -29,6 +29,14 @@
 		regulator-boot-on;
 		status = "okay";
 	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xc0000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
 };
 
 &clk_hse {
@@ -55,7 +63,7 @@
 /** The power supply for the Portenta H7 is based on a ST PSU reference design.
  *  The design specification from this reference design limits the maximum
  *  clock speed to 400 MHz.
- *	Refer: section 8.1 of the reference design guide.
+ *        Refer: section 8.1 of the reference design guide.
  */
 
 &rcc {
