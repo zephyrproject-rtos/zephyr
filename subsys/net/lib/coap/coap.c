@@ -1553,7 +1553,7 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
 		      const struct sockaddr *addr,
-		      const struct coap_transmission_parameters *params)
+		      uint8_t retries)
 {
 	memset(pending, 0, sizeof(*pending));
 
@@ -1561,16 +1561,10 @@ int coap_pending_init(struct coap_pending *pending,
 
 	memcpy(&pending->addr, addr, sizeof(*addr));
 
-	if (params) {
-		pending->params = *params;
-	} else {
-		pending->params = coap_transmission_params;
-	}
-
 	pending->data = request->data;
 	pending->len = request->offset;
 	pending->t0 = k_uptime_get();
-	pending->retries = pending->params.max_retransmission;
+	pending->retries = retries;
 
 	return 0;
 }
@@ -1682,12 +1676,12 @@ struct coap_pending *coap_pending_next_to_expire(
 	return found;
 }
 
-static uint32_t init_ack_timeout(const struct coap_transmission_parameters *params)
+static uint32_t init_ack_timeout(void)
 {
 #if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT)
-	const uint32_t max_ack = params->ack_timeout *
+	const uint32_t max_ack = coap_transmission_params.ack_timeout *
 				 CONFIG_COAP_ACK_RANDOM_PERCENT / 100;
-	const uint32_t min_ack = params->ack_timeout;
+	const uint32_t min_ack = coap_transmission_params.ack_timeout;
 
 	/* Randomly generated initial ACK timeout
 	 * ACK_TIMEOUT < INIT_ACK_TIMEOUT < ACK_TIMEOUT * ACK_RANDOM_FACTOR
@@ -1695,7 +1689,7 @@ static uint32_t init_ack_timeout(const struct coap_transmission_parameters *para
 	 */
 	return min_ack + (sys_rand32_get() % (max_ack - min_ack));
 #else
-	return params->ack_timeout;
+	return coap_transmission_params.ack_timeout;
 #endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
 }
 
@@ -1703,7 +1697,8 @@ bool coap_pending_cycle(struct coap_pending *pending)
 {
 	if (pending->timeout == 0) {
 		/* Initial transmission. */
-		pending->timeout = init_ack_timeout(&pending->params);
+		pending->timeout = init_ack_timeout();
+
 		return true;
 	}
 
@@ -1712,7 +1707,7 @@ bool coap_pending_cycle(struct coap_pending *pending)
 	}
 
 	pending->t0 += pending->timeout;
-	pending->timeout = pending->timeout * pending->params.coap_backoff_percent / 100;
+	pending->timeout = pending->timeout * coap_transmission_params.coap_backoff_percent / 100;
 	pending->retries--;
 
 	return true;

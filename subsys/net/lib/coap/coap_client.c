@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define COAP_VERSION 1
 #define COAP_SEPARATE_TIMEOUT 6000
 #define COAP_PERIODIC_TIMEOUT 500
+#define DEFAULT_RETRY_AMOUNT 5
 #define BLOCK1_OPTION_SIZE 4
 #define PAYLOAD_MARKER_SIZE 1
 
@@ -59,6 +60,7 @@ static void reset_internal_request(struct coap_client_internal_request *request)
 {
 	request->offset = 0;
 	request->last_id = 0;
+	request->retry_count = 0;
 	reset_block_contexts(request);
 }
 
@@ -275,7 +277,7 @@ out:
 }
 
 int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
-		    struct coap_client_request *req, struct coap_transmission_parameters *params)
+		    struct coap_client_request *req, int retries)
 {
 	int ret;
 
@@ -350,8 +352,14 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 	/* only TYPE_CON messages need pending tracking */
 	if (coap_header_get_type(&internal_req->request) == COAP_TYPE_CON) {
+		if (retries == -1) {
+			internal_req->retry_count = DEFAULT_RETRY_AMOUNT;
+		} else {
+			internal_req->retry_count = retries;
+		}
+
 		ret = coap_pending_init(&internal_req->pending, &internal_req->request,
-					&client->address, params);
+					&client->address, internal_req->retry_count);
 
 		if (ret < 0) {
 			LOG_ERR("Failed to initialize pending struct");
@@ -684,11 +692,9 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			}
 
 			if (coap_header_get_type(&internal_req->request) == COAP_TYPE_CON) {
-				struct coap_transmission_parameters params =
-					internal_req->pending.params;
 				ret = coap_pending_init(&internal_req->pending,
 							&internal_req->request, &client->address,
-							&params);
+							internal_req->retry_count);
 				if (ret < 0) {
 					LOG_ERR("Error creating pending");
 					k_mutex_unlock(&client->send_mutex);
@@ -787,9 +793,8 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			goto fail;
 		}
 
-		struct coap_transmission_parameters params = internal_req->pending.params;
 		ret = coap_pending_init(&internal_req->pending, &internal_req->request,
-					&client->address, &params);
+					&client->address, internal_req->retry_count);
 		if (ret < 0) {
 			LOG_ERR("Error creating pending");
 			k_mutex_unlock(&client->send_mutex);
