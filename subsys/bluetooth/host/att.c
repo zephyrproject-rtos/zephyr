@@ -3007,40 +3007,13 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op, size_t len)
 {
-	size_t headroom;
-	struct bt_att_hdr *hdr;
-	struct bt_att_tx_meta_data *data;
-	struct net_buf *buf;
-
-	ARG_UNUSED(len);
-
-	buf = bt_l2cap_create_pdu_timeout(NULL, 0, BT_ATT_TIMEOUT);
-	if (!buf) {
-		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
+	if (len + sizeof(op) > bt_att_mtu(chan)) {
+		LOG_WRN("ATT channel %p MTU too small for RSP (%u < %u)",
+			chan, bt_att_mtu(chan), len + sizeof(op));
 		return NULL;
 	}
 
-	headroom = BT_L2CAP_BUF_SIZE(0);
-
-	if (bt_att_is_enhanced(chan)) {
-		headroom += BT_L2CAP_SDU_HDR_SIZE;
-	}
-
-	net_buf_reserve(buf, headroom);
-
-	data = tx_meta_data_alloc(BT_ATT_TIMEOUT);
-	if (!data) {
-		LOG_WRN("Unable to allocate ATT TX meta");
-		net_buf_unref(buf);
-		return NULL;
-	}
-	data->att_chan = chan;
-	bt_att_tx_meta_data(buf) = data;
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = op;
-
-	return buf;
+	return bt_att_chan_create_pdu(chan, op, len);
 }
 
 static void att_reset(struct bt_att *att)
