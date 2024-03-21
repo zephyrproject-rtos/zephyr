@@ -135,6 +135,8 @@ __subsystem struct mipi_dbi_driver_api {
 			     struct display_buffer_descriptor *desc,
 			     enum display_pixel_format pixfmt);
 	int (*reset)(const struct device *dev, uint32_t delay);
+	int (*release)(const struct device *dev,
+		       const struct mipi_dbi_config *config);
 };
 
 /**
@@ -142,7 +144,9 @@ __subsystem struct mipi_dbi_driver_api {
  *
  * Writes a command, along with an optional data buffer to the display.
  * If data buffer and buffer length are NULL and 0 respectively, then
- * only a command will be sent.
+ * only a command will be sent. Note that if the SPI configuration passed
+ * to this function locks the SPI bus, it is the caller's responsibility
+ * to release it with mipi_dbi_release()
  *
  * @param dev mipi dbi controller
  * @param config MIPI DBI configuration
@@ -254,6 +258,31 @@ static inline int mipi_dbi_reset(const struct device *dev, uint32_t delay)
 		return -ENOSYS;
 	}
 	return api->reset(dev, delay);
+}
+
+/**
+ * @brief Releases a locked MIPI DBI device.
+ *
+ * Releases a lock on a MIPI DBI device and/or the device's CS line if and
+ * only if the given config parameter was the last one to be used in any
+ * of the above functions, and if it has the SPI_LOCK_ON bit set and/or
+ * the SPI_HOLD_ON_CS bit set into its operation bits field.
+ * This lock functions exactly like the SPI lock, and can be used if the caller
+ * needs to keep CS asserted for multiple transactions, or the MIPI DBI device
+ * locked.
+ * @param dev mipi dbi controller
+ * @param config MIPI DBI configuration
+ */
+static inline int mipi_dbi_release(const struct device *dev,
+				   const struct mipi_dbi_config *config)
+{
+	const struct mipi_dbi_driver_api *api =
+		(const struct mipi_dbi_driver_api *)dev->api;
+
+	if (api->release == NULL) {
+		return -ENOSYS;
+	}
+	return api->release(dev, config);
 }
 
 #ifdef __cplusplus
