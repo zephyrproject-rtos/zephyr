@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8ulp.dtsi>
+#include "imx8ulp_evk_mimx8ud7_adsp-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX 8ULP Audio DSP";
