@@ -67,6 +67,9 @@ comment "hal_nordic module not available."
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
 
+comment "libsbc module not available."
+	depends on !ZEPHYR_LIBSBC_MODULE
+
 comment "LittleFS module not available."
 	depends on !ZEPHYR_LITTLEFS_MODULE
 
