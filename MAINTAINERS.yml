@@ -2960,12 +2960,13 @@ Twister:
   maintainers:
     - nashif
   collaborators:
-    - galak
     - PerMac
     - hakehuang
     - gopiotr
     - golowanow
     - gchwier
+    - LukaszMrugala
+    - KamilxPaszkiet
   files:
     - scripts/twister
     - scripts/schemas/twister/
