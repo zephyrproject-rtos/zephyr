@@ -908,8 +908,8 @@ static uint8_t tbs_remote_incoming(const void *cmd, uint16_t cmd_len, void *rsp,
 
 	LOG_DBG("");
 
-	if ((cp->recv_len >= sizeof(recv_uri) || cp->caller_len >= sizeof(caller_uri)) ||
-	     cp->fn_len >= sizeof(friendly_name)) {
+	if (cp->recv_len >= sizeof(recv_uri) || cp->caller_len >= sizeof(caller_uri) ||
+	    cp->fn_len >= sizeof(friendly_name)) {
 		return BTP_STATUS_FAILED;
 	}
 
