@@ -1043,11 +1043,9 @@ static void rx_timeout(struct k_timer *timer)
 			(data->async->rx_timeout_left
 				< data->async->rx_timeout_slab)) {
 			/* rx_timeout us elapsed since last receiving */
-			if (data->async->rx_buf != NULL) {
-				notify_uart_rx_rdy(dev, len);
-				data->async->rx_offset += len;
-				data->async->rx_total_user_byte_cnt += len;
-			}
+			notify_uart_rx_rdy(dev, len);
+			data->async->rx_offset += len;
+			data->async->rx_total_user_byte_cnt += len;
 		} else {
 			data->async->rx_timeout_left -=
 				data->async->rx_timeout_slab;
