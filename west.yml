@@ -301,7 +301,7 @@ manifest:
       revision: 214f9fc1539f8e5937c0474cb6ee29b6dcb2d4b8
       path: modules/lib/open-amp
     - name: openthread
-      revision: 7761b81d23b10b3d5ee21b8504c67535cde10896
+      revision: 00076aff3ae571db7c90509ec9dc293457098c35
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
