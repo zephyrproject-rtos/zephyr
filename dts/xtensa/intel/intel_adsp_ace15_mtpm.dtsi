@@ -48,8 +48,9 @@
 			d3: off {
 				compatible = "zephyr,power-state";
 				power-state-name = "soft-off";
-				min-residency-us = <2147483647>;
+				min-residency-us = <0>;
 				exit-latency-us = <0>;
+				status = "disabled";
 			};
 		};
 	};
