@@ -519,7 +519,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 	 * we need to allocate new data and make a copy.
 	 */
 	if (pool->alloc->cb->ref && !(buf->flags & NET_BUF_EXTERNAL_DATA)) {
-		clone->__buf = data_ref(buf, buf->__buf);
+		clone->__buf = buf->__buf ? data_ref(buf, buf->__buf) : NULL;
 		clone->data = buf->data;
 		clone->len = buf->len;
 		clone->size = buf->size;
