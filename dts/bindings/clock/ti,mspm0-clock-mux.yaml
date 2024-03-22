@@ -1,0 +1,43 @@
+# Copyright (c) 2024 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 Clock Mux
+
+compatible: "ti,mspm0-clock-mux"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  uclk-div:
+    type: int
+    default: 1
+    description: |
+      Divider from MCLK (system clock) to ULPCLK (low power clock). ULPCLK must
+      be less than or equal to 40 MHz. Valid value is 1 when sourced from SYSOSC
+      or LFOSC. Valid values are 1 or 2 when sourced from a high speed clock
+      (such as PLL or external clock).
+
+  mclk-div:
+    type: int
+    default: 1
+    description: |
+      Divider for MCLK (system clock) only when source with SYSOSC with a
+      frequency value of 4 MHz. Disabled otherwise. Valid values are 1-16.
+
+  clock-source:
+    type: phandle
+    required: true
+    description: |
+      Clock Source for the system clock
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+clock-cells:
+  - bus
