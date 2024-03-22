@@ -385,7 +385,7 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 	ticks = counter_us_to_ticks(dev, counter_period_us);
 	top_cfg.ticks = ticks;
 
-	cntr_alarm_cfg.flags = 0;
+	cntr_alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
 	cntr_alarm_cfg.callback = alarm_handler;
 	cntr_alarm_cfg.user_data = &cntr_alarm_cfg;
 
