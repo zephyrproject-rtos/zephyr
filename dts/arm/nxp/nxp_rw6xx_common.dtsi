@@ -108,6 +108,15 @@
 		int-source = "pint";
 	};
 
+	usb_otg: usbotg@145000 {
+		compatible = "nxp,ehci";
+		reg = <0x145000 0x200>;
+		interrupts = <50 1>;
+		interrupt-names = "usb_otg";
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
 	flexcomm0: flexcomm@106000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x106000 0x1000>;
