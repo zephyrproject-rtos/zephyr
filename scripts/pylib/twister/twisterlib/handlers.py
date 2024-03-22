@@ -511,6 +511,9 @@ class DeviceHandler(Handler):
                     elif runner == "openocd" and product == "EDBG CMSIS-DAP":
                         command_extra_args.append("--cmd-pre-init")
                         command_extra_args.append("cmsis_dap_serial %s" % board_id)
+                    elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
+                        command_extra_args.append("--cmd-pre-init")
+                        command_extra_args.append("adapter serial %s" % board_id)
                     elif runner == "jlink":
                         command.append("--tool-opt=-SelectEmuBySN  %s" % board_id)
                     elif runner == "linkserver":
