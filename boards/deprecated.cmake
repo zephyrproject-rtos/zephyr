@@ -446,6 +446,12 @@ set(nrf5340_audio_dk_nrf5340_cpuapp_ns_DEPRECATED
 set(nrf5340_audio_dk_nrf5340_cpunet_DEPRECATED
     nrf5340_audio_dk/nrf5340/cpunet
 )
+set(nrf5340bsim_nrf5340_cpuapp_DEPRECATED
+    nrf5340bsim/nrf5340/cpuapp
+)
+set(nrf5340bsim_nrf5340_cpunet_DEPRECATED
+    nrf5340bsim/nrf5340/cpunet
+)
 set(nrf5340dk_nrf5340_cpuapp_DEPRECATED
     nrf5340dk/nrf5340/cpuapp
 )
