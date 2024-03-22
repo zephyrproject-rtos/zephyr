@@ -47,6 +47,13 @@
 				reg = <0x2>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_ov5640: ov5640@3 {
+				compatible = "ovti,ov5640";
+				reg = <0x3>;
+				reset-gpios = <&test_gpio 0 0>;
+				powerdown-gpios = <&test_gpio 1 0>;
+			};
 		};
 	};
 };

@@ -3,10 +3,20 @@ sample:
 tests:
   sample.video.capture:
     build_only: true
-    tags: video
+    tags:
+      - video
+      - shield
+      - samples
+    depends_on:
+      - video
+    extra_args:
+      - platform:mimxrt1064_evk:SHIELD=huatian_mt9m114
+      - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD="wuxi_ov5640;rk055hdmipi4m"
+      - platform:mimxrt1170_evk/mimxrt1176/cm7:CONF_FILE="boards/nxp_rt11xx.conf"
     platform_allow:
       - mimxrt1064_evk
+      - mimxrt1170_evk/mimxrt1176/cm7
       - mm_swiftio
-    depends_on: video
     integration_platforms:
       - mimxrt1064_evk
+      - mimxrt1170_evk/mimxrt1176/cm7

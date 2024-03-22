@@ -14,7 +14,8 @@ properties:
   interrupts:
     required: true
 
-  sensor:
+  sdev:
     required: true
     type: phandle
-    description: phandle of connected sensor device
+    description: phandle of the connected source device,
+      e.g., a mipi csi or a camera sensor
