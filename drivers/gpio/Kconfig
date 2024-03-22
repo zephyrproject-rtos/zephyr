@@ -121,6 +121,8 @@ source "drivers/gpio/Kconfig.cc13xx_cc26xx"
 
 source "drivers/gpio/Kconfig.cc32xx"
 
+source "drivers/gpio/Kconfig.mspm0"
+
 source "drivers/gpio/Kconfig.sifive"
 
 source "drivers/gpio/Kconfig.esp32"
