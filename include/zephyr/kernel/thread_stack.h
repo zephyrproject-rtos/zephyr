@@ -18,8 +18,8 @@
  * @}
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_THREAD_STACK_H
-#define ZEPHYR_INCLUDE_SYS_THREAD_STACK_H
+#ifndef ZEPHYR_INCLUDE_KERNEL_THREAD_STACK_H
+#define ZEPHYR_INCLUDE_KERNEL_THREAD_STACK_H
 
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/arch/cpu.h>
@@ -662,4 +662,4 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 #endif
 
 #endif /* _ASMLANGUAGE */
-#endif /* ZEPHYR_INCLUDE_SYS_THREAD_STACK_H */
+#endif /* ZEPHYR_INCLUDE_KERNEL_THREAD_STACK_H */
