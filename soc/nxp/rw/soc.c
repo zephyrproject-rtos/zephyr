@@ -243,6 +243,17 @@ __ramfunc void clock_init(void)
 	RESET_PeripheralReset(kFREEMRT_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb_otg), okay) && CONFIG_USB_DC_NXP_EHCI
+	/* Enable system xtal from Analog */
+	SYSCTL2->ANA_GRP_CTRL |= SYSCTL2_ANA_GRP_CTRL_PU_AG_MASK;
+	/* reset USB */
+	RESET_PeripheralReset(kUSB_RST_SHIFT_RSTn);
+	/* enable usb clock */
+	CLOCK_EnableClock(kCLOCK_Usb);
+	/* enable usb phy clock */
+	CLOCK_EnableUsbhsPhyClock();
+#endif
+
 }
 
 /**
