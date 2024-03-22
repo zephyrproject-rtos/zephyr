@@ -123,7 +123,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_STACK_DECLARE(sym, size) \
 	extern struct z_thread_stack_element \
-		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+		sym[K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a thread stack array
@@ -175,7 +175,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_DEFINE_IN(sym, size, lsect) \
 	struct z_thread_stack_element lsect \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+		sym[K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel array of kernel stack memory regions in specified section
