@@ -483,18 +483,20 @@ skip_ipv4:
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_DHCPV4)
-	PR("DHCPv4 lease time : %u\n",
-	   iface->config.dhcpv4.lease_time);
-	PR("DHCPv4 renew time : %u\n",
-	   iface->config.dhcpv4.renewal_time);
-	PR("DHCPv4 server     : %s\n",
-	   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
-	PR("DHCPv4 requested  : %s\n",
-	   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
-	PR("DHCPv4 state      : %s\n",
-	   net_dhcpv4_state_name(iface->config.dhcpv4.state));
-	PR("DHCPv4 attempts   : %d\n",
-	   iface->config.dhcpv4.attempts);
+	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		PR("DHCPv4 lease time : %u\n",
+		   iface->config.dhcpv4.lease_time);
+		PR("DHCPv4 renew time : %u\n",
+		   iface->config.dhcpv4.renewal_time);
+		PR("DHCPv4 server     : %s\n",
+		   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
+		PR("DHCPv4 requested  : %s\n",
+		   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
+		PR("DHCPv4 state      : %s\n",
+		   net_dhcpv4_state_name(iface->config.dhcpv4.state));
+		PR("DHCPv4 attempts   : %d\n",
+		   iface->config.dhcpv4.attempts);
+	}
 #endif /* CONFIG_NET_DHCPV4 */
 
 #else
