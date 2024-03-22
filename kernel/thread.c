@@ -385,7 +385,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 #ifdef CONFIG_USERSPACE
 	if (z_stack_is_user_capable(stack)) {
 		stack_obj_size = Z_THREAD_STACK_SIZE_ADJUST(stack_size);
-		stack_buf_start = Z_THREAD_STACK_BUFFER(stack);
+		stack_buf_start = K_THREAD_STACK_BUFFER(stack);
 		stack_buf_size = stack_obj_size - K_THREAD_STACK_RESERVED;
 	} else
 #endif /* CONFIG_USERSPACE */

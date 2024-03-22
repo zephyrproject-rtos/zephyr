@@ -114,7 +114,7 @@ void stack_buffer_scenarios(void)
 #ifdef CONFIG_USERSPACE
 	if (scenario_data.is_user) {
 		reserved = K_THREAD_STACK_RESERVED;
-		stack_buf = Z_THREAD_STACK_BUFFER(stack_obj);
+		stack_buf = K_THREAD_STACK_BUFFER(stack_obj);
 		/* always use the original size here */
 		alignment = Z_THREAD_STACK_OBJ_ALIGN(STEST_STACKSIZE);
 	} else
