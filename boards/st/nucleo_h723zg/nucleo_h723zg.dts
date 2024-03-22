@@ -160,15 +160,25 @@
 &mac {
 	status = "okay";
 	pinctrl-0 = <&eth_ref_clk_pa1
-		     &eth_mdio_pa2
 		     &eth_crs_dv_pa7
-		     &eth_mdc_pc1
 		     &eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
 	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
 };
 
 zephyr_udc0: &usbotg_hs {
