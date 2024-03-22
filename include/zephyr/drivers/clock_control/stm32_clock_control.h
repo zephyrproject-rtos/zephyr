@@ -53,6 +53,8 @@
 #include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/clock/stm32h7rs_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32N6X)
+#include <zephyr/dt-bindings/clock/stm32n6_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U0X)
 #include <zephyr/dt-bindings/clock/stm32u0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -72,6 +74,7 @@
 #define STM32_APB1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb1_prescaler)
 #define STM32_APB2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 #define STM32_APB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb3_prescaler)
+#define STM32_APB4_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb4_prescaler)
 #define STM32_APB5_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb5_prescaler)
 #define STM32_APB7_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb7_prescaler)
 #define STM32_AHB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
@@ -140,6 +143,9 @@
 #endif
 #if DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_csi))
 #define STM32_SYSCLK_SRC_CSI	1
+#endif
+#if DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(ic2))
+#define STM32_SYSCLK_SRC_IC2	1
 #endif
 
 
@@ -252,6 +258,38 @@
 #define STM32_PLL2_PREDIV	DT_PROP(DT_NODELABEL(pll2), prediv)
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll1), st_stm32n6_pll_clock, okay)
+#define STM32_PLL1_ENABLED	1
+#define STM32_PLL1_M_DIVISOR	DT_PROP(DT_NODELABEL(pll1), div_m)
+#define STM32_PLL1_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pll1), mul_n)
+#define STM32_PLL1_P1_DIVISOR	DT_PROP(DT_NODELABEL(pll1), div_p1)
+#define STM32_PLL1_P2_DIVISOR	DT_PROP(DT_NODELABEL(pll1), div_p2)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32n6_pll_clock, okay)
+#define STM32_PLL2_ENABLED	1
+#define STM32_PLL2_M_DIVISOR	DT_PROP(DT_NODELABEL(pll2), div_m)
+#define STM32_PLL2_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pll2), mul_n)
+#define STM32_PLL2_P1_DIVISOR	DT_PROP(DT_NODELABEL(pll2), div_p1)
+#define STM32_PLL2_P2_DIVISOR	DT_PROP(DT_NODELABEL(pll2), div_p2)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll3), st_stm32n6_pll_clock, okay)
+#define STM32_PLL3_ENABLED	1
+#define STM32_PLL3_M_DIVISOR	DT_PROP(DT_NODELABEL(pll3), div_m)
+#define STM32_PLL3_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pll3), mul_n)
+#define STM32_PLL3_P1_DIVISOR	DT_PROP(DT_NODELABEL(pll3), div_p1)
+#define STM32_PLL3_P2_DIVISOR	DT_PROP(DT_NODELABEL(pll3), div_p2)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll4), st_stm32n6_pll_clock, okay)
+#define STM32_PLL4_ENABLED	1
+#define STM32_PLL4_M_DIVISOR	DT_PROP(DT_NODELABEL(pll4), div_m)
+#define STM32_PLL4_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pll4), mul_n)
+#define STM32_PLL4_P1_DIVISOR	DT_PROP(DT_NODELABEL(pll4), div_p1)
+#define STM32_PLL4_P2_DIVISOR	DT_PROP(DT_NODELABEL(pll4), div_p2)
+#endif
+
 /** PLL/PLL1 clock source */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)
@@ -281,6 +319,9 @@
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll2)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll2), clocks)
 #define DT_PLL2_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pll2))
+#if DT_SAME_NODE(DT_PLL2_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
+#define STM32_PLL2_SRC_MSI	1
+#endif
 #if DT_SAME_NODE(DT_PLL2_CLOCKS_CTRL, DT_NODELABEL(clk_msis))
 #define STM32_PLL2_SRC_MSIS	1
 #endif
@@ -297,6 +338,9 @@
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll3)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll3), clocks)
 #define DT_PLL3_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pll3))
+#if DT_SAME_NODE(DT_PLL3_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
+#define STM32_PLL3_SRC_MSI	1
+#endif
 #if DT_SAME_NODE(DT_PLL3_CLOCKS_CTRL, DT_NODELABEL(clk_msis))
 #define STM32_PLL3_SRC_MSIS	1
 #endif
@@ -305,6 +349,22 @@
 #endif
 #if DT_SAME_NODE(DT_PLL3_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
 #define STM32_PLL3_SRC_HSE	1
+#endif
+
+#endif
+
+/** PLL4 clock source */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pll4), okay) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(pll4), clocks)
+#define DT_PLL4_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pll4))
+#if DT_SAME_NODE(DT_PLL4_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
+#define STM32_PLL4_SRC_MSI	1
+#endif
+#if DT_SAME_NODE(DT_PLL4_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
+#define STM32_PLL4_SRC_HSI	1
+#endif
+#if DT_SAME_NODE(DT_PLL4_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
+#define STM32_PLL4_SRC_HSE	1
 #endif
 
 #endif
@@ -414,6 +474,11 @@
 #define STM32_HSE_ENABLED	1
 #define STM32_HSE_DIV2		DT_PROP(DT_NODELABEL(clk_hse), hse_div2)
 #define STM32_HSE_FREQ		DT_PROP(DT_NODELABEL(clk_hse), clock_frequency)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32n6_hse_clock, okay)
+#define STM32_HSE_ENABLED	1
+#define STM32_HSE_BYPASS	DT_PROP(DT_NODELABEL(clk_hse), hse_bypass)
+#define STM32_HSE_DIV2		DT_PROP(DT_NODELABEL(clk_hse), hse_div2)
+#define STM32_HSE_FREQ		DT_PROP(DT_NODELABEL(clk_hse), clock_frequency)
 #else
 #define STM32_HSE_FREQ		0
 #endif
@@ -429,6 +494,130 @@
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(perck), st_stm32_clock_mux, okay)
 #define STM32_CKPER_ENABLED	1
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(cpusw), st_stm32_clock_mux, okay)
+#define STM32_CPUSW_ENABLED	1
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic1), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC1_ENABLED	1
+#define STM32_IC1_PLL_SRC	DT_PROP(DT_NODELABEL(ic1), pll_src)
+#define STM32_IC1_DIV		DT_PROP(DT_NODELABEL(ic1), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic2), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC2_ENABLED	1
+#define STM32_IC2_PLL_SRC	DT_PROP(DT_NODELABEL(ic2), pll_src)
+#define STM32_IC2_DIV		DT_PROP(DT_NODELABEL(ic2), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic3), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC3_ENABLED	1
+#define STM32_IC3_PLL_SRC	DT_PROP(DT_NODELABEL(ic3), pll_src)
+#define STM32_IC3_DIV		DT_PROP(DT_NODELABEL(ic3), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic4), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC4_ENABLED	1
+#define STM32_IC4_PLL_SRC	DT_PROP(DT_NODELABEL(ic4), pll_src)
+#define STM32_IC4_DIV		DT_PROP(DT_NODELABEL(ic4), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic5), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC5_ENABLED	1
+#define STM32_IC5_PLL_SRC	DT_PROP(DT_NODELABEL(ic5), pll_src)
+#define STM32_IC5_DIV		DT_PROP(DT_NODELABEL(ic5), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic6), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC6_ENABLED	1
+#define STM32_IC6_PLL_SRC	DT_PROP(DT_NODELABEL(ic6), pll_src)
+#define STM32_IC6_DIV		DT_PROP(DT_NODELABEL(ic6), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic7), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC7_ENABLED	1
+#define STM32_IC7_PLL_SRC	DT_PROP(DT_NODELABEL(ic7), pll_src)
+#define STM32_IC7_DIV		DT_PROP(DT_NODELABEL(ic7), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic8), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC8_ENABLED	1
+#define STM32_IC8_PLL_SRC	DT_PROP(DT_NODELABEL(ic8), pll_src)
+#define STM32_IC8_DIV		DT_PROP(DT_NODELABEL(ic8), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic9), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC9_ENABLED	1
+#define STM32_IC9_PLL_SRC	DT_PROP(DT_NODELABEL(ic9), pll_src)
+#define STM32_IC9_DIV		DT_PROP(DT_NODELABEL(ic9), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic10), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC10_ENABLED	1
+#define STM32_IC10_PLL_SRC	DT_PROP(DT_NODELABEL(ic10), pll_src)
+#define STM32_IC10_DIV		DT_PROP(DT_NODELABEL(ic10), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic11), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC11_ENABLED	1
+#define STM32_IC11_PLL_SRC	DT_PROP(DT_NODELABEL(ic11), pll_src)
+#define STM32_IC11_DIV		DT_PROP(DT_NODELABEL(ic11), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic12), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC12_ENABLED	1
+#define STM32_IC12_PLL_SRC	DT_PROP(DT_NODELABEL(ic12), pll_src)
+#define STM32_IC12_DIV		DT_PROP(DT_NODELABEL(ic12), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic13), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC13_ENABLED	1
+#define STM32_IC13_PLL_SRC	DT_PROP(DT_NODELABEL(ic13), pll_src)
+#define STM32_IC13_DIV		DT_PROP(DT_NODELABEL(ic13), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic14), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC14_ENABLED	1
+#define STM32_IC14_PLL_SRC	DT_PROP(DT_NODELABEL(ic14), pll_src)
+#define STM32_IC14_DIV		DT_PROP(DT_NODELABEL(ic14), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic15), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC15_ENABLED	1
+#define STM32_IC15_PLL_SRC	DT_PROP(DT_NODELABEL(ic15), pll_src)
+#define STM32_IC15_DIV		DT_PROP(DT_NODELABEL(ic15), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic16), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC16_ENABLED	1
+#define STM32_IC16_PLL_SRC	DT_PROP(DT_NODELABEL(ic16), pll_src)
+#define STM32_IC16_DIV		DT_PROP(DT_NODELABEL(ic16), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic17), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC17_ENABLED	1
+#define STM32_IC17_PLL_SRC	DT_PROP(DT_NODELABEL(ic17), pll_src)
+#define STM32_IC17_DIV		DT_PROP(DT_NODELABEL(ic17), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic18), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC18_ENABLED	1
+#define STM32_IC18_PLL_SRC	DT_PROP(DT_NODELABEL(ic18), pll_src)
+#define STM32_IC18_DIV		DT_PROP(DT_NODELABEL(ic18), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic19), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC19_ENABLED	1
+#define STM32_IC19_PLL_SRC	DT_PROP(DT_NODELABEL(ic19), pll_src)
+#define STM32_IC19_DIV		DT_PROP(DT_NODELABEL(ic19), ic_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ic20), st_stm32n6_ic_clock_mux, okay)
+#define STM32_IC20_ENABLED	1
+#define STM32_IC20_PLL_SRC	DT_PROP(DT_NODELABEL(ic20), pll_src)
+#define STM32_IC20_DIV		DT_PROP(DT_NODELABEL(ic20), ic_div)
 #endif
 
 /** Driver structure definition */
