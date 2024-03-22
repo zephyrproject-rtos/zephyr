@@ -1,0 +1,21 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32N6 HSE Clock
+
+compatible: "st,stm32n6-hse-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hse-bypass:
+    type: boolean
+    description: |
+      HSE crystal oscillator bypass
+      Set to the property to by-pass the oscillator with an external clock.
+
+  hse-div2:
+    type: boolean
+    description: |
+      When set HSE output clock is divided by 2.
+      Otherwise, no prescaler is used.
