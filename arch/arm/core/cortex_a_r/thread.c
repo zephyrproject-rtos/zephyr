@@ -14,6 +14,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/llext/symbol.h>
 #include <ksched.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
@@ -247,7 +248,7 @@ bool z_arm_thread_is_in_user_mode(void)
 	value = __get_CPSR();
 	return ((value & CPSR_M_Msk) == CPSR_M_USR);
 }
-
+EXPORT_SYMBOL(z_arm_thread_is_in_user_mode);
 #endif
 
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
