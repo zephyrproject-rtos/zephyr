@@ -209,7 +209,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	_kernel.cpus[0].irq_stack = (K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]) +
 				     K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
 
-	main_stack = (Z_THREAD_STACK_BUFFER(z_main_stack) +
+	main_stack = (K_THREAD_STACK_BUFFER(z_main_stack) +
 		      K_THREAD_STACK_SIZEOF(z_main_stack));
 
 	__asm__ volatile (
