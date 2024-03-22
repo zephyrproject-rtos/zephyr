@@ -294,7 +294,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_DEFINE		K_KERNEL_STACK_DEFINE
 #define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
 #define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
-#define Z_THREAD_STACK_BUFFER		K_KERNEL_STACK_BUFFER
+#define K_THREAD_STACK_BUFFER		K_KERNEL_STACK_BUFFER
 #define K_THREAD_STACK_DECLARE		K_KERNEL_STACK_DECLARE
 #define K_THREAD_STACK_ARRAY_DECLARE	K_KERNEL_STACK_ARRAY_DECLARE
 #define K_THREAD_PINNED_STACK_DEFINE	K_KERNEL_PINNED_STACK_DEFINE
@@ -650,7 +650,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param sym defined stack symbol name
  * @return The buffer itself, a char *
  */
-static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
+static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym + K_THREAD_STACK_RESERVED;
 }
