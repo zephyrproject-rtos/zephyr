@@ -28,7 +28,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_trinket_m0 board configuration supports the following hardware
+The adafruit_trinket_m0/samd21e18a board configuration supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+
@@ -118,7 +118,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_trinket_m0
+      :board: adafruit_trinket_m0/samd21e18a
       :goals: build
       :compact:
 
@@ -149,7 +149,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_trinket_m0
+      :board: adafruit_trinket_m0/samd21e18a
       :goals: flash
       :compact:
 

@@ -67,7 +67,7 @@ More information about STM32F072RB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f072b_disco board configuration supports the following hardware
+The Zephyr stm32f072b_disco/stm32f072xb board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -144,7 +144,7 @@ is assigned to UART 1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f072b_disco`` board configuration can be built and
+Applications for the ``stm32f072b_disco/stm32f072xb`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -165,7 +165,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f072b_disco
+   :board: stm32f072b_disco/stm32f072xb
    :goals: build flash
 
 Run a serial host program to connect with your board. A TTL(3.3V) serial
@@ -193,7 +193,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f072b_disco
+   :board: stm32f072b_disco/stm32f072xb
    :goals: debug
 
 References

@@ -8,7 +8,7 @@ Overview
 
 The STM32F103_MINI board features an ARM Cortex-M3 based STM32F103RC MCU
 with a wide range of connectivity support and configurations. There are
-multiple version of this board like ``stm32f103_mini``.
+multiple version of this board like ``stm32f103_mini/stm32f103xe``.
 
 .. image:: img/stm32f103_mini_yellow.jpg
    :align: center
@@ -45,7 +45,7 @@ More information about STM32F103RC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f103_mini board configuration supports the following hardware features:
+The Zephyr stm32f103_mini/stm32f103xe board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -118,7 +118,7 @@ The on-board 8MHz crystal is used to produce a 72MHz system clock with PLL.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f103_mini`` board configuration can be built and
+Applications for the ``stm32f103_mini/stm32f103xe`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -137,7 +137,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f103_mini
+   :board: stm32f103_mini/stm32f103xe
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -150,7 +150,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f103_mini
+   :board: stm32f103_mini/stm32f103xe
    :maybe-skip-config:
    :goals: debug
 

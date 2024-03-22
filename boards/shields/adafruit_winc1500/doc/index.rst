@@ -57,7 +57,7 @@ Set ``-DSHIELD=adafruit_winc1500`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :shield: adafruit_winc1500
    :goals: build
 

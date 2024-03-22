@@ -159,7 +159,7 @@ Here is an example for the "hello_world" application.
 .. code-block:: console
 
    # From the root of the zephyr repository
-   west build -b tlsr9518adk80d samples/hello_world
+   west build -b tlsr9518adk80d/tlsr9518 samples/hello_world
 
 To use `Telink RISC-V Linux Toolchain`_, ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``CROSS_COMPILE`` variables need to be set.
 In addition ``CONFIG_FPU=y`` must be selected in :zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d_defconfig` file since this
@@ -172,7 +172,7 @@ toolchain is compatible only with the float point unit usage.
    # Specify the Telink RISC-V Toolchain location
    export CROSS_COMPILE=~/toolchains/nds32le-elf-mculib-v5f/bin/riscv32-elf-
    # From the root of the zephyr repository
-   west build -b tlsr9518adk80d samples/hello_world
+   west build -b tlsr9518adk80d/tlsr9518 samples/hello_world
 
 `Telink RISC-V Linux Toolchain`_ is available on the `Burning and Debugging Tools for TLSR9 Series in Linux`_ page.
 
@@ -189,7 +189,7 @@ serial port:
 .. code-block:: console
 
    *** Booting Zephyr OS version 2.5.0  ***
-   Hello World! tlsr9518adk80d
+   Hello World! tlsr9518adk80d/tlsr9518
 
 
 Flashing

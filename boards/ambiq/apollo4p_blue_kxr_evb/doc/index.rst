@@ -73,7 +73,7 @@ Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: apollo4p_blue_kxr_evb
+   :board: apollo4p_blue_kxr_evb/apollo4p_blue
    :goals: flash
 
 .. note::
@@ -92,7 +92,7 @@ the following message:
 
 .. code-block:: console
 
-   Hello World! apollo4p_blue_kxr_evb
+   Hello World! apollo4p_blue_kxr_evb/apollo4p_blue
 
 .. _Apollo4 Blue Plus Website:
    https://ambiq.com/apollo4-blue-plus/

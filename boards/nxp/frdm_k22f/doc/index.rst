@@ -57,12 +57,12 @@ For more information about the K22F SoC and FRDM-K22F board:
 Supported Features
 ==================
 
-The frdm_k22f board configuration supports the hardware features listed
+The frdm_k22f/mk22f51212 board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
 :ref:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the frdm_k64f board may have additional features
-already supported, which can also be re-used on this frdm_k22f board:
+Zephyr.  Therefore, the frdm_k64f/mk64f12 board may have additional features
+already supported, which can also be re-used on this frdm_k22f/mk22f51212 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -214,7 +214,7 @@ default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_k22f
+   :board: frdm_k22f/mk22f51212
    :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
@@ -241,7 +241,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_k22f
+   :board: frdm_k22f/mk22f51212
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW1 button), and you should
@@ -250,7 +250,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.0.0 *****
-   Hello World! frdm_k22f
+   Hello World! frdm_k22f/mk22f51212
 
 Debugging
 =========
@@ -259,7 +259,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_k22f
+   :board: frdm_k22f/mk22f51212
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -268,7 +268,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.0.0 *****
-   Hello World! frdm_k22f
+   Hello World! frdm_k22f/mk22f51212
 
 .. _FRDM-K22F Website:
    https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/mcu-boards/nxp-freedom-development-platform-for-kinetis-k22-mcus:FRDM-K22F

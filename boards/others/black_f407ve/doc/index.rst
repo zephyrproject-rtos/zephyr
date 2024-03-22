@@ -8,7 +8,7 @@ Overview
 
 The BLACK_F407VE board features an ARM Cortex-M4 based STM32F407xx MCU
 with a wide range of connectivity support and configurations. There are
-multiple version of this board like ``black_f407ve``.
+multiple version of this board like ``black_f407ve/stm32f407xx``.
 Here are some highlights of the BLACK_F407VE board:
 
 - STM32 microcontroller in LQFP100 package
@@ -88,7 +88,7 @@ More information about STM32F407VE SOC can be found here:
 Supported Features
 ==================
 
-The Zephyr black_f407ve board configuration supports the following hardware
+The Zephyr black_f407ve/stm32f407xx board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -188,7 +188,7 @@ it to UART1 pins (PA9/PA10).
 Programming and Debugging
 *************************
 
-Applications for the ``black_f407ve`` board configuration can be built and
+Applications for the ``black_f407ve/stm32f407xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -213,7 +213,7 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: black_f407ve
+   :board: black_f407ve/stm32f407xx
    :goals: build flash
 
 You should see user led "LD1" blinking.
@@ -226,7 +226,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: black_f407ve
+   :board: black_f407ve/stm32f407xx
    :maybe-skip-config:
    :goals: debug
 

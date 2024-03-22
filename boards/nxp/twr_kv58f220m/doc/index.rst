@@ -43,7 +43,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The twr_kv58f220m board configuration supports the following hardware
+The twr_kv58f220m/mkv58f24 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -126,7 +126,7 @@ path.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :tool: all
-   :board: twr_kv58f220m
+   :board: twr_kv58f220m/mkv58f24
    :goals: build
 
 Configuring a Console
@@ -152,7 +152,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: twr_kv58f220m
+   :board: twr_kv58f220m/mkv58f24
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW1 button), and you should
@@ -161,7 +161,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-xxx-gxxxxxxxxxxxx *****
-   Hello World! twr_kv58f220m
+   Hello World! twr_kv58f220m/mkv58f24
 
 Debugging
 =========
@@ -170,7 +170,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: twr_kv58f220m
+   :board: twr_kv58f220m/mkv58f24
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -179,7 +179,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-xxx-gxxxxxxxxxxxx *****
-   Hello World! twr_kv58f220m
+   Hello World! twr_kv58f220m/mkv58f24
 
 .. _TWR-KV58F220M Website:
    https://www.nxp.com/TWR-KV58F220M

@@ -15,7 +15,7 @@ SRAM and 82 GPIOs.
 
 .. image:: img/gd32f407v_start.webp
      :align: center
-     :alt: gd32f407v_start
+     :alt: gd32f407v_start/gd32f407
 
 Hardware
 ********
@@ -100,7 +100,7 @@ Also, J-Link can be used to program the board via the SWD interface
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f407v_start
+      :board: gd32f407v_start/gd32f407
       :goals: build
       :compact:
 
@@ -125,7 +125,7 @@ Also, J-Link can be used to program the board via the SWD interface
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f407v_start
+      :board: gd32f407v_start/gd32f407
       :goals: flash
       :compact:
 
@@ -137,7 +137,7 @@ Also, J-Link can be used to program the board via the SWD interface
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f407v_start
+      :board: gd32f407v_start/gd32f407
       :goals: debug
       :compact:
 

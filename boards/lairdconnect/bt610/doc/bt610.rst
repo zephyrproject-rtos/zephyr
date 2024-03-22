@@ -482,7 +482,7 @@ Required pins are as follows.
 Programming and Debugging
 *************************
 
-Applications for the ``bt610`` board configuration can be
+Applications for the ``bt610/nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); however, the standard
 debugging targets are not currently available.
@@ -564,7 +564,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bt610
+   :board: bt610/nrf52840
    :goals: build flash
 
 Note that an external debugger is required to perform application flashing.
@@ -572,7 +572,7 @@ Note that an external debugger is required to perform application flashing.
 Debugging
 =========
 
-The ``bt610`` board does not have an on-board J-Link debug IC
+The ``bt610/nrf52840`` board does not have an on-board J-Link debug IC
 as some nRF5x development boards, however, instructions from the
 :ref:`nordic_segger` page also apply to this board, with the additional step
 of connecting an external debugger.

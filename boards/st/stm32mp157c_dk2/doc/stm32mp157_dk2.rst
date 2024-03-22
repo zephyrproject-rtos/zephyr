@@ -158,7 +158,7 @@ More information about STM32P157C can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32mp157c_dk2 board configuration supports the following hardware
+The Zephyr stm32mp157c_dk2/stm32mp157cxx board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -256,7 +256,7 @@ Principle is to attach to the firmware already loaded by the Linux.
 
 .. code-block:: console
 
-  west build -b stm32mp157c_dk2 samples/hello_world
+  west build -b stm32mp157c_dk2/stm32mp157cxx samples/hello_world
 
 - Copy the firmware on the target filesystem, load it and start it (`stm32mp157c boot Cortex-M4 firmware`_).
 - Attach to the target:

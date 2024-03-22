@@ -75,7 +75,7 @@ More information about STM32F429ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f429i_disc1 board configuration supports the following hardware features:
+The Zephyr stm32f429i_disc1/stm32f429xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -158,7 +158,7 @@ and host OTG operation, but only device mode has been tested with Zephyr at this
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f429i_disc1`` board configuration can be built
+Applications for the ``stm32f429i_disc1/stm32f429xx`` board configuration can be built
 and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -186,7 +186,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f429i_disc1
+   :board: stm32f429i_disc1/stm32f429xx
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -210,7 +210,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f429i_disc1
+   :board: stm32f429i_disc1/stm32f429xx
    :goals: debug
 
 .. _STM32F429I-DISC1 website:

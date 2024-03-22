@@ -26,7 +26,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimex_stm32_p405 board configuration supports the following
+The olimex_stm32_p405/stm32f405xx board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -225,7 +225,7 @@ Now build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: olimex_stm32_p405
+   :board: olimex_stm32_p405/stm32f405xx
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -249,7 +249,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: olimex_stm32_p405
+   :board: olimex_stm32_p405/stm32f405xx
    :maybe-skip-config:
    :goals: debug
 

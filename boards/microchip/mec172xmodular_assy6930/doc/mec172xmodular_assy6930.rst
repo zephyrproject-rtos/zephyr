@@ -56,7 +56,7 @@ The board is powered through the +5V USB micro-A connector or from the MECC conn
 Supported Features
 ==================
 
-The mec172xmodular_assy6930 (Rev. B) board configuration supports the following hardware features:
+The mec172xmodular_assy6930/mec172x_nsz (Rev. B) board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -205,7 +205,7 @@ Setup
 
    .. code-block:: console
 
-      west build -p auto -b mec172xmodular_assy6930 samples/hello_world -- -DMEC172X_SPI_GEN=$HOME/CPGZephyrDocs/MEC172x/SPI_image_gen/mec172x_spi_gen_lin_x86_64 -DMEC172X_SPI_CFG=$HOME/zephyrproject/zephyr/boards/microchip/mec172xmodular_assy6930/support/spi_cfg_128MBit.txt
+      west build -p auto -b mec172xmodular_assy6930/mec172x_nsz samples/hello_world -- -DMEC172X_SPI_GEN=$HOME/CPGZephyrDocs/MEC172x/SPI_image_gen/mec172x_spi_gen_lin_x86_64 -DMEC172X_SPI_CFG=$HOME/zephyrproject/zephyr/boards/microchip/mec172xmodular_assy6930/support/spi_cfg_128MBit.txt
 
 
 Wiring
@@ -232,7 +232,7 @@ Wiring
    |    MOSI    |       5       |
    +------------+---------------+
 
-#. Connect UART1 port of the mec172xmodular_assy6930 (Rev. B) board
+#. Connect UART1 port of the mec172xmodular_assy6930/mec172x_nsz (Rev. B) board
    to your host computer using the RS232 cable.
 
 #. Apply power to the board via a micro-USB cable.

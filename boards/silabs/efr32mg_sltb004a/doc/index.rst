@@ -53,7 +53,7 @@ For more information about the EFR32MG SoC and Thunderboard Sense 2
 Supported Features
 ==================
 
-The efr32mg_sltb004a board configuration supports the following hardware features:
+The efr32mg_sltb004a/efr32mg12p332f1024gl125 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -173,7 +173,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32mg_sltb004a
+   :board: efr32mg_sltb004a/efr32mg12p332f1024gl125
    :goals: build
 
 Connect the EFR32MG-SLTB004A to your host computer using the USB port and you

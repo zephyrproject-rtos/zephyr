@@ -187,7 +187,7 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``disco_l475_iot1`` board configuration can be built and
+Applications for the ``disco_l475_iot1/stm32l475xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -214,7 +214,7 @@ Then build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: disco_l475_iot1
+   :board: disco_l475_iot1/stm32l475xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -231,7 +231,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: disco_l475_iot1
+   :board: disco_l475_iot1/stm32l475xx
    :maybe-skip-config:
    :goals: debug
 

@@ -74,7 +74,7 @@ More information about STM32F303VC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f3_disco board configuration supports the following hardware
+The Zephyr stm32f3_disco/stm32f303xc board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -205,7 +205,7 @@ Flashing
 STM32F3DISCOVERY Discovery kit includes a ST-LINK/V2 or ST-LINK/V2-B embedded
 debug tool interface.
 
-Applications for the ``stm32f3_disco`` board configuration can be built and
+Applications for the ``stm32f3_disco/stm32f303xc`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -219,7 +219,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f3_disco
+   :board: stm32f3_disco/stm32f303xc
    :goals: build flash
 
 
@@ -228,7 +228,7 @@ adapted board definition:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f3_disco@E
+   :board: stm32f3_disco@E/stm32f303xc
    :goals: build flash
 
 Run a serial host program to connect with your board. For PCB version A or B a
@@ -257,14 +257,14 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f3_disco
+   :board: stm32f3_disco/stm32f303xc
    :goals: debug
 
 Again you have to use the adapted command for newer PCB revisions (E and newer):
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f3_disco@E
+   :board: stm32f3_disco@E/stm32f303xc
    :goals: debug
 
 .. _STM32F3DISCOVERY website:

@@ -57,10 +57,10 @@ Supported Features
 NXP considers the MIMXRT685-EVK as a superset board for the i.MX RT6xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT6xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The mimxrt685_evk board
+this board with new support for Zephyr features.  The mimxrt685_evk/mimxrt685s board
 configuration supports the hardware features below.  Another very similar
 board is the :ref:`mimxrt595_evk`, and that board may have additional features
-already supported, which can also be re-used on this mimxrt685_evk board:
+already supported, which can also be re-used on this mimxrt685_evk/mimxrt685s board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -290,7 +290,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt685_evk
+   :board: mimxrt685_evk/mimxrt685s
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -299,7 +299,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0 *****
-   Hello World! mimxrt685_evk
+   Hello World! mimxrt685_evk/mimxrt685s
 
 Debugging
 =========
@@ -309,7 +309,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt685_evk
+   :board: mimxrt685_evk/mimxrt685s
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -318,7 +318,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS zephyr-v2.3.0 *****
-   Hello World! mimxrt685_evk
+   Hello World! mimxrt685_evk/mimxrt685s
 
 Troubleshooting
 ===============

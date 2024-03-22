@@ -174,7 +174,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: usb_kw24d512
+   :board: usb_kw24d512/mkw24d5
    :goals: flash
 
 The Segger RTT console is only available during a debug session. Use ``attach``
@@ -182,7 +182,7 @@ to start one:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: usb_kw24d512
+   :board: usb_kw24d512/mkw24d5
    :goals: attach
 
 Run telnet as shown earlier, and you should see the following message in the
@@ -191,7 +191,7 @@ terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! usb_kw24d512
+   Hello World! usb_kw24d512/mkw24d5
 
 Debugging
 =========
@@ -200,7 +200,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: usb_kw24d512
+   :board: usb_kw24d512/mkw24d5
    :goals: debug
 
 Run telnet as shown earlier, step through the application in your debugger, and
@@ -209,7 +209,7 @@ you should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! usb_kw24d512
+   Hello World! usb_kw24d512/mkw24d5
 
 .. _USB-KW24D512 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/ieee-802.15.4-packet-sniffer-usb-dongle-form-factor:USB-KW24D512

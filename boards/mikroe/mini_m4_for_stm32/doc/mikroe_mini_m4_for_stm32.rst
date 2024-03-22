@@ -96,7 +96,7 @@ The Zephyr console output is assigned to USART2. Default settings are 115200 8N1
 Programming and Debugging
 *************************
 
-Applications for the ``mikroe_mini_m4_for_stm32`` board configuration can
+Applications for the ``mikroe_mini_m4_for_stm32/stm32f415xx`` board configuration can
 be built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -122,14 +122,14 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mikroe_mini_m4_for_stm32
+   :board: mikroe_mini_m4_for_stm32/stm32f415xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! mikroe_mini_m4_for_stm32
+   Hello World! mikroe_mini_m4_for_stm32/stm32f415xx
 
 Debugging
 =========
@@ -139,7 +139,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mikroe_mini_m4_for_stm32
+   :board: mikroe_mini_m4_for_stm32/stm32f415xx
    :maybe-skip-config:
    :goals: debug
 

@@ -122,7 +122,7 @@ More information about STM32L496AG can be found in:
 Supported Features
 ==================
 
-The Zephyr stm32l496g_disco board configuration supports the following hardware features:
+The Zephyr stm32l496g_disco/stm32l496xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -205,7 +205,7 @@ STM32L496G Discovery board includes an ST-LINK/V2-1 embedded debug
 tool interface.  This interface is supported by openocd version
 v0.10.0, which has been available since Zephyr SDK v0.9.2.
 
-Applications for the ``stm32l496g_disco`` board configuration can be
+Applications for the ``stm32l496g_disco/stm32l496xx`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -225,7 +225,7 @@ Then, build and flash in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32l496g_disco
+   :board: stm32l496g_disco/stm32l496xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -242,7 +242,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32l496g_disco
+   :board: stm32l496g_disco/stm32l496xx
    :maybe-skip-config:
    :goals: debug
 

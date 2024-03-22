@@ -29,7 +29,7 @@ This application can be built and executed on :ref:`native_sim <native_sim>` as 
    :goals: run
    :compact:
 
-To build for another board, change ``native_sim`` above to that board's name.
+To build for another board, change ``native_sim/native`` above to that board's name.
 
 Sample Output
 =============

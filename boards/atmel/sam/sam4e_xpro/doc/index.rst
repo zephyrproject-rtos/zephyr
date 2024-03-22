@@ -34,7 +34,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4e_xpro board configuration supports the following hardware
+The sam4e_xpro/sam4e16e board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -126,7 +126,7 @@ Using OpenOCD
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: sam4e_xpro
+      :board: sam4e_xpro/sam4e16e
       :goals: build flash
 
 Using SAM-BA bootloader
@@ -142,7 +142,7 @@ Using SAM-BA bootloader
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: sam4e_xpro
+      :board: sam4e_xpro/sam4e16e
       :goals: build
 
    .. code-block:: console
@@ -179,7 +179,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sam4e_xpro
+   :board: sam4e_xpro/sam4e16e
    :maybe-skip-config:
    :goals: debug
 

@@ -207,7 +207,7 @@ For the :code:`Hello, world!` application, follow the instructions below.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: cc1352r_sensortag
+   :board: cc1352r_sensortag/cc1352r
    :goals: build flash
 
 Debugging
@@ -218,7 +218,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: cc1352r_sensortag
+   :board: cc1352r_sensortag/cc1352r
    :maybe-skip-config:
    :goals: debug
 

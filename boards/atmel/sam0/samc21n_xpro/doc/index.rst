@@ -32,7 +32,7 @@ Hardware
 Supported Features
 ==================
 
-The samc21n_xpro board configuration supports the following hardware
+The samc21n_xpro/samc21n18a board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -147,7 +147,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samc21n_xpro
+      :board: samc21n_xpro/samc21n18a
       :goals: build
       :compact:
 
@@ -173,7 +173,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samc21n_xpro
+      :board: samc21n_xpro/samc21n18a
       :goals: flash
       :compact:
 

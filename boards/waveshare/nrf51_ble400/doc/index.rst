@@ -183,7 +183,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf51_ble400
+   :board: nrf51_ble400/nrf51822
    :goals: build flash
 
 Debugging

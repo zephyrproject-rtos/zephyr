@@ -108,7 +108,7 @@ Zephyr application. For example:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/zperf
    :tool: all
-   :board: reel_board
+   :board: reel_board/nrf52840
    :shield: link_board_eth
    :goals: build
 

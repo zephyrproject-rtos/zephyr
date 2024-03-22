@@ -29,7 +29,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_itsybitsy_m4_express board configuration supports the following
+The adafruit_itsybitsy_m4_express/samd51g19a board configuration supports the following
 hardware features:
 
 +-----------+------------+------------------------------------------+
@@ -126,7 +126,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_itsybitsy_m4_express/samd51g19a
       :goals: build
       :compact:
 
@@ -157,7 +157,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_itsybitsy_m4_express/samd51g19a
       :goals: flash
       :compact:
 
@@ -178,7 +178,7 @@ debugged using a SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_itsybitsy_m4_express/samd51g19a
       :goals: flash
       :flash-args: -r openocd
       :compact:
@@ -187,7 +187,7 @@ debugged using a SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_itsybitsy_m4_express/samd51g19a
       :goals: debug
       :compact:
 

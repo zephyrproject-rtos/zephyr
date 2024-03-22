@@ -39,7 +39,7 @@ The nRF52832 of the Holyiot YJ-16019 is clocked by an external crystal with a fr
 Supported Features
 ==================
 
-The holyiot_yj16019 board configuration supports the following
+The holyiot_yj16019/nrf52832 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -80,7 +80,7 @@ LED and push button
 Programming and Debugging
 *************************
 
-Applications for the ``holyiot_yj16019`` board configuration can be
+Applications for the ``holyiot_yj16019/nrf52832`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); however, an external
 Segger J-Link is required since the board does not have any on-board
@@ -113,7 +113,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: holyiot_yj16019
+   :board: holyiot_yj16019/nrf52832
    :goals: build flash
 
 Debugging

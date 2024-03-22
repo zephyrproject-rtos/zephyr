@@ -66,7 +66,7 @@ More information about STM32F411VE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f411e_disco board configuration supports the following
+The Zephyr stm32f411e_disco/stm32f411xe board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -124,7 +124,7 @@ assigned to UART2. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f411e_disco`` board configuration can be built and
+Applications for the ``stm32f411e_disco/stm32f411xe`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -145,7 +145,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f411e_disco
+   :board: stm32f411e_disco/stm32f411xe
    :goals: build flash
 
 In case you are using PCB revision B, you have to use an
@@ -153,7 +153,7 @@ adapted board definition as the default PCB rev here is D:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f411e_disco@B
+   :board: stm32f411e_disco@B/stm32f411xe
    :goals: build flash
 
 You should see the orange led (LD3) blinking every second.
@@ -166,7 +166,7 @@ the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f411e_disco
+   :board: stm32f411e_disco/stm32f411xe
    :maybe-skip-config:
    :goals: debug
 

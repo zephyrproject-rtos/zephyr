@@ -80,7 +80,7 @@ Build and flash hello world sample
 .. code-block:: console
 
    cd zephyr/samples/hello_world
-   west build -p auto -b cy8ckit_062s4 --pristine
+   west build -p auto -b cy8ckit_062s4/cy8c6244lqi_s4d92 --pristine
    west flash
    picocom /dev/ttyACM0 -b 115200
 

@@ -41,7 +41,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: intel_ish_5_4_1
+      :board: intel_ish_5_4_1/intel_ish_5_4_1
       :goals: build
 
    .. note::

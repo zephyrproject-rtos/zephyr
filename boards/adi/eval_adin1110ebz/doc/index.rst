@@ -47,7 +47,7 @@ https://wiki.analog.com/resources/eval/user-guides/eval-adin1110ebz-user-guide
 Supported Features
 ==================
 
-The ADI adi_eval_adin1110ebz board configuration supports the
+The ADI adi_eval_adin1110ebz/stm32l4s5xx board configuration supports the
 following hardware features:
 
 +--------------+------------+-------------------------------------+
@@ -149,14 +149,14 @@ Then, build and flash in the usual way. Here is an example for the :ref:`hello_w
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adi_eval_adin1110ebz
+   :board: adi_eval_adin1110ebz/stm32l4s5xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! adi_eval_adin1110ebz
+   Hello World! adi_eval_adin1110ebz/stm32l4s5xx
 
 Debugging
 =========
@@ -166,7 +166,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adi_eval_adin1110ebz
+   :board: adi_eval_adin1110ebz/stm32l4s5xx
    :maybe-skip-config:
    :goals: debug
 

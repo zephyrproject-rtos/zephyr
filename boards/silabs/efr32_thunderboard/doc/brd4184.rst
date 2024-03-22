@@ -145,14 +145,14 @@ BRD4184A:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg22_brd4184a
+   :board: efr32bg22_brd4184a/efr32bg22c224f512im40
    :goals: flash
 
 BRD4184B:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg22_brd4184b
+   :board: efr32bg22_brd4184b/efr32bg22c224f512im40
    :goals: flash
 
 .. note::
@@ -191,14 +191,14 @@ BRD4184A:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: efr32bg22_brd4184a
+   :board: efr32bg22_brd4184a/efr32bg22c224f512im40
    :goals: build
 
 BRD4184B:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: efr32bg22_brd4184b
+   :board: efr32bg22_brd4184b/efr32bg22c224f512im40
    :goals: build
 
 

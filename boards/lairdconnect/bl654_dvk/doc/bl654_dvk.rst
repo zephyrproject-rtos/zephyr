@@ -113,7 +113,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``bl654_dvk`` board configuration can be built, flashed,
+Applications for the ``bl654_dvk/nrf52840`` board configuration can be built, flashed,
 and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
 
@@ -143,7 +143,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bl654_dvk
+   :board: bl654_dvk/nrf52840
    :goals: build flash
 
 Debugging

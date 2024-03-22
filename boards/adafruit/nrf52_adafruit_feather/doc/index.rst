@@ -89,7 +89,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-The ``nrf52_adafruit_feather`` board is available in two different versions:
+The ``nrf52_adafruit_feather/nrf52832`` board is available in two different versions:
 
 - `Adafruit Feather nRF52 Pro with myNewt Bootloader`_
    This board version is the recommended one to use. It has the SWD header
@@ -102,14 +102,14 @@ The ``nrf52_adafruit_feather`` board is available in two different versions:
    with this version a 2*5pin 0.5" SWD header (e.g. `Adafruit SWD connector`_)
    needs to be soldered.
 
-Applications for the ``nrf52_adafruit_feather`` board configuration can be
+Applications for the ``nrf52_adafruit_feather/nrf52832`` board configuration can be
 built, flashed, and debugged in the usual way. See :ref:`build_an_application`
 and :ref:`application_run` for more details on building and running.
 
 Flashing
 ========
 
-Flashing Zephyr onto the ``nrf52_adafruit_feather`` board requires an external
+Flashing Zephyr onto the ``nrf52_adafruit_feather/nrf52832`` board requires an external
 J-Link programmer. The programmer is attached to the X1 SWD header.
 
 Follow the instructions in the :ref:`nordic_segger` page to install
@@ -125,7 +125,7 @@ Here is an example for the :ref:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: nrf52_adafruit_feather
+      :board: nrf52_adafruit_feather/nrf52832
       :goals: build
       :compact:
 
@@ -144,7 +144,7 @@ Here is an example for the :ref:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: nrf52_adafruit_feather
+      :board: nrf52_adafruit_feather/nrf52832
       :goals: flash
       :compact:
 
@@ -154,7 +154,7 @@ Here is an example for the :ref:`hello_world` application.
 Debugging
 =========
 
-The ``nrf52_adafruit_feather`` board does not have an on-board J-Link debug IC
+The ``nrf52_adafruit_feather/nrf52832`` board does not have an on-board J-Link debug IC
 as some nRF5x development boards, however, instructions from the
 :ref:`nordic_segger` page also apply to this board, with the additional step
 of connecting an external debugger.

@@ -32,7 +32,7 @@ More information about STM32L4R9 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32l4r9i_disco board configuration supports the following hardware features:
+The current Zephyr stm32l4r9i_disco/stm32l4r9xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -96,7 +96,7 @@ Flashing
 
 The STM32L4R9I Discovery board includes an ST-LINK/V2-1 debug tool.
 
-Applications for the ``stm32l4r9i_disco`` board configuration can be
+Applications for the ``stm32l4r9i_disco/stm32l4r9xx`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -116,14 +116,14 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32l4r9i_disco
+   :board: stm32l4r9i_disco/stm32l4r9xx
    :goals: build flash
 
 You should see the following message in the serial host program:
 
 .. code-block:: console
 
-   $ Hello World! stm32l4r9i_disco
+   $ Hello World! stm32l4r9i_disco/stm32l4r9xx
 
 
 Debugging
@@ -134,7 +134,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
     :zephyr-app: samples/hello_world
-    :board: stm32l4r9i_disco
+    :board: stm32l4r9i_disco/stm32l4r9xx
     :goals: debug
 
 .. _STM32L4R9I-DISCOVERY website:

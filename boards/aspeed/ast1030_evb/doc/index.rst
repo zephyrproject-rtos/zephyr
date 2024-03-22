@@ -75,7 +75,7 @@ This board comes with a JTAG port which facilitates debugging using a single phy
 Flashing
 ========
 
-Build application as usual for the ``ast1030_evb`` board, and flash
+Build application as usual for the ``ast1030_evb/ast1030`` board, and flash
 using SF100 SPI Flash programmer. See the
 `Aspeed Zephyr SDK User Guide`_ for more information.
 

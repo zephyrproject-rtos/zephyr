@@ -48,7 +48,7 @@ The Waveshare Open103Z configuration supports the following hardware features:
 Programming and Debugging
 *************************
 
-Applications for the ``waveshare_open103z`` board configuration can be built and
+Applications for the ``waveshare_open103z/stm32f103xe`` board configuration can be built and
 flashed in the usual way.
 
 Flashing
@@ -59,7 +59,7 @@ Build and flash applications as usual. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: waveshare_open103z
+   :board: waveshare_open103z/stm32f103xe
    :goals: build flash
 
 Debugging
@@ -70,7 +70,7 @@ Debug applications as usual. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: waveshare_open103z
+   :board: waveshare_open103z/stm32f103xe
    :maybe-skip-config:
    :goals: debug
 

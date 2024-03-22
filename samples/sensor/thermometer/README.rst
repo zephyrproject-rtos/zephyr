@@ -46,7 +46,7 @@ Temperature Alert
 If the attached sensor supports alerts when the temperature drifts above or
 below a threshold, the sample will enable the sensor's trigger functionality.
 This will require the sensor's TRIGGER KConfig setting to be enabled. An
-example of this setup is provided for the ``frdm_k22f`` board, using
+example of this setup is provided for the ``frdm_k22f/mk22f51212`` board, using
 ``boards/frdm_k22f.conf``.
 
 Sample Output

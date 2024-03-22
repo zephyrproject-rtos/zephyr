@@ -37,13 +37,13 @@ Applications for the HiFive1 board configuration can be built as usual (see
    .. group-tab:: HiFive1
 
       .. zephyr-app-commands::
-         :board: hifive1
+         :board: hifive1/fe310
          :goals: build
 
    .. group-tab:: HiFive1 Rev B
 
       .. zephyr-app-commands::
-         :board: hifive1@B
+         :board: hifive1@B/fe310
          :goals: build
 
 Flashing
@@ -66,7 +66,7 @@ HiFive1
       ``-DOPENOCD=<path/to/riscv-openocd/bin/openocd>`` parameter when building:
 
       .. zephyr-app-commands::
-         :board: hifive1
+         :board: hifive1/fe310
          :goals: build
          :gen-args: -DOPENOCD=<path/to/riscv-openocd/bin/openocd>
 

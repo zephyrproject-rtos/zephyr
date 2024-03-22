@@ -23,7 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The zybo board configuration supports the following hardware features:
+The zybo/xc7z010 board configuration supports the following hardware features:
 
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
@@ -87,7 +87,7 @@ Next, upload and run the Zephyr application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: zybo
+   :board: zybo/xc7z010
    :goals: flash
 
 You should see the following message in the terminal:
@@ -95,7 +95,7 @@ You should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS vx.xx.x-xxx-gxxxxxxxxxxxx ***
-   Hello World! zybo
+   Hello World! zybo/xc7z010
 
 Another option is to load and run the :ref:`hello_world` application via U-Boot. Copy
 ``u-boot/spl/boot.bin``, ``u-boot/u-boot.img``, and ``zephyr/zephyr.bin`` to a FAT32 formatted
@@ -111,7 +111,7 @@ Once U-boot is done initializing, load an run the Zephyr application:
    Zynq> go 0x0
    ## Starting application at 0x00000000 ...
    *** Booting Zephyr OS vx.xx.x-xxx-gxxxxxxxxxxxx ***
-   Hello World! zybo
+   Hello World! zybo/xc7z010
 
 Debugging
 =========
@@ -126,7 +126,7 @@ Next, upload and debug the Zephyr application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: zybo
+   :board: zybo/xc7z010
    :goals: debug
 
 Step through the application in your debugger, and you should see the following message in the
@@ -135,7 +135,7 @@ terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx ***
-   Hello World! zybo
+   Hello World! zybo/xc7z010
 
 .. _Digilent Zybo:
    https://digilent.com/reference/programmable-logic/zybo/start

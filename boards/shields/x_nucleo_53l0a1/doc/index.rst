@@ -71,7 +71,7 @@ Set ``-DSHIELD=x_nucleo_53l0a1`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/vl53l0x
-   :board: nucleo_f429zi
+   :board: nucleo_f429zi/stm32f429xx
    :shield: x_nucleo_53l0a1
    :goals: build
 

@@ -36,7 +36,7 @@ example:
 
 .. zephyr-app-commands::
    :zephyr-app: <my_app>
-   :board: lpcxpresso55s16
+   :board: lpcxpresso55s16/lpc55s16
    :shield: mikroe_adc_click
    :goals: build
 

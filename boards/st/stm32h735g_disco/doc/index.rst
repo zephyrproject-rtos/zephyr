@@ -41,7 +41,7 @@ More information about STM32H735 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h735g_disco board configuration supports the following hardware features:
+The current Zephyr stm32h735g_disco/stm32h735xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -121,7 +121,7 @@ Flashing
 Flashing operation will depend on the target to be flashed and the SoC
 option bytes configuration.
 It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
-configuration and flash the ``stm32h735g_disco`` target.
+configuration and flash the ``stm32h735g_disco/stm32h735xx`` target.
 
 
 Debugging
@@ -132,7 +132,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h735g_disco
+   :board: stm32h735g_disco/stm32h735xx
    :goals: debug
 
 

@@ -125,7 +125,7 @@ The BT510 incorporates an I2C Silabs SI7055 temperature sensor. Refer to the `Si
 Programming and Debugging
 *************************
 
-Applications for the ``bt510`` board configuration can be built, flashed, and
+Applications for the ``bt510/nrf52840`` board configuration can be built, flashed, and
 debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
 
@@ -208,7 +208,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bt510
+   :board: bt510/nrf52840
    :goals: build flash
 
 Note that an external debugger is required to perform application flashing.
@@ -216,7 +216,7 @@ Note that an external debugger is required to perform application flashing.
 Debugging
 =========
 
-The ``bt510`` board does not have an on-board J-Link debug IC
+The ``bt510/nrf52840`` board does not have an on-board J-Link debug IC
 as some nRF5x development boards, however, instructions from the
 :ref:`nordic_segger` page also apply to this board, with the additional step
 of connecting an external debugger. The USB-SWD programmer board has a CMSIS debugger

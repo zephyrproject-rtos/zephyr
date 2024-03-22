@@ -131,7 +131,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``pinnacle_100_dvk`` board configuration can be
+Applications for the ``pinnacle_100_dvk/nrf52840`` board configuration can be
 built and flashed in the usual way. (see :ref:`build_an_application`
 and :ref:`application_run` for more details)
 
@@ -162,7 +162,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: pinnacle_100_dvk
+   :board: pinnacle_100_dvk/nrf52840
    :goals: build flash
 
 Debugging

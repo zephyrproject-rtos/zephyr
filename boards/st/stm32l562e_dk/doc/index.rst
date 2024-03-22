@@ -146,7 +146,7 @@ More information about STM32L562QE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32l562e_dk board configuration supports the following
+The Zephyr stm32l562e_dk/stm32l562xx board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -217,7 +217,7 @@ The BOARD options are summarized below:
 +------------------------------+-------------------------------------------+
 | BOARD                        | Description                               |
 +==============================+===========================================+
-| stm32l562e_dk                | For building Trust Zone Disabled firmware |
+| stm32l562e_dk/stm32l562xx                | For building Trust Zone Disabled firmware |
 +------------------------------+-------------------------------------------+
 | stm32l562e_dk/stm32l562xx/ns | For building Non-Secure firmware          |
 +------------------------------+-------------------------------------------+
@@ -284,7 +284,7 @@ assigned to USART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32l562e_dk`` board configuration can be built and
+Applications for the ``stm32l562e_dk/stm32l562xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -320,14 +320,14 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32l562e_dk
+   :board: stm32l562e_dk/stm32l562xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! stm32l562e_dk
+   Hello World! stm32l562e_dk/stm32l562xx
 
 Debugging
 =========
@@ -337,7 +337,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32l562e_dk
+   :board: stm32l562e_dk/stm32l562xx
    :maybe-skip-config:
    :goals: debug
 

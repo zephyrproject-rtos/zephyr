@@ -16,7 +16,7 @@ SRAM and 88 GPIOs.
 
 .. image:: img/gd32a503v_eval.jpg
      :align: center
-     :alt: gd32a503v_eval
+     :alt: gd32a503v_eval/gd32a503
 
 
 Hardware
@@ -123,7 +123,7 @@ headers J2 and J100 that can be used with any ARM compatible tools.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32a503v_eval
+      :board: gd32a503v_eval/gd32a503
       :goals: build
       :compact:
 
@@ -146,7 +146,7 @@ headers J2 and J100 that can be used with any ARM compatible tools.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32a503v_eval
+      :board: gd32a503v_eval/gd32a503
       :goals: flash
       :compact:
 
@@ -156,7 +156,7 @@ headers J2 and J100 that can be used with any ARM compatible tools.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32a503v_eval
+      :board: gd32a503v_eval/gd32a503
       :goals: debug
       :compact:
 
@@ -172,7 +172,7 @@ is :code:`$HOME/.local/bin`.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32a503v_eval
+      :board: gd32a503v_eval/gd32a503
       :goals: build
       :compact:
 

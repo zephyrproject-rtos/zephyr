@@ -23,7 +23,7 @@ Here is an example for building and flashing the :zephyr:code-sample:`blinky` ap
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_minima
+   :board: arduino_uno_r4_minima/r7fa4m1ab3cfm
    :goals: build flash
 
 Debugging
@@ -35,7 +35,7 @@ Also, see the instructions specific to the debug server that you use.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_uno_r4_minima
+   :board: arduino_uno_r4_minima/r7fa4m1ab3cfm
    :maybe-skip-config:
    :goals: debug
 

@@ -40,7 +40,7 @@ Set ``-DSHIELD=adafruit_neopixel_grid_bff`` when you invoke ``west build``. For 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_strip
-   :board: adafruit_qt_py_rp2040
+   :board: adafruit_qt_py_rp2040/rp2040
    :shield: adafruit_neopixel_grid_bff
    :goals: build
 
@@ -61,7 +61,7 @@ Set ``-DSHIELD=adafruit_neopixel_grid_bff_display`` when you invoke ``west build
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: adafruit_qt_py_rp2040
+   :board: adafruit_qt_py_rp2040/rp2040
    :shield: adafruit_neopixel_grid_bff_display
    :goals: build
 

@@ -360,7 +360,7 @@ example:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
    :tool: all
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
    :shield: adafruit_can_picowbell
    :goals: build
 

@@ -44,7 +44,7 @@ is 32.768 kHz. The frequency of the main clock is 32 MHz.
 Supported Features
 ==================
 
-The contextualelectronics_abc board configuration supports the following
+The contextualelectronics_abc/nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -83,21 +83,21 @@ features.
 Programming and Debugging
 *************************
 
-Applications for the ``contextualelectronics_abc`` board configuration can be
+Applications for the ``contextualelectronics_abc/nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
 Flashing
 ========
 
-Flashing Zephyr onto the ``contextualelectronics_abc`` board requires
+Flashing Zephyr onto the ``contextualelectronics_abc/nrf52840`` board requires
 an external programmer. The programmer is attached to the SWD header.
 
 Build the Zephyr kernel and the :ref:`hello_world` sample application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: contextualelectronics_abc
+      :board: contextualelectronics_abc/nrf52840
       :goals: build
       :compact:
 
@@ -105,7 +105,7 @@ Flash the image.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: contextualelectronics_abc
+      :board: contextualelectronics_abc/nrf52840
       :goals: flash
       :compact:
 

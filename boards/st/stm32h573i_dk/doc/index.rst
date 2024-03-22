@@ -240,7 +240,7 @@ assigned to USART1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32h573i_dk`` board configuration can be built and
+Applications for the ``stm32h573i_dk/stm32h573xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -269,14 +269,14 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h573i_dk
+   :board: stm32h573i_dk/stm32h573xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! stm32h573i_dk
+   Hello World! stm32h573i_dk/stm32h573xx
 
 Debugging
 =========
@@ -294,7 +294,7 @@ example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h573i_dk
+   :board: stm32h573i_dk/stm32h573xx
    :maybe-skip-config:
    :goals: debug
 

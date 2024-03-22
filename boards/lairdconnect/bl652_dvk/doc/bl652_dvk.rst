@@ -231,7 +231,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bl652_dvk
+   :board: bl652_dvk/nrf52832
    :goals: build flash
 
 Debugging

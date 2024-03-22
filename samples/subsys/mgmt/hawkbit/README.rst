@@ -145,7 +145,7 @@ Click on distribution icon in the left pane of UI and create a new Distribution
 with type Apps only (``name:frdm_k64f_update,version:1.0.1``). Assign the
 ``hawkbit`` software module to the created distribution. Click on Deployment
 icon in the left pane of UI and assign the ``frdm_k64f_update`` distribution to
-the target ``frdm_k64f``.
+the target ``frdm_k64f/mk64f12``.
 
 Step 8: Run the update
 ======================

@@ -48,7 +48,7 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Build application as usual for the ``google_twinkie_v2`` board, and flash
+Build application as usual for the ``google_twinkie_v2/stm32g0b1xx`` board, and flash
 using dfu-util or J-Link.
 
 Debugging

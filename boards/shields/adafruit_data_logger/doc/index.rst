@@ -66,7 +66,7 @@ Set ``-DSHIELD=adafruit_data_logger`` when you invoke ``west build``. For exampl
 
 .. zephyr-app-commands::
    :zephyr-app: tests/drivers/rtc/rtc_api
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :shield: adafruit_data_logger
    :goals: build
 

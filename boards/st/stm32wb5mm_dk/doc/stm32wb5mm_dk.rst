@@ -174,7 +174,7 @@ Default settings are ``115200 8N1``.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32wb5mm_dk`` board configuration can be built the
+Applications for the ``stm32wb5mm_dk/stm32wb55xx`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing
@@ -201,7 +201,7 @@ Then first build and flash the application for the STM32WB5MM-DK board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32wb5mm_dk
+   :board: stm32wb5mm_dk/stm32wb55xx
    :goals: build flash
 
 Reset the board and you should see the following messages on the console:
@@ -218,7 +218,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32wb5mm_dk
+   :board: stm32wb5mm_dk/stm32wb55xx
    :maybe-skip-config:
    :goals: debug
 

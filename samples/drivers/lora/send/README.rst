@@ -17,7 +17,7 @@ range.
 Building and Running
 ********************
 
-Build and flash the sample as follows, changing ``b_l072z_lrwan1`` for
+Build and flash the sample as follows, changing ``b_l072z_lrwan1/stm32l072xx`` for
 your board, where your board has a ``lora0`` alias in the devicetree.
 
 .. zephyr-app-commands::

@@ -17,11 +17,11 @@ Programming and debugging
 Building
 ========
 
-Applications for the ``m2gl025_miv`` board configuration can be built as usual
+Applications for the ``m2gl025_miv/miv`` board configuration can be built as usual
 (see :ref:`build_an_application`):
 
 .. zephyr-app-commands::
-   :board: m2gl025_miv
+   :board: m2gl025_miv/miv
    :goals: build
 
 Flashing

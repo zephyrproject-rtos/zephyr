@@ -1,7 +1,7 @@
 .. _it8xxx2_evb:
 
 ITE IT8XXX2 series
-######################
+##################
 
 Overview
 ********
@@ -100,7 +100,7 @@ Wiring
 
    .. image:: it8xxx2_evb_wiring.jpg
         :align: center
-        :alt: it8xxx2_evb wiring
+        :alt: it8xxx2_evb/it81302bx wiring
 
    .. note:: Be careful during connection!
     Use separate wires to connect I2C pins with pins on the it8xxx2_evb board.
@@ -117,7 +117,7 @@ Wiring
     |      4      |       5       |
     +-------------+---------------+
 
-    For USB to UART cable, connect the it8xxx2_evb as below:
+    For USB to UART cable, connect the it8xxx2_evb/it81302bx as below:
 
     +-------------+---------------+
     | USB to UART | it8xxx2_evb   |
@@ -137,7 +137,7 @@ Building
    (see :`Zephyr Getting Started Guide`_):.
 
    .. zephyr-app-commands::
-      :board: it8xxx2_evb
+      :board: it8xxx2_evb/it81302bx
       :zephyr-app: samples/hello_world
       :goals: build
 
@@ -154,7 +154,7 @@ to the it8xxx2 board flash.
 
 #. Open winflash tool and make sure the order you open the switch is right.
    Fisrt, turn on the Download board switch.
-   Second, turn on the it8xxx2_evb board switch.
+   Second, turn on the it8xxx2_evb/it81302bx board switch.
    Then, configure your winflash tool like below.
 
     .. figure:: WinFlashTool_P2.jpg
@@ -179,7 +179,7 @@ to the it8xxx2 board flash.
     .. figure:: WinFlashTool_P1.jpg
           :align: center
 
-#. Turn on the it8xxx2_evb board switch, you should see ``"Hello World! it8xxx2_evb"``
+#. Turn on the it8xxx2_evb/it81302bx board switch, you should see ``"Hello World! it8xxx2_evb"``
    sent by the board. If you don't see this message, press the Reset button and the
    message should appear.
 
@@ -217,7 +217,7 @@ Troubleshooting
 ===============
 
 #. If the flash tool reports a failure, re-plug the 8390 Download board or
-   power cycle the it8xxx2_evb board and try again.
+   power cycle the it8xxx2_evb/it81302bx board and try again.
 
 References
 ==========

@@ -15,7 +15,7 @@ SRAM and 59 GPIOs.
 
 .. image:: img/gd32l233r_eval.jpg
      :align: center
-     :alt: gd32l233r_eval
+     :alt: gd32l233r_eval/gd32l233
 
 Hardware
 ********
@@ -92,7 +92,7 @@ which can be used with tools like Segger J-Link(latest version required).
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32l233r_eval
+      :board: gd32l233r_eval/gd32l233
       :goals: build
       :compact:
 
@@ -115,7 +115,7 @@ which can be used with tools like Segger J-Link(latest version required).
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32l233r_eval
+      :board: gd32l233r_eval/gd32l233
       :goals: flash
       :compact:
 
@@ -125,7 +125,7 @@ which can be used with tools like Segger J-Link(latest version required).
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32l233r_eval
+      :board: gd32l233r_eval/gd32l233
       :goals: debug
       :compact:
 

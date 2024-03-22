@@ -104,7 +104,7 @@ SEGGER J-link's drivers are at https://www.segger.com/downloads/jlink/
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: npcx9m6f_evb
+   :board: npcx9m6f_evb/npcx9m6f
    :maybe-skip-config:
    :goals: build flash
 

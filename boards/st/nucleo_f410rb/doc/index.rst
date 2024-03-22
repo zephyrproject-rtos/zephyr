@@ -64,7 +64,7 @@ More information about STM32F410RB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f410rb board configuration supports the following hardware features:
+The Zephyr nucleo_f410rb/stm32f410rx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -153,7 +153,7 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f410rb`` board configuration can be built and
+Applications for the ``nucleo_f410rb/stm32f410rx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -178,7 +178,7 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f410rb
+   :board: nucleo_f410rb/stm32f410rx
    :goals: build flash
 
 You should see the following message on the console:
@@ -195,7 +195,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f410rb
+   :board: nucleo_f410rb/stm32f410rx
    :maybe-skip-config:
    :goals: debug
 

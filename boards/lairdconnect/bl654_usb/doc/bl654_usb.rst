@@ -101,9 +101,9 @@ Zephyr console output is available as follows:
 Programming and Debugging
 *************************
 
-Applications for the ``bl654_usb`` board configuration can be
+Applications for the ``bl654_usb/nrf52840`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details). The
-``bl654_usb`` board cannot be used for debugging. The compatible BL654 DVK
+``bl654_usb/nrf52840`` board cannot be used for debugging. The compatible BL654 DVK
 board can be used for development. Documentation can be found at the :ref:`bl654_dvk`
 site and :zephyr_file:`boards/lairdconnect/bl654_dvk/doc/bl654_dvk.rst`
 
@@ -134,7 +134,7 @@ before proceeding. These instructions were tested with version 6.1.0.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
-      :board: bl654_usb
+      :board: bl654_usb/nrf52840
       :goals: build
 
 #. Package the application for the bootloader using ``nrfutil``:

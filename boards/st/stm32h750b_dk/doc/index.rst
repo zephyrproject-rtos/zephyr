@@ -41,7 +41,7 @@ More information about STM32H750 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h750b_dk board configuration supports the following hardware features:
+The current Zephyr stm32h750b_dk/stm32h750xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -110,14 +110,14 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h750b_dk
+   :board: stm32h750b_dk/stm32h750xx
    :goals: build flash
 
 You should see the following message in the serial host program:
 
 .. code-block:: console
 
-   $ Hello World! stm32h750b_dk
+   $ Hello World! stm32h750b_dk/stm32h750xx
 
 
 Debugging
@@ -128,7 +128,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h750b_dk
+   :board: stm32h750b_dk/stm32h750xx
    :goals: debug
 
 

@@ -49,7 +49,7 @@ More information about STM32G474RE can be found here:
 Supported Features
 ==================
 
-The Zephyr b_g474e_dpow1 board configuration supports the following hardware features:
+The Zephyr b_g474e_dpow1/stm32g474xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -104,7 +104,7 @@ For more details please refer to `B-G474E-DPOW1 Discovery board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``b_g474e_dpow1`` board configuration can be built and
+Applications for the ``b_g474e_dpow1/stm32g474xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -124,7 +124,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: b_g474e_dpow1
+   :board: b_g474e_dpow1/stm32g474xx
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -137,7 +137,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: b_g474e_dpow1
+   :board: b_g474e_dpow1/stm32g474xx
    :maybe-skip-config:
    :goals: debug
 

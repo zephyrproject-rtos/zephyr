@@ -46,7 +46,7 @@ can be found in these documents:
 Supported Features
 ==================
 
-The Zephyr steval_fcu001v1 board configuration supports the following hardware features:
+The Zephyr steval_fcu001v1/stm32f401xc board configuration supports the following hardware features:
 
 +-----------+------------+------------------------------------+
 | Interface | Controller | Driver/Component                   |
@@ -81,20 +81,20 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ============
 
-The steval_fcu001v1 system clock can be driven by an internal or external oscillator,
+The steval_fcu001v1/stm32f401xc system clock can be driven by an internal or external oscillator,
 as well as by the main PLL clock. By default, the system clock is driven by the PLL clock at 84MHz,
 driven by a 16MHz high-speed external clock.
 
 Serial Port
 ===========
 
-The steval_fcu001v1 board has one UART. The Zephyr console output is assigned to UART1.
+The steval_fcu001v1/stm32f401xc board has one UART. The Zephyr console output is assigned to UART1.
 Default settings are 115200 8N1.
 
 I2C
 ===
 
-The steval_fcu001v1 board has one I2C. The default I2C mapping for Zephyr is:
+The steval_fcu001v1/stm32f401xc board has one I2C. The default I2C mapping for Zephyr is:
 
 - I2C2_SCL : PB10
 - I2C2_SDA : PB3
@@ -102,22 +102,22 @@ The steval_fcu001v1 board has one I2C. The default I2C mapping for Zephyr is:
 Programming and Debugging
 *************************
 
-Applications for the ``steval_fcu001v1`` board configuration can be built and
+Applications for the ``steval_fcu001v1/stm32f401xc`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
 Flashing
 ========
 
-Flashing Zephyr onto the steval_fcu001v1 board requires an external ST-LINK/V2-1 programmer.
+Flashing Zephyr onto the steval_fcu001v1/stm32f401xc board requires an external ST-LINK/V2-1 programmer.
 The programmer is attached to the P8 programming header with ARM-JTAG-20-10-Plug-in Adapter.
 
 Flashing an application to STEVAL_FCU001V1
 ------------------------------------------
 
 Connect the FT232-to-USB port to host system, and RX, TX, Gnd pins to
-the P7 header of the steval_fcu001v1 board.  Then run a serial host
-program to connect with your steval_fcu001v1 via the FT232 board:
+the P7 header of the steval_fcu001v1/stm32f401xc board.  Then run a serial host
+program to connect with your steval_fcu001v1/stm32f401xc via the FT232 board:
 
 .. code-block:: console
 
@@ -127,14 +127,14 @@ Now build and flash an application. Here is an example for :ref:`hello_world`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: steval_fcu001v1
+   :board: steval_fcu001v1/stm32f401xc
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! steval_fcu001v1
+   Hello World! steval_fcu001v1/stm32f401xc
 
 Debugging
 =========
@@ -144,7 +144,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: steval_fcu001v1
+   :board: steval_fcu001v1/stm32f401xc
    :maybe-skip-config:
    :goals: debug
 

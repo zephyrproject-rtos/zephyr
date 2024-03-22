@@ -99,7 +99,7 @@ More information about STM32G081RB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32g081b_eval board configuration supports the following hardware features:
+The Zephyr stm32g081b_eval/stm32g081xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -152,7 +152,7 @@ For more details please refer to `STM32G0 Evaluation board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32g081b_eval`` board configuration can be built and
+Applications for the ``stm32g081b_eval/stm32g081xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -172,7 +172,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32g081b_eval
+   :board: stm32g081b_eval/stm32g081xx
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -185,7 +185,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32g081b_eval
+   :board: stm32g081b_eval/stm32g081xx
    :maybe-skip-config:
    :goals: debug
 

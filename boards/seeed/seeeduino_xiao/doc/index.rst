@@ -25,7 +25,7 @@ Hardware
 Supported Features
 ==================
 
-The seeeduino_xiao board configuration supports the following hardware
+The seeeduino_xiao/samd21g18a board configuration supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+
@@ -124,7 +124,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: seeeduino_xiao
+      :board: seeeduino_xiao/samd21g18a
       :goals: build
       :compact:
 
@@ -155,7 +155,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: seeeduino_xiao
+      :board: seeeduino_xiao/samd21g18a
       :goals: flash
       :compact:
 

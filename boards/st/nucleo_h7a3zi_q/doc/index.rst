@@ -85,7 +85,7 @@ Nucleo H7A3ZI-Q provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h7a3zi_q board configuration supports the following hardware
+The Zephyr nucleo_h7a3zi_q/stm32h7a3xx board configuration supports the following hardware
 features:
 
 +-------------+------------+------------------------------------+
@@ -148,7 +148,7 @@ assigned to USART3. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_h7a3zi_q`` board configuration can be built and
+Applications for the ``nucleo_h7a3zi_q/stm32h7a3xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -172,14 +172,14 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h7a3zi_q
+   :board: nucleo_h7a3zi_q/stm32h7a3xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! nucleo_h7a3zi_q
+   $ Hello World! nucleo_h7a3zi_q/stm32h7a3xx
 
 Debugging
 =========
@@ -189,7 +189,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h7a3zi_q
+   :board: nucleo_h7a3zi_q/stm32h7a3xx
    :maybe-skip-config:
    :goals: debug
 

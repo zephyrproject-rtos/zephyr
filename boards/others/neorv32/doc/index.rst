@@ -21,7 +21,7 @@ The currently supported version is 1.8.6.
 Supported Features
 ==================
 
-The ``neorv32`` board configuration can be used a generic definition for NEORV32
+The ``neorv32/neorv32`` board configuration can be used a generic definition for NEORV32
 based boards. Customisation to fit custom NEORV32 implementations can be done
 using :ref:`devicetree overlays <use-dt-overlays>`.
 
@@ -132,7 +132,7 @@ implementation with the On-Chip Debugger (OCD) and bootloader enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32
    :goals: flash
 
 The default board configuration uses an :ref:`openocd-debug-host-tools`
@@ -142,7 +142,7 @@ example for using the Flyswatter JTAG:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32
    :goals: flash
    :gen-args: -DBOARD_RUNNER_ARGS_openocd="--config;interface/ftdi/flyswatter.cfg;--config;neorv32.cfg;--cmd-pre-init;'adapter speed 2000'"
 
@@ -151,7 +151,7 @@ After flashing, you should see message similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32
+   Hello World! neorv32/neorv32
 
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal block RAM in the FPGA. It will
@@ -170,7 +170,7 @@ can be passed at build time:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32
    :goals: build
    :gen-args: -DCMAKE_PROGRAM_PATH=<path/to/neorv32/sw/image_gen/>
 
@@ -189,7 +189,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32
    :goals: debug
 
 Step through the application in your debugger, and you should see a message
@@ -198,7 +198,7 @@ similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32
+   Hello World! neorv32/neorv32
 
 .. _The NEORV32 RISC-V Processor GitHub:
    https://github.com/stnolting/neorv32

@@ -31,7 +31,7 @@ The R-Car M3-W includes:
 
 Supported Features
 ==================
-The Renesas rcar_salvator_xs board configuration supports the following
+The Renesas rcar_salvator_xs/r8a77961 board configuration supports the following
 hardware features:
 
 +-----------+------------------------------+--------------------------------+

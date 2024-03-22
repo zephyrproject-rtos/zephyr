@@ -101,7 +101,7 @@ Supported Features
 NXP considers the MIMXRT1064-EVK as the superset board for the i.MX RT10xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT10xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The mimxrt1064_evk board
+this board with new support for Zephyr features.  The mimxrt1064_evk/mimxrt1064 board
 configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -381,7 +381,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1064_evk
+   :board: mimxrt1064_evk/mimxrt1064
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW9 button), and you should
@@ -390,7 +390,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1064_evk
+   Hello World! mimxrt1064_evk/mimxrt1064
 
 Debugging
 =========
@@ -399,7 +399,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1064_evk
+   :board: mimxrt1064_evk/mimxrt1064
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -408,7 +408,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1064_evk
+   Hello World! mimxrt1064_evk/mimxrt1064
 
 
 .. _Troubleshooting RT1064:

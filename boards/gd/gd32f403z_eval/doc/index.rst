@@ -16,7 +16,7 @@ SRAM and 112 GPIOs.
 
 .. image:: img/gd32f403z_eval.jpg
      :align: center
-     :alt: gd32f403z_eval
+     :alt: gd32f403z_eval/gd32f403
 
 
 Hardware
@@ -118,7 +118,7 @@ headers J1 and J100 that can be used with any ARM compatible tools.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f403z_eval
+      :board: gd32f403z_eval/gd32f403
       :goals: build
       :compact:
 
@@ -141,7 +141,7 @@ headers J1 and J100 that can be used with any ARM compatible tools.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f403z_eval
+      :board: gd32f403z_eval/gd32f403
       :goals: flash
       :compact:
 
@@ -151,7 +151,7 @@ headers J1 and J100 that can be used with any ARM compatible tools.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f403z_eval
+      :board: gd32f403z_eval/gd32f403
       :goals: debug
       :compact:
 
@@ -167,7 +167,7 @@ is :code:`$HOME/.local/bin`.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f403z_eval
+      :board: gd32f403z_eval/gd32f403
       :goals: build
       :compact:
 
@@ -180,7 +180,7 @@ is :code:`$HOME/.local/bin`.
 
    .. code-block:: console
 
-      west build -b gd32f403z_eval samples/hello_world
+      west build -b gd32f403z_eval/gd32f403 samples/hello_world
       west flash -r gd32isp [--port=/dev/ttyUSB0]
 
 #. Run your favorite terminal program to listen for output. Under Linux the

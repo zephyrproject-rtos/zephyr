@@ -146,7 +146,7 @@ Nucleo F401RE board has up to 3 I2Cs. The default I2C mapping for Zephyr is:
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f401re`` board configuration can be built and
+Applications for the ``nucleo_f401re/stm32f401xe`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -171,7 +171,7 @@ Now build and flash an application. Here is an example for
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f401re
+   :board: nucleo_f401re/stm32f401xe
    :goals: build flash
 
 You should see the following message on the console:
@@ -189,7 +189,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f401re
+   :board: nucleo_f401re/stm32f401xe
    :maybe-skip-config:
    :goals: debug
 

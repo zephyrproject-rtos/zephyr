@@ -43,7 +43,7 @@ For more information about the SOC's please see `MEC172x Reference Manual`_
 Supported Features
 ==================
 
-The mec172xevb_assy6906 board configuration supports the following hardware
+The mec172xevb_assy6906/mec172x_nsz board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -431,7 +431,7 @@ PCA9555 Enabling
 ================
 #. To enable PCA9555PW and test the I2C on mec172xevb_assy6906, additional works are needed:
 
-   As the I2C slave device NXP pca95xx on mec172xevb_assy6906 is connected to I2C00 port,
+   As the I2C slave device NXP pca95xx on mec172xevb_assy6906/mec172x_nsz is connected to I2C00 port,
    however, I2C00 port is shared with UART2 RS232 to TTL converter used to catch serial log,
    so it's not possible to use UART2 and I2C00 port simultaneously. We need to change to use
    I2C01 port by making some jumpers setting as below:

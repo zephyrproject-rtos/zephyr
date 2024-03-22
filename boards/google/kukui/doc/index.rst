@@ -70,7 +70,7 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Build application as usual for the ``google_kukui`` board, and flash
+Build application as usual for the ``google_kukui/stm32f098xx`` board, and flash
 using Servo V2, μServo, or Servo V4 (CCD). See the
 `Chromium EC Flashing Documentation`_ for more information.
 

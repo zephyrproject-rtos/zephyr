@@ -145,7 +145,7 @@ More information about STM32WB55RG can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_wb55rg board configuration supports the following hardware features:
+The Zephyr nucleo_wb55rg/stm32wb55xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -239,7 +239,7 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_wb55rg`` board configuration can be built the
+Applications for the ``nucleo_wb55rg/stm32wb55xx`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing
@@ -275,7 +275,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_wb55rg
+   :board: nucleo_wb55rg/stm32wb55xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -292,7 +292,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_wb55rg
+   :board: nucleo_wb55rg/stm32wb55xx
    :maybe-skip-config:
    :goals: debug
 

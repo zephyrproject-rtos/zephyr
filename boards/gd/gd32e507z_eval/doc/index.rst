@@ -15,7 +15,7 @@ SRAM and 112 GPIOs.
 
 .. image:: img/gd32e507z_eval.webp
      :align: center
-     :alt: gd32e507z_eval
+     :alt: gd32e507z_eval/gd32e507
 
 Hardware
 ********
@@ -106,7 +106,7 @@ the JP2 header.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32e507z_eval
+      :board: gd32e507z_eval/gd32e507
       :goals: build
       :compact:
 
@@ -129,7 +129,7 @@ the JP2 header.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32e507z_eval
+      :board: gd32e507z_eval/gd32e507
       :goals: flash
       :compact:
 
@@ -139,7 +139,7 @@ the JP2 header.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32e507z_eval
+      :board: gd32e507z_eval/gd32e507
       :goals: debug
       :compact:
 

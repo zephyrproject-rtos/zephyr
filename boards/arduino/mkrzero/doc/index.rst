@@ -27,7 +27,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_mkrzero board configuration supports the following hardware
+The arduino_mkrzero/samd21g18a board configuration supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+
@@ -134,7 +134,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: arduino_mkrzero
+      :board: arduino_mkrzero/samd21g18a
       :goals: build
       :compact:
 
@@ -165,7 +165,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: arduino_mkrzero
+      :board: arduino_mkrzero/samd21g18a
       :goals: flash
       :compact:
 

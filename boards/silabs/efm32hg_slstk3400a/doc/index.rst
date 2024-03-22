@@ -130,7 +130,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efm32hg_slstk3400a
+   :board: efm32hg_slstk3400a/efm32hg322f64
    :goals: build
 
 Connect the EFM32HG-SLSTK3400A to your host computer using the USB port and

@@ -106,7 +106,7 @@ More information about STM32L4S5VI can be found here:
 Supported Features
 ==================
 
-The Zephyr b_l4s5i_iot01a board configuration supports the following hardware features:
+The Zephyr b_l4s5i_iot01a/stm32l4s5xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -199,7 +199,7 @@ Then, build and flash in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: b_l4s5i_iot01a
+   :board: b_l4s5i_iot01a/stm32l4s5xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -216,7 +216,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: b_l4s5i_iot01a
+   :board: b_l4s5i_iot01a/stm32l4s5xx
    :maybe-skip-config:
    :goals: debug
 

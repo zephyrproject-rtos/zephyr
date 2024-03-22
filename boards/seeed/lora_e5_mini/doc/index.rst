@@ -139,7 +139,7 @@ main PLL clock. By default System clock is driven by the MSI clock at 48MHz.
 Programming and Debugging
 *************************
 
-Applications for the ``lora_e5_mini`` board configuration can be built the
+Applications for the ``lora_e5_mini/stm32wle5xx`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 In the factory the module is flashed with an DFU bootloader, an AT command
@@ -192,7 +192,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lora_e5_mini
+   :board: lora_e5_mini/stm32wle5xx
    :goals: build flash
 
 Debugging
@@ -203,7 +203,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: lora_e5_mini
+   :board: lora_e5_mini/stm32wle5xx
    :maybe-skip-config:
    :goals: debug
 

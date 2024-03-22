@@ -85,7 +85,7 @@ For more details please refer to the `datasheet`_, `full pinout`_ and the `schem
 Programming and Debugging
 *************************
 
-Applications for the ``arduino_nicla_sense_me`` board configuration can be built and
+Applications for the ``arduino_nicla_sense_me/nrf52832`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -99,7 +99,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: arduino_nicla_sense_me
+   :board: arduino_nicla_sense_me/nrf52832
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -112,7 +112,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! arduino_nicla_sense_me
+   Hello World! arduino_nicla_sense_me/nrf52832
 
 Debugging
 =========
@@ -122,7 +122,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: arduino_nicla_sense_me
+   :board: arduino_nicla_sense_me/nrf52832
    :goals: debug
 
 References

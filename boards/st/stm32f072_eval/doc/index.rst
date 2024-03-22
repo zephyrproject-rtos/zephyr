@@ -76,7 +76,7 @@ More information about STM32F072VB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f072_eval board configuration supports the following hardware features:
+The Zephyr stm32f072_eval/stm32f072xb board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -142,7 +142,7 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f072_eval`` board configuration can be built and
+Applications for the ``stm32f072_eval/stm32f072xb`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -159,7 +159,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f072_eval
+   :board: stm32f072_eval/stm32f072xb
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -172,7 +172,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f072_eval
+   :board: stm32f072_eval/stm32f072xb
    :maybe-skip-config:
    :goals: debug
 

@@ -49,7 +49,7 @@ Board is booted over PCIe interface.
 
 Debugging
 =========
-The bcm958401m2 board includes pads for soldering a JTAG connector.
+The bcm958401m2/bcm58400 board includes pads for soldering a JTAG connector.
 Zephyr applications running on the M7 core can also be tested by observing UART console output.
 
 

@@ -28,7 +28,7 @@ in core sleep states, as LPTIM (:dtcompatible:`st,stm32-lptim`).
 Building and Running
 ********************
 
-Build and flash Blinky as follows, changing ``stm32l562e_dk`` for your board:
+Build and flash Blinky as follows, changing ``stm32l562e_dk/stm32l562xx`` for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

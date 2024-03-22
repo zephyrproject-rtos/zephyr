@@ -393,11 +393,11 @@ Configuring
 
 You may need to write a ``prj.conf`` file if the sample doesn't have one.
 Next, you can use the menuconfig rule to configure the target. By specifying
-``hsdk4xd`` as the board configuration, you can select the ARC HS4x/HS4xD Development
+``hsdk4xd/arc_hsdk4xd`` as the board configuration, you can select the ARC HS4x/HS4xD Development
 Kit board support for Zephyr.
 
 .. zephyr-app-commands::
-   :board: hsdk4xd
+   :board: hsdk4xd/arc_hsdk4xd
    :zephyr-app: samples/hello_world
    :goals: menuconfig
 
@@ -410,7 +410,7 @@ You can build an application in the usual way.  Refer to
 :ref:`hello_world`.
 
 .. zephyr-app-commands::
-   :board: hsdk4xd
+   :board: hsdk4xd/arc_hsdk4xd
    :zephyr-app: samples/hello_world
    :maybe-skip-config:
    :goals: build
@@ -449,7 +449,7 @@ One option is to build and debug the application using the usual
 Zephyr build system commands.
 
 .. zephyr-app-commands::
-   :board: hsdk4xd
+   :board: hsdk4xd/arc_hsdk4xd
    :app: <my app>
    :goals: debug
 
@@ -459,7 +459,7 @@ At this point you can do your normal debug session. Set breakpoints and then
 The other option is to launch a debug server, as follows.
 
 .. zephyr-app-commands::
-   :board: hsdk4xd
+   :board: hsdk4xd/arc_hsdk4xd
    :app: <my app>
    :goals: debugserver
 
@@ -482,7 +482,7 @@ If you just want to download the application to the HS4x/HS4xD Development Kit's
 and run, you can do so in the usual way.
 
 .. zephyr-app-commands::
-   :board: hsdk4xd
+   :board: hsdk4xd/arc_hsdk4xd
    :app: <my app>
    :goals: flash
 

@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The xiao_ble board configuration supports the following hardware features:
+The xiao_ble/nrf52840 board configuration supports the following hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
@@ -138,7 +138,7 @@ initialized before any text is printed, as below:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_ble
+         :board: xiao_ble/nrf52840
          :goals: build flash
          :gen-args: -DCONFIG_BOOT_DELAY=5000
 
@@ -170,7 +170,7 @@ properly with Zephyr:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: xiao_ble
+         :board: xiao_ble/nrf52840
          :goals: build flash
 
    .. group-tab:: XIAO BLE Sense
@@ -196,7 +196,7 @@ with Zephyr:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/subsys/shell/shell_module
-         :board: xiao_ble
+         :board: xiao_ble/nrf52840
          :goals: build flash
 
    .. group-tab:: XIAO BLE Sense

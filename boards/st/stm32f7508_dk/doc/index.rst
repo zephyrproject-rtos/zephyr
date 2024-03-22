@@ -79,7 +79,7 @@ More information about STM32F750x8 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f7508_dk board configuration supports the following hardware features:
+The Zephyr stm32f7508_dk/stm32f750xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -178,7 +178,7 @@ settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f7508_dk`` board configuration can be built and
+Applications for the ``stm32f7508_dk/stm32f750xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -198,7 +198,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f7508_dk
+   :board: stm32f7508_dk/stm32f750xx
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -221,7 +221,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f7508_dk
+   :board: stm32f7508_dk/stm32f750xx
    :goals: debug
 
 

@@ -136,7 +136,7 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``dragino_nbsn95`` board configuration can be built and
+Applications for the ``dragino_nbsn95/stm32l072xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -161,14 +161,14 @@ Then build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: dragino_nbsn95
+   :board: dragino_nbsn95/stm32l072xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! dragino_nbsn95
+   $ Hello World! dragino_nbsn95/stm32l072xx
 
 Debugging
 =========
@@ -178,7 +178,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: dragino_nbsn95
+   :board: dragino_nbsn95/stm32l072xx
    :maybe-skip-config:
    :goals: debug
 

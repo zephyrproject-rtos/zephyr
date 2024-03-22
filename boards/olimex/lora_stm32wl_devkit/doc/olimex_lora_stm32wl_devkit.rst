@@ -89,7 +89,7 @@ The default configuration can be found in:
 Programming and Debugging
 *************************
 
-Applications for the ``olimex_lora_stm32wl_devkit`` board configuration can be built the
+Applications for the ``olimex_lora_stm32wl_devkit/stm32wle5xx`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 The board contains an on-board debug probe which implements the CMSIS-DAP
@@ -113,7 +113,7 @@ Connect the board to your host computer and build and flash an application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: olimex_lora_stm32wl_devkit
+   :board: olimex_lora_stm32wl_devkit/stm32wle5xx
    :goals: build flash
 
 If you're using devkit revision C or higher, you'll need to specify the
@@ -122,7 +122,7 @@ CON1 pin header.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: olimex_lora_stm32wl_devkit@D
+   :board: olimex_lora_stm32wl_devkit@D/stm32wle5xx
    :goals: build flash
 
 Run a serial terminal to connect with your board. By default, ``usart1`` is
@@ -140,7 +140,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: olimex_lora_stm32wl_devkit
+   :board: olimex_lora_stm32wl_devkit/stm32wle5xx
    :maybe-skip-config:
    :goals: debug
 
@@ -148,7 +148,7 @@ On board revisions C or newer:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: olimex_lora_stm32wl_devkit@D
+   :board: olimex_lora_stm32wl_devkit@D/stm32wle5xx
    :maybe-skip-config:
    :goals: debug
 

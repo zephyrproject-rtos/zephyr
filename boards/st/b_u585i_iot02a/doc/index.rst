@@ -160,7 +160,7 @@ More information about STM32U585AI can be found here:
 Supported Features
 ==================
 
-The Zephyr b_u585i_iot02a board configuration supports the following hardware features:
+The Zephyr b_u585i_iot02a/stm32u585xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -210,9 +210,9 @@ for building for both Secure and Non-Secure firmware.
 The BOARD options are summarized below:
 
 +-------------------------------+-------------------------------------------+
-| BOARD                         | Description                               |
+| Board target                  | Description                               |
 +===============================+===========================================+
-| b_u585i_iot02a                | For building Trust Zone Disabled firmware |
+| b_u585i_iot02a/stm32u585xx    | For building Trust Zone Disabled firmware |
 +-------------------------------+-------------------------------------------+
 | b_u585i_iot02a/stm32u585xx/ns | For building Non-Secure firmware          |
 +-------------------------------+-------------------------------------------+
@@ -315,7 +315,7 @@ Then, build and flash in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: b_u585i_iot02a
+   :board: b_u585i_iot02a/stm32u585xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -332,7 +332,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: b_u585i_iot02a
+   :board: b_u585i_iot02a/stm32u585xx
    :goals: debug
 
 Disabling TrustZone |reg| on the board

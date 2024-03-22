@@ -43,7 +43,7 @@ For more information about the EFM32GG11 SoC and EFM32GG-STK3701A board:
 Supported Features
 ==================
 
-The efm32gg_stk3701a board configuration supports the following hardware
+The efm32gg_stk3701a/efm32gg11b820f2048gl192 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -153,7 +153,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efm32gg_stk3701a
+   :board: efm32gg_stk3701a/efm32gg11b820f2048gl192
    :goals: build
 
 Connect the EFM32GG-STK3701A to your host computer using the USB port and you
@@ -172,7 +172,7 @@ terminal session:
 
 .. code-block:: console
 
-   Hello World! efm32gg_stk3701a
+   Hello World! efm32gg_stk3701a/efm32gg11b820f2048gl192
 
 
 .. _EFM32GG-STK3701A Website:

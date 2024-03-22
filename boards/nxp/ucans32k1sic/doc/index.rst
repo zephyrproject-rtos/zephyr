@@ -38,7 +38,7 @@ More information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The ``ucans32k1sic`` board configuration supports the following hardware features:
+The ``ucans32k1sic/s32k146`` board configuration supports the following hardware features:
 
 ============  ==========  ================================
 Interface     Controller  Driver/Component
@@ -130,7 +130,7 @@ The Arm Cortex-M4F core is configured to run at 80 MHz (RUN mode).
 Programming and Debugging
 *************************
 
-Applications for the ``ucans32k1sic`` board can be built in the usual way as
+Applications for the ``ucans32k1sic/s32k146`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
 This board configuration supports `Lauterbach TRACE32`_ and `SEGGER J-Link`_

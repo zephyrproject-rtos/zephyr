@@ -68,7 +68,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: up_squared
+      :board: up_squared/apollo_lake
       :goals: build
 
    .. note::

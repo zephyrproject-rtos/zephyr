@@ -46,7 +46,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_stm32_sensor_mez board configuration supports the following
+The Zephyr 96b_stm32_sensor_mez/stm32f446xx board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -185,7 +185,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_stm32_sensor_mez
+   :board: 96b_stm32_sensor_mez/stm32f446xx
    :goals: build
 
 Flashing
@@ -211,14 +211,14 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_stm32_sensor_mez
+   :board: 96b_stm32_sensor_mez/stm32f446xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! 96b_stm32_sensor_mez
+   $ Hello World! 96b_stm32_sensor_mez/stm32f446xx
 
 Debugging
 =========
@@ -228,7 +228,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_stm32_sensor_mez
+   :board: 96b_stm32_sensor_mez/stm32f446xx
    :maybe-skip-config:
    :goals: debug
 

@@ -105,7 +105,7 @@ such as the hello world sample shown below:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: kv260_r5
+   :board: kv260_r5/zynqmp_rpu
    :goals: build
 
 Due to a hardware limitation, both Linux and Zephyr share the same UART

@@ -212,7 +212,7 @@ Here is an example for the :zephyr:code-sample:`button` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/button
-   :board: olimex_stm32_h103
+   :board: olimex_stm32_h103/stm32f103xb
    :goals: build flash
 
 Debugging
@@ -223,7 +223,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: olimex_stm32_h103
+   :board: olimex_stm32_h103/stm32f103xb
    :maybe-skip-config:
    :goals: debug
 

@@ -38,7 +38,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr stm32f030_demo board configuration supports the following
+The Zephyr stm32f030_demo/stm32f030x6 board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -74,7 +74,7 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f030_demo`` board configuration can be built and
+Applications for the ``stm32f030_demo/stm32f030x6`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -91,7 +91,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f030_demo
+   :board: stm32f030_demo/stm32f030x6
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -104,7 +104,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f030_demo
+   :board: stm32f030_demo/stm32f030x6
    :maybe-skip-config:
    :goals: debug
 

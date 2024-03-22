@@ -50,7 +50,7 @@ More information about STM32U5A9NJH6Q can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32u5a9j_dk board configuration supports the following
+The current Zephyr stm32u5a9j_dk/stm32u5a9xx board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -154,14 +154,14 @@ Then, build and flash in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32u5a9j_dk
+   :board: stm32u5a9j_dk/stm32u5a9xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! stm32u5a9j_dk
+   Hello World! stm32u5a9j_dk/stm32u5a9xx
 
 Debugging
 =========
@@ -172,7 +172,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32u5a9j_dk
+   :board: stm32u5a9j_dk/stm32u5a9xx
    :goals: debug
 
 

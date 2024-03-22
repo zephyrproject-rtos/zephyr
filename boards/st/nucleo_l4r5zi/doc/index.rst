@@ -116,7 +116,7 @@ More information about STM32L4R5ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l4r5zi board configuration supports the following
+The Zephyr nucleo_l4r5zi/stm32l4r5xx board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -247,7 +247,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_l4r5zi
+   :board: nucleo_l4r5zi/stm32l4r5xx
    :goals: build flash
 
 You should see the following message on the console:

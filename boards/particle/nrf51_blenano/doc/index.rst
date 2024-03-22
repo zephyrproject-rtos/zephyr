@@ -18,7 +18,7 @@ is 32.768 kHz. The frequency of the main clock is 16 MHz.
 Supported Features
 ==================
 
-The nrf51_blenano board configuration supports the following nRF51
+The nrf51_blenano/nrf51822 board configuration supports the following nRF51
 hardware features:
 
 +-----------+------------+----------------------+
@@ -61,7 +61,7 @@ More information about Nano and DAPLink can be found at the `RedBear Github`_.
 Programming and Debugging
 *************************
 
-Applications for the ``nrf51_blenano`` board configuration can be built and
+Applications for the ``nrf51_blenano/nrf51822`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -83,7 +83,7 @@ Now build and flash applications as usual. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf51_blenano
+   :board: nrf51_blenano/nrf51822
    :goals: build flash
 
 Debugging
@@ -95,7 +95,7 @@ the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf51_blenano
+   :board: nrf51_blenano/nrf51822
    :maybe-skip-config:
    :goals: debug
 

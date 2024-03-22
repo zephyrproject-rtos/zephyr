@@ -69,7 +69,7 @@ More information about STM32F446RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f446re board configuration supports the following hardware features:
+The Zephyr nucleo_f446re/stm32f446xx board configuration supports the following hardware features:
 
 +-------------+------------+-------------------------------------+
 | Interface   | Controller | Driver/Component                    |
@@ -164,7 +164,7 @@ used with `RS485 CAN Shield`_.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f446re`` board configuration can be built and
+Applications for the ``nucleo_f446re/stm32f446xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -189,7 +189,7 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f446re
+   :board: nucleo_f446re/stm32f446xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -206,7 +206,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f446re
+   :board: nucleo_f446re/stm32f446xx
    :maybe-skip-config:
    :goals: debug
 

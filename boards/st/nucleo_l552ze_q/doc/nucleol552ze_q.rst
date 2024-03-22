@@ -130,7 +130,7 @@ More information about STM32L552ZE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l552ze_q board configuration supports the following
+The Zephyr nucleo_l552ze_q/stm32l552xx board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -189,9 +189,9 @@ for building for both Secure and Non-Secure firmware.
 The BOARD options are summarized below:
 
 +--------------------------------+-------------------------------------------+
-| BOARD                          | Description                               |
+| BOARD target                   | Description                               |
 +================================+===========================================+
-| nucleo_l552ze_q                | For building Trust Zone Disabled firmware |
+| nucleo_l552ze_q/stm32l552xx    | For building Trust Zone Disabled firmware |
 +--------------------------------+-------------------------------------------+
 | nucleo_l552ze_q/stm32l552xx/ns | For building Non-Secure firmware          |
 +--------------------------------+-------------------------------------------+
@@ -282,7 +282,7 @@ UART2. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_l552ze_q`` board configuration can be built and
+Applications for the ``nucleo_l552ze_q/stm32l552xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -318,7 +318,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_l552ze_q
+   :board: nucleo_l552ze_q/stm32l552xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -335,7 +335,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_l552ze_q
+   :board: nucleo_l552ze_q/stm32l552xx
    :maybe-skip-config:
    :goals: debug
 

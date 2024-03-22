@@ -106,7 +106,7 @@ More information about STM32L452RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l452re board configuration supports the following hardware features:
+The Zephyr nucleo_l452re/stm32l452xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -192,7 +192,7 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_l452re`` board configuration can be built and
+Applications for the ``nucleo_l452re/stm32l452xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -218,7 +218,7 @@ Now build and flash an application. Here is an example for
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_l452re
+   :board: nucleo_l452re/stm32l452xx
    :goals: build flash
 
 For Nucleo L452RE-P, use this command instead:
@@ -243,7 +243,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_l452re
+   :board: nucleo_l452re/stm32l452xx
    :maybe-skip-config:
    :goals: debug
 

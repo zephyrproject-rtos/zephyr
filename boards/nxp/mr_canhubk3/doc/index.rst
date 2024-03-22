@@ -40,7 +40,7 @@ More information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The ``mr_canhubk3`` board configuration supports the following hardware features:
+The ``mr_canhubk3/s32k344`` board configuration supports the following hardware features:
 
 ============  ==========  ================================
 Interface     Controller  Driver/Component
@@ -279,7 +279,7 @@ The 100Base-T1 signals are available in connector ``P9`` and can be converted to
 Programming and Debugging
 *************************
 
-Applications for the ``mr_canhubk3`` board can be built in the usual way as
+Applications for the ``mr_canhubk3/s32k344`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
 This board configuration supports `Lauterbach TRACE32`_, `SEGGER J-Link`_ and `pyOCD`_

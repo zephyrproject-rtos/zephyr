@@ -60,7 +60,7 @@ It also regulates 5V from USB to 3.3V via the onboard LDO to power Nano v2.
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52_blenano2`` board configuration can be built and
+Applications for the ``nrf52_blenano2/nrf52832`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -81,7 +81,7 @@ Now build and flash applications as usual. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52_blenano2
+   :board: nrf52_blenano2/nrf52832
    :goals: build flash
 
 Debugging
@@ -93,7 +93,7 @@ the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52_blenano2
+   :board: nrf52_blenano2/nrf52832
    :maybe-skip-config:
    :goals: debug
 

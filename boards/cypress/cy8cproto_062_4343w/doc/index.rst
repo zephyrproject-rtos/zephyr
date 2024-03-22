@@ -106,7 +106,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 .. code-block:: console
 
    cd zephyr
-   west build -p auto -b cy8cproto_062_4343w samples/basic/blink
+   west build -p auto -b cy8cproto_062_4343w/cy8c624abzi_s2d44 samples/basic/blink
 
 OpenOCD Installation
 ====================

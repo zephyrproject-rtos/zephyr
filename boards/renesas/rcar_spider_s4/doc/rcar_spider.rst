@@ -141,12 +141,12 @@ Flashing
 
 First of all, open your serial terminal.
 
-Applications for the ``rcar_spider_s4`` board configuration can be built in the
+Applications for the ``rcar_spider_s4/r8a779f0`` board configuration can be built in the
 usual way (see :ref:`build_an_application` for more details).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rcar_spider_s4
+   :board: rcar_spider_s4/r8a779f0
    :goals: flash
 
 You should see the following message in the terminal:
@@ -154,7 +154,7 @@ You should see the following message in the terminal:
 .. code-block:: console
 
 	*** Booting Zephyr OS build v3.3.0-rc2 ***
-	Hello World! rcar_spider_s4
+	Hello World! rcar_spider_s4/r8a779f0
 
 Debugging
 =========
@@ -165,7 +165,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rcar_spider_s4
+   :board: rcar_spider_s4/r8a779f0
    :goals: debug
 
 You will then get access to a GDB session for debugging.
@@ -175,7 +175,7 @@ By continuing the app, you should see the following message in the terminal:
 .. code-block:: console
 
 	*** Booting Zephyr OS build v3.3.0-rc2 ***
-	Hello World! rcar_spider_s4
+	Hello World! rcar_spider_s4/r8a779f0
 
 References
 **********

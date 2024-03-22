@@ -43,7 +43,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52840_blip board configuration supports the following
+The nrf52840_blip/nrf52840 board configuration supports the following
 hardware features currently:
 
 +-----------+------------+----------------------+
@@ -125,7 +125,7 @@ MicroSD is connected to these pins, and CS pin is connected to P0.17.
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52840_blip`` board configuration can be
+Applications for the ``nrf52840_blip/nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); The onboard Black Magic
 Probe debugger presents itself as two USB-serial ports. On Linux,
@@ -156,7 +156,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52840_blip
+   :board: nrf52840_blip/nrf52840
    :goals: build flash
 
 Debugging

@@ -28,7 +28,7 @@ is merged together with the default configuration files used by MCUboot.
 :file:`sysbuild/mcuboot.conf` adjusts the log level in MCUboot, as well as
 configures MCUboot to prevent downgrades and operate in upgrade-only mode.
 
-To build both the sample and MCUboot with ``west`` for the ``reel_board``, run:
+To build both the sample and MCUboot with ``west`` for the ``reel_board/nrf52840``, run:
 
 .. zephyr-app-commands::
    :tool: west

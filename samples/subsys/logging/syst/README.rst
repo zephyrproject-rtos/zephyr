@@ -35,7 +35,7 @@ MIPI Sys-T Text Messages
 The Sys-T text messages are self contained strings that do not
 require additional artifacts to process.
 
-To build the sample printing text messages under ``qemu_x86``:
+To build the sample printing text messages under ``qemu_x86/atom``:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/syst
@@ -206,7 +206,7 @@ arguments can be combined offline with the collateral file (which contains
 the mapping between hashes and their corresponding format strings) to
 form the actual messages.
 
-To build the sample printing catalog messages under ``qemu_x86``:
+To build the sample printing catalog messages under ``qemu_x86/atom``:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/syst

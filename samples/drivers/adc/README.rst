@@ -25,7 +25,7 @@ sure that the ADC is enabled (``status = "okay";``).
 In addition to that, this sample requires an ADC channel specified in the
 ``io-channels`` property of the ``zephyr,user`` node. This is usually done with
 a devicetree overlay. The example overlay in the ``boards`` subdirectory for
-the ``nucleo_l073rz`` board can be easily adjusted for other boards.
+the ``nucleo_l073rz/stm32l073xx`` board can be easily adjusted for other boards.
 
 Configuration of channels (settings like gain, reference, or acquisition time)
 also needs to be specified in devicetree, in ADC controller child nodes. Also

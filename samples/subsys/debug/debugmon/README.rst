@@ -29,7 +29,7 @@ Your board must:
 Building and Running
 ********************
 
-Build and flash Debug Monitor as follows, changing ``reel_board`` for your board:
+Build and flash Debug Monitor as follows, changing ``reel_board/nrf52840`` for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/debug/debugmon

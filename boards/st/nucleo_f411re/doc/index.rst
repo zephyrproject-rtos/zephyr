@@ -64,7 +64,7 @@ More information about STM32F411RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f411re board configuration supports the following hardware features:
+The Zephyr nucleo_f411re/stm32f411xe board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -141,7 +141,7 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f411re`` board configuration can be built and
+Applications for the ``nucleo_f411re/stm32f411xe`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -166,7 +166,7 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f411re
+   :board: nucleo_f411re/stm32f411xe
    :goals: build flash
 
 You should see the following message on the console:
@@ -183,7 +183,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f411re
+   :board: nucleo_f411re/stm32f411xe
    :maybe-skip-config:
    :goals: debug
 

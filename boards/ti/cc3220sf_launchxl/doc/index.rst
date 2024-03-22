@@ -173,7 +173,7 @@ To build and flash an application, execute the following commands for <my_app>:
 
 .. zephyr-app-commands::
    :zephyr-app: <my_app>
-   :board: cc3220sf_launchxl
+   :board: cc3220sf_launchxl/cc3220sf
    :goals: flash
 
 This will load the image into flash.
@@ -200,7 +200,7 @@ build target:
 
 .. zephyr-app-commands::
    :zephyr-app: <my_app>
-   :board: cc3220sf_launchxl
+   :board: cc3220sf_launchxl/cc3220sf
    :maybe-skip-config:
    :goals: debug
 
@@ -226,7 +226,7 @@ Provisioning:
 SimpleLink provides a few rather sophisticated Wi-Fi provisioning methods.
 To keep it simple for Zephyr development and demos, the SimpleLink
 "Fast Connect" policy is enabled, with one-shot scanning.
-This enables the cc3220sf_launchxl to automatically reconnect to the last
+This enables the cc3220sf_launchxl/cc3220sf to automatically reconnect to the last
 good known access point (AP), without having to restart a scan, and
 re-specify the SSID and password.
 

@@ -6,7 +6,7 @@ acn52832
 Overview
 ********
 
-The acn52832 is a module in a small form factor which features the Nordic Semiconductor
+The acn52832/nrf52832 is a module in a small form factor which features the Nordic Semiconductor
 nRF52832 ARM Cortex-M4F CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`

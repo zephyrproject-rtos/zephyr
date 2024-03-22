@@ -38,7 +38,7 @@ For more information about the KL25Z SoC and FRDM-KL25Z board:
 Supported Features
 ==================
 
-The frdm_kl25z board configuration supports the following hardware features:
+The frdm_kl25z/mkl25z4 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -160,7 +160,7 @@ default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_kl25z
+   :board: frdm_kl25z/mkl25z4
    :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
@@ -193,7 +193,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_kl25z
+   :board: frdm_kl25z/mkl25z4
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW1 button), and you should
@@ -202,7 +202,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! frdm_kl25z
+   Hello World! frdm_kl25z/mkl25z4
 
 Debugging
 =========
@@ -211,7 +211,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_kl25z
+   :board: frdm_kl25z/mkl25z4
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -220,7 +220,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! frdm_kl25z
+   Hello World! frdm_kl25z/mkl25z4
 
 .. _FRDM-KL25Z Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/l-seriesultra-low-powerm0-plus/freedom-development-platform-for-kinetis-kl14-kl15-kl24-kl25-mcus:FRDM-KL25Z

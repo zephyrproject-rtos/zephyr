@@ -57,7 +57,7 @@ Set ``-DSHIELD=tcan4550evm`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: tests/drivers/can/api
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :shield: tcan4550evm
    :goals: build
 

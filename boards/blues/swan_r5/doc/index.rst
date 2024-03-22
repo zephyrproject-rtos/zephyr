@@ -210,7 +210,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: swan_r5
+   :board: swan_r5/stm32l4r5xx
    :goals: build flash
 
 You should see the following message on the console:

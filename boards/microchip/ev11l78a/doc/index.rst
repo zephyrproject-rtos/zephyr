@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The ev11l78a board configuration supports the following hardware
+The ev11l78a/samd20e16 board configuration supports the following hardware
 features:
 
 

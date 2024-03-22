@@ -79,7 +79,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xmc47_relax_kit
+   :board: xmc47_relax_kit/xmc4700
    :goals: flash
 
 Debugging
@@ -89,7 +89,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xmc47_relax_kit
+   :board: xmc47_relax_kit/xmc4700
    :goals: debug
 
 Step through the application in your debugger.

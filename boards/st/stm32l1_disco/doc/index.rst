@@ -53,7 +53,7 @@ More information about STM32L151x can be found in the `STM32L1x reference manual
 Supported Features
 ==================
 
-The Zephyr stm32l1_disco board configuration supports the following hardware features:
+The Zephyr stm32l1_disco/stm32l151xb board configuration supports the following hardware features:
 
 .. list-table:: Supported hardware
    :header-rows: 1
@@ -130,7 +130,7 @@ For more details please refer to `STM32L1DISCOVERY board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32l1_disco`` board configuration can be built and
+Applications for the ``stm32l1_disco/stm32l151xb`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -147,7 +147,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32l1_disco
+   :board: stm32l1_disco/stm32l151xb
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -160,7 +160,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32l1_disco
+   :board: stm32l1_disco/stm32l151xb
    :maybe-skip-config:
    :goals: debug
 

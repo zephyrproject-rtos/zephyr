@@ -64,7 +64,7 @@ More information about STM32L152RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l152re board configuration supports the following hardware features:
+The Zephyr nucleo_l152re/stm32l152xe board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -135,7 +135,7 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_l152re`` board configuration can be built and
+Applications for the ``nucleo_l152re/stm32l152xe`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -152,7 +152,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_l152re
+   :board: nucleo_l152re/stm32l152xe
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -165,7 +165,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_l152re
+   :board: nucleo_l152re/stm32l152xe
    :maybe-skip-config:
    :goals: debug
 

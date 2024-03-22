@@ -52,7 +52,7 @@ For more information about the KW41Z SoC and FRDM-KW41Z board:
 Supported Features
 ==================
 
-The frdm_kw41z board configuration supports the following hardware features:
+The frdm_kw41z/mkw41z4 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -178,7 +178,7 @@ default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_kw41z
+   :board: frdm_kw41z/mkw41z4
    :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
@@ -205,7 +205,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_kw41z
+   :board: frdm_kw41z/mkw41z4
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW1 button), and you should
@@ -214,7 +214,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! frdm_kw41z
+   Hello World! frdm_kw41z/mkw41z4
 
 Debugging
 =========
@@ -223,7 +223,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_kw41z
+   :board: frdm_kw41z/mkw41z4
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -232,7 +232,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! frdm_kw41z
+   Hello World! frdm_kw41z/mkw41z4
 
 .. _FRDM-KW41Z Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/freedom-development-kit-for-kinetis-kw41z-31z-21z-mcus:FRDM-KW41Z

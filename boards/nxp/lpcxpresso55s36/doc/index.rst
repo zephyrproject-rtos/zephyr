@@ -50,10 +50,10 @@ Supported Features
 NXP considers the LPCXpresso55S36 as a superset board for the LPC55(S)3x
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire LPC55(S)3x family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The lpcxpresso55s36 board
+this board with new support for Zephyr features.  The lpcxpresso55s36/lpc55s36 board
 configuration supports the hardware features below.  Another similar superset
 board is the :ref:`lpcxpresso55s69`, and that board may have additional features
-already supported, which can also be re-used on this lpcxpresso55s36 board:
+already supported, which can also be re-used on this lpcxpresso55s36/lpc55s36 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -201,7 +201,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso55s36
+   :board: lpcxpresso55s36/lpc55s36
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -210,7 +210,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.2.0 *****
-   Hello World! lpcxpresso55s36
+   Hello World! lpcxpresso55s36/lpc55s36
 
 Debugging
 =========
@@ -219,7 +219,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso55s36
+   :board: lpcxpresso55s36/lpc55s36
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -228,7 +228,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS zephyr-v2.2.0 *****
-   Hello World! lpcxpresso55s36
+   Hello World! lpcxpresso55s36/lpc55s36
 
 .. _LPC55S36 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpc553x-s3x-advanced-analog-armcortex-m33-based-mcu-family:LPC553x

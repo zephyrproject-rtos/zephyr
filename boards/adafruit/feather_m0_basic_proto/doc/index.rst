@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_feather_m0_basic_proto board configuration supports the
+The adafruit_feather_m0_basic_proto/samd21g18a board configuration supports the
 following hardware features:
 
 +-----------+------------+------------------------------------------+
@@ -114,7 +114,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_feather_m0_basic_proto
+      :board: adafruit_feather_m0_basic_proto/samd21g18a
       :goals: build
       :compact:
 
@@ -146,7 +146,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_feather_m0_basic_proto
+      :board: adafruit_feather_m0_basic_proto/samd21g18a
       :goals: flash
       :compact:
 

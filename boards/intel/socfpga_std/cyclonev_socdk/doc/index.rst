@@ -162,7 +162,7 @@ Flashing
 Flashing Kernel into the board
 ------------------------------
 
-The usual ``flash`` target will work with the ``cyclonev_socdk`` board
+The usual ``flash`` target will work with the ``cyclonev_socdk/cyclonev`` board
 configuration. Here is an example for the :ref:`hello_world`
 application.
 
@@ -173,7 +173,7 @@ to :zephyr_file:`boards/intel/socfpga_std/cyclonev_socdk/support/`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: cyclonev_socdk
+   :board: cyclonev_socdk/cyclonev
    :goals: flash
 
 Refer to :ref:`build_an_application` and :ref:`application_run` for
@@ -218,7 +218,7 @@ You can debug an application in the usual way.  Here is an example.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: cyclonev_socdk
+   :board: cyclonev_socdk/cyclonev
    :goals: debug
 
 You will see output similar to the following:
@@ -331,7 +331,7 @@ Development Kit Board. Try to ``blink`` an LED from the HPS side of the chip:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: cyclonev_socdk
+   :board: cyclonev_socdk/cyclonev
    :goals: flash
 
 .. figure:: img/cyclonev_blinky.jpg
@@ -344,7 +344,7 @@ Try writing characters to the LCD display connected to the i2c bus:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/lcd_cyclonev_socdk
-   :board: cyclonev_socdk
+   :board: cyclonev_socdk/cyclonev
    :goals: flash
 
 

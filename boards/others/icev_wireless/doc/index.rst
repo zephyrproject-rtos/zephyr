@@ -135,7 +135,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :app: samples/hello_world
-   :board: icev_wireless
+   :board: icev_wireless/esp32c3
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -183,7 +183,7 @@ For the :code:`Hello, world!` application, follow the instructions below.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: icev_wireless
+   :board: icev_wireless/esp32c3
    :goals: build flash
 
 Open the serial monitor using the following command:
@@ -198,7 +198,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! icev_wireless
+   Hello World! icev_wireless/esp32c3
 
 Debugging
 *********
@@ -224,7 +224,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: icev_wireless
+   :board: icev_wireless/esp32c3
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -233,7 +233,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: icev_wireless
+   :board: icev_wireless/esp32c3
    :maybe-skip-config:
    :goals: debug
 

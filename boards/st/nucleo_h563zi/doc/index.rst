@@ -143,7 +143,7 @@ More information about STM32H563ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_h563zi board configuration supports the following hardware features:
+The Zephyr nucleo_h563zi/stm32h563xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -196,11 +196,11 @@ for building for Secure firmware.
 
 The BOARD options are summarized below:
 
-+----------------------+-----------------------------------------------+
-|   BOARD              | Description                                   |
-+======================+===============================================+
-| nucleo_h563zi        | For building Secure firmware                  |
-+----------------------+-----------------------------------------------+
++---------------------------+-----------------------------------------------+
+| Board target              | Description                                   |
++===========================+===============================================+
+| nucleo_h563zi/stm32h563xx | For building Secure firmware                  |
++---------------------------+-----------------------------------------------+
 
 Connections and IOs
 ===================
@@ -240,7 +240,7 @@ to USART3. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_h563zi`` board can be built and
+Applications for the ``nucleo_h563zi/stm32h563xx`` board can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -283,14 +283,14 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h563zi
+   :board: nucleo_h563zi/stm32h563xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! nucleo_h563zi
+   Hello World! nucleo_h563zi/stm32h563xx
 
 Debugging
 =========
@@ -300,7 +300,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_h563zi
+   :board: nucleo_h563zi/stm32h563xx
    :goals: debug
 
 .. _NUCLEO_H563ZI website:

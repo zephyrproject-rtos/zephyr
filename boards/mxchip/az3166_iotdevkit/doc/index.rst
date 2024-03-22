@@ -43,7 +43,7 @@ The MXChip AZ3166 IoT DevKit has the following physical features:
 Supported Features
 ==================
 
-The az3166_iotdevkit board configuration supports the following
+The az3166_iotdevkit/stm32f412rx board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -91,7 +91,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: az3166_iotdevkit
+   :board: az3166_iotdevkit/stm32f412rx
    :goals: build flash
 
 

@@ -141,7 +141,7 @@ More information about STM32U575ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_u575zi_q board configuration supports the following hardware features:
+The Zephyr nucleo_u575zi_q/stm32u575xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -276,7 +276,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_u575zi_q
+   :board: nucleo_u575zi_q/stm32u575xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -293,7 +293,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_u575zi_q
+   :board: nucleo_u575zi_q/stm32u575xx
    :goals: debug
 
 .. _STM32 Nucleo-144 board User Manual:

@@ -78,7 +78,7 @@ for the default design:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: scobc_module1
+   :board: scobc_module1/designstart_fpga_cortex_m3
    :goals: flash
 
 After flashing, you should see message similar to the following in the terminal:
@@ -86,7 +86,7 @@ After flashing, you should see message similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v2.7.99  ***
-   Hello World! scobc_module1
+   Hello World! scobc_module1/designstart_fpga_cortex_m3
 
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal RAM in the FPGA.
@@ -98,7 +98,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: scobc_module1
+   :board: scobc_module1/designstart_fpga_cortex_m3
    :goals: debug
 
 Step through the application in your debugger, and you should see a message
@@ -107,7 +107,7 @@ similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v2.7.99  ***
-   Hello World! scobc_module1
+   Hello World! scobc_module1/designstart_fpga_cortex_m3
 
 References
 **********

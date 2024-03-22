@@ -109,7 +109,7 @@ Wiring
 =======
 #. Connect the Download Board to your host computer using the USB cable.
 
-#. Connect the it82xx2_evb to the evolution motherboard.
+#. Connect the it82xx2_evb/it82202ax to the evolution motherboard.
 
 #. Connect the Download Board J5 to J41 on the evolution motherboard.
 
@@ -117,10 +117,10 @@ Wiring
 
    .. image:: it82xx2_evb_wiring.jpg
         :align: center
-        :alt: it82xx2_evb wiring
+        :alt: it82xx2_evb/it82202ax wiring
 
    .. note:: Be careful during connection!
-    Use separate wires to connect I2C pins with pins on the it82xx2_evb board.
+    Use separate wires to connect I2C pins with pins on the it82xx2_evb/it82202ax board.
     Wiring connection is described in the table below.
 
     +-------------+---------------+
@@ -155,7 +155,7 @@ Building
    (see :`Zephyr Getting Started Guide`_):.
 
    .. zephyr-app-commands::
-      :board: it82xx2_evb
+      :board: it82xx2_evb/it82202ax
       :zephyr-app: samples/hello_world
       :goals: build
 
@@ -172,7 +172,7 @@ to the it82xx2 board flash.
 
 #. Open the winflash tool and make sure the order you open the switch is right.
    First, turn on the Download board switch.
-   Second, turn on the it82xx2_evb board switch.
+   Second, turn on the it82xx2_evb/it82202ax board switch.
    Then, configure your winflash tool like below.
 
     .. figure:: WinFlashTool_P2.jpg
@@ -197,7 +197,7 @@ to the it82xx2 board flash.
     .. figure:: WinFlashTool_P1.jpg
           :align: center
 
-#. Turn on the it82xx2_evb board switch, you should see ``"Hello World! it82xx2_evb"``
+#. Turn on the it82xx2_evb/it82202ax board switch, you should see ``"Hello World! it82xx2_evb"``
    sent by the board. If you don't see this message, press the Reset button and the
    message should appear.
 
@@ -236,7 +236,7 @@ Troubleshooting
 ===============
 
 #. If the flash tool reports a failure, re-plug the 8390 Download board or
-   power cycle the it82xx2_evb board and try again.
+   power cycle the it82xx2_evb/it82202ax board and try again.
 
 References
 ==========

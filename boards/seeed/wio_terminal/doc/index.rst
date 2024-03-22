@@ -41,7 +41,7 @@ Hardware
 Supported Features
 ==================
 
-The wio_terminal board configuration supports the following hardware features:
+The wio_terminal/samd51p19a board configuration supports the following hardware features:
 
 .. list-table::
     :header-rows: 1
@@ -143,7 +143,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: build
       :compact:
 
@@ -153,7 +153,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: flash
       :compact:
 
@@ -179,7 +179,7 @@ debugged using an SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: flash
       :flash-args: -r openocd
       :compact:
@@ -188,7 +188,7 @@ debugged using an SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: debug
       :compact:
 

@@ -60,7 +60,7 @@ More information about STM32F302VC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f3_seco_d23 board configuration supports the following hardware
+The Zephyr stm32f3_seco_d23/stm32f302xc board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -185,7 +185,7 @@ Programming and Debugging
 Flashing
 ========
 
-Applications for the ``stm32f3_seco_d23`` board configuration can be built and
+Applications for the ``stm32f3_seco_d23/stm32f302xc`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -210,7 +210,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f3_seco_d23
+   :board: stm32f3_seco_d23/stm32f302xc
    :goals: build flash
 
 Run a serial host program to connect with your board.
@@ -226,7 +226,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! stm32f3_seco_d23
+   Hello World! stm32f3_seco_d23/stm32f302xc
 
 
 .. _SECO SBC-3.5-PX30 website:

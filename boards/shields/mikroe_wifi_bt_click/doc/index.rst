@@ -99,11 +99,11 @@ See the example below for lpcxpresso55s69 board using Mikrobus serial:
    :shield: mikroe_wifi_bt_click_mikrobus
    :goals: build flash
 
-And this example for the b_u585i_iot02a development kit, using the Arduino connector for the UART pins:
+And this example for the b_u585i_iot02a/stm32u585xx development kit, using the Arduino connector for the UART pins:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: b_u585i_iot02a
+   :board: b_u585i_iot02a/stm32u585xx
    :shield: mikroe_wifi_bt_click_arduino
    :goals: build flash
 

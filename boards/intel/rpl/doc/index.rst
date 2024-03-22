@@ -58,7 +58,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: intel_rpl_s_crb
+      :board: intel_rpl_s_crb/raptor_lake
       :goals: build
 
    .. note::

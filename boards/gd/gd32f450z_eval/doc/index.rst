@@ -15,7 +15,7 @@ SRAM and 114 GPIOs.
 
 .. image:: img/gd32f450z_eval.webp
      :align: center
-     :alt: gd32f450z_eval
+     :alt: gd32f450z_eval/gd32f450
 
 
 Hardware
@@ -111,7 +111,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f450z_eval
+      :board: gd32f450z_eval/gd32f450
       :goals: build
       :compact:
 
@@ -134,7 +134,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f450z_eval
+      :board: gd32f450z_eval/gd32f450
       :goals: flash
       :compact:
 
@@ -144,7 +144,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f450z_eval
+      :board: gd32f450z_eval/gd32f450
       :goals: debug
       :compact:
 

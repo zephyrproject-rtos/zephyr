@@ -42,7 +42,7 @@ More information about the STM32F100x can be found in the
 Supported Features
 ==================
 
-The Zephyr stm32vl_disco board configuration supports the following hardware features:
+The Zephyr stm32vl_disco/stm32f100xb board configuration supports the following hardware features:
 
 .. list-table:: Supported hardware
    :header-rows: 1
@@ -124,7 +124,7 @@ For more details please refer to `STM32VLDISCOVERY board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32vl_disco`` board configuration can be built and
+Applications for the ``stm32vl_disco/stm32f100xb`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -141,7 +141,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32vl_disco
+   :board: stm32vl_disco/stm32f100xb
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -154,7 +154,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32vl_disco
+   :board: stm32vl_disco/stm32f100xb
    :maybe-skip-config:
    :goals: debug
 

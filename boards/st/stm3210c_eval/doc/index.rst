@@ -57,7 +57,7 @@ More information about STM32F107VCT can be found here:
 Supported Features
 ==================
 
-The Zephyr stm3210c_eval board configuration supports the following hardware features:
+The Zephyr stm3210c_eval/stm32f107xc board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -115,7 +115,7 @@ At power-on, the board is in firmware-upgrade mode (also called DFU for
 "Device Firmware Upgrade"), allowing the firmware to be updated through the USB.
 This interface is supported by the openocd version included in Zephyr SDK.
 
-Applications for the ``stm3210c_eval`` board configuration can be built and
+Applications for the ``stm3210c_eval/stm32f107xc`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -129,7 +129,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm3210c_eval
+   :board: stm3210c_eval/stm32f107xc
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -149,7 +149,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm3210c_eval
+   :board: stm3210c_eval/stm32f107xc
    :maybe-skip-config:
    :goals: debug
 

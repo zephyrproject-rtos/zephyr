@@ -27,7 +27,7 @@ Set ``-DSHIELD=boostxl_ulpsense`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/accel_polling/
-   :board: cc1352r1_launchxl
+   :board: cc1352r1_launchxl/cc1352r
    :shield: boostxl_ulpsense
    :goals: build
 

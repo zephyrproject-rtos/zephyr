@@ -48,7 +48,7 @@ kernel tests on Khadas Edge-V board. For example, with the :ref:`hello_world`:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: khadas_edgev
+   :board: khadas_edgev/rk3399
    :goals: build
 
 This will build an image with the synchronization sample app.
@@ -70,7 +70,7 @@ It will display the following console output:
 .. code-block:: console
 
 	*** Booting Zephyr OS build XXXXXXXXXXXX  ***
-	Hello World! khadas_edgev
+	Hello World! khadas_edgev/rk3399
 
 Flashing
 ========

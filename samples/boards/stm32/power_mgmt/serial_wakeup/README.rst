@@ -33,7 +33,7 @@ Note: Using HSI clock is a specific
 Building and Running
 ********************
 
-Build and flash this sample as follows, changing ``nucleo_wb55rg`` for a board
+Build and flash this sample as follows, changing ``nucleo_wb55rg/stm32wb55xx`` for a board
 configured to be compatible with this sample.
 
 .. zephyr-app-commands::

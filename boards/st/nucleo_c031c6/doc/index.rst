@@ -58,7 +58,7 @@ More information about STM32C031C6 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_c031c6 board configuration supports the following hardware features:
+The Zephyr nucleo_c031c6/stm32c031xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -115,7 +115,7 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_c031c6`` board configuration can be built and
+Applications for the ``nucleo_c031c6/stm32c031xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -131,7 +131,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_c031c6
+   :board: nucleo_c031c6/stm32c031xx
    :goals: build flash
 
 You will see the LED blinking every second.

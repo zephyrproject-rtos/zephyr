@@ -56,7 +56,7 @@ Set ``-DSHIELD=frdm_stbc_agm01`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxas21002
-   :board: frdm_k22f
+   :board: frdm_k22f/mk22f51212
    :shield: frdm_stbc_agm01
    :goals: build
 

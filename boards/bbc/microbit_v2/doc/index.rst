@@ -42,7 +42,7 @@ The micro:bit-v2 has the following physical features:
 Supported Features
 ==================
 
-The bbc_microbit_v2 board configuration supports the following
+The bbc_microbit_v2/nrf52833 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -86,7 +86,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bbc_microbit_v2
+   :board: bbc_microbit_v2/nrf52833
    :goals: build flash
 
 

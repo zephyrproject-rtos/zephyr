@@ -17,9 +17,10 @@ Requirements for SD card support
 
 This project requires SD card support and microSD card formatted with proper file system
 (FAT or Ext2) See the :ref:`disk_access_api` documentation for Zephyr implementation details.
-Boards that by default use SD card for storage: ``arduino_mkrzero``, ``esp_wrover_kit``,
-``mimxrt1050_evk``, ``nrf52840_blip`` and  ``olimexino_stm32``. The sample should be able
-to run with any other board that has "zephyr,sdmmc-disk" DT node enabled.
+Boards that by default use SD card for storage: ``arduino_mkrzero/samd21g18a``,
+``esp_wrover_kit``, ``mimxrt1050_evk/mimxrt1052``, ``nrf52840_blip/nrf52840`` and
+``olimexino_stm32/stm32f103xb``. The sample should be able to run with any other board that
+has "zephyr,sdmmc-disk" DT node enabled.
 
 Requirements for setting up FAT FS on SoC flash
 ***********************************************
@@ -40,7 +41,7 @@ on DK board. Currently following boards support the configuration:
 Building and Running FAT samples
 ********************************
 
-Boards with default configurations, for example ``arduino_mkrzero`` or
+Boards with default configurations, for example ``arduino_mkrzero/samd21g18a`` or
 ``nrf52840dk/nrf52840`` using internal flash can be build using command:
 
 .. zephyr-app-commands::
@@ -49,7 +50,7 @@ Boards with default configurations, for example ``arduino_mkrzero`` or
    :goals: build
    :compact:
 
-Where used example board ``nrf52840_blip`` should be replaced with desired board.
+Where used example board ``nrf52840_blip/nrf52840`` should be replaced with desired board.
 
 In case when some more specific configuration is to be used for a given board,
 for example ``nrf52840dk/nrf52840`` with MX25 device over QSPI, configuration
@@ -73,8 +74,8 @@ sample lists them out on the debug serial output.
 Building and Running EXT2 samples
 *********************************
 
-Ext2 sample can be build for ``hifive_unmatched`` or ``bl5340_dvk/nrf5340/cpuapp``. Because
-FAT is default file system for this sample, additional flags must be passed to build
+Ext2 sample can be build for ``hifive_unmatched/fu740`` or ``bl5340_dvk/nrf5340/cpuapp``.
+Because FAT is default file system for this sample, additional flags must be passed to build
 the sample.
 
 .. zephyr-app-commands::

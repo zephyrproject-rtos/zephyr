@@ -33,7 +33,7 @@ Hardware
 Supported Features
 ==================
 
-The samd20_xpro board configuration supports the following hardware
+The samd20_xpro/samd20j18 board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -114,7 +114,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samd20_xpro
+      :board: samd20_xpro/samd20j18
       :goals: build
       :compact:
 
@@ -140,7 +140,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samd20_xpro
+      :board: samd20_xpro/samd20j18
       :goals: flash
       :compact:
 

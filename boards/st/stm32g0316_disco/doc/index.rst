@@ -37,7 +37,7 @@ For more information about the STM32G03x SoC and the STM32G0316-DISCO board, see
 Supported Features
 ==================
 
-The Zephyr stm32g0316_disco board configuration supports the following hardware features:
+The Zephyr stm32g0316_disco/stm32g031xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -81,7 +81,7 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Applications for the ``stm32g0316_disco`` board configuration can be built the
+Applications for the ``stm32g0316_disco/stm32g031xx`` board configuration can be built the
 usual way (see :ref:`build_an_application` and :ref:`application_run` for more details).
 
 Flashing
@@ -98,7 +98,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32g0316_disco
+   :board: stm32g0316_disco/stm32g031xx
    :goals: build flash
 
 You should see the LED blinking every second.
@@ -111,7 +111,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32g0316_disco
+   :board: stm32g0316_disco/stm32g031xx
    :maybe-skip-config:
    :goals: debug
 

@@ -88,7 +88,7 @@ Nucleo F767ZI provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_f767zi board configuration supports the following hardware
+The Zephyr nucleo_f767zi/stm32f767xx board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -124,7 +124,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 
-(*) nucleo_f767zi with soc cut-A (Device marking A) has some ethernet
+(*) nucleo_f767zi/stm32f767xx with soc cut-A (Device marking A) has some ethernet
     instability (:github:`26519`).
     Use of cut-Z is advised.
     see restrictions errata:
@@ -178,7 +178,7 @@ assigned to UART3. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f767zi`` board configuration can be built and
+Applications for the ``nucleo_f767zi/stm32f767xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -202,14 +202,14 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f767zi
+   :board: nucleo_f767zi/stm32f767xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! nucleo_f767zi
+   $ Hello World! nucleo_f767zi/stm32f767xx
 
 Debugging
 =========
@@ -219,7 +219,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f767zi
+   :board: nucleo_f767zi/stm32f767xx
    :maybe-skip-config:
    :goals: debug
 

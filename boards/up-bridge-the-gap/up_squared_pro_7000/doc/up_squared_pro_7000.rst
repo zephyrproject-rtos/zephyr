@@ -45,7 +45,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: up_squared_pro_7000
+      :board: up_squared_pro_7000/alder_lake
       :goals: build
 
    .. note::

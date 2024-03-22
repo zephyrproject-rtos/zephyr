@@ -39,7 +39,7 @@ For more information about the K66F SoC and IP-K66F board:
 Supported Features
 ==================
 
-The ip_k66f board configuration supports the following hardware features:
+The ip_k66f/mk66f18 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -121,7 +121,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: ip_k66f
+   :board: ip_k66f/mk66f18
    :goals: flash
 
 Red LED0 should blink at 1 second delay.
@@ -133,7 +133,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: ip_k66f
+   :board: ip_k66f/mk66f18
    :goals: debug
 
 Step through the application in your debugger.
@@ -162,7 +162,7 @@ Step through the application in your debugger.
 Serial console
 ==============
 
-The ``ip_k66f`` board only uses Segger's RTT console for providing serial
+The ``ip_k66f/mk66f18`` board only uses Segger's RTT console for providing serial
 console. There is no physical serial port available.
 
 - To communicate with this board one needs in one console:

@@ -21,13 +21,13 @@ Requirements
 ************
 The TCPC device used by the sample is specified in the devicetree
 node that's compatible with ``usb-c-connector``.
-The sample has been tested on ``stm32g081b_eval``.
+The sample has been tested on ``stm32g081b_eval/stm32g081xx``.
 An overlay file is provided.
 
 Building and Running
 ********************
 
-Build and flash as follows, changing ``stm32g081b_eval`` for your board:
+Build and flash as follows, changing ``stm32g081b_eval/stm32g081xx`` for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb_c/source

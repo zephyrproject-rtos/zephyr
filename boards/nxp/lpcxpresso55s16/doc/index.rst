@@ -48,12 +48,12 @@ For more information about the LPC55S16 SoC and LPCXPresso55S16 board, see:
 Supported Features
 ==================
 
-The lpcxpresso55s16 board configuration supports the hardware features listed
+The lpcxpresso55s16/lpc55s16 board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
 :ref:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
-already supported, which can also be re-used on this lpcxpresso55s16 board:
+already supported, which can also be re-used on this lpcxpresso55s16/lpc55s16 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -193,7 +193,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso55s16
+   :board: lpcxpresso55s16/lpc55s16
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -202,7 +202,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.2.0 *****
-   Hello World! lpcxpresso55s16
+   Hello World! lpcxpresso55s16/lpc55s16
 
 Debugging
 =========
@@ -211,7 +211,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso55s16
+   :board: lpcxpresso55s16/lpc55s16
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -220,7 +220,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS zephyr-v2.2.0 *****
-   Hello World! lpcxpresso55s16
+   Hello World! lpcxpresso55s16/lpc55s16
 
 .. _LPC55S16 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpc551x-s1x-baseline-arm-cortex-m33-based-microcontroller-family:LPC551X-S1X

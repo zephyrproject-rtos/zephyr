@@ -117,7 +117,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :app: samples/hello_world
-   :board: xiao_esp32c3
+   :board: xiao_esp32c3/esp32c3
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -165,7 +165,7 @@ For the :code:`Hello, world!` application, follow the instructions below.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c3
+   :board: xiao_esp32c3/esp32c3
    :goals: build flash
 
 Since the Zephyr console is by default on the `usb_serial` device, we use
@@ -181,7 +181,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! xiao_esp32c3
+   Hello World! xiao_esp32c3/esp32c3
 
 Debugging
 *********
@@ -198,7 +198,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c3
+   :board: xiao_esp32c3/esp32c3
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -206,7 +206,7 @@ You can debug an application in the usual way. Here is an example for the :ref:`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_esp32c3
+   :board: xiao_esp32c3/esp32c3
    :goals: debug
 
 References

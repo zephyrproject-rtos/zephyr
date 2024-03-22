@@ -228,13 +228,13 @@ Rather, users can use the available USB port (CN12) to run virtual com port
 Programming and Debugging
 *************************
 
-Applications for the ``stm32wb5mmg`` board configuration can be built the
+Applications for the ``stm32wb5mmg/stm32wb55xx`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing the module
 ===================
 
-The onboard ST-Link on the ``b_u585i_iot02a`` board can be used to flash the
+The onboard ST-Link on the ``b_u585i_iot02a/stm32u585xx`` board can be used to flash the
 STM32WB5MMG module. To do this you should put SW4 on OFF and SW5 on ON mode.
 In this case the firmware will be uploaded on the STM32WB5MMG module.
 
@@ -257,7 +257,7 @@ Then build and flash the application for the STM32WB5MMG module.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/hci_uart
-   :board: stm32wb5mmg
+   :board: stm32wb5mmg/stm32wb55xx
    :goals: build flash
 
 Next, reverse back the buttons to default mode (SW4 on ON and SW5
@@ -268,7 +268,7 @@ B-U585I-IOT02A board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: b_u585i_iot02a
+   :board: b_u585i_iot02a/stm32u585xx
    :goals: build flash
 
 Rest the board and you should see the following messages on the console:
@@ -291,7 +291,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: b_u585i_iot02a
+   :board: b_u585i_iot02a/stm32u585xx
    :maybe-skip-config:
    :goals: debug
 

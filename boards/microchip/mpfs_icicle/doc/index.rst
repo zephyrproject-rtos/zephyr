@@ -6,8 +6,8 @@ Microchip mpfs_icicle
 Overview
 ********
 
-The Microchip mpfs_icicle board is a PolarFire SoC FPGA based development board with a Microchip MPFS250T fpga device.
-The E51 RISC-V CPU can be deployed on the mpfs_icicle board.
+The Microchip mpfs_icicle/polarfire board is a PolarFire SoC FPGA based development board with a Microchip MPFS250T fpga device.
+The E51 RISC-V CPU can be deployed on the mpfs_icicle/polarfire board.
 More information can be found on the `Microchip website <https://www.microchip.com/en-us/product/MPFS250T>`_.
 
 Programming and debugging
@@ -16,11 +16,11 @@ Programming and debugging
 Building
 ========
 
-Applications for the ``mpfs_icicle`` board configuration can be built as usual
+Applications for the ``mpfs_icicle/polarfire`` board configuration can be built as usual
 (see :ref:`build_an_application`):
 
 .. zephyr-app-commands::
-   :board: mpfs_icicle
+   :board: mpfs_icicle/polarfire
    :goals: build
 
 

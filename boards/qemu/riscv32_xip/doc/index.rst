@@ -11,7 +11,7 @@ The RISCV32 XIP QEMU board configuration is used to emulate the RISCV32 architec
 Programming and Debugging
 *************************
 
-Applications for the ``qemu_riscv32_xip`` board configuration can be built and run in
+Applications for the ``qemu_riscv32_xip/fe310`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -25,7 +25,7 @@ emulated environment. For example, with the :zephyr:code-sample:`synchronization
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_riscv32_xip
+   :board: qemu_riscv32_xip/fe310
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using

@@ -6,7 +6,7 @@ nRF52832-mdk
 Overview
 ********
 
-The nrf52832_mdk board is a fully open-source, versatile single board
+The nrf52832_mdk/nrf52832 board is a fully open-source, versatile single board
 development kit for Bluetooth® low energy, ANT and 2.4GHz proprietary
 applications using the nRF52832 SoC.
 

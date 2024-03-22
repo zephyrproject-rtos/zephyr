@@ -191,7 +191,7 @@ the USB data lines to the MCU, short solder bridges SB15 and SB16.
 Programming and Debugging
 *************************
 
-Applications for the ``b_l072z_lrwan1`` board configuration can be built and
+Applications for the ``b_l072z_lrwan1/stm32l072xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -219,7 +219,7 @@ Then build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: b_l072z_lrwan1
+   :board: b_l072z_lrwan1/stm32l072xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -236,7 +236,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: b_l072z_lrwan1
+   :board: b_l072z_lrwan1/stm32l072xx
    :maybe-skip-config:
    :goals: debug
 

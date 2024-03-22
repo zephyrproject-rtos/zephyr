@@ -25,11 +25,11 @@ Programming and debugging
 Building
 ========
 
-Applications for the ``sparkfun_red_v_things_plus`` board configuration can be built as usual
+Applications for the ``sparkfun_red_v_things_plus/fe310`` board configuration can be built as usual
 (see :ref:`build_an_application`) using the corresponding board name:
 
 .. zephyr-app-commands::
-   :board: sparkfun_red_v_things_plus
+   :board: sparkfun_red_v_things_plus/fe310
    :goals: build
 
 Flashing
@@ -46,7 +46,7 @@ With the Segger J-Link Software installed, you can flash the application as usua
 (see :ref:`build_an_application` and :ref:`application_run` for more details):
 
 .. zephyr-app-commands::
-   :board: sparkfun_red_v_things_plus
+   :board: sparkfun_red_v_things_plus/fe310
    :goals: flash
 
 Debugging

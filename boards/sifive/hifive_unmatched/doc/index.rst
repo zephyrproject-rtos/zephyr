@@ -19,11 +19,11 @@ Programming and debugging
 Building
 ========
 
-Applications for the ``hifive_unmatched`` board configuration can be built as
+Applications for the ``hifive_unmatched/fu740`` board configuration can be built as
 usual (see :ref:`build_an_application`) using the corresponding board name:
 
 .. zephyr-app-commands::
-   :board: hifive_unmatched
+   :board: hifive_unmatched/fu740
    :goals: build
 
 Flashing

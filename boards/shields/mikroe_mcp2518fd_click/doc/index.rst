@@ -28,7 +28,7 @@ for example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
-   :board: lpcxpresso55s28
+   :board: lpcxpresso55s28/lpc55s28
    :shield: mikroe_mcp2518fd_click
    :goals: build flash
 

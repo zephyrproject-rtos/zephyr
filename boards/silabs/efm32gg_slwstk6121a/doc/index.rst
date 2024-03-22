@@ -42,7 +42,7 @@ For more information about the WGM160P and SLWSTK6121A board:
 Supported Features
 ==================
 
-The efm32gg_slwstk6121a board configuration supports the following hardware
+The efm32gg_slwstk6121a/efm32gg11b820f2048gm64 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -141,7 +141,7 @@ Here is an example to build and flash the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efm32gg_slwstk6121a
+   :board: efm32gg_slwstk6121a/efm32gg11b820f2048gm64
    :goals: flash
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -156,7 +156,7 @@ terminal session:
 
 .. code-block:: console
 
-   Hello World! efm32gg_slwstk6121a
+   Hello World! efm32gg_slwstk6121a/efm32gg11b820f2048gm64
 
 .. _WGM160P Website:
    https://www.silabs.com/wireless/wi-fi/wfm160-series-1-modules

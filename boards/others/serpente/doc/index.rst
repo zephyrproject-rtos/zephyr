@@ -91,7 +91,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: serpente
+      :board: serpente/samd21e18a
       :goals: build
       :compact:
 
@@ -104,7 +104,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: serpente
+      :board: serpente/samd21e18a
       :goals: flash
       :compact:
 

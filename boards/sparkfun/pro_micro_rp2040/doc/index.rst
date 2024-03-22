@@ -37,7 +37,7 @@ Hardware
 Supported Features
 ==================
 
-The sparkfun_pro_micro_rp2040 board configuration supports the following
+The sparkfun_pro_micro_rp2040/rp2040 board configuration supports the following
 hardware features:
 
 .. list-table::

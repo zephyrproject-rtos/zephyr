@@ -57,7 +57,7 @@ More information about STM32H7B0VB can be found here:
 Supported Features
 ==================
 
-The Zephyr fk7b0m1_vbt6 board configuration supports the following hardware
+The Zephyr fk7b0m1_vbt6/stm32h7b0xx board configuration supports the following hardware
 features:
 
 +-------------+------------+-------------------------------------+
@@ -127,7 +127,7 @@ The Zephyr console output is assigned to UART1. The default communication settin
 Programming and Debugging
 *************************
 
-Applications for the ``fk7b0m1_vbt6`` board configuration can be built and flashed in the usual
+Applications for the ``fk7b0m1_vbt6/stm32h7b0xx`` board configuration can be built and flashed in the usual
 way (see :ref:`build_an_application` and :ref:`application_run` for more details).
 
 Flashing
@@ -149,7 +149,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: fk7b0m1_vbt6
+   :board: fk7b0m1_vbt6/stm32h7b0xx
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -162,7 +162,7 @@ Then, press the RESET button, you should see the following message:
 
 .. code-block:: console
 
-   Hello World! fk7b0m1_vbt6
+   Hello World! fk7b0m1_vbt6/stm32h7b0xx
 
 Debugging
 =========

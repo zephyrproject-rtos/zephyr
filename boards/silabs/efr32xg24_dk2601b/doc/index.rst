@@ -129,10 +129,10 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32xg24_dk2601b
+   :board: efr32xg24_dk2601b/efr32mg24b310f1536im48
    :goals: build
 
-Connect the efr32xg24_dk2601b to your host computer using the USB port and you
+Connect the efr32xg24_dk2601b/efr32mg24b310f1536im48 to your host computer using the USB port and you
 should see a USB connection.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -147,7 +147,7 @@ terminal session:
 
 .. code-block:: console
 
-   Hello World! efr32xg24_dk2601b
+   Hello World! efr32xg24_dk2601b/efr32mg24b310f1536im48
 
 Bluetooth
 =========
@@ -165,7 +165,7 @@ this example.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: efr32xg24_dk2601b
+   :board: efr32xg24_dk2601b/efr32mg24b310f1536im48
    :goals: build
 
 .. _EFR32MG24 Website:

@@ -69,7 +69,7 @@ For connections on the edge connectors, please refer to `Clicker 2 for STM32 Use
 
 Programming and Debugging
 *************************
-Applications for the ``mikroe_clicker_2`` board configuration can
+Applications for the ``mikroe_clicker_2/stm32f407xx`` board configuration can
 be built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -95,14 +95,14 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mikroe_clicker_2
+   :board: mikroe_clicker_2/stm32f407xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! mikroe_clicker_2
+   Hello World! mikroe_clicker_2/stm32f407xx
 
 
 Debugging
@@ -113,7 +113,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mikroe_clicker_2
+   :board: mikroe_clicker_2/stm32f407xx
    :maybe-skip-config:
    :goals: debug
 

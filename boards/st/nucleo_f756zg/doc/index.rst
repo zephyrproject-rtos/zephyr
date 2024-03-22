@@ -88,7 +88,7 @@ Nucleo F756ZG provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_f756zg board configuration supports the following hardware
+The Zephyr nucleo_f756zg/stm32f756xx board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -160,7 +160,7 @@ assigned to UART3. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f756zg`` board configuration can be built and
+Applications for the ``nucleo_f756zg/stm32f756xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -184,14 +184,14 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f756zg
+   :board: nucleo_f756zg/stm32f756xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! nucleo_f756zg
+   $ Hello World! nucleo_f756zg/stm32f756xx
 
 Debugging
 =========
@@ -201,7 +201,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f756zg
+   :board: nucleo_f756zg/stm32f756xx
    :maybe-skip-config:
    :goals: debug
 

@@ -95,7 +95,7 @@ More information about STM32G474RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g474re board configuration supports the following hardware features:
+The Zephyr nucleo_g474re/stm32g474xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -196,7 +196,7 @@ low power mode.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_g474re`` board configuration can be built and
+Applications for the ``nucleo_g474re/stm32g474xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -220,7 +220,7 @@ Now build and flash an application. Here is an example for
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_g474re
+   :board: nucleo_g474re/stm32g474xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -238,7 +238,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_g474re
+   :board: nucleo_g474re/stm32g474xx
    :maybe-skip-config:
    :goals: debug
 

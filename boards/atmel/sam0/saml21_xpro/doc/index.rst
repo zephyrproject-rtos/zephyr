@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The saml21_xpro board configuration supports the following hardware
+The saml21_xpro/saml21j18b board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -154,7 +154,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: saml21_xpro
+      :board: saml21_xpro/saml21j18b
       :goals: build
       :compact:
 
@@ -177,7 +177,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: saml21_xpro
+      :board: saml21_xpro/saml21j18b
       :goals: flash
       :compact:
 

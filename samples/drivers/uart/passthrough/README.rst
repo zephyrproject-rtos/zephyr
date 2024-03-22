@@ -26,7 +26,7 @@ Requirements
 Building and Running
 ********************
 
-Build and flash the sample as follows, changing ``nucleo_l476rg`` for your
+Build and flash the sample as follows, changing ``nucleo_l476rg/stm32l476xx`` for your
 board:
 
 .. zephyr-app-commands::

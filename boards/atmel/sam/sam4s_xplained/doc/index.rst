@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4s_xplained board configuration supports the following hardware
+The sam4s_xplained/sam4s16c board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -115,7 +115,7 @@ Using JLink
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: sam4s_xplained
+      :board: sam4s_xplained/sam4s16c
       :goals: build flash
 
 
@@ -132,7 +132,7 @@ Using SAM-BA bootloader
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: sam4s_xplained
+      :board: sam4s_xplained/sam4s16c
       :goals: build
 
    .. code-block:: console
@@ -171,7 +171,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sam4s_xplained
+   :board: sam4s_xplained/sam4s16c
    :maybe-skip-config:
    :goals: debug
 

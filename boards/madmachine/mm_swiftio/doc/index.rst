@@ -35,7 +35,7 @@ Hardware
 Supported Features
 ==================
 
-The mm_swiftio board configuration supports the following hardware
+The mm_swiftio/mimxrt1052 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -215,7 +215,7 @@ where ``<user>`` is your login name.
 
 .. code-block:: console
 
-    west build -b mm_swiftio samples/hello_world
+    west build -b mm_swiftio/mimxrt1052 samples/hello_world
     cp build/zephyr/zephyr.bin /media/<user>/SWIFTIODBGR/
 
 
@@ -225,7 +225,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.1.0-rc1 *****
-   Hello World! mm_swiftio
+   Hello World! mm_swiftio/mimxrt1052
 
 
 .. _MadMachine Homepage:

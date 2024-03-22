@@ -46,7 +46,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The twr_ke18f board configuration supports the following hardware
+The twr_ke18f/mke18f16 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -170,7 +170,7 @@ default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
@@ -197,7 +197,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW1 button), and you should
@@ -206,7 +206,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-xxx-gxxxxxxxxxxxx *****
-   Hello World! twr_ke18f
+   Hello World! twr_ke18f/mke18f16
 
 Debugging
 =========
@@ -215,7 +215,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -224,7 +224,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-xxx-gxxxxxxxxxxxx *****
-   Hello World! twr_ke18f
+   Hello World! twr_ke18f/mke18f16
 
 .. _TWR-KE18F Website:
    https://www.nxp.com/TWR-KE18F

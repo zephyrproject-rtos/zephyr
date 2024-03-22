@@ -188,7 +188,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: cc26x2r1_launchxl
+   :board: cc26x2r1_launchxl/cc2652r
    :goals: build flash
 
 Debugging
@@ -199,7 +199,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: cc26x2r1_launchxl
+   :board: cc26x2r1_launchxl/cc2652r
    :maybe-skip-config:
    :goals: debug
 

@@ -76,7 +76,7 @@ More information about STM32F407VG can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f4_disco board configuration supports the following hardware features:
+The Zephyr stm32f4_disco/stm32f407xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -155,7 +155,7 @@ enable console output you should use a serial cable and connect it to UART2 pins
 Programming and Debugging
 *************************
 
-Applications for the ``stm32f4_disco`` board configuration can be built and
+Applications for the ``stm32f4_disco/stm32f407xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -180,7 +180,7 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f4_disco
+   :board: stm32f4_disco/stm32f407xx
    :goals: build flash
 
 You should see user led "LD4" blinking.
@@ -193,7 +193,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32f4_disco
+   :board: stm32f4_disco/stm32f407xx
    :maybe-skip-config:
    :goals: debug
 

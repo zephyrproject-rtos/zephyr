@@ -6,7 +6,7 @@ ARM V2M Beetle
 Overview
 ********
 
-The v2m_beetle board configuration is used by Zephyr applications that run on
+The v2m_beetle/beetle_r0 board configuration is used by Zephyr applications that run on
 the V2M Beetle board. It provides support for the Beetle ARM Cortex-M3 CPU and
 the following devices:
 
@@ -49,7 +49,7 @@ ARM V2M BEETLE provides the following hardware components:
 Supported Features
 ===================
 
-The v2m_beetle board configuration supports the following hardware features:
+The v2m_beetle/beetle_r0 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -233,7 +233,7 @@ the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: v2m_beetle
+   :board: v2m_beetle/beetle_r0
    :goals: build
 
 Connect the V2M Beetle to your host computer using the USB port and you should

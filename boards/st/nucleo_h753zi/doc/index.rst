@@ -91,7 +91,7 @@ Nucleo H753ZI provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h753zi board configuration supports the following hardware
+The Zephyr nucleo_h753zi/stm32h753xx board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -169,7 +169,7 @@ Requires an external CAN or CANFD transceiver.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_h753zi`` board configuration can be built and
+Applications for the ``nucleo_h753zi/stm32h753xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -199,14 +199,14 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h753zi
+   :board: nucleo_h753zi/stm32h753xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! nucleo_h753zi
+   $ Hello World! nucleo_h753zi/stm32h753xx
 
 Debugging
 =========
@@ -216,7 +216,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h753zi
+   :board: nucleo_h753zi/stm32h753xx
    :maybe-skip-config:
    :goals: debug
 

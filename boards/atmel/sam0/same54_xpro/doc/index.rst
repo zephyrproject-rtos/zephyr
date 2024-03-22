@@ -43,7 +43,7 @@ Hardware
 Supported Features
 ==================
 
-The same54_xpro board configuration supports the following hardware
+The same54_xpro/same54p20a board configuration supports the following hardware
 features:
 
 +---------------+------------+----------------------------+
@@ -183,7 +183,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: same54_xpro
+      :board: same54_xpro/same54p20a
       :goals: build
       :compact:
 
@@ -209,7 +209,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: same54_xpro
+      :board: same54_xpro/same54p20a
       :goals: flash
       :compact:
 

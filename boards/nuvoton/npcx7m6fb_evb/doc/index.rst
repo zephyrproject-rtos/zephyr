@@ -90,7 +90,7 @@ SEGGER J-link's drivers are at https://www.segger.com/downloads/jlink/
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: npcx7m6fb_evb
+   :board: npcx7m6fb_evb/npcx7m6fb
    :maybe-skip-config:
    :goals: build flash
 

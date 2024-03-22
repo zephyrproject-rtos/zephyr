@@ -6,7 +6,7 @@ nRF52-VBLUno52
 Overview
 ********
 
-Zephyr can use the nrf52_vbluno52 board configuration to run on the VBLUno52 board,
+Zephyr can use the nrf52_vbluno52/nrf52832 board configuration to run on the VBLUno52 board,
 a VNG Bluetooth Low Energy UNO using an nRF52832 ARM Cortex-M4F processor.
 It provides support for the Nordic Semiconductor nRF52832 ARM Cortex-M4F CPU and
 the following devices:
@@ -34,7 +34,7 @@ is 64 MHz.
 Supported Features
 ==================
 
-The nrf52_vbluno52 board configuration supports the following
+The nrf52_vbluno52/nrf52832 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -91,7 +91,7 @@ example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52_vbluno52
+   :board: nrf52_vbluno52/nrf52832
    :goals: build flash
 
 Testing the VBLUno52 with Zephyr: buttons, LEDs, UART, BLE

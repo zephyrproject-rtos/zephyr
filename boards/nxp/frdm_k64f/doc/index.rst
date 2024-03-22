@@ -61,7 +61,7 @@ Supported Features
 NXP considers the FRDM-K64F as the superset board for the Kinetis K
 series of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire Kinetis K series.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The frdm_k64f board
+this board with new support for Zephyr features.  The frdm_k64f/mk64f12 board
 configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
@@ -286,7 +286,7 @@ instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
 
         .. zephyr-app-commands::
            :zephyr-app: samples/hello_world
-           :board: frdm_k64f
+           :board: frdm_k64f/mk64f12
            :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
            :goals: build
 
@@ -313,7 +313,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW1 button), and you should
@@ -322,7 +322,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! frdm_k64f
+   Hello World! frdm_k64f/mk64f12
 
 Debugging
 =========
@@ -331,7 +331,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -340,7 +340,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! frdm_k64f
+   Hello World! frdm_k64f/mk64f12
 
 Troubleshooting
 ===============

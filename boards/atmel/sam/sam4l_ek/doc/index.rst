@@ -56,7 +56,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4l_ek board configuration supports the following hardware features:
+The sam4l_ek/sam4lc4c board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -144,7 +144,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: sam4l_ek
+      :board: sam4l_ek/sam4lc4c
       :goals: build flash
 
    You should see "Hello World! sam4l_ek" in your terminal.
@@ -157,7 +157,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sam4l_ek
+   :board: sam4l_ek/sam4lc4c
    :maybe-skip-config:
    :goals: debug
 

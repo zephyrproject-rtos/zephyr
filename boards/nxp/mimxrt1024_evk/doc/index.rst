@@ -80,12 +80,12 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1024_evk board configuration supports the hardware features listed
+The mimxrt1024_evk/mimxrt1024 board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
 :ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1024_evk board:
+Zephyr.  Therefore, the mimxrt1064_evk/mimxrt1064 board may have additional features
+already supported, which can also be re-used on this mimxrt1024_evk/mimxrt1024 board:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -253,7 +253,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1024_evk
+   :board: mimxrt1024_evk/mimxrt1024
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW9 button), and you should
@@ -262,7 +262,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.4.0-rc1 *****
-   Hello World! mimxrt1024_evk
+   Hello World! mimxrt1024_evk/mimxrt1024
 
 Debugging
 =========
@@ -271,7 +271,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1024_evk
+   :board: mimxrt1024_evk/mimxrt1024
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -280,7 +280,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v2.4.0-rc1 *****
-   Hello World! mimxrt1024_evk
+   Hello World! mimxrt1024_evk/mimxrt1024
 
 .. _MIMXRT1024-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1024-evaluation-kit:MIMXRT1024-EVK
