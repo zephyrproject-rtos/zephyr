@@ -1,0 +1,75 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <ti/mspm0g1x0x_g3x0x/mspm0g3507.dtsi>
+#include <ti/mspm0g1x0x_g3x0x/mspm0g350x-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "TI LP_MSPM0G3507";
+	compatible = "ti,mspm0g3507";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &btn0;
+		sw1 = &btn1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiob 22 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+		led1: led_1 {
+			gpios = <&gpiob 26 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpiob 27 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpiob 21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Switch 3";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn1: btn_1 {
+			gpios = <&gpioa 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <32000000>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
+	pinctrl-names = "default";
+};

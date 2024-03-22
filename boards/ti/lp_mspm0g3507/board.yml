@@ -1,0 +1,5 @@
+board:
+  name: lp_mspm0g3507
+  vendor: ti
+  socs:
+    - name: mspm0g350x
