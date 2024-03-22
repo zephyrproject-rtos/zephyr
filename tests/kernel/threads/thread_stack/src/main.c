@@ -121,7 +121,7 @@ void stack_buffer_scenarios(void)
 #endif
 	{
 		reserved = K_KERNEL_STACK_RESERVED;
-		stack_buf = Z_KERNEL_STACK_BUFFER(stack_obj);
+		stack_buf = K_KERNEL_STACK_BUFFER(stack_obj);
 		alignment = Z_KERNEL_STACK_OBJ_ALIGN;
 	}
 

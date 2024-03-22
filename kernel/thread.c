@@ -392,7 +392,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	{
 		/* Object cannot host a user mode thread */
 		stack_obj_size = Z_KERNEL_STACK_SIZE_ADJUST(stack_size);
-		stack_buf_start = Z_KERNEL_STACK_BUFFER(stack);
+		stack_buf_start = K_KERNEL_STACK_BUFFER(stack);
 		stack_buf_size = stack_obj_size - K_KERNEL_STACK_RESERVED;
 
 		/* Zephyr treats stack overflow as an app bug.  But

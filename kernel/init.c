@@ -469,7 +469,7 @@ void z_init_cpu(int id)
 	_kernel.cpus[id].idle_thread = &z_idle_threads[id];
 	_kernel.cpus[id].id = id;
 	_kernel.cpus[id].irq_stack =
-		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
+		(K_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
 		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	_kernel.cpus[id].usage = &_kernel.usage[id];
