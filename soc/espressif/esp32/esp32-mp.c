@@ -258,12 +258,12 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	sr.cpu = cpu_num;
 	sr.fn = fn;
-	sr.stack_top = Z_KERNEL_STACK_BUFFER(stack) + sz;
+	sr.stack_top = K_KERNEL_STACK_BUFFER(stack) + sz;
 	sr.arg = arg;
 	sr.vecbase = vb;
 	sr.alive = &alive_flag;
 
-	appcpu_top = Z_KERNEL_STACK_BUFFER(stack) + sz;
+	appcpu_top = K_KERNEL_STACK_BUFFER(stack) + sz;
 
 	start_rec = &sr;
 

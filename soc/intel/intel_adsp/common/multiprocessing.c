@@ -129,7 +129,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	start_rec.fn = fn;
 	start_rec.arg = arg;
 
-	z_mp_stack_top = Z_KERNEL_STACK_BUFFER(stack) + sz;
+	z_mp_stack_top = K_KERNEL_STACK_BUFFER(stack) + sz;
 
 	soc_start_core(cpu_num);
 }

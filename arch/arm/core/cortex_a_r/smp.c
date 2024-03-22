@@ -120,16 +120,16 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	}
 
 	/* Pass stack address to secondary core */
-	arm_cpu_boot_params.irq_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
-	arm_cpu_boot_params.fiq_sp = Z_KERNEL_STACK_BUFFER(z_arm_fiq_stack[cpu_num])
+	arm_cpu_boot_params.irq_sp = K_KERNEL_STACK_BUFFER(stack) + sz;
+	arm_cpu_boot_params.fiq_sp = K_KERNEL_STACK_BUFFER(z_arm_fiq_stack[cpu_num])
 				     + CONFIG_ARMV7_FIQ_STACK_SIZE;
-	arm_cpu_boot_params.abt_sp = Z_KERNEL_STACK_BUFFER(z_arm_abort_stack[cpu_num])
+	arm_cpu_boot_params.abt_sp = K_KERNEL_STACK_BUFFER(z_arm_abort_stack[cpu_num])
 				     + CONFIG_ARMV7_EXCEPTION_STACK_SIZE;
-	arm_cpu_boot_params.udf_sp = Z_KERNEL_STACK_BUFFER(z_arm_undef_stack[cpu_num])
+	arm_cpu_boot_params.udf_sp = K_KERNEL_STACK_BUFFER(z_arm_undef_stack[cpu_num])
 				     + CONFIG_ARMV7_EXCEPTION_STACK_SIZE;
-	arm_cpu_boot_params.svc_sp = Z_KERNEL_STACK_BUFFER(z_arm_svc_stack[cpu_num])
+	arm_cpu_boot_params.svc_sp = K_KERNEL_STACK_BUFFER(z_arm_svc_stack[cpu_num])
 				     + CONFIG_ARMV7_SVC_STACK_SIZE;
-	arm_cpu_boot_params.sys_sp = Z_KERNEL_STACK_BUFFER(z_arm_sys_stack[cpu_num])
+	arm_cpu_boot_params.sys_sp = K_KERNEL_STACK_BUFFER(z_arm_sys_stack[cpu_num])
 				     + CONFIG_ARMV7_SYS_STACK_SIZE;
 
 	arm_cpu_boot_params.fn = fn;

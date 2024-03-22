@@ -156,7 +156,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	apic_id = x86_cpu_loapics[cpu_num];
 
-	x86_cpuboot[cpu_num].sp = (uint64_t) Z_KERNEL_STACK_BUFFER(stack) + sz;
+	x86_cpuboot[cpu_num].sp = (uint64_t) K_KERNEL_STACK_BUFFER(stack) + sz;
 	x86_cpuboot[cpu_num].stack_size = sz;
 	x86_cpuboot[cpu_num].fn = fn;
 	x86_cpuboot[cpu_num].arg = arg;

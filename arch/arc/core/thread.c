@@ -283,7 +283,7 @@ FUNC_NORETURN void z_arc_switch_to_main_no_multithreading(k_thread_entry_t main_
 							  void *p1, void *p2, void *p3)
 {
 	_kernel.cpus[0].id = 0;
-	_kernel.cpus[0].irq_stack = (Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]) +
+	_kernel.cpus[0].irq_stack = (K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]) +
 				     K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
 
 	void *main_stack = (Z_THREAD_STACK_BUFFER(z_main_stack) +
