@@ -41,4 +41,6 @@ source "drivers/video/Kconfig.ov7725"
 
 source "drivers/video/Kconfig.ov2640"
 
+source "drivers/video/Kconfig.stm32_dcmi"
+
 endif # VIDEO
