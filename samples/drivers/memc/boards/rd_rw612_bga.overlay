@@ -1,0 +1,19 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &sram_code;
+	};
+
+	aliases {
+		sram-ext = &is66wvq8m4;
+	};
+};
+
+&is66wvq8m4 {
+	status = "okay";
+};
