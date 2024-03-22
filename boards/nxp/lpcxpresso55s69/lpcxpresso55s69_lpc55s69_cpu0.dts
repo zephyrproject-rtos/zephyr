@@ -151,6 +151,14 @@
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	d-cal = <5>;
+	txcal45dp = <10>;
+	txcal45dm = <10>;
 };
 
 &ctimer0 {

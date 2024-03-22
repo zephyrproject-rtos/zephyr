@@ -352,6 +352,14 @@ i2s1: &flexcomm3 {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy_handle = <&usbphy>;
+};
+
+&usbphy {
+	status = "okay";
+	d-cal = <12>;
+	txcal45dp = <6>;
+	txcal45dm = <6>;
 };
 
 &ctimer0 {
