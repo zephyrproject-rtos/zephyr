@@ -1,4 +1,4 @@
-identifier: nrf52_sparkfun
+identifier: nrf52_sparkfun/nrf52832
 name: Sparkfun nRF52832 breakout
 type: mcu
 arch: arm

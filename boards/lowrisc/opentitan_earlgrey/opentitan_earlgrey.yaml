@@ -1,4 +1,4 @@
-identifier: opentitan_earlgrey
+identifier: opentitan_earlgrey/opentitan
 name: OpenTitan Earl Grey
 type: mcu
 arch: riscv

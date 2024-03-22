@@ -1,4 +1,4 @@
-identifier: nucleo_c031c6
+identifier: nucleo_c031c6/stm32c031xx
 name: ST Nucleo C031C6
 type: mcu
 arch: arm

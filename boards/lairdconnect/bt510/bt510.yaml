@@ -1,4 +1,4 @@
-identifier: bt510
+identifier: bt510/nrf52840
 name: BT510
 type: mcu
 arch: arm

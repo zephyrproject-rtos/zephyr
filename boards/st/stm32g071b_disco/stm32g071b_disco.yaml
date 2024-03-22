@@ -1,4 +1,4 @@
-identifier: stm32g071b_disco
+identifier: stm32g071b_disco/stm32g071xx
 name: ST STM32G071B Discovery
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: nrf52_vbluno52
+identifier: nrf52_vbluno52/nrf52832
 name: nRF52-VBLUno52
 type: mcu
 arch: arm

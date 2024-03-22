@@ -1,4 +1,4 @@
-identifier: nucleo_l552ze_q
+identifier: nucleo_l552ze_q/stm32l552xx
 name: ST Nucleo L552ZE Q
 type: mcu
 arch: arm

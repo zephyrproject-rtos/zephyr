@@ -1,4 +1,4 @@
-identifier: google_kukui
+identifier: google_kukui/stm32f098xx
 name: Google Kukui EC
 type: mcu
 arch: arm

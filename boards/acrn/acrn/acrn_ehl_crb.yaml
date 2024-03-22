@@ -1,4 +1,4 @@
-identifier: acrn_ehl_crb
+identifier: acrn_ehl_crb/elkhart_lake
 name: ACRN on EHL configuration
 type: mcu
 arch: x86

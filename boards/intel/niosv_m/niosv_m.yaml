@@ -1,4 +1,4 @@
-identifier: niosv_m
+identifier: niosv_m/niosv_m
 name: INTEL FPGA niosv_m
 type: mcu
 arch: riscv

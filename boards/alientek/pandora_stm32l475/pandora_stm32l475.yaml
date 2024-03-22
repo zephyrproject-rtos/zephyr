@@ -1,4 +1,4 @@
-identifier: pandora_stm32l475
+identifier: pandora_stm32l475/stm32l475xx
 name: STM32L475 Pandora
 type: mcu
 arch: arm

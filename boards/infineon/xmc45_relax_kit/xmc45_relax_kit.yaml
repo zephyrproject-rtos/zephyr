@@ -1,4 +1,4 @@
-identifier: xmc45_relax_kit
+identifier: xmc45_relax_kit/xmc4500
 name: XMC45-RELAX-KIT
 type: mcu
 arch: arm

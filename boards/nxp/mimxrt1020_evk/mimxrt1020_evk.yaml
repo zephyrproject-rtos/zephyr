@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt1020_evk
+identifier: mimxrt1020_evk/mimxrt1021
 name: NXP MIMXRT1020-EVK
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: qemu_cortex_a53
+identifier: qemu_cortex_a53/qemu_cortex_a53
 name: QEMU Emulation for Cortex-A53
 type: qemu
 simulation: qemu

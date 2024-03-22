@@ -1,4 +1,4 @@
-identifier: xiao_ble
+identifier: xiao_ble/nrf52840
 name: XIAO BLE
 type: mcu
 arch: arm

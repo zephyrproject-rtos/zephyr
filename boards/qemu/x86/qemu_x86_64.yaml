@@ -1,4 +1,4 @@
-identifier: qemu_x86_64
+identifier: qemu_x86_64/atom
 name: QEMU Emulation for X86_64
 type: qemu
 arch: x86

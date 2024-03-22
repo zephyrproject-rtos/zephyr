@@ -1,4 +1,4 @@
-identifier: swan_r5
+identifier: swan_r5/stm32l4r5xx
 name: Blues Wireless Swan
 type: mcu
 arch: arm

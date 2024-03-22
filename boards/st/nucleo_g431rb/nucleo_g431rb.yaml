@@ -1,4 +1,4 @@
-identifier: nucleo_g431rb
+identifier: nucleo_g431rb/stm32g431xx
 name: ST Nucleo G431RB
 type: mcu
 arch: arm

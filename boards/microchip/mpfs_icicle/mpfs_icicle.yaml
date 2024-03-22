@@ -1,4 +1,4 @@
-identifier: mpfs_icicle
+identifier: mpfs_icicle/polarfire
 name: Microchip PolarFire ICICLE kit
 type: mcu
 arch: riscv

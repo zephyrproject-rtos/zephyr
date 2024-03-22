@@ -1,4 +1,4 @@
-identifier: stm32f723e_disco
+identifier: stm32f723e_disco/stm32f723xx
 name: ST STM32F723E Discovery
 type: mcu
 arch: arm

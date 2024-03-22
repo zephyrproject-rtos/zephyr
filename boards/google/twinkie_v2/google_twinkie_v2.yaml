@@ -1,4 +1,4 @@
-identifier: google_twinkie_v2
+identifier: google_twinkie_v2/stm32g0b1xx
 name: Google Twinkie V2
 type: mcu
 arch: arm

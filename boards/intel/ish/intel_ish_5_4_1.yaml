@@ -1,4 +1,4 @@
-identifier: intel_ish_5_4_1
+identifier: intel_ish_5_4_1/intel_ish_5_4_1
 name: Intel ISH 5.4.1 SoC
 type: mcu
 arch: x86

@@ -1,4 +1,4 @@
-identifier: qemu_kvm_arm64
+identifier: qemu_kvm_arm64/qemu_virt_arm64
 name: QEMU Virt Emulation for AArch64 KVM
 type: qemu
 arch: arm64

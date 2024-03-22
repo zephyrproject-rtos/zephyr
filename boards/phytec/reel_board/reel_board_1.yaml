@@ -1,4 +1,4 @@
-identifier: reel_board
+identifier: reel_board/nrf52840
 name: reel-board
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: nucleo_l432kc
+identifier: nucleo_l432kc/stm32l432xx
 name: ST Nucleo L432KC
 type: mcu
 arch: arm

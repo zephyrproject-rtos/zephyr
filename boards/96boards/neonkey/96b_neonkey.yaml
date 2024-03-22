@@ -1,4 +1,4 @@
-identifier: 96b_neonkey
+identifier: 96b_neonkey/stm32f411xe
 name: 96Boards Neonkey
 type: mcu
 arch: arm

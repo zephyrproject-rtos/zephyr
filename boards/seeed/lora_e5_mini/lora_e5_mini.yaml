@@ -1,4 +1,4 @@
-identifier: lora_e5_mini
+identifier: lora_e5_mini/stm32wle5xx
 name: Seeedstudio LoRa-E5 mini
 type: mcu
 arch: arm

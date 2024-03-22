@@ -1,4 +1,4 @@
-identifier: visionfive2
+identifier: visionfive2/jh7110
 name: Visionfive JH7110 (NON-SMP)
 type: mcu
 arch: riscv

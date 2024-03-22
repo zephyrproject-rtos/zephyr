@@ -1,4 +1,4 @@
-identifier: legend@25hdd
+identifier: legend@25hdd/stm32f070xb
 name: Legend
 type: mcu
 arch: arm

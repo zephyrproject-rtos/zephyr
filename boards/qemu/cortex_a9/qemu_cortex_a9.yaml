@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: qemu_cortex_a9
+identifier: qemu_cortex_a9/xc7z007s
 name: QEMU Emulation for Cortex-A9
 type: qemu
 simulation: qemu

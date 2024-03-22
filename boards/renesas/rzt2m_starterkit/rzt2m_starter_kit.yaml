@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: rzt2m_starter_kit
+identifier: rzt2m_starter_kit/renesas_rzt2m
 name: Renesas RZ/T2M Starter Kit+
 type: mcu
 arch: arm

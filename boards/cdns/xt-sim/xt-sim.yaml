@@ -1,4 +1,4 @@
-identifier: xt-sim
+identifier: xt-sim/xtensa_sample_controller
 name: XT Simulator
 type: sim
 arch: xtensa

@@ -1,6 +1,6 @@
 # Copyright (c) 2021 Aspeed Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
-identifier: ast1030_evb
+identifier: ast1030_evb/ast1030
 name: Aspeed AST1030-EVB
 type: mcu
 arch: arm

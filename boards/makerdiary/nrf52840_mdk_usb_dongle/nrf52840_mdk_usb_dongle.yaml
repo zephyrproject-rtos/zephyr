@@ -1,4 +1,4 @@
-identifier: nrf52840_mdk_usb_dongle
+identifier: nrf52840_mdk_usb_dongle/nrf52840
 name: nRF52840-MDK-USB-Dongle
 type: mcu
 arch: arm

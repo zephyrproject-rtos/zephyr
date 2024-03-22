@@ -1,4 +1,4 @@
-identifier: rcar_salvator_xs
+identifier: rcar_salvator_xs/r8a77961
 name: Renesas Salvator XS M3 based on r8a77961
 type: mcu
 arch: arm64

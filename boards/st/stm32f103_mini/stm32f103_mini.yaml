@@ -1,4 +1,4 @@
-identifier: stm32f103_mini
+identifier: stm32f103_mini/stm32f103xe
 name: STM32F103RCT6 Mini Board
 type: mcu
 arch: arm

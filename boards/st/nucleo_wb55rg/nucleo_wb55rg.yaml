@@ -1,4 +1,4 @@
-identifier: nucleo_wb55rg
+identifier: nucleo_wb55rg/stm32wb55xx
 name: ST Nucleo WB55RG
 type: mcu
 arch: arm

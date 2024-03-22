@@ -1,4 +1,4 @@
-identifier: esp32s2_saola
+identifier: esp32s2_saola/esp32s2
 name: ESP32-S2 Saola
 type: mcu
 arch: xtensa

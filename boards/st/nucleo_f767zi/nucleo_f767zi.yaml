@@ -1,4 +1,4 @@
-identifier: nucleo_f767zi
+identifier: nucleo_f767zi/stm32f767xx
 name: ST Nucleo F767ZI
 type: mcu
 arch: arm

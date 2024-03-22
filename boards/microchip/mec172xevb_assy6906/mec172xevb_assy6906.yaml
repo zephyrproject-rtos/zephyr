@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mec172xevb_assy6906
+identifier: mec172xevb_assy6906/mec172x_nsz
 name: MEC172X EVB ASSY 6906
 type: mcu
 arch: arm

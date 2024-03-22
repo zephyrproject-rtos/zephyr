@@ -1,4 +1,4 @@
-identifier: generic_leon3
+identifier: generic_leon3/leon3
 name: Generic LEON3 system
 type: mcu
 simulation: tsim

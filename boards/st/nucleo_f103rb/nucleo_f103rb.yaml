@@ -1,4 +1,4 @@
-identifier: nucleo_f103rb
+identifier: nucleo_f103rb/stm32f103xb
 name: ST Nucleo F103RB
 type: mcu
 arch: arm

@@ -1,7 +1,7 @@
 # Copyright (c) 2021 BrainCO Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: gd32f350r_eval
+identifier: gd32f350r_eval/gd32f350
 name: GigaDevice GD32F350R Evaluation Kit
 type: mcu
 arch: arm

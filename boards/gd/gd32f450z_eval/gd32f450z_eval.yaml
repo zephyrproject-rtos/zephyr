@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Rtone.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: gd32f450z_eval
+identifier: gd32f450z_eval/gd32f450
 name: GigaDevice GD32F450Z-EVAL
 type: mcu
 arch: arm

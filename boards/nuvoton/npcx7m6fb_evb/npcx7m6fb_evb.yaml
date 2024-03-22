@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: npcx7m6fb_evb
+identifier: npcx7m6fb_evb/npcx7m6fb
 name: Nuvoton NPCX7M6FB EVB
 type: mcu
 arch: arm

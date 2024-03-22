@@ -1,4 +1,4 @@
-identifier: nucleo_wba55cg
+identifier: nucleo_wba55cg/stm32wba55xx
 name: ST Nucleo WBA55CG
 type: mcu
 arch: arm

@@ -1,7 +1,7 @@
 # Copyright (c) 2021, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: gd32vf103v_eval
+identifier: gd32vf103v_eval/gd32vf103
 name: GigaDevice GD32VF103V-EVAL
 type: mcu
 arch: riscv

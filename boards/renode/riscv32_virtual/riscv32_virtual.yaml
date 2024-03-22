@@ -1,4 +1,4 @@
-identifier: riscv32_virtual
+identifier: riscv32_virtual/riscv_virtual_renode
 name: Renode RISC-V 32-bit Virtual Board
 type: mcu
 arch: riscv

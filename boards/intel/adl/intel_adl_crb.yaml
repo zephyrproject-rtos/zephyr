@@ -1,4 +1,4 @@
-identifier: intel_adl_crb
+identifier: intel_adl_crb/alder_lake
 name: Alder Lake CRB
 type: mcu
 arch: x86

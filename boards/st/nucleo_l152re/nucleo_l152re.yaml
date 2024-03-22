@@ -1,4 +1,4 @@
-identifier: nucleo_l152re
+identifier: nucleo_l152re/stm32l152xe
 name: ST Nucleo L152RE
 type: mcu
 arch: arm

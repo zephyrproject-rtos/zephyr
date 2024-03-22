@@ -1,4 +1,4 @@
-identifier: qomu
+identifier: qomu/quicklogic_eos_s3
 name: QuickLogic Qomu
 type: mcu
 arch: arm

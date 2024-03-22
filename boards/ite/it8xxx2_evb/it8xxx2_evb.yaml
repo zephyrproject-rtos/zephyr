@@ -1,4 +1,4 @@
-identifier: it8xxx2_evb
+identifier: it8xxx2_evb/it81302bx
 name: ITE IT8XXX2 EVB
 type: mcu
 arch: riscv

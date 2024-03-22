@@ -1,4 +1,4 @@
-identifier: icev_wireless
+identifier: icev_wireless/esp32c3
 name: ICE-V Wireless
 type: mcu
 arch: riscv

@@ -1,4 +1,4 @@
-identifier: arduino_mkrzero
+identifier: arduino_mkrzero/samd21g18a
 name: Arduino MKRZERO
 type: mcu
 arch: arm

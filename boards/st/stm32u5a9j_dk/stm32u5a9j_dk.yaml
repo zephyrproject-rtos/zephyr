@@ -1,4 +1,4 @@
-identifier: stm32u5a9j_dk
+identifier: stm32u5a9j_dk/stm32u5a9xx
 name: ST STM32U5A9J-DK Discovery Kit
 type: mcu
 arch: arm

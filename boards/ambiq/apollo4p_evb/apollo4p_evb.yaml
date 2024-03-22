@@ -1,4 +1,4 @@
-identifier: apollo4p_evb
+identifier: apollo4p_evb/apollo4p
 name: Apollo4P EVB
 type: mcu
 arch: arm

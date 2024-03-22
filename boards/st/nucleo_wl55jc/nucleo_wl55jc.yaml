@@ -1,4 +1,4 @@
-identifier: nucleo_wl55jc
+identifier: nucleo_wl55jc/stm32wl55xx
 name: ST Nucleo WL55JC
 type: mcu
 arch: arm

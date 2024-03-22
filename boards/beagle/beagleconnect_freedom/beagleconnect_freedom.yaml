@@ -1,4 +1,4 @@
-identifier: beagleconnect_freedom
+identifier: beagleconnect_freedom/cc1352p7
 name: BeagleConnect Freedom
 type: mcu
 arch: arm

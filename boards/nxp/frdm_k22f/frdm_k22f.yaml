@@ -1,4 +1,4 @@
-identifier: frdm_k22f
+identifier: frdm_k22f/mk22f51212
 name: NXP FRDM-K22F
 type: mcu
 arch: arm

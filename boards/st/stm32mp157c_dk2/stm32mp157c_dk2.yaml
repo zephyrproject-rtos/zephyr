@@ -1,4 +1,4 @@
-identifier: stm32mp157c_dk2
+identifier: stm32mp157c_dk2/stm32mp157cxx
 name: ST STM32MP157C-DK2 Discovery
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: az3166_iotdevkit
+identifier: az3166_iotdevkit/stm32f412rx
 name: MXChip AZ3166 IoT Devkit
 type: mcu
 arch: arm

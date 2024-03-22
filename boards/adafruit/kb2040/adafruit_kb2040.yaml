@@ -1,4 +1,4 @@
-identifier: adafruit_kb2040
+identifier: adafruit_kb2040/rp2040
 name: Adafruit KB2040
 type: mcu
 arch: arm

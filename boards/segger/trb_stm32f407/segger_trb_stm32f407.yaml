@@ -1,4 +1,4 @@
-identifier: segger_trb_stm32f407
+identifier: segger_trb_stm32f407/stm32f407xx
 name: Cortex-M Trace Reference Board V1.2
 type: mcu
 arch: arm

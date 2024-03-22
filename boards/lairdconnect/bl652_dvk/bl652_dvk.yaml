@@ -1,4 +1,4 @@
-identifier: bl652_dvk
+identifier: bl652_dvk/nrf52832
 name: bl652_dvk
 type: mcu
 arch: arm

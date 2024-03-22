@@ -1,4 +1,4 @@
-identifier: intel_rpl_p_crb
+identifier: intel_rpl_p_crb/raptor_lake
 name: Raptor Lake P CRB
 type: mcu
 arch: x86

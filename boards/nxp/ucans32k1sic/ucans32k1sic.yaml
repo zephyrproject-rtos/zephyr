@@ -1,7 +1,7 @@
 # Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: ucans32k1sic
+identifier: ucans32k1sic/s32k146
 name: NXP UCANS32K1SIC
 vendor: nxp
 type: mcu

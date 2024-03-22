@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: teensy41
+identifier: teensy41/mimxrt1062
 name: PJRC TEENSY41
 type: mcu
 arch: arm

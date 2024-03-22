@@ -1,4 +1,4 @@
-identifier: particle_boron
+identifier: particle_boron/nrf52840
 name: Particle Boron
 type: mcu
 arch: arm

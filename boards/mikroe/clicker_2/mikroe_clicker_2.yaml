@@ -1,4 +1,4 @@
-identifier: mikroe_clicker_2
+identifier: mikroe_clicker_2/stm32f407xx
 name: MikroE Clicker 2 for STM32
 type: mcu
 arch: arm

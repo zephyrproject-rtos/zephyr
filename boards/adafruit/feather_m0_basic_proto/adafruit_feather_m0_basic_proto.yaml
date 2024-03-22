@@ -1,4 +1,4 @@
-identifier: adafruit_feather_m0_basic_proto
+identifier: adafruit_feather_m0_basic_proto/samd21g18a
 name: Adafruit Feather M0 Basic Proto
 type: mcu
 arch: arm

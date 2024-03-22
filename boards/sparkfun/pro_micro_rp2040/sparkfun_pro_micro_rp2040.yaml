@@ -1,4 +1,4 @@
-identifier: sparkfun_pro_micro_rp2040
+identifier: sparkfun_pro_micro_rp2040/rp2040
 name: Sparkfun Pro Micro RP2040
 type: mcu
 arch: arm

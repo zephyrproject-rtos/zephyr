@@ -1,4 +1,4 @@
-identifier: google_dragonclaw
+identifier: google_dragonclaw/stm32f412zx
 name: Google Dragonclaw Development Board
 type: mcu
 arch: arm

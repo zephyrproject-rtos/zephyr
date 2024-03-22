@@ -1,4 +1,4 @@
-identifier: hifive_unmatched
+identifier: hifive_unmatched/fu740
 name: SiFive HiFive Unmatched
 type: mcu
 arch: riscv

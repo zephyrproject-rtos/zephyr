@@ -1,4 +1,4 @@
-identifier: legend@25ssd
+identifier: legend@25ssd/stm32f070xb
 name: Legend
 type: mcu
 arch: arm

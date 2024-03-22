@@ -1,4 +1,4 @@
-identifier: stm32vl_disco
+identifier: stm32vl_disco/stm32f100xb
 name: ST STM32VL Discovery
 type: mcu
 arch: arm

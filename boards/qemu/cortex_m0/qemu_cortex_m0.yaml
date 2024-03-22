@@ -1,4 +1,4 @@
-identifier: qemu_cortex_m0
+identifier: qemu_cortex_m0/nrf51822
 name: QEMU Emulation for Cortex-M0
 type: qemu
 simulation: qemu

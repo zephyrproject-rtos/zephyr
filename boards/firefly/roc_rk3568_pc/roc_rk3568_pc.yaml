@@ -1,4 +1,4 @@
-identifier: roc_rk3568_pc
+identifier: roc_rk3568_pc/rk3568
 name: Rockchip ROC RK3568 PC
 type: mcu
 arch: arm64

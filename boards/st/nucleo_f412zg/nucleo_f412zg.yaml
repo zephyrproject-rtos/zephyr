@@ -1,4 +1,4 @@
-identifier: nucleo_f412zg
+identifier: nucleo_f412zg/stm32f412zx
 name: ST Nucleo F412ZG
 type: mcu
 arch: arm

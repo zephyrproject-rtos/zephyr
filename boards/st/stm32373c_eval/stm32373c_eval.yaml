@@ -1,4 +1,4 @@
-identifier: stm32373c_eval
+identifier: stm32373c_eval/stm32f373xc
 name: ST STM32373C Evaluation
 type: mcu
 arch: arm

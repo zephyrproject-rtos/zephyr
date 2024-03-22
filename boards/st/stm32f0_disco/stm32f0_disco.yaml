@@ -1,4 +1,4 @@
-identifier: stm32f0_disco
+identifier: stm32f0_disco/stm32f051x8
 name: ST STM32F0 Discovery
 type: mcu
 arch: arm

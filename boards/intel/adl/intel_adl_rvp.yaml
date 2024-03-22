@@ -1,4 +1,4 @@
-identifier: intel_adl_rvp
+identifier: intel_adl_rvp/alder_lake
 name: Alder Lake RVP
 type: mcu
 arch: x86

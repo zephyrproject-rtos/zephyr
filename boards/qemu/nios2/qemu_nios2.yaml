@@ -1,4 +1,4 @@
-identifier: qemu_nios2
+identifier: qemu_nios2/qemu_nios2
 name: QEMU Emulation for NIOS II
 type: qemu
 simulation: qemu

@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: zybo
+identifier: zybo/xc7z010
 name: Digilent Zybo
 type: mcu
 arch: arm

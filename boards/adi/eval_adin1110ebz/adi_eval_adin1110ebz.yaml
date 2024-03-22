@@ -1,4 +1,4 @@
-identifier: adi_eval_adin1110ebz
+identifier: adi_eval_adin1110ebz/stm32l4s5xx
 name: ADI EVAL-ADIN1110EBZ evaulation board
 type: mcu
 arch: arm

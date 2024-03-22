@@ -1,4 +1,4 @@
-identifier: pinnacle_100_dvk
+identifier: pinnacle_100_dvk/nrf52840
 name: pinnacle-100-dvk
 type: mcu
 arch: arm

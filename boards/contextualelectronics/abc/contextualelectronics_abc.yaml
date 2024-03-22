@@ -1,4 +1,4 @@
-identifier: contextualelectronics_abc
+identifier: contextualelectronics_abc/nrf52840
 name: contextualelectronics_abc
 type: mcu
 arch: arm

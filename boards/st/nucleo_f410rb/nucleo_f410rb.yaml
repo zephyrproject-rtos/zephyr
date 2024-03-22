@@ -1,4 +1,4 @@
-identifier: nucleo_f410rb
+identifier: nucleo_f410rb/stm32f410rx
 name: ST Nucleo F410RB
 type: mcu
 arch: arm

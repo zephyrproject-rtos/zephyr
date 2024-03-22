@@ -1,4 +1,4 @@
-identifier: bl654_sensor_board
+identifier: bl654_sensor_board/nrf52840
 name: BL654_Sensor_Board
 type: mcu
 arch: arm

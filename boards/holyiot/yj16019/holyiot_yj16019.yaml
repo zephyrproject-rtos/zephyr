@@ -1,4 +1,4 @@
-identifier: holyiot_yj16019
+identifier: holyiot_yj16019/nrf52832
 name: Holyiot YJ-16019
 type: mcu
 arch: arm

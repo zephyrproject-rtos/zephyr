@@ -1,4 +1,4 @@
-identifier: nucleo_h743zi
+identifier: nucleo_h743zi/stm32h743xx
 name: ST Nucleo H743ZI
 type: mcu
 arch: arm

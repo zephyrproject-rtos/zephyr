@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: rd_rw612_bga
+identifier: rd_rw612_bga/rw612
 name: NXP RD_RW612_BGA
 type: mcu
 arch: arm

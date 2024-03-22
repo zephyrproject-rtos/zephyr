@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: numaker_pfm_m467
+identifier: numaker_pfm_m467/m467
 name: NUVOTON NUMAKER-PFM-M467 Kit
 type: mcu
 arch: arm

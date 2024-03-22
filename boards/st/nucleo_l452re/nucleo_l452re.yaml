@@ -1,4 +1,4 @@
-identifier: nucleo_l452re
+identifier: nucleo_l452re/stm32l452xx
 name: ST Nucleo L452RE
 type: mcu
 arch: arm

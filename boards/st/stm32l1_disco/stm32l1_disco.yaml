@@ -1,4 +1,4 @@
-identifier: stm32l1_disco
+identifier: stm32l1_disco/stm32l151xb
 name: ST STM32L1 Discovery
 type: mcu
 arch: arm

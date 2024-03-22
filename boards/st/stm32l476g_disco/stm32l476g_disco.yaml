@@ -1,4 +1,4 @@
-identifier: stm32l476g_disco
+identifier: stm32l476g_disco/stm32l476xx
 name: ST STM32L476G Discovery
 type: mcu
 arch: arm

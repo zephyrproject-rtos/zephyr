@@ -1,4 +1,4 @@
-identifier: efm32hg_slstk3400a
+identifier: efm32hg_slstk3400a/efm32hg322f64
 name: EFM32HG-SLSTK3400A
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: nucleo_f303k8
+identifier: nucleo_f303k8/stm32f303x8
 name: ST Nucleo F303K8
 type: mcu
 arch: arm

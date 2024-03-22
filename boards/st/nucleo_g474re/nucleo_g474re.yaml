@@ -1,4 +1,4 @@
-identifier: nucleo_g474re
+identifier: nucleo_g474re/stm32g474xx
 name: ST Nucleo G474RE
 type: mcu
 arch: arm

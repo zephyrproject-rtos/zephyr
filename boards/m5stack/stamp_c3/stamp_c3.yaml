@@ -1,4 +1,4 @@
-identifier: stamp_c3
+identifier: stamp_c3/esp32c3
 name: M5Stack STAMP-C3
 type: mcu
 arch: riscv

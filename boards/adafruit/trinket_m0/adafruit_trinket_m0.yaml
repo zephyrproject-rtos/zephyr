@@ -1,4 +1,4 @@
-identifier: adafruit_trinket_m0
+identifier: adafruit_trinket_m0/samd21e18a
 name: Adafruit Trinket M0
 type: mcu
 arch: arm

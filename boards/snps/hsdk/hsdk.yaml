@@ -1,4 +1,4 @@
-identifier: hsdk
+identifier: hsdk/arc_hsdk
 name: HS Development Kit
 type: mcu
 arch: arc

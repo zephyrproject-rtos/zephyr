@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: cy8cproto_063_ble
+identifier: cy8cproto_063_ble/cyble_416045_02
 name: CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit
 type: mcu
 arch: arm

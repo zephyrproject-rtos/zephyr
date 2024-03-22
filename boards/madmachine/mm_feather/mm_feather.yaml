@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mm_feather
+identifier: mm_feather/mimxrt1062
 name: MM MM-FEATHER
 type: mcu
 arch: arm

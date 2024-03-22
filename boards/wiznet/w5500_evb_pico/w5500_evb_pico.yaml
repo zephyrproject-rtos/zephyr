@@ -1,4 +1,4 @@
-identifier: w5500_evb_pico
+identifier: w5500_evb_pico/rp2040
 name: Wiznet W5500 Evaluation Board
 type: mcu
 arch: arm

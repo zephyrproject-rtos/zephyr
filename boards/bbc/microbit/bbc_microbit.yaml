@@ -1,4 +1,4 @@
-identifier: bbc_microbit
+identifier: bbc_microbit/nrf51822
 name: BBC Micro:Bit
 type: mcu
 arch: arm

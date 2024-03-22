@@ -1,4 +1,4 @@
-identifier: qemu_riscv32_xip
+identifier: qemu_riscv32_xip/fe310
 name: QEMU Emulation for RISC-V 32-bit in XIP mode
 type: qemu
 simulation: qemu

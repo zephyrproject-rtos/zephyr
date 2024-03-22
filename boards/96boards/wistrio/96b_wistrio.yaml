@@ -1,4 +1,4 @@
-identifier: 96b_wistrio
+identifier: 96b_wistrio/stm32l151xba
 name: 96boards WisTrio
 type: mcu
 arch: arm

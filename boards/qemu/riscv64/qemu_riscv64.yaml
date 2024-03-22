@@ -1,4 +1,4 @@
-identifier: qemu_riscv64
+identifier: qemu_riscv64/qemu_virt_riscv64
 name: QEMU Emulation for RISC-V 64-bit
 type: qemu
 simulation: qemu

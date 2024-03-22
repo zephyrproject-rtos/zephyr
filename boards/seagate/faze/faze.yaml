@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: faze
+identifier: faze/lpc11u67
 name: Seagate FireCuda Gaming SSD (FaZe)
 type: mcu
 arch: arm

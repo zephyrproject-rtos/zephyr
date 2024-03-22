@@ -1,5 +1,5 @@
 # Copyright (c) 2020, Antmicro
-identifier: mercury_xu
+identifier: mercury_xu/zynqmp_rpu
 name: MERCURY-XU
 type: mcu
 arch: arm

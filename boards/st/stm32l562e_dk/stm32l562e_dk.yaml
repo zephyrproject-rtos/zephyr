@@ -1,4 +1,4 @@
-identifier: stm32l562e_dk
+identifier: stm32l562e_dk/stm32l562xx
 name: ST STM32L562E-DK Discovery
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: nucleo_l053r8
+identifier: nucleo_l053r8/stm32l053xx
 name: ST Nucleo L053R8
 type: mcu
 arch: arm

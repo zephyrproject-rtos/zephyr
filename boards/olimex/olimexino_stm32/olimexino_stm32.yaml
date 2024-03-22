@@ -1,4 +1,4 @@
-identifier: olimexino_stm32
+identifier: olimexino_stm32/stm32f103xb
 name: OLIMEXINO-STM32
 type: mcu
 arch: arm

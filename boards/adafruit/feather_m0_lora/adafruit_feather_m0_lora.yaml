@@ -1,4 +1,4 @@
-identifier: adafruit_feather_m0_lora
+identifier: adafruit_feather_m0_lora/samd21g18a
 name: Adafruit Feather M0 LoRa
 type: mcu
 arch: arm

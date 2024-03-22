@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: gd32e507z_eval
+identifier: gd32e507z_eval/gd32e507
 name: GigaDevice GD32E507Z-EVAL
 type: mcu
 arch: arm

@@ -1,7 +1,7 @@
 # Copyright (c) 2021, ATL Electronics
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: gd32f403z_eval
+identifier: gd32f403z_eval/gd32f403
 name: GigaDevice GD32F403Z Evaluation Kit
 type: mcu
 arch: arm

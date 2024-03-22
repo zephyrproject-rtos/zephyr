@@ -1,4 +1,4 @@
-identifier: stm3210c_eval
+identifier: stm3210c_eval/stm32f107xc
 name: ST STM3210C Evaluation
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: st25dv_mb1283_disco
+identifier: st25dv_mb1283_disco/stm32f405xx
 name: ST ST25DV MB1283 Discovery
 type: mcu
 arch: arm

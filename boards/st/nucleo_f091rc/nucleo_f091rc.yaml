@@ -1,4 +1,4 @@
-identifier: nucleo_f091rc
+identifier: nucleo_f091rc/stm32f091xc
 name: ST Nucleo F091RC
 type: mcu
 arch: arm

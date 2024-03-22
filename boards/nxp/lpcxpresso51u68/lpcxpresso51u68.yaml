@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: lpcxpresso51u68
+identifier: lpcxpresso51u68/lpc51u68
 name: NXP LPCXpresso51u68
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: nucleo_f756zg
+identifier: nucleo_f756zg/stm32f756xx
 name: ST Nucleo F756ZG
 type: mcu
 arch: arm

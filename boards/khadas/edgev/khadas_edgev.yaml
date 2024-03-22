@@ -1,4 +1,4 @@
-identifier: khadas_edgev
+identifier: khadas_edgev/rk3399
 name: Khadas Edge-V (single core, non SMP)
 type: mcu
 arch: arm64

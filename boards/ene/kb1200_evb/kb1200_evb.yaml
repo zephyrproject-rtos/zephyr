@@ -1,4 +1,4 @@
-identifier: kb1200_evb
+identifier: kb1200_evb/kb1200
 name: KB1200 EVB
 type: mcu
 arch: arm

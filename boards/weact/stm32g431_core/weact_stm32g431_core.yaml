@@ -1,4 +1,4 @@
-identifier: weact_stm32g431_core
+identifier: weact_stm32g431_core/stm32g431xx
 name: WeAct Studio STM32G431 Core Board
 type: mcu
 arch: arm

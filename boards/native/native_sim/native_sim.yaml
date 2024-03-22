@@ -1,4 +1,4 @@
-identifier: native_sim
+identifier: native_sim/native
 name: Native Simulation port - 32-bit
 type: native
 simulation: native

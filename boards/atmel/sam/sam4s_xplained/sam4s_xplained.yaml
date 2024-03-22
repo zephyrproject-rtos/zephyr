@@ -1,4 +1,4 @@
-identifier: sam4s_xplained
+identifier: sam4s_xplained/sam4s16c
 name: SAM4S Xplained
 type: mcu
 arch: arm

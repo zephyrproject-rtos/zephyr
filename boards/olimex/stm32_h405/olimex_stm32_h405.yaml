@@ -1,4 +1,4 @@
-identifier: olimex_stm32_h405
+identifier: olimex_stm32_h405/stm32f405xx
 name: OLIMEX-STM32-H405
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: altera_max10
+identifier: altera_max10/zephyr_nios2f
 name: Altera MAX10
 type: mcu
 arch: nios2

@@ -1,4 +1,4 @@
-identifier: adafruit_feather_stm32f405
+identifier: adafruit_feather_stm32f405/stm32f405xx
 name: Adafruit Feather STM32F405 Express
 type: mcu
 arch: arm

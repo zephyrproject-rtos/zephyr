@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: gd32e507v_start
+identifier: gd32e507v_start/gd32e507
 name: GigaDevice GD32E507V-START
 type: mcu
 arch: arm

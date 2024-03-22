@@ -1,4 +1,4 @@
-identifier: b_l4s5i_iot01a
+identifier: b_l4s5i_iot01a/stm32l4s5xx
 name: ST B_L4S5I_IOT01A Discovery kit
 type: mcu
 arch: arm

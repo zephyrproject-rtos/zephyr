@@ -1,4 +1,4 @@
-identifier: nucleo_l496zg
+identifier: nucleo_l496zg/stm32l496xx
 name: ST Nucleo L496ZG
 type: mcu
 arch: arm

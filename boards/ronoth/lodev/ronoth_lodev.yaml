@@ -1,4 +1,4 @@
-identifier: ronoth_lodev
+identifier: ronoth_lodev/stm32l073xx
 name: Ronoth LoDev
 type: mcu
 arch: arm

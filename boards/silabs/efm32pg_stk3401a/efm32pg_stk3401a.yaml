@@ -1,4 +1,4 @@
-identifier: efm32pg_stk3401a
+identifier: efm32pg_stk3401a/efm32pg1b200f256gm48
 name: EFM32PG-STK3401A
 type: mcu
 arch: arm

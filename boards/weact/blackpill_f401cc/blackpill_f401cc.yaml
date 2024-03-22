@@ -1,4 +1,4 @@
-identifier: blackpill_f401cc
+identifier: blackpill_f401cc/stm32f401xc
 name: WeAct Studio Black Pill V3.0 (F401CC)
 type: mcu
 arch: arm

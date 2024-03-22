@@ -1,4 +1,4 @@
-identifier: olimex_stm32_h103
+identifier: olimex_stm32_h103/stm32f103xb
 name: OLIMEX-STM32-H103
 type: mcu
 arch: arm

@@ -1,7 +1,7 @@
 # Copyright (c) 2018 Bryan O'Donoghue
 # Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
-identifier: samd21_xpro
+identifier: samd21_xpro/samd21j18a
 name: SAM D21 Xplained Pro
 type: mcu
 arch: arm

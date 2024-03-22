@@ -1,4 +1,4 @@
-identifier: stm32h735g_disco
+identifier: stm32h735g_disco/stm32h735xx
 name: ST STM32H735G Discovery
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: sparkfun_red_v_things_plus
+identifier: sparkfun_red_v_things_plus/fe310
 name: SparkFun RED-V Things Plus
 type: mcu
 arch: riscv

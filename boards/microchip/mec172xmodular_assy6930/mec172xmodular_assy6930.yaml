@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mec172xmodular_assy6930
+identifier: mec172xmodular_assy6930/mec172x_nsz
 name: MEC172X MODULAR ASSY 6930
 type: mcu
 arch: arm

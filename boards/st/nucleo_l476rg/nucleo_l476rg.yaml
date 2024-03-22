@@ -1,4 +1,4 @@
-identifier: nucleo_l476rg
+identifier: nucleo_l476rg/stm32l476xx
 name: ST Nucleo L476RG
 type: mcu
 arch: arm

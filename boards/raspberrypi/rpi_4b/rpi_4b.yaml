@@ -1,4 +1,4 @@
-identifier: rpi_4b
+identifier: rpi_4b/bcm2711
 name: Raspberry Pi 4 Model B
 type: mcu
 arch: arm64

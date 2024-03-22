@@ -1,4 +1,4 @@
-identifier: nrf52832_mdk
+identifier: nrf52832_mdk/nrf52832
 name: nRF52832-MDK
 type: mcu
 arch: arm

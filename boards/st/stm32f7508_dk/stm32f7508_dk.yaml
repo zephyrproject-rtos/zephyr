@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Rtone.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: stm32f7508_dk
+identifier: stm32f7508_dk/stm32f750xx
 name: ST STM32F7508 DK
 type: mcu
 arch: arm

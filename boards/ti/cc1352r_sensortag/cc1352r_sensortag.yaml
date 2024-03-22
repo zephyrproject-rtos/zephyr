@@ -1,4 +1,4 @@
-identifier: cc1352r_sensortag
+identifier: cc1352r_sensortag/cc1352r
 name: TI SimpleLink CC1352R SensorTag
 type: mcu
 arch: arm

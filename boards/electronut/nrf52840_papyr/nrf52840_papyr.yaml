@@ -1,4 +1,4 @@
-identifier: nrf52840_papyr
+identifier: nrf52840_papyr/nrf52840
 name: Electronut Labs Papyr
 type: mcu
 arch: arm

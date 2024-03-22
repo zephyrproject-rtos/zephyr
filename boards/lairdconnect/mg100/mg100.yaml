@@ -1,4 +1,4 @@
-identifier: mg100
+identifier: mg100/nrf52840
 name: mg100
 type: mcu
 arch: arm

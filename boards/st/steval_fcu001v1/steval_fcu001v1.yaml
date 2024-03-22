@@ -1,4 +1,4 @@
-identifier: steval_fcu001v1
+identifier: steval_fcu001v1/stm32f401xc
 name: ST STM32 Flight Controller Unit
 type: mcu
 arch: arm

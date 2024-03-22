@@ -1,4 +1,4 @@
-identifier: sensortile_box
+identifier: sensortile_box/stm32l4r9xx
 name: ST SensorTile.box
 type: mcu
 arch: arm

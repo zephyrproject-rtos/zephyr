@@ -1,4 +1,4 @@
-identifier: neorv32
+identifier: neorv32/neorv32
 name: NEORV32 Processor (SoC)
 type: mcu
 arch: riscv

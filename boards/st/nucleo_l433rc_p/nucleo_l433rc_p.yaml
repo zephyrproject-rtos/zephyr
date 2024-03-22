@@ -1,4 +1,4 @@
-identifier: nucleo_l433rc_p
+identifier: nucleo_l433rc_p/stm32l433xx
 name: ST Nucleo L433RC
 type: mcu
 arch: arm

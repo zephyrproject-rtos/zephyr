@@ -1,4 +1,4 @@
-identifier: wio_terminal
+identifier: wio_terminal/samd51p19a
 name: Wio Terminal
 type: mcu
 arch: arm

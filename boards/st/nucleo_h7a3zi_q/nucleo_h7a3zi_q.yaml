@@ -1,4 +1,4 @@
-identifier: nucleo_h7a3zi_q
+identifier: nucleo_h7a3zi_q/stm32h7a3xx
 name: ST Nucleo H7A3ZI-Q
 type: mcu
 arch: arm

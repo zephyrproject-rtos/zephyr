@@ -1,4 +1,4 @@
-identifier: xenvm
+identifier: xenvm/xenvm
 name: ARMv8 Xen Virtual Machine
 type: mcu
 arch: arm64

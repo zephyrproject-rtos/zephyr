@@ -1,4 +1,4 @@
-identifier: blackpill_f411ce
+identifier: blackpill_f411ce/stm32f411xe
 name: WeAct Studio Black Pill V2.0
 type: mcu
 arch: arm

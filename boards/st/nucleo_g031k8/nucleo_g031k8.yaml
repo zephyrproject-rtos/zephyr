@@ -1,4 +1,4 @@
-identifier: nucleo_g031k8
+identifier: nucleo_g031k8/stm32g031xx
 name: ST Nucleo G031K8
 type: mcu
 arch: arm

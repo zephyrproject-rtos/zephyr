@@ -1,4 +1,4 @@
-identifier: waveshare_open103z
+identifier: waveshare_open103z/stm32f103xe
 name: Waveshare Open103Z
 type: mcu
 arch: arm

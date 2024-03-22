@@ -1,4 +1,4 @@
-identifier: bl654_dvk
+identifier: bl654_dvk/nrf52840
 name: BL654_DVK
 type: mcu
 arch: arm

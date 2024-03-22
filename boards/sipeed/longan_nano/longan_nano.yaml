@@ -1,4 +1,4 @@
-identifier: longan_nano
+identifier: longan_nano/gd32vf103
 name: Sipeed Longan Nano
 type: mcu
 arch: riscv

@@ -1,4 +1,4 @@
-identifier: qemu_x86_tiny
+identifier: qemu_x86_tiny/atom
 name: QEMU Emulation for X86 (small VM)
 type: qemu
 arch: x86

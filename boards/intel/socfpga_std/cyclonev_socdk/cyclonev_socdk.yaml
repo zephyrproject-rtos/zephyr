@@ -1,4 +1,4 @@
-identifier: cyclonev_socdk
+identifier: cyclonev_socdk/cyclonev
 name: Intel Cyclone V SoC FPGA
 type: mcu
 arch: arm

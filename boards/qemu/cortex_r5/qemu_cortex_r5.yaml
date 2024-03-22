@@ -1,4 +1,4 @@
-identifier: qemu_cortex_r5
+identifier: qemu_cortex_r5/zynqmp_rpu
 name: QEMU Emulation for Cortex-R5
 type: qemu
 simulation: qemu

@@ -1,4 +1,4 @@
-identifier: efm32wg_stk3800
+identifier: efm32wg_stk3800/efm32wg990f256
 name: EFM32WG-STK3800
 type: mcu
 arch: arm

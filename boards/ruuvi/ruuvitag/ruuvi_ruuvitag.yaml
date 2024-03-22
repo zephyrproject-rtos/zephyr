@@ -1,4 +1,4 @@
-identifier: ruuvi_ruuvitag
+identifier: ruuvi_ruuvitag/nrf52832
 name: Ruuvi-RuuviTag
 type: mcu
 arch: arm

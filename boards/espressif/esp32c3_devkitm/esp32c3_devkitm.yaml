@@ -1,4 +1,4 @@
-identifier: esp32c3_devkitm
+identifier: esp32c3_devkitm/esp32c3
 name: ESP32-C3
 type: mcu
 arch: riscv

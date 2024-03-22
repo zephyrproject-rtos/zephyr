@@ -1,4 +1,4 @@
-identifier: stm32g0316_disco
+identifier: stm32g0316_disco/stm32g031xx
 name: ST STM32G0316 Discovery
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: 96b_stm32_sensor_mez
+identifier: 96b_stm32_sensor_mez/stm32f446xx
 name: 96Boards STM32 Sensor Mezzanine
 type: mcu
 arch: arm

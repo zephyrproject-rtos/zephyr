@@ -1,4 +1,4 @@
-identifier: usb_kw24d512
+identifier: usb_kw24d512/mkw24d5
 name: NXP USB-KW24D512
 type: mcu
 arch: arm

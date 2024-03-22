@@ -1,4 +1,4 @@
-identifier: qemu_cortex_m3
+identifier: qemu_cortex_m3/ti_lm3s6965
 name: QEMU Emulation for Cortex-M3
 type: qemu
 simulation: qemu

@@ -1,4 +1,4 @@
-identifier: native_posix
+identifier: native_posix/native
 name: Native 32-bit POSIX port
 type: native
 simulation: native

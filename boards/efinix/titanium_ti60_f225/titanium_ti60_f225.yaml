@@ -1,4 +1,4 @@
-identifier: titanium_ti60_f225
+identifier: titanium_ti60_f225/efinix_sapphire
 name: titanium_ti60_f225 FPGA development kit with Efinix Sapphire riscv SoC
 type: mcu
 arch: riscv

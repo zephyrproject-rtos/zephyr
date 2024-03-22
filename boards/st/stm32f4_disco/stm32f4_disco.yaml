@@ -1,4 +1,4 @@
-identifier: stm32f4_disco
+identifier: stm32f4_disco/stm32f407xx
 name: ST STM32F4 Discovery
 type: mcu
 arch: arm

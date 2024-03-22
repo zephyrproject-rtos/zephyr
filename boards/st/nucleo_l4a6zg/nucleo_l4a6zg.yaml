@@ -1,4 +1,4 @@
-identifier: nucleo_l4a6zg
+identifier: nucleo_l4a6zg/stm32l4a6xx
 name: ST Nucleo L4A6ZG
 type: mcu
 arch: arm

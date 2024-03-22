@@ -1,4 +1,4 @@
-identifier: sensortile_box_pro
+identifier: sensortile_box_pro/stm32u585xx
 name: ST SensorTile.box Pro
 type: mcu
 arch: arm

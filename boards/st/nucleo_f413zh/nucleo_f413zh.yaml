@@ -1,4 +1,4 @@
-identifier: nucleo_f413zh
+identifier: nucleo_f413zh/stm32f413xx
 name: ST Nucleo F413ZH
 type: mcu
 arch: arm

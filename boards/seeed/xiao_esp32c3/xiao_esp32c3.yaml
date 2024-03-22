@@ -1,4 +1,4 @@
-identifier: xiao_esp32c3
+identifier: xiao_esp32c3/esp32c3
 name: XIAO ESP32C3
 type: mcu
 arch: riscv

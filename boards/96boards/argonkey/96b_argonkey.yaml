@@ -1,4 +1,4 @@
-identifier: 96b_argonkey
+identifier: 96b_argonkey/stm32f412cx
 name: 96Boards Argonkey
 type: mcu
 arch: arm

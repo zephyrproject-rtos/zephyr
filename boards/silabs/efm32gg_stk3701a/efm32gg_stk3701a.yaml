@@ -1,4 +1,4 @@
-identifier: efm32gg_stk3701a
+identifier: efm32gg_stk3701a/efm32gg11b820f2048gl192
 name: EFM32GG-STK3701A
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: nucleo_l011k4
+identifier: nucleo_l011k4/stm32l011xx
 name: ST Nucleo L011K4
 type: mcu
 arch: arm

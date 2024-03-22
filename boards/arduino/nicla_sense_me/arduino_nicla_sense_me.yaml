@@ -1,4 +1,4 @@
-identifier: arduino_nicla_sense_me
+identifier: arduino_nicla_sense_me/nrf52832
 name: Arduino Nicla Sense ME
 type: mcu
 arch: arm

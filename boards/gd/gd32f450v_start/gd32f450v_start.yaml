@@ -1,7 +1,7 @@
 # Copyright (c) 2022, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: gd32f450v_start
+identifier: gd32f450v_start/gd32f450
 name: GigaDevice GD32F450V-START
 type: mcu
 arch: arm

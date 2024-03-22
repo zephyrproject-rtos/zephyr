@@ -1,4 +1,4 @@
-identifier: frdm_kl25z
+identifier: frdm_kl25z/mkl25z4
 name: NXP FRDM-KL25Z
 type: mcu
 arch: arm

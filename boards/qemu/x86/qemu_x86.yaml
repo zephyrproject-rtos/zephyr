@@ -1,4 +1,4 @@
-identifier: qemu_x86
+identifier: qemu_x86/atom
 name: QEMU Emulation for X86
 type: qemu
 simulation: qemu

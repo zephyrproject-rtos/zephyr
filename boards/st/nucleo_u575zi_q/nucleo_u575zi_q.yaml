@@ -1,4 +1,4 @@
-identifier: nucleo_u575zi_q
+identifier: nucleo_u575zi_q/stm32u575xx
 name: ST Nucleo U575ZI Q
 type: mcu
 arch: arm

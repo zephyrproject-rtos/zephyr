@@ -1,4 +1,4 @@
-identifier: nucleo_l412rb_p
+identifier: nucleo_l412rb_p/stm32l412xx
 name: ST Nucleo L412RP-P
 type: mcu
 arch: arm

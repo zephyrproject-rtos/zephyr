@@ -1,4 +1,4 @@
-identifier: intel_socfpga_agilex5_socdk
+identifier: intel_socfpga_agilex5_socdk/agilex5
 name: Intel SoC FPGA Agilex5
 type: mcu
 arch: arm64

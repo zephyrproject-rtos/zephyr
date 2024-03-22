@@ -1,4 +1,4 @@
-identifier: stm32l4r9i_disco
+identifier: stm32l4r9i_disco/stm32l4r9xx
 name: ST STM32L4R9I Discovery
 type: mcu
 arch: arm

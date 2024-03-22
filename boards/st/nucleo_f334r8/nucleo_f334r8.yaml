@@ -1,4 +1,4 @@
-identifier: nucleo_f334r8
+identifier: nucleo_f334r8/stm32f334x8
 name: ST Nucleo F334R8
 type: mcu
 arch: arm

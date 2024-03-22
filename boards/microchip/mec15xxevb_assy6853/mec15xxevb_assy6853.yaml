@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mec15xxevb_assy6853
+identifier: mec15xxevb_assy6853/mec1501_hsz
 name: MEC15XX EVB ASSY 6853
 type: mcu
 arch: arm

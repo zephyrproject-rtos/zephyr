@@ -1,4 +1,4 @@
-identifier: dragino_nbsn95
+identifier: dragino_nbsn95/stm32l072xx
 name: Dragino NBSN95 NB-IoT Sensor Node
 type: mcu
 arch: arm

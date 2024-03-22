@@ -1,4 +1,4 @@
-identifier: nucleo_f446ze
+identifier: nucleo_f446ze/stm32f446xx
 name: ST Nucleo F446ZE
 type: mcu
 arch: arm

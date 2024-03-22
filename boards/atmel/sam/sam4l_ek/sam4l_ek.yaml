@@ -1,4 +1,4 @@
-identifier: sam4l_ek
+identifier: sam4l_ek/sam4lc4c
 name: SAM4L-EK
 type: mcu
 arch: arm

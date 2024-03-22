@@ -1,4 +1,4 @@
-identifier: m2gl025_miv
+identifier: m2gl025_miv/miv
 name: Microchip M2GL025 with MiV target
 type: mcu
 arch: riscv

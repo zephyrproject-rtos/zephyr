@@ -1,4 +1,4 @@
-identifier: nucleo_g070rb
+identifier: nucleo_g070rb/stm32g070xx
 name: ST Nucleo G070RB
 type: mcu
 arch: arm

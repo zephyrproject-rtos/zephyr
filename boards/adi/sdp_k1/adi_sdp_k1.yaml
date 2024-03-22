@@ -1,4 +1,4 @@
-identifier: adi_sdp_k1
+identifier: adi_sdp_k1/stm32f469xx
 name: ADI SDP-K1
 type: mcu
 arch: arm

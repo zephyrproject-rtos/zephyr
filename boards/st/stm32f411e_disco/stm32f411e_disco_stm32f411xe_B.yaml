@@ -1,4 +1,4 @@
-identifier: stm32f411e_disco@B
+identifier: stm32f411e_disco@B/stm32f411xe
 name: ST STM32F411E Discovery
 type: mcu
 arch: arm

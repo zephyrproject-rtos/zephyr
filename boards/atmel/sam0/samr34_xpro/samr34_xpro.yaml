@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Argentum Systems Ltd.
 # Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
-identifier: samr34_xpro
+identifier: samr34_xpro/samr34j18b
 name: SAM R34 Xplained Pro
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: rm1xx_dvk
+identifier: rm1xx_dvk/nrf51822
 name: RM1xx_DVK
 type: mcu
 arch: arm

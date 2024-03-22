@@ -1,4 +1,4 @@
-identifier: stm32wb5mmg
+identifier: stm32wb5mmg/stm32wb55xx
 name: ST STM32WB5MMG Ultra-low-power Module
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: stm32h573i_dk
+identifier: stm32h573i_dk/stm32h573xx
 name: ST STM32H573I Discovery Kit
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: olimex_lora_stm32wl_devkit
+identifier: olimex_lora_stm32wl_devkit/stm32wle5xx
 name: Olimex LoRa STM32WL DevKit
 type: mcu
 arch: arm

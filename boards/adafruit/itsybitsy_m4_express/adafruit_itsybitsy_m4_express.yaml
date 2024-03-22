@@ -1,4 +1,4 @@
-identifier: adafruit_itsybitsy_m4_express
+identifier: adafruit_itsybitsy_m4_express/samd51g19a
 name: Adafruit ItsyBitsy M4 Express
 type: mcu
 arch: arm

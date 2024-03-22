@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Argentum Systems Ltd.
 # Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
-identifier: saml21_xpro
+identifier: saml21_xpro/saml21j18b
 name: SAM L21 Xplained Pro
 type: mcu
 arch: arm

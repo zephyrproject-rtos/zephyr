@@ -1,4 +1,4 @@
-identifier: qemu_leon3
+identifier: qemu_leon3/leon3
 name: QEMU Emulation for LEON3
 type: qemu
 simulation: qemu

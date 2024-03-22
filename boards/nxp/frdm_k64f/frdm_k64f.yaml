@@ -1,4 +1,4 @@
-identifier: frdm_k64f
+identifier: frdm_k64f/mk64f12
 name: NXP FRDM-K64F
 type: mcu
 arch: arm

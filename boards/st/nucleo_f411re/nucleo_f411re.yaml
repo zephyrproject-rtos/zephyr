@@ -1,4 +1,4 @@
-identifier: nucleo_f411re
+identifier: nucleo_f411re/stm32f411xe
 name: ST Nucleo F411RE
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: samd20_xpro
+identifier: samd20_xpro/samd20j18
 name: SAM D20 Xplained Pro
 type: mcu
 arch: arm

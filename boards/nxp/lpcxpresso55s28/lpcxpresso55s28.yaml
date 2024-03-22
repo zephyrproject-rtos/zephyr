@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: lpcxpresso55s28
+identifier: lpcxpresso55s28/lpc55s28
 name: NXP LPCXpresso55S28
 type: mcu
 arch: arm

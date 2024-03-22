@@ -1,4 +1,4 @@
-identifier: nrf51_ble400
+identifier: nrf51_ble400/nrf51822
 name: BLE400
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: sam4e_xpro
+identifier: sam4e_xpro/sam4e16e
 name: SAM4E Xplained Pro
 type: mcu
 arch: arm

@@ -1,4 +1,4 @@
-identifier: adafruit_qt_py_rp2040
+identifier: adafruit_qt_py_rp2040/rp2040
 name: Adafruit QT Py RP2040
 type: mcu
 arch: arm

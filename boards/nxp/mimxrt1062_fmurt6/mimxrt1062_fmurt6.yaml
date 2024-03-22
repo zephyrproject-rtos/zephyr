@@ -4,7 +4,7 @@
 # Copyright 2023 NXP
 #
 
-identifier: mimxrt1062_fmurt6
+identifier: mimxrt1062_fmurt6/mimxrt1062
 name: NXP MIMXRT1062-FMURT6
 type: mcu
 arch: arm

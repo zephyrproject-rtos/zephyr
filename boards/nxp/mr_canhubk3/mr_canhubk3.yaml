@@ -1,7 +1,7 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: mr_canhubk3
+identifier: mr_canhubk3/s32k344
 name: NXP MR-CANHUBK3
 type: mcu
 arch: arm

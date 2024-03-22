@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-identifier: 96b_aerocore2
+identifier: 96b_aerocore2/stm32f427xx
 name: 96Boards AeroCore 2
 type: mcu
 arch: arm

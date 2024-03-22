@@ -1,4 +1,4 @@
-identifier: lora_e5_dev_board
+identifier: lora_e5_dev_board/stm32wle5xx
 name: Seeedstudio LoRa-E5 Dev Board
 type: mcu
 arch: arm

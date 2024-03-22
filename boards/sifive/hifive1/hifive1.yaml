@@ -1,4 +1,4 @@
-identifier: hifive1
+identifier: hifive1/fe310
 name: SiFive HiFive1
 type: mcu
 arch: riscv

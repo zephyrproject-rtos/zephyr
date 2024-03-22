@@ -1,4 +1,4 @@
-identifier: stm32f030_demo
+identifier: stm32f030_demo/stm32f030x6
 name: STM32F030 DEMO BOARD
 type: mcu
 arch: arm

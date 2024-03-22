@@ -1,4 +1,4 @@
-identifier: xmc47_relax_kit
+identifier: xmc47_relax_kit/xmc4700
 name: XMC47-RELAX-KIT
 type: mcu
 arch: arm
