@@ -1,0 +1,6 @@
+family:
+- name: ti_mspm0
+  series:
+  - name: mspm0gxxx
+    socs:
+    - name: mspm0g3507
