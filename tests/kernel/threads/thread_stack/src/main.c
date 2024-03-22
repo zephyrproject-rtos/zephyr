@@ -235,7 +235,7 @@ void stack_buffer_scenarios(void)
 		 * 	K_THREAD_STACK_SIZEOF(my_stack)
 		 *
 		 * K_KERNEL_STACK_DEFINE(my_kern_stack, Y):
-		 * Z_KERNEL_STACK_SIZE_ADJUST(Y) - K_KERNEL_STACK_RESERVED ==
+		 * K_KERNEL_STACK_LEN(Y) - K_KERNEL_STACK_RESERVED ==
 		 *	K_KERNEL_STACK_SIZEOF(my_stack)
 		 */
 #ifdef CONFIG_USERSPACE
@@ -245,7 +245,7 @@ void stack_buffer_scenarios(void)
 		} else
 #endif
 		{
-			adjusted = Z_KERNEL_STACK_SIZE_ADJUST(scenario_data.declared_size);
+			adjusted = K_KERNEL_STACK_LEN(scenario_data.declared_size);
 		}
 		adjusted -= reserved;
 

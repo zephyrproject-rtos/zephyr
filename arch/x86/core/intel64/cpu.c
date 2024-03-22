@@ -107,9 +107,9 @@ struct x86_cpuboot x86_cpuboot[] = {
 		.tr = X86_KERNEL_CPU0_TR,
 		.gs_base = &tss0,
 		.sp = (uint64_t) z_interrupt_stacks[0] +
-			Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_ISR_STACK_SIZE),
+			K_KERNEL_STACK_LEN(CONFIG_ISR_STACK_SIZE),
 		.stack_size =
-			Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_ISR_STACK_SIZE),
+			K_KERNEL_STACK_LEN(CONFIG_ISR_STACK_SIZE),
 		.fn = z_prep_c,
 		.arg = &x86_cpu_boot_arg,
 	},
