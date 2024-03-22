@@ -186,6 +186,9 @@ family:
   - name: stm32mp1x
     socs:
     - name: stm32mp157cxx
+  - name: stm32n6x
+    socs:
+    - name: stm32n657xx
   - name: stm32u0x
     socs:
     - name: stm32u031xx
