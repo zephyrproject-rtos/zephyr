@@ -25,7 +25,7 @@ class TestReport:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             [
                 'qemu_x86.xml', 'mps2_an385.xml',
                 'testplan.json', 'twister.json',
@@ -37,7 +37,7 @@ class TestReport:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             [
                 'mps2_an385_TEST.xml', 'qemu_x86_TEST.xml',
                 'twister_TEST.json', 'twister_TEST_report.xml',
@@ -48,7 +48,7 @@ class TestReport:
     TESTDATA_3 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', 'abcd'],
             [
                 'abcd.json', 'abcd_report.xml',
@@ -57,7 +57,7 @@ class TestReport:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', '1234', '--platform-reports'],
             [
                 'mps2_an385.xml', 'qemu_x86.xml',
@@ -67,7 +67,7 @@ class TestReport:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', 'Final', '--platform-reports', '--report-suffix=Test'],
             [
                 'mps2_an385_Test.xml', 'qemu_x86_Test.xml',
@@ -79,7 +79,7 @@ class TestReport:
     TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'twister.json', 'twister_report.xml',
                 'twister_suite_report.xml', 'twister.xml'
@@ -90,7 +90,7 @@ class TestReport:
     TESTDATA_5 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'testplan.json', 'twister.log',
                 'twister.json', 'twister_report.xml',
@@ -102,7 +102,7 @@ class TestReport:
     TESTDATA_6 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             "TEST_LOG_FILE.log"
         ),
     ]
@@ -338,7 +338,7 @@ class TestReport:
         ids=['dummy tests']
     )
     def test_detailed_skipped_report(self, out_path, test_path, expected_testcase_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
                ['--detailed-skipped-report'] + \
                [val for pair in zip(
@@ -363,7 +363,7 @@ class TestReport:
                'Some platforms are missing from the XML report.'
 
     def test_enable_size_report(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \

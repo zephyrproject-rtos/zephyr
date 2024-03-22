@@ -23,7 +23,7 @@ class TestRunner:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'frdm_k64f/mk64f12'],
             {
                 'selected_test_scenarios': 3,
                 'selected_test_instances': 9,
@@ -42,7 +42,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'frdm_k64f/mk64f12'],
             {
                 'selected_test_scenarios': 1,
                 'selected_test_instances': 3,
@@ -63,7 +63,7 @@ class TestRunner:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'frdm_k64f/mk64f12'],
             {
                 'executed_on_platform': 0,
                 'only_built': 6
@@ -71,7 +71,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'frdm_k64f/mk64f12'],
             {
                 'executed_on_platform': 0,
                 'only_built': 1
@@ -81,7 +81,7 @@ class TestRunner:
     TESTDATA_3 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'frdm_k64f/mk64f12'],
             {
                 'selected_test_scenarios': 3,
                 'selected_test_instances': 9,
@@ -102,13 +102,13 @@ class TestRunner:
     TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
         ),
     ]
     TESTDATA_5 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom'],
             {
                 'passed_configurations': 6,
                 'selected_test_instances': 6,
@@ -120,14 +120,14 @@ class TestRunner:
     TESTDATA_6 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             os.path.join(TEST_DATA, "pre_script.sh")
         ),
     ]
     TESTDATA_7 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom'],
             {
                 'passed_configurations': 3,
                 'selected_test_instances': 6,
@@ -139,43 +139,43 @@ class TestRunner:
     TESTDATA_8 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86_64'],
+            ['qemu_x86_64/atom'],
             '1',
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             '2',
         ),
     ]
     TESTDATA_9 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             '15',
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             '30',
         ),
     ]
     TESTDATA_10 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_timeout', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             '2',
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'always_timeout', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             '0.5',
         ),
     ]
     TESTDATA_11 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['device'],
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
              'dummy.agnostic.group1.subgroup2 SKIPPED: Command line testsuite tag filter',
@@ -185,7 +185,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['subgrouped'],
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
              r'2 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 2 skipped'
@@ -193,7 +193,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['agnostic', 'device'],
             [r'3 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 1 skipped']
         ),
@@ -201,7 +201,7 @@ class TestRunner:
     TESTDATA_12 = [
         (
             os.path.join(TEST_DATA, 'tests', 'one_fail_one_pass'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             {
                 'selected_test_instances': 2,
                 'skipped_configurations': 0,
@@ -214,12 +214,12 @@ class TestRunner:
     TESTDATA_13 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_build_error'),
-            ['qemu_x86_64'],
+            ['qemu_x86_64/atom'],
             '1',
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'always_build_error'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             '4',
         ),
     ]

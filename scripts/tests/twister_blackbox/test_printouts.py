@@ -83,7 +83,7 @@ class TestPrintOuts:
     TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f']
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'frdm_k64f/mk64f12']
         )
     ]
 
@@ -271,7 +271,7 @@ class TestPrintOuts:
 
     @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
     def test_size(self, capfd, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                [val for pair in zip(
@@ -288,7 +288,7 @@ class TestPrintOuts:
         capfd.readouterr()
 
         p = os.path.relpath(path, ZEPHYR_BASE)
-        prev_path = os.path.join(out_path, 'qemu_x86', p,
+        prev_path = os.path.join(out_path, 'qemu_x86/atom', p,
                                  'sample.basic.helloworld', 'zephyr', 'zephyr.elf')
         args = ['--size', prev_path]
 

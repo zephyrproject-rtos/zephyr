@@ -497,7 +497,7 @@ def test_cmake_run_cmake(
 
 
 TESTDATA_3 = [
-    ('unit_testing', [], False, True, None, True, None, True,
+    ('unit_testing/unit_testing', [], False, True, None, True, None, True,
      None, None, {}, {}, None, None, [], {}),
     (
         'other', [], True,
@@ -2112,7 +2112,7 @@ TESTDATA_14 = [
         True,
         'device',
         234,
-        'native_sim',
+        'native_sim/native',
         'posix',
         {'CONFIG_FAKE_ENTROPY_NATIVE_POSIX': 'y'},
         'pytest',
@@ -2127,7 +2127,7 @@ TESTDATA_14 = [
         True,
         'not device',
         None,
-        'native_sim',
+        'native_sim/native',
         'not posix',
         {'CONFIG_FAKE_ENTROPY_NATIVE_POSIX': 'y'},
         'not pytest',
@@ -2142,7 +2142,7 @@ TESTDATA_14 = [
         False,
         'device',
         234,
-        'native_sim',
+        'native_sim/native',
         'posix',
         {'CONFIG_FAKE_ENTROPY_NATIVE_POSIX': 'y'},
         'pytest',
@@ -2279,7 +2279,7 @@ TESTDATA_16 = [
     ('passed', 'qemu', False, False, True),
     ('filtered', 'unit', False, False, True),
     ('filtered', 'mcu', True, True, False),
-    ('passed', 'frdm_k64f', False, True, False),
+    ('passed', 'frdm_k64f/mk64f12', False, True, False),
 ]
 
 @pytest.mark.parametrize(

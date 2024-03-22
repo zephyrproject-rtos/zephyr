@@ -50,7 +50,7 @@ class TestShuffle:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_shuffle_tests(self, out_path, seed, ratio, expected_order):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                ['--shuffle-tests', '--shuffle-tests-seed', seed] + \

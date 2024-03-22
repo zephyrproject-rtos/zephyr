@@ -103,7 +103,7 @@ class TestFilter:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_exclude_tag(self, out_path, tag, expected_test_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                ['--exclude-tag', tag] + \
@@ -129,7 +129,7 @@ class TestFilter:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_enable_slow(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
         alt_config_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy', 'agnostic')
         args = ['-i', '--outdir', out_path, '-T', path] + \
@@ -157,7 +157,7 @@ class TestFilter:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_enable_slow_only(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
         alt_config_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy', 'agnostic')
         args = ['-i', '--outdir', out_path, '-T', path] + \

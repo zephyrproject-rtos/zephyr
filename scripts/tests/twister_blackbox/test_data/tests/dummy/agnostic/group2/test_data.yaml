@@ -1,9 +1,9 @@
 tests:
   dummy.agnostic.group2:
     platform_allow:
-      - native_sim
-      - qemu_x86
-      - qemu_x86_64
+      - native_sim/native
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     integration_platforms:
       - native_sim
     tags: agnostic

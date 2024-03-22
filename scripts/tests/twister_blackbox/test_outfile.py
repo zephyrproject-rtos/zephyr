@@ -44,7 +44,7 @@ class TestOutfile:
         ids=['clobber', 'do not clobber', 'do not clean', 'do not clobber, do not clean']
     )
     def test_clobber_output(self, out_path, flag_section, clobber, expect_straggler):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                flag_section + \
@@ -80,7 +80,7 @@ class TestOutfile:
             assert straggler_name not in out_contents
 
     def test_runtime_artifact_cleanup(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--runtime-artifact-cleanup'] + \
@@ -96,7 +96,7 @@ class TestOutfile:
         assert str(sys_exit.value) == '0'
 
         relpath = os.path.relpath(path, ZEPHYR_BASE)
-        sample_path = os.path.join(out_path, 'qemu_x86', relpath, 'sample.basic.helloworld')
+        sample_path = os.path.join(out_path, 'qemu_x86/atom', relpath, 'sample.basic.helloworld')
         listdir = os.listdir(sample_path)
         zephyr_listdir = os.listdir(os.path.join(sample_path, 'zephyr'))
 
@@ -110,7 +110,7 @@ class TestOutfile:
                'Cleaned directory has unexpected files.'
 
     def test_short_build_path(self, out_path):
-        test_platforms = ['qemu_x86']
+        test_platforms = ['qemu_x86/atom']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
         # twister_links dir does not exist in a dry run.
         args = ['-i', '--outdir', out_path, '-T', path] + \
@@ -121,7 +121,7 @@ class TestOutfile:
                ) for val in pair]
 
         relative_test_path = os.path.relpath(path, ZEPHYR_BASE)
-        test_result_path = os.path.join(out_path, 'qemu_x86',
+        test_result_path = os.path.join(out_path, 'qemu_x86/atom',
                                         relative_test_path, 'dummy.agnostic.group2')
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
@@ -177,10 +177,10 @@ class TestOutfile:
                 assert len(flag_value) < len(unshortened_pipe_path), 'Pipe path not shortened.'
 
     def test_prep_artifacts_for_testing(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         relative_test_path = os.path.relpath(path, ZEPHYR_BASE)
-        zephyr_out_path = os.path.join(out_path, 'qemu_x86', relative_test_path,
+        zephyr_out_path = os.path.join(out_path, 'qemu_x86/atom', relative_test_path,
                                        'sample.basic.helloworld', 'zephyr')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--prep-artifacts-for-testing'] + \
@@ -202,7 +202,7 @@ class TestOutfile:
         assert 'zephyr.elf' in zephyr_artifact_list
 
     def test_package_artifacts(self, out_path):
-        test_platforms = ['qemu_x86']
+        test_platforms = ['qemu_x86/atom']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         package_name = 'PACKAGE'
         package_path = os.path.join(out_path, package_name)
