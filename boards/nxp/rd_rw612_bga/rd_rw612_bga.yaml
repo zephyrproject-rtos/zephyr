@@ -21,6 +21,7 @@ supported:
   - spi
   - i2c
   - entropy
+  - usb_device
   - watchdog
   - counter
   - hwinfo
