@@ -73,10 +73,6 @@ static void ticker_next_slot_get_op_cb(uint32_t status, void *param);
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
-static void ticker_resume_op_cb(uint32_t status, void *param);
-static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
-			     uint32_t remainder, uint16_t lazy, uint8_t force,
-			     void *param);
 static void cis_disabled_cb(void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void cig_disable(void *param);
@@ -614,72 +610,6 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 		 */
 		cis_disabled_cb(&cig->lll);
 	}
-}
-
-void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
-				      uint16_t cis_handle,
-				      uint32_t ticks_anchor,
-				      uint32_t resume_timeout)
-{
-	struct lll_conn_iso_group *cig;
-	uint32_t resume_delay_us;
-	int32_t resume_offset_us;
-	uint8_t ticker_id;
-	uint32_t ret;
-
-	cig = resume_event->prepare_param.param;
-	ticker_id = TICKER_ID_CONN_ISO_RESUME_BASE + cig->handle;
-
-	if (cig->resume_cis != LLL_HANDLE_INVALID) {
-		/* Restarting resume ticker - must be stopped first */
-		(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-				  ticker_id, NULL, NULL);
-	}
-	cig->resume_cis = cis_handle;
-
-	resume_delay_us  = EVENT_OVERHEAD_START_US;
-	resume_delay_us += EVENT_TICKER_RES_MARGIN_US;
-
-	if (cig->role == BT_HCI_ROLE_PERIPHERAL) {
-		/* Add peripheral specific delay */
-		resume_delay_us += EVENT_JITTER_US;
-		if (0) {
-#if defined(CONFIG_BT_CTLR_PHY)
-		} else {
-			struct ll_conn_iso_stream *cis;
-			struct ll_conn *conn;
-
-			cis = ll_conn_iso_stream_get(cis_handle);
-			conn = ll_conn_get(cis->lll.acl_handle);
-
-			resume_delay_us +=
-				lll_radio_rx_ready_delay_get(conn->lll.phy_rx,
-							     PHY_FLAGS_S8);
-#else
-		} else {
-			resume_delay_us += lll_radio_rx_ready_delay_get(0, 0);
-#endif /* CONFIG_BT_CTLR_PHY */
-		}
-	}
-
-	resume_offset_us = (int32_t)(resume_timeout - resume_delay_us);
-	LL_ASSERT(resume_offset_us >= 0);
-
-	/* Setup resume timeout as single-shot */
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
-			   TICKER_USER_ID_LLL,
-			   ticker_id,
-			   ticks_anchor,
-			   HAL_TICKER_US_TO_TICKS(resume_offset_us),
-			   TICKER_NULL_PERIOD,
-			   TICKER_NULL_REMAINDER,
-			   TICKER_NULL_LAZY,
-			   TICKER_NULL_SLOT,
-			   ticker_resume_cb, resume_event,
-			   ticker_resume_op_cb, NULL);
-
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
 }
 
 int ull_conn_iso_init(void)
@@ -1266,46 +1196,6 @@ static void ticker_update_cig_op_cb(uint32_t status, void *param)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_update_mark_get() ||
 		  param == ull_disable_mark_get());
-}
-
-static void ticker_resume_op_cb(uint32_t status, void *param)
-{
-	ARG_UNUSED(param);
-
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-}
-
-static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
-			     uint32_t remainder, uint16_t lazy, uint8_t force,
-			     void *param)
-{
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
-	struct lll_conn_iso_group *cig;
-	struct lll_event *resume_event;
-	uint32_t ret;
-
-	ARG_UNUSED(ticks_drift);
-	LL_ASSERT(lazy == 0);
-
-	resume_event = param;
-
-	/* Append timing parameters */
-	resume_event->prepare_param.ticks_at_expire = ticks_at_expire;
-	resume_event->prepare_param.remainder = remainder;
-	resume_event->prepare_param.lazy = 0;
-	resume_event->prepare_param.force = force;
-	mfy.param = resume_event;
-
-	/* Mark resume as done */
-	cig = resume_event->prepare_param.param;
-	cig->resume_cis = LLL_HANDLE_INVALID;
-
-	/* Kick LLL resume */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &mfy);
-
-	LL_ASSERT(!ret);
 }
 
 static void cis_disabled_cb(void *param)
