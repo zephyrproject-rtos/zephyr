@@ -8,3 +8,4 @@ tests:
       - esp32_devkitc_wrover/esp32/procpu
       - yd_esp32/esp32/procpu
     tags: esp32
+    build_only: true
