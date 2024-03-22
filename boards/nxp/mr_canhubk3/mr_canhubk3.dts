@@ -60,6 +60,30 @@
 			gpios = <&gpioe_l 14 GPIO_ACTIVE_LOW>;
 			label = "User RGB LED1 RED";
 		};
+		can_led0: can_led0 {
+			gpios = <&gpioc_h 2 GPIO_ACTIVE_LOW>;
+			label = "CAN LED0";
+		};
+		can_led1: can_led1 {
+			gpios = <&gpioe_l 5 GPIO_ACTIVE_LOW>;
+			label = "CAN LED1";
+		};
+		can_led2: can_led2 {
+			gpios = <&gpiod_h 4 GPIO_ACTIVE_LOW>;
+			label = "CAN LED2";
+		};
+		can_led3: can_led3 {
+			gpios = <&gpiob_h 8 GPIO_ACTIVE_LOW>;
+			label = "CAN LED3";
+		};
+		can_led4: can_led4 {
+			gpios = <&gpiob_h 10 GPIO_ACTIVE_LOW>;
+			label = "CAN LED4";
+		};
+		can_led5: can_led5 {
+			gpios = <&gpiod_h 15 GPIO_ACTIVE_LOW>;
+			label = "CAN LED5";
+		};
 	};
 
 	/* gpio-leds and pwm-leds are the same RGB LED and cannot be used at the same time. */
@@ -201,7 +225,11 @@
 	status = "okay";
 };
 
-/* Enable gpio to control the CAN transceivers */
+/* Enable gpio to control the CAN transceivers and LEDs */
+
+&gpiob_h {
+	status = "okay";
+};
 
 &gpioc_h {
 	status = "okay";
