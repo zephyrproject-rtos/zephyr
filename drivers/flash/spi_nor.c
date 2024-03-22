@@ -504,7 +504,6 @@ static int enter_dpd(const struct device *const dev)
 	int ret = 0;
 	const struct spi_nor_config *cfg = dev->config;
 
-	ARG_UNUSED(cfg);
 	if (cfg->dpd_exist) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_DPD);
 		if (ret == 0) {
@@ -818,7 +817,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 {
 	const size_t flash_size = dev_flash_size(dev);
 	const uint16_t page_size = dev_page_size(dev);
-	int ret = 0;
+	int ret;
 
 	/* should be between 0 and flash size */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
@@ -870,7 +869,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
-	int ret = 0;
+	int ret;
 
 	/* erase area must be subregion of device */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
@@ -964,7 +963,6 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	}
 #endif
 
-	ARG_UNUSED(cfg);
 	ret = spi_nor_cmd_write(dev, (write_protect) ?
 	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
 
@@ -1213,8 +1211,6 @@ static int spi_nor_process_sfdp(const struct device *dev)
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static int setup_pages_layout(const struct device *dev)
 {
-	int rv = 0;
-
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 	struct spi_nor_data *data = dev->data;
 	const size_t flash_size = dev_flash_size(dev);
@@ -1272,7 +1268,7 @@ static int setup_pages_layout(const struct device *dev)
 #error Unhandled SFDP choice
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
-	return rv;
+	return 0;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
@@ -1666,7 +1662,7 @@ static const struct flash_driver_api spi_nor_api = {
 	.mxicy_mx25r_power_mode_exist = DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),	\
 	.enter_4byte_addr_exist = DT_INST_NODE_HAS_PROP(idx, enter_4byte_addr),			\
 	.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),				\
-	.requires_ulbpr_exist =  DT_INST_PROP(idx, requires_ulbpr),				\
+	.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),				\
 	.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),					\
 	.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),				\
 	IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))		\
