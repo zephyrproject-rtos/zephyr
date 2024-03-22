@@ -13,6 +13,7 @@ import sys
 from typing import List
 import yaml
 import list_hardware
+from list_hardware import unique_paths
 
 BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
 with open(BOARD_SCHEMA_PATH, 'r') as f:
@@ -116,7 +117,7 @@ def find_arch2board_set(args):
     arches = sorted(find_arches(args))
     ret = defaultdict(set)
 
-    for root in args.board_roots:
+    for root in unique_paths(args.board_roots):
         for arch, boards in find_arch2board_set_in(root, arches, args.board_dir).items():
             if args.board is not None:
                 ret[arch] |= {b for b in boards if b.name == args.board}
@@ -129,7 +130,7 @@ def find_arch2board_set(args):
 def find_arches(args):
     arch_set = set()
 
-    for root in args.arch_roots:
+    for root in unique_paths(args.arch_roots):
         arch_set |= find_arches_in(root)
 
     return arch_set
@@ -236,7 +237,7 @@ def find_v2_boards(args):
 
     boards = []
     board_files = []
-    for root in args.board_roots:
+    for root in unique_paths(args.board_roots):
         board_files.extend((root / 'boards').rglob(BOARD_YML))
 
     for board_yml in board_files:
