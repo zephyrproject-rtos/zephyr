@@ -70,16 +70,10 @@ complete conversion reference.
 Hardware support hierarchy
 **************************
 
-Zephyr's hardware support hierarchy has the following levels, from most to least
-specific:
-
-- :term:`board`, which has one or more
-- :term:`SoC`, each of which optionally belong to a
-- :term:`SoC series`, which in turn may optionally belong to an
-- :term:`SoC family`. Each SoC has one or more
-- :term:`CPU cluster`, each containing one or more
-- :term:`CPU core`, of a particular
-- :term:`architecture`
+Zephyr's hardware support is based on a series of hierarchical abstractions.
+Primarily, each :term:`board` has one or more :term:`SoC`.
+Each SoC can be optionally classed into an :term:`SoC series`, which in turn may optionally belong to an :term:`SoC family`.
+Each SoC has one or more :term:`CPU cluster`, each containing one or more :term:`CPU core` of a particular :term:`architecture`.
 
 You can visualize the hierarchy in the diagram below:
 
