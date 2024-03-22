@@ -18,4 +18,5 @@ supported:
   - dma
   - gpio
   - spi
+  - adc
 vendor: nxp

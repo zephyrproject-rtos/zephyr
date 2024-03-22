@@ -49,4 +49,12 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A2_PIO4_23>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
 };
