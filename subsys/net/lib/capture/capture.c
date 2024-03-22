@@ -508,6 +508,7 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 	struct k_mem_slab *orig_slab;
 	struct net_pkt *captured;
 	sys_snode_t *sn, *sns;
+	bool skip_clone = false;
 
 	/* We must prevent to capture network packet that is already captured
 	 * in order to avoid recursion.
@@ -528,17 +529,29 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 			continue;
 		}
 
-		orig_slab = pkt->slab;
-		pkt->slab = get_net_pkt();
+		/* If the packet is marked as "cooked", then it means that the
+		 * packet was directed here by "any" interface and was already
+		 * cooked mode captured. So no need to clone it here.
+		 */
+		if (net_pkt_is_cooked_mode(pkt)) {
+			skip_clone = true;
+		}
 
-		captured = net_pkt_clone(pkt, K_NO_WAIT);
+		if (skip_clone) {
+			captured = pkt;
+		} else {
+			orig_slab = pkt->slab;
+			pkt->slab = get_net_pkt();
 
-		pkt->slab = orig_slab;
+			captured = net_pkt_clone(pkt, K_NO_WAIT);
 
-		if (captured == NULL) {
-			NET_DBG("Captured pkt %s", "dropped");
-			/* TODO: update capture data statistics */
-			goto out;
+			pkt->slab = orig_slab;
+
+			if (captured == NULL) {
+				NET_DBG("Captured pkt %s", "dropped");
+				/* TODO: update capture data statistics */
+				goto out;
+			}
 		}
 
 		net_pkt_set_orig_iface(captured, iface);
@@ -549,6 +562,8 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 		if (ret < 0) {
 			net_pkt_unref(captured);
 		}
+
+		net_pkt_set_cooked_mode(pkt, false);
 
 		goto out;
 	}

@@ -306,6 +306,11 @@ struct net_pkt {
 	};
 #endif /* CONFIG_NET_OFFLOAD */
 
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+	/* Tell the capture api that this is a captured packet */
+	uint8_t cooked_mode_pkt : 1;
+#endif /* CONFIG_NET_CAPTURE_COOKED_MODE */
+
 	/* @endcond */
 };
 
@@ -891,6 +896,31 @@ static inline void net_pkt_set_priority(struct net_pkt *pkt,
 {
 	pkt->priority = priority;
 }
+
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+static inline bool net_pkt_is_cooked_mode(struct net_pkt *pkt)
+{
+	return pkt->cooked_mode_pkt;
+}
+
+static inline void net_pkt_set_cooked_mode(struct net_pkt *pkt, bool value)
+{
+	pkt->cooked_mode_pkt = value;
+}
+#else
+static inline bool net_pkt_is_cooked_mode(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline void net_pkt_set_cooked_mode(struct net_pkt *pkt, bool value)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(value);
+}
+#endif /* CONFIG_NET_CAPTURE_COOKED_MODE */
 
 #if defined(CONFIG_NET_VLAN)
 static inline uint16_t net_pkt_vlan_tag(struct net_pkt *pkt)
