@@ -1,5 +1,0 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NRF5340BSIM_NRF5340_CPUAPP
-	select SOC_POSIX
