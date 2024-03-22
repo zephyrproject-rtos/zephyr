@@ -338,7 +338,7 @@ static int spi_b9x_config(const struct device *dev,
 #if CONFIG_SOC_RISCV_TELINK_B91
 	uint8_t clk_src = b9x_config->peripheral_id == PSPI_MODULE ? sys_clk.pclk : sys_clk.hclk;
 #elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
-	uint8_t clk_src = sys_clk.hclk;
+	uint8_t clk_src = sys_clk.pll_clk;
 #endif
 
 	/* check for unsupported configuration */
@@ -367,8 +367,13 @@ static int spi_b9x_config(const struct device *dev,
 	}
 
 	/* init SPI master */
+#if CONFIG_SOC_RISCV_TELINK_B91
 	spi_master_init(b9x_config->peripheral_id,
 			clk_src * 1000000 / (2 * config->frequency) - 1, mode);
+#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+	spi_master_init(b9x_config->peripheral_id,
+			clk_src * 1000000/config->frequency, mode);
+#endif
 	spi_master_config(b9x_config->peripheral_id, SPI_NORMAL);
 
 	/* set lines configuration */
