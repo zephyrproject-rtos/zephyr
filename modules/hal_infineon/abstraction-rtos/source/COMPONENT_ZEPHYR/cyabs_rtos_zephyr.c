@@ -122,7 +122,7 @@ cy_rslt_t cy_rtos_create_thread(cy_thread_t *thread, cy_thread_entry_fn_t entry_
 		/* Allocate stack if NULL was passed */
 		if ((uint32_t *)stack == NULL) {
 			stack_alloc = k_aligned_alloc(Z_KERNEL_STACK_OBJ_ALIGN,
-						      Z_KERNEL_STACK_SIZE_ADJUST(stack_size));
+						      K_KERNEL_STACK_LEN(stack_size));
 
 			/* Store pointer to allocated stack,
 			 * NULL if not allocated by cy_rtos_thread_create (passed by application).
