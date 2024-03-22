@@ -764,7 +764,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
-	struct wifi_scan_params params = { 0 };
+	struct wifi_scan_params params = { .dwell_time_active = 50, .dwell_time_passive = 130, };
 	bool do_scan = true;
 	int opt_num;
 
