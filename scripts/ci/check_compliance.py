@@ -1448,6 +1448,58 @@ class KeepSorted(ComplianceTest):
             with open(file, "r") as fp:
                 self.check_file(file, fp)
 
+class FileEncoding(ComplianceTest):
+    """
+    Check the encoding for source files.
+    """
+    name = "FileEncoding"
+    doc = "Check the encoding for source files."
+    path_hint = "<git-top>"
+
+    MATCH_FILES = [
+            r'.*\.c$',
+            r'.*\.h$',
+            ]
+
+    def match_file(self, file):
+        for match in self.MATCH_FILES:
+            if re.match(match, file):
+                return True
+
+        return False
+
+    def check_file(self, file, fp):
+        if not self.match_file(str(file)):
+            return
+
+        for line_num, line in enumerate(fp.readlines(), start=1):
+            line = line.strip()
+
+            if not line:
+                continue
+
+            if "Copyright" in line:
+                continue
+
+            if not line.isascii():
+                #self.fmtd_failure("error", self.name, file, line_num,
+                #                  desc="Invalid encoding")
+                print("!!!", file, line)
+
+    def run(self):
+        path = Path(ZEPHYR_BASE)
+        for file in path.glob("**/*"):
+            # hack hack
+            if not file.is_file():
+                continue
+            with open(file, "r") as fp:
+                self.check_file(file, fp)
+            # hack hack
+
+        for file in get_files(filter="d"):
+            with open(file, "r") as fp:
+                self.check_file(file, fp)
+
 def init_logs(cli_arg):
     # Initializes logging
 

@@ -71,6 +71,7 @@ BinaryFiles.txt
 BoardYml.txt
 Checkpatch.txt
 DevicetreeBindings.txt
+FileEncoding.txt
 GitDiffCheck.txt
 Gitlint.txt
 Identity.txt
