@@ -141,9 +141,14 @@ class Family:
     socs: List[Soc]
 
 
+def unique_paths(paths):
+    # Using dict keys ensures both uniqueness and a deterministic order.
+    yield from dict.fromkeys(map(Path.resolve, paths)).keys()
+
+
 def find_v2_archs(args):
     ret = {'archs': []}
-    for root in args.arch_roots:
+    for root in unique_paths(args.arch_roots):
         archs_yml = root / ARCHS_YML_PATH
 
         if Path(archs_yml).is_file():
@@ -172,7 +177,7 @@ def find_v2_archs(args):
 def find_v2_systems(args):
     yml_files = []
     systems = Systems()
-    for root in args.soc_roots:
+    for root in unique_paths(args.soc_roots):
         yml_files.extend(sorted((root / 'soc').rglob(SOC_YML)))
 
     for soc_yml in yml_files:
