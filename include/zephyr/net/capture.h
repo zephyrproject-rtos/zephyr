@@ -211,6 +211,90 @@ static inline void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 }
 #endif
 
+/** The type and direction of the captured data. */
+enum net_capture_packet_type {
+	NET_CAPTURE_HOST,      /**< Packet was sent to us by somebody else */
+	NET_CAPTURE_BROADCAST, /**< Packet was broadcast by somebody else */
+	NET_CAPTURE_MULTICAST, /**< Packet was multicast, but not broadcast, by somebody else */
+	NET_CAPTURE_OTHERHOST, /**< Packet was sent by somebody else to somebody else */
+	NET_CAPTURE_OUTGOING,  /**< Packet was sent by us */
+};
+
+#define NET_CAPTURE_LL_ADDRLEN 8 /** Maximum length of a link-layer address */
+
+/** The context information for cooked mode capture */
+struct net_capture_cooked {
+	/** Link-layer address type */
+	uint16_t hatype;
+	/** Link-layer address length */
+	uint16_t halen;
+	/** Link-layer address */
+	uint8_t addr[NET_CAPTURE_LL_ADDRLEN];
+};
+
+/**
+ * @brief Initialize cooked mode capture context.
+ *
+ * @param cooked Cooked context struct allocated by user.
+ * @param hatype Link-layer address type
+ * @param halen Link-layer address length (maximum is 8 bytes)
+ * @param addr Link-layer address
+ *
+ * @return 0 if ok, <0 if context initialization failed
+ */
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+int net_capture_cooked_setup(struct net_capture_cooked *ctx,
+			     uint16_t hatype,
+			     uint16_t halen,
+			     uint8_t *addr);
+#else
+static inline int net_capture_cooked_setup(struct net_capture_cooked *ctx,
+					   uint16_t hatype,
+					   uint16_t halen,
+					   uint8_t *addr)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(hatype);
+	ARG_UNUSED(halen);
+	ARG_UNUSED(addr);
+
+	return -ENOTSUP;
+}
+#endif
+
+/**
+ * @brief Capture arbitrary data from source that does not have an interface.
+ *        This can be used if you do not have a network interface that
+ *        you want to capture from. For example low level modem device
+ *        below PPP containing HDLC frames, CANBUS data or Bluetooth packets etc.
+ *        The data given to this function should only contain full link
+ *        layer packets so that packet boundary is not lost.
+ *
+ * @param ctx Cooked mode capture context.
+ * @param buf Data to capture.
+ * @param len Length of the data.
+ * @param type The direction and type of the packet (did we sent it etc).
+ * @param ptype Protocol type id. These are the ETH_P_* types set in ethernet.h
+ */
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+void net_capture_data(struct net_capture_cooked *ctx,
+		      const uint8_t *data, size_t len,
+		      enum net_capture_packet_type type,
+		      uint16_t ptype);
+#else
+static inline void net_capture_data(struct net_capture_cooked *ctx,
+				    const uint8_t *data, size_t len,
+				    enum net_capture_packet_type type,
+				    uint16_t ptype)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+	ARG_UNUSED(type);
+	ARG_UNUSED(ptype);
+}
+#endif
+
 struct net_capture_info {
 	const struct device *capture_dev;
 	struct net_if *capture_iface;

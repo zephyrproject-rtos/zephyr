@@ -54,6 +54,14 @@ enum virtual_interface_caps {
 enum virtual_interface_config_type {
 	VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS,
 	VIRTUAL_INTERFACE_CONFIG_TYPE_MTU,
+	VIRTUAL_INTERFACE_CONFIG_TYPE_LINK_TYPE,
+};
+
+struct virtual_interface_link_types {
+	int count;
+	uint16_t type[COND_CODE_1(CONFIG_NET_CAPTURE_COOKED_MODE,
+				  (CONFIG_NET_CAPTURE_COOKED_MODE_MAX_LINK_TYPES),
+				  (1))];
 };
 
 struct virtual_interface_config {
@@ -62,6 +70,7 @@ struct virtual_interface_config {
 		struct in_addr peer4addr;
 		struct in6_addr peer6addr;
 		int mtu;
+		struct virtual_interface_link_types link_types;
 	};
 };
 
