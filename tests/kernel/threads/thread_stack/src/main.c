@@ -231,7 +231,7 @@ void stack_buffer_scenarios(void)
 		 * For some stack declared with:
 		 *
 		 * K_THREAD_STACK_DEFINE(my_stack, X);
-		 * Z_THREAD_STACK_SIZE_ADJUST(X) - K_THREAD_STACK_RESERVED ==
+		 * K_THREAD_STACK_LEN(X) - K_THREAD_STACK_RESERVED ==
 		 * 	K_THREAD_STACK_SIZEOF(my_stack)
 		 *
 		 * K_KERNEL_STACK_DEFINE(my_kern_stack, Y):
@@ -241,7 +241,7 @@ void stack_buffer_scenarios(void)
 #ifdef CONFIG_USERSPACE
 		/* Not defined if user mode disabled, all stacks are kernel stacks */
 		if (scenario_data.is_user) {
-			adjusted = Z_THREAD_STACK_SIZE_ADJUST(scenario_data.declared_size);
+			adjusted = K_THREAD_STACK_LEN(scenario_data.declared_size);
 		} else
 #endif
 		{

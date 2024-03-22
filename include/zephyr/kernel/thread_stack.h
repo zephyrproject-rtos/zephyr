@@ -404,7 +404,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #define K_THREAD_STACK_DECLARE(sym, size) \
 	extern struct z_thread_stack_element \
-		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+		sym[K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a thread stack array
@@ -467,7 +467,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define Z_THREAD_STACK_DEFINE_IN(sym, size, lsect) \
 	struct z_thread_stack_element lsect \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+		sym[K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel array of thread stack memory regions in specified region
