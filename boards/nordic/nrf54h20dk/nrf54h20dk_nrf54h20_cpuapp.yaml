@@ -10,6 +10,6 @@ toolchain:
   - xtools
   - zephyr
 ram: 256
-flash: 512
+flash: 600
 supported:
   - gpio
