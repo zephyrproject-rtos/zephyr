@@ -82,6 +82,9 @@ class HardwareAdapter(DeviceAdapter):
             elif runner == 'openocd' and self.device_config.product == 'EDBG CMSIS-DAP':
                 extra_args.append('--cmd-pre-init')
                 extra_args.append(f'cmsis_dap_serial {board_id}')
+            elif runner == "openocd" and self.device_config.product == "LPC-LINK2 CMSIS-DAP":
+                extra_args.append("--cmd-pre-init")
+                extra_args.append(f'adapter serial {board_id}')
             elif runner == 'jlink':
                 base_args.append(f'--tool-opt=-SelectEmuBySN {board_id}')
             elif runner == 'stm32cubeprogrammer':
