@@ -59,13 +59,13 @@ static struct k_spinlock objfree_lock;     /* k_object_free */
 #if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
 #define STACK_ELEMENT_DATA_SIZE(size) \
 	(sizeof(struct z_stack_data) + CONFIG_PRIVILEGED_STACK_SIZE + \
-	Z_THREAD_STACK_OBJ_ALIGN(size) + Z_THREAD_STACK_SIZE_ADJUST(size))
+	Z_THREAD_STACK_OBJ_ALIGN(size) + K_THREAD_STACK_LEN(size))
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) (sizeof(struct z_stack_data) + \
-	Z_THREAD_STACK_SIZE_ADJUST(size))
+	K_THREAD_STACK_LEN(size))
 #endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
 #else
-#define STACK_ELEMENT_DATA_SIZE(size) Z_THREAD_STACK_SIZE_ADJUST(size)
+#define STACK_ELEMENT_DATA_SIZE(size) K_THREAD_STACK_LEN(size)
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
 #endif /* CONFIG_DYNAMIC_OBJECTS */
