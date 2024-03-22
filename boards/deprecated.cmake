@@ -404,6 +404,11 @@ set(mps3_an547_DEPRECATED
 set(mps3_an547_ns_DEPRECATED
     mps3/an547/ns
 )
+
+set(native_posix_64_DEPRECATED
+    native_posix/native/64
+)
+
 set(nrf21540dk_nrf52840_DEPRECATED
     nrf21540dk
 )
