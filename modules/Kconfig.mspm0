@@ -1,0 +1,7 @@
+# MSPM0 SDK configuration
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_MSPM0_SDK
+	bool
