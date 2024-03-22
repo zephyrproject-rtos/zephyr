@@ -199,6 +199,10 @@ arduino_i2c: &flexcomm2 {
 	dc-gain = <1>;
 };
 
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
 &dma0 {
 	status = "okay";
 };
