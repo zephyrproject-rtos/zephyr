@@ -196,12 +196,19 @@ function __zephyr_west_complete_help
 end
 
 function __zephyr_west_complete_board
-    set -l boards (west 2>/dev/null boards --format="{name}|{qualifiers}")
+    # HWMv1
+    set -l boards (west 2>/dev/null boards --format="{name} {arch}")
     for board in $boards
-        set -l b (string split "|" $board)
-        set -l qualifiers (string split "," $b[2])
-        for i in $qualifiers
-            printf "%s\n" $b[1]/$i
+        set -l b (string split " " $board)
+        printf "%s\n" $b[1]\t"$b[2]"
+    end
+
+    # HWMv2
+    set -l boards (west 2>/dev/null boards --format="{identifiers}")
+    for board in $boards
+        set -l b (string split "," $board)
+        for variant in $b
+            printf "%s\n" $variant[1]
         end
     end
 end
@@ -300,7 +307,7 @@ complete -c west -n "__zephyr_west_seen_subcommand_from boards" -l soc-root -xa 
 # build
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra build -d "compile a Zephyr application"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -ra "(__zephyr_west_complete_directories)"
-complete -c west -n "__zephyr_west_seen_subcommand_from build" -o b -l board -xa "(__zephyr_west_complete_board)"
+complete -c west -n "__zephyr_west_seen_subcommand_from build" -o b -l board -xa "(__zephyr_west_complete_board)" -d "board to build for"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o d -l build-dir -xa "(__zephyr_west_complete_directories)" -d "build directory to create or use"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -o f -l force -d "ignore errors and continue"
 complete -c west -n "__zephyr_west_seen_subcommand_from build" -l sysbuild -d "create multi-domain build system"

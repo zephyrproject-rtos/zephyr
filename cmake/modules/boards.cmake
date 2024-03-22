@@ -285,14 +285,12 @@ elseif(HWMv2)
       string(REGEX REPLACE "^//" "/${LIST_BOARD_SOCS}/" BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
     endif()
 
-    set(board_targets ${LIST_BOARD_QUALIFIERS})
-    list(TRANSFORM board_targets PREPEND "${BOARD}/")
-    if(NOT ("${BOARD}${BOARD_QUALIFIERS}" IN_LIST board_targets))
-      string(REPLACE ";" "\n" board_targets "${board_targets}")
+    if(NOT ("${BOARD}${BOARD_QUALIFIERS}" IN_LIST LIST_BOARD_QUALIFIERS))
+      string(REPLACE ";" "\n" LIST_BOARD_QUALIFIERS "${LIST_BOARD_QUALIFIERS}")
       unset(CACHED_BOARD CACHE)
       message(FATAL_ERROR "Board qualifiers `${BOARD_QUALIFIERS}` for board \
             `${BOARD}` not found. Please specify a valid board target.\n"
-            "Valid board targets for ${BOARD_NAME} are:\n${board_targets}\n")
+            "Valid board qualifiers for ${BOARD_NAME} are:\n${LIST_BOARD_QUALIFIERS}\n")
     endif()
   endif()
 else()
