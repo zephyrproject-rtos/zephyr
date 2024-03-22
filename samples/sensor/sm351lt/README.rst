@@ -28,13 +28,13 @@ The SM351LT (or compatible) sensors are available on the following boards:
 * :ref:`bt510`
 
 Building on bt510
-==================
+=================
 
 :ref:`bt510` includes a Honeywell SM351LT magnetoresistive sensor.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/sm351lt
-   :board: bt510
+   :board: bt510/nrf52840
    :goals: build flash
    :compact:
 

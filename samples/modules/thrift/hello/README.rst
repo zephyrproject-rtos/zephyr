@@ -122,7 +122,7 @@ For example, to build for ``qemu_x86_64`` with TSSLSocket support:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/thrift/hello/server
    :host-os: unix
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :conf: "prj.conf ../overlay-tls.conf"
    :goals: run
    :compact:
@@ -186,7 +186,7 @@ Then, in annother terminal, run the corresponding ``hello/client`` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/thrift/hello/client
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :goals: run
    :compact:
 

@@ -20,7 +20,7 @@ executed on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/logger
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 

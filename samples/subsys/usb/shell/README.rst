@@ -19,7 +19,7 @@ built like:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: flash
    :compact:
 

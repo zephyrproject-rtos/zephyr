@@ -30,7 +30,7 @@ In the sample below the :ref:`arduino_due` board is used.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mpr
-   :board: arduino_due
+   :board: arduino_due/sam3x8e
    :goals: build flash
 
 Sample Output

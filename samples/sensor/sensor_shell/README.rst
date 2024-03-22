@@ -15,7 +15,7 @@ enabled, for example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/sensor_shell
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build flash
 
 Shell Module Command Help

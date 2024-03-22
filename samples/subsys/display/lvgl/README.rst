@@ -76,7 +76,7 @@ Example building for :ref:`native_sim <native_sim>`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: native_sim
+   :board: native_sim/native
    :goals: build run
 
 Alternatively, if building from a 64-bit host machine, the previous target

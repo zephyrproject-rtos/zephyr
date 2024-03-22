@@ -33,7 +33,7 @@ Build and flash Debug Monitor as follows, changing ``reel_board`` for your board
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/debug/debugmon
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build flash
    :compact:
 

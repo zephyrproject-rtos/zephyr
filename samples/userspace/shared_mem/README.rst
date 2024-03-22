@@ -22,12 +22,12 @@ was tested on the following boards qemu_x86,frdm_k64, and ``96b_carbon/stm32f401
 Building and Running
 ********************
 
-This example will only cover the qemu_x86 board, since the sample
+This example will only cover the qemu_x86/atom board, since the sample
 just prints text to a console.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/userspace/shared_mem
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: build run
    :compact:
 

@@ -35,7 +35,7 @@ Example building for :ref:`mimxrt1060_evk`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
-   :board: mimxrt1060_evk
+   :board: mimxrt1060_evk/mimxrt1062
    :goals: build flash
 
 These demos can be built for simulated display environment as follows:
@@ -43,7 +43,7 @@ These demos can be built for simulated display environment as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :gen-args: -DCONFIG_LV_Z_DEMO_MUSIC=y
    :goals: run
    :compact:
@@ -51,7 +51,7 @@ These demos can be built for simulated display environment as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :gen-args: -DCONFIG_LV_Z_DEMO_BENCHMARK=y
    :goals: run
    :compact:
@@ -59,7 +59,7 @@ These demos can be built for simulated display environment as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :gen-args: -DCONFIG_LV_Z_DEMO_STRESS=y
    :goals: run
    :compact:
@@ -67,7 +67,7 @@ These demos can be built for simulated display environment as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :gen-args: -DCONFIG_LV_Z_DEMO_WIDGETS=y
    :goals: run
    :compact:

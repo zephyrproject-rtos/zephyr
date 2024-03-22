@@ -21,7 +21,7 @@ on :ref:`native_sim <native_sim>` as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/zbus/remote_mock
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: run
 
 Sample Output

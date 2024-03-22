@@ -23,7 +23,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/task_wdt
-   :board: nucleo_l073rz
+   :board: nucleo_l073rz/stm32l073xx
    :goals: build flash
    :compact:
 

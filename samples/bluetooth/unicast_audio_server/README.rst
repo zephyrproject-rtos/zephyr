@@ -66,7 +66,7 @@ Similarly to how you would for real HW, you can do:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/unicast_audio_server/
-   :board: nrf52_bsim
+   :board: nrf52_bsim/native
    :goals: build
    :gen-args: -DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
 

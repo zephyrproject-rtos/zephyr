@@ -40,7 +40,7 @@ To build the sample printing text messages under ``qemu_x86``:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/syst
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: build
    :gen-args: -DCONFIG_LOG_BACKEND_SHOW_COLOR=n
    :compact:
@@ -109,7 +109,7 @@ The :file:`/tmp/syst` should contain something like this:
                               03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
    [    0.030000] <dbg> syst: frame
                               03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
-   hello sys-t on board qemu_x86
+   hello sys-t on board qemu_x86/atom
    SYS-T RAW DATA: 220A000B170003000000000000004572726F72206D657373616765206578616D706C652E00
    SYS-T RAW DATA: 320A000B190003000000000000005761726E696E67206D657373616765206578616D706C652E00
    SYS-T RAW DATA: 420A000B16000300000000000000496E666F206D657373616765206578616D706C652E00
@@ -170,7 +170,7 @@ And the parsed messages:
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
    frame
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
-   hello sys-t on board qemu_x86
+   hello sys-t on board qemu_x86/atom
 
    Warning message example.
    Info message example.
@@ -193,7 +193,7 @@ And the parsed messages:
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
    frame
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
-   hello sys-t on board qemu_x86
+   hello sys-t on board qemu_x86/atom
 
 
 MIPI Sys-T Catalog Messages
@@ -211,7 +211,7 @@ To build the sample printing catalog messages under ``qemu_x86``:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/syst
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: build
    :gen-args: -DCONFIG_LOG_BACKEND_SHOW_COLOR=n -DCONFIG_LOG_MIPI_SYST_USE_CATALOG=y
    :compact:
@@ -280,7 +280,7 @@ The :file:`/tmp/syst` should contain something like this:
                               03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
    [    0.030000] <dbg> syst: frame
                               03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
-   hello sys-t on board qemu_x86
+   hello sys-t on board qemu_x86/atom
    SYS-T RAW DATA: 230A0001040003000000000000004C221100
    SYS-T RAW DATA: 330A00010400030000000000000030221100
    SYS-T RAW DATA: 430A00010400030000000000000018221100
@@ -343,7 +343,7 @@ And the parsed messages:
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
    frame
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
-   hello sys-t on board qemu_x86
+   hello sys-t on board qemu_x86/atom
 
    Error message example.
    Warning message example.
@@ -367,4 +367,4 @@ And the parsed messages:
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
    frame
    03 d2 04 00 00 08 01 02  03 04 05 06 07 08       |........ ......
-   hello sys-t on board qemu_x86
+   hello sys-t on board qemu_x86/atom

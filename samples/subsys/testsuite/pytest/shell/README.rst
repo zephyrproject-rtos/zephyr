@@ -29,7 +29,7 @@ Build and run sample by Twister:
 
 .. code-block:: console
 
-   $ ./scripts/twister -vv --platform native_sim -T samples/subsys/testsuite/pytest/shell
+   $ ./scripts/twister -vv --platform native_sim/native -T samples/subsys/testsuite/pytest/shell
 
 
 Sample Output

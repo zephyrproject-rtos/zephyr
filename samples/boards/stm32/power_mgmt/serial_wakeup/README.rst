@@ -38,7 +38,7 @@ configured to be compatible with this sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/stm32/power_mgmt/serial_wakeup
-   :board: nucleo_wb55rg
+   :board: nucleo_wb55rg/stm32wb55xx
    :goals: build flash
    :compact:
 
@@ -59,8 +59,8 @@ target to reach low power consumption.
 Also note that after debug mode has been disabled, target should also be powered off in order
 to get back to normal mode and reach low power consumption.
 
-PM measurements on stm32l562e_dk using stm32l562e_dk PM shield
-**************************************************************
+PM measurements on stm32l562e_dk/stm32l562xx using stm32l562e_dk/stm32l562xx PM shield
+**************************************************************************************
 
 Plug Power shield
 Plug ST-Link
@@ -83,4 +83,4 @@ into account:
   - Provide "sleep" pinctrl configuration to other uart nodes.
   - Disable Debug mode
 
- With all these conditions matched, one can reach 10uA on stm32l562e_dk with this sample.
+ With all these conditions matched, one can reach 10uA on stm32l562e_dk/stm32l562xx with this sample.

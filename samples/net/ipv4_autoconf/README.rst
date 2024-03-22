@@ -46,7 +46,7 @@ steps:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/ipv4_autoconf
    :host-os: unix
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 

@@ -24,7 +24,7 @@ For building the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/sip_svc
-   :board: intel_socfpga_agilex_socdk
+   :board: intel_socfpga_agilex_socdk/agilex
    :goals: build
 
 For running the application the Zephyr image can be loaded in DDR memory

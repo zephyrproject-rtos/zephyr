@@ -22,7 +22,7 @@ wiring configuration.
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/auxdisplay
    :host-os: unix
-   :board: nucleo_f746zg
+   :board: nucleo_f746zg/stm32f746xx
    :goals: build flash
    :compact:
 

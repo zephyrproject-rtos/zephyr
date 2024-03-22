@@ -38,7 +38,7 @@ Example building for :ref:`twr_ke18f`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/babbling
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :goals: build flash
 
 Sample output

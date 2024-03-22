@@ -78,11 +78,11 @@ the server URL, ``<your-ip-address>:8080``, and logging into the server using
 Step 4: Build Hawkbit
 =====================
 
-``Hawkbit`` can be built for the frdm_k64f as follows:
+``Hawkbit`` can be built for the frdm_k64f/mk64f12 as follows:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/subsys/mgmt/hawkbit
-    :board: frdm_k64f
+    :board: frdm_k64f/mk64f12
     :conf: "prj.conf"
     :goals: build
 
@@ -117,7 +117,7 @@ of your board.
 
 Once the image is flashed and booted, the sample will print the image build
 time to the console. After it connects to the internet, in hawkbit server UI,
-you should see the frdm_k64f show up in the Targets pane. It's time to
+you should see the frdm_k64f/mk64f12 show up in the Targets pane. It's time to
 upload a firmware binary to the server, and update it using this UI.
 
 Step 7: Building and signing the test image
@@ -284,11 +284,11 @@ Step 11: Build Hawkbit HTTPS
 * Convert the server.pem file to self_sign.der and place the der file in
   hawkbit/src directory
 
-``Hawkbit https`` can be built for the frdm_k64f as follows:
+``Hawkbit https`` can be built for the frdm_k64f/mk64f12 as follows:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/subsys/mgmt/hawkbit
-    :board: frdm_k64f
+    :board: frdm_k64f/mk64f12
     :conf: "prj.conf overlay-tls.conf"
     :goals: build
 

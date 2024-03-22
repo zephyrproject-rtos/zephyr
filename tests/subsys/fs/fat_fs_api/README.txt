@@ -10,7 +10,7 @@ Building and Running Project:
 The demo will run on native_sim using the flash simulator.
 
        mkdir build; cd build
-       cmake -DBOARD=native_sim ..
+       cmake -DBOARD=native_sim/native ..
        make run
 
 To test fatfs on MMC, add this cmake option to your build command:

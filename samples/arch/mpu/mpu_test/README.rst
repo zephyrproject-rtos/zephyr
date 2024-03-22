@@ -22,7 +22,7 @@ This project can be built and executed as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/arch/mpu/mpu_test
-   :board: v2m_beetle
+   :board: v2m_beetle/beetle_r0
    :goals: build flash
    :compact:
 
@@ -31,7 +31,7 @@ single thread: :file:`prj_single.conf`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/arch/mpu/mpu_test
-   :board: v2m_beetle
+   :board: v2m_beetle/beetle_r0
    :conf: prj_single.conf
    :goals: run
    :compact:

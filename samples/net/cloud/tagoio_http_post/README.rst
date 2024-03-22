@@ -51,7 +51,7 @@ tagoio-http-client sample application with minimal configuration:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: [sam4e_xpro | sam_v71_xult/samv71q21 | frdm_k64f | nucleo_f767zi]
+   :board: [ sam4e_xpro/sam4e16e | sam_v71_xult/samv71q21 | frdm_k64f/mk64f12 | nucleo_f767zi/stm32f767xx ]
    :goals: build flash
    :compact:
 
@@ -68,15 +68,15 @@ need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: disco_l475_iot1
+   :board: disco_l475_iot1/stm32l475xx
    :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
    :goals: build flash
    :compact:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: [sam_v71_xult/samv71q21 | frdm_k64f | nucleo_f767zi]
-   :shield: [esp_8266_arduino | inventek_eswifi_arduino_uart]
+   :board: [ sam_v71_xult/samv71q21 | frdm_k64f/mk64f12 | nucleo_f767zi/stm32f767xx ]
+   :shield: [ esp_8266_arduino | inventek_eswifi_arduino_uart ]
    :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
    :goals: build flash
    :compact:
@@ -97,14 +97,14 @@ a special designator like defined at ``arduino.overlay``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: sam4e_xpro
+   :board: sam4e_xpro/sam4e16e
    :gen-args: -DEXTRA_CONF_FILE=overlay-modem.conf
    :goals: build flash
    :compact:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :gen-args: -DEXTRA_CONF_FILE=overlay-modem.conf -DDTC_OVERLAY_FILE=arduino.overlay
    :goals: build flash
    :compact:

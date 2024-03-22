@@ -32,7 +32,7 @@ Building on stm32l562e_dk board
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lsm6dso
    :host-os: unix
-   :board: stm32l562e_dk
+   :board: stm32l562e_dk/stm32l562xx
    :goals: build
    :compact:
 

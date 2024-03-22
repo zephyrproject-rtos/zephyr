@@ -18,7 +18,7 @@ The tail ``0`` is the sensor number.  This sample support up to 15 sensors.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/die_temp_polling
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
    :goals: build
    :compact:
 

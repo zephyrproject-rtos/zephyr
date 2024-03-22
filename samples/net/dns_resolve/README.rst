@@ -137,7 +137,7 @@ Open a terminal window and type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dns_resolve
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 

@@ -109,7 +109,7 @@ You may postprocess these with your preferred tools. For example:
    :zephyr-app: samples/hello_world
    :gen-args: -DCONFIG_COVERAGE=y
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: build
    :compact:
 
@@ -136,11 +136,11 @@ You just need to invoke it with the ``--coverage`` command line option.
 
 For example, you may invoke::
 
-    $ twister --coverage -p qemu_x86 -T tests/kernel
+    $ twister --coverage -p qemu_x86/atom -T tests/kernel
 
 or::
 
-    $ twister --coverage -p native_sim -T tests/bluetooth
+    $ twister --coverage -p native_sim/native -T tests/bluetooth
 
 which will produce ``twister-out/coverage/index.html`` report as well as
 the coverage data collected by ``gcovr`` tool in ``twister-out/coverage.json``.
@@ -151,7 +151,7 @@ command line options.
 The process differs for unit tests, which are built with the host
 toolchain and require a different board::
 
-    $ twister --coverage -p unit_testing -T tests/unit
+    $ twister --coverage -p unit_testing/unit_test -T tests/unit
 
 which produces a report in the same location as non-unit testing.
 

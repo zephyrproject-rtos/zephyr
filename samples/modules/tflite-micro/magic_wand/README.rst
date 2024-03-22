@@ -37,7 +37,7 @@ emulation in Renode as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/tflite-micro/magic_wand
    :host-os: unix
-   :board: litex_vexriscv
+   :board: litex_vexriscv/litex_vexriscv
    :goals: build
    :compact:
 

@@ -18,7 +18,7 @@ This project outputs to the console. It can be built and executed on QEMU as fol
 .. zephyr-app-commands::
    :zephyr-app: samples/posix/philosophers
    :host-os: unix
-   :board: qemu_riscv64
+   :board: qemu_riscv64/qemu_virt_riscv64
    :goals: run
    :compact:
 

@@ -22,7 +22,7 @@ Build and flash as follows, replacing ``stm32f3_disco`` with your board:
 
  .. zephyr-app-commands::
     :zephyr-app: samples/boards/stm32/uart/single_wire
-    :board: stm32f3_disco
+    :board: stm32f3_disco/stm32f303xc
     :goals: build flash
     :compact:
 

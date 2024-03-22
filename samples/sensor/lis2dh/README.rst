@@ -57,7 +57,7 @@ boards with Arduino headers.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lis2dh
-   :board: nucleo_l476rg
+   :board: nucleo_l476rg/stm32l476xx
    :goals: build flash
    :shield: x_nucleo_iks01a2
    :compact:

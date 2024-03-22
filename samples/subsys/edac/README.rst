@@ -19,7 +19,7 @@ The sample can be built as follows for the :ref:`intel_ehl_crb` board:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/edac
    :host-os: unix
-   :board: intel_ehl_crb
+   :board: intel_ehl_crb/elkhart_lake
    :goals: build
    :compact:
 

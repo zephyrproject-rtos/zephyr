@@ -16,7 +16,7 @@ Build and flash Twinkie as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/google_pda
-   :board: google_twinkie_v2
+   :board: google_twinkie_v2/stm32g0b1xx
    :goals: build flash
    :compact:
 

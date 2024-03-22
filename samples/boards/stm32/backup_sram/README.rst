@@ -27,7 +27,7 @@ board DT file.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/stm32/backup_sram
-   :board: nucleo_h743zi
+   :board: nucleo_h743zi/stm32h743xx
    :goals: build
    :compact:
 

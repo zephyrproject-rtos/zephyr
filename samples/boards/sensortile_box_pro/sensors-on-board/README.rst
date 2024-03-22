@@ -35,7 +35,7 @@ Build and flash the sample in the following way:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/boards/sensortile_box_pro/sensors-on-board
-    :board: sensortile_box_pro
+    :board: sensortile_box_pro/stm32u585xx
     :goals: build flash
 
 Please note that flashing the board requires a few preliminary steps described

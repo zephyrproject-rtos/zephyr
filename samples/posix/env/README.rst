@@ -20,7 +20,7 @@ This project outputs to the console. It can be built and executed on QEMU as fol
 .. zephyr-app-commands::
    :zephyr-app: samples/posix/env
    :host-os: unix
-   :board: qemu_riscv32
+   :board: qemu_riscv32/qemu_virt_riscv32
    :goals: run
    :compact:
 
@@ -60,7 +60,7 @@ The shell command below may be used to display the value associated with one env
 .. code-block:: console
 
     uart:~$ posix env get BOARD
-    qemu_riscv32
+    qemu_riscv32/qemu_virt_riscv32
 
 The shell command below may be used to display all environment variables and their associated
 values.

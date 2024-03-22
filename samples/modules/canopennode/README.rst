@@ -42,7 +42,7 @@ follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/canopennode
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :goals: build flash
    :compact:
 
@@ -61,7 +61,7 @@ The sample can be built and executed for the FRDM-K64F as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/canopennode
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 
@@ -80,7 +80,7 @@ The sample can be built and executed for the STM32F072RB Discovery as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/canopennode
-   :board: stm32f072b_disco
+   :board: stm32f072b_disco/stm32f072xb
    :goals: build flash
    :compact:
 
@@ -99,7 +99,7 @@ The sample can be built and executed for the STM32F3 Discovery as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/canopennode
-   :board: stm32f3_disco
+   :board: stm32f3_disco/stm32f303xc
    :goals: build flash
    :compact:
 
@@ -109,7 +109,7 @@ object at index ``0x2102`` in the object dictionary.
 Building and Running for other STM32 boards
 ===========================================
 The sample cannot run if the <erase-block-size> of the flash-controller exceeds 0x10000.
-Typically nucleo_h743zi with erase-block-size = <DT_SIZE_K(128)>;
+Typically nucleo_h743zi/stm32h743xx with erase-block-size = <DT_SIZE_K(128)>;
 
 
 Building and Running for boards without storage partition
@@ -406,7 +406,7 @@ for the FRDM-K64F as follows:
    .. zephyr-app-commands::
       :tool: west
       :app: samples/modules/canopennode
-      :board: frdm_k64f
+      :board: frdm_k64f/mk64f12
       :goals: build
       :west-args: --sysbuild
       :gen-args: -Dcanopennode_CONF_FILE=prj_img_mgmt.conf

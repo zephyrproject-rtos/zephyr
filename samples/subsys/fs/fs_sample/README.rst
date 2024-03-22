@@ -45,7 +45,7 @@ Boards with default configurations, for example ``arduino_mkrzero`` or
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fs_sample
-   :board: nrf52840_blip
+   :board: nrf52840_blip/nrf52840
    :goals: build
    :compact:
 
@@ -79,7 +79,7 @@ the sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fs_sample
-   :board: hifive_unmatched
+   :board: hifive_unmatched/fu740
    :gen-args: -DCONF_FILE=prj_ext.conf
    :goals: build
    :compact:

@@ -34,7 +34,7 @@ for testing USB mass storage class implementation.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: reel_board
+   :board: reel_board/nrf52840
    :gen-args: -DEXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
    :goals: build
    :compact:
@@ -49,7 +49,7 @@ In this example we will build the sample with a RAM-based disk:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: reel_board
+   :board: reel_board/nrf52840
    :gen-args: -DEXTRA_DTC_OVERLAY_FILE="ramdisk.overlay" -DCONFIG_APP_MSC_STORAGE_RAM=y
    :goals: build
    :compact:
@@ -118,7 +118,7 @@ follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: mimxrt1050_evk
+   :board: mimxrt1050_evk/mimxrt1052
    :gen-args: -DCONFIG_APP_MSC_STORAGE_SDCARD=y
    :goals: build
    :compact:

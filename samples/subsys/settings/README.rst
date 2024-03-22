@@ -17,7 +17,7 @@ Requirements
 ************
 
 * A board with settings support, for instance: nrf52840dk/nrf52840
-* Or qemu_x86 target
+* Or qemu_x86/atom target
 
 Building and Running
 ********************
@@ -31,7 +31,7 @@ application for the qemu_x86.
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/settings
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 

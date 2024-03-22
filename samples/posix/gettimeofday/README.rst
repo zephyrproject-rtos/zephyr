@@ -28,7 +28,7 @@ This project outputs to the console. It can be built and executed on QEMU as fol
 .. zephyr-app-commands::
    :zephyr-app: samples/posix/gettimeofday
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 

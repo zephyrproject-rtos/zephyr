@@ -36,7 +36,7 @@ Build and flash the sample in the following way:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/boards/sensortile_box
-    :board: sensortile_box
+    :board: sensortile_box/stm32l4r9xx
     :goals: build flash
 
 Please note that flashing the board requires a few preliminary steps described

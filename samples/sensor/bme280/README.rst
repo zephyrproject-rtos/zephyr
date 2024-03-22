@@ -41,7 +41,7 @@ sure this node has ``status = "okay";``, then build and run with:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme280
    :goals: build flash
-   :board: adafruit_feather_m0_basic_proto
+   :board: adafruit_feather_m0_basic_proto/samd21g18a
 
 BME280 via Arduino SPI pins
 ===========================
@@ -83,7 +83,7 @@ flash with:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme280
    :goals: build flash
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
 
 An alternative is to use PIO serving as an SPI device.  The devicetree
 overlay :zephyr_file:`samples/sensor/bme280/rpi_pico_spi_pio.overlay`
@@ -93,7 +93,7 @@ Build and flash with:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme280
    :goals: build flash
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
    :gen-args: -DDTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay
 
 Note that miso-gpios, mosi-gpios, and clk-gpios need to be assigned to the
@@ -118,7 +118,7 @@ overlay provided with this sample:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme280
    :goals: build flash
-   :board: adafruit_feather_m0_basic_proto
+   :board: adafruit_feather_m0_basic_proto/samd21g18a
 
 Sample Output
 =============

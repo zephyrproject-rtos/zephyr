@@ -29,12 +29,12 @@ This project outputs sensor data to the console. It requires an LSM6DSO
 sensor (for example, the one on evaluation board STEVAL-MKI196V1).
 
 Building on mimxrt685_evk board
-====================================
+===============================
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lsm6dso_i2c_on_i3c
    :host-os: unix
-   :board: mimxrt685_evk
+   :board: mimxrt685_evk/mimxrt685s
    :goals: build
    :compact:
 
@@ -42,7 +42,7 @@ Board Preparations
 ==================
 
 mimxrt685_evk
-------------------
+-------------
 
 On the board :ref:`mimxrt685_evk`, the I3C pins are exposed on the J18
 header, where:

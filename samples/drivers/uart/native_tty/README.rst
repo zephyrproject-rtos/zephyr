@@ -15,7 +15,7 @@ The source code for this sample application can be found at:
 :zephyr_file:`samples/drivers/uart/native_tty`.
 
 You can learn more about the Native TTY UART driver in the
-:ref:`TTY UART <native_tty_uart>` section of the native_sim board
+:ref:`TTY UART <native_tty_uart>` section of the native_sim/native board
 documentation.
 
 Requirements
@@ -39,7 +39,7 @@ This application can be built and executed on :ref:`native_sim <native_sim>` as 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/uart/native_tty
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: run
    :compact:
 

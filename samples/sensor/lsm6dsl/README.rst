@@ -15,7 +15,7 @@ Requirements
 ************
 
 This sample uses the LSM6DSL sensor controlled using the I2C or SPI interface.
-It has been tested on both :ref:`96b_argonkey` and disco_l475_iot1 board.
+It has been tested on both :ref:`96b_argonkey` and disco_l475_iot1/stm32l475xx board.
 
 References
 **********
@@ -26,7 +26,7 @@ Building and Running
 ********************
 
  This project outputs sensor data to the console. It requires an LSM6DSL
- sensor, which is present on both the :ref:`96b_argonkey` and disco_l475_iot1 board.
+ sensor, which is present on both the :ref:`96b_argonkey` and disco_l475_iot1/stm32l475xx board.
 
 Building on ArgonKey board
 ==========================
@@ -34,7 +34,7 @@ Building on ArgonKey board
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lsm6dsl
    :host-os: unix
-   :board: 96b_argonkey
+   :board: 96b_argonkey/stm32f412cx
    :goals: build
    :compact:
 
@@ -44,7 +44,7 @@ Building on disco_l475_iot1 board
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lsm6dsl
    :host-os: unix
-   :board: disco_l475_iot1
+   :board: disco_l475_iot1/stm32l475xx
    :goals: build
    :compact:
 
@@ -73,4 +73,4 @@ Sample Output
 
     <repeats endlessly every 2 seconds>
 
-.. note:: The magn row is displayed only when running sample onto 96b_argonkey board, where a magnetometer is connected to LSM6DSL.
+.. note:: The magn row is displayed only when running sample onto 96b_argonkey/stm32f412cx board, where a magnetometer is connected to LSM6DSL.

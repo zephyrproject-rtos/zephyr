@@ -31,7 +31,7 @@ board with a matching Arduino connector. For this example, we use a
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/lmp90100_evb/rtd
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build
    :compact:
 

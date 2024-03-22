@@ -28,7 +28,7 @@ is used:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/promiscuous_mode
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :conf: <config file to use>
    :goals: build
    :compact:

@@ -43,11 +43,11 @@ Building and Running
 ********************
 
 This sample can be built for multiple boards, in this example we will build it
-for the nucleo_f070rb board:
+for the nucleo_f070rb/stm32f070xb board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/hid-mouse
-   :board: nucleo_f070rb
+   :board: nucleo_f070rb/stm32f070xb
    :goals: build
    :compact:
 

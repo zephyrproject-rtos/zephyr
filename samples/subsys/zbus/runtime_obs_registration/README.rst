@@ -19,7 +19,7 @@ on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/zbus/runtime_obs_registration
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
 
 Sample Output

@@ -49,7 +49,7 @@ Enable TLS support in the sample by building the project with the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/http_get
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :conf: "prj.conf overlay-tls.conf"
    :goals: build
    :compact:

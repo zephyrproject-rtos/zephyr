@@ -36,7 +36,7 @@ qemu_cortex_a53
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/virtualization/ivshmem/doorbell
    :host-os: unix
-   :board: qemu_cortex_a53
+   :board: qemu_cortex_a53/qemu_cortex_a53
    :goals: run
    :compact:
 
@@ -46,7 +46,7 @@ qemu_kvm_arm64
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/virtualization/ivshmem/doorbell
    :host-os: unix
-   :board: qemu_kvm_arm64
+   :board: qemu_kvm_arm64/qemu_virt_arm64
    :goals: run
    :compact:
 
@@ -56,7 +56,7 @@ qemu_x86_64
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/virtualization/ivshmem/doorbell
    :host-os: unix
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :goals: run
    :compact:
 
@@ -70,7 +70,7 @@ How to
 
 .. note::
 
-   Due to limited RAM memory available in qemu_x86_64 dts, it is not possible
+   Due to limited RAM memory available in qemu_x86_64/atom dts, it is not possible
    to use the default shared memory size of ivshmem (4MB) for this platform.
 
 Steps to reproduce this sample:

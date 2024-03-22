@@ -49,7 +49,7 @@ It can be built and executed on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/zbus/priority_boost -- -DCONFIG_ZBUS_PRIORITY_BOOST=n
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
 
 Sample Output
@@ -129,7 +129,7 @@ To execute the sample with priority boost feature enabled, run the following com
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/zbus/priority_boost -- -DCONFIG_ZBUS_PRIORITY_BOOST=y
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
 
 Sample Output

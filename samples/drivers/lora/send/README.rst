@@ -23,7 +23,7 @@ your board, where your board has a ``lora0`` alias in the devicetree.
 .. zephyr-app-commands::
    :zephyr-app: zephyr/samples/drivers/lora/send
    :host-os: unix
-   :board: b_l072z_lrwan1
+   :board: b_l072z_lrwan1/stm32l072xx
    :goals: build flash
    :compact:
 

@@ -38,7 +38,7 @@ and alert GPIO, build this sample app using:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mcp9808
-   :board: particle_xenon
+   :board: particle_xenon/nrf52840
    :goals: build flash
 
 Sample Output

@@ -20,7 +20,7 @@ The sample can be built and run as follows for the ``qemu_x86_64`` board:
 .. zephyr-app-commands::
    :zephyr-app: zephyr/samples/drivers/smbus
    :host-os: unix
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :goals: run
    :compact:
 
@@ -32,7 +32,7 @@ Output from console when application started:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v3.2.0-804-gfedd72615e82  ***
-   Start SMBUS shell sample qemu_x86_64
+   Start SMBUS shell sample qemu_x86_64/atom
    uart:~$
 
 List available SMBus shell commands with:

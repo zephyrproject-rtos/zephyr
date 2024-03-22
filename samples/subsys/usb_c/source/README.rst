@@ -31,7 +31,7 @@ Build and flash as follows, changing ``stm32g081b_eval`` for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb_c/source
-   :board: stm32g081b_eval
+   :board: stm32g081b_eval/stm32g081xx
    :goals: build flash
    :compact:
 

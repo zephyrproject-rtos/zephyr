@@ -24,7 +24,7 @@ You can build this sample for :ref:`native_sim <native_sim>` with:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/fs
-   :board: native_sim
+   :board: native_sim/native
    :goals: build
    :compact:
 
@@ -48,7 +48,7 @@ you will also have the flash filesystem mounted and accessible from your Linux h
 Before starting a build, make sure that the i386 pkgconfig directory is in your
 search path and that a 32-bit version of libfuse is installed. For more
 background information on this requirement check
-:ref:`the native_sim documentation <native_fuse_flash>`.
+:ref:`the native_sim/native documentation <native_fuse_flash>`.
 
 .. code-block:: console
 
@@ -56,7 +56,7 @@ background information on this requirement check
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/fs
-   :board: native_sim
+   :board: native_sim/native
    :gen-args: -DCONFIG_FUSE_FS_ACCESS=y
    :goals: build
    :compact:
@@ -66,7 +66,7 @@ Reel Board
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/fs
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build
    :compact:
 
@@ -78,7 +78,7 @@ the :zephyr:code-sample:`littlefs` sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/fs
-   :board: particle_xenon
+   :board: particle_xenon/nrf52840
    :goals: build
    :compact:
 

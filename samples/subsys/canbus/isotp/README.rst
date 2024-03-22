@@ -24,7 +24,7 @@ For the NXP TWR-KE18F board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/canbus/isotp
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :goals: build flash
 
 Requirements

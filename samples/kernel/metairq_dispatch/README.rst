@@ -67,11 +67,11 @@ k_busy_wait()) where they will voluntarily release the CPU.
 Building and Running
 ********************
 
-This application can be built and executed on frdm_k64f as follows:
+This application can be built and executed on frdm_k64f/mk64f12 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/kernel/metairq_dispatch
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 

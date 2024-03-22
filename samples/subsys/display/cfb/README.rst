@@ -23,7 +23,7 @@ Build this sample application with the following commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/cfb
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build
    :compact:
 

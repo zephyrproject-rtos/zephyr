@@ -37,7 +37,7 @@ The following commands build and flash gateway sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/modbus/tcp_gateway
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 

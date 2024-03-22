@@ -20,7 +20,7 @@ frequency of the local clock used for synchronization, and whether the
 DS3231 has recorded a loss-of-oscillator::
 
    ***** Booting Zephyr OS build zephyr-v1.14.0-2409-g322d53aedaa0 *****
-   DS3231 on particle_xenon syncclock 1000 Hz
+   DS3231 on particle_xenon/nrf52840 syncclock 1000 Hz
    .
    DS3231 has not experienced an oscillator fault
 
@@ -129,7 +129,7 @@ corresponding devicetree overlay.
 
   .. zephyr-app-commands::
      :zephyr-app: samples/drivers/counter/maxim_ds3231
-     :board: frdm_k64f
+     :board: frdm_k64f/mk64f12
      :goals: build
      :compact:
 
@@ -137,7 +137,7 @@ corresponding devicetree overlay.
 
   .. zephyr-app-commands::
      :zephyr-app: samples/drivers/counter/maxim_ds3231
-     :board: nucleo_l476rg
+     :board: nucleo_l476rg/stm32l476xx
      :goals: build
      :compact:
 
@@ -145,7 +145,7 @@ corresponding devicetree overlay.
 
   .. zephyr-app-commands::
      :zephyr-app: samples/drivers/counter/maxim_ds3231
-     :board: efr32mg_sltb004a
+     :board: efr32mg_sltb004a/efr32mg12p332f1024gl125
      :goals: build
      :compact:
 

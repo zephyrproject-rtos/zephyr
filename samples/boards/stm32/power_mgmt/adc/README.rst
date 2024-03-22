@@ -25,7 +25,7 @@ Build and flash as follows, changing ``nucleo_wb55rg`` for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/stm32/power_mgmt/adc
-   :board: nucleo_wb55rg
+   :board: nucleo_wb55rg/stm32wb55xx
    :goals: build flash
    :compact:
 

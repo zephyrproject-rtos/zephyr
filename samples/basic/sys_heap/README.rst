@@ -17,7 +17,7 @@ This application can be built on :ref:`native_sim <native_sim>` as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/sys_heap
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: build
    :compact:
 

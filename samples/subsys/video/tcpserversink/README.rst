@@ -33,7 +33,7 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/tcpserversink
-   :board: mimxrt1064_evk
+   :board: mimxrt1064_evk/mimxrt1064
    :goals: build
    :compact:
 

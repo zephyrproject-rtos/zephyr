@@ -39,7 +39,7 @@ Make sure this node has ``status = "okay";``, then build and run with:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ds18b20
    :goals: build flash
-   :board: nucleo_g0b1re
+   :board: nucleo_g0b1re/stm32g0b1xx
 
 DS18B20 via Arduino Serial pins
 ===============================

@@ -30,7 +30,7 @@ Building and Running
  .. zephyr-app-commands::
     :zephyr-app: samples/drivers/counter/alarm
     :host-os: unix
-    :board: disco_l475_iot1
+    :board: disco_l475_iot1/stm32l475xx
     :goals: run
     :compact:
 
