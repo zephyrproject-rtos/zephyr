@@ -409,6 +409,10 @@ set(native_posix_64_DEPRECATED
     native_posix/native/64
 )
 
+set(native_sim_64_DEPRECATED
+    native_sim/native/64
+)
+
 set(nrf21540dk_nrf52840_DEPRECATED
     nrf21540dk
 )

@@ -12,15 +12,6 @@ config BOARD_NATIVE_SIM
 	  Native simulator (Single Core)
 	  Will produce a console Linux process which can be executed natively.
 
-config BOARD_NATIVE_SIM_64
-	bool
-	select BOARD_NATIVE_SIM
-	select 64BIT
-	help
-	  Native simulator (Single Core) - 64 bit version
-	  Will produce a console Linux process which can be executed natively
-	  as a 64-bit executable.
-
 if BOARD_NATIVE_SIM
 
 comment "Native Simular (Single Core) options"
