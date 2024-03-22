@@ -271,7 +271,7 @@ void stack_buffer_scenarios(void)
 		if (scenario_data.is_user) {
 			adjusted = K_THREAD_STACK_LEN(scenario_data.declared_size);
 		} else {
-			adjusted = Z_KERNEL_STACK_LEN(scenario_data.declared_size);
+			adjusted = K_KERNEL_STACK_LEN(scenario_data.declared_size);
 		}
 		adjusted -= reserved;
 

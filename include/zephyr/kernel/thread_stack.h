@@ -104,7 +104,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif /* ARCH_KERNEL_STACK_OBJ_ALIGN */
 
-#define Z_KERNEL_STACK_LEN(size) \
+#define K_KERNEL_STACK_LEN(size) \
 	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
 
 /**
@@ -137,7 +137,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_STACK_ARRAY_DECLARE(sym, nmemb, size) \
 	extern struct z_thread_stack_element \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a pinned thread stack array
@@ -151,7 +151,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_PINNED_STACK_ARRAY_DECLARE(sym, nmemb, size) \
 	extern struct z_thread_stack_element \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel kernel stack memory region in specified section
@@ -188,7 +188,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, lsect) \
 	struct z_thread_stack_element lsect \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel kernel stack memory region
@@ -290,7 +290,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #ifndef CONFIG_USERSPACE
 #define K_THREAD_STACK_RESERVED		K_KERNEL_STACK_RESERVED
 #define K_THREAD_STACK_SIZEOF		K_KERNEL_STACK_SIZEOF
-#define K_THREAD_STACK_LEN		Z_KERNEL_STACK_LEN
+#define K_THREAD_STACK_LEN		K_KERNEL_STACK_LEN
 #define K_THREAD_STACK_DEFINE		K_KERNEL_STACK_DEFINE
 #define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
 #define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
