@@ -41,6 +41,7 @@ config SOC_LPC55S26
 	select HAS_MCUX_LPADC
 	select HAS_MCUX_LPC_DMA
 	select HAS_MCUX_RNG
+	select HAS_MCUX_SCTIMER
 
 config SOC_LPC55S28
 	select CPU_CORTEX_M33
@@ -52,6 +53,7 @@ config SOC_LPC55S28
 	select HAS_MCUX_LPADC
 	select HAS_MCUX_LPC_DMA
 	select HAS_MCUX_RNG
+	select HAS_MCUX_SCTIMER
 
 config SOC_LPC55S36
 	select CPU_CORTEX_M33
