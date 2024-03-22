@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MSPM0G1X0X_G3X0X
+	bool
+	select SOC_FAMILY_TI_MSPM0
+	help
+		Enable support for TI MSPM0G1X0X_G3X0X SoCs
+
+config SOC_MSPM0G350X
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G310X
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G150X
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_MSPM0G110X
+	bool
+	select SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC_SERIES
+	default "mspm0g1x0x_g3x0x" if SOC_SERIES_MSPM0G1X0X_G3X0X
+
+config SOC
+	default "mspm0g350x" if SOC_MSPM0G350X
+	default "mspm0g150x" if SOC_MSPM0G150X
+	default "mspm0g310x" if SOC_MSPM0G310X
+	default "mspm0g110x" if SOC_MSPM0G110X

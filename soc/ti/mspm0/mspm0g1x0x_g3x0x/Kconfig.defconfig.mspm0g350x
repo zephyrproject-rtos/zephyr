@@ -1,0 +1,17 @@
+# TI MSPM0G3507 SoC
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MSPM0G350X
+
+config SOC
+	default "mspm0g350X"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000000
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_MSPM0G350X

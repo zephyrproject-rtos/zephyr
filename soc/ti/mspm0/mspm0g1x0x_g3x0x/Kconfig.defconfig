@@ -1,0 +1,10 @@
+# TI MSPM0G3XXX
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MSPM0G1X0X_G3X0X
+
+rsource "Kconfig.defconfig.mspm0g*"
+
+endif # SOC_SERIES_MSPM0G1X0X_G3X0X
