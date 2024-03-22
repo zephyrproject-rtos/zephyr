@@ -5244,14 +5244,20 @@ void net_if_init(void)
 	net_tc_tx_init();
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		memset(net_if_get_config(iface)->name, 0,
+		       sizeof(iface->config.name));
+#endif
 
 		init_iface(iface);
 
 #if defined(CONFIG_NET_INTERFACE_NAME)
-		memset(net_if_get_config(iface)->name, 0,
-		       sizeof(iface->config.name));
-
-		set_default_name(iface);
+		/* If the driver did not set the name, then set
+		 * a default name for the network interface.
+		 */
+		if (net_if_get_config(iface)->name[0] == '\0') {
+			set_default_name(iface);
+		}
 #endif
 
 		if_count++;
