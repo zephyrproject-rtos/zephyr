@@ -384,6 +384,7 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 static void gpio_dw_isr(const struct device *port)
 {
 	struct gpio_dw_runtime *context = port->data;
@@ -396,6 +397,7 @@ static void gpio_dw_isr(const struct device *port)
 
 	gpio_fire_callbacks(&context->callbacks, port, int_status);
 }
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts) */
 
 static const struct gpio_driver_api api_funcs = {
 	.pin_configure = gpio_dw_config,
