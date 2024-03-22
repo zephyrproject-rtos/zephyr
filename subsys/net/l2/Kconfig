@@ -10,6 +10,10 @@ config NET_L2_DUMMY
 	  Add a dummy L2 layer driver. This is usually only needed when
 	  simulating a network interface when running network stack inside QEMU.
 
+if NET_L2_DUMMY
+source "subsys/net/l2/dummy/Kconfig"
+endif
+
 config NET_L2_BT
 	bool "Bluetooth support"
 	depends on NET_IPV6
