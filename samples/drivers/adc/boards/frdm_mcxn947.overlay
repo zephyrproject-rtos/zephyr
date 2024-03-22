@@ -1,0 +1,33 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2024 NXP
+ */
+
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&lpadc0 0>;
+	};
+};
+
+&lpadc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * To use this sample:
+	 * - Please connect LPADC0 CH2 A-side signal (J8-28) to voltage between 0~3.3V
+	 */
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <3300>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH2A>;
+	};
+};
