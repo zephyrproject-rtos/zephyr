@@ -34,50 +34,11 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/display/mipi_display.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * SPI 3 wire (Type C1). Uses 9 write clocks to send a byte of data.
- * The bit sent on the 9th clock indicates whether the byte is a
- * command or data byte
- *
- *
- *           .---.   .---.   .---.   .---.   .---.   .---.   .---.   .---.
- *     SCK  -'   '---'   '---'   '---'   '---'   '---'   '---'   '---'   '---
- *
- *          -.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.
- *     DOUT  |D/C| D7| D6| D5| D4| D3| D2| D1| D0|D/C| D7| D6| D5| D4|...|
- *          -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'
- *           | Word 1                            | Word n
- *
- *          -.								 .--
- *     CS    '-----------------------------------------------------------'
- */
-#define MIPI_DBI_MODE_SPI_3WIRE 0x1
-/**
- * SPI 4 wire (Type C3). Uses 8 write clocks to send a byte of data.
- * an additional C/D pin will be use to indicate whether the byte is a
- * command or data byte
- *
- *           .---.   .---.   .---.   .---.   .---.   .---.   .---.   .---.
- *     SCK  -'   '---'   '---'   '---'   '---'   '---'   '---'   '---'   '---
- *
- *          -.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.
- *     DOUT  | D7| D6| D5| D4| D3| D2| D1| D0| D7| D6| D5| D4| D3| D2| D1| D0|
- *          -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'
- *           | Word 1                        | Word n
- *
- *          -.								     .--
- *     CS    '---------------------------------------------------------------'
- *
- *          -.-------------------------------.-------------------------------.-
- *     CD    |             D/C               |             D/C               |
- *          -'-------------------------------'-------------------------------'-
- */
-#define MIPI_DBI_MODE_SPI_4WIRE 0x2
 
 /**
  * @brief initialize a MIPI DBI SPI configuration struct from devicetree
@@ -120,6 +81,36 @@ extern "C" {
  */
 #define MIPI_DBI_SPI_CONFIG_DT_INST(inst, operation_, delay_)		\
 	MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+
+/**
+ * @brief Initialize a MIPI DBI configuration from devicetree
+ *
+ * This helper allows drivers to initialize a MIPI DBI configuration
+ * structure from devicetree. It sets the MIPI DBI mode, as well
+ * as configuration fields in the SPI configuration structure
+ * @param node_id Devicetree node identifier for the MIPI DBI device to
+ *                initialize
+ * @param operation_ the desired operation field in the struct spi_config
+ * @param delay_ the desired delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define MIPI_DBI_CONFIG_DT(node_id, operation_, delay_)			\
+	{								\
+		.mode = DT_PROP(node_id, mipi_mode),			\
+		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
+	}
+
+/**
+ * @brief Initialize a MIPI DBI configuration from device instance
+ *
+ * Equivalent to MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+ * @param inst Instance of the device to initialize a MIPI DBI configuration for
+ * @param operation_ the desired operation field in the struct spi_config
+ * @param delay_ the desired delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define MIPI_DBI_CONFIG_DT_INST(inst, operation_, delay_)		\
+	MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
 
 /**
  * @brief MIPI DBI controller configuration
