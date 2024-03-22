@@ -324,8 +324,6 @@ end:
 
 static void tcp_send(struct net_pkt *pkt)
 {
-	NET_DBG("%s", tcp_th(pkt));
-
 	tcp_pkt_ref(pkt);
 
 	if (tcp_send_cb) {
@@ -720,8 +718,6 @@ static void tcp_conn_release(struct k_work *work)
 	}
 #endif
 
-	k_mutex_lock(&tcp_lock, K_FOREVER);
-
 	/* Application is no longer there, unref any remaining packets on the
 	 * fifo (although there shouldn't be any at this point.)
 	 */
@@ -761,11 +757,11 @@ static void tcp_conn_release(struct k_work *work)
 	net_context_unref(conn->context);
 	conn->context = NULL;
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
+	k_mutex_unlock(&tcp_lock);
 
 	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
-
-	k_mutex_unlock(&tcp_lock);
 }
 
 #if defined(CONFIG_NET_TEST)
@@ -1465,6 +1461,8 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 		goto err;
 	}
 
+	NET_DBG("%s", tcp_th(rst));
+
 	tcp_send(rst);
 
 	return;
@@ -1521,8 +1519,6 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		tcp_pkt_unref(pkt);
 		goto out;
 	}
-
-	NET_DBG("%s", tcp_th(pkt));
 
 	if (tcp_send_cb) {
 		ret = tcp_send_cb(pkt);
@@ -1633,7 +1629,9 @@ static bool tcp_window_full(struct tcp *conn)
 	window_full = window_full || (conn->send_data_total >= conn->ca.cwnd);
 #endif
 
-	NET_DBG("conn: %p window_full=%hu", conn, window_full);
+	if (window_full) {
+		NET_DBG("conn: %p TX window_full", conn);
+	}
 
 	return window_full;
 }
@@ -1664,8 +1662,6 @@ static int tcp_unsent_len(struct tcp *conn)
 #endif
 	}
  out:
-	NET_DBG("unsent_len=%d", unsent_len);
-
 	return unsent_len;
 }
 
@@ -2092,7 +2088,9 @@ static struct tcp *tcp_conn_alloc(void)
 
 	tcp_conn_ref(conn);
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 	sys_slist_append(&tcp_conns, &conn->next);
+	k_mutex_unlock(&tcp_lock);
 out:
 	NET_DBG("conn: %p", conn);
 
@@ -2113,19 +2111,15 @@ int net_tcp_get(struct net_context *context)
 	int ret = 0;
 	struct tcp *conn;
 
-	k_mutex_lock(&tcp_lock, K_FOREVER);
-
 	conn = tcp_conn_alloc();
 	if (conn == NULL) {
 		ret = -ENOMEM;
-		goto out;
+		return ret;
 	}
 
 	/* Mutually link the net_context and tcp connection */
 	conn->context = context;
 	context->tcp = conn;
-out:
-	k_mutex_unlock(&tcp_lock);
 
 	return ret;
 }
@@ -2154,12 +2148,16 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	struct tcp *conn;
 	struct tcp *tmp;
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
 		found = tcp_conn_cmp(conn, pkt);
 		if (found) {
 			break;
 		}
 	}
+
+	k_mutex_unlock(&tcp_lock);
 
 	return found ? conn : NULL;
 }
@@ -2178,8 +2176,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
-
-	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	conn = tcp_conn_search(pkt);
 	if (conn) {
@@ -2200,8 +2196,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 		conn->accepted_conn = conn_old;
 	}
 in:
-	k_mutex_unlock(&tcp_lock);
-
 	if (conn) {
 		verdict = tcp_in(conn, pkt);
 	} else {
@@ -4270,7 +4264,6 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
-
 		if (atomic_get(&conn->ref_count) > 0) {
 			k_mutex_unlock(&tcp_lock);
 			cb(conn, user_data);

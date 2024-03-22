@@ -1,0 +1,25 @@
+# FRDM-KW41Z board
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_KW41Z
+
+config OSC_XTAL0_FREQ
+	default 32000000
+
+config MCG_FRDIV
+	default 5
+
+config MCG_FCRDIV
+	default 0
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+choice ADC_MCUX_ADC16_VREF
+	default ADC_MCUX_ADC16_VREF_ALTERNATE
+endchoice
+
+endif # BOARD_FRDM_KW41Z

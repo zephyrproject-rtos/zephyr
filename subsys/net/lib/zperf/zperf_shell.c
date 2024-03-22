@@ -106,6 +106,32 @@ static void print_number(const struct shell *sh, uint32_t value,
 	}
 }
 
+static void print_number_64(const struct shell *sh, uint64_t value,
+			 const uint32_t *divisor_arr, const char **units)
+{
+	const char **unit;
+	const uint32_t *divisor;
+	uint32_t dec;
+	uint64_t radix;
+
+	unit = units;
+	divisor = divisor_arr;
+
+	while (value < *divisor) {
+		divisor++;
+		unit++;
+	}
+
+	if (*divisor != 0U) {
+		radix = value / *divisor;
+		dec = (value % *divisor) * 100U / *divisor;
+		shell_fprintf(sh, SHELL_NORMAL, "%llu.%s%u %s", radix,
+			      (dec < 10) ? "0" : "", dec, *unit);
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "%llu %s", value, *unit);
+	}
+}
+
 static long parse_number(const char *string, const uint32_t *divisor_arr,
 			 const char **units)
 {
@@ -306,9 +332,8 @@ static void udp_session_cb(enum zperf_status status,
 		/* Compute baud rate */
 		if (result->time_in_us != 0U) {
 			rate_in_kbps = (uint32_t)
-				(((uint64_t)result->total_len * 8ULL *
-				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)result->time_in_us * 1000ULL));
+				((result->total_len * 8ULL * USEC_PER_SEC) /
+				 (result->time_in_us * 1000ULL));
 		} else {
 			rate_in_kbps = 0U;
 		}
@@ -316,7 +341,7 @@ static void udp_session_cb(enum zperf_status status,
 		shell_fprintf(sh, SHELL_NORMAL, "End of session!\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " duration:\t\t");
-		print_number(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
+		print_number_64(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " received packets:\t%u\n",
@@ -343,6 +368,53 @@ static void udp_session_cb(enum zperf_status status,
 	}
 }
 
+/*
+ * parse download options with '-'
+ * return < 0 if parse error
+ * return 0 if no '-' options
+ * return > 0 num of argc we parsed
+ * and following parse starts from this num
+ */
+static int shell_cmd_download(const struct shell *sh, size_t argc,
+			      char *argv[],
+			      struct zperf_download_params *param)
+{
+	int opt_cnt = 0;
+	size_t i;
+
+	for (i = 1; i < argc; ++i) {
+		if (*argv[i] != '-') {
+			break;
+		}
+
+		switch (argv[i][1]) {
+		case 'I':
+			/*
+			 * IFNAMSIZ by default CONFIG_NET_INTERFACE_NAME_LEN
+			 * is at least 1 so no overflow risk here
+			 */
+			i++;
+			if (i >= argc) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "-I <interface name>\n");
+				return -ENOEXEC;
+			}
+			(void)memset(param->if_name, 0x0, IFNAMSIZ);
+			strncpy(param->if_name, argv[i], IFNAMSIZ - 1);
+
+			opt_cnt += 2;
+			break;
+
+		default:
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unrecognized argument: %s\n", argv[i]);
+			return -ENOEXEC;
+		}
+	}
+
+	return opt_cnt;
+}
+
 static int cmd_udp_download_stop(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
@@ -365,8 +437,16 @@ static int cmd_udp_download(const struct shell *sh, size_t argc,
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		struct zperf_download_params param = { 0 };
 		int ret;
+		int start;
 
-		ret = zperf_bind_host(sh, argc, argv, &param);
+		start = shell_cmd_download(sh, argc, argv, &param);
+		if (start < 0) {
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unable to parse option.\n");
+			return -ENOEXEC;
+		}
+
+		ret = zperf_bind_host(sh, argc - start, &argv[start], &param);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unable to bind host.\n");
@@ -406,9 +486,8 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 
 		if (results->time_in_us != 0U) {
 			rate_in_kbps = (uint32_t)
-				(((uint64_t)results->total_len *
-				  (uint64_t)8 * (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)results->time_in_us * 1000U));
+				((results->total_len * 8 * USEC_PER_SEC) /
+				 (results->time_in_us * 1000U));
 		} else {
 			rate_in_kbps = 0U;
 		}
@@ -418,7 +497,7 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 				(((uint64_t)results->nb_packets_sent *
 				  (uint64_t)results->packet_size * (uint64_t)8 *
 				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)results->client_time_in_us * 1000U));
+				 (results->client_time_in_us * 1000U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
@@ -431,10 +510,10 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Statistics:\t\tserver\t(client)\n");
 		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
-		print_number(sh, results->time_in_us, TIME_US,
+		print_number_64(sh, results->time_in_us, TIME_US,
 			     TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\t(");
-		print_number(sh, results->client_time_in_us, TIME_US,
+		print_number_64(sh, results->client_time_in_us, TIME_US,
 			     TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, ")\n");
 
@@ -474,13 +553,13 @@ static void shell_tcp_upload_print_stats(const struct shell *sh,
 				(((uint64_t)results->nb_packets_sent *
 				  (uint64_t)results->packet_size * (uint64_t)8 *
 				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)results->client_time_in_us * 1000U));
+				 (results->client_time_in_us * 1000U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t");
-		print_number(sh, results->client_time_in_us,
+		print_number_64(sh, results->client_time_in_us,
 			     TIME_US, TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 		shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t%u\n",
@@ -595,7 +674,7 @@ static int execute_upload(const struct shell *sh,
 	int ret;
 
 	shell_fprintf(sh, SHELL_NORMAL, "Duration:\t");
-	print_number(sh, param->duration_ms * USEC_PER_MSEC, TIME_US,
+	print_number_64(sh, (uint64_t)param->duration_ms * USEC_PER_MSEC, TIME_US,
 		     TIME_US_UNIT);
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
 	shell_fprintf(sh, SHELL_NORMAL, "Packet size:\t%u bytes\n",
@@ -776,6 +855,19 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			opt_cnt += 2;
 			break;
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+
+		case 'I':
+			i++;
+			if (i >= argc) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "-I <interface name>\n");
+				return -ENOEXEC;
+			}
+			(void)memset(param.if_name, 0x0, IFNAMSIZ);
+			strncpy(param.if_name, argv[i], IFNAMSIZ - 1);
+
+			opt_cnt += 2;
+			break;
 
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
@@ -963,6 +1055,19 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			break;
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
+		case 'I':
+			i++;
+			if (i >= argc) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "-I <interface name>\n");
+				return -ENOEXEC;
+			}
+			(void)memset(param.if_name, 0x0, IFNAMSIZ);
+			strncpy(param.if_name, argv[i], IFNAMSIZ - 1);
+
+			opt_cnt += 2;
+			break;
+
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unrecognized argument: %s\n", argv[i]);
@@ -1106,9 +1211,8 @@ static void tcp_session_cb(enum zperf_status status,
 		/* Compute baud rate */
 		if (result->time_in_us != 0U) {
 			rate_in_kbps = (uint32_t)
-				(((uint64_t)result->total_len * 8ULL *
-				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)result->time_in_us * 1000ULL));
+				((result->total_len * 8ULL * USEC_PER_SEC) /
+				 (result->time_in_us * 1000ULL));
 		} else {
 			rate_in_kbps = 0U;
 		}
@@ -1116,7 +1220,7 @@ static void tcp_session_cb(enum zperf_status status,
 		shell_fprintf(sh, SHELL_NORMAL, "TCP session ended\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " Duration:\t\t");
-		print_number(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
+		print_number_64(sh, result->time_in_us, TIME_US, TIME_US_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 		shell_fprintf(sh, SHELL_NORMAL, " rate:\t\t\t");
@@ -1154,8 +1258,16 @@ static int cmd_tcp_download(const struct shell *sh, size_t argc,
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		struct zperf_download_params param = { 0 };
 		int ret;
+		int start;
 
-		ret = zperf_bind_host(sh, argc, argv, &param);
+		start = shell_cmd_download(sh, argc, argv, &param);
+		if (start < 0) {
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unable to parse option.\n");
+			return -ENOEXEC;
+		}
+
+		ret = zperf_bind_host(sh, argc - start, &argv[start], &param);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unable to bind host.\n");
@@ -1322,6 +1434,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+		  "-I: Specify host interface name\n"
 		  "Example: udp upload 192.0.2.2 1111 1 1K 1M\n"
 		  "Example: udp upload 2001:db8::2\n",
 		  cmd_udp_upload),
@@ -1339,6 +1452,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+		  "-I: Specify host interface name\n"
 		  "Example: udp upload2 v4 1 1K 1M\n"
 		  "Example: udp upload2 v6\n"
 #if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
@@ -1352,8 +1466,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  ,
 		  cmd_udp_upload2),
 	SHELL_CMD(download, &zperf_cmd_udp_download,
+		  "[<options>] command options (optional): [-I eth0]\n"
 		  "[<port>]:  Server port to listen on/connect to\n"
 		  "[<host>]:  Bind to <host>, an interface address\n"
+		  "Available options:\n"
+		  "-I <interface name>: Specify host interface name\n"
 		  "Example: udp download 5001 192.168.0.1\n",
 		  cmd_udp_download),
 	SHELL_SUBCMD_SET_END

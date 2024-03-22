@@ -101,30 +101,4 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 	  This prevents faults when the data to write would be located on the
 	  flash itself.
 
-if FLASH_MCUX_FLEXSPI_XIP
-
-choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
-	prompt "FlexSPI drivers relocation target"
-	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
-	help
-	  Select the location to run the FlexSPI drivers when using
-	  the flash API.
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
-	bool "ITCM"
-	select CODE_DATA_RELOCATION
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
-	bool "RAM"
-	select CODE_DATA_RELOCATION_SRAM
-
-endchoice
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM
-	string
-	default "ITCM" if FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
-	default "RAM" if FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
-
-endif # FLASH_MCUX_FLEXSPI_XIP
-
 endif # HAS_MCUX_FLEXSPI

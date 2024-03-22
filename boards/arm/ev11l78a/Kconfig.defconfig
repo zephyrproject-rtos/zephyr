@@ -1,8 +1,0 @@
-# Microchip EV11L78A Board configuration
-
-# Copyright (c) 2023 Meta Platforms, Inc. and its affiliates.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "ev11l78a"
-	depends on BOARD_EV11L78A

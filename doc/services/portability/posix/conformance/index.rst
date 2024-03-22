@@ -79,7 +79,7 @@ POSIX System Interfaces
    :widths: 50, 10, 50
 
     _POSIX_ADVISORY_INFO, -1,
-    _POSIX_CPUTIME, -1,
+    _POSIX_CPUTIME, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_FSYNC, -1,
     _POSIX_IPV6, 200809L, :kconfig:option:`CONFIG_NET_IPV6`
     _POSIX_MEMLOCK, -1,
@@ -109,7 +109,7 @@ POSIX System Interfaces
     _XOPEN_CRYPT, -1,
     _XOPEN_REALTIME, -1,
     _XOPEN_REALTIME_THREADS, -1,
-    :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, -1, :kconfig:option:`CONFIG_NET_SOCKETS`
+    :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, -1, :ref:`†<posix_undefined_behaviour>`
     _XOPEN_UNIX, -1,
 
 POSIX Shell and Utilities

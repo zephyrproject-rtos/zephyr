@@ -1,0 +1,7 @@
+#
+# Copyright (c) 2019 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y

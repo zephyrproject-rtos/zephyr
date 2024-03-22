@@ -4,6 +4,6 @@
 config MBOX_NXP_MAILBOX
 	bool "NXP Mailbox driver for MBOX"
 	default y
-	depends on DT_HAS_NXP_LPC_MAILBOX_ENABLED
+	depends on DT_HAS_NXP_MBOX_MAILBOX_ENABLED
 	help
 	  Driver for NXP Mailbox Unit around MBOX.

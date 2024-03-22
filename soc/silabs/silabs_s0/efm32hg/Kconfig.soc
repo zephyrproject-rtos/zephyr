@@ -1,0 +1,23 @@
+# EFM32HG (Happy Gecko) MCU line
+
+# Copyright (c) 2018 Marcio Montenegro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32HG
+	bool
+	select SOC_FAMILY_SILABS_S0
+	help
+	  EFM32HG Series MCU
+
+config SOC_PART_NUMBER_EFM32HG322F64
+	bool
+	select SOC_SERIES_EFM32HG
+
+config SOC_SERIES
+	default "efm32hg" if SOC_SERIES_EFM32HG
+
+config SOC
+	default "efm32hg322f64" if SOC_PART_NUMBER_EFM32HG322F64
+
+config SOC_PART_NUMBER
+	default "EFM32HG322F64" if SOC_PART_NUMBER_EFM32HG322F64

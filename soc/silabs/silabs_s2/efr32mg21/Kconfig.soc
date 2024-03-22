@@ -1,0 +1,23 @@
+# Silicon Labs EFR32MG21 (Mighty Gecko) MCU line
+
+# Copyright (c) 2020 TriaGnoSys GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32MG21
+	bool
+	select SOC_FAMILY_SILABS_S2
+	help
+	  EFR32MG21 Series MCU
+
+config SOC_PART_NUMBER_EFR32MG21A020F1024IM32
+	bool
+	select SOC_SERIES_EFR32MG21
+
+config SOC_SERIES
+	default "efr32mg21" if SOC_SERIES_EFR32MG21
+
+config SOC
+	default "efr32mg21a020f1024im32" if SOC_PART_NUMBER_EFR32MG21A020F1024IM32
+
+config SOC_PART_NUMBER
+	default "EFR32MG21A020F1024IM32" if SOC_PART_NUMBER_EFR32MG21A020F1024IM32

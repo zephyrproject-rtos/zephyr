@@ -53,6 +53,11 @@ extern int lifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 extern int event_ops(uint32_t num_iterations, uint32_t options);
 extern int event_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 			      uint32_t alt_options);
+extern int condvar_blocking_ops(uint32_t num_iterations, uint32_t start_options,
+				uint32_t alt_options);
+extern int stack_ops(uint32_t num_iterations, uint32_t options);
+extern int stack_blocking_ops(uint32_t num_iterations, uint32_t start_options,
+			       uint32_t alt_options);
 extern void heap_malloc_free(void);
 
 static void test_thread(void *arg1, void *arg2, void *arg3)
@@ -143,6 +148,25 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	sema_context_switch(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
 	sema_context_switch(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
 	sema_context_switch(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
+#endif
+
+	condvar_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, 0);
+#ifdef CONFIG_USERSPACE
+	condvar_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
+	condvar_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
+	condvar_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
+#endif
+
+	stack_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0);
+#ifdef CONFIG_USERSPACE
+	stack_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER);
+#endif
+
+	stack_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, 0);
+#ifdef CONFIG_USERSPACE
+	stack_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, 0, K_USER);
+	stack_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, 0);
+	stack_blocking_ops(CONFIG_BENCHMARK_NUM_ITERATIONS, K_USER, K_USER);
 #endif
 
 	mutex_lock_unlock(CONFIG_BENCHMARK_NUM_ITERATIONS, 0);

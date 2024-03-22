@@ -39,6 +39,12 @@ extern "C" {
 #define PTHREAD_CANCEL_DEFERRED     0
 #define PTHREAD_CANCEL_ASYNCHRONOUS 1
 
+/* Pthread scope */
+#undef PTHREAD_SCOPE_PROCESS
+#define PTHREAD_SCOPE_PROCESS    1
+#undef PTHREAD_SCOPE_SYSTEM
+#define PTHREAD_SCOPE_SYSTEM     0
+
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT {0}
 
@@ -253,12 +259,7 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
  *
  * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_mutexattr_init(pthread_mutexattr_t *m)
-{
-	ARG_UNUSED(m);
-
-	return 0;
-}
+int pthread_mutexattr_init(pthread_mutexattr_t *attr);
 
 /**
  * @brief POSIX threading compatibility API
@@ -267,12 +268,7 @@ static inline int pthread_mutexattr_init(pthread_mutexattr_t *m)
  *
  * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
-{
-	ARG_UNUSED(m);
-
-	return 0;
-}
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 
 /**
  * @brief Declare a pthread barrier
@@ -429,6 +425,8 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
 			  void **stackaddr, size_t *stacksize);
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
+int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
+int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
 #ifdef CONFIG_PTHREAD_IPC
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif

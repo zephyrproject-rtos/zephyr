@@ -1,0 +1,58 @@
+# Cypress Semiconductor PSoC6 series configuration options
+# Copyright (c) 2018, Cypress
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PSOC62_PSOC63
+	bool
+	select ARM
+	select HAS_CYPRESS_DRIVERS
+	select CPU_CORTEX_M0PLUS if SOC_CY8C6247_M0 || SOC_CY8C6347_M0
+	select CPU_CORTEX_M_HAS_SYSTICK if SOC_CY8C6247_M0 || SOC_CY8C6347_M0
+	select CPU_CORTEX_M_HAS_VTOR if SOC_CY8C6247_M0 || SOC_CY8C6347_M0
+	select CPU_HAS_ARM_MPU if SOC_CY8C6247_M0 || SOC_CY8C6347_M0
+	select CPU_CORTEX_M4 if SOC_CY8C6247_M4 || SOC_CY8C6347_M4
+	select CPU_CORTEX_M_HAS_DWT if SOC_CY8C6247_M4 || SOC_CY8C6347_M4
+	select CPU_CORTEX_M_HAS_SYSTICK if SOC_CY8C6247_M4 || SOC_CY8C6347_M4
+	select CPU_HAS_ARM_MPU if SOC_CY8C6247_M4 || SOC_CY8C6347_M4
+	select CPU_HAS_FPU if SOC_CY8C6247_M4 || SOC_CY8C6347_M4
+
+config SOC_SERIES_PSOC62
+	select SOC_SERIES_PSOC62_PSOC63
+
+config SOC_SERIES_PSOC63
+	select SOC_SERIES_PSOC62_PSOC63
+
+config SOC_PSOC6_M0_ENABLES_M4
+	bool "Dual-core support [activate Cortex-M4]"
+	depends on SOC_CY8C6247_M0 || SOC_CY8C6347_M0
+	help
+	  Cortex-M0 CPU should boot Cortex-M4
+
+config SOC_DIE_PSOC6
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select DYNAMIC_INTERRUPTS
+	select CPU_HAS_FPU
+
+if SOC_FAMILY_INFINEON_CAT1A
+
+## PSoC™ 6 Cortex M0+ prebuilt images
+choice
+	prompt "PSoC™ 6 Cortex M0+ prebuilt images"
+	help
+	  Choose the prebuilt application image to be executed on the Cortex-M0+ core of the PSoC™ 6
+	  dual-core MCU. The image is responsible for booting the Cortex-M4 on the device.
+
+config SOC_PSOC6_CM0P_IMAGE_SLEEP
+	bool "DeepSleep"
+	help
+	  DeepSleep prebuilt application image is executed on the Cortex-M0+ core of the PSoC™ 6 BLE
+	  dual-core MCU.The image is provided as C array ready to be compiled as part of the Cortex-M4
+	  application. The Cortex-M0+ application code is placed to internal flash by the Cortex-M4
+	  linker script.
+
+endchoice
+
+endif # SOC_FAMILY_INFINEON_CAT1A

@@ -1,9 +1,0 @@
-# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_GD32A503V_EVAL
-
-config BOARD
-	default "gd32a503v_eval"
-
-endif # BOARD_GD32A503V_EVAL

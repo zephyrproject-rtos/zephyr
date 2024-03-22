@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLEV_FIRE
+	select 64BIT
+	select SCHED_IPI_SUPPORTED
+	select CPU_HAS_FPU_DOUBLE_PRECISION

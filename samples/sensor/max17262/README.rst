@@ -32,7 +32,7 @@ Connect the sensor pins according to the connection diagram given in the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/max17262
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

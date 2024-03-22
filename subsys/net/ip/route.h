@@ -139,22 +139,6 @@ int net_route_del_by_nexthop(struct net_if *iface,
 			     struct in6_addr *nexthop);
 
 /**
- * @brief Delete a route from routing table by nexthop if the routing engine
- * specific data matches.
- *
- * @detail The routing engine specific data could be the RPL data.
- *
- * @param iface Network interface to use.
- * @param nexthop IPv6 address of the nexthop device.
- * @param data Routing engine specific data.
- *
- * @return number of routes deleted, <0 if error
- */
-int net_route_del_by_nexthop_data(struct net_if *iface,
-				  struct in6_addr *nexthop,
-				  void *data);
-
-/**
  * @brief Update the route lifetime.
  *
  * @param route Pointer to routing entry.

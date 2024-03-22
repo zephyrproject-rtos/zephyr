@@ -1,0 +1,5 @@
+board:
+  name: nrf52_blenano2
+  vendor: particle
+  socs:
+  - name: nrf52832

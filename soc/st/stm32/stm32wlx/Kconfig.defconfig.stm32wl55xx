@@ -1,0 +1,11 @@
+# STMicroelectronics STM32WL55 MCU
+
+# Copyright (c) 2020 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32WL55XX
+
+config NUM_IRQS
+	default 62
+
+endif # SOC_STM32WL55XX

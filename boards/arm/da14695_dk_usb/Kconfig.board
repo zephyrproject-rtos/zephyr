@@ -1,8 +1,0 @@
-# DA14695 Development Kit USB board configuration
-
-# Copyright (c) 2023 Renesas Electronics Corporation and/or its affiliates
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_DA14695_DK_USB
-	bool "DA14695 Development Kit USB board"
-	depends on SOC_SERIES_DA1469X

@@ -607,10 +607,6 @@ void bt_mesh_reset(void);
  *  If at all possible, the Friendship feature should be used instead, to
  *  make the node into a Low Power Node.
  *
- * @note Should not be called from work queue due to undefined behavior.
- * This is due to k_work_flush_delayable() being used in disabling of the
- * extended advertising.
- *
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_suspend(void);

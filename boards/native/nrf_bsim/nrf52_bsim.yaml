@@ -1,0 +1,16 @@
+identifier: nrf52_bsim
+name: NRF52 BabbleSim board
+type: native
+arch: posix
+simulation: native
+env:
+  - BSIM_OUT_PATH
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - modem
+    - bsim_skip_CI
+supported:
+  - gpio
+  - counter

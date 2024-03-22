@@ -1,0 +1,7 @@
+board:
+  name: nrf9151dk
+  vendor: nordic
+  socs:
+  - name: nrf9151
+    variants:
+    - name: 'ns'

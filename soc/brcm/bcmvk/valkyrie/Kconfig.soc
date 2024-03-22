@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2020 Broadcom.
+#
+
+config SOC_SERIES_VALKYRIE
+	bool
+	select SOC_FAMILY_BCMVK
+	help
+	  Enable support for Broadcom Valkyrie Series
+
+config SOC_BCM58400
+	bool
+	select SOC_SERIES_VALKYRIE
+	help
+	  Broadcom BCM58400
+
+config SOC_SERIES
+	default "valkyrie" if SOC_SERIES_VALKYRIE
+
+config SOC
+	default "bcm58400" if SOC_BCM58400

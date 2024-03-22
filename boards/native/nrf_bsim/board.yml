@@ -1,0 +1,23 @@
+boards:
+- name: nrf52_bsim
+  vendor: zephyr
+  socs:
+  - name: native
+- name: nrf5340bsim
+  vendor: zephyr
+  socs:
+  # Note this is referring to the real SOC yaml, but we only use its name and cpu-cluster definition
+  # In practice this board uses the same native SOC (SOC_POSIX) as the nrf52_bsim
+  - name: nrf5340
+
+# These two board definitions below, together with their respective
+# Kconfig.nrf5340bsim_nrf5340_cpu[app,net] exist for backwards compatibility with hwmv1 usage
+# Once all their usage in tree is removed, or aliases have been introduced they can be removed.
+- name: nrf5340bsim_nrf5340_cpuapp
+  vendor: zephyr
+  socs:
+  - name: native
+- name: nrf5340bsim_nrf5340_cpunet
+  vendor: zephyr
+  socs:
+  - name: native

@@ -6,7 +6,7 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
@@ -14,5 +14,5 @@ tests:
   sample.bluetooth.beacon-coex:
     extra_args: CONF_FILE="prj-coex.conf"
     harness: bluetooth
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     tags: bluetooth

@@ -1,0 +1,19 @@
+# Smartbond display controller configuration options
+
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_RENESAS_LCDC
+	bool "Smartbond display controller driver"
+	depends on DT_HAS_RENESAS_SMARTBOND_DISPLAY_ENABLED
+	select DMA
+	default y
+	help
+	  Enable Smartbond display controller.
+
+config DISPLAY_RENESAS_LCDC_BUFFER_PSRAM
+	bool "Allocate the display buffer into PSRAM"
+	depends on DISPLAY_RENESAS_LCDC
+	select MEMC
+	help
+	  Allocate the display buffer into PSRAM

@@ -6,7 +6,7 @@ common:
   tags:
     - kernel
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
     - qemu_x86
   harness: console
   harness_config:

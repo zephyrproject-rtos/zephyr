@@ -22,8 +22,8 @@ a devicetree node label named ``i2s_rxtx`` or separate node labels ``i2s_rx``
 and ``i2s_tx`` if separate I2S devices are to be used for the RX and TX
 streams.
 
-This sample has been tested on :ref:`nrf52840dk_nrf52840` (nrf52840dk_nrf52840)
-and :ref:`nrf5340dk_nrf5340` (nrf5340dk_nrf5340_cpuapp), using the Audio Codec
+This sample has been tested on :ref:`nrf52840dk_nrf52840` (nrf52840dk/nrf52840)
+and :ref:`nrf5340dk_nrf5340` (nrf5340dk/nrf5340/cpuapp), using the Audio Codec
 Shield, and provides overlay files for both of these boards.
 
 More information about the used shield and the CODEC itself can be found here:
@@ -40,7 +40,7 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/i2s/echo
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

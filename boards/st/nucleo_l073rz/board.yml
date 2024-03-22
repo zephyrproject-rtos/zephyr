@@ -1,0 +1,5 @@
+board:
+  name: nucleo_l073rz
+  vendor: st
+  socs:
+    - name: stm32l073xx

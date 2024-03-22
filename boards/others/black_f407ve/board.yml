@@ -1,0 +1,5 @@
+board:
+  name: black_f407ve
+  vendor: others
+  socs:
+    - name: stm32f407xx

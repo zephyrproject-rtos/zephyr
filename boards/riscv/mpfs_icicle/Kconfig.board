@@ -1,9 +1,0 @@
-# Copyright (c) 2021-2022 Microchip Technology Inc
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MPFS_ICICLE
-	bool "Microchip PolarFire SoC ICICLE kit"
-	depends on SOC_POLARFIRE
-	select 64BIT
-	select SCHED_IPI_SUPPORTED
-	select CPU_HAS_FPU_DOUBLE_PRECISION

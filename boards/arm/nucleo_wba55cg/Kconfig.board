@@ -1,8 +1,0 @@
-# STM32WBA55CG Nucleo board configuration
-
-# Copyright (c) 2023 STMicroelectronics
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_WBA55CG
-	bool "Nucleo WBA55CG Development Board"
-	depends on SOC_STM32WBA55XX

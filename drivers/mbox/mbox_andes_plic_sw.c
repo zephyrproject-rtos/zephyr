@@ -9,6 +9,7 @@
 #define LOG_LEVEL CONFIG_MBOX_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 LOG_MODULE_REGISTER(mbox_andes_plic_sw);
 
 #define DT_DRV_COMPAT	andestech_plic_sw

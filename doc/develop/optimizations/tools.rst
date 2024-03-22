@@ -3,6 +3,9 @@
 Optimization Tools
 ##################
 
+The available optimization tools let you analyse :ref:`footprint_tools`
+and :ref:`data_structures` using different build system targets.
+
 .. _footprint_tools:
 
 Footprint and Memory Usage
@@ -12,9 +15,32 @@ The build system offers 3 targets to view and analyse RAM, ROM and stack usage
 in generated images. The tools run on the final image and give information
 about size of symbols and code being used in both RAM and ROM. Additionally,
 with features available through the compiler, we can also generate worst-case
-stack usage analysis:
+stack usage analysis.
 
-Tools that are available as build system targets:
+Some of the tools mentioned in this section are organizing their output based
+on the physical organization of the symbols. As some symbols might be external
+to the project's tree structure, or might lack metadata needed to display them
+by name, the following top-level containers are used to group such symbols:
+
+* Hidden - The RAM and ROM reports list all processing symbols with no matching
+  mapped files in the Hidden category.
+
+  This means that the file for the listed symbol was not added to the metadata file,
+  was empty, or was undefined. The tool was unable to get the name
+  of the function for the given symbol nor identify where it comes from.
+
+* No paths - The RAM and ROM reports list all processing symbols with relative paths
+  in the No paths category.
+
+  This means that the listed symbols cannot be placed in the tree structure
+  of the report at an absolute path under one specific file. The tool was able
+  to get the name of the function, but it was unable to identify where it comes from.
+
+  .. note::
+
+     You can have multiple cases of the same function, and the No paths category
+     will list the sum of these in one entry.
+
 
 Build Target: ram_report
 ========================
@@ -23,7 +49,7 @@ List all compiled objects and their RAM usage in a tabular form with bytes
 per symbol and the percentage it uses. The data is grouped based on the file
 system location of the object in the tree and the file containing the symbol.
 
-Use the ``ram_report`` target with your board:
+Use the ``ram_report`` target with your board, as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
@@ -31,7 +57,7 @@ Use the ``ram_report`` target with your board:
     :board: reel_board
     :goals: ram_report
 
-which will generate something similar to the output below::
+These commands will generate something similar to the output below::
 
     Path                                                                       Size    %
     ========================================================================================
@@ -76,6 +102,7 @@ which will generate something similar to the output below::
     ========================================================================================
                                                                                4637
 
+
 Build Target: rom_report
 ========================
 
@@ -83,7 +110,7 @@ List all compiled objects and their ROM usage in a tabular form with bytes
 per symbol and the percentage it uses. The data is grouped based on the file
 system location of the object in the tree and the file containing the symbol.
 
-Use the ``rom_report`` to get the ROM report:
+Use the ``rom_report`` target with your board, as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
@@ -91,7 +118,7 @@ Use the ``rom_report`` to get the ROM report:
     :board: reel_board
     :goals: rom_report
 
-which will generate something similar to the output below::
+These commands will generate something similar to the output below::
 
     Path                                                                       Size    %
     ========================================================================================
@@ -134,8 +161,10 @@ Build Target: puncover
 This target uses a third-party tool called puncover which can be found at
 https://github.com/HBehrens/puncover. When this target is built, it will
 launch a local web server which will allow you to open a web client and browse
-the files and view their ROM, RAM, and stack usage. Before you can use this
-target, you will have to install the puncover python module::
+the files and view their ROM, RAM, and stack usage.
+
+Before you can use this
+target, install the puncover Python module::
 
     pip3 install git+https://github.com/HBehrens/puncover --user
 
@@ -145,7 +174,8 @@ target, you will have to install the puncover python module::
    time. Please check the GitHub issues, and report new problems to the
    project maintainer.
 
-Then:
+After you installed the Python module, use ``puncover`` target with your board,
+as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
@@ -165,6 +195,8 @@ To view worst-case stack usage analysis, build this with the
     :gen-args: -DCONFIG_STACK_USAGE=y
 
 
+.. _data_structures:
+
 Data Structures
 ****************
 
@@ -182,10 +214,12 @@ available in the dwarves package in both fedora and ubuntu::
 
     sudo apt-get install dwarves
 
-or in fedora::
+Alternatively, you can get it from fedora::
 
     sudo dnf install dwarves
 
+After you installed the package, use ``pahole`` target with your board,
+as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
@@ -193,8 +227,7 @@ or in fedora::
     :board: reel_board
     :goals: pahole
 
-
-After running this target, pahole will output the results to the console::
+Pahole will generate something similar to the output below in the console::
 
     /* Used at: zephyr/isr_tables.c */
     /* <80> ../include/sw_isr_table.h:30 */

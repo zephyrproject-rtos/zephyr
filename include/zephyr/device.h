@@ -24,6 +24,8 @@ extern "C" {
 /**
  * @brief Device Model
  * @defgroup device_model Device Model
+ * @since 1.0
+ * @version 1.0.0
  * @{
  */
 

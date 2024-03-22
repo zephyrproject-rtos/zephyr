@@ -3,31 +3,15 @@
 zephyr_library()
 zephyr_library_link_libraries(subsys__bluetooth)
 
+add_subdirectory_ifdef(CONFIG_BT_CLASSIC classic)
+
 zephyr_library_sources_ifdef(CONFIG_BT_HCI_RAW          hci_raw.c hci_common.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MONITOR          monitor.c)
 zephyr_library_sources_ifdef(CONFIG_BT_TINYCRYPT_ECC    hci_ecc.c)
-zephyr_library_sources_ifdef(CONFIG_BT_A2DP             a2dp.c)
-zephyr_library_sources_ifdef(CONFIG_BT_AVDTP            avdtp.c)
-zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_TESTING          testing.c)
 zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS         settings.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HOST_CCM         aes_ccm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_LONG_WQ          long_wq.c)
-
-zephyr_library_sources_ifdef(
-  CONFIG_BT_BREDR
-  br.c
-  keys_br.c
-  l2cap_br.c
-  sdp.c
-  ssp.c
-  )
-
-zephyr_library_sources_ifdef(
-  CONFIG_BT_HFP_HF
-  hfp_hf.c
-  at.c
-  )
 
 if(CONFIG_BT_HCI_HOST)
   zephyr_library_sources(

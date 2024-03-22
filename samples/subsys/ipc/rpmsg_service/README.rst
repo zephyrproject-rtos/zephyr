@@ -15,28 +15,28 @@ perspective and code. Note that the remote and primary image core images can be
 flashed independently, but sysbuild must be used in order to flash them in one
 step.
 
-Building the application for nrf5340dk_nrf5340_cpuapp
+Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/rpmsg_service
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: debug
 
-Building the application for mps2_an521
-***************************************
+Building the application for mps2/an521/cpu0
+********************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/rpmsg_service
-   :board: mps2_an521
+   :board: mps2/an521/cpu0
    :goals: debug
 
-Building the application for v2m_musca_b1
-*****************************************
+Building the application for v2m_musca_b1/musca_b1
+**************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/rpmsg_service
-   :board: v2m_musca_b1
+   :board: v2m_musca_b1/musca_b1
    :goals: debug
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
@@ -77,17 +77,17 @@ serial port, one is master another is remote:
    Remote core received a message: 98
    RPMsg Service demo ended.
 
-Building the application for bl5340_dvk_cpuapp
-**********************************************
+Building the application for bl5340_dvk/nrf5340/cpuapp
+******************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/rpmsg_service
-   :board: bl5340_dvk_cpuapp
+   :board: bl5340_dvk/nrf5340/cpuapp
    :goals: debug
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/rpmsg_service
-   :board: bl5340_dvk_cpunet
+   :board: bl5340_dvk/nrf5340/cpunet
    :goals: debug
 
 Open a serial terminal (for example Minicom or PuTTY) and connect to the board

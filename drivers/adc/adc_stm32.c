@@ -221,12 +221,9 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 
 #if defined(ADC_VER_V5_V90)
 	if (adc == ADC3) {
-		LL_ADC_REG_SetDMATransferMode(adc,
-			ADC3_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
-		LL_ADC_EnableDMAReq(adc);
+		LL_ADC_REG_SetDMATransferMode(adc, LL_ADC3_REG_DMA_TRANSFER_LIMITED);
 	} else {
-		LL_ADC_REG_SetDataTransferMode(adc,
-			ADC_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
+		LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
 	}
 #elif defined(ADC_VER_V5_X)
 	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
@@ -238,7 +235,15 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 
 #error "The STM32F1 ADC + DMA is not yet supported"
 
-#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+
+	if (adc == ADC4) {
+		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED_ADC4);
+	} else {
+		LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
+	}
+
+#else /* defined(CONFIG_SOC_SERIES_STM32U5X) */
 
 	/* Default mechanism for other MCUs */
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
@@ -547,6 +552,23 @@ static int adc_stm32_calibrate(const struct device *dev)
 	ADC_TypeDef *adc = config->base;
 	int err;
 
+#if defined(CONFIG_ADC_STM32_DMA)
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+	/* Make sure DMA is disabled before starting calibration */
+	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc == ADC4) {
+		/* Make sure DMA is disabled before starting calibration */
+		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+	}
+#endif /* CONFIG_SOC_SERIES_* */
+#endif /* CONFIG_ADC_STM32_DMA */
+
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	adc_stm32_disable(adc);
 	adc_stm32_calibration_start(dev);
@@ -641,11 +663,14 @@ static const uint32_t table_oversampling_ratio[] = {
  */
 static void adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
 {
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	/*
-	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
-	 * or enabled without conversion on going : disable it, it will stop
+	 * Setting OVS bits is conditioned to ADC state: ADC must be disabled
+	 * or enabled without conversion on going : disable it, it will stop.
+	 * For the G0 series, ADC must be disabled to prevent CKMODE bitfield
+	 * from getting reset, see errata ES0418 section 2.6.4.
 	 */
 	if (LL_ADC_GetOverSamplingScope(adc) == ovs_scope) {
 		return;
@@ -1550,7 +1575,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 #define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
 	.dma = {									\
 		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),		\
-		.channel = STM32_DMA_SLOT_BY_IDX(index, 0, channel),			\
+		.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),			\
 		.dma_cfg = {								\
 			.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),		\
 			.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
@@ -1675,6 +1700,8 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 #define ADC_STM32_IRQ_FUNC(index)                                                                  \
 	.irq_cfg_func = COND_CODE_1(IS_EQ(index, FIRST_WITH_IRQN(index)),                          \
 				    (UTIL_CAT(ISR_FUNC(index), _init)), (NULL)),
+
+#define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)
 
 #endif /* CONFIG_ADC_STM32_DMA */
 

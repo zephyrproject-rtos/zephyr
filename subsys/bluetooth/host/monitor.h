@@ -43,7 +43,7 @@
 
 #define BT_MONITOR_BASE_HDR_LEN  6
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 #define BT_MONITOR_EXT_HDR_MAX 19
 #else
 #define BT_MONITOR_EXT_HDR_MAX 15

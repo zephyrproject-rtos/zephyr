@@ -1,0 +1,11 @@
+# BL654 Sensor Board configuration
+
+# Copyright (c) 2021 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BL654_SENSOR_BOARD
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_BL654_SENSOR_BOARD

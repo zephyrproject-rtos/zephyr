@@ -142,7 +142,7 @@ static void kbd_matrix_state_log_entry(char *header, kbd_row_t *data)
 		char *sep = (i + 1) < cfg->col_size ? " " : "";
 
 		if (data[i] != 0) {
-			ret = snprintf(buf, size, PRIkbdrow "%s", data[i], sep);
+			ret = snprintf(buf, size, "%" PRIkbdrow "%s", data[i], sep);
 		} else {
 			ret = snprintf(buf, size, "%s%s", blank, sep);
 		}

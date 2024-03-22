@@ -1,0 +1,13 @@
+# STM32WB55RG Nucleo board configuration
+
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_WB55RG
+
+choice BT_HCI_BUS_TYPE
+	default BT_STM32_IPM
+	depends on BT
+endchoice
+
+endif

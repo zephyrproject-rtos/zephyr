@@ -95,6 +95,7 @@ extensions = [
     "sphinx_togglebutton",
     "zephyr.external_content",
     "zephyr.domain",
+    "zephyr.api_overview",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -187,9 +188,9 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.6.0", "/3.6.0/"),
         ("3.5.0", "/3.5.0/"),
-        ("3.4.0", "/3.4.0/"),
-        ("2.7.5 (LTS)", "/2.7.5/"),
+        ("2.7.6 (LTS)", "/2.7.6/"),
     ),
     "display_gh_links": True,
     "reference_links": {
@@ -364,6 +365,9 @@ linkcheck_timeout = 30
 linkcheck_workers = 10
 linkcheck_anchors = False
 
+# -- Options for zephyr.api_overview --------------------------------------
+
+api_overview_doxygen_base_url = "../../doxygen/html"
 
 def setup(app):
     # theme customizations

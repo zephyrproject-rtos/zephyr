@@ -285,7 +285,7 @@ int main(void)
 
 	usbd_uac2_set_ops(dev, &usb_audio_ops, &main_ctx);
 
-	sample_usbd = sample_usbd_init_device();
+	sample_usbd = sample_usbd_init_device(NULL);
 	if (sample_usbd == NULL) {
 		return -ENODEV;
 	}

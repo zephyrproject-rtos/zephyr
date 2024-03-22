@@ -1,0 +1,5 @@
+board:
+  name: efm32wg_stk3800
+  vendor: silabs
+  socs:
+  - name: efm32wg990f256

@@ -6,10 +6,10 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     tags: bluetooth
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_BT_CTLR=n
       - CONFIG_BT_NO_DRIVER=y

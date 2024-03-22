@@ -3,4 +3,4 @@
 
 config HAS_ESPRESSIF_HAL
 	bool
-	depends on SOC_FAMILY_ESP32
+	depends on SOC_FAMILY_ESPRESSIF_ESP32

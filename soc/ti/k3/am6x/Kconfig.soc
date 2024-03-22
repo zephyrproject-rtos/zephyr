@@ -1,0 +1,32 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM6X
+	bool
+	select SOC_FAMILY_TI_K3
+
+config SOC_SERIES_AM6X_A53
+	bool
+	select SOC_SERIES_AM6X
+	help
+	  Enable support for AM6X A53 Series.
+
+config SOC_SERIES_AM6X_M4
+	bool
+	select SOC_SERIES_AM6X
+	help
+	  Enable support for AM62X M4 Series.
+
+config SOC_AM6234_A53
+	bool
+	select SOC_SERIES_AM6X_A53
+
+config SOC_AM6234_M4
+	bool
+	select SOC_SERIES_AM6X_M4
+
+config SOC_SERIES
+	default "am6x" if SOC_SERIES_AM6X
+
+config SOC
+	default "am6234" if SOC_AM6234_M4 || SOC_AM6234_A53

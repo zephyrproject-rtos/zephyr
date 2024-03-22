@@ -1,0 +1,18 @@
+# ST Microelectronics STM32WB MCU line
+
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32WBX
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32wbx" if SOC_SERIES_STM32WBX
+
+config SOC_STM32WB55XX
+	bool
+	select SOC_SERIES_STM32WBX
+
+config SOC
+	default "stm32wb55xx" if SOC_STM32WB55XX

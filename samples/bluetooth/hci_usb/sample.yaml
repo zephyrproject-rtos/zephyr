@@ -20,4 +20,4 @@ tests:
       - usb
       - bluetooth
     extra_args: CONF_FILE="usbd_next_prj.conf"
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840

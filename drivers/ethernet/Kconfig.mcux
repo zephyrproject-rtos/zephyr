@@ -94,8 +94,8 @@ if PTP_CLOCK_MCUX
 config ETH_MCUX_PTP_CLOCK_SRC_HZ
 	int "Frequency of the clock source for the PTP timer"
 	default 50000000 if SOC_SERIES_KINETIS_K6X
-	default 50000000 if SOC_SERIES_IMX_RT10XX
-	default 24000000 if SOC_SERIES_IMX_RT11XX
+	default 50000000 if SOC_SERIES_IMXRT10XX
+	default 24000000 if SOC_SERIES_IMXRT11XX
 	help
 	  Set the frequency in Hz sourced to the PTP timer.
 	  If the value is set properly, the timer will be accurate.

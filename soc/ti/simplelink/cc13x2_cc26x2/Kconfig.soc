@@ -1,0 +1,43 @@
+# Texas Instruments SimpleLink CC13x2 / CC26x2
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC13X2_CC26X2
+	bool
+	select SOC_FAMILY_TI_SIMPLELINK
+	help
+	  Enable support for TI SimpleLink CC13x2 / CC26x2 SoCs
+
+config SOC_CC1352P
+	bool
+	select SOC_SERIES_CC13X2_CC26X2
+	help
+	  CC1352P
+
+config SOC_CC1352R
+	bool
+	select SOC_SERIES_CC13X2_CC26X2
+	help
+	  CC1352R
+
+config SOC_CC2652P
+	bool
+	select SOC_SERIES_CC13X2_CC26X2
+	help
+	  CC2652P
+
+config SOC_CC2652R
+	bool
+	select SOC_SERIES_CC13X2_CC26X2
+	help
+	  CC2652R
+
+config SOC_SERIES
+	default "cc13x2_cc26x2" if SOC_SERIES_CC13X2_CC26X2
+
+config SOC
+	default "cc1352p" if SOC_CC1352P
+	default "cc1352r" if SOC_CC1352R
+	default "cc2652p" if SOC_CC2652P
+	default "cc2652r" if SOC_CC2652R

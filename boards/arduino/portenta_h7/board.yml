@@ -1,0 +1,5 @@
+board:
+  name: arduino_portenta_h7
+  vendor: arduino
+  socs:
+    - name: stm32h747xx

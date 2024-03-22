@@ -9,6 +9,7 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/timeutil.h>
+#include <zephyr/sys/util.h>
 
 #include <time.h>
 
@@ -46,6 +47,40 @@ ZTEST(rtc_api, test_alarm)
 
 		zassert_true((ret == 0) || (ret == -ENOTSUP),
 			     "Failed to clear and disable alarm callback");
+	}
+
+	/* Every supported alarm field should reject invalid values. */
+	for (uint16_t i = 0; i < alarms_count; i++) {
+		ret = rtc_alarm_get_supported_fields(rtc, i, &alarm_time_mask_supported);
+
+		zassert_ok(ret, "Failed to get supported alarm fields");
+
+		alarm_time_set = (struct rtc_time) {
+			.tm_sec = 70,
+			.tm_min = 70,
+			.tm_hour = 25,
+			.tm_mday = 35,
+			.tm_mon = 15,
+			.tm_year = 8000,
+			.tm_wday = 8,
+			.tm_yday = 370,
+			.tm_nsec = INT32_MAX,
+		};
+		uint16_t masks[] = {RTC_ALARM_TIME_MASK_SECOND,  RTC_ALARM_TIME_MASK_MINUTE,
+				    RTC_ALARM_TIME_MASK_HOUR,    RTC_ALARM_TIME_MASK_MONTHDAY,
+				    RTC_ALARM_TIME_MASK_MONTH,   RTC_ALARM_TIME_MASK_YEAR,
+				    RTC_ALARM_TIME_MASK_WEEKDAY, RTC_ALARM_TIME_MASK_YEARDAY,
+				    RTC_ALARM_TIME_MASK_NSEC};
+		ARRAY_FOR_EACH(masks, j)
+		{
+			if (masks[j] & alarm_time_mask_supported) {
+				ret = rtc_alarm_set_time(rtc, i, masks[j], &alarm_time_set);
+				zassert_equal(
+					-EINVAL, ret,
+					"%s: RTC should reject invalid alarm time in field %zu.",
+					rtc->name, j);
+			}
+		}
 	}
 
 	/* Validate alarms supported fields */

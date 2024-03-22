@@ -1,6 +1,6 @@
 tests:
   arch.arm64.smc_call.smc:
-    platform_allow: fvp_base_revc_2xaemv8a_smp_ns
+    platform_allow: fvp_base_revc_2xaemv8a//smp/ns
     tags:
       - arm
       - smc

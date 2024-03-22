@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 struct btp_ccp_chrc_handles_ev tbs_handles;
 struct bt_tbs_instance *tbs_inst;
+static uint8_t call_index;
 static uint8_t inst_ccid;
 static bool send_ev;
 
@@ -868,6 +869,303 @@ uint8_t tester_init_ccp(void)
 }
 
 uint8_t tester_unregister_ccp(void)
+{
+	return BTP_STATUS_SUCCESS;
+}
+
+/* Telephone Bearer Service */
+static uint8_t tbs_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	struct btp_tbs_read_supported_commands_rp *rp = rsp;
+
+	/* octet 0 */
+	tester_set_bit(rp->data, BTP_TBS_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(rp->data, BTP_TBS_REMOTE_INCOMING);
+	tester_set_bit(rp->data, BTP_TBS_HOLD);
+	tester_set_bit(rp->data, BTP_TBS_SET_BEARER_NAME);
+	tester_set_bit(rp->data, BTP_TBS_SET_TECHNOLOGY);
+	tester_set_bit(rp->data, BTP_TBS_SET_URI_SCHEME);
+	tester_set_bit(rp->data, BTP_TBS_SET_STATUS_FLAGS);
+
+	/* octet 1 */
+	tester_set_bit(rp->data, BTP_TBS_REMOTE_HOLD);
+	tester_set_bit(rp->data, BTP_TBS_ORIGINATE);
+	tester_set_bit(rp->data, BTP_TBS_SET_SIGNAL_STRENGTH);
+
+	*rsp_len = sizeof(*rp) + 2;
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_remote_incoming(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_tbs_remote_incoming_cmd *cp = cmd;
+	char friendly_name[CONFIG_BT_TBS_MAX_URI_LENGTH];
+	char caller_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
+	char recv_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
+	int err;
+
+	LOG_DBG("");
+
+	if ((cp->recv_len >= sizeof(recv_uri) || cp->caller_len >= sizeof(caller_uri)) ||
+	     cp->fn_len >= sizeof(friendly_name)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memcpy(recv_uri, cp->data, cp->recv_len);
+	memcpy(caller_uri, cp->data + cp->recv_len, cp->caller_len);
+	memcpy(friendly_name, cp->data + cp->recv_len + cp->caller_len, cp->fn_len);
+
+	recv_uri[cp->recv_len] = '\0';
+	caller_uri[cp->caller_len] = '\0';
+	friendly_name[cp->fn_len] = '\0';
+
+	err = bt_tbs_remote_incoming(cp->index, recv_uri, caller_uri, friendly_name);
+	if (err < 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_originate(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_tbs_originate_cmd *cp = cmd;
+	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
+	int err;
+
+	LOG_DBG("TBS Originate Call");
+
+	if (cp->uri_len >= sizeof(uri)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memcpy(uri, cp->uri, cp->uri_len);
+	uri[cp->uri_len] = '\0';
+
+	err = bt_tbs_originate(cp->index, uri, &call_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_hold(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_tbs_hold_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("TBS Hold Call");
+
+	err = bt_tbs_hold(cp->index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_remote_hold(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_tbs_remote_hold_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("TBS Remote Hold Call");
+
+	err = bt_tbs_remote_hold(cp->index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_set_bearer_name(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_tbs_set_bearer_name_cmd *cp = cmd;
+	char bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
+	int err;
+
+	LOG_DBG("TBS Set Bearer Provider Name");
+
+	if (cp->name_len >= sizeof(bearer_name)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memcpy(bearer_name, cp->name, cp->name_len);
+	bearer_name[cp->name_len] = '\0';
+
+	err = bt_tbs_set_bearer_provider_name(cp->index, bearer_name);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_set_bearer_technology(const void *cmd, uint16_t cmd_len, void *rsp,
+					 uint16_t *rsp_len)
+{
+	const struct btp_tbs_set_technology_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("TBS Set bearer technology");
+
+	err = bt_tbs_set_bearer_technology(cp->index, cp->tech);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_set_uri_scheme_list(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_tbs_set_uri_schemes_list_cmd *cp = cmd;
+	char uri_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
+	char *uri_ptr = (char *)&uri_list;
+	int err;
+
+	LOG_DBG("TBS Set Uri Scheme list");
+
+	if (cp->uri_len >= sizeof(uri_list)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memcpy(uri_list, cp->uri_list, cp->uri_len);
+	uri_list[cp->uri_len] = '\0';
+
+	if (cp->uri_count > 1) {
+		/* TODO: currently supporting only one uri*/
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_set_uri_scheme_list(cp->index, (const char **)&uri_ptr, cp->uri_count);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_set_status_flags(const void *cmd, uint16_t cmd_len, void *rsp,
+				    uint16_t *rsp_len)
+{
+	const struct btp_tbs_set_status_flags_cmd *cp = cmd;
+	uint16_t flags = sys_le16_to_cpu(cp->flags);
+	int err;
+
+	LOG_DBG("TBS Set Status Flags");
+
+	err = bt_tbs_set_status_flags(cp->index, flags);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_set_signal_strength(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_tbs_set_signal_strength_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("TBS Set Signal Strength");
+
+	err = bt_tbs_set_signal_strength(cp->index, cp->strength);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static bool btp_tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index, const char *uri)
+{
+	LOG_DBG("TBS Originate Call cb");
+
+	return true;
+}
+
+static void btp_tbs_call_change_cb(struct bt_conn *conn, uint8_t call_index)
+{
+	LOG_DBG("TBS Call Status Changed cb");
+}
+
+static struct bt_tbs_cb tbs_cbs = {
+	.originate_call = btp_tbs_originate_call_cb,
+	.hold_call = btp_tbs_call_change_cb,
+};
+
+static const struct btp_handler tbs_handlers[] = {
+	{
+		.opcode = BTP_TBS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = tbs_supported_commands,
+	},
+	{
+		.opcode = BTP_TBS_REMOTE_INCOMING,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = tbs_remote_incoming,
+	},
+	{
+		.opcode = BTP_TBS_HOLD,
+		.expect_len = sizeof(struct btp_tbs_hold_cmd),
+		.func = tbs_hold,
+	},
+	{
+		.opcode = BTP_TBS_SET_BEARER_NAME,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = tbs_set_bearer_name,
+	},
+	{
+		.opcode = BTP_TBS_SET_TECHNOLOGY,
+		.expect_len = sizeof(struct btp_tbs_set_technology_cmd),
+		.func = tbs_set_bearer_technology,
+	},
+	{
+		.opcode = BTP_TBS_SET_URI_SCHEME,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = tbs_set_uri_scheme_list,
+	},
+	{
+		.opcode = BTP_TBS_SET_STATUS_FLAGS,
+		.expect_len = sizeof(struct btp_tbs_set_status_flags_cmd),
+		.func = tbs_set_status_flags,
+	},
+	{
+		.opcode = BTP_TBS_REMOTE_HOLD,
+		.expect_len = sizeof(struct btp_tbs_remote_hold_cmd),
+		.func = tbs_remote_hold,
+	},
+	{
+		.opcode = BTP_TBS_ORIGINATE,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = tbs_originate,
+	},
+	{
+		.opcode = BTP_TBS_SET_SIGNAL_STRENGTH,
+		.expect_len = sizeof(struct btp_tbs_set_signal_strength_cmd),
+		.func = tbs_set_signal_strength,
+	},
+};
+
+uint8_t tester_init_tbs(void)
+{
+	bt_tbs_register_cb(&tbs_cbs);
+
+	tester_register_command_handlers(BTP_SERVICE_ID_TBS, tbs_handlers,
+					 ARRAY_SIZE(tbs_handlers));
+
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t tester_unregister_tbs(void)
 {
 	return BTP_STATUS_SUCCESS;
 }

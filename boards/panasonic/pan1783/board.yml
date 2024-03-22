@@ -1,0 +1,13 @@
+boards:
+- name: pan1783_evb
+  vendor: panasonic
+  socs:
+  - name: nrf5340
+- name: pan1783a_evb
+  vendor: panasonic
+  socs:
+  - name: nrf5340
+- name: pan1783a_pa_evb
+  vendor: panasonic
+  socs:
+  - name: nrf5340

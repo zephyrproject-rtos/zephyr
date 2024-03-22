@@ -23,11 +23,11 @@ tests:
         - "sys_trace_.*_user.*"
   sample.tracing.format.sysview:
     platform_allow:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
       - mimxrt1050_evk
       - mimxrt1064_evk
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     extra_args: CONF_FILE="prj_sysview.conf"
   sample.tracing.osawareness.openocd:
     arch_exclude:
@@ -45,7 +45,7 @@ tests:
     extra_args: CONF_FILE="prj_uart.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
   sample.tracing.transport.usb:
-    platform_allow: sam_e70_xplained
+    platform_allow: sam_e70_xplained/same70q21
     depends_on: usb_device
     extra_args: CONF_FILE="prj_usb.conf"
   sample.tracing.transport.uart.ctf:
@@ -57,7 +57,7 @@ tests:
     extra_args: CONF_FILE="prj_uart_ctf.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
   sample.tracing.transport.usb.ctf:
-    platform_allow: sam_e70_xplained
+    platform_allow: sam_e70_xplained/same70q21
     depends_on: usb_device
     extra_args: CONF_FILE="prj_usb_ctf.conf"
   sample.tracing.transport.native:

@@ -25,6 +25,9 @@ static int cmd_wpa_cli(const struct shell *sh,
 		return -EINVAL;
 	}
 
+	argv[argc] = "interactive";
+	argc++;
+
 	/* Remove wpa_cli from the argument list */
 	return z_wpa_ctrl_zephyr_cmd(argc - 1, &argv[1]);
 }

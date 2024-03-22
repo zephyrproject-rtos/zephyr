@@ -1,0 +1,11 @@
+# ST Microelectronics STM32F098XX MCU
+
+# Copyright (c) 2019 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F098XX
+
+config NUM_IRQS
+	default 31
+
+endif # SOC_STM32F098xx

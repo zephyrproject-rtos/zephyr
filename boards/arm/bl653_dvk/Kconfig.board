@@ -1,8 +1,0 @@
-# BL653 DVK board configuration
-
-# Copyright (c) 2020 Laird Connectivity
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_BL653_DVK
-	bool "BL653 DVK"
-	depends on SOC_NRF52833_QIAA

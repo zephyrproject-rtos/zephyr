@@ -24,20 +24,23 @@
 
 LOG_MODULE_REGISTER(pwmbbled_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
+#define XEC_PWM_BBLED_MAX_FREQ_DIV	256U
+
 /* We will choose frequency from Device Tree */
 #define XEC_PWM_BBLED_INPUT_FREQ_HI	48000000
 #define XEC_PWM_BBLED_INPUT_FREQ_LO	32768
 
-#define XEC_PWM_BBLED_MAX_FREQ_DIV	256U
-#define XEC_PWM_BBLED_MIN_FREQ_DIV	(256U * 4066U)
-
-/* Maximum frequency BBLED-PWM can generate is scaled by
- * 256 * (LD+1) where LD is in [0, 4065].
+/* Hardware blink mode equation is Fpwm = Fin / (256 * (LD + 1))
+ * The maximum Fpwm is actually Fin / 256
+ * LD in [0, 4095]
  */
-#define XEC_PWM_BBLED_MAX_PWM_FREQ_AHB_CLK	\
-	(XEC_PWM_BBLED_INPUT_FREQ_HI / XEC_PWM_BBLED_MAX_FREQ_DIV)
-#define XEC_PWM_BBLED_MAX_PWM_FREQ_32K_CLK	\
-	(XEC_PWM_BBLED_INPUT_FREQ_LO / XEC_PWM_BBLED_MAX_FREQ_DIV)
+#define XEC_PWM_BBLED_MAX_PWM_FREQ_HI	(XEC_PWM_BBLED_INPUT_FREQ_HI / \
+		XEC_PWM_BBLED_MAX_FREQ_DIV)
+#define XEC_PWM_BBLED_MAX_PWM_FREQ_LO	(XEC_PWM_BBLED_INPUT_FREQ_LO / \
+		XEC_PWM_BBLED_MAX_FREQ_DIV)
+#define XEC_PWM_BBLED_LD_MAX 4095
+#define XEC_PWM_BBLED_DC_MIN 1u /* 0 full off */
+#define XEC_PWM_BBLED_DC_MAX 254u /* 255 is full on */
 
 /* BBLED PWM mode uses the duty cycle to set the PWM frequency:
  * Fpwm = Fclock / (256 * (LD + 1)) OR
@@ -98,12 +101,10 @@ LOG_MODULE_REGISTER(pwmbbled_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
 /* DT enum values */
 #define XEC_PWM_BBLED_CLKSEL_32K	0
-#define XEC_PWM_BBLED_CLKSEL_PCR_SLOW	1
-#define XEC_PWM_BBLED_CLKSEL_AHB_48M	2
+#define XEC_PWM_BBLED_CLKSEL_AHB_48M	1
 
 #define XEC_PWM_BBLED_CLKSEL_0		XEC_PWM_BBLED_CLKSEL_32K
-#define XEC_PWM_BBLED_CLKSEL_1		XEC_PWM_BBLED_CLKSEL_PCR_SLOW
-#define XEC_PWM_BBLED_CLKSEL_2		XEC_PWM_BBLED_CLKSEL_AHB_48M
+#define XEC_PWM_BBLED_CLKSEL_1		XEC_PWM_BBLED_CLKSEL_AHB_48M
 
 
 struct bbled_regs {
@@ -133,52 +134,6 @@ struct bbled_xec_data {
 	uint32_t config;
 };
 
-/* Compute BBLED PWM delay factor to produce requested frequency.
- * Fpwm = Fclk / (256 * (LD+1)) where Fclk is 48MHz or 32KHz and
- * LD is a 12-bit value in [0, 4096].
- * We expect 256 <= pulse_cycles <= (256 * 4096)
- * period_cycles = (period * cycles_per_sec) / NSEC_PER_SEC;
- * period_cycles = (Tpwm * Fclk) = Fclk / Fpwm
- * period_cycles = Fclk * (256 * (LD+1)) / Fclk = (256 * (LD+1))
- * (LD+1) = period_cycles / 256
- */
-static uint32_t xec_pwmbb_compute_ld(const struct device *dev, uint32_t period_cycles)
-{
-	uint32_t ld = 0;
-
-	ld = period_cycles / 256U;
-	if (ld > 0) {
-		if (ld > 4096U) {
-			ld = 4096U;
-		}
-		ld--;
-	}
-
-	return ld;
-}
-
-/* BBLED-PWM duty cycle set in 8-bit MINIMUM field of BBLED LIMITS register.
- * Limits.Minimum == 0 (alwyas off, output driven low)
- *                == 255 (always on, output driven high)
- * 1 <= Limits.Minimum <= 254 duty cycle
- */
-static uint32_t xec_pwmbb_compute_dc(uint32_t period_cycles, uint32_t pulse_cycles)
-{
-	uint32_t dc;
-
-	if (pulse_cycles >= period_cycles) {
-		return 255U; /* always on */
-	}
-
-	if (period_cycles < 256U) {
-		return 0; /* always off */
-	}
-
-	dc = (256U * pulse_cycles) / period_cycles;
-
-	return dc;
-}
-
 /* Issue: two separate registers must be updated.
  * LIMITS.MIN = duty cycle = [1, 254]
  * LIMITS register update takes effect immediately.
@@ -193,13 +148,13 @@ static void xec_pwmbb_progam_pwm(const struct device *dev, uint32_t ld, uint32_t
 	struct bbled_regs * const regs = cfg->regs;
 	uint32_t val;
 
-	val = regs->delay & ~(XEC_PWM_BBLED_DLY_LO_MSK);
-	val |= ((ld  << XEC_PWM_BBLED_DLY_LO_POS) & XEC_PWM_BBLED_DLY_LO_MSK);
-	regs->delay = val;
-
 	val = regs->limits & ~(XEC_PWM_BBLED_LIM_MIN_MSK);
 	val |= ((dc << XEC_PWM_BBLED_LIM_MIN_POS) & XEC_PWM_BBLED_LIM_MIN_MSK);
 	regs->limits = val;
+
+	val = regs->delay & ~(XEC_PWM_BBLED_DLY_LO_MSK);
+	val |= ((ld  << XEC_PWM_BBLED_DLY_LO_POS) & XEC_PWM_BBLED_DLY_LO_MSK);
+	regs->delay = val;
 
 	 /* transfer new delay value from holding register */
 	regs->config |= BIT(XEC_PWM_BBLED_CFG_EN_UPDATE_POS);
@@ -209,100 +164,11 @@ static void xec_pwmbb_progam_pwm(const struct device *dev, uint32_t ld, uint32_t
 	regs->config = val;
 }
 
-/* API implementation: Set the period and pulse width for a single PWM.
- * channel must be 0 as each PWM instance implements one output.
- * period in clock cycles of currently configured clock.
- * pulse width in clock cycles of currently configured clock.
- * flags b[7:0] defined by zephyr. b[15:8] can be SoC specific.
- * Bit[0] = 1 inverted, bits[7:1] specify capture features not implemented in XEC PWM.
- * Note: macro PWM_MSEC() and others convert from other units to nanoseconds.
- * BBLED output state is Active High. If Active low is required the GPIO pin invert
- * bit must be set. The XEC PWM block also defaults to Active High but it has a bit
- * to select Active Low.
- * PWM API exposes this function as pwm_set_cycles and has wrapper API defined in
- * pwm.h, named pwm_set which:
- * Calls pwm_get_cycles_per_second to get current maximum HW frequency as cycles_per_sec
- * Computes period_cycles = (period * cycles_per_sec) / NSEC_PER_SEC
- *          pulse_cycles = (pulse * cycles_per_sec) / NSEC_PER_SEC
- * Call pwm_set_cycles passing period_cycles and pulse_cycles.
- *
- * BBLED PWM input frequency is 32KHz (POR default) or 48MHz selected by device tree
- * at application build time.
- * BBLED Fpwm = Fin / (256 * (LD + 1)) where LD = [0, 4095]
- * This equation tells use the maximum number of cycles of Fin the hardware can
- * generate is 256 whereas the mininum number of cycles is 256 * 4096.
- *
- * Fin = 32KHz
- * Fpwm-min = 32768 / (256 * 4096) = 31.25 mHz = 31250000 nHz = 0x01DC_D650 nHz
- * Fpwm-max = 32768 / 256 = 128 Hz = 128e9 nHz = 0x1D_CD65_0000 nHz
- * Tpwm-min = 32e9 ns    = 0x0007_7359_4000 ns
- * Tpmw-max = 7812500 ns = 0x0077_3594 ns
- *
- * Fin = 48MHz
- * Fpwm-min = 48e6 / (256 * 4096) = 45.7763 Hz = 45776367188 nHz = 0x000A_A87B_EE53 nHz
- * Fpwm-max = 48e6 / 256 = 187500 = 1.875e14 = 0xAA87_BEE5_3800 nHz
- * Tpwm-min = 5334 ns = 0x14D6 ns
- * Tpwm-max = 21845333 ns = 0x014D_5555 ns
- */
-static int pwm_bbled_xec_check_cycles(uint32_t period_cycles, uint32_t pulse_cycles)
-{
-	if ((period_cycles < 256U) || (period_cycles > (4096U * 256U))) {
-		return -EINVAL;
-	}
-
-	if ((pulse_cycles < 256U) || (pulse_cycles > (4096U * 256U))) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int pwm_bbled_xec_set_cycles(const struct device *dev, uint32_t channel,
-				    uint32_t period_cycles, uint32_t pulse_cycles,
-				    pwm_flags_t flags)
-{
-	const struct pwm_bbled_xec_config * const cfg = dev->config;
-	struct bbled_regs * const regs = cfg->regs;
-	uint32_t dc, ld;
-	int ret;
-
-	if (channel > 0) {
-		return -EIO;
-	}
-
-	if (flags) {
-		/* PWM polarity not supported (yet?) */
-		return -ENOTSUP;
-	}
-
-	if ((pulse_cycles == 0U) && (period_cycles == 0U)) { /* Controller off, clocks gated */
-		regs->config = (regs->config & ~XEC_PWM_BBLED_CFG_MODE_MSK)
-			       | XEC_PWM_BBLED_CFG_MODE_OFF;
-	} else if ((pulse_cycles == 0U) && (period_cycles > 0U)) {
-		/* PWM mode: Limits minimum duty cycle == 0 -> LED output is fully OFF */
-		regs->limits &= ~XEC_PWM_BBLED_LIM_MIN_MSK;
-	} else if ((pulse_cycles > 0U) && (period_cycles == 0U)) {
-		/* PWM mode: Limits minimum duty cycle == full value -> LED output is fully ON */
-		regs->limits |= XEC_PWM_BBLED_LIM_MIN_MSK;
-	} else {
-		ret = pwm_bbled_xec_check_cycles(period_cycles, pulse_cycles);
-		if (ret) {
-			LOG_DBG("Target frequency out of range");
-			return ret;
-		}
-
-		ld = xec_pwmbb_compute_ld(dev, period_cycles);
-		dc = xec_pwmbb_compute_dc(period_cycles, pulse_cycles);
-		xec_pwmbb_progam_pwm(dev, ld, dc);
-	}
-
-	return 0;
-}
-
 /* API implementation: Get the clock rate (cycles per second) for a single PWM output.
  * BBLED in PWM mode (same as blink mode) PWM frequency = Source Frequency / (256 * (LP + 1))
  * where Source Frequency is either 48 MHz or 32768 Hz and LP is the 12-bit low delay
- * field of the DELAY register.
+ * field of the DELAY register. We return the maximum PWM frequency which is configured
+ * hardware input frequency (32K or 48M) divided by 256.
  */
 static int pwm_bbled_xec_get_cycles_per_sec(const struct device *dev,
 					    uint32_t channel, uint64_t *cycles)
@@ -316,10 +182,83 @@ static int pwm_bbled_xec_get_cycles_per_sec(const struct device *dev,
 
 	if (cycles) {
 		if (regs->config & BIT(XEC_PWM_BBLED_CFG_CLK_SRC_48M_POS)) {
-			*cycles = XEC_PWM_BBLED_INPUT_FREQ_HI;
+			*cycles = XEC_PWM_BBLED_MAX_PWM_FREQ_HI; /* 187,500 Hz */
 		} else {
-			*cycles = XEC_PWM_BBLED_INPUT_FREQ_LO;
+			*cycles = XEC_PWM_BBLED_MAX_PWM_FREQ_LO; /* 128 Hz */
 		}
+	}
+
+	return 0;
+}
+
+/* API PWM set cycles:
+ * pulse == 0 -> pin should be constant inactive level
+ * pulse >= period -> pin should be constant active level
+ * hardware PWM (blink) mode: Fpwm = Fin_actual / (LD + 1)
+ * Fin_actual = XEC_PWM_BBLED_MAX_PWM_FREQ_HI or XEC_PWM_BBLED_MAX_PWM_FREQ_LO.
+ *  period cycles and pulse cycles both zero is OFF
+ *  pulse cycles == 0 is OFF
+ *  pulse cycles > 0 and period cycles == 0 is OFF
+ *  otherwise
+ *    compute duty cycle = 256 * (pulse_cycles / period_cycles).
+ *    compute (LD + 1) = Fin_actual / Fpwm
+ *    program LD into bits[11:0] of Delay register
+ *    program duty cycle info bits[7:0] of Limits register
+ * NOTE: flags parameter is currently used for pin invert and PWM capture.
+ * The BBLED HW does not support pin invert or PWM capture.
+ * NOTE 2: Pin invert is possible by using the MCHP function invert feature
+ * of the GPIO pin. This property can be set using PINCTRL at build time.
+ */
+static int pwm_bbled_xec_set_cycles(const struct device *dev, uint32_t channel,
+				    uint32_t period_cycles, uint32_t pulse_cycles,
+				    pwm_flags_t flags)
+{
+	const struct pwm_bbled_xec_config * const cfg = dev->config;
+	struct bbled_regs * const regs = cfg->regs;
+	uint32_t dc, ld;
+
+	if (channel > 0) {
+		LOG_ERR("Invalid channel: %u", channel);
+		return -EIO;
+	}
+
+	if (flags) {
+		return -ENOTSUP;
+	}
+
+	LOG_DBG("period_cycles = %u  pulse_cycles = %u", period_cycles, pulse_cycles);
+
+	if (pulse_cycles == 0u) {
+		/* drive pin to inactive state */
+		regs->config = (regs->config & ~XEC_PWM_BBLED_CFG_MODE_MSK)
+			       | XEC_PWM_BBLED_CFG_MODE_OFF;
+		regs->limits &= ~XEC_PWM_BBLED_LIM_MIN_MSK;
+		regs->delay &= ~(XEC_PWM_BBLED_DLY_LO_MSK);
+	} else if (pulse_cycles >= period_cycles) {
+		/* drive pin to active state */
+		regs->config = (regs->config & ~XEC_PWM_BBLED_CFG_MODE_MSK)
+			       | XEC_PWM_BBLED_CFG_MODE_ALWAYS_ON;
+		regs->limits &= ~XEC_PWM_BBLED_LIM_MIN_MSK;
+		regs->delay &= ~(XEC_PWM_BBLED_DLY_LO_MSK);
+	} else {
+		ld = period_cycles;
+		if (ld) {
+			ld--;
+			if (ld > XEC_PWM_BBLED_LD_MAX) {
+				ld = XEC_PWM_BBLED_LD_MAX;
+			}
+		}
+
+		dc = ((XEC_PWM_BBLED_DC_MAX + 1) * pulse_cycles / period_cycles);
+		if (dc < XEC_PWM_BBLED_DC_MIN) {
+			dc = XEC_PWM_BBLED_DC_MIN;
+		} else if (dc > XEC_PWM_BBLED_DC_MAX) {
+			dc = XEC_PWM_BBLED_DC_MAX;
+		}
+
+		LOG_DBG("Program: ld = 0x%0x  dc = 0x%0x", ld, dc);
+
+		xec_pwmbb_progam_pwm(dev, ld, dc);
 	}
 
 	return 0;

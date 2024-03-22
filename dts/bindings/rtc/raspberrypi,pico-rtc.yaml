@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Andrew Featherstone <andrew.featherstone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: RaspberryPi Pico RTC
+
+compatible: "raspberrypi,pico-rtc"
+
+include: [rtc-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true

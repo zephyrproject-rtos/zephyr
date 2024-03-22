@@ -57,6 +57,8 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
+        # Increase rename limit to allow for large PRs
+        git config diff.renameLimit 10000
         ./scripts/ci/check_compliance.py --annotate -e KconfigBasic \
         -c origin/${BASE_REF}..
 

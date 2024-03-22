@@ -11,16 +11,16 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../remote/zephyr)
 
-if(("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpuapp") OR
-   ("${BOARD}" STREQUAL "nrf5340bsim_nrf5340_cpuapp") OR
-   ("${BOARD}" STREQUAL "adp_xc7k_ae350") OR
-   ("${BOARD}" STREQUAL "mimxrt1170_evkb_cm7") OR
-   ("${BOARD}" STREQUAL "mimxrt1170_evk_cm7") OR
-   ("${BOARD}" STREQUAL "mimxrt1160_evk_cm7") OR
-   ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu0"))
-  message(STATUS "${BOARD} compile as Main in this sample")
+if(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP OR
+   CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP OR
+   CONFIG_BOARD_ADP_XC7K_AE350 OR
+   CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7 OR
+   CONFIG_BOARD_MIMXRT1160_EVK_MIMXRT1166_CM7 OR
+   CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0 OR
+   CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP)
+  message(STATUS "${BOARD}${BOARD_QUALIFIERS} compile as Main in this sample")
 else()
-  message(FATAL_ERROR "${BOARD} is not supported for this sample")
+  message(FATAL_ERROR "${BOARD}${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
 project(mbox_ipc)

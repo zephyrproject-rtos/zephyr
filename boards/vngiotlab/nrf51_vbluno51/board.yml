@@ -1,0 +1,5 @@
+board:
+  name: nrf51_vbluno51
+  vendor: vngiotlab
+  socs:
+  - name: nrf51822

@@ -400,6 +400,9 @@ struct bt_bap_ep_info {
 	/** @brief True if the stream associated with the endpoint is able to send data */
 	bool can_send;
 
+	/** @brief True if the stream associated with the endpoint is able to receive data */
+	bool can_recv;
+
 	/** Pointer to paired endpoint if the endpoint is part of a bidirectional CIS,
 	 *  otherwise NULL
 	 */
@@ -412,7 +415,8 @@ struct bt_bap_ep_info {
  * @param ep   The audio stream endpoint object.
  * @param info The structure object to be filled with the info.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval -EINVAL if @p ep or @p info are NULL
  */
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
 
@@ -1506,6 +1510,18 @@ int bt_bap_base_subgroup_codec_to_codec_cfg(const struct bt_bap_base_subgroup *s
 int bt_bap_base_get_subgroup_bis_count(const struct bt_bap_base_subgroup *subgroup);
 
 /**
+ * @brief Get all BIS indexes of a subgroup
+ *
+ * @param[in]  subgroup    The subgroup pointer
+ * @param[out] bis_indexes 32-bit BIS index bitfield that will be populated
+ *
+ * @retval -EINVAL if arguments are invalid
+ * @retval 0 on success
+ */
+int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subgroup,
+					 uint32_t *bis_indexes);
+
+/**
  * @brief Iterate on all BIS in the subgroup
  *
  * @param subgroup  The subgroup pointer
@@ -1799,9 +1815,9 @@ struct bt_bap_broadcast_sink_cb {
 	 *  bt_bap_broadcast_sink_sync() to synchronize to the audio stream(s).
 	 *
 	 *  @param sink          Pointer to the sink structure.
-	 *  @param encrypted     Whether or not the broadcast is encrypted
+	 *  @param biginfo       The BIGInfo report.
 	 */
-	void (*syncable)(struct bt_bap_broadcast_sink *sink, bool encrypted);
+	void (*syncable)(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo);
 
 	/* Internally used list node */
 	sys_snode_t _node;
@@ -2135,6 +2151,8 @@ struct bt_bap_broadcast_assistant_cb {
 	 * @param err     Error value. 0 on success, GATT error on fail.
 	 */
 	void (*rem_src)(struct bt_conn *conn, int err);
+
+	sys_snode_t _node;
 };
 
 /**
@@ -2178,8 +2196,26 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn);
 
 /**
  * @brief Registers the callbacks used by Broadcast Audio Scan Service client.
+ *
+ * @param cb	The callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was already registered
  */
-void bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb);
+int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb);
+
+/**
+ * @brief Unregisters the callbacks used by the Broadcast Audio Scan Service client.
+ *
+ * @param cb   The callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was not registered
+ */
+int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb);
+
 
 /** Parameters for adding a source to a Broadcast Audio Scan Service server */
 struct bt_bap_broadcast_assistant_add_src_param {

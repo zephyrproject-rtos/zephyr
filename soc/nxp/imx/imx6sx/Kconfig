@@ -1,0 +1,18 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX6SX
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_IMX_HAL
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CLOCK_CONTROL
+
+config SOC_MCIMX6X_M4
+	select HAS_IMX_HAL
+	select HAS_IMX_GPIO
+	select HAS_IMX_EPIT
+	select HAS_IMX_I2C
+	select HAS_IMX_IOMUXC

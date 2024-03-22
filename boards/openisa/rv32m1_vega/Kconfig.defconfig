@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2018 Foundries.io Ltd
+
+if BOARD_RV32M1_VEGA
+
+if BT
+
+config BT_CTLR
+	default y
+
+#TODO: Resolve the complete non-BLE support for crypto CAU3 firmware/driver
+#config HAS_RV32M1_CAU3
+#	bool
+#	default y if BT_CTLR_CRYPTO && !BT_CTLR_LE_ENC_SUPPORT
+
+config HAS_RV32M1_CAU3_BLE
+	bool
+	default y if BT_CTLR_CRYPTO && \
+		(BT_CTLR_LE_ENC_SUPPORT || BT_CTLR_PRIVACY_SUPPORT)
+
+config RV32M1_INTMUX_CHANNEL_2
+	default n
+
+config RV32M1_INTMUX_CHANNEL_3
+	default n
+
+endif # BT
+
+endif # BOARD_RV32M1_VEGA

@@ -14,6 +14,8 @@
 
 /**
  * @defgroup dai_interface DAI Interface
+ * @since 3.1
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @brief DAI Interface
  *

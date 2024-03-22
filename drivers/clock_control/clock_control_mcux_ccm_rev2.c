@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,7 +115,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#if defined(CONFIG_SOC_MIMX93_A55) && defined(CONFIG_DAI_NXP_SAI)
+#if defined(CONFIG_SOC_MIMX9352_A55) && defined(CONFIG_DAI_NXP_SAI)
 	case IMX_CCM_SAI1_CLK:
 	case IMX_CCM_SAI2_CLK:
 	case IMX_CCM_SAI3_CLK:
@@ -141,10 +141,15 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Flexspi2;
 		break;
 #endif
+#ifdef CONFIG_COUNTER_NXP_PIT
+	case IMX_CCM_PIT_CLK:
+		clock_root = kCLOCK_Root_Bus + instance;
+		break;
+#endif
 	default:
 		return -EINVAL;
 	}
-#ifdef CONFIG_SOC_MIMX93_A55
+#ifdef CONFIG_SOC_MIMX9352_A55
 	*rate = CLOCK_GetIpFreq(clock_root);
 #else
 	*rate = CLOCK_GetRootClockFreq(clock_root);
@@ -173,7 +178,7 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 	case IMX_CCM_FLEXSPI_CLK:
 		__fallthrough;
 	case IMX_CCM_FLEXSPI2_CLK:
-#if defined(CONFIG_SOC_SERIES_IMX_RT11XX) && defined(CONFIG_MEMC_MCUX_FLEXSPI)
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX) && defined(CONFIG_MEMC_MCUX_FLEXSPI)
 		/* The SOC is using the FlexSPI for XIP. Therefore,
 		 * the FlexSPI itself must be managed within the function,
 		 * which is SOC specific.

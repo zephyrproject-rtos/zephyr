@@ -21,11 +21,11 @@ TESTDATA_1 = [
     (
 """\
 identifier: dummy empty
-arch: arch0
+arch: arc
 """,
         {
             'name': 'dummy empty',
-            'arch': 'arch0',
+            'arch': 'arc',
             'twister': True,
             'ram': 128,
             'timeout_multiplier': 1.0,
@@ -44,12 +44,12 @@ arch: arch0
             'env': [],
             'env_satisfied': True
         },
-        '<dummy empty on arch0>'
+        '<dummy empty on arc>'
     ),
     (
 """\
 identifier: dummy full
-arch: riscv32
+arch: riscv
 twister: true
 ram: 1024
 testing:
@@ -81,7 +81,7 @@ env:
 """,
         {
             'name': 'dummy full',
-            'arch': 'riscv32',
+            'arch': 'riscv',
             'twister': True,
             'ram': 1024,
             'timeout_multiplier': 2.0,
@@ -96,11 +96,11 @@ env:
             'type': 'unit',
             'simulation': 'nsim',
             'simulation_exec': 'nsimdrv',
-            'supported_toolchains': ['zephyr', 'llvm', 'cross-compile', 'xtools'],
+            'supported_toolchains': ['zephyr', 'llvm', 'cross-compile'],
             'env': ['dummynonexistentvar'],
             'env_satisfied': False
         },
-        '<dummy full on riscv32>'
+        '<dummy full on riscv>'
     ),
 ]
 

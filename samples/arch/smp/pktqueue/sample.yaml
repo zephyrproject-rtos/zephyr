@@ -18,13 +18,5 @@ tests:
     depends_on:
       - smp
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
-    platform_exclude:
-      - esp32_devkitc_wroom
-      - esp_wrover_kit
-      - esp32_ethernet_kit
-      - heltec_wifi_lora32_v2
-      - m5stickc_plus
-      - odroid_go
-      - olimex_esp32_evb
     integration_platforms:
       - qemu_x86_64

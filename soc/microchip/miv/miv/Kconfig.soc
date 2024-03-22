@@ -1,0 +1,22 @@
+# RISCV32_MIV configuration options
+
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MIV
+	bool
+	select SOC_FAMILY_MICROCHIP_MIV
+	help
+	  Microchip Mi-V implementation#
+
+config SOC_MIV
+	bool
+	select SOC_SERIES_MIV
+	help
+	  Microchip Mi-V system implementation
+
+config SOC_SERIES
+	default "miv" if SOC_SERIES_MIV
+
+config SOC
+	default "miv" if SOC_MIV

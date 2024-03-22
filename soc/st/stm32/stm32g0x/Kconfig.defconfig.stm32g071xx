@@ -1,0 +1,12 @@
+# STMicroelectronics STM32G071xx MCU
+
+# Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G071XX
+
+config NUM_IRQS
+	default 31
+
+endif # SOC_STM32G071XX

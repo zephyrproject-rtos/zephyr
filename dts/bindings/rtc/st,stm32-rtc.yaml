@@ -10,3 +10,11 @@ include: rtc.yaml
 properties:
   reg:
     required: true
+
+  calib-out-freq:
+    type: int
+    description: |
+      Calibration output frequency (1 Hz or 512 Hz).
+    enum:
+      - 1
+      - 512

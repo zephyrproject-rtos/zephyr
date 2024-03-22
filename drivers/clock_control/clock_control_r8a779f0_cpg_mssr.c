@@ -22,12 +22,32 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control_rcar);
 
+#define R8A779F0_CLK_SD0_STOP_BIT 8
+#define R8A779F0_CLK_SD0_DIV_MASK 0x3
+#define R8A779F0_CLK_SD0_DIV_SHIFT 0
+
+#define R8A779F0_CLK_SD0H_STOP_BIT 9
+#define R8A779F0_CLK_SD0H_DIV_MASK 0x7
+#define R8A779F0_CLK_SD0H_DIV_SHIFT 2
+
+#define R8A779F0_CLK_SDSRC_DIV_MASK 0x3
+#define R8A779F0_CLK_SDSRC_DIV_SHIFT 29
+
 struct r8a779f0_cpg_mssr_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
 };
 
 struct r8a779f0_cpg_mssr_data {
 	struct rcar_cpg_mssr_data cmn; /* Must be first */
+};
+
+enum clk_ids {
+	/* Core Clock Outputs exported to DT */
+	LAST_DT_CORE_CLK = R8A779F0_CLK_OSC,
+
+	/* Internal Core Clocks */
+	CLK_PLL5,
+	CLK_SDSRC,
 };
 
 /* NOTE: the array MUST be sorted by module field */
@@ -37,12 +57,24 @@ static struct cpg_clk_info_table core_props[] = {
 
 	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_CL16M, RCAR_CPG_NONE, RCAR_CPG_NONE,
 				RCAR_CPG_KHZ(16660)),
+
+	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_SD0H, 0x0870, CLK_SDSRC, RCAR_CPG_NONE),
+	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_SD0, 0x0870, R8A779F0_CLK_SD0H, RCAR_CPG_NONE),
+
+	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_SASYNCPERD1, RCAR_CPG_NONE, RCAR_CPG_NONE,
+				266666666),
+
+	RCAR_CORE_CLK_INFO_ITEM(CLK_PLL5, RCAR_CPG_NONE, RCAR_CPG_NONE, RCAR_CPG_MHZ(3200)),
+	RCAR_CORE_CLK_INFO_ITEM(CLK_SDSRC, 0x08A4, CLK_PLL5, RCAR_CPG_NONE),
 };
 
 /* NOTE: the array MUST be sorted by module field */
 static struct cpg_clk_info_table mod_props[] = {
+	RCAR_MOD_CLK_INFO_ITEM(514, R8A779F0_CLK_SASYNCPERD1),
 	RCAR_MOD_CLK_INFO_ITEM(702, R8A779F0_CLK_S0D12_PER),
 	RCAR_MOD_CLK_INFO_ITEM(704, R8A779F0_CLK_S0D12_PER),
+
+	RCAR_MOD_CLK_INFO_ITEM(706, R8A779F0_CLK_SD0),
 
 	RCAR_MOD_CLK_INFO_ITEM(915, R8A779F0_CLK_CL16M),
 };
@@ -50,11 +82,29 @@ static struct cpg_clk_info_table mod_props[] = {
 static int r8a779f0_cpg_enable_disable_core(const struct device *dev,
 					    struct cpg_clk_info_table *clk_info, uint32_t enable)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(clk_info);
-	ARG_UNUSED(enable);
+	int ret = 0;
+	uint32_t reg;
 
-	return -ENOTSUP;
+	switch (clk_info->module) {
+	case R8A779F0_CLK_SD0:
+		reg = sys_read32(DEVICE_MMIO_GET(dev) + clk_info->offset);
+		reg &= ~(1 << R8A779F0_CLK_SD0_STOP_BIT);
+		reg |= (!enable << R8A779F0_CLK_SD0_STOP_BIT);
+		break;
+	case R8A779F0_CLK_SD0H:
+		reg = sys_read32(DEVICE_MMIO_GET(dev) + clk_info->offset);
+		reg &= ~(1 << R8A779F0_CLK_SD0H_STOP_BIT);
+		reg |= (!enable << R8A779F0_CLK_SD0H_STOP_BIT);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	if (!ret) {
+		rcar_cpg_write(DEVICE_MMIO_GET(dev), clk_info->offset, reg);
+	}
+	return ret;
 }
 
 static int r8a779f0_cpg_core_clock_endisable(const struct device *dev, struct rcar_cpg_clk *clk,
@@ -120,6 +170,30 @@ static uint32_t r8a779f0_get_div_helper(uint32_t reg_val, uint32_t module)
 	case R8A779F0_CLK_S0D12_PER:
 	case R8A779F0_CLK_CL16M:
 		return 1;
+	case CLK_SDSRC:
+		reg_val >>= R8A779F0_CLK_SDSRC_DIV_SHIFT;
+		reg_val &= R8A779F0_CLK_SDSRC_DIV_MASK;
+		/*  setting of 3 is prohibited */
+		if (reg_val < 3) {
+			/* real divider is in range 4 - 6 */
+			return reg_val + 4;
+		}
+
+		LOG_WRN("SDSRC clock has an incorrect divider value: %u", reg_val);
+		return RCAR_CPG_NONE;
+	case R8A779F0_CLK_SD0H:
+		reg_val >>= R8A779F0_CLK_SD0H_DIV_SHIFT;
+		reg_val &= R8A779F0_CLK_SD0H_DIV_MASK;
+		/* setting of value bigger than 4 is prohibited */
+		if (reg_val < 5) {
+			return (1 << reg_val);
+		}
+
+		LOG_WRN("SD0H clock has an incorrect divider value: %u", reg_val);
+		return RCAR_CPG_NONE;
+	case R8A779F0_CLK_SD0:
+		/* convert only two possible values 0,1 to 2,4 */
+		return (1 << ((reg_val & R8A779F0_CLK_SD0_DIV_MASK) + 1));
 	default:
 		return RCAR_CPG_NONE;
 	}
@@ -127,11 +201,38 @@ static uint32_t r8a779f0_get_div_helper(uint32_t reg_val, uint32_t module)
 
 static int r8a779f0_set_rate_helper(uint32_t module, uint32_t *divider, uint32_t *div_mask)
 {
-	ARG_UNUSED(module);
-	ARG_UNUSED(divider);
-	ARG_UNUSED(div_mask);
-
-	return -ENOTSUP;
+	switch (module) {
+	case CLK_SDSRC:
+		/* divider has to be in range 4-6 */
+		if (*divider > 3 && *divider < 7) {
+			/* we can write to register value in range 0-2 */
+			*divider -= 4;
+			*divider <<= R8A779F0_CLK_SDSRC_DIV_SHIFT;
+			*div_mask = R8A779F0_CLK_SDSRC_DIV_MASK << R8A779F0_CLK_SDSRC_DIV_SHIFT;
+			return 0;
+		}
+		return -EINVAL;
+	case R8A779F0_CLK_SD0:
+		/* possible to have only 2 or 4 */
+		if (*divider == 2 || *divider == 4) {
+			/* convert 2/4 to 0/1 */
+			*divider >>= 2;
+			*div_mask = R8A779F0_CLK_SD0_DIV_MASK << R8A779F0_CLK_SD0_DIV_SHIFT;
+			return 0;
+		}
+		return -EINVAL;
+	case R8A779F0_CLK_SD0H:
+		/* divider should be power of two number and last possible value 16 */
+		if (!is_power_of_two(*divider) || *divider > 16) {
+			return -EINVAL;
+		}
+		/* 1,2,4,8,16 have to be converted to 0,1,2,3,4 and then shifted */
+		*divider = (find_lsb_set(*divider) - 1) << R8A779F0_CLK_SD0H_DIV_SHIFT;
+		*div_mask = R8A779F0_CLK_SD0H_DIV_MASK << R8A779F0_CLK_SD0H_DIV_SHIFT;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int r8a779f0_cpg_mssr_start(const struct device *dev, clock_control_subsys_t sys)

@@ -522,14 +522,41 @@ static bool ospi_address_is_valid(const struct device *dev, off_t addr,
 	return (addr >= 0) && ((uint64_t)addr + (uint64_t)size <= flash_size);
 }
 
+static int stm32_ospi_wait_auto_polling(struct flash_stm32_ospi_data *dev_data,
+		OSPI_AutoPollingTypeDef *s_config, uint32_t timeout_ms)
+{
+	dev_data->cmd_status = 0;
+	if (HAL_OSPI_AutoPolling_IT(&dev_data->hospi, s_config) != HAL_OK) {
+		LOG_ERR("OSPI AutoPoll failed");
+		return -EIO;
+	}
+
+	if (k_sem_take(&dev_data->sync, K_MSEC(timeout_ms)) != 0) {
+		LOG_ERR("OSPI AutoPoll wait failed");
+		HAL_OSPI_Abort(&dev_data->hospi);
+		k_sem_reset(&dev_data->sync);
+		return -EIO;
+	}
+
+	/* HAL_OSPI_AutoPolling_IT enables transfer error interrupt which sets
+	 * cmd_status.
+	 */
+	return dev_data->cmd_status;
+}
+
 /*
  * This function Polls the WEL (write enable latch) bit to become to 0
  * When the Chip Erase Cycle is completed, the Write Enable Latch (WEL) bit is cleared.
  * in nor_mode SPI/OPI OSPI_SPI_MODE or OSPI_OPI_MODE
  * and nor_rate transfer STR/DTR OSPI_STR_TRANSFER or OSPI_DTR_TRANSFER
  */
-static int stm32_ospi_mem_erased(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uint8_t nor_rate)
+static int stm32_ospi_mem_erased(const struct device *dev)
 {
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+	uint8_t nor_mode = dev_cfg->data_mode;
+	uint8_t nor_rate = dev_cfg->data_rate;
+	OSPI_HandleTypeDef *hospi = &dev_data->hospi;
 	OSPI_AutoPollingTypeDef s_config = {0};
 	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
@@ -566,12 +593,8 @@ static int stm32_ospi_mem_erased(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, ui
 	}
 
 	/* Start Automatic-Polling mode to wait until the memory is totally erased */
-	if (HAL_OSPI_AutoPolling(hospi, &s_config, STM32_OSPI_BULK_ERASE_MAX_TIME) != HAL_OK) {
-		LOG_ERR("OSPI AutoPoll (WEL) failed");
-		return -EIO;
-	}
-
-	return 0;
+	return stm32_ospi_wait_auto_polling(dev_data,
+			&s_config, STM32_OSPI_BULK_ERASE_MAX_TIME);
 }
 
 /*
@@ -579,8 +602,10 @@ static int stm32_ospi_mem_erased(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, ui
  * in nor_mode SPI/OPI OSPI_SPI_MODE or OSPI_OPI_MODE
  * and nor_rate transfer STR/DTR OSPI_STR_TRANSFER or OSPI_DTR_TRANSFER
  */
-static int stm32_ospi_mem_ready(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uint8_t nor_rate)
+static int stm32_ospi_mem_ready(struct flash_stm32_ospi_data *dev_data, uint8_t nor_mode,
+		uint8_t nor_rate)
 {
+	OSPI_HandleTypeDef *hospi = &dev_data->hospi;
 	OSPI_AutoPollingTypeDef s_config = {0};
 	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
@@ -616,17 +641,14 @@ static int stm32_ospi_mem_ready(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uin
 	}
 
 	/* Start Automatic-Polling mode to wait until the memory is ready WIP=0 */
-	if (HAL_OSPI_AutoPolling(hospi, &s_config, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("OSPI AutoPoll failed");
-		return -EIO;
-	}
-
-	return 0;
+	return stm32_ospi_wait_auto_polling(dev_data, &s_config, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 }
 
 /* Enables writing to the memory sending a Write Enable and wait it is effective */
-static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uint8_t nor_rate)
+static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data,
+		uint8_t nor_mode, uint8_t nor_rate)
 {
+	OSPI_HandleTypeDef *hospi = &dev_data->hospi;
 	OSPI_AutoPollingTypeDef s_config = {0};
 	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
@@ -679,12 +701,7 @@ static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, 
 	s_config.Interval        = SPI_NOR_AUTO_POLLING_INTERVAL;
 	s_config.AutomaticStop   = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
 
-	if (HAL_OSPI_AutoPolling(hospi, &s_config, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("OSPI config auto polling failed");
-		return -EIO;
-	}
-
-	return 0;
+	return stm32_ospi_wait_auto_polling(dev_data, &s_config, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 }
 
 /* Write Flash configuration register 2 with new dummy cycles */
@@ -796,7 +813,7 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	/* Going to set the OPI mode (STR or DTR transfer rate) */
 	LOG_DBG("OSPI configuring OctoSPI mode");
 
-	if (stm32_ospi_write_enable(&dev_data->hospi,
+	if (stm32_ospi_write_enable(dev_data,
 		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI write Enable failed");
 		return -EIO;
@@ -808,12 +825,12 @@ static int stm32_ospi_config_mem(const struct device *dev)
 		LOG_ERR("OSPI write CFGR2 failed");
 		return -EIO;
 	}
-	if (stm32_ospi_mem_ready(&dev_data->hospi,
+	if (stm32_ospi_mem_ready(dev_data,
 		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI autopolling failed");
 		return -EIO;
 	}
-	if (stm32_ospi_write_enable(&dev_data->hospi,
+	if (stm32_ospi_write_enable(dev_data,
 		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI write Enable 2 failed");
 		return -EIO;
@@ -841,7 +858,7 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	}
 
 	if (dev_cfg->data_rate == OSPI_STR_TRANSFER) {
-		if (stm32_ospi_mem_ready(&dev_data->hospi,
+		if (stm32_ospi_mem_ready(dev_data,
 			OSPI_OPI_MODE, OSPI_STR_TRANSFER) != 0) {
 			/* Check Flash busy ? */
 			LOG_ERR("OSPI flash busy failed");
@@ -859,7 +876,7 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	}
 
 	if (dev_cfg->data_rate == OSPI_DTR_TRANSFER) {
-		if (stm32_ospi_mem_ready(&dev_data->hospi,
+		if (stm32_ospi_mem_ready(dev_data,
 			OSPI_OPI_MODE, OSPI_DTR_TRANSFER) != 0) {
 			/* Check Flash busy ? */
 			LOG_ERR("OSPI flash busy failed");
@@ -1004,7 +1021,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 	ospi_lock_thread(dev);
 
-	if (stm32_ospi_mem_ready(&dev_data->hospi,
+	if (stm32_ospi_mem_ready(dev_data,
 		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
 		ospi_unlock_thread(dev);
 		LOG_ERR("Erase failed : flash busy");
@@ -1023,7 +1040,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 	while ((size > 0) && (ret == 0)) {
 
-		ret = stm32_ospi_write_enable(&dev_data->hospi,
+		ret = stm32_ospi_write_enable(dev_data,
 			dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
 			LOG_ERR("Erase failed : write enable");
@@ -1044,15 +1061,14 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 			size -= dev_cfg->flash_size;
 			/* Chip (Bulk) erase started, wait until WEL becomes 0 */
-			ret = stm32_ospi_mem_erased(&dev_data->hospi,
-						   dev_cfg->data_mode, dev_cfg->data_rate);
+			ret = stm32_ospi_mem_erased(dev);
 			if (ret != 0) {
 				LOG_ERR("Chip Erase failed");
 				break;
 			}
 		} else {
 			/* Sector or Block erase depending on the size */
-			LOG_INF("Sector/Block Erase");
+			LOG_DBG("Sector/Block Erase");
 
 			cmd_erase.AddressMode =
 				(dev_cfg->data_mode == OSPI_OPI_MODE)
@@ -1098,7 +1114,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 					bet = NULL;
 				}
 			}
-			LOG_INF("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
+			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
 				cmd_erase.Address, cmd_erase.AddressSize,
 				cmd_erase.AddressMode, cmd_erase.Instruction);
 
@@ -1112,8 +1128,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				size -= SPI_NOR_SECTOR_SIZE;
 			}
 
-			ret = stm32_ospi_mem_ready(&dev_data->hospi,
-						   dev_cfg->data_mode, dev_cfg->data_rate);
+			ret = stm32_ospi_mem_ready(dev_data, dev_cfg->data_mode,
+						dev_cfg->data_rate);
 		}
 
 	}
@@ -1275,7 +1291,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	LOG_DBG("OSPI: write %zu data", size);
 	ospi_lock_thread(dev);
 
-	ret = stm32_ospi_mem_ready(&dev_data->hospi,
+	ret = stm32_ospi_mem_ready(dev_data,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
 	if (ret != 0) {
 		ospi_unlock_thread(dev);
@@ -1285,7 +1301,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 
 	while ((size > 0) && (ret == 0)) {
 		to_write = size;
-		ret = stm32_ospi_write_enable(&dev_data->hospi,
+		ret = stm32_ospi_write_enable(dev_data,
 						    dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
 			LOG_ERR("OSPI: write not enabled");
@@ -1315,7 +1331,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		addr += to_write;
 
 		/* Configure automatic polling mode to wait for end of program */
-		ret = stm32_ospi_mem_ready(&dev_data->hospi,
+		ret = stm32_ospi_mem_ready(dev_data,
 						 dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
 			LOG_ERR("OSPI: write PP not ready");
@@ -1660,7 +1676,7 @@ static int stm32_ospi_enable_qe(const struct device *dev)
 		return 0;
 	}
 
-	ret = stm32_ospi_write_enable(&data->hospi, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+	ret = stm32_ospi_write_enable(data, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1672,7 +1688,7 @@ static int stm32_ospi_enable_qe(const struct device *dev)
 		return ret;
 	}
 
-	ret = stm32_ospi_mem_ready(&data->hospi, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+	ret = stm32_ospi_mem_ready(data, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2133,6 +2149,13 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
+	/* Initialize semaphores */
+	k_sem_init(&dev_data->sem, 1, 1);
+	k_sem_init(&dev_data->sync, 0, 1);
+
+	/* Run IRQ init */
+	dev_cfg->irq_config(dev);
+
 	/* Reset NOR flash memory : still with the SPI/STR config for the NOR */
 	if (stm32_ospi_mem_reset(dev) != 0) {
 		LOG_ERR("OSPI reset failed");
@@ -2142,7 +2165,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	LOG_DBG("Reset Mem (SPI/STR)");
 
 	/* Check if memory is ready in the SPI/STR mode */
-	if (stm32_ospi_mem_ready(&dev_data->hospi,
+	if (stm32_ospi_mem_ready(dev_data,
 		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI memory not ready");
 		return -EIO;
@@ -2165,12 +2188,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Initialize semaphores */
-	k_sem_init(&dev_data->sem, 1, 1);
-	k_sem_init(&dev_data->sync, 0, 1);
 
-	/* Run IRQ init */
-	dev_cfg->irq_config(dev);
 
 	/* Send the instruction to read the SFDP  */
 	const uint8_t decl_nph = 2;
@@ -2225,6 +2243,39 @@ static int flash_stm32_ospi_init(const struct device *dev)
 			if (ret != 0) {
 				LOG_ERR("SFDP BFP failed: %d", ret);
 				break;
+			}
+		}
+		if (id == JESD216_SFDP_PARAM_ID_4B_ADDR_INSTR) {
+
+			if (dev_data->address_width == 4U) {
+				/*
+				 * Check table 4 byte address instruction table to get supported
+				 * erase opcodes when running in 4 byte address mode
+				 */
+				union {
+					uint32_t dw[2];
+					struct {
+						uint32_t dummy;
+						uint8_t type[4];
+					} types;
+				} u2;
+				ret = ospi_read_sfdp(dev, jesd216_param_addr(php),
+					     (uint8_t *)u2.dw,
+					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
+				if (ret != 0) {
+					break;
+				}
+				for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
+					struct jesd216_erase_type *etp = &dev_data->erase_types[ei];
+					const uint8_t cmd = u2.types.type[ei];
+					/* 0xff means not supported */
+					if (cmd == 0xff) {
+						etp->exp = 0;
+						etp->cmd = 0;
+					} else {
+						etp->cmd = cmd;
+					};
+				}
 			}
 		}
 		++php;

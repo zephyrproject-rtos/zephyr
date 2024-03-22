@@ -1,0 +1,114 @@
+# Copyright 2019,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC55XXX
+	select HAS_MCUX
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_WWDT
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_DWT
+	select PLATFORM_SPECIFIC_INIT
+
+config SOC_LPC55S06
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_IAP if !TRUSTED_EXECUTION_NONSECURE
+	select HAS_MCUX_RNG
+
+config SOC_LPC55S16
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_IAP if !TRUSTED_EXECUTION_NONSECURE
+	select HAS_MCUX_MCAN
+	select HAS_MCUX_RNG
+
+config SOC_LPC55S28
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select HAS_MCUX_IAP
+	select HAS_MCUX_LPADC
+	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_RNG
+
+config SOC_LPC55S36
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_MCAN
+	select HAS_MCUX_PWM
+
+config SOC_LPC55S69
+	select CPU_CORTEX_M33
+
+config SOC_LPC55S69_CPU0
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_IAP
+	select HAS_MCUX_LPADC
+	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_USB_LPCIP3511
+	select HAS_MCUX_CTIMER
+	select HAS_MCUX_SCTIMER
+	select HAS_MCUX_RNG
+
+if SOC_SERIES_LPC55XXX
+
+config INIT_PLL0
+	bool "Initialize PLL0"
+
+config INIT_PLL1
+	bool "Initialize PLL1"
+	default "y"
+	depends on !(SOC_LPC55S06 || FLASH || BUILD_WITH_TFM)
+	help
+	  In the LPC55XXX Family, this is currently being used to set the
+	  core clock value at it's highest frequency which clocks at 150MHz.
+	  Note that flash programming operations are limited to 100MHz, and
+	  this PLL should not be used as the core clock in those cases.
+
+config SECOND_CORE_MCUX
+	bool "LPC55xxx's second core"
+
+config SECOND_CORE_BOOT_ADDRESS_MCUX
+	depends on SECOND_CORE_MCUX
+	hex "Address the second core will boot at"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_CPU1_PARTITION))
+	help
+	  This is the address the second core will boot from.
+
+config LPC55XXX_SRAM_CLOCKS
+	bool "CLock LPC SRAM banks"
+
+config LPC55XXX_USB_RAM
+	bool
+
+if SOC_LPC55S69
+
+config SOC_FLASH_MCUX
+	bool
+
+endif # SOC_LPC55S69
+
+config MCUX_CORE_SUFFIX
+	default "_cm33_core0" if SOC_LPC55S69_CPU0
+	default "_cm33_core1" if SOC_LPC55S69_CPU1
+
+endif # SOC_SERIES_LPC55XXX

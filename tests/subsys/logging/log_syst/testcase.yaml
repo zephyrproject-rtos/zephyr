@@ -18,9 +18,9 @@ tests:
     # Not all compilers announced in Zephyr support full libc
     filter: CONFIG_FULL_LIBC_SUPPORTED
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_ENABLE=y
       - CONFIG_LOG_BACKEND_MOCK_OUTPUT_SYST=y

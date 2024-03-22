@@ -86,3 +86,11 @@ endif()
 if(CONFIG_BT_CAP_INITIATOR)
     target_sources(app PRIVATE src/btp_cap.c)
 endif()
+
+if(CONFIG_BT_TBS OR CONFIG_BT_GTBS)
+    target_sources(app PRIVATE src/btp_ccp.c)
+endif()
+
+if(CONFIG_BT_TMAP)
+    target_sources(app PRIVATE src/btp_tmap.c)
+endif()

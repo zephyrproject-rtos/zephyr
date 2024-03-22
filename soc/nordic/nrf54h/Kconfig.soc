@@ -1,0 +1,31 @@
+# Nordic Semiconductor nRF54H MCU line
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NRF54H20
+	bool
+	select SOC_SERIES_NRF54HX
+	help
+	  nRF54H20
+
+config SOC_NRF54H20_CPUAPP
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 CPUAPP
+
+config SOC_NRF54H20_CPURAD
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 CPURAD
+
+config SOC_NRF54H20_CPUPPR
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 CPUPPR
+
+config SOC
+	default "nrf54h20" if SOC_NRF54H20

@@ -1,0 +1,14 @@
+# STMicroelectronics STM32WL MCU series
+
+# Copyright (c) 2020 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32WLX
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_STM32CUBE
+	select CPU_HAS_ARM_MPU
+	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
+	select HAS_PM
+	select HAS_POWEROFF

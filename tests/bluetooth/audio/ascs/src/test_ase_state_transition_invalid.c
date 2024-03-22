@@ -510,8 +510,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_client_source_state_releasing)
 
 static void test_server_config_codec_expect_error(struct bt_bap_stream *stream)
 {
-	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
-		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(
+		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
+		BT_AUDIO_LOCATION_FRONT_LEFT, 40U, 1, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	int err;
 
 	err = bt_bap_stream_reconfig(stream, &codec_cfg);

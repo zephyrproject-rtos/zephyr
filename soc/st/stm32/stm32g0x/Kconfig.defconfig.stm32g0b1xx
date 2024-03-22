@@ -1,0 +1,18 @@
+# STMicroelectronics STM32G0B1xx MCU
+
+# Copyright (c) 2020 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G0B1XX
+
+config NUM_IRQS
+	default 31
+
+if CAN_STM32_FDCAN
+
+config SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,fdcan1) && $(dt_nodelabel_enabled,fdcan2)
+
+endif # CAN_STM32_FDCAN
+
+endif # SOC_STM32G0B1XX

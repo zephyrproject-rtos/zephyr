@@ -66,6 +66,12 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define ALPN_MAX_PROTOCOLS 0
 #endif /* CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS */
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+#define DTLS_SENDMSG_BUF_SIZE (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE)
+#else
+#define DTLS_SENDMSG_BUF_SIZE 0
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
 static const struct socket_op_vtable tls_sock_fd_op_vtable;
 
 #ifndef MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED
@@ -401,10 +407,8 @@ static inline bool is_handshake_complete(struct tls_context *ctx)
 BUILD_ASSERT(MBEDTLS_TLS_EXT_ADV_CONTENT_LEN >= 512,
 	     "Too small content length!");
 
-static inline unsigned char tls_mfl_code_from_content_len(void)
+static inline unsigned char tls_mfl_code_from_content_len(size_t len)
 {
-	size_t len = MBEDTLS_TLS_EXT_ADV_CONTENT_LEN;
-
 	if (len >= 4096) {
 		return MBEDTLS_SSL_MAX_FRAG_LEN_4096;
 	} else if (len >= 2048) {
@@ -418,14 +422,22 @@ static inline unsigned char tls_mfl_code_from_content_len(void)
 	}
 }
 
-static inline void tls_set_max_frag_len(mbedtls_ssl_config *config)
+static inline void tls_set_max_frag_len(mbedtls_ssl_config *config, enum net_sock_type type)
 {
-	unsigned char mfl_code = tls_mfl_code_from_content_len();
+	unsigned char mfl_code;
+	size_t len = MBEDTLS_TLS_EXT_ADV_CONTENT_LEN;
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (type == SOCK_DGRAM && len > CONFIG_NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH) {
+		len = CONFIG_NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH;
+	}
+#endif
+	mfl_code = tls_mfl_code_from_content_len(len);
 
 	mbedtls_ssl_conf_max_frag_len(config, mfl_code);
 }
 #else
-static inline void tls_set_max_frag_len(mbedtls_ssl_config *config) {}
+static inline void tls_set_max_frag_len(mbedtls_ssl_config *config, enum net_sock_type type) {}
 #endif
 
 /* Allocate TLS context. */
@@ -458,7 +470,6 @@ static struct tls_context *tls_alloc(void)
 
 		mbedtls_ssl_init(&tls->ssl);
 		mbedtls_ssl_config_init(&tls->config);
-		tls_set_max_frag_len(&tls->config);
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		mbedtls_ssl_cookie_init(&tls->cookie);
 		tls->options.dtls_handshake_timeout_min =
@@ -1305,6 +1316,7 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
+	tls_set_max_frag_len(&context->config, context->type);
 
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
 	mbedtls_ssl_conf_legacy_renegotiation(&context->config,
@@ -2260,7 +2272,8 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 	}
 
 	if (ctx->session_closed) {
-		return 0;
+		errno = ECONNABORTED;
+		return -1;
 	}
 
 	if (!is_block) {
@@ -2429,15 +2442,94 @@ ssize_t ztls_sendto_ctx(struct tls_context *ctx, const void *buf, size_t len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
+static ssize_t dtls_sendmsg_merge_and_send(struct tls_context *ctx,
+					   const struct msghdr *msg,
+					   int flags)
+{
+	static K_MUTEX_DEFINE(sendmsg_lock);
+	static uint8_t sendmsg_buf[DTLS_SENDMSG_BUF_SIZE];
+	ssize_t len = 0;
+
+	k_mutex_lock(&sendmsg_lock, K_FOREVER);
+
+	for (int i = 0; i < msg->msg_iovlen; i++) {
+		struct iovec *vec = msg->msg_iov + i;
+
+		if (vec->iov_len >= 0) {
+			if (len + vec->iov_len > sizeof(sendmsg_buf)) {
+				k_mutex_unlock(&sendmsg_lock);
+				errno = EMSGSIZE;
+				return -1;
+			}
+
+			memcpy(sendmsg_buf + len, vec->iov_base, vec->iov_len);
+			len += vec->iov_len;
+		}
+	}
+
+	if (len > 0) {
+		len = ztls_sendto_ctx(ctx, sendmsg_buf, len, flags,
+				      msg->msg_name, msg->msg_namelen);
+	}
+
+	k_mutex_unlock(&sendmsg_lock);
+
+	return len;
+}
+
+static ssize_t tls_sendmsg_loop_and_send(struct tls_context *ctx,
+					 const struct msghdr *msg,
+					 int flags)
+{
+	ssize_t len = 0;
+	ssize_t ret;
+
+	for (int i = 0; i < msg->msg_iovlen; i++) {
+		struct iovec *vec = msg->msg_iov + i;
+		size_t sent = 0;
+
+		if (vec->iov_len == 0) {
+			continue;
+		}
+
+		while (sent < vec->iov_len) {
+			uint8_t *ptr = (uint8_t *)vec->iov_base + sent;
+
+			ret = ztls_sendto_ctx(ctx, ptr, vec->iov_len - sent,
+					      flags, msg->msg_name,
+					      msg->msg_namelen);
+			if (ret < 0) {
+				return ret;
+			}
+			sent += ret;
+		}
+		len += sent;
+	}
+
+	return len;
+}
+
 ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 			 int flags)
 {
-	ssize_t len;
-	ssize_t ret;
-	int i;
+	if (msg == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_ENABLE_DTLS) &&
 	    ctx->type == SOCK_DGRAM) {
+		if (DTLS_SENDMSG_BUF_SIZE > 0) {
+			/* With one buffer only, there's no need to use
+			 * intermediate buffer.
+			 */
+			if (msghdr_non_empty_iov_count(msg) == 1) {
+				goto send_loop;
+			}
+
+			return dtls_sendmsg_merge_and_send(ctx, msg, flags);
+		}
+
 		/*
 		 * Current mbedTLS API (i.e. mbedtls_ssl_write()) allows only to send a single
 		 * contiguous buffer. This means that gather write using sendmsg() can only be
@@ -2449,32 +2541,8 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 		}
 	}
 
-	len = 0;
-	if (msg) {
-		for (i = 0; i < msg->msg_iovlen; i++) {
-			struct iovec *vec = msg->msg_iov + i;
-			size_t sent = 0;
-
-			if (vec->iov_len == 0) {
-				continue;
-			}
-
-			while (sent < vec->iov_len) {
-				uint8_t *ptr = (uint8_t *)vec->iov_base + sent;
-
-				ret = ztls_sendto_ctx(ctx, ptr,
-					    vec->iov_len - sent, flags,
-					    msg->msg_name, msg->msg_namelen);
-				if (ret < 0) {
-					return ret;
-				}
-				sent += ret;
-			}
-			len += sent;
-		}
-	}
-
-	return len;
+send_loop:
+	return tls_sendmsg_loop_and_send(ctx, msg, flags);
 }
 
 static ssize_t recv_tls(struct tls_context *ctx, void *buf,

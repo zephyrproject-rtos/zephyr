@@ -89,6 +89,20 @@
 			reg-io-width = <4>;
 		};
 
+		sckcr: sckcr@81280004 {
+			/* System Clock Control Register*/
+			compatible = "syscon";
+			reg = <0x80280000 0x20>;
+			reg-io-width = <4>;
+		};
+
+		sckcr2: sckcr2@81280004 {
+			/* System Clock Control Register 2 */
+			compatible = "syscon";
+			reg = <0x81280004 0x1a>;
+			reg-io-width = <4>;
+		};
+
 		uart0: serial@80001000 {
 			compatible = "renesas,rzt2m-uart";
 			reg = <0x80001000 0x1000>;

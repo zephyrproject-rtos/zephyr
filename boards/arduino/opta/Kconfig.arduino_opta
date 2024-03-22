@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_OPTA
+	select SOC_STM32H747XX_M4

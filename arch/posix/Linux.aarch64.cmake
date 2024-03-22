@@ -18,7 +18,7 @@ if (CONFIG_64BIT)
   if (${WORDSIZE} STREQUAL "32")
     message(FATAL_ERROR
       "CONFIG_64BIT=y but this Aarch64 machine has a 32-bit userspace.\n"
-      "If you were targeting native_posix_64, target native_posix instead.\n"
+      "If you were targeting native_sim/native/64, target native_sim instead.\n"
       "Otherwise, be sure to define CONFIG_64BIT appropriately.\n"
     )
   endif()
@@ -27,7 +27,7 @@ else ()
   if (${WORDSIZE} STREQUAL "64")
     message(FATAL_ERROR
       "CONFIG_64BIT=n but this Aarch64 machine has a 64-bit userspace.\n"
-      "If you were targeting native_posix, target native_posix_64 instead.\n"
+      "If you were targeting native_sim, target native_sim/native/64 instead.\n"
       "Otherwise, be sure to define CONFIG_64BIT appropriately.\n"
     )
   endif()

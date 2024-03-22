@@ -655,7 +655,9 @@ enum bt_audio_dir {
 		.phy = _phy,                                                                       \
 		.sdu = _sdu,                                                                       \
 		.rtn = _rtn,                                                                       \
-		.latency = _latency,                                                               \
+		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE),                     \
+				   IS_ENABLED(CONFIG_BT_BAP_UNICAST)),                             \
+			   (.latency = _latency,))                                                 \
 		.pd = _pd,                                                                         \
 	})
 

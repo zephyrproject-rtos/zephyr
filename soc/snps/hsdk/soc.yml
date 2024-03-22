@@ -1,0 +1,4 @@
+series:
+- name: arc_hsdk
+  socs:
+  - name: arc_hsdk

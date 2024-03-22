@@ -29,7 +29,7 @@ Requirements
 ************
 
 This sample has been tested on the NordicSemiconductor nRF9160 DK
-(nrf9160dk_nrf9160) and nRF52840 DK (nrf52840dk_nrf52840) boards.
+(nrf9160dk/nrf9160) and nRF52840 DK (nrf52840dk/nrf52840) boards.
 
 Building and Running
 ********************
@@ -40,7 +40,7 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/nrfx
-   :board: nrf9160dk_nrf9160
+   :board: nrf9160dk/nrf9160
    :goals: build flash
    :compact:
 

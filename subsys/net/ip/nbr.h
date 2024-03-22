@@ -56,9 +56,6 @@ struct net_nbr {
 	/** Amount of data that this neighbor buffer can store. */
 	const uint16_t size;
 
-	/** Extra data size associated with this neighbor */
-	const uint16_t extra_data_size;
-
 	/** Interface this neighbor is found */
 	struct net_if *iface;
 
@@ -75,17 +72,15 @@ struct net_nbr {
 };
 
 /* This is an array of struct net_nbr + some additional data */
-#define NET_NBR_POOL_INIT(_name, _count, _size, _remove, _extra_size)	\
+#define NET_NBR_POOL_INIT(_name, _count, _size, _remove)		\
 	struct {							\
 		struct net_nbr nbr;					\
 		uint8_t data[ROUND_UP(_size, 4)] __net_nbr_align;	\
-		uint8_t extra[ROUND_UP(_extra_size, 4)] __net_nbr_align;\
 	} _name[_count] = {						\
 		[0 ... (_count - 1)] = { .nbr = {			\
 			.idx = NET_NBR_LLADDR_UNKNOWN,			\
 			.remove = _remove,				\
-			.size = ROUND_UP(_size, 4),			\
-			.extra_data_size = ROUND_UP(_extra_size, 4) } },\
+			.size = ROUND_UP(_size, 4) } },			\
 	}
 
 struct net_nbr_table {
@@ -114,18 +109,6 @@ struct net_nbr_table {
 			.nbr_count = ARRAY_SIZE(_pool),			\
 		}							\
 	}
-
-/**
- *  @brief Get a pointer to the extra data of a neighbor entry.
- *
- *  @param nbr A valid pointer to neighbor
- *
- *  @return Pointer to the extra data of the nbr.
- */
-static inline void *net_nbr_extra_data(struct net_nbr *nbr)
-{
-	return (void *)ROUND_UP((nbr->__nbr + nbr->size), sizeof(int));
-}
 
 /**
  * @brief Decrement the reference count. If count goes to 0, the neighbor

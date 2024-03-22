@@ -8,6 +8,7 @@
 
 #include "ec_host_cmd_backend_shi.h"
 
+#include <chip_chipregs.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>

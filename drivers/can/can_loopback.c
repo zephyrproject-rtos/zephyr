@@ -13,6 +13,7 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(can_loopback, CONFIG_CAN_LOG_LEVEL);
 
@@ -340,21 +341,6 @@ static int can_loopback_get_state(const struct device *dev, enum can_state *stat
 	return 0;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int can_loopback_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct can_loopback_data *data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
-
 static void can_loopback_set_state_change_callback(const struct device *dev,
 						   can_state_change_callback_t cb,
 						   void *user_data)
@@ -366,8 +352,11 @@ static void can_loopback_set_state_change_callback(const struct device *dev,
 
 static int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
 {
-	/* Return 16MHz as an realistic value for the testcases */
-	*rate = 16000000;
+	ARG_UNUSED(dev);
+
+	/* Recommended CAN clock from from CiA 601-3 */
+	*rate = MHZ(80);
+
 	return 0;
 }
 
@@ -388,41 +377,40 @@ static const struct can_driver_api can_loopback_driver_api = {
 	.add_rx_filter = can_loopback_add_rx_filter,
 	.remove_rx_filter = can_loopback_remove_rx_filter,
 	.get_state = can_loopback_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_loopback_recover,
-#endif
 	.set_state_change_callback = can_loopback_set_state_change_callback,
 	.get_core_clock = can_loopback_get_core_clock,
 	.get_max_filters = can_loopback_get_max_filters,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 2,
+		.phase_seg2 = 2,
+		.prescaler = 1
 	},
 	.timing_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
+		.sjw = 128,
+		.prop_seg = 0,
+		.phase_seg1 = 256,
+		.phase_seg2 = 128,
+		.prescaler = 32
 	},
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_loopback_set_timing_data,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_data_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 1,
+		.phase_seg2 = 1,
+		.prescaler = 1
 	},
 	.timing_data_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
+		.sjw = 16,
+		.prop_seg = 0,
+		.phase_seg1 = 32,
+		.phase_seg2 = 16,
+		.prescaler = 32
 	},
 #endif /* CONFIG_CAN_FD_MODE */
 };
@@ -451,14 +439,12 @@ static int can_loopback_init(const struct device *dev)
 		return -1;
 	}
 
-	LOG_INF("Init of %s done", dev->name);
-
 	return 0;
 }
 
 #define CAN_LOOPBACK_INIT(inst)							\
 	static const struct can_loopback_config can_loopback_config_##inst = {	\
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0U),		\
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),		\
 	};									\
 										\
 	static struct can_loopback_data can_loopback_data_##inst;		\

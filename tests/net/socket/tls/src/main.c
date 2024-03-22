@@ -598,7 +598,7 @@ static void test_sendmsg_tx_work_handler(struct k_work *work)
 	test_sendmsg(test_data->sock, test_data->msg, 0);
 }
 
-static void test_dtls_sendmsg(sa_family_t family)
+static void test_dtls_sendmsg_no_buf(sa_family_t family)
 {
 	int rv;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
@@ -663,13 +663,141 @@ static void test_dtls_sendmsg(sa_family_t family)
 	k_msleep(10);
 }
 
+ZTEST(net_socket_tls, test_v4_dtls_sendmsg_no_buf)
+{
+	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE > 0) {
+		ztest_test_skip();
+	}
+
+	test_dtls_sendmsg_no_buf(AF_INET);
+}
+
+ZTEST(net_socket_tls, test_v6_dtls_sendmsg_no_buf)
+{
+	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE > 0) {
+		ztest_test_skip();
+	}
+
+	test_dtls_sendmsg_no_buf(AF_INET6);
+}
+
+static void test_dtls_sendmsg(sa_family_t family)
+{
+	int rv;
+	uint8_t buf[128 + 1] = { 0 };
+	uint8_t dummy_byte = 0;
+	static const char expected_str[] = "testtest";
+	struct iovec iov[3] = {
+		{
+			.iov_base = TEST_STR_SMALL,
+			.iov_len = sizeof(TEST_STR_SMALL) - 1,
+		},
+		{
+			.iov_base = TEST_STR_SMALL,
+			.iov_len = sizeof(TEST_STR_SMALL) - 1,
+		},
+		{},
+	};
+	struct msghdr msg = {};
+	struct test_sendmsg_data test_data = {
+		.msg = &msg,
+	};
+
+	test_prepare_dtls_connection(family);
+
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work, test_sendmsg_tx_work_handler);
+
+	/* sendmsg() with multiple fragments */
+
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 2,
+
+	test_work_reschedule(&test_data.tx_work, K_NO_WAIT);
+
+	memset(buf, 0, sizeof(buf));
+	rv = recv(s_sock, buf, sizeof(buf), 0);
+	zassert_equal(rv, sizeof(expected_str) - 1, "recv failed");
+	zassert_mem_equal(buf, expected_str, sizeof(expected_str) - 1, "invalid rx data");
+
+	test_work_wait(&test_data.tx_work);
+
+	/* sendmsg() with multiple fragments and empty fragment inbetween */
+
+	iov[1].iov_base = NULL;
+	iov[1].iov_len = 0;
+	iov[2].iov_base = TEST_STR_SMALL;
+	iov[2].iov_len = sizeof(TEST_STR_SMALL) - 1;
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 3;
+
+	test_work_reschedule(&test_data.tx_work, K_NO_WAIT);
+
+	memset(buf, 0, sizeof(buf));
+	rv = recv(s_sock, buf, sizeof(buf), 0);
+	zassert_equal(rv, sizeof(expected_str) - 1, "recv failed");
+	zassert_mem_equal(buf, expected_str, sizeof(expected_str) - 1, "invalid rx data");
+
+	test_work_wait(&test_data.tx_work);
+
+	/* sendmsg() with single fragment should still work even if larger than
+	 * intermediate buffer size
+	 */
+
+	memset(buf, 'a', sizeof(buf));
+	iov[0].iov_base = buf;
+	iov[0].iov_len = sizeof(buf);
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 1;
+
+	test_work_reschedule(&test_data.tx_work, K_NO_WAIT);
+
+	/* We reuse the buffer, so wait to make sure the message is sent. */
+	k_msleep(10);
+
+	memset(buf, 0, sizeof(buf));
+	rv = recv(s_sock, buf, sizeof(buf), 0);
+	zassert_equal(rv, sizeof(buf), "recv failed");
+	for (int i = 0; i < sizeof(buf); i++) {
+		zassert_equal(buf[i], 'a', "invalid rx data");
+	}
+
+	test_work_wait(&test_data.tx_work);
+
+	/* sendmsg() exceeding intermediate buf size */
+
+	iov[0].iov_base = buf;
+	iov[0].iov_len = sizeof(buf);
+	iov[1].iov_base = &dummy_byte;
+	iov[1].iov_len = sizeof(dummy_byte);
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 2;
+
+	rv = sendmsg(c_sock, &msg, 0);
+	zassert_equal(rv, -1, "sendmsg succeeded");
+	zassert_equal(errno, EMSGSIZE, "incorrect errno value");
+
+	test_sockets_close();
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
+}
+
 ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 {
+	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE == 0) {
+		ztest_test_skip();
+	}
+
 	test_dtls_sendmsg(AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 {
+	if (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE == 0) {
+		ztest_test_skip();
+	}
+
 	test_dtls_sendmsg(AF_INET6);
 }
 
@@ -1168,6 +1296,55 @@ ZTEST(net_socket_tls, test_send_block)
 	ret = recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_equal(ret, -1, "recv() should've failed");
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_send_on_close)
+{
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+	int ret;
+
+	test_prepare_tls_connection(AF_INET6);
+
+	test_close(new_sock);
+	new_sock = -1;
+
+	/* Small delay for packets to propagate. */
+	k_msleep(10);
+
+	/* Verify send() reports an error after connection is closed. */
+	ret = send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	zassert_equal(ret, -1, "send() should've failed");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	/* send() on closed connection marked error on a socket. */
+	ret = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "send() should've failed");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+
+	/* And in reverse order */
+
+	test_prepare_tls_connection(AF_INET6);
+
+	test_close(new_sock);
+	new_sock = -1;
+
+	/* Small delay for packets to propagate. */
+	k_msleep(10);
+
+	/* Graceful connection close should be reported first. */
+	ret = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, 0, "recv() should've reported connection close");
+
+	/* And consecutive send() should fail. */
+	ret = send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	zassert_equal(ret, -1, "send() should've failed");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
 
 	test_sockets_close();
 

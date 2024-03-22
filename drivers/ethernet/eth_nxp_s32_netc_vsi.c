@@ -37,11 +37,6 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 	struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	const struct nxp_s32_eth_msix *msix;
-#if defined(CONFIG_NET_IPV6)
-	static struct net_if_mcast_monitor mon;
-
-	net_if_mcast_mon_register(&mon, iface, nxp_s32_eth_mcast_cb);
-#endif /* CONFIG_NET_IPV6 */
 
 	/*
 	 * For VLAN, this value is only used to get the correct L2 driver.
@@ -66,9 +61,10 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 
 	for (int i = 0; i < NETC_MSIX_EVENTS_COUNT; i++) {
 		msix = &cfg->msix[i];
-		if (msix->mbox_channel.dev != NULL) {
-			if (mbox_set_enabled(&msix->mbox_channel, true)) {
-				LOG_ERR("Failed to enable MRU channel %u", msix->mbox_channel.id);
+		if (mbox_is_ready_dt(&msix->mbox_spec)) {
+			if (mbox_set_enabled_dt(&msix->mbox_spec, true)) {
+				LOG_ERR("Failed to enable MRU channel %u",
+					msix->mbox_spec.channel_id);
 			}
 		}
 	}

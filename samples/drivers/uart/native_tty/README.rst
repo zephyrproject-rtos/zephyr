@@ -12,7 +12,7 @@ UART to USB bridge dongles that are wired together, writing demo data to one
 dongle and reading it from the other."
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/drivers/uart/native-tty`.
+:zephyr_file:`samples/drivers/uart/native_tty`.
 
 You can learn more about the Native TTY UART driver in the
 :ref:`TTY UART <native_tty_uart>` section of the native_sim board

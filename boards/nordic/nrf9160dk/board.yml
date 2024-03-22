@@ -1,0 +1,14 @@
+board:
+  name: nrf9160dk
+  vendor: nordic
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'
+  - name: nrf52840
+  revision:
+    format: major.minor.patch
+    default: "0.14.0"
+    revisions:
+    - name: "0.7.0"
+    - name: "0.14.0"

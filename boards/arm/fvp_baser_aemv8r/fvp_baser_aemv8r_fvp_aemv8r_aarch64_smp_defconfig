@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable simulated CPU power management
+CONFIG_SOC_FVP_AEMV8R_SIMULATE_CPU_PM=y
+CONFIG_PM_CPU_OPS=y
+CONFIG_PM_CPU_OPS_PSCI=n
+CONFIG_ARM64_SET_VMPIDR_EL2=y
+
+CONFIG_SMP=y
+CONFIG_MP_MAX_NUM_CPUS=4
+
+CONFIG_MAX_THREAD_BYTES=3

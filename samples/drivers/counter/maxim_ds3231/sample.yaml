@@ -8,7 +8,7 @@ tests:
     platform_allow:
       - efr32mg_sltb004a
       - frdm_k64f
-      - nrf51dk_nrf51422
+      - nrf51dk/nrf51822
       - nucleo_l476rg
       - particle_xenon
     integration_platforms:

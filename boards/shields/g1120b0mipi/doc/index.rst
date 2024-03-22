@@ -55,7 +55,7 @@ example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: mimxrt595_evk_cm33
+   :board: mimxrt595_evk/mimxrt595s/cm33
    :shield: g1120b0mipi
    :goals: build
 

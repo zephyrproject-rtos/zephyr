@@ -1,0 +1,5 @@
+board:
+  name: gr716a_mini
+  vendor: gaisler
+  socs:
+  - name: gr716a

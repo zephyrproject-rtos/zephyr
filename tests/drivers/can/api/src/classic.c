@@ -476,12 +476,16 @@ ZTEST(can_classic, test_set_state_change_callback)
 }
 
 /**
- * @brief Test setting a too high bitrate.
+ * @brief Test bitrate limits.
  */
-ZTEST_USER(can_classic, test_set_bitrate_too_high)
+ZTEST_USER(can_classic, test_bitrate_limits)
 {
+	uint32_t min = 0U;
 	uint32_t max = 0U;
 	int err;
+
+	err = can_get_min_bitrate(can_dev, &min);
+	zassert_equal(err, 0, "failed to get min bitrate (err %d)", err);
 
 	err = can_get_max_bitrate(can_dev, &max);
 	if (err == -ENOSYS) {
@@ -489,16 +493,46 @@ ZTEST_USER(can_classic, test_set_bitrate_too_high)
 	}
 
 	zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
-	zassert_not_equal(max, 0, "max bitrate is 0");
+
+	zassert_true(min <= max, "min bitrate must be lower or equal to max bitrate");
+}
+
+/**
+ * @brief Test setting a too high bitrate.
+ */
+ZTEST_USER(can_classic, test_set_bitrate_too_high)
+{
+	uint32_t max = 1000000U;
+	int expected = -EINVAL;
+	int err;
+
+	err = can_get_max_bitrate(can_dev, &max);
+	if (err != -ENOSYS) {
+		zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
+		zassert_not_equal(max, 0, "max bitrate is 0");
+		expected = -ENOTSUP;
+	}
 
 	err = can_stop(can_dev);
 	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
 
 	err = can_set_bitrate(can_dev, max + 1);
-	zassert_equal(err, -ENOTSUP, "too high bitrate accepted");
+	zassert_equal(err, expected, "too high bitrate accepted");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test using an invalid sample point.
+ */
+ZTEST_USER(can_classic, test_invalid_sample_point)
+{
+	struct can_timing timing;
+	int err;
+
+	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, 1000);
+	zassert_equal(err, -EINVAL, "invalid sample point of 100.0% accepted (err %d)", err);
 }
 
 /**
@@ -513,6 +547,40 @@ ZTEST_USER(can_classic, test_set_bitrate)
 
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that the minimum timing values can be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_min)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing(can_dev, can_get_timing_min(can_dev));
+	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that the maximum timing values can be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_max)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing(can_dev, can_get_timing_max(can_dev));
+	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -853,18 +921,55 @@ ZTEST_USER(can_classic, test_send_fd_format)
 
 /**
  * @brief Test CAN controller bus recovery.
+ *
+ * It is not possible to provoke a bus off state, but verify the API call return codes.
  */
 ZTEST_USER(can_classic, test_recover)
 {
+	can_mode_t cap;
 	int err;
 
-	/* It is not possible to provoke a bus off state, but test the API call */
-	err = can_recover(can_dev, TEST_RECOVER_TIMEOUT);
-	if (err == -ENOTSUP) {
-		ztest_test_skip();
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_MANUAL_RECOVERY_MODE);
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_MANUAL_RECOVERY) != 0U) {
+		/* Check that manual recovery fails when not in manual recovery mode */
+		err = can_recover(can_dev, TEST_RECOVER_TIMEOUT);
+		zassert_equal(err, -ENOTSUP, "wrong error return code (err %d)", err);
+
+		err = can_stop(can_dev);
+		zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+		/* Enter manual recovery mode */
+		err = can_set_mode(can_dev, CAN_MODE_NORMAL | CAN_MODE_MANUAL_RECOVERY);
+		zassert_equal(err, 0, "failed to set manual recovery mode (err %d)", err);
+		zassert_equal(CAN_MODE_NORMAL | CAN_MODE_MANUAL_RECOVERY, can_get_mode(can_dev));
+
+		err = can_start(can_dev);
+		zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 	}
 
-	zassert_equal(err, 0, "failed to recover (err %d)", err);
+	err = can_recover(can_dev, TEST_RECOVER_TIMEOUT);
+
+	if ((cap & CAN_MODE_MANUAL_RECOVERY) != 0U) {
+		zassert_equal(err, 0, "failed to recover (err %d)", err);
+
+		err = can_stop(can_dev);
+		zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+		/* Restore loopback mode */
+		err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+		zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+		zassert_equal(CAN_MODE_LOOPBACK, can_get_mode(can_dev));
+
+		err = can_start(can_dev);
+		zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	} else {
+		/* Check that manual recovery fails when not supported */
+		zassert_equal(err, -ENOSYS, "wrong error return code (err %d)", err);
+	}
 }
 
 /**
@@ -1036,7 +1141,17 @@ ZTEST_USER(can_classic, test_start_while_started)
  */
 ZTEST_USER(can_classic, test_recover_while_stopped)
 {
+	can_mode_t cap;
 	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_MANUAL_RECOVERY_MODE);
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		ztest_test_skip();
+	}
 
 	err = can_stop(can_dev);
 	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);

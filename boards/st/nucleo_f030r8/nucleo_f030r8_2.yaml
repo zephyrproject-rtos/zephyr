@@ -1,0 +1,24 @@
+identifier: nucleo_f030r8@2
+name: ST Nucleo F030R8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 8
+flash: 64
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - i2c
+  - spi
+  - gpio
+  - watchdog
+  - adc
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: st

@@ -7,10 +7,10 @@ tests:
   sample.sensor.ds18b20.w1_serial:
     platform_allow:
       - nucleo_g0b1re
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
       - nucleo_g0b1re
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     harness_config:
       type: one_line
       regex:

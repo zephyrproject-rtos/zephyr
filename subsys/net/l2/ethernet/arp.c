@@ -220,20 +220,19 @@ static inline struct in_addr *if_get_addr(struct net_if *iface,
 					  struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	int i;
 
 	if (!ipv4) {
 		return NULL;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (ipv4->unicast[i].is_used &&
-		    ipv4->unicast[i].address.family == AF_INET &&
-		    ipv4->unicast[i].addr_state == NET_ADDR_PREFERRED &&
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (ipv4->unicast[i].ipv4.is_used &&
+		    ipv4->unicast[i].ipv4.address.family == AF_INET &&
+		    ipv4->unicast[i].ipv4.addr_state == NET_ADDR_PREFERRED &&
 		    (!addr ||
 		     net_ipv4_addr_cmp(addr,
-				       &ipv4->unicast[i].address.in_addr))) {
-			return &ipv4->unicast[i].address.in_addr;
+				       &ipv4->unicast[i].ipv4.address.in_addr))) {
+			return &ipv4->unicast[i].ipv4.address.in_addr;
 		}
 	}
 
@@ -417,6 +416,13 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			NET_DBG("Resending ARP %p", req);
 		}
 
+		if (!req && entry) {
+			/* Add the arp entry back to arp_free_entries, to avoid the
+			 * arp entry is leak due to ARP packet allocated failed.
+			 */
+			sys_slist_prepend(&arp_free_entries, &entry->node);
+		}
+
 		k_mutex_unlock(&arp_mutex);
 		return req;
 	}
@@ -467,7 +473,7 @@ void net_arp_update(struct net_if *iface,
 	struct net_pkt *pkt;
 
 	NET_DBG("src %s", net_sprint_ipv4_addr(src));
-
+	net_if_tx_lock(iface);
 	k_mutex_lock(&arp_mutex, K_FOREVER);
 
 	entry = arp_entry_get_pending(iface, src);
@@ -505,6 +511,7 @@ void net_arp_update(struct net_if *iface,
 		}
 
 		k_mutex_unlock(&arp_mutex);
+		net_if_tx_unlock(iface);
 		return;
 	}
 
@@ -534,15 +541,14 @@ void net_arp_update(struct net_if *iface,
 		 * the pkt are not counted twice and the packet filter
 		 * callbacks are only called once.
 		 */
-		net_if_tx_lock(iface);
 		ret = net_if_l2(iface)->send(iface, pkt);
-		net_if_tx_unlock(iface);
 		if (ret < 0) {
 			net_pkt_unref(pkt);
 		}
 	}
 
 	k_mutex_unlock(&arp_mutex);
+	net_if_tx_unlock(iface);
 }
 
 static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,

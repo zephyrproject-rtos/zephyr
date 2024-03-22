@@ -1,0 +1,12 @@
+# STMicroelectronics STM32G081xx MCU
+
+# Copyright (c) 2019 STMicroelectronics
+# Copyright (c) 2021 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G081XX
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_STM32G081XX

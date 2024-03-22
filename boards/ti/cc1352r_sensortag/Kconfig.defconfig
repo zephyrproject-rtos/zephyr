@@ -1,0 +1,12 @@
+# TI CC1352R SensorTag board
+
+# Copyright (c) 2019 Brett Witherspoon
+# Copyright (c) 2020 Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CC1352R_SENSORTAG
+
+config SPI
+	default SENSOR
+
+endif # BOARD_CC1352R_SENSORTAG

@@ -1,8 +1,0 @@
-# STM32F103RCT6 Mini board configuration
-
-# Copyright (c) 2020 WuhanStudio
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_STM32F103_MINI
-	bool "STM32F103RCT6 Mini Board"
-	depends on SOC_STM32F103XE

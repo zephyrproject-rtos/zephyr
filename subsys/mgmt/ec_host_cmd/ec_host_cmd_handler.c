@@ -292,6 +292,12 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	struct ec_host_cmd *hc = &ec_host_cmd;
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
 
+	if (hc->state != EC_HOST_CMD_STATE_PROCESSING) {
+		LOG_ERR("Unexpected state while sending");
+		return -ENOTSUP;
+	}
+	hc->state = EC_HOST_CMD_STATE_SENDING;
+
 	if (status != EC_HOST_CMD_SUCCESS) {
 		const struct ec_host_cmd_request_header *const rx_header =
 			(const struct ec_host_cmd_request_header *const)hc->rx_ctx.buf;
@@ -390,9 +396,13 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		.reserved = NULL,
 	};
 
+	__ASSERT(hc->state != EC_HOST_CMD_STATE_DISABLED, "HC backend not initialized");
+
 	while (1) {
+		hc->state = EC_HOST_CMD_STATE_RECEIVING;
 		/* Wait until RX messages is received on host interface */
 		k_sem_take(&hc->rx_ready, K_FOREVER);
+		hc->state = EC_HOST_CMD_STATE_PROCESSING;
 
 		ec_host_cmd_log_request(rx->buf);
 
@@ -484,6 +494,8 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 		LOG_ERR("No buffer for Host Command communication");
 		return -EIO;
 	}
+
+	hc->state = EC_HOST_CMD_STATE_RECEIVING;
 
 	/* Check if a backend uses provided buffers. The buffer pointers can be shifted within the
 	 * buffer to make space for preamble. Make sure the rx/tx pointers are within the provided

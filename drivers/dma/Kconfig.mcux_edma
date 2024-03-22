@@ -28,10 +28,10 @@ config DMA_TCD_QUEUE_SIZE
 
 config DMA_MCUX_TEST_SLOT_START
 	int "test slot start num"
-	depends on (SOC_SERIES_KINETIS_K6X || SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_S32K3XX)
+	depends on (SOC_SERIES_KINETIS_K6X || SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_S32K3)
 	default 58 if SOC_SERIES_KINETIS_K6X
 	default 60 if SOC_SERIES_KINETIS_KE1XF
-	default 62 if SOC_SERIES_S32K3XX
+	default 62 if SOC_SERIES_S32K3
 	help
 	  test slot start num
 

@@ -60,12 +60,12 @@ Build echo-client sample application like this:
    :goals: build
    :compact:
 
-Example building for the nrf52840dk_nrf52840 with OpenThread support:
+Example building for the nrf52840dk/nrf52840 with OpenThread support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :conf: "prj.conf overlay-ot.conf"
    :goals: run
    :compact:
@@ -75,7 +75,7 @@ Example building for the IEEE 802.15.4 RF2XX transceiver:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
-   :board: [atsamr21_xpro | sam4s_xplained | sam_v71_xult]
+   :board: [samr21_xpro | sam4s_xplained | sam_v71_xult/samv71q21]
    :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :goals: build flash
    :compact:

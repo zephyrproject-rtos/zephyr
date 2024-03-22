@@ -143,9 +143,9 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 	.set_state_change_callback = can_sja1000_set_state_change_callback,
 	.get_core_clock = can_kvaser_pci_get_core_clock,
 	.get_max_filters = can_sja1000_get_max_filters,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_sja1000_recover,
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.timing_min = CAN_SJA1000_TIMING_MIN_INITIALIZER,
 	.timing_max = CAN_SJA1000_TIMING_MAX_INITIALIZER,
 };
@@ -168,7 +168,7 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 	static const struct can_sja1000_config can_sja1000_config_##inst =                         \
 		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_kvaser_pci_config_##inst,                \
 					       can_kvaser_pci_read_reg, can_kvaser_pci_write_reg,  \
-					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR);            \
+					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR, 0);         \
                                                                                                    \
 	static struct can_kvaser_pci_data can_kvaser_pci_data_##inst;                              \
                                                                                                    \

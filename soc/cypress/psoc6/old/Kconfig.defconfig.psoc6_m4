@@ -1,0 +1,10 @@
+# Cypress PSoC6 CM4 platform configuration options
+# Copyright (c) 2018, Cypress
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CY8C6247_M4 || SOC_CY8C6347_M4
+
+config NUM_IRQS
+	default 147
+
+endif # SOC_CY8C6247_M4 || SOC_CY8C6347_M4

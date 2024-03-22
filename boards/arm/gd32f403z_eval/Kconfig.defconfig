@@ -1,9 +1,0 @@
-# Copyright (c) 2021 ATL Electronics
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_GD32F403Z_EVAL
-
-config BOARD
-	default "gd32f403z_eval"
-
-endif   # BOARD_GD32F403Z_EVAL

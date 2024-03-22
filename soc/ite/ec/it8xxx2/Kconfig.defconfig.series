@@ -1,0 +1,56 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ITE_IT8XXX2
+
+config RISCV_GP
+	default y
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096
+
+config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	default y
+	depends on UART_NS16550
+
+config FLASH_INIT_PRIORITY
+	default 0
+
+config IT8XXX2_PLL_SEQUENCE_PRIORITY
+	int
+	default 1
+	depends on SOC_IT8XXX2_PLL_FLASH_48M
+
+config VCMP_IT8XXX2_INIT_PRIORITY
+	default 91 if VCMP_IT8XXX2_WORKQUEUE
+
+config PINCTRL
+	default y
+
+config NUM_IRQS
+	default 185
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_START_VECTOR
+	default 0
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+rsource "Kconfig.defconfig.it8*"
+
+endif # SOC_SERIES_ITE_IT8XXX2

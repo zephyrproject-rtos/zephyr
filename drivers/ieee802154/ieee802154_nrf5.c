@@ -727,9 +727,8 @@ static void nrf5_irq_config(const struct device *dev)
 	ARG_UNUSED(dev);
 
 #if !IS_ENABLED(CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT)
-	IRQ_CONNECT(RADIO_IRQn, NRF_802154_IRQ_PRIORITY,
-		    nrf5_radio_irq, NULL, 0);
-	irq_enable(RADIO_IRQn);
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(radio)), NRF_802154_IRQ_PRIORITY, nrf5_radio_irq, NULL, 0);
+	irq_enable(DT_IRQN(DT_NODELABEL(radio)));
 #endif
 }
 

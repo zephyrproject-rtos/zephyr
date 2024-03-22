@@ -1,8 +1,0 @@
-# TI SimpleLink CC3235SF LaunchXL Board
-
-# Copyright (c) 2019, Texas Instruments Incorporated
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_CC3235SF_LAUNCHXL
-	bool "TI CC3235SF LAUNCHXL"
-	depends on SOC_CC3235SF

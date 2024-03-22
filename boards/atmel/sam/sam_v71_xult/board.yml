@@ -1,0 +1,6 @@
+board:
+  name: sam_v71_xult
+  vendor: atmel
+  socs:
+    - name: samv71q21
+    - name: samv71q21b

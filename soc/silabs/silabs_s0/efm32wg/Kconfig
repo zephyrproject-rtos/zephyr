@@ -1,0 +1,18 @@
+# EFM32WG (Wonder Gecko) MCU line
+
+# Copyright (c) 2017 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32WG
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select HAS_SILABS_GECKO
+	select SOC_GECKO_CMU
+	select SOC_GECKO_GPIO
+	select HAS_PM
+
+config SOC_GECKO_SDID
+	default 74 if SOC_SERIES_EFM32WG

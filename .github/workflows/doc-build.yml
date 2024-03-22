@@ -10,19 +10,6 @@ on:
     tags:
     - v*
   pull_request:
-    paths:
-    - 'doc/**'
-    - '**.rst'
-    - 'include/**'
-    - 'kernel/include/kernel_arch_interface.h'
-    - 'lib/libc/**'
-    - 'subsys/testsuite/ztest/include/**'
-    - 'tests/**'
-    - '**/Kconfig*'
-    - 'west.yml'
-    - '.github/workflows/doc-build.yml'
-    - 'scripts/dts/**'
-    - 'doc/requirements.txt'
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
@@ -33,16 +20,66 @@ env:
   DOXYGEN_VERSION: 1.9.6
 
 jobs:
+  doc-file-check:
+    name: Check for doc changes
+    runs-on: ubuntu-22.04
+    if: >
+      github.repository_owner == 'zephyrproject-rtos'
+    outputs:
+      file_check: ${{ steps.check-doc-files.outputs.any_changed }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: Check if Documentation related files changed
+      uses: tj-actions/changed-files@v42
+      id: check-doc-files
+      with:
+        files: |
+          doc/**
+          **.rst
+          include/**
+          kernel/include/kernel_arch_interface.h
+          lib/libc/**
+          subsys/testsuite/ztest/include/**
+          tests/**
+          **/Kconfig*
+          west.yml
+          scripts/dts/**
+          doc/requirements.txt
+          .github/workflows/doc-build.yml
+
   doc-build-html:
     name: "Documentation Build (HTML)"
-    if: github.repository_owner == 'zephyrproject-rtos'
-    runs-on: zephyr-runner-linux-x64-4xlarge
-    timeout-minutes: 45
+    needs: [doc-file-check]
+    if: >
+      github.repository_owner == 'zephyrproject-rtos' &&
+        ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    timeout-minutes: 90
     concurrency:
       group: doc-build-html-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
+    - name: Print cloud service information
+      run: |
+        echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+        echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+        echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+    - name: install-pkgs
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget python3-pip git ninja-build graphviz lcov
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+        sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
+        echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
     - name: checkout
       uses: actions/checkout@v4
       with:
@@ -60,14 +97,6 @@ jobs:
         git config --global user.name "Github Actions"
         git rebase origin/${BASE_REF}
         git log --graph --oneline HEAD...${PR_HEAD}
-
-    - name: install-pkgs
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build graphviz lcov
-        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
-        tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
-        echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: cache-pip
       uses: actions/cache@v4
@@ -150,12 +179,14 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
+    needs: [doc-file-check]
     if: |
       github.event_name != 'pull_request' &&
       github.repository_owner == 'zephyrproject-rtos'
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     container: texlive/texlive:latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     concurrency:
       group: doc-build-pdf-${{ github.ref }}
       cancel-in-progress: true
@@ -164,6 +195,12 @@ jobs:
     - name: Apply container owner mismatch workaround
       run: |
         git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+    - name: Print cloud service information
+      run: |
+        echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+        echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+        echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
 
     - name: checkout
       uses: actions/checkout@v4
@@ -217,3 +254,14 @@ jobs:
         path: |
           doc/_build/latex/zephyr.pdf
           doc/_build/latex/zephyr.log
+
+  doc-build-status-check:
+    if: always()
+    name: "Documentation Build Status"
+    needs:
+    - doc-build-pdf
+    - doc-file-check
+    - doc-build-html
+    uses: ./.github/workflows/ready-to-merge.yml
+    with:
+      needs_context: ${{ toJson(needs) }}

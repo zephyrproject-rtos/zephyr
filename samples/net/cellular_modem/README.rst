@@ -16,9 +16,9 @@ up the IP of test-endpoint.com.
 Notes
 *****
 
-This sample uses the devicetree alias modem to identify
+This sample uses the devicetree alias ``modem`` to identify
 the modem instance to use. The sample also presumes that
-the modem driver creates the only network interface.
+the modem driver creates the only PPP network interface.
 
 Setup
 *****

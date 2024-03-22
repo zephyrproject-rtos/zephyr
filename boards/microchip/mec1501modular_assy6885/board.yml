@@ -1,0 +1,5 @@
+board:
+  name: mec1501modular_assy6885
+  vendor: microchip
+  socs:
+    - name: mec1501_hsz

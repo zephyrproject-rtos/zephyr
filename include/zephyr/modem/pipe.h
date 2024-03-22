@@ -98,6 +98,10 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api 
  *
  * @retval 0 if pipe was successfully opened or was already open
  * @retval -errno code otherwise
+ *
+ * @warning Be cautious when using this synchronous version of the call.
+ * It may block the calling thread, which in the case of the system workqueue
+ * can result in a deadlock until this call times out waiting for the pipe to be open.
  */
 int modem_pipe_open(struct modem_pipe *pipe);
 
@@ -130,25 +134,27 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  * @brief Transmit data through pipe
  *
  * @param pipe Pipe to transmit through
- * @param buf Destination for reveived data
- * @param size Capacity of destination for recevied data
+ * @param buf Data to transmit
+ * @param size Number of bytes to transmit
  *
- * @return Number of bytes placed in pipe
+ * @retval Number of bytes placed in pipe
+ * @retval -EPERM if pipe is closed
+ * @retval -errno code on error
  *
  * @warning This call must be non-blocking
  */
 int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size);
 
 /**
- * @brief Reveive data through pipe
+ * @brief Receive data through pipe
  *
  * @param pipe Pipe to receive from
- * @param buf Destination for reveived data
- * @param size Capacity of destination for recevied data
+ * @param buf Destination for received data; must not be already in use in a modem module.
+ * @param size Capacity of destination for received data
  *
- * @return Number of bytes received from pipe if any
- * @return -EPERM if pipe is closed
- * @return -errno code on error
+ * @retval Number of bytes received from pipe
+ * @retval -EPERM if pipe is closed
+ * @retval -errno code on error
  *
  * @warning This call must be non-blocking
  */
@@ -168,6 +174,10 @@ void modem_pipe_release(struct modem_pipe *pipe);
  *
  * @retval 0 if pipe open was called closed or pipe was already closed
  * @retval -errno code otherwise
+ *
+ * @warning Be cautious when using this synchronous version of the call.
+ * It may block the calling thread, which in the case of the system workqueue
+ * can result in a deadlock until this call times out waiting for the pipe to be closed.
  */
 int modem_pipe_close(struct modem_pipe *pipe);
 

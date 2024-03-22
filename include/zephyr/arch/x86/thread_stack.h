@@ -66,7 +66,7 @@ struct z_x86_thread_stack_header {
 	char guard_page[CONFIG_MMU_PAGE_SIZE];
 #endif
 #ifdef CONFIG_USERSPACE
-	char privilege_stack[CONFIG_MMU_PAGE_SIZE];
+	char privilege_stack[CONFIG_PRIVILEGED_STACK_SIZE];
 #endif /* CONFIG_USERSPACE */
 } __packed __aligned(Z_X86_STACK_BASE_ALIGN);
 

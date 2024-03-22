@@ -507,8 +507,7 @@ static int cap_initiator_unicast_audio_configure(
 		active_proc->proc_param.initiator[i].stream = cap_stream;
 		active_proc->proc_param.initiator[i].start.ep = stream_param->ep;
 		active_proc->proc_param.initiator[i].start.conn = conn;
-		memcpy(&active_proc->proc_param.initiator[i].start.codec_cfg,
-		       stream_param->codec_cfg, sizeof(*stream_param->codec_cfg));
+		active_proc->proc_param.initiator[i].start.codec_cfg = stream_param->codec_cfg;
 	}
 
 	/* Store the information about the active procedure so that we can
@@ -519,7 +518,7 @@ static int cap_initiator_unicast_audio_configure(
 
 	proc_param = &active_proc->proc_param.initiator[0];
 	bap_stream = &proc_param->stream->bap_stream;
-	codec_cfg = &proc_param->start.codec_cfg;
+	codec_cfg = proc_param->start.codec_cfg;
 	conn = proc_param->start.conn;
 	ep = proc_param->start.ep;
 	active_proc->proc_initiated_cnt++;
@@ -603,7 +602,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		conn = proc_param->start.conn;
 		ep = proc_param->start.ep;
-		codec_cfg = &proc_param->start.codec_cfg;
+		codec_cfg = proc_param->start.codec_cfg;
 		bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
 

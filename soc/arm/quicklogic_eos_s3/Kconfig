@@ -1,5 +1,0 @@
-# Copyright (c) 2020 Antmicro <www.antmicro.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_EOS_S3
-	bool

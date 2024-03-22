@@ -1,0 +1,7 @@
+# XIAO BLE board configuration
+
+# Copyright (c) 2022 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAO_BLE
+	select SOC_NRF52840_QIAA

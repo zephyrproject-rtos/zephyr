@@ -42,14 +42,15 @@ enum {
 	ADV_FLAG_PROXY,
 	/** The proxy has been start, but maybe pending. */
 	ADV_FLAG_PROXY_START,
-	/** The send-call has been scheduled. */
-	ADV_FLAG_SCHEDULED,
 	/** The send-call has been pending. */
 	ADV_FLAG_SCHEDULE_PENDING,
 	/** Custom adv params have been set, we need to update the parameters on
 	 *  the next send.
 	 */
 	ADV_FLAG_UPDATE_PARAMS,
+
+	/** The advertiser is suspending. */
+	ADV_FLAG_SUSPENDING,
 
 	/* Number of adv flags. */
 	ADV_FLAGS_NUM
@@ -248,6 +249,11 @@ static void send_pending_adv(struct k_work *work)
 
 	ext_adv = CONTAINER_OF(work, struct bt_mesh_ext_adv, work);
 
+	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_SUSPENDING)) {
+		LOG_DBG("Advertiser is suspending");
+		return;
+	}
+
 	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_SENT)) {
 		LOG_DBG("Advertising stopped after %u ms for %s",
 			k_uptime_get_32() - ext_adv->timestamp,
@@ -267,13 +273,7 @@ static void send_pending_adv(struct k_work *work)
 
 			ext_adv->adv = NULL;
 		}
-
-		(void)schedule_send(ext_adv);
-
-		return;
 	}
-
-	atomic_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULED);
 
 	while ((adv = bt_mesh_adv_get_by_tag(ext_adv->tags, K_NO_WAIT))) {
 		/* busy == 0 means this was canceled */
@@ -290,6 +290,11 @@ static void send_pending_adv(struct k_work *work)
 		if (!err) {
 			return; /* Wait for advertising to finish */
 		}
+	}
+
+	if (ext_adv->instance == NULL) {
+		LOG_DBG("Advertiser is suspended or deleted");
+		return;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) &&
@@ -325,7 +330,7 @@ static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_ACTIVE)) {
 		atomic_set_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
 		return false;
-	} else if (atomic_test_and_set_bit(ext_adv->flags, ADV_FLAG_SCHEDULED)) {
+	} else if (k_work_is_pending(&ext_adv->work)) {
 		return false;
 	}
 
@@ -496,7 +501,12 @@ int bt_mesh_adv_disable(void)
 	struct k_work_sync sync;
 
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
-		k_work_flush(&advs[i].work, &sync);
+		atomic_set_bit(advs[i].flags, ADV_FLAG_SUSPENDING);
+
+		if (k_current_get() != &k_sys_work_q.thread ||
+		    (k_work_busy_get(&advs[i].work) & K_WORK_RUNNING) == 0) {
+			k_work_flush(&advs[i].work, &sync);
+		}
 
 		err = bt_le_ext_adv_stop(advs[i].instance);
 		if (err) {
@@ -514,7 +524,10 @@ int bt_mesh_adv_disable(void)
 			LOG_ERR("Failed to delete adv %d", err);
 			return err;
 		}
+
 		advs[i].instance = NULL;
+
+		atomic_clear_bit(advs[i].flags, ADV_FLAG_SUSPENDING);
 	}
 
 	return 0;

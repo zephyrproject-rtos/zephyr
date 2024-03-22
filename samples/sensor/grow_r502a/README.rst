@@ -42,7 +42,7 @@ build this sample app using:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/grow_r502a
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
 
 Sample Output

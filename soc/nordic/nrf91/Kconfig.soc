@@ -1,0 +1,47 @@
+# Nordic Semiconductor nRF91 MCU line
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF91X
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Enable support for NRF91 MCU series
+
+config SOC_NRF9120
+	bool
+	select SOC_SERIES_NRF91X
+
+config SOC_NRF9131_LACA
+	bool
+	select SOC_NRF9120
+
+config SOC_NRF9151_LACA
+	bool
+	select SOC_NRF9120
+
+config SOC_NRF9160
+	bool
+	select SOC_SERIES_NRF91X
+
+config SOC_NRF9160_SICA
+	bool
+	select SOC_NRF9160
+
+# The nRF9161 is technically a SiP (System-in-Package) that consists of
+# the nRF9120 SoC and additional components like PMIC, FEM, and XTAL,
+# so for nrfx/MDK the nRF9120 SoC is to be indicated as the build target,
+# but since the nRF9161 is what a user can actually see on a board, using
+# only nRF9120 in the Zephyr build infrastructure might be confusing.
+# That's why in the top level of SoC definitions (for user-configurable
+# options in Kconfig, for example) the nRF9161 term is used and nRF9120
+# underneath.
+config SOC_NRF9161_LACA
+	bool
+	select SOC_NRF9120
+
+config SOC
+	default "nrf9131" if SOC_NRF9131_LACA
+	default "nrf9151" if SOC_NRF9151_LACA
+	default "nrf9160" if SOC_NRF9160_SICA
+	default "nrf9161" if SOC_NRF9161_LACA

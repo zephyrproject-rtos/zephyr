@@ -95,8 +95,9 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	memset(bis_data, 0, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
 
 	/* Initialize default values*/
-	*codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG_16_2(loc, ctx);
-	*codec_qos = BT_AUDIO_CODEC_LC3_QOS_10_UNFRAMED(sdu, rtn, latency, pd);
+	*codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_16KHZ,
+					       BT_AUDIO_CODEC_CFG_DURATION_10, loc, 40U, 1, ctx);
+	*codec_qos = BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, sdu, rtn, latency, pd);
 	memcpy(bis_data, bis_cfg_data, sizeof(bis_cfg_data));
 
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT; i++) {

@@ -1,0 +1,22 @@
+# Blues Wireless Swan board configuration
+
+# Copyright (c) 2022 Blues Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SWAN_R5
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+if NETWORKING
+
+config USB_DEVICE_STACK
+	default y
+
+config USB_DEVICE_NETWORK_EEM
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_SWAN_R5

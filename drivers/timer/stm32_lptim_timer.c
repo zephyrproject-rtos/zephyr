@@ -238,10 +238,18 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
+	/*
+	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = y, ticks equals to -1
+	 * is treated as a lptim off ; never waking up ; lptim not clocked anymore
+	 */
 	if (ticks == K_TICKS_FOREVER) {
 		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 		return;
 	}
+	/*
+	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = n, ticks equals to INT_MAX
+	 * is treated as a maximum possible value LPTIM_MAX_TIMEBASE (16bit counter)
+	 */
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
 	err = clock_control_on(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);

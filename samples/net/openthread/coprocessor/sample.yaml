@@ -3,7 +3,7 @@ common:
   tags:
     - net
     - openthread
-  depends_on: netif
+  depends_on: openthread
   min_flash: 140
 sample:
   description: Runs the OpenThread stack as NCP BR
@@ -12,18 +12,18 @@ tests:
   sample.net.openthread.coprocessor:
     build_only: true
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf52833dk_nrf52833
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
       - tlsr9518adk80d
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
   sample.net.openthread.coprocessor.usb:
     build_only: true
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf52833dk_nrf52833
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     tags: ci_build
     extra_args:
       - OVERLAY_CONFIG=overlay-usb-nrf-br.conf
@@ -31,9 +31,9 @@ tests:
   sample.openthread.coprocessor.rcp:
     build_only: true
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf52833dk_nrf52833
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
       - tlsr9518adk80d
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     extra_args: OVERLAY_CONFIG=overlay-rcp.conf

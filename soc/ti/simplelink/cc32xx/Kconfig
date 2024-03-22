@@ -1,0 +1,25 @@
+# Texas Instruments CC32XX
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2016-2017, Texas Instruments Incorporated
+
+config SOC_SERIES_CC32XX
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select DYNAMIC_INTERRUPTS
+
+config SOC_CC3220SF
+	select HAS_CC3220SDK
+
+config SOC_CC3235SF
+	select HAS_CC3220SDK
+
+config CC3220SF_DEBUG
+	bool "Prepend debug header, disabling flash verification" if XIP
+	default XIP
+	depends on SOC_CC3220SF
+
+config CC3235SF_DEBUG
+	bool "Prepend debug header, disabling flash verification" if XIP
+	default XIP
+	depends on SOC_CC3235SF

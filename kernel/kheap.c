@@ -12,17 +12,17 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
+void k_heap_init(struct k_heap *heap, void *mem, size_t bytes)
 {
-	z_waitq_init(&h->wait_q);
-	sys_heap_init(&h->heap, mem, bytes);
+	z_waitq_init(&heap->wait_q);
+	sys_heap_init(&heap->heap, mem, bytes);
 
-	SYS_PORT_TRACING_OBJ_INIT(k_heap, h);
+	SYS_PORT_TRACING_OBJ_INIT(k_heap, heap);
 }
 
 static int statics_init(void)
 {
-	STRUCT_SECTION_FOREACH(k_heap, h) {
+	STRUCT_SECTION_FOREACH(k_heap, heap) {
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
 		/* Some heaps may not present at boot, so we need to wait for
 		 * paging mechanism to be initialized before we can initialize
@@ -37,17 +37,17 @@ static int statics_init(void)
 		 * pinned region as they have already been initialized and
 		 * possibly already in use. Otherwise initialize.
 		 */
-		if (lnkr_is_pinned((uint8_t *)h) &&
-		    lnkr_is_pinned((uint8_t *)&h->wait_q) &&
-		    lnkr_is_region_pinned((uint8_t *)h->heap.init_mem,
-					  h->heap.init_bytes)) {
+		if (lnkr_is_pinned((uint8_t *)heap) &&
+		    lnkr_is_pinned((uint8_t *)&heap->wait_q) &&
+		    lnkr_is_region_pinned((uint8_t *)heap->heap.init_mem,
+					  heap->heap.init_bytes)) {
 			do_clear = !do_clear;
 		}
 
 		if (do_clear)
 #endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 		{
-			k_heap_init(h, h->heap.init_mem, h->heap.init_bytes);
+			k_heap_init(heap, heap->heap.init_mem, heap->heap.init_bytes);
 		}
 	}
 	return 0;
@@ -62,22 +62,22 @@ SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_
 SYS_INIT_NAMED(statics_init_post, statics_init, POST_KERNEL, 0);
 #endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
-void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
+void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 			k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	void *ret = NULL;
 
-	k_spinlock_key_t key = k_spin_lock(&h->lock);
+	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, h, timeout);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
 
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	bool blocked_alloc = false;
 
 	while (ret == NULL) {
-		ret = sys_heap_aligned_alloc(&h->heap, align, bytes);
+		ret = sys_heap_aligned_alloc(&heap->heap, align, bytes);
 
 		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
 		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -87,7 +87,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 		if (!blocked_alloc) {
 			blocked_alloc = true;
 
-			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_heap, aligned_alloc, h, timeout);
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_heap, aligned_alloc, heap, timeout);
 		} else {
 			/**
 			 * @todo	Trace attempt to avoid empty trace segments
@@ -95,37 +95,37 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 		}
 
 		timeout = sys_timepoint_timeout(end);
-		(void) z_pend_curr(&h->lock, key, &h->wait_q, timeout);
-		key = k_spin_lock(&h->lock);
+		(void) z_pend_curr(&heap->lock, key, &heap->wait_q, timeout);
+		key = k_spin_lock(&heap->lock);
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, aligned_alloc, h, timeout, ret);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, aligned_alloc, heap, timeout, ret);
 
-	k_spin_unlock(&h->lock, key);
+	k_spin_unlock(&heap->lock, key);
 	return ret;
 }
 
-void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout)
+void *k_heap_alloc(struct k_heap *heap, size_t bytes, k_timeout_t timeout)
 {
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, alloc, h, timeout);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, alloc, heap, timeout);
 
-	void *ret = k_heap_aligned_alloc(h, sizeof(void *), bytes, timeout);
+	void *ret = k_heap_aligned_alloc(heap, sizeof(void *), bytes, timeout);
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, alloc, h, timeout, ret);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, alloc, heap, timeout, ret);
 
 	return ret;
 }
 
-void k_heap_free(struct k_heap *h, void *mem)
+void k_heap_free(struct k_heap *heap, void *mem)
 {
-	k_spinlock_key_t key = k_spin_lock(&h->lock);
+	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
-	sys_heap_free(&h->heap, mem);
+	sys_heap_free(&heap->heap, mem);
 
-	SYS_PORT_TRACING_OBJ_FUNC(k_heap, free, h);
-	if (IS_ENABLED(CONFIG_MULTITHREADING) && z_unpend_all(&h->wait_q) != 0) {
-		z_reschedule(&h->lock, key);
+	SYS_PORT_TRACING_OBJ_FUNC(k_heap, free, heap);
+	if (IS_ENABLED(CONFIG_MULTITHREADING) && z_unpend_all(&heap->wait_q) != 0) {
+		z_reschedule(&heap->lock, key);
 	} else {
-		k_spin_unlock(&h->lock, key);
+		k_spin_unlock(&heap->lock, key);
 	}
 }

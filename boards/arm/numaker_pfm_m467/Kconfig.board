@@ -1,9 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-#
-# Nuvoton PFM M467 board configuration
-#
-# Copyright (c) 2023 Nuvoton Technology Corporation.
-
-config BOARD_NUMAKER_PFM_M467
-	bool "NUVOTON PFM M467 Development Board"
-	depends on SOC_M467

@@ -1,0 +1,10 @@
+boards:
+  - name: efr32_radio
+    socs:
+      - name: efr32bg13p632f512gm48
+      - name: efr32mg12p433f1024gm68
+      - name: efr32mg12p432f1024gl125
+      - name: efr32fg1p133f256gm48
+      - name: efr32mg21a020f1024im32
+      - name: efr32mg24b220f1536im48
+      - name: efr32fg13p233f512gm48

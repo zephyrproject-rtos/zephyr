@@ -1,0 +1,28 @@
+# M5Stack StampS3 board configuration
+# Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_STAMPS3_ESP32S3_PROCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 65535 if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+config KERNEL_MEM_POOL
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice
+
+endif # BOARD_M5STACK_STAMPS3_ESP32S3_PROCPU
+
+if BOARD_M5STACK_STAMPS3_ESP32S3_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_M5STACK_STAMPS3_ESP32S3_APPCPU

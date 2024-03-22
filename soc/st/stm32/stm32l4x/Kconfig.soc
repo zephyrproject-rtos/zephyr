@@ -1,0 +1,111 @@
+# ST Microelectronics STM32L4 MCU line
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2016 BayLibre, SAS
+# Copyright (c) 2019 Centaur Analytics, Inc
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32L4X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32l4x" if SOC_SERIES_STM32L4X
+
+config SOC_STM32L412XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L422XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L431XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L432XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L433XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L451XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L452XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L462XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L471XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L475XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L476XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L486XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L496XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L4A6XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L4P5XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L4Q5XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L4S5XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L4R5XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC_STM32L4R9XX
+	bool
+	select SOC_SERIES_STM32L4X
+
+config SOC
+	default "stm32l412xx" if SOC_STM32L412XX
+	default "stm32l422xx" if SOC_STM32L422XX
+	default "stm32l431xx" if SOC_STM32L431XX
+	default "stm32l432xx" if SOC_STM32L432XX
+	default "stm32l433xx" if SOC_STM32L433XX
+	default "stm32l451xx" if SOC_STM32L451XX
+	default "stm32l452xx" if SOC_STM32L452XX
+	default "stm32l462xx" if SOC_STM32L462XX
+	default "stm32l471xx" if SOC_STM32L471XX
+	default "stm32l475xx" if SOC_STM32L475XX
+	default "stm32l476xx" if SOC_STM32L476XX
+	default "stm32l486xx" if SOC_STM32L486XX
+	default "stm32l496xx" if SOC_STM32L496XX
+	default "stm32l4a6xx" if SOC_STM32L4A6XX
+	default "stm32l4p5xx" if SOC_STM32L4P5XX
+	default "stm32l4q5xx" if SOC_STM32L4Q5XX
+	default "stm32l4s5xx" if SOC_STM32L4S5XX
+	default "stm32l4r5xx" if SOC_STM32L4R5XX
+	default "stm32l4r9xx" if SOC_STM32L4R9XX

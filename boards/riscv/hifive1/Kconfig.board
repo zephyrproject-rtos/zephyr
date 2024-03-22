@@ -1,5 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_HIFIVE1
-	bool "HiFive1 target"
-	depends on SOC_SIFIVE_FREEDOM_E340

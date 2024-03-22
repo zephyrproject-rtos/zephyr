@@ -62,9 +62,15 @@ config CAN_ACCEPT_RTR
 	  level.
 
 config CAN_FD_MODE
-	bool "CAN FD"
+	bool "CAN FD support"
 	help
 	  Enable CAN FD support. Not all CAN controllers support CAN FD.
+
+config CAN_MANUAL_RECOVERY_MODE
+	bool "Manual bus-off recovery support"
+	help
+	  Enable support for manual (non-automatic) recovery from bus-off state. Not all CAN
+	  controllers support manual recovery mode.
 
 config CAN_RX_TIMESTAMP
 	bool "Receiving timestamps"
@@ -72,15 +78,6 @@ config CAN_RX_TIMESTAMP
 	  This option enables a timestamp value of the CAN free running timer.
 	  The value is incremented every bit time and starts when the controller
 	  is initialized. Not all CAN controllers support timestamps.
-
-config CAN_AUTO_BUS_OFF_RECOVERY
-	bool "Automatic recovery from bus-off"
-	default y
-	help
-	  This option enables the automatic bus-off recovery according to
-	  ISO 11898-1 (recovery after 128 occurrences of 11 consecutive
-	  recessive bits). When this option is enabled, the recovery API is not
-	  available.
 
 config CAN_QEMU_IFACE_NAME
 	string "SocketCAN interface name for QEMU"

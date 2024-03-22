@@ -1,8 +1,0 @@
-# Copyright (c) 2020 Brian Bradley
-# SPDX-License-Identifier: Apache-2.0
-
-# STM32F411CE based Black Pill V2.0+ board configuration
-
-config BOARD_BLACKPILL_F411CE
-	bool "WeAct Studio Black Pill V2.0+ Board"
-	depends on SOC_STM32F411XE

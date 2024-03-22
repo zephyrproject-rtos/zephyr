@@ -1,0 +1,11 @@
+board:
+  name: nucleo_f030r8
+  vendor: st
+  revision:
+    format: number
+    default: "1"
+    revisions:
+      - name: "1"
+      - name: "2"
+  socs:
+    - name: stm32f030x8

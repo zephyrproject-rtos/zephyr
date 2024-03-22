@@ -1,0 +1,6 @@
+# EFM32GG SLTB009A board configuration
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFM32GG_SLTB009A
+	select SOC_PART_NUMBER_EFM32GG12B810F1024GM64

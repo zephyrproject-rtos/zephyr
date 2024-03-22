@@ -13,8 +13,8 @@ target_include_directories(app PRIVATE
 
 zephyr_include_directories(
   include
-  ${ZEPHYR_BASE}/soc/riscv/ite_ec/common
-  ${ZEPHYR_BASE}/soc/riscv/ite_ec/it8xxx2
+  ${ZEPHYR_BASE}/soc/ite/ec/common
+  ${ZEPHYR_BASE}/soc/ite/ec/it8xxx2
 )
 
 target_sources(app

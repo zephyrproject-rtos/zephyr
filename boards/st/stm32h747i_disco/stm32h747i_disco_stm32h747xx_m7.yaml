@@ -1,0 +1,21 @@
+identifier: stm32h747i_disco/stm32h747xx/m7
+name: ST STM32H747I Discovery (M7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 1024
+supported:
+  - arduino_gpio
+  - gpio
+  - arduino_spi
+  - spi
+  - netif:eth
+  - qspi
+  - memc
+  - usb_cdc
+  - usb_device
+vendor: st

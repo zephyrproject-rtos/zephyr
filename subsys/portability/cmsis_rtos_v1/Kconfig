@@ -6,6 +6,7 @@ config CMSIS_RTOS_V1
 	depends on THREAD_CUSTOM_DATA
 	depends on POLL
 	depends on THREAD_STACK_INFO
+	select THREAD_ABORT_HOOK
 	help
 	  This enables CMSIS RTOS v1 API support. This is an OS-integration
 	  layer which allows applications using CMSIS RTOS APIs to build on

@@ -1,0 +1,90 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Nordic Semiconductor ASA
+
+if SOC_SERIES_BSIM_NRFXX
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BUILD_OUTPUT_EXE
+	# When the IPC service is used, the net core image requires the application core image, as it needs
+	# access to its IPC buffer. Without it, the executable cannot be built.
+	default y if !(BOARD_NRF5340BSIM_NRF5340_CPUNET && IPC_SERVICE && (NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS = ""))
+
+config OUTPUT_PRINT_MEMORY_USAGE
+	default n
+
+config NATIVE_SIMULATOR_NUMBER_MCUS
+	default 2 if BOARD_NRF5340BSIM_NRF5340_CPUNET || BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	default 1
+
+config NATIVE_SIMULATOR_MCU_N
+	default 1 if BOARD_NRF5340BSIM_NRF5340_CPUNET
+	default 0
+
+config NATIVE_SIMULATOR_AUTOSTART_MCU
+	default y if BOARD_NRF5340BSIM_NRF5340_CPUNET
+
+config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
+	default 1 if SOC_SERIES_BSIM_NRF53X
+	default 0
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128 if !TICKLESS_KERNEL
+	default 32768
+
+config BT_CTLR
+	default y if BOARD_NRF52_BSIM || BOARD_NRF5340BSIM_NRF5340_CPUNET
+	depends on BT
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+	default 4096 if NRF_802154_SER_HOST && BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	default 4096 if NRF_802154_SER_RADIO && BOARD_NRF5340BSIM_NRF5340_CPUNET
+
+if BOARD_NRF5340BSIM_NRF5340_CPUAPP || BOARD_NRF5340BSIM_NRF5340_CPUNET
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP || BOARD_NRF5340BSIM_NRF5340_CPUNET
+
+if BOARD_NRF5340BSIM_NRF5340_CPUAPP
+
+config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
+	default y if IPC_SERVICE_BACKEND_RPMSG
+
+choice BT_HCI_BUS_TYPE
+	default BT_HCI_IPC
+endchoice
+
+endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP
+
+# The 15.4 driver Tx encryption is currently not functional with this
+# simulated board => we disable it by default. With this Openthread will normally
+# default to encrypt packets on its own.
+config NRF_802154_ENCRYPTION
+	default n
+
+if LOG
+
+# For this board we can log synchronously without any problem
+# Doing so will be nicer for debugging
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+
+endif # LOG
+
+if CONSOLE
+
+config POSIX_ARCH_CONSOLE
+	default y
+
+endif # CONSOLE
+
+endif # SOC_SERIES_BSIM_NRFXX

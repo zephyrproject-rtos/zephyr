@@ -1,0 +1,7 @@
+# ST25DV DISCOVERY board configuration
+
+# Copyright (c) 2024 Eve Redero
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ST25DV_MB1283_DISCO
+	select SOC_STM32F405XX

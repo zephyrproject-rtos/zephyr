@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 common:
-  platform_allow: nrf52840dk_nrf52840
+  platform_allow: nrf52840dk/nrf52840
   tags:
     - mgmt
     - mcumgr

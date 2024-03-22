@@ -163,14 +163,14 @@ process applications.
    :header: API, Supported
    :widths: 50,10
 
-    confstr(),
-    environ,
+    confstr(),yes
+    environ,yes
     errno,yes
-    getenv(),
-    setenv(),
+    getenv(),yes
+    setenv(),yes
     sysconf(),yes
     uname(),yes
-    unsetenv()
+    unsetenv(),yes
 
 .. _posix_option_group_signals:
 
@@ -379,9 +379,9 @@ _POSIX_PRIORITY_SCHEDULING
     sched_get_priority_min(),yes
     sched_getparam(),yes
     sched_getscheduler(),yes
-    sched_rr_get_interval(),yes
-    sched_setparam(),yes
-    sched_setscheduler(),yes
+    sched_rr_get_interval(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sched_setparam(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sched_setscheduler(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     sched_yield(),yes
 
 .. _posix_option_reader_writer_locks:
@@ -440,10 +440,10 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
 
     pthread_attr_getinheritsched(),
     pthread_attr_getschedpolicy(),yes
-    pthread_attr_getscope(),
+    pthread_attr_getscope(),yes
     pthread_attr_setinheritsched(),
     pthread_attr_setschedpolicy(),yes
-    pthread_attr_setscope(),
+    pthread_attr_setscope(),yes
     pthread_getschedparam(),yes
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes
@@ -503,13 +503,13 @@ _XOPEN_STREAMS
    :header: API, Supported
    :widths: 50,10
 
-    fattach(),
-    fdetach(),
-    getmsg(),
-    getpmsg(),
+    fattach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    fdetach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    getmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    getpmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     ioctl(),yes
     isastream(),
-    putmsg(),
+    putmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     putpmsg(),
 
 

@@ -1,9 +1,0 @@
-# Copyright 2021-2022 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_MIMX8MP_EVK_A53
-
-config BOARD
-	default "mimx8mp_evk_a53"
-
-endif # BOARD_MIMX8MP_EVK_A53

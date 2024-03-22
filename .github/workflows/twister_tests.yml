@@ -8,11 +8,13 @@ on:
     branches:
     - main
     - v*-branch
+    - collab-*
     paths:
     - 'scripts/pylib/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
     - '.github/workflows/twister_tests.yml'
+    - 'scripts/schemas/twister/'
   pull_request:
     branches:
     - main
@@ -22,6 +24,7 @@ on:
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
     - '.github/workflows/twister_tests.yml'
+    - 'scripts/schemas/twister/'
 
 jobs:
   twister-tests:
@@ -35,7 +38,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: cache-pip-linux

@@ -1,8 +1,0 @@
-# Atmel SMART SAM E70 Xplained Board selection
-
-# Copyright (c) 2016 Piotr Mienkowski
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SAM_E70_XPLAINED
-	bool "Atmel SMART SAM E70 Xplained Board"
-	depends on SOC_PART_NUMBER_SAME70Q21 || SOC_PART_NUMBER_SAME70Q21B

@@ -613,6 +613,81 @@ ZTEST_F(bap_base_test_suite, test_base_get_subgroup_bis_count_inval_param_null_s
 }
 
 static bool
+test_bt_bap_base_subgroup_get_bis_indexes_cb(const struct bt_bap_base_subgroup *subgroup,
+					     void *user_data)
+{
+	uint32_t bis_indexes;
+	int ret;
+
+	ret = bt_bap_base_subgroup_get_bis_indexes(subgroup, &bis_indexes);
+	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
+	zassert_not_equal(bis_indexes, 0 /* May be Bit 1 or 2 */,
+			  "Unexpected BIS index value: 0x%08X", bis_indexes);
+
+	return true;
+}
+
+ZTEST_F(bap_base_test_suite, test_bt_bap_base_subgroup_get_bis_indexes)
+{
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(&fixture->valid_base_ad);
+	uint32_t bis_indexes;
+	int ret;
+
+	zassert_not_null(base);
+
+	ret = bt_bap_base_foreach_subgroup(base, test_bt_bap_base_subgroup_get_bis_indexes_cb,
+					   NULL);
+	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
+}
+
+static bool test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_subgroup_cb(
+	const struct bt_bap_base_subgroup *subgroup, void *user_data)
+{
+	uint32_t bis_indexes;
+	int ret;
+
+	ret = bt_bap_base_subgroup_get_bis_indexes(NULL, &bis_indexes);
+	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
+
+	return true;
+}
+
+ZTEST_F(bap_base_test_suite, test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_subgroup)
+{
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(&fixture->valid_base_ad);
+	int ret;
+
+	zassert_not_null(base);
+
+	ret = bt_bap_base_foreach_subgroup(
+		base, test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_subgroup_cb, NULL);
+	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
+}
+
+static bool test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_index_cb(
+	const struct bt_bap_base_subgroup *subgroup, void *user_data)
+{
+	int ret;
+
+	ret = bt_bap_base_subgroup_get_bis_indexes(subgroup, NULL);
+	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
+
+	return true;
+}
+
+ZTEST_F(bap_base_test_suite, test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_index)
+{
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(&fixture->valid_base_ad);
+	int ret;
+
+	zassert_not_null(base);
+
+	ret = bt_bap_base_foreach_subgroup(
+		base, test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_index_cb, NULL);
+	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
+}
+
+static bool
 test_base_subgroup_foreach_bis_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 					       void *user_data)
 {

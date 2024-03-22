@@ -1,0 +1,5 @@
+board:
+  name: gd32f450v_start
+  vendor: gd
+  socs:
+    - name: gd32f450

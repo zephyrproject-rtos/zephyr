@@ -1016,6 +1016,11 @@ static void target_i2c_isr_dma(const struct device *dev,
 		target_cb->buf_write_received(data->target_cfg,
 			target_buffer->in_buffer, data->buffer_size);
 	}
+	/* Peripheral finish */
+	if (interrupt_status & IT8XXX2_I2C_P_CLR) {
+		/* Transfer done callback function */
+		target_cb->stop(data->target_cfg);
+	}
 	/* Controller to read data */
 	if (interrupt_status & IT8XXX2_I2C_IDR_CLR) {
 		uint32_t len;
@@ -1037,6 +1042,9 @@ static void target_i2c_isr_dma(const struct device *dev,
 			memcpy(target_buffer->out_buffer, rdata, len);
 		}
 	}
+
+	/* Write clear the peripheral status */
+	IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
 }
 
 static int target_i2c_isr_pio(const struct device *dev,
@@ -1088,7 +1096,9 @@ static void target_i2c_isr(const struct device *dev)
 
 	/* Any error */
 	if (target_status & E_TARGET_ANY_ERROR) {
-		goto end;
+		/* Hardware reset */
+		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
+		return;
 	}
 
 	/* Interrupt pending */
@@ -1103,26 +1113,26 @@ static void target_i2c_isr(const struct device *dev)
 				IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 				data->target_nack = 1;
 			}
+			/* Peripheral finish */
+			if (interrupt_status & IT8XXX2_I2C_P_CLR) {
+				/* Transfer done callback function */
+				target_cb->stop(data->target_cfg);
+
+				if (data->target_nack) {
+					/* Set acknowledge */
+					IT8XXX2_I2C_CTR(base) |=
+						IT8XXX2_I2C_ACK;
+					data->target_nack = 0;
+				}
+			}
+			/* Write clear the peripheral status */
+			IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
+			/* Hardware reset */
+			IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 		} else {
 			target_i2c_isr_dma(dev, interrupt_status);
 		}
-		/* Peripheral finish */
-		if (interrupt_status & IT8XXX2_I2C_P_CLR) {
-			/* Transfer done callback function */
-			target_cb->stop(data->target_cfg);
-
-			if (data->target_nack) {
-				/* Set acknowledge */
-				IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_ACK;
-				data->target_nack = 0;
-			}
-		}
-		/* Write clear the peripheral status */
-		IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
 	}
-end:
-	/* Hardware reset */
-	IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 }
 #endif
 
@@ -1258,9 +1268,9 @@ static int i2c_enhance_recover_bus(const struct device *dev)
 	int i, status;
 
 	/* Set SCL of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	/* Set SDA of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 
 	/*
 	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c

@@ -1,0 +1,40 @@
+# XMC 4xxx MCU line
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_XMC4XXX
+	bool
+	select SOC_FAMILY_INFINEON_XMC
+	help
+	  XMC 4xxx Series MCU
+
+config SOC_XMC4500
+	bool
+	select SOC_SERIES_XMC4XXX
+	help
+	 SOC_XMC4500
+
+config SOC_XMC4700
+	bool
+	select SOC_SERIES_XMC4XXX
+	help
+	  SOC_XMC4700
+
+config SOC_PART_NUMBER_F100X1024
+	bool
+
+config SOC_PART_NUMBER_F144X2048
+	bool
+
+config SOC_SERIES
+	default "xmc4xxx" if SOC_SERIES_XMC4XXX
+
+config SOC
+	default "xmc4500" if SOC_XMC4500
+	default "xmc4700" if SOC_XMC4700
+
+config SOC_PART_NUMBER
+	default "F100x1024" if SOC_PART_NUMBER_F100X1024
+	default "F144x2048" if SOC_PART_NUMBER_F144X2048

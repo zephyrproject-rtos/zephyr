@@ -52,11 +52,11 @@ To build the sample you can use following command:
    building the sample is the I2S output clock frequency configuration. For example,
    for nucleo_f411re board, we have the following file that configures the I2SPLL and
    have a dependency on HSE/HSI:
-   :zephyr_file:`boards/shields/x_nucleo_iks02a1/boards/nucleo_f411re.defconfig`
+   :zephyr_file:`boards/shields/x_nucleo_iks02a1/boards/nucleo_f411re.overlay`
 
    The user is invited to to verify which osci is configured on the used host board
    defconfig file and calculate the final I2SClk frequency, e.g.
-   :zephyr_file:`boards/arm/nucleo_f411re/nucleo_f411re.dts`
+   :zephyr_file:`boards/st/nucleo_f411re/nucleo_f411re.dts`
 
 
 Sample Output

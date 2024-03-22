@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=20
+EXECUTE_TIMEOUT=50
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
@@ -23,6 +23,6 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
-  -D=2 -sim_length=70e6 $@
+  -D=2 -sim_length=100e6 $@
 
 wait_for_background_jobs

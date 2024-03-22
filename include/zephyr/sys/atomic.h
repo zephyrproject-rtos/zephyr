@@ -15,7 +15,7 @@
 
 #include <zephyr/sys/atomic_types.h> /* IWYU pragma: export */
 #include <zephyr/types.h>
-#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

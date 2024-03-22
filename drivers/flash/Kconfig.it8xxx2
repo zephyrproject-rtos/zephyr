@@ -8,6 +8,9 @@ config SOC_FLASH_ITE_IT8XXX2
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_FLASH_CONTROLLER_ENABLED
 	select SOC_IT8XXX2_USE_ILM
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select HAS_FLASH_LOAD_OFFSET
 	help
 	  The flash driver includes support for read, write and
 	  erase flash operations. It also supports protection.

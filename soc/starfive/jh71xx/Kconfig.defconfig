@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Rajnesh Kanwal <rajnesh.kanwal49@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STARFIVE_JH71XX
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 6250000
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_GP
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config NUM_IRQS
+	default 139
+
+endif

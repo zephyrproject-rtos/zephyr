@@ -7,7 +7,7 @@ tests:
   sample.net.cloud.mqtt_azure:
     harness: net
     platform_allow:
-      - sam_e70_xplained
+      - sam_e70_xplained/same70q21
       - frdm_k64f
       - qemu_x86
     integration_platforms:

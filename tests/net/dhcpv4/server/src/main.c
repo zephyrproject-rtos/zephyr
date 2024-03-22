@@ -67,7 +67,7 @@ static void server_iface_init(struct net_if *iface)
 	test_ctx.iface = iface;
 
 	(void)net_if_ipv4_addr_add(iface, &server_addr, NET_ADDR_MANUAL, 0);
-	(void)net_if_ipv4_set_netmask(iface, &netmask);
+	(void)net_if_ipv4_set_netmask_by_addr(iface, &server_addr, &netmask);
 }
 
 static void send_icmp_echo_reply(struct net_pkt *pkt,
@@ -389,15 +389,19 @@ static void get_reserved_address(struct in_addr *reserved)
 	zassert_ok(ret, "Failed to obtain reserved address");
 }
 
-static void client_get_lease(void)
+static void client_get_lease(bool verify)
 {
 	client_send_discover();
-	verify_lease_count(1, 0, 0);
+	if (verify) {
+		verify_lease_count(1, 0, 0);
+	}
 	get_reserved_address(&test_ctx.assigned_ip);
 	test_pkt_free();
 
 	client_send_request_solicit();
-	verify_lease_count(0, 1, 0);
+	if (verify) {
+		verify_lease_count(0, 1, 0);
+	}
 	test_pkt_free();
 }
 
@@ -429,7 +433,7 @@ static void verify_no_option(struct net_pkt *pkt, uint8_t opt_type)
 }
 
 static void verify_option(struct net_pkt *pkt, uint8_t opt_type,
-			  void *optval, uint8_t optlen)
+			  const void *optval, uint8_t optlen)
 {
 	struct net_pkt_cursor cursor;
 
@@ -563,11 +567,12 @@ static void verify_offer(bool broadcast)
 			    NET_DHCPV4_MSG_TYPE_OFFER);
 	verify_option(pkt, DHCPV4_OPTIONS_SERVER_ID, server_addr.s4_addr,
 		      sizeof(struct in_addr));
+	verify_option(pkt, DHCPV4_OPTIONS_CLIENT_ID, test_ctx.client_id,
+		      strlen(test_ctx.client_id));
 	verify_option(pkt, DHCPV4_OPTIONS_SUBNET_MASK, netmask.s4_addr,
 		      sizeof(struct in_addr));
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_IPADDR);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_LIST);
-	verify_no_option(pkt, DHCPV4_OPTIONS_CLIENT_ID);
 }
 
 static void reserved_address_cb(struct net_if *iface,
@@ -750,11 +755,16 @@ static void verify_ack(bool inform, bool renew)
 			    NET_DHCPV4_MSG_TYPE_ACK);
 	verify_option(pkt, DHCPV4_OPTIONS_SERVER_ID, server_addr.s4_addr,
 		      sizeof(struct in_addr));
+	if (inform) {
+		verify_no_option(pkt, DHCPV4_OPTIONS_CLIENT_ID);
+	} else {
+		verify_option(pkt, DHCPV4_OPTIONS_CLIENT_ID, test_ctx.client_id,
+			      strlen(test_ctx.client_id));
+	}
 	verify_option(pkt, DHCPV4_OPTIONS_SUBNET_MASK, netmask.s4_addr,
 		      sizeof(struct in_addr));
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_IPADDR);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_LIST);
-	verify_no_option(pkt, DHCPV4_OPTIONS_CLIENT_ID);
 }
 
 static void allocated_address_cb(struct net_if *iface,
@@ -799,7 +809,7 @@ ZTEST(dhcpv4_server_tests, test_request)
  */
 ZTEST(dhcpv4_server_tests, test_renew)
 {
-	client_get_lease();
+	client_get_lease(true);
 
 	client_send_request_renew();
 	verify_ack(false, true);
@@ -812,7 +822,7 @@ ZTEST(dhcpv4_server_tests, test_renew)
  */
 ZTEST(dhcpv4_server_tests, test_rebind)
 {
-	client_get_lease();
+	client_get_lease(true);
 
 	client_send_request_rebind();
 	verify_ack(false, true);
@@ -824,7 +834,7 @@ ZTEST(dhcpv4_server_tests, test_rebind)
 ZTEST(dhcpv4_server_tests, test_expiry)
 {
 	test_ctx.lease_time = 1;
-	client_get_lease();
+	client_get_lease(true);
 
 	/* Add extra 10ms to avoid race. */
 	k_msleep(1000 + 10);
@@ -836,7 +846,7 @@ ZTEST(dhcpv4_server_tests, test_expiry)
  */
 ZTEST(dhcpv4_server_tests, test_release)
 {
-	client_get_lease();
+	client_get_lease(true);
 
 	client_send_release();
 	verify_lease_count(0, 0, 0);
@@ -865,16 +875,52 @@ static void verify_declined_address(struct in_addr *declined)
 }
 
 /* Verify that the DHCP server blocks the address after receiving Decline
- * message.
+ * message, and gets released after configured time.
  */
 ZTEST(dhcpv4_server_tests, test_decline)
 {
-	client_get_lease();
+	client_get_lease(true);
 	verify_lease_count(0, 1, 0);
 
 	client_send_decline();
 	verify_lease_count(0, 0, 1);
 	verify_declined_address(&test_ctx.assigned_ip);
+
+	/* Add extra 10ms to avoid race. */
+	k_msleep(1000 + 10);
+	verify_lease_count(0, 0, 0);
+}
+
+/* Verify that if all of the address leases get blocked (due to conflict), the
+ * server will try to reuse the oldest blocked entry on Discovery.
+ */
+ZTEST(dhcpv4_server_tests, test_declined_reuse)
+{
+	struct in_addr oldest_addr;
+
+	for (int i = 0; i < CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT; i++) {
+		client_get_lease(false);
+		if (i == 0) {
+			oldest_addr = test_ctx.assigned_ip;
+		}
+		client_send_decline();
+		k_msleep(10);
+	}
+
+	verify_lease_count(0, 0, 4);
+
+	client_send_discover();
+	verify_offer(false);
+	verify_lease_count(1, 0, 3);
+	test_pkt_free();
+
+	client_send_request_solicit();
+	verify_ack(false, false);
+	verify_lease_count(0, 1, 3);
+	test_pkt_free();
+
+	zassert_equal(oldest_addr.s_addr, test_ctx.assigned_ip.s_addr,
+		      "Should've reassing oldest declined address");
 }
 
 /* Verify that the DHCP server replies with ACK for a Inform message, w/o

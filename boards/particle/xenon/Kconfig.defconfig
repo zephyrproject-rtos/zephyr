@@ -1,0 +1,12 @@
+# Particle Xenon board configuration
+
+# Copyright (c) 2018 Endre Karlson
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PARTICLE_XENON
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_PARTICLE_XENON

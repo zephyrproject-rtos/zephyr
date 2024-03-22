@@ -11,8 +11,6 @@ common:
 tests:
   sample.syscall_performances:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    arch_allow:
-      - riscv32
-      - riscv64
+    arch_allow: riscv
     integration_platforms:
-      - hifive1_revb
+      - hifive1@B

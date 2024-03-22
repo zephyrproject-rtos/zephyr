@@ -1,0 +1,63 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NATIVE_SIM
+	bool
+	select POSIX_ARCH_CONSOLE
+	select NATIVE_LIBRARY
+	select NATIVE_POSIX_TIMER
+	select 64BIT if BOARD_NATIVE_SIM_NATIVE_64
+	imply BOARD_NATIVE_POSIX if NATIVE_SIM_NATIVE_POSIX_COMPAT
+	help
+	  Native simulator (Single Core)
+	  Will produce a console Linux process which can be executed natively.
+
+config BOARD_NATIVE_SIM_64
+	bool
+	select BOARD_NATIVE_SIM
+	select 64BIT
+	help
+	  Native simulator (Single Core) - 64 bit version
+	  Will produce a console Linux process which can be executed natively
+	  as a 64-bit executable.
+
+if BOARD_NATIVE_SIM
+
+comment "Native Simular (Single Core) options"
+
+config NATIVE_SIM_NATIVE_POSIX_COMPAT
+	bool "Pretend to be a native_posix board"
+	default y
+	help
+	  When this option is set the native_sim board will pretend to be
+	  a native_posix board from kconfig point of view, to allow using it directly with
+	  code which was meant for the native_posix board and checks for the macro
+	  CONFIG_BOARD_NATIVE_POSIX, or requires other kconfig options which depend on it.
+
+config NATIVE_SIM_SLOWDOWN_TO_REAL_TIME
+	bool "Slow down execution to real time"
+	default n if ARCH_POSIX_LIBFUZZER
+	default y if BT_USERCHAN || !TEST
+	help
+	  When selected the execution of the process will be slowed down to real time.
+	  (if there is a lot of load it may be slower than real time)
+	  If deselected, the process will run as fast as possible.
+	  Note that this only decouples simulated time from real/wall time. In either
+	  case the zephyr kernel and application cannot tell the difference unless they
+	  interact with some other driver/device which runs at real time.
+
+# This option definition exists only to enable NATIVE_SIM_NATIVE_POSIX_COMPAT
+config BOARD_NATIVE_POSIX
+	bool
+
+config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
+	bool "Slow down execution to real time (native_posix compat)"
+	select NATIVE_SIM_SLOWDOWN_TO_REAL_TIME
+	help
+	  Transitional option which allows applications which targeted native_posix
+	  to set the correct native_sim option (CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
+
+source "boards/native/common/sdl/Kconfig"
+source "boards/native/common/extra_args/Kconfig"
+
+endif # BOARD_NATIVE_SIM

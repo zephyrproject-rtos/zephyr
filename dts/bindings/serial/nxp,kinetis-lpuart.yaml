@@ -8,9 +8,6 @@ properties:
   reg:
     required: true
 
-  interrupts:
-    required: true
-
   nxp,loopback:
     type: boolean
     description: |

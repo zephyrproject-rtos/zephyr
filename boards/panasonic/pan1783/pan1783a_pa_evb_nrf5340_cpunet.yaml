@@ -1,0 +1,14 @@
+identifier: pan1783a_pa_evb/nrf5340/cpunet
+name: PAN1783A-PA-EVB-network-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - watchdog
+  - gpio
+vendor: panasonic

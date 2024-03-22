@@ -1,0 +1,5 @@
+# Copyright (c) 2023 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KB1200_EVB
+	select SOC_KB1200

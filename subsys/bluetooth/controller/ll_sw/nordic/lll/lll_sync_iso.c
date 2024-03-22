@@ -255,7 +255,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 					   lll->data_chan_count,
 					   &lll->data_chan_prn_s,
 					   &lll->data_chan_remap_idx);
-	lll->ctrl_chan_use = data_chan_use;
 
 	/* Initialize stream current */
 	lll->stream_curr = 0U;
@@ -876,7 +875,15 @@ isr_rx_next_subevent:
 
 	/* Set the channel to use */
 	if (!bis) {
-		data_chan_use = lll->ctrl_chan_use;
+		const uint16_t event_counter =
+				(lll->payload_count / lll->bn) - 1U;
+
+		/* Calculate the radio channel to use for ISO event */
+		data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
+						   lll->data_chan_map,
+						   lll->data_chan_count,
+						   &lll->data_chan_prn_s,
+						   &lll->data_chan_remap_idx);
 	} else if (!skipped) {
 		data_chan_use = lll->next_chan_use;
 	} else {
@@ -1004,7 +1011,7 @@ isr_rx_next_subevent:
 		 * the current subevent we are listening.
 		 */
 		hcto += (((EVENT_CLOCK_JITTER_US << 1) * nse) << 1) +
-			RANGE_DELAY_US + HCTO_START_DELAY_US;
+			RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
 	} else {
 		/* First subevent PDU was not received, hence setup radio packet
 		 * timer header complete timeout from where the first subevent

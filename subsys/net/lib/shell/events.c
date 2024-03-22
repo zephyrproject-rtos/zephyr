@@ -272,11 +272,13 @@ static const char *get_l4_desc(uint32_t event)
 /* We use a separate thread in order not to do any shell printing from
  * event handler callback (to avoid stack size issues).
  */
-static void event_mon_handler(const struct shell *sh)
+static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 {
 	char extra_info[NET_IPV6_ADDR_LEN];
 	struct event_msg msg;
 
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	net_mgmt_init_event_callback(&l2_cb, event_handler,
 				     MONITOR_L2_MASK);
 	net_mgmt_add_event_callback(&l2_cb);

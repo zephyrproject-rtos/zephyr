@@ -18,6 +18,6 @@ Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_multiple_id_prj_conf\
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=4500e6 $@
+  -D=2 -sim_length=4500e6 $@ -argschannel -at=40
 
 wait_for_background_jobs

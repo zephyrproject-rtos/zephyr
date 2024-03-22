@@ -1,0 +1,5 @@
+board:
+  name: degu_evk
+  vendor: atmarktechno
+  socs:
+  - name: nrf52840

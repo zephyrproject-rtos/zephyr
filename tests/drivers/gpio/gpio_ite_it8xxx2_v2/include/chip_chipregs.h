@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <../soc/riscv/ite_ec/common/chip_chipregs.h>
+#include <../soc/ite/ec/common/chip_chipregs.h>
 
 /*
  * Macros for emulated hardware registers access.

@@ -1,0 +1,138 @@
+/*
+ * Copyright 2022-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rd_rw612_bga-pinctrl.dtsi"
+/ {
+
+	aliases {
+		usart-0 = &flexcomm3;
+		led0 = &green_led;
+		sw0 = &sw_4;
+		i2c-0 = &flexcomm2;
+		watchdog0 = &wwdt;
+	};
+
+	chosen {
+		zephyr,sram = &sram_data;
+		zephyr,flash = &mx25u51245g;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &mx25u51245g;
+		zephyr,console = &flexcomm3;
+		zephyr,shell-uart = &flexcomm3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&hsgpio1 20 0>;
+			label = "User LED_GREEN";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		sw_4: sw_4 {
+			label = "User SW4";
+			gpios = <&hsgpio0 25 0>;
+		};
+	};
+};
+
+&wwdt {
+	status = "okay";
+};
+
+arduino_spi: &flexcomm0 {
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm0_spi>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+arduino_i2c: &flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+};
+
+&flexcomm3 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm3_usart>;
+	pinctrl-names = "default";
+};
+
+&hsgpio0 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-bufferable;
+	ahb-prefetch;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	status = "okay";
+	mx25u51245g: mx25u51245g@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		spi-max-frequency = <133000000>;
+		reg = <0>;
+		/* MX25UM51245G is 64MB, 512MBit flash part */
+		size = <DT_SIZE_M(64 * 8)>;
+		status = "okay";
+		jedec-id = [c2 25 3a];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x3e0000>;
+			};
+			slot1_partition: partition@680000 {
+				label = "image-1";
+				reg = <0x680000 0x3e0000>;
+			};
+			storage_partition: partition@a60000 {
+				label = "storage";
+				reg = <0xa60000 0x35a0000>;
+			};
+		};
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};

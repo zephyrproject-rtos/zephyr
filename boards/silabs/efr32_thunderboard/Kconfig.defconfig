@@ -1,0 +1,38 @@
+# Thunderboard-style boards
+
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CMU_HFXO_FREQ
+	default 38400000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+if BT
+
+config FPU
+	default y
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+choice BT_HCI_BUS_TYPE
+	default BT_SILABS_HCI
+endchoice
+
+endif # BT
+
+config REGULATOR
+	default y if SI7210

@@ -1,11 +1,15 @@
 common:
   depends_on: netif
   filter: CONFIG_FULL_LIBC_SUPPORTED
+  tags:
+    - net
+    - socket
+    - getaddrinfo
+    - userspace
 tests:
   net.socket.get_addr_info:
     min_ram: 21
-    tags:
-      - net
-      - socket
-      - getaddrinfo
-      - userspace
+  net.socket.get_addr_info.timeout:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_DNS_TIMEOUT=2000
+      - CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL=1000

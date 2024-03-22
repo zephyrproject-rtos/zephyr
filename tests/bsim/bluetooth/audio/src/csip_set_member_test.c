@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +76,35 @@ static void bt_ready(int err)
 	}
 }
 
+static void test_set_sirk(void)
+{
+	const uint8_t new_set_sirk[] = {0xff, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+					0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45};
+	uint8_t tmp_sirk[BT_CSIP_SET_SIRK_SIZE];
+	int err;
+
+	printk("Setting new SIRK\n");
+	err = bt_csip_set_member_set_sirk(svc_inst, new_set_sirk);
+	if (err != 0) {
+		FAIL("Failed to set SIRK: %d\n", err);
+		return;
+	}
+
+	printk("Getting new SIRK\n");
+	err = bt_csip_set_member_get_sirk(svc_inst, tmp_sirk);
+	if (err != 0) {
+		FAIL("Failed to get SIRK: %d\n", err);
+		return;
+	}
+
+	if (memcmp(new_set_sirk, tmp_sirk, BT_CSIP_SET_SIRK_SIZE) != 0) {
+		FAIL("The SIRK set and the SIRK set were different\n");
+		return;
+	}
+
+	printk("New SIRK correctly set and retrieved\n");
+}
+
 static void test_main(void)
 {
 	int err;
@@ -88,6 +117,18 @@ static void test_main(void)
 	}
 
 	WAIT_FOR_FLAG(flag_connected);
+
+	if (param.lockable) {
+		/* Waiting for lock */
+		WAIT_FOR_COND(g_locked);
+		/* Waiting for lock release */
+		WAIT_FOR_COND(!g_locked);
+		/* Waiting for lock */
+		WAIT_FOR_COND(g_locked);
+		/* Waiting for lock release */
+		WAIT_FOR_COND(!g_locked);
+	}
+
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
 	err = bt_csip_set_member_unregister(svc_inst);
@@ -134,6 +175,36 @@ static void test_csip_enc(void)
 	printk("Running %s\n", __func__);
 	sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
 	test_main();
+}
+
+static void test_new_sirk(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	backchannel_sync_send_all();
+	backchannel_sync_wait_all();
+
+	test_set_sirk();
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_csip_set_member_unregister(svc_inst);
+	if (err != 0) {
+		FAIL("Could not unregister CSIP (err %d)\n", err);
+		return;
+	}
+	svc_inst = NULL;
+
+	PASS("CSIP Set member passed: Client successfully disconnected\n");
 }
 
 static void test_args(int argc, char *argv[])
@@ -186,8 +257,14 @@ static const struct bst_test_instance test_connect[] = {
 		.test_main_f = test_csip_enc,
 		.test_args_f = test_args,
 	},
-
-	BSTEST_END_MARKER
+	{
+		.test_id = "csip_set_member_new_sirk",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_new_sirk,
+		.test_args_f = test_args,
+	},
+	BSTEST_END_MARKER,
 };
 
 struct bst_test_list *test_csip_set_member_install(struct bst_test_list *tests)

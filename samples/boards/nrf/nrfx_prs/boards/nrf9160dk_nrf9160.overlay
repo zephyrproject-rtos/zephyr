@@ -79,7 +79,7 @@
 	pinctrl-names = "default";
 };
 
-/* This node also needs to be disabled, as in the default nrf9160dk_nrf9160
+/* This node also needs to be disabled, as in the default nrf9160dk/nrf9160
  * board configuration it uses the same pin numbers that are above assigned
  * to the spi1 node (17, 18, and 19).
  */

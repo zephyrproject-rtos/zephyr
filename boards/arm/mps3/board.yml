@@ -1,0 +1,7 @@
+board:
+  name: mps3
+  vendor: arm
+  socs:
+  - name: 'an547'
+    variants:
+    - name: 'ns'

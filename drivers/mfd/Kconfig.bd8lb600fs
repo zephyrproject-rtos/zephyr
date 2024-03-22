@@ -1,0 +1,11 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX -License-Identifier: Apache-2.0
+
+config MFD_BD8LB600FS
+	bool "BD8LB600FS low side switch multi-function device driver"
+	default y
+	depends on DT_HAS_ROHM_BD8LB600FS_ENABLED
+	# using select SPI at this point introduces a cyclic dependency
+	depends on SPI
+	help
+	  Enable the Rohm BD8LB600FS low side switch multi-function device driver

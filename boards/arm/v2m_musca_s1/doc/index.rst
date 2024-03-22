@@ -95,7 +95,7 @@ See the `V2M Musca-S1 Website`_ for a complete list of V2M Musca-S1 board
 hardware features.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/v2m_musca_s1/v2m_musca_s1_defconfig``.
+:zephyr_file:`boards/arm/v2m_musca_s1/v2m_musca_s1_defconfig`.
 
 Interrupt Controller
 ====================
@@ -384,13 +384,13 @@ folder after TF-M built.
 Building the TF-M integration sample for Musca-S1
 -------------------------------------------------
 
-The TF-M integration samples can be run using the ``v2m_musca_s1_ns``
+The TF-M integration samples can be run using the ``v2m_musca_s1/musca_s1/ns``
 target. Please make sure all the requirements listed in the sample's
 description are met before building.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/tfm_integration/psa_crypto
-   :board: v2m_musca_s1_ns
+   :board: v2m_musca_s1/musca_s1/ns
    :goals: build
 
 To upload the build artifact to the board, first connect the Musca-S1 to your

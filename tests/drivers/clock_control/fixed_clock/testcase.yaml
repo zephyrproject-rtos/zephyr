@@ -4,4 +4,4 @@ tests:
       - drivers
       - clock
     platform_allow:
-      - native_sim_64
+      - native_sim/native/64

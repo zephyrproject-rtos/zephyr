@@ -4,7 +4,7 @@ sample:
   name: hello world user
 common:
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
   tags: introduction
   harness: console
   harness_config:
@@ -17,5 +17,5 @@ tests:
     arch_exclude:
       - posix
     platform_exclude:
-      - qemu_xtensa_mmu
+      - qemu_xtensa/dc233c/mmu
     tags: introduction

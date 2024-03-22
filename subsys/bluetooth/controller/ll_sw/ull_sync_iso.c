@@ -71,6 +71,8 @@ static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
 static struct ll_sync_iso_set ll_sync_iso[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 static struct lll_sync_iso_stream
 			stream_pool[CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT];
+static struct ll_iso_rx_test_mode
+			test_mode[CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT];
 static void *stream_free;
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
@@ -84,6 +86,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	struct node_rx_hdr *node_rx;
 	struct ll_sync_set *sync;
 	struct lll_sync_iso *lll;
+	int8_t last_index;
 
 	sync = ull_sync_is_enabled_get(sync_handle);
 	if (!sync || sync->iso.sync_iso) {
@@ -105,11 +108,29 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO: Check parameters */
+	/* TODO: Check remaining parameters */
+
+	/* Check BIS indices */
+	last_index = -1;
+	for (uint8_t i = 0U; i < num_bis; i++) {
+		/* Stream index must be in valid range and in ascending order */
+		if (!IN_RANGE(bis[i], 0x01, 0x1F) || (bis[i] <= last_index)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+
+		} else if (bis[i] > sync->num_bis) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+		last_index = bis[i];
+	}
+
+	/* Check if requested encryption matches */
+	if (encryption != sync->enc) {
+		return BT_HCI_ERR_ENC_MODE_NOT_ACCEPTABLE;
+	}
 
 	/* Check if free BISes available */
 	if (mem_free_count_get(stream_free) < num_bis) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	link_sync_estab = ll_rx_link_alloc();
@@ -182,6 +203,8 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		stream->big_handle = big_handle;
 		stream->bis_index = bis[i];
 		stream->dp = NULL;
+		stream->test_mode = &test_mode[i];
+		memset(stream->test_mode, 0, sizeof(struct ll_iso_rx_test_mode));
 		lll->stream_handle[i] = sync_iso_stream_handle_get(stream);
 	}
 
@@ -420,20 +443,20 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	lll->phy = BIT(bi->chm_phy[4] >> 5);
 
-	lll->num_bis = bi->num_bis;
-	lll->bn = bi->bn;
-	lll->nse = bi->nse;
-	lll->sub_interval = sys_le24_to_cpu(bi->sub_interval);
+	lll->num_bis = PDU_BIG_INFO_NUM_BIS_GET(bi);
+	lll->bn = PDU_BIG_INFO_BN_GET(bi);
+	lll->nse = PDU_BIG_INFO_NSE_GET(bi);
+	lll->sub_interval = PDU_BIG_INFO_SUB_INTERVAL_GET(bi);
 	lll->max_pdu = bi->max_pdu;
-	lll->pto = bi->pto;
+	lll->pto = PDU_BIG_INFO_PTO_GET(bi);
 	if (lll->pto) {
 		lll->ptc = lll->bn;
 	} else {
 		lll->ptc = 0U;
 	}
-	lll->bis_spacing = sys_le24_to_cpu(bi->spacing);
-	lll->irc = bi->irc;
-	lll->sdu_interval = sys_le24_to_cpu(bi->sdu_interval);
+	lll->bis_spacing = PDU_BIG_INFO_SPACING_GET(bi);
+	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
+	lll->sdu_interval = PDU_BIG_INFO_SDU_INTERVAL_GET(bi);
 
 	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
@@ -475,7 +498,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		}
 	}
 
-	lll->iso_interval = sys_le16_to_cpu(bi->iso_interval);
+	lll->iso_interval = PDU_BIG_INFO_ISO_INTERVAL_GET(bi);
 	interval_us = lll->iso_interval * PERIODIC_INT_UNIT_US;
 
 	sync_iso->timeout_reload =
@@ -488,7 +511,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 				   lll_clock_ppm_get(sca)) *
 				 interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
-	if (bi->offs_units) {
+	if (PDU_BIG_INFO_OFFS_UNITS_GET(bi)) {
 		lll->window_size_event_us = OFFS_UNIT_300_US;
 	} else {
 		lll->window_size_event_us = OFFS_UNIT_30_US;
@@ -501,7 +524,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	/* Calculate the BIG Offset in microseconds */
 	sync_iso_offset_us = ftr->radio_end_us;
-	sync_iso_offset_us += (uint32_t)sys_le16_to_cpu(bi->offs) *
+	sync_iso_offset_us += PDU_BIG_INFO_OFFS_GET(bi) *
 			      lll->window_size_event_us;
 	/* Skip to first selected BIS subevent */
 	/* FIXME: add support for interleaved packing */
@@ -627,7 +650,6 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 {
 	struct ll_sync_iso_set *sync_iso;
 	struct node_rx_sync_iso *se;
-	struct lll_sync_iso *lll;
 	struct node_rx_pdu *rx;
 
 	/* switch to normal prepare */
@@ -635,7 +657,6 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 
 	/* Get reference to ULL context */
 	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
-	lll = &sync_iso->lll;
 
 	/* Prepare BIG Sync Established */
 	rx = (void *)sync_iso->sync->iso.node_rx_estab;
@@ -776,16 +797,46 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 		  (ret == TICKER_STATUS_BUSY));
 }
 
+uint32_t ull_big_sync_delay(const struct lll_sync_iso *lll_iso)
+{
+	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
+	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
+	 */
+	return (lll_iso->num_bis - 1) * lll_iso->bis_spacing +
+		(lll_iso->nse - 1) * lll_iso->sub_interval +
+		BYTES2US(PDU_OVERHEAD_SIZE(lll_iso->phy) +
+			lll_iso->max_pdu + (lll_iso->enc ? 4 : 0),
+			lll_iso->phy);
+}
+
+static void disable(uint8_t sync_idx)
+{
+	struct ll_sync_iso_set *sync_iso;
+	int err;
+
+	sync_iso = &ll_sync_iso[sync_idx];
+
+	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_ISO_BASE +
+					sync_idx, sync_iso, &sync_iso->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+}
+
 static int init_reset(void)
 {
-	/* Add initializations common to power up initialization and HCI reset
-	 * initializations.
-	 */
+	uint8_t idx;
+
+	/* Disable all active BIGs (uses blocking ull_ticker_stop_with_mark) */
+	for (idx = 0U; idx < CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET; idx++) {
+		disable(idx);
+	}
 
 	mem_init((void *)stream_pool, sizeof(struct lll_sync_iso_stream),
 		 CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT, &stream_free);
 
-	return 0;
+	memset(&ll_sync_iso, 0, sizeof(ll_sync_iso));
+
+	/* Initialize LLL */
+	return lll_sync_iso_init();
 }
 
 static struct ll_sync_iso_set *sync_iso_get(uint8_t handle)

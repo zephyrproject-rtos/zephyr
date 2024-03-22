@@ -1,8 +1,0 @@
-# STM32U5A9J Discovery Kit board configuration
-
-# Copyright (c) 2023 STMicroelectronics
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_STM32U5A9J_DK
-	bool "STM32U5A9J Discovery Kit Development Board"
-	depends on SOC_STM32U5A9XX

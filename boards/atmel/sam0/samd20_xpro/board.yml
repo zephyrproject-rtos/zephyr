@@ -1,0 +1,5 @@
+board:
+  name: samd20_xpro
+  vendor: atmel
+  socs:
+    - name: samd20j18

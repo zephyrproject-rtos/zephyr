@@ -122,7 +122,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 			++state->optind;
 		}
 		if (state->opterr && *ostr != ':') {
-			LOG_ERR("illegal option -- %c", state->optopt);
+			LOG_DBG("illegal option -- %c", state->optopt);
 		}
 		z_getopt_global_state_update(state);
 		return BADCH;
@@ -151,7 +151,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 				return BADARG;
 			}
 			if (state->opterr) {
-				LOG_ERR("option requires an argument -- %c",
+				LOG_DBG("option requires an argument -- %c",
 					state->optopt);
 			}
 			z_getopt_global_state_update(state);

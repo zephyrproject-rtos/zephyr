@@ -18,6 +18,7 @@
 #define ZEPHYR_INCLUDE_NET_ZPERF_H_
 
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +35,7 @@ struct zperf_upload_params {
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
 	uint16_t packet_size;
+	char if_name[IFNAMSIZ];
 	struct {
 		uint8_t tos;
 		int tcp_nodelay;
@@ -44,6 +46,7 @@ struct zperf_upload_params {
 struct zperf_download_params {
 	uint16_t port;
 	struct sockaddr addr;
+	char if_name[IFNAMSIZ];
 };
 
 struct zperf_results {
@@ -51,10 +54,10 @@ struct zperf_results {
 	uint32_t nb_packets_rcvd;
 	uint32_t nb_packets_lost;
 	uint32_t nb_packets_outorder;
-	uint32_t total_len;
-	uint32_t time_in_us;
+	uint64_t total_len;
+	uint64_t time_in_us;
 	uint32_t jitter_in_us;
-	uint32_t client_time_in_us;
+	uint64_t client_time_in_us;
 	uint32_t packet_size;
 	uint32_t nb_packets_errors;
 };

@@ -1,0 +1,7 @@
+# CY8CPROTO-062-4343W PSoC™ 6 Wi-Fi BT Prototyping Kit
+
+# Copyright (c) 2021 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CPROTO_062_4343W
+	select SOC_CY8C624ABZI_S2D44

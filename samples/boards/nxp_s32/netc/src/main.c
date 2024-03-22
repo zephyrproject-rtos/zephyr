@@ -54,12 +54,14 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 		LOG_INF("IPv4 address: %s", ipv4_addr);
 
 		if (netmask && netmask[0]) {
-			if (net_addr_pton(AF_INET, netmask, &addr4)) {
+			struct in_addr nm;
+
+			if (net_addr_pton(AF_INET, netmask, &nm)) {
 				LOG_ERR("Invalid netmask: %s", netmask);
 				return -EINVAL;
 			}
 
-			net_if_ipv4_set_netmask(iface, &addr4);
+			net_if_ipv4_set_netmask_by_addr(iface, &addr4, &nm);
 		}
 	}
 

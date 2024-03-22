@@ -99,7 +99,7 @@ endif()
 
 zephyr_iterable_section(NAME bt_l2cap_fixed_chan KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
-if(CONFIG_BT_BREDR)
+if(CONFIG_BT_CLASSIC)
   zephyr_iterable_section(NAME bt_l2cap_br_fixed_chan KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
 
@@ -207,7 +207,7 @@ if (CONFIG_HTTP_SERVER)
 endif()
 
 if(CONFIG_INPUT)
-  zephyr_iterable_section(NAME input_listener KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME input_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
 
 if(CONFIG_USBD_MSC_CLASS)

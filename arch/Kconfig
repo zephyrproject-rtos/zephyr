@@ -8,8 +8,10 @@
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 
-# Note: $ARCH might be a glob pattern
-source "$(ARCH_DIR)/$(ARCH)/Kconfig"
+source "$(ARCH_DIR)/Kconfig.$(HWM_SCHEME)"
+
+# ToDo: Generate a Kconfig.arch for loading of additional arch in HWMv2.
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.arch"
 
 # Architecture symbols
 #
@@ -1018,27 +1020,6 @@ config ARCH
 	string
 	help
 	  System architecture string.
-
-config SOC
-	string
-	help
-	  SoC name which can be found under soc/<arch>/<soc name>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files for the SoC.
-
-config SOC_SERIES
-	string
-	help
-	  SoC series name which can be found under soc/<arch>/<family>/<series>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files.
-
-config SOC_FAMILY
-	string
-	help
-	  SoC family name which can be found under soc/<arch>/<family>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files.
 
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	bool

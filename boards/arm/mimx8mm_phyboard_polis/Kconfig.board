@@ -1,9 +1,0 @@
-# MIMX8MM_PHYBOARD_POLIS board configuration
-
-# Copyright (c) 2022 PHYTEC Messtechnik GmbH
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MIMX8MM_PHYBOARD_POLIS
-	bool "Phytec Phyboard Polis i.MX8M Mini"
-	depends on SOC_SERIES_IMX8MM_M4
-	select SOC_PART_NUMBER_MIMX8MM6DVTLZ

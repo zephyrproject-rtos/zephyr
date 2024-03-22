@@ -61,6 +61,11 @@ properties:
       This property is intended to only be used for regulators where
       software cannot read the state of the regulator.
 
+  regulator-boot-off:
+    type: boolean
+    description: |
+      Regulator should be disabled on boot.
+
   regulator-allow-bypass:
     type: boolean
     description: allow the regulator to go into bypass mode

@@ -75,8 +75,7 @@ static int gpio_axp192_port_clear_bits_raw(const struct device *dev, gpio_port_p
 	return gpio_axp192_port_set_masked_raw(dev, pins, 0);
 }
 
-static int gpio_axp192_configure(const struct device *dev, gpio_pin_t pin,
-					gpio_flags_t flags)
+static int gpio_axp192_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_axp192_config *config = dev->config;
 	int ret;

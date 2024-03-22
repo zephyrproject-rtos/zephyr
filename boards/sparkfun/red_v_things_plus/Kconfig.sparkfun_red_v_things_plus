@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SPARKFUN_RED_V_THINGS_PLUS
+	select SOC_SIFIVE_FREEDOM_FE310

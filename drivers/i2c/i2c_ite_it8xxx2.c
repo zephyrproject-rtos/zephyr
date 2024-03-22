@@ -1191,9 +1191,9 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 	int i, status;
 
 	/* Set SCL of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	/* Set SDA of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 
 	/*
 	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c

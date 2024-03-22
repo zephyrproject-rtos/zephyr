@@ -32,7 +32,7 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	uint8_t evt_type = evt_data[0];
 
 	switch (evt_type) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;
@@ -280,7 +280,7 @@ static int bt_esp32_ble_init(void)
 	int ret;
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
-#if defined(CONFIG_BT_BREDR) && defined(CONFIG_SOC_SERIES_ESP32)
+#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_SOC_SERIES_ESP32)
 	esp_bt_mode_t mode = ESP_BT_MODE_BTDM;
 #else
 	esp_bt_mode_t mode = ESP_BT_MODE_BLE;

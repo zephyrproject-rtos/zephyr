@@ -38,14 +38,14 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param prop Property name.
  * @param idx Property entry index.
  */
-#if defined(CONFIG_SOC_FAMILY_SAM)
+#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)				\
 	((DT_PROP_BY_IDX(node_id, prop, idx)   << SAM_PINCTRL_PINMUX_POS)	\
 	 | (DT_PROP(node_id, bias_pull_up)     << SAM_PINCTRL_PULLUP_POS)	\
 	 | (DT_PROP(node_id, bias_pull_down)   << SAM_PINCTRL_PULLDOWN_POS)	\
 	 | (DT_PROP(node_id, drive_open_drain) << SAM_PINCTRL_OPENDRAIN_POS)	\
 	),
-#else /* CONFIG_SOC_FAMILY_SAM0 */
+#else /* CONFIG_SOC_FAMILY_ATMEL_SAM0 */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)				  \
 	((DT_PROP_BY_IDX(node_id, prop, idx)     << SAM_PINCTRL_PINMUX_POS)	  \
 	 | (DT_PROP(node_id, bias_pull_up)       << SAM_PINCTRL_PULLUP_POS)	  \

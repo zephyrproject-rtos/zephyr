@@ -7,7 +7,8 @@ tests:
     min_flash: 48
     # Fix exclude when we can exclude just sim run
     platform_exclude:
-      - mps2_an385
-      - mps2_an521
+      - mps2/an385
+      - mps2/an521/cpu0
       - neorv32
+      - hifive1  # see #69350
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")

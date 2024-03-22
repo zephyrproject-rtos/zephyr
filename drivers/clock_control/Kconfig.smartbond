@@ -5,6 +5,6 @@
 
 config CLOCK_CONTROL_SMARTBOND
 	bool "Smartbond Clock Control"
-	depends on SOC_FAMILY_SMARTBOND
+	depends on SOC_FAMILY_RENESAS_SMARTBOND
 	help
 	  Enable driver for Clock Control subsystem found in SmartBond

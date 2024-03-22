@@ -1,0 +1,7 @@
+board:
+  name: xenvm
+  vendor: xen
+  socs:
+  - name: xenvm
+    variants:
+    - name: gicv3

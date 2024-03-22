@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2019, Linaro Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: 96b_meerkat96/mcimx7d/m4
+name: 96Boards Meerkat96
+type: mcu
+arch: arm
+ram: 32
+flash: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - shell
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: novtech

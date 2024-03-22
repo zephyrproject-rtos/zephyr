@@ -1,0 +1,15 @@
+# Copyright 2022 HNU-ESNL
+# Copyright 2022 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+# SMP support
+CONFIG_SMP=y
+CONFIG_MP_MAX_NUM_CPUS=4
+CONFIG_MAX_THREAD_BYTES=4
+
+# ARMv8 NS world with cache management
+CONFIG_DCACHE=y
+
+# PSCI support
+CONFIG_PM_CPU_OPS=y
+CONFIG_PM_CPU_OPS_PSCI=y

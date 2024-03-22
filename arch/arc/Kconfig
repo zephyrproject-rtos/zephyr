@@ -9,7 +9,6 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-
 config CPU_ARCEM
 	bool
 	select ATOMIC_OPERATIONS_C
@@ -380,8 +379,6 @@ config ARC_EARLY_SOC_INIT
 	  (before C runtime initialization). Setup code is called in form of
 	  soc_early_asm_init_percpu assembler macro.
 
-endmenu
-
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 
@@ -408,3 +405,5 @@ config CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 	default 2048 if 64BIT
+
+endmenu

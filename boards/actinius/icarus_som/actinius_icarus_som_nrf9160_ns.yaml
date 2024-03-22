@@ -1,0 +1,17 @@
+identifier: actinius_icarus_som/nrf9160/ns
+name: Actinius Icarus SoM Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 192
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - counter
+vendor: actinius

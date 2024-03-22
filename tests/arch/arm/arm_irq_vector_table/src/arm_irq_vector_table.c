@@ -16,7 +16,7 @@
  */
 #define _ISR_OFFSET 0
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #undef _ISR_OFFSET
 #if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 /* For the nRF51-based QEMU Cortex-M0 platform, the first set of consecutive
@@ -34,7 +34,7 @@
 /* For other nRF targets, use TIMER0-2 interrupt lines. */
 #define _ISR_OFFSET TIMER0_IRQn
 #endif
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 struct k_sem sem[3];
 
@@ -130,7 +130,7 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 
 typedef void (*vth)(void); /* Vector Table Handler */
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 /* nRF5X- and nRF91X-based platforms employ a Hardware RTC peripheral
  * to implement the Kernel system timer, instead of the ARM Cortex-M
  * SysTick. Therefore, a pointer to the timer ISR needs to be added in
@@ -184,7 +184,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0,
 	rtc_isr
 };
-#elif defined(CONFIG_SOC_SERIES_IMX_RT6XX) || defined(CONFIG_SOC_SERIES_IMX_RT5XX) && \
+#elif defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) && \
 	defined(CONFIG_MCUX_OS_TIMER)
 /* MXRT685 employs a OS Event timer to implement the Kernel system
  * timer, instead of the ARM Cortex-M SysTick. Therefore, a pointer to
@@ -197,7 +197,8 @@ vth __irq_vector_table _irq_vector_table[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	mcux_lpc_ostick_isr
 };
-#elif defined(CONFIG_SOC_SERIES_IMX_RT) && defined(CONFIG_MCUX_GPT_TIMER)
+#elif (defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)) && \
+	defined(CONFIG_MCUX_GPT_TIMER)
 /** MXRT parts employ a GPT timer peripheral to implement the Kernel system
  * timer, instead of the ARM Cortex-M Systick. Thereforce, a pointer to the
  * timer ISR need to be added in the custom vector table to handle
@@ -210,7 +211,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, mcux_imx_gpt_isr
 };
-#elif defined(CONFIG_SOC_SERIES_IMX_RT10XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT10XX)
 /* RT10xx GPT timer interrupt is at offset 100 */
 vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -219,7 +220,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, mcux_imx_gpt_isr
 };
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 /* RT11xx GPT timer interrupt is at offset 119 */
 vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -236,7 +237,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2
 };
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 /**
  * @}

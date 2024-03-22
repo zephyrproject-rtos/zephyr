@@ -2352,7 +2352,7 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = __DOXYGEN__ \
                          CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT \
                          CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN \
-                         CONFIG_BT_BREDR \
+                         CONFIG_BT_CLASSIC \
                          CONFIG_BT_EATT \
                          CONFIG_BT_L2CAP_SEG_RECV \
                          CONFIG_BT_MESH_MODEL_EXTENSIONS \

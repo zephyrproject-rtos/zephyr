@@ -1,0 +1,18 @@
+#include <nrf9160dk_uart1_on_if0_3.dtsi>
+
+/ {
+	aliases {
+		modem = &modem;
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	hw-flow-control;
+
+	modem: modem {
+		compatible = "nordic,nrf91-slm";
+		status = "okay";
+		mdm-power-gpios = <&interface_to_nrf9160 4 GPIO_ACTIVE_LOW>;
+	};
+};

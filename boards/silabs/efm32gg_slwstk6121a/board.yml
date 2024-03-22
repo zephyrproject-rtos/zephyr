@@ -1,0 +1,5 @@
+board:
+  name: efm32gg_slwstk6121a
+  vendor: silabs
+  socs:
+  - name: efm32gg11b820f2048gm64

@@ -1,0 +1,32 @@
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NSIM
+	select ARC
+
+config SOC_NSIM_EM
+	select CPU_HAS_MPU
+
+config SOC_NSIM_EM7D_V22
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+
+config SOC_NSIM_EM11D
+	select CPU_HAS_MPU
+	select CPU_HAS_DSP
+
+config SOC_NSIM_SEM
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+	select ARC_HAS_SECURE
+
+config SOC_NSIM_HS
+	select CPU_HAS_FPU
+	select CPU_HAS_MPU
+
+config SOC_NSIM_HS_SMP
+	select CPU_HAS_FPU
+
+config SOC_NSIM_HS_MPUV6
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU

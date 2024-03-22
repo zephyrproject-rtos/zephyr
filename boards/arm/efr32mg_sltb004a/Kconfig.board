@@ -1,9 +1,0 @@
-# EFR32MG SLTB004A board
-
-# Copyright (c) 2018, Diego Sueiro
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_EFR32MG_SLTB004A
-	bool "SiLabs EFR32MG-SLTB004A (Thunderboard Sense 2)"
-	depends on SOC_SERIES_EFR32MG12P
-	select SOC_PART_NUMBER_EFR32MG12P332F1024GL125

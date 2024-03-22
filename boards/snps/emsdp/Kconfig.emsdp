@@ -1,0 +1,21 @@
+# DesignWare ARC EM Software Development Platform board configuration
+
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EMSDP
+	select SOC_ARC_EMSDP
+	select SOC_EMSDP_EM4 if BOARD_EMSDP_EMSDP_EM4
+	select SOC_EMSDP_EM5D if BOARD_EMSDP_EMSDP_EM5D
+	select SOC_EMSDP_EM6 if BOARD_EMSDP_EMSDP_EM6
+	select SOC_EMSDP_EM7D if BOARD_EMSDP_EMSDP_EM7D
+	select SOC_EMSDP_EM7D_ESP if BOARD_EMSDP_EMSDP_EM7D_ESP
+	select SOC_EMSDP_EM9D if BOARD_EMSDP_EMSDP_EM9D
+	select SOC_EMSDP_EM11D if BOARD_EMSDP_EMSDP_EM11D
+	help
+	  The ARC EM Software Development Platform (emsdp) is an FPGA based
+	  development platform intended to support ARC licenses in developing
+	  their software for the ARC EM processor family and ARC EM Subsystems.
+	  It has the support for ARC EM4, EM5D, EM6, EM7D, EM9D and EM11D
+	  processors. ARC EM Enhanced Security Package (ESP) and ARC EM
+	  Subsystems (DFSS, SCSS, DSS) are also supported.

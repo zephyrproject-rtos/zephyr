@@ -304,18 +304,22 @@ static void game_ended(bool won)
 	k_work_reschedule(&refresh, K_MSEC(RESTART_THRESHOLD));
 }
 
+#if CONFIG_THREAD_MONITOR
 static void game_stack_dump(const struct k_thread *thread, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
 	log_stack_usage(thread);
 }
+#endif
 
 static void game_refresh(struct k_work *work)
 {
 	if (sound_state != SOUND_IDLE) {
 		sound_set(SOUND_IDLE);
+#if CONFIG_THREAD_MONITOR
 		k_thread_foreach(game_stack_dump, NULL);
+#endif
 	}
 
 	if (pg_state == INIT) {

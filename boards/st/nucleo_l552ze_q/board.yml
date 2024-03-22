@@ -1,0 +1,7 @@
+board:
+  name: nucleo_l552ze_q
+  vendor: st
+  socs:
+    - name: stm32l552xx
+      variants:
+        - name: ns

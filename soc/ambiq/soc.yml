@@ -1,0 +1,7 @@
+family:
+- name: ambiq
+  series:
+  - name: apollo4x
+    socs:
+    - name: apollo4p
+    - name: apollo4p_blue

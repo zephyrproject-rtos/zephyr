@@ -323,6 +323,9 @@ static int mcp23xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 			/* can't happen */
 			ret = -ENOTSUP;
 			goto done;
+		default:
+			ret = -EINVAL;
+			goto done;
 		}
 		break;
 
@@ -343,6 +346,9 @@ static int mcp23xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 			drv_data->rising_edge_ints |= BIT(pin);
 			drv_data->falling_edge_ints |= BIT(pin);
 			break;
+		default:
+			ret = -EINVAL;
+			goto done;
 		}
 		break;
 	}

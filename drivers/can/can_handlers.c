@@ -45,6 +45,16 @@ static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 }
 #include <syscalls/can_get_core_clock_mrsh.c>
 
+static inline int z_vrfy_can_get_min_bitrate(const struct device *dev,
+					     uint32_t *min_bitrate)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(min_bitrate, sizeof(*min_bitrate)));
+
+	return z_impl_can_get_min_bitrate(dev, min_bitrate);
+}
+#include <syscalls/can_get_min_bitrate_mrsh.c>
+
 static inline int z_vrfy_can_get_max_bitrate(const struct device *dev,
 					     uint32_t *max_bitrate)
 {
@@ -249,15 +259,16 @@ static inline int z_vrfy_can_get_state(const struct device *dev, enum can_state 
 }
 #include <syscalls/can_get_state_mrsh.c>
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static inline int z_vrfy_can_recover(const struct device *dev, k_timeout_t timeout)
 {
-	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, recover));
+	/* Optional API function */
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
 	return z_impl_can_recover(dev, timeout);
 }
 #include <syscalls/can_recover_mrsh.c>
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 #ifdef CONFIG_CAN_STATS
 

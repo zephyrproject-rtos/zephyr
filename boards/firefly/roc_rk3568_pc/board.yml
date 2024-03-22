@@ -1,0 +1,7 @@
+board:
+  name: roc_rk3568_pc
+  vendor: firefly
+  socs:
+  - name: rk3568
+    variants:
+    - name: smp

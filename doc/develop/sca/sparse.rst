@@ -23,4 +23,4 @@ called with a ``-DZEPHYR_SCA_VARIANT=sparse`` parameter, e.g.
 
 .. code-block:: shell
 
-    west build -d hello -b intel_adsp_cavs25 zephyr/samples/hello_world -- -DZEPHYR_SCA_VARIANT=sparse
+    west build -d hello -b intel_adsp/cavs25 zephyr/samples/hello_world -- -DZEPHYR_SCA_VARIANT=sparse

@@ -8,4 +8,4 @@ sample:
   name: VLAN sample app
 tests:
   sample.net.vlan:
-    depends_on: netif
+    depends_on: eth

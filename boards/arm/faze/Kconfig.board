@@ -1,9 +1,0 @@
-# Seagate FireCuda Gaming SSD (FaZe) board
-
-# Copyright (c) 2020, Seagate Technology LLC
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_FAZE
-	bool "Seagate FireCuda Gaming SSD (FaZe)"
-	depends on SOC_SERIES_LPC11U6X
-	select SOC_PART_NUMBER_LPC11U67JBD48

@@ -4,9 +4,9 @@ tests:
   sample.bluetooth.central_otc:
     harness: bluetooth
     platform_allow:
-      - nrf21540dk_nrf52840
-      - nrf52840dk_nrf52840
-      - nrf52833dk_nrf52833
+      - nrf21540dk/nrf52840
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
     tags: bluetooth
     integration_platforms:
-      - nrf21540dk_nrf52840
+      - nrf21540dk/nrf52840

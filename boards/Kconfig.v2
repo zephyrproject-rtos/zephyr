@@ -1,0 +1,28 @@
+# Copyright (c) 2022-2024 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+BOARD_STRING := $(normalize_upper,$(BOARD))
+BOARD_TARGET_STRING := $(normalize_upper,$(BOARD)$(BOARD_QUALIFIERS))
+BOARD_QUALIFIERS_NO_SEPARATOR := $(substring,$(BOARD_QUALIFIERS),1)
+
+config BOARD_$(BOARD_STRING)
+	def_bool y
+	help
+	  Kconfig symbol identifying the board.
+
+config BOARD_$(BOARD_TARGET_STRING)
+	def_bool y
+	help
+	  Kconfig symbol identifying the board target.
+
+config BOARD_QUALIFIERS
+	string
+	default "$(BOARD_QUALIFIERS_NO_SEPARATOR)"
+	help
+	  Contains the qualifiers of the board being used without the name of the board itself.
+
+	  For example, if building for ``nrf5340dk/nrf5340/cpuapp`` then this will contain the
+	  value ``nrf5340/cpuapp``.
+
+osource "$(BOARD_DIR)/Kconfig.$(BOARD)"

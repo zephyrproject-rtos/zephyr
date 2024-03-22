@@ -120,7 +120,7 @@ config BT_MAX_CONN
 
 config BT_CONN_TX
 	bool
-	default BT_CONN || BT_ISO_BROADCASTER
+	default BT_CONN || BT_ISO_TX
 	help
 	  Hidden configuration that is true if ACL or broadcast ISO is enabled
 

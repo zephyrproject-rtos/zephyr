@@ -1,0 +1,13 @@
+# Nordic Semiconductor nRF51 MCU line
+
+# Copyright (c) 2016 Linaro Limited
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF51X
+	select ARM
+	select CPU_CORTEX_M0
+	imply XIP
+	select HAS_NRFX
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_POWEROFF

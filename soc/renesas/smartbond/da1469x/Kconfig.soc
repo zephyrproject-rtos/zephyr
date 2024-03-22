@@ -1,0 +1,27 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_DA1469X
+	bool
+	select SOC_FAMILY_RENESAS_SMARTBOND
+	help
+	  Renesas SmartBond(tm) DA1469x series MCU
+
+config SOC_DA14695
+	bool
+	select SOC_SERIES_DA1469X
+	help
+	  DA14695
+
+config SOC_DA14699
+	bool
+	select SOC_SERIES_DA1469X
+	help
+	  DA14699
+
+config SOC_SERIES
+	default "da1469x" if SOC_SERIES_DA1469X
+
+config SOC
+	default "da14695" if SOC_DA14695
+	default "da14699" if SOC_DA14699

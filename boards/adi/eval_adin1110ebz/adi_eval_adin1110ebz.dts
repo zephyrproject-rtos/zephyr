@@ -1,0 +1,328 @@
+/*
+ * Copyright (c) 2024 BayLibre
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/l4/stm32l4s5Xi.dtsi>
+#include <st/l4/stm32l4s5qiix-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
+
+/ {
+	model = "Analog Devices Inc. EVAL-ADIN1110EBZ board";
+	compatible = "adi,eval-adin1110ebz";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &mx25r6435f;
+	};
+
+	ram0: psram@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0x60000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "RAM0";
+	};
+
+	leds { /* Respecting pcb silkscreen naming */
+		compatible = "gpio-leds";
+		green_led: led_uC0 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "Status uC0";
+		};
+		red_led: led_uC1 {
+			gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+			label = "Status uC1 ";
+		};
+		yellow_led: led_uC2 {
+			gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+			label = "Status uC2";
+		};
+		blue_led: led_uC3 {
+			gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+			label = "Status uC3";
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		watchdog0 = &iwdg;
+		spi-flash0 = &mx25r6435f;
+	};
+
+	soc {
+		fmc: memory-controller@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = <0xa0000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
+
+			sram {
+				compatible = "st,stm32-fmc-nor-psram";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <40>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(432)>;
+		};
+		slot1_partition: partition@8c000 {
+			label = "image-1";
+			reg = <0x0008C000 DT_SIZE_K(432)>;
+		};
+		scratch_partition: partition@f8000 {
+			label = "image-scratch";
+			reg = <0x000F8000 DT_SIZE_K(16)>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&usart1 { /* USB FT232 */
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart4 { /* ARDUINO P405 1 & 2 */
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	adt7420@48 {
+		compatible = "adi,adt7420";
+		reg = <0x48>;
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	dmas = <&dmamux1 2 13 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC |
+		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>,
+		       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
+		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>;
+		dma-names = "tx", "rx";
+	status = "okay";
+
+	adin1110: adin1110@0 {
+		compatible = "adi,adin1110";
+		reg = <0x0>;
+		spi-max-frequency = <25000000>;
+		int-gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
+		spi-oa;
+		spi-oa-protection;
+
+		port1 {
+			local-mac-address = [ 00 E0 22 FE DA C8 ];
+		};
+		mdio {
+			compatible = "adi,adin2111-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-phy@1 {
+				reg = <0x1>;
+				compatible = "adi,adin2111-phy";
+			};
+		};
+	};
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-names = "default";
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
+		     &usb_otg_fs_id_pa10>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pa3 &octospim_p1_ncs_pa4
+		     &octospim_p1_io0_pb1 &octospim_p1_io1_pb0
+		     &octospim_p1_io2_pa7 &octospim_p1_io3_pa6>;
+	pinctrl-names = "default";
+	dmas = <&dma1 0 40 0x480>; /* request 40 for OCTOSPI1 */
+	dma-names = "tx_rx";
+
+	status = "okay";
+
+	mx25r6435f: ospi-nor-flash@90000000 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Megabits */
+		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
+		spi-bus-width = <OSPI_QUAD_MODE>;
+		data-rate = <OSPI_STR_TRANSFER>;
+		writeoc="PP_1_4_4";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			store_partition: partition@0 {
+				label = "store";
+				reg = <0x00000000 DT_SIZE_M(8)>;
+			};
+		};
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
+		     &fmc_nce_pd7 &fmc_nwe_pd5 &fmc_noe_pd4
+		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3
+		     &fmc_a4_pf4 &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13
+		     &fmc_a8_pf14 &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1
+		     &fmc_a12_pg2 &fmc_a13_pg3 &fmc_a14_pg4 &fmc_a15_pg5
+		     &fmc_a16_pd11 &fmc_a17_pd12 &fmc_a18_pd13 &fmc_a19_pe3
+		     &fmc_a20_pe4 &fmc_a21_pe5
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
+		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
+
+	sram {
+		bank@0 {
+			reg = <0x0>;
+			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
+				      STM32_FMC_MEMORY_TYPE_SRAM
+				      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
+				      STM32_FMC_BURST_ACCESS_MODE_DISABLE
+				      STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
+				      STM32_FMC_WAIT_TIMING_BEFORE_WS
+				      STM32_FMC_WRITE_OPERATION_ENABLE
+				      STM32_FMC_WAIT_SIGNAL_DISABLE
+				      STM32_FMC_EXTENDED_MODE_DISABLE
+				      STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
+				      STM32_FMC_WRITE_BURST_DISABLE
+				      STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
+				      STM32_FMC_WRITE_FIFO_DISABLE
+				      STM32_FMC_PAGE_SIZE_NONE>;
+			st,timing = <4 2 3 0 16 17 STM32_FMC_ACCESS_MODE_A>;
+		};
+	};
+};

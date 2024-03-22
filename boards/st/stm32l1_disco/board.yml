@@ -1,0 +1,5 @@
+board:
+  name: stm32l1_disco
+  vendor: st
+  socs:
+    - name: stm32l151xb

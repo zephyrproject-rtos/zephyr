@@ -1,7 +1,0 @@
-# Copyright 2023 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_UCANS32K1SIC
-	bool "ucans32k1sic"
-	depends on SOC_SERIES_S32K1XX
-	select SOC_PART_NUMBER_FS32K146UAT0VLHT

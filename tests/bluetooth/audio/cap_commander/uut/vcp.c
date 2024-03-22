@@ -43,6 +43,24 @@ int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 	return 0;
 }
 
+int bt_vcp_vol_ctlr_mute(struct bt_vcp_vol_ctlr *vol_ctlr)
+{
+	if (vcp_cb != NULL && vcp_cb->mute != NULL) {
+		vcp_cb->mute(vol_ctlr, 0);
+	}
+
+	return 0;
+}
+
+int bt_vcp_vol_ctlr_unmute(struct bt_vcp_vol_ctlr *vol_ctlr)
+{
+	if (vcp_cb != NULL && vcp_cb->unmute != NULL) {
+		vcp_cb->unmute(vol_ctlr, 0);
+	}
+
+	return 0;
+}
+
 int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **vol_ctlr)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(vol_ctlrs); i++) {

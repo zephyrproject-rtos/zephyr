@@ -1,4 +1,0 @@
-# Copyright (c) 2023 EPAM Systems
-# SPDX-License-Identifier: Apache-2.0
-
-source "soc/arm64/renesas_rcar/*/Kconfig.defconfig.series"

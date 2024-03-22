@@ -1,7 +1,0 @@
-# Copyright (c) 2020 DENX Software Engineering GmbH
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_IP_K66F
-	bool "Segger IP-K66F"
-	depends on SOC_SERIES_KINETIS_K6X
-	select SOC_PART_NUMBER_MK66FN2M0VMD18

@@ -1,0 +1,64 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: PMW3610 Low Power Laser Mouse Sensor
+
+compatible: "pixart,pmw3610"
+
+include: spi-device.yaml
+
+properties:
+  motion-gpios:
+    type: phandle-array
+    required: true
+    description:
+      GPIO connected to the motion pin, active low.
+
+  reset-gpios:
+    type: phandle-array
+    description:
+      GPIO connected to the reset pin, active low.
+
+  zephyr,axis-x:
+    type: int
+    required: true
+    description: |
+      The input code for the X axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device X axis if unspecified.
+
+  zephyr,axis-y:
+    type: int
+    required: true
+    description: |
+      The input code for the Y axis to report for the device, typically any of
+      INPUT_REL_*. No report produced for the device Y axis if unspecified.
+
+  res-cpi:
+    type: int
+    description: |
+      CPI resolution for the sensor, range from 200 to 3200, rounded down to
+      the closest supported value in increments of 200. This can also be
+      changed in runtime using the pmw3610_set_resolution() API.
+
+  invert-x:
+    type: boolean
+    description: |
+      Invert X axis values.
+
+  invert-y:
+    type: boolean
+    description: |
+      Invert Y axis values.
+
+  force-awake:
+    type: boolean
+    description: |
+      Initialize the sensor in "force awake" mode. This can also be enabled or
+      disabled in runtime by the application using the pmw3610_force_awake()
+      API.
+
+  smart-mode:
+    type: boolean
+    description: |
+      Enable the "smart mode" algorithm as described in the device datasheet.
+      This should improve sensor tracking across a wider range of surfaces.

@@ -8,11 +8,11 @@ common:
 tests:
   benchmark.kernel.application:
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
   benchmark.kernel.application.objcore.stats:
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     extra_configs:
       - CONFIG_OBJ_CORE=y
@@ -34,7 +34,7 @@ tests:
       - CONFIG_OBJ_CORE_STATS=y
   benchmark.kernel.application.timeslicing:
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     extra_configs:
       - CONFIG_TIMESLICING=y
@@ -42,7 +42,7 @@ tests:
     extra_args: CONF_FILE=prj_user.conf
     filter: CONFIG_ARCH_HAS_USERSPACE
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_x86
     extra_configs:
       - CONFIG_TIMESLICING=y

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ENE_KB1200
+	bool "ENE KB1200 GPIO Driver"
+	default y
+	depends on DT_HAS_ENE_KB1200_GPIO_ENABLED
+	help
+	  Enable support for the kb1200 GPIO controllers.

@@ -1,6 +1,0 @@
-# Copyright (c) 2022 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_WE_PROTEUS3EV_NRF52840
-	bool "we_proteus3ev_nrf52840"
-	depends on SOC_NRF52840_QIAA

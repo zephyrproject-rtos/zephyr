@@ -5,8 +5,8 @@ tests:
     harness: bluetooth
     platform_allow:
       - bbc_microbit
-      - nrf51dk_nrf51422
-      - nrf52dk_nrf52832
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
       - qemu_cortex_m3
       - qemu_x86
     tags: bluetooth

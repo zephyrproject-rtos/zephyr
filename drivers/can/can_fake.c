@@ -8,6 +8,7 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/can_fake.h>
 #include <zephyr/fff.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>
@@ -60,7 +61,8 @@ static int fake_can_get_core_clock_delegate(const struct device *dev, uint32_t *
 {
 	ARG_UNUSED(dev);
 
-	*rate = 16000000;
+	/* Recommended CAN clock from from CiA 601-3 */
+	*rate = MHZ(80);
 
 	return 0;
 }
@@ -103,48 +105,50 @@ static const struct can_driver_api fake_can_driver_api = {
 	.add_rx_filter = fake_can_add_rx_filter,
 	.remove_rx_filter = fake_can_remove_rx_filter,
 	.get_state = fake_can_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = fake_can_recover,
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.set_state_change_callback = fake_can_set_state_change_callback,
 	.get_core_clock = fake_can_get_core_clock,
 	.get_max_filters = fake_can_get_max_filters,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 2,
+		.phase_seg2 = 2,
+		.prescaler = 1
 	},
 	.timing_max = {
-		.sjw = 0x0f,
-		.prop_seg = 0x0f,
-		.phase_seg1 = 0x0f,
-		.phase_seg2 = 0x0f,
-		.prescaler = 0xffff
+		.sjw = 128,
+		.prop_seg = 0,
+		.phase_seg1 = 256,
+		.phase_seg2 = 128,
+		.prescaler = 32
 	},
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = fake_can_set_timing_data,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 1,
+		.phase_seg2 = 1,
+		.prescaler = 1
 	},
 	.timing_data_max = {
-		.sjw = 0x0f,
-		.prop_seg = 0x0f,
-		.phase_seg1 = 0x0f,
-		.phase_seg2 = 0x0f,
-		.prescaler = 0xffff
+		.sjw = 16,
+		.prop_seg = 0,
+		.phase_seg1 = 32,
+		.phase_seg2 = 16,
+		.prescaler = 32
 	},
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
 #define FAKE_CAN_INIT(inst)						     \
 	static const struct fake_can_config fake_can_config_##inst = {	     \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0U),	     \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),	     \
 	};								     \
 									     \
 	static struct fake_can_data fake_can_data_##inst;		     \

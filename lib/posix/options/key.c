@@ -52,19 +52,19 @@ static pthread_key_obj *get_posix_key(pthread_key_t key)
 
 	/* if the provided cond does not claim to be initialized, its invalid */
 	if (!is_pthread_obj_initialized(key)) {
-		LOG_ERR("Key is uninitialized (%x)", key);
+		LOG_DBG("Key is uninitialized (%x)", key);
 		return NULL;
 	}
 
 	/* Mask off the MSB to get the actual bit index */
 	if (sys_bitarray_test_bit(&posix_key_bitarray, bit, &actually_initialized) < 0) {
-		LOG_ERR("Key is invalid (%x)", key);
+		LOG_DBG("Key is invalid (%x)", key);
 		return NULL;
 	}
 
 	if (actually_initialized == 0) {
 		/* The cond claims to be initialized but is actually not */
-		LOG_ERR("Key claims to be initialized (%x)", key);
+		LOG_DBG("Key claims to be initialized (%x)", key);
 		return NULL;
 	}
 
@@ -218,7 +218,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 		key_data = k_malloc(sizeof(struct pthread_key_data));
 
 		if (key_data == NULL) {
-			LOG_ERR("Failed to allocate key data for key %x", key);
+			LOG_DBG("Failed to allocate key data for key %x", key);
 			retval = ENOMEM;
 			goto out;
 		}

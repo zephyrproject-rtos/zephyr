@@ -1,0 +1,10 @@
+# Copyright (c) 2020-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if DAI_INTEL_SSP
+
+config DAI_SSP_HAS_POWER_CONTROL
+	def_bool y
+
+endif

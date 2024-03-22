@@ -341,6 +341,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		struct z_stack_data *stack_data = (struct z_stack_data *)
 			((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
 		stack_data->priv = (uint8_t *)dyn->data;
+		stack_data->size = adjusted_size;
 		dyn->kobj.data.stack_data = stack_data;
 #if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
 		dyn->kobj.name = (void *)ROUND_UP(
@@ -351,6 +352,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 #endif
 #else
 		dyn->kobj.name = dyn->data;
+		dyn->kobj.data.stack_size = adjusted_size;
 #endif
 	} else {
 		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
@@ -551,7 +553,7 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 
 	/* This object has no more references. Some objects may have
 	 * dynamically allocated resources, require cleanup, or need to be
-	 * marked as uninitailized when all references are gone. What
+	 * marked as uninitialized when all references are gone. What
 	 * specifically needs to happen depends on the object type.
 	 */
 	switch (ko->type) {

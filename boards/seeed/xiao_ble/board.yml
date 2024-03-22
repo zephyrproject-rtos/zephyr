@@ -1,0 +1,7 @@
+board:
+  name: xiao_ble
+  vendor: seeed
+  socs:
+  - name: nrf52840
+    variants:
+    - name: 'sense'

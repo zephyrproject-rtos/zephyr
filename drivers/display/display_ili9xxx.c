@@ -142,20 +142,6 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-static int ili9xxx_read(const struct device *dev, const uint16_t x,
-			const uint16_t y,
-			const struct display_buffer_descriptor *desc, void *buf)
-{
-	LOG_ERR("Reading not supported");
-	return -ENOTSUP;
-}
-
-static void *ili9xxx_get_framebuffer(const struct device *dev)
-{
-	LOG_ERR("Direct framebuffer access not supported");
-	return NULL;
-}
-
 static int ili9xxx_display_blanking_off(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking off");
@@ -166,20 +152,6 @@ static int ili9xxx_display_blanking_on(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking on");
 	return ili9xxx_transmit(dev, ILI9XXX_DISPOFF, NULL, 0);
-}
-
-static int ili9xxx_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	LOG_ERR("Set brightness not implemented");
-	return -ENOTSUP;
-}
-
-static int ili9xxx_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	LOG_ERR("Set contrast not supported");
-	return -ENOTSUP;
 }
 
 static int
@@ -372,10 +344,6 @@ static const struct display_driver_api ili9xxx_api = {
 	.blanking_on = ili9xxx_display_blanking_on,
 	.blanking_off = ili9xxx_display_blanking_off,
 	.write = ili9xxx_write,
-	.read = ili9xxx_read,
-	.get_framebuffer = ili9xxx_get_framebuffer,
-	.set_brightness = ili9xxx_set_brightness,
-	.set_contrast = ili9xxx_set_contrast,
 	.get_capabilities = ili9xxx_get_capabilities,
 	.set_pixel_format = ili9xxx_set_pixel_format,
 	.set_orientation = ili9xxx_set_orientation,

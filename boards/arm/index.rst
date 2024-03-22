@@ -1,7 +1,7 @@
 .. _boards-arm:
 
-ARM Boards
-##########
+ARM Ltd.
+########
 
 .. toctree::
    :maxdepth: 1

@@ -1152,7 +1152,7 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	    recv_src_sll.sll_family != AF_PACKET || recv_src_sll.sll_protocol != ETH_P_IEEE802154 ||
 	    recv_src_sll.sll_halen != IEEE802154_EXT_ADDR_LENGTH ||
 	    memcmp(recv_src_sll.sll_addr, mac_be, IEEE802154_EXT_ADDR_LENGTH)) {
-		NET_ERR("*** Received socket address does not compare", errno);
+		NET_ERR("*** Received socket address does not compare (%d)", -errno);
 		goto release_rx_pkt;
 	}
 

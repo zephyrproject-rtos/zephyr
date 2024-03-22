@@ -242,7 +242,7 @@ Artificially long but functional example:
     # Start of individual args place them in alpha-beta order
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
+                       "%s/subsys/testsuite/boards" % ZEPHYR_BASE]
 
     modules = zephyr_module.parse_modules(ZEPHYR_BASE)
     for module in modules:
@@ -637,7 +637,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-u",
         "--no-update",
         action="store_true",
-         help="Do not update the results of the last run of twister.")
+         help="Do not update the results of the last run. This option "
+              "is only useful when reusing the same output directory of "
+              "twister, for example when re-running failed tests with --only-failed "
+              "or --no-clean. This option is for debugging purposes only.")
 
     parser.add_argument(
         "-v",

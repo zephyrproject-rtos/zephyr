@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pinctrl/m2l31ki-pinctrl.h"
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group0 {
+			pinmux = <PB12MFP_UART0_RXD>,
+				 <PB13MFP_UART0_TXD>;
+		};
+	};
+
+	/* TX/RX/RTS/CTS/RST --> D1/D0/A2/A3/D2 --> PB3/PB2/PB8/PB9/PC9 */
+	uart1_default: uart1_default {
+		group0 {
+			pinmux = <PB9MFP_UART1_nCTS>,
+				 <PB8MFP_UART1_nRTS>,
+				 <PB2MFP_UART1_RXD>,
+				 <PB3MFP_UART1_TXD>,
+				 <PC9MFP_GPIO>;
+		};
+	};
+};

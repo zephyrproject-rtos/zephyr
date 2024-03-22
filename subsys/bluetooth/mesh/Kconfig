@@ -712,7 +712,7 @@ config BT_MESH_MODEL_EXTENSIONS
 
 config BT_MESH_COMP_PAGE_1
 	bool "Support for Composition Data Page 1"
-	depends on BT_MESH_MODEL_EXTENSIONS
+	default y
 	help
 	  Enable support for Composition Data Page 1.
 
@@ -720,6 +720,7 @@ config BT_MESH_MODEL_EXTENSION_LIST_SIZE
 	int "Model extensions list size"
 	depends on BT_MESH_COMP_PAGE_1
 	range 0 255
+	default 0 if !BT_MESH_MODEL_EXTENSIONS
 	default 10
 	help
 	  This option specifies how many models relations can be saved.
@@ -944,12 +945,14 @@ config BT_MESH_BLOB_IO_FLASH
 
 config BT_MESH_DFU_SRV
 	bool "Support for Firmware Update Server model"
+	depends on BT_MESH_MODEL_EXTENSIONS
 	depends on BT_MESH_BLOB_SRV
 	help
 	  Enable the Firmware Update Server model.
 
 config BT_MESH_DFU_CLI
 	bool "Support for Firmware Update Client model"
+	depends on BT_MESH_MODEL_EXTENSIONS
 	depends on BT_MESH_BLOB_CLI
 	help
 	  Enable the Firmware Update Client model.

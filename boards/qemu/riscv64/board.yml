@@ -1,0 +1,7 @@
+board:
+  name: qemu_riscv64
+  vendor: qemu
+  socs:
+    - name: qemu_virt_riscv64
+      variants:
+        - name: smp

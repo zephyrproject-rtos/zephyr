@@ -261,7 +261,7 @@ struct gmac_queue {
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
 	Gmac *regs;
-#ifdef CONFIG_SOC_FAMILY_SAM
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	const struct atmel_sam_pmc_config clock_cfg;
 #endif
 	const struct pinctrl_dev_config *pcfg;

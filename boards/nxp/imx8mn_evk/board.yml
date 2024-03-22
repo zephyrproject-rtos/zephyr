@@ -1,0 +1,8 @@
+board:
+  name: imx8mn_evk
+  vendor: nxp
+  socs:
+  - name: mimx8mn6
+    variants:
+    - name: smp
+      cpucluster: a53

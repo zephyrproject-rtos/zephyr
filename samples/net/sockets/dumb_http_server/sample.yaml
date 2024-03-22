@@ -9,7 +9,7 @@ common:
   tags:
     - net
     - socket
-  platform_exclude: intel_adsp_cavs25
+  platform_exclude: intel_adsp/cavs25
 tests:
   sample.net.sockets.dumb_http_server:
     extra_configs:

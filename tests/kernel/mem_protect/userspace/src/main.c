@@ -22,7 +22,12 @@
 
 #if defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/cache.h>
+#if defined(CONFIG_XTENSA_MMU)
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
+#endif
+#if defined(CONFIG_XTENSA_MPU)
+#include <zephyr/arch/xtensa/mpu.h>
+#endif
 #endif
 
 #if defined(CONFIG_ARC)
@@ -82,12 +87,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		} else {
 			printk("Wrong fault reason, expecting %d\n",
 			       expected_reason);
-			printk("PROJECT EXECUTION FAILED\n");
+			TC_END_REPORT(TC_FAIL);
 			k_fatal_halt(reason);
 		}
 	} else {
 		printk("Unexpected fault during test\n");
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 }
@@ -259,6 +264,7 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
 #elif defined(CONFIG_XTENSA)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
+#if defined(CONFIG_XTENSA_MMU)
 	/* Reset way 6 to do identity mapping.
 	 * Complier would complain addr going out of range if we
 	 * simply do addr = i * 0x20000000 inside the loop. So
@@ -274,6 +280,20 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
 
 		addr += 0x20000000;
 	}
+#endif
+
+#if defined(CONFIG_XTENSA_MPU)
+	/* Technically, simply clearing out all foreground MPU entries
+	 * allows the background map to take over, so it is not exactly
+	 * disabling MPU. However, this test is about catching userspace
+	 * trying to manipulate the MPU regions. So as long as there is
+	 * kernel OOPS, we would be fine.
+	 */
+	for (int i = 0; i < XTENSA_MPU_NUM_ENTRIES; i++) {
+		__asm__ volatile("wptlb %0, %1\n\t" : : "a"(i), "a"(0));
+	}
+#endif
+
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -533,8 +553,16 @@ ZTEST_USER(userspace, test_read_other_stack)
 	/* Try to read from another thread's stack. */
 	unsigned int val;
 
-#ifdef CONFIG_MMU
+#if defined(CONFIG_MMU) || defined(CONFIG_MPU)
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API)
+	/* With memory domain enabled, all threads within the same domain
+	 * have access to each other threads' stacks, especially with
+	 * CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API=y (as it is expected
+	 * behavior). The access would not fault which the test expects.
+	 * So skip this test.
+	 */
 	ztest_test_skip();
+#endif
 #endif
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_read_body, &val, NULL, NULL,
@@ -555,8 +583,16 @@ ZTEST_USER(userspace, test_write_other_stack)
 	/* Try to write to another thread's stack. */
 	unsigned int val;
 
-#ifdef CONFIG_MMU
+#if defined(CONFIG_MMU) || defined(CONFIG_MPU)
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API)
+	/* With memory domain enabled, all threads within the same domain
+	 * have access to each other threads' stacks, especially with
+	 * CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API=y (as it is expected
+	 * behavior). The access would not fault which the test expects.
+	 * So skip this test.
+	 */
 	ztest_test_skip();
+#endif
 #endif
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_write_body, &val, NULL, NULL,

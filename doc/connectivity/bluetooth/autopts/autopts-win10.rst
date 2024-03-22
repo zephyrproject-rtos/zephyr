@@ -116,7 +116,7 @@ Build the auto-pts tester app
 
 .. code-block::
 
-    west build -p auto -b nrf52840dk_nrf52840 zephyr/tests/bluetooth/tester/
+    west build -p auto -b nrf52840dk/nrf52840 zephyr/tests/bluetooth/tester/
 
 You can display flashing options with:
 

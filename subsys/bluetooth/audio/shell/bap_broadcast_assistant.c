@@ -42,19 +42,21 @@ static struct bt_auto_scan {
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
+	uint8_t base_size;
 
 	/* Base is NULL if the data does not contain a valid BASE */
 	if (base == NULL) {
 		return true;
 	}
 
-	/* Compare BASE and print if different */
-	if (data->data_len != received_base_size ||
-	    memcmp(data->data, received_base, data->data_len) != 0) {
-		(void)memcpy(&received_base, data->data, data->data_len);
-		received_base_size = data->data_len;
+	base_size = data->data_len - BT_UUID_SIZE_16; /* the BASE comes after the UUID */
 
-		print_base(base);
+	/* Compare BASE and print if different */
+	if (base_size != received_base_size || memcmp(base, received_base, base_size) != 0) {
+		(void)memcpy(received_base, base, base_size);
+		received_base_size = base_size;
+
+		print_base((const struct bt_bap_base *)received_base);
 	}
 
 	return false;
@@ -781,6 +783,13 @@ static inline bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgrou
 	uint8_t *data;
 	int ret;
 
+	if (param->num_subgroups == CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		shell_warn(ctx_shell, "Cannot fit all subgroups param with size %d",
+			   CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+
+		return true; /* return true to avoid returning -ECANCELED as this is OK */
+	}
+
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
 	if (ret < 0) {
 		return false;
@@ -808,6 +817,7 @@ static inline bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgrou
 static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 						   size_t argc, char **argv)
 {
+	struct bt_bap_bass_subgroup subgroup_params[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	/* TODO: Add support to select which PA sync to BIG sync to */
 	struct bt_le_per_adv_sync *pa_sync = per_adv_syncs[0];
@@ -874,11 +884,15 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 		bis_bitfield_req |= BIT(index);
 	}
 
-	err = bt_bap_base_foreach_subgroup((const struct bt_bap_base *)received_base,
-					   add_pa_sync_base_subgroup_cb, &param);
-	if (err < 0) {
-		shell_error(ctx_shell, "Could not add BASE to params %d", err);
-		return -ENOEXEC;
+	param.subgroups = subgroup_params;
+	if (received_base_size > 0) {
+		err = bt_bap_base_foreach_subgroup((const struct bt_bap_base *)received_base,
+						   add_pa_sync_base_subgroup_cb, &param);
+		if (err < 0) {
+			shell_error(ctx_shell, "Could not add BASE to params %d", err);
+
+			return -ENOEXEC;
+		}
 	}
 
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);

@@ -1,0 +1,19 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx8mm_evk/mimx8mm6/a53
+name: NXP i.MX8M Mini EVK A53
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: nxp

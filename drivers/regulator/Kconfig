@@ -28,6 +28,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/regulator/Kconfig.axp192"
 source "drivers/regulator/Kconfig.adp5360"
+source "drivers/regulator/Kconfig.cp9314"
 source "drivers/regulator/Kconfig.da1469x"
 source "drivers/regulator/Kconfig.fake"
 source "drivers/regulator/Kconfig.fixed"

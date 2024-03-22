@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpiob 0 0>,	/* A0 */
+			   <1 0 &gpioa 4 0>,	/* A1 */
+			   <2 0 &gpioa 0 0>,	/* A2 */
+			   <3 0 &gpioa 5 0>,	/* A3 */
+			   <4 0 &gpioa 6 0>,	/* A4 */
+			   <5 0 &gpiof 12 0>,	/* A5 */
+			   <6 0 &gpiob 11 0>,	/* D0 */
+			   <7 0 &gpiob 10 0>,	/* D1 */
+			   <8 0 &gpiog 15 0>,	/* D2 */
+			   <9 0 &gpiob 5 0>,	/* D3 */
+			   <10 0 &gpiog 4 0>,	/* D4 */
+			   <11 0 &gpioh 11 0>,	/* D5 */
+			   <12 0 &gpioh 10 0>,	/* D6 */
+			   <13 0 &gpiog 5 0>,	/* D7 */
+			   <14 0 &gpiog 8 0>,	/* D8 */
+			   <15 0 &gpioa 8 0>,	/* D9 */
+			   <16 0 &gpioa 3 0>,	/* D10 */
+			   <17 0 &gpiob 15 0>,	/* D11 */
+			   <18 0 &gpioi 2 0>,	/* D12 */
+			   <19 0 &gpioi 1 0>,	/* D13 */
+			   <20 0 &gpiob 7 0>,	/* D14 */
+			   <21 0 &gpiob 6 0>;	/* D15 */
+	};
+};
+
+arduino_spi: &spi2 {};
+arduino_i2c: &i2c1 {};

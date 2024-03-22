@@ -1,0 +1,174 @@
+# Nordic Semiconductor nRFx MCU line
+
+# Copyright (c) 2016-2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file is contains Zephyr build system Kconfig references and is not
+# re-usable outside the Zephyr tree.
+
+config SOC_FAMILY_NORDIC_NRF
+	select SOC_COMPATIBLE_NRF
+	select PLATFORM_SPECIFIC_INIT if ARM
+
+if SOC_FAMILY_NORDIC_NRF
+
+rsource "common/Kconfig.peripherals"
+rsource "*/Kconfig"
+
+config NRF_SOC_SECURE_SUPPORTED
+	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)
+	depends on !SOC_SERIES_NRF54HX
+	help
+	  Hidden function to indicate that that the soc_secure functions are
+	  available.
+	  The functions are always available when not in non-secure.
+	  For non-secure the functions must redirect to secure services exposed
+	  by the secure firmware.
+
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  By default, if we build for a Non-Secure version of the board,
+	  enable building with TF-M as the Secure Execution Environment.
+
+if BUILD_WITH_TFM
+
+config TFM_FLASH_MERGED_BINARY
+	default y
+	help
+	  By default, if we build with TF-M, instruct build system to
+	  flash the combined TF-M (Secure) & Zephyr (Non Secure) image
+
+config TFM_LOG_LEVEL_SILENCE
+	default y if !$(dt_nodelabel_has_prop,uart1,pinctrl-names)
+	help
+	  Disable TF-M secure output if the uart1 node has not assigned GPIO
+	  pins using pinctrl.
+
+config TFM_NRF_NS_STORAGE
+	bool "TF-M non-secure storage partition"
+	default y
+
+endif # BUILD_WITH_TFM
+
+
+config NRF_MPU_FLASH_REGION_SIZE
+	hex
+	default 0x1000
+	depends on HAS_HW_NRF_MPU
+	help
+	  FLASH region size for the NRF_MPU peripheral.
+
+config NRF_BPROT_FLASH_REGION_SIZE
+	hex
+	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH),erase-block-size)
+	depends on HAS_HW_NRF_BPROT
+	help
+	  FLASH region size for the NRF_BPROT peripheral (nRF52).
+
+config NRF_ACL_FLASH_REGION_SIZE
+	hex
+	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH),erase-block-size)
+	depends on HAS_HW_NRF_ACL
+	help
+	  FLASH region size for the NRF_ACL peripheral.
+
+config NFCT_PINS_AS_GPIOS
+	bool "[DEPRECATED] NFCT pins as GPIOs"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
+	select DEPRECATED
+	help
+	  Two pins are usually reserved for NFC in SoCs that implement the
+	  NFCT peripheral. This option switches them to normal GPIO mode.
+	  HW enabling happens once in the device lifetime, during the first
+	  system startup. Disabling this option will not switch back these
+	  pins to NFCT mode. Doing this requires UICR erase prior to
+	  flashing device using the image which has this option disabled.
+
+	  NFC pins in nRF52 series: P0.09 and P0.10
+	  NFC pins in nRF5340: P0.02 and P0.03
+
+	  This option is deprecated, please use devicetree to configure NFCT
+	  pins as GPIOS like this:
+
+	  &uicr {
+	      nfct-pins-as-gpios;
+	  };
+
+choice NRF_APPROTECT_HANDLING
+	bool "APPROTECT handling"
+	depends on SOC_SERIES_NRF52X || SOC_NRF5340_CPUNET || \
+		   (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE) || \
+		   SOC_SERIES_NRF91X
+	default NRF_APPROTECT_USE_UICR
+	help
+	  Specifies how the SystemInit() function should handle the APPROTECT
+	  mechanism.
+
+config NRF_APPROTECT_USE_UICR
+	bool "Use UICR"
+	help
+	  When this option is selected, the SystemInit() function loads the
+	  firmware branch state of the APPROTECT mechanism from UICR, so if
+	  UICR->APPROTECT is disabled, CTRLAP->APPROTECT will be disabled.
+
+config NRF_APPROTECT_LOCK
+	bool "Lock"
+	help
+	  When this option is selected, the SystemInit() function locks
+	  the firmware branch of the APPROTECT mechanism, preventing it
+	  from being opened.
+
+config NRF_APPROTECT_USER_HANDLING
+	bool "Allow user handling"
+	depends on !SOC_SERIES_NRF52X
+	help
+	  When this option is selected, the SystemInit() function does not
+	  touch the APPROTECT mechanism, allowing the user code to handle it
+	  at later stages, for example, to implement authenticated debug.
+
+endchoice
+
+choice NRF_SECURE_APPROTECT_HANDLING
+	bool "Secure APPROTECT handling"
+	depends on (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE)
+	default NRF_SECURE_APPROTECT_USE_UICR
+	help
+	  Specifies how the SystemInit() function should handle the secure
+	  APPROTECT mechanism.
+
+config NRF_SECURE_APPROTECT_USE_UICR
+	bool "Use UICR"
+	help
+	  When this option is selected, the SystemInit() function loads the
+	  firmware branch state of the secure APPROTECT mechanism from UICR,
+	  so if UICR->SECUREAPPROTECT is disabled, CTRLAP->SECUREAPPROTECT
+	  will be disabled.
+
+config NRF_SECURE_APPROTECT_LOCK
+	bool "Lock"
+	help
+	  When this option is selected, the SystemInit() function locks the
+	  firmware branch of the secure APPROTECT mechanism, preventing it
+	  from being opened.
+
+config NRF_SECURE_APPROTECT_USER_HANDLING
+	bool "Allow user handling"
+	depends on !SOC_SERIES_NRF52X
+	help
+	  When this option is selected, the SystemInit() function does not
+	  touch the secure APPROTECT mechanism, allowing the user code to
+	  handle it at later stages, for example, to implement authenticated
+	  debug.
+
+endchoice
+
+config NRF_TRACE_PORT
+	bool "nRF TPIU"
+	depends on !SOC_SERIES_NRF51X
+	help
+	  Enable this option to initialize the TPIU (Trace Port Interface
+	  Unit) for tracing using a hardware probe. If disabled, the trace
+	  pins will be used as GPIO.
+
+endif # SOC_FAMILY_NORDIC_NRF

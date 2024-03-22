@@ -25,7 +25,7 @@ tests:
   sample.filesystem.shell.flash_load:
     tags:
       - flash_load
-    platform_allow: nrf52dk_nrf52832
+    platform_allow: nrf52dk/nrf52832
     extra_args: CONF_FILE=prj_flash_load.conf
     integration_platforms:
-      - nrf52dk_nrf52832
+      - nrf52dk/nrf52832

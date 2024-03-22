@@ -1,0 +1,9 @@
+family:
+- name: ti_k3
+  series:
+  - name: am6x
+    socs:
+    - name: am6234
+      cpuclusters:
+      - name: m4
+      - name: a53

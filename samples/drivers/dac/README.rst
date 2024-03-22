@@ -171,7 +171,7 @@ built and executed for the :ref:`bl5340_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: bl5340_dvk_cpuapp
+   :board: bl5340_dvk/nrf5340/cpuapp
    :goals: build flash
    :compact:
 
@@ -206,7 +206,7 @@ also can run for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: longan_nano_lite
+   :board: longan_nano/gd32vf103/lite
    :goals: build flash
    :compact:
 

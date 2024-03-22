@@ -94,7 +94,7 @@ static uint32_t get_hpsram_bank_idx(uintptr_t pa)
  */
 static uint16_t flags_to_tlb_perms(uint32_t flags)
 {
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
 	uint16_t perms = 0;
 
 	if ((flags & SYS_MM_MEM_PERM_RW) == SYS_MM_MEM_PERM_RW) {
@@ -111,7 +111,7 @@ static uint16_t flags_to_tlb_perms(uint32_t flags)
 #endif
 }
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
 /**
  * Convert TLB entry permission bits to the SYS_MM_MEM_PERM_* flags.
  *
@@ -136,7 +136,7 @@ static uint16_t tlb_perms_to_flags(uint16_t perms)
 
 static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocking)
 {
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
 	if (bank_idx > ace_hpsram_get_bank_count()) {
 		return -1;
 	}
@@ -333,7 +333,6 @@ int sys_mm_drv_unmap_page(void *virt)
 {
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
-	uint16_t entry;
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	uintptr_t pa;
 	int ret = 0;
@@ -363,16 +362,14 @@ int sys_mm_drv_unmap_page(void *virt)
 	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	entry_idx = get_tlb_entry_idx(va);
-	/* Restore default entry settings */
-	entry = pa_to_tlb_entry(va) | TLB_EXEC_BIT | TLB_WRITE_BIT;
-	/* Clear the enable bit */
-	entry &= ~TLB_ENABLE_BIT;
-	tlb_entries[entry_idx] = entry;
-
 	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
 
-	/* Check bounds of physical address space. */
-	/* Initial TLB mappings could point to non existing physical pages. */
+	/* Restore default entry settings with cleared the enable bit. */
+	tlb_entries[entry_idx] = 0;
+
+	/* Check bounds of physical address space.
+	 * Initial TLB mappings could point to non existing physical pages.
+	 */
 	if ((pa >= L2_SRAM_BASE) && (pa < (L2_SRAM_BASE + L2_SRAM_SIZE))) {
 		sys_mem_blocks_free_contiguous(&L2_PHYS_SRAM_REGION,
 					       UINT_TO_POINTER(pa), 1);
@@ -399,6 +396,49 @@ int sys_mm_drv_unmap_region(void *virt, size_t size)
 	void *va = (__sparse_force void *)sys_cache_cached_ptr_get(virt);
 
 	return sys_mm_drv_simple_unmap_region(va, size);
+}
+
+int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
+{
+	k_spinlock_key_t key;
+	uint32_t entry_idx;
+	uint16_t entry;
+	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	int ret = 0;
+
+	/* Use cached virtual address */
+	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
+
+	/* Make sure inputs are page-aligned and check bounds of virtual address space */
+	CHECKIF(!sys_mm_drv_is_addr_aligned(va) ||
+		(va < UNUSED_L2_START_ALIGNED) ||
+		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&tlb_lock);
+
+	entry_idx = get_tlb_entry_idx(va);
+
+	entry = tlb_entries[entry_idx];
+
+	/* Check entry is already mapped */
+	if (!(entry & TLB_ENABLE_BIT)) {
+		ret = -EFAULT;
+		goto out;
+	}
+
+	/* Clear the access flags */
+	entry &= ~(TLB_EXEC_BIT | TLB_WRITE_BIT);
+
+	/* Set new permissions for this entry */
+	entry |= flags_to_tlb_perms(flags);
+
+	tlb_entries[entry_idx] = entry;
+
+out:
+	k_spin_unlock(&tlb_lock, key);
+	return ret;
 }
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
@@ -444,7 +484,7 @@ int sys_mm_drv_page_flag_get(void *virt, uint32_t *flags)
 	ARG_UNUSED(virt);
 	int ret = 0;
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE)
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	uint16_t ent;
 

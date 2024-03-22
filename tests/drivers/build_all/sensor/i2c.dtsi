@@ -926,3 +926,62 @@ test_i2c_tmag5273: tmag5273@82 {
 	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
 	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
 };
+
+test_i2c_ens160: ens160@83 {
+	compatible = "sciosense,ens160";
+	reg = <0x83>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tsl2591: tsl2591@84 {
+	compatible = "ams,tsl2591";
+	reg = <0x84>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_max31790: max31790@85 {
+	compatible = "maxim,max31790";
+	status = "okay";
+	reg = <0x85>;
+
+	max31790_fan_fault: max31790_fan_fault {
+		compatible = "maxim,max31790-fan-fault";
+		status = "okay";
+	};
+
+	max31790_fan_speed_1: max31790_fan_speed_1 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <1>;
+	};
+
+	max31790_fan_speed_2: max31790_fan_speed_2 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <2>;
+	};
+
+	max31790_fan_speed_3: max31790_fan_speed_3 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <3>;
+	};
+
+	max31790_fan_speed_4: max31790_fan_speed_4 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <4>;
+	};
+
+	max31790_fan_speed_5: max31790_fan_speed_5 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <5>;
+	};
+
+	max31790_fan_speed_6: max31790_fan_speed_6 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <6>;
+	};
+};

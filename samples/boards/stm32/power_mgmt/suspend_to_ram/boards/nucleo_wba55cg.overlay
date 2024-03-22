@@ -7,6 +7,10 @@
 / {
 	/* Change min residency time to ease power consumption measurement */
 	cpus {
+		cpu0: cpu@0 {
+			cpu-power-states = <&stop0 &stop1 &standby>;
+		};
+
 		power-states {
 			stop0: state0 {
 				min-residency-us = <500000>;

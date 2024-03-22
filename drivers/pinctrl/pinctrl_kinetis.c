@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,9 @@ static PORT_Type *ports[] = {
 #endif
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 4
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porte)),
+#endif
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 5
+	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portf)),
 #endif
 };
 

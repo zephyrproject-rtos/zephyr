@@ -1,0 +1,9 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_INTEL_ACE20_LNL
+
+config MP_MAX_NUM_CPUS
+	default 5
+
+endif

@@ -12,5 +12,5 @@ sample:
   name: websocket_client
 tests:
   sample.net.sockets.websocket_client:
-    platform_exclude: intel_adsp_cavs25
+    platform_exclude: intel_adsp/cavs25
     harness: net

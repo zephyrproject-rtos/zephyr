@@ -78,6 +78,12 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_thread_abort(thread)                                                      \
 	SEGGER_SYSVIEW_RecordU32(TID_THREAD_ABORT, (uint32_t)(uintptr_t)thread)
 
+#define sys_port_trace_k_thread_abort_enter(thread)                                                \
+	SEGGER_SYSVIEW_RecordU32(TID_THREAD_ABORT, (uint32_t)(uintptr_t)thread)
+
+#define sys_port_trace_k_thread_abort_exit(thread)                                                 \
+	SEGGER_SYSVIEW_RecordEndCall(TID_THREAD_ABORT)
+
 #define sys_port_trace_k_thread_suspend_enter(thread)                                              \
 	SEGGER_SYSVIEW_RecordU32(TID_THREAD_SUSPEND, (uint32_t)(uintptr_t)thread)
 
@@ -641,7 +647,7 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT,	       \
 					(uint32_t)ret)
 #define sys_port_trace_pm_device_runtime_put_async_enter(dev, delay)	       \
-	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,	       \
+	SEGGER_SYSVIEW_RecordU32x2(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,	       \
 			 (uint32_t)(uintptr_t)dev, (uint32_t)delay.ticks)
 #define sys_port_trace_pm_device_runtime_put_async_exit(dev, delay, ret)       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,       \

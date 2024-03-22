@@ -1,0 +1,18 @@
+identifier: bl5340_dvk/nrf5340/cpunet
+name: BL5340-DVK-network-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - counter
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog
+vendor: lairdconnect

@@ -76,6 +76,9 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, i
 static struct k_spinlock lock;
 /* Last HW count that we called sys_clock_announce() */
 static volatile uint32_t last_announced_hw_cnt;
+/* Last system (kernel) elapse and ticks */
+static volatile uint32_t last_elapsed;
+static volatile uint32_t last_ticks;
 
 enum ext_timer_raw_cnt {
 	EXT_NOT_RAW_CNT = 0,
@@ -194,6 +197,8 @@ static void evt_timer_isr(const void *unused)
 		uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER)) -
 				   last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
 		last_announced_hw_cnt += (dticks * HW_CNT_PER_SYS_TICK);
+		last_ticks += dticks;
+		last_elapsed = 0;
 
 		sys_clock_announce(dticks);
 	} else {
@@ -246,21 +251,26 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 */
 		k_spin_unlock(&lock, key);
 		return;
-	} else if (ticks <= 1) {
-		/*
-		 * Ticks <= 1 means the kernel wants the tick announced
-		 * as soon as possible, ideally no more than one system tick
-		 * in the future. So set event timer count to 1 system tick or
-		 * at least 1 hw count.
-		 */
-		hw_cnt = MAX((1 * HW_CNT_PER_SYS_TICK), 1);
 	} else {
+		uint32_t next_cycs;
+		uint32_t now;
+		uint32_t dcycles;
+
 		/*
-		 * Set event timer count to EVENT_TIMER_MAX_CNT, after
-		 * interrupt fired the remaining time will be set again
-		 * by sys_clock_announce().
+		 * If ticks <= 1 means the kernel wants the tick announced
+		 * as soon as possible, ideally no more than one system tick
+		 * in the future. So set event timer count to 1 HW tick.
 		 */
-		hw_cnt = MIN((ticks * HW_CNT_PER_SYS_TICK), EVENT_TIMER_MAX_CNT);
+		ticks = CLAMP(ticks, 1, (int32_t)EVEN_TIMER_MAX_CNT_SYS_TICK);
+
+		next_cycs = (last_ticks + last_elapsed + ticks) * HW_CNT_PER_SYS_TICK;
+		now = ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
+		if (unlikely(next_cycs <= now)) {
+			hw_cnt = 1;
+		} else {
+			dcycles = next_cycs - now;
+			hw_cnt = MIN(dcycles, EVENT_TIMER_MAX_CNT);
+		}
 	}
 
 	/* Set event timer 24-bit count */
@@ -292,6 +302,8 @@ uint32_t sys_clock_elapsed(void)
 	 */
 	uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER)) -
 				last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
+	last_elapsed = dticks;
+
 	k_spin_unlock(&lock, key);
 
 	return dticks;

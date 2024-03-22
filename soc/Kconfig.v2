@@ -1,0 +1,39 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+# Load all SoCs.
+# SoCs that has transitioned to SoC scheme v2 are promptless, and thus
+# unselectable by the user or through configuration files.
+#
+# SoC that are still using scheme v1 are still having a prompt but is loaded as
+# they offer board maintainers the possibility to use board scheme v2.
+
+config SOC
+	string
+	help
+	  SoC name. The value of this setting must be defined by the selected
+	  SoC for hw model v2.
+
+config SOC_SERIES
+	string
+	help
+	  SoC series. The value of this setting must be defined by the selected
+	  SoC if the SoC belongs to a common series.
+
+config SOC_FAMILY
+	string
+	help
+	  SoC family. The value of this setting must be defined by the selected
+	  SoC if the SoC belongs to a SoC family. Usually a SoC family also
+	  indicates the vendor of the SoC.
+
+config SOC_PART_NUMBER
+	string
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+# Source all Kconfig HWMv2 from SoC roots.
+source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc"

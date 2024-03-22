@@ -1,0 +1,12 @@
+# EFM32PG1B series configuration options
+
+# Copyright (c) 2020 Rafael Dias Menezes <rdmeneze@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFM32PG1B
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 34
+
+endif # SOC_SERIES_EFM32PG1B

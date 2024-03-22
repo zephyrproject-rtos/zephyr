@@ -19,7 +19,7 @@
  * - no statistics collection
  */
 
-#if defined(CONFIG_SOC_FAMILY_SAM)
+#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 #define DT_DRV_COMPAT atmel_sam_gmac
 #else
 #define DT_DRV_COMPAT atmel_sam0_gmac
@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth.h"
 
-#ifdef CONFIG_SOC_FAMILY_SAM0
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #include "eth_sam0_gmac.h"
 #endif
 
@@ -97,9 +97,9 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #define dcache_clean(addr, size)
 #endif
 
-#ifdef CONFIG_SOC_FAMILY_SAM0
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
-#elif CONFIG_SOC_FAMILY_SAM
+#elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
 #else
 #error Unsupported SoC family
@@ -1796,7 +1796,7 @@ static int eth_initialize(const struct device *dev)
 
 	cfg->config_func();
 
-#ifdef CONFIG_SOC_FAMILY_SAM
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
@@ -2235,7 +2235,7 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct eth_sam_dev_cfg eth0_config = {
 	.regs = (Gmac *)DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-#ifdef CONFIG_SOC_FAMILY_SAM
+#ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
 #endif
 	.config_func = eth0_irq_config,

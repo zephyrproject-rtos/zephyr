@@ -1,8 +1,0 @@
-# EFM32PG1B (Pearl Gecko) MCU line
-
-# Copyright (c) 2018 Christian Taedcke
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_PART_NUMBER_EFM32PG1B200F256GM48
-	bool
-	depends on SOC_SERIES_EFM32PG1B

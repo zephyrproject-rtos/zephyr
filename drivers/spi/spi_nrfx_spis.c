@@ -399,18 +399,9 @@ static int spi_nrfx_init(const struct device *dev)
 			    CONFIG_SPI_INIT_PRIORITY,			       \
 			    &spi_nrfx_driver_api)
 
-#ifdef CONFIG_HAS_HW_NRF_SPIS0
-SPI_NRFX_SPIS_DEFINE(0);
-#endif
+/* Macro creates device instance if it is enabled in devicetree. */
+#define SPIS_DEVICE(periph, prefix, id, _) \
+	IF_ENABLED(CONFIG_HAS_HW_NRF_SPIS##prefix##id, (SPI_NRFX_SPIS_DEFINE(prefix##id);))
 
-#ifdef CONFIG_HAS_HW_NRF_SPIS1
-SPI_NRFX_SPIS_DEFINE(1);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIS2
-SPI_NRFX_SPIS_DEFINE(2);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIS3
-SPI_NRFX_SPIS_DEFINE(3);
-#endif
+/* Macro iterates over nrfx_spis instances enabled in the nrfx_config.h. */
+NRFX_FOREACH_ENABLED(SPIS, SPIS_DEVICE, (), (), _)

@@ -8,20 +8,50 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/net_ip.h>
 
-#define PR(fmt, ...)						\
-	shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
+#define PR(fmt, ...)                                                            \
+	do {                                                                    \
+		if (sh) {                                                       \
+			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
+		} else {                                                        \
+			printk(fmt, ##__VA_ARGS__);                             \
+		}                                                               \
+	} while (false)
 
-#define PR_SHELL(sh, fmt, ...)				\
-	shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
+#define PR_SHELL(sh, fmt, ...)                                                  \
+	do {                                                                    \
+		if (sh) {                                                       \
+			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
+		} else {                                                        \
+			printk(fmt, ##__VA_ARGS__);                             \
+		}                                                               \
+	} while (false)
 
-#define PR_ERROR(fmt, ...)					\
-	shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__)
+#define PR_ERROR(fmt, ...)                                                      \
+	do {                                                                    \
+		if (sh) {                                                       \
+			shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__);     \
+		} else {                                                        \
+			printk(fmt, ##__VA_ARGS__);                             \
+		}                                                               \
+	} while (false)
 
-#define PR_INFO(fmt, ...)					\
-	shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__)
+#define PR_INFO(fmt, ...)                                                       \
+	do {                                                                    \
+		if (sh) {                                                       \
+			shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__);      \
+		} else {                                                        \
+			printk(fmt, ##__VA_ARGS__);                             \
+		}                                                               \
+	} while (false)
 
-#define PR_WARNING(fmt, ...)					\
-	shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__)
+#define PR_WARNING(fmt, ...)                                                    \
+	do {                                                                    \
+		if (sh) {                                                       \
+			shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__);   \
+		} else {                                                        \
+			printk(fmt, ##__VA_ARGS__);                             \
+		}                                                               \
+	} while (false)
 
 #include "net_private.h"
 #include "../ip/ipv6.h"

@@ -1,6 +1,0 @@
-# Copyright (c) 2023 Meta
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_RISCV32_VIRTUAL
-	bool "riscv32_virtual"
-	depends on SOC_RISCV32_VIRTUAL_RENODE

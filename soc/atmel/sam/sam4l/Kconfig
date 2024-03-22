@@ -1,0 +1,10 @@
+# Copyright (c) 2020-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAM4L
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select PLATFORM_SPECIFIC_INIT
+	select HAS_POWEROFF

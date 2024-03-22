@@ -36,7 +36,7 @@ To build and run the sample application for use-case 1:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nxp_s32/netc
-   :board: s32z270dc2_rtu0_r52
+   :board: s32z2xxdc2/s32z270/rtu0
    :goals: build flash
 
 Once started, you should see the network interface details, for example:
@@ -59,7 +59,7 @@ To build and run the sample application for use-case 2:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nxp_s32/netc
-   :board: s32z270dc2_rtu0_r52
+   :board: s32z2xxdc2/s32z270/rtu0
    :goals: build flash
    :gen-args: -DDTC_OVERLAY_FILE="./vsi-and-psi.overlay"
 

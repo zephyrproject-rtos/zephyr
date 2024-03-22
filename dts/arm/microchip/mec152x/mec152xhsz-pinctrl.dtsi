@@ -1349,4 +1349,19 @@
 		low-power-enable;
 	};
 
+	/* BBLED */
+	led0_gpio156_sleep: led0_gpio156_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0156, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	led1_gpio157_sleep: led1_gpio157_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0157, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	led2_gpio153_sleep: led2_gpio153_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0153, MCHP_AF1) >;
+		low-power-enable;
+	};
 };

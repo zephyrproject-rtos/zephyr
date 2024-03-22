@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2020 Yestin Sun
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32l562e_dk_common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32L562E-DK Discovery board";
+	compatible = "st,stm32l562e-dk";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,bt-c2h-uart = &usart1;
+	};
+
+	aliases {
+		led0 = &green_led_10;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		accel0 = &lsm6dso;
+	};
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&aes {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 2KB at the end of 512KB flash is set for storage */
+		storage_partition: partition@7f800 {
+			   reg = <0x0007f800 DT_SIZE_K(2)>;
+		   };
+	};
+};

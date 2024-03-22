@@ -1,0 +1,13 @@
+board:
+  name: em_starterkit
+  vendor: snps
+  socs:
+  - name: emsk_em7d
+  - name: emsk_em9d
+  - name: emsk_em11d
+  revision:
+    format: major.minor.patch
+    default: "2.3"
+    revisions:
+    - name: "2.2"
+    - name: "2.3"

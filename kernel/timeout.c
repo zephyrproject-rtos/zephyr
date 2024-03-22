@@ -160,10 +160,6 @@ static k_ticks_t timeout_rem(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
-	if (z_is_inactive_timeout(timeout)) {
-		return 0;
-	}
-
 	for (struct _timeout *t = first(); t != NULL; t = next(t)) {
 		ticks += t->dticks;
 		if (timeout == t) {
@@ -171,7 +167,7 @@ static k_ticks_t timeout_rem(const struct _timeout *timeout)
 		}
 	}
 
-	return ticks - elapsed();
+	return ticks;
 }
 
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
@@ -179,7 +175,9 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 	k_ticks_t ticks = 0;
 
 	K_SPINLOCK(&timeout_lock) {
-		ticks = timeout_rem(timeout);
+		if (!z_is_inactive_timeout(timeout)) {
+			ticks = timeout_rem(timeout) - elapsed();
+		}
 	}
 
 	return ticks;
@@ -190,7 +188,10 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 	k_ticks_t ticks = 0;
 
 	K_SPINLOCK(&timeout_lock) {
-		ticks = curr_tick + timeout_rem(timeout) + elapsed();
+		ticks = curr_tick;
+		if (!z_is_inactive_timeout(timeout)) {
+			ticks += timeout_rem(timeout);
+		}
 	}
 
 	return ticks;

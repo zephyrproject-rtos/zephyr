@@ -1,8 +1,0 @@
-# SAM D20 Xplained Pro board configuration
-
-# Copyright (c) 2018 Sean Nyekjaer
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "atsamd20_xpro"
-	depends on BOARD_ATSAMD20_XPRO

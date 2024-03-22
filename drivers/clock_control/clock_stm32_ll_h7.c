@@ -90,8 +90,8 @@
 
 /* Datasheet maximum frequency definitions */
 #if defined(CONFIG_SOC_STM32H743XX) ||\
-	defined(CONFIG_SOC_STM32H745XX) ||\
-	defined(CONFIG_SOC_STM32H747XX) ||\
+	defined(CONFIG_SOC_STM32H745XX_M7) || defined(CONFIG_SOC_STM32H745XX_M4) ||\
+	defined(CONFIG_SOC_STM32H747XX_M7) || defined(CONFIG_SOC_STM32H747XX_M4) ||\
 	defined(CONFIG_SOC_STM32H750XX) ||\
 	defined(CONFIG_SOC_STM32H753XX)
 /* All h7 SoC with maximum 480MHz SYSCLK */

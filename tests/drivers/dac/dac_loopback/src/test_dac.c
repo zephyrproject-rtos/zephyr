@@ -144,7 +144,7 @@
 #elif defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK)  || \
-	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP)
+	defined(CONFIG_BOARD_BL5340_DVK)
 #include <hal/nrf_saadc.h>
  /* DAC output from MCP4725 pin 1
   * On BL65x ADC_1 input is read from pin SIO_3
@@ -184,7 +184,7 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 #if defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
-	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP) || \
+	defined(CONFIG_BOARD_BL5340_DVK) || \
 	defined(CONFIG_BOARD_LPCXPRESSO55S36)
 	.input_positive   = ADC_1ST_CHANNEL_INPUT,
 #endif

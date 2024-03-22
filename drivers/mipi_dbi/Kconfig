@@ -23,4 +23,6 @@ config MIPI_DBI_INIT_PRIORITY
 
 source "drivers/mipi_dbi/Kconfig.spi"
 
+source "drivers/mipi_dbi/Kconfig.smartbond"
+
 endif

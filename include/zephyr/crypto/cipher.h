@@ -118,7 +118,7 @@ struct cipher_ctx {
 	/** To be populated by the app before calling begin_session() */
 	union {
 		/* Cryptographic key to be used in this session */
-		uint8_t *bit_stream;
+		const uint8_t *bit_stream;
 		/* For cases where  key is protected and is not
 		 * available to caller
 		 */

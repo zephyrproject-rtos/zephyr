@@ -338,6 +338,7 @@ static int conn_mgr_mon_init(void)
 			CONFIG_NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE,
 			conn_mgr_mon_thread_fn,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
+	k_thread_name_set(&conn_mgr_mon_thread, "conn_mgr_monitor");
 
 	return 0;
 }

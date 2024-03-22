@@ -1,0 +1,10 @@
+family:
+- name: microchip_mec
+  series:
+  - name: mec15xx
+    socs:
+    - name: mec1501_hsz
+  - name: mec172x
+    socs:
+    - name: mec172x_nsz
+    - name: mec172x_nlj

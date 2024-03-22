@@ -1,0 +1,51 @@
+# EFR32 radio board
+
+# Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 TriaGnoSys GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EFR32_RADIO
+
+config CMU_HFXO_FREQ
+	default 39000000 if BOARD_EFR32_RADIO_EFR32MG24B220F1536IM48
+	default 38400000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+config FLASH_BASE_ADDRESS
+	hex
+	default 0x08000000 if BOARD_EFR32_RADIO_EFR32MG24B220F1536IM48
+	default 0x0
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default n if SOC_FAMILY_SILABS_S1
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+if BT
+
+config FPU
+	default y
+
+config MINIMAL_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+choice BT_HCI_BUS_TYPE
+	default BT_SILABS_HCI
+endchoice
+
+endif # BT
+
+endif # BOARD_EFR32_RADIO

@@ -1,0 +1,8 @@
+set(BOARD_REVISIONS "blue" "black")
+if(NOT DEFINED BOARD_REVISION)
+  set(BOARD_REVISION "blue")
+else()
+  if(NOT BOARD_REVISION IN_LIST BOARD_REVISIONS)
+    message(FATAL_ERROR "${BOARD_REVISION} is not a valid revision for stm32_min_dev. Accepted revisions: ${BOARD_REVISIONS}")
+  endif()
+endif()

@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STEVAL_FCU001V1
+	select SOC_STM32F401XC

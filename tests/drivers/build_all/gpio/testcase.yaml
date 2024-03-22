@@ -26,7 +26,7 @@ tests:
 
   drivers.gpio.build.adc_ads1145s0x_gpio:
     min_ram: 32
-    platform_allow: m5stack_core2 nrf52840dk_nrf52840
+    platform_allow: m5stack_core2/esp32/procpu nrf52840dk/nrf52840
     depends_on:
       - gpio
       - adc

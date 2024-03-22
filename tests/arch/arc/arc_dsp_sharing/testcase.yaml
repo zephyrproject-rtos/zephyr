@@ -1,8 +1,8 @@
 tests:
   arch.arc.dsp_sharing.test_load_store:
     filter: CONFIG_ISA_ARCV2 and CONFIG_CPU_HAS_DSP
-    platform_allow: nsim_em11d
+    platform_allow: nsim/nsim_em11d
   arch.arc.dsp_sharing.test_calculation:
     filter: CONFIG_ISA_ARCV2 and CONFIG_CPU_HAS_DSP
     toolchain_allow: arcmwdt
-    platform_allow: nsim_em11d
+    platform_allow: nsim/nsim_em11d

@@ -1,0 +1,7 @@
+# BT510 DVK board configuration
+
+# Copyright (c) 2020 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BT510
+	select SOC_NRF52840_QIAA

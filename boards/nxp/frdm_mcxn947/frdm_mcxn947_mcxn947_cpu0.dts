@@ -1,0 +1,73 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxn94x.dtsi>
+#include "frdm_mcxn947.dtsi"
+
+/ {
+	model = "NXP FRDM_N94 board";
+	compatible = "nxp,mcxn947", "nxp,mcx";
+
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,console = &flexcomm4_lpuart4;
+		zephyr,shell-uart = &flexcomm4_lpuart4;
+	};
+};
+
+/*
+ * Default for this board is to allocate SRAM0-5 to cpu0 but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-7 differently.
+ *
+ * For example, SRAM0-6 could be allocated to cpu0 with only SRAM7
+ * for cpu1. This would require the value of sram0 to have a DT_SIZE_K
+ * of 384. You would have to make updates to cpu1 sram settings as well.
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(320)>;
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&flexcomm4_lpuart4 {
+	status = "okay";
+};

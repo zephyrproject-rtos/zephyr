@@ -1,0 +1,17 @@
+identifier: rcar_salvator_xs
+name: Renesas Salvator XS M3 based on r8a77961
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 512
+supported:
+  - clock_control
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - isotp
+vendor: renesas

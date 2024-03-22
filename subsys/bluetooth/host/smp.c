@@ -57,7 +57,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define ID_DIST 0
 #endif
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 #define LINK_DIST BT_SMP_DIST_LINK_KEY
 #else
 #define LINK_DIST 0
@@ -81,7 +81,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define BT_SMP_AUTH_BONDING_FLAGS 0
 #endif /* CONFIG_BT_BONDABLE */
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 
 #define BT_SMP_AUTH_MASK_SC	0x2f
 #if defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
@@ -100,7 +100,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING_FLAGS | BT_SMP_AUTH_SC)
 #endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 enum pairing_method {
 	JUST_WORKS,		/* JustWorks pairing */
@@ -247,7 +247,7 @@ static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
 };
 #endif /* !CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 /* SMP over BR/EDR channel specific context */
 struct bt_smp_br {
 	/* Commands that remote is allowed to send */
@@ -276,7 +276,7 @@ struct bt_smp_br {
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 static struct bt_smp bt_smp_pool[CONFIG_BT_MAX_CONN];
 static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
@@ -616,7 +616,7 @@ static bool update_debug_keys_check(struct bt_smp *smp)
 	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 /* For TX callbacks */
 static void smp_pairing_complete(struct bt_smp *smp, uint8_t status);
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status);
 #endif
 
@@ -641,7 +641,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		return;
 	}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		struct bt_smp_br *smp;
 
@@ -678,7 +678,7 @@ static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 }
 #endif /* CONFIG_BT_SIGNING */
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static void sc_derive_link_key(struct bt_smp *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
@@ -1590,7 +1590,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 
 	return 0;
 }
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 static void smp_reset(struct bt_smp *smp)
 {
@@ -1659,7 +1659,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 	}
 
 	if (!status) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		/*
 		 * Don't derive if Debug Keys are used.
 		 * TODO should we allow this if BR/EDR is already connected?
@@ -1669,7 +1669,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		     IS_ENABLED(CONFIG_BT_STORE_DEBUG_KEYS))) {
 			sc_derive_link_key(smp);
 		}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
 		struct bt_conn_auth_info_cb *listener, *next;
 
@@ -5182,7 +5182,7 @@ static int smp_g2_test(void)
 	return 0;
 }
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static int smp_h6_test(void)
 {
 	uint8_t w[16] = { 0x9b, 0x7d, 0x39, 0x0a, 0xa6, 0x10, 0x10, 0x34,
@@ -5227,7 +5227,7 @@ static int smp_h7_test(void)
 
 	return 0;
 }
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 static int smp_h8_test(void)
 {
@@ -5294,7 +5294,7 @@ static int smp_self_test(void)
 		return err;
 	}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	err = smp_h6_test();
 	if (err) {
 		LOG_ERR("SMP h6 self test failed");
@@ -5306,7 +5306,7 @@ static int smp_self_test(void)
 		LOG_ERR("SMP h7 self test failed");
 		return err;
 	}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 	err = smp_h8_test();
 	if (err) {
 		LOG_ERR("SMP h8 self test failed");
@@ -5946,10 +5946,10 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 }
 
 BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
 			bt_smp_br_accept, NULL);
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 int bt_smp_init(void)
 {

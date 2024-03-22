@@ -1,0 +1,10 @@
+board:
+  name: neorv32
+  vendor: others
+  revision:
+    format: major.minor.patch
+    default: "1.8.6"
+    revisions:
+      - name: "1.8.6"
+  socs:
+    - name: neorv32

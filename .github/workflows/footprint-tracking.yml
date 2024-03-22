@@ -22,10 +22,11 @@ concurrency:
 
 jobs:
   footprint-tracking:
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     if: github.repository_owner == 'zephyrproject-rtos'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.9.20240223
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -39,6 +40,12 @@ jobs:
           #        Actions runner is implemented. Remove this workaround when
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
 
       - name: Update PATH for west
         run: |

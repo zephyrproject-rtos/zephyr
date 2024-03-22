@@ -4,7 +4,7 @@ common:
   arch_exclude:
     - posix
   integration_platforms:
-    - qemu_riscv64_smp
+    - qemu_riscv64/qemu_virt_riscv64/smp
 tests:
   portability.posix.pthread_pressure:
     extra_configs:

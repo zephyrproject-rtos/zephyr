@@ -15,6 +15,7 @@
 
 struct regulator_fake_config {
 	struct regulator_common_config common;
+	bool is_enabled;
 };
 
 struct regulator_fake_data {
@@ -64,9 +65,11 @@ static struct regulator_driver_api api = {
 
 static int regulator_fake_init(const struct device *dev)
 {
+	const struct regulator_fake_config *config = dev->config;
+
 	regulator_common_data_init(dev);
 
-	return regulator_common_init(dev, false);
+	return regulator_common_init(dev, config->is_enabled);
 }
 
 /* parent regulator */
@@ -90,6 +93,7 @@ static struct regulator_parent_driver_api parent_api = {
                                                                                \
 	static const struct regulator_fake_config FAKE_CONF_NAME(node_id) = {  \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),            \
+		.is_enabled = DT_PROP(node_id, fake_is_enabled_in_hardware),   \
 	};                                                                     \
                                                                                \
 	DEVICE_DT_DEFINE(node_id, regulator_fake_init, NULL,                   \

@@ -187,7 +187,7 @@ ZTEST(mqueue, test_mqueue_notify_thread)
 
 	zassert_ok(mq_send(mqd, send_data, MESSAGE_SIZE, 0), "Unable to send message");
 
-	usleep(USEC_PER_MSEC * 10U);
+	usleep(USEC_PER_MSEC * 100U);
 
 	zassert_true(notification_executed, "Notification not triggered.");
 

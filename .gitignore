@@ -68,14 +68,17 @@ tags
 
 # from check_compliance.py
 BinaryFiles.txt
+BoardYml.txt
 Checkpatch.txt
 DevicetreeBindings.txt
+GitDiffCheck.txt
 Gitlint.txt
 Identity.txt
 ImageSize.txt
 Kconfig.txt
 KconfigBasic.txt
 KconfigBasicNoModules.txt
+KconfigHWMv2.txt
 KeepSorted.txt
 MaintainersFormat.txt
 ModulesMaintainers.txt

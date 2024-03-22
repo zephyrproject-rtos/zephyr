@@ -386,3 +386,7 @@
 &gpio5{
 	pinmux = <&iomuxc_snvs_pmic_on_req_gpio5_io00>;
 };
+
+&pit0 {
+	interrupts = <24 0>;
+};

@@ -23,7 +23,7 @@ tests:
     min_ram: 128
     depends_on: usb_device
     platform_allow:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
       - frdm_k64f
     extra_args:
       - CONF_FILE="usbd_next_prj.conf"
@@ -66,11 +66,11 @@ tests:
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf5340dk_nrf5340_cpuapp
-      - adafruit_feather_nrf52840
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - adafruit_feather/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
@@ -91,11 +91,11 @@ tests:
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf5340dk_nrf5340_cpuapp
-      - adafruit_feather_nrf52840
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - adafruit_feather/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     extra_args: CONF_FILE="usbd_next_prj.conf"
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
@@ -138,11 +138,11 @@ tests:
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow:
-      - nrf52840dk_nrf52840
-      - nrf5340dk_nrf5340_cpuapp
-      - adafruit_feather_nrf52840
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - adafruit_feather/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y

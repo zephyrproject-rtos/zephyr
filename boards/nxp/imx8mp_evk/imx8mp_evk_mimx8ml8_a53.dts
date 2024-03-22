@@ -1,0 +1,45 @@
+/*
+ * Copyright 2021-2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx8mp_a53.dtsi>
+#include "imx8mp_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX8MP A53";
+	compatible = "fsl,mimx8mp";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+		cpu@1 {
+			status = "disabled";
+		};
+		cpu@2 {
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@c0000000 {
+		reg = <0xc0000000 DT_SIZE_M(1)>;
+	};
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};

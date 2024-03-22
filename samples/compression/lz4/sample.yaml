@@ -17,7 +17,7 @@ common:
 tests:
   sample.compression.lz4:
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
       - qemu_riscv64
     tags:
       - compression

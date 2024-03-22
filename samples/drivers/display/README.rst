@@ -25,7 +25,7 @@ Below is an example on how to build for a :ref:`nrf52840dk_nrf52840` board with 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :shield: adafruit_2_8_tft_touch_v2
    :compact:

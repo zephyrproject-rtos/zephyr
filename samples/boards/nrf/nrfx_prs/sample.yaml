@@ -3,11 +3,11 @@ sample:
 tests:
   sample.boards.nrf.nrfx_prs:
     platform_allow:
-      - nrf5340dk_nrf5340_cpuapp
-      - nrf9160dk_nrf9160
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf9160dk/nrf9160
     integration_platforms:
-      - nrf5340dk_nrf5340_cpuapp
-      - nrf9160dk_nrf9160
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf9160dk/nrf9160
     tags: nrfx
     harness: console
     harness_config:

@@ -3,9 +3,9 @@ common:
   arch_allow:
     - arm
     - xtensa
-  filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
+  filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
   platform_exclude:
-    - nuvoton_pfm_m487 # See #63167
+    - numaker_pfm_m487 # See #63167
 sample:
   description: Loadable extensions with shell sample
   name: Extension loader shell

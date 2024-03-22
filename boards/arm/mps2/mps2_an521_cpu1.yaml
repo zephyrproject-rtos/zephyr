@@ -1,0 +1,16 @@
+identifier: mps2/an521/cpu1
+name: ARM V2M MPS2-AN521_cpu1
+type: mcu
+arch: arm
+ram: 512
+flash: 468
+simulation: qemu
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools
+testing:
+  default: true
+  only_tags:
+    - arm
+    - fpu

@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023, Nordic Semiconductor ASA
+
+## A pykwalify schema for basic validation of the structure of a
+## board metadata YAML file.
+##
+# The board.yml file is a simple list of key value pairs containing board
+# information like: name, vendor, socs, variants.
+schema;variant-schema:
+  required: false
+  type: seq
+  sequence:
+    - type: map
+      mapping:
+        name:
+          required: true
+          type: str
+        cpucluster:
+          required: false
+          type: str
+        variants:
+          required: false
+          include: variant-schema
+
+schema;board-schema:
+  type: map
+  mapping:
+    name:
+      required: true
+      type: str
+      desc: Name of the board
+    vendor:
+      required: false
+      type: str
+      desc: SoC family of the SoC on the board.
+    revision:
+      required: false
+      type: map
+      mapping:
+        format:
+          required: true
+          type: str
+          enum:
+            ["major.minor.patch", "letter", "number", "custom"]
+        default:
+          required: false # This field is required when 'format' != 'custom'
+          type: str
+        exact:
+          required: false
+          type: bool
+        revisions:
+          required: false # This field is required when 'format' != 'custom'
+          type: seq
+          sequence:
+            - type: map
+              mapping:
+                name:
+                  required: true
+                  type: str
+    socs:
+      required: true
+      type: seq
+      sequence:
+        - type: map
+          mapping:
+            name:
+              required: true
+              type: str
+            variants:
+              include: variant-schema
+
+type: map
+mapping:
+  board:
+    include: board-schema
+  boards:
+    type: seq
+    sequence:
+      - include: board-schema

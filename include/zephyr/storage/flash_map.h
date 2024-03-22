@@ -18,6 +18,8 @@
  * @brief Abstraction over flash partitions/areas and their drivers
  *
  * @defgroup flash_area_api flash area Interface
+ * @since 1.11
+ * @version 1.0.0
  * @ingroup storage_apis
  * @{
  */

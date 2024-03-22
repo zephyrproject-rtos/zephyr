@@ -13,3 +13,8 @@ properties:
 
   constant-charge-voltage-max-microvolt:
     required: true
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin

@@ -40,7 +40,7 @@ _names = [
     'linkserver',
     'mdb',
     'misc',
-    'native_gdb',
+    'native',
     'nios2',
     'nrfjprog',
     'nrfutil',

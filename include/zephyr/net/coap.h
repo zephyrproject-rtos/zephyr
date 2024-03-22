@@ -17,6 +17,8 @@
 /**
  * @brief COAP library
  * @defgroup coap COAP Library
+ * @since 1.10
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -83,6 +85,8 @@ enum coap_method {
 #define COAP_REQUEST_MASK 0x07
 
 #define COAP_VERSION_1 1U
+
+#define COAP_OBSERVE_MAX_AGE 0xFFFFFF
 
 /**
  * @brief CoAP packets may be of one of these types.

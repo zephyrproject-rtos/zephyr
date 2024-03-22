@@ -4,10 +4,10 @@ tests:
     tags:
       - kernel
       - userspace
-    # FIXME: qemu_arc_hs6x is excluded due to a run-time failure, see #49492
+    # FIXME: qemu_arc/qemu_arc_hs6x is excluded due to a run-time failure, see #49492
     platform_exclude:
-      - nrf52dk_nrf52810
-      - qemu_arc_hs6x
+      - nrf52dk/nrf52810
+      - qemu_arc/qemu_arc_hs6x
   kernel.poll.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     ignore_faults: true
@@ -15,9 +15,9 @@ tests:
       - kernel
       - userspace
       - libc
-    # FIXME: qemu_arc_hs6x is excluded due to a run-time failure, see #49492
+    # FIXME: qemu_arc/qemu_arc_hs6x is excluded due to a run-time failure, see #49492
     platform_exclude:
-      - nrf52dk_nrf52810
-      - qemu_arc_hs6x
+      - nrf52dk/nrf52810
+      - qemu_arc/qemu_arc_hs6x
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y

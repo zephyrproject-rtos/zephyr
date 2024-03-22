@@ -1,0 +1,16 @@
+/*
+ * Copyright 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&cpuapp_bellboard 0>;
+		mbox-names = "rx";
+	};
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};

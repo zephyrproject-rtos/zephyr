@@ -144,6 +144,10 @@ static void zpacket_set_eth_pkttype(struct net_if *iface,
 				    struct sockaddr_ll *addr,
 				    struct net_linkaddr *lladdr)
 {
+	if (lladdr == NULL || lladdr->addr == NULL) {
+		return;
+	}
+
 	if (net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr)) {
 		addr->sll_pkttype = PACKET_BROADCAST;
 	} else if (net_eth_is_addr_multicast(

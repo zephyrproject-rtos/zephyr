@@ -1,0 +1,8 @@
+# Copyright (c) 2017 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SILABS_S1
+	bool
+	select SOC_VENDOR_SILABS
+
+rsource "*/Kconfig.soc"

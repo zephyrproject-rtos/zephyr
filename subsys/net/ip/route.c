@@ -29,10 +29,6 @@ LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 #include "nbr.h"
 #include "route.h"
 
-#if !defined(NET_ROUTE_EXTRA_DATA_SIZE)
-#define NET_ROUTE_EXTRA_DATA_SIZE 0
-#endif
-
 /* We keep track of the routes in a separate list so that we can remove
  * the oldest routes (at tail) if needed.
  */
@@ -55,8 +51,7 @@ static void net_route_nexthop_remove(struct net_nbr *nbr)
 NET_NBR_POOL_INIT(net_route_nexthop_pool,
 		  CONFIG_NET_MAX_NEXTHOPS,
 		  sizeof(struct net_route_nexthop),
-		  net_route_nexthop_remove,
-		  0);
+		  net_route_nexthop_remove);
 
 static inline struct net_route_nexthop *net_nexthop_data(struct net_nbr *nbr)
 {
@@ -115,8 +110,7 @@ static void net_route_entries_table_clear(struct net_nbr_table *table)
 NET_NBR_POOL_INIT(net_route_entries_pool,
 		  CONFIG_NET_MAX_ROUTES,
 		  sizeof(struct net_route_entry),
-		  net_route_entry_remove,
-		  NET_ROUTE_EXTRA_DATA_SIZE);
+		  net_route_entry_remove);
 
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, nbr_routes, net_route_entries_pool,
 		   net_route_entries_table_clear);
@@ -663,70 +657,6 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 	}
 
 	return 0;
-}
-
-int net_route_del_by_nexthop_data(struct net_if *iface,
-				  struct in6_addr *nexthop,
-				  void *data)
-{
-	int count = 0, status = 0;
-	struct net_nbr *nbr_nexthop;
-	struct net_route_nexthop *nexthop_route;
-	int i, ret;
-
-	NET_ASSERT(iface);
-	NET_ASSERT(nexthop);
-
-	net_ipv6_nbr_lock();
-
-	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
-	if (!nbr_nexthop) {
-		net_ipv6_nbr_unlock();
-		return -EINVAL;
-	}
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
-		struct net_nbr *nbr = get_nbr(i);
-		struct net_route_entry *route = net_route_data(nbr);
-
-		SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route,
-					     node) {
-			void *extra_data;
-
-			if (nexthop_route->nbr != nbr_nexthop) {
-				continue;
-			}
-
-			if (nbr->extra_data_size == 0U) {
-				continue;
-			}
-
-			/* Routing engine specific extra data needs
-			 * to match too.
-			 */
-			extra_data = net_nbr_extra_data(nbr_nexthop);
-			if (extra_data != data) {
-				continue;
-			}
-
-			ret = net_route_del(route);
-			if (!ret) {
-				count++;
-			} else {
-				status = ret;
-			}
-
-			break;
-		}
-	}
-
-	net_ipv6_nbr_unlock();
-
-	if (count) {
-		return count;
-	}
-
-	return status;
 }
 
 struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)

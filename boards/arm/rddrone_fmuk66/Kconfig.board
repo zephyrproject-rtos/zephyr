@@ -1,7 +1,0 @@
-# Copyright (c) 2021, Electromaticus LLC, 2021 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_RDDRONE_FMUK66
-	bool "NXP RDDRONE-FMUK66"
-	depends on SOC_SERIES_KINETIS_K6X
-	select SOC_PART_NUMBER_MK66FN2M0VLQ18

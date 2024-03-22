@@ -623,8 +623,6 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	gpio_stm32_enable_int(cfg->port, pin);
-
 	switch (trig) {
 	case GPIO_INT_TRIG_LOW:
 		edge = STM32_EXTI_TRIG_FALLING;
@@ -635,7 +633,12 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	case GPIO_INT_TRIG_BOTH:
 		edge = STM32_EXTI_TRIG_BOTH;
 		break;
+	default:
+		err = -EINVAL;
+		goto exit;
 	}
+
+	gpio_stm32_enable_int(cfg->port, pin);
 
 	stm32_exti_trigger(pin, edge);
 

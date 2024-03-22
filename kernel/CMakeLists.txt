@@ -57,10 +57,18 @@ list(APPEND kernel_files
   init.c
   kheap.c
   mem_slab.c
+  float.c
   thread.c
   version.c
+  priority_queues.c
   sched.c
   )
+
+if(CONFIG_SCHED_CPU_MASK)
+list(APPEND kernel_files
+  cpu_mask.c
+  )
+endif()
 
 if(CONFIG_MULTITHREADING)
 list(APPEND kernel_files
@@ -82,6 +90,24 @@ list(APPEND kernel_files
 endif()
 
 endif()
+
+if(CONFIG_SPIN_VALIDATE)
+list(APPEND kernel_files
+     spinlock_validate.c)
+endif()
+
+if(CONFIG_IRQ_OFFLOAD)
+list(APPEND kernel_files
+  irq_offload.c
+  )
+endif()
+
+
+if(CONFIG_THREAD_MONITOR)
+list(APPEND kernel_files
+     thread_monitor.c)
+endif()
+
 
 if(CONFIG_XIP)
 list(APPEND kernel_files

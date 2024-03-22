@@ -49,7 +49,8 @@ static const struct dma_driver_api intel_adsp_hda_dma_host_in_api = {
 			    DEVICE_DT_INST_GET(inst),			\
 			    DT_INST_IRQ(inst, sense));			\
 		irq_enable(DT_INST_IRQN(inst));			\
-		IF_ENABLED(CONFIG_SOC_SERIES_INTEL_ACE, (ACE_DINT[0].ie[ACE_INTL_HDAHIDMA] = 1;)) \
+		IF_ENABLED(CONFIG_SOC_SERIES_INTEL_ADSP_ACE,	\
+			    (ACE_DINT[0].ie[ACE_INTL_HDAHIDMA] = 1;))	\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_ADSP_HDA_DMA_HOST_IN_INIT)

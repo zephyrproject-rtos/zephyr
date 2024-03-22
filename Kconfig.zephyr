@@ -21,12 +21,11 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 # This loads Zephyr base shield defconfigs
 source "boards/shields/*/Kconfig.defconfig"
 
-source "$(BOARD_DIR)/Kconfig.defconfig"
+osource "$(BOARD_DIR)/Kconfig.defconfig"
 
-# This loads custom SoC root defconfigs
-osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
-# This loads Zephyr base SoC root defconfigs
-osource "soc/$(ARCH)/*/Kconfig.defconfig"
+# This loads Zephyr specific SoC root defconfigs
+source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
+
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 # This loads the testsuite defconfig
@@ -644,7 +643,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x1c5f21b0" if SOC_SERIES_ESP32
 	default "0x621e937a" if SOC_NRF52833_QIAA
 	default "0xada52840" if SOC_NRF52840_QIAA
-	default "0x4fb2d5bd" if SOC_SERIES_IMX_RT
+	default "0x4fb2d5bd" if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
 	default "0xe48bff56" if SOC_SERIES_RP2XXX
 	default "0x68ed2b88" if SOC_SERIES_SAMD21
@@ -906,7 +905,7 @@ config BOOTLOADER_SRAM_SIZE_DEPRECATED
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT && !MCUBOOT
+	depends on SOC_FAMILY_ESPRESSIF_ESP32 && !BOOTLOADER_MCUBOOT && !MCUBOOT
 	default	y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader

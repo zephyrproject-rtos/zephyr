@@ -30,9 +30,9 @@ tests:
   sample.logger.basic.dictionary.uart_async_frontend:
     build_only: true
     tags: logging
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_LOG_BACKEND_UART=n
       - CONFIG_LOG_BACKEND_RTT=n
@@ -44,9 +44,9 @@ tests:
   sample.logger.basic.dictionary.uart_frontend_rt:
     build_only: true
     tags: logging
-    platform_allow: nrf5340dk_nrf5340_cpuapp
+    platform_allow: nrf5340dk/nrf5340/cpuapp
     integration_platforms:
-      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk/nrf5340/cpuapp
     extra_configs:
       - CONFIG_SHELL=y
       - CONFIG_LOG_RUNTIME_FILTERING=y

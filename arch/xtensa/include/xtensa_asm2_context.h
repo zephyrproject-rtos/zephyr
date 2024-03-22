@@ -8,6 +8,7 @@
 
 #include <xtensa/corebits.h>
 #include <xtensa/config/core-isa.h>
+#include <xtensa/config/tie.h>
 
 /*
  * Stack frame layout for a saved processor context, in memory order,
@@ -104,6 +105,18 @@ struct xtensa_irq_base_save_area {
 	uintptr_t fpu13;
 	uintptr_t fpu14;
 	uintptr_t fpu15;
+#endif
+
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+
+	/*
+	 * Carve space for the registers used by the HiFi audio engine
+	 * coprocessor (which is always CP1). Carve additional space to
+	 * manage alignment at run-time as we can not yet guarantee the
+	 * alignment of the BSA.
+	 */
+
+	uint8_t  hifi[XCHAL_CP1_SA_SIZE + XCHAL_CP1_SA_ALIGN];
 #endif
 
 #if XCHAL_HAVE_THREADPTR

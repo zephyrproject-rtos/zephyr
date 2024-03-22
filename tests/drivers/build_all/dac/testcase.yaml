@@ -15,6 +15,6 @@ tests:
   drivers.dac.mcux32.build:
     platform_allow: twr_ke18f
   drivers.dac.sam0.build:
-    platform_allow: atsamd21_xpro
+    platform_allow: samd21_xpro
   drivers.dac.stm32.build:
     platform_allow: nucleo_f091rc

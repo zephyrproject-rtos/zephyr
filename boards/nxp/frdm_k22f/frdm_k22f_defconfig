@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2018 Prevas A/S
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_GPIO=y
+CONFIG_PINCTRL=y
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=72000000
+CONFIG_OSC_LOW_POWER=y

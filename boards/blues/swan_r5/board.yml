@@ -1,0 +1,5 @@
+board:
+  name: swan_r5
+  vendor: blues
+  socs:
+    - name: stm32l4r5xx

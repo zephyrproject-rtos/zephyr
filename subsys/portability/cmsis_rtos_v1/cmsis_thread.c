@@ -39,7 +39,7 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 /* clear related bit in cmsis thread status bitarray
  * when terminating a thread
  */
-void z_thread_cmsis_status_mask_clear(struct k_thread *thread)
+void thread_abort_hook(struct k_thread *thread)
 {
 	uint32_t offset, instance;
 

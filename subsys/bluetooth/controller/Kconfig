@@ -255,73 +255,93 @@ choice BT_CTLR_TX_PWR
 	  The value set here represents the actual default power level fed
 	  to the antenna.
 
+config BT_CTLR_TX_PWR_PLUS_10
+	bool "+10 dBm"
+	depends on SOC_SERIES_NRF54HX
+
+config BT_CTLR_TX_PWR_PLUS_9
+	bool "+9 dBm"
+	depends on SOC_SERIES_NRF54HX
+
 config BT_CTLR_TX_PWR_PLUS_8
 	bool "+8 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_7
 	bool "+7 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_6
 	bool "+6 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_5
 	bool "+5 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_4
 	bool "+4 dBm"
-	depends on SOC_SERIES_NRF51X || SOC_COMPATIBLE_NRF52X
+	depends on SOC_SERIES_NRF51X || SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_3
 	bool "+3 dBm"
-	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
+	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF53X
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_PLUS_1
 	bool "+1 dBm"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_0
 	bool "0 dBm"
 
 config BT_CTLR_TX_PWR_MINUS_1
 	bool "-1 dBm"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_2
 	bool "-2 dBm"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_3
 	bool "-3 dBm"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_4
 	bool "-4 dBm"
 
 config BT_CTLR_TX_PWR_MINUS_5
 	bool "-5 dBm"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_6
 	bool "-6 dBm"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_7
 	bool "-7 dBm"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_8
 	bool "-8 dBm"
 
+config BT_CTLR_TX_PWR_MINUS_9
+	bool "-9 dBm"
+	depends on SOC_SERIES_NRF54LX
+
+config BT_CTLR_TX_PWR_MINUS_10
+	bool "-10 dBm"
+	depends on SOC_SERIES_NRF54LX
+
 config BT_CTLR_TX_PWR_MINUS_12
 	bool "-12 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_14
+	bool "-14 dBm"
+	depends on SOC_SERIES_NRF54LX
 
 config BT_CTLR_TX_PWR_MINUS_16
 	bool "-16 dBm"
@@ -329,18 +349,32 @@ config BT_CTLR_TX_PWR_MINUS_16
 config BT_CTLR_TX_PWR_MINUS_20
 	bool "-20 dBm"
 
+config BT_CTLR_TX_PWR_MINUS_26
+	bool "-26 dBm"
+	depends on SOC_SERIES_NRF54LX
+
 config BT_CTLR_TX_PWR_MINUS_30
 	bool "-30 dBm"
-	depends on SOC_SERIES_NRF51X
+	depends on SOC_SERIES_NRF51X || SOC_SERIES_NRF54HX
 
 config BT_CTLR_TX_PWR_MINUS_40
 	bool "-40 dBm"
-	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
+	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+
+config BT_CTLR_TX_PWR_MINUS_46
+	bool "-46 dBm"
+	depends on SOC_SERIES_NRF54LX
+
+config BT_CTLR_TX_PWR_MINUS_70
+	bool "-70 dBm"
+	depends on SOC_SERIES_NRF54HX
 
 endchoice
 
 config BT_CTLR_TX_PWR_DBM
 	int
+	default 10 if BT_CTLR_TX_PWR_PLUS_10
+	default 9 if BT_CTLR_TX_PWR_PLUS_9
 	default 8 if BT_CTLR_TX_PWR_PLUS_8
 	default 7 if BT_CTLR_TX_PWR_PLUS_7
 	default 6 if BT_CTLR_TX_PWR_PLUS_6
@@ -358,11 +392,17 @@ config BT_CTLR_TX_PWR_DBM
 	default -6 if BT_CTLR_TX_PWR_MINUS_6
 	default -7 if BT_CTLR_TX_PWR_MINUS_7
 	default -8 if BT_CTLR_TX_PWR_MINUS_8
+	default -9 if BT_CTLR_TX_PWR_MINUS_9
+	default -10 if BT_CTLR_TX_PWR_MINUS_10
 	default -12 if BT_CTLR_TX_PWR_MINUS_12
+	default -14 if BT_CTLR_TX_PWR_MINUS_14
 	default -16 if BT_CTLR_TX_PWR_MINUS_16
 	default -20 if BT_CTLR_TX_PWR_MINUS_20
+	default -26 if BT_CTLR_TX_PWR_MINUS_26
 	default -30 if BT_CTLR_TX_PWR_MINUS_30
 	default -40 if BT_CTLR_TX_PWR_MINUS_40
+	default -46 if BT_CTLR_TX_PWR_MINUS_46
+	default -70 if BT_CTLR_TX_PWR_MINUS_70
 
 config BT_CTLR_TX_PWR_ANTENNA
 	int "Set TX power (dBm)"
@@ -517,8 +557,8 @@ config BT_CTLR_FAL_SIZE
 	int "LE Controller-based Privacy White List size"
 	depends on BT_CTLR_FILTER_ACCEPT_LIST
 	default 8
-	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
-	range 1 16 if !(SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
+	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1)
+	range 1 16 if !(SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1)
 	help
 	  Set the size of the Filter Accept List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
@@ -529,7 +569,7 @@ config BT_CTLR_RL_SIZE
 	depends on BT_CTLR_PRIVACY
 	default 8
 	range 1 8 if SOC_COMPATIBLE_NRF
-	range 1 8 if SOC_OPENISA_RV32M1_RISCV32
+	range 1 8 if SOC_OPENISA_RV32M1
 	help
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
@@ -812,10 +852,13 @@ config BT_CTLR_SYNC_ISO_PDU_LEN_MAX
 endif # BT_CTLR_ADV_EXT
 
 config BT_CTLR_SET_HOST_FEATURE
-	bool "LE Set Host Feature Command [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "LE Set Host Feature Command" if !BT_LL_SW_SPLIT
 	help
 	  Enables optional LE Set Host Feature Command
+
+config BT_CTLR_SET_HOST_FEATURE
+	bool "LE Set Host Feature Command (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
@@ -951,6 +994,14 @@ config BT_CTLR_ASSERT_HANDLER
 	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
+
+config BT_CTLR_VS_SCAN_REQ_RX
+	bool "Use scan request reporting"
+	depends on BT_HCI_VS_EXT && !BT_CTLR_ADV_EXT
+	select BT_HCI_VS_EVT
+	select BT_CTLR_SCAN_REQ_NOTIFY
+	help
+	  Enables usage of VS Scan Request Reports Command and Scan Request Received Event
 
 endif # BT_CTLR
 

@@ -249,7 +249,8 @@ void bt_mesh_cdb_node_foreach(bt_mesh_cdb_node_func_t func, void *user_data);
  *
  *  @param net_idx NetIdx of the subnet.
  *
- *  @return The new subnet or NULL if it cannot be allocated.
+ *  @return The new subnet or NULL if it cannot be allocated due to
+ *          lack of resources or the subnet has been already allocated.
  */
 struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_alloc(uint16_t net_idx);
 
@@ -328,7 +329,8 @@ int bt_mesh_cdb_subnet_key_export(const struct bt_mesh_cdb_subnet *sub, int key_
  *  @param net_idx NetIdx of NetKey that the application key is bound to.
  *  @param app_idx AppIdx of the application key.
  *
- *  @return The new application key or NULL if it cannot be allocated.
+ *  @return The new application key or NULL if it cannot be allocated due to
+ *          lack of resources or the key has been already allocated.
  */
 struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(uint16_t net_idx,
 						      uint16_t app_idx);

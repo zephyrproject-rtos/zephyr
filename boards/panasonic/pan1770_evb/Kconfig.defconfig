@@ -1,0 +1,11 @@
+# PAN1770 EVB configuration
+
+# Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PAN1770_EVB
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_PAN1770_EVB

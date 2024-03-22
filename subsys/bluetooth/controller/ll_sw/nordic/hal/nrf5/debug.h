@@ -74,7 +74,7 @@
 #define DEBUG_PIN7       BIT(18)
 #define DEBUG_PIN8       BIT(19)
 #define DEBUG_PIN9       BIT(20)
-#elif defined(CONFIG_BOARD_NRF51DK_NRF51422)
+#elif defined(CONFIG_BOARD_NRF51DK_NRF51822)
 #define DEBUG_PORT       NRF_GPIO
 #define DEBUG_PIN0       BIT(12)
 #define DEBUG_PIN1       BIT(13)

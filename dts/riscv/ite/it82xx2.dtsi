@@ -275,7 +275,7 @@
 			       0x00f01639 1   /* GPOTR */
 			       0x00f01651 1   /* P18SCR */
 			       0x00f016a8 8>; /* GPCR */
-			ngpios = <6>;
+			ngpios = <8>;
 			gpio-controller;
 			interrupts = <IT8XXX2_IRQ_WU128 IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_WU129 IRQ_TYPE_LEVEL_HIGH
@@ -283,14 +283,14 @@
 				      IT8XXX2_IRQ_WU131 IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_WU132 IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_WU133 IRQ_TYPE_LEVEL_HIGH
-				      NO_FUNC 0
-				      NO_FUNC 0>;
+				      IT8XXX2_IRQ_WU134 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU135 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			wuc-base = <0xf01b34 0xf01b34 0xf01b34 0xf01b34
-				    0xf01b34 0xf01b34 NO_FUNC  NO_FUNC >;
+				    0xf01b34 0xf01b34 0xf01b34  0xf01b34 >;
 			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
-				    BIT(4)   BIT(5)   0        0       >;
-			has-volt-sel = <1 1 1 1 1 1 0 0>;
+				    BIT(4)   BIT(5)   BIT(6)   BIT(7)>;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
 			#gpio-cells = <2>;
 		};
 
@@ -996,4 +996,3 @@
 		};
 	};
 };
-

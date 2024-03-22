@@ -1,0 +1,20 @@
+identifier: legend@35
+name: Legend
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: seagate

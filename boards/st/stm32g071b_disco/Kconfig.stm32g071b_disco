@@ -1,0 +1,5 @@
+# Copyright 2021 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32G071B_DISCO
+	select SOC_STM32G071XX

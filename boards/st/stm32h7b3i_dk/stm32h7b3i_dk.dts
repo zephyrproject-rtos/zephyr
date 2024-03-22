@@ -1,0 +1,273 @@
+/*
+ * Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h7b3Xi.dtsi>
+#include <st/h7/stm32h7b3lihxq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32H7B3I DISCOVERY KIT board";
+	compatible = "st,stm32h7b3i-dk";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,display = &ltdc;
+		zephyr,canbus = &fdcan1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpiog 11 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		blue_led: led_1 {
+			gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User PB";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(16)>;
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
+		standby-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &red_led;
+		sw0 = &user_button;
+		spi-flash0 = &mx25lm51245;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+/* PLL1P is used for system clock (280 MHz), PLL1Q is used for FDCAN bit quantum clock (80 MHz) */
+&pll {
+	div-m = <12>;
+	mul-n = <280>;
+	div-p = <2>;
+	div-q = <7>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+/* PLL3R is used for outputting 9 MHz pixel clock for LTDC */
+&pll3 {
+	div-m = <8>;
+	mul-n = <60>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <20>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(280)>;
+	d1cpre = <1>;
+	hpre = <1>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_ph13 &uart4_rx_ph14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpioh 2 0>;
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pa12 &spi2_miso_pb14 &spi2_mosi_pb15 &spi2_nss_pi0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* Connect solder bridges SB3, SB4 and SB5 to use CAN connector (CN21) */
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+	phys = <&transceiver0>;
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
+		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke1_ph7
+		     &fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
+		     &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
+		     &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1
+		     &fmc_a14_pg4 &fmc_a15_pg5 &fmc_d0_pd14 &fmc_d1_pd15
+		     &fmc_d2_pd0 &fmc_d3_pd1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
+		     &fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13
+		     &fmc_d11_pe14 &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9
+		     &fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sdram {
+		status = "okay";
+		power-up-delay = <100>;
+		num-auto-refresh = <8>;
+		mode-register = <0x220>;
+		refresh-rate = <0x603>;
+		bank@1 {
+			reg = <1>;
+			st,sdram-control = <STM32_FMC_SDRAM_NC_9
+						STM32_FMC_SDRAM_NR_12
+						STM32_FMC_SDRAM_MWID_16
+						STM32_FMC_SDRAM_NB_4
+						STM32_FMC_SDRAM_CAS_2
+						STM32_FMC_SDRAM_SDCLK_PERIOD_3
+						STM32_FMC_SDRAM_RBURST_ENABLE
+						STM32_FMC_SDRAM_RPIPE_2>;
+			st,sdram-timing = <2 7 4 7 2 2 2>;
+		};
+	};
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpioi 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pi15 &ltdc_r1_pj0 &ltdc_r2_pj1 &ltdc_r3_pj2
+		     &ltdc_r4_pj3 &ltdc_r5_pj4 &ltdc_r6_pj5 &ltdc_r7_pj6
+		     &ltdc_g0_pj7 &ltdc_g1_pj8 &ltdc_g2_pj9 &ltdc_g3_pj10
+		     &ltdc_g4_pj11 &ltdc_g5_pk0 &ltdc_g6_pk1 &ltdc_g7_pk2
+		     &ltdc_b0_pj12 &ltdc_b1_pj13 &ltdc_b2_pj14 &ltdc_b3_pj15
+		     &ltdc_b4_pk3 &ltdc_b5_pk4 &ltdc_b6_pk5 &ltdc_b7_pk6
+		     &ltdc_de_pk7 &ltdc_clk_pi14 &ltdc_hsync_pi12 &ltdc_vsync_pi13>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&sdram2>;
+	status = "okay";
+
+	width = <480>;
+	height = <272>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <10>;
+		hback-porch = <43>;
+		vback-porch = <12>;
+		hfront-porch = <8>;
+		vfront-porch = <4>;
+	};
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pg6
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pf9
+		     &octospim_p1_io2_pf7 &octospim_p1_io3_pf6
+		     &octospim_p1_io4_pc1 &octospim_p1_io5_ph3
+		     &octospim_p1_io6_pg9 &octospim_p1_io7_pd7
+		     &octospim_p1_dqs_pc5>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@90000000 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_DTR_TRANSFER>;
+		status = "okay";
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   partition@0 {
+			       label = "nor";
+			       reg = <0x00000000 DT_SIZE_M(4)>;
+			   };
+		};
+	};
+};

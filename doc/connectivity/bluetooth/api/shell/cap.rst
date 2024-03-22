@@ -27,13 +27,38 @@ register callbacks.
                     [rank <int>] [not-lockable] [sirk <data>]
      lock          :Lock the set
      release       :Release the set [force]
-     print_sirk    :Print the currently used SIRK
+     set_sirk      :Set the currently used SIRK <sirk>
+     get_sirk      :Get the currently used SIRK
      set_sirk_rsp  :Set the response used in SIRK requests <accept, accept_enc,
                     reject, oob>
 
 Besides initializing the CAS and the CSIS, there are also commands to lock and release the CSIS
 instance, as well as printing and modifying access to the SIRK of the CSIS.
 
+Setting a new SIRK
+------------------
+
+This command can modify the currently used SIRK. To get the new RSI to advertise on air,
+:code:`bt adv-data` or :code:`bt advertise` must be called again to set the new advertising data.
+If :code:`CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE` is enabled, this will also notify connected
+clients.
+
+.. code-block:: console
+
+   uart:~$ cap_acceptor set_sirk 00112233445566778899aabbccddeeff
+   Set SIRK updated
+
+Getting the current SIRK
+------------------------
+
+This command can get the currently used SIRK.
+
+.. code-block:: console
+
+   uart:~$ cap_acceptor get_sirk
+   Set SIRK
+   36 04 9a dc 66 3a a1 a1 |6...f:..
+   1d 9a 2f 41 01 73 3e 01 |../A.s>.
 
 CAP Initiator
 *************
@@ -49,6 +74,7 @@ Using the CAP Initiator
 
 When the Bluetooth stack has been initialized (:code:`bt init`), the Initiator can discover CAS and
 the optionally included CSIS instance by calling (:code:`cap_initiator discover`).
+The CAP initiator also supports broadcast audio as a source.
 
 .. code-block:: console
 
@@ -139,6 +165,53 @@ used.
    uart:~$ cap_initiator unicast_stop all
    Unicast stop completed
 
+When doing broadcast
+--------------------
+
+To start a broadcast as the CAP initiator there are a few steps to be done:
+
+1. Create and configure an extended advertising set with periodic advertising
+2. Create and configure a broadcast source
+3. Setup extended and periodic advertising data
+
+The following commands will setup a CAP broadcast source using the 16_2_1 preset (defined by BAP):
+
+
+.. code-block:: console
+
+   bt init
+   bap init
+   bt adv-create nconn-nscan ext-adv name
+   bt per-adv-param
+   cap_initiator ac_12 16_2_1
+   bt adv-data discov
+   bt per-adv-data
+   cap_initiator broadcast_start
+
+
+The broadcast source is created by the :code:`cap_initiator ac_12`, :code:`cap_initiator ac_13`,
+and :code:`cap_initiator ac_14` commands, configuring the broadcast source for the defined audio
+configurations from BAP. The broadcast source can then be stopped with
+:code:`cap_initiator broadcast_stop` or deleted with :code:`cap_initiator broadcast_delete`.
+
+The metadata of the broadcast source can be updated at any time, including when it is already
+streaming. To update the metadata the :code:`cap_initiator broadcast_update` command can be used.
+The command takes an array of data, and the only requirement (besides having valid data) is that the
+streaming context shall be set. For example to set the streaming context to media, the command can
+be used as
+
+.. code-block:: console
+
+   cap_initiator broadcast_update 03020400
+   CAP Broadcast source updated with new metadata. Update the advertised base via `bt per-adv-data`
+   bt per-adv-data
+
+The :code:`bt per-adv-data` command should be used afterwards to update the data is the advertised
+BASE. The data must be little-endian, so in the above example the metadata :code:`03020400` is
+setting the metadata entry with :code:`03` as the length, :code:`02` as the type (streaming context)
+and :code:`0400` as the value :code:`BT_AUDIO_CONTEXT_TYPE_MEDIA`
+(which has the numeric value of 0x).
+
 CAP Commander
 *************
 
@@ -173,7 +246,8 @@ command also needs to be called.
 When connected
 --------------
 
-Discovering CAS and CSIS on a device:
+Discovering CAS and CSIS on a device
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: console
 
@@ -181,7 +255,8 @@ Discovering CAS and CSIS on a device:
    discovery completed with CSIS
 
 
-Setting the volume on all connected devices:
+Setting the volume on all connected devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: console
 
@@ -197,9 +272,10 @@ Setting the volume on all connected devices:
    VCP vol_set done
    Volume change completed
 
-
-Setting the volume offset on one or more connected devices. The offsets are set by connection index,
-so connection index 0 gets the first offset, and index 1 gets the second offset, etc.:
+Setting the volume offset on one or more devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The offsets are set by connection index, so connection index 0 gets the first offset,
+and index 1 gets the second offset, etc.:
 
 .. code-block:: console
 
@@ -229,3 +305,71 @@ so connection index 0 gets the first offset, and index 1 gets the second offset,
    VOCS inst 0x20014188 offset 15
    Offset set for inst 0x20014188
    Volume offset change completed
+
+Setting the volume mute on all connected devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ vcp_vol_ctlr discover
+   VCP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ bt connect <device B>
+   Connected: <device B>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ vcp_vol_ctlr discover
+   VCP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ cap_commander change_volume_mute 1
+   Setting volume mute to 1 on 2 connections
+   VCP volume 100, mute 1
+   VCP mute done
+   VCP volume 100, mute 1
+   VCP mute done
+   Volume mute change completed
+   uart:~$ cap_commander change_volume_mute 0
+   Setting volume mute to 0 on 2 connections
+   VCP volume 100, mute 0
+   VCP unmute done
+   VCP volume 100, mute 0
+   VCP unmute done
+   Volume mute change completed
+
+Setting the microphone gain on one or more devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The gains are set by connection index, so connection index 0 gets the first offset,
+and index 1 gets the second offset, etc.:
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ micp_mic_ctlr discover
+   MICP discover done with 1 AICS
+   uart:~$
+   uart:~$ bt connect <device B>
+   Connected: <device B>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ micp_mic_ctlr discover
+   MICP discover done with 1 AICS
+   uart:~$
+   uart:~$ cap_commander change_microphone_gain 10
+   Setting microphone gain on 1 connections
+   AICS inst 0x200140a4 state gain 10, mute 0, mode 0
+   Gain set for inst 0x200140a4
+   Microphone gain change completed
+   uart:~$
+   uart:~$ cap_commander change_microphone_gain 10 15
+   Setting microphone gain on 2 connections
+   Gain set for inst 0x200140a4
+   AICS inst 0x20014188 state gain 15, mute 0, mode 0
+   Gain set for inst 0x20014188
+   Microphone gain change completed

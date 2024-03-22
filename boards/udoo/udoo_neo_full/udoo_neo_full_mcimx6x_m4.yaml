@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: udoo_neo_full/mcimx6x/m4
+name: UDOO Neo Full
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - uart
+vendor: nxp

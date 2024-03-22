@@ -1,0 +1,23 @@
+# WaRP7 iMX7S M4 board
+
+# Copyright (c) 2018, Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_WARP7
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+config FXAS21002_DRDY_INT1
+	default y
+	depends on FXAS21002_TRIGGER
+
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
+endif # BOARD_WARP7

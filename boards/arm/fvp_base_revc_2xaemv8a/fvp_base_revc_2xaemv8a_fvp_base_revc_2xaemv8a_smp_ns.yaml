@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_base_revc_2xaemv8a//smp/ns
+name: FVP Emulation FVP_Base_RevC-2xAEMvA (SMP)
+arch: arm64
+type: sim
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 2048
+flash: 64
+vendor: arm

@@ -1,6 +1,0 @@
-# NXP i.MX8 SoC series selection
-#
-# Copyright (c) 2021 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-source "soc/xtensa/nxp_adsp/*/Kconfig.series"

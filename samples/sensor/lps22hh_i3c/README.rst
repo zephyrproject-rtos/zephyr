@@ -37,20 +37,20 @@ sensor (for example, the one on evaluation board STEVALMKI192-V1).
    resulting in the sample not being able to communicate with
    the sensor.
 
-Building on mimxrt685_evk_cm33 board
+Building on mimxrt685_evk board
 ====================================
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lps22hh_i3c
    :host-os: unix
-   :board: mimxrt685_evk_cm33
+   :board: mimxrt685_evk
    :goals: build
    :compact:
 
 Board Preparations
 ==================
 
-mimxrt685_evk_cm33
+mimxrt685_evk
 ------------------
 
 On the board :ref:`mimxrt685_evk`, the I3C pins are exposed on the J18

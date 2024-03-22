@@ -1,0 +1,9 @@
+# ODROID-GO Game Kit configuration
+
+# Copyright (c) 2019 Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ODROID_GO
+	select SOC_ESP32_WROVER_E_N16R2
+	select SOC_ESP32_PROCPU if BOARD_ODROID_GO_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_ODROID_GO_ESP32_APPCPU

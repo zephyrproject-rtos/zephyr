@@ -28,6 +28,10 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dns_resolve.h>
 
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_net.h>
+#include <zephyr/logging/log_ctrl.h>
+
 #include "dhcpv4_internal.h"
 #include "ipv4.h"
 #include "net_stats.h"
@@ -45,8 +49,28 @@ static struct k_work_delayable timeout_work;
 static struct net_mgmt_event_callback mgmt4_cb;
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
-static sys_slist_t option_callbacks;
+static sys_slist_t option_callbacks = SYS_SLIST_STATIC_INIT(&option_callbacks);
+static int unique_types_in_callbacks;
 #endif
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC)
+static sys_slist_t option_vendor_callbacks = SYS_SLIST_STATIC_INIT(&option_vendor_callbacks);
+#endif
+
+static const uint8_t min_req_options[] = {
+	DHCPV4_OPTIONS_SUBNET_MASK,
+	DHCPV4_OPTIONS_ROUTER,
+#ifdef CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION
+	DHCPV4_OPTIONS_LOG_SERVER,
+#endif
+#ifdef CONFIG_NET_DHCPV4_OPTION_NTP_SERVER
+	DHCPV4_OPTIONS_NTP_SERVER,
+#endif
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+	DHCPV4_OPTIONS_VENDOR_SPECIFIC,
+#endif
+	DHCPV4_OPTIONS_DNS_SERVER
+};
 
 /* RFC 1497 [17] */
 static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
@@ -61,6 +85,47 @@ static inline bool dhcpv4_add_cookie(struct net_pkt *pkt)
 
 	return true;
 }
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+static void dhcpv4_option_callback_get_unique_types(uint8_t *types)
+{
+	struct net_dhcpv4_option_callback *cb, *tmp;
+	int count = ARRAY_SIZE(min_req_options);
+	bool found = false;
+
+	memcpy(types, min_req_options, ARRAY_SIZE(min_req_options));
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&option_callbacks, cb, tmp, node) {
+		for (int j = 0; j < count; j++) {
+			if (types[j] == cb->option) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			if (count >= CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS) {
+				NET_ERR("Too many unique options in callbacks, cannot request "
+					"option %d",
+					cb->option);
+				continue;
+			}
+			types[count] = cb->option;
+			count++;
+		} else {
+			found = false;
+		}
+	}
+	unique_types_in_callbacks = count - ARRAY_SIZE(min_req_options);
+}
+
+static void dhcpv4_option_callback_count(void)
+{
+	uint8_t types[CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS];
+
+	dhcpv4_option_callback_get_unique_types(types);
+}
+#endif	/* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
 /* Add a an option with the form OPTION LENGTH VALUE.  */
 static bool dhcpv4_add_option_length_value(struct net_pkt *pkt, uint8_t option,
@@ -87,12 +152,17 @@ static bool dhcpv4_add_msg_type(struct net_pkt *pkt, uint8_t type)
  */
 static bool dhcpv4_add_req_options(struct net_pkt *pkt)
 {
-	static uint8_t data[3] = { DHCPV4_OPTIONS_SUBNET_MASK,
-				DHCPV4_OPTIONS_ROUTER,
-				DHCPV4_OPTIONS_DNS_SERVER };
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+	uint8_t data[CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS];
+
+	dhcpv4_option_callback_get_unique_types(data);
 
 	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_LIST,
-					      ARRAY_SIZE(data), data);
+		unique_types_in_callbacks + ARRAY_SIZE(min_req_options), data);
+#else
+	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_LIST,
+					      ARRAY_SIZE(min_req_options), min_req_options);
+#endif
 }
 
 static bool dhcpv4_add_server_id(struct net_pkt *pkt,
@@ -115,6 +185,15 @@ static bool dhcpv4_add_hostname(struct net_pkt *pkt,
 {
 	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_HOST_NAME,
 					      size, hostname);
+}
+#endif
+
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+static bool dhcpv4_add_vendor_class_id(struct net_pkt *pkt,
+				 const char *vendor_class_id, const size_t size)
+{
+	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_VENDOR_CLASS_ID,
+					      size, vendor_class_id);
 }
 #endif
 
@@ -164,6 +243,10 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 	const char *hostname = net_hostname_get();
 	const size_t hostname_size = strlen(hostname);
 #endif
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+	const char vendor_class_id[] = CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING;
+	const size_t vendor_class_id_size = sizeof(vendor_class_id) - 1;
+#endif
 
 	if (src_addr == NULL) {
 		addr = net_ipv4_unspecified_address();
@@ -180,12 +263,21 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 	}
 
 	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER) {
-		size +=  DHCPV4_OLV_MSG_REQ_LIST;
+		size +=  DHCPV4_OLV_MSG_REQ_LIST + ARRAY_SIZE(min_req_options);
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+		size += unique_types_in_callbacks;
+#endif
 	}
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 	if (hostname_size > 0) {
 		size += DHCPV4_OLV_MSG_HOST_NAME + hostname_size;
+	}
+#endif
+
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+	if (vendor_class_id_size > 0) {
+		size += DHCPV4_OLV_MSG_VENDOR_CLASS_ID + vendor_class_id_size;
 	}
 #endif
 
@@ -250,6 +342,13 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 	if (hostname_size > 0 &&
 	     !dhcpv4_add_hostname(pkt, hostname, hostname_size)) {
+		goto fail;
+	}
+#endif
+
+#if defined(CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER)
+	if (vendor_class_id_size > 0 &&
+	     !dhcpv4_add_vendor_class_id(pkt, vendor_class_id, vendor_class_id_size)) {
 		goto fail;
 	}
 #endif
@@ -667,6 +766,71 @@ static void dhcpv4_timeout(struct k_work *work)
 	}
 }
 
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC)
+
+static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
+				      enum net_dhcpv4_msg_type *msg_type, int length)
+{
+	struct net_dhcpv4_option_callback *cb, *tmp;
+	struct net_pkt_cursor backup;
+	uint8_t len;
+	uint8_t type;
+
+	if (length < 3) {
+		NET_ERR("Vendor-specific option parsing, length too short");
+		net_pkt_skip(pkt, length);
+		return -EBADMSG;
+	}
+
+	while (!net_pkt_read_u8(pkt, &type)) {
+		if (type == DHCPV4_OPTIONS_END) {
+			NET_DBG("Vendor-specific options_end");
+			return 0;
+		}
+		length--;
+
+		if (length <= 0) {
+			NET_ERR("Vendor-specific option parsing, malformed option");
+			return -EBADMSG;
+		}
+
+		if (net_pkt_read_u8(pkt, &len)) {
+			NET_ERR("Vendor-specific option parsing, bad length");
+			return -ENOBUFS;
+		}
+		length--;
+		if (length < len) {
+			NET_ERR("Vendor-specific option parsing, length too long");
+			net_pkt_skip(pkt, length);
+			return -EBADMSG;
+		}
+		net_pkt_cursor_backup(pkt, &backup);
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&option_vendor_callbacks, cb, tmp, node) {
+			if (cb->option == type) {
+				NET_ASSERT(cb->handler, "No callback handler!");
+
+				if (net_pkt_read(pkt, cb->data, MIN(cb->max_length, len))) {
+					NET_DBG("option vendor callback, read err");
+					return -ENOBUFS;
+				}
+
+				cb->handler(cb, len, *msg_type, iface);
+				net_pkt_cursor_restore(pkt, &backup);
+			}
+		}
+		net_pkt_skip(pkt, len);
+		length = length - len;
+		if (length <= 0) {
+			NET_DBG("Vendor-specific options_end (no code 255)");
+			return 0;
+		}
+	}
+	return -ENOBUFS;
+}
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
+
 /* Parse DHCPv4 options and retrieve relevant information
  * as per RFC 2132.
  */
@@ -738,7 +902,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			net_if_ipv4_set_netmask(iface, &netmask);
+			iface->config.dhcpv4.netmask = netmask;
+
 			NET_DBG("options_subnet_mask %s",
 				net_sprint_ipv4_addr(&netmask));
 			break;
@@ -807,6 +972,83 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
+			break;
+		}
+#endif
+#if defined(CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION)
+		case DHCPV4_OPTIONS_LOG_SERVER: {
+			struct sockaddr_in log_server = { 0 };
+
+			/* Log server option may present 1 or more
+			 * addresses. Each 4 bytes in length. Log
+			 * servers should be listed in order
+			 * of preference.  Hence we choose the first
+			 * and skip the rest.
+			 */
+			if (length % 4 != 0U) {
+				NET_ERR("options_log_server, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, log_server.sin_addr.s4_addr, 4) < 0 ||
+			    net_pkt_skip(pkt, length - 4U) < 0) {
+				NET_ERR("options_log_server, short packet");
+				return false;
+			}
+
+			log_server.sin_family = AF_INET;
+			log_backend_net_set_ip((struct sockaddr *)&log_server);
+
+#ifdef CONFIG_LOG_BACKEND_NET_AUTOSTART
+			log_backend_net_start();
+#endif
+
+			NET_DBG("options_log_server: %s", net_sprint_ipv4_addr(&log_server));
+
+			break;
+		}
+#endif /* CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION */
+#if defined(CONFIG_NET_DHCPV4_OPTION_NTP_SERVER)
+		case DHCPV4_OPTIONS_NTP_SERVER: {
+
+			/* NTP server option may present 1 or more
+			 * addresses. Each 4 bytes in length. NTP
+			 * servers should be listed in order
+			 * of preference.  Hence we choose the first
+			 * and skip the rest.
+			 */
+			if (length % 4 != 0U) {
+				NET_ERR("options_log_server, bad length");
+				return false;
+			}
+
+			if (net_pkt_read(pkt, iface->config.dhcpv4.ntp_addr.s4_addr, 4) < 0 ||
+			    net_pkt_skip(pkt, length - 4U) < 0) {
+				NET_ERR("options_ntp_server, short packet");
+				return false;
+			}
+
+			NET_DBG("options_ntp_server: %s",
+				net_sprint_ipv4_addr(&iface->config.dhcpv4.ntp_addr));
+
+			break;
+		}
+#endif /* CONFIG_NET_DHCPV4_OPTION_NTP_SERVER */
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC)
+		case DHCPV4_OPTIONS_VENDOR_SPECIFIC: {
+			if (!sys_slist_is_empty(&option_vendor_callbacks)) {
+				NET_DBG("options_vendor_specific");
+				if (dhcpv4_parse_option_vendor(pkt, iface, msg_type, length) ==
+				    -ENOBUFS) {
+					return false;
+				}
+			} else {
+				NET_DBG("options_vendor_specific, no callbacks");
+				if (net_pkt_skip(pkt, length)) {
+					NET_DBG("options_vendor_specific, skip err");
+					return false;
+				}
+			}
 			break;
 		}
 #endif
@@ -962,6 +1204,10 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 			NET_DBG("Failed to add IPv4 addr to iface %p", iface);
 			return;
 		}
+
+		net_if_ipv4_set_netmask_by_addr(iface,
+						&iface->config.dhcpv4.requested_ip,
+						&iface->config.dhcpv4.netmask);
 
 		dhcpv4_enter_bound(iface);
 		break;
@@ -1281,12 +1527,13 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 
 int net_dhcpv4_add_option_callback(struct net_dhcpv4_option_callback *cb)
 {
-	if (!cb || !cb->handler) {
+	if (cb == NULL || cb->handler == NULL) {
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&lock, K_FOREVER);
 	sys_slist_prepend(&option_callbacks, &cb->node);
+	dhcpv4_option_callback_count();
 	k_mutex_unlock(&lock);
 	return 0;
 }
@@ -1295,7 +1542,7 @@ int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb)
 {
 	int ret = 0;
 
-	if (!cb || !cb->handler) {
+	if (cb == NULL || cb->handler == NULL) {
 		return -EINVAL;
 	}
 
@@ -1303,11 +1550,44 @@ int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb)
 	if (!sys_slist_find_and_remove(&option_callbacks, &cb->node)) {
 		ret = -EINVAL;
 	}
+	dhcpv4_option_callback_count();
 	k_mutex_unlock(&lock);
 	return ret;
 }
 
 #endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC)
+
+int net_dhcpv4_add_option_vendor_callback(struct net_dhcpv4_option_callback *cb)
+{
+	if (cb == NULL || cb->handler == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	sys_slist_prepend(&option_vendor_callbacks, &cb->node);
+	k_mutex_unlock(&lock);
+	return 0;
+}
+
+int net_dhcpv4_remove_option_vendor_callback(struct net_dhcpv4_option_callback *cb)
+{
+	int ret = 0;
+
+	if (cb == NULL || cb->handler == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	if (!sys_slist_find_and_remove(&option_vendor_callbacks, &cb->node)) {
+		ret = -EINVAL;
+	}
+	k_mutex_unlock(&lock);
+	return ret;
+}
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
 
 void net_dhcpv4_start(struct net_if *iface)
 {
@@ -1395,11 +1675,6 @@ int net_dhcpv4_init(void)
 	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
 					 NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 
-#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
-	k_mutex_lock(&lock, K_FOREVER);
-	sys_slist_init(&option_callbacks);
-	k_mutex_unlock(&lock);
-#endif
 	return 0;
 }
 

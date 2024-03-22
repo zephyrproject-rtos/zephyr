@@ -1,0 +1,61 @@
+# ST Microelectronics STM32F7 MCU line
+
+# Copyright (c) 2018 Yurii Hamann
+# Copyright (c) 2022, Rtone.
+# Copyright (c) 2023, Rahul Arasikere.
+# Copyright (c) 2023 Evan Perry Grove
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32F7X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32f7x" if SOC_SERIES_STM32F7X
+
+config SOC_STM32F722XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F723XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F745XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F746XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F756XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F750XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F765XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F767XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC_STM32F769XX
+	bool
+	select SOC_SERIES_STM32F7X
+
+config SOC
+	default "stm32f722xx" if SOC_STM32F722XX
+	default "stm32f723xx" if SOC_STM32F723XX
+	default "stm32f745xx" if SOC_STM32F745XX
+	default "stm32f746xx" if SOC_STM32F746XX
+	default "stm32f750xx" if SOC_STM32F750XX
+	default "stm32f756xx" if SOC_STM32F756XX
+	default "stm32f765xx" if SOC_STM32F765XX
+	default "stm32f767xx" if SOC_STM32F767XX
+	default "stm32f769xx" if SOC_STM32F769XX

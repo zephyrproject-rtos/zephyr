@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2021, Laird Connectivity
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx8mp_evk/mimx8ml8/m7/ddr
+name: NXP i.MX8M Plus EVK (DDR)
+type: mcu
+arch: arm
+ram: 2048
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - uart
+vendor: nxp

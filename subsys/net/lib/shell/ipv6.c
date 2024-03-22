@@ -62,7 +62,6 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 	const struct shell *sh = data->sh;
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	const char *extra;
-	int i;
 
 	ARG_UNUSED(user_data);
 
@@ -77,7 +76,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 
 	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_ipv6_prefix *prefix;
 		char remaining_str[sizeof("01234567890")];
 		uint64_t remaining;
@@ -219,6 +218,10 @@ static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
 		if (ret < 0) {
 			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
 				 "join", net_sprint_ipv6_addr(&addr), idx, ret);
+			if (ret == -ENOTSUP) {
+				PR_INFO("Enable CONFIG_NET_IPV6_MLD for %s multicast "
+					"group\n", "joining");
+			}
 			return ret;
 		}
 	} else {
@@ -254,7 +257,7 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 	iface = net_if_get_by_index(idx);
 	if (!iface) {
 		PR_WARNING("No such interface in index %d\n", idx);
-		return -ENOEXEC;
+		return -ENOENT;
 	}
 
 	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
@@ -269,6 +272,10 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 		if (ret < 0) {
 			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
 				 "leave", net_sprint_ipv6_addr(&addr), idx, ret);
+			if (ret == -ENOTSUP) {
+				PR_INFO("Enable CONFIG_NET_IPV6_MLD for %s multicast "
+					"group\n", "leaving");
+			}
 			return ret;
 		}
 	} else {

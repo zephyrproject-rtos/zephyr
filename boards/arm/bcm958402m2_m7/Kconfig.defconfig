@@ -1,6 +1,0 @@
-# Copyright 2020 Broadcom
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "bcm958402m2_m7"
-	depends on BOARD_BCM958402M2_M7

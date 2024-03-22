@@ -50,7 +50,7 @@ static void loopback_init(struct net_if *iface)
 			LOG_ERR("Failed to register IPv4 loopback address");
 		}
 
-		net_if_ipv4_set_netmask(iface, &netmask);
+		net_if_ipv4_set_netmask_by_addr(iface, &ipv4_loopback, &netmask);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
