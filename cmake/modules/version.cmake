@@ -69,6 +69,10 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   set(MAJOR ${${type}_VERSION_MAJOR}) # Temporary convenience variable
   set(MINOR ${${type}_VERSION_MINOR}) # Temporary convenience variable
   set(PATCH ${${type}_PATCHLEVEL})    # Temporary convenience variable
+  # if VERSION_TWEAK is not set, set it to 0
+  if(NOT ${type}_VERSION_TWEAK)
+    set(${type}_VERSION_TWEAK 0)
+  endif()
   set(TWEAK ${${type}_VERSION_TWEAK}) # Temporary convenience variable
 
   math(EXPR ${type}_VERSION_NUMBER_INT "(${MAJOR} << 16) + (${MINOR} << 8)  + (${PATCH})")
