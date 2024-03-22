@@ -232,6 +232,7 @@
  */
 #define INPUT_ABS_BRAKE 0x0a            /**< Absolute brake position */
 #define INPUT_ABS_GAS 0x09              /**< Absolute gas position */
+#define INPUT_ABS_MT_SLOT 0x2f          /**< Absolute multitouch slot identifier */
 #define INPUT_ABS_RUDDER 0x07           /**< Absolute rudder position */
 #define INPUT_ABS_RX 0x03               /**< Absolute rotation around X axis */
 #define INPUT_ABS_RY 0x04               /**< Absolute rotation around Y axis */
