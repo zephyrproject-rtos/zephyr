@@ -56,6 +56,10 @@ struct memc_flexspi_data {
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
+FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+	flexspi_read_sample_clock_t rx_sample_clock_b;
+#endif
 	const struct pinctrl_dev_config *pincfg;
 	size_t size[kFLEXSPI_PortCount];
 	struct port_lut port_luts[kFLEXSPI_PortCount];
@@ -241,6 +245,14 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 		offset += data->size[i];
 	}
 
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT) && \
+	(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT)
+	if (data->base->FLSHCR0[port] & FLEXSPI_FLSHCR0_ADDRSHIFT_MASK) {
+		/* Address shift is set, add 0x1000_0000 to AHB address */
+		offset += 0x10000000;
+	}
+#endif
+
 	return data->ahb_base + offset;
 }
 
@@ -282,6 +294,16 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config.enableSckBDiffOpt = data->sck_differential_clock;
 #endif
 	flexspi_config.rxSampleClock = data->rx_sample_clock;
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
+FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+	flexspi_config.rxSampleClockPortB = data->rx_sample_clock_b;
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF) && \
+	FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF
+	if (flexspi_config.rxSampleClock != flexspi_config.rxSampleClockPortB) {
+		flexspi_config.rxSampleClockDiff = true;
+	}
+#endif
+#endif
 
 	/* Configure AHB RX buffers, if any configuration settings are present */
 	__ASSERT(data->buf_cfg_cnt < FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT,
@@ -329,6 +351,13 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif
 
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
+	FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+#define MEMC_FLEXSPI_RXCLK_B(inst) .rx_sample_clock_b = DT_INST_PROP(inst, rx_clock_source_b),
+#else
+#define MEMC_FLEXSPI_RXCLK_B(inst)
+#endif
+
 #if defined(CONFIG_XIP) && defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
 /* Checks if image flash base address is in the FlexSPI AHB base region */
 #define MEMC_FLEXSPI_CFG_XIP(node_id)						\
@@ -357,6 +386,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.combination_mode = DT_INST_PROP(n, combination_mode),	\
 		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),	\
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\
+		MEMC_FLEXSPI_RXCLK_B(n)                                 \
 		.buf_cfg = (struct memc_flexspi_buf_cfg *)buf_cfg_##n,	\
 		.buf_cfg_cnt = sizeof(buf_cfg_##n) /			\
 			sizeof(struct memc_flexspi_buf_cfg),		\
