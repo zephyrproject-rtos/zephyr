@@ -6,7 +6,7 @@ common:
   harness_config:
     fixture: gpio_loopback
   platform_allow:
-    - b_u585i_iot02a
+    - b_u585i_iot02a/stm32u585xx
     - nrf5340dk/nrf5340/cpuapp
 
 tests:

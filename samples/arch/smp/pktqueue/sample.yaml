@@ -19,4 +19,4 @@ tests:
       - smp
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
     integration_platforms:
-      - qemu_x86_64
+      - qemu_x86_64/atom

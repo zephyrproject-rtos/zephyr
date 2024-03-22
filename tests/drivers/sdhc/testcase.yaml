@@ -11,4 +11,4 @@ tests:
     filter: dt_alias_exists("sdhc0")
     tags: sdhc
     integration_platforms:
-      - mimxrt1064_evk
+      - mimxrt1064_evk/mimxrt1064

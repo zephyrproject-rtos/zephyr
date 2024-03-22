@@ -1,7 +1,7 @@
 tests:
   logging.log_links:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     tags:
       - log_links
       - logging

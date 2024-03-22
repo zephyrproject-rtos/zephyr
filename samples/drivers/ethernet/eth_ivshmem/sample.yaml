@@ -2,6 +2,6 @@ sample:
   name: Inter-VM Shared Memory (ivshmem) Ethernet
 tests:
   sample.drivers.ethernet.eth_ivshmem:
-    platform_allow: qemu_cortex_a53
+    platform_allow: qemu_cortex_a53/qemu_cortex_a53
     tags: drivers ethernet
     build_only: true

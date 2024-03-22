@@ -5,6 +5,6 @@ common:
     - tls
 tests:
   net.socket.tls.ext:
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

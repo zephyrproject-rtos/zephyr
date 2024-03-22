@@ -7,7 +7,7 @@ common:
 
 tests:
   sample.drivers.fpga_controller:
-    platform_allow: quick_feather
+    platform_allow: quick_feather/quicklogic_eos_s3
   sample.drivers.fpga_controller.shell:
-    platform_allow: quick_feather
+    platform_allow: quick_feather/quicklogic_eos_s3
     extra_args: CONF_FILE="prj_shell.conf"

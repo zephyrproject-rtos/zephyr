@@ -5,8 +5,8 @@ tests:
     build_only: true
     tags: video
     platform_allow:
-      - mimxrt1064_evk
-      - mm_swiftio
+      - mimxrt1064_evk/mimxrt1064
+      - mm_swiftio/mimxrt1052
     depends_on: video
     integration_platforms:
-      - mimxrt1064_evk
+      - mimxrt1064_evk/mimxrt1064

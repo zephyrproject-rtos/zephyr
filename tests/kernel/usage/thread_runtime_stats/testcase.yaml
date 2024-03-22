@@ -14,7 +14,7 @@ tests:
     # SMP is excluded as the test was only written for UP
     filter: not CONFIG_SMP
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
       - mps2/an385
     platform_exclude:
-      - mr_canhubk3
+      - mr_canhubk3/s32k344

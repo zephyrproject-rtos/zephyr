@@ -4,7 +4,7 @@ sample:
 common:
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   harness: net
-  platform_allow: qemu_x86
+  platform_allow: qemu_x86/atom
   tags:
     - net
     - socket

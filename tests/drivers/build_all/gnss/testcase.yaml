@@ -3,6 +3,6 @@ common:
     - drivers
     - gnss
   build_only: true
-  platform_allow: native_sim
+  platform_allow: native_sim/native
 tests:
   drivers.gnss.default: {}

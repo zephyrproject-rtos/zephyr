@@ -5,10 +5,10 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
-      - qemu_x86
+      - qemu_x86/atom
       - mps2/an385
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     tags: power
     harness: console
     harness_config:

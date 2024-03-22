@@ -2,7 +2,7 @@ common:
   tags: shell
   min_ram: 32
   integration_platforms:
-    - native_sim
+    - native_sim/native
 
 tests:
   shell.core:

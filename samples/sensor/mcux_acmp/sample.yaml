@@ -3,11 +3,11 @@ sample:
   name: NXP MCUX ACMP sample
 common:
   platform_allow:
-    - twr_ke18f
+    - twr_ke18f/mke18f16
     - mimxrt1170_evk/mimxrt1176/cm7
     - mimxrt1170_evk/mimxrt1176/cm4
   integration_platforms:
-    - twr_ke18f
+    - twr_ke18f/mke18f16
   tags:
     - drivers
     - sensor

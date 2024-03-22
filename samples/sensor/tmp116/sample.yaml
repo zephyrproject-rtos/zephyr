@@ -3,9 +3,9 @@ sample:
 tests:
   sample.sensor.tmp116:
     harness: console
-    platform_allow: nucleo_f401re
+    platform_allow: nucleo_f401re/stm32f401xe
     integration_platforms:
-      - nucleo_f401re
+      - nucleo_f401re/stm32f401xe
     tags: sensors
     depends_on: i2c
     harness_config:

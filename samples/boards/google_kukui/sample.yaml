@@ -2,5 +2,5 @@ sample:
   name: Kukui general features
 tests:
   sample.board.google_kukui:
-    platform_allow: google_kukui
+    platform_allow: google_kukui/stm32f098xx
     tags: ec

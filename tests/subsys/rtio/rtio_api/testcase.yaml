@@ -1,5 +1,5 @@
 common:
-  platform_exclude: m2gl025_miv
+  platform_exclude: m2gl025_miv/miv
   platform_key:
     - arch
     - simulation
@@ -8,14 +8,14 @@ tests:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
     integration_platforms:
-      - native_sim
+      - native_sim/native
   rtio.api.submit_sem:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
     extra_configs:
       - CONFIG_RTIO_SUBMIT_SEM=y
     integration_platforms:
-      - native_sim
+      - native_sim/native
   rtio.api.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
@@ -26,7 +26,7 @@ tests:
       - rtio
       - userspace
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   rtio.api.userspace.submit_sem:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
@@ -38,4 +38,4 @@ tests:
       - rtio
       - userspace
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

@@ -48,9 +48,9 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-clock-sync.conf"
     filter: CONFIG_ENTROPY_HAS_DRIVER
     integration_platforms:
-      - nucleo_wl55jc
+      - nucleo_wl55jc/stm32wl55xx
   sample.lorawan.class_a.multicast:
     extra_args: OVERLAY_CONFIG="overlay-multicast.conf"
     filter: CONFIG_ENTROPY_HAS_DRIVER
     integration_platforms:
-      - nucleo_wl55jc
+      - nucleo_wl55jc/stm32wl55xx

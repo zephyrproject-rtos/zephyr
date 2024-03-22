@@ -10,10 +10,10 @@ tests:
     platform_exclude:
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4
-      - gd32f350r_eval
+      - gd32f350r_eval/gd32f350
       - arduino_portenta_h7/stm32h747xx/m4
       - arduino_giga_r1/stm32h747xx/m4
     harness: keyboard
     min_ram: 12
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

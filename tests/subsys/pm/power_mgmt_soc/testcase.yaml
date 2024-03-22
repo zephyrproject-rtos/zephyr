@@ -1,15 +1,15 @@
 tests:
   pm.soc:
     platform_allow:
-      - cc26x2r1_launchxl
-      - cc1352r1_launchxl
-      - mec15xxevb_assy6853
-      - mec1501modular_assy6885
-      - nucleo_f429zi
-      - nucleo_wb55rg
-      - nucleo_l476rg
-      - twr_ke18f
+      - cc26x2r1_launchxl/cc2652r
+      - cc1352r1_launchxl/cc1352r
+      - mec15xxevb_assy6853/mec1501_hsz
+      - mec1501modular_assy6885/mec1501_hsz
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_wb55rg/stm32wb55xx
+      - nucleo_l476rg/stm32l476xx
+      - twr_ke18f/mke18f16
       - mimxrt595_evk/mimxrt595s/cm33
     tags: pm
     integration_platforms:
-      - mec15xxevb_assy6853
+      - mec15xxevb_assy6853/mec1501_hsz

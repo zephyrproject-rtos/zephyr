@@ -4,10 +4,10 @@ tests:
   sample.bluetooth.periodic_sync:
     harness: bluetooth
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_x86
-      - nrf52_bsim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
+      - nrf52_bsim/nrf52833
       - nrf52dk/nrf52832
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965

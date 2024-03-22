@@ -5,10 +5,10 @@ tests:
   sample.net.socket.tcp:
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
     harness: net
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom
     tags:
       - socket
       - net
       - tcp
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

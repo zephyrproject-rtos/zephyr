@@ -5,8 +5,8 @@ tests:
   sample.bluetooth.ibeacon:
     harness: bluetooth
     platform_allow:
-      - bbc_microbit
-      - qemu_x86
+      - bbc_microbit/nrf51822
+      - qemu_x86/atom
     tags: bluetooth
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

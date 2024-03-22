@@ -14,9 +14,9 @@ common:
 tests:
   sample.drivers.jesd216:
     platform_exclude:
-      - hifive1
-      - hifive_unleashed
-      - hifive_unmatched
+      - hifive1/fe310
+      - hifive_unleashed/fu540
+      - hifive_unmatched/fu740
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm4
     filter: dt_compat_enabled("jedec,spi-nor")

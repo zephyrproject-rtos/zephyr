@@ -4,7 +4,7 @@ common:
   tags:
     - input
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   input.api.thread:
     extra_configs:

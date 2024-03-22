@@ -10,14 +10,14 @@ tests:
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
-    platform_exclude: qemu_x86_64
+    platform_exclude: qemu_x86_64/atom
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   kernel.memory_protection.mem_map.x86_64:
     filter: CONFIG_MMU and CONFIG_X86_64 and not CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
     integration_platforms:
-      - qemu_x86_64
+      - qemu_x86_64/atom
   kernel.memory_protection.mem_map.x86_64.coverage:
     filter: CONFIG_MMU and CONFIG_X86_64 and CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
@@ -25,9 +25,9 @@ tests:
       - EXTRA_CFLAGS=-DSKIP_EXECUTE_TESTS
     extra_configs:
       - CONFIG_COVERAGE=y
-    platform_allow: qemu_x86_64
+    platform_allow: qemu_x86_64/atom
   kernel.memory_protection.mem_map.x86_64.coverage.exec:
     filter: CONFIG_MMU and CONFIG_X86_64 and CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
     extra_args: CONF_FILE=prj_x86_64_coverage_exec.conf
-    platform_allow: qemu_x86_64
+    platform_allow: qemu_x86_64/atom

@@ -6,31 +6,31 @@ tests:
       - adc
     depends_on: adc
     platform_allow:
-      - nucleo_l073rz
-      - disco_l475_iot1
-      - cc3220sf_launchxl
-      - cc3235sf_launchxl
-      - cy8cproto_063_ble
-      - stm32l496g_disco
-      - stm32h735g_disco
+      - nucleo_l073rz/stm32l073xx
+      - disco_l475_iot1/stm32l475xx
+      - cc3220sf_launchxl/cc3220sf
+      - cc3235sf_launchxl/cc3235sf
+      - cy8cproto_063_ble/cyble_416045_02
+      - stm32l496g_disco/stm32l496xx
+      - stm32h735g_disco/stm32h735xx
       - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
-      - mec172xevb_assy6906
-      - gd32f350r_eval
-      - gd32f450i_eval
-      - gd32vf103v_eval
-      - gd32f403z_eval
+      - mec172xevb_assy6906/mec172x_nsz
+      - gd32f350r_eval/gd32f350
+      - gd32f450i_eval/gd32f450
+      - gd32vf103v_eval/gd32vf103
+      - gd32f403z_eval/gd32f403
       - esp32_devkitc_wroom/esp32/procpu
       - esp32_devkitc_wrover/esp32/procpu
-      - esp32s2_saola
-      - esp32c3_devkitm
-      - gd32l233r_eval
-      - lpcxpresso55s36
-      - mr_canhubk3
-      - longan_nano
+      - esp32s2_saola/esp32s2
+      - esp32c3_devkitm/esp32c3
+      - gd32l233r_eval/gd32l233
+      - lpcxpresso55s36/lpc55s36
+      - mr_canhubk3/s32k344
+      - longan_nano/gd32vf103
       - longan_nano/gd32vf103/lite
     integration_platforms:
-      - nucleo_l073rz
+      - nucleo_l073rz/stm32l073xx
       - nrf52840dk/nrf52840
     harness: console
     timeout: 10

@@ -8,4 +8,4 @@ tests:
       - sensor
       - subsys
     platform_allow:
-      - native_sim
+      - native_sim/native

@@ -4,19 +4,19 @@ tests:
   sample.bluetooth.iso_broadcast:
     harness: bluetooth
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_x86
-      - nrf52_bsim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
+      - nrf52_bsim/nrf52833
       - nrf52dk/nrf52832
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
     tags: bluetooth
   sample.bluetooth.iso_broadcast.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_x86
-      - nrf52_bsim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
+      - nrf52_bsim/nrf52833
       - nrf52dk/nrf52832
     integration_platforms:
       - nrf52dk/nrf52832

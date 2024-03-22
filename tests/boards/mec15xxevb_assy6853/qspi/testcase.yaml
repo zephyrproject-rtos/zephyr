@@ -1,6 +1,6 @@
 tests:
   boards.mec15xxevb_assy6853.qspi:
-    platform_allow: mec15xxevb_assy6853
+    platform_allow: mec15xxevb_assy6853/mec1501_hsz
     tags:
       - drivers
       - spi

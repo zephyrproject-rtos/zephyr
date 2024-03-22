@@ -1,6 +1,6 @@
 common:
   timeout: 5
-  platform_allow: nucleo_h723zg
+  platform_allow: nucleo_h723zg/stm32h723xx
 tests:
   drivers.clock.stm32_clock_configuration.h7_dev.spi1_pllq_1_d1ppre_1:
     extra_args: DTC_OVERLAY_FILE="boards/core_init.overlay;boards/spi1_pllq_1_d1ppre_1.overlay"

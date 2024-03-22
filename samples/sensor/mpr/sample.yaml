@@ -4,6 +4,6 @@ tests:
   sample.sensor.mpr:
     harness: sensor
     tags: sensors
-    platform_allow: arduino_due
+    platform_allow: arduino_due/sam3x8e
     integration_platforms:
-      - arduino_due
+      - arduino_due/sam3x8e

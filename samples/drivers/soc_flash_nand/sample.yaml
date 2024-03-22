@@ -4,9 +4,9 @@ sample:
 tests:
   sample.drivers.flash.soc_flash_nand:
     platform_allow:
-      - intel_socfpga_agilex5_socdk
+      - intel_socfpga_agilex5_socdk/agilex5
     integration_platforms:
-      - intel_socfpga_agilex5_socdk
+      - intel_socfpga_agilex5_socdk/agilex5
     tags:
       - flash
       - cdns

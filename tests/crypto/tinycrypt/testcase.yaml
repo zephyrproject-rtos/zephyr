@@ -8,8 +8,8 @@ tests:
     platform_exclude:
       - qemu_arc/qemu_arc_em
       - qemu_arc/qemu_arc_hs
-      - m2gl025_miv
+      - m2gl025_miv/miv
     timeout: 500
     integration_platforms:
-      - native_sim
+      - native_sim/native
     toolchain_exclude: xcc

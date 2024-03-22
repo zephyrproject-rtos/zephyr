@@ -12,6 +12,6 @@ tests:
     build_only: true
     platform_allow:
       - sam_v71_xult/samv71q21
-      - b_u585i_iot02a
+      - b_u585i_iot02a/stm32u585xx
       - nrf9160dk/nrf9160
       - nrf5340dk/nrf5340/cpuapp

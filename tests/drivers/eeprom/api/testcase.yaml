@@ -7,33 +7,33 @@ tests:
   drivers.eeprom.api:
     # Tests overwrite EEPROM content, only run on select boards
     platform_allow:
-      - native_posix
+      - native_posix/native
       - native_posix/native/64
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
-      - qemu_x86
-      - nucleo_l152re
-      - nucleo_l073rz
+      - qemu_x86/atom
+      - nucleo_l152re/stm32l152xe
+      - nucleo_l073rz/stm32l073xx
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   drivers.eeprom.api.w_at2x_emul:
     # Tests overwrite EEPROM content, only run on select boards
     extra_args:
       - DTC_OVERLAY_FILE=at2x_emul.overlay
       - OVERLAY_CONFIG=at2x_emul.conf
     platform_allow:
-      - native_posix
+      - native_posix/native
       - native_posix/native/64
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
     integration_platforms:
-      - native_sim
+      - native_sim/native
   drivers.eeprom.api.build:
     # Build-only test for boards with EEPROMs
     build_only: true
     platform_exclude:
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
-      - qemu_x86
-      - nucleo_l152re
-      - nucleo_l073rz
+      - qemu_x86/atom
+      - nucleo_l152re/stm32l152xe
+      - nucleo_l073rz/stm32l073xx

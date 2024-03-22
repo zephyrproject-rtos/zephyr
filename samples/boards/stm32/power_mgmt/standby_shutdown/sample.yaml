@@ -3,8 +3,8 @@ sample:
 tests:
   sample.boards.stm32.power_mgmt.standby_shutdown:
     platform_allow:
-      - nucleo_l476rg
-      - disco_l475_iot1
+      - nucleo_l476rg/stm32l476xx
+      - disco_l475_iot1/stm32l475xx
     tags:
       - LED
       - power

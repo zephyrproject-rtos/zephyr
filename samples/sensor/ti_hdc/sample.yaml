@@ -4,9 +4,9 @@ tests:
   sample.sensor.ti_hdc:
     harness: sensor
     platform_allow:
-      - reel_board
-      - nucleo_l496zg
+      - reel_board/nrf52840
+      - nucleo_l496zg/stm32l496xx
     integration_platforms:
-      - reel_board
+      - reel_board/nrf52840
     tags: sensors
     depends_on: i2c

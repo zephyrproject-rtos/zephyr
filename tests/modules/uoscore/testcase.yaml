@@ -9,4 +9,4 @@ tests:
       - uoscore
       - uoscore-uedhoc
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

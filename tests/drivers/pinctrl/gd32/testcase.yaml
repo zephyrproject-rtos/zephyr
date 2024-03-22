@@ -6,9 +6,9 @@ tests:
     tags:
       - drivers
       - pinctrl
-    platform_allow: gd32f450i_eval
+    platform_allow: gd32f450i_eval/gd32f450
   drivers.pinctrl.gd32_afio:
     tags:
       - drivers
       - pinctrl
-    platform_allow: gd32f403z_eval
+    platform_allow: gd32f403z_eval/gd32f403

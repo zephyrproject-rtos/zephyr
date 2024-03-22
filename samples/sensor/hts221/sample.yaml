@@ -3,7 +3,7 @@ sample:
 common:
   harness: console
   integration_platforms:
-    - disco_l475_iot1
+    - disco_l475_iot1/stm32l475xx
   filter: dt_compat_enabled("st,hts221")
   tags: sensors
   depends_on:
@@ -24,4 +24,4 @@ tests:
     extra_configs:
       - CONFIG_HTS221_TRIGGER_OWN_THREAD=y
     platform_exclude:
-      - b_u585i_iot02a
+      - b_u585i_iot02a/stm32u585xx

@@ -8,7 +8,7 @@ tests:
     min_ram: 16
     integration_platforms:
       - mps2/an521/cpu0
-      - qemu_x86
+      - qemu_x86/atom
   kernel.threads.armv8m_mpu_stack_guard:
     min_ram: 16
     extra_args: CONF_FILE=prj_armv8m_mpu_stack_guard.conf

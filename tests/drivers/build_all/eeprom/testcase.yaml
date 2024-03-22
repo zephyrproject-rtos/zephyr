@@ -6,7 +6,7 @@ common:
 tests:
   drivers.eeprom.build:
     min_ram: 32
-    platform_exclude: serpente
+    platform_exclude: serpente/samd21e18a
     depends_on:
       - gpio
       - i2c

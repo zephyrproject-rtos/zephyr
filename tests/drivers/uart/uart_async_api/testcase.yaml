@@ -1,8 +1,8 @@
 common:
   platform_exclude:
-    - stamp_c3
-    - wio_terminal
-    - xiao_esp32c3
+    - stamp_c3/esp32c3
+    - wio_terminal/samd51p19a
+    - xiao_esp32c3/esp32c3
   tags:
     - drivers
     - uart
@@ -22,11 +22,11 @@ tests:
     extra_configs:
       - CONFIG_UART_WIDE_DATA=y
     arch_allow: arm
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.uart.async_api.nrf_uarte_new:
-    platform_allow: nrf52840dk/nrf52840 nrf52_bsim
+    platform_allow: nrf52840dk/nrf52840 nrf52_bsim/nrf52833
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
     harness_config:
@@ -53,11 +53,11 @@ tests:
       - CONFIG_USE_SEGGER_RTT=y
       - CONFIG_UART_RTT=y
     platform_exclude:
-      - xmc45_relax_kit
-      - xmc47_relax_kit
+      - xmc45_relax_kit/xmc4500
+      - xmc47_relax_kit/xmc4700
     build_only: true
     integration_platforms:
-      - qemu_cortex_m0
+      - qemu_cortex_m0/nrf51822
   drivers.uart.async_api.lpuart:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART
     harness: ztest
@@ -65,12 +65,12 @@ tests:
   drivers.uart.async_api.sam0:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_ATMEL_SAM0
     platform_allow:
-      - samc21n_xpro
-      - samd21_xpro
-      - saml21_xpro
-      - samr21_xpro
-      - samr34_xpro
-      - same54_xpro
+      - samc21n_xpro/samc21n18a
+      - samd21_xpro/samd21j18a
+      - saml21_xpro/saml21j18b
+      - samr21_xpro/samr21g18a
+      - samr34_xpro/samr34j18b
+      - same54_xpro/same54p20a
     extra_configs:
       - CONFIG_UART_SAM0_ASYNC=y
       - CONFIG_DMA=y

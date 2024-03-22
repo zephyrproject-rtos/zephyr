@@ -4,14 +4,14 @@ common:
     - benchmark
 tests:
   benchmark.kernel.latency:
-    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
+    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0/nrf51822
     platform_exclude:
-      - qemu_cortex_m0
-      - m2gl025_miv
+      - qemu_cortex_m0/nrf51822
+      - m2gl025_miv/miv
     filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
     harness: console
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
       - qemu_arc/qemu_arc_em
     harness_config:
       type: one_line
@@ -22,14 +22,14 @@ tests:
 
 
   benchmark.kernel.latency.objcore.stats:
-    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
+    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0/nrf51822
     platform_exclude:
-      - qemu_cortex_m0
-      - m2gl025_miv
+      - qemu_cortex_m0/nrf51822
+      - m2gl025_miv/miv
     filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
     harness: console
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
       - qemu_arc/qemu_arc_em
     extra_configs:
       - CONFIG_OBJ_CORE=y
@@ -67,8 +67,8 @@ tests:
       - CONFIG_USERSPACE=y
     harness: console
     integration_platforms:
-      - qemu_x86
-      - qemu_cortex_a53
+      - qemu_x86/atom
+      - qemu_cortex_a53/qemu_cortex_a53
     harness_config:
       type: one_line
       record:
@@ -84,8 +84,8 @@ tests:
     timeout: 300
     harness: console
     integration_platforms:
-      - qemu_x86
-      - qemu_cortex_a53
+      - qemu_x86/atom
+      - qemu_cortex_a53/qemu_cortex_a53
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_OBJ_CORE=y
@@ -99,14 +99,14 @@ tests:
 
   # Obtain the various kernel benchmark results with time slicing enabled
   benchmark.kernel.latency.timeslicing:
-    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
+    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0/nrf51822
     platform_exclude:
-      - qemu_cortex_m0
-      - m2gl025_miv
+      - qemu_cortex_m0/nrf51822
+      - m2gl025_miv/miv
     filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
     harness: console
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
       - qemu_arc/qemu_arc_em
     extra_configs:
       - CONFIG_TIMESLICING=y
@@ -123,8 +123,8 @@ tests:
     timeout: 300
     harness: console
     integration_platforms:
-      - qemu_x86
-      - qemu_cortex_a53
+      - qemu_x86/atom
+      - qemu_cortex_a53/qemu_cortex_a53
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_TIMESLICING=y

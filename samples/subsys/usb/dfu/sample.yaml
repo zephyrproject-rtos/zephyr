@@ -5,19 +5,19 @@ common:
   build_only: true
   arch_exclude: posix
   platform_exclude:
-    - mimxrt1010_evk
-    - mimxrt1050_evk@qspi
-    - mimxrt1020_evk
-    - mimxrt1015_evk
-    - mimxrt1060_evk
-    - sam4l_ek
-    - mimxrt1050_evk
-    - mimxrt1060_evk@hyperflash
-    - nucleo_f207zg
-    - teensy40
-    - teensy41
-    - b_u585i_iot02a
-    - frdm_kl25z
+    - mimxrt1010_evk/mimxrt1011
+    - mimxrt1050_evk@qspi/mimxrt1052
+    - mimxrt1020_evk/mimxrt1021
+    - mimxrt1015_evk/mimxrt1015
+    - mimxrt1060_evk/mimxrt1062
+    - sam4l_ek/sam4lc4c
+    - mimxrt1050_evk/mimxrt1052
+    - mimxrt1060_evk@hyperflash/mimxrt1062
+    - nucleo_f207zg/stm32f207xx
+    - teensy40/mimxrt1062
+    - teensy41/mimxrt1062
+    - b_u585i_iot02a/stm32u585xx
+    - frdm_kl25z/mkl25z4
     - lpcxpresso55s69/lpc55s69/cpu0
     - stm32l562e_dk/stm32l562xx/ns
   depends_on: usb_device
@@ -26,7 +26,7 @@ common:
     and dt_chosen_enabled("zephyr,flash-controller") and CONFIG_FLASH_HAS_DRIVER_ENABLED
   integration_platforms:
     - nrf52840dk/nrf52840
-    - frdm_k64f
+    - frdm_k64f/mk64f12
 tests:
   sample.usb.dfu:
     tags: usb

@@ -22,7 +22,7 @@ tests:
       - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   sample.zbus.benchmark_async_msg_sub:
     tags: zbus
     min_ram: 16
@@ -44,7 +44,7 @@ tests:
       - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   sample.zbus.benchmark_sync:
     tags: zbus
     min_ram: 16
@@ -66,4 +66,4 @@ tests:
       - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

@@ -8,7 +8,7 @@ tests:
     filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
       or dt_compat_enabled("st,stm32-ospi-nor")
       or (dt_compat_enabled("nordic,qspi-nor") and CONFIG_NORDIC_QSPI_NOR)
-    platform_exclude: hifive_unmatched
+    platform_exclude: hifive_unmatched/fu740
     harness: console
     harness_config:
       type: multi_line
@@ -25,7 +25,7 @@ tests:
       - spi
       - flash
     filter: dt_compat_enabled("jedec,spi-nor")
-    platform_exclude: hifive_unmatched
+    platform_exclude: hifive_unmatched/fu740
     build_only: true
     extra_configs:
       - CONFIG_SPI_NOR_IDLE_IN_DPD=y

@@ -19,7 +19,7 @@ tests:
     filter: CONFIG_FULL_LIBC_SUPPORTED
     integration_platforms:
       - mps2/an385
-      - qemu_x86
+      - qemu_x86/atom
       - sam_e70_xplained/same70q21
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_ENABLE=y

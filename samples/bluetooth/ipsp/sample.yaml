@@ -5,21 +5,21 @@ tests:
   sample.bluetooth.ipsp:
     harness: bluetooth
     platform_allow:
-      - qemu_x86
-      - qemu_cortex_m3
+      - qemu_x86/atom
+      - qemu_cortex_m3/ti_lm3s6965
     tags:
       - bluetooth
       - net
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   sample.bluetooth.ipsp.zep1656:
     harness: bluetooth
     extra_args: CONF_FILE="prj_zep1656.conf"
     platform_allow:
-      - qemu_x86
-      - qemu_cortex_m3
+      - qemu_x86/atom
+      - qemu_cortex_m3/ti_lm3s6965
     tags:
       - bluetooth
       - net
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

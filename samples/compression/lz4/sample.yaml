@@ -18,7 +18,7 @@ tests:
   sample.compression.lz4:
     integration_platforms:
       - mps2/an385
-      - qemu_riscv64
+      - qemu_riscv64/qemu_virt_riscv64
     tags:
       - compression
       - lz4

@@ -3,7 +3,7 @@ tests:
     tags: kernel
     ignore_faults: true
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     platform_exclude:
-      - qemu_x86_tiny
+      - qemu_x86_tiny/atom
       - qemu_x86_tiny/ia32/768

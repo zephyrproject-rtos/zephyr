@@ -3,5 +3,5 @@ tests:
     tags:
       - kernel
     integration_platforms:
-      - qemu_x86
-      - native_sim
+      - qemu_x86/atom
+      - native_sim/native

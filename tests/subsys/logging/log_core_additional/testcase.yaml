@@ -3,12 +3,12 @@ tests:
     tags: logging
     extra_args: CONF_FILE=prj.conf
     integration_platforms:
-      - native_sim
+      - native_sim/native
   logging.sync:
     tags: logging
     extra_args: CONF_FILE=log_sync.conf
     integration_platforms:
-      - native_sim
+      - native_sim/native
   logging.log_user:
     tags: logging
     filter: CONFIG_USERSPACE
@@ -23,4 +23,4 @@ tests:
     #        together.
     toolchain_exclude: zephyr
     # integration_platforms:
-    #   - qemu_x86
+    #   - qemu_x86/atom

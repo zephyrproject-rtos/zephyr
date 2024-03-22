@@ -9,6 +9,6 @@ tests:
     filter: dt_compat_enabled("zephyr,espi-emul-controller")
     harness: ztest
     platform_allow:
-      - native_sim
+      - native_sim/native
     integration_platforms:
-      - native_sim
+      - native_sim/native

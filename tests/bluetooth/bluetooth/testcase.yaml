@@ -1,12 +1,12 @@
 tests:
   bluetooth.general:
     platform_allow:
-      - qemu_x86
-      - qemu_cortex_m3
-      - native_posix
+      - qemu_x86/atom
+      - qemu_cortex_m3/ti_lm3s6965
+      - native_posix/native
       - native_posix/native/64
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     tags: bluetooth

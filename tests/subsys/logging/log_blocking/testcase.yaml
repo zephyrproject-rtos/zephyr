@@ -4,7 +4,7 @@ common:
     - log_api
     - logging
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
 tests:
   logging.blocking.rate.input_limited:
     extra_configs:
@@ -21,7 +21,7 @@ tests:
   logging.blocking.rate.stalled:
     platform_exclude:
       # twister fails with "unexpected eof" even though the test passes
-      - qemu_cortex_r5
+      - qemu_cortex_r5/zynqmp_rpu
     timeout: 5
     extra_configs:
       - CONFIG_TEST_INPUT_LOG_RATE=1000

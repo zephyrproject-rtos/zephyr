@@ -3,9 +3,9 @@ sample:
 tests:
   sample.sensor.apds9960:
     harness: console
-    platform_allow: reel_board
+    platform_allow: reel_board/nrf52840
     integration_platforms:
-      - reel_board
+      - reel_board/nrf52840
     tags: sensors
     depends_on:
       - i2c
@@ -19,9 +19,9 @@ tests:
       fixture: fixture_i2c_apds9960
   sample.sensor.apds9960.trigger:
     harness: console
-    platform_allow: reel_board
+    platform_allow: reel_board/nrf52840
     integration_platforms:
-      - reel_board
+      - reel_board/nrf52840
     tags: sensors
     depends_on:
       - i2c

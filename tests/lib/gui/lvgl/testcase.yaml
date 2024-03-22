@@ -5,9 +5,9 @@ common:
   platform_allow:
     - native_posix/native/64
     - native_sim/native/64
-    - native_sim
+    - native_sim/native
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   libraries.gui.lvgl: {}
   libraries.gui.lvgl.dynamic.heap.libc:

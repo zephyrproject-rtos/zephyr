@@ -2,7 +2,7 @@ sample:
   name: MEC150x board sample power management tests
 tests:
   sample.board.mec15xxevb_assy6853.pm:
-    platform_allow: mec15xxevb_assy6853
+    platform_allow: mec15xxevb_assy6853/mec1501_hsz
     tags:
       - board
       - pm

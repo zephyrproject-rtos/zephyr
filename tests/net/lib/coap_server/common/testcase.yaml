@@ -5,7 +5,7 @@ common:
     - coap
     - server
   integration_platforms:
-    - native_sim
+    - native_sim/native
 
 tests:
   net.coap.server.common: {}

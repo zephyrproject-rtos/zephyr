@@ -4,7 +4,7 @@ sample:
 common:
   tags: sensing
   integration_platforms:
-    - native_sim
+    - native_sim/native
   harness: console
   harness_config:
     type: multi_line
@@ -13,5 +13,5 @@ common:
 tests:
   sample.sensing.simple:
     platform_allow:
-      - native_sim
+      - native_sim/native
     tags: sensing

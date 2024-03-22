@@ -5,4 +5,4 @@ common:
     - mdio
 tests:
   drivers.mdio.build:
-    platform_allow: qemu_cortex_m0
+    platform_allow: qemu_cortex_m0/nrf51822

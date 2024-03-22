@@ -1,14 +1,14 @@
 tests:
   libraries.devicetree.api:
     tags: devicetree
-    # We only need this to run on one platform so use native_sim as it
+    # We only need this to run on one platform so use native_sim/native as it
     # will mostly likely be the fastest.
     platform_allow:
-      - native_posix
-      - native_sim
-      - qemu_x86
-      - qemu_x86_64
-      - qemu_cortex_m3
-      - qemu_riscv32
+      - native_posix/native
+      - native_sim/native
+      - qemu_x86/atom
+      - qemu_x86_64/atom
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_riscv32/qemu_virt_riscv32
     integration_platforms:
-      - native_sim
+      - native_sim/native

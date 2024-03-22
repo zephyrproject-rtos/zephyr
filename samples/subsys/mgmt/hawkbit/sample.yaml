@@ -9,6 +9,6 @@ tests:
     tags: net
     depends_on: netif
     build_only: true
-    platform_allow: frdm_k64f
+    platform_allow: frdm_k64f/mk64f12
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12

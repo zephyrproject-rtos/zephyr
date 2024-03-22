@@ -4,7 +4,7 @@ common:
   tags: input
   build_only: true
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   sample.input.input_dump: {}
   sample.input.input_dump_shell:

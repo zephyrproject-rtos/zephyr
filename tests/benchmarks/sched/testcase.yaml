@@ -5,7 +5,7 @@ tests:
       - kernel
     integration_platforms:
       - mps2/an385
-      - qemu_x86
+      - qemu_x86/atom
     slow: true
     harness: console
     harness_config:

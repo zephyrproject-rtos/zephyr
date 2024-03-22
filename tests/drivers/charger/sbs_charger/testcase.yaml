@@ -11,15 +11,15 @@ tests:
       CONF_FILE="prj.conf;boards/emulated_board.conf"
       DTC_OVERLAY_FILE="boards/emulated_board.overlay"
     platform_exclude:
-      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53
       - qemu_cortex_a53/qemu_cortex_a53/smp
-      - qemu_kvm_arm64
-      - xenvm
+      - qemu_kvm_arm64/qemu_virt_arm64
+      - xenvm/xenvm
       - xenvm/xenvm/gicv3
-      - hifive_unmatched
+      - hifive_unmatched/fu740
       - rcar_h3ulcb/r8a77951/a57
-      - rcar_salvator_xs
-      - numaker_pfm_m467
+      - rcar_salvator_xs/r8a77961
+      - numaker_pfm_m467/m467
   drivers.charger.sbs.emulated_64_bit_i2c_addr:
     tags:
       - drivers
@@ -28,11 +28,11 @@ tests:
       dt_compat_enabled("sbs,sbs-charger") and
       (CONFIG_QEMU_TARGET or CONFIG_ARCH_POSIX)
     platform_allow:
-      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53
       - qemu_cortex_a53/qemu_cortex_a53/smp
-      - qemu_kvm_arm64
-      - xenvm
+      - qemu_kvm_arm64/qemu_virt_arm64
+      - xenvm/xenvm
       - xenvm/xenvm/gicv3
     extra_args:
-      CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
-      DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"
+      CONF_FILE="prj.conf;boards/qemu_cortex_a53_qemu_cortex_a53.conf"
+      DTC_OVERLAY_FILE="boards/qemu_cortex_a53_qemu_cortex_a53.overlay"

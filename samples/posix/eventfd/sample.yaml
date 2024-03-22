@@ -4,7 +4,7 @@ sample:
 common:
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   tags: posix
-  platform_exclude: m2gl025_miv
+  platform_exclude: m2gl025_miv/miv
   integration_platforms:
     - mps2/an385
 tests:

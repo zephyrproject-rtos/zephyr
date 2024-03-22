@@ -4,11 +4,11 @@
 
 common:
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   libraries.hash_function.identity:
-    # RNG seems to be broken on qemu_cortex_a53
-    platform_exclude: qemu_cortex_a53
+    # RNG seems to be broken on qemu_cortex_a53/qemu_cortex_a53
+    platform_exclude: qemu_cortex_a53/qemu_cortex_a53
     extra_configs:
       - CONFIG_SYS_HASH_FUNC32_CHOICE_IDENTITY=y
   libraries.hash_function.djb2:

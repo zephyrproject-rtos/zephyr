@@ -5,7 +5,7 @@
 common:
   min_ram: 24
   integration_platforms:
-    - native_sim
+    - native_sim/native
 
 tests:
   libraries.hash_map.separate_chaining.djb2:

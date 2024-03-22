@@ -9,7 +9,7 @@ sample:
 common:
   min_ram: 24
   integration_platforms:
-    - qemu_x86_64
+    - qemu_x86_64/atom
     - mps2/an385
   harness: console
   harness_config:

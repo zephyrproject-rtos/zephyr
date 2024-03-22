@@ -3,9 +3,9 @@ sample:
 tests:
   sample.shields.x_nucleo_iks01a1:
     platform_exclude:
-      - disco_l475_iot1
-      - pan1781_evb
-      - pan1782_evb
+      - disco_l475_iot1/stm32l475xx
+      - pan1781_evb/nrf52820
+      - pan1782_evb/nrf52833
     harness: shield
     tags: shield
     depends_on:

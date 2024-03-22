@@ -4,48 +4,48 @@ tests:
   sample.drivers.dac:
     tags: DAC
     platform_allow:
-      - arduino_zero
-      - b_u585i_iot02a
-      - bl652_dvk
-      - bl653_dvk
-      - bl654_dvk
+      - arduino_zero/samd21g18a
+      - b_u585i_iot02a/stm32u585xx
+      - bl652_dvk/nrf52832
+      - bl653_dvk/nrf52833
+      - bl654_dvk/nrf52840
       - bl5340_dvk/nrf5340/cpuapp
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
       - esp32_devkitc_wroom/esp32/procpu
       - esp32_devkitc_wrover/esp32/procpu
-      - esp32s2_saola
-      - frdm_k22f
-      - frdm_k64f
-      - gd32a503v_eval
-      - gd32e103v_eval
-      - gd32f450i_eval
-      - longan_nano
+      - esp32s2_saola/esp32s2
+      - frdm_k22f/mk22f51212
+      - frdm_k64f/mk64f12
+      - gd32a503v_eval/gd32a503
+      - gd32e103v_eval/gd32e103
+      - gd32f450i_eval/gd32f450
+      - longan_nano/gd32vf103
       - longan_nano/gd32vf103/lite
-      - nucleo_f091rc
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f746zg
-      - nucleo_f767zi
-      - nucleo_g071rb
-      - nucleo_g431rb
-      - nucleo_g474re
-      - nucleo_h743zi
-      - nucleo_l073rz
-      - nucleo_l152re
-      - nucleo_l552ze_q
-      - nucleo_u575zi_q
-      - nucleo_wl55jc
+      - nucleo_f091rc/stm32f091xc
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f746zg/stm32f746xx
+      - nucleo_f767zi/stm32f767xx
+      - nucleo_g071rb/stm32g071xx
+      - nucleo_g431rb/stm32g431xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_l073rz/stm32l073xx
+      - nucleo_l152re/stm32l152xe
+      - nucleo_l552ze_q/stm32l552xx
+      - nucleo_u575zi_q/stm32u575xx
+      - nucleo_wl55jc/stm32wl55xx
       - sam_e70_xplained/same70q21
       - sam_e70_xplained/same70q21b
       - sam_v71_xult/samv71q21
       - sam_v71_xult/samv71q21b
-      - stm32f3_disco
-      - stm32l562e_dk
-      - twr_ke18f
-      - lpcxpresso55s36
+      - stm32f3_disco/stm32f303xc
+      - stm32l562e_dk/stm32l562xx
+      - twr_ke18f/mke18f16
+      - lpcxpresso55s36/lpc55s36
     depends_on: dac
     integration_platforms:
-      - nucleo_l152re
+      - nucleo_l152re/stm32l152xe
     harness: console
     harness_config:
       type: one_line

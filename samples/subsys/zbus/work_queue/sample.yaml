@@ -4,7 +4,7 @@ common:
   tags: zbus
   harness: console
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
   harness_config:
     type: multi_line
     ordered: false

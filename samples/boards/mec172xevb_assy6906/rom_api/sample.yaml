@@ -18,4 +18,4 @@ common:
       - "Application done"
 tests:
   sample.boards.mec172xevb_assy6906.rom_api:
-    platform_allow: mec172xevb_assy6906
+    platform_allow: mec172xevb_assy6906/mec172x_nsz

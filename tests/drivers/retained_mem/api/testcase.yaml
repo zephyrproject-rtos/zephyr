@@ -5,7 +5,7 @@ tests:
       - drivers
       - retained_mem
   drivers.retained_mem.api.ram:
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     tags:
       - drivers
       - retained_mem

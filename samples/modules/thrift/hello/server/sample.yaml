@@ -11,9 +11,9 @@ common:
     - thrift
   platform_allow:
     - mps2/an385
-    - qemu_x86_64
+    - qemu_x86_64/atom
   integration_platforms:
-    - qemu_x86_64
+    - qemu_x86_64/atom
   filter: CONFIG_FULL_LIBCPP_SUPPORTED
 tests:
   sample.thrift.hello.server.binaryProtocol: {}

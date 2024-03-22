@@ -4,6 +4,6 @@ tests:
       - x86
       - arm64
     platform_allow:
-      - qemu_x86_64
-      - qemu_cortex_a53
-      - qemu_kvm_arm64
+      - qemu_x86_64/atom
+      - qemu_cortex_a53/qemu_cortex_a53
+      - qemu_kvm_arm64/qemu_virt_arm64

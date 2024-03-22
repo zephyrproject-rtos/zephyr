@@ -8,12 +8,12 @@ common:
     - fs
     - littlefs
   platform_allow:
-    - native_sim
+    - native_sim/native
     - native_sim/native/64
     - nrf52840dk/nrf52840
-    - mr_canhubk3
+    - mr_canhubk3/s32k344
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   logging.backend.fs.automounted: {}
   logging.backend.fs.manualmounted:

@@ -5,4 +5,4 @@ tests:
   modem.modem_pipe:
     tags: modem_pipe
     harness: ztest
-    platform_allow: native_sim
+    platform_allow: native_sim/native

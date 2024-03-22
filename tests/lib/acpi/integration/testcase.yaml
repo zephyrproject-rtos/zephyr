@@ -4,5 +4,5 @@ tests:
       - acpi
       - acpica
     integration_platforms:
-      - qemu_x86_64
+      - qemu_x86_64/atom
     depends_on: acpi

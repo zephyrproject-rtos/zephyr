@@ -8,7 +8,7 @@ common:
     - tls
   filter: CONFIG_FULL_LIBC_SUPPORTED
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
   platform_exclude: vmu_rt1170/mimxrt1176/cm7 # See #61129
 tests:
   net.socket.tls:

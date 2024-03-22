@@ -1,6 +1,6 @@
 common:
   timeout: 5
-  platform_allow: nucleo_wba52cg
+  platform_allow: nucleo_wba52cg/stm32wba52xx
 tests:
   drivers.clock.stm32_clock_configuration.wba.sysclksrc_hsi_32:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16.overlay"

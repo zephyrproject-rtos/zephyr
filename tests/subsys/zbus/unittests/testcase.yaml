@@ -3,11 +3,11 @@ tests:
     platform_exclude: fvp_base_revc_2xaemv8a//smp/ns
     tags: zbus
     integration_platforms:
-      - native_sim
+      - native_sim/native
   message_bus.zbus.general_unittests_without_priority_boost:
     platform_exclude: fvp_base_revc_2xaemv8a//smp/ns
     tags: zbus
     integration_platforms:
-      - native_sim
+      - native_sim/native
     extra_configs:
       - CONFIG_ZBUS_PRIORITY_BOOST=n

@@ -16,7 +16,7 @@ tests:
     toolchain_exclude: xcc
     integration_platforms:
       - mps2/an385
-      - qemu_x86
+      - qemu_x86/atom
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     harness: console
     harness_config:
@@ -37,7 +37,7 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
       - sam_e70_xplained/same70q21
     harness: console
     harness_config:
@@ -52,8 +52,8 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     harness: console
     harness_config:
       type: one_line
@@ -66,8 +66,8 @@ tests:
   sample.logger.syst.catalog.immediate:
     toolchain_exclude: xcc
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     harness: console
     harness_config:
       type: one_line
@@ -81,8 +81,8 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     harness: console
     harness_config:
       type: one_line
@@ -96,7 +96,7 @@ tests:
     toolchain_exclude: xcc
     integration_platforms:
       - mps2/an385
-      - qemu_x86
+      - qemu_x86/atom
     harness: console
     harness_config:
       type: one_line
@@ -110,8 +110,8 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     harness: console
     harness_config:
       type: one_line
@@ -125,8 +125,8 @@ tests:
   sample.logger.syst.catalog.immediate_cpp:
     toolchain_exclude: xcc
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     harness: console
     harness_config:
       type: one_line

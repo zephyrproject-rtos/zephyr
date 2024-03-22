@@ -8,12 +8,12 @@ tests:
     extra_configs:
       - CONFIG_POSIX_API=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.headers.without_posix_api:
     extra_configs:
       - CONFIG_POSIX_API=n
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.headers.picolibc.with_posix_api:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
@@ -21,7 +21,7 @@ tests:
       - CONFIG_POSIX_API=y
       - CONFIG_PICOLIBC=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.headers.picolibc.without_posix_api:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
@@ -29,7 +29,7 @@ tests:
       - CONFIG_POSIX_API=n
       - CONFIG_PICOLIBC=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.headers.newlib.with_posix_api:
     tags: newlib
     filter: TOOLCHAIN_HAS_NEWLIB == 1
@@ -37,14 +37,14 @@ tests:
       - CONFIG_POSIX_API=y
       - CONFIG_NEWLIB_LIBC=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.headers.newlib.without_posix_api:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_POSIX_API=n
       - CONFIG_NEWLIB_LIBC=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.headers.arcmwdtlib.with_posix_api:
     toolchain_allow: arcmwdt
     extra_configs:

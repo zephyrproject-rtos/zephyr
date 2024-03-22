@@ -39,7 +39,7 @@ tests:
       - CONFIG_ZBUS_PRIORITY_BOOST=n
     tags: zbus
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   sample.zbus.priority_boost:
     harness: console
     harness_config:
@@ -78,4 +78,4 @@ tests:
       - CONFIG_ZBUS_PRIORITY_BOOST=y
     tags: zbus
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

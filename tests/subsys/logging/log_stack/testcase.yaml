@@ -6,7 +6,7 @@ common:
     - logging
   skip: true
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
 tests:
   logging.stack.deferred:
     extra_configs:

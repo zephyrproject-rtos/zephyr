@@ -5,17 +5,17 @@ tests:
   sample.bluetooth.peripheral:
     harness: bluetooth
     platform_allow:
-      - qemu_x86
-      - nucleo_wb55rg
+      - qemu_x86/atom
+      - nucleo_wb55rg/stm32wb55xx
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     tags: bluetooth
   sample.bluetooth.peripheral.x_nucleo_idb05a1_shield:
     harness: bluetooth
-    platform_allow: nucleo_l4r5zi
+    platform_allow: nucleo_l4r5zi/stm32l4r5xx
     depends_on:
       - arduino_spi
       - arduino_gpio
     extra_args: SHIELD=x_nucleo_idb05a1
     integration_platforms:
-      - nucleo_l4r5zi
+      - nucleo_l4r5zi/stm32l4r5xx

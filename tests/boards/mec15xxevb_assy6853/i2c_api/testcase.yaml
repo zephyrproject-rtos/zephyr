@@ -5,4 +5,4 @@ tests:
       - drivers
       - i2c
     filter: dt_compat_enabled("nxp,pca95xx")
-    platform_allow: mec15xxevb_assy6853
+    platform_allow: mec15xxevb_assy6853/mec1501_hsz

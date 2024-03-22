@@ -3,7 +3,7 @@ common:
     - net
     - igmp
   depends_on: netif
-  platform_allow: qemu_x86
+  platform_allow: qemu_x86/atom
 tests:
   net.igmp:
     extra_configs:

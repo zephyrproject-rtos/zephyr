@@ -4,11 +4,11 @@ tests:
   sample.bluetooth.hci_pwr_ctrl:
     harness: bluetooth
     platform_allow:
-      - bbc_microbit
+      - bbc_microbit/nrf51822
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
-      - qemu_cortex_m3
-      - qemu_x86
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965

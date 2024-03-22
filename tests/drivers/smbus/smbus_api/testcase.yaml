@@ -7,7 +7,7 @@ tests:
     extra_configs:
       - CONFIG_SMBUS_INTEL_PCH_ACCESS_IO=y
   drivers.smbus.api.access.mmio:
-    platform_exclude: qemu_x86_64
+    platform_exclude: qemu_x86_64/atom
     extra_configs:
       - CONFIG_SMBUS_INTEL_PCH_ACCESS_MMIO=y
   drivers.smbus.api_user:

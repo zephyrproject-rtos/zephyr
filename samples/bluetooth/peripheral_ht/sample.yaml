@@ -5,21 +5,21 @@ tests:
   sample.bluetooth.peripheral_ht:
     harness: bluetooth
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_x86
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
   sample.bluetooth.peripheral_ht.frdm_kw41z_shield:
     harness: bluetooth
     platform_allow:
-      - mimxrt1020_evk
-      - mimxrt1050_evk
-      - mimxrt1060_evk
-      - frdm_k64f
+      - mimxrt1020_evk/mimxrt1021
+      - mimxrt1050_evk/mimxrt1052
+      - mimxrt1060_evk/mimxrt1062
+      - frdm_k64f/mk64f12
     tags: bluetooth
     extra_args: SHIELD=frdm_kw41z
     integration_platforms:
-      - mimxrt1020_evk
+      - mimxrt1020_evk/mimxrt1021

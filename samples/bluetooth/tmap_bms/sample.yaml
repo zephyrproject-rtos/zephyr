@@ -5,9 +5,9 @@ tests:
   sample.bluetooth.tmap_bms:
     harness: bluetooth
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_x86
-      - native_sim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
+      - native_sim/native
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965

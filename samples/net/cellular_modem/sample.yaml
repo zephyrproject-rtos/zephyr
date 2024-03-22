@@ -8,6 +8,6 @@ tests:
     tags: cellular modem
     filter: dt_alias_exists("modem")
     platform_allow:
-      - b_u585i_iot02a
+      - b_u585i_iot02a/stm32u585xx
     integration_platforms:
-      - b_u585i_iot02a
+      - b_u585i_iot02a/stm32u585xx

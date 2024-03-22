@@ -13,272 +13,272 @@ tests:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_msi.overlay;boards/pll_48_msi_4.overlay"
     platform_allow:
-      - disco_l475_iot1
-      - nucleo_l4r5zi
-      - stm32l562e_dk
+      - disco_l475_iot1/stm32l475xx
+      - nucleo_l4r5zi/stm32l4r5xx
+      - stm32l562e_dk/stm32l562xx
     integration_platforms:
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
   drivers.clock.stm32_clock_configuration.common_core.l4_l5.sysclksrc_pll_64_hsi_16:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_msi.overlay;boards/pll_64_hsi_16.overlay"
     platform_allow:
-      - disco_l475_iot1
-      - nucleo_l4r5zi
-      - stm32l562e_dk
+      - disco_l475_iot1/stm32l475xx
+      - nucleo_l4r5zi/stm32l4r5xx
+      - stm32l562e_dk/stm32l562xx
     integration_platforms:
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
   drivers.clock.stm32_clock_configuration.common_core.sysclksrc_hsi_16:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_msi.overlay;boards/hsi_16.overlay"
     platform_allow:
-      - disco_l475_iot1
-      - nucleo_l4r5zi
-      - stm32l562e_dk
-      - nucleo_wb55rg
-      - nucleo_wl55jc
+      - disco_l475_iot1/stm32l475xx
+      - nucleo_l4r5zi/stm32l4r5xx
+      - stm32l562e_dk/stm32l562xx
+      - nucleo_wb55rg/stm32wb55xx
+      - nucleo_wl55jc/stm32wl55xx
     integration_platforms:
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
   drivers.clock.stm32_clock_configuration.common_core.sysclksrc_msi_48:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_msi.overlay;boards/msi_range11.overlay"
     platform_allow:
-      - disco_l475_iot1
-      - nucleo_l4r5zi
-      - stm32l562e_dk
-      - nucleo_wl55jc
-      - nucleo_wb55rg
+      - disco_l475_iot1/stm32l475xx
+      - nucleo_l4r5zi/stm32l4r5xx
+      - stm32l562e_dk/stm32l562xx
+      - nucleo_wl55jc/stm32wl55xx
+      - nucleo_wb55rg/stm32wb55xx
     integration_platforms:
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
   drivers.clock.stm32_clock_configuration.common_core.l4_l5.sysclksrc_hse_8.fixup:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_msi.overlay;boards/hse_8.overlay"
     platform_allow:
-      - disco_l475_iot1
-      - nucleo_l4r5zi
-      - stm32l562e_dk
+      - disco_l475_iot1/stm32l475xx
+      - nucleo_l4r5zi/stm32l4r5xx
+      - stm32l562e_dk/stm32l562xx
     harness: ztest
     harness_config:
       fixture: mco_sb_closed
     integration_platforms:
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
   drivers.clock.stm32_clock_configuration.common_core.l4_l5.sysclksrc_pll_64_hse_8.fixup:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_msi.overlay;boards/pll_64_hse_8.overlay"
     platform_allow:
-      - disco_l475_iot1
-      - nucleo_l4r5zi
-      - stm32l562e_dk
+      - disco_l475_iot1/stm32l475xx
+      - nucleo_l4r5zi/stm32l4r5xx
+      - stm32l562e_dk/stm32l562xx
     harness: ztest
     harness_config:
       fixture: mco_sb_closed
     integration_platforms:
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
   drivers.clock.stm32_clock_configuration.common_core.g0.sysclksrc_pll_64_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_64_hse_8.overlay"
-    platform_allow: nucleo_g071rb
+    platform_allow: nucleo_g071rb/stm32g071xx
     harness: ztest
     harness_config:
       fixture: mco_sb_closed
     integration_platforms:
-      - nucleo_g071rb
+      - nucleo_g071rb/stm32g071xx
   drivers.clock.stm32_clock_configuration.common_core.g0.sysclksrc_hsi_g0_16_div_2:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_g0_16_div_2.overlay"
-    platform_allow: nucleo_g071rb
+    platform_allow: nucleo_g071rb/stm32g071xx
     integration_platforms:
-      - nucleo_g071rb
+      - nucleo_g071rb/stm32g071xx
   drivers.clock.stm32_clock_configuration.common_core.g0.sysclksrc_hsi_g0_16_div_4:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_g0_16_div_4.overlay"
-    platform_allow: nucleo_g071rb
+    platform_allow: nucleo_g071rb/stm32g071xx
     integration_platforms:
-      - nucleo_g071rb
+      - nucleo_g071rb/stm32g071xx
   drivers.clock.stm32_clock_configuration.common_core.g4.sysclksrc_pll_64_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_64_hsi_16.overlay"
-    platform_allow: nucleo_g474re
+    platform_allow: nucleo_g474re/stm32g474xx
     integration_platforms:
-      - nucleo_g474re
+      - nucleo_g474re/stm32g474xx
   drivers.clock.stm32_clock_configuration.common_core.g0.sysclksrc_pll_g0_64_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_g0_64_hsi_16.overlay"
-    platform_allow: nucleo_g071rb
+    platform_allow: nucleo_g071rb/stm32g071xx
     integration_platforms:
-      - nucleo_g071rb
+      - nucleo_g071rb/stm32g071xx
   drivers.clock.stm32_clock_configuration.common_core.g4.sysclksrc_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16.overlay"
-    platform_allow: nucleo_g474re
+    platform_allow: nucleo_g474re/stm32g474xx
     integration_platforms:
-      - nucleo_g474re
+      - nucleo_g474re/stm32g474xx
   drivers.clock.stm32_clock_configuration.common_core.g0.sysclksrc_hsi_g0_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_g0_16.overlay"
-    platform_allow: nucleo_g071rb
+    platform_allow: nucleo_g071rb/stm32g071xx
     integration_platforms:
-      - nucleo_g071rb
+      - nucleo_g071rb/stm32g071xx
   drivers.clock.stm32_clock_configuration.common_core.g4.sysclksrc_hse_24:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_24.overlay"
-    platform_allow: nucleo_g474re
+    platform_allow: nucleo_g474re/stm32g474xx
   drivers.clock.stm32_clock_configuration.common_core.g4.sysclksrc_hse_24.css:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_24.overlay;boards/hse_css.overlay"
-    platform_allow: nucleo_g474re
+    platform_allow: nucleo_g474re/stm32g474xx
   drivers.clock.stm32_clock_configuration.common_core.l0_l1.sysclksrc_hse_8:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_msi.overlay;boards/hse_8.overlay"
     platform_allow:
-      - nucleo_l152re
-      - nucleo_l073rz
+      - nucleo_l152re/stm32l152xe
+      - nucleo_l073rz/stm32l073xx
     integration_platforms:
-      - nucleo_l152re
+      - nucleo_l152re/stm32l152xe
   drivers.clock.stm32_clock_configuration.common_core.l0_l1.sysclksrc_pll_32_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_32_hse_8.overlay"
     platform_allow:
-      - nucleo_l152re
-      - nucleo_l073rz
+      - nucleo_l152re/stm32l152xe
+      - nucleo_l073rz/stm32l073xx
     integration_platforms:
-      - nucleo_l152re
+      - nucleo_l152re/stm32l152xe
   drivers.clock.stm32_clock_configuration.common_core.l0_l1.sysclksrc_pll_32_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_32_hsi_16.overlay"
     platform_allow:
-      - nucleo_l152re
-      - nucleo_l073rz
+      - nucleo_l152re/stm32l152xe
+      - nucleo_l073rz/stm32l073xx
     integration_platforms:
-      - nucleo_l152re
+      - nucleo_l152re/stm32l152xe
   drivers.clock.stm32_clock_configuration.common_core.l0_l1.sysclksrc_msi_range6:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/msi_range6.overlay"
     platform_allow:
-      - nucleo_l152re
-      - nucleo_l073rz
+      - nucleo_l152re/stm32l152xe
+      - nucleo_l073rz/stm32l073xx
     integration_platforms:
-      - nucleo_l152re
+      - nucleo_l152re/stm32l152xe
   drivers.clock.stm32_clock_configuration.common_core.wl.sysclksrc_pll_48_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_48_hsi_16.overlay"
-    platform_allow: nucleo_wl55jc
+    platform_allow: nucleo_wl55jc/stm32wl55xx
     integration_platforms:
-      - nucleo_wl55jc
+      - nucleo_wl55jc/stm32wl55xx
   drivers.clock.stm32_clock_configuration.common_core.wl.sysclksrc_pll_48_hse_32:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/wl_pll_48_hse_32.overlay"
-    platform_allow: nucleo_wl55jc
+    platform_allow: nucleo_wl55jc/stm32wl55xx
     integration_platforms:
-      - nucleo_wl55jc
+      - nucleo_wl55jc/stm32wl55xx
   drivers.clock.stm32_clock_configuration.common_core.wl.sysclksrc_hse_32:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/wl_32_hse.overlay"
-    platform_allow: nucleo_wl55jc
+    platform_allow: nucleo_wl55jc/stm32wl55xx
     integration_platforms:
-      - nucleo_wl55jc
+      - nucleo_wl55jc/stm32wl55xx
   drivers.clock.stm32_clock_configuration.common_core.wb.sysclksrc_hse_32:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_32.overlay"
-    platform_allow: nucleo_wb55rg
+    platform_allow: nucleo_wb55rg/stm32wb55xx
     integration_platforms:
-      - nucleo_wb55rg
+      - nucleo_wb55rg/stm32wb55xx
   drivers.clock.stm32_clock_configuration.common_core.wb.sysclksrc_pll_48_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/wb_pll_48_hsi_16.overlay"
-    platform_allow: nucleo_wb55rg
+    platform_allow: nucleo_wb55rg/stm32wb55xx
     integration_platforms:
-      - nucleo_wb55rg
+      - nucleo_wb55rg/stm32wb55xx
   drivers.clock.stm32_clock_configuration.common_core.wb.sysclksrc_pll_64_hse_32:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/wb_pll_64_hse_32.overlay"
-    platform_allow: nucleo_wb55rg
+    platform_allow: nucleo_wb55rg/stm32wb55xx
     integration_platforms:
-      - nucleo_wb55rg
+      - nucleo_wb55rg/stm32wb55xx
   drivers.clock.stm32_clock_configuration.common_core.wb.sysclksrc_pll_48_msi_4:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/wb_pll_48_msi_4.overlay"
-    platform_allow: nucleo_wb55rg
+    platform_allow: nucleo_wb55rg/stm32wb55xx
     integration_platforms:
-      - nucleo_wb55rg
+      - nucleo_wb55rg/stm32wb55xx
   drivers.clock.stm32_clock_configuration.common_core.f0_f3.sysclksrc_hsi_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/hsi_8.overlay"
     platform_allow:
-      - nucleo_f091rc
-      - stm32f3_disco
+      - nucleo_f091rc/stm32f091xc
+      - stm32f3_disco/stm32f303xc
     integration_platforms:
-      - nucleo_f091rc
+      - nucleo_f091rc/stm32f091xc
   drivers.clock.stm32_clock_configuration.common_core.f0_f3.sysclksrc_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/hse_8_bypass.overlay"
     platform_allow:
-      - nucleo_f091rc
-      - stm32f3_disco
+      - nucleo_f091rc/stm32f091xc
+      - stm32f3_disco/stm32f303xc
     integration_platforms:
-      - nucleo_f091rc
+      - nucleo_f091rc/stm32f091xc
   drivers.clock.stm32_clock_configuration.common_core.f0_f3.sysclksrc_pll_32_hsi_8:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/f0_f3_pll_32_hsi_8.overlay"
     platform_allow:
-      - nucleo_f091rc
-      - stm32f3_disco
+      - nucleo_f091rc/stm32f091xc
+      - stm32f3_disco/stm32f303xc
     integration_platforms:
-      - nucleo_f091rc
+      - nucleo_f091rc/stm32f091xc
   drivers.clock.stm32_clock_configuration.common_core.f0_f3.sysclksrc_pll_32_hse_8:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/f0_f3_pll_32_hse_8.overlay"
     platform_allow:
-      - nucleo_f091rc
-      - stm32f3_disco
+      - nucleo_f091rc/stm32f091xc
+      - stm32f3_disco/stm32f303xc
     integration_platforms:
-      - nucleo_f091rc
+      - nucleo_f091rc/stm32f091xc
   drivers.clock.stm32_clock_configuration.common_core.f1.sysclksrc_hsi_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/hsi_8.overlay"
-    platform_allow: nucleo_f103rb
+    platform_allow: nucleo_f103rb/stm32f103xb
     integration_platforms:
-      - nucleo_f103rb
+      - nucleo_f103rb/stm32f103xb
   drivers.clock.stm32_clock_configuration.common_core.f1.sysclksrc_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/hse_8.overlay"
-    platform_allow: nucleo_f103rb
+    platform_allow: nucleo_f103rb/stm32f103xb
     integration_platforms:
-      - nucleo_f103rb
+      - nucleo_f103rb/stm32f103xb
   drivers.clock.stm32_clock_configuration.common_core.f1.sysclksrc_pll_64_hsi_8:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/f1_pll_64_hsi_8.overlay"
-    platform_allow: nucleo_f103rb
+    platform_allow: nucleo_f103rb/stm32f103xb
     integration_platforms:
-      - nucleo_f103rb
+      - nucleo_f103rb/stm32f103xb
   drivers.clock.stm32_clock_configuration.common_core.f1.sysclksrc_pll_64_hse_8:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_f0_f1_f3_clocks.overlay;boards/f1_pll_64_hse_8.overlay"
-    platform_allow: nucleo_f103rb
+    platform_allow: nucleo_f103rb/stm32f103xb
     integration_platforms:
-      - nucleo_f103rb
+      - nucleo_f103rb/stm32f103xb
   drivers.clock.stm32_clock_configuration.common_core.f2_f4_f7.sysclksrc_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f2_f4_f7_clocks.overlay;boards/hsi_16.overlay"
     platform_allow:
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f446re
-      - nucleo_f746zg
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f446re/stm32f446xx
+      - nucleo_f746zg/stm32f746xx
     integration_platforms:
-      - nucleo_f207zg
+      - nucleo_f207zg/stm32f207xx
   drivers.clock.stm32_clock_configuration.common_core.f2_f4_f7.sysclksrc_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f2_f4_f7_clocks.overlay;boards/hse_8.overlay"
     platform_allow:
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f446re
-      - nucleo_f746zg
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f446re/stm32f446xx
+      - nucleo_f746zg/stm32f746xx
     integration_platforms:
-      - nucleo_f207zg
+      - nucleo_f207zg/stm32f207xx
   drivers.clock.stm32_clock_configuration.common_core.f2_f4_f7.sysclksrc_pll_64_hsi_16:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_f2_f4_f7_clocks.overlay;boards/f2_f4_f7_pll_64_hsi_16.overlay"
     platform_allow:
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f446re
-      - nucleo_f746zg
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f446re/stm32f446xx
+      - nucleo_f746zg/stm32f746xx
     integration_platforms:
-      - nucleo_f207zg
+      - nucleo_f207zg/stm32f207xx
   drivers.clock.stm32_clock_configuration.common_core.f2_f4_f7.sysclksrc_pll_64_hse_8:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_f2_f4_f7_clocks.overlay;boards/f2_f4_f7_pll_64_hse_8.overlay"
     platform_allow:
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f446re
-      - nucleo_f746zg
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f446re/stm32f446xx
+      - nucleo_f746zg/stm32f746xx
     integration_platforms:
-      - nucleo_f207zg
+      - nucleo_f207zg/stm32f207xx
   drivers.clock.stm32_clock_configuration.common_core.f2_f4_f7.sysclksrc_pll_100_hsi_16_ahb2:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_f2_f4_f7_clocks.overlay;boards/f2_f4_f7_pll_100_hsi_16_ahb_2.overlay"
     platform_allow:
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f446re
-      - nucleo_f746zg
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f446re/stm32f446xx
+      - nucleo_f746zg/stm32f746xx
     integration_platforms:
-      - nucleo_f207zg
+      - nucleo_f207zg/stm32f207xx

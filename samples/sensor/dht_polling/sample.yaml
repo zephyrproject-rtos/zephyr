@@ -12,7 +12,7 @@ tests:
     tags: sensors
     filter: dt_alias_exists("dht0")
     integration_platforms:
-      - nucleo_f401re
+      - nucleo_f401re/stm32f401xe
     harness: console
     harness_config:
       type: one_line

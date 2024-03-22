@@ -6,17 +6,17 @@ common:
 tests:
   drivers.ieee802154.build.external:
     platform_allow:
-      - native_posix
-      - native_sim
+      - native_posix/native
+      - native_sim/native
   drivers.ieee802154.build.cc13xx_cc26xx:
-    platform_allow: cc1352r_sensortag
+    platform_allow: cc1352r_sensortag/cc1352r
   drivers.ieee802154.build.kw41z:
-    platform_allow: frdm_kw41z
+    platform_allow: frdm_kw41z/mkw41z4
   drivers.ieee802154.build.mcr20a:
-    platform_allow: usb_kw24d512
+    platform_allow: usb_kw24d512/mkw24d5
   drivers.ieee802154.build.nrf5:
     platform_allow: nrf52840dk/nrf52840
   drivers.ieee802154.build.telink_b91:
-    platform_allow: tlsr9518adk80d
+    platform_allow: tlsr9518adk80d/tlsr9518
   drivers.ieee802154.build.upipe:
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom

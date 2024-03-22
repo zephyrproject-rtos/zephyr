@@ -1,4 +1,4 @@
 tests:
   pm.system:
-    platform_allow: native_sim
+    platform_allow: native_sim/native
     tags: pm

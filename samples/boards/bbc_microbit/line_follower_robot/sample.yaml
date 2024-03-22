@@ -2,7 +2,7 @@ sample:
   name: BBC micro:bit Line follower robot
 tests:
   sample.board.bbc_microbit.line_follower_robot:
-    platform_allow: bbc_microbit
+    platform_allow: bbc_microbit/nrf51822
     tags:
       - microbit
       - line-follower

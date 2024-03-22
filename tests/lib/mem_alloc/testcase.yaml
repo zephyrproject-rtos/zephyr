@@ -4,16 +4,16 @@ common:
     - clib
     - userspace
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
 tests:
   libraries.libc.minimal.mem_alloc:
     extra_args: CONF_FILE=prj.conf
-    platform_exclude: twr_ke18f
+    platform_exclude: twr_ke18f/mke18f16
     tags:
       - minimal_libc
   libraries.libc.minimal.mem_alloc_negative_testing:
     extra_args: CONF_FILE=prj_negative_testing.conf
-    platform_exclude: twr_ke18f
+    platform_exclude: twr_ke18f/mke18f16
     tags:
       - minimal_libc
   libraries.libc.newlib.mem_alloc:
@@ -21,7 +21,7 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     min_ram: 16
     platform_exclude:
-      - twr_ke18f
+      - twr_ke18f/mke18f16
     tags:
       - newlib
   libraries.libc.newlib_nano.mem_alloc:
@@ -33,6 +33,6 @@ tests:
     extra_args: CONF_FILE=prj_picolibc.conf
     filter: CONFIG_PICOLIBC_SUPPORTED
     platform_exclude:
-      - twr_ke18f
+      - twr_ke18f/mke18f16
     tags:
       - picolibc

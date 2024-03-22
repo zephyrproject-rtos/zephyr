@@ -6,14 +6,14 @@ tests:
     extra_args: CONF_FILE=prj.conf
     filter: not CONFIG_SOC_MCIMX7D_M4 and CONFIG_STDOUT_CONSOLE
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     arch_exclude: posix
     ignore_faults: true
   libraries.libc.sprintf_new:
     extra_args: CONF_FILE=prj_new.conf
     arch_exclude: posix
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   libraries.libc.picolibc.sprintf:
     extra_args: CONF_FILE=prj_picolibc.conf
     tags:
@@ -21,14 +21,14 @@ tests:
     ignore_faults: true
     filter: CONFIG_PICOLIBC_SUPPORTED
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   libraries.libc.picolibc.sprintf_new:
     extra_args: CONF_FILE=prj_picolibc_new.conf
     tags:
       - picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   libraries.libc.picolibc.sprintf_inexact:
     extra_args: CONF_FILE=prj_picolibc_new.conf
     extra_configs:
@@ -38,4 +38,4 @@ tests:
       - picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

@@ -5,4 +5,4 @@ tests:
   ipc.ipc_service:
     tags: ipc_service
     harness: ztest
-    platform_allow: qemu_cortex_a53
+    platform_allow: qemu_cortex_a53/qemu_cortex_a53

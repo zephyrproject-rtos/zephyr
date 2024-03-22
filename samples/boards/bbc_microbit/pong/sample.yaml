@@ -2,7 +2,7 @@ sample:
   name: Pong game using BBC Micro:bit
 tests:
   sample.board.bbc_microbit.pong:
-    platform_allow: bbc_microbit
+    platform_allow: bbc_microbit/nrf51822
     tags:
       - microbit
       - mesh

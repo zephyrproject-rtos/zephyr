@@ -10,8 +10,8 @@ tests:
       - CONFIG_NET_IPV4=n
       - CONFIG_NET_IPV6=n
     platform_exclude:
-      - mg100
-      - pinnacle_100_dvk
+      - mg100/nrf52840
+      - pinnacle_100_dvk/nrf52840
   net.eth_bridge.ip:
     extra_configs:
       - CONFIG_NET_IPV4=y

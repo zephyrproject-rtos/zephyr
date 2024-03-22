@@ -62,10 +62,10 @@ tests:
       - CONFIG_X86_SSE_FP_MATH=n
       - CONFIG_X86_SSE=n
     platform_allow:
-      - qemu_x86
-      - qemu_x86_lakemont
+      - qemu_x86/atom
+      - qemu_x86_lakemont/lakemont
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     slow: true
     tags:
       - fpu
@@ -76,10 +76,10 @@ tests:
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=n
     platform_allow:
-      - qemu_x86
-      - qemu_x86_lakemont
+      - qemu_x86/atom
+      - qemu_x86_lakemont/lakemont
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     slow: true
     tags:
       - fpu
@@ -93,8 +93,8 @@ tests:
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=y
     platform_allow:
-      - qemu_x86
-      - qemu_x86_lakemont
+      - qemu_x86/atom
+      - qemu_x86_lakemont/lakemont
     slow: true
     tags:
       - fpu

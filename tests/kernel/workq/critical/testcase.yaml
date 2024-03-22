@@ -7,7 +7,7 @@ tests:
     platform_exclude: nsim/nsim_sem/mpu_stack_guard
     filter: not CONFIG_WDT_SAM
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   kernel.workqueue.critical.sam:
     filter: CONFIG_WDT_SAM
     extra_configs:

@@ -3,7 +3,7 @@ common:
   arch_exclude:
     - posix
   integration_platforms:
-    - qemu_riscv64
+    - qemu_riscv64/qemu_virt_riscv64
   tags: posix
 tests:
   portability.posix.env: {}
@@ -21,7 +21,7 @@ tests:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
   portability.posix.env.newlib:
     platform_exclude:
-      - hifive1
+      - hifive1/fe310
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y

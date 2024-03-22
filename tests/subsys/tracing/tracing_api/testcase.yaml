@@ -1,5 +1,5 @@
 common:
-  platform_allow: qemu_x86
+  platform_allow: qemu_x86/atom
   extra_args: CONF_FILE="prj.conf"
 
 tests:

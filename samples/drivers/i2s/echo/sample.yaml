@@ -8,7 +8,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-    platform_exclude: litex_vexriscv
+    platform_exclude: litex_vexriscv/litex_vexriscv
     harness: console
     harness_config:
       type: one_line

@@ -13,4 +13,4 @@ tests:
   sample.net.sockets.dumb_http_server_mt:
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=y
-    platform_exclude: esp32s2_saola
+    platform_exclude: esp32s2_saola/esp32s2

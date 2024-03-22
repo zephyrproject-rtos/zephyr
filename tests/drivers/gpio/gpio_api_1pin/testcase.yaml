@@ -9,6 +9,6 @@ tests:
     platform_exclude:
       - mps2/an385
       - mps2/an521/cpu0
-      - neorv32
-      - hifive1  # see #69350
+      - neorv32/neorv32
+      - hifive1/fe310  # see #69350
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")

@@ -4,11 +4,11 @@ common:
 tests:
   lorawan.clock_sync.sim:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     platform_allow:
-      - native_sim
+      - native_sim/native
   lorawan.clock_sync.phy:
     depends_on: lora
     filter: CONFIG_ENTROPY_HAS_DRIVER
     integration_platforms:
-      - nucleo_wl55jc
+      - nucleo_wl55jc/stm32wl55xx

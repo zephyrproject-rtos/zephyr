@@ -3,7 +3,7 @@ sample:
   name: socket_echo_async
 common:
   harness: net
-  platform_allow: qemu_x86
+  platform_allow: qemu_x86/atom
   tags:
     - net
     - socket

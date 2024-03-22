@@ -3,13 +3,13 @@ common:
     - device
     - userspace
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   kernel.device:
     tags:
       - kernel
       - device
-    platform_exclude: xenvm
+    platform_exclude: xenvm/xenvm
   kernel.device.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags:
@@ -18,11 +18,11 @@ tests:
       - libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
-    platform_exclude: xenvm
+    platform_exclude: xenvm/xenvm
   kernel.device.pm:
     tags:
       - kernel
       - device
-    platform_exclude: mec15xxevb_assy6853 xenvm
+    platform_exclude: mec15xxevb_assy6853/mec1501_hsz xenvm/xenvm
     extra_configs:
       - CONFIG_PM_DEVICE=y

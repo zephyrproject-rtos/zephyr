@@ -1,8 +1,8 @@
 tests:
   kernel.memory_protection.protection:
     platform_exclude:
-      - twr_ke18f
-      - ucans32k1sic
+      - twr_ke18f/mke18f16
+      - ucans32k1sic/s32k146
     filter: CONFIG_SRAM_REGION_PERMISSIONS
     tags:
       - kernel

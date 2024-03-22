@@ -2,23 +2,23 @@ tests:
   storage.flash_map:
     platform_allow:
       - nrf51dk/nrf51822
-      - qemu_x86
-      - native_posix
+      - qemu_x86/atom
+      - native_posix/native
       - native_posix/native/64
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
-      - mr_canhubk3
+      - mr_canhubk3/s32k344
     tags: flash_map
     integration_platforms:
-      - native_sim
+      - native_sim/native
   storage.flash_map.mpu:
     extra_args: OVERLAY_CONFIG=overlay-mpu.conf
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - hexiwear/mk64f12
-      - twr_ke18f
+      - twr_ke18f/mke18f16
     integration_platforms:
       - nrf52840dk/nrf52840
     tags: flash_map
@@ -26,12 +26,12 @@ tests:
     extra_args: OVERLAY_CONFIG=overlay-mbedtls.conf
     platform_allow:
       - nrf51dk/nrf51822
-      - qemu_x86
-      - native_posix
+      - qemu_x86/atom
+      - native_posix/native
       - native_posix/native/64
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
-      - mr_canhubk3
+      - mr_canhubk3/s32k344
     tags: flash_map
     integration_platforms:
-      - native_sim
+      - native_sim/native

@@ -4,4 +4,4 @@ tests:
       - drivers
       - interrupt
       - plic
-    platform_allow: qemu_riscv64
+    platform_allow: qemu_riscv64/qemu_virt_riscv64

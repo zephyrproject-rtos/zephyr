@@ -10,12 +10,12 @@ tests:
       - CONFIG_DISK_DRIVER_SDMMC=y
     tags: mcux
     integration_platforms:
-      - mimxrt1060_evk
-      - mimxrt1050_evk
-      - mimxrt1064_evk
+      - mimxrt1060_evk/mimxrt1062
+      - mimxrt1050_evk/mimxrt1052
+      - mimxrt1064_evk/mimxrt1064
   drivers.disk.ram:
-    platform_allow: qemu_x86_64
+    platform_allow: qemu_x86_64/atom
   drivers.disk.nvme:
     extra_configs:
       - CONFIG_NVME=y
-    platform_allow: qemu_x86_64
+    platform_allow: qemu_x86_64/atom

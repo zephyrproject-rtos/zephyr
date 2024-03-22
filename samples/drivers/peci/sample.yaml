@@ -5,10 +5,10 @@ tests:
     # theoretically EVB can be connected to Intel RVP as well,
     # but HW setup is not documented, hence qualifying as unsupported.
     platform_exclude:
-      - mec15xxevb_assy6853
-      - mec172xevb_assy6906
+      - mec15xxevb_assy6853/mec1501_hsz
+      - mec172xevb_assy6906/mec172x_nsz
     integration_platforms:
-      - npcx9m6f_evb
+      - npcx9m6f_evb/npcx9m6f
     filter: dt_alias_exists("peci-0")
     tags:
       - drivers

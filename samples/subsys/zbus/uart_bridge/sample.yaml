@@ -19,4 +19,4 @@ tests:
     tags: zbus
     filter: dt_nodelabel_enabled("uart1")
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

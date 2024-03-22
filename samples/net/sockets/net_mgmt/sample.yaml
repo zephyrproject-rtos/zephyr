@@ -18,4 +18,4 @@ tests:
     extra_configs:
       - CONFIG_USERSPACE=y
     platform_exclude:
-      - ip_k66f
+      - ip_k66f/mk66f18

@@ -4,7 +4,7 @@ sample:
 tests:
   sample.board.sensortile_box_pro.sensors-on-board:
     harness: sensor
-    platform_allow: sensortile_box_pro
+    platform_allow: sensortile_box_pro/stm32u585xx
     tags: sensors
     depends_on:
       - i2c

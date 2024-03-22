@@ -7,14 +7,14 @@ tests:
     extra_configs:
       - CONFIG_RELOCATE_TO_ITCM=y
     platform_allow:
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062
   application_development.code_relocation_kinetis:
     filter: CONFIG_CPU_HAS_NXP_MPU
     arch_allow: arm
     extra_configs:
       - CONFIG_MPU_ALLOW_FLASH_WRITE=y
     platform_allow:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
   application_development.code_relocation.no_itcm:
     filter: not CONFIG_CPU_HAS_NXP_MPU and not dt_chosen_enabled("zephyr,itcm")
     arch_allow: arm
@@ -25,16 +25,16 @@ tests:
       - _SRAM_DATA_SECTION_NAME
       - _CUSTOM_SECTION_NAME2
     platform_allow:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
       - mps2/an385
       - sam_e70_xplained/same70q21
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
   application_development.code_relocation.riscv:
     extra_args: CONF_FILE="prj_riscv.conf"
     platform_allow:
-      - qemu_riscv32
-      - qemu_riscv64
+      - qemu_riscv32/qemu_virt_riscv32
+      - qemu_riscv64/qemu_virt_riscv64
   application_development.code_relocation.xtensa:
     extra_args: CONF_FILE="prj_xtensa.conf"
-    platform_allow: qemu_xtensa
+    platform_allow: qemu_xtensa/dc233c

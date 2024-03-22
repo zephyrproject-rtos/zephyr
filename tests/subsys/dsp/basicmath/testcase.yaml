@@ -2,10 +2,10 @@ tests:
   zdsp.basicmath:
     filter: CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: zdsp
     min_flash: 128
     min_ram: 64

@@ -6,7 +6,7 @@ common:
     - ppp
     - modem
     - gsm
-  platform_allow: frdm_k64f
+  platform_allow: frdm_k64f/mk64f12
   extra_args: DTC_OVERLAY_FILE="boards/frdm_uart2_dts.overlay"
 sample:
   description: Sample for generic GSM modem

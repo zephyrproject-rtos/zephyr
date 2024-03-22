@@ -1,6 +1,6 @@
 common:
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
     - mps2/an385
 tests:
   drivers.sensor.generic:

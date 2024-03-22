@@ -7,7 +7,7 @@ tests:
       - sensors
     filter: dt_alias_exists("die-temp0")
     integration_platforms:
-      - stm32f3_disco
+      - stm32f3_disco/stm32f303xc
     harness: console
     harness_config:
       type: one_line
