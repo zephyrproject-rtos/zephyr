@@ -985,3 +985,8 @@ test_i2c_max31790: max31790@85 {
 		channel = <6>;
 	};
 };
+
+test_i2c_bmp085: bmp085@86 {
+	compatible = "bosch,bmp085";
+	reg = <0x86>;
+};
