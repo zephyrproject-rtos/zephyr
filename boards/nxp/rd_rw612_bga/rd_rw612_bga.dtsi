@@ -116,6 +116,7 @@ arduino_i2c: &flexcomm2 {
 	ahb-cacheable;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
+	rx-clock-source-b = <3>;
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -155,6 +156,25 @@ arduino_i2c: &flexcomm2 {
 				reg = <0xa60000 0x35a0000>;
 			};
 		};
+	};
+	is66wvq8m4: is66wvq8m4@2 {
+		compatible = "nxp,imx-flexspi-is66wvq8m4";
+		/* IS66WVQ8M4 is 4MB, 32MBit pSRAM */
+		size = <DT_SIZE_M(32)>;
+		reg = <2>;
+		spi-max-frequency = <256000000>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+		cs-interval-unit = <1>;
+		cs-interval = <5>;
+		cs-hold-time = <2>;
+		cs-setup-time = <3>;
+		data-valid-time = <1>;
+		column-space = <14>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
 	};
 };
 

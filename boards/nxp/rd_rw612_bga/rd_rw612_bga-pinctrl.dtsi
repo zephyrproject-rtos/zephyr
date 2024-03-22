@@ -70,5 +70,21 @@
 			slew-rate = "ultra";
 			bias-pull-down;
 		};
+
+		group2 {
+			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO35
+				IO_MUX_QUAD_SPI_PSRAM_IO36
+				IO_MUX_QUAD_SPI_PSRAM_IO38
+				IO_MUX_QUAD_SPI_PSRAM_IO39
+				IO_MUX_QUAD_SPI_PSRAM_IO40
+				IO_MUX_QUAD_SPI_PSRAM_IO41>;
+			slew-rate = "normal";
+		};
+
+		group3 {
+			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO37>;
+			slew-rate = "normal";
+			bias-pull-down;
+		};
 	};
 };
