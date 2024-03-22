@@ -100,6 +100,20 @@ led1 / user_led1_green   Green  PTA27  FXIO D5 / EMIOS1 CH10 / EMIOS2 CH10
 led2 / user_led1_blue    Blue   PTE12  FXIO D8 / EMIOS1 CH5
 =======================  =====  =====  ===================================
 
+In addition to the RGB LED, the MR-CANHUBK3 board has six red LEDs, each located
+next to one of the CAN connectors:
+
+=======================  =====  =====  ===================================
+Devicetree node          Color  Pin    Pin Functions
+=======================  =====  =====  ===================================
+can_led0                 Red    PTC18  FXIO D6 / FXIO D12 / EMIOS2 CH12
+can_led1                 Red    PTE5   FXIO D7 / EMIOS1 CH5 / EMIOS0 CH 19
+can_led2                 Red    PTD20  EMIOS1 CH17 / EMIOS2 CH0
+can_led3                 Red    PTB24  FXIO D5 / EMIOS1 CH20 / EMIOS2 CH20
+can_led4                 Red    PTB26  FXIO D7 / EMIOS1 CH22 / EMIOS2 CH22
+can_led5                 Red    PTD31  FXIO D6 / EMIOS2 CH22
+=======================  =====  =====  ===================================
+
 The user can control the LEDs in any way. An output of ``0`` illuminates the LED.
 
 Buttons
