@@ -64,9 +64,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "macOS" ]; then
-            EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+            EXTRA_TWISTER_FLAGS="-P native_sim/native --build-only"
           elif [ "${{ runner.os }}" = "Windows" ]; then
-            EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
+            EXTRA_TWISTER_FLAGS="-P native_sim/native --short-build-path -O/tmp/twister-out"
           fi
           ./scripts/twister --force-color --inline-logs -T samples/hello_world -v $EXTRA_TWISTER_FLAGS
 
