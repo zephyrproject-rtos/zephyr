@@ -322,6 +322,14 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 		return;
 	}
 
+	if (udc_ep_buf_has_zlp(buf) && ep != USB_CONTROL_EP_IN) {
+		udc_ep_buf_clear_zlp(buf);
+		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
+		LOG_DBG("ZLP ep 0x%02x", ep);
+
+		return;
+	}
+
 	udc_buf_get(dev, ep);
 
 	if (ep == USB_CONTROL_EP_IN) {
@@ -439,7 +447,7 @@ static void udc_stm32_mem_init(const struct device *dev)
 	/* The documentation is not clear at all about RX FiFo size requirement,
 	 * Allocate a minimum of 0x40 words, which seems to work reliably.
 	 */
-	words = MAX(0x40, cfg->ep_mps / 4);
+	words = MAX(0x40, cfg->ep_mps / 2);
 	HAL_PCDEx_SetRxFiFo(&priv->pcd, words);
 	priv->occupied_mem = words * 4;
 
@@ -755,6 +763,21 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 	return 0;
 }
 
+static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
+{
+	struct udc_stm32_data *priv = udc_get_private(dev);
+
+	if (priv->pcd.Init.speed == USBD_HS_SPEED) {
+		return UDC_BUS_SPEED_HS;
+	}
+
+	if (priv->pcd.Init.speed == USBD_FS_SPEED) {
+		return UDC_BUS_SPEED_FS;
+	}
+
+	return UDC_BUS_UNKNOWN;
+}
+
 static const struct udc_api udc_stm32_api = {
 	.lock = udc_stm32_lock,
 	.unlock = udc_stm32_unlock,
@@ -771,6 +794,7 @@ static const struct udc_api udc_stm32_api = {
 	.ep_clear_halt = udc_stm32_ep_clear_halt,
 	.ep_enqueue = udc_stm32_ep_enqueue,
 	.ep_dequeue = udc_stm32_ep_dequeue,
+	.device_speed = udc_stm32_device_speed,
 };
 
 /* ----------------- Instance/Device specific data ----------------- */
@@ -1074,6 +1098,9 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.out_ack = false;
 	data->caps.mps0 = UDC_MPS0_64;
+	if (usb_dc_stm32_get_maximum_speed() == USB_OTG_SPEED_HIGH) {
+		data->caps.hs = true;
+	}
 
 	priv->dev = dev;
 	priv->irq = DT_INST_IRQN(0);

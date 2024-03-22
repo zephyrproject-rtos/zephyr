@@ -28,6 +28,9 @@ LOG_MODULE_REGISTER(usbd_ch9, CONFIG_USBD_LOG_LEVEL);
 #define SF_TEST_MODE_SELECTOR(wIndex)		((uint8_t)((wIndex) >> 8))
 #define SF_TEST_LOWER_BYTE(wIndex)		((uint8_t)(wIndex))
 
+static int nonstd_request(struct usbd_contex *const uds_ctx,
+			  struct net_buf *const dbuf);
+
 static bool reqtype_is_to_host(const struct usb_setup_packet *const setup)
 {
 	return setup->wLength && USB_REQTYPE_GET_DIR(setup->bmRequestType);
@@ -440,15 +443,32 @@ static int sreq_get_status(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
+/*
+ * This function handles configuration and USB2.0 other-speed-configuration
+ * descriptor type requests.
+ */
 static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 			     struct net_buf *const buf,
-			     const uint8_t idx)
+			     const uint8_t idx,
+			     const bool other_cfg)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	enum usbd_speed speed = usbd_bus_speed(uds_ctx);
+	struct usb_cfg_descriptor other_desc;
 	struct usb_cfg_descriptor *cfg_desc;
 	struct usbd_config_node *cfg_nd;
+	enum usbd_speed get_desc_speed;
 	struct usbd_class_node *c_nd;
 	uint16_t len;
+
+	/*
+	 * If the other-speed-configuration-descriptor is requested and the
+	 * controller does not support high speed, respond with an error.
+	 */
+	if (other_cfg && usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
+		errno = -ENOTSUP;
+		return 0;
+	}
 
 	cfg_nd = usbd_config_get(uds_ctx, idx + 1);
 	if (cfg_nd == NULL) {
@@ -457,16 +477,51 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 		return 0;
 	}
 
-	cfg_desc = cfg_nd->desc;
-	len = MIN(setup->wLength, net_buf_tailroom(buf));
-	net_buf_add_mem(buf, cfg_desc, MIN(len, cfg_desc->bLength));
+	if (other_cfg) {
+		/*
+		 * Because the structure of the other-speed-configuration is
+		 * the same as a configuration descriptor, and the other speed
+		 * function collection has the same length and the number of
+		 * interfaces and endpoints, we simply copy the configuration
+		 * descriptor and update the type.
+		 * If at some point the number of interfaces or endpoints for
+		 * full and high speed descritpors in a class implementation
+		 * becomes different, we need to revisit this and compute the
+		 * configuration descriptor properties on the fly.
+		 */
+		memcpy(&other_desc, cfg_nd->desc, sizeof(other_desc));
+		other_desc.bDescriptorType = USB_DESC_OTHER_SPEED;
+
+		cfg_desc = &other_desc;
+		if (speed != USBD_SPEED_HS) {
+			get_desc_speed = USBD_SPEED_HS;
+		} else {
+			get_desc_speed = USBD_SPEED_FS;
+		}
+	} else {
+		cfg_desc = cfg_nd->desc;
+		get_desc_speed = speed;
+	}
+
+	net_buf_add_mem(buf, cfg_desc, MIN(net_buf_tailroom(buf), cfg_desc->bLength));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
-		struct usb_desc_header *head = c_nd->data->desc;
-		size_t desc_len = usbd_class_desc_len(c_nd);
+		struct usb_desc_header **dhp;
 
-		len = MIN(setup->wLength, net_buf_tailroom(buf));
-		net_buf_add_mem(buf, head, MIN(len, desc_len));
+		dhp = usbd_class_get_desc(c_nd, get_desc_speed);
+		if (dhp == NULL) {
+			return -EINVAL;
+		}
+
+		while (*dhp != NULL && (*dhp)->bLength != 0) {
+			len = MIN(net_buf_tailroom(buf), (*dhp)->bLength);
+			net_buf_add_mem(buf, *dhp, len);
+			dhp++;
+		}
+	}
+
+	if (buf->len > setup->wLength) {
+		net_buf_remove_mem(buf, buf->len - setup->wLength);
 	}
 
 	LOG_DBG("Get Configuration descriptor %u, len %u", idx, buf->len);
@@ -499,6 +554,40 @@ static int sreq_get_desc(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
+static int sreq_get_dev_qualifier(struct usbd_contex *const uds_ctx,
+				  struct net_buf *const buf)
+{
+	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct usb_device_descriptor *d_desc = uds_ctx->desc;
+	struct usb_device_qualifier_descriptor q_desc = {
+		.bLength = sizeof(struct usb_device_qualifier_descriptor),
+		.bDescriptorType = USB_DESC_DEVICE_QUALIFIER,
+		.bcdUSB = d_desc->bcdUSB,
+		.bDeviceClass = d_desc->bDeviceClass,
+		.bDeviceSubClass = d_desc->bDeviceSubClass,
+		.bDeviceProtocol = d_desc->bDeviceProtocol,
+		.bMaxPacketSize0 = d_desc->bMaxPacketSize0,
+		.bNumConfigurations = d_desc->bNumConfigurations,
+		.bReserved = 0U,
+	};
+	size_t len;
+
+	/*
+	 * If the Device Qualifier descriptor is requested and the controller
+	 * does not support high speed, respond with an error.
+	 */
+	if (usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	LOG_DBG("Get Device Qualifier");
+	len = MIN(setup->wLength, net_buf_tailroom(buf));
+	net_buf_add_mem(buf, &q_desc, MIN(len, q_desc.bLength));
+
+	return 0;
+}
+
 static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
 			       struct net_buf *const buf)
 {
@@ -509,16 +598,29 @@ static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
 	LOG_DBG("Get Descriptor request type %u index %u",
 		desc_type, desc_idx);
 
+	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
+		/*
+		 * If the recipient is not the device then it is probably a
+		 * class specific  request where wIndex is the interface
+		 * number or endpoing and not the language ID. e.g. HID
+		 * Class Get Descriptor request.
+		 */
+		return nonstd_request(uds_ctx, buf);
+	}
+
 	switch (desc_type) {
 	case USB_DESC_DEVICE:
 		return sreq_get_desc(uds_ctx, buf, USB_DESC_DEVICE, 0);
 	case USB_DESC_CONFIGURATION:
-		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx);
+		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx, false);
+	case USB_DESC_OTHER_SPEED:
+		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx, true);
 	case USB_DESC_STRING:
 		return sreq_get_desc(uds_ctx, buf, USB_DESC_STRING, desc_idx);
+	case USB_DESC_DEVICE_QUALIFIER:
+		return sreq_get_dev_qualifier(uds_ctx, buf);
 	case USB_DESC_INTERFACE:
 	case USB_DESC_ENDPOINT:
-	case USB_DESC_OTHER_SPEED:
 	default:
 		break;
 	}

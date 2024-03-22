@@ -141,6 +141,20 @@ struct usbd_ch9_data {
 };
 
 /**
+ * @brief USB device speed
+ */
+enum usbd_speed {
+	/** To be aligned with enum udc_bus_speed */
+	USBD_SPEED_UNKNOWN,
+	/** Device suports or is connected to a full speed bus */
+	USBD_SPEED_FS,
+	/** Device suports or is connected to a high speed bus  */
+	USBD_SPEED_HS,
+	/** Device suports or is connected to a super speed bus */
+	USBD_SPEED_SS,
+};
+
+/**
  * USB device support status
  */
 struct usbd_status {
@@ -152,6 +166,8 @@ struct usbd_status {
 	unsigned int suspended : 1;
 	/** USB remote wake-up feature is enabled */
 	unsigned int rwup : 1;
+	/** USB device speed */
+	enum usbd_speed speed : 2;
 };
 
 /**
@@ -240,6 +256,10 @@ struct usbd_class_api {
 
 	/** Shutdown of the class implementation */
 	void (*shutdown)(struct usbd_class_node *const node);
+
+	/** Get function descriptor based on speed parameter */
+	void *(*get_desc)(struct usbd_class_node *const node,
+			  const enum usbd_speed speed);
 };
 
 /**
@@ -248,10 +268,6 @@ struct usbd_class_api {
 struct usbd_class_data {
 	/** Pointer to USB device stack context structure */
 	struct usbd_contex *uds_ctx;
-	/** Pointer to a class implementation descriptor that should end with
-	 *  a nil descriptor (bLength = 0 and bDescriptorType = 0).
-	 */
-	void *desc;
 	/** Supported vendor request table, can be NULL */
 	const struct usbd_cctx_vendor_req *v_reqs;
 	/** Bitmap of all endpoints assigned to the instance.
@@ -280,6 +296,40 @@ struct usbd_class_node {
 	/** Pointer to USB device support class data */
 	struct usbd_class_data *data;
 };
+
+/**
+ * @brief Get the USB device runtime context under which the class is registered
+ *
+ * The class implementation must use this function and not access the members
+ * of the struct directly.
+ *
+ * @param[in] node Pointer to USB device class node
+ *
+ * @return Pointer to USB device runtime context
+ */
+static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_node *const c_nd)
+{
+	struct usbd_class_data *const c_data = c_nd->data;
+
+	return c_data->uds_ctx;
+}
+
+/**
+ * @brief Get class implementation private data
+ *
+ * The class implementation must use this function and not access the members
+ * of the struct directly.
+ *
+ * @param[in] node Pointer to USB device class node
+ *
+ * @return Pointer to class implementation private data
+ */
+static inline void *usbd_class_get_private(const struct usbd_class_node *const c_nd)
+{
+	struct usbd_class_data *const c_data = c_nd->data;
+
+	return c_data->priv;
+}
 
 #define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
@@ -669,6 +719,24 @@ bool usbd_is_suspended(struct usbd_contex *uds_ctx);
  * @return 0 on success, other values on fail.
  */
 int usbd_wakeup_request(struct usbd_contex *uds_ctx);
+
+/**
+ * @brief Get actual device speed
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return Actual device speed
+ */
+enum usbd_speed usbd_bus_speed(const struct usbd_contex *const uds_ctx);
+
+/**
+ * @brief Get highest speed supported by the controller
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return Highest supported speed
+ */
+enum usbd_speed usbd_caps_speed(const struct usbd_contex *const uds_ctx);
 
 /**
  * @brief Set USB device descriptor value bcdUSB
