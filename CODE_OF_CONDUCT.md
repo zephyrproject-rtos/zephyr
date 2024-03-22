@@ -35,6 +35,8 @@ Examples of unacceptable behavior include:
   without their explicit permission
 * Other conduct which could reasonably be considered inappropriate in a
   professional setting
+* The use of emojis can confuse older contributors and maintainers. Please
+  demonstrate empathy and only use ASCII characters.
 
 ## Enforcement Responsibilities
 
