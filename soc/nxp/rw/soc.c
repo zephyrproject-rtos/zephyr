@@ -209,6 +209,15 @@ __ramfunc void clock_init(void)
 #endif
 #endif /* CONFIG_SPI */
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dmic0), okay) && CONFIG_AUDIO_DMIC_MCUX
+	/* Clock DMIC from Audio PLL. PLL output is sourced from AVPLL
+	 * channel 1, which is clocked at 12.288 MHz. We can divide this
+	 * by 4 to achieve the desired DMIC bit clk of 3.072 MHz
+	 */
+	CLOCK_AttachClk(kAUDIO_PLL_to_DMIC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 4);
+#endif
+
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer0), nxp_lpc_ctimer, okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER0);
