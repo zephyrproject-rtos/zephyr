@@ -32,6 +32,9 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 
 #endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
 
+in_addr_t inet_addr(const char *cp);
+char *inet_ntoa(struct in_addr in);
+
 #ifdef __cplusplus
 }
 #endif
