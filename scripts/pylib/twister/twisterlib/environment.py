@@ -43,6 +43,9 @@ canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 installed_packages = [pkg.project_name for pkg in pkg_resources.working_set]  # pylint: disable=not-an-iterable
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 
+def norm_path(astring):
+    newstring = os.path.normpath(astring).replace(os.sep, '/')
+    return newstring
 
 def add_parse_arguments(parser = None):
     if parser is None:
@@ -96,7 +99,7 @@ Artificially long but functional example:
         help="Load a list of tests and platforms to be run from file.")
 
     case_select.add_argument(
-        "-T", "--testsuite-root", action="append", default=[],
+        "-T", "--testsuite-root", action="append", default=[], type = norm_path,
         help="Base directory to recursively search for test cases. All "
              "testcase.yaml files under here will be processed. May be "
              "called multiple times. Defaults to the 'samples/' and "
@@ -178,6 +181,12 @@ Artificially long but functional example:
                         when flash operation also executes test case on the platform.
                         """)
 
+    parser.add_argument("--flash-before", action="store_true", default=False,
+                        help="""Flash device before attaching to serial port.
+                        This is useful for devices that share the same port for programming
+                        and serial console, where flash must come first.
+                        """)
+
     test_or_build.add_argument(
         "-b", "--build-only", action="store_true", default="--prep-artifacts-for-testing" in sys.argv,
         help="Only build the code, do not attempt to run the code on targets.")
@@ -203,7 +212,7 @@ Artificially long but functional example:
         and global timeout multiplier (this parameter)""")
 
     test_xor_subtest.add_argument(
-        "-s", "--test", "--scenario", action="append",
+        "-s", "--test", "--scenario", action="append", type = norm_path,
         help="Run only the specified testsuite scenario. These are named by "
              "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
@@ -786,14 +795,22 @@ def parse_arguments(parser, args, options = None):
         logger.error("valgrind enabled but valgrind executable not found")
         sys.exit(1)
 
-    if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) > 1:
-        logger.error("""When --device-testing is used with
-                        --device-serial or --device-serial-pty,
-                        only one platform is allowed""")
+    if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1:
+        logger.error("When --device-testing is used with --device-serial "
+                     "or --device-serial-pty, exactly one platform must "
+                     "be specified")
         sys.exit(1)
 
     if options.device_flash_with_test and not options.device_testing:
         logger.error("--device-flash-with-test requires --device_testing")
+        sys.exit(1)
+
+    if options.flash_before and options.device_flash_with_test:
+        logger.error("--device-flash-with-test does not apply when --flash-before is used")
+        sys.exit(1)
+
+    if options.flash_before and options.device_serial_pty:
+        logger.error("--device-serial-pty cannot be used when --flash-before is set (for now)")
         sys.exit(1)
 
     if options.shuffle_tests and options.subset is None:
@@ -846,6 +863,9 @@ def parse_arguments(parser, args, options = None):
 
     return options
 
+def strip_ansi_sequences(s: str) -> str:
+    """Remove ANSI escape sequences from a string."""
+    return re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', "", s)
 
 class TwisterEnv:
 
@@ -950,8 +970,7 @@ class TwisterEnv:
         # for instance if twister is executed from inside a makefile. In such a
         # scenario it is then necessary to remove them, as otherwise the JSON decoding
         # will fail.
-        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-        out = ansi_escape.sub('', out.decode())
+        out = strip_ansi_sequences(out.decode())
 
         if p.returncode == 0:
             msg = "Finished running %s" % (args[0])

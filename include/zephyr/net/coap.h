@@ -758,6 +758,15 @@ bool coap_has_descriptive_block_option(struct coap_packet *cpkt);
 int coap_remove_descriptive_block_option(struct coap_packet *cpkt);
 
 /**
+ * @brief Check if BLOCK1 or BLOCK2 option has more flag set
+ *
+ * @param cpkt Packet to be checked.
+ * @return true If more flag is set in BLOCK1 or BLOCK2
+ * @return false If MORE flag is not set or BLOCK header not found.
+ */
+bool coap_block_has_more(struct coap_packet *cpkt);
+
+/**
  * @brief Append BLOCK1 option to the packet.
  *
  * @param cpkt Packet to be updated

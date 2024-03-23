@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
-
 set -eu
-bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
 
-# Read variable definitions output by _env.sh
-source "${bash_source_dir}/_env.sh"
+INCR_BUILD=1
 
-# terminate running simulations (if any)
-${BSIM_COMPONENTS_PATH}/common/stop_bsim.sh
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-west build -b nrf52_bsim && \
-    cp build/zephyr/zephyr.exe $central_exe
+app="$(guess_test_relpath)" _compile

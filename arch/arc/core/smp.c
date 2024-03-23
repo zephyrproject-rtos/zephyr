@@ -39,7 +39,7 @@ volatile char *arc_cpu_sp;
 volatile _cpu_t *_curr_cpu[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Called from Zephyr initialization */
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	_curr_cpu[cpu_num] = &(_kernel.cpus[cpu_num]);
@@ -50,7 +50,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * arc_cpu_wake_flag will protect arc_cpu_sp that
 	 * only one slave cpu can read it per time
 	 */
-	arc_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
+	arc_cpu_sp = K_KERNEL_STACK_BUFFER(stack) + sz;
 
 	arc_cpu_wake_flag = cpu_num;
 
@@ -114,7 +114,7 @@ void arch_secondary_cpu_init(int cpu_num)
 			   DT_IRQ(DT_NODELABEL(ici), priority), 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 #endif
-	/* call the function set by arch_start_cpu */
+	/* call the function set by arch_cpu_start */
 	fn = arc_cpu_init[cpu_num].fn;
 
 	fn(arc_cpu_init[cpu_num].arg);

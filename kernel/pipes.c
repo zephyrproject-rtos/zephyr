@@ -33,7 +33,7 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 			     k_timeout_t timeout);
 #ifdef CONFIG_OBJ_CORE_PIPE
 static struct k_obj_type obj_type_pipe;
-#endif
+#endif /* CONFIG_OBJ_CORE_PIPE */
 
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
@@ -52,12 +52,12 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&pipe->poll_events);
-#endif
+#endif /* CONFIG_POLL */
 	k_object_init(pipe);
 
 #ifdef CONFIG_OBJ_CORE_PIPE
 	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
-#endif
+#endif /* CONFIG_OBJ_CORE_PIPE */
 }
 
 int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
@@ -94,7 +94,7 @@ static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 	return z_impl_k_pipe_alloc_init(pipe, size);
 }
 #include <syscalls/k_pipe_alloc_init_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 static inline void handle_poll_events(struct k_pipe *pipe)
 {
@@ -102,7 +102,7 @@ static inline void handle_poll_events(struct k_pipe *pipe)
 	z_handle_obj_poll_events(&pipe->poll_events, K_POLL_STATE_PIPE_DATA_AVAILABLE);
 #else
 	ARG_UNUSED(pipe);
-#endif
+#endif /* CONFIG_POLL */
 }
 
 void z_impl_k_pipe_flush(struct k_pipe *pipe)
@@ -127,7 +127,7 @@ void z_vrfy_k_pipe_flush(struct k_pipe *pipe)
 	z_impl_k_pipe_flush(pipe);
 }
 #include <syscalls/k_pipe_flush_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_pipe_buffer_flush(struct k_pipe *pipe)
 {
@@ -154,7 +154,7 @@ void z_vrfy_k_pipe_buffer_flush(struct k_pipe *pipe)
 
 	z_impl_k_pipe_buffer_flush(pipe);
 }
-#endif
+#endif /* CONFIG_USERSPACE */
 
 int k_pipe_cleanup(struct k_pipe *pipe)
 {
@@ -526,7 +526,7 @@ int z_vrfy_k_pipe_put(struct k_pipe *pipe, const void *data,
 				 timeout);
 }
 #include <syscalls/k_pipe_put_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 			     void *data, size_t bytes_to_read,
@@ -734,7 +734,7 @@ int z_vrfy_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 				timeout);
 }
 #include <syscalls/k_pipe_get_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
 {
@@ -771,7 +771,7 @@ size_t z_vrfy_k_pipe_read_avail(struct k_pipe *pipe)
 	return z_impl_k_pipe_read_avail(pipe);
 }
 #include <syscalls/k_pipe_read_avail_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
 {
@@ -808,7 +808,7 @@ size_t z_vrfy_k_pipe_write_avail(struct k_pipe *pipe)
 	return z_impl_k_pipe_write_avail(pipe);
 }
 #include <syscalls/k_pipe_write_avail_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_PIPE
 static int init_pipe_obj_core_list(void)
@@ -829,4 +829,4 @@ static int init_pipe_obj_core_list(void)
 
 SYS_INIT(init_pipe_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif
+#endif /* CONFIG_OBJ_CORE_PIPE */

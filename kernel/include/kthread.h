@@ -17,7 +17,7 @@
  * thread->next_thread (until NULL)
  */
 extern struct k_spinlock z_thread_monitor_lock;
-#endif
+#endif /* CONFIG_THREAD_MONITOR */
 
 /* clean up when a thread is aborted */
 
@@ -42,8 +42,8 @@ static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t dela
 #else
 	ARG_UNUSED(delay);
 	k_thread_start(thread);
-#endif
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 }
-#endif
+#endif /* CONFIG_MULTITHREADING */
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_THREAD_H_ */

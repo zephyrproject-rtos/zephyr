@@ -48,6 +48,13 @@ extern "C" {
 #endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL */
 
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
+#define WIFI_MGMT_SCAN_MIN_DWELL_TIME_ACTIVE 5
+#define WIFI_MGMT_SCAN_MAX_DWELL_TIME_ACTIVE 1000
+#define WIFI_MGMT_SCAN_MIN_DWELL_TIME_PASSIVE 10
+#define WIFI_MGMT_SCAN_MAX_DWELL_TIME_PASSIVE 1000
+#define WIFI_MGMT_SCAN_DEFAULT_DWELL_TIME_ACTIVE 50
+#define WIFI_MGMT_SCAN_DEFAULT_DWELL_TIME_PASSIVE 130
+#define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
 /** Wi-Fi management commands */
 enum net_request_wifi_cmd {
@@ -359,6 +366,8 @@ struct wifi_connect_req_params {
 	enum wifi_security_type security;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
+	/** BSSID */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
 };
@@ -371,12 +380,23 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_SUCCESS = 0,
 	/** Connection failed - generic failure */
 	WIFI_STATUS_CONN_FAIL,
-	/** Connection failed - wrong password */
+	/** Connection failed - wrong password
+	 * Few possible reasons for 4-way handshake failure that we can guess are as follows:
+	 * 1) Incorrect key
+	 * 2) EAPoL frames lost causing timeout
+	 *
+	 * #1 is the likely cause, so, we convey to the user that it is due to
+	 * Wrong passphrase/password.
+	 */
 	WIFI_STATUS_CONN_WRONG_PASSWORD,
 	/** Connection timed out */
 	WIFI_STATUS_CONN_TIMEOUT,
 	/** Connection failed - AP not found */
 	WIFI_STATUS_CONN_AP_NOT_FOUND,
+	/** Last connection status */
+	WIFI_STATUS_CONN_LAST_STATUS,
+	/** Connection disconnected status */
+	WIFI_STATUS_DISCONN_FIRST_STATUS = WIFI_STATUS_CONN_LAST_STATUS,
 };
 
 /** Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -384,7 +404,7 @@ enum wifi_conn_status {
  */
 enum wifi_disconn_reason {
 	/** Unspecified reason */
-	WIFI_REASON_DISCONN_UNSPECIFIED = 0,
+	WIFI_REASON_DISCONN_UNSPECIFIED = WIFI_STATUS_DISCONN_FIRST_STATUS,
 	/** Disconnected due to user request */
 	WIFI_REASON_DISCONN_USER_REQUEST,
 	/** Disconnected due to AP leaving */

@@ -72,6 +72,11 @@ Drivers and Sensors
 
 * Audio
 
+* Battery
+
+  * Added ``re-charge-voltage-microvolt`` property to the ``battery`` binding. This allows to set
+    limit to automatically start charging again.
+
 * Battery backed up RAM
 
 * CAN
@@ -92,6 +97,13 @@ Drivers and Sensors
   * Updated the CAN timing functions to take the minimum supported bitrate into consideration when
     validating the bitrate.
   * Made the ``sample-point`` and ``sample-point-data`` devicetree properties optional.
+
+* Charger
+
+  * Added ``chgin-to-sys-current-limit-microamp`` property to ``maxim,max20335-charger``.
+  * Added ``system-voltage-min-threshold-microvolt`` property to ``maxim,max20335-charger``.
+  * Added ``re-charge-threshold-microvolt`` property to ``maxim,max20335-charger``.
+  * Added ``thermistor-monitoring-mode`` property to ``maxim,max20335-charger``.
 
 * Clock control
 
@@ -166,6 +178,20 @@ Drivers and Sensors
 Networking
 **********
 
+* DHCPv4:
+
+  * Added support for encapsulated vendor specific options. By enabling
+    :kconfig:option:`CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC` callbacks can be
+    registered with :c:func:`net_dhcpv4_add_option_vendor_callback` to handle these options after
+    being initialised with :c:func:`net_dhcpv4_init_option_vendor_callback`.
+
+  * Added support for the "Vendor class identifier" option. Use the
+    :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER` to enable it and
+    :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING` to set it.
+
+  * The NTP server from the DHCPv4 option can now be used to set the system time. This is done by
+    default, if :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` is enabled.
+
 * LwM2M:
 
   * Added new API function:
@@ -184,6 +210,9 @@ Libraries / Subsystems
 * Management
 
 * Logging
+
+  * By enabling :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION`, the IP address of the
+    syslog server for the networking backend is set by the DHCPv4 Log Server Option (7).
 
 * Modem modules
 

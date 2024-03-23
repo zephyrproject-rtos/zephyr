@@ -9,7 +9,7 @@
  * @brief Internal kernel APIs implemented at the architecture layer.
  *
  * Not all architecture-specific defines are here, APIs that are used
- * by public functions and macros are defined in include/sys/arch_interface.h.
+ * by public functions and macros are defined in include/zephyr/arch/arch_interface.h.
  *
  * For all inline functions prototyped here, the implementation is expected
  * to be provided by arch/ARCH/include/kernel_arch_func.h
@@ -18,7 +18,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -37,7 +37,7 @@ extern "C" {
  * @param usec_to_wait Wait period, in microseconds
  */
 void arch_busy_wait(uint32_t usec_to_wait);
-#endif
+#endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
 
 /** @} */
 
@@ -154,7 +154,7 @@ int arch_swap(unsigned int key);
  */
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
-#endif /* CONFIG_USE_SWITCH i*/
+#endif /* CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 /**

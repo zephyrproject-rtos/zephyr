@@ -9,6 +9,7 @@ config SPI_MCUX_LPSPI
 	depends on DT_HAS_NXP_IMX_LPSPI_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
+	select MFD if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
 	help
 	  Enable support for mcux spi driver.
 

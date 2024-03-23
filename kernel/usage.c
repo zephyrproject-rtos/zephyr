@@ -14,7 +14,7 @@
 /* Need one of these for this to work */
 #if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 #error "No data backend configured for CONFIG_SCHED_THREAD_USAGE"
-#endif
+#endif /* !CONFIG_USE_SWITCH && !CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
 static struct k_spinlock usage_lock;
 
@@ -26,7 +26,7 @@ static uint32_t usage_now(void)
 	now = (uint32_t)timing_counter_get();
 #else
 	now = k_cycle_get_32();
-#endif
+#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
 
 	/* Edge case: we use a zero as a null ("stop() already called") */
 	return (now == 0) ? 1 : now;
@@ -51,12 +51,12 @@ static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 	} else {
 		cpu->usage->current = 0;
 		cpu->usage->num_windows++;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 	}
 }
 #else
 #define sched_cpu_update_usage(cpu, cycles)   do { } while (0)
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
 static void sched_thread_update_usage(struct k_thread *thread, uint32_t cycles)
 {
@@ -68,7 +68,7 @@ static void sched_thread_update_usage(struct k_thread *thread, uint32_t cycles)
 	if (thread->base.usage.longest < thread->base.usage.current) {
 		thread->base.usage.longest = thread->base.usage.current;
 	}
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 }
 
 void z_sched_usage_start(struct k_thread *thread)
@@ -93,7 +93,7 @@ void z_sched_usage_start(struct k_thread *thread)
 	 */
 
 	_current_cpu->usage0 = usage_now();
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 }
 
 void z_sched_usage_stop(void)
@@ -159,7 +159,7 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 		stats->average_cycles = stats->total_cycles /
 					cpu->usage->num_windows;
 	}
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 	stats->idle_cycles =
 		_kernel.cpus[cpu_id].idle_thread->base.usage.total;
@@ -168,7 +168,7 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 
 	k_spin_unlock(&usage_lock, key);
 }
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
 void z_sched_thread_usage(struct k_thread *thread,
 			  struct k_thread_runtime_stats *stats)
@@ -215,11 +215,11 @@ void z_sched_thread_usage(struct k_thread *thread,
 		stats->average_cycles = stats->total_cycles /
 					thread->base.usage.num_windows;
 	}
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	stats->idle_cycles = 0;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 	stats->execution_cycles = thread->base.usage.total;
 
 	k_spin_unlock(&usage_lock, key);
@@ -273,7 +273,7 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 void k_sys_runtime_stats_enable(void)
@@ -303,7 +303,7 @@ void k_sys_runtime_stats_enable(void)
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 		_kernel.cpus[i].usage->num_windows++;
 		_kernel.cpus[i].usage->current = 0;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 	}
 
 	k_spin_unlock(&usage_lock, key);
@@ -342,7 +342,7 @@ void k_sys_runtime_stats_disable(void)
 
 	k_spin_unlock(&usage_lock, key);
 }
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
 int z_thread_stats_raw(struct k_obj_core *obj_core, void *stats)
@@ -382,7 +382,7 @@ int z_thread_stats_reset(struct k_obj_core *obj_core)
 	stats->current = 0ULL;
 	stats->longest = 0ULL;
 	stats->num_windows = (thread->base.usage.track_usage) ?  1U : 0U;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 	if (thread != _current_cpu->current) {
 
@@ -423,7 +423,7 @@ int z_thread_stats_disable(struct k_obj_core *obj_core)
 	return k_thread_runtime_stats_disable(thread);
 #else
 	return -ENOTSUP;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 }
 
 int z_thread_stats_enable(struct k_obj_core *obj_core)
@@ -436,9 +436,9 @@ int z_thread_stats_enable(struct k_obj_core *obj_core)
 	return k_thread_runtime_stats_enable(thread);
 #else
 	return -ENOTSUP;
-#endif
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 }
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
 
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 int z_cpu_stats_raw(struct k_obj_core *obj_core, void *stats)
@@ -462,7 +462,7 @@ int z_cpu_stats_query(struct k_obj_core *obj_core, void *stats)
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
 
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 int z_kernel_stats_raw(struct k_obj_core *obj_core, void *stats)
@@ -483,4 +483,4 @@ int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats)
 
 	return k_thread_runtime_stats_all_get(stats);
 }
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */

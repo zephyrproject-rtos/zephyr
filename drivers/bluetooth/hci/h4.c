@@ -278,7 +278,6 @@ static size_t h4_discard(const struct device *uart, size_t len)
 static inline void read_payload(void)
 {
 	struct net_buf *buf;
-	uint8_t evt_flags;
 	int read;
 
 	if (!rx.buf) {
@@ -331,26 +330,15 @@ static inline void read_payload(void)
 	rx.buf = NULL;
 
 	if (rx.type == H4_EVT) {
-		evt_flags = bt_hci_evt_get_flags(rx.evt.evt);
 		bt_buf_set_type(buf, BT_BUF_EVT);
 	} else {
-		evt_flags = BT_HCI_EVT_FLAG_RECV;
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
 
 	reset_rx();
 
-	if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) &&
-	    (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
-		LOG_DBG("Calling bt_recv_prio(%p)", buf);
-		bt_recv_prio(buf);
-	}
-
-	if ((evt_flags & BT_HCI_EVT_FLAG_RECV) ||
-	    !IS_ENABLED(CONFIG_BT_RECV_BLOCKING)) {
-		LOG_DBG("Putting buf %p to rx fifo", buf);
-		net_buf_put(&rx.fifo, buf);
-	}
+	LOG_DBG("Putting buf %p to rx fifo", buf);
+	net_buf_put(&rx.fifo, buf);
 }
 
 static inline void read_header(void)

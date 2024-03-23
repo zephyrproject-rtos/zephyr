@@ -20,7 +20,7 @@ import threading
 import time
 
 from queue import Queue, Empty
-from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
@@ -216,7 +216,7 @@ class BinaryHandler(Handler):
                     else:
                         stripped_line = line_decoded.rstrip()
                     logger.debug("OUTPUT: %s", stripped_line)
-                    log_out_fp.write(line_decoded)
+                    log_out_fp.write(strip_ansi_sequences(line_decoded))
                     log_out_fp.flush()
                     harness.handle(stripped_line)
                     if harness.state:
@@ -378,6 +378,10 @@ class DeviceHandler(Handler):
             # from the test.
             harness.capture_coverage = True
 
+        # Wait for serial connection
+        while not ser.isOpen():
+            time.sleep(0.1)
+
         # Clear serial leftover.
         ser.reset_input_buffer()
 
@@ -422,7 +426,7 @@ class DeviceHandler(Handler):
                 sl = serial_line.decode('utf-8', 'ignore').lstrip()
                 logger.debug("DEVICE: {0}".format(sl.rstrip()))
 
-                log_out_fp.write(sl.encode('utf-8'))
+                log_out_fp.write(strip_ansi_sequences(sl).encode('utf-8'))
                 log_out_fp.flush()
                 harness.handle(sl.rstrip())
 
@@ -647,9 +651,13 @@ class DeviceHandler(Handler):
         if hardware.flash_with_test:
             flash_timeout += self.get_test_timeout()
 
+        serial_port = None
+        if hardware.flash_before is False:
+            serial_port = serial_device
+
         try:
             ser = self._create_serial_connection(
-                serial_device,
+                serial_port,
                 hardware.baud,
                 flash_timeout,
                 serial_pty,
@@ -702,6 +710,15 @@ class DeviceHandler(Handler):
 
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
+
+        # Connect to device after flashing it
+        if hardware.flash_before:
+            try:
+                logger.debug(f"Attach serial device {serial_device} @ {hardware.baud} baud")
+                ser.port = serial_device
+                ser.open()
+            except serial.SerialException:
+                return
 
         if not flash_error:
             # Always wait at most the test timeout here after flashing.
@@ -904,7 +921,7 @@ class QEMUHandler(Handler):
                 continue
 
             # line contains a full line of data output from QEMU
-            log_out_fp.write(line)
+            log_out_fp.write(strip_ansi_sequences(line))
             log_out_fp.flush()
             line = line.rstrip()
             logger.debug(f"QEMU ({pid}): {line}")

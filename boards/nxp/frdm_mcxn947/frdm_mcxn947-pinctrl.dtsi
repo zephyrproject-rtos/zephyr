@@ -7,6 +7,18 @@
 #include <nxp/mcx/MCXN947VDF-pinctrl.h>
 
 &pinctrl {
+	pinmux_flexcomm1_lpspi: pinmux_flexcomm1_lpspi {
+		group0 {
+			pinmux = <FC1_P0_PIO0_24>,
+				<FC1_P1_PIO0_25>,
+				<FC1_P2_PIO0_26>,
+				<FC1_P3_PIO0_27>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexcomm4_lpuart: pinmux_flexcomm4_lpuart {
 		group0 {
 			pinmux = <FC4_P0_PIO1_8>,
@@ -14,6 +26,35 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
+		};
+	};
+
+	pinmux_flexspi: pinmux_flexspi {
+		group0 {
+			pinmux = <FLEXSPI0_A_SS0_b_PIO3_0>,
+					<FLEXSPI0_A_SCLK_PIO3_7>,
+					<FLEXSPI0_A_DQS_PIO3_6>,
+					<FLEXSPI0_A_DATA0_PIO3_8>,
+					<FLEXSPI0_A_DATA1_PIO3_9>;
+			input-enable;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+		group1 {
+			pinmux = <FLEXSPI0_A_DATA2_PIO3_10>,
+					<FLEXSPI0_A_DATA3_PIO3_11>;
+			input-enable;
+			slew-rate = "fast";
+			drive-strength = "low";
+			bias-pull-up;
+		};
+	};
+
+	pinmux_dac0: pinmux_dac0 {
+		group0 {
+			pinmux = <DAC0_OUT_PIO4_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
 		};
 	};
 };

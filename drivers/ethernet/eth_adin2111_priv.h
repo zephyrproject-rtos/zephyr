@@ -48,10 +48,14 @@
 #define ADIN2111_CONFIG2_P2_FWD_UNK2P1		BIT(14)
 /* Forward Frames from Port 1 Not Matching a MAC Address to Port 2 */
 #define ADIN2111_CONFIG2_P1_FWD_UNK2P2		BIT(13)
+/* Forward Frames Not Matching Any MAC Address to the Host */
+#define ADIN2111_CONFIG2_P2_FWD_UNK2HOST	BIT(12)
 /* Enable Cut Through from Port to Port */
 #define ADIN2111_CONFIG2_PORT_CUT_THRU_EN	BIT(11)
 /* Enable CRC Append */
 #define ADIN2111_CONFIG2_CRC_APPEND		BIT(5)
+/* Forward Frames Not Matching Any MAC Address to the Host */
+#define ADIN2111_CONFIG2_P1_FWD_UNK2HOST	BIT(2)
 
 /* Status Register 0 */
 #define ADIN2111_STATUS0			0x08U
@@ -135,6 +139,16 @@
 #define ADIN2111_P2_RX_FSIZE			0xC0U
 /* P2 MAC Receive Register */
 #define ADIN2111_P2_RX				0xC1U
+
+/* MAC reset status */
+#define ADIN1110_MAC_RST_STATUS_REG		0x3BU
+
+/* MAC reset */
+#define ADIN2111_SOFT_RST_REG			0x3CU
+#define ADIN2111_SWRESET_KEY1			0x4F1CU
+#define ADIN2111_SWRESET_KEY2			0xC1F4U
+#define ADIN2111_SWRELEASE_KEY1			0x6F1AU
+#define ADIN2111_SWRELEASE_KEY2			0xA1F6U
 
 /* SPI header size in bytes */
 #define ADIN2111_SPI_HEADER_SIZE		2U

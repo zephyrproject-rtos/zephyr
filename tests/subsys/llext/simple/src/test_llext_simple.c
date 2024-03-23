@@ -11,6 +11,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/libc-hooks.h>
 
+#include "syscalls_ext.h"
+
 LOG_MODULE_REGISTER(test_llext_simple);
 
 
@@ -41,6 +43,19 @@ void llext_entry(void *arg0, void *arg1, void *arg2)
 	LOG_INF("calling fn %p from thread %p", fn, k_current_get());
 	fn();
 }
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_ext_syscall_ok(int a)
+{
+	return a + 1;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_ext_syscall_ok(int a)
+{
+	return z_impl_ext_syscall_ok(a);
+}
+#include <syscalls/ext_syscall_ok_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void load_call_unload(struct llext_test *test_case)
@@ -158,6 +173,11 @@ static LLEXT_CONST uint8_t object_ext[] __aligned(4) = {
 	#include "object.inc"
 };
 LLEXT_LOAD_UNLOAD(object, true)
+
+static LLEXT_CONST uint8_t syscalls_ext[] __aligned(4) = {
+	#include "syscalls.inc"
+};
+LLEXT_LOAD_UNLOAD(syscalls, true)
 #endif /* ! LOADER_BUILD_ONLY */
 
 /*
@@ -171,5 +191,17 @@ ZTEST(llext, test_printk_exported)
 	zassert_equal(printk_fn, printk, "printk should be an exported symbol");
 }
 
+/*
+ * Ensure ext_syscall_fail is exported - as it is picked up by the syscall
+ * build machinery - but points to NULL as it is not implemented.
+ */
+ZTEST(llext, test_ext_syscall_fail)
+{
+	const void * const esf_fn = llext_find_sym(NULL,
+						   "z_impl_ext_syscall_fail");
+
+	zassert_is_null(*(uintptr_t **)esf_fn, NULL,
+			"ext_syscall_fail should be NULL");
+}
 
 ZTEST_SUITE(llext, NULL, NULL, NULL, NULL, NULL);

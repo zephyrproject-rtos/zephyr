@@ -279,7 +279,7 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 	}
 
 	/* Notify all receive states after a bonded device reconnects */
-	for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		struct bass_recv_state_internal *internal_state = &scan_delegator.recv_states[i];
 		int gatt_err;
 
@@ -318,7 +318,7 @@ static struct broadcast_assistant *get_bap_broadcast_assistant(struct bt_conn *c
 {
 	struct broadcast_assistant *new = NULL;
 
-	for (int i = 0; i < ARRAY_SIZE(scan_delegator.assistant_configs); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.assistant_configs); i++) {
 		if (scan_delegator.assistant_configs[i].conn == conn) {
 			return &scan_delegator.assistant_configs[i];
 		} else if (new == NULL &&
@@ -344,7 +344,7 @@ static uint8_t next_src_id(void)
 	while (!unique) {
 		next_src_id = scan_delegator.next_src_id++;
 		unique = true;
-		for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+		for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 			if (scan_delegator.recv_states[i].active &&
 			    scan_delegator.recv_states[i].state.src_id == next_src_id) {
 				unique = false;
@@ -358,7 +358,7 @@ static uint8_t next_src_id(void)
 
 static struct bass_recv_state_internal *bass_lookup_src_id(uint8_t src_id)
 {
-	for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		if (scan_delegator.recv_states[i].active &&
 		    scan_delegator.recv_states[i].state.src_id == src_id) {
 			return &scan_delegator.recv_states[i];
@@ -370,7 +370,7 @@ static struct bass_recv_state_internal *bass_lookup_src_id(uint8_t src_id)
 
 static struct bass_recv_state_internal *bass_lookup_pa_sync(struct bt_le_per_adv_sync *sync)
 {
-	for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		if (scan_delegator.recv_states[i].pa_sync == sync) {
 			return &scan_delegator.recv_states[i];
 		}
@@ -381,7 +381,7 @@ static struct bass_recv_state_internal *bass_lookup_pa_sync(struct bt_le_per_adv
 
 static struct bass_recv_state_internal *bass_lookup_addr(const bt_addr_le_t *addr)
 {
-	for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		if (bt_addr_le_eq(&scan_delegator.recv_states[i].state.addr,
 				  addr)) {
 			return &scan_delegator.recv_states[i];
@@ -493,6 +493,29 @@ static int pa_sync_term_request(struct bt_conn *conn,
 	return err;
 }
 
+/* BAP 6.5.4 states that the Broadcast Assistant shall not initiate the Add Source operation
+ * if the operation would result in duplicate values for the combined Source_Address_Type,
+ * Source_Adv_SID, and Broadcast_ID fields of any Broadcast Receive State characteristic exposed
+ * by the Scan Delegator.
+ */
+static bool bass_source_is_duplicate(uint32_t broadcast_id, uint8_t adv_sid, uint8_t addr_type)
+{
+	struct bass_recv_state_internal *state;
+
+	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+		state = &scan_delegator.recv_states[i];
+
+		if (state != NULL && state->state.broadcast_id == broadcast_id &&
+			state->state.adv_sid == adv_sid && state->state.addr.type == addr_type) {
+			LOG_DBG("recv_state already exists at src_id=0x%02X", state->state.src_id);
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int scan_delegator_add_source(struct bt_conn *conn,
 				     struct net_buf_simple *buf)
 {
@@ -502,6 +525,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 	uint8_t pa_sync;
 	uint16_t pa_interval;
 	uint32_t aggregated_bis_syncs = 0;
+	uint32_t broadcast_id;
 	bool bis_sync_requested;
 
 	/* subtract 1 as the opcode has already been pulled */
@@ -535,7 +559,17 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
-	state->broadcast_id = net_buf_simple_pull_le24(buf);
+	broadcast_id = net_buf_simple_pull_le24(buf);
+
+	if (bass_source_is_duplicate(broadcast_id, state->adv_sid, state->addr.type)) {
+		LOG_DBG("Adding broadcast_id=0x%06X, adv_sid=0x%02X, and addr.type=0x%02X would "
+			"result in duplication", state->broadcast_id, state->adv_sid,
+			state->addr.type);
+
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	state->broadcast_id = broadcast_id;
 
 	pa_sync = net_buf_simple_pull_u8(buf);
 	if (pa_sync > BT_BAP_BASS_PA_REQ_SYNC) {
@@ -635,6 +669,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 
 	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC) {
 		int err;
+
 		err = pa_sync_request(conn, state, pa_sync, pa_interval);
 
 		if (err != 0) {
@@ -1108,11 +1143,10 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 		k_sem_give(&read_buf_sem);
 
 		return ret_val;
-	} else {
-		LOG_DBG("Index %u: Not active", idx);
-
-		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
 	}
+	LOG_DBG("Index %u: Not active", idx);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
+
 }
 
 #define RECEIVE_STATE_CHARACTERISTIC(idx) \

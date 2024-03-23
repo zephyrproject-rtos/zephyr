@@ -85,6 +85,10 @@ static otRadioFrame sTransmitFrame;
 static otRadioFrame ack_frame;
 static uint8_t ack_psdu[ACK_PKT_LENGTH];
 
+#if defined(CONFIG_OPENTHREAD_TIME_SYNC)
+static otRadioIeInfo tx_ie_info;
+#endif
+
 static struct net_pkt *tx_pkt;
 static struct net_buf *tx_payload;
 
@@ -334,6 +338,10 @@ static void dataInit(void)
 	for (size_t i = 0; i < CHANNEL_COUNT; i++) {
 		max_tx_power_table[i] = OT_RADIO_POWER_INVALID;
 	}
+
+#if defined(CONFIG_OPENTHREAD_TIME_SYNC)
+	sTransmitFrame.mInfo.mTxInfo.mIeInfo = &tx_ie_info;
+#endif
 }
 
 void platformRadioInit(void)
@@ -384,6 +392,18 @@ void transmit_message(struct k_work *tx_job)
 
 	radio_api->set_channel(radio_dev, channel);
 	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+
+#if defined(CONFIG_OPENTHREAD_TIME_SYNC)
+	if (sTransmitFrame.mInfo.mTxInfo.mIeInfo->mTimeIeOffset != 0) {
+		uint8_t *time_ie =
+			sTransmitFrame.mPsdu + sTransmitFrame.mInfo.mTxInfo.mIeInfo->mTimeIeOffset;
+		uint64_t offset_plat_time =
+			otPlatTimeGet() + sTransmitFrame.mInfo.mTxInfo.mIeInfo->mNetworkTimeOffset;
+
+		*(time_ie++) = sTransmitFrame.mInfo.mTxInfo.mIeInfo->mTimeSyncSeq;
+		sys_put_le64(offset_plat_time, time_ie);
+	}
+#endif
 
 	net_pkt_set_ieee802154_frame_secured(tx_pkt,
 					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);

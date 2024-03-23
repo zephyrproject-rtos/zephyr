@@ -289,6 +289,70 @@ POSIX_CLOCK_SELECTION
     pthread_condattr_setclock(),yes
     clock_nanosleep(),yes
 
+.. _posix_option_group_networking:
+
+POSIX_NETWORKING
+================
+
+.. csv-table:: POSIX_NETWORKING
+   :header: API, Supported
+   :widths: 50,10
+
+    accept(),yes
+    bind(),yes
+    connect(),yes
+    endhostent(),yes
+    endnetent(),yes
+    endprotoent(),yes
+    endservent(),yes
+    freeaddrinfo(),yes
+    gai_strerror(),yes
+    getaddrinfo(),yes
+    gethostent(),yes
+    gethostname(),yes
+    getnameinfo(),yes
+    getnetbyaddr(),yes
+    getnetbyname(),yes
+    getnetent(),yes
+    getpeername(),yes
+    getprotobyname(),yes
+    getprotobynumber(),yes
+    getprotoent(),yes
+    getservbyname(),yes
+    getservbyport(),yes
+    getservent(),yes
+    getsockname(),yes
+    getsockopt(),yes
+    htonl(),yes
+    htons(),yes
+    if_freenameindex(),yes
+    if_indextoname(),yes
+    if_nameindex(),yes
+    if_nametoindex(),yes
+    inet_addr(),yes
+    inet_ntoa(),yes
+    inet_ntop(),yes
+    inet_pton(),yes
+    listen(),yes
+    ntohl(),yes
+    ntohs(),yes
+    recv(),yes
+    recvfrom(),yes
+    recvmsg(),yes
+    send(),yes
+    sendmsg(),yes
+    sendto(),yes
+    sethostent(),yes
+    setnetent(),yes
+    setprotoent(),yes
+    setservent(),yes
+    setsockopt(),yes
+    shutdown(),yes
+    socket(),yes
+    sockatmark(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    socketpair(),yes
+
+
 .. _posix_option_group_semaphores:
 
 POSIX_SEMAPHORES

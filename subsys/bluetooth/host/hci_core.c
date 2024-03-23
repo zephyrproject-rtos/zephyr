@@ -66,14 +66,12 @@ LOG_MODULE_REGISTER(bt_hci_core);
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
 /* Stacks for the threads */
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 static void rx_work_handler(struct k_work *work);
 static K_WORK_DEFINE(rx_work, rx_work_handler);
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
-#endif /* !CONFIG_BT_RECV_BLOCKING */
 static struct k_thread tx_thread_data;
 static K_KERNEL_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 
@@ -406,6 +404,13 @@ static int hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time)
 	*tx_octets = sys_le16_to_cpu(rp->max_tx_octets);
 	*tx_time = sys_le16_to_cpu(rp->max_tx_time);
 	net_buf_unref(rsp);
+
+	if (!IN_RANGE(*tx_octets, BT_HCI_LE_MAX_TX_OCTETS_MIN, BT_HCI_LE_MAX_TX_OCTETS_MAX)) {
+		LOG_WRN("tx_octets exceeds the valid range %u", *tx_octets);
+	}
+	if (!IN_RANGE(*tx_time, BT_HCI_LE_MAX_TX_TIME_MIN, BT_HCI_LE_MAX_TX_TIME_MAX)) {
+		LOG_WRN("tx_time exceeds the valid range %u", *tx_time);
+	}
 
 	return 0;
 }
@@ -1682,6 +1687,19 @@ static void le_data_len_change(struct net_buf *buf)
 	uint16_t max_tx_time = sys_le16_to_cpu(evt->max_tx_time);
 	uint16_t max_rx_time = sys_le16_to_cpu(evt->max_rx_time);
 
+	if (!IN_RANGE(max_tx_octets, BT_HCI_LE_MAX_TX_OCTETS_MIN, BT_HCI_LE_MAX_TX_OCTETS_MAX)) {
+		LOG_WRN("max_tx_octets exceeds the valid range %u", max_tx_octets);
+	}
+	if (!IN_RANGE(max_rx_octets, BT_HCI_LE_MAX_RX_OCTETS_MIN, BT_HCI_LE_MAX_RX_OCTETS_MAX)) {
+		LOG_WRN("max_rx_octets exceeds the valid range %u", max_rx_octets);
+	}
+	if (!IN_RANGE(max_tx_time, BT_HCI_LE_MAX_TX_TIME_MIN, BT_HCI_LE_MAX_TX_TIME_MAX)) {
+		LOG_WRN("max_tx_time exceeds the valid range %u", max_tx_time);
+	}
+	if (!IN_RANGE(max_rx_time, BT_HCI_LE_MAX_RX_TIME_MIN, BT_HCI_LE_MAX_RX_TIME_MAX)) {
+		LOG_WRN("max_rx_time exceeds the valid range %u", max_rx_time);
+	}
+
 	LOG_DBG("max. tx: %u (%uus), max. rx: %u (%uus)", max_tx_octets, max_tx_time, max_rx_octets,
 		max_rx_time);
 
@@ -2725,6 +2743,40 @@ static const struct event_handler normal_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_HARDWARE_ERROR, hci_hardware_error,
 		      sizeof(struct bt_hci_evt_hardware_error)),
 };
+
+
+#define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
+#define BT_HCI_EVT_FLAG_RECV      BIT(1)
+
+/** @brief Get HCI event flags.
+ *
+ * Helper for the HCI driver to get HCI event flags that describes rules that.
+ * must be followed.
+ *
+ * @param evt HCI event code.
+ *
+ * @return HCI event flags for the specified event.
+ */
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
+{
+	switch (evt) {
+	case BT_HCI_EVT_DISCONN_COMPLETE:
+		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
+		/* fallthrough */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+#if defined(CONFIG_BT_CONN)
+	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
+		__fallthrough;
+#endif /* defined(CONFIG_BT_CONN) */
+#endif /* CONFIG_BT_CONN ||  CONFIG_BT_ISO */
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		return BT_HCI_EVT_FLAG_RECV_PRIO;
+	default:
+		return BT_HCI_EVT_FLAG_RECV;
+	}
+}
 
 static void hci_event(struct net_buf *buf)
 {
@@ -3834,7 +3886,6 @@ void hci_event_prio(struct net_buf *buf)
 	}
 }
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 static void rx_queue_put(struct net_buf *buf)
 {
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
@@ -3848,7 +3899,6 @@ static void rx_queue_put(struct net_buf *buf)
 		LOG_ERR("Could not submit rx_work: %d", err);
 	}
 }
-#endif /* !CONFIG_BT_RECV_BLOCKING */
 
 int bt_recv(struct net_buf *buf)
 {
@@ -3859,18 +3909,11 @@ int bt_recv(struct net_buf *buf)
 	switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BT_CONN)
 	case BT_BUF_ACL_IN:
-#if defined(CONFIG_BT_RECV_BLOCKING)
-		hci_acl(buf);
-#else
 		rx_queue_put(buf);
-#endif
 		return 0;
 #endif /* BT_CONN */
 	case BT_BUF_EVT:
 	{
-#if defined(CONFIG_BT_RECV_BLOCKING)
-		hci_event(buf);
-#else
 		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 
@@ -3881,17 +3924,12 @@ int bt_recv(struct net_buf *buf)
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
 			rx_queue_put(buf);
 		}
-#endif
-		return 0;
 
+		return 0;
 	}
 #if defined(CONFIG_BT_ISO)
 	case BT_BUF_ISO_IN:
-#if defined(CONFIG_BT_RECV_BLOCKING)
-		hci_iso(buf);
-#else
 		rx_queue_put(buf);
-#endif
 		return 0;
 #endif /* CONFIG_BT_ISO */
 	default:
@@ -3900,19 +3938,6 @@ int bt_recv(struct net_buf *buf)
 		return -EINVAL;
 	}
 }
-
-#if defined(CONFIG_BT_RECV_BLOCKING)
-int bt_recv_prio(struct net_buf *buf)
-{
-	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
-
-	BT_ASSERT(bt_buf_get_type(buf) == BT_BUF_EVT);
-
-	hci_event_prio(buf);
-
-	return 0;
-}
-#endif /* CONFIG_BT_RECV_BLOCKING */
 
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
@@ -3991,7 +4016,6 @@ static void init_work(struct k_work *work)
 	}
 }
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
 static void rx_work_handler(struct k_work *work)
 {
 	int err;
@@ -4043,7 +4067,6 @@ static void rx_work_handler(struct k_work *work)
 		}
 	}
 }
-#endif /* !CONFIG_BT_RECV_BLOCKING */
 
 #if defined(CONFIG_BT_TESTING)
 k_tid_t bt_testing_tx_tid_get(void)

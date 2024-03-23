@@ -20,6 +20,7 @@
 #include <zephyr/dt-bindings/sensor/lis2du12.h>
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
+#include <zephyr/dt-bindings/sensor/stts22h.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -984,4 +985,37 @@ test_i2c_max31790: max31790@85 {
 		status = "okay";
 		channel = <6>;
 	};
+};
+
+test_i2c_stts22h: stts22h@86 {
+	compatible = "st,stts22h";
+	reg = <0x86>;
+	int-gpios = <&test_gpio 0 0>;
+	sampling-rate = <STTS22H_100Hz>;
+};
+
+test_i2c_dht20: dht20@87 {
+	compatible = "aosong,dht20";
+	reg = <0x87>;
+	status = "okay";
+};
+
+test_i2c_aht20: aht20@88 {
+	compatible = "aosong,aht20";
+	reg = <0x88>;
+	status = "okay";
+};
+
+test_i2c_am2301b: am2301b@89 {
+	compatible = "aosong,am2301b";
+	reg = <0x89>;
+	status = "okay";
+};
+
+test_i2c_iis328dq: iis328dq@8a {
+	compatible = "st,iis328dq";
+	status = "okay";
+	reg = <0x8a>;
+	int2-gpios = <&test_gpio 0 0>;
+	threshold-int-pad = <2>;
 };

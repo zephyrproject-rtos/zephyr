@@ -22,10 +22,15 @@ config NET_SOCKETS_PRIORITY_DEFAULT
 	  socket creation over the native one, or vice versa.
 
 config NET_SOCKETS_POSIX_NAMES
-	bool "POSIX names for Sockets API (without full POSIX API)"
-	default y if !POSIX_API
+	bool "[DEPRECATED] POSIX names for Sockets API (without full POSIX API)"
 	depends on !POSIX_API
+	select DEPRECATED
 	help
+	  This option is marked as deprecated in favor of using normal
+	  POSIX socket API includes found under the include/zephyr/posix
+	  directory. If you want to use BSD socket API calls, you need
+	  to select POSIX_API and use the socket headers in POSIX subsystem.
+
 	  With this option, Socket API functions are available under the
 	  standard POSIX names like socket(), recv(), and close(), etc.,
 	  even if full POSIX API (CONFIG_POSIX_API) is not enabled. (Note

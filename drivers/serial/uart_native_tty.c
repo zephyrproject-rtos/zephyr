@@ -289,9 +289,11 @@ void native_tty_uart_irq_function(void *arg1, void *arg2, void *arg3)
 			} else {
 				k_sleep(K_MSEC(1));
 			}
-		} else if (data->tx_irq_enabled) {
+		}
+		if (data->tx_irq_enabled) {
 			native_tty_uart_irq_handler(dev);
-		} else {
+		}
+		if (data->tx_irq_enabled == false && data->rx_irq_enabled == false) {
 			k_sleep(K_MSEC(10));
 		}
 	}

@@ -114,14 +114,14 @@ void stack_buffer_scenarios(void)
 #ifdef CONFIG_USERSPACE
 	if (scenario_data.is_user) {
 		reserved = K_THREAD_STACK_RESERVED;
-		stack_buf = Z_THREAD_STACK_BUFFER(stack_obj);
+		stack_buf = K_THREAD_STACK_BUFFER(stack_obj);
 		/* always use the original size here */
 		alignment = Z_THREAD_STACK_OBJ_ALIGN(STEST_STACKSIZE);
 	} else
 #endif
 	{
 		reserved = K_KERNEL_STACK_RESERVED;
-		stack_buf = Z_KERNEL_STACK_BUFFER(stack_obj);
+		stack_buf = K_KERNEL_STACK_BUFFER(stack_obj);
 		alignment = Z_KERNEL_STACK_OBJ_ALIGN;
 	}
 
@@ -231,21 +231,21 @@ void stack_buffer_scenarios(void)
 		 * For some stack declared with:
 		 *
 		 * K_THREAD_STACK_DEFINE(my_stack, X);
-		 * Z_THREAD_STACK_SIZE_ADJUST(X) - K_THREAD_STACK_RESERVED ==
+		 * K_THREAD_STACK_LEN(X) - K_THREAD_STACK_RESERVED ==
 		 * 	K_THREAD_STACK_SIZEOF(my_stack)
 		 *
 		 * K_KERNEL_STACK_DEFINE(my_kern_stack, Y):
-		 * Z_KERNEL_STACK_SIZE_ADJUST(Y) - K_KERNEL_STACK_RESERVED ==
+		 * K_KERNEL_STACK_LEN(Y) - K_KERNEL_STACK_RESERVED ==
 		 *	K_KERNEL_STACK_SIZEOF(my_stack)
 		 */
 #ifdef CONFIG_USERSPACE
 		/* Not defined if user mode disabled, all stacks are kernel stacks */
 		if (scenario_data.is_user) {
-			adjusted = Z_THREAD_STACK_SIZE_ADJUST(scenario_data.declared_size);
+			adjusted = K_THREAD_STACK_LEN(scenario_data.declared_size);
 		} else
 #endif
 		{
-			adjusted = Z_KERNEL_STACK_SIZE_ADJUST(scenario_data.declared_size);
+			adjusted = K_KERNEL_STACK_LEN(scenario_data.declared_size);
 		}
 		adjusted -= reserved;
 
@@ -271,7 +271,7 @@ void stack_buffer_scenarios(void)
 		if (scenario_data.is_user) {
 			adjusted = K_THREAD_STACK_LEN(scenario_data.declared_size);
 		} else {
-			adjusted = Z_KERNEL_STACK_LEN(scenario_data.declared_size);
+			adjusted = K_KERNEL_STACK_LEN(scenario_data.declared_size);
 		}
 		adjusted -= reserved;
 

@@ -1,7 +1,7 @@
 .. _bluetooth_shell:
 
-Bluetooth Shell
-###############
+Shell
+#####
 
 The Bluetooth Shell is an application based on the :ref:`shell_api` module. It offer a collection of
 commands made to easily interact with the Bluetooth stack.

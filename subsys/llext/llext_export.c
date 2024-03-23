@@ -15,3 +15,5 @@ EXPORT_SYMBOL(strncmp);
 EXPORT_SYMBOL(memcmp);
 EXPORT_SYMBOL(memcpy);
 EXPORT_SYMBOL(memset);
+
+#include <syscall_export_llext.c>

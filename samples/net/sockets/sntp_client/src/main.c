@@ -9,9 +9,7 @@
 LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/sntp.h>
-#ifdef CONFIG_POSIX_API
 #include <arpa/inet.h>
-#endif
 
 #include "config.h"
 
@@ -31,7 +29,7 @@ int main(void)
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(SNTP_PORT);
-	zsock_inet_pton(AF_INET, SERVER_ADDR, &addr.sin_addr);
+	inet_pton(AF_INET, SERVER_ADDR, &addr.sin_addr);
 
 	rv = sntp_init(&ctx, (struct sockaddr *) &addr,
 		       sizeof(struct sockaddr_in));
@@ -58,7 +56,7 @@ int main(void)
 	memset(&addr6, 0, sizeof(addr6));
 	addr6.sin6_family = AF_INET6;
 	addr6.sin6_port = htons(SNTP_PORT);
-	zsock_inet_pton(AF_INET6, SERVER_ADDR6, &addr6.sin6_addr);
+	inet_pton(AF_INET6, SERVER_ADDR6, &addr6.sin6_addr);
 
 	rv = sntp_init(&ctx, (struct sockaddr *) &addr6,
 		       sizeof(struct sockaddr_in6));

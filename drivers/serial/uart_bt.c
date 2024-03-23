@@ -101,7 +101,7 @@ static void tx_work_handler(struct k_work *work)
 		 * size per-connection. This has the trade-off of limiting
 		 * throughput but allows multi-connection support.
 		 */
-		len = ring_buf_get_claim(dev_data->uart.tx_ringbuf, &data, 23);
+		len = ring_buf_get_claim(dev_data->uart.tx_ringbuf, &data, 20);
 		if (len > 0) {
 			err = bt_nus_inst_send(NULL, dev_data->bt.inst, data, len);
 			if (err) {

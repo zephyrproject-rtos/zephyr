@@ -205,6 +205,12 @@ testing:
     power-efficient but slow CPU or simulation platform which can perform instruction accurate
     simulation but does it slowly.
 
+env:
+  A list of environment variables. Twister will check if all these environment variables are set,
+  and otherwise skip this platform. This allows the user to define a platform which should be
+  used, for example, only if some required software or hardware is present, and to signal that
+  presence to twister using these environment variables.
+
 Test Cases
 **********
 

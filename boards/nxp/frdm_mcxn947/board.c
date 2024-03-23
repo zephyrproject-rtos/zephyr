@@ -6,6 +6,7 @@
 #include <zephyr/device.h>
 #include <fsl_clock.h>
 #include <fsl_spc.h>
+#include <soc.h>
 
 /* Board xtal frequency in Hz */
 #define BOARD_XTAL0_CLK_HZ                        24000000U
@@ -66,6 +67,13 @@ static int frdm_mcxn947_init(void)
 	/* Enable FRO HF(48MHz) output */
 	CLOCK_SetupFROHFClocking(48000000U);
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	/* Call function flexspi_clock_safe_config() to move FleXSPI clock to a stable
+	 * clock source when updating the PLL if in XIP (execute code from FlexSPI memory
+	 */
+	flexspi_clock_safe_config();
+#endif
+
 	/* Set up PLL0 */
 	const pll_setup_t pll0Setup = {
 		.pllctrl = SCG_APLLCTRL_SOURCE(1U) | SCG_APLLCTRL_SELI(27U) |
@@ -85,6 +93,11 @@ static int frdm_mcxn947_init(void)
 
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm1), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
@@ -117,6 +130,22 @@ static int frdm_mcxn947_init(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
 	CLOCK_EnableClock(kCLOCK_Gpio5);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay)
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
+	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC0);
+
+	CLOCK_EnableClock(kCLOCK_Dac0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac1), okay)
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac1);
+	CLOCK_SetClkDiv(kCLOCK_DivDac1Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC1);
+
+	CLOCK_EnableClock(kCLOCK_Dac1);
 #endif
 
 	/* Set SystemCoreClock variable. */

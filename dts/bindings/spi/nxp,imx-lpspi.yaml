@@ -11,9 +11,6 @@ properties:
   reg:
     required: true
 
-  interrupts:
-    required: true
-
   clocks:
     required: true
 

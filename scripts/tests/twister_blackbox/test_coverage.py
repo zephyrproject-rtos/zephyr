@@ -13,7 +13,7 @@ import pytest
 import sys
 import json
 
-from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock
+from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 
@@ -130,6 +130,20 @@ class TestCoverage:
             'Running lcov --gcov-tool'
         )
     ]
+    TESTDATA_6 = [
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
+            ['qemu_x86'],
+            ['The specified file does not exist.', r'\[Errno 13\] Permission denied:'],
+        )
+    ]
+    TESTDATA_7 = [
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
+            ['qemu_x86_64', 'qemu_x86'],
+            ['qemu_x86_64', 'qemu_x86', ['qemu_x86_64', 'qemu_x86']],
+        )
+    ]
 
     @classmethod
     def setup_class(cls):
@@ -147,7 +161,7 @@ class TestCoverage:
     )
     def test_coverage(self, capfd, test_path, test_platforms, out_path, file_name):
         args = ['-i','--outdir', out_path, '-T', test_path] + \
-            ['--coverage', '--coverage-tool', 'gcovr'] + \
+               ['--coverage', '--coverage-tool', 'gcovr'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -175,7 +189,7 @@ class TestCoverage:
     )
     def test_enable_coverage(self, capfd, test_path, test_platforms, out_path, expected):
         args = ['-i','--outdir', out_path, '-T', test_path] + \
-        ['--enable-coverage', '-vv'] + \
+               ['--enable-coverage', '-vv'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -207,7 +221,7 @@ class TestCoverage:
             os.rmdir(base_dir)
         os.mkdir(base_dir)
         args = ['--outdir', out_path,'-i', '-T', test_path] + \
-        ['--coverage', '--coverage-tool', 'gcovr',  '-v', '--coverage-basedir', base_dir] + \
+               ['--coverage', '--coverage-tool', 'gcovr',  '-v', '--coverage-basedir', base_dir] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -251,7 +265,7 @@ class TestCoverage:
         test_path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
         test_platforms = ['qemu_x86']
         args = ['--outdir', out_path,'-i', '-T', test_path] + \
-        ['--coverage', '--coverage-tool', cov_tool, '--coverage-formats', cov_format, '-v'] + \
+               ['--coverage', '--coverage-tool', cov_tool, '--coverage-formats', cov_format, '-v'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -298,3 +312,78 @@ class TestCoverage:
         assert str(sys_exit.value) == '0'
 
         assert re.search(expected_content, caplog.text), f'{cov_tool} line not found'
+
+    @pytest.mark.parametrize(
+        'test_path, test_platforms, expected_content',
+        TESTDATA_6,
+        ids=[
+            'missing tool'
+        ]
+    )
+    def test_gcov_tool(self, capfd, test_path, test_platforms, out_path, expected_content):
+        args = ['--outdir', out_path, '-i', '-T', test_path] + \
+            ['--coverage', '--gcov-tool', TEST_DATA, '-v'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        assert str(sys_exit.value) == '1'
+        for line in expected_content:
+            result = re.search(line, err)
+            assert result, f'missing information in log: {line}'
+
+    @pytest.mark.parametrize(
+        'test_path, test_platforms, cov_platform',
+        TESTDATA_7,
+        ids=[
+            'coverage platform'
+        ]
+    )
+    def test_coverage_platform(self, capfd, test_path, test_platforms, out_path, cov_platform):
+        def search_cov():
+            pattern = r'TOTAL\s+(\d+)'
+            coverage_file_path = os.path.join(out_path, 'coverage', 'coverage.txt')
+            with open(coverage_file_path, 'r') as file:
+                data = file.read()
+            match = re.search(pattern, data)
+            if match:
+                total = int(match.group(1))
+                return total
+            else:
+                print('Error, pattern not found')
+
+        run = []
+        for element in cov_platform:
+            args = ['--outdir', out_path, '-i', '-T', test_path] + \
+               ['--coverage', '--coverage-formats', 'txt', '-v'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+            if isinstance(element, list):
+                for nested_element in element:
+                    args += ['--coverage-platform', nested_element]
+            else:
+                args += ['--coverage-platform', element]
+
+            with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                    pytest.raises(SystemExit) as sys_exit:
+                self.loader.exec_module(self.twister_module)
+
+            assert str(sys_exit.value) == '0'
+
+            run += [search_cov()]
+
+            capfd.readouterr()
+            clear_log_in_test()
+
+        assert run[2] > run[0], 'Broader coverage platform selection did not result in broader coverage'
+        assert run[2] > run[1], 'Broader coverage platform selection did not result in broader coverage'

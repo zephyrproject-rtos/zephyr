@@ -27,13 +27,13 @@ extern void __start(void);
 void soc_interrupt_init(void);
 #endif
 
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	riscv_cpu_init[cpu_num].fn = fn;
 	riscv_cpu_init[cpu_num].arg = arg;
 
-	riscv_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
+	riscv_cpu_sp = K_KERNEL_STACK_BUFFER(stack) + sz;
 	riscv_cpu_boot_flag = 0U;
 
 #ifdef CONFIG_PM_CPU_OPS

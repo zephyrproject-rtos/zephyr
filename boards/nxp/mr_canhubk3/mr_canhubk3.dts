@@ -27,6 +27,7 @@
 		zephyr,shell-uart = &lpuart2;
 		zephyr,flash-controller = &mx25l6433f;
 		zephyr,canbus = &flexcan0;
+		zephyr,display = &ssd1306;
 	};
 
 	aliases {
@@ -59,6 +60,30 @@
 		user_led1_red: user_led1_red {
 			gpios = <&gpioe_l 14 GPIO_ACTIVE_LOW>;
 			label = "User RGB LED1 RED";
+		};
+		can_led0: can_led0 {
+			gpios = <&gpioc_h 2 GPIO_ACTIVE_LOW>;
+			label = "CAN LED0";
+		};
+		can_led1: can_led1 {
+			gpios = <&gpioe_l 5 GPIO_ACTIVE_LOW>;
+			label = "CAN LED1";
+		};
+		can_led2: can_led2 {
+			gpios = <&gpiod_h 4 GPIO_ACTIVE_LOW>;
+			label = "CAN LED2";
+		};
+		can_led3: can_led3 {
+			gpios = <&gpiob_h 8 GPIO_ACTIVE_LOW>;
+			label = "CAN LED3";
+		};
+		can_led4: can_led4 {
+			gpios = <&gpiob_h 10 GPIO_ACTIVE_LOW>;
+			label = "CAN LED4";
+		};
+		can_led5: can_led5 {
+			gpios = <&gpiod_h 15 GPIO_ACTIVE_LOW>;
+			label = "CAN LED5";
 		};
 	};
 
@@ -201,7 +226,11 @@
 	status = "okay";
 };
 
-/* Enable gpio to control the CAN transceivers */
+/* Enable gpio to control the CAN transceivers and LEDs */
+
+&gpiob_h {
+	status = "okay";
+};
 
 &gpioc_h {
 	status = "okay";
@@ -378,6 +407,22 @@
 	pinctrl-0 = <&lpi2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	ssd1306: ssd1306@3c {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3c>;
+		width = <128>;
+		height = <32>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <31>;
+		segment-remap;
+		com-invdir;
+		com-sequential;
+		prechargep = <0x22>;
+	};
 };
 
 &lpi2c1 {

@@ -49,7 +49,7 @@ static struct k_spinlock lock;
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 static struct k_obj_type obj_type_mutex;
-#endif
+#endif /* CONFIG_OBJ_CORE_MUTEX */
 
 int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
@@ -62,7 +62,7 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 	k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
-#endif
+#endif /* CONFIG_OBJ_CORE_MUTEX */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mutex, mutex, 0);
 
@@ -76,7 +76,7 @@ static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 	return z_impl_k_mutex_init(mutex);
 }
 #include <syscalls/k_mutex_init_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
 {
@@ -205,7 +205,7 @@ static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 	return z_impl_k_mutex_lock(mutex, timeout);
 }
 #include <syscalls/k_mutex_lock_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
@@ -289,7 +289,7 @@ static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
 	return z_impl_k_mutex_unlock(mutex);
 }
 #include <syscalls/k_mutex_unlock_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 static int init_mutex_obj_core_list(void)
@@ -310,4 +310,4 @@ static int init_mutex_obj_core_list(void)
 
 SYS_INIT(init_mutex_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif
+#endif /* CONFIG_OBJ_CORE_MUTEX */

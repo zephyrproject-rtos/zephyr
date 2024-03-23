@@ -460,7 +460,7 @@
 			dma-channels = <9>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			power-domain = <&io0_domain>;
 			status = "okay";
 		};
@@ -472,7 +472,7 @@
 			dma-channels = <10>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			power-domain = <&io0_domain>;
 			status = "okay";
 		};
@@ -484,7 +484,7 @@
 			dma-channels = <9>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			power-domain = <&hst_domain>;
 			interrupts = <13 0 0>;
 			interrupt-parent = <&ace_intc>;
@@ -498,7 +498,7 @@
 			dma-channels = <10>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			power-domain = <&hst_domain>;
 			interrupts = <12 0 0>;
 			interrupt-parent = <&ace_intc>;

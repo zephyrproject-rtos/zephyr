@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 
 
+sample_filename_mock = mock.PropertyMock(return_value='test_sample.yaml')
 testsuite_filename_mock = mock.PropertyMock(return_value='test_data.yaml')
 sample_filename_mock = mock.PropertyMock(return_value='test_sample.yaml')
 
