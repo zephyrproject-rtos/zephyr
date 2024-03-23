@@ -59,6 +59,9 @@ struct net_eth_addr {
 
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
 
+#define NET_ETH_PTYPE_CAN		0x000C /* CAN: Controller Area Network */
+#define NET_ETH_PTYPE_CANFD		0x000D /* CANFD: CAN flexible data rate*/
+#define NET_ETH_PTYPE_HDLC		0x0019 /* HDLC frames (like in PPP) */
 #define NET_ETH_PTYPE_ARP		0x0806
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
@@ -94,6 +97,15 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_IEEE802154)
 #define  ETH_P_IEEE802154 NET_ETH_PTYPE_IEEE802154
+#endif
+#if !defined(ETH_P_CAN)
+#define ETH_P_CAN	NET_ETH_PTYPE_CAN
+#endif
+#if !defined(ETH_P_CANFD)
+#define ETH_P_CANFD	NET_ETH_PTYPE_CANFD
+#endif
+#if !defined(ETH_P_HDLC)
+#define ETH_P_HDLC	NET_ETH_PTYPE_HDLC
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
