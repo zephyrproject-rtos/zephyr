@@ -13,6 +13,7 @@
 #define INCLUDE_ZEPHYR_DRIVERS_MISC_DEVMUX_H_
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
