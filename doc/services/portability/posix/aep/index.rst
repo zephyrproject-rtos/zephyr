@@ -139,7 +139,7 @@ Dedicated Realtime System Profile (PSE53)
     POSIX_FILE_LOCKING,,
     POSIX_FILE_SYSTEM,,
     POSIX_MULTI_PROCESS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_NETWORKING, yes, :ref:`†<posix_undefined_behaviour>`
+    POSIX_NETWORKING, yes, :ref:`POSIX_NETWORKING <posix_option_group_networking>`
     POSIX_PIPE,, :ref:`†<posix_undefined_behaviour>`
     POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
     POSIX_SIGNAL_JUMP,, :ref:`†<posix_undefined_behaviour>`
