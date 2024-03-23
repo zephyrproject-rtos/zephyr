@@ -857,6 +857,17 @@ int usb_dc_ep_mps(const uint8_t ep)
 	}
 }
 
+int usb_dc_wakeup_request(void)
+{
+	/* Enable resume signaling */
+	USB0->CTL |= USB_CTL_RESUME_MASK;
+	/* Must be active from 10ms to 15ms as per USB spec */
+	k_sleep(K_MSEC(12));
+	/* Clear resume signal */
+	USB0->CTL &= ~USB_CTL_RESUME_MASK;
+	return 0;
+}
+
 static inline void reenable_control_endpoints(void)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;

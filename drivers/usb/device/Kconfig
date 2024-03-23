@@ -147,6 +147,7 @@ config USB_KINETIS
 	bool "Kinetis USB Device Controller Driver"
 	default y
 	depends on DT_HAS_NXP_KINETIS_USBD_ENABLED
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  Kinetis USB Device Controller Driver.
 
