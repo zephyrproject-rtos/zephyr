@@ -29,6 +29,34 @@
 extern "C" {
 #endif
 
+struct hostent {
+	char *h_name;
+	char **h_aliases;
+	int h_addrtype;
+	int h_length;
+	char **h_addr_list;
+};
+
+struct netent {
+	char *n_name;
+	char **n_aliases;
+	int n_addrtype;
+	uint32_t n_net;
+};
+
+struct protoent {
+	char *p_name;
+	char **p_aliases;
+	int p_proto;
+};
+
+struct servent {
+	char *s_name;
+	char **s_aliases;
+	int s_port;
+	char *s_proto;
+};
+
 #ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
 
 #define addrinfo zsock_addrinfo
@@ -59,6 +87,25 @@ static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 }
 
 #endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+
+void endhostent(void);
+void endnetent(void);
+void endprotoent(void);
+void endservent(void);
+struct hostent *gethostent(void);
+struct netent *getnetbyaddr(uint32_t net, int type);
+struct netent *getnetbyname(const char *name);
+struct netent *getnetent(void);
+struct protoent *getprotobyname(const char *name);
+struct protoent *getprotobynumber(int proto);
+struct protoent *getprotoent(void);
+struct servent *getservbyname(const char *name, const char *proto);
+struct servent *getservbyport(int port, const char *proto);
+struct servent *getservent(void);
+void sethostent(int stayopen);
+void setnetent(int stayopen);
+void setprotoent(int stayopen);
+void setservent(int stayopen);
 
 #ifdef __cplusplus
 }
