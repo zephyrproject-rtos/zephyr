@@ -1,0 +1,11 @@
+# Copyright (c) 2024, Friedt Professional Engineering Services, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_NETWORKING
+	bool "POSIX Networking API"
+	default y if POSIX_API
+	depends on NETWORKING
+	help
+	  Enable this option to support the POSIX networking API. This includes
+	  support for BSD Sockets.
