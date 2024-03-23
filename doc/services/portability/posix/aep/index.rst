@@ -84,7 +84,7 @@ Realtime Controller System Profile (PSE52)
     POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
     POSIX_SINGLE_PROCESS, yes,
     POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes, :ref:`†<posix_undefined_behaviour>`
+    XSI_THREADS_EXT, yes,
 
 .. csv-table:: PSE52 Option Requirements
    :header: Symbol, Support, Remarks
@@ -145,7 +145,7 @@ Dedicated Realtime System Profile (PSE53)
     POSIX_SIGNAL_JUMP,, :ref:`†<posix_undefined_behaviour>`
     POSIX_SINGLE_PROCESS, yes,
     POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes, :ref:`†<posix_undefined_behaviour>`
+    XSI_THREADS_EXT, yes,
 
 .. csv-table:: PSE53 Option Requirements
    :header: Symbol, Support, Remarks
