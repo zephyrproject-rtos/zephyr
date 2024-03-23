@@ -275,3 +275,11 @@ void setservent(int stayopen)
 {
 	ARG_UNUSED(stayopen);
 }
+
+int sockatmark(int s)
+{
+	ARG_UNUSED(s);
+
+	errno = ENOSYS;
+	return -1;
+}
