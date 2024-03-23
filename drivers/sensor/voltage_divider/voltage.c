@@ -76,8 +76,8 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	/* Note if full_ohms is not specified then unscaled voltage is returned */
 	(void)voltage_divider_scale_dt(&config->voltage, &v_mv);
 
-	LOG_DBG("%d of %d, %dmV, voltage:%dmV", data->raw,
-		(1 << data->sequence.resolution) - 1, raw_val, v_mv);
+	LOG_DBG("%d of %d, %dmV, voltage:%dmV", data->raw, (1 << data->sequence.resolution) - 1,
+		raw_val, v_mv);
 	val->val1 = v_mv / 1000;
 	val->val2 = (v_mv * 1000) % 1000000;
 
