@@ -1,0 +1,9 @@
+common:
+  depends_on: netif
+  min_ram: 16
+  tags:
+    - iface
+    - net
+    - posix
+tests:
+  portability.posix.net: {}
