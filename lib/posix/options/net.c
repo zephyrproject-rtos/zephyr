@@ -174,3 +174,104 @@ unsigned int if_nametoindex(const char *ifname)
 
 	return ret;
 }
+
+void endhostent(void)
+{
+}
+
+void endnetent(void)
+{
+}
+
+void endprotoent(void)
+{
+}
+
+void endservent(void)
+{
+}
+
+struct hostent *gethostent(void)
+{
+	return NULL;
+}
+
+struct netent *getnetbyaddr(uint32_t net, int type)
+{
+	ARG_UNUSED(net);
+	ARG_UNUSED(type);
+
+	return NULL;
+}
+
+struct netent *getnetbyname(const char *name)
+{
+	ARG_UNUSED(name);
+
+	return NULL;
+}
+
+struct netent *getnetent(void)
+{
+	return NULL;
+}
+
+struct protoent *getprotobyname(const char *name)
+{
+	ARG_UNUSED(name);
+
+	return NULL;
+}
+
+struct protoent *getprotobynumber(int proto)
+{
+	ARG_UNUSED(proto);
+
+	return NULL;
+}
+
+struct protoent *getprotoent(void)
+{
+	return NULL;
+}
+
+struct servent *getservbyname(const char *name, const char *proto)
+{
+	ARG_UNUSED(name);
+	ARG_UNUSED(proto);
+
+	return NULL;
+}
+
+struct servent *getservbyport(int port, const char *proto)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(proto);
+
+	return NULL;
+}
+
+struct servent *getservent(void)
+{
+	return NULL;
+}
+
+void sethostent(int stayopen)
+{
+	ARG_UNUSED(stayopen);
+}
+
+void setnetent(int stayopen)
+{
+	ARG_UNUSED(stayopen);
+}
+
+void setprotoent(int stayopen)
+{
+	ARG_UNUSED(stayopen);
+}
+
+void setservent(int stayopen)
+{
+	ARG_UNUSED(stayopen);
+}
