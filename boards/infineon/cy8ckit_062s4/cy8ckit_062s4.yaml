@@ -12,4 +12,4 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
-vendor: cypress
+vendor: infineon
