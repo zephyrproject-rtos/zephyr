@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <cypress/psoc6_cm0.dtsi>
+#include <infineon/cat1a/legacy/psoc6_cm0.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
