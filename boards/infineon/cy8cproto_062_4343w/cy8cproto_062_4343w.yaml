@@ -22,4 +22,7 @@ supported:
   - gpio
   - uart
   - i2c
-vendor: cypress
+  - thermistor
+  - uart
+  - timer
+vendor: infineon
