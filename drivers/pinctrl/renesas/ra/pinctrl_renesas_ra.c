@@ -47,7 +47,7 @@ static void pinctrl_ra_configure_pfs(const pinctrl_soc_pin_t *pinc)
 	pincfg.port = 0;
 
 	/* Clear PMR bits before configuring */
-	if ((pincfg.config & PmnPFS_PMR_POS)) {
+	if ((pincfg.config & BIT(PmnPFS_PMR_POS))) {
 		uint32_t val = pinctrl_ra_read_PmnFPS(pinc->port, pinc->pin);
 
 		pinctrl_ra_write_PmnFPS(pinc->port, pinc->pin, val & ~(BIT(PmnPFS_PMR_POS)));
