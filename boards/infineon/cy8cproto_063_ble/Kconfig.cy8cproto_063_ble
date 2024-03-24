@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_CY8CPROTO_063_BLE
-	select SOC_CYBLE_416045_02
+	select SOC_CYBLE_416045_02_DEVICE
