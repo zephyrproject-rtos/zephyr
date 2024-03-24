@@ -1486,6 +1486,25 @@ void net_pkt_print_frags(struct net_pkt *pkt);
 #endif
 
 /**
+ * @brief Get a data buffer from a given pool.
+ *
+ * @details Normally this version is not useful for applications
+ * but is mainly used by network fragmentation code.
+ *
+ * @param pool The net_buf pool to use.
+ * @param min_len Minimum length of the requested fragment.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified time.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+#if !defined(NET_PKT_DEBUG_ENABLED)
+struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
+					 size_t min_len, k_timeout_t timeout);
+#endif
+
+/**
  * @brief Get RX DATA buffer from pool.
  * Normally you should use net_pkt_get_frag() instead.
  *
