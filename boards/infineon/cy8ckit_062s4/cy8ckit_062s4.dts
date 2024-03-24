@@ -4,7 +4,7 @@
  */
 
 /dts-v1/;
-#include <infineon/psoc6/mpns/CY8C6244LQI_S4D92.dtsi>
+#include <infineon/cat1a/mpns/CY8C6244LQI_S4D92.dtsi>
 
 / {
 	model = "Infineon PSoC 62S4 Pioneer Kit";
