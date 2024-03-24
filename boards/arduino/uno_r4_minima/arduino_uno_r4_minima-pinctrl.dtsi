@@ -12,4 +12,11 @@
 			pinmux = <P301_RXD2>, <P302_TXD2>;
 		};
 	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <P100_SCL1>, <P101_SDA1>;
+			drive-strength = "middle";
+		};
+	};
 };
