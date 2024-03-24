@@ -29,8 +29,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_01_124_BGA
   ${hal_cat1a_dir}/source/pin_packages/cyhal_psoc6_01_124_bga.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_01_124_BGA_SIP
   ${hal_cat1a_dir}/source/pin_packages/cyhal_psoc6_01_124_bga_sip.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_01_43_SMT
-  ${hal_cat1a_dir}/source/pin_packages/cyhal_psoc6_01_43_smt.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_01_68_QFN_BLE
   ${hal_cat1a_dir}/source/pin_packages/cyhal_psoc6_01_68_qfn_ble.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_01_80_WLCSP
