@@ -76,7 +76,8 @@ extern int pinctrl_ra_query_config(uint32_t port, uint32_t pin,
  */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)                                               \
 	{                                                                                          \
-		.config = DT_PROP_BY_IDX(node_id, prop, idx),                                      \
+		.config = DT_PROP_BY_IDX(node_id, pinmux, idx) |                                   \
+			  (DT_ENUM_IDX_OR(node_id, drive_strength, 0) << PmnPFS_DSCR_POS),         \
 	},
 
 /**
