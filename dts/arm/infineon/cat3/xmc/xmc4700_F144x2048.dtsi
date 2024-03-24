@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <infineon/xmc4xxx.dtsi>
+#include <infineon/cat3/xmc/xmc4xxx.dtsi>
 
 / {
 	psram1: memory@1ffe8000 {
