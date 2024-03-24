@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <cypress/psoc6_cm4.dtsi>
+#include <infineon/cat1a/legacy/psoc6_cm4.dtsi>
 #include "cy8ckit_062_ble_common.dtsi"
 
 / {
