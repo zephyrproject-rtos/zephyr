@@ -6,8 +6,8 @@
 
 /dts-v1/;
 
-#include <infineon/psoc6/mpns/CYBLE_416045_02.dtsi>
-#include <infineon/psoc6/system_clocks.dtsi>
+#include <infineon/cat1a/mpns/CYBLE_416045_02.dtsi>
+#include <infineon/cat1a/system_clocks.dtsi>
 #include "cy8cproto_063_ble-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
