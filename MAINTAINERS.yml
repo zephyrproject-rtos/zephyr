@@ -3706,8 +3706,6 @@ Infineon Platforms:
     - drivers/*/*xmc*
     - drivers/sensor/infineon/
     - dts/arm/infineon/
-    - dts/arm/cypress/
-    - soc/cypress/
     - dts/bindings/*/*infineon*
     - soc/infineon/
   labels:
