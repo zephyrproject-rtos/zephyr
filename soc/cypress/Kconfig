@@ -1,9 +1,0 @@
-# Copyright (c) 2018, Cypress
-# Copyright (c) 2020, ATL Electronics
-# SPDX-License-Identifier: Apache-2.0
-
-if SOC_FAMILY_PSOC6 || SOC_FAMILY_INFINEON_CAT1
-
-rsource "*/Kconfig"
-
-endif # SOC_FAMILY_PSOC6 || SOC_FAMILY_INFINEON_CAT1

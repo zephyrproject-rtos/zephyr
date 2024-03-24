@@ -1,6 +1,5 @@
-# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
 # an affiliate of Cypress Semiconductor Corporation
-# Copyright (c) David Ullmann
 # SPDX-License-Identifier: Apache-2.0
 
 # Infineon PSoC6_04 based MCU default configuration
@@ -10,5 +9,10 @@ if SOC_DIE_PSOC6_04
 config NUM_IRQS
 	default 16 if CPU_CORTEX_M0PLUS
 	default 175 if CPU_CORTEX_M4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 100000000
+
+# add additional die specific params
 
 endif # SOC_DIE_PSOC6_04
