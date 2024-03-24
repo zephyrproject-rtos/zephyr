@@ -4,8 +4,8 @@
  */
 
 /dts-v1/;
-#include <infineon/psoc6/mpns/CY8C624ABZI_S2D44.dtsi>
-#include <infineon/psoc6/system_clocks.dtsi>
+#include <infineon/cat1a/mpns/CY8C624ABZI_S2D44.dtsi>
+#include <infineon/cat1a/system_clocks.dtsi>
 #include "cy8cproto_062_4343w-common.dtsi"
 #include "cy8cproto_062_4343w-pinctrl.dtsi"
 
