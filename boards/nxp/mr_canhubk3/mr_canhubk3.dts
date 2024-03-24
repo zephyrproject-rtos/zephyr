@@ -27,6 +27,7 @@
 		zephyr,shell-uart = &lpuart2;
 		zephyr,flash-controller = &mx25l6433f;
 		zephyr,canbus = &flexcan0;
+		zephyr,display = &ssd1306;
 	};
 
 	aliases {
@@ -406,6 +407,22 @@
 	pinctrl-0 = <&lpi2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	ssd1306: ssd1306@3c {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3c>;
+		width = <128>;
+		height = <32>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <31>;
+		segment-remap;
+		com-invdir;
+		com-sequential;
+		prechargep = <0x22>;
+	};
 };
 
 &lpi2c1 {

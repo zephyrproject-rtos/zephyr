@@ -228,6 +228,8 @@ P4.3       PTD14  LPI2C0_SCL
 P4.4       PTD13  LPI2C0_SDA
 =========  =====  ============
 
+The accompanying display board can be connected to ``lpi2c0`` via connector ``P4``.
+
 ADC
 ===
 
