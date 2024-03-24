@@ -219,7 +219,24 @@ static int clock_control_ra_get_rate(const struct device *dev, clock_control_sub
 
 	switch (clkid & 0xFFFFFF00) {
 	case RA_CLOCK_SCI(0):
+	case RA_CLOCK_SCI(1):
+	case RA_CLOCK_SCI(2):
+	case RA_CLOCK_SCI(9):
+	case RA_CLOCK_GPT(0):
+	case RA_CLOCK_SPI(0):
+	case RA_CLOCK_SPI(1):
+	case RA_CLOCK_CRC(0):
+	case RA_CLOCK_SCE(0):
 		*rate = FREQ_pclka;
+		break;
+	case RA_CLOCK_SSI(0):
+	case RA_CLOCK_IIC(0):
+	case RA_CLOCK_IIC(1):
+	case RA_CLOCK_ADC(0):
+	case RA_CLOCK_DOC(0):
+	case RA_CLOCK_POEG(0):
+	case RA_CLOCK_CTSU(0):
+		*rate = FREQ_pclkb;
 		break;
 	default:
 		return -EINVAL;
