@@ -217,7 +217,7 @@
 		};
 
 		ssp0: ssp@77000 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077000 0x200
@@ -227,12 +227,18 @@
 			dmas = <&lpgpdma0 2
 				&lpgpdma0 3>;
 			dma-names = "tx", "rx";
-
+			ssp-index = <0>;
 			status = "okay";
+
+			ssp00: ssp@0 {
+				compatible = "intel,ssp-dai";
+				reg = <0x0>;
+				status = "okay";
+			};
 		};
 
 		ssp1: ssp@77200 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077200 0x200
@@ -242,12 +248,18 @@
 			dmas = <&lpgpdma0 4
 				&lpgpdma0 5>;
 			dma-names = "tx", "rx";
-
+			ssp-index = <1>;
 			status = "okay";
+
+			ssp10: ssp@10 {
+				compatible = "intel,ssp-dai";
+				reg = <0x10>;
+				status = "okay";
+			};
 		};
 
 		ssp2: ssp@77400 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077400 0x200
@@ -257,12 +269,18 @@
 			dmas = <&lpgpdma0 6
 				&lpgpdma0 7>;
 			dma-names = "tx", "rx";
-
+			ssp-index = <2>;
 			status = "okay";
+
+			ssp20: ssp@20 {
+				compatible = "intel,ssp-dai";
+				reg = <0x20>;
+				status = "okay";
+			};
 		};
 
 		ssp3: ssp@77600 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077600 0x200
@@ -272,12 +290,18 @@
 			dmas = <&lpgpdma0 8
 				&lpgpdma0 9>;
 			dma-names = "tx", "rx";
-
+			ssp-index = <3>;
 			status = "okay";
+
+			ssp30: ssp@30 {
+				compatible = "intel,ssp-dai";
+				reg = <0x30>;
+				status = "okay";
+			};
 		};
 
 		ssp4: ssp@77800 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077800 0x200
@@ -287,12 +311,18 @@
 			dmas = <&lpgpdma0 10
 				&lpgpdma0 11>;
 			dma-names = "tx", "rx";
-
+			ssp-index = <4>;
 			status = "okay";
+
+			ssp40: ssp@40 {
+				compatible = "intel,ssp-dai";
+				reg = <0x40>;
+				status = "okay";
+			};
 		};
 
 		ssp5: ssp@77a00 {
-			compatible = "intel,ssp-dai";
+			compatible = "intel,ssp";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00077A00 0x200
@@ -302,8 +332,14 @@
 			dmas = <&lpgpdma0 12
 				&lpgpdma0 13>;
 			dma-names = "tx", "rx";
-
+			ssp-index = <5>;
 			status = "okay";
+
+			ssp50: ssp@50 {
+				compatible = "intel,ssp-dai";
+				reg = <0x50>;
+				status = "okay";
+			};
 		};
 
 		/*
