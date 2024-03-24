@@ -567,6 +567,15 @@
 		interrupts = <57 0>;
 		status = "disabled";
 	};
+
+	vref: vref@111000 {
+		compatible = "nxp,vref";
+		regulator-name = "lpc55s36-vref";
+		reg = <0x111000 0x14>;
+		status = "disabled";
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+	};
 };
 
 &systick {
