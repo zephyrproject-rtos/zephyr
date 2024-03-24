@@ -19,4 +19,5 @@ supported:
   - i2c
   - watchdog
   - spi
-vendor: cypress
+  - timer
+vendor: infineon
