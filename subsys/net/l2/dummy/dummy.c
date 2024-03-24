@@ -17,14 +17,17 @@ LOG_MODULE_REGISTER(net_l2_dummy, LOG_LEVEL_NONE);
 static inline enum net_verdict dummy_recv(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
-	net_pkt_lladdr_src(pkt)->addr = NULL;
-	net_pkt_lladdr_src(pkt)->len = 0U;
-	net_pkt_lladdr_src(pkt)->type = NET_LINK_DUMMY;
-	net_pkt_lladdr_dst(pkt)->addr = NULL;
-	net_pkt_lladdr_dst(pkt)->len = 0U;
-	net_pkt_lladdr_dst(pkt)->type = NET_LINK_DUMMY;
+	const struct dummy_api *api = net_if_get_device(iface)->api;
 
-	return NET_CONTINUE;
+	if (api == NULL) {
+		return NET_DROP;
+	}
+
+	if (api->recv == NULL) {
+		return NET_CONTINUE;
+	}
+
+	return api->recv(iface, pkt);
 }
 
 static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
