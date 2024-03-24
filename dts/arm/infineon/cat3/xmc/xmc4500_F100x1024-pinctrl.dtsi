@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <infineon/xmc4xxx.dtsi>
+#include <infineon/cat3/xmc/xmc4xxx.dtsi>
 #include <zephyr/dt-bindings/pinctrl/xmc4xxx-pinctrl.h>
 
 &pinctrl {
