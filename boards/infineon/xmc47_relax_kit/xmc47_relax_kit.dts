@@ -7,8 +7,8 @@
 
 /dts-v1/;
 
-#include <infineon/xmc4700_F144x2048.dtsi>
-#include <infineon/xmc4700_F144x2048-intc.dtsi>
+#include <infineon/cat3/xmc/xmc4700_F144x2048.dtsi>
+#include <infineon/cat3/xmc/xmc4700_F144x2048-intc.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "xmc47_relax_kit-pinctrl.dtsi"
 #include "arduino_r3_connector.dtsi"
