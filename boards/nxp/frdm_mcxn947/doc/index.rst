@@ -70,10 +70,10 @@ Targets available
 ==================
 
 The default configuration file
-zephyr_file:`boards/nxp/frdm_mcxn947/frdm_mcxn947_mcxn947_cpu0_defconfig`
+:zephyr_file:`boards/nxp/frdm_mcxn947/frdm_mcxn947_mcxn947_cpu0_defconfig`
 only enables the first core.
 
-Other hardware features are not currently supported by the port.`
+Other hardware features are not currently supported by the port.
 
 Connections and IOs
 ===================
@@ -116,10 +116,12 @@ configured by default to use the MCU-Link CMSIS-DAP Onboard Debug Probe.
 Using LinkServer
 ----------------
 
-Linkserver is the default runner for this board. Follow the instructions in
-:ref:`mcu-link-cmsis-onboard-debug-probe` to progtam the MCU-Link firmware.
-This only needs to be done if the default onboard debug circuit firmware was changed.
-To put the board in ``DFU mode`` to program the firmware, short jumper J21.
+Linkserver is the default runner for this board, and supports the factory
+default MCU-Link firmware. Follow the instructions in
+:ref:`mcu-link-cmsis-onboard-debug-probe` to reprogram the default MCU-Link
+firmware. This only needs to be done if the default onboard debug circuit
+firmware was changed. To put the board in ``DFU mode`` to program the firmware,
+short jumper J21.
 
 Using J-Link
 ------------
@@ -164,7 +166,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
-   Hello World! frdm_mcxn947
+   Hello World! frdm_mcxn947/mcxn947/cpu0
 
 Debugging
 =========
@@ -182,7 +184,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
-   Hello World! frdm_mcxn947
+   Hello World! frdm_mcxn947/mcxn947/cpu0
 
 .. _MCX-N947 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n94x-54x-highly-integrated-multicore-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N94X-N54X
