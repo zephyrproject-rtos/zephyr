@@ -1683,7 +1683,8 @@ static const struct flash_driver_api spi_nor_api = {
 	IF_ENABLED(ANY_INST_HAS_DPD_WAKEUP_SEQUENCE, (INIT_WAKEUP_SEQ_PARAMS(idx),))		\
 	IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE, (INIT_MXICY_MX25R_POWER_MODE(idx),))	\
 	IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))				\
-	IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))
+	IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))				\
+	IF_ENABLED(ANY_INST_HAS_HOLD_GPIOS, (INIT_HOLD_GPIOS(idx),))
 
 #define GENERATE_CONFIG_STRUCT(idx)								\
 	static const struct spi_nor_config spi_nor_##idx##_config = {				\
