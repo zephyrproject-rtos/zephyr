@@ -5130,6 +5130,18 @@ int net_if_set_name(struct net_if *iface, const char *buf)
 		return -ENAMETOOLONG;
 	}
 
+	STRUCT_SECTION_FOREACH(net_if, iface_check) {
+		if (iface_check == iface) {
+			continue;
+		}
+
+		if (memcmp(net_if_get_config(iface_check)->name,
+			   buf,
+			   name_len + 1) == 0) {
+			return -EALREADY;
+		}
+	}
+
 	/* Copy string and null terminator */
 	memcpy(net_if_get_config(iface)->name, buf, name_len + 1);
 
