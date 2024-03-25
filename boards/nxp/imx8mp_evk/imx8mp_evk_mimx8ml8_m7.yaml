@@ -19,5 +19,6 @@ testing:
     - net
     - bluetooth
 supported:
+  - spi
   - uart
 vendor: nxp
