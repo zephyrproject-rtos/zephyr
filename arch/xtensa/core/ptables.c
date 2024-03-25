@@ -108,9 +108,6 @@ extern char _heap_end[];
 extern char _heap_start[];
 extern char __data_start[];
 extern char __data_end[];
-extern char _bss_start[];
-extern char _bss_end[];
-
 /*
  * Static definition of all code & data memory regions of the
  * current Zephyr image. This information must be available &
