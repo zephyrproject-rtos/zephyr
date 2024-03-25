@@ -8,7 +8,11 @@ approach that is described in the :ref:`application` section of the
 documentation.
 
 Additional information that is only relevant to Bluetooth applications can be
-found in this page.
+found on this page.
+
+.. contents::
+    :local:
+    :depth: 2
 
 Thread safety
 *************
@@ -29,12 +33,17 @@ applications with Zephyr. Depending on the hardware that is available to you,
 the requirements you have and the type of development you prefer you may pick
 one or another setup to match your needs.
 
-There are 4 possible hardware setups to use with Zephyr and Bluetooth:
+There are 3 possible setups:
 
-#. Embedded
-#. QEMU with an external Controller
-#. :ref:`native_sim <native_sim>` with an external Controller
-#. Simulated nRF5x with BabbleSim
+#. :ref:`Embedded <bluetooth-hw-setup-embedded>`
+#. :ref:`External controller <bluetooth-hw-setup-external-ll>`
+
+   - :ref:`QEMU host <bluetooth-hw-setup-qemu-host>`
+   - :ref:`native_sim host <bluetooth-hw-setup-native-sim-host>`
+
+#. :ref:`Simulated nRF5x with BabbleSim <bluetooth-hw-setup-bsim>`
+
+.. _bluetooth-hw-setup-embedded:
 
 Embedded
 ========
@@ -55,6 +64,8 @@ There is a way to access the :ref:`HCI <bluetooth-hci>` traffic between the Host
 and Controller, even if there is no physical transport. See :ref:`Embedded HCI
 tracing <bluetooth-embedded-hci-tracing>` for instructions.
 
+.. _bluetooth-hw-setup-external-ll:
+
 Host on Linux with an external Controller
 =========================================
 
@@ -71,7 +82,7 @@ which is comprised of the following devices:
 
    * A commercially available Controller
    * A :ref:`Controller-only <bluetooth-build-types>` build of Zephyr
-   * A Virtual controller
+   * A :ref:`Virtual controller <bluetooth_virtual_posix>`
 
 .. warning::
    Certain external Controllers are either unable to accept the Host to
@@ -87,6 +98,8 @@ which is comprised of the following devices:
    you need to disable Host to Controller flow control. To do so, set
    ``CONFIG_BT_HCI_ACL_FLOW_CONTROL=n`` in your :file:`prj.conf`.
 
+.. _bluetooth-hw-setup-qemu-host:
+
 QEMU
 ----
 
@@ -95,6 +108,8 @@ and have it interact with a physical external Bluetooth Controller.
 
 Refer to :ref:`bluetooth_qemu_native` for full instructions on how to build and
 run an application in this setup.
+
+.. _bluetooth-hw-setup-native-sim-host:
 
 native_sim
 ----------
@@ -112,6 +127,8 @@ external Controller. Refer to:
 
 - :ref:`bluetooth_qemu_native` for the physical controller
 - :ref:`bluetooth_virtual_posix` for the virtual controller
+
+.. _bluetooth-hw-setup-bsim:
 
 Simulated nRF5x with BabbleSim
 ==============================
@@ -168,5 +185,11 @@ The key APIs employed by the beacon sample are :c:func:`bt_enable`
 that's used to initialize Bluetooth and then :c:func:`bt_le_adv_start`
 that's used to start advertising a specific combination of advertising
 and scan response data.
+
+More Examples
+*************
+
+More :ref:`sample Bluetooth applications <bluetooth-samples>` are available in
+``samples/bluetooth/``.
 
 .. _BabbleSim: https://babblesim.github.io/
