@@ -4,6 +4,10 @@
 
 if(CONFIG_NANOPB)
 
+  # Nanopb by default requires c_std_11 compiler features like _Static_assert
+  # A future improvement would be to add a Kconfig option to select a desired C standard
+  set_property(GLOBAL PROPERTY CSTD c11)
+
   set(NANOPB_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
 
   zephyr_library()
