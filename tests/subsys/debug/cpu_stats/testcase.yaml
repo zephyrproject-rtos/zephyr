@@ -1,0 +1,24 @@
+common:
+  tags: cpu_stats
+  filter: CONFIG_CPU_CORTEX_M and not SMP
+tests:
+  debug.cpu_stats:
+    integration_platforms:
+      - mps2/an385
+  debug.cpu_stats.counter:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_CPU_STATS_USE_COUNTER=y
+  debug.cpu_stats.periodic_report:
+    integration_platforms:
+      - mps2/an385
+    extra_configs:
+      - CONFIG_CPU_STATS_LOG_PERIODICALLY=50
+      - CONFIG_LOG=y
+      - CONFIG_TEST_LOGGING_DEFAULTS=n
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_MODE_IMMEDIATE=y
