@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 /* 1000 msec = 1 sec */
-#define SLEEP_TIME_MS   1000
+#define SLEEP_TIME_MS 1000
 
 #define EEPROM_SAMPLE_OFFSET 0
 #define EEPROM_SAMPLE_MAGIC  0xEE9704
@@ -30,7 +30,6 @@ struct perisistant_values {
 static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
 static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
-
 
 /*
  * Get a device structure from a devicetree node with alias eeprom-0
@@ -53,28 +52,26 @@ static const struct device *get_eeprom_device(void)
 int main(void)
 {
 	const struct device *eeprom = get_eeprom_device();
-	size_t eeprom_size;
 	struct perisistant_values values;
 	int rc;
-	int ret;
 
 	if (!gpio_is_ready_dt(&led1) || !gpio_is_ready_dt(&led2) || !gpio_is_ready_dt(&led3)) {
 		printk("Device not ready\n");
 		return 0;
 	}
 
-	ret = gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
+	rc = gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
+	if (rc < 0) {
 		printk("led1 could not be configured\n");
 		return 0;
 	}
-	ret = gpio_pin_configure_dt(&led2, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
+	rc = gpio_pin_configure_dt(&led2, GPIO_OUTPUT_ACTIVE);
+	if (rc < 0) {
 		printk("led2 could not be configured\n");
 		return 0;
 	}
-	ret = gpio_pin_configure_dt(&led3, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
+	rc = gpio_pin_configure_dt(&led3, GPIO_OUTPUT_ACTIVE);
+	if (rc < 0) {
 		printk("led3 could not be configured\n");
 		return 0;
 	}
@@ -84,11 +81,13 @@ int main(void)
 		return 0;
 	}
 
+#if defined(CONFIG_EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES)
 	/*
 	 * Use ST25DV specific functions from eeprom_st25dv header file
 	 * Read UUID and IC rev
 	 */
-	uint8_t uuid[8] = { 0 };
+	size_t eeprom_size;
+	uint8_t uuid[8] = {0};
 	uint8_t ic_rev = 0;
 
 	eeprom_st25dv_read_uuid(eeprom, uuid);
@@ -98,6 +97,7 @@ int main(void)
 
 	eeprom_size = eeprom_get_size(eeprom);
 	printk("Using eeprom with size of: %zu.\n", eeprom_size);
+#endif /* CONFIG_EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES */
 
 	rc = eeprom_read(eeprom, EEPROM_SAMPLE_OFFSET, &values, sizeof(values));
 	if (rc < 0) {
@@ -122,18 +122,18 @@ int main(void)
 	printk("Reset the MCU to see the increasing boot counter.\n\n");
 
 	while (1) {
-		ret = gpio_pin_toggle_dt(&led1);
-		if (ret < 0) {
+		rc = gpio_pin_toggle_dt(&led1);
+		if (rc < 0) {
 			return 0;
 		}
 		k_msleep(SLEEP_TIME_MS);
-		ret = gpio_pin_toggle_dt(&led2);
-		if (ret < 0) {
+		rc = gpio_pin_toggle_dt(&led2);
+		if (rc < 0) {
 			return 0;
 		}
 		k_msleep(SLEEP_TIME_MS);
-		ret = gpio_pin_toggle_dt(&led3);
-		if (ret < 0) {
+		rc = gpio_pin_toggle_dt(&led3);
+		if (rc < 0) {
 			return 0;
 		}
 		k_msleep(SLEEP_TIME_MS);

@@ -8,3 +8,13 @@ config EEPROM_ST25DV
 	select I2C
 	help
 	  Enable support for ST25DV NFC tag for use as an EEPROM.
+
+if EEPROM_ST25DV
+
+config EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES
+	bool "ST25DV advanced features"
+	default n
+	help
+	  Enable advanced features of the ST25DV like mailbox access, password, zone definition.
+
+endif

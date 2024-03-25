@@ -13,7 +13,9 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/eeprom.h>
+#if defined(CONFIG_EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES)
 #include <zephyr/drivers/eeprom/eeprom_st25dv.h>
+#endif
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
@@ -132,13 +134,14 @@ LOG_MODULE_REGISTER(eeprom_st25dv, CONFIG_EEPROM_LOG_LEVEL);
 #define EEPROM_ST25DV_MB_CTRL_DYN_CURRENTMSG_MASK   0xC0
 
 /** Sleep interval for polling (in ms) */
-#define EEPROM_ST25DV_POLL_INTERVAL_MS    10u
+#define EEPROM_ST25DV_POLL_INTERVAL_MS 10u
 
 /** Limit for I2C transfer if i2c-transfer-is-limited property is set */
-#define EEPROM_ST25DV_I2C_LIMIT_MAX    255u
+#define EEPROM_ST25DV_I2C_LIMIT_MAX 255u
 
-/** Split for I2C transfer too long for a single transfer when exceeding EEPROM_ST25DV_I2C_LIMIT_MAX */
-#define EEPROM_ST25DV_I2C_LIMIT_SPLIT_TRANSFER	128u
+/** Split for I2C transfer too long for a single transfer when exceeding EEPROM_ST25DV_I2C_LIMIT_MAX
+ */
+#define EEPROM_ST25DV_I2C_LIMIT_SPLIT_TRANSFER 128u
 
 struct eeprom_st25dv_config {
 	struct i2c_dt_spec bus;
@@ -218,6 +221,8 @@ static int _st25dv_read_user(const struct eeprom_st25dv_config *config, off_t of
 	return _st25dv_read(config, config->addr, offset, pdata, count);
 }
 
+#if defined(CONFIG_EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES)
+
 static int _st25dv_read_conf(const struct eeprom_st25dv_config *config, off_t offset,
 			     uint8_t *pdata, uint32_t count)
 {
@@ -241,6 +246,8 @@ static int _st25dv_write_dyn_conf(const struct eeprom_st25dv_config *config, off
 {
 	return _st25dv_write(config, config->addr, offset, pdata, count);
 }
+
+#endif /* defined(CONFIG_EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES) */
 
 static int eeprom_st25dv_read(const struct device *dev, off_t offset, void *buf, size_t len)
 {
@@ -311,6 +318,8 @@ static int eeprom_st25dv_init(const struct device *dev)
 	}
 	return 0;
 }
+
+#if defined(CONFIG_EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES)
 
 /**
  * @brief  Read ENDA1 register
@@ -1247,6 +1256,8 @@ int eeprom_st25dv_mailbox_write(const struct device *dev, uint8_t *buffer, size_
 	return eeprom_st25dv_write(dev, ST25DV_REG_MAILBOX_RAM, buffer, length);
 }
 
+#endif /* defined(CONFIG_EEPROM_ST25DV_ENABLE_ADVANCED_FEATURES) */
+
 static const struct eeprom_driver_api eeprom_st25dv_api = {
 	.read = eeprom_st25dv_read,
 	.write = eeprom_st25dv_write,
@@ -1258,7 +1269,7 @@ static const struct eeprom_driver_api eeprom_st25dv_api = {
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.addr = DT_INST_REG_ADDR(inst),                                                    \
 		.size = DT_INST_PROP(inst, size),                                                  \
-		.i2c_transfer_is_limited = DT_INST_PROP(inst, i2c_transfer_is_limited),   \
+		.i2c_transfer_is_limited = DT_INST_PROP(inst, i2c_transfer_is_limited),            \
 	};                                                                                         \
 	static struct eeprom_st25dv_data _st25dv_data_##inst;                                      \
 	DEVICE_DT_INST_DEFINE(inst, eeprom_st25dv_init, eeprom_st25dv_pm, &_st25dv_data_##inst,    \
