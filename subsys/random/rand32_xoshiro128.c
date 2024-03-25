@@ -91,15 +91,6 @@ static uint32_t xoshiro128_next(void)
 	return result;
 }
 
-uint32_t z_impl_sys_rand32_get(void)
-{
-	if (unlikely(!initialized)) {
-		xoshiro128_init_state();
-	}
-
-	return xoshiro128_next();
-}
-
 void z_impl_sys_rand_get(void *dst, size_t outlen)
 {
 	size_t blocks = outlen / sizeof(uint32_t);
