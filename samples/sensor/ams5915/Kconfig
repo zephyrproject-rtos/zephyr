@@ -1,0 +1,19 @@
+# Copyright (c) 2024 BoRob Engineering
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+# Enable I2C support by default. This default can be overridden if
+# needed.
+
+config I2C
+	default y
+
+source "Kconfig.zephyr"
