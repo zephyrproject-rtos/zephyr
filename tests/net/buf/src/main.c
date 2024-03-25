@@ -452,6 +452,26 @@ ZTEST(net_buf_tests, test_net_buf_clone_no_ref_count)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
+ZTEST(net_buf_tests, test_net_buf_clone_user_data)
+{
+	struct net_buf *original, *clone;
+	uint32_t *buf_user_data, *clone_user_data;
+
+	/* Requesting size 1 because all we are interested in are the user data */
+	original = net_buf_alloc_len(&bufs_pool, 1, K_NO_WAIT);
+	zassert_not_null(original, "Failed to get buffer");
+	buf_user_data = net_buf_user_data(original);
+	*buf_user_data = 0xAABBCCDD;
+
+	clone = net_buf_clone(original, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to get clone buffer");
+	clone_user_data = net_buf_user_data(clone);
+	zexpect_equal(*clone_user_data, 0xAABBCCDD, "User data copy is invalid");
+
+	net_buf_unref(original);
+	net_buf_unref(clone);
+}
+
 ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 {
 	struct net_buf *buf;
