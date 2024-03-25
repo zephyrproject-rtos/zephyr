@@ -148,6 +148,10 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 	help
 	  Receiver inactivity timeout. It is used to calculate timeout in microseconds.
 
+comment "Serial Utils"
+
+source "drivers/serial/Kconfig.serial_shell"
+
 comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.b91"

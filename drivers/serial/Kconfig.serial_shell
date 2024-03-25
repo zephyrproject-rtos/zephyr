@@ -1,0 +1,35 @@
+# Copyright (C) 2024 Bang & Olufsen A/S, Denmark
+# SPDX-License-Identifier: Apache-2.0
+
+config SERIAL_SHELL
+	bool "Serial shell"
+	depends on SHELL
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  Enable serial shell.
+	  The serial shell supports writing and receiving data to/from a serial device.
+
+	  The serial shell works by enabling a serial device for the shell.
+	  This device will be registered to transfer the input from 'serial write'
+	  and log the received data from the serial device.
+
+	  Currently only supports serial interrupt API.
+
+if SERIAL_SHELL
+
+config SERIAL_SHELL_RX_BUFFER_SIZE
+	int "Serial shell RX buffer size"
+	default 32
+	help
+	  Size of the RX buffer.
+	  The shell will dump received messages when
+	  RX buffer is full or when FIFO is empty.
+
+config SERIAL_SHELL_TX_BUFFER_SIZE
+	int "Serial shell TX buffer size"
+	default 32
+	help
+	  Size of the TX buffer.
+	  An attempt at transmitting more data will fail.
+
+endif #  SERIAL_SHELL
