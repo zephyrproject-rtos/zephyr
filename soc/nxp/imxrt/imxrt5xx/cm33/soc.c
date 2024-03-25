@@ -85,6 +85,7 @@ const clock_frg_clk_config_t g_frg12Config_clock_init = {
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
+
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 /* Main stack pointer */
@@ -292,6 +293,11 @@ void __weak rt5xx_clock_init(void)
 	usb_device_clock_init();
 #endif
 
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2s, okay) && CONFIG_I2S)
+	/* attach AUDIO PLL clock to FLEXCOMM1 (I2S_PDM) */
+	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM0);
+#endif
+
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay) && CONFIG_I2S)
 	/* attach AUDIO PLL clock to FLEXCOMM1 (I2S1) */
 	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM1);
@@ -445,6 +451,13 @@ void __weak rt5xx_clock_init(void)
 
 	/* Set main clock to FRO as deep sleep clock by default. */
 	POWER_SetDeepSleepClock(kDeepSleepClk_Fro);
+
+#if CONFIG_AUDIO_CODEC_WM8904
+	/* attach AUDIO PLL clock to MCLK */
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivMclkClk, 1);
+	SYSCTL1->MCLKPINDIR = SYSCTL1_MCLKPINDIR_MCLKPINDIR_MASK;
+#endif
 }
 
 #if CONFIG_MIPI_DSI

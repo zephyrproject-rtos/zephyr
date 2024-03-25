@@ -236,8 +236,9 @@
 			pinmux = <I3C0_SCL_PIO2_29>,
 				<I3C0_SDA_PIO2_30>;
 			input-enable;
+			bias-pull-up;
 			slew-rate = "slow";
-			drive-strength = "high";
+			drive-strength = "normal";
 		};
 
 		group1 {
@@ -247,4 +248,11 @@
 		};
 	};
 
+	pinmux_codec: pinmux_codec {
+		group0 {
+			pinmux = <MCLK_PIO1_10>;
+			slew-rate = "normal";
+			drive-strength = "high";
+		};
+	};
 };

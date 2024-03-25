@@ -457,10 +457,24 @@ zephyr_udc0: &usbhs {
 };
 
 &i3c0 {
+	#address-cells = <3>;
+	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_i3c>;
 	pinctrl-names = "default";
+	clk-divider = <20>;
+	interrupts = <49 0>;
+	clk-divider-tc = <0>;
+	clk-divider-slow = <0>;
 
 	status = "okay";
+
+	audio_codec: wm8904@1a {
+		pinctrl-0 = <&pinmux_codec>;
+		pinctrl-names = "default";
+		compatible = "wolfson,wm8904";
+		reg = <0x1a 0 0>;
+		clock-source = "MCLK";
+	};
 };
 
 &mbox {

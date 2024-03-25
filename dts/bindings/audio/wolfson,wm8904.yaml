@@ -1,0 +1,24 @@
+# Copyright (c) 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: WM8904 audio codec
+
+include: [i2c-device.yaml, pinctrl-device.yaml]
+
+compatible: "wolfson,wm8904"
+
+properties:
+  reg:
+    required: true
+
+  clock-source:
+    type: string
+    default: "MCLK"
+    description: |
+      Clock source to be used by the PDM peripheral. The following options
+      are available:
+      - "MCLK": clock from MCLK
+      - "FLL":  clock from FLL
+    enum:
+      - "MCLK"
+      - "FLL"
