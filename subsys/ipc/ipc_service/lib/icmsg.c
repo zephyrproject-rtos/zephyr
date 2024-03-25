@@ -20,6 +20,9 @@
 #define SEND_BUFFER_UNUSED	0
 #define SEND_BUFFER_RESERVED	1
 
+static struct k_work_q icmsg_work_queue;
+K_THREAD_STACK_DEFINE(icmsg_work_queue_stack, CONFIG_IPC_SERVICE_ICMSG_WORK_QUEUE_STACK_SIZE);
+
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 				0x30, 0x72, 0x6e, 0x33, 0x6c, 0x69, 0x34};
 BUILD_ASSERT(sizeof(magic) <= RX_BUF_SIZE);
@@ -59,7 +62,7 @@ static void notify_process(struct k_work *item)
 	if (state != ICMSG_STATE_READY) {
 		int ret;
 
-		ret = k_work_reschedule(dwork, BOND_NOTIFY_REPEAT_TO);
+		ret = k_work_reschedule_for_queue(&icmsg_work_queue, dwork, BOND_NOTIFY_REPEAT_TO);
 		__ASSERT_NO_MSG(ret >= 0);
 		(void)ret;
 	}
@@ -127,7 +130,7 @@ static bool is_rx_data_available(struct icmsg_data_t *dev_data)
 
 static void submit_mbox_work(struct icmsg_data_t *dev_data)
 {
-	if (k_work_submit(&dev_data->mbox_work) < 0) {
+	if (k_work_submit_to_queue(&icmsg_work_queue, &dev_data->mbox_work) < 0) {
 		/* The mbox processing work is never canceled.
 		 * The negative error code should never be seen.
 		 */
@@ -211,6 +214,10 @@ static int mbox_init(const struct icmsg_config_t *conf,
 {
 	int err;
 
+	k_work_queue_start(&icmsg_work_queue, icmsg_work_queue_stack,
+					   K_THREAD_STACK_SIZEOF(icmsg_work_queue_stack),
+					   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
+
 	k_work_init(&dev_data->mbox_work, mbox_callback_process);
 	k_work_init_delayable(&dev_data->notify_work, notify_process);
 
@@ -263,7 +270,7 @@ int icmsg_open(const struct icmsg_config_t *conf,
 		return ret;
 	}
 
-	ret = k_work_schedule(&dev_data->notify_work, K_NO_WAIT);
+	ret = k_work_schedule_for_queue(&icmsg_work_queue, &dev_data->notify_work, K_NO_WAIT);
 	if (ret < 0) {
 		return ret;
 	}
