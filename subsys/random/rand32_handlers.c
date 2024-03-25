@@ -7,12 +7,6 @@
 #include <zephyr/random/random.h>
 #include <zephyr/internal/syscall_handler.h>
 
-static inline uint32_t z_vrfy_sys_rand32_get(void)
-{
-	return z_impl_sys_rand32_get();
-}
-#include <syscalls/sys_rand32_get_mrsh.c>
-
 static inline void z_vrfy_sys_rand_get(void *dst, size_t len)
 {
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(dst, len));
