@@ -150,7 +150,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -171,7 +171,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -722,7 +722,7 @@ int stm32_clock_control_init(const struct device *dev)
 		return r;
 	}
 
-	/* Set peripheral busses prescalers */
+	/* Set peripheral buses prescalers */
 	LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_AHB_PRESCALER));
 	LL_RCC_SetAPB1Prescaler(apb1_prescaler(STM32_APB1_PRESCALER));
 	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_APB2_PRESCALER));

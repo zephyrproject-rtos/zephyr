@@ -125,7 +125,7 @@ static int enabled_clock(uint32_t src_clk)
 	if ((src_clk == STM32_SRC_SYSCLK) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
-+	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
+	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_MSIS) && IS_ENABLED(STM32_MSIS_ENABLED)) ||
@@ -154,7 +154,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -175,7 +175,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -715,7 +715,7 @@ static void set_up_fixed_clock_sources(void)
 		while (!LL_RCC_LSE_IsReady()) {
 		}
 
-		/* Enable LSESYS additionnally */
+		/* Enable LSESYS additionally */
 		LL_RCC_LSE_EnablePropagation();
 		/* Wait till LSESYS is ready */
 		while (!LL_RCC_LSESYS_IsReady()) {
@@ -830,7 +830,7 @@ int stm32_clock_control_init(const struct device *dev)
 		return r;
 	}
 
-	/* Set peripheral busses prescalers */
+	/* Set peripheral buses prescalers */
 	LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_AHB_PRESCALER));
 	LL_RCC_SetAPB1Prescaler(apb1_prescaler(STM32_APB1_PRESCALER));
 	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_APB2_PRESCALER));
