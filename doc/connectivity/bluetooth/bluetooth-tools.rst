@@ -81,6 +81,7 @@ Running on QEMU or native_sim
 
 It's possible to run Bluetooth applications using either the :ref:`QEMU
 emulator<application_run_qemu>` or :ref:`native_sim <native_sim>`.
+
 In either case, a Bluetooth controller needs to be exported from
 the host OS (Linux) to the emulator. For this purpose you will need some tools
 described in the :ref:`bluetooth_bluez` section.
@@ -166,6 +167,8 @@ transports when building a single-mode, Zephyr-based BLE Controller:
 * USB: Use the :ref:`hci_usb <bluetooth-hci-usb-sample>` sample and then
   treat it as a Host System Bluetooth Controller (see previous section)
 
+.. _bluetooth-hci-tracing:
+
 HCI Tracing
 ===========
 
@@ -177,6 +180,61 @@ In order to see those logs, you can use the built-in ``btmon`` tool from BlueZ:
 .. code-block:: console
 
    $ btmon
+
+The output looks like this::
+
+   = New Index: 00:00:00:00:00:00 (Primary,Virtual,Control)                     0.274200
+   = Open Index: 00:00:00:00:00:00                                              0.274500
+   < HCI Command: Reset (0x03|0x0003) plen 0                                 #1 0.274600
+   > HCI Event: Command Complete (0x0e) plen 4                               #2 0.274700
+         Reset (0x03|0x0003) ncmd 1
+         Status: Success (0x00)
+   < HCI Command: Read Local Supported Features (0x04|0x0003) plen 0         #3 0.274800
+   > HCI Event: Command Complete (0x0e) plen 12                              #4 0.274900
+         Read Local Supported Features (0x04|0x0003) ncmd 1
+         Status: Success (0x00)
+         Features: 0x00 0x00 0x00 0x00 0x60 0x00 0x00 0x00
+            BR/EDR Not Supported
+            LE Supported (Controller)
+
+.. _bluetooth-embedded-hci-tracing:
+
+Embedded HCI tracing
+--------------------
+
+When running both Host and Controller in actual Integrated Circuits, you will
+only see normal log messages on the console by default, without any way of
+accessing the HCI traffic between the Host and the Controller.  However, there
+is a special Bluetooth logging mode that converts the console to use a binary
+protocol that interleaves both normal log messages as well as the HCI traffic.
+
+Set the following Kconfig options to enable this protocol before building your
+application:
+
+.. code-block:: cfg
+
+   CONFIG_BT_DEBUG_MONITOR_UART=y
+   CONFIG_UART_CONSOLE=n
+
+- Setting :kconfig:option:`CONFIG_BT_DEBUG_MONITOR_UART` activates the formatting
+- Clearing :kconfig:option:`CONFIG_UART_CONSOLE` makes the UART unavailable for
+  the system console. E.g. for ``printk`` and the :kconfig:option:`boot banner
+  <CONFIG_BOOT_BANNER>`
+
+To decode the binary protocol that will now be sent to the console UART you need
+to use the btmon tool from :ref:`BlueZ <bluetooth_bluez>`:
+
+.. code-block:: console
+
+   $ btmon --tty <console TTY> --tty-speed 115200
+
+If UART is not available (or you still want non-binary logs), you can set
+:kconfig:option:`CONFIG_BT_DEBUG_MONITOR_RTT` instead, which will use Segger
+RTT. For example, if trying to connect to a nRF52840DK with S/N 683578642:
+
+.. code-block:: console
+
+   $ btmon --jlink nRF52840_xxAA,683578642
 
 .. _bluetooth_virtual_posix:
 

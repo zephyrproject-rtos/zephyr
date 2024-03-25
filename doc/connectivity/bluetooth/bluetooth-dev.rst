@@ -51,34 +51,9 @@ To start developing using this setup follow the :ref:`Getting Started Guide
 boards that support Bluetooth and then :ref:`run the application
 <application_run_board>`).
 
-.. _bluetooth-hci-tracing:
-
-Embedded HCI tracing
---------------------
-
-When running both Host and Controller in actual Integrated Circuits, you will
-only see normal log messages on the console by default, without any way of
-accessing the HCI traffic between the Host and the Controller.  However, there
-is a special Bluetooth logging mode that converts the console to use a binary
-protocol that interleaves both normal log messages as well as the HCI traffic.
-Set the following Kconfig options to enable this protocol before building your
-application:
-
-.. code-block:: console
-
-   CONFIG_BT_DEBUG_MONITOR_UART=y
-   CONFIG_UART_CONSOLE=n
-
-Setting :kconfig:option:`CONFIG_BT_DEBUG_MONITOR_UART` to ``y`` replaces the
-:kconfig:option:`CONFIG_BT_DEBUG_LOG` option, and setting :kconfig:option:`CONFIG_UART_CONSOLE`
-to ``n`` disables the default ``printk``/``printf`` hooks.
-
-To decode the binary protocol that will now be sent to the console UART you need
-to use the btmon tool from :ref:`BlueZ <bluetooth_bluez>`:
-
-.. code-block:: console
-
-   $ btmon --tty <console TTY> --tty-speed 115200
+There is a way to access the :ref:`HCI <bluetooth-hci>` traffic between the Host
+and Controller, even if there is no physical transport. See :ref:`Embedded HCI
+tracing <bluetooth-embedded-hci-tracing>` for instructions.
 
 Host on Linux with an external Controller
 =========================================
@@ -117,6 +92,7 @@ QEMU
 
 You can run the Zephyr Host on the :ref:`QEMU emulator<application_run_qemu>`
 and have it interact with a physical external Bluetooth Controller.
+
 Refer to :ref:`bluetooth_qemu_native` for full instructions on how to build and
 run an application in this setup.
 
@@ -129,13 +105,13 @@ native_sim
 The :ref:`native_sim <native_sim>` target builds your Zephyr application
 with the Zephyr kernel, and some minimal HW emulation as a native Linux
 executable.
+
 This executable is a normal Linux program, which can be debugged and
 instrumented like any other, and it communicates with a physical or virtual
-external Controller.
+external Controller. Refer to:
 
-Refer to :ref:`bluetooth_qemu_native` for full instructions on how to build and
-run an application with a physical controller. For the virtual controller refer
-to :ref:`bluetooth_virtual_posix`.
+- :ref:`bluetooth_qemu_native` for the physical controller
+- :ref:`bluetooth_virtual_posix` for the virtual controller
 
 Simulated nRF5x with BabbleSim
 ==============================
