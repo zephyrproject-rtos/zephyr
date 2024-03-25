@@ -20,7 +20,7 @@ Hardware support for:
 
 - :kconfig:option:`CONFIG_BT`
 - :kconfig:option:`CONFIG_BT_PERIPHERAL`
-- :kconfig:option:`CONFIG_BT_NUS`
+- :kconfig:option:`CONFIG_BT_ZEPHYR_NUS`
 - :kconfig:option:`CONFIG_SERIAL`
 - :kconfig:option:`CONFIG_CONSOLE`
 - :kconfig:option:`CONFIG_UART_CONSOLE`

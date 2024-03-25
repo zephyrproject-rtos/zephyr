@@ -6,7 +6,7 @@
 
 #include "nus_internal.h"
 
-#if defined(CONFIG_BT_NUS_DEFAULT_INSTANCE)
+#if defined(CONFIG_BT_ZEPHYR_NUS_DEFAULT_INSTANCE)
 BT_NUS_INST_DEFINE(nus_def);
 struct bt_nus_inst *bt_nus_inst_default(void)
 {
