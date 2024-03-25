@@ -1,8 +1,7 @@
-.. _bluetooth_audio_arch:
+.. _bluetooth_le_audio_arch:
 
-
-Audio Architecture
-##################
+LE Audio Stack
+##############
 
 .. figure:: img/ble_audio_arch.svg
    :align: center
