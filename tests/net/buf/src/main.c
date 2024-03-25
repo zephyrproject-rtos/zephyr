@@ -452,6 +452,21 @@ ZTEST(net_buf_tests, test_net_buf_clone_no_ref_count)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
+/* Regression test: Zero sized buffers must be copy-able, not trigger a NULL pointer dereference */
+ZTEST(net_buf_tests, test_net_buf_clone_reference_counted_zero_sized_buffer)
+{
+	struct net_buf *buf, *clone;
+
+	buf = net_buf_alloc_len(&var_pool, 0, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	clone = net_buf_clone(buf, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to clone zero sized buffer");
+
+	net_buf_unref(buf);
+	net_buf_unref(clone);
+}
+
 ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 {
 	struct net_buf *buf;
