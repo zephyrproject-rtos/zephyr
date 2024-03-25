@@ -1285,13 +1285,7 @@ int handle_http_frame_window_update(struct http_client_ctx *client)
 
 	print_http_frames(client);
 
-	if (client->has_upgrade_header) {
-		frame->stream_identifier = 1;
-		handle_http_frame_headers(client);
-		client->server_state = HTTP_SERVER_FRAME_GOAWAY_STATE;
-
-		return 0;
-	}
+	/* TODO Implement flow control, for now just ignore. */
 
 	if (client->offset < frame->length) {
 		return -EAGAIN;
