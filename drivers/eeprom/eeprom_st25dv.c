@@ -156,13 +156,23 @@ static int _st25dv_read(const struct eeprom_st25dv_config *config, uint16_t addr
 			uint8_t *pdata, uint32_t count)
 {
 	int ret = 0;
+	int64_t timeout;
 	uint8_t wr_data[2] = {offset >> 8, offset & 0xff};
 	/*
 	 * A write cycle may be in progress so reads must be attempted
 	 * until the current write cycle should be completed.
 	 */
-	WAIT_FOR(((ret = i2c_write_read(config->bus.bus, addr, wr_data, 2, pdata, count)) == 0),
-		 EEPROM_ST25DV_WRITE_TIMEOUT_US, k_msleep(1));
+	timeout = k_uptime_get() + EEPROM_ST25DV_WRITE_TIMEOUT_US;
+	while (1) {
+		int64_t now = k_uptime_get();
+
+		ret = i2c_write_read(config->bus.bus, addr, wr_data, 2, pdata, count);
+
+		if (!ret || now > timeout) {
+			break;
+		}
+		k_sleep(K_MSEC(1));
+	}
 	return ret;
 }
 
@@ -170,6 +180,7 @@ static int _st25dv_write(const struct eeprom_st25dv_config *config, uint16_t add
 			 const uint8_t *pdata, uint32_t count)
 {
 	int ret = 0;
+	int64_t timeout;
 	uint8_t buffer[count + 2];
 
 	buffer[0] = offset >> 8;
@@ -181,8 +192,17 @@ static int _st25dv_write(const struct eeprom_st25dv_config *config, uint16_t add
 	 * attempted until the previous write cycle should be
 	 * completed.
 	 */
-	WAIT_FOR(((ret = i2c_write(config->bus.bus, buffer, count + 2, addr)) == 0),
-		 EEPROM_ST25DV_WRITE_TIMEOUT_US, k_msleep(1));
+	timeout = k_uptime_get() + EEPROM_ST25DV_WRITE_TIMEOUT_US;
+	while (1) {
+		int64_t now = k_uptime_get();
+
+		ret = i2c_write(config->bus.bus, buffer, count + 2, addr);
+
+		if (!ret || now > timeout) {
+			break;
+		}
+		k_sleep(K_MSEC(1));
+	}
 	return ret;
 }
 
