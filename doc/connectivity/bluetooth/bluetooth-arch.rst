@@ -1,7 +1,7 @@
 .. _bluetooth-arch:
 
-Bluetooth Stack Architecture
-############################
+Stack Architecture
+##################
 
 Overview
 ********

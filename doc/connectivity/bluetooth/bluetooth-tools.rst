@@ -1,7 +1,7 @@
 .. _bluetooth-tools:
 
-Bluetooth Tools
-###############
+Tools
+#####
 
 This page lists and describes tools that can be used to assist during Bluetooth
 stack or application development in order to help, simplify and speed up the

@@ -1,7 +1,7 @@
 .. _bluetooth-qual:
 
-Bluetooth Qualification
-#######################
+Qualification
+#############
 
 Qualification setup
 *******************
