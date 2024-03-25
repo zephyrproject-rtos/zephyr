@@ -54,6 +54,7 @@ config SOC_NRF53_ANOMALY_160_WORKAROUND
 	bool
 	depends on SYS_CLOCK_EXISTS
 	select ARM_ON_ENTER_CPU_IDLE_HOOK
+	select CPU_STATS_EXT_ON_ENTER_HOOK
 
 config SOC_NRF53_ANOMALY_168_WORKAROUND
 	bool "Workaround for nRF5340 anomaly 168"
@@ -79,6 +80,7 @@ config SOC_NRF53_RTC_PRETICK
 	depends on (SYS_CLOCK_EXISTS && SOC_NRF5340_CPUNET) || SOC_NRF5340_CPUAPP
 	select NRFX_DPPI
 	select ARM_ON_ENTER_CPU_IDLE_HOOK if SOC_NRF5340_CPUNET
+	select CPU_STATS_EXT_ON_ENTER_HOOK if SOC_NRF5340_CPUNET
 	select ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK if SOC_NRF5340_CPUNET
 	help
 	  Indicates that the pre-tick workaround for the anomaly 165 that affects

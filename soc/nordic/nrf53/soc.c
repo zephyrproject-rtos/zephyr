@@ -17,6 +17,7 @@
 #include <zephyr/sys/barrier.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/debug/cpu_stats.h>
 #include <nrf_erratas.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_ipc.h>
@@ -382,6 +383,12 @@ bool z_arm_on_enter_cpu_idle(void)
 		NRF_IPC->PUBLISH_RECEIVE[CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET] &=
 			~IPC_PUBLISH_RECEIVE_EN_Msk;
 		NRF_WDT->TASKS_STOP = 1;
+	}
+#endif
+
+#ifdef CONFIG_CPU_STATS
+	if (ok_to_sleep) {
+		cpu_stats_on_enter_cpu_idle_hook();
 	}
 #endif
 
