@@ -13,3 +13,5 @@ properties:
     required: true
   size:
     required: true
+  i2c-transfer-is-limited:
+    type: boolean

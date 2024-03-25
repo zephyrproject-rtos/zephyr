@@ -81,6 +81,15 @@ typedef enum {
 } eeprom_st25dv_lock_status_t;
 
 /**
+ * @brief ST25DV Mailbox status polling definitions.
+ */
+typedef enum {
+	EEPROM_ST25DV_MB_STATUS_POLL_HOST_PUT = 0,
+	EEPROM_ST25DV_MB_STATUS_POLL_RF_PUT = 1,
+	EEPROM_ST25DV_MB_STATUS_POLL_BOTH = 2,
+} eeprom_st25dv_mb_status_poll_t;
+
+/**
  * @brief ST25DV RF Area protection structure definition.
  */
 typedef struct {
@@ -171,6 +180,42 @@ int eeprom_st25dv_write_end_zone(const struct device *dev, const eeprom_st25dv_e
 				 uint8_t end_zone_addr);
 
 /**
+ * @brief Read MB_MODE register
+ *
+ * @param dev the ST25DV device pointer
+ * @param[out] mb_mode pointer used to store the mb_mode register value
+ * @return 0 if successful, <0 if an error occurred
+ */
+int eeprom_st25dv_read_mb_mode(const struct device *dev, uint8_t *mb_mode);
+
+/**
+ * @brief Write MB_MODE register
+ *
+ * @param dev the ST25DV device pointer
+ * @param mb_mode mb_mode value to be written
+ * @return 0 if successful, <0 if an error occurred
+ */
+int eeprom_st25dv_write_mb_mode(const struct device *dev, uint8_t mb_mode);
+
+/**
+ * @brief Read MB_CTRL_DYN register
+ *
+ * @param dev the ST25DV device pointer
+ * @param[out] mb_ctrl_dyn pointer used to store the mb_ctrl_dyn register value
+ * @return 0 if successful, <0 if an error occurred
+ */
+int eeprom_st25dv_read_mb_ctrl_dyn(const struct device *dev, uint8_t *mb_ctrl_dyn);
+
+/**
+ * @brief Write MB_CTRL_DYN register
+ *
+ * @param dev the ST25DV device pointer
+ * @param mb_ctrl_dyn mb_ctrl_dyn value to be written
+ * @return 0 if successful, <0 if an error occurred
+ */
+int eeprom_st25dv_write_mb_ctrl_dyn(const struct device *dev, uint8_t mb_ctrl_dyn);
+
+/**
  * @brief Presents I2C password, to authorize the I2C writes to protected areas.
  * @param dev the ST25DV device pointer
  * @param password password value to be presented to the device
@@ -246,6 +291,48 @@ int eeprom_st25dv_init_end_zone(const struct device *dev);
 int eeprom_st25dv_create_user_zone(const struct device *dev, const uint16_t zone1_length,
 				   const uint16_t zone2_length, const uint16_t zone3_length,
 				   const uint16_t zone4_length);
+
+/**
+ * @brief Enable / disable fast transmfer mode
+ *
+ * @param dev the ST25DV device pointer.
+ * @param enable Enable FTM if true. Disable if fl
+ * @return 0 if successful, <0 if an error occurred
+ */
+int eeprom_st25dv_set_ftm(const struct device *dev, bool enable);
+
+/**
+ * @brief Poll mailbox status for a flag
+ *
+ * @param dev the ST25DV device pointer.
+ * @param status Status to be checked when polling
+ * @param poll_for_set Poll for flag set if true, poll for clear if false
+ * @param timeout Timeout for polling
+ * @return 0 if flag was found. <0 if flag was not found or an error occurred
+ */
+int eeprom_st25dv_mailbox_poll_status(const struct device *dev,
+				      eeprom_st25dv_mb_status_poll_t status, bool poll_for_set,
+				      k_timeout_t timeout);
+
+/**
+ * @brief Read message from mailbox
+ *
+ * @param dev the ST25DV device pointer.
+ * @param[out] buffer Buffer in which to store the data read from the mailbox
+ * @param buffer_length Length of the buffer
+ * @return Length of the message read from the mailbox. <0 if an error occurred.
+ */
+int eeprom_st25dv_mailbox_read(const struct device *dev, uint8_t *buffer, size_t buffer_length);
+
+/**
+ * @brief Write message to mailbox
+ *
+ * @param dev the ST25DV device pointer.
+ * @param[in] buffer Buffer containing the message to be stored in the mailbox
+ * @param length Length of the message
+ * @return 0 if successful, <0 if an error occurred.
+ */
+int eeprom_st25dv_mailbox_write(const struct device *dev, uint8_t *buffer, size_t length);
 
 #ifdef __cplusplus
 }

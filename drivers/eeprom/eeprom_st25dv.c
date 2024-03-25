@@ -20,6 +20,7 @@
 LOG_MODULE_REGISTER(eeprom_st25dv, CONFIG_EEPROM_LOG_LEVEL);
 
 /* ST25DV registers */
+
 #define ST25DV_REG_GPO         0x0000
 #define ST25DV_REG_IT_TIME     0x0001
 #define ST25DV_REG_EH_MODE     0x0002
@@ -47,27 +48,36 @@ LOG_MODULE_REGISTER(eeprom_st25dv, CONFIG_EEPROM_LOG_LEVEL);
 #define ST25DV_REG_IC_REV      0x0020
 #define ST25DV_REG_I2C_PASSWD  0x0900
 #define ST25DV_REG_I2C_SSO_DYN 0x2004
+#define ST25DV_REG_MB_CTRL_DYN 0x2006
+#define ST25DV_REG_MBLEN_DYN   0x2007
+#define ST25DV_REG_MAILBOX_RAM 0x2008
 
 /** @brief Length of the MEM_SIZE field of the ST25DV */
-#define ST25DV_MEM_SIZE_LENGTH   2U
+#define ST25DV_MEM_SIZE_LENGTH    2U
 /** @brief Length of the BLK_SIZE field of the ST25DV */
-#define ST25DV_BLK_SIZE_LENGTH   1U
+#define ST25DV_BLK_SIZE_LENGTH    1U
 /** @brief Length of the IC_REV field of the ST25DV */
-#define ST25DV_IC_REV_LENGTH     1U
+#define ST25DV_IC_REV_LENGTH      1U
 /** @brief Length of ENDA registers */
-#define ST25DV_ENDA_LENGTH       1U
+#define ST25DV_ENDA_LENGTH        1U
 /** @brief Length of I2C_PASSWD message */
-#define ST25DV_I2C_PASSWD_LENGTH 17U
+#define ST25DV_I2C_PASSWD_LENGTH  17U
 /** @brief Length of RFAxSS registers */
-#define ST25DV_RFASS_LENGTH      1U
+#define ST25DV_RFASS_LENGTH       1U
+/** @brief Length of MB_MODE register */
+#define ST25DV_MB_MODE_LENGTH     1U
+/** @brief Length of MB_CTRL_DYN register */
+#define ST25DV_MB_CTRL_DYN_LENGTH 1U
+/** @brief Length of MB_LEN_DYN register */
+#define ST25DV_MB_LEN_DYN_LENGTH  1U
 
 /**
  * @brief I2C write timeout (us)
  *
- * @details Max value (ms): t_write + t_write * (max write bytes) / (internal page write)
+ * @details Max value (us): t_write + t_write * (max write bytes) / (internal page write)
  * 5 + 5*(256/16)
  */
-#define EEPROM_ST25DV_WRITE_TIMEOUT 85U
+#define EEPROM_ST25DV_WRITE_TIMEOUT_US 85U
 
 /* I2C Security Session Open I2C_SSO_Dyn */
 #define EEPROM_ST25DV_I2C_SSO_DYN_I2CSSO_SHIFT 0
@@ -98,11 +108,44 @@ LOG_MODULE_REGISTER(eeprom_st25dv, CONFIG_EEPROM_LOG_LEVEL);
 #define EEPROM_ST25DV_I2CSS_RW_PROT_A4_FIELD 0x3F
 #define EEPROM_ST25DV_I2CSS_RW_PROT_A4_MASK  0xC0
 
+/* Fast transfer mode control and status */
+#define EEPROM_ST25DV_MB_CTRL_DYN_MBEN_SHIFT        0u
+#define EEPROM_ST25DV_MB_CTRL_DYN_MBEN_FIELD        0xFE
+#define EEPROM_ST25DV_MB_CTRL_DYN_MBEN_MASK         0x01
+#define EEPROM_ST25DV_MB_CTRL_DYN_HOSTPUTMSG_SHIFT  1u
+#define EEPROM_ST25DV_MB_CTRL_DYN_HOSTPUTMSG_FIELD  0xFD
+#define EEPROM_ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK   0x02
+#define EEPROM_ST25DV_MB_CTRL_DYN_RFPUTMSG_SHIFT    2u
+#define EEPROM_ST25DV_MB_CTRL_DYN_RFPUTMSG_FIELD    0xFB
+#define EEPROM_ST25DV_MB_CTRL_DYN_RFPUTMSG_MASK     0x04
+#define EEPROM_ST25DV_MB_CTRL_DYN_STRESERVED_SHIFT  3u
+#define EEPROM_ST25DV_MB_CTRL_DYN_STRESERVED_FIELD  0xF7
+#define EEPROM_ST25DV_MB_CTRL_DYN_STRESERVED_MASK   0x08
+#define EEPROM_ST25DV_MB_CTRL_DYN_HOSTMISSMSG_SHIFT 4u
+#define EEPROM_ST25DV_MB_CTRL_DYN_HOSTMISSMSG_FIELD 0xEF
+#define EEPROM_ST25DV_MB_CTRL_DYN_HOSTMISSMSG_MASK  0x10
+#define EEPROM_ST25DV_MB_CTRL_DYN_RFMISSMSG_SHIFT   5u
+#define EEPROM_ST25DV_MB_CTRL_DYN_RFMISSMSG_FIELD   0xDF
+#define EEPROM_ST25DV_MB_CTRL_DYN_RFMISSMSG_MASK    0x20
+#define EEPROM_ST25DV_MB_CTRL_DYN_CURRENTMSG_SHIFT  6u
+#define EEPROM_ST25DV_MB_CTRL_DYN_CURRENTMSG_FIELD  0x3F
+#define EEPROM_ST25DV_MB_CTRL_DYN_CURRENTMSG_MASK   0xC0
+
+/** Sleep interval for polling (in ms) */
+#define EEPROM_ST25DV_POLL_INTERVAL_MS    10u
+
+/** Limit for I2C transfer if i2c-transfer-is-limited property is set */
+#define EEPROM_ST25DV_I2C_LIMIT_MAX    255u
+
+/** Split for I2C transfer too long for a single transfer when exceeding EEPROM_ST25DV_I2C_LIMIT_MAX */
+#define EEPROM_ST25DV_I2C_LIMIT_SPLIT_TRANSFER	128u
+
 struct eeprom_st25dv_config {
 	struct i2c_dt_spec bus;
 	uint16_t addr;
 	uint8_t power_state;
 	size_t size;
+	bool i2c_transfer_is_limited;
 };
 
 struct eeprom_st25dv_data {
@@ -127,7 +170,6 @@ static int _st25dv_write(const struct eeprom_st25dv_config *config, uint16_t add
 			 const uint8_t *pdata, uint32_t count)
 {
 	int ret = 0;
-	int64_t timeout;
 	uint8_t buffer[count + 2];
 
 	buffer[0] = offset >> 8;
@@ -168,6 +210,18 @@ static int _st25dv_write_conf(const struct eeprom_st25dv_config *config, off_t o
 	return _st25dv_write(config, config->addr | 4, offset, pdata, count);
 }
 
+static int _st25dv_read_dyn_conf(const struct eeprom_st25dv_config *config, off_t offset,
+				 uint8_t *pdata, uint32_t count)
+{
+	return _st25dv_read(config, config->addr, offset, pdata, count);
+}
+
+static int _st25dv_write_dyn_conf(const struct eeprom_st25dv_config *config, off_t offset,
+				  uint8_t *pdata, uint32_t count)
+{
+	return _st25dv_write(config, config->addr, offset, pdata, count);
+}
+
 static int eeprom_st25dv_read(const struct device *dev, off_t offset, void *buf, size_t len)
 {
 	const struct eeprom_st25dv_config *config = dev->config;
@@ -176,6 +230,11 @@ static int eeprom_st25dv_read(const struct device *dev, off_t offset, void *buf,
 
 	if (!len) {
 		return 0;
+	}
+
+	if (config->i2c_transfer_is_limited && len > EEPROM_ST25DV_I2C_LIMIT_MAX) {
+		LOG_ERR("attempt to read mode bytes than possible");
+		return -EINVAL;
 	}
 
 	if ((offset + len) > config->size) {
@@ -241,7 +300,7 @@ static int eeprom_st25dv_init(const struct device *dev)
  */
 static int _get_enda1(const struct eeprom_st25dv_config *config, uint8_t *const value)
 {
-	assert(value == NULL);
+	assert(value != NULL);
 
 	return _st25dv_read_conf(config, ST25DV_REG_ENDA1, value, ST25DV_ENDA_LENGTH);
 }
@@ -254,7 +313,7 @@ static int _get_enda1(const struct eeprom_st25dv_config *config, uint8_t *const 
  */
 static int _set_enda1(const struct eeprom_st25dv_config *config, uint8_t *const value)
 {
-	assert(value == NULL);
+	assert(value != NULL);
 
 	return _st25dv_write_conf(config, ST25DV_REG_ENDA1, value, ST25DV_ENDA_LENGTH);
 }
@@ -267,7 +326,7 @@ static int _set_enda1(const struct eeprom_st25dv_config *config, uint8_t *const 
  */
 static int _get_enda2(const struct eeprom_st25dv_config *config, uint8_t *const value)
 {
-	assert(value == NULL);
+	assert(value != NULL);
 
 	return _st25dv_read_conf(config, ST25DV_REG_ENDA2, value, ST25DV_ENDA_LENGTH);
 }
@@ -280,7 +339,7 @@ static int _get_enda2(const struct eeprom_st25dv_config *config, uint8_t *const 
  */
 static int _set_enda2(const struct eeprom_st25dv_config *config, uint8_t *const value)
 {
-	assert(value == NULL);
+	assert(value != NULL);
 
 	return _st25dv_write_conf(config, ST25DV_REG_ENDA2, value, ST25DV_ENDA_LENGTH);
 }
@@ -293,7 +352,7 @@ static int _set_enda2(const struct eeprom_st25dv_config *config, uint8_t *const 
  */
 static int _get_enda3(const struct eeprom_st25dv_config *config, uint8_t *const value)
 {
-	assert(value == NULL);
+	assert(value != NULL);
 
 	return _st25dv_read_conf(config, ST25DV_REG_ENDA3, value, ST25DV_ENDA_LENGTH);
 }
@@ -306,7 +365,7 @@ static int _get_enda3(const struct eeprom_st25dv_config *config, uint8_t *const 
  */
 static int _set_enda3(const struct eeprom_st25dv_config *config, uint8_t *const value)
 {
-	assert(value == NULL);
+	assert(value != NULL);
 
 	return _st25dv_write_conf(config, ST25DV_REG_ENDA3, value, ST25DV_ENDA_LENGTH);
 }
@@ -632,6 +691,86 @@ int eeprom_st25dv_write_end_zone(const struct device *dev, const eeprom_st25dv_e
 	return ret;
 }
 
+int eeprom_st25dv_read_mb_mode(const struct device *dev, uint8_t *mb_mode)
+{
+	const struct eeprom_st25dv_config *config = dev->config;
+	struct eeprom_st25dv_data *data = dev->data;
+	int ret;
+
+	if (mb_mode == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = _st25dv_read_conf(config, ST25DV_REG_MB_MODE, mb_mode, ST25DV_MB_MODE_LENGTH);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+int eeprom_st25dv_write_mb_mode(const struct device *dev, uint8_t mb_mode)
+{
+	const struct eeprom_st25dv_config *config = dev->config;
+	struct eeprom_st25dv_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = _st25dv_write_conf(config, ST25DV_REG_MB_MODE, &mb_mode, ST25DV_MB_MODE_LENGTH);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+int eeprom_st25dv_read_mb_ctrl_dyn(const struct device *dev, uint8_t *mb_ctrl_dyn)
+{
+	const struct eeprom_st25dv_config *config = dev->config;
+	struct eeprom_st25dv_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = _st25dv_read_dyn_conf(config, ST25DV_REG_MB_CTRL_DYN, mb_ctrl_dyn,
+				    ST25DV_MB_CTRL_DYN_LENGTH);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+int eeprom_st25dv_write_mb_ctrl_dyn(const struct device *dev, uint8_t mb_ctrl_dyn)
+{
+	const struct eeprom_st25dv_config *config = dev->config;
+	struct eeprom_st25dv_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = _st25dv_write_dyn_conf(config, ST25DV_REG_MB_CTRL_DYN, &mb_ctrl_dyn,
+				     ST25DV_MB_CTRL_DYN_LENGTH);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+int eeprom_st25dv_read_mb_len_dyn(const struct device *dev, uint8_t *mb_len_dyn)
+{
+	const struct eeprom_st25dv_config *config = dev->config;
+	struct eeprom_st25dv_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = _st25dv_read_dyn_conf(config, ST25DV_REG_MBLEN_DYN, mb_len_dyn,
+				    ST25DV_MB_LEN_DYN_LENGTH);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+int eeprom_st25dv_write_mb_len_dyn(const struct device *dev, uint8_t mb_len_dyn)
+{
+	const struct eeprom_st25dv_config *config = dev->config;
+	struct eeprom_st25dv_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = _st25dv_write_dyn_conf(config, ST25DV_REG_MBLEN_DYN, &mb_len_dyn,
+				     ST25DV_MB_LEN_DYN_LENGTH);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
 int eeprom_st25dv_present_i2c_password(const struct device *dev,
 				       const eeprom_st25dv_passwd_t password)
 {
@@ -919,6 +1058,175 @@ int eeprom_st25dv_create_user_zone(const struct device *dev, const uint16_t zone
 	return ret;
 }
 
+int eeprom_st25dv_set_ftm(const struct device *dev, bool enable)
+{
+	int ret = 0;
+	/* Present password to open security session */
+	ret = eeprom_st25dv_present_i2c_password(dev, 0);
+	if (ret < 0) {
+		LOG_ERR("Error presenting I2C password");
+		return ret;
+	}
+
+	if (enable) {
+		/* Authorize FTM mode by setting MB_MODE */
+		ret = eeprom_st25dv_write_mb_mode(dev, 0x01);
+		if (ret < 0) {
+			LOG_ERR("Error write mb_mode %d", ret);
+			return ret;
+		}
+
+		/* Enable FTM: read, set MB_EN bit and write */
+		uint8_t mb_ctrl_dyn = 0;
+
+		ret = eeprom_st25dv_read_mb_ctrl_dyn(dev, &mb_ctrl_dyn);
+		if (ret < 0) {
+			LOG_ERR("Error read mb_ctrl_dyn %d", ret);
+			return ret;
+		}
+
+		mb_ctrl_dyn |= (1u << EEPROM_ST25DV_MB_CTRL_DYN_MBEN_SHIFT);
+		ret = eeprom_st25dv_write_mb_ctrl_dyn(dev, mb_ctrl_dyn);
+		if (ret < 0) {
+			LOG_ERR("Error write mb_ctrl_dyn %d", ret);
+			return ret;
+		}
+	} else {
+		/* Disable FTM: read, clear MB_EN bit and write */
+		uint8_t mb_ctrl_dyn = 0;
+
+		ret = eeprom_st25dv_read_mb_ctrl_dyn(dev, &mb_ctrl_dyn);
+		if (ret < 0) {
+			LOG_ERR("Error read mb_ctrl_dyn %d", ret);
+			return ret;
+		}
+
+		mb_ctrl_dyn &= EEPROM_ST25DV_MB_CTRL_DYN_MBEN_MASK;
+		ret = eeprom_st25dv_write_mb_ctrl_dyn(dev, mb_ctrl_dyn);
+		if (ret < 0) {
+			LOG_ERR("Error write mb_ctrl_dyn %d", ret);
+			return ret;
+		}
+
+		/* Forbid FTM mode by clearing MB_MODE */
+		ret = eeprom_st25dv_write_mb_mode(dev, 0x00);
+		if (ret < 0) {
+			LOG_ERR("Error write mb_mode %d", ret);
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
+int eeprom_st25dv_mailbox_poll_status(const struct device *dev,
+				      eeprom_st25dv_mb_status_poll_t status, bool poll_for_set,
+				      k_timeout_t timeout)
+{
+	uint8_t mb_ctrl_dyn = 0;
+	uint64_t start_time;
+	uint8_t mask;
+	uint8_t compare_mask_value;
+	int ret;
+
+	start_time = k_uptime_ticks();
+
+	/* Set mask according to status to poll */
+	switch (status) {
+	case EEPROM_ST25DV_MB_STATUS_POLL_RF_PUT:
+		mask = EEPROM_ST25DV_MB_CTRL_DYN_RFPUTMSG_MASK;
+		break;
+
+	case EEPROM_ST25DV_MB_STATUS_POLL_HOST_PUT:
+		mask = EEPROM_ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK;
+		break;
+
+	case EEPROM_ST25DV_MB_STATUS_POLL_BOTH:
+		mask = EEPROM_ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK |
+		       EEPROM_ST25DV_MB_CTRL_DYN_RFPUTMSG_MASK;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+	if (poll_for_set) {
+		compare_mask_value = mask;
+	} else {
+		compare_mask_value = 0;
+	}
+
+	/* Poll status field until register matches expected value */
+	do {
+		if (!K_TIMEOUT_EQ(timeout, K_FOREVER) &&
+		    k_uptime_ticks() - start_time >= timeout.ticks) {
+			ret = -EAGAIN;
+			break;
+		}
+
+		ret = eeprom_st25dv_read_mb_ctrl_dyn(dev, &mb_ctrl_dyn);
+		k_msleep(EEPROM_ST25DV_POLL_INTERVAL_MS);
+
+	} while (ret == 0 && (mb_ctrl_dyn & mask) != compare_mask_value);
+
+	if (ret == 0 && (mb_ctrl_dyn & mask) == compare_mask_value) {
+		return 0;
+	} else {
+		return -EIO;
+	}
+}
+
+int eeprom_st25dv_mailbox_read(const struct device *dev, uint8_t *buffer, size_t buffer_length)
+{
+	const struct eeprom_st25dv_config *config = dev->config;
+	int ret = 0;
+	uint8_t mb_len;
+	/*
+	 * MB_LEN contains length of message -1
+	 * Increment by one to get the actual length of the message in mailbox
+	 */
+	ret = eeprom_st25dv_read_mb_len_dyn(dev, &mb_len);
+	uint16_t msg_length = (uint16_t)mb_len + 1;
+	/* Check buffer is big enough to store mailbox message */
+	if (buffer_length < msg_length) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Some hardware may not allow reading 256 bytes in a single read
+	 * Use device properties to know if such limitation is applicable or not.
+	 * If so, split in two reads of 128 bytes
+	 */
+	if (config->i2c_transfer_is_limited && msg_length > EEPROM_ST25DV_I2C_LIMIT_MAX) {
+		ret = eeprom_st25dv_read(dev, ST25DV_REG_MAILBOX_RAM, buffer,
+					 EEPROM_ST25DV_I2C_LIMIT_SPLIT_TRANSFER);
+		if (ret == 0) {
+			ret = eeprom_st25dv_read(
+				dev,
+				ST25DV_REG_MAILBOX_RAM + EEPROM_ST25DV_I2C_LIMIT_SPLIT_TRANSFER,
+				&(buffer[EEPROM_ST25DV_I2C_LIMIT_SPLIT_TRANSFER]),
+				msg_length - EEPROM_ST25DV_I2C_LIMIT_SPLIT_TRANSFER);
+			if (ret == 0) {
+				ret = msg_length;
+			}
+		}
+	} else {
+		ret = eeprom_st25dv_read(dev, ST25DV_REG_MAILBOX_RAM, buffer, msg_length);
+		if (ret == 0) {
+			ret = msg_length;
+		}
+	}
+	return ret;
+}
+
+int eeprom_st25dv_mailbox_write(const struct device *dev, uint8_t *buffer, size_t length)
+{
+	if (length > 256) {
+		return -EINVAL;
+	}
+
+	return eeprom_st25dv_write(dev, ST25DV_REG_MAILBOX_RAM, buffer, length);
+}
+
 static const struct eeprom_driver_api eeprom_st25dv_api = {
 	.read = eeprom_st25dv_read,
 	.write = eeprom_st25dv_write,
@@ -930,6 +1238,7 @@ static const struct eeprom_driver_api eeprom_st25dv_api = {
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.addr = DT_INST_REG_ADDR(inst),                                                    \
 		.size = DT_INST_PROP(inst, size),                                                  \
+		.i2c_transfer_is_limited = DT_INST_PROP(inst, i2c_transfer_is_limited),   \
 	};                                                                                         \
 	static struct eeprom_st25dv_data _st25dv_data_##inst;                                      \
 	DEVICE_DT_INST_DEFINE(inst, eeprom_st25dv_init, eeprom_st25dv_pm, &_st25dv_data_##inst,    \
