@@ -503,18 +503,19 @@ static int capture_disable(const struct device *dev)
 	return 0;
 }
 
-void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
+int net_capture_pkt_with_status(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct k_mem_slab *orig_slab;
 	struct net_pkt *captured;
 	sys_snode_t *sn, *sns;
 	bool skip_clone = false;
+	int ret = -ENOENT;
 
 	/* We must prevent to capture network packet that is already captured
 	 * in order to avoid recursion.
 	 */
 	if (net_pkt_is_captured(pkt)) {
-		return;
+		return -EALREADY;
 	}
 
 	k_mutex_lock(&lock, K_FOREVER);
@@ -522,7 +523,6 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&net_capture_devlist, sn, sns) {
 		struct net_capture *ctx = CONTAINER_OF(sn, struct net_capture,
 						       node);
-		int ret;
 
 		if (!ctx->in_use || !ctx->is_enabled ||
 		    ctx->capture_iface != iface) {
@@ -550,6 +550,7 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 			if (captured == NULL) {
 				NET_DBG("Captured pkt %s", "dropped");
 				/* TODO: update capture data statistics */
+				ret = -ENOMEM;
 				goto out;
 			}
 		}
@@ -560,7 +561,9 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 
 		ret = net_capture_send(ctx->dev, ctx->tunnel_iface, captured);
 		if (ret < 0) {
-			net_pkt_unref(captured);
+			if (!skip_clone) {
+				net_pkt_unref(captured);
+			}
 		}
 
 		net_pkt_set_cooked_mode(pkt, false);
@@ -570,6 +573,13 @@ void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 
 out:
 	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
+void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
+{
+	(void)net_capture_pkt_with_status(iface, pkt);
 }
 
 static int capture_dev_init(const struct device *dev)

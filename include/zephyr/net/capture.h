@@ -211,6 +211,31 @@ static inline void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
 }
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Special variant for net_capture_pkt() which returns the status
+ *        of the send message.
+ *
+ * @param iface Network interface the packet is being sent
+ * @param pkt The network packet that is sent
+ *
+ * @return 0 if captured packet was handled ok, <0 if the capture failed
+ */
+#if defined(CONFIG_NET_CAPTURE)
+int net_capture_pkt_with_status(struct net_if *iface, struct net_pkt *pkt);
+#else
+static inline int net_capture_pkt_with_status(struct net_if *iface, struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+
+	return -ENOTSUP;
+}
+#endif
+
+/** @endcond */
+
 /** The type and direction of the captured data. */
 enum net_capture_packet_type {
 	NET_CAPTURE_HOST,      /**< Packet was sent to us by somebody else */
