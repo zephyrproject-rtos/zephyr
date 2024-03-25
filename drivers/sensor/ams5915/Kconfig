@@ -1,0 +1,13 @@
+# AMS5915 pressure and temperature sensor configuration options
+
+# Copyright (c) 2024 BoRob Engineering
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config AMS5915
+	bool "AMS 5915 is a series of high precision, digital pressure sensors"
+	default y
+	depends on DT_HAS_ANALOGMICRO_AMS5915_ENABLED
+	select I2C
+	help
+	  Enable driver for AMS5915 I2C-based pressure and temperature sensor.
