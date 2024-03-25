@@ -142,7 +142,7 @@
 #error "SYS clock frequency for M7 core doesn't match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
 #endif
 
-/* end of clock feasability check */
+/* end of clock feasibility check */
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
 
@@ -329,7 +329,7 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
 
-/** @brief Verifies clock is part of actve clock configuration */
+/** @brief Verifies clock is part of active clock configuration */
 static int enabled_clock(uint32_t src_clk)
 {
 
@@ -365,7 +365,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -391,7 +391,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -416,7 +416,7 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 
 	err = enabled_clock(pclken->bus);
 	if (err < 0) {
-		/* Attemp to configure a src clock not available or not valid */
+		/* Attempt to configure a src clock not available or not valid */
 		return err;
 	}
 
@@ -852,7 +852,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Configure MCO1/MCO2 based on Kconfig */
 	stm32_clock_control_mco_init();
 
-	/* Set up indiviual enabled clocks */
+	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
 	/* Set up PLLs */
@@ -877,7 +877,7 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
-	/* Preset the prescalers prior to chosing SYSCLK */
+	/* Preset the prescalers prior to choosing SYSCLK */
 	/* Prevents APB clock to go over limits */
 	/* Set buses (Sys,AHB, APB1, APB2 & APB4) prescalers */
 	LL_RCC_SetSysPrescaler(sysclk_prescaler(STM32_D1CPRE));
