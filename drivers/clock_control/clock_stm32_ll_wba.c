@@ -510,7 +510,7 @@ static void set_up_fixed_clock_sources(void)
 int stm32_clock_control_init(const struct device *dev)
 {
 	uint32_t old_flash_freq;
-	int r = 0;
+	int r;
 
 	ARG_UNUSED(dev);
 
