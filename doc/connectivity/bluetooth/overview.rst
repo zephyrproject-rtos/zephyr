@@ -35,10 +35,10 @@ Bluetooth stack.
     * Host-only over UART, SPI, and IPC (shared memory)
     * Combined (Host + Controller)
 
-* Bluetooth-SIG qualified
+* Bluetooth-SIG qualifiable
 
-  * Controller on Nordic Semiconductor hardware
-  * Conformance tests run regularly on all layers
+  * Conformance tests run regularly on all layers (Controller and Host, except
+    BT Classic) on Nordic Semiconductor hardware.
 
 * Bluetooth Low Energy Controller support (LE Link Layer)
 
