@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 BoRob Engineering
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example of a nucleo-g474re overlay with attached AMS5915 sensor to the Arduino I2C bus.
+ *
+ * Device address 0x28 and sensor variant AMS5915-1000-D-N is assumed.
+ */
+&arduino_i2c {
+	status = "okay";
+	ams5915@28 {
+		compatible = "analogmicro,ams5915";
+		reg = <0x28>;
+		lower-limit-press = <0>;  /* limit in kilopascal!*/
+		upper-limit-press = <10000>;  /* limit in kilopascal! */
+	};
+};

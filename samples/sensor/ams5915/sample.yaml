@@ -1,0 +1,10 @@
+sample:
+  description: Demonstration of the AMS5915 Pressure Sensor Driver
+  name: ams5915 sample
+tests:
+  sample.sensor.iaqcore:
+    harness: sensor
+    tags: samples
+    depends_on:
+      - i2c
+      - arduino_i2c
