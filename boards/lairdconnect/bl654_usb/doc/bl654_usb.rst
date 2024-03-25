@@ -175,7 +175,7 @@ the board is working properly with Zephyr:
 
 You can build and flash the example to make sure Zephyr is running correctly on
 your board. The LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/bl654_usb/bl654_usb.dts`.
+:zephyr_file:`boards/lairdconnect/bl654_usb/bl654_usb_nrf52840.dts`.
 
 
 References

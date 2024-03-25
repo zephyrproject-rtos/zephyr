@@ -62,7 +62,7 @@ The following features are supported:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nuvoton/npcx9m6f_evb/npcx9m6f_evb_defconfig`
+:zephyr_file:`boards/nuvoton/npcx9m6f_evb/npcx9m6f_evb_npcx9m6f_defconfig`
 
 
 Connections and IOs

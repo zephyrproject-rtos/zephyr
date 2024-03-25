@@ -96,7 +96,7 @@ The Zephyr nucleo_f410rb/stm32f410rx board configuration supports the following 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f410rb/nucleo_f410rb_defconfig`
+:zephyr_file:`boards/st/nucleo_f410rb/nucleo_f410rb_stm32f410rx_defconfig`
 
 
 Connections and IOs

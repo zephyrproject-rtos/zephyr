@@ -41,7 +41,7 @@ hardware features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/intel/socfpga/agilex_socdk/intel_socfpga_agilex_socdk_defconfig`
+:zephyr_file:`boards/intel/socfpga/agilex_socdk/intel_socfpga_agilex_socdk_agilex_defconfig`
 
 Programming and Debugging
 *************************

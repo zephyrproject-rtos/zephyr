@@ -95,7 +95,7 @@ The Zephyr nucleo_l011k4/stm32l011xx board configuration supports the following 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l011k4/nucleo_l011k4_defconfig`
+:zephyr_file:`boards/st/nucleo_l011k4/nucleo_l011k4_stm32l011xx_defconfig`
 
 Connections and IOs
 ===================

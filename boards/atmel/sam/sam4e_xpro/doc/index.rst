@@ -72,7 +72,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4e_xpro/sam4e_xpro_defconfig`.
+:zephyr_file:`boards/atmel/sam/sam4e_xpro/sam4e_xpro_sam4e16e_defconfig`.
 
 Connections and IOs
 ===================

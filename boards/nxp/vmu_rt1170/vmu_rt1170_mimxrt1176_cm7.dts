@@ -8,7 +8,7 @@
 
 #include <nxp/nxp_rt11xx_cm7.dtsi>
 #include <zephyr/dt-bindings/led/led.h>
-#include "vmu_rt1170.dtsi"
+#include "vmu_rt1170_mimxrt1176_cm7.dtsi"
 
 / {
 	model = "NXP VMU RT1170";

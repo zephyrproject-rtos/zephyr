@@ -121,7 +121,7 @@ hardware features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/blues/swan_r5/swan_r5_defconfig`
+:zephyr_file:`boards/blues/swan_r5/swan_r5_stm32l4r5xx_defconfig`
 
 
 Connections and IOs

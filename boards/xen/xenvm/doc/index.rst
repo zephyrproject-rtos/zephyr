@@ -35,7 +35,7 @@ The kernel currently does not support other hardware features on this platform.
 The default configuration for this board can be found in these files:
 
 - :zephyr_file:`boards/xen/xenvm/Kconfig.defconfig`
-- :zephyr_file:`boards/xen/xenvm/xenvm_defconfig`
+- :zephyr_file:`boards/xen/xenvm/xenvm_xenvm_defconfig`
 
 Devices
 ========
@@ -176,7 +176,7 @@ environment variable, like so:
 Then, generated "domu-libxl.dtb" file can be de-compiled using "dtc" tool.
 
 Use information from de-compiled DTB file to update all related entries in
-provided "xenvm.dts" file. If memory layout is also changed, you may need to
+provided "xenvm_xenvm.dts" file. If memory layout is also changed, you may need to
 update :code:`CONFIG_SRAM_BASE_ADDRESS` as well.
 
 References

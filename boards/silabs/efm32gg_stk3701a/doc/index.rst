@@ -70,7 +70,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32gg_stk3701a/efm32gg_stk3701a_defconfig`
+:zephyr_file:`boards/silabs/efm32gg_stk3701a/efm32gg_stk3701a_efm32gg11b820f2048gl192_defconfig`
 
 Other hardware features are currently not supported by the port.
 

@@ -83,7 +83,7 @@ The efr32mg_sltb004a/efr32mg12p332f1024gl125 board configuration supports the fo
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efr32mg_sltb004a/efr32mg_sltb004a_defconfig`
+:zephyr_file:`boards/silabs/efr32mg_sltb004a/efr32mg_sltb004a_efr32mg12p332f1024gl125_defconfig`
 
 Other hardware features are currently not supported by the port.
 

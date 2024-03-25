@@ -181,7 +181,7 @@ The Zephyr nucleo_wba55cg/stm32wba55xx board configuration supports the followin
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wba55cg/nucleo_wba55cg_defconfig`
+:zephyr_file:`boards/st/nucleo_wba55cg/nucleo_wba55cg_stm32wba55xx_defconfig`
 
 Bluetooh support
 ----------------

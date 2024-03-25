@@ -122,7 +122,7 @@ The Zephyr nucleo_l432kc/stm32l432xx board configuration supports the following 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l432kc/nucleo_l432kc_defconfig`
+:zephyr_file:`boards/st/nucleo_l432kc/nucleo_l432kc_stm32l432xx_defconfig`
 
 
 Connections and IOs

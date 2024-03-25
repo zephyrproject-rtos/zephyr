@@ -177,7 +177,7 @@ The Zephyr nucleo_wb55rg/stm32wb55xx board configuration supports the following 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wb55rg/nucleo_wb55rg_defconfig`
+:zephyr_file:`boards/st/nucleo_wb55rg/nucleo_wb55rg_stm32wb55xx_defconfig`
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================

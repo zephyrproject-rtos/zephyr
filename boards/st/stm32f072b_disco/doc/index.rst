@@ -98,7 +98,7 @@ features:
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32f072b_disco/stm32f072b_disco_defconfig`
+:zephyr_file:`boards/st/stm32f072b_disco/stm32f072b_disco_stm32f072xb_defconfig`
 
 
 Pin Mapping

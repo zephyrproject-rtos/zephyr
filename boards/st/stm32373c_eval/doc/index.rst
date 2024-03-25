@@ -85,7 +85,7 @@ The Zephyr stm32373c_eval/stm32f373xc board configuration supports the following
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32373c_eval/stm32373c_eval_defconfig`
+:zephyr_file:`boards/st/stm32373c_eval/stm32373c_eval_stm32f373xc_defconfig`
 
 Connections and IOs
 ===================

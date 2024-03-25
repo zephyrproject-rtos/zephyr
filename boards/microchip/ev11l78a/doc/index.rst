@@ -73,7 +73,7 @@ Other hardware features are not currently supported by Zephyr.
 Refer to the `EV11L78A Schematics`_ for a detailed hardware diagram.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/microchip/ev11l78a/ev11l78a_defconfig`.
+:zephyr_file:`boards/microchip/ev11l78a/ev11l78a_samd20e16_defconfig`.
 
 Serial Port
 ===========

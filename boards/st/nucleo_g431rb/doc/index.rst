@@ -125,7 +125,7 @@ The Zephyr nucleo_g431rb/stm32g431xx board configuration supports the following 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_g431rb/nucleo_g431rb_defconfig`
+:zephyr_file:`boards/st/nucleo_g431rb/nucleo_g431rb_stm32g431xx_defconfig`
 
 
 Connections and IOs

@@ -121,7 +121,7 @@ The Zephyr stm32g081b_eval/stm32g081xx board configuration supports the followin
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32g081b_eval/stm32g081b_eval_defconfig`
+:zephyr_file:`boards/st/stm32g081b_eval/stm32g081b_eval_stm32g081xx_defconfig`
 
 Connections and IOs
 ===================

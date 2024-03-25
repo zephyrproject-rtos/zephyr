@@ -136,7 +136,7 @@ The current Zephyr stm32h7b3i_dk/stm32h7b3xx board configuration supports the fo
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32h7b3i_dk/stm32h7b3i_dk_defconfig`
+:zephyr_file:`boards/st/stm32h7b3i_dk/stm32h7b3i_dk_stm32h7b3xx_defconfig`
 
 Pin Mapping
 ===========

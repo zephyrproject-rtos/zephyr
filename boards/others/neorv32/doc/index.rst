@@ -44,7 +44,7 @@ Processor (SoC):
 +-----------+------------+-------------------------------------+
 
 The default board configuration for the NEORV32 Processor (SoC) can be found in
-the defconfig file: :file:`boards/riscv/neorv32/neorv32_defconfig`.
+the defconfig file: :file:`boards/riscv/neorv32/neorv32_neorv32_defconfig`.
 
 System Clock
 ============

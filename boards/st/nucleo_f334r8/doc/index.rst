@@ -95,7 +95,7 @@ The Zephyr nucleo_f334r8/stm32f334x8 board configuration supports the following 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f334r8/nucleo_f334r8_defconfig`
+:zephyr_file:`boards/st/nucleo_f334r8/nucleo_f334r8_stm32f334x8_defconfig`
 
 Connections and IOs
 ===================

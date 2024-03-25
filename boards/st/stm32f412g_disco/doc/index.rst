@@ -103,7 +103,7 @@ The Zephyr stm32f412g_disco/stm32f412zx board configuration supports the followi
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32f412g_disco/stm32f412g_disco_defconfig`
+:zephyr_file:`boards/st/stm32f412g_disco/stm32f412g_disco_stm32f412zx_defconfig`
 
 
 Pin Mapping

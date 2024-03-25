@@ -115,7 +115,7 @@ The Zephyr nucleo_f429zi/stm32f429xx board configuration supports the following 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f429zi/nucleo_f429zi_defconfig`
+:zephyr_file:`boards/st/nucleo_f429zi/nucleo_f429zi_stm32f429xx_defconfig`
 
 
 Connections and IOs
@@ -186,7 +186,7 @@ Flash partitions for MCUBoot bootloader
 
 The on-board STM32F429ZI MCU has 2MBs of internal flash memory. To use `MCUboot`_,
 define a :ref:`Zephyr partition table <flash_map_api>` for the flash memory in
-its devicetree file ``nucleo_f429zi.dts``. As a reference, a partition table for
+its devicetree file ``nucleo_f429zi_stm32f429xx.dts``. As a reference, a partition table for
 MCUBoot is already defined in the devicetree file, with these settings:
 
 - `MCUBoot`_ bootloader partition takes 64K bytes.

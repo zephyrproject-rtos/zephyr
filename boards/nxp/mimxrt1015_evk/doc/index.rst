@@ -100,7 +100,7 @@ already supported, which can also be re-used on this mimxrt1015_evk/mimxrt1015 b
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1015_evk/mimxrt1015_evk_defconfig`
+:zephyr_file:`boards/nxp/mimxrt1015_evk/mimxrt1015_evk_mimxrt1015_defconfig`
 
 Other hardware features are not currently supported by the port.
 

@@ -79,7 +79,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samd21_xpro/samd21_xpro_defconfig`.
+:zephyr_file:`boards/atmel/sam0/samd21_xpro/samd21_xpro_samd21j18a_defconfig`.
 
 Pin Mapping
 ===========

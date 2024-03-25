@@ -210,7 +210,7 @@ The Zephyr nucleo_u5a5zj_q/stm32u5a5xx board configuration supports the followin
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_u5a5zj_q/nucleo_u5a5zj_q_defconfig`
+:zephyr_file:`boards/st/nucleo_u5a5zj_q/nucleo_u5a5zj_q_stm32u5a5xx_defconfig`
 
 
 Connections and IOs

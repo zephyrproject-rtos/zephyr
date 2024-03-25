@@ -80,7 +80,7 @@ features:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec15xxevb_assy6853/mec15xxevb_assy6853_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec15xxevb_assy6853/mec15xxevb_assy6853_mec1501_hsz_defconfig` Kconfig file.
 
 Connections and IOs
 ===================

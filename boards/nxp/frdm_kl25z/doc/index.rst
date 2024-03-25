@@ -64,7 +64,7 @@ The frdm_kl25z/mkl25z4 board configuration supports the following hardware featu
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/frdm_kl25z/frdm_kl25z_defconfig`
+:zephyr_file:`boards/nxp/frdm_kl25z/frdm_kl25z_mkl25z4_defconfig`
 
 Other hardware features are not currently supported by the port.
 

@@ -85,7 +85,7 @@ The mec172xmodular_assy6930/mec172x_nsz (Rev. B) board configuration supports th
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec172xmodular_assy6930/mec172xmodular_assy6930_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec172xmodular_assy6930/mec172xmodular_assy6930_mec172x_nsz_defconfig` Kconfig file.
 
 Connections and IOs
 ===================

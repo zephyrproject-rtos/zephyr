@@ -112,7 +112,7 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_f207zg/nucleo_f207zg_defconfig`
+:zephyr_file:`boards/st/nucleo_f207zg/nucleo_f207zg_stm32f207xx_defconfig`
 
 
 Connections and IOs

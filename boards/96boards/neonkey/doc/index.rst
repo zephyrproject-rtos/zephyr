@@ -75,7 +75,7 @@ features:
 More details about the board can be found at `96Boards website`_.
 
 The default board configuration can be found in
-:zephyr_file:`boards/96boards/neonkey/96b_neonkey_defconfig`
+:zephyr_file:`boards/96boards/neonkey/96b_neonkey_stm32f411xe_defconfig`
 
 Connections and IOs
 ===================

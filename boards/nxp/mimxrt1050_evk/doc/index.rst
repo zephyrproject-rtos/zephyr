@@ -146,7 +146,7 @@ already supported, which can also be re-used on this mimxrt1050_evk/mimxrt1052 b
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1050_evk/mimxrt1050_evk_defconfig`
+:zephyr_file:`boards/nxp/mimxrt1050_evk/mimxrt1050_evk_mimxrt1052_defconfig`
 
 Other hardware features are not currently supported by the port.
 

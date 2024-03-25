@@ -2,7 +2,7 @@ boards:
 - name: nrf52_bsim
   vendor: zephyr
   socs:
-  - name: native
+  - name: nrf52833
 - name: nrf5340bsim
   vendor: zephyr
   socs:

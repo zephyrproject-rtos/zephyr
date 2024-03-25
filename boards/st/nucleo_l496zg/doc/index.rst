@@ -133,7 +133,7 @@ The Zephyr nucleo_l496zg/stm32l496xx board configuration supports the following 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l496zg/nucleo_l496zg_defconfig`
+:zephyr_file:`boards/st/nucleo_l496zg/nucleo_l496zg_stm32l496xx_defconfig`
 
 
 Connections and IOs

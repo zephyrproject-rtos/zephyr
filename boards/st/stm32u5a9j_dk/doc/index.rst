@@ -87,7 +87,7 @@ hardware features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration per core can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32u5a9j_dk/stm32u5a9j_dk_defconfig`
+:zephyr_file:`boards/st/stm32u5a9j_dk/stm32u5a9j_dk_stm32u5a9xx_defconfig`
 
 Pin Mapping
 ===========

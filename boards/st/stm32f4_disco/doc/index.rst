@@ -104,7 +104,7 @@ The Zephyr stm32f4_disco/stm32f407xx board configuration supports the following 
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32f4_disco/stm32f4_disco_defconfig`
+:zephyr_file:`boards/st/stm32f4_disco/stm32f4_disco_stm32f407xx_defconfig`
 
 
 Pin Mapping

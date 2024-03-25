@@ -56,7 +56,7 @@ RTC           on-chip     counter
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/nxp/ucans32k1sic/ucans32k1sic_defconfig`.
+:zephyr_file:`boards/nxp/ucans32k1sic/ucans32k1sic_s32k146_defconfig`.
 
 Connections and IOs
 ===================

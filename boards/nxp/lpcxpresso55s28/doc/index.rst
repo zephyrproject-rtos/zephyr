@@ -88,7 +88,7 @@ already supported, which can also be re-used on this lpcxpresso55s28/lpc55s28 bo
 Other hardware features are not currently enabled.
 
 The default configuration file
-:zephyr_file:`boards/nxp/lpcxpresso55s28/lpcxpresso55s28_defconfig`
+:zephyr_file:`boards/nxp/lpcxpresso55s28/lpcxpresso55s28_lpc55s28_defconfig`
 
 Connections and IOs
 ===================

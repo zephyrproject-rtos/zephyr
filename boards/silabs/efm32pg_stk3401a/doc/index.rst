@@ -63,7 +63,7 @@ The efm32pg_stk3401a/efm32pg1b200f256gm48 board configuration supports the follo
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32pg_stk3401a/efm32pg_stk3401a_defconfig`
+:zephyr_file:`boards/silabs/efm32pg_stk3401a/efm32pg_stk3401a_efm32pg1b200f256gm48_defconfig`
 
 Other hardware features are currently not supported by the port.
 

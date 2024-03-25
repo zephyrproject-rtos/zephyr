@@ -32,7 +32,7 @@ hardware features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in (NON-SMP)
-:zephyr_file:`boards/khadas/edgev/khadas_edgev_defconfig`
+:zephyr_file:`boards/khadas/edgev/khadas_edgev_rk3399_defconfig`
 
 There are multiple serial ports on the board: Zephyr is using
 uart2 as serial console.

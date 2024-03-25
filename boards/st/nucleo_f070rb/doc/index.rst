@@ -98,7 +98,7 @@ The Zephyr nucleo_f070rb/stm32f070xb board configuration supports the following 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f070rb/nucleo_f070rb_defconfig`
+:zephyr_file:`boards/st/nucleo_f070rb/nucleo_f070rb_stm32f070xb_defconfig`
 
 Connections and IOs
 ===================

@@ -66,7 +66,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4s_xplained/sam4s_xplained_defconfig`.
+:zephyr_file:`boards/atmel/sam/sam4s_xplained/sam4s_xplained_sam4s16c_defconfig`.
 
 Connections and IOs
 ===================

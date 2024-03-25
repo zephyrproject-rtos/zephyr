@@ -60,7 +60,7 @@ The ip_k66f/mk66f18 board configuration supports the following hardware features
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/segger/ip_k66f/ip_k66f_defconfig`
+:zephyr_file:`boards/segger/ip_k66f/ip_k66f_mk66f18_defconfig`
 
 Micrel/Microchip KSZ8794CNX Ethernet Switch is not currently
 supported.

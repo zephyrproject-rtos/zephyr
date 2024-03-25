@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "hsdk.dtsi"
+#include "hsdk_arc_hsdk.dtsi"
 
 / {
 	model = "hsdk";

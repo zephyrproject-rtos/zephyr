@@ -112,7 +112,7 @@ The Zephyr nucleo_f091rc/stm32f091xc board configuration supports the following 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f091rc/nucleo_f091rc_defconfig`
+:zephyr_file:`boards/st/nucleo_f091rc/nucleo_f091rc_stm32f091xc_defconfig`
 
 Connections and IOs
 ===================

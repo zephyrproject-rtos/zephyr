@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "rd_rw612_bga-pinctrl.dtsi"
+#include "rd_rw612_bga_rw612-pinctrl.dtsi"
 / {
 
 	aliases {

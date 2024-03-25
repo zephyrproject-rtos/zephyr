@@ -145,7 +145,7 @@ hardware features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l4r5zi/nucleo_l4r5zi_defconfig`
+:zephyr_file:`boards/st/nucleo_l4r5zi/nucleo_l4r5zi_stm32l4r5xx_defconfig`
 
 
 Connections and IOs

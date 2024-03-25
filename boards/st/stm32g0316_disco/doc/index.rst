@@ -59,7 +59,7 @@ The Zephyr stm32g0316_disco/stm32g031xx board configuration supports the followi
 Other hardware features are not currently supported by the port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32g0316_disco/stm32g0316_disco_defconfig`
+:zephyr_file:`boards/st/stm32g0316_disco/stm32g0316_disco_stm32g031xx_defconfig`
 
 Connections and IOs
 ===================

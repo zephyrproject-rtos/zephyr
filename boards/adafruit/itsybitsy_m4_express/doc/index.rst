@@ -63,7 +63,7 @@ hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/itsybitsy_m4_express/adafruit_itsybitsy_m4_express_defconfig`.
+:zephyr_file:`boards/adafruit/itsybitsy_m4_express/adafruit_itsybitsy_m4_express_samd51g19a_defconfig`.
 
 Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific RTC.
 To use the RTC, set :code:`CONFIG_CORTEX_M_SYSTICK=n` and set

@@ -89,7 +89,7 @@ The frdm_kw41z/mkw41z4 board configuration supports the following hardware featu
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/frdm_kw41z/frdm_kw41z_defconfig`
+:zephyr_file:`boards/nxp/frdm_kw41z/frdm_kw41z_mkw41z4_defconfig`
 
 Other hardware features are not currently supported by the port.
 

@@ -225,13 +225,13 @@ There are two possible options for Zephyr console output:
   To enable console and shell over UART
 
   - switch the console lines from cdc_acm to uart4
-    (:file:`boards/st/sensortile_box_pro/sensortile_box_pro.dts`)
+    (:file:`boards/st/sensortile_box_pro/sensortile_box_pro_stm32u585xx.dts`)
 
   - comment out the USB configuration macros
-    (:file:`boards/st/sensortile_box_pro/sensortile_box_pro_defconfig`)
+    (:file:`boards/st/sensortile_box_pro/sensortile_box_pro_stm32u585xx_defconfig`)
 
 .. code-block:: dts
-   :caption: boards/st/sensortile_box_pro/sensortile_box_pro.dts
+   :caption: boards/st/sensortile_box_pro/sensortile_box_pro_stm32u585xx.dts
 
    / {
        chosen {
@@ -243,7 +243,7 @@ There are two possible options for Zephyr console output:
      };
 
 .. code-block:: Kconfig
-   :caption: boards/st/sensortile_box_pro/sensortile_box_pro_defconfig
+   :caption: boards/st/sensortile_box_pro/sensortile_box_pro_stm32u585xx_defconfig
 
    # Comment out following USB config lines when
    # switching console to UART
@@ -258,7 +258,7 @@ There are two possible options for Zephyr console output:
 - through USB as USB CDC/ACM class. This is the default case present in the board dts file.
 
 .. code-block:: dts
-   :caption: boards/st/sensortile_box_pro/sensortile_box_pro.dts
+   :caption: boards/st/sensortile_box_pro/sensortile_box_pro_stm32u585xx.dts
 
    / {
        chosen {

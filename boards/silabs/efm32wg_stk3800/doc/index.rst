@@ -60,7 +60,7 @@ The efm32wg_stk3800/efm32wg990f256 board configuration supports the following ha
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32wg_stk3800/efm32wg_stk3800_defconfig`
+:zephyr_file:`boards/silabs/efm32wg_stk3800/efm32wg_stk3800_efm32wg990f256_defconfig`
 
 Other hardware features are currently not supported by the port.
 

@@ -104,7 +104,7 @@ The Zephyr nucleo_l152re/stm32l152xe board configuration supports the following 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_l152re/nucleo_l152re_defconfig`
+:zephyr_file:`boards/st/nucleo_l152re/nucleo_l152re_stm32l152xe_defconfig`
 
 Connections and IOs
 ===================

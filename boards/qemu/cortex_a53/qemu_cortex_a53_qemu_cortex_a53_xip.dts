@@ -5,4 +5,4 @@
  *
  */
 
-#include "qemu_cortex_a53.dts"
+#include "qemu_cortex_a53_qemu_cortex_a53.dts"

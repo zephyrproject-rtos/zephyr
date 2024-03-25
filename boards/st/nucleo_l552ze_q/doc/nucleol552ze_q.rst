@@ -172,8 +172,8 @@ The default configuration can be found in the defconfig and dts files:
 
 - Secure target:
 
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_defconfig`
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q.dts`
+  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx_defconfig`
+  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx.dts`
 
 - Non-Secure target:
 

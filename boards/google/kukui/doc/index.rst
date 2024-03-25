@@ -48,7 +48,7 @@ The following features are supported:
 Other features (such as I2C) are not available in Zephyr.
 
 The default configuration can be found in
-:zephyr_file:`boards/google/kukui/google_kukui_defconfig`
+:zephyr_file:`boards/google/kukui/google_kukui_stm32f098xx_defconfig`
 
 Connections and IOs
 ===================

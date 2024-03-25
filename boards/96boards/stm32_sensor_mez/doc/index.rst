@@ -74,7 +74,7 @@ hardware features:
 +-----------+------------+-------------------------------------+
 
 The default board configuration can be found in
-:zephyr_file:`boards/96boards/stm32_sensor_mez/96b_stm32_sensor_mez_defconfig`
+:zephyr_file:`boards/96boards/stm32_sensor_mez/96b_stm32_sensor_mez_stm32f446xx_defconfig`
 
 Connections and IOs
 ===================

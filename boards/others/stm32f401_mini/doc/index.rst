@@ -70,7 +70,7 @@ hardware features:
 +------------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/others/stm32f401_mini/stm32f401_mini_defconfig`
+:zephyr_file:`boards/others/stm32f401_mini/stm32f401_mini_stm32f401xc_defconfig`
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

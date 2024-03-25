@@ -126,7 +126,7 @@ The Zephyr STM32WB5MM-DK board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32wb5mm_dk/stm32wb5mm_dk_defconfig`
+:zephyr_file:`boards/st/stm32wb5mm_dk/stm32wb5mm_dk_stm32wb55xx_defconfig`
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================

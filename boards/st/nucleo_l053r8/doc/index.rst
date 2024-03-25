@@ -96,7 +96,7 @@ The Zephyr nucleo_l053r8/stm32l053xx board configuration supports the following 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l053r8/nucleo_l053r8_defconfig`
+:zephyr_file:`boards/st/nucleo_l053r8/nucleo_l053r8_stm32l053xx_defconfig`
 
 Connections and IOs
 ===================

@@ -5,4 +5,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "roc_rk3568_pc.dts"
+#include "roc_rk3568_pc_rk3568.dts"

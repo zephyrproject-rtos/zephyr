@@ -59,7 +59,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/seeed/seeeduino_xiao/seeeduino_xiao_defconfig`.
+:zephyr_file:`boards/seeed/seeeduino_xiao/seeeduino_xiao_samd21g18a_defconfig`.
 
 Connections and IOs
 ===================

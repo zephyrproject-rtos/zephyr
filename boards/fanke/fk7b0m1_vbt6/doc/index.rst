@@ -85,7 +85,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration per core can be found in
-:zephyr_file:`boards/fanke/fk7b0m1_vbt6/fk7b0m1_vbt6_defconfig`
+:zephyr_file:`boards/fanke/fk7b0m1_vbt6/fk7b0m1_vbt6_stm32h7b0xx_defconfig`
 
 Pin Mapping
 ===========

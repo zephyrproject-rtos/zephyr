@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "teensy40.dts"
+#include "teensy40_mimxrt1062.dts"
 
 / {
 	model = "PJRC TEENSY 4.1 board";

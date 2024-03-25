@@ -74,7 +74,7 @@ The Zephyr nucleo_f042k6/stm32f042x6 board configuration supports the following 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f042k6/nucleo_f042k6_defconfig`
+:zephyr_file:`boards/st/nucleo_f042k6/nucleo_f042k6_stm32f042x6_defconfig`
 
 Connections and IOs
 ===================
