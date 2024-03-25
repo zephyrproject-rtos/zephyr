@@ -25,12 +25,11 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, core,
                  linkserver=DEFAULT_LINKSERVER_EXE,
                  dt_flash=True, erase=True,
-                 probe=1,
                  gdb_host='',
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
                  semihost_port=DEFAULT_LINKSERVER_SEMIHOST_PORT,
                  override=[],
-                 tui=False, tool_opt=[]):
+                 tui=False, tool_opt=[], dev_id = None):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -43,12 +42,12 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         self.linkserver = linkserver
         self.dt_flash = dt_flash
         self.erase = erase
-        self.probe = probe
         self.gdb_host = gdb_host
         self.gdb_port = gdb_port
         self.semihost_port = semihost_port
         self.tui_arg = ['-tui'] if tui else []
         self.override = override
+        self.dev_id = dev_id
         self.override_cli = self._build_override_cli()
 
         self.tool_opt = []
@@ -66,13 +65,15 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                           tool_opt=True, file=True)
 
     @classmethod
+    def dev_id_help(cls) -> str:
+        return '''Device identifier. Use it to select the debugger serial number
+                  of the device connected over USB when multiple are connected.'''
+
+    @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--device', required=True, help='device name')
 
         parser.add_argument('--core', required=False, help='core of the device')
-
-        parser.add_argument('--probe', default=1,
-                            help='interface to use (index, no serial number), default is 1')
 
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
@@ -99,11 +100,11 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                                  linkserver=args.linkserver,
                                  dt_flash=args.dt_flash,
                                  erase=args.erase,
-                                 probe=args.probe,
                                  semihost_port=args.semihost_port,
                                  gdb_port=args.gdb_port,
                                  override=args.override,
-                                 tui=args.tui, tool_opt=args.tool_opt)
+                                 tui=args.tui, tool_opt=args.tool_opt,
+                                 dev_id=args.dev_id)
 
     @property
     def linkserver_version_str(self):
@@ -130,9 +131,9 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
             linkserver_cmd = ([self.linkserver] +
                               ["gdbserver"]    +
-                              ["--probe", "#"+str(self.probe) ] +
                               ["--gdb-port", str(self.gdb_port )] +
                               ["--semihost-port", str(self.semihost_port) ] +
+                              ([f"--probe={self.dev_id}"] if self.dev_id else []) +
                               _cmd_core +
                               self.override_cli +
                               [self.device])
@@ -169,7 +170,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         else:
             _cmd_core = ""
 
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", "#"+str(self.probe)] +
+        linkserver_cmd = ([self.linkserver, "flash"] +
+                          ([f"--probe={self.dev_id}"] if self.dev_id else []) +
                           [self.device+_cmd_core] + ["erase"])
         self.logger.debug("flash erase command = " + str(linkserver_cmd))
         self.check_call(linkserver_cmd)
@@ -191,7 +193,9 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         else:
             _cmd_core = ""
 
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", "#"+str(self.probe)] + self.override_cli + [self.device+_cmd_core])
+        linkserver_cmd = ([self.linkserver, "flash"] +
+                          ([f"--probe={self.dev_id}"] if self.dev_id else []) +
+                          self.override_cli + [self.device+_cmd_core])
         self.logger.debug(f'LinkServer cmd:  + {linkserver_cmd}')
 
         if self.erase:
