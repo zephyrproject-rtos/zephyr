@@ -207,6 +207,8 @@ The stack is split up as follows in the source tree:
 ``doc/guides/bluetooth/``
   Extra documentation, such as PICS documents.
 
+.. _bluetooth-host:
+
 Host
 ****
 

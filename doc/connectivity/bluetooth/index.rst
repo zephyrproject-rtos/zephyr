@@ -13,7 +13,7 @@ hardware, as well as portions of a Classical Bluetooth (BR/EDR) Host layer.
 .. toctree::
    :maxdepth: 1
 
-   overview.rst
+   features.rst
    bluetooth-arch.rst
    bluetooth-ctlr-arch.rst
    bluetooth-audio-arch.rst

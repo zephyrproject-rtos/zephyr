@@ -1,7 +1,7 @@
-.. _bluetooth-overview:
+.. _bluetooth-features:
 
-Overview
-########
+Supported features
+##################
 
 .. contents::
     :local:
@@ -14,12 +14,6 @@ implementations of the Bluetooth specification (Linux's BlueZ) as well as the
 design and development of BLE radio hardware, the protocol stack in Zephyr has
 grown to be mature and feature-rich, as can be seen in the section below.
 
-Supported Features
-******************
-
-Zephyr comes integrated with a feature-rich and highly configurable
-Bluetooth stack.
-
 * Bluetooth v5.3 compliant
 
   * Highly configurable
@@ -29,18 +23,19 @@ Bluetooth stack.
   * Portable to all architectures supported by Zephyr (including big and
     little endian, alignment flavors and more)
 
-  * Support for all combinations of Host and Controller builds:
+  * Support for :ref:`all combinations <bluetooth-hw-setup>` of Host and
+    Controller builds:
 
     * Controller-only (HCI) over UART, SPI, USB and IPC physical transports
     * Host-only over UART, SPI, and IPC (shared memory)
     * Combined (Host + Controller)
 
-* Bluetooth-SIG qualifiable
+* :ref:`Bluetooth-SIG qualifiable <bluetooth-qual>`
 
   * Conformance tests run regularly on all layers (Controller and Host, except
     BT Classic) on Nordic Semiconductor hardware.
 
-* Bluetooth Low Energy Controller support (LE Link Layer)
+* :ref:`Bluetooth Low Energy Controller <bluetooth-ctlr-arch>` (LE Link Layer)
 
   * Unlimited role and connection count, all roles supported
   * All v5.3 specification features supported (except a few minor items)
@@ -53,7 +48,7 @@ Bluetooth stack.
     module
   * Support for Controller (HCI) builds over different physical transports
 
-* Bluetooth Host support
+* :ref:`Bluetooth Host <bluetooth-host>`
 
   * Generic Access Profile (GAP) with all possible LE roles
 
@@ -102,7 +97,7 @@ Bluetooth stack.
 
   * Verified with multiple popular controllers
 
-* LE Audio in Host and Controller
+* :ref:`LE Audio in Host and Controller <bluetooth_audio_arch>`
 
   * Isochronous channels
 
