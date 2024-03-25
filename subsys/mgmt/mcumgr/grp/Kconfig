@@ -19,3 +19,5 @@ rsource "stat_mgmt/Kconfig"
 rsource "zephyr_basic/Kconfig"
 
 rsource "settings_mgmt/Kconfig"
+
+rsource "enum_mgmt/Kconfig"
