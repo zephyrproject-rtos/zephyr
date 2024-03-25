@@ -46,6 +46,8 @@ extern "C" {
 #include <core_cr5.h>
 #elif defined(CONFIG_CPU_CORTEX_R7)
 #include <core_cr7.h>
+#elif defined(CONFIG_CPU_CORTEX_R8)
+#include <core_cr8.h>
 #elif defined(CONFIG_CPU_CORTEX_R52)
 #include <core_cr52.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_A)
