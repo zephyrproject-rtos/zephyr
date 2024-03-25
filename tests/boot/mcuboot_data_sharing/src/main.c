@@ -12,14 +12,16 @@
 #include <bootutil/boot_status.h>
 #include <bootutil/image.h>
 #include <mcuboot_version.h>
+#include <zephyr/storage/flash_map.h>
 
-#define FLASH_SECTOR_SIZE 1024
-#define FLASH_SECTOR_SIZE_KB 4
-#define FLASH_MAX_APP_SECTORS 34
+#define FLASH_SECTOR_SIZE 4096
 #define FLASH_RESERVED_SECTORS 1
-#define FLASH_MAX_APP_SIZE ((FLASH_MAX_APP_SECTORS - FLASH_RESERVED_SECTORS) \
-			    * FLASH_SECTOR_SIZE_KB)
 #define RUNNING_SLOT 0
+#define GET_FLASH_MAX_APP_SIZE(slot_number)	\
+	(FIXED_PARTITION_SIZE(UTIL_CAT(slot, UTIL_CAT(slot_number, _partition))))
+
+#define FLASH_MAX_APP_SIZE (GET_FLASH_MAX_APP_SIZE(RUNNING_SLOT) -	\
+			    FLASH_RESERVED_SECTORS * FLASH_SECTOR_SIZE)
 
 ZTEST(mcuboot_shared_data, test_mode)
 {
@@ -94,7 +96,6 @@ ZTEST(mcuboot_shared_data, test_max_application_size)
 	rc = settings_runtime_get("blinfo/max_application_size", var, sizeof(var));
 	zassert_equal(rc, sizeof(var), "Expected data length mismatch");
 	memcpy(&value, var, sizeof(value));
-	value /= FLASH_SECTOR_SIZE;
 	zassert_equal(value, FLASH_MAX_APP_SIZE, "Expected data mismatch");
 }
 
