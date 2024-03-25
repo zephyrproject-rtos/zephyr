@@ -3,7 +3,7 @@
 
 description: AMS5915 pressure and temperature sensor
 
-compatible: "anamicro,ams5915"
+compatible: "analogmicro,ams5915"
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
