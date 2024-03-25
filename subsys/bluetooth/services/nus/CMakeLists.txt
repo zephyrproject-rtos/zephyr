@@ -9,6 +9,6 @@ zephyr_library_sources(
 	nus_inst.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_BT_NUS_AUTO_START_BLUETOOTH
+zephyr_library_sources_ifdef(CONFIG_BT_ZEPHYR_NUS_AUTO_START_BLUETOOTH
 	bt_nus_auto_start_bt.c
 )
