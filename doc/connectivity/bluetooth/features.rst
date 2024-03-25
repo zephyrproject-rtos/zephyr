@@ -48,7 +48,7 @@ grown to be mature and feature-rich, as can be seen in the section below.
     module
   * Support for Controller (HCI) builds over different physical transports
 
-* :ref:`Bluetooth Host <bluetooth-host>`
+* :ref:`Bluetooth Host <bluetooth_le_host>`
 
   * Generic Access Profile (GAP) with all possible LE roles
 
