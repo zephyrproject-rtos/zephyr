@@ -169,7 +169,7 @@ static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 		 * data, so more than one byte is transmitted (e.g: when poll_out is
 		 * called inside a for-loop).
 		 */
-		k_work_reschedule(&dev_data->uart.tx_work, K_MSEC(1));
+		k_work_schedule(&dev_data->uart.tx_work, K_MSEC(1));
 	}
 }
 
