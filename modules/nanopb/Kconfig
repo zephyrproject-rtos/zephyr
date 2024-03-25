@@ -6,6 +6,8 @@ config ZEPHYR_NANOPB_MODULE
 
 menuconfig NANOPB
 	bool "Nanopb Support"
+	# Nanopb requires c_std_11 compiler features like _Static_assert
+	select REQUIRES_STD_C11
 	help
 	  This option enables the Nanopb library and generator.
 
