@@ -1,7 +1,7 @@
 .. _bluetooth_api:
 
-Bluetooth APIs
-##############
+API
+###
 
 Bluetooth Classic Host and profiles
 ===================================
