@@ -835,8 +835,8 @@ int stm32_clock_control_init(const struct device *dev)
 	int r = 0;
 
 #if defined(CONFIG_CPU_CORTEX_M7)
-	uint32_t old_hclk_freq = 0;
-	uint32_t new_hclk_freq = 0;
+	uint32_t old_hclk_freq;
+	uint32_t new_hclk_freq;
 
 	/* HW semaphore Clock enable */
 #if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) || \
