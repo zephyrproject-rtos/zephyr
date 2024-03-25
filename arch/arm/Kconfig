@@ -53,6 +53,18 @@ config ARM_ON_ENTER_CPU_IDLE_HOOK
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
 
+config ARM_ON_EXIT_CPU_IDLE_HOOK
+	bool
+	help
+	  Enables a hook (z_arm_on_exit_cpu_idle()) that is called when
+	  the CPU wakes up from idle (by k_cpu_idle() or k_cpu_atomic_idle())
+	  with interrupts locked.
+
+	  Note that ARM_ON_EXIT_CPU_IDLE is similar but it injects exact code
+	  as provided in the macro immediately after wake up which is used
+	  for handling erratas and hook is more generic because it is a C
+	  function call.
+
 config ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
 	bool
 	help
@@ -78,6 +90,9 @@ config ARM_ON_EXIT_CPU_IDLE
 	  of the SOC_ON_EXIT_CPU_IDLE is to perform an action that mitigate issues
 	  observed on some SoCs caused by a memory access following WFI/WFE
 	  instructions.
+
+	  For more generic operation use ARM_ON_EXIT_CPU_IDLE_HOOK which provides
+	  option to call a C function.
 
 rsource "core/Kconfig"
 rsource "core/Kconfig.vfp"
