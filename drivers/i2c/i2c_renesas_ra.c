@@ -101,6 +101,17 @@ struct i2c_ra_cfg {
 #define ICCR2_BBSY_POS (7)
 #define ICCR2_BBSY_LEN (1)
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
 #define ICMR1_BC_POS   (0)
 #define ICMR1_BC_LEN   (3)
 #define ICMR1_BCWP_POS (3)
@@ -110,6 +121,17 @@ struct i2c_ra_cfg {
 #define ICMR1_MTWP_POS (7)
 #define ICMR1_MTWP_LEN (1)
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
 #define ICMR2_TMOS_POS (0)
 #define ICMR2_TMOS_LEN (1)
 #define ICMR2_TMOL_POS (1)
@@ -120,6 +142,18 @@ struct i2c_ra_cfg {
 #define ICMR2_SDDL_LEN (3)
 #define ICMR2_DLCS_POS (7)
 #define ICMR2_DLCS_LEN (1)
+
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
 
 #define ICMR3_NF_POS    (0)
 #define ICMR3_NF_LEN    (2)
@@ -136,6 +170,18 @@ struct i2c_ra_cfg {
 #define ICMR3_SMBS_POS  (7)
 #define ICMR3_SMBS_LEN  (1)
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
+
 #define ICFER_TMOE_POS  (0)
 #define ICFER_TMOE_LEN  (1)
 #define ICFER_MALE_POS  (1)
@@ -151,6 +197,18 @@ struct i2c_ra_cfg {
 #define ICFER_SCLE_POS  (6)
 #define ICFER_SCLE_LEN  (1)
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
+
 #define ICSER_SAR0E_POS (0)
 #define ICSER_SAR0E_LEN (1)
 #define ICSER_SAR1E_POS (1)
@@ -163,6 +221,18 @@ struct i2c_ra_cfg {
 #define ICSER_DIDE_LEN  (1)
 #define ICSER_HOAE_POS  (7)
 #define ICSER_HOAE_LEN  (1)
+
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
 
 #define ICIER_TMOIE_POS (0)
 #define ICIER_TMOIE_LEN (1)
@@ -181,6 +251,18 @@ struct i2c_ra_cfg {
 #define ICIER_TIE_POS   (7)
 #define ICIER_TIE_LEN   (1)
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
+
 #define ICSR1_AAS0_POS (0)
 #define ICSR1_AAS0_LEN (1)
 #define ICSR1_AAS1_POS (1)
@@ -193,6 +275,18 @@ struct i2c_ra_cfg {
 #define ICSR1_DID_LEN  (1)
 #define ICSR1_HOA_POS  (7)
 #define ICSR1_HOA_LEN  (1)
+
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
 
 #define ICSR2_TMOF_POS  (0)
 #define ICSR2_TMOF_LEN  (1)
@@ -211,6 +305,18 @@ struct i2c_ra_cfg {
 #define ICSR2_TDRE_POS  (7)
 #define ICSR2_TDRE_LEN  (1)
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
+
 #define ICWUR_WUAFA_POS (0)
 #define ICWUR_WUAFA_LEN (1)
 #define ICWUR_WUACK_POS (4)
@@ -222,12 +328,36 @@ struct i2c_ra_cfg {
 #define ICWUR_WUE_POS   (7)
 #define ICWUR_WUE_LEN   (1)
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
+
 #define ICWUR2_WUSEN_POS  (0)
 #define ICWUR2_WUSEN_LEN  (1)
 #define ICWUR2_WUASYF_POS (1)
 #define ICWUR2_WUASYF_LEN (1)
 #define ICWUR2_WUSYF_POS  (2)
 #define ICWUR2_WUSYF_LEN  (1)
+
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
 
 #define SARL0_SVA0_POS (0)
 #define SARL0_SVA0_LEN (1)
@@ -242,6 +372,18 @@ struct i2c_ra_cfg {
 #define SARL2_SVA_POS  SARL0_SVA_POS
 #define SARL2_SVA_LEN  SARL0_SVA_LEN
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
+
 #define SARU0_FS_POS  (0)
 #define SARU0_FS_LEN  (1)
 #define SARU0_SVA_POS (1)
@@ -255,10 +397,34 @@ struct i2c_ra_cfg {
 #define SARU2_SVA_POS SARU0_SVA_POS
 #define SARU2_SVA_LEN SARU0_SVA_LEN
 
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
+
 #define ICBRL_BRL_POS      (0)
 #define ICBRL_BRL_LEN      (5)
 #define ICBRL_RESERVED_POS (5)
 #define ICBRL_RESERVED_LEN (3)
+
+/**
+ * ICCR2  (I2C Bus Control Register 2)
+ *
+ * - [0..1]:  Start Condition Issuance Request
+ * - [1..2]:  
+ * - [2..3]:  
+ * - [3..4]:  
+ * - [5..6]:  
+ * - [6..7]:  
+ * - [7..8]:  
+ */
 
 #define ICBRH_BRL_POS      (0)
 #define ICBRH_BRL_LEN      (5)
