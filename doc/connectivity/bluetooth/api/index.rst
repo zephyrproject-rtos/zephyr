@@ -4,6 +4,7 @@ Bluetooth APIs
 ##############
 
 Bluetooth Classic Host and profiles
+===================================
 
 .. toctree::
    :maxdepth: 1
