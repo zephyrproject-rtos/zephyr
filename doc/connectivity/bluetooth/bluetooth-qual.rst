@@ -97,10 +97,10 @@ the following documents:
 .. toctree::
    :maxdepth: 1
 
-   gap-pics.rst
-   gatt-pics.rst
-   l2cap-pics.rst
-   sm-pics.rst
-   rfcomm-pics.rst
-   mesh-pics.rst
-   dis-pics.rst
+   ics/gap.rst
+   ics/gatt.rst
+   ics/l2cap.rst
+   ics/sm.rst
+   ics/rfcomm.rst
+   ics/mesh.rst
+   ics/dis.rst
