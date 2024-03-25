@@ -31,7 +31,7 @@ int on_url(struct http_parser *p, const char *at, size_t length);
 int accept_new_client(int server_fd);
 void init_client_ctx(struct http_client_ctx *client, int new_socket);
 void close_client_connection(struct http_server_ctx *server, struct http_client_ctx *client);
-int handle_http_preface(struct http_client_ctx *ctx_client);
+int handle_http_preface(struct http_server_ctx *server, struct http_client_ctx *ctx_client);
 int handle_http_request(struct http_server_ctx *ctx_server, struct http_client_ctx *ctx_client);
 int handle_http_frame_rst_frame(struct http_server_ctx *ctx_server,
 				struct http_client_ctx *ctx_client);

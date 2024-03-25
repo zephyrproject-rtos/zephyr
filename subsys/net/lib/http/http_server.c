@@ -441,7 +441,7 @@ int handle_http_request(struct http_server_ctx *server, struct http_client_ctx *
 	do {
 		switch (client->server_state) {
 		case HTTP_SERVER_PREFACE_STATE:
-			ret = handle_http_preface(client);
+			ret = handle_http_preface(server, client);
 			break;
 		case HTTP_SERVER_REQUEST_STATE:
 			ret = handle_http1_request(server, client);
@@ -605,7 +605,8 @@ int enter_http_http_done_state(struct http_server_ctx *server,
 	return 0;
 }
 
-int handle_http_preface(struct http_client_ctx *client)
+int handle_http_preface(struct http_server_ctx *server,
+			struct http_client_ctx *client)
 {
 	LOG_DBG("HTTP_SERVER_PREFACE_STATE.");
 
@@ -617,11 +618,22 @@ int handle_http_preface(struct http_client_ctx *client)
 	if (strncmp(client->buffer, preface, sizeof(preface) - 1) != 0) {
 		client->server_state = HTTP_SERVER_REQUEST_STATE;
 	} else {
+		int ret;
+
 		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 		client->offset -= sizeof(preface) - 1;
 
 		memmove(client->buffer, client->buffer + sizeof(preface) - 1,
 			client->offset);
+
+		/* HTTP/2 client preface received, send server preface
+		 * (settings frame).
+		 */
+		ret = sendall(client->fd, settings_frame, sizeof(settings_frame));
+		if (ret < 0) {
+			close_client_connection(server, client);
+			return ret;
+		}
 	}
 
 	return 0;
@@ -1251,12 +1263,6 @@ int handle_http_frame_settings(struct http_client_ctx *client)
 
 	if (!settings_ack_flag(frame->flags)) {
 		int ret;
-
-		ret = sendall(client->fd, settings_frame, sizeof(settings_frame));
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-			return ret;
-		}
 
 		ret = sendall(client->fd, settings_ack, sizeof(settings_ack));
 		if (ret < 0) {
