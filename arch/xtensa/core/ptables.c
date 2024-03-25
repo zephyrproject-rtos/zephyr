@@ -106,8 +106,6 @@ static sys_slist_t xtensa_domain_list;
 
 extern char _heap_end[];
 extern char _heap_start[];
-extern char __data_start[];
-extern char __data_end[];
 /*
  * Static definition of all code & data memory regions of the
  * current Zephyr image. This information must be available &
