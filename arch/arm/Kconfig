@@ -53,6 +53,12 @@ config ARM_ON_ENTER_CPU_IDLE_HOOK
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
 
+config ARM_ON_EXIT_CPU_IDLE_HOOK
+	bool
+	help
+	  Enables a hook (z_arm_on_exit_cpu_idle()) that is called when
+	  the CPU wakes up from idle (by k_cpu_idle() or k_cpu_atomic_idle()).
+
 config ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
 	bool
 	help

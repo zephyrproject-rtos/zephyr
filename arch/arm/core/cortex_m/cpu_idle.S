@@ -132,6 +132,12 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	/* Enter low power state */
 	_sleep_if_allowed wfi
 
+#if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE_HOOK)
+	push	{r0, lr}
+	bl	z_arm_on_exit_cpu_idle
+	pop	{r0, lr}
+#endif
+
 	/*
 	 * Clear PRIMASK and flush instruction buffer to immediately service
 	 * the wake-up interrupt.
@@ -178,6 +184,11 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 	 * (SEVONPEND is set in z_arm_cpu_idle_init())
 	 */
 	_sleep_if_allowed wfe
+#if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE_HOOK)
+	push	{r0, lr}
+	bl	z_arm_on_exit_cpu_idle
+	pop	{r0, lr}
+#endif
 
 	cmp	r0, #0
 	bne	_irq_disabled
@@ -192,6 +203,11 @@ _irq_disabled:
 	msr	BASEPRI, r1
 
 	_sleep_if_allowed wfe
+#if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE_HOOK)
+	push	{r0, lr}
+	bl	z_arm_on_exit_cpu_idle
+	pop	{r0, lr}
+#endif
 
 	msr	BASEPRI, r0
 	cpsie	i
