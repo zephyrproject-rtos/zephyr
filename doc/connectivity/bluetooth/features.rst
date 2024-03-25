@@ -97,7 +97,7 @@ grown to be mature and feature-rich, as can be seen in the section below.
 
   * Verified with multiple popular controllers
 
-* :ref:`LE Audio in Host and Controller <bluetooth_audio_arch>`
+* :ref:`LE Audio in Host and Controller <bluetooth_le_audio_arch>`
 
   * Isochronous channels
 

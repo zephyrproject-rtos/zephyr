@@ -386,7 +386,7 @@ LE Audio
 The LE audio is a set of profiles and services that utilizes GATT and
 Isochronous Channel to provide audio over Bluetooth Low Energy.
 The architecture and API references can be found in
-:ref:`Bluetooth Audio Architecture <bluetooth_audio_arch>`.
+:ref:`Bluetooth Audio Architecture <bluetooth_le_audio_arch>`.
 
 
 .. _bluetooth-persistent-storage:

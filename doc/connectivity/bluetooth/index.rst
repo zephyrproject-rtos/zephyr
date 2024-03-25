@@ -16,7 +16,7 @@ hardware, as well as portions of a Classical Bluetooth (BR/EDR) Host layer.
    features.rst
    bluetooth-qual.rst
    bluetooth-arch.rst
-   bluetooth-audio-arch.rst
+   bluetooth-le-audio-arch.rst
    bluetooth-ctlr-arch.rst
    bluetooth-dev.rst
    api/index.rst
