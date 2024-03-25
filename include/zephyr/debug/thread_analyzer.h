@@ -35,6 +35,9 @@ struct thread_analyzer_info {
 
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	unsigned int utilization;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	unsigned int utilization_delta;
+#endif
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	k_thread_runtime_stats_t  usage;
 #endif
