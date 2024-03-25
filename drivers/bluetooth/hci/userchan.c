@@ -89,16 +89,18 @@ static struct net_buf *get_rx(const uint8_t *buf)
 }
 
 /**
- * @brief Decode the length of an HCI H4 packet
+ * @brief Decode the length of an HCI H4 packet and check it's complete
  * @details Decodes packet length according to Bluetooth spec v5.4 Vol 4 Part E
  * @param buf	Pointer to a HCI packet buffer
- * @return Length of the HCI packet in bytes, zero if no valid packet found.
+ * @param buf_len	Bytes available in the buffer
+ * @return Length of the complete HCI packet in bytes, -1 if cannot find an HCI
+ *         packet, 0 if more data required.
  */
-static uint16_t packet_len(const uint8_t *buf)
+static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 {
 	uint16_t payload_len = 0;
-	uint8_t header_len = 0;
 	const uint8_t type = buf[0];
+	uint8_t header_len = sizeof(type);
 	const uint8_t *hdr = &buf[sizeof(type)];
 
 	switch (type) {
@@ -107,7 +109,7 @@ static uint16_t packet_len(const uint8_t *buf)
 
 		/* Parameter Total Length */
 		payload_len = cmd->param_len;
-		header_len = BT_HCI_CMD_HDR_SIZE;
+		header_len += BT_HCI_CMD_HDR_SIZE;
 		break;
 	}
 	case BT_HCI_H4_ACL: {
@@ -115,7 +117,7 @@ static uint16_t packet_len(const uint8_t *buf)
 
 		/* Data Total Length */
 		payload_len = sys_le16_to_cpu(acl->len);
-		header_len = BT_HCI_ACL_HDR_SIZE;
+		header_len += BT_HCI_ACL_HDR_SIZE;
 		break;
 	}
 	case BT_HCI_H4_SCO: {
@@ -123,7 +125,7 @@ static uint16_t packet_len(const uint8_t *buf)
 
 		/* Data_Total_Length */
 		payload_len = sco->len;
-		header_len = BT_HCI_SCO_HDR_SIZE;
+		header_len += BT_HCI_SCO_HDR_SIZE;
 		break;
 	}
 	case BT_HCI_H4_EVT: {
@@ -131,7 +133,7 @@ static uint16_t packet_len(const uint8_t *buf)
 
 		/* Parameter Total Length */
 		payload_len = evt->len;
-		header_len = BT_HCI_EVT_HDR_SIZE;
+		header_len += BT_HCI_EVT_HDR_SIZE;
 		break;
 	}
 	case BT_HCI_H4_ISO: {
@@ -139,16 +141,21 @@ static uint16_t packet_len(const uint8_t *buf)
 
 		/* ISO_Data_Load_Length parameter */
 		payload_len =  bt_iso_hdr_len(sys_le16_to_cpu(iso->len));
-		header_len = BT_HCI_ISO_HDR_SIZE;
+		header_len += BT_HCI_ISO_HDR_SIZE;
 		break;
 	}
 	/* If no valid packet type found */
 	default:
 		LOG_WRN("Unknown packet type 0x%02x", type);
+		return -1;
+	}
+
+	/* Request more data */
+	if (buf_len < header_len || buf_len - header_len < payload_len) {
 		return 0;
 	}
 
-	return sizeof(type) + header_len + payload_len;
+	return (int32_t)header_len + payload_len;
 }
 
 static bool uc_ready(void)
@@ -166,6 +173,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	LOG_DBG("started");
 
+	uint16_t frame_size = 0;
+
 	while (1) {
 		static uint8_t frame[512];
 		struct net_buf *buf;
@@ -181,7 +190,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		LOG_DBG("calling read()");
 
-		len = read(uc_fd, frame, sizeof(frame));
+		len = read(uc_fd, frame + frame_size, sizeof(frame) - frame_size);
 		if (len < 0) {
 			if (errno == EINTR) {
 				k_yield();
@@ -194,46 +203,60 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			return;
 		}
 
-		while (len > 0) {
+		frame_size += len;
 
+		while (frame_size > 0) {
+			const uint8_t *buf_add;
 			const uint8_t packet_type = frame_start[0];
-			const uint16_t decoded_len = packet_len(frame_start);
+			const int32_t decoded_len = hci_packet_complete(frame_start, frame_size);
+
+			if (decoded_len == -1) {
+				LOG_ERR("HCI Packet type is invalid, length could not be decoded");
+				frame_size = 0; /* Drop buffer */
+				break;
+			}
 
 			if (decoded_len == 0) {
-				LOG_ERR("HCI Packet type is invalid, length could not be decoded");
+				if (frame_size == sizeof(frame)) {
+					LOG_ERR("HCI Packet (%d bytes) is too big for frame (%d "
+						"bytes)",
+						decoded_len, sizeof(frame));
+					frame_size = 0; /* Drop buffer */
+					break;
+				}
+				if (frame_start != frame) {
+					memmove(frame, frame_start, frame_size);
+				}
+				/* Read more */
 				break;
 			}
 
-			if (decoded_len > len) {
-				LOG_ERR("Decoded HCI packet length (%d bytes) is greater "
-					"than buffer length (%d bytes)", decoded_len, len);
-				break;
-			}
+			buf_add = frame_start + sizeof(packet_type);
+			buf_add_len = decoded_len - sizeof(packet_type);
 
 			buf = get_rx(frame_start);
+
+			frame_size -= decoded_len;
+			frame_start += decoded_len;
+
 			if (!buf) {
 				LOG_DBG("Discard adv report due to insufficient buf");
-				goto next;
+				continue;
 			}
 
 			buf_tailroom = net_buf_tailroom(buf);
-			buf_add_len = decoded_len - sizeof(packet_type);
 			if (buf_tailroom < buf_add_len) {
 				LOG_ERR("Not enough space in buffer %zu/%zu",
 					buf_add_len, buf_tailroom);
 				net_buf_unref(buf);
-				goto next;
+				continue;
 			}
 
-			net_buf_add_mem(buf, frame_start + sizeof(packet_type), buf_add_len);
+			net_buf_add_mem(buf, buf_add, buf_add_len);
 
 			LOG_DBG("Calling bt_recv(%p)", buf);
 
 			bt_recv(buf);
-
-next:
-			len -= decoded_len;
-			frame_start += decoded_len;
 		}
 
 		k_yield();
