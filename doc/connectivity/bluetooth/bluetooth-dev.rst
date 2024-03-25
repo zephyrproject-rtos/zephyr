@@ -1,7 +1,7 @@
 .. _bluetooth-dev:
 
-Developing Bluetooth Applications
-#################################
+Application Development
+#######################
 
 Bluetooth applications are developed using the common infrastructure and
 approach that is described in the :ref:`application` section of the
