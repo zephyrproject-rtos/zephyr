@@ -118,26 +118,29 @@ static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
 
 static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv_state)
 {
-	const struct bt_bap_scan_delegator_recv_state *state = &recv_state->state;
-	const bool is_bad_code = state->encrypt_state ==
-					BT_BAP_BIG_ENC_STATE_BAD_CODE;
+	if (recv_state->active) {
+		const struct bt_bap_scan_delegator_recv_state *state = &recv_state->state;
+		const bool is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
 
-	LOG_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, "
-		"broadcast_id 0x%06X, pa_sync_state %u, "
-		"encrypt state %u%s%s, num_subgroups %u",
-		recv_state->index, state->src_id, bt_addr_le_str(&state->addr), state->adv_sid,
-		state->broadcast_id, state->pa_sync_state, state->encrypt_state,
-		is_bad_code ? ", bad code" : "",
-		is_bad_code ? bt_hex(state->bad_code, sizeof(state->bad_code)) : "",
-		state->num_subgroups);
+		LOG_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, broadcast_id 0x%06X, "
+			"pa_sync_state %u, encrypt state %u%s%s, num_subgroups %u",
+			recv_state->index, state->src_id, bt_addr_le_str(&state->addr),
+			state->adv_sid, state->broadcast_id, state->pa_sync_state,
+			state->encrypt_state, is_bad_code ? ", bad code" : "",
+			is_bad_code ? bt_hex(state->bad_code, sizeof(state->bad_code)) : "",
+			state->num_subgroups);
 
-	for (int i = 0; i < state->num_subgroups; i++) {
-		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
+		for (uint8_t i = 0U; i < state->num_subgroups; i++) {
+			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
-		LOG_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %zu, metadata: "
-			"%s",
-			i, subgroup->bis_sync, recv_state->requested_bis_sync[i],
-			subgroup->metadata_len, bt_hex(subgroup->metadata, subgroup->metadata_len));
+			LOG_DBG("\tSubgroup[%u]: BIS sync %u (requested %u), metadata_len %zu, "
+				"metadata: %s",
+				i, subgroup->bis_sync, recv_state->requested_bis_sync[i],
+				subgroup->metadata_len,
+				bt_hex(subgroup->metadata, subgroup->metadata_len));
+		}
+	} else {
+		LOG_DBG("Inactive receive state");
 	}
 }
 
