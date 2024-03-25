@@ -14,6 +14,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <fsl_lpi2c.h>
+#if CONFIG_NXP_LP_FLEXCOMM
+#include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
+#endif
 
 #include <zephyr/drivers/pinctrl.h>
 
@@ -39,6 +42,9 @@ LOG_MODULE_REGISTER(mcux_lpi2c);
 
 struct mcux_lpi2c_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+	const struct device *parent_dev;
+#endif
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
@@ -530,8 +536,16 @@ static int mcux_lpi2c_init(const struct device *dev)
 	if (error) {
 		return error;
 	}
-
+#if CONFIG_NXP_LP_FLEXCOMM
+	/* When using LP Flexcomm driver, register the interrupt handler
+	 * so we receive notification from the LP Flexcomm interrupt handler.
+	 */
+	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev,
+				      LP_FLEXCOMM_PERIPH_LPI2C, mcux_lpi2c_isr);
+#else
+	/* Interrupt is managed by this driver */
 	config->irq_config_func(dev);
+#endif
 
 	return 0;
 }
@@ -560,7 +574,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			DT_INST_IRQ(n, priority),			\
-			mcux_lpi2c_isr, 				\
+			mcux_lpi2c_isr,					\
 			DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 	} while (false)
@@ -569,13 +583,21 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),				\
 		(I2C_MCUX_LPI2C_MODULE_IRQ_CONNECT(n)))
 
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+#define PARENT_DEV(n)							\
+	.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
+#else
+#define PARENT_DEV(n)
+#endif /* CONFIG_NXP_LP_FLEXCOMM */
+
 #define I2C_MCUX_LPI2C_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev); \
 									\
 	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {	\
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)), \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	\
+		PARENT_DEV(n)						\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
