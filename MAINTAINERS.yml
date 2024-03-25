@@ -556,6 +556,7 @@ C library:
   maintainers:
     - stephanosio
   collaborators:
+    - aescolar
     - nashif
     - keith-packard
     - cfriedt
