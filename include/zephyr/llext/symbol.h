@@ -67,21 +67,34 @@ struct llext_symtable {
 
 
 /**
- * @brief Export a constant symbol to a table of symbols
+ * @brief Export a constant symbol to extensions
  *
  * Takes a symbol (function or object) by symbolic name and adds the name
- * and address of the symbol to a table of symbols that may be used for linking.
+ * and address of the symbol to a table of symbols that may be referenced
+ * by extensions.
  *
- * @param x Symbol to export
+ * @param x Symbol to export to extensions
  */
 #define EXPORT_SYMBOL(x)							\
 	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
 
+/**
+ * @brief Exports a symbol from an extension to the base image
+ *
+ * This macro can be used in extensions to add a symbol (function or object)
+ * to the extension's exported symbol table, so that it may be referenced by
+ * the base image.
+ *
+ * @param x Extension symbol to export to the base image
+ */
 #define LL_EXTENSION_SYMBOL(x)							\
-	struct llext_symbol Z_GENERIC_SECTION(".exported_sym") __used		\
-		symbol_##x = {STRINGIFY(x), (void *)&x}
+	static const struct llext_const_symbol					\
+			Z_GENERIC_SECTION(".exported_sym") __used		\
+			x ## _sym = {						\
+		.name = STRINGIFY(x), .addr = (const void *)&x,			\
+	}
 
 /**
  * @}
