@@ -1,0 +1,23 @@
+# Copyright (c) 2024 BoRob Engineering
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMS5915 pressure and temperature sensor
+
+compatible: "anamicro,ams5915"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  lower-limit-press:
+    required: true
+    type: int
+    description: |
+      The lower pressure limit in kilopascal of the attached AMS5915 sensor
+      variant according datasheet. 
+
+  upper-limit-press:
+    required: true
+    type: int
+    description: |
+      The upper pressure limit in kilopascal of the attached AMS5915 sensor
+      variant according datasheet. 
