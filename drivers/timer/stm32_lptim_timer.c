@@ -437,6 +437,35 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
+#if DT_INST_NODE_HAS_PROP(0, st_counter_value)
+	/* Calculate the corresponding prescaler in range [1..128] */
+	uint8_t presci;
+
+	for (presci = 0; presci <= 7 ; presci++) {
+		/* value is in the interval from 0 to 2<<presc */
+		if ((uint32_t)(2 << presci) >=
+			(uint32_t)DT_INST_PROP(0, st_counter_value)) {
+			break;
+		}
+	}
+
+	/*
+	 * Check if lptim_clock_presc given by DT_INST_PROP(0, st_counter_value)
+	 * equals the calculated one from the DT_INST_PROP(0, st_counter_value)
+	 */
+	if (lptim_clock_presc != (1 << presci)) {
+		return -EIO;
+	}
+
+	/*
+	 * LPTIM is counting DT_INST_PROP(0, st_counter_value),
+	 * seconds at lptim_clock_freq divided lptim_clock_presc) Hz",
+	 * lptim_time_base is the autoreload counter
+	 */
+	lptim_time_base = 2 * (lptim_clock_freq *
+		(uint32_t)DT_INST_PROP(0, st_counter_value))
+		/ lptim_clock_presc;
+#else
 	/* Set LPTIM time base based on clock source freq */
 	if (lptim_clock_freq == KHZ(32)) {
 		lptim_time_base = 0xF9FF;
@@ -445,6 +474,8 @@ static int sys_clock_driver_init(void)
 	} else {
 		return -EIO;
 	}
+
+#endif /* st_counter_value */
 
 #if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
 	/*
