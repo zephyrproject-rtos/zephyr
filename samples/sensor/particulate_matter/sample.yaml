@@ -1,0 +1,11 @@
+sample:
+  name: particulate_matter sensor sample
+tests:
+  sample.sensor.sngcja5:
+    build_only: true
+    platform_allow: pan1780_evb pan1770_evb pan1781_evb pan1782_evb
+    tags: sensors
+    integration_platforms:
+      - pan1781_evb
+    depends_on: arduino_i2c
+    extra_args: "DTC_OVERLAY_FILE=arduino_i2c.overlay"
