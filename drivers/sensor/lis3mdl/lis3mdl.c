@@ -68,6 +68,21 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
+	/* If in single mode, the sensor needs to be brought back out of
+	 * IDLE before each sensor read
+	 */
+	if (drv_data->single_mode) {
+		uint8_t chip_cfg[2];
+		
+		chip_cfg[0] = LIS3MDL_REG_CTRL3;
+		chip_cfg[1] = LIS3MDL_MD_SINGLE;
+		
+		if (i2c_write_dt(&config->i2c, chip_cfg, 2) < 0) {
+			LOG_DBG("Failed to set SINGLE mode.");
+			return -EIO;
+		}
+	}
+
 	/* fetch magnetometer sample */
 	if (i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,
 			      (uint8_t *)buf, 8) < 0) {
@@ -105,6 +120,7 @@ static const struct sensor_driver_api lis3mdl_driver_api = {
 int lis3mdl_init(const struct device *dev)
 {
 	const struct lis3mdl_config *config = dev->config;
+	struct lis3mdl_data *drv_data = dev->data;
 	uint8_t chip_cfg[6];
 	uint8_t id, idx;
 
@@ -136,11 +152,15 @@ int lis3mdl_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/* Check if single mode should be set */
+	drv_data->single_mode = lis3mdl_odr_bits[idx] & LIS3MDL_FAST_ODR_MASK ?
+		      false : true;
+
 	/* Configure sensor */
 	chip_cfg[0] = LIS3MDL_REG_CTRL1;
 	chip_cfg[1] = LIS3MDL_TEMP_EN_MASK | lis3mdl_odr_bits[idx];
 	chip_cfg[2] = LIS3MDL_FS_IDX << LIS3MDL_FS_SHIFT;
-	chip_cfg[3] = LIS3MDL_MD_CONTINUOUS;
+	chip_cfg[3] = drv_data->single_mode ? LIS3MDL_MD_SINGLE : LIS3MDL_MD_CONTINUOUS;
 	chip_cfg[4] = ((lis3mdl_odr_bits[idx] & LIS3MDL_OM_MASK) >>
 		       LIS3MDL_OM_SHIFT) << LIS3MDL_OMZ_SHIFT;
 	chip_cfg[5] = LIS3MDL_BDU_EN;
