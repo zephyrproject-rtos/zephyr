@@ -28,6 +28,7 @@ CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_volume_changed);
 CREATE_FLAG(flag_volume_mute_changed);
 CREATE_FLAG(flag_volume_offset_changed);
+CREATE_FLAG(flag_microphone_mute_changed);
 CREATE_FLAG(flag_microphone_gain_changed);
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
@@ -68,7 +69,7 @@ static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		FAIL("Failed to change volume for conn %p: %d\n", conn, err);
+		FAIL("Failed to change volume mute for conn %p: %d\n", conn, err);
 		return;
 	}
 
@@ -79,7 +80,7 @@ static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
 static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		FAIL("Failed to change volume for conn %p: %d\n", conn, err);
+		FAIL("Failed to change volume offset for conn %p: %d\n", conn, err);
 		return;
 	}
 
@@ -89,11 +90,21 @@ static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+static void cap_microphone_mute_changed_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		FAIL("Failed to change microphone mute for conn %p: %d\n", conn, err);
+		return;
+	}
+
+	SET_FLAG(flag_microphone_mute_changed);
+}
+
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static void cap_microphone_gain_changed_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		FAIL("Failed to change volume for conn %p: %d\n", conn, err);
+		FAIL("Failed to change microphone gain for conn %p: %d\n", conn, err);
 		return;
 	}
 
@@ -112,6 +123,7 @@ static struct bt_cap_commander_cb cap_cb = {
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+	.microphone_mute_changed = cap_microphone_mute_changed_cb,
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	.microphone_gain_changed = cap_microphone_gain_changed_cb,
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
@@ -370,7 +382,7 @@ static void test_change_volume_mute(bool mute)
 
 	err = bt_cap_commander_change_volume_mute_state(&param);
 	if (err != 0) {
-		FAIL("Failed to change volume: %d\n", err);
+		FAIL("Failed to change volume mute: %d\n", err);
 		return;
 	}
 
@@ -398,12 +410,40 @@ static void test_change_volume_offset(void)
 
 	err = bt_cap_commander_change_volume_offset(&param);
 	if (err != 0) {
-		FAIL("Failed to change volume: %d\n", err);
+		FAIL("Failed to change volume offset: %d\n", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(flag_volume_offset_changed);
 	printk("Volume offset changed\n");
+}
+
+static void test_change_microphone_mute(bool mute)
+{
+	union bt_cap_set_member members[CONFIG_BT_MAX_CONN];
+	const struct bt_cap_commander_change_microphone_mute_state_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.members = members,
+		.count = connected_conn_cnt,
+		.mute = mute,
+	};
+	int err;
+
+	printk("Changing microphone mute state to %d\n", param.mute);
+	UNSET_FLAG(flag_microphone_mute_changed);
+
+	for (size_t i = 0U; i < param.count; i++) {
+		param.members[i].member = connected_conns[i];
+	}
+
+	err = bt_cap_commander_change_microphone_mute_state(&param);
+	if (err != 0) {
+		FAIL("Failed to change microphone mute: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_microphone_mute_changed);
+	printk("Microphone mute state changed to %d\n", param.mute);
 }
 
 static void test_change_microphone_gain(void)
@@ -471,7 +511,8 @@ static void test_main_cap_commander_capture_and_render(void)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_MICP_MIC_CTLR)) {
-			/* TODO: Add test of mic mute */
+			test_change_microphone_mute(true);
+			test_change_microphone_mute(false);
 
 			if (IS_ENABLED(CONFIG_BT_MICP_MIC_CTLR_AICS)) {
 				test_change_microphone_gain();

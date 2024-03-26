@@ -63,6 +63,16 @@ static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+static void cap_microphone_mute_changed_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		shell_error(ctx_shell, "Microphone mute change failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Microphone mute change completed");
+}
+
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static void cap_microphone_gain_changed_cb(struct bt_conn *conn, int err)
 {
@@ -86,6 +96,7 @@ static struct bt_cap_commander_cb cbs = {
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+	.microphone_mute_changed = cap_microphone_mute_changed_cb,
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	.microphone_gain_changed = cap_microphone_gain_changed_cb,
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
@@ -319,6 +330,58 @@ static int cmd_cap_commander_change_volume_offset(const struct shell *sh, size_t
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+static int cmd_cap_commander_change_microphone_mute(const struct shell *sh, size_t argc,
+						    char *argv[])
+{
+	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
+	union bt_cap_set_member members[CONFIG_BT_MAX_CONN] = {0};
+	struct bt_cap_commander_change_microphone_mute_state_param param = {
+		.members = members,
+		.type = BT_CAP_SET_TYPE_AD_HOC, /* TODO: Add support for coordinated sets */
+	};
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	param.mute = shell_strtobool(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse microphone mute from %s", argv[1]);
+
+		return -ENOEXEC;
+	}
+
+	/* Populate the array of connected connections */
+	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
+
+	param.count = 0U;
+	param.members = members;
+	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+		struct bt_conn *conn = connected_conns[i];
+
+		if (conn == NULL) {
+			break;
+		}
+
+		param.members[i].member = conn;
+		param.count++;
+	}
+
+	shell_print(sh, "Setting microphone mute to %d on %zu connections", param.mute,
+		    param.count);
+
+	err = bt_cap_commander_change_microphone_mute_state(&param);
+	if (err != 0) {
+		shell_print(sh, "Failed to change microphone mute: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size_t argc,
 						    char *argv[])
@@ -422,6 +485,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+	SHELL_CMD_ARG(change_microphone_mute, NULL,
+		      "Change microphone mute state on all connections <mute>",
+		      cmd_cap_commander_change_microphone_mute, 2, 0),
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	SHELL_CMD_ARG(change_microphone_gain, NULL,
 		      "Change microphone gain per connection <gain [gain [...]]>",
