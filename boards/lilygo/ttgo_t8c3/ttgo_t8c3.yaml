@@ -1,0 +1,18 @@
+identifier: ttgo_t8c3
+name: TTGO T8C3
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog
+  - can
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: lilygo
