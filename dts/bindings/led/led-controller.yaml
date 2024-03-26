@@ -8,7 +8,10 @@ child-binding:
   properties:
     label:
       type: string
-      description: Human readable string describing the LED
+      description: |
+        Human readable string describing the LED. It can be used by an
+        application to identify this LED or to retrieve its number/index
+        (i.e. child node number) on the parent device.
     index:
       type: int
       description: |
