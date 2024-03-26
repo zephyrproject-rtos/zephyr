@@ -150,8 +150,25 @@ required, and some Zephyr users do not use or have west, but still use the build
 Test scripts
 ------------
 
-- Each test is defined by a shell script with the extension ``.sh``.
-- Scripts starting with an underscore (``_``) are ignored.
+Please follow the existing conventions and do not design one-off bespoke runners (e.g. a python
+script, or another shell abstraction).
+
+The rationale is that it is easier and faster for the maintainers to perform tree-wide updates for
+build system or compatibility changes if the tests are run in the same manner, with the same
+variables, etc..
+
+If you have a good idea for improving your test script, please make a PR changing *all* the test
+scripts in order to benefit everyone and conserve homogeneity. You can of course discuss it first in
+an RFC issue or on the babblesim discord channel.
+
+Scripts starting with an underscore (``_``) are not automatically discovered and run. They can serve
+as either helper functions for the main script, or can be used for local development utilities, e.g.
+building and running tests locally, debugging, etc..
+
+Here are the conventions:
+
+- Each test is defined by a shell script with the extension ``.sh``, in a subfolder called
+  ``test_scripts/``.
 - Test scripts expect that the binaries they require are already built, and will spawn the processes
   for the simulated devices and physical layer simulation with the necessary command line options.
 - Tests must return 0 to the invoking shell if the test passes, and not 0 if the test fails.
