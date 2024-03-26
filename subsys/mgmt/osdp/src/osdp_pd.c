@@ -262,6 +262,19 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	struct osdp_cmd cmd;
 	struct osdp_event *event;
 
+	if (pd->resend) {
+		pd->resend = false;
+		if (pd->cmd_id != pd->last_cmd_meta.cmd_id) {
+			pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
+			pd->last_cmd_meta.reply_id = REPLY_NAK;
+			pd->last_cmd_meta.cmd_id = pd->cmd_id;
+			pd->last_cmd_meta.ret = OSDP_PD_ERR_REPLY;
+			return OSDP_PD_ERR_GENERIC;
+		}
+		pd->reply_id = pd->last_cmd_meta.reply_id;
+		return pd->last_cmd_meta.ret;
+	}
+
 	pd->reply_id = 0;
 	pd->cmd_id = cmd.id = buf[pos++];
 	len--;
@@ -538,6 +551,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_ERR("Unknown CMD(%02x)", pd->cmd_id);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
+		pd->last_cmd_meta.reply_id = REPLY_NAK;
+		pd->last_cmd_meta.cmd_id = pd->cmd_id;
+		pd->last_cmd_meta.ret = OSDP_PD_ERR_REPLY;
 		return OSDP_PD_ERR_REPLY;
 	}
 
@@ -552,6 +568,10 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	if (pd->cmd_id != CMD_POLL) {
 		LOG_DBG("CMD: %02x REPLY: %02x", pd->cmd_id, pd->reply_id);
 	}
+
+	pd->last_cmd_meta.reply_id = pd->reply_id;
+	pd->last_cmd_meta.cmd_id = pd->cmd_id;
+	pd->last_cmd_meta.ret = ret;
 
 	return ret;
 }

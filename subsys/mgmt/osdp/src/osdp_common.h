@@ -441,6 +441,14 @@ struct osdp_secure_channel {
 };
 #endif
 
+#ifdef CONFIG_OSDP_MODE_PD
+struct last_cmd_meta_t {
+	int ret;
+	int cmd_id;
+	int reply_id;
+};
+#endif
+
 struct osdp_pd {
 	void *osdp_ctx;
 	int idx;
@@ -469,6 +477,10 @@ struct osdp_pd {
 	int cmd_id;
 	int reply_id;
 	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];
+#ifdef CONFIG_OSDP_MODE_PD
+	struct last_cmd_meta_t last_cmd_meta;
+	bool resend;
+#endif
 
 	struct osdp_channel channel;
 
