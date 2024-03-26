@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 NXP
+ * Copyright 2024 TiaC Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mipi_dbi_spi, CONFIG_MIPI_DBI_LOG_LEVEL);
@@ -121,6 +123,71 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 					&buf_set);
 			if (ret < 0) {
 				goto out;
+			}
+		}
+	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE_16BIT) {
+		/* 4 wire mode with toggle the command/data GPIO
+		 * to indicate if we are sending a command or data
+		 * but send 16-bit blocks (bit stuffing).
+		 */
+		uint16_t data16;
+
+		if (cmd_present) {
+			data16 = sys_cpu_to_be16(cmd);
+			buffer.buf = &data16;
+			buffer.len = sizeof(data16);
+
+			/* Set CD pin low for command */
+			gpio_pin_set_dt(&config->cmd_data, 0);
+			ret = spi_write(config->spi_dev, &dbi_config->config,
+					&buf_set);
+			if (ret < 0) {
+				goto out;
+			}
+
+			/* iterate command data */
+			for (int i = 0; i < len; i++) {
+				data16 = sys_cpu_to_be16(data_buf[i]);
+
+				/* Set CD pin high for data */
+				gpio_pin_set_dt(&config->cmd_data, 1);
+				ret = spi_write(config->spi_dev, &dbi_config->config,
+						&buf_set);
+				if (ret < 0) {
+					goto out;
+				}
+			}
+
+		} else {
+			int stuffing = len % sizeof(data16);
+
+			/* pass through generic device data */
+			if (len - stuffing > 0) {
+				buffer.buf = (void *)data_buf;
+				buffer.len = len - stuffing;
+
+				/* Set CD pin high for data */
+				gpio_pin_set_dt(&config->cmd_data, 1);
+				ret = spi_write(config->spi_dev, &dbi_config->config,
+						&buf_set);
+				if (ret < 0) {
+					goto out;
+				}
+			}
+
+			/* iterate remaining data with stuffing */
+			for (int i = len - stuffing; i < len; i++) {
+				data16 = sys_cpu_to_be16(data_buf[i]);
+				buffer.buf = &data16;
+				buffer.len = sizeof(data16);
+
+				/* Set CD pin high for data */
+				gpio_pin_set_dt(&config->cmd_data, 1);
+				ret = spi_write(config->spi_dev, &dbi_config->config,
+						&buf_set);
+				if (ret < 0) {
+					goto out;
+				}
 			}
 		}
 	} else {

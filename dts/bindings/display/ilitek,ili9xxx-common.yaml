@@ -1,5 +1,6 @@
 # Copyright (c) 2018, Jan Van Winkel <jan.van_winkel@dxplore.eu>
 # Copyright (c) 2020, Teslabs Engineering S.L.
+# Copyright (c) 2024, TiaC Systems
 # SPDX-License-Identifier: Apache-2.0
 
 description: ILI9XXX display controllers common properties.
@@ -7,6 +8,18 @@ description: ILI9XXX display controllers common properties.
 include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
 
 properties:
+  spi2mcu-shift:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 16
+    description:
+      In rare types of displays, discrete shift registers can be found
+      whose task is to convert the serial SPI bit stream to the parallel
+      MCU interface with clock and bit accuracy. Typically, these are
+      16 bits wide. However, wider expansion stages are also conceivable.
+
   pixel-format:
     type: int
     default: 0
