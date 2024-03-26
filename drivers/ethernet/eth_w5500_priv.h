@@ -86,6 +86,13 @@ struct w5500_config {
 	void (*config_func)(void);
 	uint8_t full_duplex;
 	int32_t timeout;
+	int32_t hw_reset_delay;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(ready_gpios)
+	struct gpio_dt_spec ready;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(preconfigured_mac_address)
+	bool preconfigured_mac_address;
+#endif
 };
 
 struct w5500_runtime {

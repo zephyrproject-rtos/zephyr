@@ -8,6 +8,9 @@
 
 #define DT_DRV_COMPAT	wiznet_w5500
 
+/* WIZ550io extension compatible */
+#define WIZ550IO_DRV_COMPAT wiznet_wiz550io
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -33,6 +36,16 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 #define W5500_SPI_READ_CONTROL(addr)	(W5500_SPI_BLOCK_SELECT(addr) << 3)
 #define W5500_SPI_WRITE_CONTROL(addr)   \
 	((W5500_SPI_BLOCK_SELECT(addr) << 3) | BIT(2))
+
+/* W5500 datasheet recommends 1ms delay after hardware reset for
+ * internal PLL to stabilize.
+ */
+#define W5500_RESET_DELAY_MS 1
+
+/* WIZ550io documentation recommends 150ms delay after HW reset
+ * for PIC12F519 MCU to configure the W5500.
+ */
+#define WIZ550IO_RESET_DELAY_MS 150
 
 static int w5500_spi_read(const struct device *dev, uint32_t addr,
 			  uint8_t *data, uint32_t len)
@@ -579,9 +592,54 @@ static int w5500_init(const struct device *dev)
 			LOG_ERR("Unable to configure GPIO pin %u", config->reset.pin);
 			return -EINVAL;
 		}
-		gpio_pin_set_dt(&config->reset, 0);
+		gpio_pin_set_dt(&config->reset, 1);
 		k_usleep(500);
+		gpio_pin_set_dt(&config->reset, 0);
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(ready_gpios)
+		if (config->ready.port) {
+			if (!gpio_is_ready_dt(&config->ready)) {
+				LOG_ERR("GPIO port %s not ready", config->ready.port->name);
+				return -EINVAL;
+			}
+			if (gpio_pin_configure_dt(&config->ready, GPIO_INPUT)) {
+				LOG_ERR("Unable to configure GPIO pin %u", config->ready.pin);
+				return -EINVAL;
+			}
+
+			k_timepoint_t timeout = sys_timepoint_calc(
+				K_MSEC(config->hw_reset_delay));
+
+			while (!gpio_pin_get_dt(&config->ready)) {
+				if (sys_timepoint_expired(timeout)) {
+					LOG_ERR("W5500 not ready");
+					return -ETIMEDOUT;
+				}
+				k_msleep(1);
+			}
+		} else
+#endif
+		{
+			k_msleep(config->hw_reset_delay);
+		}
 	}
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(preconfigured_mac_address)
+	/* WIZ550io module has a preconfigured unique MAC address
+	 * assigned by the PIC12F519 after hardware reset. It needs to
+	 * be read out after a hardware reset and before software reset.
+	 */
+	if (config->preconfigured_mac_address) {
+		err = w5500_spi_read(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
+		if (err ||
+		    ctx->mac_addr[0] != WIZNET_OUI_B0 ||
+		    ctx->mac_addr[1] != WIZNET_OUI_B1 ||
+		    ctx->mac_addr[2] != WIZNET_OUI_B2) {
+			LOG_ERR("Unable to read preconfigured MAC address");
+			return -EIO;
+		}
+	}
+#endif
 
 	err = w5500_hw_reset(dev);
 	if (err) {
@@ -622,11 +680,30 @@ static struct w5500_runtime w5500_0_runtime = {
 				      0, UINT_MAX),
 };
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(ready_gpios)
+#define W5500_READY_GPIO_INIT(inst)							\
+	.ready = GPIO_DT_SPEC_INST_GET_OR(inst, ready_gpios, { 0 }),
+#else
+#define W5500_READY_GPIO_INIT(inst)
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(preconfigured_mac_address)
+#define W5500_PRECONFIGURED_MAC_ADDRESS_INIT(inst)					\
+	.preconfigured_mac_address = DT_INST_PROP(inst, preconfigured_mac_address),
+#else
+#define W5500_PRECONFIGURED_MAC_ADDRESS_INIT(inst)
+#endif
+
 static const struct w5500_config w5500_0_config = {
 	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.timeout = CONFIG_ETH_W5500_TIMEOUT,
+	.hw_reset_delay = COND_CODE_1(
+		DT_NODE_HAS_COMPAT(DT_DRV_INST(0), WIZ550IO_DRV_COMPAT),
+		(WIZ550IO_RESET_DELAY_MS), (W5500_RESET_DELAY_MS)),
+	W5500_READY_GPIO_INIT(0)
+	W5500_PRECONFIGURED_MAC_ADDRESS_INIT(0)
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,

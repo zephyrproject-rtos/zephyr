@@ -1,0 +1,48 @@
+# Copyright (c) 2024 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WIZ550io standalone 10/100BASE-T Ethernet controller with SPI interface
+  and preconfigured unique MAC address.
+
+  This is a specialization of the W5500 Ethernet controller.
+
+  Example:
+    &spi3 {
+        status = "okay";
+        pinctrl-0 = <&spi3_sck_pb3 &spi3_miso_pb4 &spi3_mosi_pb5>;
+        pinctrl-names = "default";
+        cs-gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+        eth_wiz550io: eth_wiz550io@0 {
+            status = "okay";
+            compatible = "wiznet,wiz550io", "wiznet,w5500";
+            reg = <0x0>;
+            spi-max-frequency = <DT_FREQ_M(80)>;
+            int-gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+            reset-gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+            ready-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+            preconfigured-mac-address;
+        };
+    };
+
+compatible: "wiznet,wiz550io"
+
+include: wiznet,w5500.yaml
+
+properties:
+  ready-gpios:
+    type: phandle-array
+    description: |
+      Ready pin.
+      The WIZ550io module has an extra GPIO pin that signals
+      when the PIC12F519 has finished configuring the W5500.
+      This is optional to shorten the hardware reset delay.
+  preconfigured-mac-address:
+    type: boolean
+    description: |
+      Preconfigured W5500 MAC address.
+      The WIZ550io module has a preconfigured unique MAC address
+      assigned by the PIC12F519 after hardware reset.
+      This functionality depends on having a reset GPIO.
+      Enable this option to use that MAC address.
