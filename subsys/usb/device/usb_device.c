@@ -3,6 +3,7 @@
  *  Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)
  *  Copyright (c) 2016 Intel Corporation
  *  Copyright (c) 2020 PHYTEC Messtechnik GmbH
+ *  Copyright (c) 2024 Argenox Technologies LLC
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -1721,4 +1722,13 @@ static int usb_device_init(void)
 	return 0;
 }
 
+int usb_device_init_app(void)
+{
+	return usb_device_init();
+}
+
+
+
+#if !IS_ENABLED(USB_DEVICE_INITIALIZE_BY_APP)
 SYS_INIT(usb_device_init, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif
