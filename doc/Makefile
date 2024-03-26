@@ -24,6 +24,7 @@ configure:
 		-GNinja \
 		-B${BUILDDIR} \
 		-S. \
+		$(call set_cmake_variable_if_defined,SPHINX_JOBS) \
 		$(call set_cmake_variable_if_defined,SPHINXOPTS) \
 		$(call set_cmake_variable_if_defined,SPHINXOPTS_EXTRA) \
 		$(call set_cmake_variable_if_defined,LATEXMKOPTS) \

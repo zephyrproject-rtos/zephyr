@@ -12,7 +12,8 @@ message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 #-------------------------------------------------------------------------------
 # Options
 
-set(SPHINXOPTS "-j auto -W --keep-going -T" CACHE STRING "Default Sphinx Options")
+set(SPHINX_JOBS "auto" CACHE STRING "Default number of Sphinx processes")
+set(SPHINXOPTS "-W --keep-going -T" CACHE STRING "Default Sphinx Options")
 set(SPHINXOPTS_EXTRA "" CACHE STRING "Extra Sphinx Options (added to defaults)")
 set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
 set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
@@ -146,6 +147,7 @@ add_doc_target(
     -d ${DOCS_DOCTREE_DIR}
     -w ${DOCS_BUILD_DIR}/html.log
     -t ${DOC_TAG}
+    -j ${SPHINX_JOBS}
     ${SPHINXOPTS}
     ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}
@@ -175,6 +177,7 @@ add_doc_target(
     -w ${DOCS_BUILD_DIR}/latex.log
     -t ${DOC_TAG}
     -t svgconvert
+    -j ${SPHINX_JOBS}
     ${SPHINXOPTS}
     ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}
@@ -226,6 +229,7 @@ add_doc_target(
     -d ${DOCS_DOCTREE_DIR}
     -w ${DOCS_BUILD_DIR}/linkcheck.log
     -t ${DOC_TAG}
+    -j ${SPHINX_JOBS}
     ${SPHINXOPTS}
     ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}
