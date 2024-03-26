@@ -99,6 +99,11 @@ static int frdm_mcxn947_init(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm2), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1u);
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
