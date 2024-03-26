@@ -212,10 +212,53 @@ config PRIVILEGED_STACK_SIZE
 
 endif # XTENSA_MMU
 
+endif # CPU_HAS_MMU
+
+if CPU_HAS_MPU
+
+menuconfig XTENSA_MPU
+	bool "Xtensa MPU Support"
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
+	select EXPERIMENTAL
+	# TODO: the target the MPU code developed on (basically sample_controller
+	#       plus MPU minus s32c1i) does not have cache or SMP capability.
+	#       Need to verify functionalities with targets supporting these.
+	depends on !CACHE && !SMP
+	help
+	  Enable support for Xtensa Memory Protection Unit.
+
+if XTENSA_MPU
+
+config XTENSA_MPU_DEFAULT_MEM_TYPE
+	hex "Default Memory Type"
+	default 0x18
+	help
+	  Default memory type for memory regions: non-cacheable memory,
+	  non-shareable, non-bufferable and interruptible.
+
+	  If userspace is enabled, it will be used to restore the memory type of
+	  the region being removed from a memory domain.
+
+config XTENSA_MPU_ONLY_SOC_RANGES
+	bool
+	help
+	  Enable this by the SoC to indicate to the architecture code to use
+	  the MPU ranges specified by SoC only, and skip the common ranges
+	  defined in the core architecture code. This gives total control to
+	  the SoC on the MPU ranges.
+
+endif # XTENSA_MPU
+
+endif # CPU_HAS_MPU
+
 config XTENSA_SYSCALL_USE_HELPER
 	bool "Use userspace syscall helper"
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
-	depends on USERSPACE
+	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
 	help
 	  Use syscall helpers for passing more then 3 arguments.
 	  This is a workaround for toolchains where they have
@@ -223,9 +266,7 @@ config XTENSA_SYSCALL_USE_HELPER
 
 config XTENSA_INSECURE_USERSPACE
 	bool
-	default y if USERSPACE
-	depends on XTENSA_MMU
-
-endif # CPU_HAS_MMU
+	default y
+	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
 
 endmenu

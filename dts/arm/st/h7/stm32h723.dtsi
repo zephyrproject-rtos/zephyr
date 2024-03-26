@@ -123,8 +123,6 @@
 			interrupts = <159 0>, <160 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 

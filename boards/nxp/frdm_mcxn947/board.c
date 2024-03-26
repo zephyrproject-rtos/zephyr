@@ -6,6 +6,7 @@
 #include <zephyr/device.h>
 #include <fsl_clock.h>
 #include <fsl_spc.h>
+#include <soc.h>
 
 /* Board xtal frequency in Hz */
 #define BOARD_XTAL0_CLK_HZ                        24000000U
@@ -48,8 +49,6 @@ void power_mode_od(void)
 
 static int frdm_mcxn947_init(void)
 {
-	/* Do not re-run this clock init code if using MCUBoot */
-#ifndef CONFIG_BOOTLOADER_MCUBOOT
 	enable_lpcac();
 
 	power_mode_od();
@@ -67,6 +66,13 @@ static int frdm_mcxn947_init(void)
 
 	/* Enable FRO HF(48MHz) output */
 	CLOCK_SetupFROHFClocking(48000000U);
+
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	/* Call function flexspi_clock_safe_config() to move FleXSPI clock to a stable
+	 * clock source when updating the PLL if in XIP (execute code from FlexSPI memory
+	 */
+	flexspi_clock_safe_config();
+#endif
 
 	/* Set up PLL0 */
 	const pll_setup_t pll0Setup = {
@@ -87,7 +93,6 @@ static int frdm_mcxn947_init(void)
 
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
-#endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);

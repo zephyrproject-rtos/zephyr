@@ -502,25 +502,37 @@ ZTEST_USER(can_classic, test_bitrate_limits)
  */
 ZTEST_USER(can_classic, test_set_bitrate_too_high)
 {
-	uint32_t max = 0U;
+	uint32_t max = 1000000U;
+	int expected = -EINVAL;
 	int err;
 
 	err = can_get_max_bitrate(can_dev, &max);
-	if (err == -ENOSYS) {
-		ztest_test_skip();
+	if (err != -ENOSYS) {
+		zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
+		zassert_not_equal(max, 0, "max bitrate is 0");
+		expected = -ENOTSUP;
 	}
-
-	zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
-	zassert_not_equal(max, 0, "max bitrate is 0");
 
 	err = can_stop(can_dev);
 	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
 
 	err = can_set_bitrate(can_dev, max + 1);
-	zassert_equal(err, -ENOTSUP, "too high bitrate accepted");
+	zassert_equal(err, expected, "too high bitrate accepted");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test using an invalid sample point.
+ */
+ZTEST_USER(can_classic, test_invalid_sample_point)
+{
+	struct can_timing timing;
+	int err;
+
+	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, 1000);
+	zassert_equal(err, -EINVAL, "invalid sample point of 100.0% accepted (err %d)", err);
 }
 
 /**
@@ -535,6 +547,40 @@ ZTEST_USER(can_classic, test_set_bitrate)
 
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that the minimum timing values can be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_min)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing(can_dev, can_get_timing_min(can_dev));
+	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that the maximum timing values can be set.
+ */
+ZTEST_USER(can_classic, test_set_timing_max)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing(can_dev, can_get_timing_max(can_dev));
+	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);

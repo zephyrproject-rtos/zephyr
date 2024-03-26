@@ -120,6 +120,8 @@ void load_call_unload(struct llext_test *test_case)
 
 	llext_unload(&ext);
 }
+
+#ifndef LOADER_BUILD_ONLY
 /*
  * Attempt to load, list, list symbols, call a fn, and unload each
  * extension in the test table. This excercises loading, calling into, and
@@ -156,6 +158,7 @@ static LLEXT_CONST uint8_t object_ext[] __aligned(4) = {
 	#include "object.inc"
 };
 LLEXT_LOAD_UNLOAD(object, true)
+#endif /* ! LOADER_BUILD_ONLY */
 
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address

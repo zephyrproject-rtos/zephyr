@@ -122,8 +122,8 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
                 board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", board.name).upper()
                 f.write('config  ' + board_str + '\n')
                 f.write('\t bool\n')
-                for identifier in list_boards.board_v2_identifiers(board):
-                    board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", identifier).upper()
+                for qualifier in list_boards.board_v2_qualifiers(board):
+                    board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier).upper()
                     f.write('config  ' + board_str + '\n')
                     f.write('\t bool\n')
                 f.write('source "' + (board.dir / ('Kconfig.' + board.name)).as_posix() + '"\n\n')

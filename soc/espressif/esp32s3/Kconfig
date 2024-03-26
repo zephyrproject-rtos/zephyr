@@ -31,16 +31,6 @@ config ESP32S3_APPCPU_DRAM
 	help
 	  Defines APPCPU DRAM area in bytes.
 
-config SOC_ESP32S3_PROCPU
-	bool
-	help
-	  This hidden configuration defines that build is targeted for PROCPU (core 0).
-
-config SOC_ESP32S3_APPCPU
-	bool
-	help
-	  This hidden configuration defines that build is targeted for APPCPU (core 1).
-
 config SOC_ENABLE_APPCPU
 	bool
 	default y

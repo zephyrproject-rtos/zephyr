@@ -131,7 +131,7 @@ struct nxp_s32_eth_data {
 int nxp_s32_eth_initialize_common(const struct device *dev);
 int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt);
 enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev);
-void nxp_s32_eth_mcast_cb(struct net_if *iface, const struct net_addr *addr, bool is_joined);
+void nxp_s32_eth_mcast_filter(const struct device *dev, const struct ethernet_filter *filter);
 int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type type,
 			   const struct ethernet_config *config);
 extern void Netc_Eth_Ip_MSIX_Rx(uint8_t si_idx);

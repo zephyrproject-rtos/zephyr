@@ -12,23 +12,6 @@ config ROM_START_OFFSET
 config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
-
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-
-DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
-DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
-		if $(DT_FLASH_PARENT_IS_FLEXSPI)
-
-config FLASH_SIZE
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
-		if $(DT_FLASH_HAS_SIZE_PROP)
-
 if MCUX_OS_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

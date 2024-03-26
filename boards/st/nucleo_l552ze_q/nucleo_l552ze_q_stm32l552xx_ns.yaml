@@ -9,5 +9,5 @@ supported:
   - gpio
   - dac
 ram: 192
-flash: 328
+flash: 36
 vendor: st

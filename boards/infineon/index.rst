@@ -1,4 +1,4 @@
-.. _boards-cypress:
+.. _boards-infineon:
 
 Infineon Technologies
 #####################

@@ -512,7 +512,7 @@
 	};
 
 	fmu: flash-controller@43000 {
-		compatible = "nxp,iap-mcx";
+		compatible = "nxp,iap-msf1";
 		reg = <0x43000 0x1000>;
 		interrupts = <138 0>;
 		status = "disabled";
@@ -542,6 +542,15 @@
 	 * implementation, so the SysTick node is not to be enabled.
 	 */
 	status = "disabled";
+};
+
+&flexspi {
+	compatible = "nxp,imx-flexspi";
+	interrupts = <58 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "disabled";
+	clocks = <&syscon MCUX_FLEXSPI_CLK>;
 };
 
 &nvic {

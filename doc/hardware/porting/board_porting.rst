@@ -65,112 +65,120 @@ complete conversion reference.
 .. _example-application conversion Pull Request: https://github.com/zephyrproject-rtos/example-application/pull/58
 .. _conversion script: https://github.com/zephyrproject-rtos/zephyr/blob/main/scripts/utils/board_v1_to_v2.py
 
-.. _board_and_identifiers:
-
-Board and board identifiers
-***************************
-
-A board may be a physical piece of hardware or an emulated board.
-Furthermore a board may contain one or multiple SoCs. Also, each SoC may contain
-one or multiple CPU clusters. A CPU cluster refers to a group of CPU cores.
-Only CPU cores of same architecture can be in the same cluster. In the case
-where a physical SoC considers a CPU cluster to contain CPU cores of different
-architectures then those must be modelled as multiple clusters, where all CPU
-cores within a cluster is having the same architecture.
-It is possible to have only a single CPU core within a CPU cluster.
-
-It's possible to define variants for dedicated use-cases.
-Examples of such use-cases are:
-
-- Variant which enables non-secure builds for SoCs containing a security
-  processor.
-- Variant enabling / changing the type of RAM used in by the build.
-
-A ``/`` is used as separator between the board name and the following:
-SoC, CPU cluster, and variant identifiers.
-
-If a board contains only a single core SoC, then the SoC can be omitted when
-building.
-
-Let's say there is a board named ``plank`` with a single-core SoC ``soc1``.
-The board including the identifier is: ``plank/soc1``.
-
-As ``plank`` is a single SoC board, then the following is sufficient: ``plank``
-to use as board when building.
-
-If ``plank`` defines board variants, then those are identified by appending the
-``/<variant>`` name after the SoC, for example to build for the ``foo`` variant,
-use: ``plank/soc1/foo``, and if omitting the SoC use: ``plank//foo``.
-Here the double ``//`` indicates to the build system that the SoC has been
-omitted.
-
-So to build hello world for ``plank``, variant ``foo``, you can do:
-
-.. code-block:: console
-
-   west build -b plank//foo samples/hello_world
-
-When using multi-core SoCs, the CPU cluster is identified after the SoC
-identifier.
-
-If ``soc1`` above has two cores, ``first`` and ``second``, then those are
-identified as: ``plank/soc1/first`` and ``plank/soc1/second``.
-
-And similar to before, if the board has only a single SoC, the SoC can be
-omitted, that is ``plank//first`` and ``plank//second`` is an identical short
-form.
-
 .. _hw_support_hierarchy:
 
-Boards, SoCs, etc.
-******************
+Hardware support hierarchy
+**************************
 
-Zephyr's hardware support hierarchy has these layers, from most to least
+Zephyr's hardware support hierarchy has the following levels, from most to least
 specific:
 
-- Board: a specific board which usually corresponds to a physical board.
-         A board may contain multiple SoCs.
-         A build targets a specific CPU cluster on a board which has multiple
-         CPUs, be these in different SOCs or in a SOC with multiple AMP CPU
-         clusters.
-- SoC: the exact system on a chip the board's CPU is part of
-- SoC series: a smaller group of tightly related SoCs
-- SoC family: a wider group of SoCs with similar characteristics
-- CPU Cluster: a cluster of one or more CPU cores.
-- CPU core: a particular CPU in an architecture
-- Architecture: an instruction set architecture
+- :term:`board`, which has one or more
+- :term:`SoC`, each of which optionally belong to a
+- :term:`SoC series`, which in turn may optionally belong to an
+- :term:`SoC family`. Each SoC has one or more
+- :term:`CPU cluster`, each containing one or more
+- :term:`CPU core`, of a particular
+- :term:`architecture`
 
-You can visualize the hierarchy like this:
+You can visualize the hierarchy in the diagram below:
 
 .. figure:: board/hierarchy.png
    :width: 500px
    :align: center
-   :alt: Configuration Hierarchy
+   :alt: Hardware support Hierarchy
 
-   Configuration Hierarchy
+   Hardware support Hierarchy
 
-Here are some examples. Notice how the SoC series and family levels are
-not always used.
+Below are some examples of the hierarchy described in this section, in the form
+of a :term:`board` per row with its corresponding hierarchy entries. Notice how
+the :term:`SoC series` and :term:`SoC family` levels are not always used.
 
 .. table::
 
-   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
-   | Board                                      | Identifier            | SoC         | SoC Series    | SoC family    | CPU core       | Architecture |
-   +============================================+=======================+=============+===============+===============+================+==============+
-   | :ref:`nrf52dk <nrf52dk_nrf52832>`          | /nrf52832             | nRF52832    | nRF52         | Nordic nRF    | Arm Cortex-M4  | Arm          |
-   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
-   | :ref:`frdm_k64f <frdm_k64f>`               | /mk64f12              | MK64F12     | Kinetis K6x   | NXP Kinetis   | Arm Cortex-M4  | Arm          |
-   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
-   | :ref:`rv32m1_vega <rv32m1_vega>`           | /openisa_rv32m1/ri5cy | RV32M1      | (Not used)    | (Not used)    | RI5CY          | RISC-V       |
-   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
-   | :ref:`nrf5340dk <nrf5340dk_nrf5340>`       | /nrf5340/cpuapp       | nRF5340     | nRF53         | Nordic nRF    | Arm Cortex-M33 | Arm          |
-   |                                            +-----------------------+-------------+---------------+---------------+----------------+--------------+
-   |                                            | /nrf5340/cpunet       | nRF5340     | nRF53         | Nordic nRF    | Arm Cortex-M33 | Arm          |
-   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
-   | :ref:`mimx8mp_evk <imx8mp_evk>`            | /mimx8m/a53           | i.MX8M Plus | i.MXM8M A53   | NXP i.MX      | Arm Cortex-A53 | Arm64        |
-   |                                            +-----------------------+-------------+---------------+---------------+----------------+--------------+
-   |                                            | /mimx8m/m7            | i.MX8M Plus | i.MXM8MM M4   | NXP i.MX      | Arm Cortex-M7  | Arm          |
-   +--------------------------------------------+-----------------------+-------------+---------------+---------------+----------------+--------------+
+   +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   | :term:`board name`                         | :term:`board qualifiers` | :term:`SoC` | :term:`SoC Series` | :term:`SoC family` | CPU core       | :term:`architecture` |
+   +============================================+==========================+=============+====================+====================+================+======================+
+   | :ref:`nrf52dk <nrf52dk_nrf52832>`          | nrf52832                 | nRF52832    | nRF52              | Nordic nRF         | Arm Cortex-M4  | ARMv7-M              |
+   +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   | :ref:`frdm_k64f <frdm_k64f>`               | mk64f12                  | MK64F12     | Kinetis K6x        | NXP Kinetis        | Arm Cortex-M4  | ARMv7-M              |
+   +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   | :ref:`rv32m1_vega <rv32m1_vega>`           | openisa_rv32m1/ri5cy     | RV32M1      | (Not used)         | (Not used)         | RI5CY          | RISC-V RV32          |
+   +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   | :ref:`nrf5340dk <nrf5340dk_nrf5340>`       | nrf5340/cpuapp           | nRF5340     | nRF53              | Nordic nRF         | Arm Cortex-M33 | ARMv8-M              |
+   |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   |                                            | nrf5340/cpunet           | nRF5340     | nRF53              | Nordic nRF         | Arm Cortex-M33 | ARMv8-M              |
+   +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   | :ref:`mimx8mp_evk <imx8mp_evk>`            | mimx8ml8/a53             | i.MX8M Plus | i.MX8M             | NXP i.MX           | Arm Cortex-A53 | ARMv8-A              |
+   |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   |                                            | mimx8ml8/m7              | i.MX8M Plus | i.MX8M             | NXP i.MX           | Arm Cortex-M7  | ARMv7-M              |
+   +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+
+Additional details about terminology can be found in the next section.
+
+.. _board_terminology:
+
+Board terminology
+*****************
+
+The previous section introduced the hierarchical manner in which Zephyr
+classifies and implements hardware support.
+This section focuses on the terminology used around hardware support, and in
+particular when defining and working with boards and SoCs.
+
+The overall set of terms used around the concept of board in Zephyr is depicted
+in the image below, which uses the :ref:`bl5340_dvk` board as reference.
+
+.. figure:: board/board-terminology.svg
+   :width: 500px
+   :align: center
+   :alt: Board terminology diagram
+
+   Board terminology diagram
+
+The diagram shows the different terms that are used to describe boards:
+
+- The :term:`board name`: ``bl5340_dvk``
+- The optional :term:`board revision`: ``1.2.0``
+- The :term:`board qualifiers`, that optionally describe the :term:`SoC`,
+  :term:`CPU cluster` and :term:`variant`: ``nrf5340/cpuapp/ns``
+- The :term:`board target`, which uniquely identifies a combination of the above
+  and can be used to specify the hardware to build for when using the tooling
+  provided by Zephyr: ``bl5340_dvk@1.2.0/nrf5340/cpuapp/ns``
+
+Formally this can also be seen as
+:samp:`{board name}[@{revision}][/{board qualifiers}]`, which can be extended to
+:samp:`{board name}[@{revision}][/{SoC}[/{CPU cluster}][/{variant}]]`.
+
+If a board contains only one single-core SoC, then the SoC can be omitted from
+the board target. This implies that if the board does not define any board
+qualifiers, the board name can be used as a board target. Conversely, if
+board qualifiers are part of the board definition, then the SoC can be omitted
+by leaving it out but including the corresponding forward-slashes: ``//``.
+
+Continuing with the example above, The board :ref:`bl5340_dvk` is a single SoC
+board where the SoC defines two CPU clusters: ``cpuapp`` and ``cpunet``. One of
+the CPU clusters, ``cpuapp``, additionally defines a non-secure board variant,
+``ns``.
+
+The board qualifiers ``nrf5340/cpuapp/ns`` can be read as:
+
+
+- ``nrf5340``: The SoC, which is a Nordic nRF5340 dual-core SoC
+- ``cpuapp``: The CPU cluster ``cpuapp``, which consists of a single Cortex-M33
+  CPU core. The number of cores in a CPU cluster cannot be determined from the
+  board qualifiers.
+- ``ns``: a variant, in this case ``ns`` is a common variant name is
+  Zephyr denoting a non-secure build for boards supporting :ref:`tfm`.
+
+Not all SoCs define CPU clusters or variants. For example a simple board
+like the :ref:`thingy52_nrf52832` contains a single SoC with no CPU clusters and
+no variants.
+For ``thingy52`` the board target ``thingy52/nrf52832`` can be read as:
+
+- ``thingy52``: board name.
+- ``nrf52832``: The board qualifiers, in this case identical to the SoC, which
+  is a Nordic nRF52832.
 
 
 Make sure your SoC is supported
@@ -262,9 +270,9 @@ Your board directory should look like this:
    ├── Kconfig.plank
    ├── Kconfig.defconfig
    ├── plank_defconfig
-   ├── plank_<identifier>_defconfig
+   ├── plank_<qualifiers>_defconfig
    ├── plank.dts
-   ├── plank_<identifier>.dts
+   ├── plank_<qualifiers>.dts
    └── plank.yaml
 
 Replace ``plank`` with your board's name, of course.
@@ -276,7 +284,7 @@ The mandatory files are:
    CPU clusters for multi-core SoCs are not described in this file as they are
    inherited from the SoC's YAML description.
 
-#. :file:`plank.dts` or :file:`plank_<identifier>.dts`: a hardware description
+#. :file:`plank.dts` or :file:`plank_<qualifiers>.dts`: a hardware description
    in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
    and any other hardware components such as LEDs, buttons, sensors, or
    communication peripherals (USB, BLE controller, etc).
@@ -292,7 +300,7 @@ The optional files are:
 - :file:`Kconfig`, :file:`Kconfig.defconfig` software configuration in
   :ref:`kconfig` formats. This provides default settings for software features
   and peripheral drivers.
-- :file:`plank_defconfig` and :file:`plank_<identifier>_defconfig`: software
+- :file:`plank_defconfig` and :file:`plank_<qualifiers>_defconfig`: software
   configuration in Kconfig ``.conf`` format.
 - :file:`board.cmake`: used for :ref:`flash-and-debug-support`
 - :file:`CMakeLists.txt`: if you need to add additional source files to
@@ -303,7 +311,7 @@ The optional files are:
 - :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
   :ref:`twister_script`.
 
-Board identifiers of the form ``<soc>/<cpucluster>/<variant>`` are sanitized so
+Board qualifiers of the form ``<soc>/<cpucluster>/<variant>`` are normalized so
 that ``/`` is replaced with ``_`` when used for filenames, for example:
 ``soc1/foo`` becomes ``soc1_foo`` when used in filenames.
 
@@ -366,7 +374,7 @@ Write your devicetree
 *********************
 
 The devicetree file :file:`boards/<vendor>/plank/plank.dts` or
-:file:`boards/<vendor>/plank/plank_<identifier>.dts` describes your board
+:file:`boards/<vendor>/plank/plank_<qualifiers>.dts` describes your board
 hardware in the Devicetree Source (DTS) format (as usual, change ``plank`` to
 your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
 
@@ -516,7 +524,7 @@ files for a board named ``plank``:
    ├── Kconfig.plank
    ├── Kconfig.defconfig
    ├── plank_defconfig
-   └── plank_<identifier>_defconfig
+   └── plank_<qualifiers>_defconfig
 
 :file:`Kconfig.plank`
   A shared Kconfig file which can be sourced both in Zephyr Kconfig and sysbuild
@@ -534,7 +542,7 @@ files for a board named ``plank``:
              select SOC_SOC1
 
   The Kconfig symbols :kconfig:option:`BOARD_<board>` and
-  :kconfig:option:`BOARD_<board_with_identifier>` are constructed by the build
+  :kconfig:option:`BOARD_<normalized_board_target>` are constructed by the build
   system, therefore no type shall be defined in above code snippet.
 
 :file:`Kconfig`
@@ -585,17 +593,17 @@ files for a board named ``plank``:
 
      endif # BOARD_PLANK
 
-:file:`plank_defconfig` / :file:`plank_<identifier>_defconfig`
+:file:`plank_defconfig` / :file:`plank_<qualifiers>_defconfig`
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board.
 
   If both the common :file:`plank_defconfig` file and one or more board
-  identifier specific :file:`plank_<identifier>_defconfig` files exist, then
+  qualifiers specific :file:`plank_<qualifiers>_defconfig` files exist, then
   all matching files will be used.
   This allows you to place configuration which is common for all board SoCs,
   CPU clusters, and board variants in the base :file:`plank_defconfig` and only
   place the adjustments specific for a given SoC or board variant in the
-  :file:`plank_<identifier>_defconfig`.
+  :file:`plank_<qualifiers>_defconfig`.
 
   The ``_defconfig`` should contain mandatory settings for your system clock,
   console, etc. The results are architecture-specific, but typically look
@@ -606,7 +614,7 @@ files for a board named ``plank``:
      CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
      CONFIG_SERIAL=y
 
-:file:`plank_x_y_z_defconfig` / :file:`plank_<identifier>_x_y_z_defconfig`
+:file:`plank_x_y_z_defconfig` / :file:`plank_<qualifiers>_x_y_z_defconfig`
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board revision
   ``x.y.z``.
@@ -820,21 +828,21 @@ adjustments to the board's normal configuration.
 
 As described in the :ref:`default_board_configuration` and
 :ref:`board_kconfig_files` sections the board default configuration is created
-from the files :file:`<board>.dts` / :file:`<board>_<identifier>.dts` and
-:file:`<board>_defconfig` / :file:`<board>_<identifier>_defconfig`.
+from the files :file:`<board>.dts` / :file:`<board>_<qualifiers>.dts` and
+:file:`<board>_defconfig` / :file:`<board>_<qualifiers>_defconfig`.
 When building for a specific board revision, the above files are used as a
 starting point and the following board files will be used in addition:
 
-- :file:`<board>_<identifier>_<revision>_defconfig`: a specific revision
+- :file:`<board>_<qualifiers>_<revision>_defconfig`: a specific revision
   defconfig which is only used for the board and SOC / variants identified by
-  ``<board>_<identifier>``.
+  ``<board>_<qualifiers>``.
 
 - :file:`<board>_<revision>_defconfig`: a specific revision defconfig which is
   used for the board regardless of the SOC / variants.
 
-- :file:`<board>_<identifier>_<revision>.overlay`: a specific revision dts
+- :file:`<board>_<qualifiers>_<revision>.overlay`: a specific revision dts
   overlay which is only used for the board and SOC / variants identified by
-  ``<board>_<identifier>``.
+  ``<board>_<qualifiers>``.
 
 - :file:`<board>_<revision>.overlay`: a specific revision dts overlay which is
   used for the board regardless of the SOC / variants.
@@ -850,8 +858,8 @@ revision adjustments:
 .. code-block:: none
 
    boards/zephyr/plank
-   ├── plank_0_5_0_defconfig          # Kconfig adjustment for all plank board identifiers on revision 0.5.0
-   ├── plank_0_5_0.overlay            # DTS overlay for all plank board identifiers on revision 0.5.0
+   ├── plank_0_5_0_defconfig          # Kconfig adjustment for all plank board qualifiers on revision 0.5.0
+   ├── plank_0_5_0.overlay            # DTS overlay for all plank board qualifiers on revision 0.5.0
    └── plank_soc1_foo_1_5_0_defconfig # Kconfig adjustment for plank board when building for soc1 variant foo on revision 1.5.0
 
 Custom revision.cmake files

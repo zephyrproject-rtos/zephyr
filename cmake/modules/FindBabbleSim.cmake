@@ -60,3 +60,38 @@ endif()
 #Many apps cmake files (in and out of tree) expect these environment variables. Lets provide them:
 set(ENV{BSIM_COMPONENTS_PATH} ${BSIM_COMPONENTS_PATH})
 set(ENV{BSIM_OUT_PATH} ${BSIM_OUT_PATH})
+
+# Let's check that it is new enough and built,
+# so we provide better information to users than a compile error:
+
+# Internal function to print a descriptive error message
+# Do NOT use it outside of this module. It uses variables internal to it
+function(bsim_handle_not_built_error)
+  get_filename_component(BSIM_ROOT_PATH ${BSIM_COMPONENTS_PATH}/.. ABSOLUTE)
+  message(FATAL_ERROR "Please ensure you have the latest babblesim and rebuild it."
+          "If you got it from Zephyr's manifest, you can do:\n\
+ west update\n\
+ cd ${BSIM_ROOT_PATH}; make everything -j 8\n"
+  )
+endfunction(bsim_handle_not_built_error)
+
+# Internal function to check that a bsim component is at least the desired version
+# Do NOT use it outside of this module. It uses variables internal to it
+function(bsim_check_build_version bs_comp req_comp_ver)
+  set(version_file ${BSIM_OUT_PATH}/lib/${bs_comp}.version)
+  if (EXISTS ${version_file})
+    file(READ ${version_file} found_version)
+    string(STRIP ${found_version} found_version)
+  else()
+    message(WARNING "BabbleSim was never compiled (${version_file} not found)")
+    bsim_handle_not_built_error()
+  endif()
+
+  if (found_version VERSION_LESS req_comp_ver)
+    message(WARNING
+            "Built ${bs_comp} version = ${found_version} < ${req_comp_ver} (required version)")
+    bsim_handle_not_built_error()
+  endif()
+endfunction(bsim_check_build_version)
+
+bsim_check_build_version(bs_2G4_phy_v1 2.4)

@@ -448,8 +448,8 @@ class KconfigCheck(ComplianceTest):
                 board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", board.name).upper()
                 fp.write('config  ' + board_str + '\n')
                 fp.write('\t bool\n')
-                for identifier in list_boards.board_v2_identifiers(board):
-                    board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", identifier).upper()
+                for qualifier in list_boards.board_v2_qualifiers(board):
+                    board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier).upper()
                     fp.write('config  ' + board_str + '\n')
                     fp.write('\t bool\n')
                 fp.write(

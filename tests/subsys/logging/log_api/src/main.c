@@ -797,6 +797,29 @@ ZTEST(test_log_api, test_log_arg_evaluation)
 #undef TEST_MSG_0_PREFIX
 }
 
+static void log_wrn_once_run(int i)
+{
+	LOG_WRN_ONCE("once %d", i);
+}
+
+ZTEST(test_log_api, test_log_wrn_once)
+{
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, "once 0");
+	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
+				exp_timestamp++, "once 0");
+
+	log_wrn_once_run(0);
+	log_wrn_once_run(1);
+	log_wrn_once_run(2);
+
+	process_and_validate(false, false);
+}
+
 ZTEST(test_log_api, test_log_override_level)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;

@@ -433,7 +433,7 @@ static void verify_no_option(struct net_pkt *pkt, uint8_t opt_type)
 }
 
 static void verify_option(struct net_pkt *pkt, uint8_t opt_type,
-			  void *optval, uint8_t optlen)
+			  const void *optval, uint8_t optlen)
 {
 	struct net_pkt_cursor cursor;
 
@@ -567,11 +567,12 @@ static void verify_offer(bool broadcast)
 			    NET_DHCPV4_MSG_TYPE_OFFER);
 	verify_option(pkt, DHCPV4_OPTIONS_SERVER_ID, server_addr.s4_addr,
 		      sizeof(struct in_addr));
+	verify_option(pkt, DHCPV4_OPTIONS_CLIENT_ID, test_ctx.client_id,
+		      strlen(test_ctx.client_id));
 	verify_option(pkt, DHCPV4_OPTIONS_SUBNET_MASK, netmask.s4_addr,
 		      sizeof(struct in_addr));
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_IPADDR);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_LIST);
-	verify_no_option(pkt, DHCPV4_OPTIONS_CLIENT_ID);
 }
 
 static void reserved_address_cb(struct net_if *iface,
@@ -754,11 +755,16 @@ static void verify_ack(bool inform, bool renew)
 			    NET_DHCPV4_MSG_TYPE_ACK);
 	verify_option(pkt, DHCPV4_OPTIONS_SERVER_ID, server_addr.s4_addr,
 		      sizeof(struct in_addr));
+	if (inform) {
+		verify_no_option(pkt, DHCPV4_OPTIONS_CLIENT_ID);
+	} else {
+		verify_option(pkt, DHCPV4_OPTIONS_CLIENT_ID, test_ctx.client_id,
+			      strlen(test_ctx.client_id));
+	}
 	verify_option(pkt, DHCPV4_OPTIONS_SUBNET_MASK, netmask.s4_addr,
 		      sizeof(struct in_addr));
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_IPADDR);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_LIST);
-	verify_no_option(pkt, DHCPV4_OPTIONS_CLIENT_ID);
 }
 
 static void allocated_address_cb(struct net_if *iface,

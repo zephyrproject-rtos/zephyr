@@ -158,7 +158,7 @@ manifest:
       groups:
         - hal
     - name: hal_ethos_u
-      revision: 90ada2ea5681b2a2722a10d2898eac34c2510791
+      revision: 8e2cf756b474eff9a32a9bdf1775d9620f1eadcf
       path: modules/hal/ethos_u
       groups:
         - hal
@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 3c4f74b405ca174fe3eb5f3b74c355376ee9a69f
+      revision: 1a360dbcd58e9f8bc30320bc82e907c03271c5f4
       path: modules/hal/nxp
       groups:
         - hal
@@ -256,7 +256,7 @@ manifest:
     - name: hostap
       repo-path: hostap
       path: modules/lib/hostap
-      revision: dee924caf7218d0ee2c2698c217559b1292a46d0
+      revision: 9ad92f5249a6743f55787bb783d3398113b136c0
     - name: libmetal
       revision: 243eed541b9c211a2ce8841c788e62ddce84425e
       path: modules/hal/libmetal
@@ -274,7 +274,7 @@ manifest:
       revision: 1bf2120cffcedae174ae35d695a28a46caefcb23
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 2b76c641749725ac90c6ac7959ca7718804cf356
+      revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 6ec4abdcda78dfc47315af568f93e5ad4398dea0
@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 9fb7ce5d026db42768d63f04cc60ce022d27b555
+      revision: 24ac8cc2be9384288829aac7477f522a7a71f3d4
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -305,7 +305,7 @@ manifest:
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 0fbc5b72aeab8a6434523a3a7bc8111c17f0bc73
+      revision: 7f6fb3f12ea1493a2f8ab6a876fb255a39db47c8
       groups:
         - debug
     - name: picolibc

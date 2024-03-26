@@ -20,6 +20,8 @@ extern "C" {
 /**
  * @brief MCUmgr mgmt API
  * @defgroup mcumgr_mgmt_api MCUmgr mgmt API
+ * @since 1.11
+ * @version 1.0.0
  * @ingroup mcumgr
  * @{
  */

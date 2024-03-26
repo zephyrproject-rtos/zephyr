@@ -81,7 +81,6 @@ static struct hawkbit_context {
 	uint8_t *response_data;
 	int32_t json_action_id;
 	size_t url_buffer_size;
-	size_t status_buffer_size;
 	struct hawkbit_download dl;
 	struct http_request http_req;
 	struct flash_img_context flash_ctx;
@@ -645,6 +644,16 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 
 	type = enum_for_http_req_string(userdata);
 
+	if (rsp->http_status_code != 200) {
+		LOG_ERR("HTTP request denied (%s): %d", (char *)userdata, rsp->http_status_code);
+		if (rsp->http_status_code == 401 || rsp->http_status_code == 403) {
+			hb_context.code_status = HAWKBIT_PERMISSION_ERROR;
+		} else {
+			hb_context.code_status = HAWKBIT_METADATA_ERROR;
+		}
+		return;
+	}
+
 	switch (type) {
 	case HAWKBIT_PROBE:
 		if (hb_context.dl.http_content_size == 0) {
@@ -680,12 +689,6 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 				break;
 			}
 
-			if (rsp->http_status_code / 100 == 4) {
-				LOG_ERR("HTTP request denied: %d", rsp->http_status_code);
-				hb_context.code_status = HAWKBIT_PERMISSION_ERROR;
-				break;
-			}
-
 			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
 			ret = json_obj_parse(hb_context.response_data,
 					     hb_context.dl.downloaded_size, json_ctl_res_descr,
@@ -701,10 +704,6 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 	case HAWKBIT_CLOSE:
 	case HAWKBIT_REPORT:
 	case HAWKBIT_CONFIG_DEVICE:
-		if (strcmp(rsp->http_status, "OK") < 0) {
-			LOG_ERR("Failed to cancel the update");
-		}
-
 		break;
 
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
@@ -853,7 +852,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 
 		ret = json_obj_encode_buf(json_cfg_descr, ARRAY_SIZE(json_cfg_descr), &cfg,
 					  hb_context.status_buffer,
-					  hb_context.status_buffer_size - 1);
+					  sizeof(hb_context.status_buffer));
 		if (ret) {
 			LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CONFIG_DEVICE",
 				ret);
@@ -885,7 +884,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 
 		ret = json_obj_encode_buf(json_close_descr, ARRAY_SIZE(json_close_descr), &close,
 					  hb_context.status_buffer,
-					  hb_context.status_buffer_size - 1);
+					  sizeof(hb_context.status_buffer));
 		if (ret) {
 			LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CLOSE", ret);
 			return false;
@@ -932,7 +931,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 
 		ret = json_obj_encode_buf(json_dep_fbk_descr, ARRAY_SIZE(json_dep_fbk_descr),
 					  &feedback, hb_context.status_buffer,
-					  hb_context.status_buffer_size - 1);
+					  sizeof(hb_context.status_buffer));
 		if (ret) {
 			LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_REPORT", ret);
 			return ret;
@@ -1025,7 +1024,8 @@ enum hawkbit_response hawkbit_probe(void)
 		goto cleanup;
 	}
 
-	if (hb_context.code_status == HAWKBIT_METADATA_ERROR) {
+	if (hb_context.code_status == HAWKBIT_METADATA_ERROR ||
+	    hb_context.code_status == HAWKBIT_PERMISSION_ERROR) {
 		goto cleanup;
 	}
 
@@ -1147,7 +1147,7 @@ enum hawkbit_response hawkbit_probe(void)
 
 	flash_img_init(&hb_context.flash_ctx);
 
-	if (send_request(HTTP_GET, HAWKBIT_DOWNLOAD, HAWKBIT_STATUS_FINISHED_NONE,
+	if (!send_request(HTTP_GET, HAWKBIT_DOWNLOAD, HAWKBIT_STATUS_FINISHED_NONE,
 			 HAWKBIT_STATUS_EXEC_NONE)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_DOWNLOAD");
 		hb_context.code_status = HAWKBIT_NETWORKING_ERROR;

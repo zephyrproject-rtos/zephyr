@@ -95,11 +95,11 @@ _Execute ./src/edttool.py -s=${SIMULATION_ID} -d=2 --transport bsim \
 cd ${BSIM_OUT_PATH}/bin
 
 _Execute \
-  ${RR_ARGS_1} ./bs_${BOARD}_tests_bsim_bluetooth_ll_edtt_hci_test_app_${PRJ_CONF_1}\
+  ${RR_ARGS_1} ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_edtt_hci_test_app_${PRJ_CONF_1}\
   -s=${SIMULATION_ID} -d=0 -v=${VERBOSITY_LEVEL_DEV1} -RealEncryption=1
 
 _Execute \
-  ${RR_ARGS_2} ./bs_${BOARD}_tests_bsim_bluetooth_ll_edtt_hci_test_app_${PRJ_CONF_2}\
+  ${RR_ARGS_2} ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_edtt_hci_test_app_${PRJ_CONF_2}\
   -s=${SIMULATION_ID} -d=1 -v=${VERBOSITY_LEVEL_DEV2} -RealEncryption=1
 
 _Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL_PHY} -s=${SIMULATION_ID} \

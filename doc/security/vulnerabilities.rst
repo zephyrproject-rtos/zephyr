@@ -1665,6 +1665,28 @@ This has been fixed in main for v3.6.0
 - `PR 66592 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/66592>`_
 
+CVE-2023-7060
+-------------
+
+Missing Security Control in Zephyr OS IP Packet Handling
+
+- `Zephyr project bug tracker GHSA-fjc8-223c-qgqr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fjc8-223c-qgqr>`_
+
+This has been fixed in main for v3.6.0
+
+- `PR 66645 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/66645>`_
+
+- `PR 66739 fix for 3.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/66739>`_
+
+- `PR 66738 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/66738>`_
+
+- `PR 66887 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/66887>`_
+
 CVE-2024-1638
 -------------
 

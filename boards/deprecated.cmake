@@ -455,15 +455,6 @@ set(nrf5340dk_nrf5340_cpuapp_ns_DEPRECATED
 set(nrf5340dk_nrf5340_cpunet_DEPRECATED
     nrf5340dk/nrf5340/cpunet
 )
-set(nrf54h20pdk_nrf54h20_cpuapp_DEPRECATED
-    nrf54h20pdk/nrf54h20/cpuapp
-)
-set(nrf54h20pdk_nrf54h20_cpuppr_DEPRECATED
-    nrf54h20pdk/nrf54h20/cpuppr
-)
-set(nrf54h20pdk_nrf54h20_cpurad_DEPRECATED
-    nrf54h20pdk/nrf54h20/cpurad
-)
 set(nrf54l15pdk_nrf54l15_cpuapp_DEPRECATED
     nrf54l15pdk/nrf54l15/cpuapp
 )

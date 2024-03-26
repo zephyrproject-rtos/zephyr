@@ -11,6 +11,8 @@
 		usart-0 = &flexcomm3;
 		led0 = &green_led;
 		sw0 = &sw_4;
+		i2c-0 = &flexcomm2;
+		watchdog0 = &wwdt;
 	};
 
 	chosen {
@@ -39,6 +41,10 @@
 	};
 };
 
+&wwdt {
+	status = "okay";
+};
+
 arduino_spi: &flexcomm0 {
 	compatible = "nxp,lpc-spi";
 	pinctrl-0 = <&pinmux_flexcomm0_spi>;
@@ -46,6 +52,16 @@ arduino_spi: &flexcomm0 {
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+};
+
+arduino_i2c: &flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
 };
 
 &flexcomm3 {
@@ -62,13 +78,21 @@ arduino_spi: &flexcomm0 {
 
 &flexspi {
 	status = "okay";
+	ahb-bufferable;
+	ahb-prefetch;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	status = "okay";
 	mx25u51245g: mx25u51245g@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		spi-max-frequency = <133000000>;
 		reg = <0>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
-		status = "disabled";
+		status = "okay";
 		jedec-id = [c2 25 3a];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
@@ -99,4 +123,22 @@ arduino_spi: &flexcomm0 {
 			};
 		};
 	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&pmu {
+	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
+			  <PMU_RESET_ITRC>,
+			  <PMU_RESET_AP_RESET>;
 };

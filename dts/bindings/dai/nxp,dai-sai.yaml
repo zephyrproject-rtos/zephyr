@@ -84,3 +84,28 @@ properties:
       If this property is not specified, the receiver will be set to ASYNC.
       If one side is SYNC then the other MUST be ASYNC. Failing to meet this
       condition will result in a failed BUILD_ASSERT().
+  tx-dataline:
+    type: int
+    description: |
+      Use this property to specify which transmission data line the SAI should
+      use. To find out which transmission line you should use you can:
+        1) Check the TRM and see if your SAI instance is multiline. If not then
+        you're going to use transmission line 0.
+        2) If your SAI is multiline then you need to check the datasheet and see
+        the index of the transmission line that's connected to your consumer
+        (e.g: the codec).
+      The indexing of the data line starts at 0. If this property is not specified
+      then the index of the transmission data line will be 0.
+      Please note that "channel" and "data line" are synnonyms in this context.
+  rx-dataline:
+    type: int
+    description: |
+      Use this property to specify which receive transmission data line the SAI should
+      use. To find out which receive line you should use you can:
+        1) Check the TRM and see if your SAI instance is multiline. If not then
+        you're going to use receive line 0.
+        2) If your SAI is multiline then you need to check the datasheet and see
+        the index of the receive line that's connected to your consumer (e.g: the codec).
+      The indexing of the data line starts at 0. If this property is not specified
+      then the index of the receive data line will be 0.
+      Please note that "channel" and "data line" are synnonyms in this context.

@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+int flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);
+void flexspi_clock_safe_config(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1045,10 +1045,6 @@ static void target_i2c_isr_dma(const struct device *dev,
 
 	/* Write clear the peripheral status */
 	IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
-	if (interrupt_status & IT8XXX2_I2C_INT_ANY) {
-		/* Hardware reset */
-		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
-	}
 }
 
 static int target_i2c_isr_pio(const struct device *dev,

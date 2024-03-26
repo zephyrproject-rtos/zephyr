@@ -35,7 +35,13 @@
 
 #include <zephyr/drivers/timer/system_timer.h>
 
+#ifdef CONFIG_XTENSA_MMU
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
+#endif
+
+#ifdef CONFIG_XTENSA_MPU
+#include <zephyr/arch/xtensa/mpu.h>
+#endif
 
 /**
  * @defgroup xtensa_apis Xtensa APIs
@@ -59,6 +65,9 @@ struct arch_mem_domain {
 	uint32_t *ptables __aligned(CONFIG_MMU_PAGE_SIZE);
 	uint8_t asid;
 	bool dirty;
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	struct xtensa_mpu_map mpu_map;
 #endif
 	sys_snode_t node;
 };

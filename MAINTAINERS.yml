@@ -556,6 +556,7 @@ C library:
   maintainers:
     - stephanosio
   collaborators:
+    - aescolar
     - nashif
     - keith-packard
     - cfriedt
@@ -2176,6 +2177,7 @@ Kernel:
     - dcpleung
     - cfriedt
     - npitre
+    - TaiJuWu
   files:
     - doc/kernel/
     - include/zephyr/kernel*.h
@@ -2892,8 +2894,8 @@ RISCV arch:
     - include/zephyr/arch/riscv/
     - soc/common/riscv-privileged/
     - soc/sifive/
-    - soc/riscv/
     - soc/starfive/
+    - soc/qemu/virt_riscv/
     - tests/arch/riscv/
     - doc/hardware/arch/risc-v.rst
     - drivers/interrupt_controller/intc_plic.c
@@ -3125,8 +3127,8 @@ Synopsys Platforms:
     - evgeniy-paltsev
     - IRISZZW
   files:
-    - soc/synopsys/
-    - boards/synopsys/
+    - soc/snps/
+    - boards/snps/
     - samples/boards/arc_secure_services/
   labels:
     - "platform: Synopsys"
@@ -3382,6 +3384,7 @@ NXP Platforms (MPU):
     - decsny
     - yvanderv
   files:
+    - dts/arm64/nxp/
     - soc/nxp/imx/
     - soc/nxp/layerscape/
   files-regex:

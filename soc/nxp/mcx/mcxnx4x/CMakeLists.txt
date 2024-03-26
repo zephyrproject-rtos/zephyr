@@ -8,9 +8,14 @@
 # Flexcomm SDK driver
 zephyr_compile_definitions_ifdef(CONFIG_NXP_LP_FLEXCOMM LPFLEXCOMM_INIT_NOT_USED_IN_DRIVER=1)
 
-zephyr_sources(
-  soc.c
-  )
+zephyr_sources(soc.c)
+
+if(CONFIG_FLASH_MCUX_FLEXSPI_NOR)
+  zephyr_sources(flash_clock_setup.c)
+  if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
+    zephyr_code_relocate(FILES flash_clock_setup.c LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+  endif()
+endif()
 
 zephyr_include_directories(.)
 

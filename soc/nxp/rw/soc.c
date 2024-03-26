@@ -10,6 +10,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/sys/util_macro.h>
 
 #include <cortex_m/exception.h>
 #include <fsl_power.h>
@@ -137,6 +138,15 @@ __ramfunc void clock_init(void)
 	/* Call function set_flexspi_clock() to set flexspi clock source to aux0_pll_clk in XIP. */
 	set_flexspi_clock(FLEXSPI, 2U, 2U);
 
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
+	CLOCK_AttachClk(kLPOSC_to_WDT0_CLK);
+#else
+	/* Allowed to select none if not being used for watchdog to
+	 * reduce power
+	 */
+	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
+#endif
+
 /* Any flexcomm can be USART */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)) && CONFIG_SERIAL
 	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){0, kCLOCK_FrgPllDiv, 255, 0});
@@ -157,6 +167,23 @@ __ramfunc void clock_init(void)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_usart, okay)) && CONFIG_SERIAL
 	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){14, kCLOCK_FrgPllDiv, 255, 0});
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM14);
+#endif
+
+/* Any flexcomm can be I2C */
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM0);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM1);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM2);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM3);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2c, okay)) && CONFIG_I2C
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM14);
 #endif
 
 /* Clock flexcomms when used as SPI */
@@ -181,6 +208,27 @@ __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM14);
 #endif
 #endif /* CONFIG_SPI */
+
+#ifdef CONFIG_COUNTER_MCUX_CTIMER
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer0), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER0);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer1), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER1);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer2), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER2);
+#endif
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer3), nxp_lpc_ctimer, okay))
+	CLOCK_AttachClk(kSFRO_to_CTIMER3);
+#endif
+#endif /* CONFIG_COUNTER_MCUX_CTIMER */
+
+#ifdef CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kFREEMRT_RST_SHIFT_RSTn);
+#endif
+
 }
 
 /**
@@ -195,6 +243,20 @@ __ramfunc void clock_init(void)
 
 static int nxp_rw600_init(void)
 {
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
+	POWER_EnableResetSource(kPOWER_ResetSourceWdt);
+#endif
+
+#define PMU_RESET_CAUSES_ \
+	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(pmu), reset_causes_en, DT_PROP_BY_IDX, (|))
+#define PMU_RESET_CAUSES \
+	COND_CODE_0(IS_EMPTY(PMU_RESET_CAUSES_), (PMU_RESET_CAUSES_), (0))
+#define WDT_RESET \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(wwdt), (kPOWER_ResetSourceWdt), (0))
+#define RESET_CAUSES \
+	(PMU_RESET_CAUSES | WDT_RESET)
+
+	POWER_EnableResetSource(RESET_CAUSES);
 
 	/* Initialize clock */
 	clock_init();

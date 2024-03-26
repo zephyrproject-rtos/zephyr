@@ -857,6 +857,7 @@ int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
 
 	if (!port_in_use(proto, ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
+		NET_DBG("service not bound");
 		return -EHOSTDOWN;
 	}
 

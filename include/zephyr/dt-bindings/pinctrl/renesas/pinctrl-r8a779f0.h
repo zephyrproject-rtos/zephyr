@@ -275,6 +275,21 @@
 #define FUNC_TCLK1                 IP0SR1(0, 1)
 #define FUNC_HSCK2                 IP0SR1(0, 2)
 #define FUNC_GP1_01                IP0SR1(4, 0)
+
+#define FUNC_MMC_SD_CLK            IPSR_DUMMY
+#define FUNC_MMC_SD_D0             IPSR_DUMMY
+#define FUNC_MMC_SD_D1             IPSR_DUMMY
+#define FUNC_MMC_SD_D2             IPSR_DUMMY
+#define FUNC_MMC_SD_D3             IPSR_DUMMY
+#define FUNC_MMC_D4                IPSR_DUMMY
+#define FUNC_MMC_D5                IPSR_DUMMY
+#define FUNC_MMC_D6                IPSR_DUMMY
+#define FUNC_MMC_D7                IPSR_DUMMY
+#define FUNC_MMC_DS                IPSR_DUMMY
+#define FUNC_MMC_SD_CMD            IPSR_DUMMY
+#define FUNC_SD_CD                 IPSR_DUMMY
+#define FUNC_SD_WP                 IPSR_DUMMY
+
 #define FUNC_TCLK4                 IP0SR1(4, 1)
 #define FUNC_HRX2                  IP0SR1(4, 2)
 #define FUNC_GP1_02                IP0SR1(8, 0)

@@ -15,15 +15,15 @@ cd ${BSIM_OUT_PATH}/bin
 function Execute_AC_6_II() {
     printf "\n\n======== Running GMAP AC_6_II with %s =========\n\n" $1
 
-    Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+    Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=gmap_ugg_ac_6_ii -RealEncryption=1 \
         -rs=23 -D=3 -argstest sink_preset $1
 
-    Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+    Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=gmap_ugt -RealEncryption=1 \
         -rs=46 -D=3
 
-    Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+    Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=gmap_ugt -RealEncryption=1 \
         -rs=69 -D=3
 

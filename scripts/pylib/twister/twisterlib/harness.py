@@ -706,8 +706,9 @@ class Bsim(Harness):
             new_exe_name = f'bs_{self.instance.platform.name}_{new_exe_name}'
         else:
             new_exe_name = self.instance.name
-            new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_')
             new_exe_name = f'bs_{new_exe_name}'
+
+        new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_')
 
         new_exe_path: str = os.path.join(bsim_out_path, 'bin', new_exe_name)
         logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')

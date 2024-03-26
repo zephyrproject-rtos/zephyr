@@ -408,18 +408,43 @@ ZTEST(net_buf_tests, test_net_buf_multi_frags)
 		      "Incorrect frag destroy callback count");
 }
 
-ZTEST(net_buf_tests, test_net_buf_clone)
+ZTEST(net_buf_tests, test_net_buf_clone_ref_count)
 {
 	struct net_buf *buf, *clone;
 
 	destroy_called = 0;
 
+	/* Heap pool supports reference counting */
 	buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
 	zassert_not_null(buf, "Failed to get buffer");
 
 	clone = net_buf_clone(buf, K_NO_WAIT);
 	zassert_not_null(clone, "Failed to get clone buffer");
 	zassert_equal(buf->data, clone->data, "Incorrect clone data pointer");
+
+	net_buf_unref(buf);
+	net_buf_unref(clone);
+
+	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+}
+
+ZTEST(net_buf_tests, test_net_buf_clone_no_ref_count)
+{
+	struct net_buf *buf, *clone;
+	const uint8_t data[3] = {0x11, 0x22, 0x33};
+
+	destroy_called = 0;
+
+	/* Fixed pool does not support reference counting */
+	buf = net_buf_alloc_len(&fixed_pool, 3, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+	net_buf_add_mem(buf, data, sizeof(data));
+
+	clone = net_buf_clone(buf, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to get clone buffer");
+	zassert_not_equal(buf->data, clone->data,
+			  "No reference counting support, different pointers expected");
+	zassert_mem_equal(clone->data, data, sizeof(data));
 
 	net_buf_unref(buf);
 	net_buf_unref(clone);
@@ -729,6 +754,39 @@ ZTEST(net_buf_tests, test_net_buf_user_data)
 		"Bad user_data_size");
 
 	net_buf_unref(buf);
+}
+
+ZTEST(net_buf_tests, test_net_buf_user_data_copy)
+{
+	struct net_buf *buf_user_data_small, *buf_user_data_big;
+	uint32_t *src_user_data, *dst_user_data;
+
+	buf_user_data_small = net_buf_alloc_len(&bufs_pool, 1, K_NO_WAIT);
+	zassert_not_null(buf_user_data_small, "Failed to get buffer");
+	src_user_data = net_buf_user_data(buf_user_data_small);
+	*src_user_data = 0xAABBCCDD;
+
+	/* Happy case: Size of user data in destination buf is bigger than the source buf one */
+	buf_user_data_big = net_buf_alloc_len(&var_pool, 1, K_NO_WAIT);
+	zassert_not_null(buf_user_data_big, "Failed to get buffer");
+	dst_user_data = net_buf_user_data(buf_user_data_big);
+	*dst_user_data = 0x11223344;
+
+	zassert_ok(net_buf_user_data_copy(buf_user_data_big, buf_user_data_small));
+	zassert_equal(*src_user_data, 0xAABBCCDD);
+
+	/* Error case: User data size of destination buffer is too small */
+	zassert_not_ok(net_buf_user_data_copy(buf_user_data_small, buf_user_data_big),
+		       "User data size in destination buffer too small");
+
+	net_buf_unref(buf_user_data_big);
+
+	/* Corner case: Same buffer used as source and target */
+	zassert_ok(net_buf_user_data_copy(buf_user_data_small, buf_user_data_small),
+		   "No-op is tolerated");
+	zassert_equal(*src_user_data, 0xAABBCCDD, "User data remains the same");
+
+	net_buf_unref(buf_user_data_small);
 }
 
 ZTEST(net_buf_tests, test_net_buf_comparison)

@@ -55,24 +55,40 @@ static void test_address(bt_addr_le_t *addr)
 		return;
 	}
 
-	adv_set_data[adv_index].rpa_rotations++;
-
 	printk("Ad set %d Old ", adv_index);
 	print_address(&adv_set_data[adv_index].old_addr);
 	printk("Ad set %d New ", adv_index);
 	print_address(addr);
 
-	/* Compare old and new address */
-	if (adv_index < 2) {
-		if (bt_addr_le_eq(addr, &adv_set_data[adv_index].old_addr)) {
-			FAIL("New RPA should have been generated\n");
+	/*	For the first 2 rpa rotations, either of the first 2 adv sets returns false.
+	 *	Hence first 2 adv sets continue with old rpa in first 2 rpa rotations.
+	 *	For the next 2 rpa rotations, either of the last 2 adv sets returns false.
+	 *	Hence last 2 adv sets continue with old rpa in next 2 rpa rotations.
+	 */
+	if ((adv_set_data[adv_index].rpa_rotations % CONFIG_BT_EXT_ADV_MAX_ADV_SET)  < 2) {
+
+		if (adv_index < 2) {
+			if (!bt_addr_le_eq(addr, &adv_set_data[adv_index].old_addr)) {
+				FAIL("Adv sets should continue with old rpa\n");
+			}
+		} else {
+			if (bt_addr_le_eq(addr, &adv_set_data[adv_index].old_addr)) {
+				FAIL("New RPA should have been generated\n");
+			}
 		}
 	} else {
-		if (!bt_addr_le_eq(addr, &adv_set_data[adv_index].old_addr)) {
-			FAIL("Adv sets should continue with old rpa\n");
+		if (adv_index < 2) {
+			if (bt_addr_le_eq(addr, &adv_set_data[adv_index].old_addr)) {
+				FAIL("New RPA should have been generated\n");
+			}
+		} else {
+			if (!bt_addr_le_eq(addr, &adv_set_data[adv_index].old_addr)) {
+				FAIL("Adv sets should continue with old rpa\n");
+			}
 		}
 	}
 
+	adv_set_data[adv_index].rpa_rotations++;
 	if (adv_set_data[adv_index].rpa_rotations > EXPECTED_NUM_ROTATIONS) {
 		PASS("PASS\n");
 	}

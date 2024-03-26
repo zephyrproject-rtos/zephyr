@@ -1516,7 +1516,7 @@ endfunction()
 # When MERGE is supplied a list of build strings will be returned with the full
 # build string as first item in the list.
 # The full order of build strings returned in the list will be:
-# - Full build string, including identifier and revision
+# - Normalized board target build string, this includes qualifiers and revision
 # - Build string with board variants removed in addition
 # - Build string with cpuset removed in addition
 # - Build string with soc removed in addition
@@ -1530,7 +1530,7 @@ endfunction()
 # Usage:
 #   zephyr_build_string(<out-variable>
 #                       BOARD <board>
-#                       [BOARD_IDENTIFIER <identifier>]
+#                       [BOARD_QUALIFIERS <qualifiers>]
 #                       [BOARD_REVISION <revision>]
 #                       [BUILD <type>]
 #                       [MERGE [REVERSE]]
@@ -1540,7 +1540,7 @@ endfunction()
 # BOARD <board>:             Board name to use when creating the build string.
 # BOARD_REVISION <revision>: Board revision to use when creating the build string.
 # BUILD <type>:              Build type to use when creating the build string.
-# MERGE:                     Return a list of build identifiers instead of a single build string.
+# MERGE:                     Return a list of build strings instead of a single build string.
 # REVERSE:                   Reverse the list before returning it.
 #
 # Examples
@@ -1553,17 +1553,17 @@ endfunction()
 # will return the string `alpha_1_0_0_debug` in `build_string` parameter.
 #
 # calling
-#   zephyr_build_string(build_string BOARD alpha BOARD_IDENTIFIER /soc/bar)
+#   zephyr_build_string(build_string BOARD alpha BOARD_QUALIFIERS /soc/bar)
 # will return the string `alpha_soc_bar` in `build_string` parameter.
 #
 # calling
-#   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_IDENTIFIER /soc/bar MERGE)
+#   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
 # will return a list of the following strings
 # `alpha_soc_bar_1_0_0;alpha_soc_bar;alpha_soc_1_0_0;alpha_soc;alpha_1_0_0;alpha` in `build_string` parameter.
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
-  set(single_args BOARD BOARD_IDENTIFIER BOARD_REVISION BUILD)
+  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION BUILD)
 
   cmake_parse_arguments(BUILD_STR "${options}" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
@@ -1580,14 +1580,14 @@ function(zephyr_build_string outvar)
     )
   endif()
 
-  if(DEFINED BUILD_STR_BOARD_IDENTIFIER AND NOT BUILD_STR_BOARD)
+  if(DEFINED BUILD_STR_BOARD_QUALIFIERS AND NOT BUILD_STR_BOARD)
     message(FATAL_ERROR
-      "zephyr_build_string(${ARGV0} <list> BOARD_IDENTIFIER ${BUILD_STR_BOARD_IDENTIFIER} ...)"
+      "zephyr_build_string(${ARGV0} <list> BOARD_QUALIFIERS ${BUILD_STR_BOARD_QUALIFIERS} ...)"
       " given without BOARD argument, please specify BOARD"
     )
   endif()
 
-  string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD}${BUILD_STR_BOARD_IDENTIFIER}")
+  string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD}${BUILD_STR_BOARD_QUALIFIERS}")
   string(REPLACE "." "_" revision_string "${BUILD_STR_BOARD_REVISION}")
 
   string(JOIN "_" ${outvar} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
@@ -2531,79 +2531,79 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options REQUIRED)
-    set(single_args BOARD BOARD_REVISION BOARD_IDENTIFIER DTS KCONF DEFCONFIG BUILD SUFFIX)
+    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
 
-  cmake_parse_arguments(FILE "${options}" "${single_args}" "${multi_args}" ${ARGN})
-  if(FILE_UNPARSED_ARGUMENTS)
-      message(FATAL_ERROR "zephyr_file(${ARGV0} <val> ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
+  cmake_parse_arguments(ZFILE "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(ZFILE_UNPARSED_ARGUMENTS)
+      message(FATAL_ERROR "zephyr_file(${ARGV0} <val> ...) given unknown arguments: ${ZFILE_UNPARSED_ARGUMENTS}")
   endif()
 
-  if(FILE_APPLICATION_ROOT)
+  if(ZFILE_APPLICATION_ROOT)
     # Note: user can do: `-D<var>=<relative-path>` and app can at same
     # time specify `list(APPEND <var> <abs-path>)`
     # Thus need to check and update only CACHED variables (-D<var>).
-    set(CACHED_PATH $CACHE{${FILE_APPLICATION_ROOT}})
+    set(CACHED_PATH $CACHE{${ZFILE_APPLICATION_ROOT}})
     foreach(path ${CACHED_PATH})
       # The cached variable is relative path, i.e. provided by `-D<var>` or
       # `set(<var> CACHE)`, so let's update current scope variable to absolute
       # path from  `APPLICATION_SOURCE_DIR`.
       if(NOT IS_ABSOLUTE ${path})
         set(abs_path ${APPLICATION_SOURCE_DIR}/${path})
-        list(FIND ${FILE_APPLICATION_ROOT} ${path} index)
+        list(FIND ${ZFILE_APPLICATION_ROOT} ${path} index)
         if(NOT ${index} LESS 0)
-          list(REMOVE_AT ${FILE_APPLICATION_ROOT} ${index})
-          list(INSERT ${FILE_APPLICATION_ROOT} ${index} ${abs_path})
+          list(REMOVE_AT ${ZFILE_APPLICATION_ROOT} ${index})
+          list(INSERT ${ZFILE_APPLICATION_ROOT} ${index} ${abs_path})
         endif()
       endif()
     endforeach()
 
     # Now all cached relative paths has been updated.
     # Let's check if anyone uses relative path as scoped variable, and fail
-    foreach(path ${${FILE_APPLICATION_ROOT}})
+    foreach(path ${${ZFILE_APPLICATION_ROOT}})
       if(NOT IS_ABSOLUTE ${path})
         message(FATAL_ERROR
-"Relative path encountered in scoped variable: ${FILE_APPLICATION_ROOT}, value=${path}\n \
-Please adjust any `set(${FILE_APPLICATION_ROOT} ${path})` or `list(APPEND ${FILE_APPLICATION_ROOT} ${path})`\n \
+"Relative path encountered in scoped variable: ${ZFILE_APPLICATION_ROOT}, value=${path}\n \
+Please adjust any `set(${ZFILE_APPLICATION_ROOT} ${path})` or `list(APPEND ${ZFILE_APPLICATION_ROOT} ${path})`\n \
 to absolute path using `\${CMAKE_CURRENT_SOURCE_DIR}/${path}` or similar. \n \
 Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endif()
     endforeach()
 
     # This updates the provided argument in parent scope (callers scope)
-    set(${FILE_APPLICATION_ROOT} ${${FILE_APPLICATION_ROOT}} PARENT_SCOPE)
+    set(${ZFILE_APPLICATION_ROOT} ${${ZFILE_APPLICATION_ROOT}} PARENT_SCOPE)
   endif()
 
-  if(FILE_CONF_FILES)
-    if(DEFINED FILE_BOARD_REVISION AND NOT FILE_BOARD)
+  if(ZFILE_CONF_FILES)
+    if(DEFINED ZFILE_BOARD_REVISION AND NOT ZFILE_BOARD)
         message(FATAL_ERROR
-          "zephyr_file(${ARGV0} <path> BOARD_REVISION ${FILE_BOARD_REVISION} ...)"
+          "zephyr_file(${ARGV0} <path> BOARD_REVISION ${ZFILE_BOARD_REVISION} ...)"
           " given without BOARD argument, please specify BOARD"
         )
     endif()
 
-    if(NOT DEFINED FILE_BOARD)
+    if(NOT DEFINED ZFILE_BOARD)
       # Defaulting to system wide settings when BOARD is not given as argument
-      set(FILE_BOARD ${BOARD})
+      set(ZFILE_BOARD ${BOARD})
       if(DEFINED BOARD_REVISION)
-        set(FILE_BOARD_REVISION ${BOARD_REVISION})
+        set(ZFILE_BOARD_REVISION ${BOARD_REVISION})
       endif()
 
-      if(DEFINED BOARD_IDENTIFIER)
-        set(FILE_BOARD_IDENTIFIER ${BOARD_IDENTIFIER})
+      if(DEFINED BOARD_QUALIFIERS)
+        set(ZFILE_BOARD_QUALIFIERS ${BOARD_QUALIFIERS})
       endif()
     endif()
 
-    if(FILE_NAMES)
-      set(dts_filename_list ${FILE_NAMES})
-      set(kconf_filename_list ${FILE_NAMES})
+    if(ZFILE_NAMES)
+      set(dts_filename_list ${ZFILE_NAMES})
+      set(kconf_filename_list ${ZFILE_NAMES})
     else()
       zephyr_build_string(filename_list
-                          BOARD ${FILE_BOARD}
-                          BOARD_REVISION ${FILE_BOARD_REVISION}
-                          BOARD_IDENTIFIER ${FILE_BOARD_IDENTIFIER}
-                          BUILD ${FILE_BUILD}
+                          BOARD ${ZFILE_BOARD}
+                          BOARD_REVISION ${ZFILE_BOARD_REVISION}
+                          BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
+                          BUILD ${ZFILE_BUILD}
                           MERGE REVERSE
       )
       list(REMOVE_DUPLICATES filename_list)
@@ -2614,24 +2614,24 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       list(TRANSFORM kconf_filename_list APPEND ".conf")
     endif()
 
-    if(FILE_DTS)
-      foreach(path ${FILE_CONF_FILES})
+    if(ZFILE_DTS)
+      foreach(path ${ZFILE_CONF_FILES})
         foreach(filename ${dts_filename_list})
           if(NOT IS_ABSOLUTE ${filename})
             set(test_file ${path}/${filename})
           else()
             set(test_file ${filename})
           endif()
-          zephyr_file_suffix(test_file SUFFIX ${FILE_SUFFIX})
+          zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
 
           if(EXISTS ${test_file})
-            list(APPEND ${FILE_DTS} ${test_file})
+            list(APPEND ${ZFILE_DTS} ${test_file})
 
-            if(DEFINED FILE_BUILD)
+            if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)
             endif()
 
-            if(FILE_NAMES)
+            if(ZFILE_NAMES)
               break()
             endif()
           endif()
@@ -2639,31 +2639,31 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endforeach()
 
       # This updates the provided list in parent scope (callers scope)
-      set(${FILE_DTS} ${${FILE_DTS}} PARENT_SCOPE)
+      set(${ZFILE_DTS} ${${ZFILE_DTS}} PARENT_SCOPE)
 
-      if(NOT ${FILE_DTS})
+      if(NOT ${ZFILE_DTS})
         set(not_found ${dts_filename_list})
       endif()
     endif()
 
-    if(FILE_KCONF)
-      foreach(path ${FILE_CONF_FILES})
+    if(ZFILE_KCONF)
+      foreach(path ${ZFILE_CONF_FILES})
         foreach(filename ${kconf_filename_list})
           if(NOT IS_ABSOLUTE ${filename})
             set(test_file ${path}/${filename})
           else()
             set(test_file ${filename})
           endif()
-          zephyr_file_suffix(test_file SUFFIX ${FILE_SUFFIX})
+          zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
 
           if(EXISTS ${test_file})
-            list(APPEND ${FILE_KCONF} ${test_file})
+            list(APPEND ${ZFILE_KCONF} ${test_file})
 
-            if(DEFINED FILE_BUILD)
+            if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)
             endif()
 
-            if(FILE_NAMES)
+            if(ZFILE_NAMES)
               break()
             endif()
           endif()
@@ -2671,16 +2671,16 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endforeach()
 
       # This updates the provided list in parent scope (callers scope)
-      set(${FILE_KCONF} ${${FILE_KCONF}} PARENT_SCOPE)
+      set(${ZFILE_KCONF} ${${ZFILE_KCONF}} PARENT_SCOPE)
 
-      if(NOT ${FILE_KCONF})
+      if(NOT ${ZFILE_KCONF})
         set(not_found ${kconf_filename_list})
       endif()
     endif()
 
-    if(FILE_REQUIRED AND DEFINED not_found)
+    if(ZFILE_REQUIRED AND DEFINED not_found)
       message(FATAL_ERROR
-              "No ${not_found} file(s) was found in the ${FILE_CONF_FILES} folder(s), "
+              "No ${not_found} file(s) was found in the ${ZFILE_CONF_FILES} folder(s), "
               "please read the Zephyr documentation on application development."
       )
     endif()
@@ -2690,17 +2690,17 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
                           " you should switch to using -DFILE_SUFFIX instead")
     endif()
 
-    if(FILE_DEFCONFIG)
-      foreach(path ${FILE_CONF_FILES})
+    if(ZFILE_DEFCONFIG)
+      foreach(path ${ZFILE_CONF_FILES})
         foreach(filename ${filename_list})
           if(EXISTS ${path}/${filename}_defconfig)
-            list(APPEND ${FILE_DEFCONFIG} ${path}/${filename}_defconfig)
+            list(APPEND ${ZFILE_DEFCONFIG} ${path}/${filename}_defconfig)
           endif()
         endforeach()
       endforeach()
 
       # This updates the provided list in parent scope (callers scope)
-      set(${FILE_DEFCONFIG} ${${FILE_DEFCONFIG}} PARENT_SCOPE)
+      set(${ZFILE_DEFCONFIG} ${${ZFILE_DEFCONFIG}} PARENT_SCOPE)
     endif()
   endif()
 endfunction()

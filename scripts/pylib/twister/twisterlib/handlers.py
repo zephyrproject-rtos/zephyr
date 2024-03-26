@@ -378,6 +378,10 @@ class DeviceHandler(Handler):
             # from the test.
             harness.capture_coverage = True
 
+        # Wait for serial connection
+        while not ser.isOpen():
+            time.sleep(0.1)
+
         # Clear serial leftover.
         ser.reset_input_buffer()
 
@@ -500,7 +504,7 @@ class DeviceHandler(Handler):
                 board_id = hardware.probe_id or hardware.id
                 product = hardware.product
                 if board_id is not None:
-                    if runner in ("pyocd", "nrfjprog"):
+                    if runner in ("pyocd", "nrfjprog", "nrfutil"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
                     elif runner == "openocd" and product == "STM32 STLink":
@@ -514,6 +518,11 @@ class DeviceHandler(Handler):
                         command_extra_args.append("cmsis_dap_serial %s" % board_id)
                     elif runner == "jlink":
                         command.append("--tool-opt=-SelectEmuBySN  %s" % board_id)
+                    elif runner == "linkserver":
+                        # for linkserver
+                        # --probe=#<number> select by probe index
+                        # --probe=<serial number> select by probe serial number
+                        command.append("--probe=%s" % board_id)
                     elif runner == "stm32cubeprogrammer":
                         command.append("--tool-opt=sn=%s" % board_id)
 
@@ -642,9 +651,13 @@ class DeviceHandler(Handler):
         if hardware.flash_with_test:
             flash_timeout += self.get_test_timeout()
 
+        serial_port = None
+        if hardware.flash_before is False:
+            serial_port = serial_device
+
         try:
             ser = self._create_serial_connection(
-                serial_device,
+                serial_port,
                 hardware.baud,
                 flash_timeout,
                 serial_pty,
@@ -697,6 +710,15 @@ class DeviceHandler(Handler):
 
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
+
+        # Connect to device after flashing it
+        if hardware.flash_before:
+            try:
+                logger.debug(f"Attach serial device {serial_device} @ {hardware.baud} baud")
+                ser.port = serial_device
+                ser.open()
+            except serial.SerialException:
+                return
 
         if not flash_error:
             # Always wait at most the test timeout here after flashing.
@@ -1045,15 +1067,13 @@ class QEMUHandler(Handler):
 
 
 class QEMUWinHandler(Handler):
-    """Spawns a thread to monitor QEMU output on Windows OS
+    """Spawns a thread to monitor QEMU output from pipes on Windows OS
 
-    We redirect subprocess output to pipe and monitor the pipes for output.
-    We need to do this as once qemu starts, it runs forever until killed.
-    Test cases emit special messages to the console as they run, we check
-    for these to collect whether the test passed or failed.
-    The pipe includes also messages from ninja command which is used for
-    running QEMU.
-    """
+     QEMU creates single duplex pipe at //.pipe/path, where path is fifo_fn.
+     We need to do this as once qemu starts, it runs forever until killed.
+     Test cases emit special messages to the console as they run, we check
+     for these to collect whether the test passed or failed.
+     """
 
     def __init__(self, instance, type_str):
         """Constructor
@@ -1063,6 +1083,8 @@ class QEMUWinHandler(Handler):
 
         super().__init__(instance, type_str)
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
+        self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
+        self.pipe_handle = None
         self.pid = 0
         self.thread = None
         self.stop_thread = False
@@ -1103,6 +1125,8 @@ class QEMUWinHandler(Handler):
                     os.kill(pid, signal.SIGTERM)
             except (ProcessLookupError, psutil.NoSuchProcess):
                 # Oh well, as long as it's dead! User probably sent Ctrl-C
+                pass
+            except OSError:
                 pass
 
     @staticmethod
@@ -1160,15 +1184,21 @@ class QEMUWinHandler(Handler):
                     self.instance.reason = "Exited with {}".format(self.returncode)
             self.instance.add_missing_case_status("blocked")
 
-    def _enqueue_char(self, stdout, queue):
+    def _enqueue_char(self, queue):
         while not self.stop_thread:
+            if not self.pipe_handle:
+                try:
+                    self.pipe_handle = os.open(r"\\.\pipe\\" + self.fifo_fn, os.O_RDONLY)
+                except FileNotFoundError as e:
+                    if e.args[0] == 2:
+                        # Pipe is not opened yet, try again after a delay.
+                        time.sleep(1)
+                continue
+
+            c = ""
             try:
-                c = stdout.read(1)
-            except ValueError:
-                # Reading on closed file exception can occur when subprocess is killed.
-                # Can be ignored.
-                pass
-            else:
+                c = os.read(self.pipe_handle, 1)
+            finally:
                 queue.put(c)
 
     def _monitor_output(self, queue, timeout, logfile, pid_fn, harness, ignore_unexpected_eof=False):
@@ -1278,10 +1308,11 @@ class QEMUWinHandler(Handler):
         self.stop_thread = False
         queue = Queue()
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+        with subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+                              cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
 
-            self.thread = threading.Thread(target=self._enqueue_char, args=(proc.stdout, queue))
+            self.thread = threading.Thread(target=self._enqueue_char, args=(queue,))
             self.thread.daemon = True
             self.thread.start()
 
@@ -1307,6 +1338,12 @@ class QEMUWinHandler(Handler):
 
         logger.debug(f"return code from QEMU ({self.pid}): {self.returncode}")
 
+        os.close(self.pipe_handle)
+        self.pipe_handle = None
+
         self._update_instance_info(harness.state, is_timeout)
 
         self._final_handle_actions(harness, 0)
+
+    def get_fifo(self):
+        return self.fifo_fn

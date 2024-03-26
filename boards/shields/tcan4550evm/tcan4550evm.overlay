@@ -28,8 +28,6 @@
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_HIGH>; /* D8 */
 		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
 		bosch,mram-cfg = <0x0 15 15 7 7 0 10 10>;
-		sample-point = <875>;
-		sample-point-data = <875>;
 		bus-speed = <125000>;
 		bus-speed-data = <1000000>;
 		status = "okay";

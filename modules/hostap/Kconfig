@@ -19,6 +19,8 @@ config WIFI_NM_WPA_SUPPLICANT
 	help
 	  WPA supplicant as a network management backend for WIFI_NM.
 
+if WIFI_NM_WPA_SUPPLICANT
+
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
 	default 8192
@@ -59,29 +61,60 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	  runtime filtering can also be configured in addition to the compile-time
 	  filtering.
 
-if WIFI_NM_WPA_SUPPLICANT
+# Memory optimizations
+config WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
+	bool "Advanced features"
+	default y
+
+if WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
+
+config WIFI_NM_WPA_SUPPLICANT_ROBUST_AV
+	bool "Robust Audio Video streaming support"
+	default y
+
+# Hidden as these are mandatory for WFA certification
+config WIFI_NM_WPA_SUPPLICANT_WMM_AC
+	bool
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_MBO
+	bool
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_WNM
+	bool "Wireless Network Management support"
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_RRM
+	bool "Radio Resource Management support"
+	default y
+endif
 
 config WIFI_NM_WPA_SUPPLICANT_WEP
 	bool "WEP (Legacy crypto) support"
 
 choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
 	prompt "WPA supplicant crypto implementation"
-	default WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
-	default WIFI_NM_WPA_SUPPLICANT_CRYPTO_PSA if BUILD_WITH_TFM
-	default WIFI_NM_WPA_SUPPLICANT_CRYPTO if !BUILD_WITH_TFM
+	default WIFI_NM_WPA_SUPPLICANT_CRYPTO
 	help
 	  Select the crypto implementation to use for WPA supplicant.
 
-# To easily manage the crypto dependencies we separate the crypto
-# implementations into two Kconfig options. One for the legacy crypto
-# and one for the PSA crypto.
-config WIFI_NM_WPA_SUPPLICANT_CRYPTO_PSA
-	bool "PSA Crypto support for WiFi"
-	select WIFI_NM_WPA_SUPPLICANT_WEP
-
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO
-	bool "Legacy Crypto support for WiFi"
-	select WIFI_NM_WPA_SUPPLICANT_WEP
+	bool "Crypto support for WiFi"
+	select MBEDTLS
+	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
+	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
+	select MBEDTLS_PK_WRITE_C
+	select MBEDTLS_ECP_C
+	select MBEDTLS_ECP_ALL_ENABLED
+	select MBEDTLS_PKCS5_C
+	select MBEDTLS_MAC_CMAC_ENABLED
+#	select MBEDTLS_CIPHER_MODE_CBC
+#	select MBEDTLS_CIPHER_MODE_CTR
+#	select MBEDTLS_LEGACY_CRYPTO_C
+#	select MBEDTLS_CTR_DRBG_C
+#	select MBEDTLS_PK_WRITE_C
+#	select MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	bool "No Crypto support for WiFi"
@@ -182,6 +215,8 @@ config TESTING_OPTIONS
 
 config AP
 	bool
+	depends on WIFI_NM_WPA_SUPPLICANT_AP
+	default y if WIFI_NM_WPA_SUPPLICANT_AP
 
 config NO_RADIUS
 	bool
@@ -299,6 +334,19 @@ config WPA_CRYPTO
 	bool
 
 config WPA_SUPP_CRYPTO
+	bool
+
+config ROBUST_AV
+	bool
+	default y
+	depends on WIFI_NM_WPA_SUPPLICANT_ROBUST_AV
+
+config RRM
+	bool
+	default y
+	depends on WIFI_NM_WPA_SUPPLICANT_RRM
+
+config WMM_AC
 	bool
 
 endif # WIFI_NM_WPA_SUPPLICANT

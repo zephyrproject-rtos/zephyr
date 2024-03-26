@@ -175,6 +175,10 @@ Networking
   one IPv4 address / network interface, the netmask must be specified
   for each IPv4 address separately. (:github:`68419`)
 
+* Virtual network interface API no longer has the `input` callback. The input callback was
+  used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
+  implemented in `recv` callback. (:github:`70549`)
+
 Other Subsystems
 ****************
 
@@ -183,6 +187,12 @@ LoRaWAN
 
 MCUmgr
 ======
+
+Modem
+=====
+
+* The ``CONFIG_MODEM_CHAT_LOG_BUFFER`` Kconfig option was
+  renamed to :kconfig:option:`MODEM_CHAT_LOG_BUFFER_SIZE`.
 
 Shell
 =====
@@ -195,6 +205,8 @@ Userspace
 
 Architectures
 *************
+
+* Function :c:func:`arch_start_cpu` has been renamed to :c:func:`arch_cpu_start`.
 
 * x86
 

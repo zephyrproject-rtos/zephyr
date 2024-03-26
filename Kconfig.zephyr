@@ -429,7 +429,9 @@ endchoice
 
 config LTO
 	bool "Link Time Optimization [EXPERIMENTAL]"
-	depends on (!(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION) && !NATIVE_LIBRARY
+	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
+	depends on !NATIVE_LIBRARY
+	depends on !CODE_DATA_RELOCATION
 	select EXPERIMENTAL
 	help
 	  This option enables Link Time Optimization.

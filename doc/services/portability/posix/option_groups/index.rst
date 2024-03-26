@@ -163,7 +163,7 @@ process applications.
    :header: API, Supported
    :widths: 50,10
 
-    confstr(),
+    confstr(),yes
     environ,yes
     errno,yes
     getenv(),yes
@@ -332,7 +332,7 @@ POSIX_TIMERS
    :header: API, Supported
    :widths: 50,10
 
-    clock_getres(),
+    clock_getres(),yes
     clock_gettime(),yes
     clock_settime(),yes
     nanosleep(),yes
@@ -401,9 +401,9 @@ _POSIX_READER_WRITER_LOCKS
     pthread_rwlock_unlock(),yes
     pthread_rwlock_wrlock(),yes
     pthread_rwlockattr_destroy(),yes
-    pthread_rwlockattr_getpshared(),
+    pthread_rwlockattr_getpshared(),yes
     pthread_rwlockattr_init(),yes
-    pthread_rwlockattr_setpshared(),
+    pthread_rwlockattr_setpshared(),yes
 
 .. _posix_option_thread_attr_stackaddr:
 
@@ -440,10 +440,10 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
 
     pthread_attr_getinheritsched(),
     pthread_attr_getschedpolicy(),yes
-    pthread_attr_getscope(),
+    pthread_attr_getscope(),yes
     pthread_attr_setinheritsched(),
     pthread_attr_setschedpolicy(),yes
-    pthread_attr_setscope(),
+    pthread_attr_setscope(),yes
     pthread_getschedparam(),yes
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes

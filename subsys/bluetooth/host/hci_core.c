@@ -407,6 +407,13 @@ static int hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time)
 	*tx_time = sys_le16_to_cpu(rp->max_tx_time);
 	net_buf_unref(rsp);
 
+	if (!IN_RANGE(*tx_octets, BT_HCI_LE_MAX_TX_OCTETS_MIN, BT_HCI_LE_MAX_TX_OCTETS_MAX)) {
+		LOG_WRN("tx_octets exceeds the valid range %u", *tx_octets);
+	}
+	if (!IN_RANGE(*tx_time, BT_HCI_LE_MAX_TX_TIME_MIN, BT_HCI_LE_MAX_TX_TIME_MAX)) {
+		LOG_WRN("tx_time exceeds the valid range %u", *tx_time);
+	}
+
 	return 0;
 }
 
@@ -1681,6 +1688,19 @@ static void le_data_len_change(struct net_buf *buf)
 	uint16_t max_rx_octets = sys_le16_to_cpu(evt->max_rx_octets);
 	uint16_t max_tx_time = sys_le16_to_cpu(evt->max_tx_time);
 	uint16_t max_rx_time = sys_le16_to_cpu(evt->max_rx_time);
+
+	if (!IN_RANGE(max_tx_octets, BT_HCI_LE_MAX_TX_OCTETS_MIN, BT_HCI_LE_MAX_TX_OCTETS_MAX)) {
+		LOG_WRN("max_tx_octets exceeds the valid range %u", max_tx_octets);
+	}
+	if (!IN_RANGE(max_rx_octets, BT_HCI_LE_MAX_RX_OCTETS_MIN, BT_HCI_LE_MAX_RX_OCTETS_MAX)) {
+		LOG_WRN("max_rx_octets exceeds the valid range %u", max_rx_octets);
+	}
+	if (!IN_RANGE(max_tx_time, BT_HCI_LE_MAX_TX_TIME_MIN, BT_HCI_LE_MAX_TX_TIME_MAX)) {
+		LOG_WRN("max_tx_time exceeds the valid range %u", max_tx_time);
+	}
+	if (!IN_RANGE(max_rx_time, BT_HCI_LE_MAX_RX_TIME_MIN, BT_HCI_LE_MAX_RX_TIME_MAX)) {
+		LOG_WRN("max_rx_time exceeds the valid range %u", max_rx_time);
+	}
 
 	LOG_DBG("max. tx: %u (%uus), max. rx: %u (%uus)", max_tx_octets, max_tx_time, max_rx_octets,
 		max_rx_time);

@@ -3,6 +3,22 @@
 Bluetooth Qualification
 #######################
 
+Qualification setup
+*******************
+
+The Zephyr Bluetooth host can be qualified using Bluetooth's PTS (Profile Tuning
+Suite) software. It is originally a manual process, but is automated by using
+the `AutoPTS automation software <https://github.com/auto-pts/auto-pts>`_.
+
+The setup is described in more details in the pages linked below.
+
+.. toctree::
+   :maxdepth: 1
+
+   autopts/autopts-win10.rst
+   autopts/autopts-linux.rst
+
+
 Qualification Listings
 **********************
 

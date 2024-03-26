@@ -296,37 +296,6 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
    :board: nucleo_u575zi_q
    :goals: debug
 
-Building a secure/non-secure with Arm |reg| TrustZone |reg|
-===========================================================
-
-The TF-M applications can be run on this board, thanks to its Arm |reg| TrustZone |reg|
-support.
-In TF-M configuration, Zephyr is run on the non-secure domain. A non-secure image
-can be generated using ``nucleo_u575zi_q_ns`` as build target.
-
-.. code-block:: bash
-
-   $ west build -b nucleo_u575zi_q_ns path/to/source/directory
-
-Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
-is run automatically in a post-build step to make some required flash layout changes.
-
-Once the build is completed, run the following script to initialize the option bytes.
-
-.. code-block:: bash
-
-   $ build/tfm/regression.sh
-
-Finally, to flash the board, run:
-
-.. code-block:: bash
-
-   $ west flash
-
-Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
-(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
-(which is used for initialization) is available in the PATH.
-
 .. _STM32 Nucleo-144 board User Manual:
    https://www.st.com/resource/en/user_manual/dm00615305.pdf
 

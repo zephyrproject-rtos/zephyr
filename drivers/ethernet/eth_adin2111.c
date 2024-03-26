@@ -1328,11 +1328,10 @@ static const struct ethernet_api adin2111_port_api = {
 		.port_idx = port_n,								\
 		.phy_addr = phy_n,								\
 	};											\
-	NET_DEVICE_INIT_INSTANCE(name##_port_##port_n, "port_" ADIN2111_XSTR(port_n), port_n,	\
-				 NULL, NULL, &name##_port_data_##port_n,			\
-				 &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,	\
-				 &adin2111_port_api, ETHERNET_L2,				\
-				 NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+	ETH_NET_DEVICE_INIT_INSTANCE(name##_port_##port_n, "port_" ADIN2111_XSTR(port_n),	\
+				     port_n, NULL, NULL, &name##_port_data_##port_n,		\
+				     &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,	\
+				     &adin2111_port_api, NET_ETH_MTU);
 
 #define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
 #define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\
