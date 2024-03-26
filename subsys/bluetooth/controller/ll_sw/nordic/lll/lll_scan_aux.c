@@ -1431,6 +1431,7 @@ static void isr_tx_connect_req(void *param)
 static void isr_rx_connect_rsp(void *param)
 {
 	struct lll_scan_aux *lll_aux;
+	uint8_t phy_aux_flags_rx;
 	struct pdu_adv *pdu_rx;
 	struct node_rx_pdu *rx;
 	struct lll_scan *lll;
@@ -1455,8 +1456,9 @@ static void isr_rx_connect_rsp(void *param)
 			irkmatch_ok = 0U;
 			irkmatch_id = FILTER_IDX_NONE;
 		}
+		phy_aux_flags_rx = radio_phy_flags_rx_get();
 	} else {
-		crc_ok = irkmatch_ok = 0U;
+		crc_ok = irkmatch_ok = phy_aux_flags_rx = 0U;
 		irkmatch_id = FILTER_IDX_NONE;
 	}
 
@@ -1535,6 +1537,7 @@ static void isr_rx_connect_rsp(void *param)
 
 	conn_lll->phy_tx = lll_aux->phy;
 	conn_lll->phy_tx_time = lll_aux->phy;
+	conn_lll->phy_flags = phy_aux_flags_rx;
 	conn_lll->phy_rx = lll_aux->phy;
 #endif /* CONFIG_BT_CTLR_PHY */
 

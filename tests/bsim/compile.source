@@ -19,6 +19,7 @@ function _compile(){
   local app_root="${app_root:-${ZEPHYR_BASE}}"
   local BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
   local conf_file="${conf_file:-prj.conf}"
+  local extra_conf_file="${extra_conf_file:-""}"
   local conf_overlay="${conf_overlay:-""}"
 
   default_cmake_args=(-DCONFIG_COVERAGE=y -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
@@ -29,8 +30,9 @@ function _compile(){
   local cc_flags="${cc_flags:-""}"
 
   if [ "${conf_overlay}" ]; then
-    overlays="${conf_overlay//;/_}"
-    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${overlays}}"
+    overlay_basename="${conf_overlay##*/}"
+    overlay_file="${overlay_basename//;/_}"
+    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${overlay_file}}"
   else
     local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
   fi
@@ -53,6 +55,7 @@ function _compile(){
   fi
   orifs="$IFS"; IFS=
   local cmake_cmd+=( -DOVERLAY_CONFIG="${conf_overlay}" \
+            -DEXTRA_CONF_FILE="${extra_conf_file}" \
             ${modules_arg} \
             "${cmake_args[@]}" ${cc_flags:+-DCMAKE_C_FLAGS=${cc_flags}} ${cmake_extra_args})
   if [ -v sysbuild ]; then
