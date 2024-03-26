@@ -21,6 +21,65 @@ struct lvgl_pointer_input_config {
 	bool invert_y;
 };
 
+static void invert_x_if_needed(const struct device *dev, lv_point_t *point)
+{
+	const struct lvgl_pointer_input_config *cfg = dev->config;
+	lv_disp_t *disp = lv_disp_get_default();
+	struct lvgl_disp_data *disp_data = disp->driver->user_data;
+	struct display_capabilities *cap = &disp_data->cap;
+
+	if (cfg->invert_x) {
+		if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
+		    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+			point->x = cap->x_resolution - point->x;
+		} else {
+			point->x = cap->y_resolution - point->x;
+		}
+	}
+}
+
+static void invert_y_if_needed(const struct device *dev, lv_point_t *point)
+{
+	const struct lvgl_pointer_input_config *cfg = dev->config;
+	lv_disp_t *disp = lv_disp_get_default();
+	struct lvgl_disp_data *disp_data = disp->driver->user_data;
+	struct display_capabilities *cap = &disp_data->cap;
+
+	if (cfg->invert_y) {
+		if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
+		    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+			point->y = cap->y_resolution - point->y;
+		} else {
+			point->y = cap->x_resolution - point->y;
+		}
+	}
+}
+
+static void rotate_point_if_needed(const struct device *dev, lv_point_t *point)
+{
+	lv_disp_t *disp = lv_disp_get_default();
+	struct lvgl_disp_data *disp_data = disp->driver->user_data;
+	struct display_capabilities *cap = &disp_data->cap;
+
+	/* rotate touch point to match display rotation */
+	if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+		lv_coord_t tmp;
+
+		tmp = point->x;
+		point->x = point->y;
+		point->y = cap->y_resolution - tmp;
+	} else if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		point->x = cap->x_resolution - point->x;
+		point->y = cap->y_resolution - point->y;
+	} else if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		lv_coord_t tmp;
+
+		tmp = point->x;
+		point->x = cap->x_resolution - point->y;
+		point->y = tmp;
+	}
+}
+
 static void lvgl_pointer_process_event(const struct device *dev, struct input_event *evt)
 {
 	const struct lvgl_pointer_input_config *cfg = dev->config;
@@ -34,16 +93,22 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 	case INPUT_ABS_X:
 		if (cfg->swap_xy) {
 			point->y = evt->value;
+			invert_y_if_needed(dev, point);
 		} else {
 			point->x = evt->value;
+			invert_x_if_needed(dev, point);
 		}
+		rotate_point_if_needed(dev, point);
 		break;
 	case INPUT_ABS_Y:
 		if (cfg->swap_xy) {
 			point->x = evt->value;
+			invert_x_if_needed(dev, point);
 		} else {
 			point->y = evt->value;
+			invert_y_if_needed(dev, point);
 		}
+		rotate_point_if_needed(dev, point);
 		break;
 	case INPUT_BTN_TOUCH:
 		data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
@@ -54,56 +119,16 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 		return;
 	}
 
-	/* prevent re-inversion of the coordinates on touch release */
-	if (data->pending_event.state == LV_INDEV_STATE_PR) {
-		if (cfg->invert_x) {
-			if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
-			    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-				point->x = cap->x_resolution - point->x;
-			} else {
-				point->x = cap->y_resolution - point->x;
-			}
-		}
-
-		if (cfg->invert_y) {
-			if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
-			    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-				point->y = cap->y_resolution - point->y;
-			} else {
-				point->y = cap->x_resolution - point->y;
-			}
-		}
-
-		/* rotate touch point to match display rotation */
-		if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-			lv_coord_t tmp;
-
-			tmp = point->x;
-			point->x = point->y;
-			point->y = cap->y_resolution - tmp;
-		} else if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			point->x = cap->x_resolution - point->x;
-			point->y = cap->y_resolution - point->y;
-		} else if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-			lv_coord_t tmp;
-
-			tmp = point->x;
-			point->x = cap->x_resolution - point->y;
-			point->y = tmp;
-		}
-
-		/* filter readings within display */
-		if (point->x <= 0) {
-			point->x = 0;
-		} else if (point->x >= cap->x_resolution) {
-			point->x = cap->x_resolution - 1;
-		}
-
-		if (point->y <= 0) {
-			point->y = 0;
-		} else if (point->y >= cap->y_resolution) {
-			point->y = cap->y_resolution - 1;
-		}
+	/* filter readings within display */
+	if (point->x <= 0) {
+		point->x = 0;
+	} else if (point->x >= cap->x_resolution) {
+		point->x = cap->x_resolution - 1;
+	}
+	if (point->y <= 0) {
+		point->y = 0;
+	} else if (point->y >= cap->y_resolution) {
+		point->y = cap->y_resolution - 1;
 	}
 
 	if (k_msgq_put(cfg->common_config.event_msgq, &data->pending_event, K_NO_WAIT) != 0) {
