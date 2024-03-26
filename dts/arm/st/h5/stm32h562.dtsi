@@ -5,7 +5,7 @@
  */
 
 #include <st/h5/stm32h5.dtsi>
-#include <zephyr/dt-bindings/flash_controller/ospi.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 
 / {
 	clocks {
@@ -180,8 +180,8 @@
 			status = "disabled";
 		};
 
-		octospi1: octospi@47001400 {
-			compatible = "st,stm32-ospi";
+		xspi1: octospi@47001400 {
+			compatible = "st,stm32-xspi";
 			reg = <0x47001400 0x400>;
 			interrupts = <78 0>;
 			clock-names = "ospix", "ospi-ker";
