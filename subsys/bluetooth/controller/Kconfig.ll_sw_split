@@ -186,7 +186,9 @@ config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
 	int "Maximum Advertising Extensions Receive PDU Length"
 	depends on BT_OBSERVER
 	range 255 255 if BT_HCI_RAW
+	range 31 BT_CTLR_SCAN_DATA_LEN_MAX if (BT_CTLR_SCAN_DATA_LEN_MAX < 255)
 	range 31 255
+	default BT_CTLR_SCAN_DATA_LEN_MAX if (BT_CTLR_SCAN_DATA_LEN_MAX < 255)
 	default 255
 	help
 	  Maximum Advertising Extensions Receive PDU Length.
