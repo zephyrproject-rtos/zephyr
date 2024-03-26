@@ -1,0 +1,27 @@
+# Copyright (c) 2024, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: 24XX01 EEPROM controller
+
+compatible: "microchip,24xx01-eeprom"
+
+include: ["eeprom-base.yaml", i2c-device.yaml]
+
+properties:
+  size:
+    const: 128
+    required: true
+    description: Total EEPROM size in bytes.
+  pagesize:
+    type: int
+    const: 8
+    required: true
+    description: EEPROM page size in bytes
+  write-cycle-time:
+    type: int
+    const: 5
+    required: true
+    description: EEPROM maximum write cycle time
+  wp-gpios:
+    type: phandle-array
+    description: GPIO to which the write-protect pin of the chip is connected.

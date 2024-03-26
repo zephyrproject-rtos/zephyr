@@ -162,6 +162,36 @@ ZTEST_USER(eeprom, test_zero_length_write)
 	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
 }
 
+/* Test write big buffer */
+ZTEST_USER(eeprom, test_write_big_buffer)
+{
+	uint8_t wr_buf1[16] = {0};
+	uint8_t rd_buf[sizeof(wr_buf1)];
+	int rc;
+
+	rc = eeprom_write(eeprom, 0, wr_buf1, sizeof(wr_buf1));
+	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+
+	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
+	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+
+	rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
+	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+
+	for (int i = 0; i < sizeof(wr_buf1); i++) {
+		wr_buf1[i] = i;
+	}
+
+	rc = eeprom_write(eeprom, 0, wr_buf1, sizeof(wr_buf1));
+	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+
+	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
+	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+
+	rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
+	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+}
+
 static void *eeprom_setup(void)
 {
 	zassert_true(device_is_ready(eeprom), "EEPROM device not ready");

@@ -51,6 +51,16 @@
 				wp-gpios = <&test_gpio 0 0>;
 				/* read-only; */
 			};
+
+			test_i2c_24xx01: 24xx01@2 {
+				compatible = "microchip,24xx01-eeprom";
+				reg = <0x2>;
+				size = <128>;
+				pagesize = <8>;
+				write-cycle-time = <5>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
 		};
 
 		test_spi: spi@33334444 {
