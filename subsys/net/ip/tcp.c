@@ -26,18 +26,18 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "net_private.h"
 #include "tcp_internal.h"
 
-#define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
+#define ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
-#define LAST_ACK_TIMEOUT_MS tcp_fin_timeout_ms
+#define LAST_ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define LAST_ACK_TIMEOUT K_MSEC(LAST_ACK_TIMEOUT_MS)
-#define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
+#define FIN_TIMEOUT K_MSEC(tcp_max_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
 #define ZWP_MAX_DELAY_MS 120000
 #define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
-static int tcp_fin_timeout_ms;
+static int tcp_max_timeout_ms;
 static int tcp_rx_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
@@ -1821,7 +1821,7 @@ static void tcp_resend_data(struct k_work *work)
 		if (conn->in_close && conn->send_data_total == 0) {
 			NET_DBG("TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
-				"active", tcp_fin_timeout_ms);
+				"active", tcp_max_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -1896,7 +1896,7 @@ static void tcp_fin_timeout(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("Did not receive %s in %dms", "FIN", tcp_fin_timeout_ms);
+	NET_DBG("Did not receive %s in %dms", "FIN", tcp_max_timeout_ms);
 	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -3564,7 +3564,7 @@ int net_tcp_put(struct net_context *context)
 
 			NET_DBG("TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
-				"active", tcp_fin_timeout_ms);
+				"active", tcp_max_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -4445,18 +4445,18 @@ void net_tcp_init(void)
 			   NULL);
 
 	/* Compute the largest possible retransmission timeout */
-	tcp_fin_timeout_ms = 0;
+	tcp_max_timeout_ms = 0;
 	rto = tcp_rto;
 	for (i = 0; i < tcp_retries; i++) {
-		tcp_fin_timeout_ms += rto;
+		tcp_max_timeout_ms += rto;
 		rto += rto >> 1;
 	}
 	/* At the last timeout cicle */
-	tcp_fin_timeout_ms += tcp_rto;
+	tcp_max_timeout_ms += tcp_rto;
 
 	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */
 	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
-		tcp_fin_timeout_ms += tcp_fin_timeout_ms >> 1;
+		tcp_max_timeout_ms += tcp_max_timeout_ms >> 1;
 	}
 
 	k_thread_name_set(&tcp_work_q.thread, "tcp_work");
