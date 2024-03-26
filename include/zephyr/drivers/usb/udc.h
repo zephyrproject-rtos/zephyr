@@ -303,7 +303,7 @@ struct udc_data {
  */
 static inline bool udc_is_initialized(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UDC_STATUS_INITIALIZED);
 }
@@ -317,7 +317,7 @@ static inline bool udc_is_initialized(const struct device *dev)
  */
 static inline bool udc_is_enabled(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UDC_STATUS_ENABLED);
 }
@@ -331,7 +331,7 @@ static inline bool udc_is_enabled(const struct device *dev)
  */
 static inline bool udc_is_suspended(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UDC_STATUS_SUSPENDED);
 }
@@ -404,7 +404,7 @@ int udc_shutdown(const struct device *dev);
  */
 static inline struct udc_device_caps udc_caps(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return data->caps;
 }
@@ -434,7 +434,7 @@ enum udc_bus_speed udc_device_speed(const struct device *dev);
  */
 static inline int udc_set_address(const struct device *dev, const uint8_t addr)
 {
-	const struct udc_api *api = dev->api;
+	const struct udc_api *api = (const struct udc_api *)dev->api;
 	int ret;
 
 	if (!udc_is_enabled(dev)) {
@@ -466,7 +466,7 @@ static inline int udc_set_address(const struct device *dev, const uint8_t addr)
 static inline int udc_test_mode(const struct device *dev,
 				const uint8_t mode, const bool dryrun)
 {
-	const struct udc_api *api = dev->api;
+	const struct udc_api *api = (const struct udc_api *)dev->api;
 	int ret;
 
 	if (!udc_is_enabled(dev)) {
@@ -496,7 +496,7 @@ static inline int udc_test_mode(const struct device *dev,
  */
 static inline int udc_host_wakeup(const struct device *dev)
 {
-	const struct udc_api *api = dev->api;
+	const struct udc_api *api = (const struct udc_api *)dev->api;
 	int ret;
 
 	if (!udc_is_enabled(dev)) {
