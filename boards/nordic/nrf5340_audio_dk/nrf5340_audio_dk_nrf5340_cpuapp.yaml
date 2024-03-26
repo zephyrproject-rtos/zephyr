@@ -9,6 +9,11 @@ toolchain:
 ram: 448
 flash: 1024
 supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - gpio
   - i2s
   - spi
