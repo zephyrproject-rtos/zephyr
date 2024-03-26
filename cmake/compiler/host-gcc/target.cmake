@@ -36,3 +36,7 @@ foreach(file_name include/stddef.h)
 
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()
+
+set(LLEXT_CFLAGS
+    -nodefaultlibs
+    -c)

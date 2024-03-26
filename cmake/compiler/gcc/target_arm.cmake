@@ -58,3 +58,9 @@ set(LLEXT_APPEND_FLAGS
   -mlong-calls
   -mthumb
 )
+
+set(LLEXT_CFLAGS
+    -mlong-calls
+    -mthumb
+    -nodefaultlibs
+    -c)

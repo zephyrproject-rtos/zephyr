@@ -89,3 +89,7 @@ macro(toolchain_cc_nostdinc)
     zephyr_compile_options( -nostdinc)
   endif()
 endmacro()
+
+set(LLEXT_CFLAGS
+    -nodefaultlibs
+    -c)

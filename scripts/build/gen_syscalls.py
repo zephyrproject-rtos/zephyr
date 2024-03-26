@@ -193,21 +193,27 @@ def union_decl(type, split):
     middle = "struct { uintptr_t lo, hi; } split" if split else "uintptr_t x"
     return "union { %s; %s val; }" % (middle, type)
 
-def wrapper_defs(func_name, func_type, args, fn):
+def wrapper_defs(func_name, func_type, args, fn, userspace_only):
     ret64 = need_split(func_type)
     mrsh_args = [] # List of rvalue expressions for the marshalled invocation
 
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args]) or "void"
     syscall_id = "K_SYSCALL_" + func_name.upper()
 
-    wrap = "extern %s z_impl_%s(%s);\n" % (func_type, func_name, decl_arglist)
-    wrap += "\n"
+    wrap = ''
+    if not userspace_only:
+        wrap += "extern %s z_impl_%s(%s);\n" % (func_type, func_name, decl_arglist)
+        wrap += "\n"
+
     wrap += "__pinned_func\n"
     wrap += "static inline %s %s(%s)\n" % (func_type, func_name, decl_arglist)
     wrap += "{\n"
-    wrap += "#ifdef CONFIG_USERSPACE\n"
+    if not userspace_only:
+        wrap += "#ifdef CONFIG_USERSPACE\n"
+
     wrap += ("\t" + "uint64_t ret64;\n") if ret64 else ""
-    wrap += "\t" + "if (z_syscall_trap()) {\n"
+    if not userspace_only:
+        wrap += "\t" + "if (z_syscall_trap()) {\n"
 
     valist_args = []
     for argnum, (argtype, argname) in enumerate(args):
@@ -255,18 +261,19 @@ def wrapper_defs(func_name, func_type, args, fn):
     for argname in valist_args:
         wrap += "\t\t" + "va_end(%s);\n" % argname
     wrap += retcode
-    wrap += "\t" + "}\n"
-    wrap += "#endif\n"
+    if not userspace_only:
+        wrap += "\t" + "}\n"
+        wrap += "#endif\n"
 
-    # Otherwise fall through to direct invocation of the impl func.
-    # Note the compiler barrier: that is required to prevent code from
-    # the impl call from being hoisted above the check for user
-    # context.
-    impl_arglist = ", ".join([argrec[1] for argrec in args])
-    impl_call = "z_impl_%s(%s)" % (func_name, impl_arglist)
-    wrap += "\t" + "compiler_barrier();\n"
-    wrap += "\t" + "%s%s;\n" % ("return " if func_type != "void" else "",
-                               impl_call)
+        # Otherwise fall through to direct invocation of the impl func.
+        # Note the compiler barrier: that is required to prevent code from
+        # the impl call from being hoisted above the check for user
+        # context.
+        impl_arglist = ", ".join([argrec[1] for argrec in args])
+        impl_call = "z_impl_%s(%s)" % (func_name, impl_arglist)
+        wrap += "\t" + "compiler_barrier();\n"
+        wrap += "\t" + "%s%s;\n" % ("return " if func_type != "void" else "",
+                                   impl_call)
 
     wrap += "}\n"
 
@@ -365,7 +372,7 @@ def marshall_defs(func_name, func_type, args):
 
     return mrsh, mrsh_name
 
-def analyze_fn(match_group, fn):
+def analyze_fn(match_group, fn, userspace_only):
     func, args = match_group
 
     try:
@@ -383,7 +390,7 @@ def analyze_fn(match_group, fn):
 
     marshaller = None
     marshaller, handler = marshall_defs(func_name, func_type, args)
-    invocation = wrapper_defs(func_name, func_type, args, fn)
+    invocation = wrapper_defs(func_name, func_type, args, fn, userspace_only)
 
     # Entry in _k_syscall_table
     table_entry = "[%s] = %s" % (sys_id, handler)
@@ -410,6 +417,8 @@ def parse_args():
                         help="Indicates we are on system with 64-bit registers")
     parser.add_argument("--gen-mrsh-files", action="store_true",
                         help="Generate marshalling files (*_mrsh.c)")
+    parser.add_argument("-u", "--userspace-only", action="store_true",
+                        help="Only generate the userpace path of wrappers")
     args = parser.parse_args()
 
 
@@ -433,7 +442,7 @@ def main():
     emit_list = []
 
     for match_group, fn, to_emit in syscalls:
-        handler, inv, mrsh, sys_id, entry = analyze_fn(match_group, fn)
+        handler, inv, mrsh, sys_id, entry = analyze_fn(match_group, fn, args.userspace_only)
 
         if fn not in invocations:
             invocations[fn] = []
