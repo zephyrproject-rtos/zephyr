@@ -33,6 +33,7 @@
 void single_sector_test(const struct device *flash_dev)
 {
 	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+	const uint8_t erased[sizeof(expected)] = { 0xff, 0xff, 0xff, 0xff };
 	const size_t len = sizeof(expected);
 	uint8_t buf[sizeof(expected)];
 	int rc;
@@ -54,6 +55,18 @@ void single_sector_test(const struct device *flash_dev)
 		printf("Flash erase failed! %d\n", rc);
 	} else {
 		printf("Flash erase succeeded!\n");
+	}
+
+	/* Check that the bytes we will later write has the erase value. */
+	rc = flash_read(flash_dev, SPI_FLASH_TEST_REGION_OFFSET, buf, len);
+	if (rc != 0) {
+		printf("Flash read failed! %d\n", rc);
+		return;
+	}
+	if (memcmp(erased, buf, sizeof(buf)) != 0) {
+		printf("Flash erase did not erase flash.\n");
+		printf(" Read expected ff ff ff ff, but got %02x %02x %02x %02x\n",
+		       buf[0], buf[1], buf[2], buf[3]);
 	}
 
 	printf("\nTest 2: Flash write\n");
