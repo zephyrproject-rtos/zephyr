@@ -54,6 +54,37 @@ extern "C" {
 	DT_PHANDLE_BY_IDX(node_id, gpio_pha, idx)
 
 /**
+ * @brief Get the node identifier for the controller phandle from a
+ *        gpio phandle-array property by name
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... { };
+ *
+ *     gpio2: gpio@... { };
+ *
+ *     n: node {
+ *             gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
+ *                     <&gpio2 30 GPIO_ACTIVE_HIGH>;
+ *             gpio-names = "foo", "bar";
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_GPIO_CTLR_BY_NAME(DT_NODELABEL(n), gpios, bar) // DT_NODELABEL(gpio2)
+ *
+ * @param node_id node identifier
+ * @param gpio_pha lowercase-and-underscores GPIO property with
+ *        type "phandle-array"
+ * @param name lowercase-and-underscores name of element in "gpio_pha"
+ * @return the node identifier for the gpio controller referenced by
+ *         name "name"
+ * @see DT_PHANDLE_BY_NAME()
+ */
+#define DT_GPIO_CTLR_BY_NAME(node_id, gpio_pha, name) \
+	DT_PHANDLE_BY_NAME(node_id, gpio_pha, name)
+
+/**
  * @brief Equivalent to DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, 0)
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
@@ -164,6 +195,51 @@ extern "C" {
  */
 #define DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, idx) \
 	DT_PHA_BY_IDX_OR(node_id, gpio_pha, idx, flags, 0)
+
+/**
+ * @brief Get a GPIO specifier's pin cell by name
+ *
+ * This macro only works for GPIO specifiers with cells named "pin".
+ * Refer to the node's binding to check if necessary.
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... {
+ *             compatible = "vnd,gpio";
+ *             #gpio-cells = <2>;
+ *     };
+ *
+ *     gpio2: gpio@... {
+ *             compatible = "vnd,gpio";
+ *             #gpio-cells = <2>;
+ *     };
+ *
+ *     n: node {
+ *             gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
+ *                     <&gpio2 30 GPIO_ACTIVE_HIGH>;
+ *             gpio-names = "foo", "bar";
+ *     };
+ *
+ * Bindings fragment for the vnd,gpio compatible:
+ *
+ *     gpio-cells:
+ *       - pin
+ *       - flags
+ *
+ * Example usage:
+ *
+ *     DT_GPIO_PIN_BY_NAME(DT_NODELABEL(n), gpios, foo) // 10
+ *     DT_GPIO_PIN_BY_NAME(DT_NODELABEL(n), gpios, bar) // 30
+ *
+ * @param node_id node identifier
+ * @param gpio_pha lowercase-and-underscores GPIO property with
+ *        type "phandle-array"
+ * @param name lowercase-and-underscores name of element in "gpio_pha"
+ * @return the pin cell value in element by "name"
+ * @see DT_PHA_BY_NAME()
+ */
+#define DT_GPIO_PIN_BY_NAME(node_id, gpio_pha, name) \
+	DT_PHA_BY_NAME(node_id, gpio_pha, name, pin)
 
 /**
  * @brief Equivalent to DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, 0)
@@ -344,6 +420,52 @@ extern "C" {
  */
 #define DT_INST_GPIO_FLAGS_BY_IDX(inst, gpio_pha, idx) \
 	DT_GPIO_FLAGS_BY_IDX(DT_DRV_INST(inst), gpio_pha, idx)
+
+/**
+ * @brief Get a GPIO specifier's flags cell by name
+ *
+ * This macro expects GPIO specifiers with cells named "flags".
+ * If there is no "flags" cell in the GPIO specifier, zero is returned.
+ * Refer to the node's binding to check specifier cell names if necessary.
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... {
+ *             compatible = "vnd,gpio";
+ *             #gpio-cells = <2>;
+ *     };
+ *
+ *     gpio2: gpio@... {
+ *             compatible = "vnd,gpio";
+ *             #gpio-cells = <2>;
+ *     };
+ *
+ *     n: node {
+ *             gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
+ *                     <&gpio2 30 GPIO_ACTIVE_HIGH>;
+ *             gpio-names = "foo", "bar";
+ *     };
+ *
+ * Bindings fragment for the vnd,gpio compatible:
+ *
+ *     gpio-cells:
+ *       - pin
+ *       - flags
+ *
+ * Example usage:
+ *
+ *     DT_GPIO_FLAGS_BY_NAME(DT_NODELABEL(n), gpios, foo) // GPIO_ACTIVE_LOW
+ *     DT_GPIO_FLAGS_BY_NAME(DT_NODELABEL(n), gpios, bar) // GPIO_ACTIVE_HIGH
+ *
+ * @param node_id node identifier
+ * @param gpio_pha lowercase-and-underscores GPIO property with
+ *        type "phandle-array"
+ * @param name lowercase-and-underscores name of element in "gpio_pha"
+ * @return the flags cell value in element by "name", or zero if there is none
+ * @see DT_PHA_BY_NAME()
+ */
+#define DT_GPIO_FLAGS_BY_NAME(node_id, gpio_pha, name) \
+	DT_PHA_BY_NAME_OR(node_id, gpio_pha, name, flags, 0)
 
 /**
  * @brief Equivalent to DT_INST_GPIO_FLAGS_BY_IDX(inst, gpio_pha, 0)

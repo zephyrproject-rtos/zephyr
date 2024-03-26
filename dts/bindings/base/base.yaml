@@ -92,3 +92,11 @@ properties:
   mbox-names:
     type: string-array
     description: Provided names of mailbox / IPM channel specifiers
+
+  interrupt-gpios:
+    type: phandle-array
+    description: GPIO routed interrupts for device
+
+  interrupt-gpio-names:
+    type: string-array
+    description: Name of each GPIO routed interrupt

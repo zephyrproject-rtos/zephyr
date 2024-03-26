@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Pushpal Sidhu
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,5 +15,27 @@
 				reg = <0x08000000 DT_SIZE_K(2048)>;
 			};
 		};
+	};
+};
+
+&pwr {
+	wkup-pin@1 {
+		wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>;
+	};
+
+	wkup-pin@2 {
+		wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_SRC_0>;
+	};
+
+	wkup-pin@3 {
+		wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_PIN_SRC_0>;
+	};
+
+	wkup-pin@4 {
+		wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_SRC_0>;
+	};
+
+	wkup-pin@5 {
+		wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_SRC_0>;
 	};
 };
