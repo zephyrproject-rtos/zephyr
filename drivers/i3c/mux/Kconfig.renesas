@@ -1,0 +1,43 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config I3C_RENESAS_IMX3112
+	bool "Renesas I3C 2:1 bus multiplexer imx3112"
+	help
+	   Enable the renesas imx3112 mux
+
+config I3C_RENESAS_MUX_INIT_PRIORITY
+	int "I3C Renesas Mux Init Priority"
+	# Default is just after I3C_CONTROLLER_INIT_PRIORITY
+	depends on I3C_RENESAS_IMX3112
+	default 51
+	help
+	  This is used for setting up an I3C renesas mux, by configuring
+	  the electrical parameters and doing device discovery.
+
+	  Note that this needs to be done before the device driver
+	  instances of the connected I3C devices start
+	  initializing those devices, but after the bus controller finishes
+	  initialization.
+
+	  Additionally, since each individual channel in the
+	  mux (controlled by I3C_RENESAS_CHANNEL_INIT_PRIORITY) has its own init
+	  function, the mux init must be completed before.
+
+	  In summary, in a typical I3C bus using a mux, the order of priorities should be:
+	  1. I3C_CONTROLLER_INIT_PRIORITY
+	  2. I3C_RENESAS_MUX_INIT_PRIORITY
+	  3. I3C_RENESAS_CHANNEL_INIT_PRIORITY
+	  4. I3C_TARGET_INIT_PRIORITY
+
+
+config I3C_RENESAS_CHANNEL_INIT_PRIORITY
+	int "I3C Renesas Mux Init Priority"
+	# Default is just after I3C_RENESAS_MUX_INIT_PRIORITY
+	default 52
+	depends on I3C_RENESAS_IMX3112
+	help
+	  This is used for setting up an I3C renesas mux channels by
+	  doing device discovery in each channel. This priority should be higher than
+	  I3C_RENESAS_MUX_INIT_PRIORITY but lower than that of the devices attached
+	  to this channel.

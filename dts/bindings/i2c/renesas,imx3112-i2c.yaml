@@ -1,0 +1,56 @@
+# Copyright (c) 2023 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas IMX3112 2:1 Bus multiplexer for I3C/I2C devices
+
+compatible: "renesas,imx3112-i2c"
+
+include: [i2c-mux-device.yaml]
+
+properties:
+  has-external-resistor:
+    type: boolean
+    description: |
+      Configures LOCAL_INF_PULLUP_CONF in MR14 of IMX3112 spec.
+      Indicates if the mux has an external pullup resistor (with pre-built resistance specs)
+      or an internal, configurable, pullup resistor. If has-external-resistor is true,
+      resistor-values will be ignored.
+  io-voltage:
+    type: string
+    description: |
+      Configures LOCAL_INF_IO_LEVEL in MR15 of IMX3112 spec.
+      Indicates the IO voltage level in volts.
+      If not present in device tree, will use the spec default
+    enum:
+      - "1.0"
+      - "1.1"
+      - "1.2"
+      - "1.8"
+      - "2.5"
+      - "3.3"
+
+child-binding:
+  compatible: "renesas,imx3112-channel"
+  properties:
+    scl-resistance:
+      type: string
+      description: |
+        Configures internal pullup resistance values for the SCL line.
+        If has-external-resistor is true, the value will be ignored.
+        Represents value in kilo-ohms.
+      enum:
+        - "0.5"
+        - "1.0"
+        - "2.0"
+        - "4.0"
+    sda-resistance:
+      type: string
+      description: |
+        Configures internal pullup resistance values for the SCL line.
+        If has-external-resistor is true, the value will be ignored.
+        Represents value in kilo-ohms.
+      enum:
+        - "0.5"
+        - "1.0"
+        - "2.0"
+        - "4.0"

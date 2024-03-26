@@ -101,5 +101,6 @@ comment "Device Drivers"
 rsource "Kconfig.nxp"
 rsource "Kconfig.cdns"
 rsource "Kconfig.test"
+rsource "mux/Kconfig.renesas"
 
 endif # I3C
