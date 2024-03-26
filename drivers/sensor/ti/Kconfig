@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/ti/bq274xx/Kconfig"
+source "drivers/sensor/ti/fdc2x1x/Kconfig"
+source "drivers/sensor/ti/ina219/Kconfig"
+source "drivers/sensor/ti/ina23x/Kconfig"
+source "drivers/sensor/ti/ina3221/Kconfig"
+source "drivers/sensor/ti/opt3001/Kconfig"
+source "drivers/sensor/ti/ti_hdc/Kconfig"
+source "drivers/sensor/ti/ti_hdc20xx/Kconfig"
+source "drivers/sensor/ti/tmag5170/Kconfig"
+source "drivers/sensor/ti/tmag5273/Kconfig"
+source "drivers/sensor/ti/tmp007/Kconfig"
+source "drivers/sensor/ti/tmp108/Kconfig"
+source "drivers/sensor/ti/tmp112/Kconfig"
+source "drivers/sensor/ti/tmp116/Kconfig"
+# zephyr-keep-sorted-stop
