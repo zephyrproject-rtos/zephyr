@@ -5,6 +5,7 @@
  */
 
 #include "frdm_mcxn947-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	aliases{
@@ -52,6 +53,12 @@
 &flexcomm1_lpspi1 {
 	pinctrl-0 = <&pinmux_flexcomm1_lpspi>;
 	pinctrl-names = "default";
+};
+
+&flexcomm2_lpi2c2 {
+	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
 &flexcomm4_lpuart4 {

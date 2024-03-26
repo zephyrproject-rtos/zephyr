@@ -77,6 +77,14 @@
 	status = "okay";
 };
 
+&flexcomm2 {
+	status = "okay";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "okay";
+};
+
 &flexcomm4 {
 	status = "okay";
 };
