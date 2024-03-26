@@ -326,7 +326,7 @@ static int cmd_gmap_ac_5(const struct shell *sh, size_t argc, char **argv)
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
 		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
+		.snk_chan_cnt = 2U,
 		.src_chan_cnt = 1U,
 	};
 
