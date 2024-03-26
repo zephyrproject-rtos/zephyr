@@ -168,6 +168,28 @@ static void flash_ambiq_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int flash_ambiq_ex_op(const struct device *dev, uint16_t code,
+			     const uintptr_t in, void *out)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
+	int rc = -ENOTSUP;
+
+	switch (code) {
+	case FLASH_EX_OP_GET_NVRAM_PROPERTIES:
+		rc = 0;
+		break;
+	default:
+		break;
+	}
+
+	return rc;
+}
+#endif
+
 static const struct flash_driver_api flash_ambiq_driver_api = {
 	.read = flash_ambiq_read,
 	.write = flash_ambiq_write,
@@ -175,6 +197,9 @@ static const struct flash_driver_api flash_ambiq_driver_api = {
 	.get_parameters = flash_ambiq_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_ambiq_pages_layout,
+#endif
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = flash_ambiq_ex_op,
 #endif
 };
 
