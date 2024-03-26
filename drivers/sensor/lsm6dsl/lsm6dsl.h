@@ -552,6 +552,56 @@
 #define LSM6DSL_REG_Y_OFS_USR				0x74
 #define LSM6DSL_REG_Z_OFS_USR				0x75
 
+#define LSM6DSL_REG_MASTER_CMD_CODE          0x60
+#define LSM6DSL_REG_SENS_SYNC_SPI_ERROR_CODE 0x61
+#define LSM6DSL_REG_OUT_MAG_RAW_X_L          0x66
+#define LSM6DSL_REG_OUT_MAG_RAW_X_H          0x67
+#define LSM6DSL_REG_OUT_MAG_RAW_Y_L          0x68
+#define LSM6DSL_REG_OUT_MAG_RAW_Y_H          0x69
+#define LSM6DSL_REG_OUT_MAG_RAW_Z_L          0x6A
+#define LSM6DSL_REG_OUT_MAG_RAW_Z_H          0x6B
+#define LSM6DSL_REG_X_OFS_USR                0x73
+#define LSM6DSL_REG_Y_OFS_USR                0x74
+#define LSM6DSL_REG_Z_OFS_USR                0x75
+
+/* Embedded functions register values - Bank A */
+#define LSM6DSL_BANK_A_SLV0_ADD               0x02
+#define LSM6DSL_BANK_A_SLV0_SUBADD            0x03
+#define LSM6DSL_BANK_A_SLAVE0_CONFIG          0x04
+#define LSM6DSL_BANK_A_SLV1_ADD               0x05
+#define LSM6DSL_BANK_A_SLV1_SUBADD            0x06
+#define LSM6DSL_BANK_A_SLAVE1_CONFIG          0x07
+#define LSM6DSL_BANK_A_SLV2_ADD               0x08
+#define LSM6DSL_BANK_A_SLV2_SUBADD            0x09
+#define LSM6DSL_BANK_A_SLAVE2_CONFIG          0x0A
+#define LSM6DSL_BANK_A_SLV3_ADD               0x0B
+#define LSM6DSL_BANK_A_SLV3_SUBADD            0x0C
+#define LSM6DSL_BANK_A_SLAVE3_CONFIG          0x0D
+#define LSM6DSL_BANK_A__SRC_MODE_SUB_VL0      0x0E
+#define LSM6DSL_BANK_A_CONFIG_PEDO_THS_MIN    0x0F
+#define LSM6DSL_BANK_A_SM_THS                 0x13
+#define LSM6DSL_BANK_A_PEDO_DEB_REG           0x14
+#define LSM6DSL_BANK_A_STEP_COUNT_DELTA       0x15
+#define LSM6DSL_BANK_A_MAG_SI_XX              0x24
+#define LSM6DSL_BANK_A_MAG_SI_XY              0x25
+#define LSM6DSL_BANK_A_MAG_SI_XZ              0x26
+#define LSM6DSL_BANK_A_MAG_SI_YX              0x27
+#define LSM6DSL_BANK_A_MAG_SI_YY              0x28
+#define LSM6DSL_BANK_A_MAG_SI_YZ              0x29
+#define LSM6DSL_BANK_A_MAG_SI_ZX              0x2A
+#define LSM6DSL_BANK_A_MAG_SI_ZY              0x2B
+#define LSM6DSL_BANK_A_MAG_SI_ZZ              0x2C
+#define LSM6DSL_BANK_A_MAG_OFFX_L             0x2D
+#define LSM6DSL_BANK_A_MAG_OFFX_H             0x2E
+#define LSM6DSL_BANK_A_MAG_OFFY_L             0x2F
+#define LSM6DSL_BANK_A_MAG_OFFY_H             0x30
+#define LSM6DSL_BANK_A_MAG_OFFZ_L             0x31
+#define LSM6DSL_BANK_A_MAG_OFFZ_H             0x32
+
+/* Embedded functions register values - Bank B */
+#define LSM6DSL_BANK_B_A_WRIST_TILT_LAT      0x50
+#define LSM6DSL_BANK_B_A_WRIST_TILT_THS      0x54
+#define LSM6DSL_BANK_B_A_WRIST_TILT_Mask     0x59
 
 /* Accel sensor sensitivity grain is 0.061 mg/LSB */
 #define SENSI_GRAIN_XL				(61LL / 1000.0)
@@ -673,6 +723,8 @@ struct lsm6dsl_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 
+	const struct sensor_trigger *motion_trigger;
+	sensor_trigger_handler_t motion_handler;
 	const struct sensor_trigger *data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 
