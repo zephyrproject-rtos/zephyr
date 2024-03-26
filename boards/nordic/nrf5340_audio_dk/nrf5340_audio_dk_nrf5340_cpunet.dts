@@ -24,6 +24,17 @@
 		zephyr,code-partition = &slot0_partition;
 		watchdog0 = &wdt0;
 	};
+
+};
+
+arduino_spi: &spi0 {
+	compatible = "nordic,nrf-spim";
+	/* Cannot be used together with uart0. */
+	/* status = "okay"; */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &gpiote {
