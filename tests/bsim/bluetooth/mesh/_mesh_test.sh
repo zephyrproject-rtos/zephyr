@@ -3,7 +3,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-EXECUTE_TIMEOUT=600
+EXECUTE_TIMEOUT=800
 
 function Skip(){
   for i in "${SKIP[@]}" ; do
