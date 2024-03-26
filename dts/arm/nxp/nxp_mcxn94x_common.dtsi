@@ -609,6 +609,15 @@
 			status = "disabled";
 		};
 	};
+
+	wwdt0: watchdog@16000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0x16000 0x1000>;
+		interrupts = <152 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
 };
 
 &systick {
