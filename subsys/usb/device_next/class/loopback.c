@@ -112,13 +112,13 @@ static int lb_control_to_dev(struct usbd_class_node *c_nd,
 static int lb_request_handler(struct usbd_class_node *c_nd,
 			      struct net_buf *buf, int err)
 {
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
 	struct udc_buf_info *bi = NULL;
 
 	bi = (struct udc_buf_info *)net_buf_user_data(buf);
 	LOG_DBG("%p -> ep 0x%02x, len %u, err %d", c_nd, bi->ep, buf->len, err);
-	usbd_ep_buf_free(c_nd->data->uds_ctx, buf);
 
-	return 0;
+	return usbd_ep_buf_free(uds_ctx, buf);
 }
 
 static void *lb_get_desc(struct usbd_class_node *const c_nd,

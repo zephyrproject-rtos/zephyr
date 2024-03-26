@@ -106,7 +106,7 @@ struct uac2_cfg {
 
 static entity_type_t id_type(struct usbd_class_node *const node, uint8_t id)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	const struct uac2_cfg *cfg = dev->config;
 
 	if ((id - 1) < cfg->num_entities) {
@@ -119,7 +119,7 @@ static entity_type_t id_type(struct usbd_class_node *const node, uint8_t id)
 static const struct usb_ep_descriptor *
 get_as_data_ep(struct usbd_class_node *const node, int as_idx)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
 
@@ -133,7 +133,7 @@ get_as_data_ep(struct usbd_class_node *const node, int as_idx)
 static const struct usb_ep_descriptor *
 get_as_feedback_ep(struct usbd_class_node *const node, int as_idx)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
 
@@ -278,7 +278,7 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 static void schedule_iso_out_read(struct usbd_class_node *const node,
 				  uint8_t ep, uint16_t mps, uint8_t terminal)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
@@ -335,7 +335,8 @@ static void schedule_iso_out_read(struct usbd_class_node *const node,
 static void write_explicit_feedback(struct usbd_class_node *const node,
 				    uint8_t ep, uint8_t terminal)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
 	struct udc_buf_info *bi;
@@ -359,7 +360,7 @@ static void write_explicit_feedback(struct usbd_class_node *const node,
 	 * class instances for high-speed and full-speed (because high-speed
 	 * allows more sampling rates and/or bit depths)?
 	 */
-	if (udc_device_speed(node->data->uds_ctx->dev) == UDC_BUS_SPEED_FS) {
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
 		net_buf_add_le24(buf, fb_value);
 	} else {
 		net_buf_add_le32(buf, fb_value);
@@ -377,7 +378,8 @@ static void write_explicit_feedback(struct usbd_class_node *const node,
 void uac2_update(struct usbd_class_node *const node,
 		 uint8_t iface, uint8_t alternate)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 	const struct usb_association_descriptor *iad;
@@ -399,7 +401,7 @@ void uac2_update(struct usbd_class_node *const node,
 	/* Audio class is forbidden on Low-Speed, therefore the only possibility
 	 * for not using microframes is when device operates at Full-Speed.
 	 */
-	if (udc_device_speed(node->data->uds_ctx->dev) == UDC_BUS_SPEED_FS) {
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
 		microframes = false;
 	} else {
 		microframes = true;
@@ -560,10 +562,10 @@ static int uac2_control_to_host(struct usbd_class_node *const node,
 static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
 			int err)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
-	struct usbd_contex *uds_ctx = node->data->uds_ctx;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
 	struct udc_buf_info *bi;
 	uint8_t ep, terminal;
 	uint16_t mps;
@@ -615,7 +617,7 @@ static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
 
 static void uac2_sof(struct usbd_class_node *const node)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	const struct usb_ep_descriptor *data_ep;
 	const struct usb_ep_descriptor *feedback_ep;
 	const struct uac2_cfg *cfg = dev->config;
@@ -679,7 +681,7 @@ static void *uac2_get_desc(struct usbd_class_node *const node,
 
 static int uac2_init(struct usbd_class_node *const node)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	struct uac2_ctx *ctx = dev->data;
 
 	if (ctx->ops == NULL) {
@@ -786,7 +788,7 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_UAC2_CLASS_DATA)
 static size_t clock_frequencies(struct usbd_class_node *const node,
 				const uint8_t id, const uint32_t **frequencies)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(node);
 	size_t count;
 
 #define GET_FREQUENCY_TABLE(node, i)						\
