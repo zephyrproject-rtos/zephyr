@@ -11,6 +11,7 @@ tests:
     platform_exclude:
       - m2gl025_miv
       - qemu_xtensa
+      - esp32s2_devkitc
       - esp32s2_saola
       - esp32s2_lolin_mini
     filter: not CONFIG_SOC_NSIM

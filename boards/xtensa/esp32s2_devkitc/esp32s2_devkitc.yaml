@@ -1,0 +1,26 @@
+identifier: esp32s2_devkitc
+name: ESP32-S2 DevKitC
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - dac
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - can
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - nvs
+  - input
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif
