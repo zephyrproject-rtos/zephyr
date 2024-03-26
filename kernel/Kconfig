@@ -197,6 +197,13 @@ config THREAD_ABORT_HOOK
 	help
 	  Used by portability layers to modify locally managed status mask.
 
+config THREAD_ABORT_NEED_CLEANUP
+	bool
+	help
+	  This option enables the bits to clean up the current thread if
+	  k_thread_abort(_current) is called, as the cleanup cannot be
+	  running in the current thread stack.
+
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help

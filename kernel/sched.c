@@ -417,6 +417,13 @@ static void ready_thread(struct k_thread *thread)
 	}
 }
 
+void z_ready_thread_locked(struct k_thread *thread)
+{
+	if (!thread_active_elsewhere(thread)) {
+		ready_thread(thread);
+	}
+}
+
 void z_ready_thread(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
@@ -1371,6 +1378,10 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		k_object_uninit(thread->stack_obj);
 		k_object_uninit(thread);
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+		k_thread_abort_cleanup(thread);
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
 	}
 }
 

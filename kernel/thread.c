@@ -487,6 +487,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+	k_thread_abort_cleanup_check_reuse(new_thread);
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+
 #ifdef CONFIG_OBJ_CORE_THREAD
 	k_obj_core_init_and_link(K_OBJ_CORE(new_thread), &obj_type_thread);
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
@@ -950,3 +954,78 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 
 	return 0;
 }
+
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+/** Pointer to thread which needs to be cleaned up. */
+static struct k_thread *thread_to_cleanup;
+
+/** Spinlock for thread abort cleanup. */
+static struct k_spinlock thread_cleanup_lock;
+
+void defer_thread_cleanup(struct k_thread *thread)
+{
+	/* Note when adding new deferred cleanup steps:
+	 * - The thread object may have been overwritten by the time
+	 *   the actual cleanup is being done (e.g. thread object
+	 *   allocated on a stack). So stash any necessary data here
+	 *   that will be used in the actual cleanup steps.
+	 */
+	thread_to_cleanup = thread;
+}
+
+void do_thread_cleanup(struct k_thread *thread)
+{
+	/* Note when adding new actual cleanup steps:
+	 * - The thread object may have been overwritten when this is
+	 *   called. So avoid using any data from the thread object.
+	 */
+	ARG_UNUSED(thread);
+}
+
+void k_thread_abort_cleanup(struct k_thread *thread)
+{
+	K_SPINLOCK(&thread_cleanup_lock) {
+		if (thread_to_cleanup != NULL) {
+			/* Finish the pending one first. */
+			do_thread_cleanup(thread_to_cleanup);
+			thread_to_cleanup = NULL;
+		}
+
+		if (thread == _current) {
+			/* Need to defer for current running thread as the cleanup
+			 * might result in exception. Actual cleanup will be done
+			 * at the next time k_thread_abort() is called, or at thread
+			 * creation if the same thread object is being reused. This
+			 * is to make sure the cleanup code no longer needs this
+			 * thread's stack. This is not exactly ideal as the stack
+			 * may still be memory mapped for a while. However, this is
+			 * a simple solution without a) the need to workaround
+			 * the schedule lock during k_thread_abort(), b) creating
+			 * another thread to perform the cleanup, and c) does not
+			 * require architecture code support (e.g. via exception).
+			 */
+			defer_thread_cleanup(thread);
+		} else {
+			/* Not the current running thread, so we are safe to do
+			 * cleanups.
+			 */
+			do_thread_cleanup(thread);
+		}
+	}
+}
+
+void k_thread_abort_cleanup_check_reuse(struct k_thread *thread)
+{
+	K_SPINLOCK(&thread_cleanup_lock) {
+		/* This is to guard reuse of the same thread object and make sure
+		 * any pending cleanups of it needs to be finished before the thread
+		 * object can be reused.
+		 */
+		if (thread_to_cleanup == thread) {
+			do_thread_cleanup(thread_to_cleanup);
+			thread_to_cleanup = NULL;
+		}
+	}
+}
+
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
