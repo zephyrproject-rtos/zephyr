@@ -33,6 +33,10 @@
 enum hawkbit_response {
 	/** matching events were not received within the specified time */
 	HAWKBIT_NO_RESPONSE,
+	/** an update was installed. Reboot is required to apply it */
+	HAWKBIT_UPDATE_INSTALLED,
+	/** no update was available */
+	HAWKBIT_NO_UPDATE,
 	/** fail to connect to the hawkBit server */
 	HAWKBIT_NETWORKING_ERROR,
 	/** image is unconfirmed */
@@ -43,14 +47,8 @@ enum hawkbit_response {
 	HAWKBIT_METADATA_ERROR,
 	/** fail while downloading the update package */
 	HAWKBIT_DOWNLOAD_ERROR,
-	/** image was already updated */
-	HAWKBIT_OK,
-	/** an update was installed. Reboot is required to apply it */
-	HAWKBIT_UPDATE_INSTALLED,
-	/** no update was available */
-	HAWKBIT_NO_UPDATE,
-	/** update was cancelled by the server */
-	HAWKBIT_CANCEL_UPDATE,
+	/** fail to allocate memory */
+	HAWKBIT_ALLOC_ERROR,
 	/** hawkBit is not initialized */
 	HAWKBIT_NOT_INITIALIZED,
 	/** probe is currently running */
