@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: This is a representation of the Microchip MCP23S17 SPI GPIO Expander.
+description: This is a representation of the Microchip MCP23S08 SPI GPIO Expander.
 
-compatible: "microchip,mcp23s17"
+compatible: "microchip,mcp23s08"
 
 include: ["microchip,mcp23xxx.yaml", spi-device.yaml]
