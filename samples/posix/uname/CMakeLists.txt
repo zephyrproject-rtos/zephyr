@@ -6,3 +6,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(posix_uname)
 
 target_sources(app PRIVATE src/main.c)
+target_posix_library_compile_options(app)
