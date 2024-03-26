@@ -539,6 +539,11 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 		net_buf_add_mem(clone, buf->data, buf->len);
 	}
 
+	/* user_data_size should be the same for buffers from the same pool */
+	__ASSERT(buf->user_data_size == clone->user_data_size, "Unexpected user data size");
+
+	memcpy(clone->user_data, buf->user_data, clone->user_data_size);
+
 	return clone;
 }
 
