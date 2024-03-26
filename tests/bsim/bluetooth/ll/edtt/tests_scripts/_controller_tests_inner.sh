@@ -58,7 +58,7 @@ function _Execute(){
     rr="rr record -o ${out}"
   fi
   check_program_exists $1
-  run_in_background timeout 300 ${rr} $@
+  run_in_background timeout --kill-after=5 -v 800 ${rr} $@
 }
 
 
