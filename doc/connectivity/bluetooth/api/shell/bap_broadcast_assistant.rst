@@ -39,7 +39,7 @@ subscribe to all notifications.
                         [<sync_bis>] [<metadata>]
    add_pa_sync       : Add a PA sync as a source <sync_pa> <broadcast_id>
                         [bis_index [bis_index [bix_index [...]]]]>
-   mod_src           : Set sync <src_id> <sync_pa> [<pa_interval>] [<sync_bis>]
+   mod_src           : Set sync <src_id> <sync_pa> [<pa_interval> | "unknown"] [<sync_bis>]
                         [<metadata>]
    broadcast_code    : Send a string-based broadcast code of up to 16 bytes
                         <src_id> <broadcast code>
