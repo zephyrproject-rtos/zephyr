@@ -10,6 +10,8 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <component/nvmctrl.h>
+#include <instance/adc0.h>
+#include <instance/adc1.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -241,8 +243,20 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	#endif
 	/* My Custom setup */
 	uint16_t* calib = (uint16_t*)ADC0_FUSES_BIASREFBUF_ADDR;
-	adc->CALIB.bit.BIASREFBUF = (*calib & ADC0_FUSES_BIASREFBUF_Msk);   // Bias Reference Buffer Scaling,
-	adc->CALIB.bit.BIASCOMP = (*calib & ADC0_FUSES_BIASCOMP_Msk);		// Bias Comparator Scaling
+	if ((void*)adc == (void*)&REG_ADC0_CTRLA)
+	{
+		adc->CALIB.bit.BIASREFBUF = (*calib & ADC0_FUSES_BIASREFBUF_Msk);   // Bias Reference Buffer Scaling,
+		adc->CALIB.bit.BIASCOMP = (*calib & ADC0_FUSES_BIASCOMP_Msk);		// Bias Comparator Scaling
+	}
+	else if ((void*)adc == (void*)&REG_ADC1_CTRLA)
+	{
+		adc->CALIB.bit.BIASREFBUF = (*calib & ADC0_FUSES_BIASREFBUF_Msk);   // Bias Reference Buffer Scaling,
+		adc->CALIB.bit.BIASCOMP = (*calib & ADC0_FUSES_BIASCOMP_Msk);		// Bias Comparator Scaling
+	}
+	else
+	{
+		return -EINVAL;
+	}
 	adc->REFCTRL.bit.REFCOMP = 1;   				 	// Reference buffer offset compensation enabled.
 	// adc->CTRLC.bit.CORREN = 0x1;             		// Digital Error Correction enabled
 	adc->CTRLC.bit.R2R = 0x1;                			// R2R mode enabled
