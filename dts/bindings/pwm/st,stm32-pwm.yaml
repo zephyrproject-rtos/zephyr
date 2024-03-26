@@ -11,6 +11,14 @@ properties:
   pinctrl-names:
     required: true
 
+  timings:
+    type: array
+    description: |
+      defines the pwm values per channel defined in pinctrl-0
+      set during driver init
+      <1 /*channel*/ PWM_USEC(10000) /*period*/ PWM_USEC(5000) /*pulse*/ 0 /*flags*/>,
+      <2 /*channel*/ PWM_USEC(10000) /*period*/ PWM_USEC(5000) /*pulse*/ 0 /*flags*/>;
+
   four-channel-capture-support:
     type: boolean
     description: |
