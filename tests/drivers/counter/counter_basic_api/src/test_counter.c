@@ -57,6 +57,9 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(microchip_xec_timer)
 	DEVS_FOR_DT_COMPAT(nxp_imx_epit)
 	DEVS_FOR_DT_COMPAT(nxp_imx_gpt)
+#ifdef CONFIG_COUNTER_MCUX_TPM
+	DEVS_FOR_DT_COMPAT(nxp_tpm_timer)
+#endif
 	DEVS_FOR_DT_COMPAT(renesas_smartbond_timer)
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 	DEVS_FOR_DT_COMPAT(nxp_lpc_ctimer)
@@ -382,7 +385,7 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 	ticks = counter_us_to_ticks(dev, counter_period_us);
 	top_cfg.ticks = ticks;
 
-	cntr_alarm_cfg.flags = 0;
+	cntr_alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
 	cntr_alarm_cfg.callback = alarm_handler;
 	cntr_alarm_cfg.user_data = &cntr_alarm_cfg;
 
