@@ -19,6 +19,11 @@ LOG_MODULE_REGISTER(adc_ad5592, CONFIG_ADC_LOG_LEVEL);
 
 #define AD5592_ADC_RESOLUTION 12U
 #define AD5592_ADC_MAX_VAL 4096
+#define AD5592_ADC_VREF_MV 2500
+
+#define AD5592_ADC_RES_IND_BIT BIT(15)
+#define AD5592_ADC_RES_CHAN_MASK GENMASK(14, 12)
+#define AD5592_ADC_RES_VAL_MASK GENMASK(11, 0)
 
 struct adc_ad5592_config {
 	const struct device *mfd_dev;
@@ -100,6 +105,7 @@ static int adc_ad5592_read_channel(const struct device *dev, uint8_t channel, ui
 {
 	const struct adc_ad5592_config *config = dev->config;
 	uint16_t val;
+	uint8_t conv_channel;
 	int ret;
 
 	ret = mfd_ad5592_write_reg(config->mfd_dev, AD5592_REG_SEQ_ADC, BIT(channel));
@@ -120,11 +126,27 @@ static int adc_ad5592_read_channel(const struct device *dev, uint8_t channel, ui
 	}
 
 	val = sys_be16_to_cpu(val);
-	if (channel >= 1) {
-		val -= channel * AD5592_ADC_MAX_VAL;
+
+	/*
+	 * Invalid data:
+	 * See "ADC section" in "Theory of operation" chapter.
+	 * Valid ADC result has MSB bit set to 0.
+	 */
+	if ((val & AD5592_ADC_RES_IND_BIT) != 0) {
+		return -EAGAIN;
 	}
 
-	*result = val;
+	/*
+	 * Invalid channel converted:
+	 * See "ADC section" in "Theory of operation" chapter.
+	 * Conversion result contains channel number which should match requested channel.
+	 */
+	conv_channel = FIELD_GET(AD5592_ADC_RES_CHAN_MASK, val);
+	if (conv_channel != channel) {
+		return -EIO;
+	}
+
+	*result = val & AD5592_ADC_RES_VAL_MASK;
 
 	return 0;
 }
@@ -222,9 +244,11 @@ static int adc_ad5592_init(const struct device *dev)
 			(k_thread_entry_t)adc_ad5592_acquisition_thread, data, NULL, NULL,
 			CONFIG_ADC_AD5592_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
-	ret = k_thread_name_set(tid, "adc_ad5592");
-	if (ret < 0) {
-		return ret;
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		ret = k_thread_name_set(tid, "adc_ad5592");
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -238,6 +262,7 @@ static const struct adc_driver_api adc_ad5592_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_ad5592_read_async,
 #endif
+	.ref_internal = AD5592_ADC_VREF_MV,
 };
 
 #define ADC_AD5592_DEFINE(inst)							\
