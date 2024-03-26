@@ -49,4 +49,12 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_dac0: pinmux_dac0 {
+		group0 {
+			pinmux = <DAC0_OUT_PIO4_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
 };
