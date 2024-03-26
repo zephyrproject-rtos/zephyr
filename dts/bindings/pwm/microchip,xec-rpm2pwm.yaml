@@ -1,0 +1,86 @@
+# Copyright (c) 2023, Silicom Connectivity Solutions, Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+
+  Microchip XEC RPM2PWM
+
+  Microchip's MEC172x series of embedded controllers supports up to 2 closed loop fan controllers.
+  The fan controllers use an input tachometer reading and a target RPM to control the PWM to the
+  fans.  There are multiple fan type configurations to support fans with different numbers of poles
+  in order to read the RPM correctly, as well as options to control the fan ramp up/down and
+  startup spin control.
+
+  This driver is an initial baseline requesting review and comment on the design and feature-set.
+
+  Example DTS board configuration:
+
+  &rpmfan0 {
+          pinctrl-0 = <&gpwm0_gpio53 &gtach_gpio050>;
+          pinctrl-names = "default";
+          status = "okay";
+
+          rpmfantach0: {
+                  status = "okay";
+          }
+
+          fan {
+                  fan0: fan {
+                          pwms = <&rpmfan0 0 PWM_MSEC(30) 0>;
+                          edges = <5>;
+                  };
+          };
+  };
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+compatible: "microchip,xec-rpm2pwm"
+
+properties:
+  reg:
+    required: true
+
+  pcrs:
+    type: array
+    required: true
+    description: RPM2PWM PCR register index and bit position
+
+  "#pwm-cells":
+    const: 3
+
+  girqs:
+    type: array
+    required: true
+    description: |
+      Array of encoded interrupt information
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+child-binding:
+  child-binding:
+    properties:
+      pwms:
+        required: true
+        type: phandle-array
+        description: |
+          Reference to RPM2PWM instance.
+
+          The period field is ignored, period is fixed in hardware.  Flags
+          should be used to set the desired spin-up and update period etc.
+          of the rpm2pwm fan controller.
+
+      edges:
+        required: true
+        type: int
+        description: |
+          Number of edges on this fan that are needed to count a single
+          revolution.
+
+pwm-cells:
+  - channel
+  - period
+  - flags

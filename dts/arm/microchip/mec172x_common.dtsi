@@ -628,18 +628,30 @@ tach3: tach@40006030 {
 	status = "disabled";
 };
 rpmfan0: rpmfan@4000a000 {
+	compatible = "microchip,xec-rpm2pwm";
 	reg = <0x4000a000 0x80>;
 	interrupts = <74 1>, <75 1>;
 	girqs = <17 20>, <17 21>;
 	pcrs = <3 12>;
 	status = "disabled";
+
+	rpmfantach0: rpmfan_tach0 {
+		compatible = "microchip,xec-prm2pwm-tach";
+		status = "disabled";
+	};
 };
 rpmfan1: rpmfan@4000a080 {
+	compatible = "microchip,xec-rpm2pwm";
 	reg = <0x4000a080 0x80>;
 	interrupts = <76 1>, <77 1>;
 	girqs = <17 22>, <17 23>;
 	pcrs = <4 7>;
 	status = "disabled";
+
+	rpmfantach1: rpmfan_tach1 {
+		compatible = "microchip,xec-prm2pwm-tach";
+		status = "disabled";
+	};
 };
 adc0: adc@40007c00 {
 	compatible = "microchip,xec-adc";
