@@ -67,10 +67,18 @@ static int dht_sample_fetch(const struct device *dev,
 	uint8_t buf[5];
 	unsigned int i, j;
 
+#if defined(CONFIG_DHT_LOCK_IRQS)
+	int lock;
+#endif
+
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* assert to send start signal */
 	gpio_pin_set_dt(&cfg->dio_gpio, true);
+
+#if defined(CONFIG_DHT_LOCK_IRQS)
+	lock = irq_lock();
+#endif
 
 	k_busy_wait(DHT_START_SIGNAL_DURATION);
 
@@ -156,6 +164,10 @@ static int dht_sample_fetch(const struct device *dev,
 	}
 
 cleanup:
+#if defined(CONFIG_DHT_LOCK_IRQS)
+	irq_unlock(lock);
+#endif
+
 	/* Switch to output inactive until next fetch. */
 	gpio_pin_configure_dt(&cfg->dio_gpio, GPIO_OUTPUT_INACTIVE);
 
