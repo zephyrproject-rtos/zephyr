@@ -3,7 +3,7 @@
 
 if SOC_SERIES_IMX8X
 
-if SOC_MIMX8QXP_ADSP
+if SOC_MIMX8QX6_ADSP
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 640000000
@@ -40,6 +40,6 @@ config TEST_LOGGING_DEFAULTS
 	default n
 	depends on TEST
 
-endif # SOC_MIMX8QXP_ADSP
+endif # SOC_MIMX8QX6_ADSP
 
 endif # SOC_SERIES_IMX8X

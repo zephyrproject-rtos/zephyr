@@ -1,7 +1,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SOC_MIMX8QXP_ADSP)
+if(CONFIG_SOC_MIMX8QX6_ADSP)
   zephyr_include_directories(adsp)
   add_subdirectory(adsp)
 
