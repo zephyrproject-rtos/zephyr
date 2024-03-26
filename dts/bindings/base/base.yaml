@@ -92,3 +92,7 @@ properties:
   mbox-names:
     type: string-array
     description: Provided names of mailbox / IPM channel specifiers
+
+  shared-irqs:
+    type: phandles
+    description: phandle to interrupt controller node

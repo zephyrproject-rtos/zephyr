@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Interrupt latency counter options
+#
+menuconfig ILC
+	bool "Interrupt latency counter drivers"
+	help
+	  To enable Interrupt latency counter driver. The ilc node represents
+	  a region containing information about  Interrupt latency counter device.
+
+if ILC
+
+module = ILC_SOFT_IP_FPGA
+module-str = ilc_soft_ip_fpga
+source "subsys/logging/Kconfig.template.log_config"
+
+config ILC_INIT_PRIORITY
+	int "Interrupt latency counter driver init priority"
+	default 90
+	help
+	  This option controls the priority of the Interrupt latency counter device
+	  initialization. Higher priority ensures that the device is initialized
+	  earlier in the startup cycle. If unsure, leave at default
+	  value
+
+config ILC_SHELL
+	bool "Support for ILC interface shell commands"
+	default y
+	depends on SHELL
+	help
+	  Display to enable ILC interface shell commands
+
+comment "Interrupt latency counter drivers"
+
+rsource "Kconfig.ilc_intel_soc_fpga"
+
+endif # ILC
