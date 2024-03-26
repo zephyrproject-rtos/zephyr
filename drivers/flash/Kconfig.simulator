@@ -28,6 +28,14 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
 	 Keep in mind that write operations can only pull bits to zero, regardless.
 
+config FLASH_SIMULATOR_ON_NVRAM
+	bool "Allow simulator to behave as flash on NVRAM"
+	select FLASH_HAS_EX_OP
+	default n
+	help
+	 If selected, the flash simulator will behave as if it is flash on NVRAM,
+	 allowing multiple writes and skipping erase requirement.
+
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Hardware timing simulation"
 

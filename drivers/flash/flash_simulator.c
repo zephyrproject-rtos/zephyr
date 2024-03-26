@@ -228,14 +228,16 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 	/* check if any unit has been already programmed */
 	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+#if (!CONFIG_FLASH_SIMULATOR_ON_NVRAM)
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
 		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
-#if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
+#if (!CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES)
 			return -EIO;
 #endif
 		}
 	}
+#endif
 
 #ifdef CONFIG_FLASH_SIMULATOR_STATS
 	bool data_part_ignored = false;
@@ -265,10 +267,10 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
 		/* only pull bits to zero */
-#if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
-		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
-#else
+#if ((CONFIG_FLASH_SIMULATOR_ON_NVRAM) || (FLASH_SIMULATOR_ERASE_VALUE != 0xFF))
 		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
+#else
+		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
 #endif
 	}
 
@@ -361,6 +363,28 @@ flash_sim_get_parameters(const struct device *dev)
 	return &flash_sim_parameters;
 }
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int flash_sim_ex_op(const struct device *dev, uint16_t code,
+			     const uintptr_t in, void *out)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
+	int rc = -ENOTSUP;
+
+	switch (code) {
+	case FLASH_EX_OP_GET_NVRAM_PROPERTIES:
+		rc = 0;
+		break;
+	default:
+		break;
+	}
+
+	return rc;
+}
+#endif
+
 static const struct flash_driver_api flash_sim_api = {
 	.read = flash_sim_read,
 	.write = flash_sim_write,
@@ -368,6 +392,9 @@ static const struct flash_driver_api flash_sim_api = {
 	.get_parameters = flash_sim_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,
+#endif
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = flash_sim_ex_op,
 #endif
 };
 
