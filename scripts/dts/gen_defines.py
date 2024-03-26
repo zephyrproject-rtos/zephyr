@@ -354,6 +354,9 @@ def write_special_props(node):
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
+    # Macros that are special to Zephyr bindings.
+    write_zephyr_device_type(node)
+
 def write_ranges(node):
     # ranges property: edtlib knows the right #address-cells and
     # #size-cells of parent and child, and can therefore pack the
@@ -617,6 +620,17 @@ def write_gpio_hogs(node):
         out_dt_define(f"{macro}_NUM", len(node.gpio_hogs))
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
+
+def write_zephyr_device_type(node):
+    # Write special macros for zephyr,device-type properties.
+
+    if 'zephyr,device-type' in node.props:
+        macro = f"{node.z_path_id}_ZEPHYR_DEVICE_TYPE"
+        device_type = node.props['zephyr,device-type'].val_as_token
+
+        out_comment("Zephyr device type:")
+        out_dt_define(f"{macro}_EXISTS", 1)
+        out_dt_define(f"{macro}_{device_type}", 1)
 
 def write_vanilla_props(node):
     # Writes macros for any and all properties defined in the

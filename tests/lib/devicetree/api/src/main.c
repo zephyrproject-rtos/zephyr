@@ -76,8 +76,11 @@
 #define TEST_DMA_CTLR_1 DT_NODELABEL(test_dma1)
 #define TEST_DMA_CTLR_2 DT_NODELABEL(test_dma2)
 
-#define TEST_IO_CHANNEL_CTLR_1 DT_NODELABEL(test_adc_1)
-#define TEST_IO_CHANNEL_CTLR_2 DT_NODELABEL(test_adc_2)
+#define TEST_ADC_1 DT_NODELABEL(test_adc_1)
+#define TEST_ADC_2 DT_NODELABEL(test_adc_2)
+
+#define TEST_IO_CHANNEL_CTLR_1 TEST_ADC_1
+#define TEST_IO_CHANNEL_CTLR_2 TEST_ADC_2
 
 #define TEST_RANGES_PCIE  DT_NODELABEL(test_ranges_pcie)
 #define TEST_RANGES_OTHER DT_NODELABEL(test_ranges_other)
@@ -2572,6 +2575,63 @@ ZTEST(devicetree_api, test_same_node)
 {
 	zassert_true(DT_SAME_NODE(TEST_DEADBEEF, TEST_DEADBEEF), "");
 	zassert_false(DT_SAME_NODE(TEST_DEADBEEF, TEST_ABCD1234), "");
+}
+
+ZTEST(devicetree_api, test_device_type)
+{
+#undef MY_FN
+#define MY_FN(node_id) 1 +
+	int num_unique = DT_FOREACH_DEVICE_TYPE_NODE(test_unique_device_type_string, MY_FN) 0;
+	int num_unique_ok =
+		DT_FOREACH_DEVICE_TYPE_STATUS_OKAY_NODE(test_unique_device_type_string, MY_FN) 0;
+#undef MY_FN
+
+#undef MY_FN
+#define MY_FN(node_id, multiplier) multiplier +
+	int num_unique_x_10 =
+		DT_FOREACH_DEVICE_TYPE_NODE_VARGS(test_unique_device_type_string, MY_FN, 10) 0;
+	int num_unique_ok_x_20 =
+		DT_FOREACH_DEVICE_TYPE_STATUS_OKAY_NODE_VARGS(test_unique_device_type_string, MY_FN,
+							      20) 0;
+#undef MY_FN
+
+	const int num_unique_expected = 4;
+	const int num_unique_ok_expected = 2;
+
+	/* DT_NODE_HAS_DEVICE_TYPE */
+	zassert_true(DT_NODE_HAS_DEVICE_TYPE(DT_NODELABEL(test_unique_device_type_reserved)));
+	zassert_true(DT_NODE_HAS_DEVICE_TYPE(DT_NODELABEL(test_unique_device_type_disabled)));
+	zassert_true(DT_NODE_HAS_DEVICE_TYPE(DT_NODELABEL(test_unique_device_type_no_status)));
+	zassert_true(DT_NODE_HAS_DEVICE_TYPE(DT_NODELABEL(test_unique_device_type_okay)));
+	zassert_false(DT_NODE_HAS_DEVICE_TYPE(ZEPHYR_USER));
+
+	/* DT_NODE_IS_DEVICE_TYPE */
+	zassert_true(DT_NODE_IS_DEVICE_TYPE(TEST_ADC_1, adc_controller));
+	zassert_true(DT_NODE_IS_DEVICE_TYPE(DT_NODELABEL(disabled_gpio), gpio_controller));
+	zassert_true(DT_NODE_IS_DEVICE_TYPE(DT_NODELABEL(reserved_gpio), gpio_controller));
+	zassert_true(DT_NODE_IS_DEVICE_TYPE(DT_NODELABEL(test_unique_device_type_okay),
+					    test_unique_device_type_string));
+	zassert_false(DT_NODE_IS_DEVICE_TYPE(TEST_ADC_1, gpio_controller));
+
+	/* DT_NODE_IS_DEVICE_TYPE_STATUS_OKAY */
+	zassert_true(DT_NODE_IS_DEVICE_TYPE_STATUS_OKAY(TEST_ADC_1, adc_controller));
+	zassert_true(DT_NODE_IS_DEVICE_TYPE_STATUS_OKAY(TEST_GPIO_1, gpio_controller));
+	zassert_false(DT_NODE_IS_DEVICE_TYPE_STATUS_OKAY(DT_NODELABEL(disabled_gpio),
+								      gpio_controller));
+	zassert_false(DT_NODE_IS_DEVICE_TYPE_STATUS_OKAY(DT_NODELABEL(reserved_gpio),
+								      gpio_controller));
+
+	/* DT_FOREACH_DEVICE_TYPE_NODE */
+	zassert_true(num_unique == num_unique_expected);
+
+	/* DT_FOREACH_DEVICE_TYPE_NODE_VARGS */
+	zassert_true(num_unique_x_10 == num_unique_expected * 10);
+
+	/* DT_FOREACH_DEVICE_TYPE_STATUS_OKAY_NODE */
+	zassert_true(num_unique_ok == num_unique_ok_expected);
+
+	/* DT_FOREACH_DEVICE_TYPE_STATUS_OKAY_NODE_VARGS */
+	zassert_true(num_unique_ok_x_20 == num_unique_ok_expected * 20);
 }
 
 ZTEST(devicetree_api, test_pinctrl)

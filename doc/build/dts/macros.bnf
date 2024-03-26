@@ -22,6 +22,8 @@ node-macro =  property-macro
 node-macro =/ pinctrl-macro
 ; A macro about the GPIO hog properties in a node.
 node-macro =/ gpiohogs-macro
+; A macro about the zephyr,device-type property in a node.
+node-macro =/ devicetype-macro
 ; EXISTS macro: node exists in the devicetree
 node-macro =/ %s"DT_N" path-id %s"_EXISTS"
 ; Bus macros: the plain BUS is a way to access a node's bus controller.
@@ -221,6 +223,42 @@ gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags_EXIST
 ;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_flags 0x20
 ;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_flags 0x30
 gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags"
+
+; --------------------------------------------------------------------
+; devicetype-macro: a macro related to zephyr,device-type properties
+;
+; The following examples assume something like this:
+;
+;     node-1: gpio@... {
+;       compatible = "vnd,gpio";
+;     };
+;
+;     node-2: adc@... {
+;       compatible = "vnd,adc";
+;     };
+;
+; Bindings fragment for the vnd,gpio compatible:
+;
+;     zephyr,device-type:
+;       default: gpio-controller
+;       const: gpio-controller
+;
+; Bindings fragment for the vnd,adc compatible:
+;
+;     zephyr,device-type:
+;       default: adc-controller
+;       const: adc-controller
+
+; The node contains a zephyr,device-type property.
+;
+;   #define DT_N_<node-1 path>_ZEPHYR_DEVICE_TYPE_EXISTS 1
+;   #define DT_N_<node-2 path>_ZEPHYR_DEVICE_TYPE_EXISTS 1
+devicetype-macro = %s"DT_N" path-id %s"_ZEPHYR_DEVICE_TYPE_EXISTS"
+; The node contains a zephyr,device-type property with the given device type.
+;
+;   #define DT_N_<node-1 path>_ZEPHYR_DEVICE_TYPE_gpio_controller 1
+;   #define DT_N_<node-2 path>_ZEPHYR_DEVICE_TYPE_adc_controller 1
+devicetypes-macro =/ %s"DT_N" path-id %s"_ZEPHYR_DEVICE_TYPE_" device-type
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property
