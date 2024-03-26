@@ -37,6 +37,13 @@ config SERIAL_INIT_PRIORITY
 	help
 	  Serial driver device initialization priority.
 
+config SERIAL_SUPPORT_BUILTIN_HALFDUPLEX
+   bool 
+   help
+     This option can be enabled by individual serial driver to
+     indicate both the driver and hardware support half-duplex
+     communication with built-in hardware components.
+
 module = UART
 module-str = uart
 source "subsys/logging/Kconfig.template.log_config"
@@ -147,6 +154,14 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 	default 100
 	help
 	  Receiver inactivity timeout. It is used to calculate timeout in microseconds.
+
+config UART_BUILTIN_HALFDUPLEX
+   bool "Built-in half-duplex API"
+   depends on SERIAL_SUPPORT_BUILTIN_HALFDUPLEX 
+   help
+     This enables the API to control an half-duplex with built-in hardware uart
+     communication. This can be useful for interacting with devices using 
+     a master/slave type of communication without any external hardware.
 
 comment "Serial Drivers"
 

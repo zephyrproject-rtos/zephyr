@@ -15,6 +15,15 @@ properties:
       disconnected, and transmitter output is internally connected to
       the receiver input.
 
+  nxp,builtin-halfduplex:
+    type: boolean
+    description: |
+      Enable half-duplex mode on the LPUART peripheral. In this mode,
+      TX pin can be connected to and disconnected from the receiver input
+      to switch the communication direction. Note that the peripheral will
+      set this mode using its internal components, eliminating the need for
+      external hardware.
+
   nxp,rs485-mode:
     type: boolean
     description: |

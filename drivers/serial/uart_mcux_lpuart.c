@@ -50,6 +50,7 @@ struct mcux_lpuart_config {
 	uint8_t parity;
 	bool rs485_de_active_low;
 	bool loopback_en;
+   bool halfduplex_en;
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -102,6 +103,9 @@ struct mcux_lpuart_data {
 #ifdef CONFIG_UART_ASYNC_API
 	struct mcux_lpuart_async_data async;
 #endif
+#ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
+   bool hd_talking;
+#endif /* CONFIG_UART_BUILTIN_HALFDUPLEX */
 	struct uart_config uart_config;
 };
 
@@ -898,6 +902,38 @@ static void mcux_lpuart_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
 
+#ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
+static int mcux_lpuart_hd_talk(const struct device *dev)
+{
+   const struct mcux_lpuart_config *config = dev->config;
+   struct mcux_lpuart_data *data = dev->data;
+
+   if(!config->halfduplex_en) {
+      return -EAGAIN;
+   }
+
+   config->base->CTRL |= (1 << LPUART_CTRL_TXDIR_SHIFT);
+   data->hd_talking = true;
+
+   return 0;
+}
+
+static int mcux_lpuart_hd_listen(const struct device *dev)
+{
+   const struct mcux_lpuart_config *config = dev->config;
+   struct mcux_lpuart_data *data = dev->data;
+
+   if(!config->halfduplex_en) {
+      return -EAGAIN;
+   }
+
+   config->base->CTRL &= ~(1 << LPUART_CTRL_TXDIR_SHIFT);
+   data->hd_talking = false;
+
+   return 0;
+}
+#endif /* CONFIG_UART_BUILTIN_HALFDUPLEX */
+
 static int mcux_lpuart_configure_init(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct mcux_lpuart_config *config = dev->config;
@@ -1019,6 +1055,15 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		config->base->CTRL &= ~LPUART_CTRL_RSRC_MASK;
 	}
 
+#ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
+   if(config->halfduplex_en) {
+      /* Set the LPUART into halfduplex mode. */
+      config->base->CTRL |= LPUART_CTRL_LOOPS_MASK;
+      config->base->CTRL |= LPUART_CTRL_RSRC_MASK;
+      (void)mcux_lpuart_hd_talk(dev);
+   }
+#endif /* CONFIG_UART_BUILTIN_HALFDUPLEX */
+
 	/* update internal uart_config */
 	data->uart_config = *cfg;
 
@@ -1136,6 +1181,10 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 	.rx_buf_rsp = mcux_lpuart_rx_buf_rsp,
 	.rx_disable = mcux_lpuart_rx_disable,
 #endif /* CONFIG_UART_ASYNC_API */
+#ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
+   .hd_talk = mcux_lpuart_hd_talk;
+   .hd_listen = mcux_lpuart_hd_listen;
+#endif /* CONFIG_UART_BUILTIN_HALFDUPLEX */
 };
 
 
@@ -1239,6 +1288,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
 	.rs485_de_active_low = DT_INST_PROP(n, nxp_rs485_de_active_low),      \
 	.loopback_en = DT_INST_PROP(n, nxp_loopback),                         \
+   .halfduplex_en = DT_INST_PROP(n, nxp_builtin_halfduplex),             \
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 	MCUX_LPUART_IRQ_INIT(n) \
 	RX_DMA_CONFIG(n)        \

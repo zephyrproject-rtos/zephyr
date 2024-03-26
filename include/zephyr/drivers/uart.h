@@ -453,6 +453,10 @@ __subsystem struct uart_driver_api {
 	int (*drv_cmd)(const struct device *dev, uint32_t cmd, uint32_t p);
 #endif
 
+#ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
+    int (*hd_talk)(const struct device *dev);
+    int (*hd_listen)(const struct device *dev);
+#endif 
 };
 
 /** @endcond */
@@ -1661,6 +1665,63 @@ static inline int z_impl_uart_drv_cmd(const struct device *dev, uint32_t cmd,
 	ARG_UNUSED(p);
 	return -ENOTSUP;
 #endif
+}
+
+/**
+ * @brief Adapt the communication direction to enable the hd master to talk.
+ * 
+ * @param dev UART device instance. 
+ * 
+ * @retval 0 If successful.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
+ * @retval -EAGAIN if Halfduplex mode is not enabled.
+ */
+__syscall int uart_hd_talk(const struct device *dev);
+
+static inline int z_impl_uart_hd_talk(const struct device *dev)
+{
+#ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
+   const struct uart_driver_api *api = 
+      (const struct uart_driver_api *)dev->api;
+
+   if(api->hd_talk == NULL) {
+      return -ENOSYS;
+   }
+   return api->hd_talk(dev);
+#else 
+   ARG_UNUSED(dev);
+   return -ENOTSUP;
+#endif 
+}
+
+/**
+ * @brief Adapt the communication direction to enable the hd master to listen for 
+ * incoming messages from hd slaves.
+ * 
+ * @param dev UART device instance. 
+ * 
+ * @retval 0 If successful.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
+ * @retval -EAGAIN if Halfduplex mode is not enabled.
+ */
+__syscall int uart_hd_listen(const struct device *dev);
+
+static inline int z_impl_uart_hd_listen(const struct device *dev)
+{
+#ifdef CONFIG_UART_BUILTIN_HALFDUPLEX
+   const struct uart_driver_api *api = 
+      (const struct uart_driver_api *)dev->api;
+
+   if(api->hd_listen == NULL) {
+      return -ENOSYS;
+   } 
+   return api->hd_listen(dev);
+#else 
+   ARG_UNUSED(dev);
+   return -ENOTSUP;
+#endif 
 }
 
 #ifdef __cplusplus
