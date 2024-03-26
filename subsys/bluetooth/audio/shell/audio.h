@@ -784,13 +784,18 @@ static inline void print_codec_cfg_chan_allocation(const struct shell *sh, size_
 	shell_print(sh, "%*sChannel allocation:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
-	/* There can be up to 32 bits set in the field */
-	for (size_t i = 0; i < 32; i++) {
-		const uint8_t bit_val = BIT(i);
 
-		if (chan_allocation & bit_val) {
-			shell_print(sh, "%*s%s (0x%08X)", indent, "",
-				    chan_location_bit_to_str(bit_val), bit_val);
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		shell_print(sh, "%*s Mono", indent, "");
+	} else {
+		/* There can be up to 32 bits set in the field */
+		for (size_t i = 0; i < 32; i++) {
+			const uint8_t bit_val = BIT(i);
+
+			if (chan_allocation & bit_val) {
+				shell_print(sh, "%*s%s (0x%08X)", indent, "",
+					    chan_location_bit_to_str(bit_val), bit_val);
+			}
 		}
 	}
 }
