@@ -1,0 +1,43 @@
+# Copyright (c) 2023, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The ws2812 controller implemented by PIO.
+
+compatible: "raspberrypi,pico-ws2812-controller-pio"
+
+include: pinctrl-device.yaml
+
+properties:
+  bit-waveform:
+    type: array
+    description: |
+      This property defines the waveform for sending 1-bit data.
+      The program uses the first three elements of the array.
+      The T0 is equal to T0H in the datasheet.
+      The T2 is equal to T1L in the datasheet.
+      The T1 is equal to (T1H-T0H) or (T0L-T1L) in the datasheet.
+
+      Code-0
+         +------+                 +---
+         |      |                 |
+         |  T0  |      T1+T2      |
+         |      |                 |
+      ---+      +-----------------+
+
+      Code-1
+         +---------------+        +---
+         |               |        |
+         |     T0+T1     |   T2   |
+         |               |        |
+      ---+               +--------+
+
+
+      The frequency determines the wave period.
+      The T0～T2 means ratio in one period.
+
+      For example, T0=3, T1=3, T2=4 and the frequency is 800kHz case,
+      T0H is
+        (1 / 800kHz) * (3/10) = 375ns
+      T0L is
+        (1 / 800kHz) * ((4+3)/10) = 875ns
