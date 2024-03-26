@@ -567,6 +567,22 @@
 		interrupts = <57 0>;
 		status = "disabled";
 	};
+
+	wwdt0: watchdog@16000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0x16000 0x1000>;
+		interrupts = <152 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
+	wwdt1: watchdog@17000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0x17000 0x1000>;
+		interrupts = <153 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
 };
 
 &systick {
