@@ -1,0 +1,24 @@
+sample:
+  name: DMA
+  description: DMA Driver sample application
+common:
+  tags:
+    - drivers
+    - dma
+tests:
+  sample.drivers.dma.mem_to_mem:
+    depends_on:
+      - dma
+      - drivers
+    filter: dt_alias_exists("dma")
+    build_only: true
+    platform_allow:
+      - intel_socfpga_agilex5_socdk
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Sample application for Memory to Memory transfer using dma controller"
+        - "Successfully transferred"
+        - "Sample application for dma transfer complete"

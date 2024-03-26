@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Direct Memory Access(DMA) sample application"
+
+source "Kconfig.zephyr"
+
+config SAMPLE_DMA_CHANNEL_NR
+	int "channel to use"
+	default 0
+
+endmenu
