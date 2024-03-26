@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2010-2024 Analog Devices Inc.
+ * Copyright (c) 2024 Baylibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdp_spi {
+	status = "okay";
+	pinctrl-names = "default";
+	max22190@0 {
+		compatible = "adi,max22190";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		status = "okay";
+
+		max22190-mode = <1>; // modes range from 0-4
+
+		drdy-gpios = <&gpioj 12 GPIO_ACTIVE_LOW>; /* SDP-GPIO5 - PMOD-PIN8 */
+		fault-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>; /* SDP-SERIAL_INT - PMOD-PIN7 */
+		latch-gpios = <&gpioj 13 GPIO_ACTIVE_LOW>; /* SDP-GPIO6 - PMOD-PIN9 */
+	};
+};
