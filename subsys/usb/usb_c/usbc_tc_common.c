@@ -147,7 +147,7 @@ static int tc_init(const struct device *dev)
 
 #ifdef CONFIG_USBC_CSM_SOURCE_ONLY
 	/* Stop sourcing VBUS by policy callback and/or TCPC */
-	ret = data->policy_cb_src_en(dev, false);
+	ret = usbc_policy_src_en(dev, tcpc, false);
 	if (ret != 0) {
 		LOG_ERR("Couldn't disable vbus sourcing: %d", ret);
 		return ret;
