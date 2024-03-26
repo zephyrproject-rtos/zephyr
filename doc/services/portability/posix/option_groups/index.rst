@@ -222,7 +222,7 @@ POSIX_DEVICE_IO
     feof(),
     ferror(),
     fflush(),
-    fgetc(),
+    fgetc(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     fgets(),
     fileno(),
     fopen(),
@@ -233,8 +233,8 @@ POSIX_DEVICE_IO
     freopen(),
     fscanf(),
     fwrite(),yes
-    getc(),
-    getchar(),
+    getc(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    getchar(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     gets(),
     open(),yes
     perror(),yes
