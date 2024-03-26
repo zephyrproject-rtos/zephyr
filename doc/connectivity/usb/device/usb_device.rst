@@ -603,6 +603,8 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
 +----------------------------------------------------+--------+
+| :zephyr:code-sample:`uac2-implicit-feedback`       | 0x000F |
++----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
 +----------------------------------------------------+--------+
 
