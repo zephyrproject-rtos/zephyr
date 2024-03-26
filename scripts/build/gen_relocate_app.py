@@ -45,6 +45,7 @@ import sys
 import argparse
 import os
 import glob
+import pickle
 import warnings
 from collections import defaultdict
 from enum import Enum
@@ -55,6 +56,10 @@ from typing import Tuple
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+
+# This is needed to load edt.pickle files.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..',
+                                'dts', 'python-devicetree', 'src'))
 
 MemoryRegion = NewType('MemoryRegion', str)
 
@@ -187,14 +192,14 @@ extern char __{0}_{1}_reloc_size[];
 
 
 DATA_COPY_FUNCTION = """
-void data_copy_xip_relocation(void)
+void data_copy_xip_relocation{1}(void)
 {{
 {0}
 }}
 """
 
 BSS_ZEROING_FUNCTION = """
-void bss_zeroing_relocation(void)
+void bss_zeroing_relocation{1}(void)
 {{
 {0}
 }}
@@ -443,7 +448,7 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
     return code_generation
 
 
-def dump_header_file(header_file, code_generation):
+def dump_header_file(header_file, code_generation, func_name_trailer = ""):
     code_string = ''
     # create a dummy void function if there is no code to generate for
     # bss/data/text regions
@@ -451,13 +456,13 @@ def dump_header_file(header_file, code_generation):
     code_string += code_generation["extern"]
 
     if code_generation["copy_code"]:
-        code_string += DATA_COPY_FUNCTION.format(code_generation["copy_code"])
+        code_string += DATA_COPY_FUNCTION.format(code_generation["copy_code"], func_name_trailer)
     else:
-        code_string += DATA_COPY_FUNCTION.format("return;")
+        code_string += DATA_COPY_FUNCTION.format("return;", func_name_trailer)
     if code_generation["zero_code"]:
-        code_string += BSS_ZEROING_FUNCTION.format(code_generation["zero_code"])
+        code_string += BSS_ZEROING_FUNCTION.format(code_generation["zero_code"], func_name_trailer)
     else:
-        code_string += BSS_ZEROING_FUNCTION.format("return;")
+        code_string += BSS_ZEROING_FUNCTION.format("return;", func_name_trailer)
 
     with open(header_file, "w") as header_file_desc:
         header_file_desc.write(SOURCE_CODE_INCLUDES)
@@ -480,8 +485,12 @@ def parse_args():
                         help="Output sram bss ld file")
     parser.add_argument("-c", "--output_code", required=False,
                         help="Output relocation code header file")
+    parser.add_argument("--output_code_delayed_relocation", required=False,
+                        help="Output delayed relocation code header file")
     parser.add_argument("-R", "--default_ram_region", default='SRAM',
                         help="Name of default RAM memory region for system")
+    parser.add_argument("--edt_pickle", required=False,
+                        help="Path to read the pickled edtlib.EDT object from")
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Verbose Output")
     args = parser.parse_args()
@@ -605,15 +614,33 @@ def main():
     generate_linker_script(linker_file, sram_data_linker_file,
                            sram_bss_linker_file, complete_list_of_sections, phdrs)
 
+    delayed_relocate = dict()
+    if os.path.isfile(args.edt_pickle):
+        with open(args.edt_pickle, 'rb') as f:
+            edt = pickle.load(f)
+            for node in edt.compat2nodes["zephyr,memory-region"]:
+                delayed_relocate[node.props["zephyr,memory-region"].val] = node.props["delay-relocation"].val
+
+    else:
+        edt = None
+
     code_generation = {"copy_code": '', "zero_code": '', "extern": ''}
+    code_generation_delayed_relocate = {"copy_code": '', "zero_code": '', "extern": ''}
     for mem_type, list_of_sections in sorted(complete_list_of_sections.items()):
 
         if "|COPY" in mem_type:
             mem_type = mem_type.split("|", 1)[0]
-            code_generation = generate_memcpy_code(mem_type,
-                                               list_of_sections, code_generation)
+            if mem_type in delayed_relocate and delayed_relocate[mem_type]:
+                code_generation_delayed_relocate = generate_memcpy_code(mem_type,
+                                                                        list_of_sections,
+                                                                        code_generation_delayed_relocate)
+            else:
+                code_generation = generate_memcpy_code(mem_type,
+                                                       list_of_sections, code_generation)
+
 
     dump_header_file(args.output_code, code_generation)
+    dump_header_file(args.output_code_delayed_relocation, code_generation_delayed_relocate, "_delayed")
 
 
 if __name__ == '__main__':

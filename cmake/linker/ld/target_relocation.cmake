@@ -9,6 +9,7 @@ macro(toolchain_ld_relocation)
   set(MEM_RELOCATION_SRAM_BSS_LD
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_bss_relocate.ld")
   set(MEM_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
+  set(MEM_DELAYED_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation_delayed.c")
   set(MEM_REGION_DEFAULT_RAM RAM)
   set(DICT_FILE "${PROJECT_BINARY_DIR}/relocation_dict.txt")
 
@@ -20,7 +21,7 @@ macro(toolchain_ld_relocation)
   )
 
   add_custom_command(
-    OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}
+    OUTPUT ${MEM_RELOCATION_CODE} ${MEM_DELAYED_RELOCATION_CODE} ${MEM_RELOCATION_LD}
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
@@ -31,11 +32,14 @@ macro(toolchain_ld_relocation)
     -s ${MEM_RELOCATION_SRAM_DATA_LD}
     -b ${MEM_RELOCATION_SRAM_BSS_LD}
     -c ${MEM_RELOCATION_CODE}
+    --output_code_delayed_relocation ${MEM_DELAYED_RELOCATION_CODE}
+    --edt_pickle ${EDT_PICKLE}
     --default_ram_region ${MEM_REGION_DEFAULT_RAM}
-    DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY} ${DICT_FILE}
+    DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY} ${DICT_FILE} ${EDT_PICKLE}
     )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})
+  target_sources_ifdef(CONFIG_DELAY_DATA_RELOCATION code_relocation_source_lib PRIVATE ${MEM_DELAYED_RELOCATION_CODE})
   target_include_directories(code_relocation_source_lib PRIVATE
 	${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
   target_link_libraries(code_relocation_source_lib zephyr_interface)
