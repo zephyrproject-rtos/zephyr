@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for PSE devices
+
+include: base.yaml
+
+properties:
+  friendly-name:
+    type: string
+    description: |
+      Human readable string describing the PSE device. It can be used to
+      distinguish multiple instances of the same model to a host operating 
+      system.
