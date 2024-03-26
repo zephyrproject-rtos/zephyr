@@ -284,7 +284,7 @@ struct usbd_class_node {
 	struct usbd_class_data *data;
 };
 
-#define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
+#define USBD_DEVICE_DEFINE(device_name, udc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
 	desc_##device_name = {						\
 		.bLength = sizeof(struct usb_device_descriptor),	\
@@ -304,7 +304,7 @@ struct usbd_class_node {
 	};								\
 	static STRUCT_SECTION_ITERABLE(usbd_contex, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
-		.dev = uhc_dev,						\
+		.dev = udc_dev,						\
 		.desc = &desc_##device_name,				\
 	}
 
