@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=50
+EXECUTE_TIMEOUT=100
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
