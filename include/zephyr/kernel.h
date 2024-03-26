@@ -5417,6 +5417,18 @@ void k_heap_init(struct k_heap *h, void *mem,
 		size_t bytes) __attribute_nonnull(1);
 
 /**
+ * @brief Free memory allocated by k_heap_alloc()
+ *
+ * Returns the specified memory block, which must have been returned
+ * from k_heap_alloc(), to the heap for use by other callers.  Passing
+ * a NULL block is legal, and has no effect.
+ *
+ * @param h Heap to which to return the memory
+ * @param mem A valid memory block, or NULL
+ */
+void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
+
+/**
  * @brief Allocate aligned memory from a k_heap
  *
  * Behaves in all ways like k_heap_alloc(), except that the returned
@@ -5436,6 +5448,7 @@ void k_heap_init(struct k_heap *h, void *mem,
  * @param timeout How long to wait, or K_NO_WAIT
  * @return Pointer to memory the caller can now use
  */
+__deallocate_with(k_heap_free, 2)
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout) __attribute_nonnull(1);
 
@@ -5460,6 +5473,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * @param timeout How long to wait, or K_NO_WAIT
  * @return A pointer to valid heap memory, or NULL
  */
+__deallocate_with(k_heap_free, 2)
 void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
 
@@ -5488,18 +5502,6 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
  */
 void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
 	__attribute_nonnull(1);
-
-/**
- * @brief Free memory allocated by k_heap_alloc()
- *
- * Returns the specified memory block, which must have been returned
- * from k_heap_alloc(), to the heap for use by other callers.  Passing
- * a NULL block is legal, and has no effect.
- *
- * @param h Heap to which to return the memory
- * @param mem A valid memory block, or NULL
- */
-void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
 /* Hand-calculated minimum heap sizes needed to return a successful
  * 1-byte allocation.  See details in lib/os/heap.[ch]
@@ -5579,6 +5581,18 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
  */
 
 /**
+ * @brief Free memory allocated from heap.
+ *
+ * This routine provides traditional free() semantics. The memory being
+ * returned must have been allocated from the heap memory pool.
+ *
+ * If @a ptr is NULL, no operation is performed.
+ *
+ * @param ptr Pointer to previously allocated memory.
+ */
+void k_free(void *ptr);
+
+/**
  * @brief Allocate memory from the heap with a specified alignment.
  *
  * This routine provides semantics similar to aligned_alloc(); memory is
@@ -5596,6 +5610,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
+__deallocate_with(k_free, 1)
 void *k_aligned_alloc(size_t align, size_t size);
 
 /**
@@ -5609,19 +5624,8 @@ void *k_aligned_alloc(size_t align, size_t size);
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
+__deallocate_with(k_free, 1)
 void *k_malloc(size_t size);
-
-/**
- * @brief Free memory allocated from heap.
- *
- * This routine provides traditional free() semantics. The memory being
- * returned must have been allocated from the heap memory pool.
- *
- * If @a ptr is NULL, no operation is performed.
- *
- * @param ptr Pointer to previously allocated memory.
- */
-void k_free(void *ptr);
 
 /**
  * @brief Allocate memory from heap, array style
