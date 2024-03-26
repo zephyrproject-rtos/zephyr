@@ -241,12 +241,13 @@ struct adc_channel_cfg {
 	.reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
 	.channel_id       = DT_REG_ADDR(node_id), \
-IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
+COND_CODE_1(CONFIG_ADC_CONFIGURABLE_INPUTS, \
 	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
 	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
-	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
-IF_ENABLED(DT_PROP(node_id, zephyr_differential), \
-	(.differential    = true,)) \
+	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),), \
+	(COND_CODE_1(DT_PROP(node_id, zephyr_differential), \
+		(.differential = true), \
+		(.differential = false)),)) \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
 	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
 	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
