@@ -99,11 +99,6 @@ if("PYTHON_PREFER" IN_LIST Deprecated_FIND_COMPONENTS)
   endif()
 endif()
 
-if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
-  message(STATUS "The following deprecated component(s) could not be found: "
-                 "${Deprecated_FIND_COMPONENTS}")
-endif()
-
 if("SEARCHED_LINKER_SCRIPT" IN_LIST Deprecated_FIND_COMPONENTS)
   # This code was deprecated after Zephyr v3.5.0
   list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SEARCHED_LINKER_SCRIPT)
@@ -120,6 +115,162 @@ if("SEARCHED_LINKER_SCRIPT" IN_LIST Deprecated_FIND_COMPONENTS)
       "or one of the Zephyr provided common linker scripts for the ${ARCH} "
       "architecture."
   )
+endif()
+
+if("ZEPHYR_FILE_DEPRECATED_OVERLAYS" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.6.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS ZEPHYR_FILE_DEPRECATED_OVERLAYS)
+  if(DEFINED ZFILE_BOARD_QUALIFIERS)
+
+    if(ZFILE_NAMES)
+      # If NAMES are specified then only look for deprecated file names if directly specified.
+      set(dts_filename_list ${ZFILE_DEPRECATED})
+    else()
+      # Include board name without SoC as deprecated option
+      string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${ZFILE_BOARD_QUALIFIERS}")
+      string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
+
+      zephyr_build_string(dts_filename_list
+                          BOARD ${ZFILE_BOARD}
+                          BOARD_REVISION ${ZFILE_BOARD_REVISION}
+                          BOARD_QUALIFIERS ${qualifiers_without_soc}
+                          BUILD ${ZFILE_BUILD}
+                          MERGE REVERSE
+      )
+
+      list(TRANSFORM dts_filename_list APPEND ".overlay")
+    endif()
+
+    foreach(path ${ZFILE_CONF_FILES})
+      foreach(filename ${dts_filename_list})
+        if(NOT IS_ABSOLUTE ${filename})
+          set(test_file ${path}/${filename})
+        else()
+          set(test_file ${filename})
+        endif()
+        zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
+
+        if(EXISTS ${test_file})
+          list(APPEND found_dts_files ${test_file})
+
+          message(DEPRECATION
+                  "Overlay files (${filename}) without the SoC name are "
+                  "deprecated after Zephyr 3.6, you should use <board>_<soc>.overlay instead")
+        endif()
+
+        if(DEFINED ZFILE_BUILD)
+          set(deprecated_file_found y)
+        endif()
+      endforeach()
+    endforeach()
+  endif()
+endif()
+
+if("ZEPHYR_FILE_DEPRECATED_CONF" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.6.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS ZEPHYR_FILE_DEPRECATED_CONF)
+  if(DEFINED ZFILE_BOARD_QUALIFIERS)
+    # Include board name without SoC as deprecated option
+    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${ZFILE_BOARD_QUALIFIERS}")
+    string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
+
+    zephyr_build_string(conf_filename_list
+                        BOARD ${ZFILE_BOARD}
+                        BOARD_REVISION ${ZFILE_BOARD_REVISION}
+                        BOARD_QUALIFIERS ${qualifiers_without_soc}
+                        BUILD ${ZFILE_BUILD}
+                        MERGE REVERSE
+    )
+
+    list(TRANSFORM conf_filename_list APPEND ".conf")
+
+    foreach(path ${ZFILE_CONF_FILES})
+      foreach(filename ${conf_filename_list})
+        if(NOT IS_ABSOLUTE ${filename})
+          set(test_file ${path}/${filename})
+        else()
+          set(test_file ${filename})
+        endif()
+        zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
+
+        if(EXISTS ${test_file})
+          list(APPEND found_conf_files ${test_file})
+
+          message(DEPRECATION
+                  "Kconfig fragment files (${filename}) without the SoC name are "
+                  " deprecated after Zephyr 3.6, you should use <board>_<soc>.conf instead")
+        endif()
+
+        if(DEFINED ZFILE_BUILD)
+          set(deprecated_file_found y)
+        endif()
+      endforeach()
+    endforeach()
+  endif()
+endif()
+
+if("ZEPHYR_FILE_DEPRECATED_DEFCONF" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.6.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS ZEPHYR_FILE_DEPRECATED_DEFCONF)
+  if(DEFINED ZFILE_BOARD_QUALIFIERS)
+    # Include board name without SoC as deprecated option
+    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${ZFILE_BOARD_QUALIFIERS}")
+    string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
+
+    zephyr_build_string(defconf_filename_list
+                        BOARD ${ZFILE_BOARD}
+                        BOARD_REVISION ${ZFILE_BOARD_REVISION}
+                        BOARD_QUALIFIERS ${qualifiers_without_soc}
+                        MERGE REVERSE
+    )
+
+    list(TRANSFORM defconf_filename_list APPEND "_defconfig")
+
+    foreach(path ${ZFILE_CONF_FILES})
+      foreach(filename ${defconf_filename_list})
+        if(NOT IS_ABSOLUTE ${filename})
+          set(test_file ${path}/${filename})
+        else()
+          set(test_file ${filename})
+        endif()
+
+        if(EXISTS ${test_file})
+          list(APPEND found_defconf_files ${test_file})
+
+          message(DEPRECATION
+                  "defconfig files (${filename}) without the SoC name are "
+                  " deprecated after Zephyr 3.6, you should use <board>_<soc>_defconfig instead")
+        endif()
+      endforeach()
+    endforeach()
+  endif()
+endif()
+
+if("DTS_SOURCE" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.6.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS DTS_SOURCE)
+  if(DEFINED BOARD_QUALIFIERS)
+    # Include board name without SoC as deprecated option
+    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${BOARD_QUALIFIERS}")
+    string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
+    zephyr_build_string(board_string
+                        BOARD ${BOARD}
+                        BOARD_QUALIFIERS ${qualifiers_without_soc}
+    )
+
+    if(EXISTS ${BOARD_DIR}/${board_string}.dts)
+      set(DTS_SOURCE ${BOARD_DIR}/${board_string}.dts)
+      message(DEPRECATION
+              "Devicetree files (${board_string}.dts) without the SoC name are deprecated"
+              " after Zephyr 3.6, you should use <board>_<soc>.dts instead"
+      )
+    endif()
+  endif()
+endif()
+
+if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
+  message(STATUS "The following deprecated component(s) could not be found: "
+                 "${Deprecated_FIND_COMPONENTS}")
 endif()
 
 set(Deprecated_FOUND True)

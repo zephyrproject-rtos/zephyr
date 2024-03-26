@@ -1517,7 +1517,8 @@ endfunction()
 # build string as first item in the list.
 # The full order of build strings returned in the list will be:
 # - Normalized board target build string, this includes qualifiers and revision
-# - Normalized board target build string, without revision
+# - Build string with board variants removed in addition
+# - Build string with cpuset removed in addition
 # - Build string with soc removed in addition
 #
 # If BUILD is supplied, then build type will be appended to each entry in the
@@ -1558,7 +1559,7 @@ endfunction()
 # calling
 #   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
 # will return a list of the following strings
-# `alpha_soc_bar_1_0_0;alpha_soc_bar;alpha_bar` in `build_string` parameter.
+# `alpha_soc_bar_1_0_0;alpha_soc_bar` in `build_string` parameter.
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
@@ -1596,12 +1597,6 @@ function(zephyr_build_string outvar)
 
     if(NOT "${variant_string}" IN_LIST ${outvar})
       list(APPEND ${outvar} "${variant_string}")
-    endif()
-
-    if(BUILD_STR_BOARD_QUALIFIERS)
-      string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${BUILD_STR_BOARD_QUALIFIERS}")
-      string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
-      list(APPEND ${outvar} "${BUILD_STR_BOARD}${qualifiers_without_soc}")
     endif()
   endif()
 
@@ -2475,7 +2470,7 @@ endfunction()
 #
 # Usage:
 #   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>]
-#               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ...]
+#               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ... [DEPRECATED <list>]]
 #               [BUILD <type>] [SUFFIX <suffix>] [REQUIRED]
 #   )
 #
@@ -2500,7 +2495,8 @@ endfunction()
 #                                                creating file names based on board settings.
 #                                                Only the first match found in <paths> will be
 #                                                returned in the <list>
-#
+#                     DEPRECATED <name1> [name2] ... List of files that, if used, will emit a
+#                                                    deprecated notice.
 #                     DTS <list>:    List to append DTS overlay files in <path> to
 #                     KCONF <list>:  List to append Kconfig fragment files in <path> to
 #                     DEFCONF <list>: List to append _defconfig files in <path> to
@@ -2527,7 +2523,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options REQUIRED)
-    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
+    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX DEPRECATED)
     set(multi_args CONF_FILES NAMES)
   endif()
 
@@ -2602,6 +2598,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
                           BUILD ${ZFILE_BUILD}
                           MERGE REVERSE
       )
+
       list(REMOVE_DUPLICATES filename_list)
       set(dts_filename_list ${filename_list})
       list(TRANSFORM dts_filename_list APPEND ".overlay")
@@ -2611,6 +2608,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     endif()
 
     if(ZFILE_DTS)
+      set(found_dts_files)
       foreach(path ${ZFILE_CONF_FILES})
         foreach(filename ${dts_filename_list})
           if(NOT IS_ABSOLUTE ${filename})
@@ -2621,7 +2619,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
           zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
 
           if(EXISTS ${test_file})
-            list(APPEND ${ZFILE_DTS} ${test_file})
+            list(APPEND found_dts_files ${test_file})
 
             if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)
@@ -2633,6 +2631,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
           endif()
         endforeach()
       endforeach()
+
+      if(NOT found_dts_files)
+        find_package(Deprecated COMPONENTS ZEPHYR_FILE_DEPRECATED_OVERLAYS)
+      endif()
+      list(APPEND ${ZFILE_DTS} ${found_dts_files})
 
       # This updates the provided list in parent scope (callers scope)
       set(${ZFILE_DTS} ${${ZFILE_DTS}} PARENT_SCOPE)
@@ -2643,6 +2646,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     endif()
 
     if(ZFILE_KCONF)
+      set(found_conf_files)
       foreach(path ${ZFILE_CONF_FILES})
         foreach(filename ${kconf_filename_list})
           if(NOT IS_ABSOLUTE ${filename})
@@ -2653,7 +2657,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
           zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
 
           if(EXISTS ${test_file})
-            list(APPEND ${ZFILE_KCONF} ${test_file})
+            list(APPEND found_conf_files ${test_file})
 
             if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)
@@ -2665,6 +2669,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
           endif()
         endforeach()
       endforeach()
+
+      if(NOT found_conf_files)
+        find_package(Deprecated COMPONENTS ZEPHYR_FILE_DEPRECATED_CONF)
+      endif()
+      list(APPEND ${ZFILE_KCONF} ${found_conf_files})
 
       # This updates the provided list in parent scope (callers scope)
       set(${ZFILE_KCONF} ${${ZFILE_KCONF}} PARENT_SCOPE)
@@ -2687,13 +2696,19 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     endif()
 
     if(ZFILE_DEFCONFIG)
+      set(found_defconf_files)
       foreach(path ${ZFILE_CONF_FILES})
         foreach(filename ${filename_list})
           if(EXISTS ${path}/${filename}_defconfig)
-            list(APPEND ${ZFILE_DEFCONFIG} ${path}/${filename}_defconfig)
+            list(APPEND found_defconf_files ${path}/${filename}_defconfig)
           endif()
         endforeach()
       endforeach()
+
+      if(NOT found_defconf_files)
+        find_package(Deprecated COMPONENTS ZEPHYR_FILE_DEPRECATED_DEFCONF)
+      endif()
+      list(APPEND ${ZFILE_DEFCONFIG} ${found_defconf_files})
 
       # This updates the provided list in parent scope (callers scope)
       set(${ZFILE_DEFCONFIG} ${${ZFILE_DEFCONFIG}} PARENT_SCOPE)

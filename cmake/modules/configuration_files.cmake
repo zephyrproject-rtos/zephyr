@@ -90,8 +90,27 @@ if(NOT DEFINED DTC_OVERLAY_FILE)
   )
   list(TRANSFORM board_overlay_strings APPEND ".overlay")
 
+  if(DEFINED BOARD_QUALIFIERS)
+    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${BOARD_QUALIFIERS}")
+    zephyr_build_string(deprecated_board_overlay_strings
+                        BOARD ${BOARD}
+                        BOARD_QUALIFIERS ${qualifiers_without_soc}
+                        MERGE
+    )
+    list(TRANSFORM deprecated_board_overlay_strings APPEND ".overlay")
+  endif()
+
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
-              NAMES "${board_overlay_strings};app.overlay" SUFFIX ${FILE_SUFFIX})
+              NAMES "${board_overlay_strings}" DEPRECATED ${deprecated_board_overlay_strings}
+              SUFFIX ${FILE_SUFFIX}
+  )
+
+  if(NOT DEFINED DTC_OVERLAY_FILE)
+    zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
+                NAMES "app.overlay" SUFFIX ${FILE_SUFFIX}
+    )
+  endif()
+
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
