@@ -17,9 +17,52 @@ source.
 
 The following diagram describes system power management:
 
-.. image:: images/system-pm.svg
-   :align: center
-   :alt: System power management
+.. graphviz::
+   :caption: System power management
+
+   digraph G {
+       compound=true
+       node [height=1.2 style=rounded]
+
+       lock [label="Lock interruptions"]
+       config_pm [label="CONFIG_PM" shape=diamond style="rounded,dashed"]
+       forced_state [label="state forced ?", shape=diamond style="rounded,dashed"]
+       config_system_managed_device_pm [label="CONFIG_PM_DEVICE" shape=diamond style="rounded,dashed"]
+       config_system_managed_device_pm2 [label="CONFIG_PM_DEVICE" shape=diamond style="rounded,dashed"]
+       pm_policy [label="Check policy manager\nfor a power state "]
+       pm_suspend_devices [label="Suspend\ndevices"]
+       pm_resume_devices [label="Resume\ndevices"]
+       pm_state_set [label="Change power state\n(SoC API)" style="rounded,bold"]
+       pm_system_resume [label="Finish wake-up\n(SoC API)\n(restore interruptions)" style="rounded,bold"]
+       k_cpu_idle [label="k_cpu_idle()"]
+
+       subgraph cluster_0 {
+              style=invisible;
+              lock -> config_pm
+       }
+
+       subgraph cluster_1 {
+                style=dashed
+                label = "pm_system_suspend()"
+
+                forced_state -> config_system_managed_device_pm [label="yes"]
+                forced_state -> pm_policy [label="no"]
+                pm_policy -> config_system_managed_device_pm
+                config_system_managed_device_pm -> pm_state_set:e [label="no"]
+                config_system_managed_device_pm -> pm_suspend_devices [label="yes"]
+                pm_suspend_devices -> pm_state_set
+                pm_state_set -> config_system_managed_device_pm2
+                config_system_managed_device_pm2 -> pm_resume_devices [label="yes"]
+                config_system_managed_device_pm2 -> pm_system_resume [label="no"]
+                pm_resume_devices -> pm_system_resume
+        }
+
+        {rankdir=LR k_cpu_idle; forced_state}
+        pm_policy -> k_cpu_idle [label="PM_STATE_ACTIVE\n(no power state meet requirements)"]
+        config_pm -> k_cpu_idle [label="no"]
+        config_pm -> forced_state [label="yes" lhead="cluster_1"]
+        pm_system_resume:e -> lock:e [constraint=false lhed="cluster_0"]
+   }
 
 Some handful examples using different power management features:
 
