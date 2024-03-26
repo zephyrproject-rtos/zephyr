@@ -204,7 +204,7 @@ def parse_args():
     """Parse arguments"""
     global args
     parser = argparse.ArgumentParser(
-        description="Character Frame Buffer (CFB) font header file generator",
+        description="Compact Framebuffer (CFB) font header file generator",
         formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument(

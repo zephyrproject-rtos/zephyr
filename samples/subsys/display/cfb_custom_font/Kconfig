@@ -1,0 +1,12 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "CFB Custom Font Sample Application"
+
+config CFB_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE
+	int "Buffer size for image transfer"
+
+config CFB_CUSTOM_FONT_SAMPLE_COMMAND_BUFFER_SIZE
+	int "Buffer size for store commands"
+
+source "Kconfig.zephyr"

@@ -1,12 +1,12 @@
 .. zephyr:code-sample:: cfb-custom-fonts
    :name: Custom fonts
-   :relevant-api: monochrome_character_framebuffer
+   :relevant-api: compact_framebuffer
 
    Generate and use a custom font.
 
 Overview
 ********
-A simple example showing how to generate Character Framebuffer (CFB)
+A simple example showing how to generate Compact Framebuffer (CFB)
 font headers automatically at build time.
 
 This example generates a font with font elements for 6 sided dice from
@@ -25,12 +25,7 @@ directory:
 - :file:`prj.conf`
   Generic config file, normally you should use this.
 
-- :file:`boards/reel_board.conf`
-  This overlay config enables support for SSD16XX display controller
-  on the reel_board.
-
-
-Example building for the reel_board with SSD16XX display support:
+Example building for the reel_board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/cfb_custom_font

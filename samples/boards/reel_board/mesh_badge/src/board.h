@@ -14,7 +14,7 @@ enum periph_device {
 };
 
 void board_refresh_display(void);
-void board_show_text(const char *text, bool center, k_timeout_t duration);
+void board_show_text(char *text, bool center, k_timeout_t duration);
 void board_blink_leds(void);
 void board_add_hello(uint16_t addr, const char *name);
 void board_add_heartbeat(uint16_t addr, uint8_t hops);

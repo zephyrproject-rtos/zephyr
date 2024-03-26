@@ -2,7 +2,7 @@ common:
   harness: display
   tags: display
 sample:
-  description: Character framebuffer shell test
+  description: Compact framebuffer shell test
   name: cfb shell sample
 tests:
   sample.display.cfb_shell.ssd1306:

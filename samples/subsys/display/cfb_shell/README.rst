@@ -1,13 +1,13 @@
 .. zephyr:code-sample:: cfb-shell-sample
-   :name: Character Framebuffer shell module
-   :relevant-api: monochrome_character_framebuffer
+   :name: Compact Framebuffer shell module
+   :relevant-api: compact_framebuffer
 
-   Use the CFB shell module to interact with a monochrome display.
+   Use the CFB shell module to interact with a display.
 
 Overview
 ********
-This is a simple shell module that exercises displays using the Character
-Framebuffer subsystem.
+This is a simple shell module that exercises displays using the Compact
+Framebuffer(CFB) subsystem.
 
 Building and Running
 ********************
@@ -25,24 +25,29 @@ Shell Module Command Help
 
 .. code-block:: console
 
-         cfb - Character Framebuffer shell commands
+         cfb - Compact Framebuffer shell commands
          Options:
                  -h, --help  :Show command help.
          Subcommands:
-                 init        :[none]
-                 get_device  :[none]
-                 get_param   :<all, height, width, ppt, rows, cols>
-                 get_fonts   :[none]
-                 set_font    :<idx>
-                 invert      :[none]
-                 print       :<col: pos> <row: pos> <text>
-                 scroll      :<dir: (vertical|horizontal)> <col: pos> <row: pos>
-                              <text>
-                 clear       :[none]
+           init         : [[<devname>] <pixfmt> [<xferbuf_size> [<cmdbuf_size>]]]
+           get_device   : [none]
+           get_param    : <all, height, width, ppt, rows, cols>
+           get_fonts    : [none]
+           set_font     : <idx>
+           set_kerning  : <kerning>
+           invert       : [<x> <y> <width> <height>]
+           print        : <col: pos> <row: pos> "<text>"
+           scroll       : scroll a text in vertical or horizontal direction
+           draw         : drawing text
+           clear        : [none]
+           foreground   : <red> <green> <blue> <alpha>
+           background   : <red> <green> <blue> <alpha>
 
 **init**: should be called first to initialize the display.
+You can specify the display pixel format, buffer size, and select device
+with arguments.
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
@@ -52,7 +57,7 @@ Command example (reel_board):
 
 **get_device**: prints the display device name.
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
@@ -63,7 +68,7 @@ Command example (reel_board):
 (pixel per tile) are in pixels and the number of rows and columns. The row
 position is incremented by a multiple of the ppt.
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
@@ -77,7 +82,7 @@ Command example (reel_board):
 **get_fonts**: print the index, height and width in pixels of the static
 defined fonts presented in the system.
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
@@ -89,7 +94,7 @@ Command example (reel_board):
 **set_font**: choose the font to be used by passing the font index. Only one
 font can be used at a time.
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
@@ -97,8 +102,11 @@ Command example (reel_board):
          Font idx=0 height=32 width=20 set
 
 **invert**: invert the pixel color of the display.
-
-Command example (reel_board):
+It inverts the screen colors and swaps the foreground and background
+olors if executed without arguments.
+Reverses the image partially if you specify the start and end coordinates.
+In this case, the foreground color and background color are not swapped.
+Command example:
 
 .. code-block:: console
 
@@ -110,7 +118,7 @@ double quotation marks when it contains spaces. If text hits the edge
 of the display the remaining characters will be displayed on the next line. The
 previous printed text will be overwritten.
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
@@ -125,17 +133,68 @@ for vertical direction. The text passed with the scroll command will be moved
 vertically or horizontally on the display.
 
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
          uart:~$ cfb scroll vertical 60 5 ZEPHYR
 
+**draw**: draw text, point, line and rect.
+
+.. code-block:: console
+
+         draw - drawing text
+         Subcommands:
+           text   : <x> <x> "<text>"
+           point  : <x> <y>
+           line   : <x0> <y0> <x1> <y1>
+           rect   : <x0> <y0> <x1> <y1>
+
+**draw text**: Draw text.
+
+.. code-block:: console
+
+         uart:~$ cfb draw text 0 0 text
+
+**draw point**: Draw point.
+
+.. code-block:: console
+
+         uart:~$ cfb draw point 0 0
+
+**draw line**: Draw line.
+
+.. code-block:: console
+
+         uart:~$ cfb draw line 0 0 200 200
+
+**draw rect**: Draw rectanble.
+
+.. code-block:: console
+
+         uart:~$ cfb draw rect 0 0 200 200
+
 **clear**: clear the display screen.
 
-Command example (reel_board):
+Command example:
 
 .. code-block:: console
 
          uart:~$ cfb clear
          Display Cleared
+
+**foreground**: set foreground color.
+
+Command example:
+
+.. code-block:: console
+
+         uart:~$ cfb foreground 0xFF 0 0 0
+
+**background**: set background color.
+
+Command example:
+
+.. code-block:: console
+
+         uart:~$ cfb background 0xFF 0 0 0
