@@ -311,6 +311,8 @@ static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 	int err;
 
 	printk("Creating BIG...\n");
+	is_iso_connected = false;
+	bis_channels[0]->iso = NULL;
 	big_create_param.bis_channels = bis_channels;
 	big_create_param.num_bis = BIS_ISO_CHAN_COUNT;
 	big_create_param.encryption = false;
@@ -344,6 +346,8 @@ static void create_advanced_big(struct bt_le_ext_adv *adv, struct bt_iso_big **b
 	int err;
 
 	printk("Creating BIG...\n");
+	is_iso_connected = false;
+	bis_channels[0]->iso = NULL;
 	big_create_param.bis_channels = bis_channels;
 	big_create_param.num_bis = BIS_ISO_CHAN_COUNT;
 	big_create_param.encryption = false;
@@ -482,6 +486,30 @@ static void test_iso_main(void)
 
 	teardown_ext_adv(adv);
 	adv = NULL;
+
+	/* Try setting up extended adv, periodic and BIG again */
+	setup_ext_adv(&adv);
+	create_big(adv, &big);
+
+	/* Use BT disable to reset Host and Controller */
+	err = bt_disable();
+	if (err) {
+		FAIL("Enable failed (err %d)\n", err);
+	}
+
+	printk("Bluetooth re-initializing...");
+	err = bt_enable(NULL);
+	if (err) {
+		FAIL("Could not init BT: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	/* Try setting up extended adv, periodic and BIG again after
+	 * BT disable
+	 */
+	setup_ext_adv(&adv);
+	create_big(adv, &big);
 
 	PASS("ISO tests Passed\n");
 
