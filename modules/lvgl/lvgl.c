@@ -159,8 +159,13 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_driver)
 		break;
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
-		buf_size = buf_nbr_pixels / 8;
-		buf_size += (buf_nbr_pixels % 8) == 0 ? 0 : 1;
+		buf_size = DIV_ROUND_UP(buf_nbr_pixels, 8);
+		break;
+	case PIXEL_FORMAT_GRAY4:
+		buf_size = DIV_ROUND_UP(buf_nbr_pixels, 4);
+		break;
+	case PIXEL_FORMAT_GRAY16:
+		buf_size = DIV_ROUND_UP(buf_nbr_pixels, 2);
 		break;
 	default:
 		return -ENOTSUP;

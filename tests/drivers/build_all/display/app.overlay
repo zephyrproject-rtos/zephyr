@@ -42,6 +42,36 @@
 			};
 		};
 
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "zephyr,i2c-emul-controller";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_st7528i: st7528i@0 {
+				compatible = "sitronix,st7528i";
+				status = "okay";
+
+				reg = <0x0>;
+
+				height = <100>;
+				width = <160>;
+
+				invert-com;
+
+				framerate = <0x7>;
+				lcd-bias = <11>;
+				regulator-resistor = <6>;
+				electronic-volume = <28>;
+				boost = <6>;
+
+				reset-gpios = <&test_gpio 0 0>;
+				chip-select-gpios = <&test_gpio 0 0>;
+			};
+		};
+
 
 		test_spi: spi@33334444 {
 			#address-cells = <1>;

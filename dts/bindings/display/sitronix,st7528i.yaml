@@ -1,0 +1,130 @@
+# Copyright (c) 2022-2023, SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# Voltage regulator calculation
+# ===============================
+#
+# Short forms are given in the descriptions of the `regulator-resistor` and `electronic-volume`
+# properties below.
+#
+# From ST7528 datasheet Ver2.3 2007/1/3, page 40:
+#
+#    v0 = r*(1-(63-α)/210)*2.1
+#    v0/2.1*210 = r*(210-(63-α))
+# I) v0*100 = r*(147+α)
+#
+# Approximating regulator resistor
+# ================================
+#
+# Assuming the electronic volume α at its midpoint of 32:
+#
+# From I):
+#
+#     v0*100/179 = r
+# II) r = 100/179 * v0
+#
+# Converting the 1+(Rb/Ra) value to a register value, using the table one page 60:
+#
+# III) r_reg = (r - 2.3)/0.7               # substitute II)
+#      r_reg = 100/179/0.7 * v0 - 2.3/0.7
+#      r_reg ~= 0.8 * v0 - 3.3
+#      ~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Calculating "electronic volume" for fine-tuning
+# ===============================================
+#
+# Rearrange III) for r:
+#
+# IV) r = r_reg * 0.7 + 2.3
+#
+# From I):
+#
+# v0*100/r-147 = α
+# α = 100 * v0/r - 147                     # substitute IV)
+# α = 100 * v0/(0.7 * r_reg + 2.3) - 147
+# α = 100/0.7 * v0/(r_reg + 3.3) - 147
+# α = 143 * v0/(r_reg + 3.3) - 147
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+description: ST7528i 160x100 grayscale LCD controller on I2C bus
+
+compatible: "sitronix,st7528i"
+
+include: ["display-controller.yaml", "i2c-device.yaml"]
+
+properties:
+  com-partial-display:
+    type: int
+    default: 100
+    description: Number of rows to display, can be combined with `com-offset` to draw only a
+      vertical portion of the screen. By default, all rows are drawn.
+
+  com-offset:
+    type: int
+    default: 0
+    description: The row/COM output to start drawing at. By default, drawing starts at the first
+      row.
+
+  invert-com:
+    type: boolean
+    description: If enabled, scan direction is from last COM output to first COM output.
+
+  invert-segments:
+    type: boolean
+    description: If enabled, last column address is mapped to first segment.
+
+  lcd-bias:
+    type: int
+    required: true
+    description: 1/n bias value for the LCD (from 5 to 12).
+
+  framerate:
+    type: int
+    required: true
+    description: Framerate of the display (register value from 0 to 15), see table "Frame
+      frequency" on page 49 of ST7528 datasheet.
+
+  regulator-resistor:
+    type: int
+    required: true
+    description: Internal voltage regulator resistor selection (from 0 to 7).
+      Approximate using `0.8 * V_LCD - 3.3`, then fine-tune using `electronic-volume`.
+
+  electronic-volume:
+    type: int
+    required: true
+    description: Internal voltage regulator adjustment (from 0 to 63).
+      Calculate using `143 * V_LCD/(regulator_resistor+3.3) - 147`.
+
+  boost:
+    type: int
+    required: true
+    description: VOUT DC-DC converter multiplier (from 3 to 6).
+      Calculate using `V_LCD / VDD2`, rounding up.
+
+  reset-gpios:
+    type: phandle-array
+    description: The active-low RESET input of the ST7528i.
+
+      If connected directly the MCU pin should be configured as active low.
+
+  chip-select-gpios:
+    type: phandle-array
+    description: The active-low CSB input of the ST7528i. Asserted constantly by the driver.
+
+      If connected directly the MCU pin should be configured as active low.
+
+  height:
+    type: int
+    required: true
+    const: 100
+    description: |
+      Height of the panel driven by the controller, with the units in pixels.
+
+  width:
+    type: int
+    required: true
+    const: 160
+    description: |
+      Width of the panel driven by the controller, with the units in pixels.
