@@ -3764,6 +3764,14 @@ Task Watchdog:
   tests:
     - drivers.syscon
 
+"Drivers: T1S":
+  status: maintained
+  maintainers:
+    - lmajewski
+  files:
+    - drivers/ethernet/oa_tc6*
+    - drivers/ethernet/eth_lan865x*
+
 "Drivers: Time Aware GPIO":
   status: maintained
   maintainers:
