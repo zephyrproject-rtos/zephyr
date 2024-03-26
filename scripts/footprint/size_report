@@ -676,7 +676,7 @@ def node_sort(items):
     """
     Node sorting used with RenderTree.
     """
-    return sorted(items, key=lambda item: item._name)
+    return sorted(items, key=lambda item: -item._size)
 
 
 def print_any_tree(root, total_size, depth):
