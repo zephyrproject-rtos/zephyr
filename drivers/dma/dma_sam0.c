@@ -24,7 +24,10 @@ struct dma_sam0_channel {
 struct dma_sam0_data {
 	__aligned(16) DmacDescriptor descriptors[DMAC_CH_NUM];
 	__aligned(16) DmacDescriptor descriptors_wb[DMAC_CH_NUM];
+	DmacDescriptor desc_pool[DMAC_CH_NUM][CONFIG_DMA_SAM0_DESC_POOL_SIZE];
 	struct dma_sam0_channel channels[DMAC_CH_NUM];
+
+	ATOMIC_DEFINE(channels_atomic, DMAC_CH_NUM);
 };
 
 /* Handles DMA interrupts and dispatches to the individual channel */
@@ -58,6 +61,70 @@ static void dma_sam0_isr(const struct device *dev)
 	 */
 }
 
+/* Configure a single DMA descriptor. */
+static int dma_sam0_config_descriptor(struct dma_config *config,
+				      struct dma_block_config *block,
+				      DmacDescriptor *desc, uint32_t channel)
+{
+	DMAC_BTCTRL_Type btctrl = { .reg = 0 };
+
+	switch (config->source_data_size) {
+	case 1:
+		btctrl.bit.BEATSIZE = DMAC_BTCTRL_BEATSIZE_BYTE_Val;
+		break;
+	case 2:
+		btctrl.bit.BEATSIZE = DMAC_BTCTRL_BEATSIZE_HWORD_Val;
+		break;
+	case 4:
+		btctrl.bit.BEATSIZE = DMAC_BTCTRL_BEATSIZE_WORD_Val;
+		break;
+	default:
+		LOG_ERR("Invalid data size");
+		return -EINVAL;
+	}
+
+	desc->BTCNT.reg = block->block_size / config->source_data_size;
+	desc->DESCADDR.reg = 0;
+
+	/* Set the automatic source / dest increment */
+	switch (block->source_addr_adj) {
+	case DMA_ADDR_ADJ_INCREMENT:
+		desc->SRCADDR.reg = block->source_address + block->block_size;
+		btctrl.bit.SRCINC = 1;
+		break;
+	case DMA_ADDR_ADJ_NO_CHANGE:
+		desc->SRCADDR.reg = block->source_address;
+		break;
+	default:
+		LOG_ERR("Invalid source increment");
+		return -EINVAL;
+	}
+
+	switch (block->dest_addr_adj) {
+	case DMA_ADDR_ADJ_INCREMENT:
+		desc->DSTADDR.reg = block->dest_address + block->block_size;
+		btctrl.bit.DSTINC = 1;
+		break;
+	case DMA_ADDR_ADJ_NO_CHANGE:
+		desc->DSTADDR.reg = block->dest_address;
+		break;
+	default:
+		LOG_ERR("Invalid destination increment");
+		return -EINVAL;
+	}
+
+	btctrl.bit.VALID = 1;
+	desc->BTCTRL = btctrl;
+
+	LOG_DBG("Configured channel %d for %08X to %08X (%u)",
+		channel,
+		block->source_address,
+		block->dest_address,
+		block->block_size);
+
+	return 0;
+}
+
 /* Configure a channel */
 static int dma_sam0_config(const struct device *dev, uint32_t channel,
 			   struct dma_config *config)
@@ -66,7 +133,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 	DmacDescriptor *desc = &data->descriptors[channel];
 	struct dma_block_config *block = config->head_block;
 	struct dma_sam0_channel *channel_control;
-	DMAC_BTCTRL_Type btctrl = { .reg = 0 };
+
 	unsigned int key;
 
 	if (channel >= DMAC_CH_NUM) {
@@ -74,10 +141,11 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	if (config->block_count > 1) {
-		LOG_ERR("Chained transfers not supported");
-		/* TODO: add support for chained transfers. */
-		return -ENOTSUP;
+	if (config->block_count > CONFIG_DMA_SAM0_DESC_POOL_SIZE + 1) {
+		LOG_ERR("%s: dma %s channel %d number of linked blocks larger than"
+			" descriptors in pool, consider increasing CONFIG_DMA_SAM0_DESC_POOL_SIZE",
+			__func__, dev->name, channel);
+		return -EINVAL;
 	}
 
 	if (config->dma_slot >= DMAC_TRIG_NUM) {
@@ -194,64 +262,46 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 		goto inval;
 	}
 
-	switch (config->source_data_size) {
-	case 1:
-		btctrl.bit.BEATSIZE = DMAC_BTCTRL_BEATSIZE_BYTE_Val;
-		break;
-	case 2:
-		btctrl.bit.BEATSIZE = DMAC_BTCTRL_BEATSIZE_HWORD_Val;
-		break;
-	case 4:
-		btctrl.bit.BEATSIZE = DMAC_BTCTRL_BEATSIZE_WORD_Val;
-		break;
-	default:
-		LOG_ERR("Invalid data size");
+	/* Specified by errata */
+	uint32_t active_above_channel = BIT64_MASK(DMAC_CH_NUM) - BIT64_MASK(channel);
+
+	if (*data->channels_atomic & active_above_channel) {
+		LOG_ERR("Channel number must be greater than any existing"
+			" active channel numbers that use linked descriptors.");
 		goto inval;
 	}
 
-	/* Set up the one and only block */
-	desc->BTCNT.reg = block->block_size / config->source_data_size;
-	desc->DESCADDR.reg = 0;
-
-	/* Set the automatic source / dest increment */
-	switch (block->source_addr_adj) {
-	case DMA_ADDR_ADJ_INCREMENT:
-		desc->SRCADDR.reg = block->source_address + block->block_size;
-		btctrl.bit.SRCINC = 1;
-		break;
-	case DMA_ADDR_ADJ_NO_CHANGE:
-		desc->SRCADDR.reg = block->source_address;
-		break;
-	default:
-		LOG_ERR("Invalid source increment");
+	/* Configure the first block descriptor */
+	if (dma_sam0_config_descriptor(config, block, desc, channel) < 0) {
 		goto inval;
 	}
 
-	switch (block->dest_addr_adj) {
-	case DMA_ADDR_ADJ_INCREMENT:
-		desc->DSTADDR.reg = block->dest_address + block->block_size;
-		btctrl.bit.DSTINC = 1;
-		break;
-	case DMA_ADDR_ADJ_NO_CHANGE:
-		desc->DSTADDR.reg = block->dest_address;
-		break;
-	default:
-		LOG_ERR("Invalid destination increment");
-		goto inval;
+	if (config->block_count == 1) {
+		goto done;
 	}
 
-	btctrl.bit.VALID = 1;
-	desc->BTCTRL = btctrl;
+	/* Linked block descriptor configuration */
+	desc = data->desc_pool[channel];
+	memset(desc, 0, (config->block_count - 1) * sizeof(DmacDescriptor));
 
+	block = block->next_block;
+	data->descriptors[channel].DESCADDR.reg = POINTER_TO_UINT(desc);
+
+	for (int i = 1; i < config->block_count; i++) {
+		if (dma_sam0_config_descriptor(config, block, desc, channel) < 0) {
+			goto inval;
+		}
+		desc->DESCADDR.reg = POINTER_TO_UINT(desc + 1);
+		block = block->next_block;
+		desc++;
+	}
+
+	(desc - 1)->DESCADDR.reg = 0;
+
+done:
 	channel_control = &data->channels[channel];
 	channel_control->cb = config->dma_callback;
 	channel_control->user_data = config->user_data;
-
-	LOG_DBG("Configured channel %d for %08X to %08X (%u)",
-		channel,
-		block->source_address,
-		block->dest_address,
-		block->block_size);
 
 	irq_unlock(key);
 	return 0;
@@ -263,9 +313,10 @@ inval:
 
 static int dma_sam0_start(const struct device *dev, uint32_t channel)
 {
+	struct dma_sam0_data *data = dev->data;
 	unsigned int key = irq_lock();
 
-	ARG_UNUSED(dev);
+	atomic_set_bit(data->channels_atomic, channel);
 
 #ifdef DMAC_CHID_ID
 	DMA_REGS->CHID.reg = channel;
@@ -294,9 +345,10 @@ static int dma_sam0_start(const struct device *dev, uint32_t channel)
 
 static int dma_sam0_stop(const struct device *dev, uint32_t channel)
 {
+	struct dma_sam0_data *data = dev->data;
 	unsigned int key = irq_lock();
 
-	ARG_UNUSED(dev);
+	atomic_clear_bit(data->channels_atomic, channel);
 
 #ifdef DMAC_CHID_ID
 	DMA_REGS->CHID.reg = channel;
