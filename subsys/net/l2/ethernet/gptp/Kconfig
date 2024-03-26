@@ -117,31 +117,6 @@ config NET_GPTP_NUM_PORTS
 	  Configures the gPTP stack to work with the given number of ports.
 	  The port concept is the same thing as network interface.
 
-config NET_GPTP_VLAN
-	bool "Run gPTP over VLAN link"
-	depends on NET_VLAN
-	select NET_L2_ETHERNET_MGMT
-	select NET_MGMT_EVENT
-	select NET_MGMT_EVENT_INFO
-	help
-	  The standard requires gPTP packets to not be VLAN-tagged (see IEEE
-	  802.1AS chapter 11.3.3).
-	  This setting is for testing purposes. It allows to deviate from the
-	  standard by running gPTP over a VLAN link. Currently only one port can
-	  have VLAN tag set. Note that CONFIG_NET_GPTP_VLAN_TAG setting must
-	  have a proper tag value set, otherwise the gPTP over VLAN will not
-	  work.
-
-config NET_GPTP_VLAN_TAG
-	int "VLAN tag to use"
-	default 4095
-	depends on NET_GPTP_VLAN
-	help
-	  The VLAN tag to use when sending and receiving gPTP messages.
-	  The default value 4095 (0x0fff) means unspecified tag which is
-	  not a valid value. This means that you need to set the tag to
-	  a valid value.
-
 config NET_GPTP_NEIGHBOR_PROP_DELAY_THR
 	int "Set neighbor propagation delay threshold (ns)"
 	default 100000
