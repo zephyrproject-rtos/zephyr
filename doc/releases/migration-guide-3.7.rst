@@ -70,6 +70,36 @@ Device Drivers and Devicetree
             };
     };
 
+* The :dtcompatible:`nxp,kinetis-ethernet` has been deprecated in favor of
+  :dtcompatible:`nxp,enet`. All in tree SOCs were converted to use this new schema.
+  Thus, all boards using NXP's ENET peripheral will need to align to this binding
+  in DT, which also comes with a different version driver. Alternatively,
+  the Ethernet node can be deleted and redefined as the old binding to use
+  the deprecated legacy driver. The primary advantage of the new binding
+  is to be able to abstract an arbitrary phy through the mdio API. Example
+  of a basic board level ENET DT definition:
+
+  .. code-block:: devicetree
+
+    &enet_mac {
+        status = "okay";
+        pinctrl-0 = <&pinmux_enet>;
+        pinctrl-names = "default";
+        phy-handle = <&phy>;
+        zephyr,random-mac-address;
+        phy-connection-type = "rmii";
+    };
+
+    &enet_mdio {
+        status = "okay";
+        pinctrl-0 = <&pinmux_enet_mdio>;
+        pinctrl-names = "default";
+        phy: phy@3 {
+            compatible = "ethernet-phy";
+            reg = <3>;
+            status = "okay";
+        };
+    };
 
 Analog-to-Digital Converter (ADC)
 =================================
