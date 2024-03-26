@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&memc {
+	status = "okay";
+	is-ram;
+	dev-size = <DT_SIZE_M(64)>;
+	enter-qpi-mode;
+	rx-inst-mode = <2>;
+	tx-inst-mode = <2>;
+	extra-byte-enable;
+};
