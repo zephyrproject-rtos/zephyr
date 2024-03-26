@@ -47,6 +47,17 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
 #endif /* CONFIG_RISCV_ISA_RV32E */
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+		const struct __extra_esf_info *esf_extra = &esf->extra_info;
+		const _callee_saved_t *callee_saved = &esf_extra->callee;
+
+		LOG_ERR("     s0: " PR_REG "    s6: " PR_REG, callee_saved->s0, callee_saved->s6);
+		LOG_ERR("     s1: " PR_REG "    s7: " PR_REG, callee_saved->s1, callee_saved->s7);
+		LOG_ERR("     s2: " PR_REG "    s8: " PR_REG, callee_saved->s2, callee_saved->s8);
+		LOG_ERR("     s3: " PR_REG "    s9: " PR_REG, callee_saved->s3, callee_saved->s9);
+		LOG_ERR("     s4: " PR_REG "   s10: " PR_REG, callee_saved->s4, callee_saved->s10);
+		LOG_ERR("     s5: " PR_REG "   s11: " PR_REG, callee_saved->s5, callee_saved->s11);
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 #ifdef CONFIG_USERSPACE
 		LOG_ERR("     sp: " PR_REG, esf->sp);
 #endif

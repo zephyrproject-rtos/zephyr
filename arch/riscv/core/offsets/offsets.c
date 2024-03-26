@@ -126,6 +126,14 @@ GEN_SOC_OFFSET_SYMS();
 
 GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, sizeof(z_arch_esf_t));
 
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+GEN_OFFSET_SYM(z_arch_esf_t, extra_info);
+GEN_OFFSET_SYM(_extra_esf_info_t, callee);
+
+GEN_ABSOLUTE_SYM(___extra_esf_info_t_SIZEOF, sizeof(_extra_esf_info_t));
+GEN_ABSOLUTE_SYM(__callee_saved_t_SIZEOF, sizeof(_callee_saved_t));
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_cpu_arch_t, user_exc_sp);
 GEN_OFFSET_SYM(_cpu_arch_t, user_exc_tmp0);
