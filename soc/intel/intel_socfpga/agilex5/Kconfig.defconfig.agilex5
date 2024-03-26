@@ -4,10 +4,10 @@
 if SOC_AGILEX5
 
 # must be >= the highest interrupt number used
-# - include the UART interrupts 173 or 204
+# - include the UART interrupts 173 or 274
 config NUM_IRQS
 	int
-	default 205
+	default 274
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
