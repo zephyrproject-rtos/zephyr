@@ -1,0 +1,113 @@
+# Copyright (c) 2024, Friedt Professional Engineering Services, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Application Conformance"
+
+# The latest versions from IEEE 1003.1-2017
+config POSIX_C_SOURCE_LATEST_VERSION
+	int
+	# The required 'L' is appended by CMake if > 2
+	default 200809
+
+config XOPEN_SOURCE_LATEST_VERSION
+	int
+	default 700
+
+choice POSIX_C_SOURCE_CHOICE
+	prompt "Selection for _POSIX_C_SOURCE"
+	default POSIX_C_SOURCE_CHOICE_DEFAULT if POSIX_API
+	default POSIX_C_SOURCE_CHOICE_NONE
+	help
+	  POSIX API application conformance level.
+
+	  This Kconfig option is used by the CMake function
+	  zephyr_posix_library_compile_definitions([min]).
+
+config POSIX_C_SOURCE_CHOICE_NONE
+	bool "None"
+	help
+	  The application does not require _POSIX_C_SOURCE defined.
+
+	  This is the default.
+
+config POSIX_C_SOURCE_CHOICE_DEFAULT
+	bool "Default"
+	help
+	  This is normally the latest version specified by IEEE 1003.1.
+
+config POSIX_C_SOURCE_CHOICE_200809L
+	bool "200809L"
+	help
+	  Prefer _POSIX_C_SOURCE=200809L. This is the value specified in both
+	  IEEE Std. 1003.1-2008 and IEEE Std. 1003.1-2017.
+
+config POSIX_C_SOURCE_CHOICE_200112L
+	bool "200112L"
+	help
+	  Prefer _POSIX_C_SOURCE=200112L. This is the value specified in IEEE Std. 1003.1-2001.
+
+config POSIX_C_SOURCE_CHOICE_199506L
+	bool "199506L"
+	help
+	  Prefer _POSIX_C_SOURCE=199506L. This is the value specified in IEEE Std. 1003.1c-1995.
+
+config POSIX_C_SOURCE_CHOICE_199309L
+	bool "199309L"
+	help
+	  Prefer _POSIX_C_SOURCE=199309L. This is the value specified in IEEE Std. 1003.1b-1993.
+
+config POSIX_C_SOURCE_CHOICE_2
+	bool "2"
+	help
+	  Prefer _POSIX_C_SOURCE=2. This is the value specified in IEEE Std. 1003.2-1992.
+
+config POSIX_C_SOURCE_CHOICE_1
+	bool "1"
+	help
+	  Prefer _POSIX_C_SOURCE=1. This is the value specified in IEEE Std. 1003.1-1990.
+
+endchoice
+
+choice XOPEN_SOURCE_CHOICE
+	prompt "Selection for _XOPEN_SOURCE"
+	default XOPEN_SOURCE_CHOICE_DEFAULT if POSIX_API
+	default XOPEN_SOURCE_CHOICE_NONE
+	help
+	  X/Open application conformance level.
+
+	  This Kconfig option is used by the CMake function
+	  zephyr_xopen_library_compile_definitions([min]).
+
+config XOPEN_SOURCE_CHOICE_NONE
+	bool "None"
+	help
+	  The application does not require _XOPEN_SOURCE defined.
+
+	  This is the default.
+
+config XOPEN_SOURCE_CHOICE_DEFAULT
+	bool "Default"
+	help
+	  This is normally the latest version specified by IEEE 1003.1.
+
+config XOPEN_SOURCE_CHOICE_700
+	bool "700"
+	help
+	  Prefer _XOPEN_SOURCE=700. This is the value specified in IEEE Std. 1003.1-2008
+	  and IEEE Std. 1003.1-2017.
+
+config XOPEN_SOURCE_CHOICE_600
+	bool "600"
+	help
+	  Prefer _XOPEN_SOURCE=600. This is the value specified in IEEE Std. 1003.1-2001.
+
+config XOPEN_SOURCE_CHOICE_500
+	bool "500"
+	help
+	  Prefer _XOPEN_SOURCE=500. This includes everything up to Single Unix Specification,
+	  version 2 (SUSv2).
+
+endchoice
+
+endmenu # "Application Conformance"

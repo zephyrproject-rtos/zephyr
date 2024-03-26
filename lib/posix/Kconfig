@@ -4,6 +4,7 @@
 
 menu "POSIX API Support"
 
+rsource "conformance/Kconfig"
 rsource "options/Kconfig"
 rsource "shell/Kconfig"
 
