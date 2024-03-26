@@ -520,8 +520,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) &&
 	    net_eth_is_vlan_enabled(ctx, iface) &&
-	    net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC &&
-	    (IS_ENABLED(CONFIG_NET_GPTP_VLAN) || ptype != htons(NET_ETH_PTYPE_PTP))) {
+	    net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
 		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
