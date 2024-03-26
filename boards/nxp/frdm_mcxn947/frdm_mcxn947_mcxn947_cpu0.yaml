@@ -18,4 +18,5 @@ supported:
   - dma
   - gpio
   - spi
+  - dac
 vendor: nxp
