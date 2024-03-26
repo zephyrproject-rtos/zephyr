@@ -3740,6 +3740,8 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
 		int err;
 
+		net_buf_simple_reset(&base_buf);
+
 		err = bt_bap_broadcast_source_get_base(default_source.bap_source, &base_buf);
 		if (err != 0) {
 			printk("Unable to get BASE: %d\n", err);
