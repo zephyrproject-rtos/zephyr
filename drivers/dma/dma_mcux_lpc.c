@@ -849,6 +849,8 @@ static int dma_mcux_lpc_init(const struct device *dev)
 	DMA_Init(DEV_BASE(dev));
 	INPUTMUX_Init(INPUTMUX);
 
+	config->irq_config_func(dev);
+
 	return 0;
 }
 
