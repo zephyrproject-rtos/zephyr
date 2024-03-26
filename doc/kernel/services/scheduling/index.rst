@@ -46,7 +46,9 @@ static priority, then the thread with the earlier deadline is considered
 to have the higher priority. Thus, when earliest-deadline-first scheduling is
 enabled, two threads are only considered to have the same priority when both
 their static priorities and deadlines are equal. The routine
-:c:func:`k_thread_deadline_set` is used to set a thread's deadline.
+:c:func:`k_thread_deadline_set` is used to set a thread's deadline. If a thread
+does not call :c:func:`k_thread_deadline_set`, its deadline is 0 which means this
+thread is executed before the others call :c:func:`k_thread_deadline_set`.
 
 .. note::
     Execution of ISRs takes precedence over thread execution,
