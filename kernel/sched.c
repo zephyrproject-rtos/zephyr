@@ -30,6 +30,11 @@ extern struct k_thread *pending_current;
 
 struct k_spinlock _sched_spinlock;
 
+/* Storage to "complete" the context switch from an invalid/incomplete thread
+ * context (ex: exiting an ISR that aborted _current)
+ */
+__incoherent struct k_thread _thread_dummies[CONFIG_MP_MAX_NUM_CPUS];
+
 static void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
@@ -423,8 +428,9 @@ void z_sched_start(struct k_thread *thread)
  * another CPU to catch the IPI we sent and halt.  Note that we check
  * for ourselves being asynchronously halted first to prevent simple
  * deadlocks (but not complex ones involving cycles of 3+ threads!).
+ * Acts to release the provided lock before returning.
  */
-static k_spinlock_key_t thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
+static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 {
 	if (is_halting(_current)) {
 		halt_thread(_current,
@@ -432,10 +438,11 @@ static k_spinlock_key_t thread_halt_spin(struct k_thread *thread, k_spinlock_key
 	}
 	k_spin_unlock(&_sched_spinlock, key);
 	while (is_halting(thread)) {
+		unsigned int k = arch_irq_lock();
+
+		arch_spin_relax(); /* Requires interrupts be masked */
+		arch_irq_unlock(k);
 	}
-	key = k_spin_lock(&_sched_spinlock);
-	z_sched_switch_spin(thread);
-	return key;
 }
 
 /* Shared handler for k_thread_{suspend,abort}().  Called with the
@@ -465,8 +472,7 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 		arch_sched_ipi();
 #endif
 		if (arch_is_in_isr()) {
-			key = thread_halt_spin(thread, key);
-			k_spin_unlock(&_sched_spinlock, key);
+			thread_halt_spin(thread, key);
 		} else  {
 			add_to_waitq_locked(_current, wq);
 			z_swap(&_sched_spinlock, key);
@@ -480,6 +486,10 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 			k_spin_unlock(&_sched_spinlock, key);
 		}
 	}
+	/* NOTE: the scheduler lock has been released.  Don't put
+	 * logic here, it's likely to be racy/deadlocky even if you
+	 * re-take the lock!
+	 */
 }
 
 
@@ -1279,6 +1289,8 @@ extern void thread_abort_hook(struct k_thread *thread);
  */
 static void halt_thread(struct k_thread *thread, uint8_t new_state)
 {
+	bool dummify = false;
+
 	/* We hold the lock, and the thread is known not to be running
 	 * anywhere.
 	 */
@@ -1295,6 +1307,16 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 			}
 			(void)z_abort_thread_timeout(thread);
 			unpend_all(&thread->join_queue);
+
+			/* Edge case: aborting _current from within an
+			 * ISR that preempted it requires clearing the
+			 * _current pointer so the upcoming context
+			 * switch doesn't clobber the now-freed
+			 * memory
+			 */
+			if (thread == _current && arch_is_in_isr()) {
+				dummify = true;
+			}
 		}
 #ifdef CONFIG_SMP
 		unpend_all(&thread->halt_queue);
@@ -1333,6 +1355,16 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 #ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
 		k_thread_abort_cleanup(thread);
 #endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+
+		/* Do this "set _current to dummy" step last so that
+		 * subsystems above can rely on _current being
+		 * unchanged.  Disabled for posix as that arch
+		 * continues to use the _current pointer in its swap
+		 * code.
+		 */
+		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
+			z_dummy_thread_init(&_thread_dummies[_current_cpu->id]);
+		}
 	}
 }
 
