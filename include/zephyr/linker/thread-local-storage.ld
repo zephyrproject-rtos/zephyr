@@ -33,8 +33,4 @@
 	PROVIDE(__tbss_size = (SIZEOF(tbss) + __tbss_align - 1) & ~(__tbss_align - 1));
 	PROVIDE(__tbss_end = __tbss_start + __tbss_size);
 
-	PROVIDE(__tls_start = __tdata_start);
-	PROVIDE(__tls_end = __tbss_end);
-	PROVIDE(__tls_size = __tbss_end - __tdata_start);
-
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
