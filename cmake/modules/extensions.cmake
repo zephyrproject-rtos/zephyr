@@ -1533,7 +1533,7 @@ endfunction()
 #                       [BOARD_QUALIFIERS <qualifiers>]
 #                       [BOARD_REVISION <revision>]
 #                       [BUILD <type>]
-#                       [MERGE [REVERSE]]
+#                       [MERGE [REVERSE] [DEPRECATED <out-deprecated-variable>]]
 #   )
 #
 # <out-variable>:            Output variable where the build string will be returned.
@@ -1542,6 +1542,7 @@ endfunction()
 # BUILD <type>:              Build type to use when creating the build string.
 # MERGE:                     Return a list of build strings instead of a single build string.
 # REVERSE:                   Reverse the list before returning it.
+# DEPRECATED <out-variable>: Output variable where the list of deprecated filenames will be returned.
 #
 # Examples
 # calling
@@ -1563,7 +1564,7 @@ endfunction()
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
-  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION BUILD)
+  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION BUILD DEPRECATED)
 
   cmake_parse_arguments(BUILD_STR "${options}" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
@@ -1587,6 +1588,13 @@ function(zephyr_build_string outvar)
     )
   endif()
 
+  if(DEFINED BUILD_STR_DEPRECATED AND NOT BUILD_STR_MERGE)
+    message(FATAL_ERROR
+      "zephyr_build_string(${ARGV0} <list> DEPRECATED ${BUILD_STR_DEPRECAED} ...)"
+      " given without MERGE argument, please specify MERGE"
+    )
+  endif()
+
   string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD}${BUILD_STR_BOARD_QUALIFIERS}")
   string(REPLACE "." "_" revision_string "${BUILD_STR_BOARD_REVISION}")
 
@@ -1605,6 +1613,10 @@ function(zephyr_build_string outvar)
     string(REGEX REPLACE "^/(.+)/" "/" qualifiers_without_soc "${BUILD_STR_BOARD_QUALIFIERS}")
     string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
     list(APPEND ${outvar} "${BUILD_STR_BOARD}${qualifiers_without_soc}")
+
+    if(BUILD_STR_DEPRECATED)
+      set(${BUILD_STR_DEPRECATED} ${BUILD_STR_BOARD} PARENT_SCOPE)
+    endif()
   endif()
 
   if(BUILD_STR_REVERSE)
@@ -2478,7 +2490,7 @@ endfunction()
 # Usage:
 #   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>]
 #               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ...]
-#               [BUILD <type>] [SUFFIX <suffix>] [REQUIRED]
+#               [BUILD <type>] [SUFFIX <suffix>] [REQUIRED] [DEPRECATED <list>]
 #   )
 #
 # CONF_FILES <paths>: Find all configuration files in the list of paths and
@@ -2517,6 +2529,7 @@ endfunction()
 #                                    if found but will use <file>.conf if not found
 #                     REQUIRED:      Option to indicate that the <list> specified by DTS or KCONF
 #                                    must contain at least one element, else an error will be raised.
+#                     DEPRECATED <list>: List of files that, if used, will emit a deprecated notice.
 #
 function(zephyr_file)
   set(file_options APPLICATION_ROOT CONF_FILES)
@@ -2529,7 +2542,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options REQUIRED)
-    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
+    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX DEPRECATED)
     set(multi_args CONF_FILES NAMES)
   endif()
 
@@ -2603,7 +2616,14 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
                           BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
                           BUILD ${ZFILE_BUILD}
                           MERGE REVERSE
+                          DEPRECATED deprecated_filename_list
       )
+
+      if(NOT DEFINED ZFILE_DEPRECATED)
+        list(TRANSFORM deprecated_filename_list APPEND ".overlay")
+        set(ZFILE_DEPRECATED ${deprecated_filename_list})
+      endif()
+
       list(REMOVE_DUPLICATES filename_list)
       set(dts_filename_list ${filename_list})
       list(TRANSFORM dts_filename_list APPEND ".overlay")
@@ -2624,6 +2644,13 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 
           if(EXISTS ${test_file})
             list(APPEND ${ZFILE_DTS} ${test_file})
+
+            cmake_path(GET test_file FILENAME test_file_without_path)
+            if("${test_file_without_path}" IN_LIST ZFILE_DEPRECATED)
+              message(DEPRECATION
+                      "Overlay files (${test_file_without_path}) without the SoC name are "
+                      "deprecated after Zephyr 3.6, you should use <board>_<soc>.overlay instead")
+            endif()
 
             if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)
@@ -2656,6 +2683,13 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 
           if(EXISTS ${test_file})
             list(APPEND ${ZFILE_KCONF} ${test_file})
+
+            cmake_path(GET test_file FILENAME test_file_without_path)
+            if("${test_file_without_path}" IN_LIST ZFILE_DEPRECATED)
+              message(DEPRECATION
+                      "Kconfig fragment files (${test_file_without_path}) without the SoC name are "
+                      " deprecated after Zephyr 3.6, you should use <board>_<soc>.conf instead")
+            endif()
 
             if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)

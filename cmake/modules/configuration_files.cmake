@@ -87,11 +87,14 @@ if(NOT DEFINED DTC_OVERLAY_FILE)
                       BOARD ${BOARD}
                       BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
                       MERGE
+                      DEPRECATED deprecated_file_names
   )
   list(TRANSFORM board_overlay_strings APPEND ".overlay")
+  list(TRANSFORM deprecated_file_names APPEND ".overlay")
 
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
-              NAMES "${board_overlay_strings};app.overlay" SUFFIX ${FILE_SUFFIX})
+              NAMES "${board_overlay_strings};app.overlay" SUFFIX ${FILE_SUFFIX}
+              DEPRECATED "${deprecated_file_names}")
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
