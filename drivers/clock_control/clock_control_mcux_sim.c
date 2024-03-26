@@ -54,6 +54,9 @@ static int mcux_sim_get_subsys_rate(const struct device *dev,
 	case KINETIS_SIM_ENET_CLK:
 		clock_name = kCLOCK_CoreSysClk;
 		break;
+	case KINETIS_SIM_ENET_1588_CLK:
+		clock_name = kCLOCK_Osc0ErClk;
+		break;
 	default:
 		clock_name = (clock_name_t) sub_system;
 		break;
