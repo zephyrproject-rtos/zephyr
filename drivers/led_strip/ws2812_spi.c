@@ -163,7 +163,13 @@ static int ws2812_strip_update_channels(const struct device *dev,
 static int ws2812_spi_init(const struct device *dev)
 {
 	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
+	struct spi_buf buf = {
+		.buf = cfg->px_buf,
+		.len = 1,
+	};
+	const struct spi_buf_set tx = {.buffers = &buf, .count = 1};
 	uint8_t i;
+	int rc;
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("SPI device %s not ready", cfg->bus.bus->name);
@@ -185,7 +191,16 @@ static int ws2812_spi_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	/* Setting the level of the SDO line to logic low to perform a reset before the driver is
+	 * available. This prevents weird boot behaviour of the leds caused by the logic level of
+	 * the SDO line during boot of the controller being interpreted as data signals.
+	 */
+	cfg->px_buf[0] = 0;
+
+	rc = spi_write_dt(&cfg->bus, &tx);
+	ws2812_reset_delay(cfg->reset_delay);
+
+	return rc;
 }
 
 static const struct led_strip_driver_api ws2812_spi_api = {
