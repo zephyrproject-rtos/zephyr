@@ -179,6 +179,13 @@ Networking
   used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
   implemented in `recv` callback. (:github:`70549`)
 
+* The Kconfig ``CONFIG_NET_TCP_ACK_TIMEOUT`` has been deprecated. Its usage was
+  limited to TCP handshake only, and in such case the total timeout should depend
+  on the total retransmission timeout (as in other cases) making the config
+  redundant and confusing. Use ``CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT`` and
+  ``CONFIG_NET_TCP_RETRY_COUNT`` instead to control the total timeout at the
+  TCP level.
+
 Other Subsystems
 ****************
 
