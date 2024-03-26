@@ -39,7 +39,7 @@ config SOC_MIMX8MN6_A53
 	select HAS_MCUX_IOMUXC if PINCTRL
 	select HAS_MCUX_RDC
 
-config SOC_MIMX8MP_ADSP
+config SOC_MIMX8ML8_ADSP
 	select XTENSA
 	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
 	select XTENSA_RESET_VECTOR
@@ -53,7 +53,7 @@ config SOC_MIMX8MP_ADSP
 	select PINCTRL_IMX if HAS_MCUX_IOMUXC
 	select CPU_HAS_DCACHE
 
-config SOC_MIMX8MP_M7
+config SOC_MIMX8ML8_M7
 	select ARM
 	select CPU_CORTEX_M7
 	select CPU_HAS_FPU
@@ -81,9 +81,9 @@ config SOC_MIMX8MQ6_M4
 
 config MCUX_CORE_SUFFIX
 	default "_ca53" if SOC_MIMX8MM6_A53 || SOC_MIMX8MN6_A53 || SOC_MIMX8ML8_A53
-	default "_dsp" if SOC_MIMX8MP_ADSP
+	default "_dsp" if SOC_MIMX8ML8_ADSP
 
-if SOC_MIMX8MP_M7
+if SOC_MIMX8ML8_M7
 
 choice CODE_LOCATION
 	prompt "Code location selection"
@@ -99,4 +99,4 @@ endchoice
 config INIT_VIDEO_PLL
 	bool "Initialize Video PLL"
 
-endif # SOC_MIMX8MP_M7
+endif # SOC_MIMX8ML8_M7
