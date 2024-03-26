@@ -13,6 +13,7 @@ family:
     - name: stm32f042x6
     - name: stm32f051x8
     - name: stm32f070xb
+    - name: stm32f072x8
     - name: stm32f072xb
     - name: stm32f091xc
     - name: stm32f098xx
