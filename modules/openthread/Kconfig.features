@@ -341,7 +341,8 @@ config OPENTHREAD_SRP_SERVER
 	select OPENTHREAD_ECDSA
 
 config OPENTHREAD_TIME_SYNC
-	bool "The time synchronization service feature"
+	bool "The time synchronization service feature [EXPERIMENTAL]"
+	select EXPERIMENTAL
 
 config OPENTHREAD_TREL
 	bool "TREL radio link for Thread over Infrastructure feature"
