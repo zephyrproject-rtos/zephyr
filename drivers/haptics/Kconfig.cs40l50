@@ -1,0 +1,10 @@
+# Copyright 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAPTICS_CS40L50
+	bool "CS40L50 Haptics Driver"
+	default y
+	depends on DT_HAS_CIRRUS_CS40L50_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for the Cirrus CS40L50 Haptics Driver.

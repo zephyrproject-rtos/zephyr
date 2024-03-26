@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cirrus Logic Haptic Driver IC
+  example:
+    cs40l50 {
+      compatible = "cirrus,cs40l50";
+      status = "okay";
+    };
+
+compatible: "cirrus,cs40l50"
+
+include: i2c-device.yaml
