@@ -16,8 +16,8 @@ description: |
 
     This binding provides a nexus mapping for 18 pins, as depicted below:
 
-        0 TX0                    RAW    -
-        1 RX1                    GND    -
+        1 TX0                    RAW    -
+        0 RX1                    GND    -
         - GND                    RST    -
         - GND                    VCC    -
         2 D2                     D21/A3 21
