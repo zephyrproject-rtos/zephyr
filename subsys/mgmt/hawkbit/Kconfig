@@ -14,6 +14,8 @@ menuconfig HAWKBIT
 	depends on DNS_RESOLVER
 	depends on JSON_LIBRARY
 	depends on BOOTLOADER_MCUBOOT
+	depends on SMF
+	depends on SMF_ANCESTOR_SUPPORT
 	select MPU_ALLOW_FLASH_WRITE
 	select IMG_ENABLE_IMAGE_CHECK
 	select IMG_ERASE_PROGRESSIVELY
