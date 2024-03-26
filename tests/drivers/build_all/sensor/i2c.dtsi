@@ -993,3 +993,9 @@ test_i2c_stts22h: stts22h@86 {
 	int-gpios = <&test_gpio 0 0>;
 	sampling-rate = <STTS22H_100Hz>;
 };
+
+test_i2c_icm20948: icm20948@87 {
+	compatible = "invensense,icm20948";
+	reg = <0x87>;
+	status = "okay";
+};

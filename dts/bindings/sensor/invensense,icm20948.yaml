@@ -1,0 +1,153 @@
+#  Copyright (c) 2023, Lazaro O'Farrill
+#  email: lazaroofarrill@gmail.com
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ICM20948 Motion sensor by invensense
+
+compatible: "invensense,icm20948"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  accel-fchoice:
+    type: int
+    description: |
+      Toggle accelerometer filter in low-power mode.
+      Maps to ACCEL_FCHOICE field in ACCEL_CONFIG.
+    default: 1
+    enum:
+      - 0
+      - 1
+
+  accel-lpf:
+    type: int
+    description: |
+      Low pass filter configuration for accelerometer.
+      Maps to ACCEL_DLPFCFG field in ACCEL_CONFIG
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  accel-hz:
+    type: string
+    description: |
+      Default frequency of accelerometer. (Unit - Hz)
+      Maps to ACCEL_SMPLRT_DIV setting.
+    default: "102.3"
+    enum:
+      - "0.27"
+      - "0.55"
+      - "1.1"
+      - "2.2"
+      - "4.4"
+      - "8.8"
+      - "17.6"
+      - "35.2"
+      - "48.9"
+      - "70.3"
+      - "102.3"
+      - "140.6"
+
+
+  gyro-fchoice:
+    type: int
+    description: |
+      Toggle gyroscope filter in low-power mode.
+      Maps to GYRO_FCHOICE field in GYRO_CONFIG_1.
+    default: 1
+    enum:
+      - 0
+      - 1
+
+  gyro-lpf:
+    type: int
+    description: |
+      Low pass filter configuration for accelerometer.
+      Maps to ACCEL_DLPFCFG field in ACCEL_CONFIG
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  gyro-hz:
+    type: string
+    description: |
+      Default frequency of gyroscope. (Unit - Hz)
+      Maps to GYRO_SMPLRT_DIV setting.
+    default: "102.3"
+    enum:
+      - "4.4"
+      - "17.3"
+      - "17.6"
+      - "34.1"
+      - "35.2"
+      - "48.9"
+      - "66.2"
+      - "70.3"
+      - "102.3"
+      - "125.0"
+      - "140.6"
+      - "187.5"
+      - "225.0"
+      - "281.3"
+      - "375.0"
+      - "562.5"
+
+  accel-fs:
+    type: int
+    description: |
+      Default full scale of accelerometer. (Unit - g)
+      Maps to ACCEL_FS_SEL field in ACCEL_CONFIG setting
+      Power-on reset value is 16
+    default: 2
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+
+  gyro-fs:
+    type: int
+    description: |
+      Default full scale of gyroscope. (Unit - DPS)
+      Maps to GYRO_FS_SEL field in GYRO_CONFIG_1 setting
+      Power-on reset value is 250
+    default: 250
+    enum:
+      - 250
+      - 500
+      - 1000
+      - 2000
+
+  mag-freq:
+    type: int
+    description: |
+      Magnetometer frequency. (Unit - Hz)
+      Maps to AK09916 CNTL2 operation mode setting
+    default: 100
+    enum:
+      - 10
+      - 20
+      - 50
+      - 100
