@@ -93,30 +93,20 @@ static void route_mcast_cb(struct net_route_entry_mcast *entry,
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
-	struct net_if *iface = data->user_data;
-	const char *extra;
 
-	if (entry->iface != iface) {
-		return;
-	}
-
-	PR("IPv6 multicast route %p for interface %d (%p) (%s)\n", entry,
-	   net_if_get_by_iface(iface), iface, iface2str(iface, &extra));
-	PR("==========================================================="
-	   "%s\n", extra);
+	PR("IPv6 multicast route (%p)\n", entry);
+	PR("=================================\n");
 
 	PR("IPv6 group     : %s\n", net_sprint_ipv6_addr(&entry->group));
 	PR("IPv6 group len : %d\n", entry->prefix_len);
 	PR("Lifetime       : %u\n", entry->lifetime);
-}
 
-static void iface_per_mcast_route_cb(struct net_if *iface, void *user_data)
-{
-	struct net_shell_user_data *data = user_data;
-
-	data->user_data = iface;
-
-	net_route_mcast_foreach(route_mcast_cb, NULL, data);
+	for (int i = 0; i < CONFIG_NET_MCAST_ROUTE_MAX_IFACES; ++i) {
+		if (entry->ifaces[i]) {
+			PR("Interface      : %d (%p) %s\n", net_if_get_by_iface(entry->ifaces[i]),
+			   entry->ifaces[i], iface2str(entry->ifaces[i], NULL));
+		}
+	}
 }
 #endif /* CONFIG_NET_ROUTE_MCAST */
 
@@ -234,7 +224,7 @@ static int cmd_net_route(const struct shell *sh, size_t argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_ROUTE_MCAST)
-	net_if_foreach(iface_per_mcast_route_cb, &user_data);
+	net_route_mcast_foreach(route_mcast_cb, NULL, &user_data);
 #endif
 #endif
 	return 0;
