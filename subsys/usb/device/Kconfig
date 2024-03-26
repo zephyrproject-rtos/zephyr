@@ -158,6 +158,13 @@ config USB_DEVICE_INITIALIZE_AT_BOOT
 	help
 	  Use CDC ACM UART as backend for console, shell, or logging.
 
+config USB_DEVICE_INITIALIZE_BY_APP
+	bool "Initializes Device by Application"
+	help
+	  Enable this to allow the application to manually initialize the USB Device Stack instead of automatically at boot.
+	  For example, this allows delaying initialization until hardware is ready or to load serial or other information
+	  into the descriptors.
+
 source "subsys/usb/device/class/Kconfig"
 
 endif # USB_DEVICE_STACK

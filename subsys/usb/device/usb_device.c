@@ -1721,4 +1721,13 @@ static int usb_device_init(void)
 	return 0;
 }
 
+int usb_device_init_app(void)
+{
+	return usb_device_init();
+}
+
+
+
+#if !IS_ENABLED(CONFIG_USB_DEVICE_INITIALIZE_BY_APP)
 SYS_INIT(usb_device_init, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif

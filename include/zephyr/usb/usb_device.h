@@ -4,7 +4,7 @@
  *  LPCUSB, an USB device driver for LPC microcontrollers
  *  Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)
  *  Copyright (c) 2016 Intel Corporation
- *
+  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
  *
@@ -445,6 +445,19 @@ int usb_wakeup_request(void);
  * @return true if remote wakeup has been enabled by the host, false otherwise.
  */
 bool usb_get_remote_wakeup_status(void);
+
+/**
+ * @brief Initializes the USB Device stack from the Application
+ *
+ * This function exists to provide a mechanism for the application
+ * to initialize the USB device stack. It should be called only from
+ * the application itself. USB_DEVICE_INITIALIZE_BY_APP should be enabled
+ * to allow for this function to be used.
+ *
+ * @return 0 on success, negative errno code on fail
+ */
+int usb_device_init_app(void);
+
 
 /**
  * @}
