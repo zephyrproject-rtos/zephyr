@@ -20,4 +20,5 @@ supported:
   - spi
   - dac
   - i2c
+  - watchdog
 vendor: nxp

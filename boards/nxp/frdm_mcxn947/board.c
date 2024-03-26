@@ -162,6 +162,10 @@ static int frdm_mcxn947_init(void)
 	SYSCON->ENET_PHY_INTF_SEL = SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(1);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
