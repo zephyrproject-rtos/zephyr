@@ -20,6 +20,7 @@
 
 	aliases {
 		led0 = &led0;
+		sw0 = &sw1;
 	};
 
 	leds {
@@ -39,6 +40,18 @@
 		led3: led3 {
 			gpios = <&gpio23 4 0>;
 			label = "led3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		sw1: sw1 {
+			label = "sw1";
+			gpios = <&gpio10 5 0>;
+		};
+		sw2: sw2 {
+			label = "sw2";
+			gpios = <&gpio16 3 0>;
 		};
 	};
 };

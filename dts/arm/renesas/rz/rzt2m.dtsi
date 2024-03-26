@@ -103,6 +103,13 @@
 			reg-io-width = <4>;
 		};
 
+		ns_portnf_md: ns_portnf_md@8009000c {
+			/* Interrupt edge detection setting */
+			compatible = "syscon";
+			reg = <0x8009000c 0x4>;
+			reg-io-width = <4>;
+		};
+
 		uart0: serial@80001000 {
 			compatible = "renesas,rzt2m-uart";
 			reg = <0x80001000 0x1000>;
@@ -131,31 +138,70 @@
 			compatible = "renesas,rzt2m-pinctrl";
 			reg = <0x800a0000 0x1000 0x81030c00 0x1000>;
 			reg-names = "port_nsr", "ptadr";
-			#address-cells = <1>;
-			#size-cells = <0>;
 
-			gpio19: gpio@13 {
-				compatible = "renesas,rzt2m-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <8>;
-				reg = <0x13>;
-			};
+			gpio_common: gpio_common {
+				compatible = "renesas,rzt2m-gpio-common";
+				interrupts = <GIC_SPI 6 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 7 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 8 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 9 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 10 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 11 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 12 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 13 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 14 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 15 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 16 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 17 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 18 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 19 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-			gpio20: gpio@14 {
-				compatible = "renesas,rzt2m-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <8>;
-				reg = <0x14>;
-			};
+				gpio10: gpio@a {
+					compatible = "renesas,rzt2m-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0xa>;
+					irqs = <4 11>, <5 2>;
+				};
 
-			gpio23: gpio@17 {
-				compatible = "renesas,rzt2m-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <8>;
-				reg = <0x17>;
+				gpio16: gpio@10 {
+					compatible = "renesas,rzt2m-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x10>;
+					irqs = <3 7>, <6 8>;
+				};
+
+				gpio19: gpio@13 {
+					compatible = "renesas,rzt2m-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x13>;
+					irqs = <2 3>;
+				};
+
+				gpio20: gpio@14 {
+					compatible = "renesas,rzt2m-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x14>;
+				};
+
+				gpio23: gpio@17 {
+					compatible = "renesas,rzt2m-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x17>;
+					irqs = <0 5>, <2 8>;
+				};
+
 			};
 		};
 	};
