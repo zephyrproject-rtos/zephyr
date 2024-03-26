@@ -1196,8 +1196,10 @@ error:
 	return hb_context.code_status;
 }
 
-static void autohandler(struct k_work *work)
+static void hawkbit_run(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		LOG_ERR("Current image is not confirmed");
@@ -1244,7 +1246,18 @@ static void autohandler(struct k_work *work)
 		LOG_INF("hawkBit is already running");
 		break;
 	}
+}
 
+static K_WORK_DELAYABLE_DEFINE(hawkbit_work_handle_once, hawkbit_run);
+
+void hawkbit_run_once(void)
+{
+	k_work_reschedule(&hawkbit_work_handle_once, K_NO_WAIT);
+}
+
+static void autohandler(struct k_work *work)
+{
+	hawkbit_run(work);
 	k_work_reschedule(&hawkbit_work_handle, K_MSEC(poll_sleep));
 }
 
