@@ -190,7 +190,7 @@ persistent storage to flash. This requires the presence of a flash
 driver and a designated "storage" partition on flash. A typical set of
 configuration options needed will look something like the following:
 
-  .. code-block:: none
+  .. code-block:: cfg
 
     CONFIG_BT_SETTINGS=y
     CONFIG_FLASH=y
@@ -201,4 +201,4 @@ configuration options needed will look something like the following:
 
 Once enabled, it is the responsibility of the application to call
 settings_load() after having initialized Bluetooth (using the
-bt_enable() API).
+:c:func:`bt_enable` API).
