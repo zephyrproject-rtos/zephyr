@@ -81,14 +81,11 @@ config SENSOR_INFO
 
 comment "Device Drivers"
 
+# zephyr-keep-sorted-start
+source "drivers/sensor/adi/Kconfig"
+# zephyr-keep-sorted-stop
+
 source "drivers/sensor/a01nyub/Kconfig"
-source "drivers/sensor/adltc2990/Kconfig"
-source "drivers/sensor/adt7310/Kconfig"
-source "drivers/sensor/adt7420/Kconfig"
-source "drivers/sensor/adxl345/Kconfig"
-source "drivers/sensor/adxl362/Kconfig"
-source "drivers/sensor/adxl367/Kconfig"
-source "drivers/sensor/adxl372/Kconfig"
 source "drivers/sensor/ags10/Kconfig"
 source "drivers/sensor/ak8975/Kconfig"
 source "drivers/sensor/akm09918c/Kconfig"
