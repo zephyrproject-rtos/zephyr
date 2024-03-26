@@ -169,21 +169,16 @@ Here are the conventions:
 
 - Each test is defined by a shell script with the extension ``.sh``, in a subfolder called
   ``test_scripts/``.
-- Test scripts expect that the binaries they require are already built, and will spawn the processes
-  for the simulated devices and physical layer simulation with the necessary command line options.
-- Tests must return 0 to the invoking shell if the test passes, and not 0 if the test fails.
-- It is recommended to have a single test for each test script.
+- It is recommended to run a single test per script file. It allows for better parallelization of
+  the runs in CI.
+- Scripts expect that the binaries they require are already built. They should not compile binaries.
+- Scripts will spawn the processes for every simulated device and the physical layer simulation.
+- Scripts must return 0 to the invoking shell if the test passes, and not 0 if the test fails.
 - Each test must have a unique simulation id, to enable running different tests in parallel.
-- The test scripts should not compile the images on their own.
 - Neither the scripts nor the images should modify the workstation filesystem content beyond the
   ``${BSIM_OUT_PATH}/results/<simulation_id>/`` or ``/tmp/`` folders.
   That is, they should not leave stray files behind.
-- If the test scripts or the test binaries create temporary files, they should preferably do so by
-  placing them in the ``${BSIM_OUT_PATH}/results/<simulation_id>/`` folder.
-  Otherwise they should be named as to avoid conflicts with other test scripts which may be running
-  in parallel.
-- When running tests that require several consecutive simulations, for ex. if simulating a device
-  pairing, powering off, and powering up after as a new simulation,
-  they should strive for using separate simulation ids for each simulation part,
-  in that way ensuring that the simulation radio activity of each segment can be inspected a
+- Tests that require several consecutive simulations (e.g, if simulating a device pairing, powering
+  off, and powering up after as a new simulation) should use separate simulation ids for each
+  simulation segment, ensuring that the radio activity of each segment can be inspected a
   posteriori.
