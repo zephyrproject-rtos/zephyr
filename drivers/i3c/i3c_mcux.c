@@ -63,6 +63,8 @@ LOG_MODULE_REGISTER(i3c_mcux, CONFIG_I3C_MCUX_LOG_LEVEL);
 #define I3C_MSTATUS_IBITYPE_MR			I3C_MSTATUS_IBITYPE(2)
 #define I3C_MSTATUS_IBITYPE_HJ			I3C_MSTATUS_IBITYPE(3)
 
+#define I3C_MAX_STOP_RETRIES 5
+
 struct mcux_i3c_config {
 	/** Common I3C Driver Config */
 	struct i3c_driver_config common;
@@ -676,23 +678,18 @@ static int mcux_i3c_request_emit_start(I3C_Type *base, uint8_t addr, bool is_i2c
 /**
  * @brief Tell controller to emit STOP.
  *
- * This emits STOP when controller is in NORMACT state as this is
- * the only valid state where STOP can be emitted. This also waits
- * for the controller to get out of NORMACT before returning.
+ * This emits STOP and waits for controller to get out of NORMACT,
+ * checking for errors.
  *
  * @param base Pointer to controller registers.
  * @param wait_stop True if need to wait for controller to be
  *                  no longer in NORMACT.
  */
-static inline void mcux_i3c_request_emit_stop(struct mcux_i3c_data *dev_data,
-					      I3C_Type *base, bool wait_stop)
+static inline int mcux_i3c_do_request_emit_stop(I3C_Type *base, bool wait_stop)
 {
-	/* Make sure we are in a state where we can emit STOP */
-	if (mcux_i3c_state_get(base) == I3C_MSTATUS_STATE_NORMACT) {
-		reg32_update(&base->MCTRL,
-			     I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_DIR_MASK | I3C_MCTRL_RDTERM_MASK,
-			     I3C_MCTRL_REQUEST_EMIT_STOP);
-	}
+	reg32_update(&base->MCTRL,
+		     I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_DIR_MASK | I3C_MCTRL_RDTERM_MASK,
+		     I3C_MCTRL_REQUEST_EMIT_STOP);
 
 	/*
 	 * EMIT_STOP request doesn't result in MCTRLDONE being cleared
@@ -709,14 +706,78 @@ static inline void mcux_i3c_request_emit_stop(struct mcux_i3c_data *dev_data,
 					I3C_MSTATUS_STATE_NORMACT)) {
 			if (mcux_i3c_has_error(base)) {
 				/*
-				 * Bail out if there is any error so
-				 * we won't loop forever.
+				 * A timeout error has been observed on
+				 * an EMIT_STOP request. Refman doesn't say
+				 * how that could occur but clear it
+				 * and return the error.
 				 */
-				return;
+				if (reg32_test(&base->MERRWARN,
+					       I3C_MERRWARN_TIMEOUT_MASK)) {
+					mcux_i3c_errwarn_clear_all_nowait(base);
+					return -ETIMEDOUT;
+				}
+				return -EIO;
 			}
-
 			k_busy_wait(10);
-		};
+		}
+	}
+	return 0;
+}
+
+/**
+ * @brief Tell controller to emit STOP.
+ *
+ * This emits STOP when controller is in NORMACT state as this is
+ * the only valid state where STOP can be emitted. This also waits
+ * for the controller to get out of NORMACT before returning and
+ * retries if any timeout errors occur during the emit STOP.
+ *
+ * @param dev_data Pointer to device driver data
+ * @param base Pointer to controller registers.
+ * @param wait_stop True if need to wait for controller to be
+ *                  no longer in NORMACT.
+ */
+static inline void mcux_i3c_request_emit_stop(struct mcux_i3c_data *dev_data,
+					      I3C_Type *base, bool wait_stop)
+{
+	size_t retries;
+
+	/*
+	 * Stop is usually the last part of a transfer.
+	 * Sometimes, an error occurred before. We want to clear
+	 * it so any error as a result of emitting the stop
+	 * itself doesn't get incorrectly mixed together.
+	 */
+	if (mcux_i3c_has_error(base)) {
+		mcux_i3c_errwarn_clear_all_nowait(base);
+	}
+
+	/* Make sure we are in a state where we can emit STOP */
+	if (!reg32_test_match(&base->MSTATUS, I3C_MSTATUS_STATE_MASK,
+			      I3C_MSTATUS_STATE_NORMACT)) {
+		return;
+	}
+
+	retries = 0;
+	while (1) {
+		int err = mcux_i3c_do_request_emit_stop(base, wait_stop);
+
+		if (err) {
+			if ((err == -ETIMEDOUT) && (++retries <= I3C_MAX_STOP_RETRIES)) {
+				LOG_WRN("Timeout on emit stop, retrying");
+				continue;
+			}
+			LOG_ERR("Error waiting for stop");
+			return;
+		}
+		/*
+		 * Success. If wait_stop was true, state should now
+		 * be IDLE or possibly SLVREQ.
+		 */
+		if (retries) {
+			LOG_WRN("EMIT_STOP succeeded on %u retries", retries);
+		}
+		break;
 	}
 
 	/* Release any threads that might have been blocked waiting for IDLE */
