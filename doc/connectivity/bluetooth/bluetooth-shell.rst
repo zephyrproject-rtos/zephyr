@@ -444,6 +444,106 @@ On device A, you should have received the data:
         Incoming data channel 0x20000210 len 14
         00000000: ff ff ff ff ff ff ff ff  ff ff ff ff ff ff       |........ ......  |
 
+A2DP
+*****
+The :code:`a2dp` command exposes parts of the A2DP API.
+
+The following examples assume that you have two devices already connected.
+
+Here is a example connecting two devices:
+ * Source and Sink sides register a2dp connection/disconnection callbacks. using :code:`a2dp register_cb`.
+ * Source and Sink sides register stream endpoints. using :code:`a2dp register_ep source sbc` and :code:`a2dp register_ep sink sbc`.
+ * Source establish A2dp connection. It will create the AVDTP Signaling and Media L2CAP channels. using :code:`a2dp connect`.
+ * Source configure the stream endpoint. The :code:`a2dp configure` command trigger to discover all
+   the stream endpoints of connected Device B, and select/configure one endpoint based on the
+   priority of self registered endpoints. The endpoint registered first has a higher priority
+   than the endpoint registered later.
+ * Source start the media. using :code:`a2dp start`.
+ * Source test the media sending. using :code:`a2dp send_media` to send one test packet data.
+ * Source and Sink side can use :code:`a2dp discover_peer_eps` to disover peer stream endpoints and their capabilities.
+
+.. tabs::
+
+        .. group-tab:: Device A (Audio Source Side)
+
+                .. code-block:: console
+
+                        uart:~$ a2dp register_cb
+                        success
+                        uart:~$ a2dp register_ep source sbc
+                        SBC source endpoint is registered
+                        uart:~$ a2dp connect
+                        Bonded with XX:XX:XX:XX:XX:XX
+                        Security changed: XX:XX:XX:XX:XX:XX level 2
+                        a2dp connected
+                        uart:~$ a2dp configure
+                        SBC configure success
+                        sample rate 44100Hz
+                        uart:~$ a2dp start
+                        a2dp start playing
+                        uart:~$ a2dp send_media
+                        frames num: 1, data length: 160
+                        data: 1, 2, 3, 4, 5, 6 ......
+                        uart:~$ a2dp discover_peer_eps
+                        endpoint id: 1, (sink), (idle):
+                          codec type: SBC
+                          sample frequency:
+                                  44100
+                                  48000
+                          channel mode:
+                                  Mono
+                                  Stereo
+                                  Joint-Stereo
+                          Block Length:
+                                  16
+                          Subbands:
+                                  8
+                          Allocation Method:
+                                  Loudness
+                          Bitpool Range: 18 - 35
+                        discover done
+
+        .. group-tab:: Device B (Audio Sink Side)
+
+                .. code-block:: console
+
+                        uart:~$ a2dp register_cb
+                        success
+                        uart:~$ a2dp register_ep sink sbc
+                        SBC sink endpoint is registered
+                        <after a2dp connect>
+                        Connected: XX:XX:XX:XX:XX:XX
+                        Bonded with XX:XX:XX:XX:XX:XX
+                        Security changed: XX:XX:XX:XX:XX:XX level 2
+                        a2dp connected
+                        <after a2dp configure>
+                        SBC configure success
+                        sample rate 44100Hz
+                        <after a2dp start>
+                        a2dp start playing
+                        <after a2dp send_media>
+                        received, num of frames: 1, data length: 160
+                        data: 1, 2, 3, 4, 5, 6 ......
+                        uart:~$ a2dp discover_peer_eps
+                        endpoint id: 1, (source), (idle):
+                          codec type: SBC
+                          sample frequency:
+                                  44100
+                                  48000
+                          channel mode:
+                                  Mono
+                                  Stereo
+                                  Joint-Stereo
+                          Block Length:
+                                  16
+                          Subbands:
+                                  8
+                          Allocation Method:
+                                  Loudness
+                          Bitpool Range: 18 - 35
+                        discover done
+                        ...
+
 Logging
 *******
 
