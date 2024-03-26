@@ -325,22 +325,37 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # We should get this from DTS instead if multiple values are possible,
         # but this is fine for now.
         net_flash_start = 0x01000000
-        net_flash_end   = 0x0103FFFF
+        net_flash_end = 0x0103FFFF
+
+        net_uicr_start = 0x01FF8000
+        net_uicr_end = 0x01FF8800
 
         # If there is nothing in the hex file for the network core,
         # only the application core is programmed.
-        if not self.hex_refers_region(net_flash_start, net_flash_end):
-            self.op_program(self.hex_, erase_arg, qspi_erase_opt, defer=True,
-                            core='NRFDL_DEVICE_CORE_APPLICATION')
+        if not (
+            self.hex_refers_region(net_flash_start, net_flash_end)
+            or self.hex_refers_region(net_uicr_start, net_uicr_end)
+        ):
+            self.op_program(
+                self.hex_,
+                erase_arg,
+                qspi_erase_opt,
+                defer=True,
+                core="NRFDL_DEVICE_CORE_APPLICATION",
+            )
         # If there is some content that addresses a region beyond the network
         # core flash range, two hex files are generated and the two cores
         # are programmed one by one.
-        elif self.hex_contents.minaddr() < net_flash_start or \
-             self.hex_contents.maxaddr() > net_flash_end:
-
+        elif (
+            self.hex_contents.minaddr() < net_flash_start
+            or self.hex_contents.maxaddr() > net_flash_end
+        ):
             net_hex, app_hex = IntelHex(), IntelHex()
             for start, end in self.hex_contents.segments():
-                if net_flash_start <= start <= net_flash_end:
+                if (
+                    net_flash_start <= start <= net_flash_end
+                    or net_uicr_start <= start <= net_uicr_end
+                ):
                     net_hex.merge(self.hex_contents[start:end])
                 else:
                     app_hex.merge(self.hex_contents[start:end])
