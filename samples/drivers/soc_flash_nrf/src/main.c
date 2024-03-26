@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Linaro Limited
  *               2016 Intel Corporation.
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,8 +42,8 @@ int main(void)
 	uint32_t buf_word = 0U;
 	uint32_t i, offset;
 
-	printf("\nNordic nRF5 Flash Testing\n");
-	printf("=========================\n");
+	printf("\nNordic nRF5 Flash Sample\n");
+	printf("==========================\n");
 
 	if (!device_is_ready(flash_dev)) {
 		printf("Flash device not ready\n");
