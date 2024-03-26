@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 struct mcux_wwdt_config {
 	WWDT_Type *base;
 	uint8_t clk_divider;
+	uint8_t wdt_instance;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -86,6 +87,10 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	clock_freq = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 	clock_freq = CLOCK_GetWdtClkFreq();
+#elif defined(CONFIG_SOC_SERIES_MCXNX4X)
+	const struct mcux_wwdt_config *config = dev->config;
+
+	clock_freq = CLOCK_GetWdtClkFreq(config->wdt_instance);
 #else
 	const struct mcux_wwdt_config *config = dev->config;
 
@@ -187,6 +192,7 @@ static const struct wdt_driver_api mcux_wwdt_api = {
 		.base = (WWDT_Type *) DT_INST_REG_ADDR(n),		\
 		.clk_divider =						\
 			DT_INST_PROP(n, clk_divider),			\
+		.wdt_instance = n,					\
 		.irq_config_func = mcux_wwdt_config_func_##n,		\
 	};								\
 									\
