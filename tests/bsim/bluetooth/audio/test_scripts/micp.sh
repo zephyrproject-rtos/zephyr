@@ -8,7 +8,6 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 SIMULATION_ID="micp"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 

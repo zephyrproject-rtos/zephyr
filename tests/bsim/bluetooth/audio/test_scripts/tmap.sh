@@ -6,7 +6,6 @@
 
 SIMULATION_ID="tmap"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=30
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
