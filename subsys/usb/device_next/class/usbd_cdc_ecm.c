@@ -454,7 +454,7 @@ static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
 	desc->if0_union.bSubordinateInterface0 = if_num + 1;
 	LOG_DBG("CDC ECM class initialized");
 
-	if (usbd_add_descriptor(c_nd->data->uds_ctx, data->mac_desc_nd)) {
+	if (usbd_add_descriptor(uds_ctx, data->mac_desc_nd)) {
 		LOG_ERR("Failed to add iMACAddress string descriptor");
 	} else {
 		desc->if0_ecm.iMACAddress = data->mac_desc_nd->idx;
