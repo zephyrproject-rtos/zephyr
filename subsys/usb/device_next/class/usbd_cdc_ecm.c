@@ -412,7 +412,7 @@ static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
 	if (usbd_add_descriptor(c_nd->data->uds_ctx, data->mac_desc_nd)) {
 		LOG_ERR("Failed to add iMACAddress string descriptor");
 	} else {
-		desc->if0_ecm.iMACAddress = data->mac_desc_nd->idx;
+		desc->if0_ecm.iMACAddress = usbd_get_descriptor_idx(data->mac_desc_nd);
 	}
 
 	return 0;
@@ -425,7 +425,7 @@ static void usbd_cdc_ecm_shutdown(struct usbd_class_node *const c_nd)
 	struct cdc_ecm_eth_data *const data = dev->data;
 
 	desc->if0_ecm.iMACAddress = 0;
-	sys_dlist_remove(&data->mac_desc_nd->node);
+	usbd_remove_descriptor(data->mac_desc_nd);
 }
 
 static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
