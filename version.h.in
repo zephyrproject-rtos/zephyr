@@ -1,8 +1,8 @@
 #ifndef _@VERSION_TYPE@_VERSION_H_
 #define _@VERSION_TYPE@_VERSION_H_
 
-/* @templates@ values come from cmake/version.cmake
- * BUILD_VERSION related @template@ values will be 'git describe',
+/* The template values come from cmake/version.cmake
+ * BUILD_VERSION related template values will be 'git describe',
  * alternatively user defined BUILD_VERSION.
  */
 
