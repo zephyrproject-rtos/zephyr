@@ -90,6 +90,7 @@ static int configure(const struct device *dev,
 	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_context *ctx = &dev_data->ctx;
 	nrfx_spi_config_t config;
+	int32_t nrf_sck_pin;
 	nrfx_err_t result;
 
 	if (dev_data->initialized && spi_context_configured(ctx, spi_cfg)) {
@@ -134,8 +135,11 @@ static int configure(const struct device *dev,
 	config.mode      = get_nrf_spi_mode(spi_cfg->operation);
 	config.bit_order = get_nrf_spi_bit_order(spi_cfg->operation);
 
-	nrf_gpio_pin_write(nrf_spi_sck_pin_get(dev_config->spi.p_reg),
-			   spi_cfg->operation & SPI_MODE_CPOL ? 1 : 0);
+	nrf_sck_pin = nrf_spi_sck_pin_get(dev_config->spi.p_reg);
+	if (nrf_sck_pin >= 0) {
+		nrf_gpio_pin_write(nrf_sck_pin,
+				   spi_cfg->operation & SPI_MODE_CPOL ? 1 : 0);
+	}
 
 	if (dev_data->initialized) {
 		nrfx_spi_uninit(&dev_config->spi);
