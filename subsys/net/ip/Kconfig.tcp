@@ -66,14 +66,14 @@ config NET_TCP_TIME_WAIT_DELAY
 	  Value of 0 disables TIME_WAIT state completely.
 
 config NET_TCP_ACK_TIMEOUT
-	int "How long to wait for ACK (in milliseconds)"
+	int "[DEPRECATED] How long to wait for ACK (in milliseconds)"
 	depends on NET_TCP
 	default 1000
 	range 1 2147483647
 	help
-	  This value affects the timeout when waiting ACK to arrive in
-	  various TCP states. The value is in milliseconds. Note that
-	  having a very low value here could prevent connectivity.
+	  Deprecated. Use CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT and
+	  CONFIG_NET_TCP_RETRY_COUNT to control the total timeout at the TCP
+	  level.
 
 config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	int "Initial value of Retransmission Timeout (RTO) (in milliseconds)"
