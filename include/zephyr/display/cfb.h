@@ -241,6 +241,13 @@ int cfb_get_numof_fonts(const struct device *dev);
  */
 int cfb_framebuffer_init(const struct device *dev);
 
+/**
+ * @brief Deinitialize Character Framebuffer.
+ *
+ * @param dev Pointer to device structure for driver instance
+ */
+void cfb_framebuffer_deinit(const struct device *dev);
+
 #ifdef __cplusplus
 }
 #endif
