@@ -101,7 +101,12 @@ static int can_sam_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_mcan_configure_mram(dev, 0U, sam_cfg->mram);
+	/* use higher 16bit only, mcan sets lower 16bit */
+	uint32_t mrba = (sam_cfg->mram & 0xFFFF0000);
+	/* keep lower 16bit, update higher 16bit; need to fix this for CAN1 as well */
+	REG_CCFG_CAN0 = mrba | (REG_CCFG_CAN0 & 0x0000FFFF);
+
+	ret = can_mcan_configure_mram(dev, mrba, sam_cfg->mram);
 	if (ret != 0) {
 		return ret;
 	}
