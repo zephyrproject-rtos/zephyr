@@ -267,12 +267,16 @@ static void gpio_emul_gen_interrupt_bits(const struct device *port,
  * @param mask The mask of pins that have changed
  * @param prev_values Previous pin values
  * @param values Current pin values
+ *
+ * @return a mask of pins for which callbacks were fired
  */
-static void gpio_emul_pend_interrupt(const struct device *port, gpio_port_pins_t mask,
-				    gpio_port_value_t prev_values,
-				    gpio_port_value_t values)
+static gpio_port_pins_t gpio_emul_pend_interrupt(const struct device *port,
+						 gpio_port_pins_t mask,
+						 gpio_port_value_t prev_values,
+						 gpio_port_value_t values)
 {
 	gpio_port_pins_t interrupts;
+	gpio_port_pins_t interrupts_fired = 0;
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
 	k_spinlock_key_t key;
@@ -283,6 +287,7 @@ static void gpio_emul_pend_interrupt(const struct device *port, gpio_port_pins_t
 	while (interrupts != 0) {
 		k_spin_unlock(&drv_data->lock, key);
 		gpio_fire_callbacks(&drv_data->callbacks, port, interrupts);
+		interrupts_fired |= interrupts;
 		key = k_spin_lock(&drv_data->lock);
 		/* Clear handled interrupts */
 		drv_data->interrupts &= ~interrupts;
@@ -291,6 +296,8 @@ static void gpio_emul_pend_interrupt(const struct device *port, gpio_port_pins_t
 	}
 
 	k_spin_unlock(&drv_data->lock, key);
+
+	return interrupts_fired;
 }
 
 int gpio_emul_input_set_masked_int(const struct device *port,
@@ -520,6 +527,7 @@ static int gpio_emul_port_set_masked_raw(const struct device *port,
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	gpio_port_pins_t input_mask;
+	gpio_port_pins_t interrupts_fired;
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
 	k_spinlock_key_t key;
@@ -541,11 +549,13 @@ static int gpio_emul_port_set_masked_raw(const struct device *port,
 	input_values = drv_data->input_vals;
 	k_spin_unlock(&drv_data->lock, key);
 	__ASSERT_NO_MSG(rv == 0);
-	gpio_emul_pend_interrupt(port, input_mask, prev_input_values, input_values);
+	interrupts_fired =
+		gpio_emul_pend_interrupt(port, input_mask, prev_input_values, input_values);
 
 	/* for output-wiring, so the user can take action based on output */
 	if (prev_values ^ values) {
-		gpio_fire_callbacks(&drv_data->callbacks, port, mask & ~get_input_pins(port));
+		gpio_fire_callbacks(&drv_data->callbacks, port,
+				    mask & get_output_pins(port) & ~interrupts_fired);
 	}
 
 	return 0;
@@ -560,6 +570,7 @@ static int gpio_emul_port_set_bits_raw(const struct device *port,
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	gpio_port_pins_t input_mask;
+	gpio_port_pins_t interrupts_fired;
 	int rv;
 
 	key = k_spin_lock(&drv_data->lock);
@@ -572,9 +583,11 @@ static int gpio_emul_port_set_bits_raw(const struct device *port,
 	input_values = drv_data->input_vals;
 	k_spin_unlock(&drv_data->lock, key);
 	__ASSERT_NO_MSG(rv == 0);
-	gpio_emul_pend_interrupt(port, input_mask, prev_input_values, input_values);
+	interrupts_fired =
+		gpio_emul_pend_interrupt(port, input_mask, prev_input_values, input_values);
 	/* for output-wiring, so the user can take action based on output */
-	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
+	gpio_fire_callbacks(&drv_data->callbacks, port,
+			    pins & get_output_pins(port) & ~interrupts_fired);
 
 	return 0;
 }
@@ -588,6 +601,7 @@ static int gpio_emul_port_clear_bits_raw(const struct device *port,
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	gpio_port_pins_t input_mask;
+	gpio_port_pins_t interrupts_fired;
 	int rv;
 
 	key = k_spin_lock(&drv_data->lock);
@@ -599,9 +613,11 @@ static int gpio_emul_port_clear_bits_raw(const struct device *port,
 	input_values = drv_data->input_vals;
 	k_spin_unlock(&drv_data->lock, key);
 	__ASSERT_NO_MSG(rv == 0);
-	gpio_emul_pend_interrupt(port, input_mask, prev_input_values, input_values);
+	interrupts_fired =
+		gpio_emul_pend_interrupt(port, input_mask, prev_input_values, input_values);
 	/* for output-wiring, so the user can take action based on output */
-	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
+	gpio_fire_callbacks(&drv_data->callbacks, port,
+			    pins & get_output_pins(port) & ~interrupts_fired);
 
 	return 0;
 }
