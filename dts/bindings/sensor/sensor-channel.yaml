@@ -1,0 +1,53 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Properties for sensor channels, where a sensor channel is considered a grouping
+# of sensor fields, and a sensor field is a scalar measurement of a physical
+# phenomenom. A channel then is a vector of fields. A sensor a vector of channels.
+#
+# A channel might also be a channel from a sensor hub like device and optionally
+# enable with additional configuration options for a particular device.
+
+description: Sensor Channel
+
+include: base.yaml
+
+properties:
+  channel-index:
+    type: int
+    required: true
+    description: |
+      The numerical index in an array of channels the sensor provides. For
+      example the 0th channel may be the accelerometer channel, the 1st may be
+      a gyro, and 3rd may be a magnetometer. Some devices may group several
+      channels together and in Zephyr those would be fields in a channel rather
+      than individual channels. Each channel might typically come with its own ability
+      to set sensitivity, odr, and so on.
+
+  channel-type:
+    type: int
+    required: true
+    description: |
+      The type of physical sensing information provided by this channel. It
+      can be used to identify a channel of data from a sensor that provides
+      for example acceleration, rotational velocity, magnetic field strength,
+      light intensity, and more.
+
+      The channel type identifiers are defined in C and are extensible.
+
+  channel-fields:
+    type: array
+    description: |
+      A sensor channel may itself be representative of a multi-dimensional
+      array containing relative data about a particular physical measurement.
+      This may be the filtered frequencies of light in a spectrometer, the
+      euclidean alignment of mems sensors for x, y, z, or a simple array of
+      values for things like ToF sensors with 1 or 2 dimensional arrays readings.
+
+      Each field is given by a pair (Field Descriptor, Length) to signify the channel
+      produces fields with a particular meaning and N of them.
+
+      Example fields usages
+
+      channel-fields: <SENSOR_FIELD_XYZ 1>

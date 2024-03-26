@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+accel {
+    compatible = "zephyr,sensor-channel";
+    channel-index = <0>;
+    channel-type = <SENSOR_CHANNEL_ACCELERATION>;
+    channel-fields = <SENSOR_FIELD_X_AXIS SENSOR_FIELD_Y_AXIS SENSOR_FIELD_Z_AXIS>;
+};
+
+gyro {
+    compatible = "zephyr,sensor-channel";
+    channel-index = <0>;
+    channel-type = <SENSOR_CHANNEL_ROTATIONAL_VELOCITY>;
+    channel-fields = <SENSOR_FIELD_X_AXIS SENSOR_FIELD_Y_AXIS SENSOR_FIELD_Z_AXIS>;
+};
