@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zsai_normal: zsai-aplha@0 {
+		compatible = "zephyr,zsai-simulator";
+		reg = <0x00000000 DT_SIZE_K(64)>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+		erase-value = <0xff>;
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+	};
+
+	zsai_erase: zsai-beta@0 {
+		compatible = "zephyr,zsai-simulator";
+		reg = <0x00000000 DT_SIZE_K(64)>;
+
+		#address-cells = <1>;
+		status = "ok";
+		#size-cells = <1>;
+		erase-value = <0xff>;
+		write-block-size = <1>;
+
+	};
+};

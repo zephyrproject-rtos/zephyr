@@ -1,0 +1,20 @@
+common:
+  tags:
+    - drivers
+    - zsai
+tests:
+  drivers.zasi.zsai_simulator.without_erase:
+    extra_args: DTC_OVERLAY_FILE=zsai_without_erase.overlay
+    platform_allow: qemu_x86 native_posix native_sim
+    integration_platforms:
+      - native_posix
+  drivers.zsai.zsai_simulator.with_erase:
+    extra_args: DTC_OVERLAY_FILE=zsai_with_erase.overlay
+    platform_allow: qemu_x86 native_posix native_sim
+    integration_platforms:
+      - native_posix
+  drivers.zsai.zsai_simulator.both:
+    extra_args: DTC_OVERLAY_FILE=zsai_with_erase.overlay:zsai_without_erase.overlay
+    platform_allow: qemu_x86 native_posix
+    integration_platforms:
+      - native_posix

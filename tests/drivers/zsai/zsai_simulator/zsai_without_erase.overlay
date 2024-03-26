@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zsai_normal: zsai_alpha {
+		compatible = "zephyr,zsai-simulator";
+		status = "ok";
+
+		/* Lack of erase-value indicates that device does not require erase */
+		simulated-size = <DT_SIZE_K(64)>;
+		status = "okay";
+		write-block-size = <4>;
+
+	};
+};

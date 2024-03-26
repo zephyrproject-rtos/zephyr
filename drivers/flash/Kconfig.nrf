@@ -24,6 +24,18 @@ menuconfig SOC_FLASH_NRF
 
 if SOC_FLASH_NRF
 
+if ZSAI
+
+config SOC_FLASH_NRF_ZSAI
+	bool "Nordic nRFx flash driver uses ZSAI"
+	select ZSAI_HAS_DRIVER_ENABLED
+	select ZSAI_DEVICE_REQUIRES_ERASE
+	select ZSAI_DEVICE_HAS_UNIFORM_PAGES
+	select ZSAI_DEVICE_ERASES_TO_1
+	help
+	  Will switch from Flash API to Zephyr Storage Access Interface API.
+endif
+
 choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
 	prompt "Nordic nRFx flash driver synchronization"
 	default SOC_FLASH_NRF_RADIO_SYNC_TICKER if BT_LL_SW_SPLIT
