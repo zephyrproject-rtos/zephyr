@@ -1,0 +1,47 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake FAT (FFAT) Disk
+
+compatible: "zephyr,ffat-disk"
+
+include: base.yaml
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
+
+  sector-size:
+    type: int
+    required: true
+    enum:
+      - 512
+      - 1024
+      - 2048
+      - 4096
+    description: |
+      Sector size in bytes.
+
+  sector-count:
+    type: int
+    required: true
+    description: |
+      Number of sectors.
+
+  sector-per-cluster:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+    description: |
+      Number of sectors per cluster.
+
