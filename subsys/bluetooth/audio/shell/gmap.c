@@ -509,55 +509,56 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(discover, NULL, HELP_NONE, cmd_gmap_discover, 1, 0),
 #if defined(CONFIG_BT_GMAP_UGG_SUPPORTED)
 #if UNICAST_SINK_SUPPORTED
-	SHELL_CMD_ARG(ac_1, NULL, "<sink preset>", cmd_gmap_ac_1, 2, 0),
+	SHELL_CMD_ARG(ac_1, NULL, "Unicast audio configuration 1", cmd_gmap_ac_1, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED */
 #if UNICAST_SRC_SUPPORTED
-	SHELL_CMD_ARG(ac_2, NULL, "<source preset>", cmd_gmap_ac_2, 2, 0),
+	SHELL_CMD_ARG(ac_2, NULL, "Unicast audio configuration 2", cmd_gmap_ac_2, 1, 0),
 #endif /* UNICAST_SRC_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
-	SHELL_CMD_ARG(ac_3, NULL, "<sink preset> <source preset>", cmd_gmap_ac_3, 3, 0),
+	SHELL_CMD_ARG(ac_3, NULL, "Unicast audio configuration 3", cmd_gmap_ac_3, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED
-	SHELL_CMD_ARG(ac_4, NULL, "<sink preset>", cmd_gmap_ac_4, 2, 0),
+	SHELL_CMD_ARG(ac_4, NULL, "Unicast audio configuration 4", cmd_gmap_ac_4, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
-	SHELL_CMD_ARG(ac_5, NULL, "<sink preset> <source preset>", cmd_gmap_ac_5, 3, 0),
+	SHELL_CMD_ARG(ac_5, NULL, "Unicast audio configuration 5", cmd_gmap_ac_5, 1, 0),
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
-	SHELL_CMD_ARG(ac_6_i, NULL, "<sink preset>", cmd_gmap_ac_6_i, 2, 0),
+	SHELL_CMD_ARG(ac_6_i, NULL, "Unicast audio configuration 6(i)", cmd_gmap_ac_6_i, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 */
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_6_ii, NULL, "<sink preset>", cmd_gmap_ac_6_ii, 2, 0),
+	SHELL_CMD_ARG(ac_6_ii, NULL, "Unicast audio configuration 6(ii)", cmd_gmap_ac_6_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #endif /* UNICAST_SINK_SUPPORTED */
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_7_ii, NULL, "<sink preset> <source preset>", cmd_gmap_ac_7_ii, 3, 0),
+	SHELL_CMD_ARG(ac_7_ii, NULL, "Unicast audio configuration 7(ii)", cmd_gmap_ac_7_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
-	SHELL_CMD_ARG(ac_8_i, NULL, "<sink preset> <source preset>", cmd_gmap_ac_8_i, 3, 0),
+	SHELL_CMD_ARG(ac_8_i, NULL, "Unicast audio configuration 8(i)", cmd_gmap_ac_8_i, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 */
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_8_ii, NULL, "<sink preset> <source preset>", cmd_gmap_ac_8_ii, 3, 0),
+	SHELL_CMD_ARG(ac_8_ii, NULL, "Unicast audio configuration 8(ii)", cmd_gmap_ac_8_ii, 1, 0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 && CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
-	SHELL_CMD_ARG(ac_11_i, NULL, "<sink preset> <source preset>", cmd_gmap_ac_11_i, 3, 0),
+	SHELL_CMD_ARG(ac_11_i, NULL, "Unicast audio configuration 11(i)", cmd_gmap_ac_11_i, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 &&                                        \
 	* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1                                           \
 	*/
 #if CONFIG_BT_MAX_CONN >= 2
-	SHELL_CMD_ARG(ac_11_ii, NULL, "<sink preset> <source preset>", cmd_gmap_ac_11_ii, 3, 0),
+	SHELL_CMD_ARG(ac_11_ii, NULL, "Unicast audio configuration 11(ii)", cmd_gmap_ac_11_ii, 1,
+		      0),
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #endif /* CONFIG_BT_GMAP_UGG_SUPPORTED */
 
 #if defined(CONFIG_BT_GMAP_BGS_SUPPORTED)
-	SHELL_CMD_ARG(ac_12, NULL, "<preset>", cmd_gmap_ac_12, 2, 0),
+	SHELL_CMD_ARG(ac_12, NULL, "Broadcast audio configuration 12", cmd_gmap_ac_12, 1, 0),
 #if CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT > 1
-	SHELL_CMD_ARG(ac_13, NULL, "<preset>", cmd_gmap_ac_13, 2, 0),
+	SHELL_CMD_ARG(ac_13, NULL, "Broadcast audio configuration 13", cmd_gmap_ac_13, 1, 0),
 #endif /* CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT > 1 */
-	SHELL_CMD_ARG(ac_14, NULL, "<preset>", cmd_gmap_ac_14, 2, 0),
+	SHELL_CMD_ARG(ac_14, NULL, "Broadcast audio configuration 14", cmd_gmap_ac_14, 1, 0),
 #endif /* CONFIG_BT_GMAP_BGS_SUPPORTED*/
 	SHELL_SUBCMD_SET_END);
 
