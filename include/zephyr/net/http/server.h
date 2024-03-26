@@ -136,6 +136,7 @@ struct http_frame {
 struct http_client_ctx {
 	int fd;
 	int offset;
+	bool preface_sent;
 	bool has_upgrade_header;
 	unsigned char buffer[CLIENT_BUFFER_SIZE];
 	enum http_server_state server_state;

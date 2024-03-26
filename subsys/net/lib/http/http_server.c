@@ -394,6 +394,7 @@ void init_client_ctx(struct http_client_ctx *client, int new_socket)
 	client->offset = 0;
 	client->server_state = HTTP_SERVER_PREFACE_STATE;
 	client->has_upgrade_header = false;
+	client->preface_sent = false;
 
 	memset(client->buffer, 0, sizeof(client->buffer));
 	memset(client->url_buffer, 0, sizeof(client->url_buffer));
@@ -629,11 +630,17 @@ int handle_http_preface(struct http_server_ctx *server,
 		/* HTTP/2 client preface received, send server preface
 		 * (settings frame).
 		 */
-		ret = sendall(client->fd, settings_frame, sizeof(settings_frame));
-		if (ret < 0) {
-			close_client_connection(server, client);
-			return ret;
+		if (!client->preface_sent) {
+			ret = sendall(client->fd, settings_frame,
+				      sizeof(settings_frame));
+			if (ret < 0) {
+				close_client_connection(server, client);
+				return ret;
+			}
+
+			client->preface_sent = true;
 		}
+
 	}
 
 	return 0;
@@ -1011,6 +1018,8 @@ static int handle_http1_to_http2_upgrade(struct http_server_ctx *server,
 	if (ret < 0) {
 		goto error;
 	}
+
+	client->preface_sent = true;
 
 	detail = get_resource_detail(client->url_buffer, &path_len);
 	if (detail != NULL) {
