@@ -307,16 +307,25 @@ class CustomDoxygenGroupDirective(DoxygenGroupDirective):
     """Monkey patch for Breathe's DoxygenGroupDirective."""
 
     def run(self) -> List[Node]:
-        nodes = super().run()
+        if self.config.zephyr_breathe_skip_doxygen_groups:
+            note = nodes.attention()
+            note += nodes.Text(
+                f"Doxygen group {self.arguments[0]} was excluded from the documentation."
+            )
+
+            doxygengroup_node = [note]
+        else:
+            doxygengroup_node = super().run()
 
         if self.config.zephyr_breathe_insert_related_samples:
-            return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+            return [RelatedCodeSamplesNode(id=self.arguments[0]), *doxygengroup_node]
         else:
-            return nodes
+            return doxygengroup_node
 
 
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
+    app.add_config_value("zephyr_breathe_skip_doxygen_groups", False, "env")
 
     app.add_domain(ZephyrDomain)
 
