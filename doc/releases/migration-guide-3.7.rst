@@ -205,6 +205,65 @@ Networking
 Other Subsystems
 ****************
 
+CFB
+===
+
+* Changed API to support multiple displays.
+
+  Introduced :c:struct:`cfb_display` structure to represent a display.
+  Therefore, use :c:func:`cfb_display_init` instead of deprecated cfb_framebuffer_init.
+  cfb_framebuffer_init has been deprecated.
+
+  Added :c:func:`cfb_display_get_framebuffer` to get the framebuffer associated with a display.
+
+  The following API has changed the first argument pointer of :c:struct:`device` to
+  pointer of :c:struct:`cfb_framebuffer`.
+  Use the reference obtained with :c:func:`cfb_display_get_framebuffer` above.
+
+  * :c:func:`cfb_print`
+  * :c:func:`cfb_draw_text`
+  * :c:func:`cfb_draw_point`
+  * :c:func:`cfb_draw_line`
+  * :c:func:`cfb_draw_rect`
+  * :c:func:`cfb_invert_area`
+  * :c:func:`cfb_set_kerning`
+  * :c:func:`cfb_clear` (renamed from `cfb_framebuffer_clear`)
+  * :c:func:`cfb_invert` (renamed from `cfb_framebuffer_invert`)
+  * :c:func:`cfb_finalize` (renamed from `cfb_framebuffer_finalize`)
+  * :c:func:`cfb_set_font` (renamed from `cfb_framebuffer_finalize`)
+
+  Typical usage is below.
+
+  .. code-block:: c
+
+    struct cfb_display disp;
+    struct cfb_framebuffer *fb;
+
+    cfb_display_init(&disp);
+    fb = cfb_display_get_framebuffer(&disp);
+    cfb_print(fb, "Hello!", 0, 0);
+
+  Also, please see the sample in ``samples/display/cfb``.
+
+* Remove unnecessary arguments for font-related APIs
+
+  The following API has removed the first argument pointer of :c:struct:`device`.
+  This argument was not used internally, so simply remove it.
+
+  * :c:func:`cfb_get_font_size`
+  * :c:func:`cfb_get_numof_fonts`
+
+* Change coordinate specification to signed integer
+
+  Change the following function arguments and structure fields used to specify
+  coordinates to signed integers.
+
+  * :c:func:`cfb_print`
+  * :c:func:`cfb_invert_area`
+  * :c:struct:`cfb_position`
+
+
+
 LoRaWAN
 =======
 
