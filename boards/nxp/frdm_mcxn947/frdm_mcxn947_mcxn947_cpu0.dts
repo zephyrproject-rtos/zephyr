@@ -25,6 +25,10 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 	};
+
+	aliases{
+		watchdog0 = &wwdt0;
+	};
 };
 
 /*
@@ -122,5 +126,9 @@
 };
 
 &enet_mdio {
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };
