@@ -46,9 +46,9 @@ ZTEST(posix_headers, test_pthread_h)
 
 	pthread_once_t once = PTHREAD_ONCE_INIT;
 
-	/* zassert_not_equal(-1, PTHREAD_PRIO_INHERIT); */ /* not implemented */
+	zassert_not_equal(-1, PTHREAD_PRIO_INHERIT);
 	zassert_not_equal(-1, PTHREAD_PRIO_NONE);
-	/* zassert_not_equal(-1, PTHREAD_PRIO_PROTECT); */ /* not implemented */
+	zassert_not_equal(-1, PTHREAD_PRIO_PROTECT);
 
 	zassert_not_equal(-1, PTHREAD_PROCESS_SHARED);
 	zassert_not_equal(-1, PTHREAD_PROCESS_PRIVATE);
@@ -58,7 +58,7 @@ ZTEST(posix_headers, test_pthread_h)
 
 	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 	pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
-	/* pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER; */ /* not implemented */
+	pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER;
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
 		zassert_not_null(pthread_atfork);
@@ -128,7 +128,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_mutexattr_gettype);
 		zassert_not_null(pthread_mutexattr_init);
 		/* zassert_not_null(pthread_mutexattr_setprioceiling); */ /* not implemented */
-		/* zassert_not_null(pthread_mutexattr_setprotocol); */ /* not implemented */
+		zassert_not_null(pthread_mutexattr_setprotocol);
 		/* zassert_not_null(pthread_mutexattr_setpshared); */ /* not implemented */
 		/* zassert_not_null(pthread_mutexattr_setrobust); */ /* not implemented */
 		zassert_not_null(pthread_mutexattr_settype);
