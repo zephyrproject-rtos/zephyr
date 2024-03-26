@@ -1,0 +1,9 @@
+# VERDIN_IMX8MM_M4 board
+
+# Copyright (c) 2023, Toradex
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_VERDIN_IMX8MM_M4
+	bool "Toradex Verdin i.MX8M Mini M4"
+	depends on SOC_SERIES_IMX8MM_M4
+	select SOC_PART_NUMBER_MIMX8MM6DVTLZ

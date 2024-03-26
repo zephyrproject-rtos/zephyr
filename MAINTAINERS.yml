@@ -3698,6 +3698,17 @@ Panasonic Platforms:
   labels:
     - "platform: Panasonic"
 
+Toradex Platforms:
+  status: maintained
+  maintainers:
+    - hiagofranco
+  collaborators:
+    - GabrielHAFs
+  files:
+    - boards/arm/verdin_imx8m*/
+  labels:
+    - "platform: Toradex"
+
 RTIO:
   status: maintained
   maintainers:
