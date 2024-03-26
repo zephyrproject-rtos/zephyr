@@ -82,6 +82,7 @@ list(APPEND kernel_files
   system_work_q.c
   work.c
   condvar.c
+  kref.c
   )
 
 if(CONFIG_SMP)
