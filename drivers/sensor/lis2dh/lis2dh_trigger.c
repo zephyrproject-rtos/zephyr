@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
 static const gpio_flags_t gpio_int_cfg[5] = {
-			GPIO_INT_EDGE,
+			GPIO_INT_EDGE_BOTH,
 			GPIO_INT_EDGE_RISING,
 			GPIO_INT_EDGE_FALLING,
 			GPIO_INT_LEVEL_HIGH,
@@ -431,7 +431,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 		if (unlikely(status < 0)) {
 			LOG_ERR("lis2dh_start_trigger_int1: %d", status);
 		}
-		return;
 	}
 
 	if (cfg->gpio_int.port &&
@@ -442,7 +441,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 		if (unlikely(status < 0)) {
 			LOG_ERR("lis2dh_start_trigger_int2: %d", status);
 		}
-		return;
 	}
 
 	if (cfg->gpio_drdy.port &&
@@ -458,8 +456,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 		if (likely(lis2dh->handler_drdy != NULL)) {
 			setup_int1(dev, true);
 		}
-
-		return;
 	}
 
 	if (cfg->gpio_int.port &&
@@ -476,7 +472,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 							 &reg_val);
 			if (status < 0) {
 				LOG_ERR("clearing interrupt 2 failed: %d", status);
-				return;
 			}
 		}
 
@@ -492,7 +487,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 						 &reg_val);
 		if (status < 0) {
 			LOG_ERR("clearing interrupt 2 failed: %d", status);
-			return;
 		}
 
 		if (likely(lis2dh->handler_tap != NULL) &&
@@ -508,8 +502,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 		if (lis2dh->handler_anymotion || lis2dh->handler_tap) {
 			setup_int2(dev, true);
 		}
-
-		return;
 	}
 }
 
