@@ -32,6 +32,7 @@ struct flashdisk_data {
 	off_t cached_addr;
 	bool cache_valid;
 	bool cache_dirty;
+	bool flash_requires_erase;
 };
 
 #define GET_SIZE_TO_BOUNDARY(start, block_size) \
@@ -45,6 +46,16 @@ static int disk_flash_access_status(struct disk_info *disk)
 	}
 
 	return DISK_STATUS_OK;
+}
+
+static bool flashdisk_requires_erase(struct flashdisk_data *ctx)
+{
+	if ((!IS_ENABLED(CONFIG_FLASH_EX_OP_ENABLED)) ||
+	    (flash_ex_op(ctx->info.dev, FLASH_EX_OP_GET_NVRAM_PROPERTIES, 0, NULL) != 0)) {
+		return true;
+	}
+
+	return false;
 }
 
 static int flashdisk_init_runtime(struct flashdisk_data *ctx,
@@ -105,6 +116,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		return -ENOMEM;
 	}
 
+	ctx->flash_requires_erase = flashdisk_requires_erase(ctx);
 	return 0;
 }
 
@@ -213,8 +225,10 @@ static int flashdisk_cache_commit(struct flashdisk_data *ctx)
 		return 0;
 	}
 
-	if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
-		return -EIO;
+	if (ctx->flash_requires_erase) {
+		if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
+			return -EIO;
+		}
 	}
 
 	/* write data to flash */
