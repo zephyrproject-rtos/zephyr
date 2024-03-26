@@ -65,5 +65,43 @@
 /* The number of set associative cache way supported on L1 Instruction Cache */
 #define ADSP_CxL1CCAP_ICMWC ((ADSP_CxL1CCAP_REG >> 20) & 7)
 
+#ifndef _ASMLANGUAGE
+/* L2 Local Memory Management */
+
+struct cavs_hpsram_regs {
+	/** @brief power gating control */
+	uint32_t HSxPGCTL;
+	/** @brief retention mode control */
+	uint32_t HSxRMCTL;
+	/** @brief power gating status */
+	uint32_t HSxPGISTS;
+};
+
+struct cavs_lpsram_regs {
+	/** @brief power gating control */
+	uint32_t USxPGCTL;
+	/** @brief retention mode control */
+	uint32_t USxRMCTL;
+	/** @brief power gating status */
+	uint32_t USxPGISTS;
+};
+#endif /* _ASMLANGUAGE */
+
+#define L2LMCAP		0x71D00
+#define L2MPAT		0x71D04
+
+/* These registers are for the L2 HP SRAM bank power management control and status.*/
+#define L2HSBPM_REG		(L2LMCAP + 0x0010)
+#define L2HSBPM_REG_SIZE	0x0010
+
+#define HPSRAM_REGS(block_idx)		((volatile struct cavs_hpsram_regs *const) \
+	(L2HSBPM_REG + L2HSBPM_REG_SIZE * (block_idx)))
+
+/* These registers are for the L2 LP SRAM bank power management control and status.*/
+#define L2LSBPM_REG		(L2LMCAP + 0x0050)
+#define L2LSBPM_REG_SIZE	0x0010
+
+#define LPSRAM_REGS(block_idx)		((volatile struct cavs_lpsram_regs *const) \
+	(L2LSBPM_REG + L2LSBPM_REG_SIZE * (block_idx)))
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */
