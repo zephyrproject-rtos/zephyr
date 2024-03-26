@@ -2150,6 +2150,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 static struct broadcast_sink_auto_scan {
 	struct broadcast_sink *broadcast_sink;
 	uint32_t broadcast_id;
+	struct bt_le_per_adv_sync **out_sync;
 } auto_scan = {
 	.broadcast_id = INVALID_BROADCAST_ID,
 };
@@ -2204,8 +2205,10 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X",
-		    broadcast_id, le_addr, info->sid);
+	shell_print(ctx_shell,
+		    "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X (looking for "
+		    "0x%06X)",
+		    broadcast_id, le_addr, info->sid, auto_scan.broadcast_id);
 
 	if (auto_scan.broadcast_id == broadcast_id && auto_scan.broadcast_sink != NULL &&
 	    auto_scan.broadcast_sink->pa_sync == NULL) {
@@ -2224,9 +2227,11 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		create_params.timeout = interval_to_sync_timeout(info->interval);
 
 		shell_print(ctx_shell, "Attempting to PA sync to the broadcaster");
-		err = bt_le_per_adv_sync_create(&create_params, &auto_scan.broadcast_sink->pa_sync);
+		err = bt_le_per_adv_sync_create(&create_params, auto_scan.out_sync);
 		if (err != 0) {
 			shell_error(ctx_shell, "Could not create Broadcast PA sync: %d", err);
+		} else {
+			auto_scan.broadcast_sink->pa_sync = *auto_scan.out_sync;
 		}
 	}
 
@@ -2271,12 +2276,13 @@ static void syncable(struct bt_bap_broadcast_sink *sink, const struct bt_iso_big
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
-	if (auto_scan.broadcast_sink != NULL && sync == auto_scan.broadcast_sink->pa_sync) {
+	if (auto_scan.broadcast_sink != NULL && auto_scan.out_sync != NULL &&
+	    sync == *auto_scan.out_sync) {
 		shell_print(ctx_shell, "PA synced to broadcast with broadcast ID 0x%06x",
 			    auto_scan.broadcast_id);
 
 		if (auto_scan.broadcast_sink->bap_sink == NULL) {
-			shell_print(ctx_shell, "Attempting to sync to the BIG");
+			shell_print(ctx_shell, "Attempting to create the sink");
 			int err;
 
 			err = bt_bap_broadcast_sink_create(sync, auto_scan.broadcast_id,
@@ -2285,7 +2291,7 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				shell_error(ctx_shell, "Could not create broadcast sink: %d", err);
 			}
 		} else {
-			shell_print(ctx_shell, "BIG is already synced");
+			shell_print(ctx_shell, "Sink is already created");
 		}
 	}
 
@@ -2822,6 +2828,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 
 		auto_scan.broadcast_sink = &default_broadcast_sink;
 		auto_scan.broadcast_id = broadcast_id;
+		auto_scan.out_sync = &per_adv_syncs[selected_per_adv_sync];
 	} else {
 		shell_print(sh, "Creating broadcast sink with broadcast ID 0x%06X",
 			    (uint32_t)broadcast_id);
