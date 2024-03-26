@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/mem_mgmt/mem_attr_heap.h>
 #include <zephyr/sys/multi_heap.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
@@ -70,6 +71,16 @@ void *mem_attr_heap_aligned_alloc(uint32_t attr, size_t align, size_t bytes)
 {
 	return sys_multi_heap_aligned_alloc(&mah_data.multi_heap,
 					    (void *)(long) attr, align, bytes);
+}
+
+void *mem_attr_heap_realloc(void *addr, size_t bytes)
+{
+	const struct mem_attr_region_t *region;
+
+	region = mem_attr_heap_get_region(addr);
+
+	return sys_multi_heap_realloc(&mah_data.multi_heap, (void *)(long)region->dt_attr, addr,
+				      bytes);
 }
 
 const struct mem_attr_region_t *mem_attr_heap_get_region(void *addr)

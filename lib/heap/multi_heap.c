@@ -5,6 +5,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/multi_heap.h>
+#include <string.h>
 
 void sys_multi_heap_init(struct sys_multi_heap *heap, sys_multi_heap_fn_t choice_fn)
 {
@@ -89,4 +90,32 @@ void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block)
 	if (heap != NULL) {
 		sys_heap_free(heap->heap, block);
 	}
+}
+
+void *sys_multi_heap_realloc(struct sys_multi_heap *mheap, void *cfg, void *block, size_t bytes)
+{
+	const struct sys_multi_heap_rec *heap;
+	void *new_block;
+	size_t prev_size;
+
+	heap = sys_multi_heap_get_heap(mheap, block);
+	new_block = NULL;
+
+	if (heap != NULL) {
+		new_block = sys_heap_realloc(heap->heap, block, bytes);
+
+		/* Allocate from another sys_heap if possible */
+		if (new_block == NULL) {
+			new_block = mheap->choice(mheap, cfg, 0, bytes);
+
+			if (new_block != NULL) {
+				prev_size = sys_heap_usable_size(heap->heap, block);
+				memcpy(new_block, block, prev_size);
+				sys_heap_free(heap->heap, block);
+			}
+
+		}
+	}
+
+	return new_block;
 }

@@ -19,6 +19,7 @@
 
 #define N_MULTI_HEAPS 4
 #define MHEAP_BYTES 128
+#define REALLOC_BYTES 8
 
 static struct sys_multi_heap multi_heap;
 static char heap_mem[N_MULTI_HEAPS][MHEAP_BYTES];
@@ -293,6 +294,34 @@ ZTEST(mheap_api, test_multi_heap)
 	for (int i = 0; i < N_MULTI_HEAPS; i++) {
 		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
 						 MHEAP_BYTES / 2);
-		zassert_not_null(blocks[i], "final re-allocation failed");
+		zassert_not_null(blocks[i], "allocation after free failed");
+
+		/* Fill returned block with data */
+		for (int p = 0; p < MHEAP_BYTES / 2; p++) {
+			blocks[i][p] = i + p;
+		}
+	}
+
+	/* Reallocate a slightly larger/smaller buffer from each heap */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		blocks[i] = sys_multi_heap_realloc(&multi_heap, (void *)(long)i, blocks[i],
+						   MHEAP_BYTES / 2 + REALLOC_BYTES);
+
+		zassert_not_null(blocks[i], "larger reallocation failed");
+
+		/* Ensure content is still present */
+		for (int p = 0; p < MHEAP_BYTES / 2; p++) {
+			zassert_equal(blocks[i][p], i + p);
+		}
+
+		blocks[i] = sys_multi_heap_realloc(&multi_heap, (void *)(long)i, blocks[i],
+						   MHEAP_BYTES / 2 - REALLOC_BYTES);
+
+		zassert_not_null(blocks[i], "smaller reallocation failed");
+
+		/* Ensure content is still present */
+		for (int p = 0; p < MHEAP_BYTES / 2 - REALLOC_BYTES; p++) {
+			zassert_equal(blocks[i][p], i + p);
+		}
 	}
 }
