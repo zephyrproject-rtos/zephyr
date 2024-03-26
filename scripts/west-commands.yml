@@ -61,3 +61,8 @@ west-commands:
       - name: bindesc
         class: Bindesc
         help: work with Binary Descriptors
+  - file: scripts/west_commands/dtshell.py
+    commands:
+      - name: dtsh
+        class: DTShell
+        help: devicetree shell

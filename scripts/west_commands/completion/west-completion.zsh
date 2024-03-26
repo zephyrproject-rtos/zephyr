@@ -34,6 +34,7 @@ _west_cmds() {
   'zephyr-export[export Zephyr installation as a CMake config package]'
   'spdx[create SPDX bill of materials]'
   'blobs[work with binary blobs]'
+  'dtsh[devicetree shell]'
   )
 
   local -a all_cmds=(${builtin_cmds} ${zephyr_ext_cmds})
@@ -355,6 +356,17 @@ _west_blob_fetch () {
 
 _west_blob_clean () {
   _arguments -S "1:west proj:_get_west_projs"
+}
+
+_west_dtsh () {
+  local -a opts=(
+  '(-b --bindings)'{-b,--bindings}'[directory to search for binding files]:bindings dir:_directories'
+  '(-u --user-files)'{-u,--user-files}'[initialize per-user configuration files]'
+  '--preferences[additional preferences file]:preferences file:_files'
+  '--theme[additional theme file]:theme file:_files'
+  )
+  _arguments -S $opts \
+      "1:dts:_files"
 }
 
 # don't run the completion function when being source-ed or eval-ed

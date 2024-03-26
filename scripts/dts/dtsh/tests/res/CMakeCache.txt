@@ -1,0 +1,8 @@
+#########################
+# CMakeCache test entries
+#########################
+
+DTSH_TEST_STRING_LIST:STRING=foo;bar
+DTSH_TEST_STRING:STRING=foobar
+DTSH_TEST_BOOL_TRUE:BOOL=ON
+DTSH_TEST_BOOL_FALSE:BOOL=0

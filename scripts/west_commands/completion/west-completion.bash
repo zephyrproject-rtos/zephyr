@@ -930,6 +930,43 @@ __comp_west_blobs()
 	esac
 }
 
+__comp_west_dtsh()
+{
+	local opt_bindings_dir="
+		--bindings -b
+	"
+	local opt_user_files="
+		--user-files -u
+	"
+	local opt_preferences="
+		--preferences
+	"
+	local opt_theme="
+		--theme
+	"
+
+	case "$cur" in
+		$(__west_to_extglob "$opt_bindings_dir") )
+			__set_comp_dirs
+			return
+			;;
+		$(__west_to_extglob "$opt_preferences") )
+			__set_comp_files
+			return
+			;;
+		$(__west_to_extglob "$opt_theme") )
+			__set_comp_files
+			return
+			;;
+		-*)
+			__set_comp "$opt_bindings_dir $opt_user_files $opt_preferences $opt_theme"
+			;;
+		*)
+			__set_comp_files
+			;;
+	esac
+}
+
 
 __comp_west()
 {
@@ -963,6 +1000,7 @@ __comp_west()
 		zephyr-export
 		spdx
 		blobs
+		dtsh
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})

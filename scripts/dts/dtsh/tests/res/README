@@ -1,0 +1,67 @@
+# Copyright (c) 2023 Christophe Dufaza <chris@openmarl.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+DTSh: Unit tests resource files
+
++ Build_gnuarm/
+  Sample DTS and corresponding CMakeCache.txt,
+  built with "gnuarmemb" toolchain variant.
+
++ Build_gnuarm/
+  Sample DTS and corresponding CMakeCache.txt,
+  built with "zephyr" toolchain variant.
+
++ fs/
+  Pseudo file-system root for file path auto-completion unit tests.
+
++ ini/
+  Configuration test files.
+
++ theme/
+  Theme test files.
+
++ yaml/
+  YAML test files.
+
++ CMakeCache.txt: CMake cache file parser test file.
+
++ zephyr.dts: A DTS file for which we won't be able
+  to find a corresponding CMakeCache.txt.
+
+
+Devicetree sample:
+
+Sample DTS and CMakeCache.txt files are generated
+when building zephyr/samples/sensor/bme680:
+- for the nrf52840dk_nrf52840 board
+- edited to connect a second BME680 to the SPI bus
+  and add an 'interrupt-names' property to test with
+
+nrf52840dk_nrf52840.overlay:
+
+    &i2c0 {
+        bme680_i2c: bme680@76 {
+            compatible = "bosch,bme680";
+            reg = <0x76>;
+        };
+    };
+
+    &spi1 {
+        bme680_spi: bme680@0 {
+            compatible = "bosch,bme680";
+            reg = <0>;
+            spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
+        };
+    };
+
+
+prj.conf:
+
+    CONFIG_SPI=y
+
+zephyr.dts:
+
+        i2c0: arduino_i2c: i2c@40003000 {
+            interrupt-names = "IRQ_i2c0";
+        };

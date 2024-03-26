@@ -21,6 +21,9 @@ psutil
 pylink-square
 pyserial
 requests
+rich
+# GNU readline support for the dtsh command on macOS
+gnureadline ; sys_platform == 'darwin'
 
 # for ram/rom reports
 anytree

@@ -1,0 +1,6 @@
+pycodestyle
+flake8
+pylint
+mypy
+types-PyYAML
+pytest

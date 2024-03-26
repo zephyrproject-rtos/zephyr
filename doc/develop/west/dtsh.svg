@@ -1,0 +1,218 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" class="rich-terminal" viewBox="0 0 1368 308.35999999999996">
+  <style>
+        @font-face {
+            font-family: "Fira Code";
+            src: local("FiraCode-Regular"),
+                    url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Regular.woff2") format("woff2"),
+                    url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Regular.woff") format("woff");
+            font-style: normal;
+            font-weight: 400;
+        }
+        @font-face {
+            font-family: "Fira Code";
+            src: local("FiraCode-Bold"),
+                    url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Bold.woff2") format("woff2"),
+                    url("https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Bold.woff") format("woff");
+            font-style: bold;
+            font-weight: 700;
+        }
+    </style>
+  <style>
+
+    .dtsh-matrix {
+        font-family: "Fira Code", monospace;
+        font-size: 14px;
+        line-height: 17.08px;
+    }
+
+    .dtsh-r1 { fill: #c5c8c6 }
+.dtsh-r2 { fill: #00afaf }
+.dtsh-r3 { fill: #5f5fff }
+.dtsh-r4 { fill: #00afaf;font-weight: bold }
+.dtsh-r5 { fill: #afaf5f }
+.dtsh-r6 { fill: #868887 }
+.dtsh-r7 { fill: #4949a9 }
+.dtsh-r8 { fill: #107979;font-weight: bold }
+.dtsh-r9 { fill: #797949 }
+    </style>
+  <defs>
+    <clipPath id="dtsh-clip-terminal">
+      <rect x="0" y="0" width="1348.32" height="289.35999999999996"/>
+    </clipPath>
+    <clipPath id="dtsh-line-0">
+      <rect x="0" y="1.5" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-1">
+      <rect x="0" y="18.58" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-2">
+      <rect x="0" y="35.66" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-3">
+      <rect x="0" y="52.74" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-4">
+      <rect x="0" y="69.82" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-5">
+      <rect x="0" y="86.9" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-6">
+      <rect x="0" y="103.98" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-7">
+      <rect x="0" y="121.06" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-8">
+      <rect x="0" y="138.14" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-9">
+      <rect x="0" y="155.22" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-10">
+      <rect x="0" y="172.3" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-11">
+      <rect x="0" y="189.38" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-12">
+      <rect x="0" y="206.46" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-13">
+      <rect x="0" y="223.54" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-14">
+      <rect x="0" y="240.62" width="1349.32" height="17.33"/>
+    </clipPath>
+    <clipPath id="dtsh-line-15">
+      <rect x="0" y="257.7" width="1349.32" height="17.33"/>
+    </clipPath>
+  </defs>
+  <rect fill="#292929" stroke="rgba(255,255,255,0.35)" stroke-width="1" x="1" y="1" width="1366" height="306.36" rx="8"/>
+  <g transform="translate(9, 9)" clip-path="url(#dtsh-clip-terminal)">
+    <g class="dtsh-matrix">
+      <text class="dtsh-r1" x="187.88" y="14" textLength="59.78" clip-path="url(#dtsh-line-0)">Buses&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="264.74" y="14" textLength="512.4" clip-path="url(#dtsh-line-0)">Compatibles&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="794.22" y="14" textLength="555.1" clip-path="url(#dtsh-line-0)">Description&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="1349.32" y="14" textLength="8.54" clip-path="url(#dtsh-line-0)">
+</text>
+      <text class="dtsh-r1" x="187.88" y="31.08" textLength="1161.44" clip-path="url(#dtsh-line-1)">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</text>
+      <text class="dtsh-r1" x="1349.32" y="31.08" textLength="8.54" clip-path="url(#dtsh-line-1)">
+</text>
+      <text class="dtsh-r1" x="0" y="48.16" textLength="170.8" clip-path="url(#dtsh-line-2)">soc&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="187.88" y="48.16" textLength="59.78" clip-path="url(#dtsh-line-2)">&#x2026;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r2" x="264.74" y="48.16" textLength="170.8" clip-path="url(#dtsh-line-2)">nordic,nrf52840-qiaa</text>
+      <text class="dtsh-r2" x="444.08" y="48.16" textLength="128.1" clip-path="url(#dtsh-line-2)">nordic,nrf52840</text>
+      <text class="dtsh-r2" x="580.72" y="48.16" textLength="102.48" clip-path="url(#dtsh-line-2)">nordic,nrf52</text>
+      <text class="dtsh-r2" x="691.74" y="48.16" textLength="85.4" clip-path="url(#dtsh-line-2)">simple-bus</text>
+      <text class="dtsh-r1" x="794.22" y="48.16" textLength="555.1" clip-path="url(#dtsh-line-2)">&#x2026;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="1349.32" y="48.16" textLength="8.54" clip-path="url(#dtsh-line-2)">
+</text>
+      <text class="dtsh-r1" x="0" y="65.24" textLength="34.16" clip-path="url(#dtsh-line-3)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="65.24" textLength="136.64" clip-path="url(#dtsh-line-3)">uart@40002000&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r3" x="187.88" y="65.24" textLength="34.16" clip-path="url(#dtsh-line-3)">uart</text>
+      <text class="dtsh-r4" x="264.74" y="65.24" textLength="136.64" clip-path="url(#dtsh-line-3)">nordic,nrf-uarte</text>
+      <text class="dtsh-r5" x="794.22" y="65.24" textLength="367.22" clip-path="url(#dtsh-line-3)">Nordic&#xA0;nRF&#xA0;family&#xA0;UARTE&#xA0;(UART&#xA0;with&#xA0;EasyDMA)</text>
+      <text class="dtsh-r1" x="1349.32" y="65.24" textLength="8.54" clip-path="url(#dtsh-line-3)">
+</text>
+      <text class="dtsh-r1" x="0" y="82.32" textLength="34.16" clip-path="url(#dtsh-line-4)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="82.32" textLength="136.64" clip-path="url(#dtsh-line-4)">i2c@40003000&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r3" x="187.88" y="82.32" textLength="25.62" clip-path="url(#dtsh-line-4)">i2c</text>
+      <text class="dtsh-r4" x="264.74" y="82.32" textLength="119.56" clip-path="url(#dtsh-line-4)">nordic,nrf-twi</text>
+      <text class="dtsh-r5" x="794.22" y="82.32" textLength="298.9" clip-path="url(#dtsh-line-4)">Nordic&#xA0;nRF&#xA0;family&#xA0;TWI&#xA0;(TWI&#xA0;master)&#x2026;</text>
+      <text class="dtsh-r1" x="1349.32" y="82.32" textLength="8.54" clip-path="url(#dtsh-line-4)">
+</text>
+      <text class="dtsh-r1" x="0" y="99.4" textLength="34.16" clip-path="url(#dtsh-line-5)">&#x2502;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="99.4" textLength="34.16" clip-path="url(#dtsh-line-5)">&#x2514;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="68.32" y="99.4" textLength="102.48" clip-path="url(#dtsh-line-5)">bme680@76&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="187.88" y="99.4" textLength="25.62" clip-path="url(#dtsh-line-5)">on&#xA0;</text>
+      <text class="dtsh-r3" x="213.5" y="99.4" textLength="25.62" clip-path="url(#dtsh-line-5)">i2c</text>
+      <text class="dtsh-r4" x="264.74" y="99.4" textLength="102.48" clip-path="url(#dtsh-line-5)">bosch,bme680</text>
+      <text class="dtsh-r5" x="794.22" y="99.4" textLength="538.02" clip-path="url(#dtsh-line-5)">The&#xA0;BME680&#xA0;is&#xA0;an&#xA0;integrated&#xA0;environmental&#xA0;sensor&#xA0;that&#xA0;measures&#x2026;</text>
+      <text class="dtsh-r1" x="1349.32" y="99.4" textLength="8.54" clip-path="url(#dtsh-line-5)">
+</text>
+      <text class="dtsh-r1" x="0" y="116.48" textLength="34.16" clip-path="url(#dtsh-line-6)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r6" x="34.16" y="116.48" textLength="102.48" clip-path="url(#dtsh-line-6)">spi@40003000</text>
+      <text class="dtsh-r7" x="187.88" y="116.48" textLength="25.62" clip-path="url(#dtsh-line-6)">spi</text>
+      <text class="dtsh-r8" x="264.74" y="116.48" textLength="119.56" clip-path="url(#dtsh-line-6)">nordic,nrf-spi</text>
+      <text class="dtsh-r9" x="794.22" y="116.48" textLength="290.36" clip-path="url(#dtsh-line-6)">Nordic&#xA0;nRF&#xA0;family&#xA0;SPI&#xA0;(SPI&#xA0;master)</text>
+      <text class="dtsh-r1" x="1349.32" y="116.48" textLength="8.54" clip-path="url(#dtsh-line-6)">
+</text>
+      <text class="dtsh-r1" x="0" y="133.56" textLength="34.16" clip-path="url(#dtsh-line-7)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r6" x="34.16" y="133.56" textLength="102.48" clip-path="url(#dtsh-line-7)">i2c@40004000</text>
+      <text class="dtsh-r7" x="187.88" y="133.56" textLength="25.62" clip-path="url(#dtsh-line-7)">i2c</text>
+      <text class="dtsh-r8" x="264.74" y="133.56" textLength="119.56" clip-path="url(#dtsh-line-7)">nordic,nrf-twi</text>
+      <text class="dtsh-r9" x="794.22" y="133.56" textLength="298.9" clip-path="url(#dtsh-line-7)">Nordic&#xA0;nRF&#xA0;family&#xA0;TWI&#xA0;(TWI&#xA0;master)&#x2026;</text>
+      <text class="dtsh-r1" x="1349.32" y="133.56" textLength="8.54" clip-path="url(#dtsh-line-7)">
+</text>
+      <text class="dtsh-r1" x="0" y="150.64" textLength="34.16" clip-path="url(#dtsh-line-8)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="150.64" textLength="136.64" clip-path="url(#dtsh-line-8)">spi@40004000&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r3" x="187.88" y="150.64" textLength="25.62" clip-path="url(#dtsh-line-8)">spi</text>
+      <text class="dtsh-r4" x="264.74" y="150.64" textLength="119.56" clip-path="url(#dtsh-line-8)">nordic,nrf-spi</text>
+      <text class="dtsh-r5" x="794.22" y="150.64" textLength="290.36" clip-path="url(#dtsh-line-8)">Nordic&#xA0;nRF&#xA0;family&#xA0;SPI&#xA0;(SPI&#xA0;master)</text>
+      <text class="dtsh-r1" x="1349.32" y="150.64" textLength="8.54" clip-path="url(#dtsh-line-8)">
+</text>
+      <text class="dtsh-r1" x="0" y="167.72" textLength="34.16" clip-path="url(#dtsh-line-9)">&#x2502;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="167.72" textLength="34.16" clip-path="url(#dtsh-line-9)">&#x2514;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="68.32" y="167.72" textLength="102.48" clip-path="url(#dtsh-line-9)">bme680@0&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="187.88" y="167.72" textLength="25.62" clip-path="url(#dtsh-line-9)">on&#xA0;</text>
+      <text class="dtsh-r3" x="213.5" y="167.72" textLength="25.62" clip-path="url(#dtsh-line-9)">spi</text>
+      <text class="dtsh-r4" x="264.74" y="167.72" textLength="102.48" clip-path="url(#dtsh-line-9)">bosch,bme680</text>
+      <text class="dtsh-r5" x="794.22" y="167.72" textLength="538.02" clip-path="url(#dtsh-line-9)">The&#xA0;BME680&#xA0;is&#xA0;an&#xA0;integrated&#xA0;environmental&#xA0;sensor&#xA0;that&#xA0;measures&#x2026;</text>
+      <text class="dtsh-r1" x="1349.32" y="167.72" textLength="8.54" clip-path="url(#dtsh-line-9)">
+</text>
+      <text class="dtsh-r1" x="0" y="184.8" textLength="34.16" clip-path="url(#dtsh-line-10)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r6" x="34.16" y="184.8" textLength="102.48" clip-path="url(#dtsh-line-10)">spi@40023000</text>
+      <text class="dtsh-r7" x="187.88" y="184.8" textLength="25.62" clip-path="url(#dtsh-line-10)">spi</text>
+      <text class="dtsh-r8" x="264.74" y="184.8" textLength="119.56" clip-path="url(#dtsh-line-10)">nordic,nrf-spi</text>
+      <text class="dtsh-r9" x="794.22" y="184.8" textLength="290.36" clip-path="url(#dtsh-line-10)">Nordic&#xA0;nRF&#xA0;family&#xA0;SPI&#xA0;(SPI&#xA0;master)</text>
+      <text class="dtsh-r1" x="1349.32" y="184.8" textLength="8.54" clip-path="url(#dtsh-line-10)">
+</text>
+      <text class="dtsh-r1" x="0" y="201.88" textLength="34.16" clip-path="url(#dtsh-line-11)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r6" x="34.16" y="201.88" textLength="102.48" clip-path="url(#dtsh-line-11)">i2s@40025000</text>
+      <text class="dtsh-r7" x="187.88" y="201.88" textLength="25.62" clip-path="url(#dtsh-line-11)">i2s</text>
+      <text class="dtsh-r8" x="264.74" y="201.88" textLength="119.56" clip-path="url(#dtsh-line-11)">nordic,nrf-i2s</text>
+      <text class="dtsh-r9" x="794.22" y="201.88" textLength="315.98" clip-path="url(#dtsh-line-11)">Nordic&#xA0;I2S&#xA0;(Inter-IC&#xA0;sound&#xA0;interface)</text>
+      <text class="dtsh-r1" x="1349.32" y="201.88" textLength="8.54" clip-path="url(#dtsh-line-11)">
+</text>
+      <text class="dtsh-r1" x="0" y="218.96" textLength="34.16" clip-path="url(#dtsh-line-12)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="218.96" textLength="136.64" clip-path="url(#dtsh-line-12)">usbd@40027000&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r3" x="187.88" y="218.96" textLength="25.62" clip-path="url(#dtsh-line-12)">usb</text>
+      <text class="dtsh-r4" x="264.74" y="218.96" textLength="128.1" clip-path="url(#dtsh-line-12)">nordic,nrf-usbd</text>
+      <text class="dtsh-r5" x="794.22" y="218.96" textLength="290.36" clip-path="url(#dtsh-line-12)">Nordic&#xA0;nRF52&#xA0;USB&#xA0;device&#xA0;controller</text>
+      <text class="dtsh-r1" x="1349.32" y="218.96" textLength="8.54" clip-path="url(#dtsh-line-12)">
+</text>
+      <text class="dtsh-r1" x="0" y="236.04" textLength="34.16" clip-path="url(#dtsh-line-13)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r6" x="34.16" y="236.04" textLength="111.02" clip-path="url(#dtsh-line-13)">uart@40028000</text>
+      <text class="dtsh-r7" x="187.88" y="236.04" textLength="34.16" clip-path="url(#dtsh-line-13)">uart</text>
+      <text class="dtsh-r8" x="264.74" y="236.04" textLength="136.64" clip-path="url(#dtsh-line-13)">nordic,nrf-uarte</text>
+      <text class="dtsh-r9" x="794.22" y="236.04" textLength="367.22" clip-path="url(#dtsh-line-13)">Nordic&#xA0;nRF&#xA0;family&#xA0;UARTE&#xA0;(UART&#xA0;with&#xA0;EasyDMA)</text>
+      <text class="dtsh-r1" x="1349.32" y="236.04" textLength="8.54" clip-path="url(#dtsh-line-13)">
+</text>
+      <text class="dtsh-r1" x="0" y="253.12" textLength="34.16" clip-path="url(#dtsh-line-14)">&#x251C;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="253.12" textLength="136.64" clip-path="url(#dtsh-line-14)">qspi@40029000&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r3" x="187.88" y="253.12" textLength="34.16" clip-path="url(#dtsh-line-14)">qspi</text>
+      <text class="dtsh-r4" x="264.74" y="253.12" textLength="128.1" clip-path="url(#dtsh-line-14)">nordic,nrf-qspi</text>
+      <text class="dtsh-r5" x="794.22" y="253.12" textLength="555.1" clip-path="url(#dtsh-line-14)">Properties&#xA0;defining&#xA0;the&#xA0;interface&#xA0;for&#xA0;the&#xA0;Nordic&#xA0;QSPI&#xA0;peripheral&#x2026;</text>
+      <text class="dtsh-r1" x="1349.32" y="253.12" textLength="8.54" clip-path="url(#dtsh-line-14)">
+</text>
+      <text class="dtsh-r1" x="0" y="270.2" textLength="34.16" clip-path="url(#dtsh-line-15)">&#x2502;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="270.2" textLength="34.16" clip-path="url(#dtsh-line-15)">&#x2514;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="68.32" y="270.2" textLength="102.48" clip-path="url(#dtsh-line-15)">mx25r6435f@0</text>
+      <text class="dtsh-r1" x="187.88" y="270.2" textLength="25.62" clip-path="url(#dtsh-line-15)">on&#xA0;</text>
+      <text class="dtsh-r3" x="213.5" y="270.2" textLength="34.16" clip-path="url(#dtsh-line-15)">qspi</text>
+      <text class="dtsh-r4" x="264.74" y="270.2" textLength="128.1" clip-path="url(#dtsh-line-15)">nordic,qspi-nor</text>
+      <text class="dtsh-r5" x="794.22" y="270.2" textLength="427" clip-path="url(#dtsh-line-15)">QSPI&#xA0;NOR&#xA0;flash&#xA0;supporting&#xA0;the&#xA0;JEDEC&#xA0;CFI&#xA0;interface.</text>
+      <text class="dtsh-r1" x="1349.32" y="270.2" textLength="8.54" clip-path="url(#dtsh-line-15)">
+</text>
+      <text class="dtsh-r1" x="0" y="287.28" textLength="34.16" clip-path="url(#dtsh-line-16)">&#x2514;&#x2500;&#x2500;&#xA0;</text>
+      <text class="dtsh-r1" x="34.16" y="287.28" textLength="136.64" clip-path="url(#dtsh-line-16)">spi@4002f000&#xA0;&#xA0;&#xA0;&#xA0;</text>
+      <text class="dtsh-r3" x="187.88" y="287.28" textLength="25.62" clip-path="url(#dtsh-line-16)">spi</text>
+      <text class="dtsh-r4" x="264.74" y="287.28" textLength="128.1" clip-path="url(#dtsh-line-16)">nordic,nrf-spim</text>
+      <text class="dtsh-r5" x="794.22" y="287.28" textLength="409.92" clip-path="url(#dtsh-line-16)">Nordic&#xA0;nRF&#xA0;family&#xA0;SPIM&#xA0;(SPI&#xA0;master&#xA0;with&#xA0;EasyDMA)</text>
+      <text class="dtsh-r1" x="1349.32" y="287.28" textLength="8.54" clip-path="url(#dtsh-line-16)">
+</text>
+    </g>
+  </g>
+</svg>
