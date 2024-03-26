@@ -11,6 +11,18 @@ properties:
   current-speed:
     type: int
     description: Initial baud rate setting for UART
+  flow-control:
+    type: string
+    description: |
+      Configures the flow control to be used at boot time. Enumeration id 0 for
+      none, 1 for RTS/CTS, 2 for DTR/DSR and 3 for RS-485. Default to none if
+      not specified.
+    default: "none"
+    enum:
+      - "none"
+      - "rtscts"
+      - "dtrdsr"
+      - "rs485"
   hw-flow-control:
     type: boolean
     description: Set to enable RTS/CTS flow control at boot time
