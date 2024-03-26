@@ -2,6 +2,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory(adi)
+add_subdirectory(bosch)
 # zephyr-keep-sorted-stop
 
 add_subdirectory_ifdef(CONFIG_A01NYUB a01nyub)
@@ -16,19 +17,6 @@ add_subdirectory_ifdef(CONFIG_AMS_IAQ_CORE ams_iAQcore)
 add_subdirectory_ifdef(CONFIG_APDS9960 apds9960)
 add_subdirectory_ifdef(CONFIG_BD8LB600FS_DIAGNOSTICS bd8lb600fs)
 add_subdirectory_ifdef(CONFIG_BH1750 bh1750)
-add_subdirectory_ifdef(CONFIG_BMA280 bma280)
-add_subdirectory_ifdef(CONFIG_BMA4XX bma4xx)
-add_subdirectory_ifdef(CONFIG_BMC150_MAGN bmc150_magn)
-add_subdirectory_ifdef(CONFIG_BME280 bme280)
-add_subdirectory_ifdef(CONFIG_BME680 bme680)
-add_subdirectory_ifdef(CONFIG_BMG160 bmg160)
-add_subdirectory_ifdef(CONFIG_BMI08X bmi08x)
-add_subdirectory_ifdef(CONFIG_BMI160 bmi160)
-add_subdirectory_ifdef(CONFIG_BMI270 bmi270)
-add_subdirectory_ifdef(CONFIG_BMI323 bmi323)
-add_subdirectory_ifdef(CONFIG_BMM150 bmm150)
-add_subdirectory_ifdef(CONFIG_BMP388 bmp388)
-add_subdirectory_ifdef(CONFIG_BMP581 bmp581)
 add_subdirectory_ifdef(CONFIG_BQ274XX bq274xx)
 add_subdirectory_ifdef(CONFIG_CCS811 ccs811)
 add_subdirectory_ifdef(CONFIG_CURRENT_AMP current_amp)
