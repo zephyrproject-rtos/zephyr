@@ -511,6 +511,10 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case REPLY_CCRYPT:
+		if (sc_is_active(pd) || pd->cmd_id != CMD_CHLNG) {
+			LOG_ERR("Out of order REPLY_CCRYPT; has PD gone rogue?");
+			break;
+		}
 		if (len != REPLY_CCRYPT_DATA_LEN) {
 			break;
 		}
@@ -526,6 +530,10 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RMAC_I:
+		if (sc_is_active(pd) || pd->cmd_id != CMD_SCRYPT) {
+			LOG_ERR("Out of order REPLY_RMAC_I; has PD gone rogue?");
+			break;
+		}
 		if (len != REPLY_RMAC_I_DATA_LEN) {
 			break;
 		}
