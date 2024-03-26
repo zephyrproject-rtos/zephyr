@@ -18,6 +18,7 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,18 +168,18 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 }
 
 #define ARCH_ISR_DIRECT_DECLARE(name) \
-	static inline int name##_body(void); \
+	static inline int UTIL_CAT(name, _body)(void); \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wattributes\"") \
 	__attribute__ ((interrupt ("IRQ"))) void name(void) \
 	{ \
 		int check_reschedule; \
 		ISR_DIRECT_HEADER(); \
-		check_reschedule = name##_body(); \
+		check_reschedule = UTIL_CAT(name, _body)(); \
 		ISR_DIRECT_FOOTER(check_reschedule); \
 	} \
 	_Pragma("GCC diagnostic pop") \
-	static inline int name##_body(void)
+	static inline int UTIL_CAT(name, _body)(void)
 
 #if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
 

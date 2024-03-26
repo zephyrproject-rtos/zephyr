@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  sys_irq.shared_irq:
+    harness: ztest
+    platform_allow:
+      - nrf9160dk_nrf9160

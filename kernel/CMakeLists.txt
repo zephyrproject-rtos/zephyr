@@ -140,6 +140,7 @@ target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
 target_sources_ifdef(CONFIG_PIPES                 kernel PRIVATE pipes.c)
 target_sources_ifdef(CONFIG_SCHED_THREAD_USAGE    kernel PRIVATE usage.c)
 target_sources_ifdef(CONFIG_OBJ_CORE              kernel PRIVATE obj_core.c)
+target_sources_ifdef(CONFIG_SYS_IRQ               kernel PRIVATE irq.c ${SYS_IRQ_HANDLER_C_PATH})
 
 if(${CONFIG_KERNEL_MEM_POOL})
   target_sources(kernel PRIVATE mempool.c)

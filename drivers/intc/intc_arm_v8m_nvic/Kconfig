@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_ARM_V8M_NVIC
+	bool "Arm V8M Nested Vector Interrupt Controller"
+	default y
+	depends on DT_HAS_ARM_V8M_NVIC_ENABLED
