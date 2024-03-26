@@ -1,0 +1,20 @@
+# Texas Instruments MSPM0G3507
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MSPM0G3XXX
+	bool
+	select SOC_FAMILY_TI_MSPM0
+	help
+		Enable support for TI MSPM0G3XXX SoCs
+
+config SOC_MSPM0G3507
+	bool
+	select SOC_SERIES_MSPM0G3XXX
+
+config SOC_SERIES
+	default "mspm0g3xxx" if SOC_SERIES_MSPM0G3XXX
+
+config SOC
+	default "mspm0g3507" if SOC_MSPM0G3507
