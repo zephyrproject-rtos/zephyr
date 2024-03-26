@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-M System Tick
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  external-reference-clock:
+    type: boolean
+    description: |
+      The default clock source for the Cortex-M systick is the processor
+      clock. Enabling this option switches to an implementation defined
+      external reference clock (if available). If unsure, leave disabled.
+
+      See section "SysTick Control and Status Register" of the
+      Armv6-M/Armv7-M/Armv8-M Architecture Reference Manuals for details.
