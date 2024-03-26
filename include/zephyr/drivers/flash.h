@@ -481,6 +481,7 @@ enum flash_ex_op_types {
 	 * Reset flash device.
 	 */
 	FLASH_EX_OP_RESET = 0,
+	FLASH_EX_OP_GET_NVRAM_PROPERTIES = 1,
 };
 
 static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
