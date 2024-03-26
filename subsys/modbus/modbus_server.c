@@ -111,11 +111,11 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	uint8_t *presp;
 	bool coil_state;
 	int err;
-	uint16_t coil_addr;
-	uint16_t coil_qty;
-	uint16_t num_bytes;
-	uint8_t bit_mask;
-	uint16_t coil_cntr;
+	uint_fast16_t coil_addr;
+	uint_fast16_t coil_qty;
+	uint_fast16_t num_bytes;
+	uint_fast8_t bit_mask;
+	uint_fast16_t coil_cntr;
 
 	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
@@ -140,7 +140,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	/* Calculate byte count for response. */
 	num_bytes = ((coil_qty - 1) / 8) + 1;
 	/* Number of data bytes + byte count. */
-	ctx->tx_adu.length = num_bytes + 1;
+	ctx->tx_adu.length = (uint16_t)(num_bytes + 1);
 	/* Set number of data bytes in response message. */
 	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
@@ -148,8 +148,6 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	presp = &ctx->tx_adu.data[1];
 	memset(presp, 0, num_bytes);
 
-	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_adu.data[1];
 	/* Start with bit 0 in response byte data mask. */
 	bit_mask = BIT(0);
 	/* Initialize loop counter. */
@@ -210,11 +208,11 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 	uint8_t *presp;
 	bool di_state;
 	int err;
-	uint16_t di_addr;
-	uint16_t di_qty;
-	uint16_t num_bytes;
-	uint8_t bit_mask;
-	uint16_t di_cntr;
+	uint_fast16_t di_addr;
+	uint_fast16_t di_qty;
+	uint_fast16_t num_bytes;
+	uint_fast8_t bit_mask;
+	uint_fast16_t di_cntr;
 
 	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
@@ -239,18 +237,16 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 	/* Get number of bytes needed for response. */
 	num_bytes = ((di_qty - 1) / 8) + 1;
 	/* Number of data bytes + byte count. */
-	ctx->tx_adu.length = num_bytes + 1;
+	ctx->tx_adu.length = (uint16_t)(num_bytes + 1);
 	/* Set number of data bytes in response message. */
 	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
 	/* Clear bytes in response */
 	presp = &ctx->tx_adu.data[1];
 	for (di_cntr = 0; di_cntr < num_bytes; di_cntr++) {
-		*presp++ = 0x00;
+		presp[di_cntr] = 0x00;
 	}
 
-	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_adu.data[1];
 	/* Start with bit 0 in response byte data mask. */
 	bit_mask = BIT(0);
 	/* Initialize loop counter. */
@@ -310,9 +306,9 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	const uint8_t request_len = 4;
 	uint8_t *presp;
 	uint16_t err;
-	uint16_t reg_addr;
-	uint16_t reg_qty;
-	uint16_t num_bytes;
+	uint_fast16_t reg_addr;
+	uint_fast16_t reg_qty;
+	uint_fast16_t num_bytes;
 
 	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
@@ -337,7 +333,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 		}
 
 		/* Get number of bytes needed for response. */
-		num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
+		num_bytes = (reg_qty * sizeof(uint16_t));
 	} else {
 		/* Read floating-point register */
 		if (ctx->mbs_user_cb->holding_reg_rd_fp == NULL) {
@@ -352,11 +348,11 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 		}
 
 		/* Get number of bytes needed for response. */
-		num_bytes = (uint8_t)(reg_qty * sizeof(float));
+		num_bytes = (reg_qty * sizeof(float));
 	}
 
 	/* Number of data bytes + byte count. */
-	ctx->tx_adu.length = num_bytes + 1;
+	ctx->tx_adu.length = (uint16_t)(num_bytes + 1);
 	/* Set number of data bytes in response message. */
 	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
@@ -420,9 +416,9 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	const uint8_t request_len = 4;
 	uint8_t *presp;
 	int err;
-	uint16_t reg_addr;
-	uint16_t reg_qty;
-	uint16_t num_bytes;
+	uint_fast16_t reg_addr;
+	uint_fast16_t reg_qty;
+	uint_fast16_t num_bytes;
 
 	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
@@ -447,7 +443,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 		}
 
 		/* Get number of bytes needed for response. */
-		num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
+		num_bytes = (reg_qty * sizeof(uint16_t));
 	} else {
 		/* Read floating-point register */
 		if (ctx->mbs_user_cb->input_reg_rd_fp == NULL) {
@@ -462,11 +458,11 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 		}
 
 		/* Get number of bytes needed for response. */
-		num_bytes = (uint8_t)(reg_qty * sizeof(float));
+		num_bytes = (reg_qty * sizeof(float));
 	}
 
 	/* Number of data bytes + byte count. */
-	ctx->tx_adu.length = num_bytes + 1;
+	ctx->tx_adu.length = (uint16_t)(num_bytes + 1);
 	/* Set number of data bytes in response message. */
 	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
@@ -728,11 +724,11 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	const uint8_t response_len = 4;
 	uint8_t temp = 0;
 	int err;
-	uint16_t coil_addr;
-	uint16_t coil_qty;
-	uint16_t num_bytes;
-	uint16_t coil_cntr;
-	uint8_t data_ix;
+	uint_fast16_t coil_addr;
+	uint_fast16_t coil_qty;
+	uint_fast16_t num_bytes;
+	uint_fast16_t coil_cntr;
+	uint_fast8_t data_ix;
 	bool coil_state;
 
 	if (ctx->rx_adu.length < request_len) {
@@ -758,7 +754,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 
 	/* Be sure byte count is valid for quantity of coils. */
 	if (((((coil_qty - 1) / 8) + 1) !=  num_bytes) ||
-	    (ctx->rx_adu.length  != (num_bytes + 5))) {
+	    (ctx->rx_adu.length != (num_bytes + 5))) {
 		LOG_ERR("Mismatch in the number of coils");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
@@ -830,10 +826,10 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	const uint8_t response_len = 4;
 	uint8_t *prx_data;
 	int err;
-	uint16_t reg_addr;
-	uint16_t reg_qty;
-	uint16_t num_bytes;
-	uint8_t reg_size;
+	uint_fast16_t reg_addr;
+	uint_fast16_t reg_qty;
+	uint_fast16_t num_bytes;
+	uint_fast8_t reg_size;
 
 	if (ctx->rx_adu.length < request_len) {
 		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
@@ -883,7 +879,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 		return true;
 	}
 
-	if ((num_bytes / reg_qty) != (uint16_t)reg_size) {
+	if ((num_bytes / reg_qty) != (uint_fast16_t)reg_size) {
 		LOG_ERR("Mismatch in the number of registers");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
