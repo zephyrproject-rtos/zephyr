@@ -391,6 +391,13 @@ config DEBUG_THREAD_INFO
 	  This option exports an array of offsets to kernel structs to allow
 	  for debugger RTOS plugins to determine the state of running threads.
 
+config HW_BREAKPOINT
+	bool "Hardware breakpoint support"
+	depends on ARCH_HAS_HW_BREAKPOINT
+	default y
+	help
+	  This option enables support for ISA-provided hardware breakpoints
+
 rsource "coredump/Kconfig"
 endmenu
 

@@ -325,6 +325,12 @@ no_fp:	/* increment _current->arch.exception_depth */
 	beq t0, t1, is_user_syscall
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_HW_BREAKPOINT
+	mv a0, sp
+	li t1, RISCV_EXC_BREAKPOINT
+	beq t0, t1, is_breakpoint
+#endif /* CONFIG_HW_BREAKPOINT */
+
 	/*
 	 * Call _Fault to handle exception.
 	 * Stack pointer is pointing to a z_arch_esf_t structure, pass it
@@ -489,6 +495,12 @@ valid_syscall_id:
 	csrc mstatus, MSTATUS_IEN
 	j might_have_rescheduled
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_HW_BREAKPOINT
+is_breakpoint:
+	jal z_riscv_hw_bp_handler
+	j check_reschedule
+#endif /* CONFIG_HW_BREAKPOINT */
 
 is_interrupt:
 

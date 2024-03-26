@@ -25,6 +25,7 @@ extern "C" {
 #endif /* !_ASMLANGUAGE */
 
 /* Exceptions 0-15 (MCAUSE interrupt=0) */
+#define RISCV_EXC_BREAKPOINT 3
 
 /* Environment Call from U-mode */
 #define RISCV_EXC_ECALLU 8
