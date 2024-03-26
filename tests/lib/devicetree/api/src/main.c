@@ -3298,6 +3298,19 @@ ZTEST(devicetree_api, test_interrupt_controller)
 
 	/* DT_INST_IRQ_INTC */
 	zassert_true(DT_SAME_NODE(DT_INST_IRQ_INTC(0), TEST_INTC), "");
+
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 0),
+		      ((70 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11);
+	/*
+	 * Commented out for now, pending fix from PR #68784:
+	 * zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 1),
+	 *        ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 12);
+	 */
+#else
+	zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 0), 70);
+	zassert_equal(DT_IRQN_BY_IDX(TEST_IRQ_EXT, 1), 30);
+#endif
 }
 
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);
