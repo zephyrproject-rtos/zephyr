@@ -315,6 +315,7 @@ int http_server_start(struct http_server_ctx *ctx)
 
 					ctx->fds[j].fd = new_socket;
 					ctx->fds[j].events = POLLIN;
+					ctx->fds[j].revents = 0;
 
 					ctx->num_clients++;
 
