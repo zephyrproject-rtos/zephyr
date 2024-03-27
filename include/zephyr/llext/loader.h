@@ -73,6 +73,7 @@ struct llext_loader {
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
 	enum llext_mem *sect_map;
 	uint32_t sect_cnt;
+	size_t prog_data_size;
 	/** @endcond */
 };
 
